@@ -221,6 +221,7 @@ type tradingDataService struct {
 	NetParamsService        NetParamsService
 	LiquidityService        LiquidityService
 	oracleService           OracleService
+	validatorService        ValidatorService
 }
 
 func (t *tradingDataService) Delegations(ctx context.Context, request *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {

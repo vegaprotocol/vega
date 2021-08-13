@@ -101,6 +101,8 @@ var (
 	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
 	// ErrMissingDepositID is returned when the ID is missing from the request
 	ErrMissingDepositID = errors.New("missing deposit ID")
+	// Validator service
+	ErrValidatorServiceGetNodeData = errors.New("failed to get data for node")
 )
 
 // errorMap contains a mapping between errors and Vega numeric error codes.
