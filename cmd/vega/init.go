@@ -29,16 +29,11 @@ type InitCmd struct {
 
 	Force      bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
 	GenBuiltin bool `short:"b" long:"gen-builtinasset-faucet" description:"Generate the builtin asset configuration (not for production)"`
-
-	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 var initCmd InitCmd
 
 func (opts *InitCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{Type: flags.ErrHelp, Message: "vega init subcommand help"}
-	}
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 

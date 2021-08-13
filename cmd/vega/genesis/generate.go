@@ -17,7 +17,6 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -31,17 +30,9 @@ type generateCmd struct {
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
-	Help    bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega genesis generate subcommand help",
-		}
-	}
-
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)

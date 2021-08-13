@@ -29,9 +29,7 @@ var (
 	networkSelect string
 )
 
-type tmCmd struct {
-	Help []bool `short:"h" long:"help" description:"Show this help message"`
-}
+type tmCmd struct {}
 
 func (opts *tmCmd) Execute(_ []string) error {
 

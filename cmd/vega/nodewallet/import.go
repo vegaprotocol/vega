@@ -20,16 +20,9 @@ type importCmd struct {
 	Chain      string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
 	WalletPath string `long:"wallet-path" required:"true" description:"The path to the wallet file to import"`
 	Force      bool   `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
-	Help       bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *importCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega nodewallet import subcommand help",
-		}
-	}
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 

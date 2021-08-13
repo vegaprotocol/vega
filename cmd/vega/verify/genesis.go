@@ -8,21 +8,11 @@ import (
 	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-
-	"github.com/jessevdk/go-flags"
 )
 
-type GenesisCmd struct {
-	Help bool `short:"h" long:"help" description:"Show this help message"`
-}
+type GenesisCmd struct {}
 
 func (opts *GenesisCmd) Execute(params []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega verify genesis subcommand help",
-		}
-	}
 	return verifier(params, verifyGenesis)
 }
 

@@ -14,17 +14,9 @@ import (
 
 type verifyCmd struct {
 	Config nodewallet.Config
-	Help   bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *verifyCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega nodewallet verify subcommand help",
-		}
-	}
-
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
