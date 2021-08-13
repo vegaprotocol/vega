@@ -183,7 +183,10 @@ pipeline {
         }
 
         stage('Start Dockerised Vega') {
-            options { retry(2) }
+            options {
+                retry(2)
+                timeout(time: 10, unit: 'MINUTES')
+            }
             steps {
                 dir('system-tests/scripts') {
                     sh label: 'make sure dockerised-vega is not running', script: '''
@@ -227,8 +230,8 @@ pipeline {
                         make stop-dockerised-vega
                     '''
                 }
-                sh label: 'Clean docker images', script: '''
-                    docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
+                sh label: 'Clean docker images', script: '''#!/bin/bash -e
+                    [ -z "$(docker images -q "${DOCKER_IMAGE_NAME_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
                 '''
             }
         }
