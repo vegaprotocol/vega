@@ -28,7 +28,7 @@ type Accounting struct {
 }
 
 func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
-	log := log.Named(namedLogger)
+	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	return &Accounting{
 		log:      log,
