@@ -113,6 +113,7 @@ type NodeCommand struct {
 	delegationBalanceSub *subscribers.DelegationBalanceSub
 	epochUpdateSub       *subscribers.EpochUpdateSub
 	timeUpdateSub        *subscribers.Time
+	rewardsSub           *subscribers.RewardCounters
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

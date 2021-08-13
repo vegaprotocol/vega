@@ -122,6 +122,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.validatorUpdateSub = subscribers.NewValidatorUpdateSub(l.ctx, l.nodeStore, l.Log, true)
 	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
 	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
+	l.rewardsSub = subscribers.NewRewards(l.ctx, l.Log, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {

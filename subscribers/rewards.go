@@ -88,13 +88,20 @@ func (rc *RewardCounters) Types() []events.Type {
 	}
 }
 
+func (rc *RewardCounters) UpdateRewards(rpe types.RewardPayoutEvent) {
+	rc.updateRewards(rpe)
+}
+
 func (rc *RewardCounters) updateRewards(rpe types.RewardPayoutEvent) {
 	percentage, err := strconv.ParseFloat(rpe.PercentOfTotalReward, 64)
 	if err != nil {
 		percentage = 0.0
 	}
 
-	reward, ok := rc.rewards[rpe.FromAccount]
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+
+	reward, ok := rc.rewards[rpe.Party]
 
 	if !ok {
 		// First reward for this party
@@ -104,7 +111,7 @@ func (rc *RewardCounters) updateRewards(rpe types.RewardPayoutEvent) {
 			LastReward:           rpe.Amount,
 			LastPercentageAmount: percentage,
 		}
-		rc.rewards[rpe.FromAccount] = reward
+		rc.rewards[rpe.Party] = reward
 		return
 	}
 
@@ -113,7 +120,7 @@ func (rc *RewardCounters) updateRewards(rpe types.RewardPayoutEvent) {
 	reward.LastPercentageAmount = percentage
 }
 
-// GetMarketDepth builds up the structure to be sent out to any market depth listeners
+// GetRewardDetails returns the information relating to rewards for a single party
 func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) (*RewardDetails, error) {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
@@ -121,5 +128,7 @@ func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) 
 	if !ok {
 		return nil, fmt.Errorf("No rewards found for partyID %s", partyID)
 	}
-	return reward, nil
+	// Create a copy and return
+	rewardCopy := *reward
+	return &rewardCopy, nil
 }

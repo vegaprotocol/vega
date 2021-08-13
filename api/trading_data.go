@@ -198,6 +198,7 @@ type LiquidityService interface {
 	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
 }
 
+<<<<<<< HEAD
 // NodeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_service_mock.go -package mocks code.vegaprotocol.io/data-node/api NodeService
 type NodeService interface {
@@ -223,6 +224,12 @@ type DelegationService interface {
 	GetPartyNodeDelegationsOnEpoch(party string, node string, epochSeq string) ([]*pbtypes.Delegation, error)
 	GetNodeDelegations(nodeID string) ([]*pbtypes.Delegation, error)
 	GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pbtypes.Delegation, error)
+=======
+// RewardsService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/rewards_service_mock.go -package mocks code.vegaprotocol.io/data-node/api RewardsService
+type RewardsService interface {
+	GetRewardDetails(ctx context.Context, party string) (pbtypes.RewardDetails, error)
+>>>>>>> Added more tests and futher work
 }
 
 type tradingDataService struct {
@@ -252,6 +259,7 @@ type tradingDataService struct {
 	oracleService           OracleService
 	nodeService             NodeService
 	epochService            EpochService
+	rewardsService          RewardsService
 }
 
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
@@ -596,6 +604,20 @@ func (t *tradingDataService) Deposits(ctx context.Context, req *protoapi.Deposit
 	return &protoapi.DepositsResponse{
 		Deposits: out,
 	}, nil
+}
+
+func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardDetails")()
+	if len(req.PartyId) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+	details, err := t.rewardsService.GetRewardDetails(ctx, req.PartyId)
+	if err != nil {
+		return nil, err
+	}
+
+	retVal := &protoapi.GetRewardDetailsResponse{}
+	return retVal, nil
 }
 
 func (t *tradingDataService) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {
