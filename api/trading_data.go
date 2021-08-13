@@ -256,6 +256,7 @@ type tradingDataService struct {
 	LiquidityService        LiquidityService
 	delegationService       DelegationService
 	oracleService           OracleService
+<<<<<<< HEAD
 	nodeService             NodeService
 	epochService            EpochService
 	rewardsService          RewardsService
@@ -371,6 +372,9 @@ func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.Dele
 	return &protoapi.DelegationsResponse{
 		Delegations: delegations,
 	}, nil
+=======
+	rewardsService          RewardsService
+>>>>>>> Added more tests and futher work
 }
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
