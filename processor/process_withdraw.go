@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -12,7 +13,12 @@ var (
 	ErrMissingWithdrawERC20Ext = errors.New("missing withdraw submission erc20 ext")
 )
 
-func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission, id string, party string) error {
+func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission, id string, party string) (err error) {
+	defer func() {
+		if err != nil {
+			app.broker.Send(events.NewTxErrEvent(ctx, err, party, w))
+		}
+	}()
 	asset, err := app.assets.Get(w.Asset)
 	if err != nil {
 		app.log.Error("invalid vega asset ID for withdrawal",
