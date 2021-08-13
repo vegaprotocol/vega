@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/events"
 )
 
 func TestGetSpecs(t *testing.T) {

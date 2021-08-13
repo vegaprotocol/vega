@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	"code.vegaprotocol.io/data-node/types"
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestMarkets_GetAll(t *testing.T) {
@@ -24,7 +24,7 @@ func TestMarkets_GetAll(t *testing.T) {
 		market := be.GetMarket()
 		require.NotNil(t, market)
 		e := events.NewMarketCreatedEvent(ctx, types.Market{
-			Id: market.MarketId,
+			ID: market.MarketId,
 		})
 		return e, nil
 	}, "markets-events.golden")

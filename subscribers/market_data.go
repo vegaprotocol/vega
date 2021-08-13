@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 )
 
 type Storage interface {

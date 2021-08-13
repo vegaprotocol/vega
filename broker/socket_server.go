@@ -6,9 +6,9 @@ import (
 	"net"
 	"strings"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/golang/protobuf/proto"

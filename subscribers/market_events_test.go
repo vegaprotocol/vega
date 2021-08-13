@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/subscribers"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
