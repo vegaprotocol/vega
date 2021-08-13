@@ -64,3 +64,12 @@ func (m MarketUpdated) StreamMessage() *eventspb.BusEvent {
 func (m MarketUpdated) StreamMarketMessage() *eventspb.BusEvent {
 	return m.StreamMessage()
 }
+
+func MarketUpdatedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarketUpdated {
+	m := be.GetMarketUpdated()
+	return &MarketUpdated{
+		Base: newBaseFromStream(ctx, MarketUpdatedEvent, be),
+		m:    types.Market{ID: m.Id},
+		pm:   *m,
+	}
+}

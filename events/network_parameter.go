@@ -37,3 +37,10 @@ func (n NetworkParameter) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func NetworkParameterEventFromStream(ctx context.Context, be *eventspb.BusEvent) *NetworkParameter {
+	return &NetworkParameter{
+		Base: newBaseFromStream(ctx, NetworkParameterEvent, be),
+		np:   proto.NetworkParameter{Key: be.GetNetworkParameter().Key, Value: be.GetNetworkParameter().Value},
+	}
+}

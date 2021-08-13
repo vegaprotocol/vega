@@ -43,3 +43,10 @@ func (t Time) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func TimeEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Time {
+	return &Time{
+		Base:      newBaseFromStream(ctx, TimeUpdate, be),
+		blockTime: time.Unix(be.GetTimeUpdate().Timestamp, 0).UTC(),
+	}
+}
