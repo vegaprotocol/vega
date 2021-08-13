@@ -20,7 +20,10 @@ func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID str
 	}
 
 	// max payout is not mandatory, if it's not defined, pass nil so that max payout is not enforced for the asset
-	maxPayoutPerParticipant := rewardScheme.MaxPayoutPerAssetPerParty[asset]
+	maxPayoutPerParticipant, ok := rewardScheme.MaxPayoutPerAssetPerParty[asset]
+	if !ok {
+		maxPayoutPerParticipant = num.Zero()
+	}
 
 	// calculate the validator score for each validator and the total score for all
 	validatorNormalisedScores := calcValidatorsNormalisedScore(validatorData, minVal, compLevel)
@@ -65,7 +68,7 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 			rewardForNode = num.Zero()
 		}
 		// if there is no cap just add the total payout for the validator
-		if maxPayout == nil {
+		if maxPayout.IsZero() {
 			rewards[vd.NodeID] = num.Zero().Add(rewardForNode, amountToKeepByValidator)
 			totalRewardPayout.AddSum(amountToKeepByValidator)
 		} else {
@@ -96,7 +99,7 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 				}
 
 				rewardAsUint, _ := num.UintFromDecimal(num.NewDecimalFromFloat(delegatorAmt.Float64() * remainingRewardForDelegators.Float64() / vd.StakeByDelegators.Float64()))
-				if maxPayout == nil {
+				if maxPayout.IsZero() {
 					totalAwardedThisRound.AddSum(rewardAsUint)
 					totalRewardPayout.AddSum(rewardAsUint)
 					rewards[party] = num.Zero().Add(rewardForParty, rewardAsUint)

@@ -9,12 +9,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFourSquare(t *testing.T) {
+func TestStakingRewards(t *testing.T) {
+	t.Run("Square root with 4 decimal places using only integer operations succeeds", testFourSquare)
+	t.Run("Calcualte correctly the validator score", testValidatorScore)
+	t.Run("Calculate correctly the total delegate acorss all validators", testTotalDelegated)
+	t.Run("Calculate normalised validator score", testCalcValidatorsScore)
+	t.Run("Calcualte the reward when the balance of the reward account is 0", testCalcRewardNoBalance)
+	t.Run("Calcualte the reward when the validator scores are 0", testCalcRewardsZeroScores)
+	t.Run("Reward is calcualted correctly when max reward per participant is zero (i.e. unrestricted)", testCalcRewardsNoMaxPayout)
+	t.Run("Reward is calcualted correctly when max reward per participant restricted but not breached", testCalcRewardsMaxPayoutNotBreached)
+	t.Run("Reward is calcualted correctly when max reward per participant restricted and breached - no participant can be topped up", testCalcRewardSmallMaxPayoutBreached)
+	t.Run("Reward is calcualted correctly when max reward per participant restricted and breached - participant can be topped up", testCalcRewardsMaxPayoutBreachedPartyCanTakeMore)
+}
+
+func testFourSquare(t *testing.T) {
 	require.Equal(t, 4.0, foursqrt(16))
 	require.Equal(t, 3.8729, foursqrt(15))
 }
 
-func TestValidatorScore(t *testing.T) {
+func testValidatorScore(t *testing.T) {
 	validatorStake := 10000.0
 	totalStake := 50000.0
 	minVal := 5.0
@@ -29,7 +42,7 @@ func TestValidatorScore(t *testing.T) {
 	require.Equal(t, 0.306762333696, calcValidatorScore(validatorStake/totalStake, minVal, compLevel, 10.0))
 }
 
-func TestTotalDelegated(t *testing.T) {
+func testTotalDelegated(t *testing.T) {
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
 		SelfStake:         num.Zero(),
@@ -48,7 +61,7 @@ func TestTotalDelegated(t *testing.T) {
 	require.Equal(t, num.NewUint(100000), calcTotalDelegated([]*types.ValidatorData{validator1, validator2, validator3}))
 }
 
-func TestCalcValidatorsScore(t *testing.T) {
+func testCalcValidatorsScore(t *testing.T) {
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
 		SelfStake:         num.Zero(),
@@ -95,13 +108,13 @@ func TestCalcValidatorsScore(t *testing.T) {
 	require.Equal(t, 0.0, valScores["node4"])
 }
 
-func TestCalcRewardNoBalance(t *testing.T) {
+func testCalcRewardNoBalance(t *testing.T) {
 	res := calculateRewards("asset", "rewardsAccountID", num.Zero(), map[string]float64{}, []*types.ValidatorData{}, 0.3, nil)
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
 
-func TestCalcRewardsZeroScores(t *testing.T) {
+func testCalcRewardsZeroScores(t *testing.T) {
 	scores := map[string]float64{}
 	scores["node1"] = 0.0
 	scores["node2"] = 0.0
@@ -183,15 +196,15 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	require.Equal(t, num.NewUint(999998), res.totalReward)
 }
 
-func TestCalcRewardsNoMaxPayout(t *testing.T) {
-	testCalcRewardsMaxPayoutRepsected(t, nil)
+func testCalcRewardsNoMaxPayout(t *testing.T) {
+	testCalcRewardsMaxPayoutRepsected(t, num.Zero())
 }
 
-func TestCalcRewardsMaxPayoutNotBreached(t *testing.T) {
+func testCalcRewardsMaxPayoutNotBreached(t *testing.T) {
 	testCalcRewardsMaxPayoutRepsected(t, num.NewUint(1000000))
 }
 
-func TestCalcRewardSmallMaxPayoutBreached(t *testing.T) {
+func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
 	delegatorForVal1["party2"] = num.NewUint(4000)
@@ -261,7 +274,7 @@ func TestCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	require.Equal(t, num.NewUint(200000), res.totalReward)
 }
 
-func TestCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
+func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
 	delegatorForVal1["party2"] = num.NewUint(4000)

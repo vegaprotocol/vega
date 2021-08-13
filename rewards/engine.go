@@ -297,13 +297,15 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 	if err != nil {
 		e.log.Panic("failed to get reward account for payout distribution", logging.String("accoundID", payout.fromAccount), logging.Error(err))
 	}
+
+	partyAccountIDToParty := make(map[string]string, len(payout.partyToAmount))
 	for party, amt := range payout.partyToAmount {
 		general, err := e.collateral.GetPartyGeneralAccount(party, payout.asset)
 		if err != nil {
 			e.log.Error("failed to get general account for reward payout", logging.String("party", party), logging.String("asset", payout.asset))
 			continue
 		}
-
+		partyAccountIDToParty[general.ID] = party
 		rewardsTR = append(rewardsTR, &types.TransferRequest{
 			Amount:      amt.Clone(),
 			MinAmount:   amt.Clone(),
@@ -326,9 +328,9 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 		// send an event with the reward amount transferred to the party
 		if len(response.Transfers) > 0 {
 			ledgerEntry := response.Transfers[0]
-			payoutEvents[ledgerEntry.ToAccount] = events.NewRewardPayout(ctx, ledgerEntry.FromAccount, ledgerEntry.ToAccount, payout.epochSeq, payout.asset, ledgerEntry.Amount, ledgerEntry.Amount.Float64()/payout.totalReward.Float64())
-			parties = append(parties, ledgerEntry.ToAccount)
-
+			party := partyAccountIDToParty[ledgerEntry.ToAccount]
+			payoutEvents[party] = events.NewRewardPayout(ctx, ledgerEntry.FromAccount, ledgerEntry.ToAccount, party, payout.epochSeq, payout.asset, ledgerEntry.Amount, ledgerEntry.Amount.Float64()/payout.totalReward.Float64())
+			parties = append(parties, party)
 		}
 	}
 	sort.Strings(parties)
