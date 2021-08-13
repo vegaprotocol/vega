@@ -81,7 +81,7 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 }
 
 func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
-	if req.Evt == nil {
+	if req.Event == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
@@ -98,7 +98,7 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	}
 
 	var ok = true
-	err = s.evtForwarder.Forward(ctx, evt, req.PubKey)
+	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
 	if err != nil && err != evtforward.ErrEvtAlreadyExist {
 		s.log.Error("unable to forward chain event",
 			logging.String("pubkey", req.PubKey),
