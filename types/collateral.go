@@ -28,7 +28,7 @@ func (a *Account) IntoProto() *proto.Account {
 	return &proto.Account{
 		Id:       a.ID,
 		Owner:    a.Owner,
-		Balance:  num.UintToUint64(a.Balance),
+		Balance:  num.UintToString(a.Balance),
 		Asset:    a.Asset,
 		MarketId: a.MarketID,
 		Type:     a.Type,
@@ -58,8 +58,8 @@ func (t *TransferRequest) IntoProto() *proto.TransferRequest {
 	return &proto.TransferRequest{
 		FromAccount: Accounts(t.FromAccount).IntoProto(),
 		ToAccount:   Accounts(t.ToAccount).IntoProto(),
-		Amount:      num.UintToUint64(t.Amount),
-		MinAmount:   num.UintToUint64(t.MinAmount),
+		Amount:      num.UintToString(t.Amount),
+		MinAmount:   num.UintToString(t.MinAmount),
 		Asset:       t.Asset,
 		Reference:   t.Reference,
 	}
@@ -99,7 +99,7 @@ func (t *TransferBalance) IntoProto() *proto.TransferBalance {
 	}
 	return &proto.TransferBalance{
 		Account: acc,
-		Balance: t.Balance.Uint64(),
+		Balance: t.Balance.String(),
 	}
 }
 
@@ -126,7 +126,7 @@ func (l *LedgerEntry) IntoProto() *proto.LedgerEntry {
 	return &proto.LedgerEntry{
 		FromAccount: l.FromAccount,
 		ToAccount:   l.ToAccount,
-		Amount:      num.UintToUint64(l.Amount),
+		Amount:      num.UintToString(l.Amount),
 		Reference:   l.Reference,
 		Type:        l.Type,
 		Timestamp:   l.Timestamp,

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"errors"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -93,23 +95,31 @@ func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 		trigger = p.Trigger.IntoProto()
 	}
 	return &proto.PriceMonitoringBounds{
-		MinValidPrice:  num.UintToUint64(p.MinValidPrice),
-		MaxValidPrice:  num.UintToUint64(p.MaxValidPrice),
+		MinValidPrice:  num.UintToString(p.MinValidPrice),
+		MaxValidPrice:  num.UintToString(p.MaxValidPrice),
 		Trigger:        trigger,
 		ReferencePrice: ref,
 	}
 }
 
-func PriceMonitoringBoundsFromProto(pr *proto.PriceMonitoringBounds) *PriceMonitoringBounds {
+func PriceMonitoringBoundsFromProto(pr *proto.PriceMonitoringBounds) (*PriceMonitoringBounds, error) {
+	minValid, ok := num.UintFromString(pr.MinValidPrice, 10)
+	if !ok {
+		return nil, errors.New("invalid min valid price")
+	}
+	maxValid, ok := num.UintFromString(pr.MaxValidPrice, 10)
+	if !ok {
+		return nil, errors.New("invalid max valid price")
+	}
 	p := PriceMonitoringBounds{
-		MinValidPrice:  num.NewUint(pr.MinValidPrice),
-		MaxValidPrice:  num.NewUint(pr.MaxValidPrice),
+		MinValidPrice:  minValid,
+		MaxValidPrice:  maxValid,
 		ReferencePrice: num.DecimalFromFloat(pr.ReferencePrice),
 	}
 	if pr.Trigger != nil {
 		p.Trigger = PriceMonitoringTriggerFromProto(pr.Trigger)
 	}
-	return &p
+	return &p, nil
 }
 
 func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {

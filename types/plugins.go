@@ -30,9 +30,9 @@ func (p *Position) IntoProto() *proto.Position {
 		MarketId:          p.MarketId,
 		PartyId:           p.PartyId,
 		OpenVolume:        p.OpenVolume,
-		RealisedPnl:       p.RealisedPnl.BigInt().Int64(),
-		UnrealisedPnl:     p.UnrealisedPnl.BigInt().Int64(),
-		AverageEntryPrice: num.UintToUint64(p.AverageEntryPrice),
+		RealisedPnl:       p.RealisedPnl.BigInt().String(),
+		UnrealisedPnl:     p.UnrealisedPnl.BigInt().String(),
+		AverageEntryPrice: num.UintToString(p.AverageEntryPrice),
 		UpdatedAt:         p.UpdatedAt,
 	}
 }

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"errors"
+
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -10,17 +12,21 @@ type Delegate struct {
 	Amount *num.Uint
 }
 
-func NewDelegateFromProto(p *commandspb.DelegateSubmission) *Delegate {
+func NewDelegateFromProto(p *commandspb.DelegateSubmission) (*Delegate, error) {
+	amount, ok := num.UintFromString(p.Amount, 10)
+	if !ok {
+		return nil, errors.New("invalid amount")
+	}
 	return &Delegate{
 		NodeID: p.NodeId,
-		Amount: num.NewUint(p.Amount),
-	}
+		Amount: amount,
+	}, nil
 }
 
 func (d Delegate) IntoProto() *commandspb.DelegateSubmission {
 	return &commandspb.DelegateSubmission{
 		NodeId: d.NodeID,
-		Amount: d.Amount.Uint64(),
+		Amount: num.UintToString(d.Amount),
 	}
 }
 
@@ -34,18 +40,22 @@ type Undelegate struct {
 	Method string
 }
 
-func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) *Undelegate {
+func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) (*Undelegate, error) {
+	amount, ok := num.UintFromString(p.Amount, 10)
+	if !ok {
+		return nil, errors.New("invalid amount")
+	}
 	return &Undelegate{
 		NodeID: p.NodeId,
-		Amount: num.NewUint(p.Amount),
+		Amount: amount,
 		Method: p.Method.String(),
-	}
+	}, nil
 }
 
 func (u Undelegate) IntoProto() *commandspb.UndelegateSubmission {
 	return &commandspb.UndelegateSubmission{
 		NodeId: u.NodeID,
-		Amount: u.Amount.Uint64(),
+		Amount: num.UintToString(u.Amount),
 		Method: commandspb.UndelegateSubmission_Method(commandspb.UndelegateSubmission_Method_value[u.Method]),
 	}
 }

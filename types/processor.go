@@ -3,6 +3,8 @@
 package types
 
 import (
+	"errors"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -68,7 +70,7 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 	return &commandspb.OrderSubmission{
 		MarketId: o.MarketId,
 		// Need to update protobuf to use string TODO UINT
-		Price:       num.UintToUint64(o.Price),
+		Price:       num.UintToString(o.Price),
 		Size:        o.Size,
 		Side:        o.Side,
 		TimeInForce: o.TimeInForce,
@@ -79,11 +81,15 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 	}
 }
 
-func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) *OrderSubmission {
+func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmission, error) {
+	price, ok := num.UintFromString(p.Price, 10)
+	if !ok {
+		return nil, errors.New("invalid min valid price")
+	}
 	return &OrderSubmission{
 		MarketId: p.MarketId,
 		// Need to update protobuf to use string TODO UINT
-		Price:       num.NewUint(p.Price),
+		Price:       price,
 		Size:        p.Size,
 		Side:        p.Side,
 		TimeInForce: p.TimeInForce,
@@ -91,7 +97,7 @@ func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) *OrderSubmission
 		Type:        p.Type,
 		Reference:   p.Reference,
 		PeggedOrder: NewPeggedOrderFromProto(p.PeggedOrder),
-	}
+	}, nil
 }
 
 func (o OrderSubmission) String() string {
@@ -124,18 +130,23 @@ type WithdrawSubmission struct {
 	Ext *WithdrawExt
 }
 
-func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) *WithdrawSubmission {
+func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {
+	amount, ok := num.UintFromString(p.Amount, 10)
+	if !ok {
+		return nil, errors.New("invalid min valid price")
+	}
+
 	return &WithdrawSubmission{
-		Amount: num.NewUint(p.Amount),
+		Amount: amount,
 		Asset:  p.Asset,
 		Ext:    p.Ext,
-	}
+	}, nil
 }
 
 func (w WithdrawSubmission) IntoProto() *commandspb.WithdrawSubmission {
 	return &commandspb.WithdrawSubmission{
 		// Update once the protobuf changes TODO UINT
-		Amount: num.UintToUint64(w.Amount),
+		Amount: num.UintToString(w.Amount),
 		Asset:  w.Asset,
 		Ext:    w.Ext,
 	}

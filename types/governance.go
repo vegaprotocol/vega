@@ -3,6 +3,8 @@
 package types
 
 import (
+	"errors"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -246,7 +248,7 @@ func (v Vote) IntoProto() *proto.Vote {
 		Value:                       v.Value,
 		ProposalId:                  v.ProposalID,
 		Timestamp:                   v.Timestamp,
-		TotalGovernanceTokenBalance: num.UintToUint64(v.TotalGovernanceTokenBalance),
+		TotalGovernanceTokenBalance: num.UintToString(v.TotalGovernanceTokenBalance),
 		TotalGovernanceTokenWeight:  v.TotalGovernanceTokenWeight.String(),
 	}
 }
@@ -264,8 +266,13 @@ func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommi
 	if err != nil {
 		return nil, err
 	}
+	commitmentAmount, ok := num.UintFromString(p.CommitmentAmount, 10)
+	if !ok {
+		return nil, errors.New("invalid amount")
+	}
+
 	l := NewMarketCommitment{
-		CommitmentAmount: num.NewUint(p.CommitmentAmount),
+		CommitmentAmount: commitmentAmount,
 		Fee:              fee,
 		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
 		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
@@ -827,7 +834,7 @@ func (n NewAsset) DeepClone() *NewAsset {
 
 func (n NewMarketCommitment) IntoProto() *proto.NewMarketCommitment {
 	r := &proto.NewMarketCommitment{
-		CommitmentAmount: num.UintToUint64(n.CommitmentAmount),
+		CommitmentAmount: num.UintToString(n.CommitmentAmount),
 		Fee:              n.Fee.String(),
 		Sells:            make([]*proto.LiquidityOrder, 0, len(n.Sells)),
 		Buys:             make([]*proto.LiquidityOrder, 0, len(n.Buys)),

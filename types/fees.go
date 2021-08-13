@@ -66,9 +66,9 @@ type Fee struct {
 
 func (f Fee) IntoProto() *proto.Fee {
 	return &proto.Fee{
-		MakerFee:          num.UintToUint64(f.MakerFee),
-		InfrastructureFee: num.UintToUint64(f.InfrastructureFee),
-		LiquidityFee:      num.UintToUint64(f.LiquidityFee),
+		MakerFee:          num.UintToString(f.MakerFee),
+		InfrastructureFee: num.UintToString(f.InfrastructureFee),
+		LiquidityFee:      num.UintToString(f.LiquidityFee),
 	}
 }
 

@@ -170,7 +170,7 @@ func (a AuctionDuration) String() string {
 
 func (p Price) IntoProto() *proto.Price {
 	return &proto.Price{
-		Value: p.Value.Uint64(),
+		Value: num.UintToString(p.Value),
 	}
 }
 
@@ -516,28 +516,24 @@ func (m MarketData) DeepClone() *MarketData {
 }
 
 func (m MarketData) IntoProto() *proto.MarketData {
-	var mp uint64
-	if m.MarkPrice != nil {
-		mp = m.MarkPrice.Uint64()
-	}
 	r := &proto.MarketData{
-		MarkPrice:                 mp,
-		BestBidPrice:              m.BestBidPrice.Uint64(),
+		MarkPrice:                 num.UintToString(m.MarkPrice),
+		BestBidPrice:              num.UintToString(m.BestBidPrice),
 		BestBidVolume:             m.BestBidVolume,
-		BestOfferPrice:            m.BestOfferPrice.Uint64(),
+		BestOfferPrice:            num.UintToString(m.BestOfferPrice),
 		BestOfferVolume:           m.BestOfferVolume,
-		BestStaticBidPrice:        m.BestStaticBidPrice.Uint64(),
+		BestStaticBidPrice:        num.UintToString(m.BestStaticBidPrice),
 		BestStaticBidVolume:       m.BestStaticBidVolume,
-		BestStaticOfferPrice:      m.BestStaticOfferPrice.Uint64(),
+		BestStaticOfferPrice:      num.UintToString(m.BestStaticOfferPrice),
 		BestStaticOfferVolume:     m.BestStaticOfferVolume,
-		MidPrice:                  m.MidPrice.Uint64(),
-		StaticMidPrice:            m.StaticMidPrice.Uint64(),
+		MidPrice:                  num.UintToString(m.MidPrice),
+		StaticMidPrice:            num.UintToString(m.StaticMidPrice),
 		Market:                    m.Market,
 		Timestamp:                 m.Timestamp,
 		OpenInterest:              m.OpenInterest,
 		AuctionEnd:                m.AuctionEnd,
 		AuctionStart:              m.AuctionStart,
-		IndicativePrice:           m.IndicativePrice.Uint64(),
+		IndicativePrice:           num.UintToString(m.IndicativePrice),
 		IndicativeVolume:          m.IndicativeVolume,
 		MarketTradingMode:         m.MarketTradingMode,
 		Trigger:                   m.Trigger,
