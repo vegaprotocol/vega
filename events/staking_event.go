@@ -38,3 +38,10 @@ func (s StakingEvt) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func StakingEventFromStream(ctx context.Context, be *eventspb.BusEvent) *StakingEvt {
+	return &StakingEvt{
+		Base: newBaseFromStream(ctx, StakingEvent, be),
+		evt:  *be.GetStakingEvent(),
+	}
+}

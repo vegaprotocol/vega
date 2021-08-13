@@ -38,3 +38,10 @@ func (e EpochEvent) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func EpochEventFromStream(ctx context.Context, be *eventspb.BusEvent) *EpochEvent {
+	return &EpochEvent{
+		Base: newBaseFromStream(ctx, EpochUpdate, be),
+		e:    be.GetEpochEvent(),
+	}
+}

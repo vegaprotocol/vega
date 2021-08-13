@@ -71,3 +71,10 @@ func (v Vote) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func VoteEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Vote {
+	return &Vote{
+		Base: newBaseFromStream(ctx, VoteEvent, be),
+		v:    *be.GetVote(),
+	}
+}

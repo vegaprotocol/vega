@@ -43,6 +43,20 @@ func (db DelegationBalance) StreamMessage() *eventspb.BusEvent {
 	}
 }
 
+func DelegationBalanceEventFromStream(ctx context.Context, be *eventspb.BusEvent) *DelegationBalance {
+	event := be.GetDelegationBalance()
+	if event == nil {
+		return nil
+	}
+
+	return &DelegationBalance{
+		Base:   newBaseFromStream(ctx, DelegationBalanceEvent, be),
+		party:  event.GetParty(),
+		nodeID: event.GetNodeId(),
+		amount: num.NewUint(event.GetAmount()),
+	}
+}
+
 type PendingDelegationBalance struct {
 	*Base
 	party              string
@@ -79,5 +93,20 @@ func (pdb PendingDelegationBalance) StreamMessage() *eventspb.BusEvent {
 		Event: &eventspb.BusEvent_PendingDelegationBalance{
 			PendingDelegationBalance: &p,
 		},
+	}
+}
+
+func PendingDelegationBalanceEventFromStream(ctx context.Context, be *eventspb.BusEvent) *PendingDelegationBalance {
+	event := be.GetPendingDelegationBalance()
+	if event == nil {
+		return nil
+	}
+
+	return &PendingDelegationBalance{
+		Base:               newBaseFromStream(ctx, PendingDelegationBalanceEvent, be),
+		party:              event.GetParty(),
+		nodeID:             event.GetNodeId(),
+		delegationAmount:   num.NewUint(event.GetDelegationAmount()),
+		undelegationAmount: num.NewUint(event.GetUndelegationAmount()),
 	}
 }

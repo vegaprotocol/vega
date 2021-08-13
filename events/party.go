@@ -42,3 +42,10 @@ func (p Party) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func PartyEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Party {
+	return &Party{
+		Base: newBaseFromStream(ctx, PartyEvent, be),
+		p:    *be.GetParty(),
+	}
+}

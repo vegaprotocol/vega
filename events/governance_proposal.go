@@ -52,3 +52,10 @@ func (p Proposal) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func ProposalEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Proposal {
+	return &Proposal{
+		Base: newBaseFromStream(ctx, ProposalEvent, be),
+		p:    *be.GetProposal(),
+	}
+}
