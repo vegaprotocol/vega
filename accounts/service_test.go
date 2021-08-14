@@ -105,7 +105,7 @@ func getTestAccounts(owner, market string, accTypes ...types.AccountType) []*typ
 		acc := &types.Account{
 			Id:       uuid.NewV4().String(),
 			Owner:    owner,
-			Balance:  0,
+			Balance:  "0",
 			Asset:    asset,
 			MarketId: market,
 			Type:     t,

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // CandleStore ...
@@ -161,18 +162,18 @@ func (c *CandleSub) updateCandles(block tradeBlock) {
 	roundedTimestamps := GetMapOfIntervalsToRoundedTimestamps(block.time)
 	for _, interval := range supportedIntervals {
 		bufkey := bufferKey(roundedTimestamps[interval], interval)
-		var lastClose uint64
+		var lastClose string = "0"
 		if candl, ok := mktBuf[bufkey]; ok {
 			lastClose = candl.Close
 		}
 
-		if lastClose == 0 {
+		if lastClose == "0" {
 			if previousCandle, err := c.store.FetchLastCandle(block.mID, interval); err == nil {
 				lastClose = previousCandle.Close
 			}
 		}
 
-		if lastClose == 0 {
+		if lastClose == "0" {
 			lastClose = block.last.Price
 		}
 
@@ -200,7 +201,7 @@ func bufferKey(timestamp time.Time, interval types.Interval) string {
 }
 
 // newCandle constructs a new candle with minimum required parameters.
-func newCandle(timestamp time.Time, openPrice, size uint64, interval types.Interval) types.Candle {
+func newCandle(timestamp time.Time, openPrice string, size uint64, interval types.Interval) types.Candle {
 	return types.Candle{
 		Timestamp: timestamp.UnixNano(),
 		Datetime:  vegatime.Format(timestamp),
@@ -222,19 +223,22 @@ func updateCandle(candle *types.Candle, trade *types.Trade) {
 	// or candle.Open == uint64(0) in case there was no previous candle as this is a new market (aka also new trading activity for that candle)
 	// -> overwrite open price with new trade price (by default candle.Open price is set to previous candle close price)
 	// -> overwrite High and Low with new trade price (by default Low and High prices are set to candle open price which is set to previous candle close price)
-	if candle.Volume == uint64(0) || candle.Open == uint64(0) {
+	if candle.Volume == uint64(0) || candle.Open == "0" {
 		candle.Open = trade.Price
 		candle.High = trade.Price
 		candle.Low = trade.Price
 	}
 
+	tradePrice, _ := num.UintFromString(trade.Price, 10)
+	candleLow, _ := num.UintFromString(candle.Low, 10)
 	// set minimum
-	if trade.Price < candle.Low || candle.Low == uint64(0) {
+	if tradePrice.LT(candleLow) || candle.Low == "0" {
 		candle.Low = trade.Price
 	}
 
+	candleHigh, _ := num.UintFromString(candle.High, 10)
 	// set maximum
-	if trade.Price > candle.High {
+	if tradePrice.GT(candleHigh) {
 		candle.High = trade.Price
 	}
 
