@@ -998,7 +998,7 @@ type LiquidityProvisionResolver interface {
 	CreatedAt(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
 	UpdatedAt(ctx context.Context, obj *vega.LiquidityProvision) (*string, error)
 	Market(ctx context.Context, obj *vega.LiquidityProvision) (*vega.Market, error)
-	CommitmentAmount(ctx context.Context, obj *vega.LiquidityProvision) (int, error)
+	CommitmentAmount(ctx context.Context, obj *vega.LiquidityProvision) (string, error)
 
 	Status(ctx context.Context, obj *vega.LiquidityProvision) (LiquidityProvisionStatus, error)
 }
@@ -7541,7 +7541,7 @@ type TransferBalance {
   "Account involved in transfer"
   account: Account!
   "The new balance of the account"
-  balance: Int!
+  balance: String!
 }
 
 type LedgerEntry {
@@ -7550,7 +7550,7 @@ type LedgerEntry {
   "account to which the balance was transferred"
   toAccount: String!
   "the amount transferred"
-  amount: Int!
+  amount: String!
   "The transfer reference"
   reference: String!
   "Type of ledger entry"
@@ -7811,7 +7811,7 @@ type LiquidityProvision {
   "Market identifier for the order"
   market: Market!
   "Specified as a unitless number that represents the amount of settlement asset of the market."
-  commitmentAmount: Int!
+  commitmentAmount: String!
   "nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers."
   fee: String!
   "a set of liquidity sell orders to meet the liquidity provision obligation, see MM orders spec."
@@ -12623,9 +12623,9 @@ func (ec *executionContext) _LedgerEntry_amount(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LedgerEntry_reference(ctx context.Context, field graphql.CollectedField, obj *LedgerEntry) (ret graphql.Marshaler) {
@@ -13279,9 +13279,9 @@ func (ec *executionContext) _LiquidityProvision_commitmentAmount(ctx context.Con
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityProvision_fee(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityProvision) (ret graphql.Marshaler) {
@@ -26325,9 +26325,9 @@ func (ec *executionContext) _TransferBalance_balance(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransferResponse_transfers(ctx context.Context, field graphql.CollectedField, obj *TransferResponse) (ret graphql.Marshaler) {

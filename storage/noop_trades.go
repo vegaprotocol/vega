@@ -112,14 +112,14 @@ func (ts *NoopTrade) GetByOrderID(ctx context.Context, orderID string, skip, lim
 	return []*types.Trade{}, nil
 }
 
-func (ts *NoopTrade) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
+func (ts *NoopTrade) GetMarkPrice(ctx context.Context, market string) (string, error) {
 	recentTrade, err := ts.GetByMarket(ctx, market, 0, 1, true)
 	if err != nil {
-		return 0, err
+		return "0", err
 	}
 
 	if len(recentTrade) == 0 {
-		return 0, errors.New("no trades available when getting market price")
+		return "0", errors.New("no trades available when getting market price")
 	}
 
 	return recentTrade[0].Price, nil

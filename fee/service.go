@@ -2,11 +2,11 @@ package fee
 
 import (
 	"context"
-	"math"
 	"strconv"
 
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 // MarketStore ...
@@ -59,25 +59,28 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 	if err != nil {
 		return nil, err
 	}
-	price := o.Price
+	price, ok := num.UintFromString(o.Price, 10)
+	if !ok {
+
+	}
 	if o.PeggedOrder != nil {
 		return &types.Fee{
-			MakerFee:          0,
-			InfrastructureFee: 0,
-			LiquidityFee:      0,
+			MakerFee:          "0",
+			InfrastructureFee: "0",
+			LiquidityFee:      "0",
 		}, nil
 	}
 
-	base := float64(price * o.Size)
+	base := num.DecimalFromUint(price.Mul(price, num.NewUint(o.Size)))
 	maker, infra, liquidity, err := s.feeFactors(mkt)
 	if err != nil {
 		return nil, err
 	}
 
 	fee := &types.Fee{
-		MakerFee:          uint64(math.Ceil(base * maker)),
-		InfrastructureFee: uint64(math.Ceil(base * infra)),
-		LiquidityFee:      uint64(math.Ceil(base * liquidity)),
+		MakerFee:          base.Mul(num.NewDecimalFromFloat(maker)).String(),
+		InfrastructureFee: base.Mul(num.NewDecimalFromFloat(infra)).String(),
+		LiquidityFee:      base.Mul(num.NewDecimalFromFloat(liquidity)).String(),
 	}
 
 	// if mkt.State == types.MarketState_MARKET_STATE_OPENING_AUCTION {

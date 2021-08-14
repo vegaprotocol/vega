@@ -246,10 +246,6 @@ func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
 }
 
-func (r *VegaResolverRoot) NewMarketCommitment() NewMarketCommitmentResolver {
-	return (*newMarketCommitmentResolver)(r)
-}
-
 func (r *VegaResolverRoot) MarketTimestamps() MarketTimestampsResolver {
 	return (*marketTimestampsResolver)(r)
 }
@@ -331,8 +327,8 @@ func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types
 func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
-func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (int, error) {
-	return int(obj.CommitmentAmount), nil
+func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
+	return obj.CommitmentAmount, nil
 }
 
 func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.LiquidityProvision) (LiquidityProvisionStatus, error) {
@@ -474,18 +470,13 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	order := &types.Order{}
 
 	var (
-		p   uint64
 		err error
 	)
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	if price != nil {
-		p, err = safeStringUint64(*price)
-		if err != nil {
-			return nil, err
-		}
+		order.Price = *price
 	}
-	order.Price = p
 	s, err := safeStringUint64(size)
 	if err != nil {
 		return nil, err
@@ -537,9 +528,9 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	ttf := resp.Fee.MakerFee + resp.Fee.InfrastructureFee + resp.Fee.LiquidityFee
 
 	fee := TradeFee{
-		MakerFee:          fmt.Sprintf("%d", resp.Fee.MakerFee),
-		InfrastructureFee: fmt.Sprintf("%d", resp.Fee.InfrastructureFee),
-		LiquidityFee:      fmt.Sprintf("%d", resp.Fee.LiquidityFee),
+		MakerFee:          resp.Fee.MakerFee,
+		InfrastructureFee: resp.Fee.InfrastructureFee,
+		LiquidityFee:      resp.Fee.LiquidityFee,
 	}
 
 	// now we calculate the margins
@@ -556,7 +547,7 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 
 	return &OrderEstimate{
 		Fee:            &fee,
-		TotalFeeAmount: fmt.Sprintf("%d", ttf),
+		TotalFeeAmount: ttf,
 		MarginLevels:   respm.MarginLevels,
 	}, nil
 
@@ -1125,19 +1116,19 @@ func (r *myMarginLevelsResolver) Asset(ctx context.Context, m *types.MarginLevel
 }
 
 func (r *myMarginLevelsResolver) CollateralReleaseLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.CollateralReleaseLevel, 10), nil
+	return m.CollateralReleaseLevel, nil
 }
 
 func (r *myMarginLevelsResolver) InitialLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.InitialMargin, 10), nil
+	return m.InitialMargin, nil
 }
 
 func (r *myMarginLevelsResolver) SearchLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.SearchLevel, 10), nil
+	return m.SearchLevel, nil
 }
 
 func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.MaintenanceMargin, 10), nil
+	return m.MaintenanceMargin, nil
 }
 
 func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
@@ -1171,7 +1162,7 @@ func (r *myMarketDataResolver) MarketTradingMode(_ context.Context, m *types.Mar
 }
 
 func (r *myMarketDataResolver) IndicativePrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.IndicativePrice, 10), nil
+	return m.IndicativePrice, nil
 }
 
 func (r *myMarketDataResolver) IndicativeVolume(_ context.Context, m *types.MarketData) (string, error) {
@@ -1179,11 +1170,11 @@ func (r *myMarketDataResolver) IndicativeVolume(_ context.Context, m *types.Mark
 }
 
 func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestBidPrice, 10), nil
+	return m.BestBidPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticBidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestStaticBidPrice, 10), nil
+	return m.BestStaticBidPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticBidVolume(_ context.Context, m *types.MarketData) (string, error) {
@@ -1199,11 +1190,11 @@ func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketD
 }
 
 func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestOfferPrice, 10), nil
+	return m.BestOfferPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestStaticOfferPrice, 10), nil
+	return m.BestStaticOfferPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
@@ -1215,15 +1206,15 @@ func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.Marke
 }
 
 func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.MidPrice, 10), nil
+	return m.MidPrice, nil
 }
 
 func (r *myMarketDataResolver) StaticMidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.StaticMidPrice, 10), nil
+	return m.StaticMidPrice, nil
 }
 
 func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.MarkPrice, 10), nil
+	return m.MarkPrice, nil
 }
 
 func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData) (string, error) {
@@ -1260,8 +1251,8 @@ func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *t
 	ret := make([]*PriceMonitoringBounds, 0, len(obj.PriceMonitoringBounds))
 	for _, b := range obj.PriceMonitoringBounds {
 		bounds := &PriceMonitoringBounds{
-			MinValidPrice: strconv.FormatUint(b.MinValidPrice, 10),
-			MaxValidPrice: strconv.FormatUint(b.MaxValidPrice, 10),
+			MinValidPrice: b.MinValidPrice,
+			MaxValidPrice: b.MaxValidPrice,
 			Trigger: &PriceMonitoringTrigger{
 				HorizonSecs:          int(b.Trigger.Horizon),
 				Probability:          b.Trigger.Probability,
@@ -1364,7 +1355,7 @@ func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*O
 }
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return obj.Price, nil
 }
 func (r *myOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
 	return convertOrderTimeInForceFromProto(obj.TimeInForce)
@@ -1486,7 +1477,7 @@ func (r *myTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side
 }
 
 func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return obj.Price, nil
 }
 
 func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, error) {
@@ -1545,9 +1536,9 @@ func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*Trad
 		LiquidityFee:      "0",
 	}
 	if obj.BuyerFee != nil {
-		fee.MakerFee = strconv.FormatUint(obj.BuyerFee.MakerFee, 10)
-		fee.InfrastructureFee = strconv.FormatUint(obj.BuyerFee.InfrastructureFee, 10)
-		fee.LiquidityFee = strconv.FormatUint(obj.BuyerFee.LiquidityFee, 10)
+		fee.MakerFee = obj.BuyerFee.MakerFee
+		fee.InfrastructureFee = obj.BuyerFee.InfrastructureFee
+		fee.LiquidityFee = obj.BuyerFee.LiquidityFee
 	}
 	return &fee, nil
 }
@@ -1564,9 +1555,9 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 		LiquidityFee:      "0",
 	}
 	if obj.SellerFee != nil {
-		fee.MakerFee = strconv.FormatUint(obj.SellerFee.MakerFee, 10)
-		fee.InfrastructureFee = strconv.FormatUint(obj.SellerFee.InfrastructureFee, 10)
-		fee.LiquidityFee = strconv.FormatUint(obj.SellerFee.LiquidityFee, 10)
+		fee.MakerFee = obj.SellerFee.MakerFee
+		fee.InfrastructureFee = obj.SellerFee.InfrastructureFee
+		fee.LiquidityFee = obj.SellerFee.LiquidityFee
 	}
 	return &fee, nil
 }
@@ -1578,16 +1569,16 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 type myCandleResolver VegaResolverRoot
 
 func (r *myCandleResolver) High(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.High, 10), nil
+	return obj.High, nil
 }
 func (r *myCandleResolver) Low(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.Low, 10), nil
+	return obj.Low, nil
 }
 func (r *myCandleResolver) Open(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.Open, 10), nil
+	return obj.Open, nil
 }
 func (r *myCandleResolver) Close(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.Close, 10), nil
+	return obj.Close, nil
 }
 func (r *myCandleResolver) Volume(ctx context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
@@ -1609,7 +1600,7 @@ func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Int
 type myPriceLevelResolver VegaResolverRoot
 
 func (r *myPriceLevelResolver) Price(ctx context.Context, obj *types.PriceLevel) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return obj.Price, nil
 }
 
 func (r *myPriceLevelResolver) Volume(ctx context.Context, obj *types.PriceLevel) (string, error) {
@@ -1658,15 +1649,15 @@ func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position
 }
 
 func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatInt(obj.RealisedPnl, 10), nil
+	return obj.RealisedPnl, nil
 }
 
 func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatInt(obj.UnrealisedPnl, 10), nil
+	return obj.UnrealisedPnl, nil
 }
 
 func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
+	return obj.AverageEntryPrice, nil
 }
 
 func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
@@ -2324,8 +2315,7 @@ func (r *mySubscriptionResolver) busEventsWithBatch(
 type myAccountResolver VegaResolverRoot
 
 func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (string, error) {
-	bal := fmt.Sprintf("%d", acc.Balance)
-	return bal, nil
+	return acc.Balance, nil
 }
 
 func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*types.Market, error) {

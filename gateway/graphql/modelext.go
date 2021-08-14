@@ -238,7 +238,7 @@ func balancesFromProto(balances []*types.TransferBalance) []*TransferBalance {
 	for _, b := range balances {
 		gql = append(gql, &TransferBalance{
 			Account: b.Account,
-			Balance: int(b.Balance),
+			Balance: b.Balance,
 		})
 	}
 	return gql
@@ -250,7 +250,7 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 		gql = append(gql, &LedgerEntry{
 			FromAccount: t.FromAccount,
 			ToAccount:   t.ToAccount,
-			Amount:      int(t.Amount),
+			Amount:      t.Amount,
 			Reference:   t.Reference,
 			Type:        t.Type,
 			Timestamp:   nanoTSToDatetime(t.Timestamp),
