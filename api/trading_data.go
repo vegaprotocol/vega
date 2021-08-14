@@ -98,7 +98,6 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*pbtypes.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty pbtypes.AccountType) (candleCh <-chan []*pbtypes.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // TransferResponseService ...
@@ -195,7 +194,6 @@ type EventService interface {
 // LiquidityService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/data-node/api LiquidityService
 type LiquidityService interface {
-	PrepareLiquidityProvisionSubmission(context.Context, *commandspb.LiquidityProvisionSubmission) error
 	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
 }
 
