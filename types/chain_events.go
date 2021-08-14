@@ -193,8 +193,8 @@ type BuiltinAssetWithdrawal struct {
 }
 
 func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
-	amount, ok := num.UintFromString(p.Amount, 10)
-	if !ok {
+	amount, overflowed := num.UintFromString(p.Amount, 10)
+	if overflowed {
 		return nil, errors.New("invalid amount")
 	}
 	return &BuiltinAssetWithdrawal{

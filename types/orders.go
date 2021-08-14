@@ -18,8 +18,8 @@ type PriceLevel struct {
 }
 
 func NewPriceLevelFromProto(p *proto.PriceLevel) (*PriceLevel, error) {
-	price, ok := num.UintFromString(p.Price, 10)
-	if !ok {
+	price, overflowed := num.UintFromString(p.Price, 10)
+	if overflowed {
 		return nil, errors.New("invalid amount")
 	}
 	return &PriceLevel{
@@ -64,9 +64,9 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 		exp, peggedOffset *int64
 	)
 	if p.Price != nil {
-		ok := false
-		price, ok = num.UintFromString(p.Price.Value, 10)
-		if !ok {
+		overflowed := false
+		price, overflowed = num.UintFromString(p.Price.Value, 10)
+		if overflowed {
 			return nil, errors.New("invalid amount")
 		}
 	}

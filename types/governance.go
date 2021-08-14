@@ -266,9 +266,9 @@ func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommi
 	if err != nil {
 		return nil, err
 	}
-	commitmentAmount, ok := num.UintFromString(p.CommitmentAmount, 10)
-	if !ok {
-		return nil, errors.New("invalid amount")
+	commitmentAmount, overflowed := num.UintFromString(p.CommitmentAmount, 10)
+	if overflowed {
+		return nil, errors.New("invalid commitment amount")
 	}
 
 	l := NewMarketCommitment{

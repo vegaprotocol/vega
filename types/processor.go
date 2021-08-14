@@ -82,9 +82,9 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 }
 
 func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmission, error) {
-	price, ok := num.UintFromString(p.Price, 10)
-	if !ok {
-		return nil, errors.New("invalid min valid price")
+	price, overflowed := num.UintFromString(p.Price, 10)
+	if overflowed {
+		return nil, errors.New("invalid price")
 	}
 	return &OrderSubmission{
 		MarketId: p.MarketId,
@@ -131,9 +131,9 @@ type WithdrawSubmission struct {
 }
 
 func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {
-	amount, ok := num.UintFromString(p.Amount, 10)
-	if !ok {
-		return nil, errors.New("invalid min valid price")
+	amount, overflowed := num.UintFromString(p.Amount, 10)
+	if overflowed {
+		return nil, errors.New("invalid amount")
 	}
 
 	return &WithdrawSubmission{

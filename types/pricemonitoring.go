@@ -103,12 +103,12 @@ func (p PriceMonitoringBounds) IntoProto() *proto.PriceMonitoringBounds {
 }
 
 func PriceMonitoringBoundsFromProto(pr *proto.PriceMonitoringBounds) (*PriceMonitoringBounds, error) {
-	minValid, ok := num.UintFromString(pr.MinValidPrice, 10)
-	if !ok {
+	minValid, overflowed := num.UintFromString(pr.MinValidPrice, 10)
+	if overflowed {
 		return nil, errors.New("invalid min valid price")
 	}
-	maxValid, ok := num.UintFromString(pr.MaxValidPrice, 10)
-	if !ok {
+	maxValid, overflowed := num.UintFromString(pr.MaxValidPrice, 10)
+	if overflowed {
 		return nil, errors.New("invalid max valid price")
 	}
 	p := PriceMonitoringBounds{

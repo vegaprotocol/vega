@@ -13,8 +13,8 @@ type Delegate struct {
 }
 
 func NewDelegateFromProto(p *commandspb.DelegateSubmission) (*Delegate, error) {
-	amount, ok := num.UintFromString(p.Amount, 10)
-	if !ok {
+	amount, overflowed := num.UintFromString(p.Amount, 10)
+	if overflowed {
 		return nil, errors.New("invalid amount")
 	}
 	return &Delegate{
@@ -41,8 +41,8 @@ type Undelegate struct {
 }
 
 func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) (*Undelegate, error) {
-	amount, ok := num.UintFromString(p.Amount, 10)
-	if !ok {
+	amount, overflowed := num.UintFromString(p.Amount, 10)
+	if overflowed {
 		return nil, errors.New("invalid amount")
 	}
 	return &Undelegate{
