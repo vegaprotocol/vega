@@ -304,6 +304,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		},
 		l.delegation,
 		l.limits,
+		l.stakeVerifier,
 	)
 
 	var abciApp tmtypes.Application

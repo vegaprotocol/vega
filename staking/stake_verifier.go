@@ -98,7 +98,7 @@ func NewStakeVerifier(
 	}
 }
 
-func (s *StakeVerifier) ProcessStakeRemove(
+func (s *StakeVerifier) ProcessStakeRemoved(
 	ctx context.Context, event *types.StakeRemoved) error {
 	pending := &pendingSR{
 		StakeRemoved: event,
