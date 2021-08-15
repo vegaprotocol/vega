@@ -6,6 +6,7 @@ import (
 	"errors"
 	"math"
 	"math/rand"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -271,8 +272,17 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 	topLen := w.top.Len()
 	isValidator := w.top.IsValidator()
 
+	// sort resources first
+	resourceIDs := make([]string, 0, len(w.resources))
+	for k, _ := range w.resources {
+		resourceIDs = append(resourceIDs, k)
+	}
+	sort.Sort(sort.StringSlice(resourceIDs))
+
 	// check if any resources passed checks
-	for k, v := range w.resources {
+	for _, k := range resourceIDs {
+		v := w.resources[k]
+
 		state := atomic.LoadUint32(&v.state)
 		votesLen := v.voteCount()
 

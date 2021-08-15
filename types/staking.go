@@ -16,21 +16,34 @@ const (
 	StakingEventTypeRemoved     = eventspb.StakingEvent_TYPE_REMOVE
 )
 
+type StakingEventStatus = eventspb.StakingEvent_Status
+
+const (
+	StakingEventStatusUnspecified = eventspb.StakingEvent_STATUS_UNSPECIFIED
+	StakingEventStatusPending     = eventspb.StakingEvent_STATUS_PENDING
+	StakingEventStatusAccepted    = eventspb.StakingEvent_STATUS_ACCEPTED
+	StakingEventStatusRejected    = eventspb.StakingEvent_STATUS_REJECTED
+)
+
 type StakingEvent struct {
-	ID     string
-	Type   StakingEventType
-	TS     int64
-	Party  string
-	Amount *num.Uint
+	ID          string
+	Type        StakingEventType
+	TS          int64
+	Party       string
+	Amount      *num.Uint
+	Status      StakingEventStatus
+	FinalizedAt int64
 }
 
 func (s *StakingEvent) IntoProto() *eventspb.StakingEvent {
 	return &eventspb.StakingEvent{
-		Id:     s.ID,
-		Type:   s.Type,
-		Ts:     s.TS,
-		Party:  s.Party,
-		Amount: num.UintToString(s.Amount),
+		Id:          s.ID,
+		Type:        s.Type,
+		Ts:          s.TS,
+		Party:       s.Party,
+		Amount:      num.UintToString(s.Amount),
+		Status:      s.Status,
+		FinalizedAt: s.FinalizedAt,
 	}
 }
 

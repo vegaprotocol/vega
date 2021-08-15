@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/go-wallet/crypto"
@@ -80,31 +81,24 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 }
 
 func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
-	if req.Evt == nil {
+	if req.Event == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	msg, err := req.Evt.PrepareToSign()
+	// verify the signature then
+	err := verifySignature(s.log, req.Event, req.Signature, req.PubKey)
 	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid signature: %w", err))
 	}
 
-	// verify the signature then
-	err = verifySignature(s.log, msg, req.Signature, req.PubKey)
+	evt := commandspb.ChainEvent{}
+	err = proto.Unmarshal(req.Event, &evt)
 	if err != nil {
-		// we try the other signature format
-		msg, err = proto.Marshal(req.Evt)
-		if err != nil {
-			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-		}
-		if err = verifySignature(s.log, msg, req.Signature, req.PubKey); err != nil {
-			s.log.Debug("invalid tx signature", logging.String("pubkey", req.PubKey))
-			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-		}
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid chain event: %w", err))
 	}
 
 	var ok = true
-	err = s.evtForwarder.Forward(ctx, req.Evt, req.PubKey)
+	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
 	if err != nil && err != evtforward.ErrEvtAlreadyExist {
 		s.log.Error("unable to forward chain event",
 			logging.String("pubkey", req.PubKey),

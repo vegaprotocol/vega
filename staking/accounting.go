@@ -57,8 +57,6 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakingEvent) {
 			logging.Error(err))
 		return
 	}
-
-	a.broker.Send(events.NewStakingEvent(ctx, *evt))
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {

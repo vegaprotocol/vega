@@ -10,8 +10,10 @@ import (
 	"time"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/validators"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -33,11 +35,19 @@ type EthereumClient interface {
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
 }
 
+// Witness provide foreign chain resources validations
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/banking Witness
+type Witness interface {
+	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
+}
+
 type StakeVerifier struct {
 	log         *logging.Logger
 	cfg         Config
 	accs        *Accounting
 	currentTime time.Time
+	witness     Witness
+	broker      Broker
 
 	ethClient EthereumClient
 
@@ -46,7 +56,28 @@ type StakeVerifier struct {
 	contractAddresses []ethcmn.Address
 
 	ethConfirmations EthereumConfirmations
+
+	pendingSDs []*pendingSD
+	pendingSRs []*pendingSR
+
+	finalizedEvents []*types.StakingEvent
 }
+
+type pendingSD struct {
+	*types.StakeDeposited
+	check func() error
+}
+
+func (p pendingSD) GetID() string { return p.ID }
+func (p *pendingSD) Check() error { return p.check() }
+
+type pendingSR struct {
+	*types.StakeRemoved
+	check func() error
+}
+
+func (p pendingSR) GetID() string { return p.ID }
+func (p *pendingSR) Check() error { return p.check() }
 
 func NewStakeVerifier(
 	log *logging.Logger,
@@ -54,19 +85,62 @@ func NewStakeVerifier(
 	accs *Accounting,
 	tt TimeTicker,
 	ethClient EthereumClient,
+	witness Witness,
+	broker Broker,
 ) (sv *StakeVerifier) {
 	defer func() {
 		tt.NotifyOnTick(sv.onTick)
 	}()
 
 	return &StakeVerifier{
-		log:  log,
-		cfg:  cfg,
-		accs: accs,
+		log:     log,
+		cfg:     cfg,
+		accs:    accs,
+		witness: witness,
 		ethConfirmations: EthereumConfirmations{
 			ethClient: ethClient,
 		},
 	}
+}
+
+func (s *StakeVerifier) ProcessStakeRemove(
+	ctx context.Context, event *types.StakeRemoved) error {
+	pending := &pendingSR{
+		StakeRemoved: event,
+		check:        func() error { return s.checkStakeRemovedOnChain(event) },
+	}
+
+	s.pendingSRs = append(s.pendingSRs, pending)
+
+	return s.witness.StartCheck(
+		pending, s.onEventVerified, s.currentTime.Add(2*time.Hour))
+}
+
+func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
+	// switch pending := event.(type) {
+	// case *pendingSD:
+	// 	evt = pending.IntoStakingEvent()
+	// case *pendingSR:
+	// 	evt = pending.IntoStakingEvent()
+	// }
+
+	pending, ok := event.(interface{ IntoStakingEvent() *types.StakingEvent })
+	if !ok {
+		s.log.Error("stake verifier received invalid event")
+	}
+
+	evt := pending.IntoStakingEvent()
+	evt.Status = types.StakingEventStatusRejected
+	if ok {
+		evt.Status = types.StakingEventStatusAccepted
+	}
+	evt.FinalizedAt = s.currentTime.UnixNano()
+	s.finalizedEvents = append(s.finalizedEvents, evt)
+}
+
+func (s *StakeVerifier) ProcessStakeDeposited(
+	ctx context.Context, event *types.StakeDeposited) error {
+	return nil
 }
 
 func (s *StakeVerifier) OnEthereumConfigUpdate(rawcfg interface{}) error {
@@ -198,7 +272,14 @@ func (s *StakeVerifier) checkStakeRemovedOnChain(event *types.StakeRemoved) erro
 }
 
 func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
+	s.currentTime = t
 
+	for _, evt := range s.finalizedEvents {
+		s.accs.AddEvent(ctx, evt)
+		s.broker.Send(events.NewStakingEvent(ctx, *evt))
+	}
+
+	s.finalizedEvents = nil
 }
 
 type EthereumConfirmations struct {
