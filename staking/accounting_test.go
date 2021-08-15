@@ -105,7 +105,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		},
 	}
 
-	acc.broker.EXPECT().Send(gomock.Any()).Times(4)
+	// acc.broker.EXPECT().Send(gomock.Any()).Times(4)
 
 	for _, c := range cases {
 		c := c
@@ -182,7 +182,7 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 		},
 	}
 
-	acc.broker.EXPECT().Send(gomock.Any()).Times(3)
+	// acc.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	for _, c := range cases {
 		c := c
