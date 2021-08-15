@@ -274,10 +274,10 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 
 	// sort resources first
 	resourceIDs := make([]string, 0, len(w.resources))
-	for k, _ := range w.resources {
+	for k := range w.resources {
 		resourceIDs = append(resourceIDs, k)
 	}
-	sort.Sort(sort.StringSlice(resourceIDs))
+	sort.Strings(resourceIDs)
 
 	// check if any resources passed checks
 	for _, k := range resourceIDs {

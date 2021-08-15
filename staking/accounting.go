@@ -32,6 +32,7 @@ func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
 	log.SetLevel(cfg.Level.Get())
 	return &Accounting{
 		log:      log,
+		cfg:      cfg,
 		broker:   broker,
 		accounts: map[string]*StakingAccount{},
 	}
