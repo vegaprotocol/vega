@@ -2,19 +2,13 @@ package staking
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
-	"strings"
-	"sync"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 var (
@@ -32,14 +26,15 @@ type TimeTicker interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
-type EthereumClient interface {
-	bind.ContractFilterer
-}
-
-// Witness provide foreign chain resources validations
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_confirmations_mock.go -package mocks code.vegaprotocol.io/vega/staking EthConfirmations
 type EthConfirmations interface {
 	Check(uint64) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_on_chain_verifier_mock.go -package mocks code.vegaprotocol.io/vega/staking EthOnChainVerifier
+type EthOnChainVerifier interface {
+	CheckStakeDeposited(*types.StakeDeposited) error
+	CheckStakeRemoved(*types.StakeRemoved) error
 }
 
 // Witness provide foreign chain resources validations
@@ -49,24 +44,20 @@ type Witness interface {
 }
 
 type StakeVerifier struct {
-	log         *logging.Logger
-	cfg         Config
-	accs        *Accounting
-	currentTime time.Time
-	witness     Witness
-	broker      Broker
+	log *logging.Logger
+	cfg Config
 
-	ethClient EthereumClient
-
-	mu                sync.RWMutex
-	ethCfg            vgproto.EthereumConfig
-	contractAddresses []ethcmn.Address
+	accs    *Accounting
+	witness Witness
+	broker  Broker
 
 	ethConfirmations EthConfirmations
+	ocv              EthOnChainVerifier
 
-	pendingSDs []*pendingSD
-	pendingSRs []*pendingSR
+	currentTime time.Time
 
+	pendingSDs      []*pendingSD
+	pendingSRs      []*pendingSR
 	finalizedEvents []*types.StakingEvent
 }
 
@@ -95,6 +86,7 @@ func NewStakeVerifier(
 	witness Witness,
 	broker Broker,
 	ethConfirmations EthConfirmations,
+	onChainVerifier EthOnChainVerifier,
 ) (sv *StakeVerifier) {
 	defer func() {
 		tt.NotifyOnTick(sv.onTick)
@@ -106,6 +98,7 @@ func NewStakeVerifier(
 		accs:             accs,
 		witness:          witness,
 		ethConfirmations: ethConfirmations,
+		ocv:              onChainVerifier,
 	}
 }
 
@@ -113,7 +106,7 @@ func (s *StakeVerifier) ProcessStakeRemove(
 	ctx context.Context, event *types.StakeRemoved) error {
 	pending := &pendingSR{
 		StakeRemoved: event,
-		check:        func() error { return s.checkStakeRemovedOnChain(event) },
+		check:        func() error { return s.ocv.CheckStakeRemoved(event) },
 	}
 
 	s.pendingSRs = append(s.pendingSRs, pending)
@@ -129,7 +122,7 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 	ctx context.Context, event *types.StakeDeposited) error {
 	pending := &pendingSD{
 		StakeDeposited: event,
-		check:          func() error { return s.checkStakeDepositedOnChain(event) },
+		check:          func() error { return s.ocv.CheckStakeDeposited(event) },
 	}
 
 	s.pendingSDs = append(s.pendingSDs, pending)
@@ -186,132 +179,6 @@ func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
 	}
 	evt.FinalizedAt = s.currentTime.UnixNano()
 	s.finalizedEvents = append(s.finalizedEvents, evt)
-}
-
-func (s *StakeVerifier) OnEthereumConfigUpdate(rawcfg interface{}) error {
-	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
-	if !ok {
-		return ErrNotAnEthereumConfig
-	}
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.ethCfg = *cfg
-	s.contractAddresses = nil
-	for _, address := range s.ethCfg.StakingBridgeAddresses {
-		s.contractAddresses = append(
-			s.contractAddresses, ethcmn.HexToAddress(address))
-	}
-
-	return nil
-}
-
-func (s *StakeVerifier) checkStakeDepositedOnChain(
-	event *types.StakeDeposited) error {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	decodedPubKeySlice, err := hex.DecodeString(event.VegaPubKey)
-	if err != nil {
-		s.log.Error("invalid pubkey inn stake deposited event", logging.Error(err))
-		return err
-	}
-	var decodedPubKey [32]byte
-	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
-
-	for _, address := range s.contractAddresses {
-		filterer, err := NewStakingFilterer(
-			address, s.ethClient)
-		if err != nil {
-			s.log.Error("could not instantiate staking bridge filterer",
-				logging.String("address", address.Hex()))
-			continue
-		}
-
-		iter, err := filterer.FilterStakeDeposited(
-			&bind.FilterOpts{
-				Start: event.BlockNumber - 1,
-			},
-			// user
-			[]ethcmn.Address{ethcmn.HexToAddress(event.EthereumAddress)},
-			// vega_public_key
-			[][32]byte{decodedPubKey})
-		if err != nil {
-			s.log.Error("could not start stake deposited filter",
-				logging.Error(err))
-		}
-		defer iter.Close()
-
-		vegaPubKey := strings.TrimPrefix(event.VegaPubKey, "0x")
-		amountDeposited := event.Amount.BigInt()
-
-		for iter.Next() {
-			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
-				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
-				iter.Event.Raw.BlockNumber == event.BlockNumber &&
-				uint64(iter.Event.Raw.Index) == event.LogIndex {
-				// now we know the event is OK,
-				// just need to check for confirmations
-				return s.ethConfirmations.Check(event.BlockNumber)
-			}
-		}
-	}
-
-	return ErrNoStakeDepositedEventFound
-}
-
-func (s *StakeVerifier) checkStakeRemovedOnChain(event *types.StakeRemoved) error {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	decodedPubKeySlice, err := hex.DecodeString(event.VegaPubKey)
-	if err != nil {
-		s.log.Error("invalid pubkey inn stake deposited event", logging.Error(err))
-		return err
-	}
-	var decodedPubKey [32]byte
-	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
-
-	for _, address := range s.contractAddresses {
-		filterer, err := NewStakingFilterer(
-			address, s.ethClient)
-		if err != nil {
-			s.log.Error("could not instantiate staking bridge filterer",
-				logging.String("address", address.Hex()))
-			continue
-		}
-
-		iter, err := filterer.FilterStakeRemoved(
-			&bind.FilterOpts{
-				Start: event.BlockNumber - 1,
-			},
-			// user
-			[]ethcmn.Address{ethcmn.HexToAddress(event.EthereumAddress)},
-			// vega_public_key
-			[][32]byte{decodedPubKey})
-		if err != nil {
-			s.log.Error("could not start stake deposited filter",
-				logging.Error(err))
-		}
-		defer iter.Close()
-
-		vegaPubKey := strings.TrimPrefix(event.VegaPubKey, "0x")
-		amountDeposited := event.Amount.BigInt()
-
-		for iter.Next() {
-			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
-				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
-				iter.Event.Raw.BlockNumber == event.BlockNumber &&
-				uint64(iter.Event.Raw.Index) == event.LogIndex {
-				// now we know the event is OK,
-				// just need to check for confirmations
-				return s.ethConfirmations.Check(event.BlockNumber)
-			}
-		}
-	}
-
-	return ErrNoStakeRemovedEventFound
 }
 
 func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
