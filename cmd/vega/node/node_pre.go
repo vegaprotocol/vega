@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/risk"
+	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -135,6 +136,8 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethClient, l.configPath); err != nil {
 		return err
 	}
+
+	l.ethClient = ethClient
 
 	return l.nodeWallet.Verify()
 }
@@ -444,6 +447,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		Param:   netparams.DelegationMaxStakePerValidator,
 		Watcher: l.delegation.OnMaxDelegationPerNodeChanged,
 	})
+
+	l.stakingAccounts, l.stakeVerifier = staking.New(
+		l.Log, l.conf.Staking, l.broker, l.timeService, l.erc, l.ethClient,
+	)
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.

@@ -51,8 +51,7 @@ type StakeVerifier struct {
 	witness Witness
 	broker  Broker
 
-	ethConfirmations EthConfirmations
-	ocv              EthOnChainVerifier
+	ocv EthOnChainVerifier
 
 	currentTime time.Time
 
@@ -82,10 +81,8 @@ func NewStakeVerifier(
 	cfg Config,
 	accs *Accounting,
 	tt TimeTicker,
-	ethClient EthereumClient,
 	witness Witness,
 	broker Broker,
-	ethConfirmations EthConfirmations,
 	onChainVerifier EthOnChainVerifier,
 ) (sv *StakeVerifier) {
 	defer func() {
@@ -93,12 +90,11 @@ func NewStakeVerifier(
 	}()
 
 	return &StakeVerifier{
-		log:              log,
-		cfg:              cfg,
-		accs:             accs,
-		witness:          witness,
-		ethConfirmations: ethConfirmations,
-		ocv:              onChainVerifier,
+		log:     log,
+		cfg:     cfg,
+		accs:    accs,
+		witness: witness,
+		ocv:     onChainVerifier,
 	}
 }
 
