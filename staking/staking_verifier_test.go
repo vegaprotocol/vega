@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/staking/mocks"
 
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
 type stakeVerifierTest struct {
@@ -21,12 +22,14 @@ type stakeVerifierTest struct {
 	ocv     *mocks.MockEthOnChainVerifier
 }
 
-func newStakeVerifierTest(t *testing.T) *stakeVerifierTest {
+func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	ctrl := gomock.NewController(t)
 	broker := bmocks.NewMockBroker(ctrl)
 	tt := mocks.NewMockTimeTicker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
 	ocv := mocks.NewMockEthOnChainVerifier(ctrl)
+
+	tt.EXPECT().NotifyOnTick(gomock.Any()).AnyTimes()
 
 	stakeV := staking.NewStakeVerifier(
 		logging.NewTestLogger(),
@@ -49,4 +52,13 @@ func newStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 		witness:       witness,
 		ocv:           ocv,
 	}
+}
+
+func TestStakeVerifier(t *testing.T) {
+	t.Run("can process stake event deposited", testProcessStakeEventDeposited)
+}
+
+func testProcessStakeEventDeposited(t *testing.T) {
+	stakeV := getStakeVerifierTest(t)
+	assert.NotNil(t, stakeV)
 }
