@@ -122,7 +122,7 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 }
 
 //UpdateAssetForStakingAndDelegationRewardScheme is called when the asset for staking and delegation is available, get the reward pool account and attach it to the scheme
-func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Context, asset string) {
+func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Context, asset string) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
@@ -143,38 +143,42 @@ func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Cont
 			e.assetForStakingAndDelegationReward: maxPayout,
 		}
 	}
+	return nil
 }
 
 //UpdateMaxPayoutPerParticipantForStakingRewardScheme is a callback for changes in the network param for max payout per participant
-func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, mayPayoutPerParticipant uint64) {
+func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, mayPayoutPerParticipant uint64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
 
 	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = num.NewUint(mayPayoutPerParticipant)
+	return nil
 }
 
 //UpdatePayoutFractionForStakingRewardScheme is a callback for changes in the network param for payout fraction
-func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context, payoutFraction float64) {
+func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context, payoutFraction float64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
 	rs.PayoutFraction = payoutFraction
+	return nil
 }
 
 //UpdatePayoutDelayForStakingRewardScheme is a callback for changes in the network param for payout delay
-func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, payoutDelay time.Duration) {
+func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, payoutDelay time.Duration) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
 	rs.PayoutDelay = payoutDelay
+	return nil
 }
 
 //UpdateDelegatorShareForStakingRewardScheme is a callback for changes in the network param for delegator share
-func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare float64) {
+func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare float64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
@@ -184,6 +188,7 @@ func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context,
 		Type:  "float",
 		Value: fmt.Sprintf("%f", delegatorShare),
 	}
+	return nil
 }
 
 //RegisterRewardScheme allows registration of a new reward scheme - unsupported for now
