@@ -255,6 +255,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) FeeInfrastructureAccounts(ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FeeInfrastructureAccounts", reflect.TypeOf((*MockTradingDataServiceClient)(nil).FeeInfrastructureAccounts), varargs...)
 }
 
+// GetEpoch mocks base method
+func (m *MockTradingDataServiceClient) GetEpoch(arg0 context.Context, arg1 *v1.GetEpochRequest, arg2 ...grpc.CallOption) (*v1.GetEpochResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetEpoch", varargs...)
+	ret0, _ := ret[0].(*v1.GetEpochResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEpoch indicates an expected call of GetEpoch
+func (mr *MockTradingDataServiceClientMockRecorder) GetEpoch(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetEpoch), varargs...)
+}
+
 // GetNetworkParametersProposals mocks base method
 func (m *MockTradingDataServiceClient) GetNetworkParametersProposals(arg0 context.Context, arg1 *v1.GetNetworkParametersProposalsRequest, arg2 ...grpc.CallOption) (*v1.GetNetworkParametersProposalsResponse, error) {
 	m.ctrl.T.Helper()
@@ -315,6 +335,46 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetNewMarketProposals(arg0, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewMarketProposals", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetNewMarketProposals), varargs...)
 }
 
+// GetNodeByID mocks base method
+func (m *MockTradingDataServiceClient) GetNodeByID(arg0 context.Context, arg1 *v1.GetNodeByIDRequest, arg2 ...grpc.CallOption) (*v1.GetNodeByIDResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNodeByID", varargs...)
+	ret0, _ := ret[0].(*v1.GetNodeByIDResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNodeByID indicates an expected call of GetNodeByID
+func (mr *MockTradingDataServiceClientMockRecorder) GetNodeByID(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeByID", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetNodeByID), varargs...)
+}
+
+// GetNodeData mocks base method
+func (m *MockTradingDataServiceClient) GetNodeData(arg0 context.Context, arg1 *v1.GetNodeDataRequest, arg2 ...grpc.CallOption) (*v1.GetNodeDataResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNodeData", varargs...)
+	ret0, _ := ret[0].(*v1.GetNodeDataResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNodeData indicates an expected call of GetNodeData
+func (mr *MockTradingDataServiceClientMockRecorder) GetNodeData(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeData", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetNodeData), varargs...)
+}
+
 // GetNodeSignaturesAggregate mocks base method
 func (m *MockTradingDataServiceClient) GetNodeSignaturesAggregate(arg0 context.Context, arg1 *v1.GetNodeSignaturesAggregateRequest, arg2 ...grpc.CallOption) (*v1.GetNodeSignaturesAggregateResponse, error) {
 	m.ctrl.T.Helper()
@@ -333,6 +393,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetNodeSignaturesAggregate(a
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeSignaturesAggregate", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetNodeSignaturesAggregate), varargs...)
+}
+
+// GetNodes mocks base method
+func (m *MockTradingDataServiceClient) GetNodes(arg0 context.Context, arg1 *v1.GetNodesRequest, arg2 ...grpc.CallOption) (*v1.GetNodesResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNodes", varargs...)
+	ret0, _ := ret[0].(*v1.GetNodesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNodes indicates an expected call of GetNodes
+func (mr *MockTradingDataServiceClientMockRecorder) GetNodes(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodes", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetNodes), varargs...)
 }
 
 // GetProposalByID mocks base method
@@ -413,6 +493,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetProposalsByParty(arg0, ar
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalsByParty", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetProposalsByParty), varargs...)
+}
+
+// GetRewardDetails mocks base method
+func (m *MockTradingDataServiceClient) GetRewardDetails(arg0 context.Context, arg1 *v1.GetRewardDetailsRequest, arg2 ...grpc.CallOption) (*v1.GetRewardDetailsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRewardDetails", varargs...)
+	ret0, _ := ret[0].(*v1.GetRewardDetailsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRewardDetails indicates an expected call of GetRewardDetails
+func (mr *MockTradingDataServiceClientMockRecorder) GetRewardDetails(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardDetails", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetRewardDetails), varargs...)
 }
 
 // GetUpdateMarketProposals mocks base method

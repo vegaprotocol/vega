@@ -8,11 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/subscribers"
-	"code.vegaprotocol.io/protos/commands"
 	proto "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -322,33 +318,4 @@ func (s *Svc) GetNewAssetProposals(inState *proto.Proposal_State) []*proto.Gover
 		filters = append(filters, subscribers.ProposalByState(*inState))
 	}
 	return s.gov.Filter(true, filters...)
-}
-
-// PrepareProposal performs basic validation and bundles together fields required for a proposal
-func (s *Svc) PrepareProposal(
-	_ context.Context, reference string, terms *proto.ProposalTerms,
-) (*commandspb.ProposalSubmission, error) {
-	if len(reference) <= 0 {
-		reference = uuid.NewV4().String()
-	}
-
-	cmd := &commandspb.ProposalSubmission{
-		Reference: reference,
-		Terms:     terms,
-	}
-
-	if err := commands.CheckProposalSubmission(cmd); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
-}
-
-// PrepareVote - some additional validation on the vote message we're preparing
-func (s *Svc) PrepareVote(cmd *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error) {
-	if err := commands.CheckVoteSubmission(cmd); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }

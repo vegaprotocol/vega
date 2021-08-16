@@ -593,20 +593,6 @@ func convertSideFromProto(x types.Side) (Side, error) {
 	}
 }
 
-func convertPeggedReferenceToProto(x PeggedReference) (types.PeggedReference, error) {
-	switch x {
-	case PeggedReferenceMid:
-		return types.PeggedReference_PEGGED_REFERENCE_MID, nil
-	case PeggedReferenceBestBid:
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID, nil
-	case PeggedReferenceBestAsk:
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, nil
-	default:
-		err := fmt.Errorf("failed to convert PeggedReference from GraphQL to Proto: %v", x)
-		return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED, err
-	}
-}
-
 func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, error) {
 	switch x {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:

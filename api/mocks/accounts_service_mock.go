@@ -6,7 +6,6 @@ package mocks
 
 import (
 	vega "code.vegaprotocol.io/protos/vega"
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -107,18 +106,4 @@ func (m *MockAccountsService) ObserveAccounts(arg0 context.Context, arg1 int, ar
 func (mr *MockAccountsServiceMockRecorder) ObserveAccounts(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveAccounts", reflect.TypeOf((*MockAccountsService)(nil).ObserveAccounts), arg0, arg1, arg2, arg3, arg4, arg5)
-}
-
-// PrepareWithdraw mocks base method
-func (m *MockAccountsService) PrepareWithdraw(arg0 context.Context, arg1 *v1.WithdrawSubmission) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrepareWithdraw", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PrepareWithdraw indicates an expected call of PrepareWithdraw
-func (mr *MockAccountsServiceMockRecorder) PrepareWithdraw(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareWithdraw", reflect.TypeOf((*MockAccountsService)(nil).PrepareWithdraw), arg0, arg1)
 }

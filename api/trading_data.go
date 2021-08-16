@@ -98,7 +98,6 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*pbtypes.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty pbtypes.AccountType) (candleCh <-chan []*pbtypes.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // TransferResponseService ...
@@ -195,7 +194,6 @@ type EventService interface {
 // LiquidityService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/data-node/api LiquidityService
 type LiquidityService interface {
-	PrepareLiquidityProvisionSubmission(context.Context, *commandspb.LiquidityProvisionSubmission) error
 	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
 }
 
@@ -223,6 +221,29 @@ type tradingDataService struct {
 	NetParamsService        NetParamsService
 	LiquidityService        LiquidityService
 	oracleService           OracleService
+}
+
+func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+// Get data of current node
+func (t *tradingDataService) GetNodeData(context.Context, *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+// List all known network nodes
+func (t *tradingDataService) GetNodes(context.Context, *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+// Get a specific node by ID
+func (t *tradingDataService) GetNodeByID(context.Context, *protoapi.GetNodeByIDRequest) (*protoapi.GetNodeByIDResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (t *tradingDataService) GetRewardDetails(context.Context, *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
+	return nil, errors.New("not implemented")
 }
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {

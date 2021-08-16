@@ -91,11 +91,6 @@ var (
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
 	ErrBlockchainChainID       = errors.New("failed to get chain ID from blockchain")
-	// ErrPrepareWithdraw is return when a withdraw request was invalid
-	ErrPrepareWithdraw = errors.New("failed to prepare withdrawal")
-	// ErrPrepareProposal is returned when preparation of a governance proposal fails for some reason.
-	ErrPrepareProposal = errors.New("failed to prepare a proposal")
-	ErrPrepareVote     = errors.New("failed to prepare vote")
 	// ErrMissingProposalID returned if proposal with this id is missing
 	ErrMissingProposalID = errors.New("missing proposal id")
 	// ErrMissingProposalReference returned if proposal with this reference is not found

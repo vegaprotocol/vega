@@ -58,14 +58,6 @@ func nanoTSToDatetime(timestampInNanoSeconds int64) string {
 	return vegatime.Format(vegatime.UnixNano(timestampInNanoSeconds))
 }
 
-func datetimeToSecondsTS(timestamp string) (int64, error) {
-	converted, err := vegatime.Parse(timestamp)
-	if err != nil {
-		return 0, err
-	}
-	return converted.UTC().Unix(), nil
-}
-
 func convertVersion(version *int) (uint64, error) {
 	const defaultValue = 0
 
