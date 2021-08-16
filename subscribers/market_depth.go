@@ -92,7 +92,6 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
 		case OE:
-			fmt.Printf("%v\n", et.Order().String())
 			order, err := types.OrderFromProto(et.Order())
 			if err != nil {
 				panic(err)
