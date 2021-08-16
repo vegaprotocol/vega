@@ -9,9 +9,9 @@ import (
 
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/collateral"
-	emocks "code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/mocks"
+	"code.vegaprotocol.io/vega/rewards/mocks"
+	rmocks "code.vegaprotocol.io/vega/rewards/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -209,6 +209,7 @@ func testDistributePayout(t *testing.T) {
 		asset:         "ETH",
 	}
 
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.distributePayout(context.Background(), payout)
 
 	rewardAccount, _ := engine.collateral.GetAccountByID(rs.RewardPoolAccountIDs[0])
@@ -378,7 +379,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now()}
 
 	testEngine.delegation.EXPECT().OnEpochEnd(gomock.Any(), gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
-
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.OnEpochEnd(context.Background(), epoch)
 	// total distributed is 999998
 	require.Equal(t, 0, len(engine.pendingPayouts))
@@ -462,9 +463,9 @@ func testOnChainTimeUpdateSomePayoutsToSend(t *testing.T) {
 	engine.pendingPayouts[payoutTime2] = []*pendingPayout{&pendingPayout{}}
 	engine.rewardPoolToPendingPayoutBalance[payout1.fromAccount] = num.NewUint(1500)
 
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.engine.onChainTimeUpdate(context.Background(), payTime)
 
-	// expect no change to pending payouts as now is before the payout times
 	require.Equal(t, 1, len(engine.pendingPayouts))
 	require.Equal(t, []*pendingPayout{&pendingPayout{}}, engine.pendingPayouts[payoutTime2])
 	require.Equal(t, num.NewUint(500), engine.rewardPoolToPendingPayoutBalance[payout1.fromAccount])
@@ -486,7 +487,7 @@ type testEngine struct {
 	ctrl          *gomock.Controller
 	broker        *bmock.MockBroker
 	epochEngine   *TestEpochEngine
-	delegation    *mocks.MockDelegationEngine
+	delegation    *rmocks.MockDelegationEngine
 	collateral    *collateral.Engine
 	validatorData []*types.ValidatorData
 }
@@ -498,7 +499,7 @@ func getEngine(t *testing.T) *testEngine {
 	logger := logging.NewTestLogger()
 	delegation := mocks.NewMockDelegationEngine(ctrl)
 	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}
-	ts := emocks.NewMockTimeService(ctrl)
+	ts := rmocks.NewMockTimeService(ctrl)
 
 	ts.EXPECT().GetTimeNow().AnyTimes()
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)

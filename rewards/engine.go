@@ -37,6 +37,7 @@ type EpochEngine interface {
 }
 
 //Delegation engine for getting validation data
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards DelegationEngine
 type Delegation interface {
 	OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData
 }
@@ -50,15 +51,10 @@ type Collateral interface {
 }
 
 //TimeService notifies the reward engine on time updates
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/rewards TimeService
 type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
-}
-
-//use mock from mocks/netparams_mock.go
-type NetParams interface {
-	Get(string) (string, error)
-	GetFloat(key string) (float64, error)
-	GetUint(key string) (uint64, error)
+	GetTimeNow() time.Time
 }
 
 //Engine is the reward engine handling reward payouts
@@ -289,18 +285,20 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 			// if the reward scheme has no delay, distribute the payout now
 			if rewardScheme.PayoutDelay == time.Duration(0) {
 				e.distributePayout(ctx, pending)
-			} else {
-				// add the total reward amount to the pending for the account so we can account for it when distributing further rewards
-				// if we need to before this is paid out
-				e.rewardPoolToPendingPayoutBalance[accountID] = pendingPayoutForAccount.AddSum(pending.totalReward)
-				timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
-				existingPending, ok := e.pendingPayouts[timeToSend]
-				if !ok {
-					existingPending = []*pendingPayout{}
-				}
-				existingPending = append(existingPending, pending)
-				e.pendingPayouts[timeToSend] = existingPending
+				continue
 			}
+
+			// add the total reward amount to the pending for the account so we can account for it when distributing further rewards
+			// if we need to before this is paid out
+			e.rewardPoolToPendingPayoutBalance[accountID] = pendingPayoutForAccount.AddSum(pending.totalReward)
+			timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
+			existingPending, ok := e.pendingPayouts[timeToSend]
+			if !ok {
+				existingPending = []*pendingPayout{}
+			}
+			existingPending = append(existingPending, pending)
+			e.pendingPayouts[timeToSend] = existingPending
+
 		}
 	}
 }
@@ -348,9 +346,11 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 		}
 	}
 	sort.Strings(parties)
+	payoutEventSlice := make([]events.Event, 0, len(parties))
 	for _, p := range parties {
-		e.broker.Send(payoutEvents[p])
+		payoutEventSlice = append(payoutEventSlice, *payoutEvents[p])
 	}
+	e.broker.SendBatch(payoutEventSlice)
 }
 
 // delegates the reward calculation to the reward scheme
