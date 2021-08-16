@@ -45,3 +45,10 @@ func (d Deposit) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func DepositEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Deposit {
+	return &Deposit{
+		Base: newBaseFromStream(ctx, DepositEvent, be),
+		d:    *be.GetDeposit(),
+	}
+}

@@ -51,3 +51,11 @@ func (p LiquidityProvision) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func LiquidityProvisionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *LiquidityProvision {
+	order := &LiquidityProvision{
+		Base: newBaseFromStream(ctx, LiquidityProvisionEvent, be),
+		p:    be.GetLiquidityProvision(),
+	}
+	return order
+}

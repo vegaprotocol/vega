@@ -72,3 +72,18 @@ func (vu ValidatorUpdate) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) *ValidatorUpdate {
+	event := be.GetValidatorUpdate()
+	if event == nil {
+		return nil
+	}
+
+	return &ValidatorUpdate{
+		Base:     newBaseFromStream(ctx, ValidatorUpdateEvent, be),
+		pubKey:   event.GetPubKey(),
+		tmPubKey: event.GetTmPubKey(),
+		infoURL:  event.GetInfoUrl(),
+		country:  event.GetCountry(),
+	}
+}

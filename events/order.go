@@ -51,3 +51,11 @@ func (o Order) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func OrderEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Order {
+	order := &Order{
+		Base: newBaseFromStream(ctx, OrderEvent, be),
+		o:    be.GetOrder(),
+	}
+	return order
+}

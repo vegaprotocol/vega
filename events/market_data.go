@@ -42,3 +42,10 @@ func (m MarketData) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func MarketDataEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarketData {
+	return &MarketData{
+		Base: newBaseFromStream(ctx, MarketDataEvent, be),
+		md:   *be.GetMarketData(),
+	}
+}
