@@ -53,7 +53,3 @@ func TestModelConverters(t *testing.T) {
 	})
 
 }
-
-func stringptr(s string) *string {
-	return &s
-}
