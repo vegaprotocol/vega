@@ -6,6 +6,7 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -49,17 +50,26 @@ func (m MarketUpdated) MarketProto() eventspb.MarketEvent {
 }
 
 func (m MarketUpdated) StreamMessage() *eventspb.BusEvent {
-	p := m.MarketProto()
+	market := m.Proto()
 	return &eventspb.BusEvent{
 		Id:    m.eventID(),
 		Block: m.TraceID(),
 		Type:  m.et.ToProto(),
-		Event: &eventspb.BusEvent_Market{
-			Market: &p,
+		Event: &eventspb.BusEvent_MarketUpdated{
+			MarketUpdated: &market,
 		},
 	}
 }
 
 func (m MarketUpdated) StreamMarketMessage() *eventspb.BusEvent {
 	return m.StreamMessage()
+}
+
+func MarketUpdatedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarketUpdated {
+	m := be.GetMarketUpdated()
+	return &MarketUpdated{
+		Base: newBaseFromStream(ctx, MarketUpdatedEvent, be),
+		m:    types.Market{ID: m.Id},
+		pm:   *m,
+	}
 }

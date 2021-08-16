@@ -66,6 +66,8 @@ const (
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
+	// length of epoch in seconds
+	ValidatorsEpochLength = "validators.epoch.length"
 	// delegation params
 	DelegationMinAmount            = "validators.delegation.minAmount"
 	DelegationMaxStakePerValidator = "validators.delegation.maxStakePerValidator"
@@ -123,6 +125,7 @@ var AllKeys = map[string]struct{}{
 	MarketLiquidityProvisionShapesMaxSize:                 {},
 	MarketProbabilityOfTradingTauScaling:                  {},
 	MarketMinProbabilityOfTradingForLPOrders:              {},
+	ValidatorsEpochLength:                                 {},
 	DelegationMinAmount:                                   {},
 	DelegationMaxStakePerValidator:                        {},
 }

@@ -19,7 +19,6 @@ import (
 
 var (
 	ErrInvalidSignature              = errors.New("invalid signature")
-	ErrVegaWalletRequired            = errors.New("vega wallet required")
 	ErrChainEventFromNonValidator    = errors.New("chain event emitted from a non-validator node")
 	ErrUnsupportedChainEvent         = errors.New("unsupported chain event")
 	ErrNodeSignatureFromNonValidator = errors.New("node signature not sent by validator")
@@ -31,6 +30,11 @@ type TimeService interface {
 	GetTimeLastBatch() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
 	SetTimeNow(context.Context, time.Time)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/processor EpochService
+type EpochService interface {
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
@@ -114,7 +118,7 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(nr *commandspb.NodeRegistration) error
+	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys [][]byte)
 	Exists(key []byte) bool
 	Len() int
@@ -180,4 +184,11 @@ type OraclesEngine interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
 type OracleAdaptors interface {
 	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/limits_mock.go -package mocks code.vegaprotocol.io/vega/processor Limits
+type Limits interface {
+	CanProposeMarket() bool
+	CanProposeAsset() bool
+	CanTrade() bool
 }

@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
@@ -85,6 +86,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		log,
 		validators.NewDefaultConfig(),
 		wallet{pubKey},
+		broker,
 	)
 
 	witness := validators.NewWitness(
@@ -142,6 +144,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	bstats := stats.NewBlockchain()
 
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+	limits := mocks.NewMockLimits(ctrl)
+	limits.EXPECT().CanTrade().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
+	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
+
 	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
@@ -158,6 +166,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		notary,
 		bstats,
 		timeService,
+		epochService,
 		topology,
 		netp,
 		&processor.Oracle{
@@ -165,6 +174,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 			Adaptors: oraclesAdaptors,
 		},
 		delegationEngine,
+		limits,
 	)
 
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)

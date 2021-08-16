@@ -78,3 +78,34 @@ func (s SettlePos) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+type settlement struct {
+	SettlementSize  int64
+	SettlementPrice uint64
+}
+
+func (s settlement) Size() int64 {
+	return s.SettlementSize
+}
+
+func (s settlement) Price() *num.Uint {
+	return num.NewUint(s.SettlementPrice)
+}
+
+func SettlePositionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *SettlePos {
+	sp := be.GetSettlePosition()
+	settlements := make([]TradeSettlement, 0, len(sp.TradeSettlements))
+	for _, ts := range sp.TradeSettlements {
+		settlements = append(settlements, settlement{
+			SettlementSize:  ts.Size,
+			SettlementPrice: ts.Price,
+		})
+	}
+	return &SettlePos{
+		Base:     newBaseFromStream(ctx, SettlePositionEvent, be),
+		partyID:  sp.PartyId,
+		marketID: sp.MarketId,
+		price:    num.NewUint(sp.Price),
+		trades:   settlements,
+	}
+}

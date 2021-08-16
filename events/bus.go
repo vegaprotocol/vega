@@ -3,6 +3,8 @@ package events
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/contextutil"
@@ -53,6 +55,7 @@ type Event interface {
 	TraceID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
+	StreamMessage() *eventspb.BusEvent
 }
 
 const (
@@ -88,8 +91,11 @@ const (
 	TxErrEvent
 	OracleSpecEvent
 	OracleDataEvent
+	EpochUpdate
 	DelegationBalanceEvent
 	PendingDelegationBalanceEvent
+	StakingEvent
+	ValidatorUpdateEvent
 )
 
 var (
@@ -102,38 +108,42 @@ var (
 	}
 
 	protoMap = map[eventspb.BusEventType]Type{
-		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                        All,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:                TimeUpdate,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:         TransferResponses,
-		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:        PositionResolution,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:                     MarketEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:                      OrderEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:                    AccountEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:                      PartyEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:                      TradeEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:              MarginLevelsEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:                   ProposalEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:                       VoteEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:                MarketDataEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:             NodeSignatureEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:         LossSocializationEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:            SettlePositionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:          SettleDistressedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:             MarketCreatedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:             MarketUpdatedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:                      AssetEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:                MarketTickEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:                 WithdrawalEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:                    DepositEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:                    AuctionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:                RiskFactorEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:          NetworkParameterEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:        LiquidityProvisionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:                   TxErrEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:                OracleSpecEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:                OracleDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                 All,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:         TimeUpdate,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:  TransferResponses,
+		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION: PositionResolution,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:              MarketEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:               OrderEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:             AccountEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:               PartyEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:               TradeEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:       MarginLevelsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:            ProposalEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:                VoteEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:         MarketDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:      NodeSignatureEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:  LossSocializationEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:     SettlePositionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:   SettleDistressedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:      MarketCreatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:      MarketUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:               AssetEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:          WithdrawalEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:             DepositEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:             AuctionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:         RiskFactorEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:   NetworkParameterEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION: LiquidityProvisionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:            TxErrEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:         OracleSpecEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:         OracleDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:        EpochUpdate,
+
 		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:         DelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PENDING_DELEGATION_BALANCE: PendingDelegationBalanceEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:              StakingEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:           ValidatorUpdateEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -166,8 +176,11 @@ var (
 		TxErrEvent:                    eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR,
 		OracleSpecEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC,
 		OracleDataEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA,
+		EpochUpdate:                   eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE,
 		DelegationBalanceEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE,
 		PendingDelegationBalanceEvent: eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
+		StakingEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
+		ValidatorUpdateEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE,
 	}
 
 	eventStrings = map[Type]string{
@@ -201,8 +214,11 @@ var (
 		TxErrEvent:                    "TxErrEvent",
 		OracleSpecEvent:               "OracleSpecEvent",
 		OracleDataEvent:               "OracleDataEvent",
+		EpochUpdate:                   "EpochUpdate",
 		DelegationBalanceEvent:        "DelegationBalanceEvent",
 		PendingDelegationBalanceEvent: "PendingDelegationBalanceEvent",
+		StakingEvent:                  "StakingEvent",
+		ValidatorUpdateEvent:          "ValidatorUpdateEvent",
 	}
 )
 
@@ -323,4 +339,25 @@ func (t Type) ToProto() eventspb.BusEventType {
 		panic(fmt.Sprintf("Converting events.Type %s to proto BusEventType: no corresponding value found", t))
 	}
 	return pt
+}
+
+func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
+	evtCtx := contextutil.WithTraceID(ctx, be.Block)
+	blockNr, seq := decodeEventID(be.Id)
+	return &Base{
+		ctx:     evtCtx,
+		traceID: be.Block,
+		blockNr: blockNr,
+		seq:     seq,
+		et:      t,
+	}
+}
+
+func decodeEventID(id string) (blockNr int64, seq uint64) {
+	arr := strings.Split(id, "-")
+	s1, s2 := arr[0], arr[1]
+	blockNr, _ = strconv.ParseInt(s1, 10, 64)
+	n, _ := strconv.ParseInt(s2, 10, 64)
+	seq = uint64(n)
+	return
 }

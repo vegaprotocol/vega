@@ -5,19 +5,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/protos/commands"
 	types "code.vegaprotocol.io/protos/vega"
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/logging"
-
-	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
-)
-
-var (
-	// ErrEmptyPrepareRequest empty prepare request
-	ErrEmptyPrepareRequest = errors.New("empty prepare request")
 )
 
 // TimeService ...
@@ -76,30 +66,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
-}
-
-func (s *Svc) PrepareSubmitOrder(_ context.Context, cmd *commandspb.OrderSubmission) error {
-	if cmd == nil {
-		return ErrEmptyPrepareRequest
-	}
-
-	if cmd.Reference == "" {
-		cmd.Reference = uuid.NewV4().String()
-	}
-
-	return commands.CheckOrderSubmission(cmd)
-}
-
-func (s *Svc) PrepareCancelOrder(_ context.Context, cmd *commandspb.OrderCancellation) error {
-	return nil
-}
-
-func (s *Svc) PrepareAmendOrder(_ context.Context, cmd *commandspb.OrderAmendment) error {
-	if cmd == nil {
-		return ErrEmptyPrepareRequest
-	}
-
-	return commands.CheckOrderAmendment(cmd)
 }
 
 // GetByOrderID find an order using its orderID

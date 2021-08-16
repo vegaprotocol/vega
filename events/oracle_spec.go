@@ -39,3 +39,10 @@ func (o OracleSpec) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func OracleSpecEventFromStream(ctx context.Context, be *eventspb.BusEvent) *OracleSpec {
+	return &OracleSpec{
+		Base: newBaseFromStream(ctx, OracleSpecEvent, be),
+		o:    *be.GetOracleSpec(),
+	}
+}

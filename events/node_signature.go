@@ -39,3 +39,10 @@ func (n NodeSignature) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func NodeSignatureEventFromStream(ctx context.Context, be *eventspb.BusEvent) *NodeSignature {
+	return &NodeSignature{
+		Base: newBaseFromStream(ctx, NodeSignatureEvent, be),
+		e:    *be.GetNodeSignature(),
+	}
+}

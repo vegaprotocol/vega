@@ -2,6 +2,7 @@ package fsutil
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -49,7 +50,7 @@ func EnsureDir(path string) error {
 	_, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return os.Mkdir(path, dirPerms)
+			return os.MkdirAll(path, dirPerms)
 		}
 		return err
 	}
@@ -80,4 +81,25 @@ func FileExists(path string) (bool, error) {
 		return false, &PathNotFound{path}
 	}
 	return false, err
+}
+
+func ReadFile(path string) ([]byte, error) {
+	dirPath, filePath := filepath.Split(path)
+
+	return fs.ReadFile(os.DirFS(dirPath), filePath)
+}
+
+func WriteFile(path string, data []byte) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	_, err = f.Write(data)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return f.Chmod(0600)
 }

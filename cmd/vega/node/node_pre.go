@@ -20,11 +20,13 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -132,18 +134,17 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}
 
 	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+	ethClient, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return err
 	}
 
 	// nodewallet
-	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethclt); err != nil {
+	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethClient, l.configPath); err != nil {
 		return err
 	}
 
-	// ensure all require wallet are available
-	return l.nodeWallet.EnsureRequireWallets()
+	return l.nodeWallet.Verify()
 }
 
 func (l *NodeCommand) loadMarketsConfig() error {
@@ -359,6 +360,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.notary,
 		l.stats.Blockchain,
 		l.timeService,
+		l.epochService,
 		l.topology,
 		l.netParams,
 		&processor.Oracle{
@@ -366,6 +368,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 			Adaptors: l.oracleAdaptors,
 		},
 		l.delegation,
+		l.limits,
 	)
 
 	var abciApp tmtypes.Application
@@ -444,7 +447,12 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
 
-	l.broker = broker.New(l.ctx)
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
+	if err != nil {
+		log.Error("unable to initialise broker", logging.Error(err))
+		return err
+	}
+
 	l.broker.SubscribeBatch(
 		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
@@ -477,7 +485,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal)
+	l.limits = limits.New(l.conf.Limits, l.Log)
+	l.timeService.NotifyOnTick(l.limits.OnTick)
+
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
 
 	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
@@ -514,6 +525,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		// panic at startup.
 		l.netParams.UponGenesis,
 		l.topology.LoadValidatorsOnGenesis,
+		l.limits.UponGenesis,
 	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
@@ -551,6 +563,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
+	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
@@ -643,6 +656,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketMinProbabilityOfTradingForLPOrders,
 			Watcher: l.executionEngine.OnMarketMinProbabilityOfTradingForLPOrdersUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: l.epochService.OnEpochLengthUpdate,
 		},
 	)
 }

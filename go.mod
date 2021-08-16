@@ -3,9 +3,9 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.7.1-0.20210727153739-42fba56d3110
+	code.vegaprotocol.io/go-wallet v0.7.1-0.20210811152350-80715dbe0f7c
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.0.0-20210803141259-571b0f496625
+	code.vegaprotocol.io/protos v0.41.1-0.20210811160213-9567aa364f79
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/99designs/gqlgen v0.11.3
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
@@ -29,7 +29,6 @@ require (
 	github.com/jinzhu/copier v0.2.8
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mwitkow/go-proto-validators v0.3.2
-	github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/prometheus/common v0.26.0
@@ -41,15 +40,14 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.11
-	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
-	github.com/vegaprotocol/api v0.38.0 // indirect
-	github.com/vegaprotocol/go-slip10 v0.1.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/apm/module/apmhttp v1.8.0
+	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	google.golang.org/genproto v0.0.0-20210611144927-798beca9d670 // indirect
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
 )

@@ -15,6 +15,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	commanderNamedLogger = "commander"
+)
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
 type Chain interface {
 	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error
@@ -78,7 +82,9 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
 		if err != nil {
 			// this can happen as network dependent
-			c.log.Error("could not send transaction to tendermint", logging.Error(err))
+			c.log.Error("could not send transaction to tendermint",
+				logging.Error(err),
+				logging.String("tx", payload.String()))
 		}
 
 		if done != nil {

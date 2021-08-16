@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
 	api "code.vegaprotocol.io/protos/vega/api"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
@@ -34,20 +33,6 @@ func NewMockBlockchain(ctrl *gomock.Controller) *MockBlockchain {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 	return m.recorder
-}
-
-// SubmitTransaction mocks base method
-func (m *MockBlockchain) SubmitTransaction(arg0 context.Context, arg1 *vega.SignedBundle, arg2 api.SubmitTransactionRequest_Type) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitTransaction", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SubmitTransaction indicates an expected call of SubmitTransaction
-func (mr *MockBlockchainMockRecorder) SubmitTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockBlockchain)(nil).SubmitTransaction), arg0, arg1, arg2)
 }
 
 // SubmitTransactionV2 mocks base method

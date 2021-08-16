@@ -71,3 +71,14 @@ func (s SettleDistressed) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func SettleDistressedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *SettleDistressed {
+	sd := be.GetSettleDistressed()
+	return &SettleDistressed{
+		Base:     newBaseFromStream(ctx, SettleDistressedEvent, be),
+		partyID:  sd.PartyId,
+		marketID: sd.MarketId,
+		margin:   num.NewUint(sd.Margin),
+		price:    num.NewUint(sd.Price),
+	}
+}

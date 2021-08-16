@@ -55,3 +55,10 @@ func (m MarginLevels) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func MarginLevelsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarginLevels {
+	return &MarginLevels{
+		Base: newBaseFromStream(ctx, MarginLevelsEvent, be),
+		l:    *be.GetMarginLevels(),
+	}
+}

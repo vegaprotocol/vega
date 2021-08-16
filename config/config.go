@@ -11,14 +11,17 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/gateway"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -69,6 +72,7 @@ type Config struct {
 	Storage           storage.Config     `group:"Storage" namespace:"storage"`
 	Trades            trades.Config      `group:"Trades" namespace:"trades"`
 	Time              vegatime.Config    `group:"Time" namespace:"time"`
+	Epoch             epochtime.Config   `group:"Epoch" namespace:"epochtime"`
 	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
 	Gateway           gateway.Config     `group:"Gateway" namespace:"gateway"`
 	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
@@ -83,7 +87,9 @@ type Config struct {
 	Validators        validators.Config  `group:"Validators" namespace:"validators"`
 	Banking           banking.Config     `group:"Banking" namespace:"banking"`
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
-	NetworkParameters netparams.Config
+	NetworkParameters netparams.Config   `group:"NetworkParameters" namespace:"netparams"`
+	Limits            limits.Config      `group:"Limits" namespace:"limits"`
+	Broker            broker.Config      `group:"Broker" namespace:"broker"`
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
@@ -105,6 +111,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Orders:            orders.NewDefaultConfig(),
 		Liquidity:         liquidity.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
+		Epoch:             epochtime.NewDefaultConfig(),
 		Markets:           markets.NewDefaultConfig(),
 		Matching:          matching.NewDefaultConfig(),
 		Parties:           parties.NewDefaultConfig(),
@@ -121,7 +128,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Metrics:           metrics.NewDefaultConfig(),
 		Transfers:         transfers.NewDefaultConfig(),
 		Governance:        governance.NewDefaultConfig(),
-		NodeWallet:        nodewallet.NewDefaultConfig(defaultStoreDirPath),
+		NodeWallet:        nodewallet.NewDefaultConfig(),
 		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
 		EvtForward:        evtforward.NewDefaultConfig(),
@@ -131,6 +138,8 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Stats:             stats.NewDefaultConfig(),
 		Subscribers:       subscribers.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
+		Limits:            limits.NewDefaultConfig(),
+		Broker:            broker.NewDefaultConfig(),
 		GatewayEnabled:    true,
 		StoresEnabled:     true,
 		UlimitNOFile:      8192,

@@ -5,6 +5,7 @@ import (
 
 	ptypes "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -48,5 +49,12 @@ func (a Acc) StreamMessage() *eventspb.BusEvent {
 		Event: &eventspb.BusEvent_Account{
 			Account: &a.a,
 		},
+	}
+}
+
+func AccountEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Acc {
+	return &Acc{
+		Base: newBaseFromStream(ctx, AccountEvent, be),
+		a:    *be.GetAccount(),
 	}
 }

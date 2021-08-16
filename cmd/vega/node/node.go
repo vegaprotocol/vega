@@ -20,12 +20,14 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/gateway/server"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/governance"
+	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -120,6 +122,7 @@ type NodeCommand struct {
 	liquidityService  *liquidity.Svc
 	partyService      *parties.Svc
 	timeService       *vegatime.Svc
+	epochService      *epochtime.Svc
 	accountsService   *accounts.Svc
 	transfersService  *transfers.Svc
 	riskService       *risk.Svc
@@ -148,6 +151,7 @@ type NodeCommand struct {
 	oracleAdaptors  *adaptors.Adaptors
 	netParams       *netparams.Store
 	delegation      *delegation.Engine
+	limits          *limits.Engine
 
 	mktscfg []types.Market
 
@@ -289,8 +293,7 @@ func (l *NodeCommand) runNode(args []string) error {
 // waitSig will wait for a sigterm or sigint interrupt.
 func waitSig(ctx context.Context, log *logging.Logger) {
 	var gracefulStop = make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
+	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 	select {
 	case sig := <-gracefulStop:

@@ -85,5 +85,7 @@ func defaultNetParams() map[string]value {
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
 			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3}"),
+
+		ValidatorsEpochLength: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
 	}
 }
