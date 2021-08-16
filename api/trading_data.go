@@ -223,6 +223,29 @@ type tradingDataService struct {
 	oracleService           OracleService
 }
 
+func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+// Get data of current node
+func (t *tradingDataService) GetNodeData(context.Context, *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+// List all known network nodes
+func (t *tradingDataService) GetNodes(context.Context, *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+// Get a specific node by ID
+func (t *tradingDataService) GetNodeByID(context.Context, *protoapi.GetNodeByIDRequest) (*protoapi.GetNodeByIDResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (t *tradingDataService) GetRewardDetails(context.Context, *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
 	lps, err := t.LiquidityService.Get(req.Party, req.Market)
