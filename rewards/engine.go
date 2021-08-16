@@ -147,13 +147,13 @@ func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Cont
 }
 
 //UpdateMaxPayoutPerParticipantForStakingRewardScheme is a callback for changes in the network param for max payout per participant
-func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, mayPayoutPerParticipant uint64) error {
+func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, mayPayoutPerParticipant int64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
 
-	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = num.NewUint(mayPayoutPerParticipant)
+	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = num.NewUint(uint64(mayPayoutPerParticipant))
 	return nil
 }
 
