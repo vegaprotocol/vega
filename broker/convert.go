@@ -65,6 +65,7 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.OracleDataEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:
 		return events.TxErrEventFromStream(ctx, be)
+
 	}
 	return nil
 }

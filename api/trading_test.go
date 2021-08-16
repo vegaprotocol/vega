@@ -95,7 +95,6 @@ func getTestGRPCServer(
 	conn *grpc.ClientConn, mockTradingServiceClient *mocks.MockTradingServiceClient,
 	err error,
 ) {
-	tidy = func() {}
 	path := fmt.Sprintf("vegatest-%d-", port)
 	tempDir, tidyTempDir, err := storage.TempDir(path)
 	if err != nil {
@@ -111,14 +110,10 @@ func getTestGRPCServer(
 
 	// Mock BlockchainClient
 	mockCtrl := gomock.NewController(t)
-	defer mockCtrl.Finish()
 
 	mockTradingServiceClient = mocks.NewMockTradingServiceClient(mockCtrl)
 
 	ctx, cancel := context.WithCancel(ctx)
-	defer func() {
-		cancel()
-	}()
 
 	// Account Store
 	accountStore, err := storage.NewAccounts(logger, conf.Storage, cancel)
@@ -285,6 +280,7 @@ func getTestGRPCServer(
 
 	tidy = func() {
 		tidyTempDir()
+		mockCtrl.Finish()
 		cancel()
 	}
 
@@ -343,7 +339,7 @@ func TestSubmitTransaction(t *testing.T) {
 
 		mockTradingServiceClient.EXPECT().
 			SubmitTransactionV2(gomock.Any(), vegaReq).
-			Return(&vegaprotoapi.SubmitTransactionV2Response{Success: true}, nil)
+			Return(&vegaprotoapi.SubmitTransactionV2Response{Success: true}, nil).Times(1)
 
 		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
 		assert.NotNil(t, proxyClient)

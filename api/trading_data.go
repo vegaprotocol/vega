@@ -1975,6 +1975,10 @@ func (t *tradingDataService) ObserveProposalVotes(
 	}
 }
 
+func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
+	return nil, nil
+}
+
 func (t *tradingDataService) ObserveEventBus(
 	stream protoapi.TradingDataService_ObserveEventBusServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
