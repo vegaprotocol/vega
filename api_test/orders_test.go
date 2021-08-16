@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	"code.vegaprotocol.io/data-node/types"
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestGetByOrderID(t *testing.T) {

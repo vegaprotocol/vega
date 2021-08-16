@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 )
 
 // CandleStore ...

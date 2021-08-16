@@ -9,8 +9,8 @@ import (
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
-	"code.vegaprotocol.io/data-node/types"
 	ptypes "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types"
 )
 
 // TradeStore represents an abstraction over a trade storage

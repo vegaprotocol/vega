@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/events"
 )
 
 // Subscriber interface allows pushing values to subscribers, can be set to

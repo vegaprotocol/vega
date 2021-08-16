@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/events"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

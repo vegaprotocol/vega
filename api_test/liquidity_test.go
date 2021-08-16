@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestLiquidity_Get(t *testing.T) {
@@ -39,11 +39,11 @@ func TestLiquidity_Get(t *testing.T) {
 		}
 
 		e := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-			Id:               lp.Id,
-			PartyId:          lp.PartyId,
+			ID:               lp.Id,
+			Party:            lp.PartyId,
 			CreatedAt:        lp.CreatedAt,
 			UpdatedAt:        lp.UpdatedAt,
-			MarketId:         lp.MarketId,
+			MarketID:         lp.MarketId,
 			CommitmentAmount: num.NewUint(lp.CommitmentAmount),
 			Fee:              fee,
 			Sells:            sells,

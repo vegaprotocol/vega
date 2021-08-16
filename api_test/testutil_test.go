@@ -22,7 +22,6 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
@@ -44,6 +43,7 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc"

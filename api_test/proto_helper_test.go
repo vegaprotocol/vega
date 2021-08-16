@@ -1,9 +1,9 @@
 package api_test
 
 import (
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func FeeFromProto(f *proto.Fee) *types.Fee {
@@ -16,8 +16,8 @@ func FeeFromProto(f *proto.Fee) *types.Fee {
 
 func TradeFromProto(t *proto.Trade) *types.Trade {
 	return &types.Trade{
-		Id:                 t.Id,
-		MarketId:           t.MarketId,
+		ID:                 t.Id,
+		MarketID:           t.MarketId,
 		Price:              num.NewUint(t.Price),
 		Size:               t.Size,
 		Buyer:              t.Buyer,
@@ -47,11 +47,11 @@ func LedgerEntryFromProto(l *proto.LedgerEntry) *types.LedgerEntry {
 
 func AccountFromProto(a *proto.Account) *types.Account {
 	return &types.Account{
-		Id:       a.Id,
+		ID:       a.Id,
 		Owner:    a.Owner,
 		Balance:  num.NewUint(a.Balance),
 		Asset:    a.Asset,
-		MarketId: a.MarketId,
+		MarketID: a.MarketId,
 		Type:     a.Type,
 	}
 }

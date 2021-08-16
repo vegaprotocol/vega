@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
 	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
 	pb "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestGetPartyAccounts(t *testing.T) {
@@ -26,11 +26,11 @@ func TestGetPartyAccounts(t *testing.T) {
 		acc := be.GetAccount()
 		require.NotNil(t, acc)
 		e := events.NewAccountEvent(ctx, types.Account{
-			Id:       acc.Id,
+			ID:       acc.Id,
 			Owner:    acc.Owner,
 			Balance:  num.NewUint(acc.Balance),
 			Asset:    acc.Asset,
-			MarketId: acc.MarketId,
+			MarketID: acc.MarketId,
 			Type:     acc.Type,
 		})
 		return e, nil

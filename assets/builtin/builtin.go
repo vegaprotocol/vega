@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/assets/common"
-	"code.vegaprotocol.io/data-node/types"
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type Builtin struct {
@@ -15,7 +15,7 @@ type Builtin struct {
 func New(id string, asset *types.AssetDetails) *Builtin {
 	return &Builtin{
 		asset: &types.Asset{
-			Id:      id,
+			ID:      id,
 			Details: asset,
 		},
 	}
@@ -59,6 +59,6 @@ func (b *Builtin) ValidateDeposit() error {
 
 func (b *Builtin) String() string {
 	return fmt.Sprintf("id(%v) name(%v) symbol(%v) totalSupply(%v) decimals(%v)",
-		b.asset.Id, b.asset.Details.Name, b.asset.Details.Symbol, b.asset.Details.TotalSupply,
+		b.asset.ID, b.asset.Details.Name, b.asset.Details.Symbol, b.asset.Details.TotalSupply,
 		b.asset.Details.Decimals)
 }

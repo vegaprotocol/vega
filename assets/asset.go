@@ -3,7 +3,7 @@ package assets
 import (
 	"code.vegaprotocol.io/data-node/assets/builtin"
 	"code.vegaprotocol.io/data-node/assets/common"
-	"code.vegaprotocol.io/data-node/types"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type isAsset interface {

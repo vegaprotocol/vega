@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/subscribers"
+	"code.vegaprotocol.io/vega/events"
 )
 
 type TimeEvent interface {

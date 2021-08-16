@@ -6,9 +6,9 @@ import (
 	"net"
 	"strings"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/golang/protobuf/proto"
@@ -127,6 +127,11 @@ func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan 
 			}
 
 			evt := toEvent(ctx, &be)
+			if evt == nil {
+				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
+				continue
+			}
+
 			receiveCh <- evt
 
 			recvTimeouts = 0
