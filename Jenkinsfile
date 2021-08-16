@@ -43,7 +43,7 @@ pipeline {
             options { retry(3) }
             steps {
                 dir('data-node') {
-                    sh 'export GONOSUMDB=code.vegaprotocol.io/vega && go mod download -x'
+                    sh 'go mod download -x'
                 }
             }
         }
