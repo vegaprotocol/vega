@@ -25,10 +25,11 @@ func TestGetPartyAccounts(t *testing.T) {
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		acc := be.GetAccount()
 		require.NotNil(t, acc)
+		balance, _ := num.UintFromString(acc.Balance, 10)
 		e := events.NewAccountEvent(ctx, types.Account{
 			ID:       acc.Id,
 			Owner:    acc.Owner,
-			Balance:  num.NewUint(acc.Balance),
+			Balance:  balance,
 			Asset:    acc.Asset,
 			MarketID: acc.MarketId,
 			Type:     acc.Type,

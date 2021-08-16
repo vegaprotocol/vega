@@ -9,7 +9,6 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,7 +26,7 @@ func TestWithdrawals(t *testing.T) {
 		e := events.NewWithdrawalEvent(ctx, types.Withdrawal{
 			ID:             withdrawal.Id,
 			PartyID:        withdrawal.PartyId,
-			Amount:         num.NewUint(withdrawal.Amount),
+			Amount:         mustUintFromString(withdrawal.Amount),
 			Asset:          withdrawal.Asset,
 			Status:         withdrawal.Status,
 			Ref:            withdrawal.Ref,

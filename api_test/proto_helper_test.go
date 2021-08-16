@@ -1,16 +1,30 @@
 package api_test
 
 import (
+	"fmt"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+func mustUintFromString(s string) *num.Uint {
+	// assume "" == 0
+	if len(s) <= 0 {
+		return num.Zero()
+	}
+	u, overflow := num.UintFromString(s, 10)
+	if overflow {
+		panic(fmt.Sprintf("uint to string overflowed: \"%v\"", s))
+	}
+	return u
+}
+
 func FeeFromProto(f *proto.Fee) *types.Fee {
 	return &types.Fee{
-		MakerFee:          num.NewUint(f.MakerFee),
-		InfrastructureFee: num.NewUint(f.InfrastructureFee),
-		LiquidityFee:      num.NewUint(f.LiquidityFee),
+		MakerFee:          mustUintFromString(f.MakerFee),
+		InfrastructureFee: mustUintFromString(f.InfrastructureFee),
+		LiquidityFee:      mustUintFromString(f.LiquidityFee),
 	}
 }
 
@@ -18,7 +32,7 @@ func TradeFromProto(t *proto.Trade) *types.Trade {
 	return &types.Trade{
 		ID:                 t.Id,
 		MarketID:           t.MarketId,
-		Price:              num.NewUint(t.Price),
+		Price:              mustUintFromString(t.Price),
 		Size:               t.Size,
 		Buyer:              t.Buyer,
 		Seller:             t.Seller,
@@ -38,7 +52,7 @@ func LedgerEntryFromProto(l *proto.LedgerEntry) *types.LedgerEntry {
 	return &types.LedgerEntry{
 		FromAccount: l.FromAccount,
 		ToAccount:   l.ToAccount,
-		Amount:      num.NewUint(l.Amount),
+		Amount:      mustUintFromString(l.Amount),
 		Reference:   l.Reference,
 		Type:        l.Type,
 		Timestamp:   l.Timestamp,
@@ -49,7 +63,7 @@ func AccountFromProto(a *proto.Account) *types.Account {
 	return &types.Account{
 		ID:       a.Id,
 		Owner:    a.Owner,
-		Balance:  num.NewUint(a.Balance),
+		Balance:  mustUintFromString(a.Balance),
 		Asset:    a.Asset,
 		MarketID: a.MarketId,
 		Type:     a.Type,
@@ -63,7 +77,7 @@ func TransferBalanceFromProto(t *proto.TransferBalance) *types.TransferBalance {
 	}
 	return &types.TransferBalance{
 		Account: acc,
-		Balance: num.NewUint(t.Balance),
+		Balance: mustUintFromString(t.Balance),
 	}
 }
 

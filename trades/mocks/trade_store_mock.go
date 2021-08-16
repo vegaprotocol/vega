@@ -111,10 +111,10 @@ func (mr *MockTradeStoreMockRecorder) GetByPartyAndID(arg0, arg1, arg2 interface
 }
 
 // GetMarkPrice mocks base method
-func (m *MockTradeStore) GetMarkPrice(arg0 context.Context, arg1 string) (uint64, error) {
+func (m *MockTradeStore) GetMarkPrice(arg0 context.Context, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarkPrice", arg0, arg1)
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

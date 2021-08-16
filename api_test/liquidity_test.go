@@ -37,14 +37,14 @@ func TestLiquidity_Get(t *testing.T) {
 			b := types.LiquidityOrderReferenceFromProto(v)
 			sells = append(buys, b)
 		}
-
+		commitmentAmount, _ := num.UintFromString(lp.CommitmentAmount, 10)
 		e := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
 			ID:               lp.Id,
 			Party:            lp.PartyId,
 			CreatedAt:        lp.CreatedAt,
 			UpdatedAt:        lp.UpdatedAt,
 			MarketID:         lp.MarketId,
-			CommitmentAmount: num.NewUint(lp.CommitmentAmount),
+			CommitmentAmount: commitmentAmount,
 			Fee:              fee,
 			Sells:            sells,
 			Buys:             buys,
