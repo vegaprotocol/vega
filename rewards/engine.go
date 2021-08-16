@@ -174,7 +174,7 @@ func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, pa
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
-	rs.PayoutDelayInSeconds = payoutDelay
+	rs.PayoutDelay = payoutDelay
 }
 
 //UpdateDelegatorShareForStakingRewardScheme is a callback for changes in the network param for delegator share
@@ -287,13 +287,13 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 			}
 
 			// if the reward scheme has no delay, distribute the payout now
-			if rewardScheme.PayoutDelayInSeconds == time.Duration(0) {
+			if rewardScheme.PayoutDelay == time.Duration(0) {
 				e.distributePayout(ctx, pending)
 			} else {
 				// add the total reward amount to the pending for the account so we can account for it when distributing further rewards
 				// if we need to before this is paid out
 				e.rewardPoolToPendingPayoutBalance[accountID] = pendingPayoutForAccount.AddSum(pending.totalReward)
-				timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelayInSeconds * time.Second)
+				timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
 				existingPending, ok := e.pendingPayouts[timeToSend]
 				if !ok {
 					existingPending = []*pendingPayout{}

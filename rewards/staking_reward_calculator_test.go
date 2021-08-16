@@ -11,15 +11,15 @@ import (
 
 func TestStakingRewards(t *testing.T) {
 	t.Run("Square root with 4 decimal places using only integer operations succeeds", testFourSquare)
-	t.Run("Calcualte correctly the validator score", testValidatorScore)
+	t.Run("Calculate correctly the validator score", testValidatorScore)
 	t.Run("Calculate correctly the total delegate acorss all validators", testTotalDelegated)
 	t.Run("Calculate normalised validator score", testCalcValidatorsScore)
-	t.Run("Calcualte the reward when the balance of the reward account is 0", testCalcRewardNoBalance)
-	t.Run("Calcualte the reward when the validator scores are 0", testCalcRewardsZeroScores)
-	t.Run("Reward is calcualted correctly when max reward per participant is zero (i.e. unrestricted)", testCalcRewardsNoMaxPayout)
-	t.Run("Reward is calcualted correctly when max reward per participant restricted but not breached", testCalcRewardsMaxPayoutNotBreached)
-	t.Run("Reward is calcualted correctly when max reward per participant restricted and breached - no participant can be topped up", testCalcRewardSmallMaxPayoutBreached)
-	t.Run("Reward is calcualted correctly when max reward per participant restricted and breached - participant can be topped up", testCalcRewardsMaxPayoutBreachedPartyCanTakeMore)
+	t.Run("Calculate the reward when the balance of the reward account is 0", testCalcRewardNoBalance)
+	t.Run("Calculate the reward when the validator scores are 0", testCalcRewardsZeroScores)
+	t.Run("Reward is calculated correctly when max reward per participant is zero (i.e. unrestricted)", testCalcRewardsNoMaxPayout)
+	t.Run("Reward is calculated correctly when max reward per participant restricted but not breached", testCalcRewardsMaxPayoutNotBreached)
+	t.Run("Reward is calculated correctly when max reward per participant restricted and breached - no participant can be topped up", testCalcRewardSmallMaxPayoutBreached)
+	t.Run("Reward is calculated correctly when max reward per participant restricted and breached - participant can be topped up", testCalcRewardsMaxPayoutBreachedPartyCanTakeMore)
 }
 
 func testFourSquare(t *testing.T) {

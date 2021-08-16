@@ -53,7 +53,7 @@ type RewardScheme struct {
 	PayoutType                PayoutType
 	PayoutFraction            float64
 	MaxPayoutPerAssetPerParty map[string]*num.Uint
-	PayoutDelayInSeconds      time.Duration
+	PayoutDelay               time.Duration
 	RewardPoolAccountIDs      []string
 }
 
