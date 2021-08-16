@@ -126,10 +126,10 @@ func testUpdatePayoutDelayForStakingRewardScheme(t *testing.T) {
 	engine := testEngine.engine
 	engine.registerStakingAndDelegationRewardScheme()
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
-	require.Nil(t, rs.PayoutDelayInSeconds)
+	require.Equal(t, time.Duration(0), rs.PayoutDelayInSeconds)
 
 	engine.UpdatePayoutDelayForStakingRewardScheme(context.Background(), 1234)
-	require.Equal(t, num.NewUint(1234), rs.PayoutDelayInSeconds)
+	require.Equal(t, time.Duration(1234), rs.PayoutDelayInSeconds)
 }
 
 // test updating of payout delay for staking and delegation reward scheme
@@ -230,7 +230,7 @@ func testOnEpochEndPendingPayoutZerosRewardAccountBalance(t *testing.T) {
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	//setup delay
-	rs.PayoutDelayInSeconds = num.NewUint(120)
+	rs.PayoutDelayInSeconds = time.Duration(120)
 
 	//setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000))
@@ -272,7 +272,7 @@ func testOnEpochEndPendingPayoutRemainingRewardAccountBalance(t *testing.T) {
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	//setup delay
-	rs.PayoutDelayInSeconds = num.NewUint(120)
+	rs.PayoutDelayInSeconds = time.Duration(120)
 
 	//setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1500000))
@@ -324,7 +324,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	//setup delay
-	rs.PayoutDelayInSeconds = num.NewUint(120)
+	rs.PayoutDelayInSeconds = time.Duration(120)
 
 	//setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
@@ -368,7 +368,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	//setup delay
-	rs.PayoutDelayInSeconds = num.NewUint(0)
+	rs.PayoutDelayInSeconds = time.Duration(0)
 
 	//setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))

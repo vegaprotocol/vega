@@ -46,7 +46,7 @@ type Collateral interface {
 	CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error)
 	GetAccountByID(id string) (*types.Account, error)
 	GetPartyGeneralAccount(partyID, asset string) (*types.Account, error)
-	TransferRewards(ctx context.Context, transferReqs []*types.TransferRequest) ([]*types.TransferResponse, error)
+	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
 }
 
 //TimeService notifies the reward engine on time updates
@@ -143,8 +143,9 @@ func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Cont
 	// if the asset comes after the max payout per asset we need to update both
 	maxPayout, ok := rs.MaxPayoutPerAssetPerParty[prevAssetName]
 	if ok {
-		rs.MaxPayoutPerAssetPerParty = make(map[string]*num.Uint, 1)
-		rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = maxPayout
+		rs.MaxPayoutPerAssetPerParty = map[string]*num.Uint{
+			e.assetForStakingAndDelegationReward: maxPayout,
+		}
 	}
 }
 
@@ -168,12 +169,12 @@ func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context,
 }
 
 //UpdatePayoutDelayForStakingRewardScheme is a callback for changes in the network param for payout delay
-func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, payoutDelay uint64) {
+func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, payoutDelay time.Duration) {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
-	rs.PayoutDelayInSeconds = num.NewUint(payoutDelay)
+	rs.PayoutDelayInSeconds = payoutDelay
 }
 
 //UpdateDelegatorShareForStakingRewardScheme is a callback for changes in the network param for delegator share
@@ -201,7 +202,13 @@ func (e *Engine) UpdateRewardScheme(rs *types.RewardScheme) error {
 
 //whenever we have a time update, check if there are pending payouts ready to be sent
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
-	for payTime, payouts := range e.pendingPayouts {
+	payTimes := make([]time.Time, 0, len(e.pendingPayouts))
+	for payTime := range e.pendingPayouts {
+		payTimes = append(payTimes, payTime)
+	}
+	sort.Slice(payTimes, func(i, j int) bool { return payTimes[i].Before(payTimes[j]) })
+	for _, payTime := range payTimes {
+		payouts := e.pendingPayouts[payTime]
 		if t.After(payTime) {
 			for _, payout := range payouts {
 				// distribute the reward
@@ -223,7 +230,14 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEnd")
 
-	for _, rewardScheme := range e.rewardSchemes {
+	rsIDs := make([]string, 0, len(e.rewardSchemes))
+	for rsID := range e.rewardSchemes {
+		rsIDs = append(rsIDs, rsID)
+	}
+	sort.Strings(rsIDs)
+	for _, rsID := range rsIDs {
+		rewardScheme := e.rewardSchemes[rsID]
+
 		// if reward scheme is not active yet or anymore, ignore it
 		if !rewardScheme.IsActive(epoch.EndTime) {
 			continue
@@ -234,57 +248,58 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 			account, err := e.collateral.GetAccountByID(accountID)
 			if err != nil {
 				e.log.Error("failed to get reward account for", logging.String("accountID", accountID))
+				continue
+			}
+
+			if account.Balance.IsZero() {
+				e.log.Debug("reward account has zero balance", logging.String("accountID", accountID))
+				continue
+			}
+
+			rewardAccountBalance := account.Balance.Clone()
+
+			// we need to subtract from the balance any pending payouts that are waiting to be awarded
+			pendingPayoutForAccount, ok := e.rewardPoolToPendingPayoutBalance[accountID]
+			if ok {
+				if pendingPayoutForAccount.GT(rewardAccountBalance) {
+					e.log.Panic("reward account balance doesn't cover pending payouts")
+				}
+				rewardAccountBalance = rewardAccountBalance.Sub(rewardAccountBalance, pendingPayoutForAccount)
 			} else {
-				if account.Balance.IsZero() {
-					e.log.Debug("reward account has zero balance", logging.String("accountID", accountID))
-					continue
-				}
+				pendingPayoutForAccount = num.Zero()
+			}
 
-				rewardAccountBalance := account.Balance.Clone()
+			if rewardAccountBalance.IsZero() {
+				e.log.Debug("reward account has zero balance including pending payouts", logging.String("accountID", accountID))
+				continue
+			}
 
-				// we need to subtract from the balance any pending payouts that are waiting to be awarded
-				pendingPayoutForAccount, ok := e.rewardPoolToPendingPayoutBalance[accountID]
-				if ok {
-					if pendingPayoutForAccount.GT(rewardAccountBalance) {
-						e.log.Panic("reward account balance doesn't cover pending payouts")
-					}
-					rewardAccountBalance = num.Zero().Sub(rewardAccountBalance, pendingPayoutForAccount)
-				} else {
-					pendingPayoutForAccount = num.Zero()
-				}
+			// get how much reward needs to be distributed based on the current balance and the reward scheme
+			rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
+			if err != nil {
+				e.log.Panic("reward scheme misconfiguration", logging.Error(err))
+			}
 
-				if rewardAccountBalance.IsZero() {
-					e.log.Debug("reward account has zero balance including pending payouts", logging.String("accountID", accountID))
-					continue
-				}
+			// calculate the rewards per the reward scheme and reword amount
+			pending := e.calculateRewards(ctx, account.Asset, account.ID, rewardScheme, rewardAmt, epoch)
+			if pending.totalReward.IsZero() {
+				continue
+			}
 
-				// get how much reward needs to be distributed based on the current balance and the reward scheme
-				rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
-				if err != nil {
-					e.log.Panic("reward scheme misconfiguration", logging.Error(err))
+			// if the reward scheme has no delay, distribute the payout now
+			if rewardScheme.PayoutDelayInSeconds == time.Duration(0) {
+				e.distributePayout(ctx, pending)
+			} else {
+				// add the total reward amount to the pending for the account so we can account for it when distributing further rewards
+				// if we need to before this is paid out
+				e.rewardPoolToPendingPayoutBalance[accountID] = pendingPayoutForAccount.AddSum(pending.totalReward)
+				timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelayInSeconds * time.Second)
+				existingPending, ok := e.pendingPayouts[timeToSend]
+				if !ok {
+					existingPending = []*pendingPayout{}
 				}
-
-				// calculate the rewards per the reward scheme and reword amount
-				pending := e.calculateRewards(ctx, account.Asset, account.ID, rewardScheme, rewardAmt, epoch)
-				if pending.totalReward.IsZero() {
-					continue
-				}
-
-				// if the reward scheme has no delay, distribute the payout now
-				if rewardScheme.PayoutDelayInSeconds.IsZero() {
-					e.distributePayout(ctx, pending)
-				} else {
-					// add the total reward amount to the pending for the account so we can account for it when distributing further rewards
-					// if we need to before this is paid out
-					e.rewardPoolToPendingPayoutBalance[accountID] = pendingPayoutForAccount.AddSum(pending.totalReward)
-					timeToSend := epoch.EndTime.Add(time.Duration(rewardScheme.PayoutDelayInSeconds.Uint64()) * time.Second)
-					existingPending, ok := e.pendingPayouts[timeToSend]
-					if !ok {
-						existingPending = []*pendingPayout{}
-					}
-					existingPending = append(existingPending, pending)
-					e.pendingPayouts[timeToSend] = existingPending
-				}
+				existingPending = append(existingPending, pending)
+				e.pendingPayouts[timeToSend] = existingPending
 			}
 		}
 	}
@@ -292,33 +307,32 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 
 // make the required transfers for distributing reward payout
 func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
-	rewardsTR := make([]*types.TransferRequest, 0, len(payout.partyToAmount))
-	rewardAccount, err := e.collateral.GetAccountByID(payout.fromAccount)
-	if err != nil {
-		e.log.Panic("failed to get reward account for payout distribution", logging.String("accoundID", payout.fromAccount), logging.Error(err))
-	}
-
 	partyAccountIDToParty := make(map[string]string, len(payout.partyToAmount))
-	for party, amt := range payout.partyToAmount {
-		general, err := e.collateral.GetPartyGeneralAccount(party, payout.asset)
-		if err != nil {
-			e.log.Error("failed to get general account for reward payout", logging.String("party", party), logging.String("asset", payout.asset))
-			continue
-		}
-		partyAccountIDToParty[general.ID] = party
-		rewardsTR = append(rewardsTR, &types.TransferRequest{
-			Amount:      amt.Clone(),
-			MinAmount:   amt.Clone(),
-			Asset:       payout.asset,
-			Reference:   types.TransferTypeRewardPayout.String(),
-			FromAccount: []*types.Account{rewardAccount},
-			ToAccount:   []*types.Account{general},
-		})
+	partyIDs := make([]string, 0, len(payout.partyToAmount))
+	for party := range payout.partyToAmount {
+		partyIDs = append(partyIDs, party)
 	}
 
-	resp, err := e.collateral.TransferRewards(ctx, rewardsTR)
+	sort.Strings(partyIDs)
+	transfers := make([]*types.Transfer, 0, len(partyIDs))
+	for _, party := range partyIDs {
+		amt := payout.partyToAmount[party]
+		transfers = append(transfers, &types.Transfer{
+			Owner: party,
+			Amount: &types.FinancialAmount{
+				Asset:  payout.asset,
+				Amount: amt.Clone(),
+			},
+			Type:      types.TransferTypeRewardPayout,
+			MinAmount: amt.Clone(),
+		})
+
+	}
+
+	resp, err := e.collateral.TransferRewards(ctx, payout.fromAccount, transfers)
 	if err != nil {
 		e.log.Error("error in transfer rewards", logging.Error(err))
+		return
 	}
 
 	// emit events

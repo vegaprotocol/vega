@@ -116,7 +116,7 @@ func testTransferRewardsEmptySlice(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	res, err := eng.Engine.TransferRewards(context.Background(), []*types.TransferRequest{})
+	res, err := eng.Engine.TransferRewards(context.Background(), "reward", []*types.Transfer{})
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(res))
 }
@@ -125,32 +125,19 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	rewardAccount := &types.Account{
-		ID:      "reward",
-		Owner:   "system",
-		Balance: num.NewUint(500),
-		Type:    types.AccountTypeGlobalReward,
-	}
-
-	partyAccount := &types.Account{
-		ID:      "party1",
-		Owner:   "party1",
-		Balance: num.NewUint(0),
-		Type:    types.AccountTypeGeneral,
-	}
-
-	transferReq := []*types.TransferRequest{
-		&types.TransferRequest{
-			Amount:      num.NewUint(1000),
-			MinAmount:   num.NewUint(1000),
-			Asset:       "ETH",
-			Reference:   types.TransferTypeRewardPayout.String(),
-			FromAccount: []*types.Account{rewardAccount},
-			ToAccount:   []*types.Account{partyAccount},
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
+			Owner:     "party1",
 		},
 	}
 
-	res, err := eng.Engine.TransferRewards(context.Background(), transferReq)
+	res, err := eng.Engine.TransferRewards(context.Background(), "rewardAccID", transfers)
 	require.Error(t, errors.New("account does not exists"), err)
 	require.Nil(t, res)
 }
@@ -159,39 +146,28 @@ func testTransferRewardsNoGeneralAccount(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "asset1")
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
 
-	rewardAccount := &types.Account{
-		ID:       rewardAccID,
-		Asset:    "asset1",
-		MarketID: "!",
-		Balance:  num.Zero(),
-		Owner:    "",
-		Type:     types.AccountTypeGlobalReward,
-	}
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
 
-	partyAccount := &types.Account{
-		ID:      "party1",
-		Owner:   "party1",
-		Asset:   "asset1",
-		Balance: num.NewUint(0),
-		Type:    types.AccountTypeGeneral,
-	}
-
-	transferReq := []*types.TransferRequest{
-		&types.TransferRequest{
-			Amount:      num.NewUint(1000),
-			MinAmount:   num.NewUint(1000),
-			Asset:       "ETH",
-			Reference:   types.TransferTypeRewardPayout.String(),
-			FromAccount: []*types.Account{rewardAccount},
-			ToAccount:   []*types.Account{partyAccount},
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
+			Owner:     "party1",
 		},
 	}
 
-	res, err := eng.Engine.TransferRewards(context.Background(), transferReq)
-	require.Error(t, errors.New("account does not exists"), err)
-	require.Nil(t, res)
+	res, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
+
+	require.Nil(t, err)
+	require.Equal(t, 0, len(res))
 }
 
 func testTransferRewardsSuccess(t *testing.T) {
@@ -201,45 +177,31 @@ func testTransferRewardsSuccess(t *testing.T) {
 	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
 	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
 
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
+
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
 
-	rewardAccount := &types.Account{
-		ID:       rewardAccID,
-		Asset:    "ETH",
-		MarketID: "!",
-		Balance:  num.NewUint(1000),
-		Owner:    "",
-		Type:     types.AccountTypeGlobalReward,
-	}
-
-	partyAccount := &types.Account{
-		ID:       partyAccountID,
-		Asset:    "ETH",
-		MarketID: "!",
-		Balance:  num.Zero(),
-		Owner:    "party1",
-		Type:     types.AccountTypeGeneral,
-	}
-
-	transferReq := []*types.TransferRequest{
-		&types.TransferRequest{
-			Amount:      num.NewUint(1000),
-			MinAmount:   num.NewUint(1000),
-			Asset:       "ETH",
-			Reference:   types.TransferTypeRewardPayout.String(),
-			FromAccount: []*types.Account{rewardAccount},
-			ToAccount:   []*types.Account{partyAccount},
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Owner: "party1",
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
 		},
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	_, err := eng.Engine.TransferRewards(context.Background(), transferReq)
+	_, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
 	require.Nil(t, err)
-	partyAccount, _ = eng.Engine.GetAccountByID(partyAccountID)
+	partyAccount, _ := eng.Engine.GetAccountByID(partyAccountID)
 	require.Equal(t, num.NewUint(1000), partyAccount.Balance)
 
-	rewardAccount, _ = eng.Engine.GetGlobalRewardAccount("ETH")
+	rewardAccount, _ := eng.Engine.GetGlobalRewardAccount("ETH")
 	require.Equal(t, num.Zero(), rewardAccount.Balance)
 }
 

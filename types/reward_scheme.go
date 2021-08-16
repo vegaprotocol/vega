@@ -53,7 +53,7 @@ type RewardScheme struct {
 	PayoutType                PayoutType
 	PayoutFraction            float64
 	MaxPayoutPerAssetPerParty map[string]*num.Uint
-	PayoutDelayInSeconds      *num.Uint
+	PayoutDelayInSeconds      time.Duration
 	RewardPoolAccountIDs      []string
 }
 
@@ -103,7 +103,7 @@ func (rs *RewardScheme) GetReward(rewardPoolBalance *num.Uint, epoch Epoch) (*nu
 
 	var rewardBalance *num.Uint
 	if rs.PayoutType == PayoutFractional {
-		rewardBalance, _ = num.UintFromDecimal(num.NewDecimalFromFloat(rs.PayoutFraction * rewardPoolBalance.Float64()))
+		rewardBalance, _ = num.UintFromDecimal(num.NewDecimalFromFloat(rs.PayoutFraction).Mul(rewardPoolBalance.ToDecimal()))
 	} else {
 		if rs.EndTime == nil {
 			return nil, ErrRewardSchemeMisconfiguration

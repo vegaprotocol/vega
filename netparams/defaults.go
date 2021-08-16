@@ -78,9 +78,8 @@ func defaultNetParams() map[string]value {
 		DelegationMaxStakePerValidator: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
 		// staking and delegation
-		StakingAndDelegationRewardPayoutFraction: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("1.0"),
-		//TODO what should the default for this be?
-		StakingAndDelegationRewardMaxPayoutPerParticipant: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		StakingAndDelegationRewardPayoutFraction:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("1.0"),
+		StakingAndDelegationRewardMaxPayoutPerParticipant: NewDuration(DurationGTE(0)).Mutable(true).MustUpdate("0"),
 		StakingAndDelegationRewardPayoutDelay:             NewInt(IntGTE(0)).Mutable(true).MustUpdate("86400"),
 		StakingAndDelegationRewardDelegatorShare:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.8"),
 
