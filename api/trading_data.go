@@ -197,6 +197,16 @@ type LiquidityService interface {
 	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
 }
 
+// ValidatorService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  ValidatorService
+type ValidatorService interface {
+	GetNodeData(ctx context.Context) (*pbtypes.NodeData, error)
+	GetNodes(ctx context.Context) ([]*pbtypes.Node, error)
+	GetNodeByID(ctx context.Context, id string) (*pbtypes.Node, error)
+	GetEpochByID(ctx context.Context, id uint64) (*pbtypes.Epoch, error)
+	GetEpoch(ctx context.Context) (*pbtypes.Epoch, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -1973,10 +1983,6 @@ func (t *tradingDataService) ObserveProposalVotes(
 			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
 		}
 	}
-}
-
-func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
-	return nil, nil
 }
 
 func (t *tradingDataService) ObserveEventBus(
