@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/rewards/mocks"
-	rmocks "code.vegaprotocol.io/vega/rewards/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
@@ -487,7 +486,7 @@ type testEngine struct {
 	ctrl          *gomock.Controller
 	broker        *bmock.MockBroker
 	epochEngine   *TestEpochEngine
-	delegation    *rmocks.MockDelegationEngine
+	delegation    *mocks.MockDelegationEngine
 	collateral    *collateral.Engine
 	validatorData []*types.ValidatorData
 }
@@ -499,7 +498,7 @@ func getEngine(t *testing.T) *testEngine {
 	logger := logging.NewTestLogger()
 	delegation := mocks.NewMockDelegationEngine(ctrl)
 	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}
-	ts := rmocks.NewMockTimeService(ctrl)
+	ts := mocks.NewMockTimeService(ctrl)
 
 	ts.EXPECT().GetTimeNow().AnyTimes()
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
