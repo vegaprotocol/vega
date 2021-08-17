@@ -2,13 +2,11 @@ package collateral
 
 import (
 	"context"
-	"encoding/json"
 
+	vpb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
-	vpb "code.vegaprotocol.io/vega/proto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"google.golang.org/protobuf/proto"
 )
 
 const SnapshotName = "collateral"
@@ -24,32 +22,14 @@ func (e *Engine) Checkpoint() []byte {
 	}
 	for party, assets := range balances {
 		bal := &vpb.Balance{
-			Balance: make(map[string]string, len(assets)),
+			Balance: make(map[string][]byte, len(assets)),
 		}
 		for a, b := range assets {
-			bal.Balance[a] = b.String()
+			bal.Balance[a] = []byte(b.String()) // either update the proto to use string, or use [32]byte reliably
 		}
 		msg.Parties[party] = bal
 	}
-	ret, err := proto.Marshal(msg)
-	if err != nil {
-		e.log.Panic("Error marshalling snapshot data for collateral engine",
-			logging.Error(err))
-	}
-	return ret
-}
-
-func (e *Engine) Checkpoint2() []byte {
-	balances := e.getPartyBalances()
-	numBytes := make(map[string]map[string][32]byte, len(balances))
-	for p, assets := range balances {
-		aBal := make(map[string][32]byte, len(assets))
-		for a, b := range assets {
-			aBal[a] = b.Bytes()
-		}
-		numBytes[p] = aBal
-	}
-	ret, err := json.Marshal(numBytes)
+	ret, err := vpb.Marshal(msg)
 	if err != nil {
 		e.log.Panic("Error marshalling snapshot data for collateral engine",
 			logging.Error(err))
@@ -59,30 +39,13 @@ func (e *Engine) Checkpoint2() []byte {
 
 func (e *Engine) Load(checkpoint, _ []byte) error {
 	msg := vpb.Collateral{}
-	if err := proto.Unmarshal(checkpoint, &msg); err != nil {
+	if err := vpb.Unmarshal(checkpoint, &msg); err != nil {
 		return err
 	}
 	for party, balances := range msg.Parties {
 		for a, bal := range balances.Balance {
-			ub, _ := num.UintFromString(bal, 10)
-			accID := e.accountID(noMarket, party, a, types.AccountTypeGeneral)
-			if _, err := e.GetAccountByID(accID); err != nil {
-				accID, _ = e.CreatePartyGeneralAccount(context.Background(), party, a)
-			}
-			e.UpdateBalance(context.Background(), accID, ub)
-		}
-	}
-	return inl
-}
-
-func (e *Engine) Load2(checkpoint, _ []byte) error {
-	data := map[string]map[string][32]byte{}
-	if err := json.Unmarshal(checkpoint, &data); err != nil {
-		return err
-	}
-	for party, assets := range data {
-		for a, bal := range assets {
-			ub := num.UintFromBytes(bal[:])
+			ub := num.UintFromBytes(bal)
+			// ub, _ := num.UintFromString(bal, 10)
 			accID := e.accountID(noMarket, party, a, types.AccountTypeGeneral)
 			if _, err := e.GetAccountByID(accID); err != nil {
 				accID, _ = e.CreatePartyGeneralAccount(context.Background(), party, a)
