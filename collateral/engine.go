@@ -315,6 +315,68 @@ func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID stri
 	return e.transferFees(ctx, marketID, assetID, ft)
 }
 
+// returns the corresponding transfer request for the slice of transfers
+// if the reward accound doesn't exist return error
+// if the party account doesn't exist log the error and continue
+func (e *Engine) getRewardTransferRequests(rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferRequest, error) {
+	rewardAccount, err := e.GetAccountByID(rewardAccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	rewardTRs := make([]*types.TransferRequest, 0, len(transfers))
+	for _, t := range transfers {
+		general, err := e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+		if err != nil {
+			e.log.Error("failed to get party general account for reward payout", logging.String("party", t.Owner), logging.String("asset", t.Amount.Asset))
+			continue
+		}
+
+		rewardTRs = append(rewardTRs, &types.TransferRequest{
+			Amount:      t.Amount.Amount.Clone(),
+			MinAmount:   t.Amount.Amount.Clone(),
+			Asset:       t.Amount.Asset,
+			Reference:   types.TransferTypeRewardPayout.String(),
+			FromAccount: []*types.Account{rewardAccount},
+			ToAccount:   []*types.Account{general},
+		})
+	}
+	return rewardTRs, nil
+}
+
+//TransferRewards takes a slice of transfers and serves them to transfer rewards from the reward account to parties general account
+func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
+	responses := make([]*types.TransferResponse, 0, len(transfers))
+
+	if len(transfers) == 0 {
+		return responses, nil
+	}
+
+	transferReqs, err := e.getRewardTransferRequests(rewardAccountID, transfers)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, req := range transferReqs {
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Error("Failed to transfer funds", logging.Error(err))
+			return nil, err
+		}
+		for _, bal := range res.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		responses = append(responses, res)
+	}
+
+	return responses, nil
+}
+
 func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
 	if len(ft.Transfers()) <= 0 {
 		return nil, nil

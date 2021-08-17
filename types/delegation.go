@@ -58,5 +58,6 @@ func (u Undelegate) String() string {
 type ValidatorData struct {
 	NodeID            string
 	StakeByDelegators *num.Uint
+	SelfStake         *num.Uint
 	Delegators        map[string]*num.Uint
 }

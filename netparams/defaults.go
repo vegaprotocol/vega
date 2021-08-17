@@ -77,6 +77,12 @@ func defaultNetParams() map[string]value {
 		DelegationMinAmount:            NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
 		DelegationMaxStakePerValidator: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
+		// staking and delegation
+		StakingAndDelegationRewardPayoutFraction:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("1.0"),
+		StakingAndDelegationRewardMaxPayoutPerParticipant: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		StakingAndDelegationRewardPayoutDelay:             NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
+		StakingAndDelegationRewardDelegatorShare:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.8"),
+
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff

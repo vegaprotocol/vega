@@ -43,6 +43,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
@@ -152,6 +153,7 @@ type NodeCommand struct {
 	netParams       *netparams.Store
 	delegation      *delegation.Engine
 	limits          *limits.Engine
+	rewards         *rewards.Engine
 
 	mktscfg []types.Market
 

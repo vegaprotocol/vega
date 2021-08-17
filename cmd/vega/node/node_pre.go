@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"code.vegaprotocol.io/vega/rewards"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	oraclepb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/accounts"
@@ -565,6 +567,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.eventService = subscribers.NewService(l.broker)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
+	// setup rewards engine
+	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
+
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
@@ -660,6 +665,26 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsEpochLength,
 			Watcher: l.epochService.OnEpochLengthUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.GovernanceVoteAsset,
+			Watcher: l.rewards.UpdateAssetForStakingAndDelegationRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardPayoutFraction,
+			Watcher: l.rewards.UpdatePayoutFractionForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardPayoutDelay,
+			Watcher: l.rewards.UpdatePayoutDelayForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerParticipant,
+			Watcher: l.rewards.UpdateMaxPayoutPerParticipantForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardDelegatorShare,
+			Watcher: l.rewards.UpdateDelegatorShareForStakingRewardScheme,
 		},
 	)
 }

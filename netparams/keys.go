@@ -63,6 +63,12 @@ const (
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
 
+	// staking and delegation reward network params
+	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
+	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
+	StakingAndDelegationRewardPayoutDelay             = "reward.staking.delegation.payoutDelay"
+	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
+
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
@@ -128,4 +134,8 @@ var AllKeys = map[string]struct{}{
 	ValidatorsEpochLength:                                 {},
 	DelegationMinAmount:                                   {},
 	DelegationMaxStakePerValidator:                        {},
+	StakingAndDelegationRewardPayoutFraction:              {},
+	StakingAndDelegationRewardMaxPayoutPerParticipant:     {},
+	StakingAndDelegationRewardPayoutDelay:                 {},
+	StakingAndDelegationRewardDelegatorShare:              {},
 }

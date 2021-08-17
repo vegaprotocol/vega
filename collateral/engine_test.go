@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -102,6 +103,106 @@ func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
 func TestCreateBondAccount(t *testing.T) {
 	t.Run("create a bond account with success", testCreateBondAccountSuccess)
 	t.Run("create a bond account with - failure no general account", testCreateBondAccountFailureNoGeneral)
+}
+
+func TestTransferRewards(t *testing.T) {
+	t.Run("transfer rewards empty slice", testTransferRewardsEmptySlice)
+	t.Run("transfer rewards missing rewards account", testTransferRewardsNoRewardsAccount)
+	t.Run("transfer rewards missing general account", testTransferRewardsNoGeneralAccount)
+	t.Run("transfer rewards success", testTransferRewardsSuccess)
+}
+
+func testTransferRewardsEmptySlice(t *testing.T) {
+	eng := getTestEngine(t, "test-market")
+	defer eng.Finish()
+
+	res, err := eng.Engine.TransferRewards(context.Background(), "reward", []*types.Transfer{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(res))
+}
+
+func testTransferRewardsNoRewardsAccount(t *testing.T) {
+	eng := getTestEngine(t, "test-market")
+	defer eng.Finish()
+
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
+			Owner:     "party1",
+		},
+	}
+
+	res, err := eng.Engine.TransferRewards(context.Background(), "rewardAccID", transfers)
+	require.Error(t, errors.New("account does not exists"), err)
+	require.Nil(t, res)
+}
+
+func testTransferRewardsNoGeneralAccount(t *testing.T) {
+	eng := getTestEngine(t, "test-market")
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
+
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
+			Owner:     "party1",
+		},
+	}
+
+	res, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
+
+	require.Nil(t, err)
+	require.Equal(t, 0, len(res))
+}
+
+func testTransferRewardsSuccess(t *testing.T) {
+	eng := getTestEngine(t, "test-market")
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
+
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Owner: "party1",
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
+		},
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	_, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
+	require.Nil(t, err)
+	partyAccount, _ := eng.Engine.GetAccountByID(partyAccountID)
+	require.Equal(t, num.NewUint(1000), partyAccount.Balance)
+
+	rewardAccount, _ := eng.Engine.GetGlobalRewardAccount("ETH")
+	require.Equal(t, num.Zero(), rewardAccount.Balance)
 }
 
 func testPartyWithoutAccountHasNoBalance(t *testing.T) {

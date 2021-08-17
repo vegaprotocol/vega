@@ -86,6 +86,8 @@ func Test(t *testing.T) {
 	// test get validators
 	t.Run("get empty list of validators succeeds", testGetValidatorsEmpty)
 	t.Run("get list of validators succeeds", testGetValidatorsSuccess)
+	t.Run("setup delegation with self and parties", testGetValidatorsSuccessWithSelfDelegation)
+
 }
 
 // pass an invalid node id
@@ -1344,6 +1346,42 @@ func testGetValidatorsSuccess(t *testing.T) {
 	require.Equal(t, 1, len(validators[1].Delegators))
 	require.Equal(t, num.NewUint(5), validators[1].Delegators["party2"])
 
+}
+
+func testGetValidatorsSuccessWithSelfDelegation(t *testing.T) {
+	testEngine := getEngine(t)
+	testEngine.topology.nodeToIsValidator["node1"] = true
+	testEngine.topology.nodeToIsValidator["node2"] = true
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
+	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
+	testEngine.stakingAccounts.partyToStake["node1"] = num.NewUint(1000)
+	testEngine.stakingAccounts.partyToStake["node2"] = num.NewUint(2000)
+	testEngine.engine.OnMaxDelegationPerNodeChanged(context.Background(), num.NewUint(10000))
+
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
+	testEngine.engine.Delegate(context.Background(), "node1", "node1", num.NewUint(100))
+	testEngine.engine.Delegate(context.Background(), "node1", "node2", num.NewUint(50))
+	testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(5))
+	testEngine.engine.Delegate(context.Background(), "node2", "node1", num.NewUint(25))
+	testEngine.engine.Delegate(context.Background(), "node2", "node2", num.NewUint(125))
+
+	testEngine.netp.EXPECT().Get("validators.delegation.maxStakePerValidator").AnyTimes().Return("1000", nil)
+	testEngine.engine.processPending(context.Background())
+	validators := testEngine.engine.getValidatorData()
+	require.Equal(t, 2, len(validators))
+	require.Equal(t, "node1", validators[0].NodeID)
+	require.Equal(t, num.NewUint(27), validators[0].StakeByDelegators)
+	require.Equal(t, num.NewUint(100), validators[0].SelfStake)
+	require.Equal(t, 2, len(validators[0].Delegators))
+	require.Equal(t, num.NewUint(2), validators[0].Delegators["party1"])
+	require.Equal(t, num.NewUint(25), validators[0].Delegators["node2"])
+
+	require.Equal(t, "node2", validators[1].NodeID)
+	require.Equal(t, num.NewUint(55), validators[1].StakeByDelegators)
+	require.Equal(t, num.NewUint(125), validators[1].SelfStake)
+	require.Equal(t, 2, len(validators[1].Delegators))
+	require.Equal(t, num.NewUint(5), validators[1].Delegators["party2"])
+	require.Equal(t, num.NewUint(50), validators[1].Delegators["node1"])
 }
 
 // try to undelegate more than delegated
