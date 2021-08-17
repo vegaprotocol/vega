@@ -19,11 +19,12 @@ pipeline {
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
+        string(name: 'DATA_NODE_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/data-node repository')
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
         string(name: 'SPECS_INTERNAL_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/specs-internal repository')
         string(name: 'PROTOS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/protos repository')
         string(name: 'SYSTEM_TESTS_VALIDATOR_NODE_COUNT', defaultValue: '1', description: 'Number of validator nodes when running system-tests')
-        string(name: 'SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT', defaultValue: '0', description: 'Number of non-validator nodes when running system-tests')
+        string(name: 'SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT', defaultValue: '1', description: 'Number of non-validator nodes when running system-tests')
         string(name: 'SYSTEM_TESTS_TEST_FUNCTION', defaultValue: '', description: 'Run only a tests with a specified function name. This is actually a "pytest -k $TEST_FUNCTION_NAME" command-line argument, see more: https://docs.pytest.org/en/stable/usage.html')
         string(name: 'SYSTEM_TESTS_TEST_DIRECTORY', defaultValue: 'CoreTesting/bvt', description: 'Run tests from files in this directory and all sub-directories')
     }
@@ -35,7 +36,8 @@ pipeline {
         // Reason: it is used by system-tests for hostnames in dockerised vega, and
         //         there is a limit of 64 characters for hostname
         DOCKER_IMAGE_TAG_LOCAL = "v-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
-        DOCKER_IMAGE_NAME_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
+        DOCKER_IMAGE_VEGA_CORE_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
+        DOCKER_IMAGE_DATA_NODE_LOCAL = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_LOCAL}"
     }
 
     stages {
@@ -52,6 +54,14 @@ pipeline {
                                 versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
                                 version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
                             }
+                        }
+                    }
+                }
+                stage('data-node') {
+                    options { retry(3) }
+                    steps {
+                        dir('data-node') {
+                            git branch: "${params.DATA_NODE_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/data-node.git'
                         }
                     }
                 }
@@ -181,14 +191,14 @@ pipeline {
                             // Note: This docker image is used by system-tests and publish stage
                             withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
                                 sh label: 'Build docker image', script: '''
-                                    docker build -t "${DOCKER_IMAGE_NAME_LOCAL}" docker/
+                                    docker build -t "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" docker/
                                 '''
                             }
                             sh label: 'Cleanup', script: '''#!/bin/bash -e
                                 rm -rf docker/bin
                             '''
                             sh label: 'Sanity check', script: '''
-                                docker run --rm --entrypoint "" "${DOCKER_IMAGE_NAME_LOCAL}" vega version
+                                docker run --rm --entrypoint "" "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" vega version
                             '''
                         }
                     }
@@ -330,10 +340,13 @@ pipeline {
                     environment {
                         SYSTEM_TESTS_PORTBASE = "${ Integer.parseInt(env.EXECUTOR_NUMBER) * 1000 + 1000}"
                         SYSTEM_TESTS_DOCKER_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
+                        VEGA_CORE_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
+                        DATA_NODE_IMAGE_TAG = "${ params.DATA_NODE_BRANCH == 'develop' ? 'develop' : env.DOCKER_IMAGE_TAG_LOCAL }"
                         VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_VALIDATOR_NODE_COUNT}"
                         NON_VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT}"
                         TEST_FUNCTION = "${params.SYSTEM_TESTS_TEST_FUNCTION}"
                         TEST_DIRECTORY = "${params.SYSTEM_TESTS_TEST_DIRECTORY}"
+                        DOCKER_GOCACHE = "${env.GOCACHE}"
                     }
                     stages {
                         stage('check') {
@@ -352,6 +365,20 @@ pipeline {
                                     withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
                                         sh 'make prepare-docker-pull'
                                     }
+                                }
+                            }
+                        }
+                        stage('Build Data-Node') {
+                            when { expression { env.DATA_NODE_IMAGE_TAG != 'develop'} }
+                            options { retry(3) }
+                            steps {
+                                dir('system-tests/scripts') {
+                                    sh label: 'Build data-node app', script: '''
+                                        make build-data-node
+                                    '''
+                                    sh label: 'Build data-node container', script: '''
+                                        make build-data-node-docker-image
+                                    '''
                                 }
                             }
                         }
@@ -428,28 +455,28 @@ pipeline {
                     }
                     environment {
                         DOCKER_IMAGE_TAG_VERSIONED = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
-                        DOCKER_IMAGE_NAME_VERSIONED = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSIONED}"
+                        DOCKER_IMAGE_VEGA_CORE_VERSIONED = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_VERSIONED}"
                         DOCKER_IMAGE_TAG_ALIAS = "${ env.TAG_NAME ? 'latest' : 'edge' }"
-                        DOCKER_IMAGE_NAME_ALIAS = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
+                        DOCKER_IMAGE_VEGA_CORE_ALIAS = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_ALIAS}"
                     }
                     options { retry(3) }
                     steps {
                         dir('vega') {
                             sh label: 'Tag new images', script: '''#!/bin/bash -e
-                                docker image tag "${DOCKER_IMAGE_NAME_LOCAL}" "${DOCKER_IMAGE_NAME_VERSIONED}"
-                                docker image tag "${DOCKER_IMAGE_NAME_LOCAL}" "${DOCKER_IMAGE_NAME_ALIAS}"
+                                docker image tag "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" "${DOCKER_IMAGE_VEGA_CORE_VERSIONED}"
+                                docker image tag "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
                             '''
 
                             withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
                                 sh label: 'Push docker images', script: '''
-                                    docker push "${DOCKER_IMAGE_NAME_VERSIONED}"
-                                    docker push "${DOCKER_IMAGE_NAME_ALIAS}"
+                                    docker push "${DOCKER_IMAGE_VEGA_CORE_VERSIONED}"
+                                    docker push "${DOCKER_IMAGE_VEGA_CORE_ALIAS}"
                                 '''
                             }
                             slackSend(
                                 channel: "#tradingcore-notify",
                                 color: "good",
-                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_NAME_VERSIONED}` aka `${DOCKER_IMAGE_NAME_ALIAS}`",
+                                message: ":docker: Vega Core » Published new docker image `${DOCKER_IMAGE_VEGA_CORE_VERSIONED}` aka `${DOCKER_IMAGE_VEGA_CORE_ALIAS}`",
                             )
                         }
                     }
@@ -524,7 +551,8 @@ pipeline {
         always {
             retry(3) {
                 sh label: 'Clean docker images', script: '''#!/bin/bash -e
-                    [ -z "$(docker images -q "${DOCKER_IMAGE_NAME_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_NAME_LOCAL}"
+                    [ -z "$(docker images -q "${DOCKER_IMAGE_VEGA_CORE_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_VEGA_CORE_LOCAL}"
+                    [ -z "$(docker images -q "${DOCKER_IMAGE_DATA_NODE_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_DATA_NODE_LOCAL}"
                 '''
             }
         }
