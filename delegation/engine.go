@@ -8,7 +8,6 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -84,7 +83,8 @@ type Engine struct {
 	nodeDelegationState  map[string]*validatorDelegation    // validator to active delegations
 	partyDelegationState map[string]*partyDelegation        // party to active delegations
 	pendingState         map[string]*pendingPartyDelegation // pending delegations/undelegations by party
-	netp                 NetParams                          // network parameter interface for reading needed network parameters
+	maxStakePerValidator *num.Uint                          // network param for max stake per validator
+	minDelegationAmount  *num.Uint                          // min delegation amount per delegation request
 }
 
 //NetParams provides access to network parameters
@@ -95,6 +95,7 @@ type NetParams interface {
 
 //New instantiate a new delegation engine
 func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, netp NetParams) *Engine {
+
 	e := &Engine{
 		config:               config,
 		log:                  log.Named(namedLogger),
@@ -104,9 +105,16 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		nodeDelegationState:  map[string]*validatorDelegation{},
 		partyDelegationState: map[string]*partyDelegation{},
 		pendingState:         map[string]*pendingPartyDelegation{},
-		netp:                 netp,
 	}
 	return e
+}
+
+func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount *num.Uint) {
+	e.minDelegationAmount = minAmount
+}
+
+func (e *Engine) OnMaxDelegationPerNodeChanged(ctx context.Context, maxStake *num.Uint) {
+	e.maxStakePerValidator = maxStake
 }
 
 //OnEpochEnd updates the delegation engine state at the end of an epoch and returns the last epoch's validation-delegation data for rewarding
@@ -139,17 +147,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 		return ErrPartyHasNoStakingAccount
 	}
 
-	// read the delegation min amount network param
-	validatorsDelegationMinAmount, err := e.netp.Get(netparams.DelegationMinAmount)
-	if err != nil {
-		return err
-	}
-	minAmount, ok := num.UintFromString(validatorsDelegationMinAmount, 10)
-	if ok {
-		e.log.Panic("unable to read", logging.String(netparams.DelegationMinAmount, validatorsDelegationMinAmount))
-	}
-
-	if amt.LT(minAmount) {
+	if amt.LT(e.minDelegationAmount) {
 		return ErrAmountLTMinAmountForDelegation
 	}
 
@@ -607,17 +605,8 @@ func (e *Engine) processPending(ctx context.Context) {
 	sort.Strings(parties)
 
 	// read the delegation min amount network param
-	maxStakePerValidatorStr, err := e.netp.Get(netparams.DelegationMaxStakePerValidator)
-	if err != nil {
-		e.log.Panic("Cannot find validators.delegation.maxStakePerValidator")
-	}
-	maxStakePerValidator, ok := num.UintFromString(maxStakePerValidatorStr, 10)
-	if ok {
-		e.log.Panic("unable to read", logging.String(netparams.DelegationMaxStakePerValidator, maxStakePerValidatorStr))
-	}
-
 	e.processPendingUndelegations(parties)
-	e.processPendingDelegations(parties, maxStakePerValidator)
+	e.processPendingDelegations(parties, e.maxStakePerValidator)
 
 	e.pendingState = map[string]*pendingPartyDelegation{}
 	for _, party := range parties {

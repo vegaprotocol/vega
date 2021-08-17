@@ -25,7 +25,6 @@ import (
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -34,17 +33,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
 )
-
-type DummyStakingAccounts struct {
-}
-
-func (DummyStakingAccounts) GetBalanceNow(party string) *num.Uint {
-	return num.Zero()
-}
-
-func (DummyStakingAccounts) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
-	return num.Zero()
-}
 
 func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -131,15 +119,28 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
 
-	netparams := netparams.New(
+	netp := netparams.New(
 		log,
 		netparams.NewDefaultConfig(),
 		broker,
 	)
 
 	//TODO replace with actual implementation
-	stakingAccount := DummyStakingAccounts{}
-	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netparams)
+	stakingAccount := delegation.NewDummyStakingAccount(collateral)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.GovernanceVoteAsset,
+		Watcher: stakingAccount.GovAssetUpdated,
+	})
+
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netp)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMinAmount,
+		Watcher: delegationEngine.OnMinAmountChanged,
+	})
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMaxStakePerValidator,
+		Watcher: delegationEngine.OnMaxDelegationPerNodeChanged,
+	})
 
 	bstats := stats.NewBlockchain()
 
@@ -167,7 +168,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		timeService,
 		epochService,
 		topology,
-		netparams,
+		netp,
 		&processor.Oracle{
 			Engine:   oraclesM,
 			Adaptors: oraclesAdaptors,
@@ -176,7 +177,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		limits,
 	)
 
-	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
+	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -197,7 +198,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		uponGenesisW,
 		genesisHandler,
 		timeService,
-		netparams,
+		netp,
 		topology,
 	)
 

@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -261,14 +262,18 @@ func (s *Store) GetInt(key string) (int64, error) {
 }
 
 // GetUint a value associated to the given key
-func (s *Store) GetUint(key string) (uint64, error) {
+func (s *Store) GetUint(key string) (*num.Uint, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	svalue, ok := s.store[key]
 	if !ok {
-		return 0, ErrUnknownKey
+		return num.Zero(), ErrUnknownKey
 	}
-	return svalue.ToUint()
+	asUint64, err := svalue.ToUint()
+	if err != nil {
+		return num.Zero(), err
+	}
+	return num.NewUint(asUint64), nil
 }
 
 // GetBool a value associated to the given key

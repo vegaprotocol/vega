@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/candles"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
@@ -494,6 +495,23 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
+
+	//TODO replace with actual implementation
+	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.GovernanceVoteAsset,
+		Watcher: stakingAccount.GovAssetUpdated,
+	})
+
+	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.netParams)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMinAmount,
+		Watcher: l.delegation.OnMinAmountChanged,
+	})
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMaxStakePerValidator,
+		Watcher: l.delegation.OnMaxDelegationPerNodeChanged,
+	})
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
