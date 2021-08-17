@@ -277,7 +277,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	if snap, _ := app.checkpoint.Checkpoint(app.currentTimestamp); snap != nil {
 		resp.Data = append(resp.Data, snap.Hash...)
 		// @TODO error handling
-		_ = app.writeCheckpoint(snap)
+		_ = app.handleCheckpoint(snap)
 	}
 	// Compute the AppHash and update the response
 
@@ -287,7 +287,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	return resp
 }
 
-func (app *App) writeCheckpoint(snap *types.Snapshot) error {
+func (app *App) handleCheckpoint(snap *types.Snapshot) error {
 	f, err := os.Create(
 		filepath.Join(
 			app.cfg.CheckpointsPath,
@@ -304,7 +304,18 @@ func (app *App) writeCheckpoint(snap *types.Snapshot) error {
 	if _, err = f.Write(snap.State); err != nil {
 		return err
 	}
-	return nil
+	// ok, now send the transaction for the commander
+	cmd := &commandspb.RestoreSnapshot{
+		Data: snap.State,
+	}
+	ch := make(chan error)
+	app.cmd.Command(context.Background(), txn.CheckpointRestoreCommand, cmd, func(ok bool) {
+		if !ok {
+			ch <- fmt.Errorf("failed to send restore command")
+		}
+		close(ch)
+	})
+	return <-ch
 }
 
 // OnCheckTx performs soft validations.
