@@ -208,6 +208,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.nodeService,
 		l.epochService,
 		l.delegationService,
+		l.rewardsSub,
 	)
 
 	// watch configs

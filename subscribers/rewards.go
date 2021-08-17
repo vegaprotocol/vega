@@ -11,10 +11,7 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
-<<<<<<< HEAD
 	"code.vegaprotocol.io/vega/types/num"
-=======
->>>>>>> get event code from vega repo
 )
 
 type RE interface {

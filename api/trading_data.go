@@ -228,7 +228,7 @@ type DelegationService interface {
 // RewardsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/rewards_service_mock.go -package mocks code.vegaprotocol.io/data-node/api RewardsService
 type RewardsService interface {
-	GetRewardDetails(ctx context.Context, party string) (pbtypes.RewardDetails, error)
+	GetRewardDetails(ctx context.Context, party string) (*protoapi.GetRewardDetailsResponse, error)
 }
 
 type tradingDataService struct {
@@ -256,7 +256,6 @@ type tradingDataService struct {
 	LiquidityService        LiquidityService
 	delegationService       DelegationService
 	oracleService           OracleService
-<<<<<<< HEAD
 	nodeService             NodeService
 	epochService            EpochService
 	rewardsService          RewardsService
@@ -337,10 +336,6 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 	}, nil
 }
 
-func (t *tradingDataService) GetRewardDetails(context.Context, *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Delegations")()
 
@@ -372,9 +367,6 @@ func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.Dele
 	return &protoapi.DelegationsResponse{
 		Delegations: delegations,
 	}, nil
-=======
-	rewardsService          RewardsService
->>>>>>> Added more tests and futher work
 }
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
@@ -618,9 +610,7 @@ func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi
 	if err != nil {
 		return nil, err
 	}
-
-	retVal := &protoapi.GetRewardDetailsResponse{}
-	return retVal, nil
+	return details, nil
 }
 
 func (t *tradingDataService) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {
