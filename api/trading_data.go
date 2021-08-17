@@ -827,6 +827,10 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVeg
 
 }
 
+func (t *tradingDataService) Checkpoints(ctx context.Context, _ *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
+	return nil, fmt.Errorf("not implmented yet")
+}
+
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
 func (t *tradingDataService) TransferResponsesSubscribe(
 	_ *protoapi.TransferResponsesSubscribeRequest, srv protoapi.TradingDataService_TransferResponsesSubscribeServer) error {
