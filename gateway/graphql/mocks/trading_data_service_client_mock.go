@@ -135,6 +135,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) CandlesSubscribe(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CandlesSubscribe", reflect.TypeOf((*MockTradingDataServiceClient)(nil).CandlesSubscribe), varargs...)
 }
 
+// Checkpoints mocks base method
+func (m *MockTradingDataServiceClient) Checkpoints(arg0 context.Context, arg1 *v1.CheckpointsRequest, arg2 ...grpc.CallOption) (*v1.CheckpointsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Checkpoints", varargs...)
+	ret0, _ := ret[0].(*v1.CheckpointsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Checkpoints indicates an expected call of Checkpoints
+func (mr *MockTradingDataServiceClientMockRecorder) Checkpoints(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoints", reflect.TypeOf((*MockTradingDataServiceClient)(nil).Checkpoints), varargs...)
+}
+
 // Deposit mocks base method
 func (m *MockTradingDataServiceClient) Deposit(arg0 context.Context, arg1 *v1.DepositRequest, arg2 ...grpc.CallOption) (*v1.DepositResponse, error) {
 	m.ctrl.T.Helper()
