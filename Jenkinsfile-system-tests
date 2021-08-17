@@ -19,6 +19,7 @@ pipeline {
     }
     parameters {
         string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
+        string(name: 'DATA_NODE_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/data-node repository')
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
         string(name: 'PROTOS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/protos repository')
         string(name: 'SYSTEM_TESTS_VALIDATOR_NODE_COUNT', defaultValue: '4', description: 'Number of validator nodes when running system-tests')
@@ -39,6 +40,8 @@ pipeline {
         // Used by system-tests/scripts/Makefile
         SYSTEM_TESTS_PORTBASE = "${ Integer.parseInt(env.EXECUTOR_NUMBER) * 1000 + 1000}"
         SYSTEM_TESTS_DOCKER_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
+        VEGA_CORE_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
+        DATA_NODE_IMAGE_TAG = "develop"
         VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_VALIDATOR_NODE_COUNT}"
         NON_VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT}"
         TEST_FUNCTION = "${params.SYSTEM_TESTS_TEST_FUNCTION}"
@@ -60,6 +63,14 @@ pipeline {
                                 versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
                                 version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
                             }
+                        }
+                    }
+                }
+                stage('data-node') {
+                    options { retry(3) }
+                    steps {
+                        dir('data-node') {
+                            git branch: "${params.DATA_NODE_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/data-node.git'
                         }
                     }
                 }
