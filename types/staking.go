@@ -33,6 +33,7 @@ type StakingEvent struct {
 	Amount      *num.Uint
 	Status      StakingEventStatus
 	FinalizedAt int64
+	TxHash      string
 }
 
 func (s *StakingEvent) IntoProto() *eventspb.StakingEvent {
@@ -44,6 +45,7 @@ func (s *StakingEvent) IntoProto() *eventspb.StakingEvent {
 		Amount:      num.UintToString(s.Amount),
 		Status:      s.Status,
 		FinalizedAt: s.FinalizedAt,
+		TxHash:      s.TxHash,
 	}
 }
 
@@ -87,6 +89,7 @@ func (s *StakeDeposited) IntoStakingEvent() *StakingEvent {
 		TS:     s.BlockTime,
 		Party:  s.VegaPubKey,
 		Amount: s.Amount.Clone(),
+		TxHash: s.TxID,
 	}
 }
 
@@ -130,5 +133,6 @@ func (s *StakeRemoved) IntoStakingEvent() *StakingEvent {
 		TS:     s.BlockTime,
 		Party:  s.VegaPubKey,
 		Amount: s.Amount.Clone(),
+		TxHash: s.TxID,
 	}
 }
