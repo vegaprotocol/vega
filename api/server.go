@@ -106,6 +106,9 @@ func NewGRPCServer(
 	depositService *plugins.Deposit,
 	marketDepthService *subscribers.MarketDepthBuilder,
 	netParamsService *netparams.Service,
+	nodeService *nodes.Service,
+	epochService *epochs.Service,
+	delegationService *delegations.Service,
 	rewardsService *subscribers.RewardCounters,
 ) *GRPCServer {
 	// setup logger
