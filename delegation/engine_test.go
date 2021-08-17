@@ -1356,6 +1356,7 @@ func testGetValidatorsSuccessWithSelfDelegation(t *testing.T) {
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 	testEngine.stakingAccounts.partyToStake["node1"] = num.NewUint(1000)
 	testEngine.stakingAccounts.partyToStake["node2"] = num.NewUint(2000)
+	testEngine.engine.OnMaxDelegationPerNodeChanged(context.Background(), num.NewUint(10000))
 
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	testEngine.engine.Delegate(context.Background(), "node1", "node1", num.NewUint(100))
