@@ -3,8 +3,10 @@ package types
 import (
 	"bytes"
 
-	"code.vegaprotocol.io/protos/vega"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/crypto"
+
+	"github.com/golang/protobuf/proto"
 )
 
 type CheckpointName string
@@ -28,23 +30,23 @@ type Checkpoint struct {
 	NetworkParameters []byte
 }
 
-func NewSnapshotFromProto(ps *vega.Snapshot) *Snapshot {
+func NewSnapshotFromProto(ps *snapshot.Snapshot) *Snapshot {
 	return &Snapshot{
 		State: ps.State,
 		Hash:  ps.Hash,
 	}
 }
 
-func (s Snapshot) IntoProto() *vega.Snapshot {
-	return &vega.Snapshot{
+func (s Snapshot) IntoProto() *snapshot.Snapshot {
+	return &snapshot.Snapshot{
 		Hash:  s.Hash,
 		State: s.State,
 	}
 }
 
 func (s Snapshot) GetCheckpoint() (*Checkpoint, error) {
-	pc := &vega.Checkpoint{}
-	if err := vega.Unmarshal(s.State, pc); err != nil {
+	pc := &snapshot.Checkpoint{}
+	if err := proto.Unmarshal(s.State, pc); err != nil {
 		return nil, err
 	}
 	cp := NewCheckpointFromProto(pc)
@@ -52,8 +54,8 @@ func (s Snapshot) GetCheckpoint() (*Checkpoint, error) {
 }
 
 func (s *Snapshot) SetState(state []byte) error {
-	cp := &vega.Checkpoint{}
-	if err := vega.Unmarshal(state, cp); err != nil {
+	cp := &snapshot.Checkpoint{}
+	if err := proto.Unmarshal(state, cp); err != nil {
 		return err
 	}
 	c := NewCheckpointFromProto(cp)
@@ -63,7 +65,7 @@ func (s *Snapshot) SetState(state []byte) error {
 }
 
 func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
-	b, err := vega.Marshal(cp.IntoProto())
+	b, err := proto.Marshal(cp.IntoProto())
 	if err != nil {
 		return err
 	}
@@ -81,7 +83,7 @@ func (s Snapshot) IsValid() bool {
 	return bytes.Equal(crypto.Hash(cp.HashBytes()), s.Hash)
 }
 
-func NewCheckpointFromProto(pc *vega.Checkpoint) *Checkpoint {
+func NewCheckpointFromProto(pc *snapshot.Checkpoint) *Checkpoint {
 	return &Checkpoint{
 		Governance:        pc.Governance,
 		Assets:            pc.Assets,
@@ -90,8 +92,8 @@ func NewCheckpointFromProto(pc *vega.Checkpoint) *Checkpoint {
 	}
 }
 
-func (c Checkpoint) IntoProto() *vega.Checkpoint {
-	return &vega.Checkpoint{
+func (c Checkpoint) IntoProto() *snapshot.Checkpoint {
+	return &snapshot.Checkpoint{
 		Governance:        c.Governance,
 		Assets:            c.Assets,
 		Collateral:        c.Collateral,

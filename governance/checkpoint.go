@@ -2,8 +2,11 @@ package governance
 
 import (
 	"code.vegaprotocol.io/protos/vega"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/vegatime"
+
+	"github.com/golang/protobuf/proto"
 )
 
 func (e *Engine) Name() types.CheckpointName {
@@ -14,15 +17,15 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	if len(e.enactedProposals) == 0 {
 		return nil, nil
 	}
-	snap := &vega.Proposals{
+	snap := &snapshot.Proposals{
 		Proposals: e.getSnapshotProposals(),
 	}
-	return vega.Marshal(snap)
+	return proto.Marshal(snap)
 }
 
 func (e *Engine) Load(data []byte) error {
-	snap := &vega.Proposals{}
-	if err := vega.Unmarshal(data, snap); err != nil {
+	snap := &snapshot.Proposals{}
+	if err := proto.Unmarshal(data, snap); err != nil {
 		return err
 	}
 	// just make sure the time is set

@@ -5,7 +5,10 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/protos/vega"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
+
+	"github.com/golang/protobuf/proto"
 )
 
 type vidx struct {
@@ -19,7 +22,7 @@ func (s *Store) Name() types.CheckpointName {
 
 func (s *Store) Checkpoint() ([]byte, error) {
 	s.mu.RLock()
-	params := vega.NetParams{
+	params := snapshot.NetParams{
 		Params: make([]*vega.NetworkParameter, 0, len(s.store)),
 	}
 	keys := make([]vidx, 0, len(s.store))
@@ -48,12 +51,12 @@ func (s *Store) Checkpoint() ([]byte, error) {
 			Value: vals[k.idx],
 		})
 	}
-	return vega.Marshal(&params)
+	return proto.Marshal(&params)
 }
 
 func (s *Store) Load(data []byte) error {
-	params := &vega.NetParams{}
-	if err := vega.Unmarshal(data, params); err != nil {
+	params := &snapshot.NetParams{}
+	if err := proto.Unmarshal(data, params); err != nil {
 		return err
 	}
 	np := make(map[string]string, len(params.Params))

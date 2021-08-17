@@ -4,10 +4,12 @@ import (
 	"context"
 	"sort"
 
-	vpb "code.vegaprotocol.io/protos/vega"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+
+	"github.com/golang/protobuf/proto"
 )
 
 func (e *Engine) Name() types.CheckpointName {
@@ -15,10 +17,10 @@ func (e *Engine) Name() types.CheckpointName {
 }
 
 func (e *Engine) Checkpoint() ([]byte, error) {
-	msg := &vpb.Collateral{
+	msg := &snapshot.Collateral{
 		Balances: e.getSnapshotBalances(),
 	}
-	ret, err := vpb.Marshal(msg)
+	ret, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
@@ -26,8 +28,8 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 }
 
 func (e *Engine) Load(checkpoint []byte) error {
-	msg := vpb.Collateral{}
-	if err := vpb.Unmarshal(checkpoint, &msg); err != nil {
+	msg := snapshot.Collateral{}
+	if err := proto.Unmarshal(checkpoint, &msg); err != nil {
 		return err
 	}
 	for _, balance := range msg.Balances {
@@ -52,9 +54,9 @@ func (e *Engine) Load(checkpoint []byte) error {
 }
 
 // get all balances for snapshot
-func (e *Engine) getSnapshotBalances() []*vpb.AssetBalance {
+func (e *Engine) getSnapshotBalances() []*snapshot.AssetBalance {
 	parties := make([]string, 0, len(e.partiesAccs))
-	pbal := make(map[string][]*vpb.AssetBalance, len(e.partiesAccs))
+	pbal := make(map[string][]*snapshot.AssetBalance, len(e.partiesAccs))
 	entries := 0
 	for party, accs := range e.partiesAccs {
 		assets := make([]string, 0, len(accs))
@@ -82,20 +84,20 @@ func (e *Engine) getSnapshotBalances() []*vpb.AssetBalance {
 			continue
 		}
 		entries += ln
-		pbal[party] = make([]*vpb.AssetBalance, 0, len(assets))
+		pbal[party] = make([]*snapshot.AssetBalance, 0, len(assets))
 		parties = append(parties, party)
 		// sort by asset -> each party will have their balances appended in alphabetic order
 		sort.Strings(assets)
 		for _, a := range assets {
 			bal := balances[a]
-			pbal[party] = append(pbal[party], &vpb.AssetBalance{
+			pbal[party] = append(pbal[party], &snapshot.AssetBalance{
 				Party:   party,
 				Asset:   a,
 				Balance: bal.String(),
 			})
 		}
 	}
-	ret := make([]*vpb.AssetBalance, 0, entries)
+	ret := make([]*snapshot.AssetBalance, 0, entries)
 	sort.Strings(parties)
 	for _, party := range parties {
 		ret = append(ret, pbal[party]...)
