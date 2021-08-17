@@ -35,6 +35,21 @@ func (m *MockCheckpoint) EXPECT() *MockCheckpointMockRecorder {
 	return m.recorder
 }
 
+// BalanceCheckpoint mocks base method
+func (m *MockCheckpoint) BalanceCheckpoint() (*types.Snapshot, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BalanceCheckpoint")
+	ret0, _ := ret[0].(*types.Snapshot)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BalanceCheckpoint indicates an expected call of BalanceCheckpoint
+func (mr *MockCheckpointMockRecorder) BalanceCheckpoint() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceCheckpoint", reflect.TypeOf((*MockCheckpoint)(nil).BalanceCheckpoint))
+}
+
 // Checkpoint mocks base method
 func (m *MockCheckpoint) Checkpoint(arg0 time.Time) (*types.Snapshot, error) {
 	m.ctrl.T.Helper()
