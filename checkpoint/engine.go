@@ -1,14 +1,18 @@
 package checkpoint
 
 import (
+	"bytes"
 	"errors"
 
+	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/types"
 )
 
 var (
 	ErrUnknownCheckpointName      = errors.New("component for checkpoint not registered")
 	ErrComponentWithDuplicateName = errors.New("multiple components with the same name")
+	ErrSnapshotHashIncorrect      = errors.New("the hash and snapshot data do not match")
 
 	cpOrder = []types.CheckpointName{
 		types.NetParamsCheckpoint,  // net params should go first
@@ -72,50 +76,57 @@ func (e *Engine) addComponent(comp State) error {
 	return nil
 }
 
-func (e *Engine) Checkpoint() (*types.Checkpoint, error) {
-	return nil, nil
-}
-
-func (e *Engine) GetCheckpoints() (map[string]Snapshot, error) {
-	ret := make(map[string]Snapshot, len(e.components))
+// Checkpoint returns the overall checkpoint
+func (e *Engine) Checkpoint() ([]byte, error) {
+	cp := &types.Checkpoint{}
 	for _, k := range cpOrder {
-		// ensure we access components in the same order all the time
-		c, ok := e.components[k]
-		if !ok {
-			continue
-		}
-		data, err := c.Checkpoint()
-		if err != nil {
-			return nil, err
-		}
-		sk := string(k)
-		ret[sk] = Snapshot{
-			name: sk,
-			data: data,
-		}
-	}
-	return ret, nil
-}
-
-// Load - loads checkpoint data for all components by name
-func (e *Engine) Load(checkpoints map[string]Snapshot) error {
-	// first ensure that all keys exist
-	for k := range checkpoints {
-		name := types.CheckpointName(k)
-		if _, ok := e.components[name]; !ok {
-			return ErrUnknownCheckpointName
-		}
-	}
-	for _, k := range cpOrder {
-		snapshot, ok := checkpoints[string(k)]
-		if !ok {
-			continue // no checkpoint data
-		}
 		comp, ok := e.components[k]
 		if !ok {
 			continue
 		}
-		if err := comp.Load(snapshot.data); err != nil {
+		data, err := comp.Checkpoint()
+		if err != nil {
+			return nil, err
+		}
+		// set the correct field
+		cp.Set(k, data)
+	}
+	b, err := vega.Marshal(cp.IntoProto())
+	if err != nil {
+		return nil, err
+	}
+
+	return vega.Marshal(&vega.Snapshot{
+		State: b,
+		Hash:  crypto.Hash(cp.HashBytes()),
+	})
+}
+
+// Load - loads checkpoint data for all components by name
+func (e *Engine) Load(data []byte) error {
+	snap := &vega.Snapshot{}
+	if err := vega.Unmarshal(data, snap); err != nil {
+		return err
+	}
+	vcp := &vega.Checkpoint{}
+	if err := vega.Unmarshal(snap.State, vcp); err != nil {
+		return err
+	}
+	cp := types.NewCheckpointFromProto(vcp)
+	// check the hash
+	if hash := crypto.Hash(cp.HashBytes()); bytes.Compare(hash, snap.Hash) != 0 {
+		return ErrSnapshotHashIncorrect
+	}
+	for _, k := range cpOrder {
+		cpData := cp.Get(k)
+		if len(cpData) == 0 {
+			continue
+		}
+		c, ok := e.components[k]
+		if !ok {
+			return ErrUnknownCheckpointName // data cannot be restored
+		}
+		if err := c.Load(cpData); err != nil {
 			return err
 		}
 	}

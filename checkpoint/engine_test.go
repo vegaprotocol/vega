@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/checkpoint/mocks"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
@@ -38,6 +40,7 @@ func TestGetCheckpoints(t *testing.T) {
 func TestLoadCheckpoints(t *testing.T) {
 	t.Run("test loading checkpoints after generating them - success", testLoadCheckpoints)
 	t.Run("load non-registered components", testLoadMissingCheckpoint)
+	t.Run("load checkpoint with invalid hash", testLoadInvalidHash)
 	t.Run("load sparse checkpoint", testLoadSparse)
 	t.Run("error loading checkpoint", testLoadError)
 }
@@ -62,11 +65,13 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	checkpoints, err := eng.GetCheckpoints()
+	raw, err := eng.Checkpoint()
 	require.NoError(t, err)
-	for k, cp := range checkpoints {
-		require.EqualValues(t, data[types.CheckpointName(k)], cp.Data())
+	// now to check if the checkpoint contains the expected data
+	for k, c := range components {
+		c.EXPECT().Load(data[k]).Times(1).Return(nil)
 	}
+	require.NoError(t, eng.Load(raw))
 }
 
 func testGetCheckpointsAdd(t *testing.T) {
@@ -88,11 +93,13 @@ func testGetCheckpointsAdd(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	checkpoints, err := eng.GetCheckpoints()
+	raw, err := eng.Checkpoint()
 	require.NoError(t, err)
-	for k, cp := range checkpoints {
-		require.EqualValues(t, data[types.CheckpointName(k)], cp.Data())
+	// now to check if the checkpoint contains the expected data
+	for k, c := range components {
+		c.EXPECT().Load(data[k]).Times(1).Return(nil)
 	}
+	require.NoError(t, eng.Load(raw))
 }
 
 func testAddDuplicate(t *testing.T) {
@@ -143,11 +150,9 @@ func testLoadCheckpoints(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	checkpoints, err := eng.GetCheckpoints()
+	snapshot, err := eng.Checkpoint()
 	require.NoError(t, err)
-	for k, cp := range checkpoints {
-		require.EqualValues(t, data[types.CheckpointName(k)], cp.Data())
-	}
+	require.NotEmpty(t, snapshot)
 	// create new components to load data in to
 	wComps := map[types.CheckpointName]*wrappedMock{
 		types.GovernanceCheckpoint: wrapMock(mocks.NewMockState(eng.ctrl)),
@@ -155,16 +160,15 @@ func testLoadCheckpoints(t *testing.T) {
 	}
 	for k, c := range wComps {
 		c.EXPECT().Name().Times(1).Return(k)
-		cp := checkpoints[string(k)]
-		c.EXPECT().Load(cp.Data()).Times(1).Return(nil)
+		c.EXPECT().Load(data[k]).Times(1).Return(nil)
 	}
 	newEng, err := checkpoint.New(wComps[types.GovernanceCheckpoint], wComps[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	require.NotNil(t, newEng)
-	require.NoError(t, newEng.Load(checkpoints))
-	for k, cp := range checkpoints {
-		wc := wComps[types.CheckpointName(k)]
-		require.EqualValues(t, cp.Data(), wc.data)
+	require.NoError(t, newEng.Load(snapshot))
+	for k, exp := range data {
+		wc := wComps[k]
+		require.EqualValues(t, exp, wc.data)
 	}
 }
 
@@ -172,13 +176,52 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
-	k := string(types.AssetsCheckpoint)
-	checkpoints := map[string]checkpoint.Snapshot{
-		k: checkpoint.Snapshot{},
+
+	// create checkpoint data
+	cp := types.Checkpoint{
+		Assets: []byte("assets"),
 	}
-	err := eng.Load(checkpoints)
+	b, err := vega.Marshal(cp.IntoProto())
+	require.NoError(t, err)
+	snap := &vega.Snapshot{
+		State: b,
+		Hash:  crypto.Hash(cp.HashBytes()),
+	}
+	data, err := vega.Marshal(snap)
+	err = eng.Load(data)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrUnknownCheckpointName, err)
+	// now try to tamper with the data itself in such a way that the has no longer matches:
+	cp.Assets = []byte("foobar")
+	b, err = vega.Marshal(cp.IntoProto())
+	require.NoError(t, err)
+	snap.State = b
+	data, err = vega.Marshal(snap)
+	err = eng.Load(data)
+	require.Error(t, err)
+	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
+}
+
+func testLoadInvalidHash(t *testing.T) {
+	t.Parallel()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	cp := types.Checkpoint{
+		Assets: []byte("assets"),
+	}
+	snap := &vega.Snapshot{
+		Hash: crypto.Hash(cp.HashBytes()),
+	}
+	// update data -> hash is invalid
+	cp.Assets = []byte("foobar")
+	b, err := vega.Marshal(cp.IntoProto())
+	require.NoError(t, err)
+	snap.State = b
+	data, err := vega.Marshal(snap)
+	err = eng.Load(data)
+	require.Error(t, err)
+	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
 }
 
 func testLoadSparse(t *testing.T) {
@@ -199,11 +242,11 @@ func testLoadSparse(t *testing.T) {
 	}
 	c := components[types.GovernanceCheckpoint]
 	c.EXPECT().Checkpoint().Times(1).Return(data[types.GovernanceCheckpoint], nil)
-	checkpoints, err := eng.GetCheckpoints()
+	snapshot, err := eng.Checkpoint()
 	require.NoError(t, err)
 	require.NoError(t, eng.Add(components[types.AssetsCheckpoint])) // load another component, not part of the checkpoints map
 	c.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
-	require.NoError(t, eng.Load(checkpoints))
+	require.NoError(t, eng.Load(snapshot))
 }
 
 func testLoadError(t *testing.T) {
@@ -230,12 +273,11 @@ func testLoadError(t *testing.T) {
 		types.GovernanceCheckpoint: errors.New("random error"),
 		types.AssetsCheckpoint:     nil, // we always load checkpoints in order, so bar will go first, and should not return an error
 	}
-	checkpoints, err := eng.GetCheckpoints()
+	checkpoints, err := eng.Checkpoint()
 	require.NoError(t, err)
-	for k, cp := range checkpoints {
-		name := types.CheckpointName(k)
-		c := components[name]
-		c.EXPECT().Load(cp.Data()).Times(1).Return(ret[name])
+	for k, r := range ret {
+		c := components[k]
+		c.EXPECT().Load(data[k]).Times(1).Return(r)
 	}
 	err = eng.Load(checkpoints)
 	require.Error(t, err)
@@ -266,7 +308,7 @@ func testGetCheckpointsErr(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], errs[k])
 	}
-	checkpoints, err := eng.GetCheckpoints()
+	checkpoints, err := eng.Checkpoint()
 	require.Nil(t, checkpoints)
 	require.Error(t, err)
 	require.Equal(t, errs[types.GovernanceCheckpoint], err)
