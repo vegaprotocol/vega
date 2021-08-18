@@ -30,12 +30,12 @@ func (opts *updateCmd) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := rootCmd.PassphraseFile.Get("node wallet")
+	pass, err := genesisCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, rootCmd.RootPath, pass)
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
 	if err != nil {
 		return err
 	}
