@@ -336,7 +336,6 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 	}, nil
 }
 
-<<<<<<< HEAD
 func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Delegations")()
 
@@ -370,8 +369,6 @@ func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.Dele
 	}, nil
 }
 
-=======
->>>>>>> Removed duplicate functions
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LiquidityProvisions")()
 	lps, err := t.LiquidityService.Get(req.Party, req.Market)
