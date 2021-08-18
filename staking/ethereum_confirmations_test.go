@@ -19,6 +19,7 @@ func TestEthereumConfirmations(t *testing.T) {
 	ethClient := mocks.NewMockEthereumClientConfirmations(ctrl)
 	tim := mocks.NewMockTime(ctrl)
 	ethCfns := staking.NewEthereumConfirmations(ethClient, tim)
+	defer ctrl.Finish()
 
 	ethCfns.OnEthereumConfigUpdate(&vgproto.EthereumConfig{
 		Confirmations: 30,

@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -93,6 +94,10 @@ func (s *StakeDeposited) IntoStakingEvent() *StakingEvent {
 	}
 }
 
+func (s StakeDeposited) String() string {
+	return fmt.Sprintf("%#v", s)
+}
+
 type StakeRemoved struct {
 	BlockNumber, LogIndex uint64
 	TxID                  string // hash
@@ -124,6 +129,10 @@ func StakeRemovedFromProto(
 		Amount:          amount,
 		BlockTime:       s.BlockTime,
 	}, nil
+}
+
+func (s StakeRemoved) String() string {
+	return fmt.Sprintf("%#v", s)
 }
 
 func (s *StakeRemoved) IntoStakingEvent() *StakingEvent {

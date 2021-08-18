@@ -12,12 +12,14 @@ import (
 )
 
 var (
-	ErrNoStakeDepositedEventFound   = errors.New("no stake deposited event found")
-	ErrNoStakeRemovedEventFound     = errors.New("no stake removed event found")
-	ErrNotAnEthereumConfig          = errors.New("not an ethereum config")
-	ErrMissingConfirmations         = errors.New("missing confirmations")
-	ErrInvalidStakeRemovedEventID   = errors.New("invalid stake removed event ID")
-	ErrInvalidStakeDepositedEventID = errors.New("invalid stake deposited event ID")
+	ErrNoStakeDepositedEventFound    = errors.New("no stake deposited event found")
+	ErrNoStakeRemovedEventFound      = errors.New("no stake removed event found")
+	ErrNotAnEthereumConfig           = errors.New("not an ethereum config")
+	ErrMissingConfirmations          = errors.New("missing confirmations")
+	ErrInvalidStakeRemovedEventID    = errors.New("invalid stake removed event ID")
+	ErrInvalidStakeDepositedEventID  = errors.New("invalid stake deposited event ID")
+	ErrDuplicatedStakeDepositedEvent = errors.New("duplicated stake deposited event")
+	ErrDuplicatedStakeRemovedEvent   = errors.New("duplicated stake deposited event")
 )
 
 // Witness provide foreign chain resources validations
@@ -58,6 +60,7 @@ type StakeVerifier struct {
 	pendingSDs      []*pendingSD
 	pendingSRs      []*pendingSR
 	finalizedEvents []*types.StakingEvent
+	ids             map[string]struct{}
 }
 
 type pendingSD struct {
@@ -95,11 +98,33 @@ func NewStakeVerifier(
 		accs:    accs,
 		witness: witness,
 		ocv:     onChainVerifier,
+		broker:  broker,
+		ids:     map[string]struct{}{},
 	}
+}
+
+func (s *StakeVerifier) addEventID(id string) {
+	s.ids[id] = struct{}{}
+}
+
+func (s *StakeVerifier) removeEventID(id string) {
+	delete(s.ids, id)
+}
+
+func (s *StakeVerifier) eventIDExists(id string) bool {
+	_, ok := s.ids[id]
+	return ok
 }
 
 func (s *StakeVerifier) ProcessStakeRemoved(
 	ctx context.Context, event *types.StakeRemoved) error {
+	if s.eventIDExists(event.ID) {
+		s.log.Error("stake removed event already exists",
+			logging.String("event", event.String()))
+		return ErrDuplicatedStakeRemovedEvent
+	}
+	s.addEventID(event.ID)
+
 	pending := &pendingSR{
 		StakeRemoved: event,
 		check:        func() error { return s.ocv.CheckStakeRemoved(event) },
@@ -116,6 +141,13 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 
 func (s *StakeVerifier) ProcessStakeDeposited(
 	ctx context.Context, event *types.StakeDeposited) error {
+	if s.eventIDExists(event.ID) {
+		s.log.Error("stake deposited event already exists",
+			logging.String("event", event.String()))
+		return ErrDuplicatedStakeDepositedEvent
+	}
+	s.addEventID(event.ID)
+
 	pending := &pendingSD{
 		StakeDeposited: event,
 		check:          func() error { return s.ocv.CheckStakeDeposited(event) },
@@ -179,8 +211,8 @@ func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
 
 func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
 	s.currentTime = t
-
 	for _, evt := range s.finalizedEvents {
+		s.removeEventID(evt.ID)
 		if evt.Status == types.StakingEventStatusAccepted {
 			s.accs.AddEvent(ctx, evt)
 		}
