@@ -59,7 +59,7 @@ type StakeVerifier struct {
 
 	pendingSDs      []*pendingSD
 	pendingSRs      []*pendingSR
-	finalizedEvents []*types.StakingEvent
+	finalizedEvents []*types.StakeLinking
 	ids             map[string]struct{}
 }
 
@@ -131,9 +131,9 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 	}
 
 	s.pendingSRs = append(s.pendingSRs, pending)
-	evt := pending.IntoStakingEvent()
-	evt.Status = types.StakingEventStatusPending
-	s.broker.Send(events.NewStakingEvent(ctx, *evt))
+	evt := pending.IntoStakeLinking()
+	evt.Status = types.StakeLinkingStatusPending
+	s.broker.Send(events.NewStakeLinking(ctx, *evt))
 
 	return s.witness.StartCheck(
 		pending, s.onEventVerified, s.currentTime.Add(2*time.Hour))
@@ -155,9 +155,9 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 
 	s.pendingSDs = append(s.pendingSDs, pending)
 
-	evt := pending.IntoStakingEvent()
-	evt.Status = types.StakingEventStatusPending
-	s.broker.Send(events.NewStakingEvent(ctx, *evt))
+	evt := pending.IntoStakeLinking()
+	evt.Status = types.StakeLinkingStatusPending
+	s.broker.Send(events.NewStakeLinking(ctx, *evt))
 
 	return s.witness.StartCheck(
 		pending, s.onEventVerified, s.currentTime.Add(2*time.Hour))
@@ -184,15 +184,15 @@ func (s *StakeVerifier) removePendingStakeRemoved(id string) error {
 }
 
 func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
-	var evt *types.StakingEvent
+	var evt *types.StakeLinking
 	switch pending := event.(type) {
 	case *pendingSD:
-		evt = pending.IntoStakingEvent()
+		evt = pending.IntoStakeLinking()
 		if err := s.removePendingStakeDeposited(evt.ID); err != nil {
 			s.log.Error("could not remove pending stake deposited event", logging.Error(err))
 		}
 	case *pendingSR:
-		evt = pending.IntoStakingEvent()
+		evt = pending.IntoStakeLinking()
 		if err := s.removePendingStakeRemoved(evt.ID); err != nil {
 			s.log.Error("could not remove pending stake removed event", logging.Error(err))
 		}
@@ -201,9 +201,9 @@ func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
 		return
 	}
 
-	evt.Status = types.StakingEventStatusRejected
+	evt.Status = types.StakeLinkingStatusRejected
 	if ok {
-		evt.Status = types.StakingEventStatusAccepted
+		evt.Status = types.StakeLinkingStatusAccepted
 	}
 	evt.FinalizedAt = s.currentTime.UnixNano()
 	s.finalizedEvents = append(s.finalizedEvents, evt)
@@ -213,10 +213,10 @@ func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
 	s.currentTime = t
 	for _, evt := range s.finalizedEvents {
 		s.removeEventID(evt.ID)
-		if evt.Status == types.StakingEventStatusAccepted {
+		if evt.Status == types.StakeLinkingStatusAccepted {
 			s.accs.AddEvent(ctx, evt)
 		}
-		s.broker.Send(events.NewStakingEvent(ctx, *evt))
+		s.broker.Send(events.NewStakeLinking(ctx, *evt))
 	}
 
 	s.finalizedEvents = nil

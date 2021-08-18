@@ -9,36 +9,36 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type StakingEventType = eventspb.StakingEvent_Type
+type StakeLinkingType = eventspb.StakeLinking_Type
 
 const (
-	StakingEventTypeUnspecified = eventspb.StakingEvent_TYPE_UNSPECIFIED
-	StakingEventTypeDeposited   = eventspb.StakingEvent_TYPE_DEPOSIT
-	StakingEventTypeRemoved     = eventspb.StakingEvent_TYPE_REMOVE
+	StakeLinkingTypeUnspecified StakeLinkingType = eventspb.StakeLinking_TYPE_UNSPECIFIED
+	StakeLinkingTypeDeposited                    = eventspb.StakeLinking_TYPE_LINK
+	StakeLinkingTypeRemoved                      = eventspb.StakeLinking_TYPE_UNLINK
 )
 
-type StakingEventStatus = eventspb.StakingEvent_Status
+type StakeLinkingStatus = eventspb.StakeLinking_Status
 
 const (
-	StakingEventStatusUnspecified = eventspb.StakingEvent_STATUS_UNSPECIFIED
-	StakingEventStatusPending     = eventspb.StakingEvent_STATUS_PENDING
-	StakingEventStatusAccepted    = eventspb.StakingEvent_STATUS_ACCEPTED
-	StakingEventStatusRejected    = eventspb.StakingEvent_STATUS_REJECTED
+	StakeLinkingStatusUnspecified StakeLinkingStatus = eventspb.StakeLinking_STATUS_UNSPECIFIED
+	StakeLinkingStatusPending                        = eventspb.StakeLinking_STATUS_PENDING
+	StakeLinkingStatusAccepted                       = eventspb.StakeLinking_STATUS_ACCEPTED
+	StakeLinkingStatusRejected                       = eventspb.StakeLinking_STATUS_REJECTED
 )
 
-type StakingEvent struct {
+type StakeLinking struct {
 	ID          string
-	Type        StakingEventType
+	Type        StakeLinkingType
 	TS          int64
 	Party       string
 	Amount      *num.Uint
-	Status      StakingEventStatus
+	Status      StakeLinkingStatus
 	FinalizedAt int64
 	TxHash      string
 }
 
-func (s *StakingEvent) IntoProto() *eventspb.StakingEvent {
-	return &eventspb.StakingEvent{
+func (s *StakeLinking) IntoProto() *eventspb.StakeLinking {
+	return &eventspb.StakeLinking{
 		Id:          s.ID,
 		Type:        s.Type,
 		Ts:          s.TS,
@@ -83,10 +83,10 @@ func StakeDepositedFromProto(
 	}, nil
 }
 
-func (s *StakeDeposited) IntoStakingEvent() *StakingEvent {
-	return &StakingEvent{
+func (s *StakeDeposited) IntoStakeLinking() *StakeLinking {
+	return &StakeLinking{
 		ID:     s.ID,
-		Type:   StakingEventTypeDeposited,
+		Type:   StakeLinkingTypeDeposited,
 		TS:     s.BlockTime,
 		Party:  s.VegaPubKey,
 		Amount: s.Amount.Clone(),
@@ -135,10 +135,10 @@ func (s StakeRemoved) String() string {
 	return fmt.Sprintf("%#v", s)
 }
 
-func (s *StakeRemoved) IntoStakingEvent() *StakingEvent {
-	return &StakingEvent{
+func (s *StakeRemoved) IntoStakeLinking() *StakeLinking {
+	return &StakeLinking{
 		ID:     s.ID,
-		Type:   StakingEventTypeRemoved,
+		Type:   StakeLinkingTypeRemoved,
 		TS:     s.BlockTime,
 		Party:  s.VegaPubKey,
 		Amount: s.Amount.Clone(),

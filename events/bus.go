@@ -94,7 +94,7 @@ const (
 	EpochUpdate
 	DelegationBalanceEvent
 	PendingDelegationBalanceEvent
-	StakingEvent
+	StakeLinkingEvent
 	ValidatorUpdateEvent
 	RewardPayoutEvent
 )
@@ -143,7 +143,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT:        RewardPayoutEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:         DelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PENDING_DELEGATION_BALANCE: PendingDelegationBalanceEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:              StakingEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:              StakeLinkingEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:           ValidatorUpdateEvent,
 	}
 
@@ -180,7 +180,7 @@ var (
 		EpochUpdate:                   eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE,
 		DelegationBalanceEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE,
 		PendingDelegationBalanceEvent: eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
-		StakingEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
+		StakeLinkingEvent:             eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING,
 		ValidatorUpdateEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE,
 		RewardPayoutEvent:             eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT,
 	}
@@ -219,7 +219,7 @@ var (
 		EpochUpdate:                   "EpochUpdate",
 		DelegationBalanceEvent:        "DelegationBalanceEvent",
 		PendingDelegationBalanceEvent: "PendingDelegationBalanceEvent",
-		StakingEvent:                  "StakingEvent",
+		StakeLinkingEvent:             "StakeLinkingEvent",
 		ValidatorUpdateEvent:          "ValidatorUpdateEvent",
 		RewardPayoutEvent:             "RewardPayoutEvent",
 	}

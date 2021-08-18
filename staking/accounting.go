@@ -38,7 +38,7 @@ func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
 	}
 }
 
-func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakingEvent) {
+func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	acc, ok := a.accounts[evt.Party]
 	if !ok {
 		acc = NewStakingAccount(evt.Party)
