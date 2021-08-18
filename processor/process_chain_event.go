@@ -18,7 +18,7 @@ var (
 )
 
 func (app *App) processChainEvent(
-	ctx context.Context, ce *commandspb.ChainEvent, pubkey []byte, id string,
+	ctx context.Context, ce *commandspb.ChainEvent, pubkey string, id string,
 ) error {
 	// first verify the event was emitted by a validator
 	if !app.top.Exists(pubkey) {

@@ -37,10 +37,10 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
 type ValidatorTopology interface {
-	Exists([]byte) bool
+	Exists(string) bool
 	Len() int
 	IsValidator() bool
-	SelfVegaPubKey() []byte
+	SelfVegaPubKey() string
 }
 
 type Resource interface {
@@ -161,9 +161,10 @@ func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) err
 	}
 
 	// ensure the node is a validator
-	if !w.top.Exists(nv.PubKey) {
+	hexPubKey := hex.EncodeToString(nv.PubKey)
+	if !w.top.Exists(hexPubKey) {
 		w.log.Error("non-validator node tried to register node vote",
-			logging.String("pubkey", hex.EncodeToString(nv.PubKey)))
+			logging.String("pubkey", hexPubKey))
 		return ErrVoteFromNonValidator
 	}
 
@@ -293,8 +294,9 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 		// if we are a validator, and the resource was validated
 		// then we try to send our vote.
 		if isValidator && state == validated || w.needResend(k) {
+			pubKey, _ := hex.DecodeString(w.top.SelfVegaPubKey())
 			nv := &commandspb.NodeVote{
-				PubKey:    w.top.SelfVegaPubKey(),
+				PubKey:    pubKey,
 				Reference: v.res.GetID(),
 			}
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))

@@ -62,7 +62,7 @@ func checkSignature(tx *commandspb.Transaction) error {
 
 	if len(tx.GetPubKey()) == 0 {
 		return ErrUnsupportedFromValueInTransaction
-	} 
+	}
 	pubKeyOrAddress, err := hex.DecodeString(tx.GetPubKey())
 	if err != nil {
 		return fmt.Errorf("invalid public key, %w", err)
@@ -214,6 +214,10 @@ func (t TxV2) PubKey() []byte {
 		panic("pub key should be hex encoded")
 	}
 	return decodedPubKey
+}
+
+func (t TxV2) PubKeyHex() string {
+	return t.tx.GetPubKey()
 }
 
 func (t TxV2) Party() string {

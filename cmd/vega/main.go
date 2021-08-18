@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"code.vegaprotocol.io/vega/cmd/vega/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
@@ -57,7 +58,7 @@ func Main(ctx context.Context) error {
 	if err := Register(ctx, parser,
 		Faucet,
 		Gateway,
-		Genesis,
+		genesis.Genesis,
 		Init,
 		Node,
 		nodewallet.NodeWallet,

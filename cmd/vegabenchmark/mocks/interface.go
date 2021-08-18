@@ -39,7 +39,7 @@ type Notary interface {
 	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
 	SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error
 	IsSigned(ctx context.Context, id string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
-	AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
+	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination witness_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Witness

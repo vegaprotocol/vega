@@ -5,6 +5,7 @@ import (
 
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 
@@ -128,6 +129,6 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		}
 	}
 
-	out, _ := json.MarshalIndent(g, "  ", "  ")
+	out, _ := vgjson.Prettify(g)
 	return string(out)
 }

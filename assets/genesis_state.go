@@ -80,6 +80,32 @@ var (
 			},
 		},
 	}
+
+	VegaTokenMainNet = AssetDetails{
+		Name:        "VEGA (V2 Test)",
+		Symbol:      "VEGA",
+		TotalSupply: "6499972300000",
+		Decimals:    5,
+		MinLpStake:  "1",
+		Source: &Source{
+			Erc20: &Erc20{
+				ContractAddress: "0xFa521aDcc11925266A518CdE33386FcD9cF2A4A6",
+			},
+		},
+	}
+
+	VegaTokenTestNet = AssetDetails{
+		Name:        "VEGA (V2 Test)",
+		Symbol:      "VEGA",
+		TotalSupply: "6499972300000",
+		Decimals:    5,
+		MinLpStake:  "1",
+		Source: &Source{
+			Erc20: &Erc20{
+				ContractAddress: "0xFa521aDcc11925266A518CdE33386FcD9cF2A4A6",
+			},
+		},
+	}
 )
 
 func DefaultGenesisState() GenesisState {

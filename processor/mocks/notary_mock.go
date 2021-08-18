@@ -35,7 +35,7 @@ func (m *MockNotary) EXPECT() *MockNotaryMockRecorder {
 }
 
 // AddSig mocks base method
-func (m *MockNotary) AddSig(arg0 context.Context, arg1 []byte, arg2 v1.NodeSignature) ([]v1.NodeSignature, bool, error) {
+func (m *MockNotary) AddSig(arg0 context.Context, arg1 string, arg2 v1.NodeSignature) ([]v1.NodeSignature, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddSig", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]v1.NodeSignature)

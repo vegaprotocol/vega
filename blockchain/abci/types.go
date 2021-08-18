@@ -11,6 +11,7 @@ type Tx interface {
 	Command() txn.Command
 	Unmarshal(interface{}) error
 	PubKey() []byte
+	PubKeyHex() string
 	Party() string
 	Hash() []byte
 	Signature() []byte

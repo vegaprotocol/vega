@@ -1,13 +1,14 @@
 package nodewallet
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/fsutil"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
+
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )
@@ -81,11 +82,10 @@ func (opts *generateCmd) Execute(_ []string) error {
 	fmt.Println("generation successful")
 	if len(data) != 0 {
 		fmt.Println("additional data:")
-		buf, err := json.MarshalIndent(data, " ", " ")
+		err := vgjson.PrettyPrint(data)
 		if err != nil {
-			return fmt.Errorf("unable to marshal store: %v", err)
+			return err
 		}
-		fmt.Printf("%v\n", string(buf))
 	}
 
 	return nil
