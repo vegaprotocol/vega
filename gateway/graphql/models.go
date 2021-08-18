@@ -238,6 +238,12 @@ type PositionResolution struct {
 
 func (PositionResolution) IsEvent() {}
 
+// A prepared LiquidityProvision command
+type PreparedLiquidityProvision struct {
+	// The blob to be send to the wallet and to be signed
+	Blob string `json:"blob"`
+}
+
 // Range of valid prices and the associated price monitoring trigger
 type PriceMonitoringBounds struct {
 	// Minimum price that isn't currently breaching the specified price monitoring trigger

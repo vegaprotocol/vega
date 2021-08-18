@@ -549,6 +549,11 @@ type Delegation {
   
   "Epoch of delegation"
 	epoch: Int!
+  "return reward information"
+  rewardDetails(
+    "ID of the party"
+    partyId: ID!
+  ): RewardDetails
 }
 
 "Represents an asset in vega"
@@ -2541,3 +2546,20 @@ type LiquidityProvision {
   reference: String
 }
 
+"A prepared LiquidityProvision command"
+type PreparedLiquidityProvision {
+  "The blob to be send to the wallet and to be signed"
+  blob: String!
+}
+
+"Reward information for a single party"
+type RewardDetails {
+  "The asset for which this reward is associated"
+  AssetId: String!
+  "The total amount of reward received"
+  TotalReward: String!
+  "The amount received in the last distribution round"
+  LastReward: String!
+  "What percentage of the last reward distribution did we receive"
+  LastRewardPercentage: String!
+}
