@@ -1,6 +1,9 @@
 package staking
 
-import "code.vegaprotocol.io/vega/logging"
+import (
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/netparams"
+)
 
 type AllEthereumClient interface {
 	EthereumClient
@@ -13,12 +16,23 @@ func New(
 	broker Broker,
 	tt TimeTicker,
 	witness Witness,
-	ethClient AllEthereumClient) (*Accounting, *StakeVerifier) {
+	ethClient AllEthereumClient,
+	netp *netparams.Store,
+) (*Accounting, *StakeVerifier) {
 
 	accs := NewAccounting(log, cfg, broker)
 	ethCfns := NewEthereumConfirmations(ethClient, nil)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
 	sakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)
+
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.BlockchainsEthereumConfig,
+		Watcher: ethCfns.OnEthereumConfigUpdate,
+	})
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.BlockchainsEthereumConfig,
+		Watcher: ocv.OnEthereumConfigUpdate,
+	})
 
 	return accs, sakeV
 }
