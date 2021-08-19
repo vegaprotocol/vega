@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
@@ -197,13 +198,18 @@ type LiquidityService interface {
 	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
 }
 
-// ValidatorService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  ValidatorService
-type ValidatorService interface {
+// NodeService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_service_mock.go -package mocks code.vegaprotocol.io/data-node/api NodeService
+type NodeService interface {
 	GetNodeData(ctx context.Context) (*pbtypes.NodeData, error)
 	GetNodes(ctx context.Context) ([]*pbtypes.Node, error)
 	GetNodeByID(ctx context.Context, id string) (*pbtypes.Node, error)
-	GetEpochByID(ctx context.Context, id uint64) (*pbtypes.Epoch, error)
+}
+
+// EpochService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_service_mock.go -package mocks code.vegaprotocol.io/data-node/api EpochService
+type EpochService interface {
+	GetEpochByID(ctx context.Context, id string) (*pbtypes.Epoch, error)
 	GetEpoch(ctx context.Context) (*pbtypes.Epoch, error)
 }
 
@@ -231,7 +237,8 @@ type tradingDataService struct {
 	NetParamsService        NetParamsService
 	LiquidityService        LiquidityService
 	oracleService           OracleService
-	validatorService        ValidatorService
+	nodeService             NodeService
+	epochService            EpochService
 }
 
 func (t *tradingDataService) Delegations(ctx context.Context, request *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
@@ -239,22 +246,78 @@ func (t *tradingDataService) Delegations(ctx context.Context, request *protoapi.
 }
 
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetEpoch")()
+
+	var epoch *pbtypes.Epoch
+	var err error
+
+	if req.GetId() == 0 {
+		epoch, err = t.epochService.GetEpoch(ctx)
+	} else {
+		epoch, err = t.epochService.GetEpochByID(ctx, strconv.FormatUint(req.GetId(), 10))
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetEpochResponse{
+		Epoch: epoch,
+	}, nil
+}
+
+func (t *tradingDataService) Checkpoints(ctx context.Context, in *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (t *tradingDataService) Delegations(ctx context.Context, in *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
 	return nil, errors.New("not implemented")
 }
 
 // Get data of current node
-func (t *tradingDataService) GetNodeData(context.Context, *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
-	return nil, errors.New("not implemented")
+func (t *tradingDataService) GetNodeData(ctx context.Context, req *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeData")()
+
+	nodeData, err := t.nodeService.GetNodeData(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNodeDataResponse{
+		NodeData: nodeData,
+	}, nil
 }
 
 // List all known network nodes
-func (t *tradingDataService) GetNodes(context.Context, *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
-	return nil, errors.New("not implemented")
+func (t *tradingDataService) GetNodes(ctx context.Context, req *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodes")()
+
+	nodes, err := t.nodeService.GetNodes(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNodesResponse{
+		Nodes: nodes,
+	}, nil
 }
 
 // Get a specific node by ID
-func (t *tradingDataService) GetNodeByID(context.Context, *protoapi.GetNodeByIDRequest) (*protoapi.GetNodeByIDResponse, error) {
-	return nil, errors.New("not implemented")
+func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetNodeByIDRequest) (*protoapi.GetNodeByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeByID")()
+
+	if req.GetId() == "" {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
+	}
+
+	node, err := t.nodeService.GetNodeByID(ctx, req.GetId())
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNodeByIDResponse{
+		Node: node,
+	}, nil
 }
 
 func (t *tradingDataService) GetRewardDetails(context.Context, *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {

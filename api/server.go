@@ -10,11 +10,13 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
@@ -65,6 +67,8 @@ type GRPCServer struct {
 	oracleService           *oracles.Service
 	tradingProxySvc         *tradingProxyService
 	tradingDataService      *tradingDataService
+	nodeService             *nodes.Service
+	epochService            *epochs.Service
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
@@ -99,6 +103,8 @@ func NewGRPCServer(
 	depositService *plugins.Deposit,
 	marketDepthService *subscribers.MarketDepthBuilder,
 	netParamsService *netparams.Service,
+	nodeService *nodes.Service,
+	epochService *epochs.Service,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -130,6 +136,8 @@ func NewGRPCServer(
 		marketDepthService:       marketDepthService,
 		netParamsService:         netParamsService,
 		oracleService:            oracleService,
+		nodeService:              nodeService,
+		epochService:             epochService,
 		ctx:                      ctx,
 		cfunc:                    cfunc,
 	}
@@ -247,6 +255,8 @@ func (g *GRPCServer) Start(ctx context.Context) error {
 		NetParamsService:        g.netParamsService,
 		LiquidityService:        g.liquidityService,
 		oracleService:           g.oracleService,
+		nodeService:             g.nodeService,
+		epochService:            g.epochService,
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)

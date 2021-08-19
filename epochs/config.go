@@ -1,4 +1,4 @@
-package validators
+package epochs
 
 import (
 	"code.vegaprotocol.io/data-node/config/encoding"
@@ -7,7 +7,7 @@ import (
 
 // namedLogger is the identifier for package and should ideally match the package name
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-const namedLogger = "validators"
+const namedLogger = "epochs"
 
 // Config represent the configuration of the validator service
 type Config struct {

@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
 	"code.vegaprotocol.io/data-node/governance"
@@ -22,6 +23,7 @@ import (
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
@@ -83,26 +85,31 @@ type NodeCommand struct {
 	partyStore            *storage.Party
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
+	nodeStore             *storage.Node
+	epochStore            *storage.Epoch
 
 	vegaTradingServiceClient vegaprotoapi.TradingServiceClient
 
 	broker *broker.Broker
 
-	transferSub      *subscribers.TransferResponse
-	marketEventSub   *subscribers.MarketEvent
-	orderSub         *subscribers.OrderEvent
-	accountSub       *subscribers.AccountSub
-	partySub         *subscribers.PartySub
-	tradeSub         *subscribers.TradeSub
-	marginLevelSub   *subscribers.MarginLevelSub
-	governanceSub    *subscribers.GovernanceDataSub
-	voteSub          *subscribers.VoteSub
-	marketDataSub    *subscribers.MarketDataSub
-	newMarketSub     *subscribers.Market
-	marketUpdatedSub *subscribers.MarketUpdated
-	candleSub        *subscribers.CandleSub
-	riskFactorSub    *subscribers.RiskFactorSub
-	marketDepthSub   *subscribers.MarketDepthBuilder
+	transferSub          *subscribers.TransferResponse
+	marketEventSub       *subscribers.MarketEvent
+	orderSub             *subscribers.OrderEvent
+	accountSub           *subscribers.AccountSub
+	partySub             *subscribers.PartySub
+	tradeSub             *subscribers.TradeSub
+	marginLevelSub       *subscribers.MarginLevelSub
+	governanceSub        *subscribers.GovernanceDataSub
+	voteSub              *subscribers.VoteSub
+	marketDataSub        *subscribers.MarketDataSub
+	newMarketSub         *subscribers.Market
+	marketUpdatedSub     *subscribers.MarketUpdated
+	candleSub            *subscribers.CandleSub
+	riskFactorSub        *subscribers.RiskFactorSub
+	marketDepthSub       *subscribers.MarketDepthBuilder
+	validatorUpdateSub   *subscribers.ValidatorUpdateSub
+	delegationBalanceSub *subscribers.DelegationBalanceSub
+	epochUpdateSub       *subscribers.EpochUpdateSub
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -121,6 +128,8 @@ type NodeCommand struct {
 	eventService      *subscribers.Service
 	netParamsService  *netparams.Service
 	oracleService     *oracles.Service
+	nodeService       *nodes.Service
+	epochService      *epochs.Service
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
@@ -191,6 +200,8 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.depositPlugin,
 		l.marketDepthSub,
 		l.netParamsService,
+		l.nodeService,
+		l.epochService,
 	)
 
 	// watch configs
