@@ -307,6 +307,24 @@ type ProposalVotes struct {
 	No *ProposalVoteSide `json:"no"`
 }
 
+// Reward information for a single party
+type Reward struct {
+	// The asset for which this reward is associated
+	AssetID           string `json:"AssetId"`
+	PartyID           string `json:"PartyId"`
+	Epoch             int    `json:"Epoch"`
+	Amount            string `json:"Amount"`
+	PercentageOfTotal string `json:"PercentageOfTotal"`
+	ReceivedAt        string `json:"ReceivedAt"`
+}
+
+// Reward information for a given asset
+type RewardPerAssetDetails struct {
+	AssetID     string    `json:"AssetID"`
+	Rewards     []*Reward `json:"Rewards"`
+	TotalAmount string    `json:"TotalAmount"`
+}
+
 type SettleDistressed struct {
 	// the market in which a position was closed out
 	MarketID string `json:"marketId"`
