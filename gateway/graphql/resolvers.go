@@ -2426,6 +2426,10 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 	return res.Party, nil
 }
 
-func (r *myQueryResolver) RewardDetails(ctx context.Context, partyID string) (*types.RewardDetails, error) {
-	return nil, nil
+func (r *myQueryResolver) RewardDetails(ctx context.Context, partyID string) (*protoapi.GetRewardDetailsResponse, error) {
+	req := &protoapi.GetRewardDetailsRequest{
+		PartyId: partyID,
+	}
+	resp, _ := r.tradingDataClient.GetRewardDetails(ctx, req)
+	return resp, nil
 }

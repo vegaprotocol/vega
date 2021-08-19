@@ -12,6 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	v13 "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
 	v12 "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/protos/vega/events/v1"
@@ -1203,13 +1204,17 @@ type QueryResolver interface {
 	Erc20WithdrawalApproval(ctx context.Context, withdrawalID string) (*Erc20WithdrawalApproval, error)
 	Deposit(ctx context.Context, id string) (*vega.Deposit, error)
 	NetworkParameters(ctx context.Context) ([]*vega.NetworkParameter, error)
+<<<<<<< HEAD
 	NodeData(ctx context.Context) (*vega.NodeData, error)
 	Nodes(ctx context.Context) ([]*vega.Node, error)
 	Node(ctx context.Context, id string) (*vega.Node, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
+=======
+	RewardDetails(ctx context.Context, partyID string) (*v13.GetRewardDetailsResponse, error)
+>>>>>>> Implemented the GraphQL resolvers
 }
 type RewardDetailsResolver interface {
-	Details(ctx context.Context, obj *vega.RewardDetails) ([]*RewardPerAssetDetails, error)
+	Details(ctx context.Context, obj *v13.GetRewardDetailsResponse) ([]*RewardPerAssetDetails, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *vega.Statistics) (int, error)
@@ -22095,6 +22100,7 @@ func (ec *executionContext) _Query_node(ctx context.Context, field graphql.Colle
 	if resTmp == nil {
 		return graphql.Null
 	}
+<<<<<<< HEAD
 	res := resTmp.(*vega.Node)
 	fc.Result = res
 	return ec.marshalONode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
@@ -22140,6 +22146,11 @@ func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.Coll
 	res := resTmp.(*vega.Epoch)
 	fc.Result = res
 	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
+=======
+	res := resTmp.(*v13.GetRewardDetailsResponse)
+	fc.Result = res
+	return ec.marshalORewardDetails2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐGetRewardDetailsResponse(ctx, field.Selections, res)
+>>>>>>> Implemented the GraphQL resolvers
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -22423,7 +22434,7 @@ func (ec *executionContext) _Reward_ReceivedAt(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RewardDetails_details(ctx context.Context, field graphql.CollectedField, obj *vega.RewardDetails) (ret graphql.Marshaler) {
+func (ec *executionContext) _RewardDetails_details(ctx context.Context, field graphql.CollectedField, obj *v13.GetRewardDetailsResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -33285,7 +33296,7 @@ func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, o
 
 var rewardDetailsImplementors = []string{"RewardDetails"}
 
-func (ec *executionContext) _RewardDetails(ctx context.Context, sel ast.SelectionSet, obj *vega.RewardDetails) graphql.Marshaler {
+func (ec *executionContext) _RewardDetails(ctx context.Context, sel ast.SelectionSet, obj *v13.GetRewardDetailsResponse) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, rewardDetailsImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -38115,7 +38126,7 @@ func (ec *executionContext) marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑ
 	return ec._Reward(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalORewardDetails2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardDetails(ctx context.Context, sel ast.SelectionSet, v *vega.RewardDetails) graphql.Marshaler {
+func (ec *executionContext) marshalORewardDetails2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋdataᚑnodeᚋapiᚋv1ᚐGetRewardDetailsResponse(ctx context.Context, sel ast.SelectionSet, v *v13.GetRewardDetailsResponse) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
