@@ -96,6 +96,7 @@ const (
 	PendingDelegationBalanceEvent
 	StakingEvent
 	ValidatorUpdateEvent
+	RewardPayoutEvent
 )
 
 var (
@@ -108,38 +109,38 @@ var (
 	}
 
 	protoMap = map[eventspb.BusEventType]Type{
-		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                 All,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:         TimeUpdate,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:  TransferResponses,
-		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION: PositionResolution,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:              MarketEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:               OrderEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:             AccountEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:               PartyEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:               TradeEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:       MarginLevelsEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:            ProposalEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:                VoteEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:         MarketDataEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:      NodeSignatureEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:  LossSocializationEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:     SettlePositionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:   SettleDistressedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:      MarketCreatedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:      MarketUpdatedEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:               AssetEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:         MarketTickEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:          WithdrawalEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:             DepositEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:             AuctionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:         RiskFactorEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:   NetworkParameterEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION: LiquidityProvisionEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:            TxErrEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:         OracleSpecEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:         OracleDataEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:        EpochUpdate,
-
+		eventspb.BusEventType_BUS_EVENT_TYPE_ALL:                        All,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:                TimeUpdate,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES:         TransferResponses,
+		eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION:        PositionResolution,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET:                     MarketEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:                      OrderEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ACCOUNT:                    AccountEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PARTY:                      PartyEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRADE:                      TradeEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARGIN_LEVELS:              MarginLevelsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_PROPOSAL:                   ProposalEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VOTE:                       VoteEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_DATA:                MarketDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NODE_SIGNATURE:             NodeSignatureEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LOSS_SOCIALIZATION:         LossSocializationEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:            SettlePositionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:          SettleDistressedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:             MarketCreatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_UPDATED:             MarketUpdatedEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ASSET:                      AssetEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_TICK:                MarketTickEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_WITHDRAWAL:                 WithdrawalEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_DEPOSIT:                    DepositEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_AUCTION:                    AuctionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:                RiskFactorEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_PARAMETER:          NetworkParameterEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_LIQUIDITY_PROVISION:        LiquidityProvisionEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:                   TxErrEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_SPEC:                OracleSpecEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA:                OracleDataEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:               EpochUpdate,
+		eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT:        RewardPayoutEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:         DelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_PENDING_DELEGATION_BALANCE: PendingDelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:              StakingEvent,
@@ -181,6 +182,7 @@ var (
 		PendingDelegationBalanceEvent: eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
 		StakingEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
 		ValidatorUpdateEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE,
+		RewardPayoutEvent:             eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT,
 	}
 
 	eventStrings = map[Type]string{
@@ -219,6 +221,7 @@ var (
 		PendingDelegationBalanceEvent: "PendingDelegationBalanceEvent",
 		StakingEvent:                  "StakingEvent",
 		ValidatorUpdateEvent:          "ValidatorUpdateEvent",
+		RewardPayoutEvent:             "RewardPayoutEvent",
 	}
 )
 

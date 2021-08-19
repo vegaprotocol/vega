@@ -56,3 +56,20 @@ func (rp RewardPayout) StreamMessage() *eventspb.BusEvent {
 		},
 	}
 }
+
+func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *RewardPayout {
+	rp := be.GetRewardPayout()
+	if rp == nil {
+		return nil
+	}
+	return &RewardPayout{
+		Base:                 newBaseFromStream(ctx, RewardPayoutEvent, be),
+		from:                 rp.FromAccount,
+		to:                   rp.ToAccount,
+		party:                rp.Party,
+		epochSeq:             rp.EpochSeq,
+		asset:                rp.Asset,
+		percentOfTotalReward: rp.PercentOfTotalReward,
+		amount:               num.NewUint(rp.Amount),
+	}
+}
