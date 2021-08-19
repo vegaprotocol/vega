@@ -2546,12 +2546,6 @@ type LiquidityProvision {
   reference: String
 }
 
-"A prepared LiquidityProvision command"
-type PreparedLiquidityProvision {
-  "The blob to be send to the wallet and to be signed"
-  blob: String!
-}
-
 "Reward information for a single party"
 type Reward {
   "The asset for which this reward is associated"

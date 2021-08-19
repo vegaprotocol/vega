@@ -603,10 +603,6 @@ type ComplexityRoot struct {
 		MarketID   func(childComplexity int) int
 	}
 
-	PreparedLiquidityProvision struct {
-		Blob func(childComplexity int) int
-	}
-
 	PriceLevel struct {
 		NumberOfOrders func(childComplexity int) int
 		Price          func(childComplexity int) int
@@ -3586,13 +3582,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PositionResolution.MarketID(childComplexity), true
-
-	case "PreparedLiquidityProvision.blob":
-		if e.complexity.PreparedLiquidityProvision.Blob == nil {
-			break
-		}
-
-		return e.complexity.PreparedLiquidityProvision.Blob(childComplexity), true
 
 	case "PriceLevel.numberOfOrders":
 		if e.complexity.PriceLevel.NumberOfOrders == nil {
@@ -7691,12 +7680,6 @@ type LiquidityProvision {
   status: LiquidityProvisionStatus!
   "A reference for the orders created out of this Liquidity provision"
   reference: String
-}
-
-"A prepared LiquidityProvision command"
-type PreparedLiquidityProvision {
-  "The blob to be send to the wallet and to be signed"
-  blob: String!
 }
 
 "Reward information for a single party"
@@ -19729,41 +19712,6 @@ func (ec *executionContext) _PositionResolution_markPrice(ctx context.Context, f
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _PreparedLiquidityProvision_blob(ctx context.Context, field graphql.CollectedField, obj *PreparedLiquidityProvision) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "PreparedLiquidityProvision",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Blob, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *vega.PriceLevel) (ret graphql.Marshaler) {
@@ -32262,33 +32210,6 @@ func (ec *executionContext) _PositionResolution(ctx context.Context, sel ast.Sel
 			}
 		case "markPrice":
 			out.Values[i] = ec._PositionResolution_markPrice(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var preparedLiquidityProvisionImplementors = []string{"PreparedLiquidityProvision"}
-
-func (ec *executionContext) _PreparedLiquidityProvision(ctx context.Context, sel ast.SelectionSet, obj *PreparedLiquidityProvision) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, preparedLiquidityProvisionImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("PreparedLiquidityProvision")
-		case "blob":
-			out.Values[i] = ec._PreparedLiquidityProvision_blob(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
