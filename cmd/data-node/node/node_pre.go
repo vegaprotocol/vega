@@ -51,10 +51,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	conf := l.cfgwatchr.Get()
 
-	if flagProvided("--no-stores") {
-		conf.StoresEnabled = false
-	}
-
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -93,12 +89,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		return err
 	}
 	l.setupSubscibers()
-
-	if !l.conf.StoresEnabled {
-		l.Log.Info("node setted up without badger store support")
-	} else {
-		l.Log.Info("node setted up with badger store support")
-	}
 
 	return nil
 }
@@ -139,15 +129,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 		return
 	}
 	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
-		return
-	}
-
-	// if stores are not enabled, initialise the noop stores and do nothing else
-	if !l.conf.StoresEnabled {
-		l.orderStore = storage.NewNoopOrders(l.Log, l.conf.Storage)
-		l.tradeStore = storage.NewNoopTrades(l.Log, l.conf.Storage)
-		l.accounts = storage.NewNoopAccounts(l.Log, l.conf.Storage)
-		l.candleStore = storage.NewNoopCandles(l.Log, l.conf.Storage)
 		return
 	}
 
