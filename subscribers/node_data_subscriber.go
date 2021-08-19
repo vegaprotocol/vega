@@ -48,14 +48,7 @@ type node struct {
 	infoURL  string
 	location string
 
-	// StakedByOperator  string
-	// StakedByDelegates string
-	// StakedTotal       string
-
-	PendingStake string
-
-	epochData *types.EpochData
-	status    types.NodeStatus
+	status types.NodeStatus
 
 	delegationsPerParty map[string]delegation
 }
@@ -64,8 +57,7 @@ type epoch struct {
 	seq       string
 	startTime int64
 	endTime   int64
-
-	nodeIDs []string
+	nodeIDs   []string
 
 	delegationsPerNodePerParty map[string]map[string]delegation
 }
@@ -74,6 +66,8 @@ type NodeDataSub struct {
 	*Base
 	store CandleStore
 	mu    sync.RWMutex
+
+	currentEpoch string
 
 	nodes  map[string]node
 	epochs map[string]epoch
@@ -87,19 +81,8 @@ func NewNodeDataSub(ctx context.Context, store CandleStore, log *logging.Logger,
 		store: store,
 		log:   log,
 	}
-	// go sub.internalLoop()
 	return sub
 }
-
-// func (ns *NodeDataSub) internalLoop() {
-// 	for {
-// 		select {
-// 		case <-c.Closed():
-// 			return
-// 			// case
-// 		}
-// 	}
-// }
 
 func (ns *NodeDataSub) Push(evts ...events.Event) {
 	if len(evts) == 0 {
@@ -131,6 +114,8 @@ func (ns *NodeDataSub) Push(evts ...events.Event) {
 				endTime:   eu.GetEndTime(),
 			}
 
+			ns.currentEpoch = seq
+
 		case DelegationBalanceEvent:
 			dbe := et.Proto()
 			ns.addDelegationToNode(dbe)
@@ -153,7 +138,7 @@ func (ns *NodeDataSub) addDelegateToEpoch(de eventspb.DelegationBalanceEvent) {
 		delegationsPerNodes = map[string]delegation{}
 	}
 
-	delegationsPerNodes[de.GetParty()] = newInternalDelegationFromEvent(de)
+	delegationsPerNodes[de.GetParty()] = delegationInternalFromEvent(de)
 }
 
 func (ns *NodeDataSub) addDelegationToNode(de eventspb.DelegationBalanceEvent) {
@@ -166,7 +151,7 @@ func (ns *NodeDataSub) addDelegationToNode(de eventspb.DelegationBalanceEvent) {
 		return
 	}
 
-	node.delegationsPerParty[de.GetParty()] = newInternalDelegationFromEvent(de)
+	node.delegationsPerParty[de.GetParty()] = delegationInternalFromEvent(de)
 }
 
 func (ns *NodeDataSub) GetNodeByID(id string) (*types.Node, error) {
@@ -178,7 +163,7 @@ func (ns *NodeDataSub) GetNodeByID(id string) (*types.Node, error) {
 		return nil, fmt.Errorf("node %s not found", id)
 	}
 
-	return newProtoNodeFromInternal(node), nil
+	return nodeProtoFromInternal(node), nil
 }
 
 func (ns *NodeDataSub) GetNodes() []*types.Node {
@@ -187,7 +172,7 @@ func (ns *NodeDataSub) GetNodes() []*types.Node {
 
 	nodes := make([]*types.Node, len(ns.nodes))
 	for _, n := range ns.nodes {
-		nodes = append(nodes, newProtoNodeFromInternal(n))
+		nodes = append(nodes, nodeProtoFromInternal(n))
 	}
 
 	return nodes
@@ -195,6 +180,7 @@ func (ns *NodeDataSub) GetNodes() []*types.Node {
 
 func (ns *NodeDataSub) GetNodeData() *types.NodeData {
 	ns.mu.RLock()
+	defer ns.mu.RUnlock()
 
 	stakedTotal := num.NewUint(0)
 
@@ -204,20 +190,50 @@ func (ns *NodeDataSub) GetNodeData() *types.NodeData {
 		}
 	}
 
-	nodesLen := uint32(len(ns.nodes))
-
 	var uptime time.Duration
 	for _, e := range ns.epochs {
 		uptime += time.Unix(0, e.endTime).Sub(time.Unix(0, e.startTime))
 	}
 
+	nodesLen := uint32(len(ns.nodes))
+
 	return &types.NodeData{
 		StakedTotal:     stakedTotal.String(),
 		TotalNodes:      nodesLen,
 		ValidatingNodes: nodesLen, // For now this is the same as total nodes
-		InactiveNodes:   0,
 		Uptime:          float32(uptime.Minutes()),
 	}
+}
+
+func (ns *NodeDataSub) GetEpoch() (*types.Epoch, error) {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	epoch := ns.epochs[ns.currentEpoch]
+
+	e, err := ns.epochProtoFromInternal(epoch)
+	if err != nil {
+		return nil, err
+	}
+
+	return e, nil
+}
+
+func (ns *NodeDataSub) GetEpochByID(id string) (*types.Epoch, error) {
+	ns.mu.RLock()
+	defer ns.mu.RUnlock()
+
+	epoch, ok := ns.epochs[id]
+	if !ok {
+		return nil, fmt.Errorf("epoch %s not found", id)
+	}
+
+	e, err := ns.epochProtoFromInternal(epoch)
+	if err != nil {
+		return nil, err
+	}
+
+	return e, nil
 }
 
 func (ns *NodeDataSub) Types() []events.Type {
@@ -228,7 +244,44 @@ func (ns *NodeDataSub) Types() []events.Type {
 	}
 }
 
-func newInternalDelegationFromEvent(de eventspb.DelegationBalanceEvent) delegation {
+func (ns *NodeDataSub) epochProtoFromInternal(e epoch) (*types.Epoch, error) {
+	seq, err := strconv.ParseUint(e.seq, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse uint from %s: %w", e.seq, err)
+	}
+
+	validators := make([]*types.Node, len(e.nodeIDs))
+	for _, id := range e.nodeIDs {
+		n, ok := ns.nodes[id]
+		if !ok {
+			continue
+		}
+
+		validators = append(validators, nodeProtoFromInternal(n))
+	}
+
+	delegations := make([]*types.Delegation, len(e.delegationsPerNodePerParty))
+	for _, delegationPerParty := range e.delegationsPerNodePerParty {
+		for _, delegation := range delegationPerParty {
+			delegations = append(delegations, delegationProtoFromInternal(delegation))
+		}
+	}
+
+	return &types.Epoch{
+		Seq: seq,
+		Timestamps: &types.EpochTimestamps{
+			StartTime: e.startTime,
+			EndTime:   e.endTime,
+			// @TODO - add those later
+			// FirstBlock: uint64,
+			// LastBlock: uint64,
+		},
+		Validators:  validators,
+		Delegations: delegations,
+	}, nil
+}
+
+func delegationInternalFromEvent(de eventspb.DelegationBalanceEvent) delegation {
 	return delegation{
 		nodeID: de.NodeId,
 		party:  de.Party,
@@ -237,7 +290,7 @@ func newInternalDelegationFromEvent(de eventspb.DelegationBalanceEvent) delegati
 	}
 }
 
-func newDelegationProtoFromInternal(d delegation) *types.Delegation {
+func delegationProtoFromInternal(d delegation) *types.Delegation {
 	return &types.Delegation{
 		NodeId:   d.nodeID,
 		Party:    d.party,
@@ -246,33 +299,37 @@ func newDelegationProtoFromInternal(d delegation) *types.Delegation {
 	}
 }
 
-func newProtoNodeFromInternal(n node) *types.Node {
+func nodeProtoFromInternal(n node) *types.Node {
 	stakedTotal := num.NewUint(0)
-
+	stakedByOperator := num.NewUint(0)
+	stakedByDelegates := num.NewUint(0)
 	delegations := make([]*types.Delegation, len(n.delegationsPerParty))
-	for _, d := range n.delegationsPerParty {
-		delegations = append(delegations, newDelegationProtoFromInternal(d))
 
-		stakedTotal.Add(stakedTotal, d.amount)
+	for _, d := range n.delegationsPerParty {
+		delegations = append(delegations, delegationProtoFromInternal(d))
+
+		// If party is equal the node public key we assume this is operator
+		if d.party == n.pubKey {
+			stakedByOperator.Add(stakedByOperator, d.amount)
+		} else {
+			stakedByDelegates.Add(stakedByDelegates, d.amount)
+		}
 	}
 
+	stakedTotal.Add(stakedByOperator, stakedByDelegates)
+
 	// @TODO finish these fields
-	// StakedByOperator string
-	// StakedByDelegates string
-	// MaxIntendedStake string
 	// PendingStake string
+	// Epoch data
 
 	return &types.Node{
-		Id:        n.id,
-		PubKey:    n.pubKey,
-		InfoUrl:   n.infoURL,
-		Location:  n.location,
-		Status:    n.status,
-		EpochData: n.epochData,
-
-		// @TODO fill this field
-		StakedByOperator:  "0",
-		StakedByDelegates: stakedTotal.String(),
+		Id:                n.id,
+		PubKey:            n.pubKey,
+		InfoUrl:           n.infoURL,
+		Location:          n.location,
+		Status:            n.status,
+		StakedByOperator:  stakedByOperator.String(),
+		StakedByDelegates: stakedByDelegates.String(),
 		StakedTotal:       stakedTotal.String(),
 
 		Delagations: delegations,
