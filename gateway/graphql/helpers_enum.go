@@ -5,8 +5,37 @@ import (
 
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
+
+func convertStakeLinkingTypeFromProto(
+	s eventspb.StakeLinking_Type) (StakeLinkingType, error) {
+	switch s {
+	case eventspb.StakeLinking_TYPE_LINK:
+		return StakeLinkingTypeLink, nil
+	case eventspb.StakeLinking_TYPE_UNLINK:
+		return StakeLinkingTypeUnlink, nil
+	default:
+		err := fmt.Errorf("failed to convert StakeLinkingType from Proto to GraphQL: %v", s)
+		return StakeLinkingType(-1), err
+	}
+}
+
+func convertStakeLinkingStatusFromProto(
+	s eventspb.StakeLinking_Status) (StakeLinkingStatus, error) {
+	switch s {
+	case eventspb.StakeLinking_STATUS_PENDING:
+		return StakeLinkingStatusPending, nil
+	case eventspb.StakeLinking_STATUS_ACCEPTED:
+		return StakeLinkingStatusAccepted, nil
+	case eventspb.StakeLinking_STATUS_REJECTED:
+		return StakeLinkingStatusRejected, nil
+	default:
+		err := fmt.Errorf("failed to convert StakeLinkingStatus from Proto to GraphQL: %v", s)
+		return StakeLinkingStatus(-1), err
+	}
+}
 
 func convertOracleSpecStatusFromProto(s oraclesv1.OracleSpec_Status) (OracleSpecStatus, error) {
 	switch s {

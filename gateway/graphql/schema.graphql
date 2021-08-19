@@ -485,7 +485,7 @@ type EpochParticipation {
 
   "RFC3339 timestamp"
   offline: String
-  
+
   "RFC3339 timestamp"
   online: String
 
@@ -512,13 +512,13 @@ type Node {
 
 	"URL where I can find out more info on the node. Will this be possible?"
 	infoUrl: String!
- 
+
   "Country code for the location of the node"
 	location: String!
 
 	"The amount the node has put up themselves"
 	stakedByOperator: String!
- 
+
 	"The amount of stake that has been delegated by token holders"
 	stakedByDelegates: String!
 
@@ -535,7 +535,7 @@ type Node {
 	epochData: EpochData
 
 	# @TODO implement this filter
-	# epochs(last: Int, since: String): [EpochParticipation!]! 
+	# epochs(last: Int, since: String): [EpochParticipation!]!
 
 	status: NodeStatus!
 
@@ -546,13 +546,13 @@ type Node {
 type Delegation {
   "Amount delegated"
 	amount: String!
-  
+
   "Party which is delegating"
 	partyId: String!
-  
+
   "URL of node you are delegating to"
   node: String!
-  
+
   "Epoch of delegation"
 	epoch: Int!
 }
@@ -1334,6 +1334,62 @@ type Party {
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
   delegations(nodeId: String): [Delegation!]
+
+  "The staking informations for this Party"
+  stake: PartyStake!
+}
+
+"""
+All staking informations related to a Party.
+Contains the current recognised balance by the network and
+all the StakeLink/Unlink seen by the network
+"""
+type PartyStake {
+  "The stake currently available for the party"
+  currentStakeAvailable: String!
+  "The list of all stake link/unlink for the party"
+  linkings: [StakeLinking!]
+}
+
+"The type of stake linking"
+enum StakeLinkingType {
+  "The stake is being linked (deposited) to a vega stake account"
+  Link
+  "The stake is being unlined (removed) from a vega stake account"
+  Unlink
+}
+
+"The status of the stake linking"
+enum StakeLinkingStatus {
+  """
+  The stake linking is pending in the vega network, this means that
+  the vega network have seen a StakeLinking, but is still to confirm
+  it's valid on the ethereum chain, and accepted by all nodes of the network
+  """
+  Pending
+  "The stake linking has been accepted and processed fully (balance updated) by the network"
+  Accepted
+  "The vega network have rejected this stake linking"
+  Rejected
+}
+
+"A Stake linking represent the intend from a party to deposit / remove stake on their account"
+type StakeLinking {
+  id: ID!
+  "Type of linking: link|unlink"
+  type: StakeLinkingType!
+  "The time at which the request happened on ethereum"
+  timestamp: String!
+  "The party initiating the stake linking"
+  party: Party!
+  "The amount linked or unlinked"
+  amount: String!
+  "The status of the linking"
+  status: StakeLinkingStatus!
+  "The time at which the stake linking was full processed by the vega network, null until defined"
+  finalizedAt: String
+  "The transaction hash (ethereum) which initiated the link/unlink"
+  txHash: String!
 }
 
 """
@@ -2563,5 +2619,5 @@ type Reward {
 type RewardPerAssetDetail {
   Asset: Asset!
   Rewards: [Reward]
-  TotalAmount: String!  
+  TotalAmount: String!
 }

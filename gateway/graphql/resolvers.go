@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
+	dnapiproto "code.vegaprotocol.io/protos/data-node/api/v1"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -279,6 +280,14 @@ func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 
 func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
 	return (*rewardPerAssetDetailResolver)(r)
+}
+
+func (r *VegaResolverRoot) StakeLinking() StakeLinkingResolver {
+	return (*stakeLinkingResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyStake() PartyStakeResolver {
+	return (*partyStakeResolver)(r)
 }
 
 // LiquidityOrder resolver
@@ -841,6 +850,17 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 		Limit:      limit,
 		Descending: descending,
 	}
+}
+
+func (r *myPartyResolver) Stake(
+	ctx context.Context,
+	party *types.Party,
+) (*dnapiproto.PartyStakeResponse, error) {
+	return r.tradingDataClient.PartyStake(
+		ctx, &dnapiproto.PartyStakeRequest{
+			Party: party.Id,
+		},
+	)
 }
 
 func (r *myPartyResolver) LiquidityProvisions(
