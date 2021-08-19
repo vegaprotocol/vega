@@ -75,7 +75,7 @@ func (v *Node) AddDelegation(de pb.Delegation) {
 
 func (v *Node) GetByID(id string) (*pb.Node, error) {
 	v.mut.RLock()
-	defer v.mut.RLocker()
+	defer v.mut.RUnlock()
 
 	node, ok := v.nodes[id]
 	if !ok {
@@ -87,9 +87,9 @@ func (v *Node) GetByID(id string) (*pb.Node, error) {
 
 func (v *Node) GetAll() []*pb.Node {
 	v.mut.RLock()
-	defer v.mut.RLocker()
+	defer v.mut.RUnlock()
 
-	nodes := make([]*pb.Node, len(v.nodes))
+	nodes := make([]*pb.Node, 0, len(v.nodes))
 	for _, n := range v.nodes {
 		nodes = append(nodes, v.nodeProtoFromInternal(n))
 	}
@@ -121,7 +121,7 @@ func (v *Node) GetStakedTotal() string {
 	for _, n := range v.nodes {
 		for _, d := range n.delegationsPerParty {
 			amount, ok := num.UintFromString(d.GetAmount(), 10)
-			if !ok {
+			if ok {
 				v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
 				continue
 			}
@@ -137,13 +137,15 @@ func (v *Node) nodeProtoFromInternal(n node) *pb.Node {
 	stakedTotal := num.NewUint(0)
 	stakedByOperator := num.NewUint(0)
 	stakedByDelegates := num.NewUint(0)
-	delegations := make([]*pb.Delegation, len(n.delegationsPerParty))
+
+	delegations := make([]*pb.Delegation, 0, len(n.delegationsPerParty))
 
 	for _, d := range n.delegationsPerParty {
-		delegations = append(delegations, &d)
+		delegation := d
+		delegations = append(delegations, &delegation)
 
 		amount, ok := num.UintFromString(d.GetAmount(), 10)
-		if !ok {
+		if ok {
 			v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
 			continue
 		}
