@@ -46,7 +46,7 @@ type Svc struct {
 }
 
 // NewService instantiate a new Trades service
-func NewService(log *logging.Logger, config Config, tradeStore TradeStore, posPlug PositionsPlugin) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, tradeStore TradeStore, posPlug PositionsPlugin) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -56,7 +56,7 @@ func NewService(log *logging.Logger, config Config, tradeStore TradeStore, posPl
 		Config:     config,
 		tradeStore: tradeStore,
 		positions:  posPlug,
-	}, nil
+	}
 }
 
 // ReloadConf update the internal configuration of the service

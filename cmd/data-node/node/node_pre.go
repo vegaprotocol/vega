@@ -17,7 +17,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/netparams"
-	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
@@ -33,6 +32,7 @@ import (
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+
 	"google.golang.org/grpc"
 )
 
@@ -203,11 +203,27 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
-
 	l.netParamsService = netparams.NewService(l.ctx)
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
 	l.stakingService = staking.NewService(l.ctx, l.Log)
+
+	// start services
+	l.candleService = candles.NewService(l.Log, l.conf.Candles, l.candleStore)
+	l.tradeService = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin)
+	l.marketService = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub)
+	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
+	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
+	l.orderService = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService)
+	l.feeService = fee.NewService(l.Log, l.conf.Fee, l.marketStore, l.marketDataStore)
+	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
+	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
+	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
+	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
+	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
+	l.eventService = subscribers.NewService(l.broker)
+	l.epochService = epochs.NewService(l.Log, l.conf.Epochs, l.epochStore)
+	l.delegationService = delegations.NewService(l.Log, l.conf.Delegations, l.delegationStore)
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
@@ -233,36 +249,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	}
 
 	l.vegaTradingServiceClient = vegaprotoapi.NewTradingServiceClient(conn)
-
-	// start services
-	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
-		return
-	}
-
-	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
-		return
-	}
-
-	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin); err != nil {
-		return
-	}
-	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub); err != nil {
-		return
-	}
-	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
-	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
-
-	// last assignment to err, no need to check here, if something went wrong, we'll know about it
-	l.feeService = fee.NewService(l.Log, l.conf.Fee, l.marketStore, l.marketDataStore)
-	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
-	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
-	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
-	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
-	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
-	l.eventService = subscribers.NewService(l.broker)
-	l.nodeService = nodes.NewService(l.Log, l.conf.Nodes, l.nodeStore, l.epochStore)
-	l.epochService = epochs.NewService(l.Log, l.conf.Epochs, l.epochStore)
-	l.delegationService = delegations.NewService(l.Log, l.conf.Delegations, l.delegationStore)
 
 	// setup config reloads for all services /etc
 	l.setupConfigWatchers()
