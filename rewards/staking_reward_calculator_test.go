@@ -190,10 +190,10 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	// 0.7 * 469163 = 328,414.1 => 328414
 	require.Equal(t, num.NewUint(328414), res.partyToAmount["node1"])
 
-	// 1 * 530836 = 530,836 => 530836
-	require.Equal(t, num.NewUint(530836), res.partyToAmount["node2"])
+	// 0.7 * 530836 = 371585 => 371585
+	require.Equal(t, num.NewUint(371585), res.partyToAmount["node2"])
 
-	require.Equal(t, num.NewUint(999998), res.totalReward)
+	require.Equal(t, num.NewUint(840747), res.totalReward)
 }
 
 func testCalcRewardsNoMaxPayout(t *testing.T) {

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/broker/mocks"
-	gmock "code.vegaprotocol.io/vega/governance/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,6 @@ type testEngine struct {
 	broker          *mocks.MockBroker
 	stakingAccounts *TestStakingAccount
 	topology        *TestTopology
-	netp            *gmock.MockNetParams
 }
 
 func Test(t *testing.T) {
@@ -113,7 +112,6 @@ func testDelegateLessThanMinDelegationAmount(t *testing.T) {
 	testEngine := getEngine(t)
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(5)
-	testEngine.netp.EXPECT().Get("validators.delegation.minAmount").Return("2", nil)
 	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(1))
 	assert.EqualError(t, err, ErrAmountLTMinAmountForDelegation.Error())
 }
@@ -124,7 +122,6 @@ func testDelegateInsufficientBalanceNoPendingNoCommitted(t *testing.T) {
 	testEngine := getEngine(t)
 	testEngine.topology.nodeToIsValidator["node1"] = true
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(5)
-	testEngine.netp.EXPECT().Get("validators.delegation.minAmount").Return("2", nil)
 	err := testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	assert.EqualError(t, err, ErrInsufficientBalanceForDelegation.Error())
 }
@@ -416,18 +413,21 @@ func testDelegateSuccesNoCommitted(t *testing.T) {
 	//party1 delegated 10 in total, 7 to node1 and 3 to node2
 	//party2 delegated 6 in total, all to node1
 	// verify the state
-	require.Equal(t, num.NewUint(10), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.NewUint(6), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.NewUint(7), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node1"])
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node2"])
-	require.Equal(t, num.NewUint(6), testEngine.engine.pendingState["party2"].nodeToDelegateAmount["node1"])
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+
+	require.Equal(t, num.NewUint(10), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.NewUint(6), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.NewUint(7), pendingStateForEpoch["party1"].nodeToDelegateAmount["node1"])
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party1"].nodeToDelegateAmount["node2"])
+	require.Equal(t, num.NewUint(6), pendingStateForEpoch["party2"].nodeToDelegateAmount["node1"])
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 0, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 0, len(testEngine.engine.partyDelegationState))
 }
@@ -446,17 +446,18 @@ func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) 
 	require.Nil(t, err)
 
 	// show that the state before delegation matches expectation (i.e. that we have 2 for undelegation from party1 and party2 to node1 and node2 respectively)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].nodeToUndelegateAmount["node1"])
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party2"].nodeToUndelegateAmount["node2"])
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].nodeToUndelegateAmount["node1"])
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party2"].nodeToUndelegateAmount["node2"])
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
@@ -470,17 +471,17 @@ func testDelegateSuccessWithPreviousPendingUndelegateFullyCovered(t *testing.T) 
 
 	// summary:
 	// verify the state
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node1"])
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].nodeToDelegateAmount["node2"])
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].nodeToDelegateAmount["node1"])
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].nodeToDelegateAmount["node2"])
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 }
@@ -499,17 +500,18 @@ func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing
 	require.Nil(t, err)
 
 	// show that the state before delegation matches expectation (i.e. that we have 2 for undelegation from party1 and party2 to node1 and node2 respectively)
-	require.Equal(t, num.NewUint(4), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.NewUint(4), testEngine.engine.pendingState["party1"].nodeToUndelegateAmount["node1"])
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].nodeToUndelegateAmount["node2"])
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, num.NewUint(4), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.NewUint(4), pendingStateForEpoch["party1"].nodeToUndelegateAmount["node1"])
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].nodeToUndelegateAmount["node2"])
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
@@ -522,17 +524,17 @@ func testDelegateSuccessWithPreviousPendingUndelegatePartiallyCovered(t *testing
 	require.Nil(t, err)
 
 	// verify the state
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.NewUint(1), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.NewUint(1), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.NewUint(1), testEngine.engine.pendingState["party1"].nodeToUndelegateAmount["node1"])
-	require.Equal(t, num.NewUint(1), testEngine.engine.pendingState["party2"].nodeToUndelegateAmount["node2"])
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.NewUint(1), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.NewUint(1), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.NewUint(1), pendingStateForEpoch["party1"].nodeToUndelegateAmount["node1"])
+	require.Equal(t, num.NewUint(1), pendingStateForEpoch["party2"].nodeToUndelegateAmount["node2"])
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 }
@@ -550,18 +552,19 @@ func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T
 	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
 	// show that the state before delegation matches expectation (i.e. that we have 2 for undelegation from party1 and party2 to node1 and node2 respectively)
-	require.Equal(t, num.NewUint(4), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.NewUint(4), testEngine.engine.pendingState["party1"].nodeToUndelegateAmount["node1"])
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].nodeToUndelegateAmount["node2"])
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	require.Equal(t, num.NewUint(4), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.NewUint(4), pendingStateForEpoch["party1"].nodeToUndelegateAmount["node1"])
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].nodeToUndelegateAmount["node2"])
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
@@ -575,7 +578,7 @@ func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T
 
 	// verify the state
 	// as we've countered all undelegation we expect the pending state to be empty
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 }
@@ -620,17 +623,18 @@ func testUndelegateSuccessNoPreviousPending(t *testing.T) {
 	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(2))
 	require.Nil(t, err)
 
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].nodeToUndelegateAmount["node1"])
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party2"].nodeToUndelegateAmount["node2"])
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].nodeToUndelegateAmount["node1"])
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party2"].nodeToUndelegateAmount["node2"])
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
@@ -642,17 +646,17 @@ func testUndelegateSuccessNoPreviousPending(t *testing.T) {
 	require.Nil(t, err)
 
 	// check that the state has updated correctly
-	require.Equal(t, num.NewUint(6), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.NewUint(6), testEngine.engine.pendingState["party1"].nodeToUndelegateAmount["node1"])
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].nodeToUndelegateAmount["node2"])
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	require.Equal(t, num.NewUint(6), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.NewUint(6), pendingStateForEpoch["party1"].nodeToUndelegateAmount["node1"])
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].nodeToUndelegateAmount["node2"])
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 
@@ -689,17 +693,18 @@ func testUndelegateSuccessWithPreviousPendingDelegatePartiallyCovered(t *testing
 	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node2"])
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].nodeToDelegateAmount["node2"])
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party2"].nodeToUndelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, 2, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party1"].nodeToDelegateAmount["node2"])
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].nodeToDelegateAmount["node2"])
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party2"].nodeToUndelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 0, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 0, len(testEngine.engine.partyDelegationState))
 
@@ -734,7 +739,8 @@ func testUndelegateSuccessWithPreviousPendingDelegateExactlyCovered(t *testing.T
 	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 	require.Nil(t, err)
 
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 
 }
 
@@ -759,17 +765,18 @@ func testUndelegateSuccessWithPreviousPendingDelegateFullyCovered(t *testing.T) 
 	err = testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(4))
 	require.Nil(t, err)
 
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
 	// party1 had pending delegation of 2 for node1 so now it should have pending undelegation of 5
-	require.Equal(t, num.NewUint(5), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node2"])
+	require.Equal(t, num.NewUint(5), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party1"].nodeToDelegateAmount["node2"])
 
 	// party2 had pending delegation of 2 for node2 so now it should have pending undelegation of 2
-	require.Equal(t, num.NewUint(2), testEngine.engine.pendingState["party2"].totalUndelegation)
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].totalDelegation)
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party2"].nodeToDelegateAmount))
-	require.Equal(t, num.NewUint(3), testEngine.engine.pendingState["party2"].nodeToDelegateAmount["node1"])
+	require.Equal(t, num.NewUint(2), pendingStateForEpoch["party2"].totalUndelegation)
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].totalDelegation)
+	require.Equal(t, 1, len(pendingStateForEpoch["party2"].nodeToDelegateAmount))
+	require.Equal(t, num.NewUint(3), pendingStateForEpoch["party2"].nodeToDelegateAmount["node1"])
 }
 
 // preprocess delegation state from last epoch for changes in stake balance - such that there were no changes so no forced undelegation is expected
@@ -784,7 +791,7 @@ func testPreprocessForRewardingNoForcedUndelegationNeeded(t *testing.T) {
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(10)
 
 	// call preprocess to update the state based on the changes in staking account
-	testEngine.engine.preprocessEpochForRewarding(context.Background(), epochStart, epochEnd)
+	testEngine.engine.preprocessEpochForRewarding(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
 
 	// the stake account balance for the epoch covers the delegation for both parties so we expect no changes in delegated balances
 	require.Equal(t, num.NewUint(8), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
@@ -813,7 +820,7 @@ func testPreprocessForRewardingWithForceUndelegateSingleValidator(t *testing.T) 
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(0)
 
 	// call preprocess to update the state based on the changes in staking account
-	testEngine.engine.preprocessEpochForRewarding(context.Background(), epochStart, epochEnd)
+	testEngine.engine.preprocessEpochForRewarding(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
 
 	// both party1 and party2 withdrew tokens from their staking account that require undelegation
 	// party1 requires undelegation of 4 tokens
@@ -882,7 +889,7 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorNoRemainder(t *t
 	testEngine.engine.partyDelegationState["party1"].nodeToAmount["node3"] = num.NewUint(10)
 
 	// call preprocess to update the state based on the changes in staking account
-	testEngine.engine.preprocessEpochForRewarding(context.Background(), epochStart, epochEnd)
+	testEngine.engine.preprocessEpochForRewarding(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
 
 	// the stake account balance has gone down for party1 to 15 and they have 30 tokens delegated meaning we need to undelegate 15
 	// with equal balance in all validators we expect to remove 5 from each
@@ -976,7 +983,7 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorWithRemainder(t 
 	testEngine.engine.partyDelegationState["party3"].nodeToAmount["node3"] = num.NewUint(5)
 
 	// call preprocess to update the state based on the changes in staking account
-	testEngine.engine.preprocessEpochForRewarding(context.Background(), epochStart, epochEnd)
+	testEngine.engine.preprocessEpochForRewarding(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
 
 	// the stake account balance for party1 has gone down by 30 so we need to undelegate 30 tokens in total from node1, node2, and node3
 	// we do it proportionally to the delegation party1 has in them
@@ -1019,8 +1026,10 @@ func testPendingUndelegationEmpty(t *testing.T) {
 	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
 
 	// no pending undelegations
-	testEngine.engine.processPendingUndelegations([]string{})
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	testEngine.engine.processPendingUndelegations([]string{}, types.Epoch{Seq: 1})
+
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, num.NewUint(8), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(6), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1044,10 +1053,11 @@ func testPendingUndelegationNothingToUndelegate(t *testing.T) {
 
 	// in this case party3 had delegate state which must have been cleared by the preprocessing step as the party withdrew from the staking account
 	// but it still has an undelegation pending for execution - which will have no impact when executed
-	testEngine.engine.processPendingUndelegations([]string{"party3"})
+	testEngine.engine.processPendingUndelegations([]string{"party3"}, types.Epoch{Seq: 1})
 
 	// expect no change in delegation state and clearing of the pending state
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, num.NewUint(8), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(6), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1109,7 +1119,7 @@ func testPendingUndelegationGTDelegateddBalance(t *testing.T) {
 	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"] = num.NewUint(2)
 	testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(2)
 
-	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"})
+	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"}, types.Epoch{Seq: 1})
 	require.Equal(t, 1, len(testEngine.engine.nodeDelegationState["node1"].partyToAmount))
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1134,7 +1144,7 @@ func testPendingUndelegationLTDelegateddBalance(t *testing.T) {
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(3))
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(1))
 
-	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"})
+	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"}, types.Epoch{Seq: 1})
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState["node1"].partyToAmount))
 	require.Equal(t, num.NewUint(5), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(3), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
@@ -1165,7 +1175,7 @@ func testPendingUndelegationAllBalanceForParty(t *testing.T) {
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(3))
 
-	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"})
+	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"}, types.Epoch{Seq: 1})
 	require.Equal(t, 1, len(testEngine.engine.nodeDelegationState["node1"].partyToAmount))
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1190,7 +1200,7 @@ func testPendingUndelegationAllBalanceForNode(t *testing.T) {
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(6))
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(2))
 
-	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"})
+	testEngine.engine.processPendingUndelegations([]string{"party1", "party2"}, types.Epoch{Seq: 1})
 	require.Equal(t, 1, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState))
 	require.Equal(t, num.NewUint(7), testEngine.engine.nodeDelegationState["node2"].totalDelegated)
@@ -1212,7 +1222,7 @@ func testPendingDelegationEmpty(t *testing.T) {
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 
-	testEngine.engine.processPendingDelegations([]string{}, num.NewUint(10))
+	testEngine.engine.processPendingDelegations([]string{}, num.NewUint(10), types.Epoch{Seq: 1})
 	require.Equal(t, 0, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 0, len(testEngine.engine.partyDelegationState))
 }
@@ -1227,7 +1237,7 @@ func testPendingDelegationInsufficientBalance(t *testing.T) {
 
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(10))
 	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(8)
-	testEngine.engine.processPendingDelegations([]string{}, num.NewUint(10))
+	testEngine.engine.processPendingDelegations([]string{}, num.NewUint(10), types.Epoch{Seq: 1})
 	require.Equal(t, 0, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 0, len(testEngine.engine.partyDelegationState))
 }
@@ -1242,7 +1252,7 @@ func testPendingDelegationValidatorAllocationMaxedOut(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 
 	// expect the state hasn't changed and the delegation request has been ignored
-	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(8))
+	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(8), types.Epoch{Seq: 1})
 	require.Equal(t, num.NewUint(8), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(6), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1261,7 +1271,7 @@ func testPendingDelegationAmountAdjusted(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 
 	// the delegation amount has been adjusted to 1 and is added to the state
-	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(9))
+	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(9), types.Epoch{Seq: 1})
 	require.Equal(t, num.NewUint(9), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(7), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1281,7 +1291,7 @@ func testPendingDelegationSuccess(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 
 	// the delegation has been applied on the state
-	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(10))
+	testEngine.engine.processPendingDelegations([]string{"party1", "party2"}, num.NewUint(10), types.Epoch{Seq: 1})
 	require.Equal(t, num.NewUint(10), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(8), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1300,10 +1310,8 @@ func testProcessPending(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(1))
 
-	// the delegation has been applied on the state
-	testEngine.netp.EXPECT().Get("validators.delegation.maxStakePerValidator").AnyTimes().Return("100", nil)
-
-	testEngine.engine.processPending(context.Background())
+	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
 	require.Equal(t, num.NewUint(10), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(8), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
 	require.Equal(t, num.NewUint(2), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
@@ -1316,7 +1324,7 @@ func testProcessPending(t *testing.T) {
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party2"].totalDelegated)
 	require.Equal(t, num.NewUint(2), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(2), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"])
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	require.Equal(t, 0, len(pendingStateForEpoch))
 }
 
 func testGetValidatorsEmpty(t *testing.T) {
@@ -1333,8 +1341,7 @@ func testGetValidatorsSuccess(t *testing.T) {
 	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(5))
-	testEngine.netp.EXPECT().Get("validators.delegation.maxStakePerValidator").AnyTimes().Return("100", nil)
-	testEngine.engine.processPending(context.Background())
+	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
 	validators := testEngine.engine.getValidatorData()
 	require.Equal(t, 2, len(validators))
 	require.Equal(t, "node1", validators[0].NodeID)
@@ -1365,8 +1372,8 @@ func testGetValidatorsSuccessWithSelfDelegation(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "node2", "node1", num.NewUint(25))
 	testEngine.engine.Delegate(context.Background(), "node2", "node2", num.NewUint(125))
 
-	testEngine.netp.EXPECT().Get("validators.delegation.maxStakePerValidator").AnyTimes().Return("1000", nil)
-	testEngine.engine.processPending(context.Background())
+	testEngine.engine.OnMaxDelegationPerNodeChanged(context.Background(), num.NewUint(1000))
+	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
 	validators := testEngine.engine.getValidatorData()
 	require.Equal(t, 2, len(validators))
 	require.Equal(t, "node1", validators[0].NodeID)
@@ -1422,12 +1429,13 @@ func testUndelegateNowAllWithPendingOnly(t *testing.T) {
 
 	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
 	require.Nil(t, err)
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
 
-	require.Equal(t, 1, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, num.NewUint(10), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.NewUint(10), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node2"])
+	require.Equal(t, 1, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, num.NewUint(10), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.NewUint(10), pendingStateForEpoch["party1"].nodeToDelegateAmount["node2"])
 }
 
 // there's no pending delegation, remove all committed delegation
@@ -1440,7 +1448,8 @@ func testUndelegateNowAllWithCommittedOnly(t *testing.T) {
 	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
 	require.Nil(t, err)
 
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].totalDelegated)
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState["party1"].nodeToAmount))
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"])
@@ -1452,7 +1461,7 @@ func testUndelegateNowAllWithCommittedOnly(t *testing.T) {
 	// undelegate now all for party1 node2
 	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.Zero())
 	require.Nil(t, err)
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
 }
 
@@ -1469,7 +1478,8 @@ func testUndelegateNowAll(t *testing.T) {
 	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.Zero())
 	require.Nil(t, err)
 
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].totalDelegated)
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState["party1"].nodeToAmount))
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"])
@@ -1481,7 +1491,7 @@ func testUndelegateNowAll(t *testing.T) {
 	// undelegate now all for party1 node2
 	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.Zero())
 	require.Nil(t, err)
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
 
 }
@@ -1497,12 +1507,13 @@ func testUndelegateNowWithPendingOnly(t *testing.T) {
 	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(5))
 	require.Nil(t, err)
 
-	require.Equal(t, 2, len(testEngine.engine.pendingState["party1"].nodeToDelegateAmount))
-	require.Equal(t, 0, len(testEngine.engine.pendingState["party1"].nodeToUndelegateAmount))
-	require.Equal(t, num.NewUint(15), testEngine.engine.pendingState["party1"].totalDelegation)
-	require.Equal(t, num.Zero(), testEngine.engine.pendingState["party1"].totalUndelegation)
-	require.Equal(t, num.NewUint(5), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node1"])
-	require.Equal(t, num.NewUint(10), testEngine.engine.pendingState["party1"].nodeToDelegateAmount["node2"])
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 2, len(pendingStateForEpoch["party1"].nodeToDelegateAmount))
+	require.Equal(t, 0, len(pendingStateForEpoch["party1"].nodeToUndelegateAmount))
+	require.Equal(t, num.NewUint(15), pendingStateForEpoch["party1"].totalDelegation)
+	require.Equal(t, num.Zero(), pendingStateForEpoch["party1"].totalUndelegation)
+	require.Equal(t, num.NewUint(5), pendingStateForEpoch["party1"].nodeToDelegateAmount["node1"])
+	require.Equal(t, num.NewUint(10), pendingStateForEpoch["party1"].nodeToDelegateAmount["node2"])
 }
 
 func testUndelegateNowWithCommittedOnly(t *testing.T) {
@@ -1514,7 +1525,8 @@ func testUndelegateNowWithCommittedOnly(t *testing.T) {
 	err := testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(4))
 	require.Nil(t, err)
 
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, num.NewUint(6), testEngine.engine.partyDelegationState["party1"].totalDelegated)
 	require.Equal(t, 2, len(testEngine.engine.partyDelegationState["party1"].nodeToAmount))
 	require.Equal(t, num.NewUint(2), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"])
@@ -1540,7 +1552,8 @@ func testUndelegateNowPendingCovers(t *testing.T) {
 	require.Nil(t, err)
 
 	// pending state should have cleared
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 
 	// committed state should have stayed the same
 	require.Equal(t, num.NewUint(10), testEngine.engine.partyDelegationState["party1"].totalDelegated)
@@ -1565,7 +1578,8 @@ func testUndelegateNowCommittedCovers(t *testing.T) {
 	require.Nil(t, err)
 
 	// pending state cleared
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 
 	// committed state lost 4 delegated tokens for party1 node1
 	require.Equal(t, num.NewUint(6), testEngine.engine.partyDelegationState["party1"].totalDelegated)
@@ -1593,7 +1607,8 @@ func testUndelegateNowAllCleared(t *testing.T) {
 	require.Nil(t, err)
 
 	// pending state cleared
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	pendingStateForEpoch := testEngine.engine.pendingState[1]
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].totalDelegated)
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState["party1"].nodeToAmount))
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"])
@@ -1605,7 +1620,7 @@ func testUndelegateNowAllCleared(t *testing.T) {
 	// undelegate now all for party1 node2
 	err = testEngine.engine.UndelegateNow(context.Background(), "party1", "node2", num.NewUint(4))
 	require.Nil(t, err)
-	require.Equal(t, 0, len(testEngine.engine.pendingState))
+	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 }
@@ -1616,10 +1631,10 @@ func getEngine(t *testing.T) *testEngine {
 	broker := mocks.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
 	stakingAccounts := newTestStakingAccount()
-	netp := gmock.NewMockNetParams(ctrl)
 	topology := newTestTopology()
 
-	engine := New(logger, conf, broker, topology, stakingAccounts, netp)
+	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{})
+	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
 	engine.OnMinAmountChanged(context.Background(), num.NewUint(2))
 	engine.OnMaxDelegationPerNodeChanged(context.Background(), num.NewUint(100))
 
@@ -1631,9 +1646,12 @@ func getEngine(t *testing.T) *testEngine {
 		broker:          broker,
 		stakingAccounts: stakingAccounts,
 		topology:        topology,
-		netp:            netp,
 	}
 }
+
+type TestEpochEngine struct{}
+
+func (t *TestEpochEngine) NotifyOnEpoch(f func(context.Context, types.Epoch)) {}
 
 type TestStakingAccount struct {
 	partyToStake         map[string]*num.Uint

@@ -9,25 +9,28 @@ import (
 
 type DelegationBalance struct {
 	*Base
-	party  string
-	nodeID string
-	amount *num.Uint
+	party    string
+	nodeID   string
+	amount   *num.Uint
+	epochSeq string
 }
 
-func NewDelegationBalance(ctx context.Context, party, nodeID string, amount *num.Uint) *DelegationBalance {
+func NewDelegationBalance(ctx context.Context, party, nodeID string, amount *num.Uint, epochSeq string) *DelegationBalance {
 	return &DelegationBalance{
-		Base:   newBase(ctx, DelegationBalanceEvent),
-		party:  party,
-		nodeID: nodeID,
-		amount: amount,
+		Base:     newBase(ctx, DelegationBalanceEvent),
+		party:    party,
+		nodeID:   nodeID,
+		amount:   amount,
+		epochSeq: epochSeq,
 	}
 }
 
 func (db DelegationBalance) Proto() eventspb.DelegationBalanceEvent {
 	return eventspb.DelegationBalanceEvent{
-		Party:  db.party,
-		NodeId: db.nodeID,
-		Amount: db.amount.Uint64(),
+		Party:    db.party,
+		NodeId:   db.nodeID,
+		Amount:   db.amount.Uint64(),
+		EpochSeq: db.epochSeq,
 	}
 }
 
@@ -50,10 +53,11 @@ func DelegationBalanceEventFromStream(ctx context.Context, be *eventspb.BusEvent
 	}
 
 	return &DelegationBalance{
-		Base:   newBaseFromStream(ctx, DelegationBalanceEvent, be),
-		party:  event.GetParty(),
-		nodeID: event.GetNodeId(),
-		amount: num.NewUint(event.GetAmount()),
+		Base:     newBaseFromStream(ctx, DelegationBalanceEvent, be),
+		party:    event.GetParty(),
+		nodeID:   event.GetNodeId(),
+		amount:   num.NewUint(event.GetAmount()),
+		epochSeq: event.GetEpochSeq(),
 	}
 }
 
@@ -63,15 +67,17 @@ type PendingDelegationBalance struct {
 	nodeID             string
 	delegationAmount   *num.Uint
 	undelegationAmount *num.Uint
+	epochSeq           string
 }
 
-func NewPendingDelegationBalance(ctx context.Context, party, nodeID string, delegationAmount *num.Uint, undelegationAmount *num.Uint) *PendingDelegationBalance {
+func NewPendingDelegationBalance(ctx context.Context, party, nodeID string, delegationAmount *num.Uint, undelegationAmount *num.Uint, epochSeq string) *PendingDelegationBalance {
 	return &PendingDelegationBalance{
 		Base:               newBase(ctx, PendingDelegationBalanceEvent),
 		party:              party,
 		nodeID:             nodeID,
 		delegationAmount:   delegationAmount,
 		undelegationAmount: undelegationAmount,
+		epochSeq:           epochSeq,
 	}
 }
 
@@ -81,6 +87,7 @@ func (pdb PendingDelegationBalance) Proto() eventspb.PendingDelegationBalanceEve
 		NodeId:             pdb.nodeID,
 		DelegationAmount:   pdb.delegationAmount.Uint64(),
 		UndelegationAmount: pdb.undelegationAmount.Uint64(),
+		EpochSeq:           pdb.epochSeq,
 	}
 }
 
@@ -108,5 +115,6 @@ func PendingDelegationBalanceEventFromStream(ctx context.Context, be *eventspb.B
 		nodeID:             event.GetNodeId(),
 		delegationAmount:   num.NewUint(event.GetDelegationAmount()),
 		undelegationAmount: num.NewUint(event.GetUndelegationAmount()),
+		epochSeq:           event.EpochSeq,
 	}
 }

@@ -13,7 +13,7 @@ const (
 	compLevel = 1.1
 )
 
-func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *pendingPayout {
+func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
 	delegatorShare, err := rewardScheme.Parameters["delegatorShare"].GetFloat()
 	if err != nil {
 		e.log.Panic("failed to read reward scheme param", logging.String("delegatorShare", rewardScheme.Parameters["delegatorShare"].Value))
@@ -32,14 +32,14 @@ func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID str
 }
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints
-func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout *num.Uint) *pendingPayout {
+func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout *num.Uint) *payout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
 	totalRewardPayout := num.Zero()
 	reward := rewardBalance.Clone()
 
 	if reward.IsZero() {
-		return &pendingPayout{
+		return &payout{
 			partyToAmount: rewards,
 			totalReward:   totalRewardPayout,
 			asset:         asset,
@@ -54,13 +54,13 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 		}
 
 		// how much reward is assigned to the validator and its delegators
-		epochPayoutForValidatorAndDelegators := valScore * reward.Float64()
+		epochPayoutForValidatorAndDelegators := num.DecimalFromFloat(valScore).Mul(reward.ToDecimal())
 
 		// how much delegators take
-		fractionDelegatorsGet := delegatorShare * vd.StakeByDelegators.Float64() / (vd.StakeByDelegators.Float64() + vd.SelfStake.Float64())
+		amountToGiveToDelegators, _ := num.UintFromDecimal(num.NewDecimalFromFloat(delegatorShare).Mul(epochPayoutForValidatorAndDelegators))
 
 		// calculate the potential reward for delegators and the validator
-		amountToKeepByValidator, _ := num.UintFromDecimal(num.NewDecimalFromFloat((1 - fractionDelegatorsGet) * epochPayoutForValidatorAndDelegators))
+		amountToKeepByValidator, _ := num.UintFromDecimal(num.NewDecimalFromFloat(1 - delegatorShare).Mul(epochPayoutForValidatorAndDelegators))
 
 		// check how much reward the validator can accept with the cap per participant
 		rewardForNode, ok := rewards[vd.NodeID]
@@ -82,7 +82,6 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 			}
 		}
 
-		amountToGiveToDelegators, _ := num.UintFromDecimal(num.NewDecimalFromFloat(fractionDelegatorsGet * epochPayoutForValidatorAndDelegators))
 		remainingRewardForDelegators := amountToGiveToDelegators
 
 		// calculate delegator amounts
@@ -126,7 +125,7 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 		}
 	}
 
-	return &pendingPayout{
+	return &payout{
 		fromAccount:   accountID,
 		partyToAmount: rewards,
 		totalReward:   totalRewardPayout,
