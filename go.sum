@@ -24,6 +24,8 @@ code.vegaprotocol.io/protos v0.41.1-0.20210818164324-8ce14a3c2408 h1:RMjyCjGKJY2
 code.vegaprotocol.io/protos v0.41.1-0.20210818164324-8ce14a3c2408/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
 code.vegaprotocol.io/protos v0.41.1-0.20210818170856-9842e86ff87e h1:Bg+5FBXdbPwc/7UKxl6jeHtBewvU++RMYfaT0LkiIJ8=
 code.vegaprotocol.io/protos v0.41.1-0.20210818170856-9842e86ff87e/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
+code.vegaprotocol.io/protos v0.41.1-0.20210819123744-caf37db61ff4 h1:Rm71KELiMPoGWEFI+YVulhXZKWZj4jJ1D5J207PX6IA=
+code.vegaprotocol.io/protos v0.41.1-0.20210819123744-caf37db61ff4/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
