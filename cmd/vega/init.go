@@ -126,20 +126,6 @@ func (opts *InitCmd) Execute(_ []string) error {
 	return nil
 }
 
-func nodeWalletInit(cfg config.Config, nodeWalletPassphrase string, genDevNodeWallet bool) error {
-	if genDevNodeWallet {
-		return nodewallet.DevInit(
-			cfg.NodeWallet.StorePath,
-			cfg.NodeWallet.DevWalletsPath,
-			nodeWalletPassphrase,
-		)
-	}
-	return nodewallet.Init(
-		cfg.NodeWallet.StorePath,
-		nodeWalletPassphrase,
-	)
-}
-
 func Init(ctx context.Context, parser *flags.Parser) error {
 	initCmd = InitCmd{
 		RootPathFlag: config.NewRootPathFlag(),
