@@ -19,4 +19,6 @@ type MyEvent struct {
 ```
 
 6. Implement the `StreamEvent` interface on it.
-7. Add the support for this new event into the `Service` responsible for it.
+7. Implement the "<NewEvent>FromStream interface on it.
+8. Add the support for this new event into the `Service` responsible for it.
+9. Update the graphql structures in the data-node in schema.graphql. In particular the `BusEventType` enum and the `Event` union
