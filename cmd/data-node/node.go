@@ -13,18 +13,11 @@ type NodeCmd struct {
 	config.RootPathFlag
 
 	config.Config
-	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 var nodeCmd NodeCmd
 
 func (cmd *NodeCmd) Execute(args []string) error {
-	if cmd.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega node subcommand help",
-		}
-	}
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
@@ -59,7 +52,7 @@ func Node(ctx context.Context, parser *flags.Parser) error {
 		RootPathFlag: rootPath,
 		Config:       config.NewDefaultConfig(rootPath.RootPath),
 	}
-	cmd, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
+	cmd, err := parser.AddCommand("node", "Runs a vega data node", "Runs a vega data node as defined by the config files", &nodeCmd)
 	if err != nil {
 		return err
 	}

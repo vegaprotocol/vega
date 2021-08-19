@@ -20,15 +20,11 @@ type InitCmd struct {
 	config.RootPathFlag
 
 	Force bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
-	Help  bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 var initCmd InitCmd
 
 func (opts *InitCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{Type: flags.ErrHelp, Message: "vega init subcommand help"}
-	}
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
@@ -102,7 +98,7 @@ func Init(ctx context.Context, parser *flags.Parser) error {
 	}
 
 	short := "Initializes a vega node"
-	long := "Generate the minimal configuration required for a vega node to start"
+	long := "Generate the minimal configuration required for a vega dataa-node to start"
 
 	_, err := parser.AddCommand("init", short, long, &initCmd)
 	return err

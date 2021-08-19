@@ -255,7 +255,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	metrics.Start(l.conf.Metrics)
 
-	l.Log.Info("Vega startup complete")
+	l.Log.Info("Vega data node startup complete")
 
 	err := eg.Wait()
 	if errors.Is(err, context.Canceled) {

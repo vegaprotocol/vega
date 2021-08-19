@@ -21,17 +21,9 @@ type gatewayCmd struct {
 	ctx context.Context
 	gateway.Config
 	config.RootPathFlag
-	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *gatewayCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega gateway subcommand help",
-		}
-	}
-
 	eg, ctx := errgroup.WithContext(opts.ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -89,6 +81,6 @@ func Gateway(ctx context.Context, parser *flags.Parser) error {
 		RootPathFlag: config.NewRootPathFlag(),
 	}
 
-	_, err := parser.AddCommand("gateway", "short", "long", opts)
+	_, err := parser.AddCommand("gateway", "The API gateway", "The gateway for all the vega APIs", opts)
 	return err
 }
