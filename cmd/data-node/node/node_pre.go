@@ -120,7 +120,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
 	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
 
-	// always enabled market,parties etc stores as they are in memory or boths use them
 	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}

@@ -7,8 +7,6 @@ import (
 
 const (
 	namedLogger = "notary"
-
-	defaultSignatureRequired = 1.0
 )
 
 // Config represents governance specific configuration

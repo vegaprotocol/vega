@@ -89,10 +89,7 @@ func getTestService(t *testing.T) *testService {
 	orderStore := mocks.NewMockOrderStore(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	conf := orders.NewDefaultConfig()
-	svc, err := orders.NewService(log, conf, orderStore, timeSvc)
-	if err != nil {
-		t.Fatalf("Failed to get test service: %+v", err)
-	}
+	svc := orders.NewService(log, conf, orderStore, timeSvc)
 	return &testService{
 		ctrl:       ctrl,
 		orderStore: orderStore,

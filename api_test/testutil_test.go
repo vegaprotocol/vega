@@ -95,10 +95,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatalf("failed to create candle store: %v", err)
 	}
 
-	candleService, err := candles.NewService(logger, conf.Candles, candleStore)
-	if err != nil {
-		t.Fatalf("failed to create candle service: %v", err)
-	}
+	candleService := candles.NewService(logger, conf.Candles, candleStore)
 
 	orderStore, err := storage.NewOrders(logger, conf.Storage, cancel)
 	if err != nil {
@@ -107,10 +104,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 
 	timeService := vegatime.New(conf.Time)
 
-	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService)
-	if err != nil {
-		t.Fatalf("failed to create order service: %v", err)
-	}
+	orderService := orders.NewService(logger, conf.Orders, orderStore, timeService)
 	orderSub := subscribers.NewOrderEvent(ctx, conf.Subscribers, logger, orderStore, true)
 
 	marketStore, err := storage.NewMarkets(logger, conf.Storage, cancel)
@@ -126,11 +120,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		return
 	}
 
-	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
-	if err != nil {
-		t.Fatalf("failed to create market service: %v", err)
-		return
-	}
+	marketService := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, logger, true)
 
 	partyStore, err := storage.NewParties(conf.Storage)
@@ -165,10 +155,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	nodeStore := storage.NewNode(logger, conf.Storage)
 	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
 
-	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, nil)
-	if err != nil {
-		t.Fatalf("failed to create trade service: %v", err)
-	}
+	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
 	tradeSub := subscribers.NewTradeSub(ctx, tradeStore, logger, true)
 
 	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)

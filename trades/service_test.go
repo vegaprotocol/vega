@@ -31,13 +31,12 @@ func getTestService(t *testing.T) *testService {
 	trade := mocks.NewMockTradeStore(ctrl)
 	pos := mocks.NewMockPositionsPlugin(ctrl)
 	log := logging.NewTestLogger()
-	svc, err := trades.NewService(
+	svc := trades.NewService(
 		log,
 		trades.NewDefaultConfig(),
 		trade,
 		pos,
 	)
-	assert.NoError(t, err)
 	return &testService{
 		Svc:   svc,
 		ctx:   ctx,
