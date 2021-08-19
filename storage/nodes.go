@@ -97,6 +97,18 @@ func (v *Node) GetAll() []*pb.Node {
 	return nodes
 }
 
+func (v *Node) GetAllIDs() []string {
+	v.mut.RLock()
+	defer v.mut.RUnlock()
+
+	ids := make([]string, 0, len(v.nodes))
+	for _, n := range v.nodes {
+		ids = append(ids, n.n.Id)
+	}
+
+	return ids
+}
+
 func (v *Node) GetTotalNodesNumber() int {
 	v.mut.RLock()
 	defer v.mut.RUnlock()

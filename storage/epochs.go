@@ -67,6 +67,9 @@ func (e *Epoch) AddEpoch(seq uint64, startTime int64, endTime int64) {
 		seq:       epochSeq,
 		startTime: startTime,
 		endTime:   startTime,
+		// @TODO this is hack.. Epoch store should consume
+		// some event about node participation in epoch in future
+		nodeIDs: e.nodeStore.GetAllIDs(),
 	}
 
 	e.currentEpoch = epochSeq
@@ -90,6 +93,9 @@ func (e *Epoch) AddDelegation(de pb.Delegation) {
 }
 
 func (e *Epoch) GetTotalNodesUptime() time.Duration {
+	e.mut.RLock()
+	defer e.mut.RUnlock()
+
 	var uptime time.Duration
 	for _, e := range e.epochs {
 		uptime += time.Unix(0, e.endTime).Sub(time.Unix(0, e.startTime))
@@ -135,7 +141,7 @@ func (e *Epoch) epochProtoFromInternal(ie epoch) (*pb.Epoch, error) {
 		return nil, fmt.Errorf("failed to parse uint from %s: %w", ie.seq, err)
 	}
 
-	validators := make([]*pb.Node, len(ie.nodeIDs))
+	validators := make([]*pb.Node, 0, len(ie.nodeIDs))
 	for _, id := range ie.nodeIDs {
 		node, err := e.nodeStore.GetByID(id)
 		if err != nil {
@@ -146,9 +152,10 @@ func (e *Epoch) epochProtoFromInternal(ie epoch) (*pb.Epoch, error) {
 		validators = append(validators, node)
 	}
 
-	delegations := make([]*pb.Delegation, len(ie.delegationsPerNodePerParty))
+	delegations := make([]*pb.Delegation, 0, len(ie.delegationsPerNodePerParty)*2)
 	for _, delegationPerParty := range ie.delegationsPerNodePerParty {
-		for _, delegation := range delegationPerParty {
+		for _, d := range delegationPerParty {
+			delegation := d
 			delegations = append(delegations, &delegation)
 		}
 	}
