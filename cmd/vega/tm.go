@@ -29,7 +29,7 @@ var (
 	networkSelect string
 )
 
-type tmCmd struct {}
+type tmCmd struct{}
 
 func (opts *tmCmd) Execute(_ []string) error {
 

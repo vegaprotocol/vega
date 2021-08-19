@@ -63,18 +63,18 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	if len(opts.Network) != 0 {
-		ethConfig := `{"network_id": "%s", "chain_id": "%s", "bridge_address": "%s", "confirmations": %d,  "staking_bridge_addresses": %s}`
+		ethConfig := `{"network_id": "%s", "chain_id": "%s", "bridge_address": "%s", "confirmations": %d}`
 		switch opts.Network {
 		case "mainnet":
 			delete(genesisState.Assets, "VOTE")
-			genesisState.Assets["VEGA"] = assets.VegaTokenMainNet
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
+			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
+			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
+			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3)
 		case "testnet":
-			genesisState.Assets["VEGA"] = assets.VegaTokenTestNet
 			delete(genesisState.Assets, "VOTE")
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
+			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenTestNet
+			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
+			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3)
 		default:
 			return fmt.Errorf("network %s is not supported", opts.Network)
 		}
