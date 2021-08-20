@@ -257,7 +257,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 		currentPendingPartyDelegation.totalDelegation = num.Zero().Add(currentPendingPartyDelegation.totalDelegation, remainingBalanceForDelegate)
 	}
 
-	e.sendPendingBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
+	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
 
 	return nil
 }
@@ -373,7 +373,7 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 		pendingForEpoch[party] = currentPendingPartyDelegation
 	}
 
-	e.sendPendingBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
+	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
 	return nil
 }
 
@@ -438,7 +438,7 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 				delete(pendingForEpoch, party)
 			}
 
-			e.sendPendingBalanceEvent(ctx, party, nodeID, epoch)
+			e.sendNextEpochBalanceEvent(ctx, party, nodeID, epoch)
 		}
 	}
 	// if there's still some balance to undelegate we go to the delegated state
@@ -469,22 +469,34 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 	return nil
 }
 
-func (e *Engine) sendPendingBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {
+// sends the expected balance for the next epoch
+func (e *Engine) sendNextEpochBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {
 	pendingState, ok := e.pendingState[seq][party]
 
+	pendingDelegated := num.Zero()
+	pendingUndelegated := num.Zero()
+	var dok, udok bool
+
 	if ok {
-		pendingDelegated, dok := pendingState.nodeToDelegateAmount[nodeID]
+		pendingDelegated, dok = pendingState.nodeToDelegateAmount[nodeID]
 		if !dok {
 			pendingDelegated = num.Zero()
 		}
-		pendingUndelegated, udok := pendingState.nodeToUndelegateAmount[nodeID]
+		pendingUndelegated, udok = pendingState.nodeToUndelegateAmount[nodeID]
 		if !udok {
 			pendingUndelegated = num.Zero()
 		}
-		e.broker.Send(events.NewPendingDelegationBalance(ctx, party, nodeID, pendingDelegated, pendingUndelegated, num.NewUint(seq).String()))
-	} else {
-		e.broker.Send(events.NewPendingDelegationBalance(ctx, party, nodeID, num.Zero(), num.Zero(), num.NewUint(seq).String()))
 	}
+	delegatedToNode := num.Zero()
+	if currentlyInPlay, ok := e.partyDelegationState[party]; ok {
+		if nodeDelegation, ok := currentlyInPlay.nodeToAmount[nodeID]; ok {
+			delegatedToNode = nodeDelegation
+		}
+	}
+
+	amt := num.Zero().Sub(num.Zero().Add(delegatedToNode, pendingDelegated), pendingUndelegated)
+	effEpoch := seq + 1
+	e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(effEpoch).String()))
 }
 
 func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {
@@ -656,8 +668,7 @@ func (e *Engine) processPending(ctx context.Context, epoch types.Epoch) {
 	for _, party := range parties {
 		nodes := partyNodes[party]
 		for _, node := range nodes {
-			e.sendDelegatedBalanceEvent(ctx, party, node, epoch.Seq)
-			e.sendPendingBalanceEvent(ctx, party, node, epoch.Seq)
+			e.sendNextEpochBalanceEvent(ctx, party, node, epoch.Seq)
 		}
 	}
 }
