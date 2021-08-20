@@ -333,7 +333,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     
     And the parties place the following orders: 
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21 | buy  | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+      | trader3a | ETH/DEC21 | buy  | 1     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
     # For trader4 -
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 1 * 1002 = 1002
@@ -395,10 +395,10 @@ Scenario: Testing fees get collected when amended order trades
       | 1000       | TRADING_MODE_CONTINUOUS | 
    
     When the parties place the following orders:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | party   | market id  | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 2      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell  | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
 
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
@@ -1407,9 +1407,8 @@ Scenario: Testing fees in continuous trading during position resolution
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          | maturity date        |
       | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1| default-none     | default-eth-for-future | 2019-12-31T23:59:59Z |
 
-
-  And the traders deposit on asset's general account the following amount:
-      | trader   | asset | amount        |
+  And the parties deposit on asset's general account the following amount:
+      | party   | asset | amount        |
       | aux1     | ETH   | 1000000000000 |
       | aux2     | ETH   | 1000000000000 |
       | trader3a | ETH   | 10000         |
@@ -1465,7 +1464,7 @@ Scenario: Testing fees in continuous trading during position resolution
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | trader3a | 0      | 0              | -98700        |
+      | trader3a | 0      | 0              | -9870        |
       | trader3b | 0      | 0              | -29622       |
 
     # trade_value_for_fee_purposes for party 3a = size_of_trade * price_of_trade = 50 *190 = 9500 And 50 * 180 = 9000
