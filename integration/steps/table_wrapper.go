@@ -581,6 +581,7 @@ func AccountID(marketID, partyID, asset string, ty types.AccountType) string {
 	idBuf := make([]byte, 256)
 
 	if ty == types.AccountTypeGeneral || ty == types.AccountTypeFeesInfrastructure {
+
 		marketID = ""
 	}
 

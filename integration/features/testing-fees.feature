@@ -231,7 +231,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | aux1    | ETH/DEC21 | buy  | 1      | 920   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2    | ETH/DEC21 | sell | 1      | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
-  #  TODO: Remove liquidity orders, add limit orders for same price and volume so that checks on lines 257-1 pass and update margin/general account figures.
     Given the traders submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
@@ -1328,6 +1327,8 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | trader3a | ETH   | 5000       |
       | trader4  | ETH   | 7465       |
       # If the trader4 balance is changed to from 7261 to 7465 then the trade goes ahead as the account balance goes above maintenance level after paying fees.
+      # | trader4  | ETH   | 7261       |
+      # If the trader4 balance is changed to 7465 then the trade goes ahead as the account balance goes below maintenance level.
 
     Then the traders place the following orders:
       | trader   | market id | side  | volume | price | resulting trades | type       | tif     |
@@ -1506,3 +1507,7 @@ Scenario: Testing fees in continuous trading during position resolution
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running - Use
 	# MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
 	# MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee" 
+
+# Fees calculations during Position Resolution on pro rated basis
+# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid.
+# Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance.
