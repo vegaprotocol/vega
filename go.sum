@@ -11,6 +11,7 @@ cloud.google.com/go/firestore v1.1.0/go.mod h1:ulACoGHTpvq5r8rxGJ4ddJZBZqakUQqCl
 cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2kNxGRt3I=
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
 code.vegaprotocol.io/go-wallet v0.7.1-0.20210811152350-80715dbe0f7c/go.mod h1:lRgjmzsi5Wrzqd/RsTtlBtTecxfPBcWfRaavbupx228=
+code.vegaprotocol.io/go-wallet v0.7.1-0.20210818090756-e2e8f4f1a075/go.mod h1:FqwlBV1B+HR487NmuurfRtZ9XvhM1n7NjgrSEuYZl/k=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
 code.vegaprotocol.io/protos v0.41.1-0.20210811150853-c20ca86bc38f/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
 code.vegaprotocol.io/protos v0.41.1-0.20210811160213-9567aa364f79 h1:2YMnaWQo0q7jzGOKLe99blG0W1auFFZ7nrP7fevaXFU=
@@ -23,10 +24,15 @@ code.vegaprotocol.io/protos v0.41.1-0.20210817173950-833e9e05f293 h1:Ork4wQSX5YZ
 code.vegaprotocol.io/protos v0.41.1-0.20210817173950-833e9e05f293/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
 code.vegaprotocol.io/protos v0.41.1-0.20210817175035-142a5668bf61 h1:dPf+0JAn20CH5gWwlipQO6goX/kbr3PiE5drE5C3NG4=
 code.vegaprotocol.io/protos v0.41.1-0.20210817175035-142a5668bf61/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
+code.vegaprotocol.io/protos v0.41.1-0.20210818085909-433d56f64986/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
+code.vegaprotocol.io/protos v0.41.1-0.20210819114944-65f49c498f7b h1:G8iu3rjvhC1Nfb1CgPdO/Y++2vd1HoRENGeAUQ6fG+o=
+code.vegaprotocol.io/protos v0.41.1-0.20210819114944-65f49c498f7b/go.mod h1:17UdBxRpWLiJk1bq43Pl6HFfTjFnuoLHBsKfEZP0qjE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/vega v0.41.1-0.20210813173752-c4e56dfda378 h1:/9kAgZqdsmRLEatM3k4KK7rUM61hryQlKetqi1lPRnA=
 code.vegaprotocol.io/vega v0.41.1-0.20210813173752-c4e56dfda378/go.mod h1:ElU0HZ+QRIE8cK7L8EkcCmAHAlSLFVU5j4+Q6QN4HEE=
+code.vegaprotocol.io/vega v0.41.1-0.20210819185355-a49f7fc951f3 h1:oigsL7Qclo47UcfgK9Tat4aGm7eBpmrUSkuiqypz+0g=
+code.vegaprotocol.io/vega v0.41.1-0.20210819185355-a49f7fc951f3/go.mod h1:MwtcEqCbh6AO1FOmH3zZIh3IqLhjNK2rtXDUEGsIrdo=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/99designs/gqlgen v0.11.3/go.mod h1:RgX5GRRdDWNkh4pBrdzNpNPFVsdoUFY2+adM6nb1N+4=
