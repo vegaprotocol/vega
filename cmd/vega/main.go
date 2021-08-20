@@ -57,7 +57,6 @@ func Main(ctx context.Context) error {
 
 	if err := Register(ctx, parser,
 		Faucet,
-		Gateway,
 		genesis.Genesis,
 		Init,
 		Node,

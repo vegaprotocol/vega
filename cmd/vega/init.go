@@ -12,7 +12,6 @@ import (
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/zannen/toml"
@@ -55,25 +54,6 @@ func (opts *InitCmd) Execute(_ []string) error {
 
 	// create the root
 	if err = fsutil.EnsureDir(opts.RootPath); err != nil {
-		return err
-	}
-
-	fullCandleStorePath := filepath.Join(opts.RootPath, storage.CandlesDataPath)
-	fullOrderStorePath := filepath.Join(opts.RootPath, storage.OrdersDataPath)
-	fullTradeStorePath := filepath.Join(opts.RootPath, storage.TradesDataPath)
-	fullMarketStorePath := filepath.Join(opts.RootPath, storage.MarketsDataPath)
-
-	// create sub-folders
-	if err = fsutil.EnsureDir(fullCandleStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullOrderStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullTradeStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullMarketStorePath); err != nil {
 		return err
 	}
 
