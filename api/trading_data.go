@@ -223,6 +223,10 @@ type tradingDataService struct {
 	oracleService           OracleService
 }
 
+func (t *tradingDataService) Delegations(ctx context.Context, request *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
+	panic("implement me")
+}
+
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
 	return nil, errors.New("not implemented")
 }

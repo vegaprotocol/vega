@@ -155,6 +155,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) Checkpoints(arg0, arg1 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoints", reflect.TypeOf((*MockTradingDataServiceClient)(nil).Checkpoints), varargs...)
 }
 
+// Delegations mocks base method
+func (m *MockTradingDataServiceClient) Delegations(arg0 context.Context, arg1 *v1.DelegationsRequest, arg2 ...grpc.CallOption) (*v1.DelegationsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Delegations", varargs...)
+	ret0, _ := ret[0].(*v1.DelegationsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Delegations indicates an expected call of Delegations
+func (mr *MockTradingDataServiceClientMockRecorder) Delegations(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delegations", reflect.TypeOf((*MockTradingDataServiceClient)(nil).Delegations), varargs...)
+}
+
 // Deposit mocks base method
 func (m *MockTradingDataServiceClient) Deposit(arg0 context.Context, arg1 *v1.DepositRequest, arg2 ...grpc.CallOption) (*v1.DepositResponse, error) {
 	m.ctrl.T.Helper()
