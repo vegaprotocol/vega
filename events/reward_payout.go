@@ -6,7 +6,6 @@ import (
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
-	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -14,13 +13,13 @@ type RewardPayout struct {
 	*Base
 	party                   string
 	epochSeq                string
-	asset                   *types.Asset
+	asset                   string
 	percentageOfTotalReward string
 	amount                  *num.Uint
 	timestamp               int64
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset *types.Asset, amount *num.Uint, percentageOfTotalReward float64) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward float64) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		party:                   party,
@@ -40,7 +39,7 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 	return eventspb.RewardPayoutEvent{
 		Party:                rp.party,
 		EpochSeq:             rp.epochSeq,
-		Asset:                rp.asset.IntoProto(),
+		Asset:                rp.asset,
 		Amount:               rp.amount.String(),
 		PercentOfTotalReward: rp.percentageOfTotalReward,
 		Timestamp:            rp.timestamp,
@@ -74,7 +73,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		Base:                    newBaseFromStream(ctx, RewardPayoutEvent, be),
 		party:                   rp.Party,
 		epochSeq:                rp.EpochSeq,
-		asset:                   types.AssetFromProto(rp.Asset),
+		asset:                   rp.Asset,
 		percentageOfTotalReward: rp.PercentOfTotalReward,
 		amount:                  amount,
 	}

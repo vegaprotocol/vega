@@ -73,7 +73,7 @@ type Engine struct {
 
 type pendingPayout struct {
 	fromAccount   string
-	asset         *types.Asset
+	asset         string
 	partyToAmount map[string]*num.Uint
 	totalReward   *num.Uint
 	epochSeq      string
@@ -325,7 +325,7 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 		transfers = append(transfers, &types.Transfer{
 			Owner: party,
 			Amount: &types.FinancialAmount{
-				Asset:  payout.asset.ID,
+				Asset:  payout.asset,
 				Amount: amt.Clone(),
 			},
 			Type:      types.TransferTypeRewardPayout,
