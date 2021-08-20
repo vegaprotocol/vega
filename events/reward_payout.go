@@ -64,10 +64,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		return nil
 	}
 
-	amount, overflow := num.UintFromString(rp.Amount, 10)
-	if overflow {
-		amount = num.Zero()
-	}
+	amount, _ := num.UintFromString(rp.Amount, 10)
 
 	return &RewardPayout{
 		Base:                    newBaseFromStream(ctx, RewardPayoutEvent, be),
