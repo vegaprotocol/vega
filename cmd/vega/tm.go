@@ -92,7 +92,7 @@ func selectGenesisDocProviderFunc(config *cfg.Config) nm.GenesisDocProvider {
 }
 
 func httpGenesisDocProvider() (*types.GenesisDoc, error) {
-	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/genesis/master/%s/genesis.json", networkSelect))
+	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect))
 	if err != nil {
 		return nil, err
 	}
