@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/protos/vega/api"
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -79,7 +78,7 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 			c.log.Panic("could not sign command", logging.Error(err))
 		}
 
-		tx := commands.NewTransaction(c.wal.PubKeyOrAddress().Hex(), marshalledData, signature)
+		tx := commandspb.NewTransaction(c.wal.PubKeyOrAddress().Hex(), marshalledData, signature)
 		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
 		if err != nil {
 			// this can happen as network dependent
