@@ -29,9 +29,10 @@ type DelegationBalanceSub struct {
 	log *logging.Logger
 }
 
-func NewDelegationBalanceSub(ctx context.Context, nodetore NodeStore, epochStore EpochStore, log *logging.Logger, ack bool) *DelegationBalanceSub {
+func NewDelegationBalanceSub(ctx context.Context, nodeStore NodeStore, epochStore EpochStore, log *logging.Logger, ack bool) *DelegationBalanceSub {
 	sub := &DelegationBalanceSub{
 		Base:       NewBase(ctx, 10, ack),
+		nodeStore:  nodeStore,
 		epochStore: epochStore,
 		log:        log,
 	}

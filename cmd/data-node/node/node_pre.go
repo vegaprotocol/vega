@@ -162,7 +162,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 	}
 
 	l.nodeStore = storage.NewNode(l.Log, l.conf.Storage)
-	l.epochStore = storage.NewEpoch(l.Log, l.conf.Storage)
+	l.epochStore = storage.NewEpoch(l.Log, l.nodeStore, l.conf.Storage)
 
 	l.cfgwatchr.OnConfigUpdate(
 		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },

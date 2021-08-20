@@ -46,40 +46,34 @@ func TestNodes(t *testing.T) {
 	a.NoError(err)
 	a.Equal(expectedNode, actualNode)
 
-	delegationOne := pb.Delegation{
-		Party:    "1",
-		NodeId:   "pub_key_1",
-		Amount:   "20",
-		EpochSeq: "1",
+	delegations := []*pb.Delegation{
+		{
+			Party:    "1",
+			NodeId:   "pub_key_1",
+			Amount:   "20",
+			EpochSeq: "1",
+		},
+		{
+			Party:    "pub_key_1",
+			NodeId:   "pub_key_1",
+			Amount:   "10",
+			EpochSeq: "1",
+		},
+		{
+			Party:    "2",
+			NodeId:   "pub_key_1",
+			Amount:   "5",
+			EpochSeq: "1",
+		},
 	}
 
-	delegationTwo := pb.Delegation{
-		Party:    "pub_key_1",
-		NodeId:   "pub_key_1",
-		Amount:   "10",
-		EpochSeq: "1",
-	}
-
-	delegationThree := pb.Delegation{
-		Party:    "2",
-		NodeId:   "pub_key_1",
-		Amount:   "5",
-		EpochSeq: "1",
-	}
-
-	nodeStore.AddDelegation(delegationOne)
-	nodeStore.AddDelegation(delegationTwo)
-	nodeStore.AddDelegation(delegationThree)
-
-	expectedDelegations := []*pb.Delegation{
-		&delegationOne,
-		&delegationTwo,
-		&delegationThree,
-	}
+	nodeStore.AddDelegation(*delegations[0])
+	nodeStore.AddDelegation(*delegations[1])
+	nodeStore.AddDelegation(*delegations[2])
 
 	actualNode, err = nodeStore.GetByID("pub_key_1")
 	a.NoError(err)
-	assertNode(a, actualNode, expectedDelegations, "10", "25", "35")
+	assertNode(a, actualNode, delegations, "10", "25", "35")
 
 	nodeStore.AddNode(pb.Node{
 		Id:       "2",
@@ -89,61 +83,75 @@ func TestNodes(t *testing.T) {
 		Status:   pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	})
 
-	delegationOne = pb.Delegation{
-		Party:    "3",
-		NodeId:   "pub_key_2",
-		Amount:   "10",
-		EpochSeq: "1",
+	delegations = []*pb.Delegation{
+		{
+			Party:    "3",
+			NodeId:   "pub_key_2",
+			Amount:   "10",
+			EpochSeq: "1",
+		},
+		{
+			Party:    "4",
+			NodeId:   "pub_key_2",
+			Amount:   "50",
+			EpochSeq: "1",
+		},
+		{
+			Party:    "4",
+			NodeId:   "pub_key_2",
+			Amount:   "50",
+			EpochSeq: "2",
+		},
+		{
+			Party:    "3",
+			NodeId:   "pub_key_2",
+			Amount:   "50",
+			EpochSeq: "2",
+		},
 	}
 
-	delegationTwo = pb.Delegation{
-		Party:    "4",
-		NodeId:   "pub_key_2",
-		Amount:   "50",
-		EpochSeq: "1",
-	}
+	nodeStore.AddDelegation(*delegations[0])
+	nodeStore.AddDelegation(*delegations[1])
+	nodeStore.AddDelegation(*delegations[2])
+	nodeStore.AddDelegation(*delegations[3])
 
-	nodeStore.AddDelegation(delegationOne)
-	nodeStore.AddDelegation(delegationTwo)
-
-	expectedDelegations = []*pb.Delegation{
-		&delegationOne,
-		&delegationTwo,
-	}
+	// This delegation should just replace previous one in the epoch - only increase the amount
+	delegations[3].Amount = "60"
+	nodeStore.AddDelegation(*delegations[3])
 
 	node, err := nodeStore.GetByID("pub_key_2")
 	a.NoError(err)
-	assertNode(a, node, expectedDelegations, "0", "60", "60")
+	assertNode(a, node, delegations, "0", "170", "170")
 
 	nodes := nodeStore.GetAll()
 	a.Equal(2, len(nodes))
 
 	a.Equal(2, nodeStore.GetTotalNodesNumber())
 	a.Equal(2, nodeStore.GetValidatingNodesNumber())
-	a.Equal("95", nodeStore.GetStakedTotal())
+	a.Equal("205", nodeStore.GetStakedTotal())
 }
 
 func assertNode(
 	a *assert.Assertions,
 	node *pb.Node,
-	expectedDelegations []*pb.Delegation,
+	delegations []*pb.Delegation,
 	stakedByOperator, stakedByDelegates, stakedTotal string,
 ) {
-	a.Equal(node.StakedByOperator, stakedByOperator)
-	a.Equal(node.StakedByDelegates, stakedByDelegates)
-	a.Equal(node.StakedTotal, stakedTotal)
+	a.Equal(stakedByOperator, node.StakedByOperator)
+	a.Equal(stakedByDelegates, node.StakedByDelegates)
+	a.Equal(stakedTotal, node.StakedTotal)
 
-	sort.Slice(expectedDelegations, func(i, j int) bool {
-		return expectedDelegations[i].Amount < expectedDelegations[j].Amount
+	sort.Slice(delegations, func(i, j int) bool {
+		return delegations[i].Amount < delegations[j].Amount
 	})
 
 	sort.Slice(node.Delagations, func(i, j int) bool {
 		return node.Delagations[i].Amount < node.Delagations[j].Amount
 	})
 
-	a.Equal(len(expectedDelegations), len(node.Delagations))
+	a.Equal(len(delegations), len(node.Delagations))
 
-	for i := range expectedDelegations {
-		a.Equal(expectedDelegations[i], node.Delagations[i])
+	for i := range delegations {
+		a.Equal(delegations[i], node.Delagations[i])
 	}
 }

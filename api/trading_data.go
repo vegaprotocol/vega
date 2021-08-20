@@ -199,7 +199,7 @@ type LiquidityService interface {
 }
 
 // NodeService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_service_mock.go -package mocks code.vegaprotocol.io/data-node/api NodeService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_service_mock.go -package mocks code.vegaprotocol.io/data-node/api NodeService
 type NodeService interface {
 	GetNodeData(ctx context.Context) (*pbtypes.NodeData, error)
 	GetNodes(ctx context.Context) ([]*pbtypes.Node, error)
@@ -207,7 +207,7 @@ type NodeService interface {
 }
 
 // EpochService ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_service_mock.go -package mocks code.vegaprotocol.io/data-node/api EpochService
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/data-node/api EpochService
 type EpochService interface {
 	GetEpochByID(ctx context.Context, id string) (*pbtypes.Epoch, error)
 	GetEpoch(ctx context.Context) (*pbtypes.Epoch, error)

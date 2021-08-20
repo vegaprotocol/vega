@@ -67,7 +67,7 @@ func NewService(
 	}
 }
 
-// ReloadConf update the market service internal configuration
+// ReloadConf update the risk service internal configuration
 func (s *Svc) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {

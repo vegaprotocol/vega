@@ -26,20 +26,21 @@ type Epoch struct {
 	epochs       map[string]epoch
 	currentEpoch string
 
-	nodeStore Node
+	nodeStore *Node
 
 	log *logging.Logger
 }
 
-func NewEpoch(log *logging.Logger, c Config) *Epoch {
+func NewEpoch(log *logging.Logger, nodeStore *Node, c Config) *Epoch {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
 	return &Epoch{
-		epochs: make(map[string]epoch),
-		log:    log,
-		Config: c,
+		nodeStore: nodeStore,
+		epochs:    make(map[string]epoch),
+		log:       log,
+		Config:    c,
 	}
 }
 
@@ -57,39 +58,58 @@ func (e *Epoch) ReloadConf(cfg Config) {
 	e.Config = cfg
 }
 
+// AddEpoch adds new epoch and updates if epoch already exists
 func (e *Epoch) AddEpoch(seq uint64, startTime int64, endTime int64) {
+	epochSeq := strconv.FormatUint(seq, 10)
+
+	e.mut.Lock()
+	if epoch, ok := e.epochs[epochSeq]; ok {
+		epoch.startTime = startTime
+		epoch.endTime = endTime
+		e.epochs[epochSeq] = epoch
+		e.mut.Unlock()
+		return
+	}
+	e.mut.Unlock()
+
+	e.addEpoch(epochSeq, startTime, endTime)
+}
+
+func (e *Epoch) addEpoch(seq string, startTime int64, endTime int64) {
 	e.mut.Lock()
 	defer e.mut.Unlock()
 
-	epochSeq := strconv.FormatUint(seq, 10)
-
-	e.epochs[epochSeq] = epoch{
-		seq:       epochSeq,
+	e.epochs[seq] = epoch{
+		seq:       seq,
 		startTime: startTime,
-		endTime:   startTime,
+		endTime:   endTime,
 		// @TODO this is hack.. Epoch store should consume
 		// some event about node participation in epoch in future
-		nodeIDs: e.nodeStore.GetAllIDs(),
+		nodeIDs:                    e.nodeStore.GetAllIDs(),
+		delegationsPerNodePerParty: make(map[string]map[string]pb.Delegation),
 	}
 
-	e.currentEpoch = epochSeq
+	e.currentEpoch = seq
 }
 
 func (e *Epoch) AddDelegation(de pb.Delegation) {
+	e.mut.RLock()
+	_, ok := e.epochs[de.EpochSeq]
+	e.mut.RUnlock()
+	if !ok {
+		e.addEpoch(de.EpochSeq, 0, 0)
+	}
+
 	e.mut.Lock()
-	defer e.mut.Unlock()
+	epoch := e.epochs[de.EpochSeq]
 
-	epoch, ok := e.epochs[de.EpochSeq]
-	if !ok {
-		e.log.Error("Failed to update event for non existing epoch", logging.String("epoch", de.EpochSeq))
+	if _, ok := epoch.delegationsPerNodePerParty[de.NodeId]; !ok {
+		epoch.delegationsPerNodePerParty[de.NodeId] = map[string]pb.Delegation{}
 	}
 
-	delegationsPerNodes, ok := epoch.delegationsPerNodePerParty[de.NodeId]
-	if !ok {
-		delegationsPerNodes = map[string]pb.Delegation{}
-	}
+	epoch.delegationsPerNodePerParty[de.NodeId][de.GetParty()] = de
 
-	delegationsPerNodes[de.GetParty()] = de
+	e.mut.Unlock()
 }
 
 func (e *Epoch) GetTotalNodesUptime() time.Duration {
@@ -98,7 +118,7 @@ func (e *Epoch) GetTotalNodesUptime() time.Duration {
 
 	var uptime time.Duration
 	for _, e := range e.epochs {
-		uptime += time.Unix(0, e.endTime).Sub(time.Unix(0, e.startTime))
+		uptime += time.Unix(e.endTime, 0).Sub(time.Unix(e.startTime, 0))
 	}
 
 	return uptime
@@ -108,11 +128,14 @@ func (e *Epoch) GetEpoch() (*pb.Epoch, error) {
 	e.mut.RLock()
 	defer e.mut.RUnlock()
 
-	epoch := e.epochs[e.currentEpoch]
+	epoch, ok := e.epochs[e.currentEpoch]
+	if !ok {
+		return nil, fmt.Errorf("no epoch present")
+	}
 
 	pe, err := e.epochProtoFromInternal(epoch)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to convert epoch to proto: %w", err)
 	}
 
 	return pe, nil

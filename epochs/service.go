@@ -8,7 +8,7 @@ import (
 	pb "code.vegaprotocol.io/protos/vega"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validators_store_mock.go -package mocks code.vegaprotocol.io/data-node/validators EpochStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_store_mock.go -package mocks code.vegaprotocol.io/data-node/validators EpochStore
 type EpochStore interface {
 	GetTotalNodesUptime() time.Duration
 	GetEpochByID(id string) (*pb.Epoch, error)
@@ -22,7 +22,7 @@ type Service struct {
 	epochStore EpochStore
 }
 
-// NewService creates an validators service with the necessary dependencies
+// NewService creates an epoch service with the necessary dependencies
 func NewService(
 	log *logging.Logger,
 	config Config,
@@ -39,7 +39,7 @@ func NewService(
 	}
 }
 
-// ReloadConf update the market service internal configuration
+// ReloadConf update the epoch service internal configuration
 func (s *Service) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {

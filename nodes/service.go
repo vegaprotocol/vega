@@ -52,7 +52,7 @@ func NewService(
 	}
 }
 
-// ReloadConf update the market service internal configuration
+// ReloadConf update the node service internal configuration
 func (s *Service) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {

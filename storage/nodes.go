@@ -12,7 +12,7 @@ import (
 type node struct {
 	n pb.Node
 
-	delegationsPerParty map[string]pb.Delegation
+	delegationsPerPartyPerEpoch map[string]map[string]pb.Delegation
 }
 
 type Node struct {
@@ -55,8 +55,8 @@ func (v *Node) AddNode(n pb.Node) {
 	defer v.mut.Unlock()
 
 	v.nodes[n.GetPubKey()] = node{
-		n:                   n,
-		delegationsPerParty: make(map[string]pb.Delegation),
+		n:                           n,
+		delegationsPerPartyPerEpoch: make(map[string]map[string]pb.Delegation),
 	}
 }
 
@@ -64,13 +64,17 @@ func (v *Node) AddDelegation(de pb.Delegation) {
 	v.mut.Lock()
 	defer v.mut.Unlock()
 
-	_, ok := v.nodes[de.GetNodeId()]
+	node, ok := v.nodes[de.GetNodeId()]
 	if !ok {
 		v.log.Error("Received delegation balance event for non existing node", logging.String("node_id", de.GetNodeId()))
 		return
 	}
 
-	v.nodes[de.GetNodeId()].delegationsPerParty[de.GetParty()] = de
+	if _, ok := node.delegationsPerPartyPerEpoch[de.GetParty()]; !ok {
+		node.delegationsPerPartyPerEpoch[de.GetParty()] = map[string]pb.Delegation{}
+	}
+
+	node.delegationsPerPartyPerEpoch[de.GetParty()][de.GetEpochSeq()] = de
 }
 
 func (v *Node) GetByID(id string) (*pb.Node, error) {
@@ -103,7 +107,7 @@ func (v *Node) GetAllIDs() []string {
 
 	ids := make([]string, 0, len(v.nodes))
 	for _, n := range v.nodes {
-		ids = append(ids, n.n.Id)
+		ids = append(ids, n.n.GetPubKey())
 	}
 
 	return ids
@@ -131,14 +135,16 @@ func (v *Node) GetStakedTotal() string {
 	stakedTotal := num.NewUint(0)
 
 	for _, n := range v.nodes {
-		for _, d := range n.delegationsPerParty {
-			amount, ok := num.UintFromString(d.GetAmount(), 10)
-			if ok {
-				v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
-				continue
-			}
+		for _, dPerEpoch := range n.delegationsPerPartyPerEpoch {
+			for _, d := range dPerEpoch {
+				amount, ok := num.UintFromString(d.GetAmount(), 10)
+				if ok {
+					v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
+					continue
+				}
 
-			stakedTotal.Add(stakedTotal, amount)
+				stakedTotal.Add(stakedTotal, amount)
+			}
 		}
 	}
 
@@ -150,23 +156,25 @@ func (v *Node) nodeProtoFromInternal(n node) *pb.Node {
 	stakedByOperator := num.NewUint(0)
 	stakedByDelegates := num.NewUint(0)
 
-	delegations := make([]*pb.Delegation, 0, len(n.delegationsPerParty))
+	delegations := make([]*pb.Delegation, 0, len(n.delegationsPerPartyPerEpoch))
 
-	for _, d := range n.delegationsPerParty {
-		delegation := d
-		delegations = append(delegations, &delegation)
+	for _, dPerEpoch := range n.delegationsPerPartyPerEpoch {
+		for _, d := range dPerEpoch {
+			delegation := d
+			delegations = append(delegations, &delegation)
 
-		amount, ok := num.UintFromString(d.GetAmount(), 10)
-		if ok {
-			v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
-			continue
-		}
+			amount, ok := num.UintFromString(d.GetAmount(), 10)
+			if ok {
+				v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
+				continue
+			}
 
-		// If party is equal the node public key we assume this is operator
-		if d.GetParty() == n.n.GetPubKey() {
-			stakedByOperator.Add(stakedByOperator, amount)
-		} else {
-			stakedByDelegates.Add(stakedByDelegates, amount)
+			// If party is equal the node public key we assume this is operator
+			if d.GetParty() == n.n.GetPubKey() {
+				stakedByOperator.Add(stakedByOperator, amount)
+			} else {
+				stakedByDelegates.Add(stakedByDelegates, amount)
+			}
 		}
 	}
 
