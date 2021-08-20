@@ -8,7 +8,6 @@ import (
 	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/validators"
-	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/types"
@@ -18,17 +17,9 @@ type newValidatorCmd struct {
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
 	Country string `long:"country" description:"The country from which the validator operates" required:"true"`
 	InfoURL string `long:"info-url" description:"The URL from which people can get to know the validator" required:"true"`
-	Help    bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *newValidatorCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega genesis new validator subcommand help",
-		}
-	}
-
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)

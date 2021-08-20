@@ -17,7 +17,6 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -31,17 +30,9 @@ type generateCmd struct {
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
-	Help    bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega genesis generate subcommand help",
-		}
-	}
-
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
@@ -72,18 +63,18 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	if len(opts.Network) != 0 {
-		ethConfig := `{"network_id": "%s", "chain_id": "%s", "bridge_address": "%s", "confirmations": %d,  "staking_bridge_addresses": %s}`
+		ethConfig := `{"network_id": "%s", "chain_id": "%s", "bridge_address": "%s", "confirmations": %d}`
 		switch opts.Network {
 		case "mainnet":
 			delete(genesisState.Assets, "VOTE")
-			genesisState.Assets["VEGA"] = assets.VegaTokenMainNet
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
+			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
+			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
+			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3)
 		case "testnet":
-			genesisState.Assets["VEGA"] = assets.VegaTokenTestNet
 			delete(genesisState.Assets, "VOTE")
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
+			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenTestNet
+			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
+			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3)
 		default:
 			return fmt.Errorf("network %s is not supported", opts.Network)
 		}

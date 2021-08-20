@@ -17,17 +17,9 @@ type watch struct {
 	Positional struct {
 		Filters []string `positional-arg-name:"<FILTERS>"`
 	} `positional-args:"true"`
-	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *watch) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega watch subcommand help",
-		}
-	}
-
 	args := opts.Positional.Filters
 	if len(args) == 0 {
 		return errors.New("error: watch requires at least one filter")
