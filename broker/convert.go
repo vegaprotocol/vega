@@ -69,8 +69,6 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.EpochEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:
 		return events.DelegationBalanceEventFromStream(ctx, be)
-	case eventspb.BusEventType_BUS_EVENT_TYPE_PENDING_DELEGATION_BALANCE:
-		return events.PendingDelegationBalanceEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:
 		return events.StakingEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:

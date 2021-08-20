@@ -15,11 +15,6 @@ type DelegationBalanceEvent interface {
 	Proto() eventspb.DelegationBalanceEvent
 }
 
-type PendingDelegationBalanceEvent interface {
-	events.Event
-	Proto() eventspb.PendingDelegationBalanceEvent
-}
-
 type DelegationBalanceSub struct {
 	*Base
 
@@ -77,9 +72,6 @@ func (db *DelegationBalanceSub) Push(evts ...events.Event) {
 
 			db.nodeStore.AddDelegation(delegation)
 			db.epochStore.AddDelegation(delegation)
-
-		case PendingDelegationBalanceEvent:
-			continue
 		default:
 			db.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
 		}
@@ -89,6 +81,5 @@ func (db *DelegationBalanceSub) Push(evts ...events.Event) {
 func (db *DelegationBalanceSub) Types() []events.Type {
 	return []events.Type{
 		events.DelegationBalanceEvent,
-		events.PendingDelegationBalanceEvent,
 	}
 }
