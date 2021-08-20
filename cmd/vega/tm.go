@@ -152,7 +152,7 @@ func newRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
 	cobraCmd.Flags().StringVar(
 		&networkSelect,
 		"network",
-		"mainnet",
+		"",
 		"The network to start this node with")
 
 	cmd.AddNodeFlags(cobraCmd)
