@@ -8,9 +8,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type walletCmd struct {
-	Help []bool `short:"h" long:"help" description:"Show this help message"`
-}
+type walletCmd struct {}
 
 func (opts *walletCmd) Execute(_ []string) error {
 	os.Args = os.Args[1:]

@@ -2,21 +2,34 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
+	"github.com/spf13/cobra"
 
 	cmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands/debug"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/cli"
+	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmlog "github.com/tendermint/tendermint/libs/log"
+	tmos "github.com/tendermint/tendermint/libs/os"
 	nm "github.com/tendermint/tendermint/node"
+	"github.com/tendermint/tendermint/p2p"
+	"github.com/tendermint/tendermint/privval"
+	"github.com/tendermint/tendermint/proxy"
+	"github.com/tendermint/tendermint/types"
 )
 
-type tmCmd struct {
-	Help []bool `short:"h" long:"help" description:"Show this help message"`
-}
+var (
+	networkSelect string
+)
+
+type tmCmd struct{}
 
 func (opts *tmCmd) Execute(_ []string) error {
 
@@ -40,10 +53,8 @@ func (opts *tmCmd) Execute(_ []string) error {
 		cli.NewCompletionCmd(rootCmd, true),
 	)
 
-	nodeFunc := nm.DefaultNewNode
-
-	// Create & start node
-	rootCmd.AddCommand(cmd.NewRunNodeCmd(nodeFunc))
+	nodeFunc := defaultNewNode
+	rootCmd.AddCommand(newRunNodeCmd(nodeFunc))
 
 	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))
 	if err := cmd.Execute(); err != nil {
@@ -51,6 +62,101 @@ func (opts *tmCmd) Execute(_ []string) error {
 	}
 
 	return nil
+}
+
+func defaultNewNode(config *cfg.Config, logger tmlog.Logger) (*nm.Node, error) {
+	nodeKey, err := p2p.LoadOrGenNodeKey(config.NodeKeyFile())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load or gen node key %s: %w", config.NodeKeyFile(), err)
+	}
+
+	return nm.NewNode(config,
+		privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile()),
+		nodeKey,
+		proxy.DefaultClientCreator(config.ProxyApp, config.ABCI, config.DBDir()),
+		selectGenesisDocProviderFunc(config),
+		nm.DefaultDBProvider,
+		nm.DefaultMetricsProvider(config.Instrumentation),
+		logger,
+	)
+}
+
+func selectGenesisDocProviderFunc(config *cfg.Config) nm.GenesisDocProvider {
+	return func() (*types.GenesisDoc, error) {
+		if len(networkSelect) > 0 {
+			return httpGenesisDocProvider()
+		}
+
+		return nm.DefaultGenesisDocProviderFunc(config)()
+	}
+}
+
+func httpGenesisDocProvider() (*types.GenesisDoc, error) {
+	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	html, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	genesisDoc := &types.GenesisDoc{}
+	err = tmjson.Unmarshal(html, genesisDoc)
+	if err != nil {
+		return nil, err
+	}
+
+	return genesisDoc, nil
+}
+
+// this is taken from tendermint
+func newRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
+	logger := tmlog.NewTMLogger(tmlog.NewSyncWriter(os.Stdout))
+	cobraCmd := &cobra.Command{
+		Use:     "start",
+		Aliases: []string{"node", "run"},
+		Short:   "Run the tendermint node",
+		RunE: func(_ *cobra.Command, args []string) error {
+			config, err := cmd.ParseConfig()
+			if err != nil {
+				return err
+			}
+
+			n, err := nodeProvider(config, logger)
+			if err != nil {
+				return fmt.Errorf("failed to create node: %w", err)
+			}
+
+			if err := n.Start(); err != nil {
+				return fmt.Errorf("failed to start node: %w", err)
+			}
+
+			logger.Info("Started node", "nodeInfo", n.Switch().NodeInfo())
+
+			// Stop upon receiving SIGTERM or CTRL-C.
+			tmos.TrapSignal(logger, func() {
+				if n.IsRunning() {
+					if err := n.Stop(); err != nil {
+						logger.Error("unable to stop the node", "error", err)
+					}
+				}
+			})
+
+			// Run forever.
+			select {}
+		},
+	}
+
+	cobraCmd.Flags().StringVar(
+		&networkSelect,
+		"network",
+		"",
+		"The network to start this node with")
+
+	cmd.AddNodeFlags(cobraCmd)
+	return cobraCmd
 }
 
 func Tm(ctx context.Context, parser *flags.Parser) error {

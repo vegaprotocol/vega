@@ -20,16 +20,9 @@ type generateCmd struct {
 
 	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
 	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
-	Help  bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega nodewallet generate subcommand help",
-		}
-	}
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 

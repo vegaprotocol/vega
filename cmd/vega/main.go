@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
+	// CLIVersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
 	CLIVersionHash = ""
 
-	// Version specifies the version used to build the application. See VERSION in Makefile for details.
+	// CLIVersion specifies the version used to build the application. See VERSION in Makefile for details.
 	CLIVersion = ""
 )
 
@@ -73,12 +73,6 @@ func Main(ctx context.Context) error {
 	}
 
 	if _, err := parser.Parse(); err != nil {
-		switch t := err.(type) {
-		case *flags.Error:
-			if t.Type != flags.ErrHelp {
-				parser.WriteHelp(os.Stdout)
-			}
-		}
 		return err
 	}
 	return nil
