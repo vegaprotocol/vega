@@ -205,7 +205,7 @@ func testDistributePayout(t *testing.T) {
 		fromAccount:   rs.RewardPoolAccountIDs[0],
 		totalReward:   num.NewUint(5000),
 		partyToAmount: partyToAmount,
-		asset:         "ETH",
+		asset:         &types.Asset{ID: "ETH"},
 	}
 
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -244,7 +244,7 @@ func testOnEpochEndPendingPayoutZerosRewardAccountBalance(t *testing.T) {
 	partyToAmt["node2"] = num.NewUint(300)
 
 	existingPendingPayout := &pendingPayout{
-		asset:         "ETH",
+		asset:         &types.Asset{ID: "ETH"},
 		fromAccount:   rs.RewardPoolAccountIDs[0],
 		partyToAmount: partyToAmt,
 		totalReward:   num.NewUint(1000),
@@ -286,7 +286,7 @@ func testOnEpochEndPendingPayoutRemainingRewardAccountBalance(t *testing.T) {
 	partyToAmt["node2"] = num.NewUint(300)
 
 	existingPendingPayout := &pendingPayout{
-		asset:         "ETH",
+		asset:         &types.Asset{ID: "ETH"},
 		fromAccount:   rs.RewardPoolAccountIDs[0],
 		partyToAmount: partyToAmt,
 		totalReward:   num.NewUint(500000),
@@ -342,7 +342,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	resultPayout := engine.pendingPayouts[epochEndPlusDelay][0]
 	require.Equal(t, num.NewUint(999998), engine.rewardPoolToPendingPayoutBalance[rs.RewardPoolAccountIDs[0]])
 	require.Equal(t, num.NewUint(999998), resultPayout.totalReward)
-	require.Equal(t, "ETH", resultPayout.asset)
+	require.Equal(t, "ETH", resultPayout.asset.ID)
 	require.Equal(t, rs.RewardPoolAccountIDs[0], resultPayout.fromAccount)
 	require.Equal(t, num.NewUint(84449), resultPayout.partyToAmount["party1"])
 	require.Equal(t, num.NewUint(56299), resultPayout.partyToAmount["party2"])
@@ -452,7 +452,7 @@ func testOnChainTimeUpdateSomePayoutsToSend(t *testing.T) {
 	partyToAmt["node2"] = num.NewUint(300)
 
 	payout1 := &pendingPayout{
-		asset:         "ETH",
+		asset:         &types.Asset{ID: "ETH"},
 		fromAccount:   rs.RewardPoolAccountIDs[0],
 		partyToAmount: partyToAmt,
 		totalReward:   num.NewUint(1000),

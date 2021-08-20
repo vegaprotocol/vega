@@ -32,6 +32,10 @@ func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq strin
 	}
 }
 
+func (rp RewardPayout) RewardPayoutEvent() eventspb.RewardPayoutEvent {
+	return rp.Proto()
+}
+
 func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 	return eventspb.RewardPayoutEvent{
 		Party:                rp.party,
@@ -61,8 +65,8 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		return nil
 	}
 
-	amount, ok := num.UintFromString(rp.Amount, 10)
-	if !ok {
+	amount, overflow := num.UintFromString(rp.Amount, 10)
+	if overflow {
 		amount = num.Zero()
 	}
 
