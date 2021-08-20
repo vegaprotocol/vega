@@ -28,21 +28,21 @@ func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID str
 	// calculate the validator score for each validator and the total score for all
 	validatorNormalisedScores := calcValidatorsNormalisedScore(validatorData, minVal, compLevel)
 
-	return calculateRewards(asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant)
+	return e.calculateRewardDistributions(asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant)
 }
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints
-func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout *num.Uint) *pendingPayout {
+func (e *Engine) calculateRewardDistributions(asset string, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout *num.Uint) *pendingPayout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
 	totalRewardPayout := num.Zero()
 	reward := rewardBalance.Clone()
-
+	assetDetails, _ := e.collateral.GetAssetDetails(asset)
 	if reward.IsZero() {
 		return &pendingPayout{
 			partyToAmount: rewards,
 			totalReward:   totalRewardPayout,
-			asset:         asset,
+			asset:         assetDetails,
 		}
 	}
 
@@ -130,9 +130,8 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 		fromAccount:   accountID,
 		partyToAmount: rewards,
 		totalReward:   totalRewardPayout,
-		asset:         asset,
+		asset:         assetDetails,
 	}
-
 }
 
 // calculate the score for each validator and normalise by the total score
