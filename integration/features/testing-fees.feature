@@ -1465,7 +1465,7 @@ Scenario: Testing fees in continuous trading during position resolution
 
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | trader3a | 0      | 0              | -9870        |
+      | trader3a | 0      | 0              | -98700        |
       | trader3b | 0      | 0              | -29622       |
 
     # trade_value_for_fee_purposes for party 3a = size_of_trade * price_of_trade = 50 *190 = 9500 And 50 * 180 = 9000
