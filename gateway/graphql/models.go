@@ -314,9 +314,9 @@ type Reward struct {
 
 // Reward information for a given asset
 type RewardPerAssetDetails struct {
-	AssetID     string    `json:"AssetID"`
-	Rewards     []*Reward `json:"Rewards"`
-	TotalAmount string    `json:"TotalAmount"`
+	Asset       *vega.Asset `json:"Asset"`
+	Rewards     []*Reward   `json:"Rewards"`
+	TotalAmount string      `json:"TotalAmount"`
 }
 
 type SettleDistressed struct {

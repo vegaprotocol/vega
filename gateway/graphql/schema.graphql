@@ -2560,7 +2560,7 @@ type Reward {
 
 "Reward information for a given asset"
 type RewardPerAssetDetails {
-  AssetID: String!
+  Asset: Asset!
   Rewards: [Reward]
   TotalAmount: String!  
 }

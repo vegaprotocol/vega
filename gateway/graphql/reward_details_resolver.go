@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	"code.vegaprotocol.io/protos/vega"
 )
 
 type rewardDetailsResolver VegaResolverRoot
@@ -15,8 +16,13 @@ func (r *rewardDetailsResolver) Details(ctx context.Context, obj *protoapi.GetRe
 
 	// Now copy across the information in the new structure.
 	for _, rpad := range obj.RewardDetails {
+		asset, err := r.r.getAssetByID(ctx, rpad.Asset)
+		if err != nil {
+			asset = &vega.Asset{Id: rpad.Asset}
+		}
+
 		rpa := &RewardPerAssetDetails{
-			AssetID:     rpad.AssetId,
+			Asset:       asset,
 			TotalAmount: rpad.TotalForAsset,
 			Rewards:     make([]*Reward, 0),
 		}

@@ -722,7 +722,7 @@ type ComplexityRoot struct {
 	}
 
 	RewardPerAssetDetails struct {
-		AssetID     func(childComplexity int) int
+		Asset       func(childComplexity int) int
 		Rewards     func(childComplexity int) int
 		TotalAmount func(childComplexity int) int
 	}
@@ -4209,12 +4209,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RewardDetails.Details(childComplexity), true
 
-	case "RewardPerAssetDetails.AssetID":
-		if e.complexity.RewardPerAssetDetails.AssetID == nil {
+	case "RewardPerAssetDetails.Asset":
+		if e.complexity.RewardPerAssetDetails.Asset == nil {
 			break
 		}
 
-		return e.complexity.RewardPerAssetDetails.AssetID(childComplexity), true
+		return e.complexity.RewardPerAssetDetails.Asset(childComplexity), true
 
 	case "RewardPerAssetDetails.Rewards":
 		if e.complexity.RewardPerAssetDetails.Rewards == nil {
@@ -7696,7 +7696,7 @@ type Reward {
 
 "Reward information for a given asset"
 type RewardPerAssetDetails {
-  AssetID: String!
+  Asset: Asset!
   Rewards: [Reward]
   TotalAmount: String!  
 }
@@ -22414,7 +22414,7 @@ func (ec *executionContext) _RewardDetails_details(ctx context.Context, field gr
 	return ec.marshalORewardPerAssetDetails2ᚕᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐRewardPerAssetDetails(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _RewardPerAssetDetails_AssetID(ctx context.Context, field graphql.CollectedField, obj *RewardPerAssetDetails) (ret graphql.Marshaler) {
+func (ec *executionContext) _RewardPerAssetDetails_Asset(ctx context.Context, field graphql.CollectedField, obj *RewardPerAssetDetails) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -22432,7 +22432,7 @@ func (ec *executionContext) _RewardPerAssetDetails_AssetID(ctx context.Context, 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.AssetID, nil
+		return obj.Asset, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -22444,9 +22444,9 @@ func (ec *executionContext) _RewardPerAssetDetails_AssetID(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*vega.Asset)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RewardPerAssetDetails_Rewards(ctx context.Context, field graphql.CollectedField, obj *RewardPerAssetDetails) (ret graphql.Marshaler) {
@@ -33259,8 +33259,8 @@ func (ec *executionContext) _RewardPerAssetDetails(ctx context.Context, sel ast.
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("RewardPerAssetDetails")
-		case "AssetID":
-			out.Values[i] = ec._RewardPerAssetDetails_AssetID(ctx, field, obj)
+		case "Asset":
+			out.Values[i] = ec._RewardPerAssetDetails_Asset(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
