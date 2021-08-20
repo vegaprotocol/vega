@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -45,7 +45,7 @@ func (l *WalletLoader) Initialise() error {
 		return err
 	}
 
-	return fsutil.EnsureDir(l.walletRootPath)
+	return vgfs.EnsureDir(l.walletRootPath)
 }
 
 func (l *WalletLoader) Generate(passphrase string) (*Wallet, error) {
@@ -57,7 +57,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, error) {
 
 	_, fileName := filepath.Split(acc.URL.Path)
 
-	data, err := fsutil.ReadFile(acc.URL.Path)
+	data, err := vgfs.ReadFile(acc.URL.Path)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read store file: %w", err)
 	}
@@ -75,14 +75,14 @@ func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 }
 
 func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, error) {
-	data, err := fsutil.ReadFile(sourceFilePath)
+	data, err := vgfs.ReadFile(sourceFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read store file: %w", err)
 	}
 
 	_, fileName := filepath.Split(sourceFilePath)
 
-	err = fsutil.WriteFile(filepath.Join(l.walletRootPath, fileName), data)
+	err = vgfs.WriteFile(filepath.Join(l.walletRootPath, fileName), data)
 	if err != nil {
 		return nil, err
 	}

@@ -15,7 +15,7 @@ import (
 	"runtime/pprof"
 
 	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -90,7 +90,7 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 	}()
 
 	// start cpu and mem profilers
-	if err := fsutil.EnsureDir(filepath.Join(config.ProfilesDir, pprofDir)); err != nil {
+	if err := vgfs.EnsureDir(filepath.Join(config.ProfilesDir, pprofDir)); err != nil {
 		p.log.Error("Could not create CPU profile file",
 			logging.String("path", p.cpuprofilePath),
 			logging.Error(err),

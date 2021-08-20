@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
-	vhttp "code.vegaprotocol.io/vega/http"
+	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/cenkalti/backoff"
@@ -38,7 +38,7 @@ type Faucet struct {
 	cfg    Config
 	wallet *faucetWallet
 	s      *http.Server
-	rl     *vhttp.RateLimit
+	rl     *vghttp.RateLimit
 	cfunc  context.CancelFunc
 	stopCh chan struct{}
 
@@ -78,7 +78,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	rl, err := vhttp.NewRateLimit(ctx, cfg.RateLimit)
+	rl, err := vghttp.NewRateLimit(ctx, cfg.RateLimit)
 	if err != nil {
 		cfunc()
 		return nil, fmt.Errorf("failed to create RateLimit: %v", err)
@@ -133,7 +133,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 
 	// rate limit minting by source IP address, party, asset
-	ip, err := vhttp.RemoteAddr(r)
+	ip, err := vghttp.RemoteAddr(r)
 	if err != nil {
 		writeError(w, newError(fmt.Sprintf("failed to get request remote address: %v", err)), http.StatusBadRequest)
 		return

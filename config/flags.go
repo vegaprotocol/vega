@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -18,7 +18,7 @@ type RootPathFlag struct {
 
 func NewRootPathFlag() RootPathFlag {
 	return RootPathFlag{
-		RootPath: fsutil.DefaultVegaDir(),
+		RootPath: vgfs.DefaultVegaDir(),
 	}
 }
 

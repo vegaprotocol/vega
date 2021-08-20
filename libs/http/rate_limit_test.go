@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/config/encoding"
-	vhttp "code.vegaprotocol.io/vega/http"
+	vghttp "code.vegaprotocol.io/vega/libs/http"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRateLimit(t *testing.T) {
 	ctx := context.Background()
-	rl, err := vhttp.NewRateLimit(
+	rl, err := vghttp.NewRateLimit(
 		ctx,
-		vhttp.RateLimitConfig{
+		vghttp.RateLimitConfig{
 			CoolDown:  encoding.Duration{Duration: 1 * time.Minute},
 			AllowList: []string{"1.2.3.4/32", "2.3.4.252/30", "fe80::/10"},
 		},

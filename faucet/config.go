@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fsutil"
-	vhttp "code.vegaprotocol.io/vega/http"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 	"github.com/zannen/toml"
 )
@@ -23,12 +23,12 @@ const (
 )
 
 type Config struct {
-	Level      encoding.LogLevel     `long:"level" description:"Log level"`
-	RateLimit  vhttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
-	WalletPath string                `long:"wallet-path" description:" "`
-	Port       int                   `long:"port" description:"Listen for connections on port <port>"`
-	IP         string                `long:"ip" description:"Bind to address <ip>"`
-	Node       NodeConfig            `group:"Node" namespace:"node"`
+	Level      encoding.LogLevel      `long:"level" description:"Log level"`
+	RateLimit  vghttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
+	WalletPath string                 `long:"wallet-path" description:" "`
+	Port       int                    `long:"port" description:"Listen for connections on port <port>"`
+	IP         string                 `long:"ip" description:"Bind to address <ip>"`
+	Node       NodeConfig             `group:"Node" namespace:"node"`
 }
 
 type NodeConfig struct {
@@ -40,7 +40,7 @@ type NodeConfig struct {
 func NewDefaultConfig(defaultDirPath string) Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
-		RateLimit: vhttp.RateLimitConfig{
+		RateLimit: vghttp.RateLimitConfig{
 			CoolDown:  encoding.Duration{Duration: defaultCoolDown},
 			AllowList: []string{"10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
 		},
@@ -70,7 +70,7 @@ func LoadConfig(path string) (*Config, error) {
 
 func GenConfig(log *logging.Logger, path, passphrase string, rewrite bool) (string, error) {
 	confPath := filepath.Join(path, configFile)
-	confPathExists, _ := fsutil.PathExists(confPath)
+	confPathExists, _ := vgfs.PathExists(confPath)
 	if confPathExists {
 		if rewrite {
 			log.Info("removing existing configuration",
@@ -86,7 +86,7 @@ func GenConfig(log *logging.Logger, path, passphrase string, rewrite bool) (stri
 	}
 
 	walletPath := filepath.Join(path, defaultWallet)
-	confPathExists, _ = fsutil.PathExists(walletPath)
+	confPathExists, _ = vgfs.PathExists(walletPath)
 	if confPathExists {
 		if rewrite {
 			log.Info("removing existing configuration",

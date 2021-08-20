@@ -9,7 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/faucet"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 
@@ -36,9 +36,9 @@ func (opts *InitCmd) Execute(_ []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
-	rootPathExists, err := fsutil.PathExists(opts.RootPath)
+	rootPathExists, err := vgfs.PathExists(opts.RootPath)
 	if err != nil {
-		if _, ok := err.(*fsutil.PathNotFound); !ok {
+		if _, ok := err.(*vgfs.PathNotFound); !ok {
 			return err
 		}
 	}
@@ -53,7 +53,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 	}
 
 	// create the root
-	if err = fsutil.EnsureDir(opts.RootPath); err != nil {
+	if err = vgfs.EnsureDir(opts.RootPath); err != nil {
 		return err
 	}
 

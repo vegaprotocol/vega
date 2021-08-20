@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/go-wallet/crypto"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 )
 
 const (
@@ -53,14 +53,14 @@ func newStorage(rootPath string) *storage {
 }
 
 func (s *storage) Initialise(passphrase string) error {
-	err := fsutil.EnsureDir(s.walletsPath)
+	err := vgfs.EnsureDir(s.walletsPath)
 	if err != nil {
 		return err
 	}
 
-	exists, err := fsutil.FileExists(s.storePath)
+	exists, err := vgfs.FileExists(s.storePath)
 	if err != nil {
-		if _, ok := err.(*fsutil.PathNotFound); !ok {
+		if _, ok := err.(*vgfs.PathNotFound); !ok {
 			return err
 		}
 	}
@@ -75,11 +75,11 @@ func (s *storage) WalletDirFor(name Blockchain) string {
 }
 
 func (s *storage) Load(passphrase string) (*store, error) {
-	if ok, err := fsutil.PathExists(s.storePath); !ok {
+	if ok, err := vgfs.PathExists(s.storePath); !ok {
 		return nil, fmt.Errorf("unable to load store (%v)", err)
 	}
 
-	data, err := fsutil.ReadFile(s.storePath)
+	data, err := vgfs.ReadFile(s.storePath)
 	if err != nil {
 		return nil, fmt.Errorf("unable to read store file (%v)", err)
 	}
@@ -104,5 +104,5 @@ func (s *storage) Save(store *store, passphrase string) error {
 		return fmt.Errorf("unable to encrypt store file (%v)", err)
 	}
 
-	return fsutil.WriteFile(s.storePath, encBuf)
+	return vgfs.WriteFile(s.storePath, encBuf)
 }
