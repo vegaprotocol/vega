@@ -635,7 +635,7 @@ Scenario: Testing fees to confirm fees are collected first and then margin
 
 Scenario: Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
 
- Given the following network parameters are set:
+  Given the following network parameters are set:
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
     And the average block duration is "1"
@@ -730,7 +730,7 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
 
 Scenario: Testing fees in auctions session with each side of a trade debited 1/2 IF & LP
     
-  Given the following network parameters are set:
+    Given the following network parameters are set:
       | name                                                | value |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
@@ -1399,70 +1399,70 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
 
 Scenario: Testing fees in continuous trading during position resolution
 
-    Given the fees configuration named "fees-config-1":
+  Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
     
-    And the markets:
+  And the markets:
       | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          | maturity date        |
       | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1| default-none     | default-eth-for-future | 2019-12-31T23:59:59Z |
 
-    And the traders deposit on asset's general account the following amount:
+  And the traders deposit on asset's general account the following amount:
       | trader   | asset | amount        |
       | aux1     | ETH   | 1000000000000 |
       | aux2     | ETH   | 1000000000000 |
       | trader3a | ETH   | 10000         |
       | trader3b | ETH   | 30000         |
 
-    Then the traders place the following orders:
+  Then the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | aux1   | ETH/DEC21| sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
       | aux2   | ETH/DEC21| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | aux1   | ETH/DEC21| sell | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
       | aux2   | ETH/DEC21| buy  | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
     
-    Then the opening auction period ends for market "ETH/DEC21"
-    And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
-    And the mark price should be "180" for the market "ETH/DEC21"
+  Then the opening auction period ends for market "ETH/DEC21"
+  And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+  And the mark price should be "180" for the market "ETH/DEC21"
 
-    When the traders place the following orders:
+  When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1   | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
       | aux2   | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | aux2   | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
-    When the traders place the following orders:
+  When the traders place the following orders:
       | trader   | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3b | ETH/DEC21 | sell | 300    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
-    Then the following trades should be executed:
+  Then the following trades should be executed:
       | buyer | price | size | seller   |
       | aux2  | 190   | 50   | trader3a |
       | aux2  | 180   | 50   | trader3a |
       | aux2  | 180   | 300  | trader3b |
 
-    Then the traders should have the following margin levels:
+  Then the traders should have the following margin levels:
       | trader   | market id | maintenance | search | initial | release |
       | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
       | trader3b | ETH/DEC21 | 7500        | 24000  | 30000   | 37500   |
 
-    Then the traders cancel the following orders:
+  Then the traders cancel the following orders:
       | trader | reference       |
       | aux1   | sell-provider-1 |
 
-    When the traders place the following orders:
+  When the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1   | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
     
-    And the traders place the following orders:
+  And the traders place the following orders:
       | trader | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1   | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1           |
       | aux2   | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2           |
 
-    And the mark price should be "300" for the market "ETH/DEC21"
+  And the mark price should be "300" for the market "ETH/DEC21"
 
-    Then the traders should have the following profit and loss:
+  Then the traders should have the following profit and loss:
       | trader   | volume | unrealised pnl | realised pnl |
       | trader3a | 0      | 0              | -9870        |
       | trader3b | 0      | 0              | -29622       |
@@ -1475,7 +1475,8 @@ Scenario: Testing fees in continuous trading during position resolution
     # infrastructure_fee for trader 3b = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 54000 = 108
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0
 
-      And the following transfers should happen:
+  And debug transfers
+  And the following transfers should happen:
       | from     | to       | from account             | to account                       | market id | amount | asset |
       | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 48     | ETH   |
       | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 45     | ETH   |
@@ -1486,12 +1487,12 @@ Scenario: Testing fees in continuous trading during position resolution
       | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 45     | ETH   | 
       | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 270    | ETH   |
 
-    Then the traders should have the following account balances:
+  Then the traders should have the following account balances:
       | trader   | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
       | trader3b | ETH   | ETH/DEC21 | 0      | 0       |
 
-    And the insurance pool balance should be "0" for the market "ETH/DEC21"
+  And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
 # TO DO -
 # Testing fees in continuous trading with two trades and one liquidity providers with 10 & 0s liquidity fee distribution timestep
