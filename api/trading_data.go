@@ -261,10 +261,6 @@ type tradingDataService struct {
 	rewardsService          RewardsService
 }
 
-func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
-	return nil, errors.New("not implemented")
-}
-
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetEpoch")()
 
