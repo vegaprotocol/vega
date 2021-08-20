@@ -13,7 +13,6 @@ import (
 type FaucetCmd struct {
 	Init faucetInit `command:"init" description:"Generates the faucet configuration"`
 	Run  faucetRun  `command:"run" description:"Runs the faucet"`
-	Help bool       `short:"h" long:"help" description:"Show this help message"`
 }
 
 // faucetCmd is a global variable that holds generic options for the faucet
@@ -41,17 +40,9 @@ type faucetInit struct {
 	config.RootPathFlag
 	config.PassphraseFlag
 	Force bool `short:"f" long:"force" description:"Erase existing configuration at specified path"`
-	Help  bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *faucetInit) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega faucet init subcommand help",
-		}
-	}
-
 	logDefaultConfig := logging.NewDefaultConfig()
 	log := logging.NewLoggerFromConfig(logDefaultConfig)
 	defer log.AtExit()
@@ -76,8 +67,6 @@ type faucetRun struct {
 	config.PassphraseFlag
 
 	faucet.Config
-
-	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *faucetRun) Execute(_ []string) error {

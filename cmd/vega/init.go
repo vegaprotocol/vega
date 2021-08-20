@@ -5,22 +5,15 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
-	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/faucet"
 	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/storage"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/jessevdk/go-flags"
 	"github.com/zannen/toml"
 )
@@ -36,16 +29,11 @@ type InitCmd struct {
 
 	Force      bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
 	GenBuiltin bool `short:"b" long:"gen-builtinasset-faucet" description:"Generate the builtin asset configuration (not for production)"`
-
-	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 var initCmd InitCmd
 
 func (opts *InitCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{Type: flags.ErrHelp, Message: "vega init subcommand help"}
-	}
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
@@ -89,20 +77,6 @@ func (opts *InitCmd) Execute(_ []string) error {
 		return err
 	}
 
-	// create default market folder
-	fullDefaultMarketConfigPath :=
-		filepath.Join(opts.RootPath, execution.MarketConfigPath)
-
-	if err = fsutil.EnsureDir(fullDefaultMarketConfigPath); err != nil {
-		return err
-	}
-
-	// generate default market config
-	filenames, err := createDefaultMarkets(fullDefaultMarketConfigPath)
-	if err != nil {
-		return err
-	}
-
 	// generate a default configuration
 	cfg := config.NewDefaultConfig(opts.RootPath)
 
@@ -121,9 +95,6 @@ func (opts *InitCmd) Execute(_ []string) error {
 		cfg.EvtForward.BlockchainQueueAllowlist = append(
 			cfg.EvtForward.BlockchainQueueAllowlist, pubkey)
 	}
-
-	// setup the defaults markets
-	cfg.Execution.Markets.Configs = filenames
 
 	// write configuration to toml
 	buf := new(bytes.Buffer)
@@ -150,179 +121,6 @@ func (opts *InitCmd) Execute(_ []string) error {
 	return nil
 }
 
-func createDefaultMarkets(confpath string) ([]string, error) {
-	/*
-		Notes on default markets:
-		- If decimalPlaces==2, then a currency balance of `1` indicates one Euro cent, not one Euro
-		- Maturity dates should be not all the same, for variety.
-	*/
-	skels := []struct {
-		id                     string
-		decimalPlaces          uint64
-		baseName               string
-		settlementAsset        string
-		quoteName              string
-		maturity               time.Time
-		settlementValue        uint64
-		sigma                  float64
-		riskAversionParameter  float64
-		openingAuctionDuration string
-	}{
-		{
-			id:                     "VHSRA2G5MDFKREFJ5TOAGHZBBDGCYS67",
-			decimalPlaces:          5,
-			baseName:               "ETH",
-			quoteName:              "VUSD",
-			settlementAsset:        "VUSD",
-			maturity:               time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
-			settlementValue:        1500000,
-			riskAversionParameter:  0.001,
-			sigma:                  1.5,
-			openingAuctionDuration: "10s",
-		},
-		{
-			id:                     "LBXRA65PN4FN5HBWRI2YBCOYDG2PBGYU",
-			decimalPlaces:          5,
-			baseName:               "GBP",
-			quoteName:              "VUSD",
-			settlementAsset:        "VUSD",
-			maturity:               time.Date(2020, 10, 30, 22, 59, 59, 0, time.UTC),
-			settlementValue:        126000,
-			riskAversionParameter:  0.01,
-			sigma:                  0.09,
-			openingAuctionDuration: "0m20s",
-		},
-		{
-			id:                     "RTJVFCMFZZQQLLYVSXTWEN62P6AH6OCN",
-			decimalPlaces:          5,
-			baseName:               "ETH",
-			quoteName:              "BTC",
-			settlementAsset:        "BTC",
-			maturity:               time.Date(2020, 12, 31, 23, 59, 59, 0, time.UTC),
-			settlementValue:        98123,
-			riskAversionParameter:  0.001,
-			sigma:                  2.0,
-			openingAuctionDuration: "0h0m30s",
-		},
-	}
-
-	filenames := make([]string, len(skels))
-
-	for seq, skel := range skels {
-		monYear := skel.maturity.Format("Jan06")
-		monYearUpper := strings.ToUpper(monYear)
-		auctionDuration, err := time.ParseDuration(skel.openingAuctionDuration)
-		if err != nil {
-			return nil, err
-		}
-
-		mkt := proto.Market{
-			Id:            skel.id,
-			DecimalPlaces: skel.decimalPlaces,
-			Fees: &proto.Fees{
-				Factors: &proto.FeeFactors{
-					LiquidityFee:      "0.001",
-					InfrastructureFee: "0.0005",
-					MakerFee:          "0.00025",
-				},
-			},
-			TradableInstrument: &proto.TradableInstrument{
-				Instrument: &proto.Instrument{
-					Id:   fmt.Sprintf("Crypto/%s%s/Futures/%s", skel.baseName, skel.quoteName, monYear),
-					Code: fmt.Sprintf("CRYPTO:%s%s/%s", skel.baseName, skel.quoteName, monYearUpper),
-					Name: fmt.Sprintf("%s %s vs %s future", skel.maturity.Format("January 2006"), skel.baseName, skel.quoteName),
-					Metadata: &proto.InstrumentMetadata{
-						Tags: []string{
-							"asset_class:fx/crypto",
-							"product:futures",
-						},
-					},
-					Product: &proto.Instrument_Future{
-						Future: &proto.Future{
-							QuoteName:       skel.quoteName,
-							Maturity:        skel.maturity.Format("2006-01-02T15:04:05Z"),
-							SettlementAsset: skel.settlementAsset,
-							OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
-									{
-										Key: &oraclesv1.PropertyKey{
-											Name: "prices.ETH.value",
-											Type: oraclesv1.PropertyKey_TYPE_INTEGER,
-										},
-										Conditions: []*oraclesv1.Condition{},
-									},
-								},
-							},
-							OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-								PubKeys: []string{"0xDEADBEEF"},
-								Filters: []*oraclesv1.Filter{
-									{
-										Key: &oraclesv1.PropertyKey{
-											Name: "trading.terminated",
-											Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
-										},
-										Conditions: []*oraclesv1.Condition{},
-									},
-								},
-							},
-							OracleSpecBinding: &proto.OracleSpecToFutureBinding{
-								SettlementPriceProperty:    "prices.ETH.value",
-								TradingTerminationProperty: "trading.terminated",
-							},
-						},
-					},
-				},
-				RiskModel: &proto.TradableInstrument_LogNormalRiskModel{
-					LogNormalRiskModel: &proto.LogNormalRiskModel{
-						RiskAversionParameter: skel.riskAversionParameter,
-						Tau:                   1.0 / 365.25 / 24,
-						Params: &proto.LogNormalModelParams{
-							Mu:    0,
-							R:     0.016,
-							Sigma: skel.sigma,
-						},
-					},
-				},
-				MarginCalculator: &proto.MarginCalculator{
-					ScalingFactors: &proto.ScalingFactors{
-						SearchLevel:       1.1,
-						InitialMargin:     1.2,
-						CollateralRelease: 1.4,
-					},
-				},
-			},
-			TradingModeConfig: &proto.Market_Continuous{
-				Continuous: &proto.ContinuousTrading{},
-			},
-			OpeningAuction: &proto.AuctionDuration{
-				Duration: int64(auctionDuration.Seconds()),
-				Volume:   0,
-			},
-			PriceMonitoringSettings: &proto.PriceMonitoringSettings{
-				Parameters: &proto.PriceMonitoringParameters{
-					Triggers: []*proto.PriceMonitoringTrigger{},
-				},
-				UpdateFrequency: 60,
-			},
-			LiquidityMonitoringParameters: &proto.LiquidityMonitoringParameters{
-				TargetStakeParameters: &proto.TargetStakeParameters{
-					TimeWindow:    3600, // seconds = 1h
-					ScalingFactor: 10,
-				},
-				TriggeringRatio: 0,
-			},
-		}
-		filenames[seq] = fmt.Sprintf("%s%s%s.json", skel.baseName, skel.quoteName, monYearUpper)
-		err = createDefaultMarket(&mkt, path.Join(confpath, filenames[seq]), uint64(seq))
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return filenames, nil
-}
-
 func Init(ctx context.Context, parser *flags.Parser) error {
 	initCmd = InitCmd{
 		RootPathFlag: config.NewRootPathFlag(),
@@ -334,26 +132,4 @@ func Init(ctx context.Context, parser *flags.Parser) error {
 	)
 	_, err := parser.AddCommand("init", short, long, &initCmd)
 	return err
-}
-
-func createDefaultMarket(mkt *proto.Market, path string, seq uint64) error {
-	m := jsonpb.Marshaler{
-		Indent:       "  ",
-		EmitDefaults: true,
-	}
-	buf, err := m.MarshalToString(mkt)
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-
-	if _, err := f.WriteString(buf); err != nil {
-		return err
-	}
-
-	return nil
 }
