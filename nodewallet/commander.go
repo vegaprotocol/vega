@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	commandspb "code.vegaprotocol.io/protos/commands"
+	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/protos/vega/api"
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
@@ -21,7 +21,7 @@ const (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
 type Chain interface {
-	SubmitTransactionV2(ctx context.Context, tx *v1.Transaction, ty api.SubmitTransactionV2Request_Type) error
+	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet BlockchainStats
@@ -64,7 +64,7 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 // Command - send command to chain
 func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
 	go func() {
-		inputData := commandspb.NewInputData(c.bstats.Height())
+		inputData := commands.NewInputData(c.bstats.Height())
 		wrapPayloadIntoInputData(inputData, cmd, payload)
 		marshalledData, err := proto.Marshal(inputData)
 		if err != nil {
@@ -78,7 +78,7 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 			c.log.Panic("could not sign command", logging.Error(err))
 		}
 
-		tx := commandspb.NewTransaction(c.wal.PubKeyOrAddress().Hex(), marshalledData, signature)
+		tx := commands.NewTransaction(c.wal.PubKeyOrAddress().Hex(), marshalledData, signature)
 		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
 		if err != nil {
 			// this can happen as network dependent
@@ -93,46 +93,46 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 	}()
 }
 
-func (c *Commander) sign(marshalledData []byte) (*v1.Signature, error) {
+func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {
 	sig, err := c.wal.Sign(marshalledData)
 	if err != nil {
 		return nil, err
 	}
 
-	return commandspb.NewSignature(sig, c.wal.Algo(), c.wal.Version()), nil
+	return commands.NewSignature(sig, c.wal.Algo(), c.wal.Version()), nil
 }
 
-func wrapPayloadIntoInputData(data *v1.InputData, cmd txn.Command, payload proto.Message) {
+func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, payload proto.Message) {
 	switch cmd {
 	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand:
 		panic("command is not supported to be sent by a node.")
 	case txn.RegisterNodeCommand:
-		if underlyingCmd, ok := payload.(*v1.NodeRegistration); ok {
-			data.Command = &v1.InputData_NodeRegistration{
+		if underlyingCmd, ok := payload.(*commandspb.NodeRegistration); ok {
+			data.Command = &commandspb.InputData_NodeRegistration{
 				NodeRegistration: underlyingCmd,
 			}
 		} else {
 			panic("failed to wrap to NodeRegistration")
 		}
 	case txn.NodeVoteCommand:
-		if underlyingCmd, ok := payload.(*v1.NodeVote); ok {
-			data.Command = &v1.InputData_NodeVote{
+		if underlyingCmd, ok := payload.(*commandspb.NodeVote); ok {
+			data.Command = &commandspb.InputData_NodeVote{
 				NodeVote: underlyingCmd,
 			}
 		} else {
 			panic("failed to wrap to NodeVote")
 		}
 	case txn.NodeSignatureCommand:
-		if underlyingCmd, ok := payload.(*v1.NodeSignature); ok {
-			data.Command = &v1.InputData_NodeSignature{
+		if underlyingCmd, ok := payload.(*commandspb.NodeSignature); ok {
+			data.Command = &commandspb.InputData_NodeSignature{
 				NodeSignature: underlyingCmd,
 			}
 		} else {
 			panic("failed to wrap to NodeSignature")
 		}
 	case txn.ChainEventCommand:
-		if underlyingCmd, ok := payload.(*v1.ChainEvent); ok {
-			data.Command = &v1.InputData_ChainEvent{
+		if underlyingCmd, ok := payload.(*commandspb.ChainEvent); ok {
+			data.Command = &commandspb.InputData_ChainEvent{
 				ChainEvent: underlyingCmd,
 			}
 		} else {

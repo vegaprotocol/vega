@@ -47,7 +47,6 @@ type Collateral interface {
 	CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error)
 	GetAccountByID(id string) (*types.Account, error)
 	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
-	GetAssetDetails(asset string) (*types.Asset, error)
 }
 
 //TimeService notifies the reward engine on time updates
@@ -219,7 +218,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 				sort.Strings(pendingRewardSchemes)
 				for _, rs := range pendingRewardSchemes {
 					if rewardScheme, ok := e.rewardSchemes[rs]; ok {
-						e.processRewards(ctx, rewardScheme, epoch)
+						e.processRewards(ctx, rewardScheme, epoch, t)
 					}
 				}
 			}
@@ -231,7 +230,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 }
 
 // process rewards when needed
-func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch) {
+func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, t time.Time) {
 	// get the reward pool accounts for the reward scheme
 	for _, accountID := range rewardScheme.RewardPoolAccountIDs {
 		account, err := e.collateral.GetAccountByID(accountID)
@@ -263,8 +262,8 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		if payout.totalReward.IsZero() {
 			continue
 		}
-    
-    payout.timestamp = t.UnixNano()
+
+		payout.timestamp = t.UnixNano()
 		e.distributePayout(ctx, payout)
 	}
 }
@@ -287,7 +286,7 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 		}
 
 		if rewardScheme.PayoutDelay == time.Duration(0) {
-			e.processRewards(ctx, rewardScheme, epoch)
+			e.processRewards(ctx, rewardScheme, epoch, epoch.EndTime)
 		} else {
 			timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
 			existingPending, ok := e.pendingPayouts[timeToSend]
