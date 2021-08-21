@@ -12,6 +12,7 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	"code.vegaprotocol.io/vega/crypto"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
@@ -43,8 +44,9 @@ type Faucet struct {
 	stopCh chan struct{}
 
 	// node connections stuff
-	clt  api.TradingServiceClient
-	conn *grpc.ClientConn
+	clt     api.TradingServiceClient
+	coreclt coreapipb.CoreApiServiceClient
+	conn    *grpc.ClientConn
 }
 
 type MintRequest struct {
@@ -73,6 +75,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	}
 
 	client := api.NewTradingServiceClient(conn)
+	coreclient := coreapipb.NewCoreApiServiceClient(conn)
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	rl, err := vghttp.NewRateLimit(ctx, cfg.RateLimit)
@@ -82,15 +85,16 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	}
 
 	f := &Faucet{
-		Router: httprouter.New(),
-		log:    log,
-		cfg:    cfg,
-		wallet: wallet,
-		clt:    client,
-		conn:   conn,
-		cfunc:  cfunc,
-		rl:     rl,
-		stopCh: make(chan struct{}),
+		Router:  httprouter.New(),
+		log:     log,
+		cfg:     cfg,
+		wallet:  wallet,
+		clt:     client,
+		coreclt: coreclient,
+		conn:    conn,
+		cfunc:   cfunc,
+		rl:      rl,
+		stopCh:  make(chan struct{}),
 	}
 
 	f.POST("/api/v1/mint", f.Mint)
@@ -199,17 +203,20 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 }
 
 func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset string) error {
-	req := &api.AssetByIDRequest{
-		Id: asset,
+	req := &coreapipb.ListAssetsRequest{
+		Asset: asset,
 	}
-	resp, err := f.cltdata.AssetByID(ctx, req)
+	resp, err := f.coreclt.ListAssets(ctx, req)
 	if err != nil {
 		if resp == nil {
 			return ErrAssetNotFound
 		}
 		return err
 	}
-	source := resp.Asset.Details.GetBuiltinAsset()
+	if len(resp.Assets) <= 0 {
+		return ErrAssetNotFound
+	}
+	source := resp.Assets[0].Details.GetBuiltinAsset()
 	if source == nil {
 		return ErrNotABuiltinAsset
 	}

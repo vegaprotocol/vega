@@ -61,6 +61,8 @@ type GRPC struct {
 	cfunc context.CancelFunc
 
 	trading *tradingService
+
+	services []func(*grpc.Server)
 }
 
 // NewGRPCServer create a new instance of the GPRC api for the vega node
@@ -89,6 +91,10 @@ func NewGRPC(
 		ctx:           ctx,
 		cfunc:         cfunc,
 	}
+}
+
+func (g *GRPC) RegisterService(f func(*grpc.Server)) {
+	g.services = append(g.services, f)
 }
 
 // ReloadConf update the internal configuration of the GRPC server
@@ -181,6 +187,11 @@ func (g *GRPC) Start() {
 	}
 	g.trading = tradingSvc
 	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)
+
+	for _, f := range g.services {
+		f(g.srv)
+	}
+
 	go g.trading.updateNetInfo(g.ctx)
 
 	err = g.srv.Serve(lis)

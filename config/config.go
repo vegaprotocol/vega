@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/coreapi"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
@@ -49,6 +50,7 @@ type Config struct {
 	API               api.Config         `group:"API" namespace:"api"`
 	Blockchain        blockchain.Config  `group:"Blockchain" namespace:"blockchain"`
 	Collateral        collateral.Config  `group:"Collateral" namespace:"collateral"`
+	CoreAPI           coreapi.Config     `group:"CoreAPI" namespace:"coreapi"`
 	Execution         execution.Config   `group:"Execution" namespace:"execution"`
 	Processor         processor.Config   `group:"Processor" namespace:"processor"`
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
@@ -89,6 +91,7 @@ type Config struct {
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
 		API:               api.NewDefaultConfig(),
+		CoreAPI:           coreapi.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),
 		Execution:         execution.NewDefaultConfig(defaultStoreDirPath),
 		Processor:         processor.NewDefaultConfig(defaultStoreDirPath),

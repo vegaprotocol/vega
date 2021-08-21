@@ -297,6 +297,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	}
 
 	now := l.timeService.GetTimeNow()
+	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
 	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)

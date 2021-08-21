@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -17,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/coreapi"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
@@ -42,6 +44,8 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/ethereum/go-ethereum/ethclient"
+
+	"google.golang.org/grpc"
 )
 
 // NodeCommand use to implement 'node' command.
@@ -158,6 +162,11 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.eventService,
 		statusChecker,
 	)
+
+	grpcServer.RegisterService(func(server *grpc.Server) {
+		svc := coreapi.NewService(l.ctx, l.Log, l.conf.CoreAPI, l.broker)
+		coreapipb.RegisterCoreApiServiceServer(server, svc)
+	})
 
 	// watch configs
 	l.cfgwatchr.OnConfigUpdate(
