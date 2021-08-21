@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
@@ -147,17 +148,32 @@ func (l *NodeCommand) runNode(args []string) error {
 		func(v string) { l.stats.SetChainVersion(v) },
 	)
 
+	grpcServer := api.NewGRPC(
+		l.Log,
+		l.conf.API,
+		l.stats,
+		l.blockchainClient,
+		l.evtfwd,
+		l.timeService,
+		l.eventService,
+		statusChecker,
+	)
+
 	// watch configs
 	l.cfgwatchr.OnConfigUpdate(
+		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
+	// start the grpc server
+	go grpcServer.Start()
 	metrics.Start(l.conf.Metrics)
 
 	l.Log.Info("Vega startup complete")
 	waitSig(l.ctx, l.Log)
 
 	// Clean up and close resources
+	grpcServer.Stop()
 	l.abciServer.Stop()
 	statusChecker.Stop()
 

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
@@ -45,6 +46,7 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
+	API               api.Config         `group:"API" namespace:"api"`
 	Blockchain        blockchain.Config  `group:"Blockchain" namespace:"blockchain"`
 	Collateral        collateral.Config  `group:"Collateral" namespace:"collateral"`
 	Execution         execution.Config   `group:"Execution" namespace:"execution"`
@@ -86,6 +88,7 @@ type Config struct {
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
+		API:               api.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),
 		Execution:         execution.NewDefaultConfig(defaultStoreDirPath),
 		Processor:         processor.NewDefaultConfig(defaultStoreDirPath),

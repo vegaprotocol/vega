@@ -43,9 +43,8 @@ type Faucet struct {
 	stopCh chan struct{}
 
 	// node connections stuff
-	clt     api.TradingServiceClient
-	cltdata api.TradingDataServiceClient
-	conn    *grpc.ClientConn
+	clt  api.TradingServiceClient
+	conn *grpc.ClientConn
 }
 
 type MintRequest struct {
@@ -74,8 +73,6 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	}
 
 	client := api.NewTradingServiceClient(conn)
-	clientData := api.NewTradingDataServiceClient(conn)
-
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	rl, err := vghttp.NewRateLimit(ctx, cfg.RateLimit)
@@ -85,16 +82,15 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	}
 
 	f := &Faucet{
-		Router:  httprouter.New(),
-		log:     log,
-		cfg:     cfg,
-		wallet:  wallet,
-		clt:     client,
-		cltdata: clientData,
-		conn:    conn,
-		cfunc:   cfunc,
-		rl:      rl,
-		stopCh:  make(chan struct{}),
+		Router: httprouter.New(),
+		log:    log,
+		cfg:    cfg,
+		wallet: wallet,
+		clt:    client,
+		conn:   conn,
+		cfunc:  cfunc,
+		rl:     rl,
+		stopCh: make(chan struct{}),
 	}
 
 	f.POST("/api/v1/mint", f.Mint)

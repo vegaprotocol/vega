@@ -40,7 +40,7 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 		Party:                rp.party,
 		EpochSeq:             rp.epochSeq,
 		Asset:                rp.asset,
-		Amount:               rp.amount.String(),
+		Amount:               num.UintToString(rp.amount),
 		PercentOfTotalReward: rp.percentageOfTotalReward,
 		Timestamp:            rp.timestamp,
 	}
@@ -65,7 +65,6 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 	}
 
 	amount, _ := num.UintFromString(rp.Amount, 10)
-
 	return &RewardPayout{
 		Base:                    newBaseFromStream(ctx, RewardPayoutEvent, be),
 		party:                   rp.Party,
