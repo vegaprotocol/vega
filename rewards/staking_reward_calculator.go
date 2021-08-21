@@ -37,7 +37,6 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 	rewards := map[string]*num.Uint{}
 	totalRewardPayout := num.Zero()
 	reward := rewardBalance.Clone()
-
 	if reward.IsZero() {
 		return &payout{
 			partyToAmount: rewards,
@@ -131,7 +130,6 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 		totalReward:   totalRewardPayout,
 		asset:         asset,
 	}
-
 }
 
 // calculate the score for each validator and normalise by the total score
