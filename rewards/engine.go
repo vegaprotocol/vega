@@ -47,6 +47,7 @@ type Collateral interface {
 	CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error)
 	GetAccountByID(id string) (*types.Account, error)
 	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
+	GetAssetDetails(asset string) (*types.Asset, error)
 }
 
 //TimeService notifies the reward engine on time updates
@@ -76,6 +77,7 @@ type pendingPayout struct {
 	partyToAmount map[string]*num.Uint
 	totalReward   *num.Uint
 	epochSeq      string
+	timestamp     int64
 }
 
 //New instantiate a new rewards engine
@@ -213,6 +215,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 			for _, payout := range payouts {
 				// distribute the reward
 				if payout != nil {
+					payout.timestamp = t.UnixNano()
 					e.distributePayout(ctx, payout)
 				}
 
@@ -346,7 +349,7 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 			ledgerEntry := response.Transfers[0]
 			party := partyAccountIDToParty[ledgerEntry.ToAccount]
 			proportion, _ := ledgerEntry.Amount.ToDecimal().Div(payout.totalReward.ToDecimal()).Float64()
-			payoutEvents[party] = events.NewRewardPayout(ctx, ledgerEntry.FromAccount, ledgerEntry.ToAccount, party, payout.epochSeq, payout.asset, ledgerEntry.Amount, proportion)
+			payoutEvents[party] = events.NewRewardPayout(ctx, payout.timestamp, party, payout.epochSeq, payout.asset, ledgerEntry.Amount, proportion)
 			parties = append(parties, party)
 		}
 	}
