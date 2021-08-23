@@ -37,36 +37,36 @@ func NewNode(log *logging.Logger, c Config) *Node {
 }
 
 // ReloadConf update the internal conf of the market
-func (n *Node) ReloadConf(cfg Config) {
-	n.log.Info("reloading configuration")
-	if n.log.GetLevel() != cfg.Level.Get() {
-		n.log.Info("updating log level",
-			logging.String("old", n.log.GetLevel().String()),
+func (ns *Node) ReloadConf(cfg Config) {
+	ns.log.Info("reloading configuration")
+	if ns.log.GetLevel() != cfg.Level.Get() {
+		ns.log.Info("updating log level",
+			logging.String("old", ns.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		n.log.SetLevel(cfg.Level.Get())
+		ns.log.SetLevel(cfg.Level.Get())
 	}
 
-	n.Config = cfg
+	ns.Config = cfg
 }
 
-func (v *Node) AddNode(n pb.Node) {
-	v.mut.Lock()
-	defer v.mut.Unlock()
+func (ns *Node) AddNode(n pb.Node) {
+	ns.mut.Lock()
+	defer ns.mut.Unlock()
 
-	v.nodes[n.GetPubKey()] = node{
+	ns.nodes[n.GetPubKey()] = node{
 		n:                           n,
 		delegationsPerEpochPerParty: make(map[string]map[string]pb.Delegation),
 	}
 }
 
-func (v *Node) AddDelegation(de pb.Delegation) {
-	v.mut.Lock()
-	defer v.mut.Unlock()
+func (ns *Node) AddDelegation(de pb.Delegation) {
+	ns.mut.Lock()
+	defer ns.mut.Unlock()
 
-	node, ok := v.nodes[de.GetNodeId()]
+	node, ok := ns.nodes[de.GetNodeId()]
 	if !ok {
-		v.log.Error("Received delegation balance event for non existing node", logging.String("node_id", de.GetNodeId()))
+		ns.log.Error("Received delegation balance event for non existing node", logging.String("node_id", de.GetNodeId()))
 		return
 	}
 
@@ -77,66 +77,66 @@ func (v *Node) AddDelegation(de pb.Delegation) {
 	node.delegationsPerEpochPerParty[de.GetEpochSeq()][de.GetParty()] = de
 }
 
-func (v *Node) GetByID(id string) (*pb.Node, error) {
-	v.mut.RLock()
-	defer v.mut.RUnlock()
+func (ns *Node) GetByID(id string) (*pb.Node, error) {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
 
-	node, ok := v.nodes[id]
+	node, ok := ns.nodes[id]
 	if !ok {
 		return nil, fmt.Errorf("node %s not found", id)
 	}
 
-	return v.nodeProtoFromInternal(node), nil
+	return ns.nodeProtoFromInternal(node), nil
 }
 
-func (v *Node) GetAll() []*pb.Node {
-	v.mut.RLock()
-	defer v.mut.RUnlock()
+func (ns *Node) GetAll() []*pb.Node {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
 
-	nodes := make([]*pb.Node, 0, len(v.nodes))
-	for _, n := range v.nodes {
-		nodes = append(nodes, v.nodeProtoFromInternal(n))
+	nodes := make([]*pb.Node, 0, len(ns.nodes))
+	for _, n := range ns.nodes {
+		nodes = append(nodes, ns.nodeProtoFromInternal(n))
 	}
 
 	return nodes
 }
 
-func (v *Node) GetAllIDs() []string {
-	v.mut.RLock()
-	defer v.mut.RUnlock()
+func (ns *Node) GetAllIDs() []string {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
 
-	ids := make([]string, 0, len(v.nodes))
-	for _, n := range v.nodes {
+	ids := make([]string, 0, len(ns.nodes))
+	for _, n := range ns.nodes {
 		ids = append(ids, n.n.GetPubKey())
 	}
 
 	return ids
 }
 
-func (v *Node) GetTotalNodesNumber() int {
-	v.mut.RLock()
-	defer v.mut.RUnlock()
+func (ns *Node) GetTotalNodesNumber() int {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
 
-	return len(v.nodes)
+	return len(ns.nodes)
 }
 
 // GetValidatingNodesNumber - for now this is the same as total nodes
-func (v *Node) GetValidatingNodesNumber() int {
-	v.mut.RLock()
-	defer v.mut.RUnlock()
+func (ns *Node) GetValidatingNodesNumber() int {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
 
-	return len(v.nodes)
+	return len(ns.nodes)
 }
 
-// GetStakedTotal returns total stake accross all nodes per epoch.
+// GetStakedTotal returns total stake across all nodes per epoch.
 // Returns 0 if epoch not exists.
-func (v *Node) GetStakedTotal(epochID string) string {
-	v.mut.RLock()
-	defer v.mut.RUnlock()
+func (ns *Node) GetStakedTotal(epochID string) string {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
 
 	stakedTotal := num.NewUint(0)
 
-	for _, n := range v.nodes {
+	for _, n := range ns.nodes {
 		dPerParty, ok := n.delegationsPerEpochPerParty[epochID]
 		if !ok {
 			continue
@@ -145,7 +145,7 @@ func (v *Node) GetStakedTotal(epochID string) string {
 		for _, d := range dPerParty {
 			amount, ok := num.UintFromString(d.GetAmount(), 10)
 			if ok {
-				v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
+				ns.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
 				continue
 			}
 
@@ -156,7 +156,7 @@ func (v *Node) GetStakedTotal(epochID string) string {
 	return stakedTotal.String()
 }
 
-func (v *Node) nodeProtoFromInternal(n node) *pb.Node {
+func (ns *Node) nodeProtoFromInternal(n node) *pb.Node {
 	stakedTotal := num.NewUint(0)
 	stakedByOperator := num.NewUint(0)
 	stakedByDelegates := num.NewUint(0)
@@ -170,7 +170,7 @@ func (v *Node) nodeProtoFromInternal(n node) *pb.Node {
 
 			amount, ok := num.UintFromString(d.GetAmount(), 10)
 			if ok {
-				v.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
+				ns.log.Error("Failed to create amount string", logging.String("string", d.GetAmount()))
 				continue
 			}
 
