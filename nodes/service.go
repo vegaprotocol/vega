@@ -9,20 +9,21 @@ import (
 )
 
 // NodeStore ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validators_store_mock.go -package mocks code.vegaprotocol.io/data-node/validators NodeStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_store_mock.go -package mocks code.vegaprotocol.io/data-node/nodes NodeStore
 type NodeStore interface {
 	GetByID(id string) (*pb.Node, error)
 	GetAll() []*pb.Node
 	GetTotalNodesNumber() int
 	GetValidatingNodesNumber() int
-	GetStakedTotal() string
+	GetStakedTotal(epochSeq string) string
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/validators_store_mock.go -package mocks code.vegaprotocol.io/data-node/validators EpochStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_store_mock.go -package mocks code.vegaprotocol.io/data-node/nodes EpochStore
 type EpochStore interface {
 	GetTotalNodesUptime() time.Duration
 	GetEpochByID(id string) (*pb.Epoch, error)
 	GetEpoch() (*pb.Epoch, error)
+	GetEpochSeq() string
 }
 
 // Service represent the node service
@@ -67,8 +68,10 @@ func (s *Service) ReloadConf(cfg Config) {
 }
 
 func (s *Service) GetNodeData(ctx context.Context) (*pb.NodeData, error) {
+	currentEpoch := s.epochStore.GetEpochSeq()
+
 	return &pb.NodeData{
-		StakedTotal:     s.nodeStore.GetStakedTotal(),
+		StakedTotal:     s.nodeStore.GetStakedTotal(currentEpoch),
 		TotalNodes:      uint32(s.nodeStore.GetTotalNodesNumber()),
 		ValidatingNodes: uint32(s.nodeStore.GetValidatingNodesNumber()),
 		Uptime:          float32(s.epochStore.GetTotalNodesUptime().Minutes()),

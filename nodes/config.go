@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "nodes"
 
-// Config represent the configuration of the validator service
+// Config represent the configuration of the nodes service
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 }

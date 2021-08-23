@@ -128,7 +128,9 @@ func TestNodes(t *testing.T) {
 
 	a.Equal(2, nodeStore.GetTotalNodesNumber())
 	a.Equal(2, nodeStore.GetValidatingNodesNumber())
-	a.Equal("205", nodeStore.GetStakedTotal())
+
+	a.Equal("95", nodeStore.GetStakedTotal("1"))
+	a.Equal("110", nodeStore.GetStakedTotal("2"))
 }
 
 func assertNode(

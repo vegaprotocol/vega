@@ -8,7 +8,7 @@ import (
 	pb "code.vegaprotocol.io/protos/vega"
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_store_mock.go -package mocks code.vegaprotocol.io/data-node/validators EpochStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_store_mock.go -package mocks code.vegaprotocol.io/data-node/epochs EpochStore
 type EpochStore interface {
 	GetTotalNodesUptime() time.Duration
 	GetEpochByID(id string) (*pb.Epoch, error)

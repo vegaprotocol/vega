@@ -15,12 +15,14 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
@@ -166,6 +168,9 @@ func getTestGRPCServer(
 		return
 	}
 
+	nodeStore := storage.NewNode(logger, conf.Storage)
+	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
+
 	// Account Service
 	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
 
@@ -224,6 +229,10 @@ func getTestGRPCServer(
 	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
 
 	riskService := risk.NewService(logger, conf.Risk, riskStore, marketStore, marketDataStore)
+
+	nodeService := nodes.NewService(logger, conf.Nodes, nodeStore, epochStore)
+	epochService := epochs.NewService(logger, conf.Epochs, epochStore)
+
 	// stub...
 	gov, vote := govStub{}, voteStub{}
 	broker, err := broker.New(ctx, logger, conf.Broker)
@@ -272,6 +281,8 @@ func getTestGRPCServer(
 		deposit,
 		marketDepth,
 		netparams,
+		nodeService,
+		epochService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

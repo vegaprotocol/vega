@@ -124,6 +124,15 @@ func (e *Epoch) GetTotalNodesUptime() time.Duration {
 	return uptime
 }
 
+// GetEpochSeq returns current epoch sequence
+func (e *Epoch) GetEpochSeq() string {
+	e.mut.RLock()
+	defer e.mut.RUnlock()
+
+	return e.currentEpoch
+}
+
+// GetEpoch returns current epoch
 func (e *Epoch) GetEpoch() (*pb.Epoch, error) {
 	e.mut.RLock()
 	defer e.mut.RUnlock()
