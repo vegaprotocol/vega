@@ -81,9 +81,9 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
     # Trader4 margin + general account balance = 10000 - 16 ( Maker fees) - 7 (Infra fee) = 99977
 
     Then the parties should have the following account balances:
-      | party     | asset | market id | margin | general |
-      | trader3    | ETH   | ETH/DEC21 | 1089   | 8927 | 
-      | trader4    | ETH   | ETH/DEC21 | 657    | 9320 | 
+      | party   | asset | market id | margin | general |
+      | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    | 
+      | trader4 | ETH   | ETH/DEC21 | 657    | 9320    | 
       
     # And the accumulated infrastructure fee should be "7" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
@@ -635,7 +635,7 @@ Scenario: Testing fees to confirm fees are collected first and then margin
 
 Scenario: Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
 
-  Given the following network parameters are set:
+   Given the following network parameters are set:
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
     And the average block duration is "1"
@@ -879,7 +879,7 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
 
 Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees
     
-  Given the following network parameters are set:
+    Given the following network parameters are set:
       | name                                                | value |
       | market.stake.target.timeWindow                      | 24h   |
       | market.stake.target.scalingFactor                   | 1     |
@@ -1475,7 +1475,6 @@ Scenario: Testing fees in continuous trading during position resolution
     # infrastructure_fee for party 3b = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 54000 = 108
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0
 
-  And debug transfers
   And the following transfers should happen:
       | from     | to       | from account             | to account                       | market id | amount | asset |
       | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 48     | ETH   |
@@ -1488,7 +1487,110 @@ Scenario: Testing fees in continuous trading during position resolution
       | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 270    | ETH   |
 
     Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
+      | trader3b | ETH   | ETH/DEC21 | 0      | 0       |
+
+  And the insurance pool balance should be "0" for the market "ETH/DEC21"
+
+Scenario: Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid
+
+# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid
+# <PC> - Even after reducing trader's balance Or increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
+# Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
+
+  Given the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.005     | 0.003              |
+    
+  And the markets:
+      | id        | quote name | asset | risk model                  | margin calculator                  | auction duration | fees         | price monitoring | oracle config          | maturity date        |
+      | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1| default-none     | default-eth-for-future | 2019-12-31T23:59:59Z |
+
+  And the parties deposit on asset's general account the following amount:
+      | party    | asset | amount        |
+      | aux1     | ETH   | 1000000000000 |
+      | aux2     | ETH   | 1000000000000 |
+      | trader3a | ETH   | 10000         |
+      | trader3b | ETH   | 30000         |
+      # | trader3a | ETH   | 9750         |
+      # | trader3b | ETH   | 29750         |
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | aux1   | ETH/DEC21| sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | aux2   | ETH/DEC21| buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC | aux-b-1   |
+      | aux1   | ETH/DEC21| sell | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-s-2   |
+      | aux2   | ETH/DEC21| buy  | 10     | 180   | 0                | TYPE_LIMIT | TIF_GTC | aux-b-2   |
+    
+  Then the opening auction period ends for market "ETH/DEC21"
+  And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
+  And the mark price should be "180" for the market "ETH/DEC21"
+
+  When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1  | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | aux2  | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+      | aux2  | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
+
+  When the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
+      | trader3a | ETH/DEC21 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | trader3b | ETH/DEC21 | sell | 300    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+  Then the following trades should be executed:
+      | buyer | price | size | seller   |
+      | aux2  | 190   | 50   | trader3a |
+      | aux2  | 180   | 50   | trader3a |
+      | aux2  | 180   | 300  | trader3b |
+
+    Then the parties should have the following margin levels:
+      | party    | market id | maintenance | search | initial | release |
+      | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
+      | trader3b | ETH/DEC21 | 7500        | 24000  | 30000   | 37500   |
+
+    Then the parties cancel the following orders:
+      | party | reference       |
+      | aux1  | sell-provider-1 |
+
+    When the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1  | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
+    
+    And the parties place the following orders:
+      | party | market id  | side | volume | price | resulting trades | type       | tif     | reference       |
+      | aux1   | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1           |
+      | aux2   | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2           |
+
+  And the mark price should be "300" for the market "ETH/DEC21"
+
+    Then the parties should have the following profit and loss:
+      | party    | volume | unrealised pnl | realised pnl |
+      | trader3a | 0      | 0              | -9851        |
+      | trader3b | 0      | 0              | -29568       |
+
+    # trade_value_for_fee_purposes for party 3a = size_of_trade * price_of_trade = 50 *190 = 9500 And 50 * 180 = 9000
+    # maker_fee for party 3a = fee_factor[maker] * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45 
+    # infrastructure_fee for party 3a = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9500 = 19 And 0.002 * 9000 = 18 + 19 = 37
+    # trade_value_for_fee_purposes for party 3b = size_of_trade * price_of_trade = 300 *180 = 54000
+    # maker_fee for party 3b =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 54000 = 270
+    # infrastructure_fee for party 3b = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 54000 = 108
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0
+
+  And debug transfers
+  And the following transfers should happen:
+      | from     | to       | from account             | to account                       | market id | amount | asset |
+      | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 48     | ETH   |
+      | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 45     | ETH   |
+      | trader3a |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 56     | ETH   |
+      | trader3b | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 270    | ETH   |
+      | trader3b |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 162    | ETH   |
+      | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 48     | ETH   | 
+      | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 45     | ETH   | 
+      | market   | aux2     | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 270    | ETH   |
+
+    Then the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
       | trader3b | ETH   | ETH/DEC21 | 0      | 0       |
 
@@ -1504,10 +1606,13 @@ Scenario: Testing fees in continuous trading during position resolution
 # During auction trading, when insufficient balance in their general (+ margin) account, then the trade still goes ahead, (fees gets executed in this order - Maker(0), IP, LP)
 # Fees calculations during Position Resolution when the fees could be paid on pro rated basis.
 
-# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid.
+# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid
+# <PC> - Even after reducing trader's balance Or increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
+# Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
 
 # Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance.
-# Last 3 API points ? - check and raise issues in ticket on Core Board - Start working 
+# Last 3 API points ? - check and raise issues in ticket on Core Board - Start working
+
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running - Use
 	# MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
 	# MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
