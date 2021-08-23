@@ -49,6 +49,7 @@ type App struct {
 	txTotals          []uint64
 	txSizes           []int
 	cBlock            string
+	blockCtx          context.Context // use this to have access to block hash + height in commit call
 
 	cfg      Config
 	log      *logging.Logger
@@ -229,6 +230,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	// let's assume genesis block is block 0
 	ctx := contextutil.WithBlockHeight(context.Background(), 0)
 	ctx = contextutil.WithTraceID(ctx, hash)
+	app.blockCtx = ctx
 
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
@@ -252,6 +254,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
 	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
+	app.blockCtx = ctx
 
 	now := req.Header.Time
 
@@ -305,6 +308,10 @@ func (app *App) handleCheckpoint(snap *types.Snapshot) error {
 	if _, err = f.Write(snap.State); err != nil {
 		return err
 	}
+	// emit the event indicating a new checkpoint was created
+	// this function is called both for interval checkpoints and withdrawal checkpoints
+	event := events.NewCheckpointEvent(app.blockCtx, snap)
+	app.broker.Send(event)
 	// ok, now send the transaction for the commander
 	cmd := &commandspb.RestoreSnapshot{
 		Data: snap.State,
