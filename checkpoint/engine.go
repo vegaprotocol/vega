@@ -105,7 +105,7 @@ func (e *Engine) addComponent(comp State) error {
 // BalanceCheckpoint is used for deposits and withdrawals. We want a snapshot to be taken in those events
 // but these snapshots should not affect the timing (delta, time between checkpoints). Currently, this call
 // generates a full checkpoint, but we probably will change this to be a sparse checkpoint
-// only contianing changes in balances and (perhaps) network parameters...
+// only containing changes in balances and (perhaps) network parameters...
 func (e *Engine) BalanceCheckpoint() (*types.Snapshot, error) {
 	// no time stuff here, for now we're just taking a full snapshot
 	return e.makeCheckpoint()

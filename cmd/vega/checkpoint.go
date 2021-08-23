@@ -51,14 +51,14 @@ func Checkpoint(ctx context.Context, parser *flags.Parser) error {
 	return err
 }
 
-func (opts *checkpointRestore) Execute(args []string) error {
-	if opts.CPFile == "" {
+func (c *checkpointRestore) Execute(args []string) error {
+	if c.CPFile == "" {
 		return fmt.Errorf("no file specified")
 	}
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	fPath, err := opts.GetPath()
+	fPath, err := c.GetPath()
 	if err != nil {
 		return fmt.Errorf("checkpoint file not found: %w", err)
 	}
@@ -70,7 +70,7 @@ func (opts *checkpointRestore) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read checkpoint file: %w", err)
 	}
-	commander, err := opts.getCommander(log)
+	commander, err := c.getCommander(log)
 	if err != nil {
 		return fmt.Errorf("failed to get commander: %w", err)
 	}
