@@ -36,9 +36,7 @@ type checkpointRestore struct {
 
 var checkpointCmd CheckpointCmd
 
-// Example is the registration function, the name of this function should
-// follow the command name.
-// This function is invoked from `Register` in main.go
+// Checkpoint - This function is invoked from `Register` in main.go
 func Checkpoint(ctx context.Context, parser *flags.Parser) error {
 
 	rootP := config.NewRootPathFlag()

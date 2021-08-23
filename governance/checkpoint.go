@@ -34,6 +34,10 @@ func (e *Engine) Load(data []byte) error {
 	}
 
 	for _, p := range snap.Proposals {
+		if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
+			// the proposal in question has expired, ignore it
+			continue
+		}
 		e.activeProposals = append(e.activeProposals, &proposal{
 			Proposal: types.ProposalFromProto(p),
 		})

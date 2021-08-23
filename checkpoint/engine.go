@@ -113,7 +113,6 @@ func (e *Engine) BalanceCheckpoint() (*types.Snapshot, error) {
 
 // Checkpoint returns the overall checkpoint
 func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
-	// @TODO, pass in time and check it
 	if e.nextCP.After(t) {
 		return nil, nil
 	}
