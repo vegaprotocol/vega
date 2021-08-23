@@ -106,7 +106,7 @@ func (c checkpointRestore) GetPath() (string, error) {
 }
 
 func (c checkpointRestore) getCommander(log *logging.Logger) (*nodewallet.Commander, error) {
-	nwConf := nodewallet.NewDefaultConfig(checkpointCmd.RootPath)
+	nwConf := nodewallet.NewDefaultConfig()
 	// instantiate the ETHClient
 	ethclt, err := ethclient.Dial(nwConf.ETH.Address)
 	if err != nil {
@@ -118,13 +118,13 @@ func (c checkpointRestore) getCommander(log *logging.Logger) (*nodewallet.Comman
 	}
 
 	// nodewallet
-	nodeWallet, err := nodewallet.New(log, nwConf, nodePass, ethclt)
+	nodeWallet, err := nodewallet.New(log, nwConf, nodePass, ethclt, checkpointCmd.RootPath)
 	if err != nil {
 		return nil, err
 	}
 
 	// ensure all require wallet are available
-	if err := nodeWallet.EnsureRequireWallets(); err != nil {
+	if err := nodeWallet.Verify(); err != nil {
 		return nil, err
 	}
 	stats := stats.New(log, stats.NewDefaultConfig(), CLIVersion, CLIVersionHash)

@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 )
 
-type GenesisCmd struct {}
+type GenesisCmd struct{}
 
 func (opts *GenesisCmd) Execute(params []string) error {
 	return verifier(params, verifyGenesis)
@@ -19,6 +19,8 @@ func (opts *GenesisCmd) Execute(params []string) error {
 type noopBroker struct{}
 
 func (n noopBroker) Send(e events.Event) {}
+
+func (noopBroker) SendBatch(e []events.Event) {}
 
 func verifyGenesis(r *reporter, bs []byte) string {
 	var g = &struct {
