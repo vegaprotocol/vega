@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/checkpoint/mocks"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -244,7 +244,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	require.Equal(t, checkpoint.ErrUnknownCheckpointName, err)
 	// now try to tamper with the data itself in such a way that the has no longer matches:
 	cp.Assets = []byte("foobar")
-	b, err := vega.Marshal(cp.IntoProto())
+	b, err := proto.Marshal(cp.IntoProto())
 	require.NoError(t, err)
 	snap.State = b
 	// reset genesis hash
@@ -276,7 +276,7 @@ func testLoadInvalidHash(t *testing.T) {
 	require.NoError(t, eng.UponGenesis(ctx, gen))
 	// update data -> hash is invalid
 	cp.Assets = []byte("foobar")
-	b, err := vega.Marshal(cp.IntoProto())
+	b, err := proto.Marshal(cp.IntoProto())
 	require.NoError(t, err)
 	snap.State = b
 	err = eng.Load(ctx, snap)
