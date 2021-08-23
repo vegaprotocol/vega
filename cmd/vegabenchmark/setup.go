@@ -156,7 +156,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	cp, _ := checkpoint.New()
 	app := processor.NewApp(
 		log,
-		processor.NewDefaultConfig(),
+		processor.NewDefaultConfig(""),
 		func() {},
 		assets,
 		banking,
