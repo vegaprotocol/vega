@@ -516,11 +516,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	// setup rewards engine
 	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
 
-	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.assets, l.collateral, l.governance, l.netParams)
-	if err != nil {
-		panic(err)
-	}
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)

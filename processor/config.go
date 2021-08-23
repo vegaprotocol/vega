@@ -4,7 +4,6 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/config/encoding"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
 )
@@ -26,11 +25,11 @@ type Config struct {
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig() Config {
+func NewDefaultConfig(basePath string) Config {
 	return Config{
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		LogOrderSubmitDebug: true,
-		CheckpointsPath:     filepath.Join(fsutil.DefaultVegaDir(), checkpointsDir),
+		CheckpointsPath:     filepath.Join(basePath, checkpointsDir),
 		Ratelimit:           ratelimit.NewDefaultConfig(),
 	}
 }
