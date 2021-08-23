@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"encoding/hex"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/contextutil"
@@ -19,7 +20,7 @@ func NewCheckpointEvent(ctx context.Context, snap *types.Snapshot) *Checkpoint {
 	return &Checkpoint{
 		Base: newBase(ctx, CheckpointEvent),
 		data: eventspb.CheckpointEvent{
-			Hash:        string(snap.Hash), // convert properly
+			Hash:        hex.EncodeToString(snap.Hash),
 			BlockHash:   block,
 			BlockHeight: uint64(height),
 		},
