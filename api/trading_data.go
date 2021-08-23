@@ -241,10 +241,6 @@ type tradingDataService struct {
 	epochService            EpochService
 }
 
-func (t *tradingDataService) Delegations(ctx context.Context, request *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
-	panic("implement me")
-}
-
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetEpoch")()
 
@@ -903,10 +899,6 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVeg
 		Timestamp: ts.UnixNano(),
 	}, nil
 
-}
-
-func (t *tradingDataService) Checkpoints(ctx context.Context, _ *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
-	return nil, fmt.Errorf("not implmented yet")
 }
 
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.
