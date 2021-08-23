@@ -290,7 +290,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 func (app *App) writeCheckpoint(snap *types.Snapshot) error {
 	f, err := os.Create(
 		filepath.Join(
-			app.config.CheckpointsPath,
+			app.cfg.CheckpointsPath,
 			fmt.Sprintf(
 				"%s-%s.cp", app.cBlock, hex.EncodeToString(snap.Hash),
 			),
