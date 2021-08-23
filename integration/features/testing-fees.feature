@@ -1428,7 +1428,7 @@ Scenario: Testing fees in continuous trading during position resolution
   When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1  | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-      | aux   | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+      | aux2  | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
       | aux2  | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
   When the parties place the following orders:
