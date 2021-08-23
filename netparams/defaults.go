@@ -98,8 +98,8 @@ func defaultNetParams() map[string]value {
 
 		// @TODO add watcher for NetworkEOL > MarketFreezeDate
 		// network checkpoint parameters
-		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(false).MustUpdate("never"),
-		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(false).MustUpdate("never"),
+		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(true).MustUpdate("never"),
+		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(true).MustUpdate("never"),
 		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h"),
 	}
 }
