@@ -2,6 +2,7 @@ package checkpoint_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -49,11 +50,17 @@ func TestLoadCheckpoints(t *testing.T) {
 	t.Run("load checkpoint with invalid hash", testLoadInvalidHash)
 	t.Run("load sparse checkpoint", testLoadSparse)
 	t.Run("error loading checkpoint", testLoadError)
+	t.Run("a checkpoint can only be loaded once if configured", testLoadGenesisHashOnlyOnce)
+}
+
+type genesis struct {
+	CP *checkpoint.GenesisState `json:"checkpoint"`
 }
 
 func testGetCheckpointsConstructor(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
+	ctx := context.Background()
 	defer ctrl.Finish()
 	components := map[types.CheckpointName]*mocks.MockState{
 		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
@@ -77,12 +84,22 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Load(data[k]).Times(1).Return(nil)
 	}
-	require.NoError(t, eng.Load(raw))
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: raw.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.Load(ctx, raw))
 }
 
 func testGetCheckpointsAdd(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
+	ctx := context.Background()
 	defer eng.ctrl.Finish()
 	components := map[types.CheckpointName]*mocks.MockState{
 		types.GovernanceCheckpoint: mocks.NewMockState(eng.ctrl),
@@ -105,7 +122,16 @@ func testGetCheckpointsAdd(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Load(data[k]).Times(1).Return(nil)
 	}
-	require.NoError(t, eng.Load(raw))
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: raw.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.Load(ctx, raw))
 }
 
 func testAddDuplicate(t *testing.T) {
@@ -140,6 +166,7 @@ func testDuplicateConstructor(t *testing.T) {
 func testLoadCheckpoints(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
+	ctx := context.Background()
 	defer eng.ctrl.Finish()
 	components := map[types.CheckpointName]*mocks.MockState{
 		types.GovernanceCheckpoint: mocks.NewMockState(eng.ctrl),
@@ -171,7 +198,16 @@ func testLoadCheckpoints(t *testing.T) {
 	newEng, err := checkpoint.New(wComps[types.GovernanceCheckpoint], wComps[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	require.NotNil(t, newEng)
-	require.NoError(t, newEng.Load(snapshot))
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: snapshot.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, newEng.UponGenesis(gen))
+	require.NoError(t, newEng.Load(ctx, snapshot))
 	for k, exp := range data {
 		wc := wComps[k]
 		require.EqualValues(t, exp, wc.data)
@@ -181,6 +217,7 @@ func testLoadCheckpoints(t *testing.T) {
 func testLoadMissingCheckpoint(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
+	ctx := context.Background()
 	defer eng.ctrl.Finish()
 
 	// create checkpoint data
@@ -189,7 +226,16 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	}
 	snap := &types.Snapshot{}
 	snap.SetCheckpoint(cp)
-	err := eng.Load(snap)
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: snap.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(gen))
+	err = eng.Load(ctx, snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrUnknownCheckpointName, err)
 	// now try to tamper with the data itself in such a way that the has no longer matches:
@@ -197,7 +243,9 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	b, err := vega.Marshal(cp.IntoProto())
 	require.NoError(t, err)
 	snap.State = b
-	err = eng.Load(snap)
+	// reset genesis hash
+	require.NoError(t, eng.UponGenesis(gen))
+	err = eng.Load(ctx, snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
 }
@@ -205,6 +253,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 func testLoadInvalidHash(t *testing.T) {
 	t.Parallel()
 	eng := getTestEngine(t)
+	ctx := context.Background()
 	defer eng.ctrl.Finish()
 
 	cp := &types.Checkpoint{
@@ -212,12 +261,21 @@ func testLoadInvalidHash(t *testing.T) {
 	}
 	snap := &types.Snapshot{}
 	snap.SetCheckpoint(cp)
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: snap.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(gen))
 	// update data -> hash is invalid
 	cp.Assets = []byte("foobar")
 	b, err := vega.Marshal(cp.IntoProto())
 	require.NoError(t, err)
 	snap.State = b
-	err = eng.Load(snap)
+	err = eng.Load(ctx, snap)
 	require.Error(t, err)
 	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
 }
@@ -225,6 +283,7 @@ func testLoadInvalidHash(t *testing.T) {
 func testLoadSparse(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
+	ctx := context.Background()
 	defer ctrl.Finish()
 	components := map[types.CheckpointName]*mocks.MockState{
 		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
@@ -244,12 +303,22 @@ func testLoadSparse(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, eng.Add(components[types.AssetsCheckpoint])) // load another component, not part of the checkpoints map
 	c.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
-	require.NoError(t, eng.Load(snapshot))
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: snapshot.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(gen))
+	require.NoError(t, eng.Load(ctx, snapshot))
 }
 
 func testLoadError(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
+	ctx := context.Background()
 	defer ctrl.Finish()
 	components := map[types.CheckpointName]*mocks.MockState{
 		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
@@ -277,7 +346,16 @@ func testLoadError(t *testing.T) {
 		c := components[k]
 		c.EXPECT().Load(data[k]).Times(1).Return(r)
 	}
-	err = eng.Load(checkpoints)
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: checkpoints.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	require.NoError(t, eng.UponGenesis(gen))
+	err = eng.Load(ctx, checkpoints)
 	require.Error(t, err)
 	require.Equal(t, ret[types.GovernanceCheckpoint], err)
 }
@@ -391,6 +469,57 @@ func testCheckpointUpdatedInterval(t *testing.T) {
 	raw, err = eng.Checkpoint(now)
 	require.NoError(t, err)
 	require.NotNil(t, raw)
+}
+
+func testLoadGenesisHashOnlyOnce(t *testing.T) {
+	t.Parallel()
+	eng := getTestEngine(t)
+	ctx := context.Background()
+	defer eng.ctrl.Finish()
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(eng.ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(eng.ctrl),
+	}
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
+	}
+	for k, c := range components {
+		c.EXPECT().Name().Times(1).Return(k)
+	}
+	require.NoError(t, eng.Add(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint]))
+	for k, c := range components {
+		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
+	}
+	raw, err := eng.Checkpoint(time.Now())
+	require.NoError(t, err)
+	// calling load with this checkpoint now is a noop
+	require.NoError(t, eng.Load(ctx, raw))
+	// pretend like the genesis block specified this hash to restore
+	set := genesis{
+		CP: &checkpoint.GenesisState{
+			CheckpointHash: raw.Hash,
+		},
+	}
+	gen, err := json.Marshal(set)
+	require.NoError(t, err)
+	// set the genesis hash to some new value
+	set.CP.CheckpointHash = append(set.CP.CheckpointHash, []byte("foo")...)
+	different, err := json.Marshal(set)
+	require.NoError(t, err)
+	// set up the engine to accept that hash
+	require.NoError(t, eng.UponGenesis(different))
+	// this doesn´t  call "load" on the components
+	require.NoError(t, eng.Load(ctx, raw))
+	// now set the engine to accept the hash of the data we want to load
+	require.NoError(t, eng.UponGenesis(gen))
+	// now we do expect the calls to be made, but only once
+	for k, c := range components {
+		c.EXPECT().Load(data[k]).Times(1).Return(nil)
+	}
+	require.NoError(t, eng.Load(ctx, raw))
+	// subsequent calls to load this checkpoint do nothing
+	require.NoError(t, eng.Load(ctx, raw))
 }
 
 type wrappedMock struct {

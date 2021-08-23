@@ -468,6 +468,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.netParams.UponGenesis,
 		l.topology.LoadValidatorsOnGenesis,
 		l.limits.UponGenesis,
+		l.checkpoint.UponGenesis,
 	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)

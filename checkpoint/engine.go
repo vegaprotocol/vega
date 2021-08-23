@@ -1,6 +1,7 @@
 package checkpoint
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"time"
@@ -35,6 +36,7 @@ type State interface {
 type Engine struct {
 	components map[types.CheckpointName]State
 	ordered    []string
+	loadHash   []byte
 	nextCP     time.Time
 	delta      time.Duration
 }
@@ -50,6 +52,15 @@ func New(components ...State) (*Engine, error) {
 		}
 	}
 	return e, nil
+}
+
+func (e *Engine) UponGenesis(data []byte) error {
+	state, err := LoadGenesisState(data)
+	if err != nil {
+		return err
+	}
+	e.loadHash = state.CheckpointHash
+	return nil
 }
 
 // Add used to add/register components after the engine has been instantiated already
@@ -108,7 +119,15 @@ func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
 }
 
 // Load - loads checkpoint data for all components by name
-func (e *Engine) Load(snap *types.Snapshot) error {
+func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
+	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
+	if e.loadHash == nil || bytes.Compare(e.loadHash, snap.Hash) != 0 {
+		return nil
+	}
+	// we found the checkpoint we need to load, set value to nil
+	// either the checkpoint was loaded successfully, or it wasn't
+	// if this fails, the node goes down
+	e.loadHash = nil
 	cp, err := snap.GetCheckpoint()
 	if err != nil {
 		return err
