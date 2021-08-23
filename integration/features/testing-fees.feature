@@ -1408,7 +1408,7 @@ Scenario: Testing fees in continuous trading during position resolution
       | ETH/DEC21 | ETH        | ETH   | default-simple-risk-model-2 | default-overkill-margin-calculator | 2                | fees-config-1| default-none     | default-eth-for-future | 2019-12-31T23:59:59Z |
 
   And the parties deposit on asset's general account the following amount:
-      | party   | asset | amount        |
+      | party    | asset | amount        |
       | aux1     | ETH   | 1000000000000 |
       | aux2     | ETH   | 1000000000000 |
       | trader3a | ETH   | 10000         |
@@ -1425,14 +1425,14 @@ Scenario: Testing fees in continuous trading during position resolution
   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
   And the mark price should be "180" for the market "ETH/DEC21"
 
-    When the parties place the following orders:
+  When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-      | aux1   | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-      | aux2   | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-      | aux2   | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
+      | aux1  | ETH/DEC21 | sell | 150    | 200   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | aux   | ETH/DEC21 | buy  | 50     | 190   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
+      | aux2  | ETH/DEC21 | buy  | 350    | 180   | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2  |
 
-    When the parties place the following orders:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     | reference |
+  When the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | trader3a | ETH/DEC21 | sell | 100    | 180   | 2                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | trader3b | ETH/DEC21 | sell | 300    | 180   | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
 
@@ -1443,32 +1443,32 @@ Scenario: Testing fees in continuous trading during position resolution
       | aux2  | 180   | 300  | trader3b |
 
     Then the parties should have the following margin levels:
-      | party   | market id | maintenance | search | initial | release |
+      | party    | market id | maintenance | search | initial | release |
       | trader3a | ETH/DEC21 | 2000        | 6400   | 8000    | 10000   |
       | trader3b | ETH/DEC21 | 7500        | 24000  | 30000   | 37500   |
 
     Then the parties cancel the following orders:
       | party | reference       |
-      | aux1   | sell-provider-1 |
+      | aux1  | sell-provider-1 |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
-      | aux1   | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
+      | aux1  | ETH/DEC21 | sell | 500    | 350   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-2 |
     
     And the parties place the following orders:
-      | party | market id | side | volume | price | resulting trades | type       | tif     | reference       |
+      | party | market id  | side | volume | price | resulting trades | type       | tif     | reference       |
       | aux1   | ETH/DEC21 | sell | 1      | 300   | 0                | TYPE_LIMIT | TIF_GTC | ref-1           |
       | aux2   | ETH/DEC21 | buy  | 1      | 300   | 1                | TYPE_LIMIT | TIF_GTC | ref-2           |
 
   And the mark price should be "300" for the market "ETH/DEC21"
 
     Then the parties should have the following profit and loss:
-      | party   | volume | unrealised pnl | realised pnl |
+      | party    | volume | unrealised pnl | realised pnl |
       | trader3a | 0      | 0              | -9870        |
       | trader3b | 0      | 0              | -29622       |
 
     # trade_value_for_fee_purposes for party 3a = size_of_trade * price_of_trade = 50 *190 = 9500 And 50 * 180 = 9000
-    # maker_fee for party 3a =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45 
+    # maker_fee for party 3a = fee_factor[maker] * trade_value_for_fee_purposes = 0.005 * 9500 = 47.5 = 48 (rounded up to nearest whole value) And 0.005 * 9000 = 45 
     # infrastructure_fee for party 3a = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9500 = 19 And 0.002 * 9000 = 18 + 19 = 37
     # trade_value_for_fee_purposes for party 3b = size_of_trade * price_of_trade = 300 *180 = 54000
     # maker_fee for party 3b =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 54000 = 270
@@ -1502,13 +1502,12 @@ Scenario: Testing fees in continuous trading during position resolution
 # During all 3 Auction sessions, fees are spilt 1/2 for IF and LP. Maker = 0
 # During auction trading, when insufficient balance in their general account but margin covers the fees
 # During auction trading, when insufficient balance in their general (+ margin) account, then the trade still goes ahead, (fees gets executed in this order - Maker(0), IP, LP)
-# Fees calculations during Position Resolution when the fees could be paid.
+# Fees calculations during Position Resolution when the fees could be paid on pro rated basis.
 
+# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid.
+
+# Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance.
 # Last 3 API points ? - check and raise issues in ticket on Core Board - Start working 
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running - Use
 	# MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
-	# MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee" 
-
-# Fees calculations during Position Resolution on pro rated basis
-# Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid.
-# Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance.
+	# MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
