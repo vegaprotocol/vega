@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
@@ -118,7 +119,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
 	l.validatorUpdateSub = subscribers.NewValidatorUpdateSub(l.ctx, l.nodeStore, l.Log, true)
-	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.Log, true)
+	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
 	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
 }
 
@@ -163,6 +164,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 
 	l.nodeStore = storage.NewNode(l.Log, l.conf.Storage)
 	l.epochStore = storage.NewEpoch(l.Log, l.nodeStore, l.conf.Storage)
+	l.delegationStore = storage.NewDelegations(l.Log, l.conf.Storage)
 
 	l.cfgwatchr.OnConfigUpdate(
 		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },
@@ -177,6 +179,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 		func(cfg config.Config) { l.nodeStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.epochStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.stats.ReloadConf(cfg.Stats) },
+		func(cfg config.Config) { l.delegationStore.ReloadConf(cfg.Storage) },
 	)
 
 	return
@@ -251,6 +254,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.eventService = subscribers.NewService(l.broker)
 	l.nodeService = nodes.NewService(l.Log, l.conf.Nodes, l.nodeStore, l.epochStore)
 	l.epochService = epochs.NewService(l.Log, l.conf.Epochs, l.epochStore)
+	l.delegationService = delegations.NewService(l.Log, l.conf.Delegations, l.delegationStore)
 
 	// setup config reloads for all services /etc
 	l.setupConfigWatchers()
@@ -275,5 +279,6 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
 		func(cfg config.Config) { l.nodeService.ReloadConf(cfg.Nodes) },
 		func(cfg config.Config) { l.epochService.ReloadConf(cfg.Epochs) },
+		func(cfg config.Config) { l.delegationService.ReloadConf(cfg.Delegations) },
 	)
 }

@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway"
@@ -65,6 +66,7 @@ type Config struct {
 	Broker      broker.Config      `group:"Broker" namespace:"broker"`
 	Nodes       nodes.Config       `group:"Nodes" namespace:"nodes"`
 	Epochs      epochs.Config      `group:"Epochs" namespace:"epochs"`
+	Delegations delegations.Config `group:"Delegations" namespace:"delegations"`
 
 	NetworkParameters netparams.Config
 
@@ -103,6 +105,9 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Fee:               fee.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
+		Epochs:            epochs.NewDefaultConfig(),
+		Nodes:             nodes.NewDefaultConfig(),
+		Delegations:       delegations.NewDefaultConfig(),
 		GatewayEnabled:    true,
 		StoresEnabled:     true,
 		UlimitNOFile:      8192,
