@@ -115,6 +115,11 @@ func (e *Engine) BalanceCheckpoint() (*types.Snapshot, error) {
 
 // Checkpoint returns the overall checkpoint
 func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
+	// start time will be zero -> add delta to this time, and return
+	if e.nextCP.IsZero() {
+		e.nextCP = t.Add(e.delta)
+		return nil, nil
+	}
 	if e.nextCP.After(t) {
 		return nil, nil
 	}
