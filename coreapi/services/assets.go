@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	vegapb "code.vegaprotocol.io/protos/vega"
@@ -17,31 +16,47 @@ type assetE interface {
 
 type Assets struct {
 	*subscribers.Base
+	ctx context.Context
 
 	mu     sync.RWMutex
 	assets map[string]vegapb.Asset
+	ch     chan vegapb.Asset
 }
 
-func NewAssets(ctx context.Context) *Assets {
+func NewAssets(ctx context.Context) (assets *Assets) {
+	defer func() { go assets.consume() }()
 	return &Assets{
 		Base:   subscribers.NewBase(ctx, 1000, true),
+		ctx:    ctx,
 		assets: map[string]vegapb.Asset{},
+		ch:     make(chan vegapb.Asset, 100),
+	}
+}
+
+func (a *Assets) consume() {
+	defer func() { close(a.ch) }()
+	for {
+		select {
+		case <-a.Closed():
+			return
+		case asset, ok := <-a.ch:
+			if !ok {
+				// cleanup base
+				a.Halt()
+				// channel is closed
+				return
+			}
+			a.mu.Lock()
+			a.assets[asset.Id] = asset
+			a.mu.Unlock()
+		}
 	}
 }
 
 func (a *Assets) Push(evts ...events.Event) {
-	if len(evts) == 0 {
-		return
-	}
-	a.mu.Lock()
-	defer a.mu.Unlock()
 	for _, e := range evts {
-		fmt.Printf("EVENT:%v\n", e)
-		switch evt := e.(type) {
-		case assetE:
-			asset := evt.Asset()
-			fmt.Printf("%#v", (asset).String())
-			a.assets[evt.Asset().Id] = evt.Asset()
+		if ae, ok := e.(assetE); ok {
+			a.ch <- ae.Asset()
 		}
 	}
 }

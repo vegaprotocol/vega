@@ -10,6 +10,7 @@ import (
 
 	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	"code.vegaprotocol.io/vega/api"
+	"code.vegaprotocol.io/vega/api/rest"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
@@ -174,8 +175,11 @@ func (l *NodeCommand) runNode(args []string) error {
 		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
+	proxyServer := rest.NewProxyServer(l.Log, l.conf.API)
+
 	// start the grpc server
 	go grpcServer.Start()
+	go proxyServer.Start()
 	metrics.Start(l.conf.Metrics)
 
 	l.Log.Info("Vega startup complete")
@@ -185,6 +189,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	grpcServer.Stop()
 	l.abciServer.Stop()
 	statusChecker.Stop()
+	proxyServer.Stop()
 
 	return nil
 }

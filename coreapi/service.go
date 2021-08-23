@@ -37,13 +37,13 @@ func NewService(
 	if cfg.Accounts {
 		log.Info("starting accounts core api")
 		svc.accounts = services.NewAccounts(ctx)
-		broker.Subscribe(svc.accounts)
+		broker.SubscribeBatch(svc.accounts)
 	}
 
 	if cfg.Assets {
 		log.Info("starting assets core api")
 		svc.assets = services.NewAssets(ctx)
-		broker.Subscribe(svc.accounts)
+		broker.SubscribeBatch(svc.accounts)
 	}
 
 	return svc
