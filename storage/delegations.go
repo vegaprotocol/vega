@@ -29,17 +29,17 @@ func NewDelegations(log *logging.Logger, c Config) *Delegations {
 }
 
 // ReloadConf update the internal conf of the market
-func (e *Delegations) ReloadConf(cfg Config) {
-	e.log.Info("reloading configuration")
-	if e.log.GetLevel() != cfg.Level.Get() {
-		e.log.Info("updating log level",
-			logging.String("old", e.log.GetLevel().String()),
+func (s *Delegations) ReloadConf(cfg Config) {
+	s.log.Info("reloading configuration")
+	if s.log.GetLevel() != cfg.Level.Get() {
+		s.log.Info("updating log level",
+			logging.String("old", s.log.GetLevel().String()),
 			logging.String("new", cfg.Level.String()),
 		)
-		e.log.SetLevel(cfg.Level.Get())
+		s.log.SetLevel(cfg.Level.Get())
 	}
 
-	e.Config = cfg
+	s.Config = cfg
 }
 
 //AddDelegation is updated with new delegation update from the subscriber
@@ -124,7 +124,7 @@ func (s *Delegations) GetNodeDelegations(nodeID string) ([]*pb.Delegation, error
 	return delegations, nil
 }
 
-//GetNodeEpochDelegations returns the delegations to a node by all parties at a given epoch
+//GetNodeDelegationsOnEpoch returns the delegations to a node by all parties at a given epoch
 func (s *Delegations) GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
@@ -172,7 +172,7 @@ func (s *Delegations) GetPartyDelegations(party string) ([]*pb.Delegation, error
 	return delegations, nil
 }
 
-//GetPartyEpochDelegations returns all delegation by party on a given epoch
+//GetPartyDelegationsOnEpoch returns all delegation by party on a given epoch
 func (s *Delegations) GetPartyDelegationsOnEpoch(party string, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
@@ -224,7 +224,7 @@ func (s *Delegations) GetPartyNodeDelegations(party string, node string) ([]*pb.
 	return delegations, nil
 }
 
-//GetPartyNodeDelegations returns the delegations from party to node at epoch
+//GetPartyNodeDelegationsOnEpoch returns the delegations from party to node at epoch
 func (s *Delegations) GetPartyNodeDelegationsOnEpoch(party, node, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
