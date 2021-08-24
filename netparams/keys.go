@@ -77,6 +77,8 @@ const (
 	// delegation params
 	DelegationMinAmount            = "validators.delegation.minAmount"
 	DelegationMaxStakePerValidator = "validators.delegation.maxStakePerValidator"
+
+	ValidatorsVoteRequired = "validators.vote.required"
 )
 
 var AllKeys = map[string]struct{}{
@@ -138,4 +140,5 @@ var AllKeys = map[string]struct{}{
 	StakingAndDelegationRewardMaxPayoutPerParticipant:     {},
 	StakingAndDelegationRewardPayoutDelay:                 {},
 	StakingAndDelegationRewardDelegatorShare:              {},
+	ValidatorsVoteRequired:                                {},
 }
