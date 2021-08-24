@@ -5426,8 +5426,6 @@ type Query {
 	epoch(id: String): Epoch!
 }
 
-# NODES --------
-
 enum NodeStatus {
   "The node is non-validating"
 	NonValidator
@@ -5556,8 +5554,6 @@ type Delegation {
   "Epoch of delegation"
 	epoch: Int!
 }
-
-# NODES -------
 
 "Represents an asset in vega"
 type Asset {

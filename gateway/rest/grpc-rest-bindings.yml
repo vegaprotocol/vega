@@ -142,3 +142,15 @@ http:
       get: '/oracle-specs/{id}/oracle-data'
     - selector: api.v1.TradingDataService.OracleSpecs
       get: '/oracle-specs'
+    
+    # Nodes
+    - selector: api.v1.TradingDataService.GetNodeData
+      get: '/nodes/data'
+    - selector: api.v1.TradingDataService.GetNodes
+      get: '/nodes'
+    - selector: api.v1.TradingDataService.GetNodeByID
+      get: '/nodes/{id}'
+    
+    # Epochs
+    - selector: api.v1.TradingDataService.GetEpoch
+      get: '/epochs/{id}'
