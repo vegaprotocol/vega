@@ -41,6 +41,7 @@ type ValidatorTopology interface {
 	Len() int
 	IsValidator() bool
 	SelfVegaPubKey() string
+	AllPubKeys() []string
 }
 
 type Resource interface {
@@ -277,10 +278,21 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			// if we have all validators votes, lets proceed
 			checkPass := votesLen >= topLen
 			if !checkPass {
+				votesReceived := []string{}
+				votesMissing := []string{}
+				for _, k := range w.top.AllPubKeys() {
+					if _, ok := v.votes[k]; ok {
+						votesReceived = append(votesReceived, k)
+						continue
+					}
+					votesMissing = append(votesMissing, k)
+				}
 				w.log.Warn("resource checking was not validated by all nodes",
 					logging.String("resource-id", v.res.GetID()),
 					logging.Int("vote-count", votesLen),
 					logging.Int("node-count", topLen),
+					logging.Strings("votes-received", votesReceived),
+					logging.Strings("votes-missing", votesMissing),
 				)
 			}
 
