@@ -83,8 +83,9 @@ func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, 
 	}
 }
 
-func (n *Notary) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) {
+func (n *Notary) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
 	n.validatorVotesRequired = f
+	return nil
 }
 
 // ReloadConf updates the internal configuration

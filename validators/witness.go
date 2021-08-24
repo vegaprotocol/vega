@@ -137,8 +137,9 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 	}
 }
 
-func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) {
+func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
 	w.validatorVotesRequired = f
+	return nil
 }
 
 // ReloadConf updates the internal configuration
