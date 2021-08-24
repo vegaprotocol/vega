@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"strconv"
+	"strings"
 
 	typespb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets/common"
@@ -244,8 +245,10 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 
 	defer iter.Close()
 	var event *bridge.BridgeAssetListed
+
+	assetId := strings.TrimPrefix(w.VegaAssetId, "0x")
 	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == w.VegaAssetId {
+		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetId {
 			event = iter.Event
 			break
 		}
@@ -384,9 +387,6 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 	nonce := &big.Int{}
 	nonce.SetString(w.ReferenceNonce, 10)
 	for iter.Next() {
-
-		// here the event queu send us a 0x... pubkey
-		// we do the slice operation to remove it ([2:]
 		if nonce.Cmp(iter.Event.Nonce) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
 			uint64(iter.Event.Raw.Index) == txIndex {
@@ -436,10 +436,9 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 	depamount := d.Amount.BigInt()
 	defer iter.Close()
 	var event *bridge.BridgeAssetDeposited
+	targetPartyID := strings.TrimPrefix(d.TargetPartyID, "0x")
 	for iter.Next() {
-		// here the event queu send us a 0x... pubkey
-		// we do the slice operation to remove it ([2:]
-		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == d.TargetPartyID[2:] &&
+		if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == targetPartyID &&
 			iter.Event.Amount.Cmp(depamount) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&
 			uint64(iter.Event.Raw.Index) == txIndex {
