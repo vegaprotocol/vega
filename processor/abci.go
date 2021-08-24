@@ -171,7 +171,8 @@ func NewApp(
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
 		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
 		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
-		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate)
+		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate).
+		HandleDeliverTx(txn.CheckpointRestoreCommand, app.DeliverReloadSnapshot)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -846,7 +847,7 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
 	}
 }
 
-func (app *App) ReloadSnapshot(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) error {
 	cmd := &commandspb.RestoreSnapshot{}
 	if err := tx.Unmarshal(cmd); err != nil {
 		return nil
