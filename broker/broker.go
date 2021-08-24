@@ -296,7 +296,7 @@ func (b *Broker) subscribe(s Subscriber) int {
 		for t := range b.tSubs {
 			// Don't add ALL subs to the map they're already in, and don't add it to the
 			// special TxErrEvent map, but we should add them to all other maps
-			if t != events.All && t != events.TxErrEvent {
+			if t != events.All {
 				b.tSubs[t][k] = &sub
 			}
 		}

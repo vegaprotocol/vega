@@ -2,7 +2,6 @@ package broker_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -93,10 +92,6 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Stop sending if context is cancelled, even new events", testStopCtxSendAgain)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
-}
-
-func TestTxErrEvents(t *testing.T) {
-	t.Run("Ensure TxErrEvents are hidden from ALL subscribers", testTxErrNotAll)
 }
 
 func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
@@ -588,82 +583,14 @@ func testEventTypeSubscription(t *testing.T) {
 	assert.NotZero(t, k2)
 	assert.NotZero(t, k3)
 	assert.NotEqual(t, k1, k2)
-	// send the TxErrEvent, a special case none of the subscribers ought to ever receive
-	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("random err"), "party-1", types.Vote{
-		PartyId:    "party-1",
-		Value:      types.Vote_VALUE_YES,
-		ProposalId: "prop-1",
-	}))
-	// send the correct event
-	broker.Send(event)
+	// send a time event
+	broker.Send(events.NewTime(context.Background(), time.Now()))
 	// ensure the event was delivered
 	wg.Wait()
 	// unsubscribe the subscriber, now we're done
 	broker.Unsubscribe(k1)
 	broker.Unsubscribe(k2)
 	broker.Unsubscribe(k3)
-	close(skipCh)
-	close(closeCh)
-}
-
-func testTxErrNotAll(t *testing.T) {
-	broker := getBroker(t)
-	defer broker.Finish()
-	sub := mocks.NewMockSubscriber(broker.ctrl)
-	allSub := mocks.NewMockSubscriber(broker.ctrl)
-	skipCh, closeCh := make(chan struct{}), make(chan struct{})
-
-	// we'll send error events. Once both have been sent to the subscriber
-	// we're certain none of them were pushed to the ALL subscriber
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	// Closed check
-	sub.EXPECT().Closed().AnyTimes().Return(closeCh)
-	allSub.EXPECT().Closed().AnyTimes().Return(closeCh)
-	// skip check
-	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	allSub.EXPECT().Skip().AnyTimes().Return(skipCh)
-
-	// all subscriber ought to never receive anything, so don't specify an EXPECT
-	// allSub.EXPECT().Push(gomock.Any()).Times(0)
-	// actually push the event - diffSub expects nothing
-	sub.EXPECT().Push(gomock.Any()).Times(2).Do(func(_ interface{}) {
-		wg.Done()
-	})
-	// the event types this subscriber is interested in
-	sub.EXPECT().Types().AnyTimes().Return([]events.Type{events.TxErrEvent})
-	allSub.EXPECT().Types().AnyTimes().Return(nil) // subscribed to ALL events
-
-	// both subscribers are ack'ing
-	sub.EXPECT().Ack().AnyTimes().Return(true)
-	allSub.EXPECT().Ack().AnyTimes().Return(true)
-
-	// TxErrEvent
-	evt := events.NewTxErrEvent(broker.ctx, errors.New("some error"), "party-1", types.Vote{
-		PartyId:    "party-1",
-		Value:      types.Vote_VALUE_YES,
-		ProposalId: "prop-1",
-	})
-	sub.EXPECT().SetID(gomock.Any()).Times(1)
-	allSub.EXPECT().SetID(gomock.Any()).Times(1)
-	k1 := broker.Subscribe(sub)
-	k2 := broker.Subscribe(allSub)
-	assert.NotZero(t, k1)
-	assert.NotZero(t, k2)
-	assert.NotEqual(t, k1, k2)
-	// send the correct event
-	broker.Send(evt)
-	// send a second event
-	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("some error 2"), "party-2", types.Vote{
-		PartyId:    "party-2",
-		Value:      types.Vote_VALUE_NO,
-		ProposalId: "prop-2",
-	}))
-	// ensure the event was delivered
-	wg.Wait()
-	// unsubscribe the subscriber, now we're done
-	broker.Unsubscribe(k1)
-	broker.Unsubscribe(k2)
 	close(skipCh)
 	close(closeCh)
 }
