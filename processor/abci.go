@@ -279,7 +279,8 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = app.exec.Hash()
 	// @TODO handle error. Snapshot can be nil if it wasn't time to create a snapshot
 	if snap, _ := app.checkpoint.Checkpoint(app.currentTimestamp); snap != nil {
-		resp.Data = append(resp.Data, snap.Hash...)
+		// This seems to break stuff
+		// resp.Data = append(resp.Data, snap.Hash...)
 		// @TODO error handling
 		_ = app.handleCheckpoint(snap)
 	}
