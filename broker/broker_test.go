@@ -129,6 +129,7 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 			close(done)
 		}
 	})
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k := tstBroker.Subscribe(sub)
 	// send batches for both events - hash 2 after hash 1
 	tstBroker.SendBatch(dataH1)
@@ -174,6 +175,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 			close(done)
 		}
 	})
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k := tstBroker.Subscribe(sub)
 	// We can't use sendBatch here: we use the traceID of the first event in the batch to determine
 	// the hash (batch-sending events can only happen within a single block)
@@ -202,8 +204,10 @@ func testSubUnsubSuccess(t *testing.T) {
 	// subscribe + unsubscribe -> 2 calls
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	reqSub.EXPECT().Types().Times(2).Return(nil)
 	reqSub.EXPECT().Ack().Times(1).Return(true)
+	reqSub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub)    // not required
 	k2 := broker.Subscribe(reqSub) // required
 	assert.NotZero(t, k1)
@@ -221,6 +225,7 @@ func testSubReuseKey(t *testing.T) {
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	sub.EXPECT().Types().Times(4).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(2)
 	k1 := broker.Subscribe(sub)
 	sub.EXPECT().Ack().Times(1).Return(true)
 	assert.NotZero(t, k1)
@@ -239,6 +244,7 @@ func testAutoUnsubscribe(t *testing.T) {
 	// sub, auto-unsub, sub again
 	sub.EXPECT().Types().Times(3).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(2)
 	k1 := broker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	// set up sub to be closed
@@ -276,6 +282,7 @@ func testSendBatch(t *testing.T) {
 	}()
 	sub.EXPECT().Types().Times(1).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	data := []events.Event{
@@ -313,6 +320,7 @@ func testSendBatchChannel(t *testing.T) {
 		twg.Done()
 	})
 	sub.EXPECT().Ack().AnyTimes().Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	batch2 := []events.Event{
@@ -393,6 +401,7 @@ func testSkipOptional(t *testing.T) {
 		twg.Done()
 	})
 	sub.EXPECT().Ack().AnyTimes().Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 
@@ -458,6 +467,7 @@ func testStopCtx(t *testing.T) {
 	broker.cfunc()
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	broker.Send(broker.randomEvt())
@@ -477,6 +487,7 @@ func testStopCtxSendAgain(t *testing.T) {
 	broker.cfunc()
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	broker.Send(broker.randomEvt())
@@ -517,6 +528,7 @@ func testSubscriberSkip(t *testing.T) {
 	sub.EXPECT().Push(events[1]).Times(1)
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	for _, e := range events {
@@ -566,6 +578,9 @@ func testEventTypeSubscription(t *testing.T) {
 	sub.EXPECT().Ack().AnyTimes().Return(true)
 	diffSub.EXPECT().Ack().AnyTimes().Return(true)
 	allSub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	diffSub.EXPECT().SetID(gomock.Any()).Times(1)
+	allSub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub)     // required sub
 	k2 := broker.Subscribe(diffSub) // required sub, but won't be used anyway
 	k3 := broker.Subscribe(allSub)
@@ -629,6 +644,8 @@ func testTxErrNotAll(t *testing.T) {
 		Value:      types.Vote_VALUE_YES,
 		ProposalId: "prop-1",
 	})
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	allSub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub)
 	k2 := broker.Subscribe(allSub)
 	assert.NotZero(t, k1)
