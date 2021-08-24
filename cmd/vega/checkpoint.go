@@ -39,7 +39,7 @@ func Checkpoint(ctx context.Context, parser *flags.Parser) error {
 
 	// here we initialize the global exampleCmd with needed default values.
 	checkpointCmd = CheckpointCmd{
-		RootPathFlag: rootP,
+		RootPathFlag: config.NewRootPathFlag(),
 		Restore:      checkpointRestore{},
 	}
 	_, err := parser.AddCommand("checkpoint", "Restore checkpoint", "Submits restore transaction to the chain to quickly restart the node from a given state", &checkpointCmd)
