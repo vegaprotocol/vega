@@ -155,3 +155,16 @@ models:
     model: code.vegaprotocol.io/protos/vega.Vote
   MarketTimestamps:
     model: code.vegaprotocol.io/protos/vega.MarketTimestamps
+  NodeData:
+    model: code.vegaprotocol.io/protos/vega.NodeData
+  EpochData:
+    model: code.vegaprotocol.io/protos/vega.EpochData
+  Delegation:
+    model: code.vegaprotocol.io/protos/vega.Delegation
+  Node:
+    model: code.vegaprotocol.io/protos/vega.Node
+  Epoch:
+    model: code.vegaprotocol.io/protos/vega.Epoch
+  EpochTimestamps:
+    model: code.vegaprotocol.io/protos/vega.EpochTimestamps
+  

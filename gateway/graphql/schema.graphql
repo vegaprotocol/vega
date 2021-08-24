@@ -407,6 +407,147 @@ type Query {
 
   "return the full list of network parameters"
   networkParameters: [NetworkParameter!]
+
+  "returns information about nodes"
+  nodeData: NodeData
+
+  "all known network nodes"
+  nodes: [Node!]
+
+  "specific node in network"
+  node("required id of node" id: String!): Node
+
+  "get data for a specific epoch, if id omitted it gets the current epoch"
+	epoch(id: String): Epoch!
+}
+
+enum NodeStatus {
+  "The node is non-validating"
+	NonValidator
+
+	"The node is validating"
+	Validator
+}
+
+# Describes in both human readable and block time when an epoch spans.
+type EpochTimestamps {
+  "RFC3339 timestamp - Vega time of epoch start, null if not started"
+  start: String
+  "RFC3339 timestamp - Vega time of epoch end, null if not ended"
+  end: String
+
+  # @TODO - blocks support
+  # "Height of first block in the epoch, null if not started"
+  # firstBlock: String!
+  # "Height of last block in the epoch, null if not ended"
+  # lastBlock: String
+}
+
+type Epoch {
+  "Presumably this is an integer or something. If there's no such thing, disregard"
+  id: String!
+
+  "Timestamps for start/end etc"
+  timestamps: EpochTimestamps!
+
+  "Validators that participated in this epoch"
+  validators: [Node!]!
+
+	delegations: [Delegation!]!
+}
+
+type NodeData {
+  "Total staked amount across all nodes"
+	stakedTotal: String!
+
+	"Total number of nodes"
+	totalNodes: Int!
+
+	"Number of inactive nodes"
+	inactiveNodes: Int!
+
+	"Number of nodes validating"
+	validatingNodes: Int!
+
+  # @TODO allow to query based on number of epochs uptime(epochs: Int)
+	"Total uptime for all epochs across all nodes. Or specify a number of epochs"
+	uptime: Float!
+}
+
+type EpochParticipation {
+  epoch: Epoch
+
+  "RFC3339 timestamp"
+  offline: String
+  
+  "RFC3339 timestamp"
+  online: String
+
+  totalRewards: Float
+}
+
+type EpochData {
+	"Total number of epochs since node was created"
+	total: Int!
+
+	"Total number of offline epochs since node was created"
+  offline: Int!
+
+	"Total number of online epochs since node was created"
+  online: Int!
+}
+
+type Node {
+	"The node url eg n01.vega.xyz"
+	id: String!
+
+  "Pubkey of the node operator"
+  pubkey: String!
+
+	"URL where I can find out more info on the node. Will this be possible?"
+	infoUrl: String!
+ 
+  "Country code for the location of the node"
+	location: String!
+
+	"The amount the node has put up themselves"
+	stakedByOperator: String!
+ 
+	"The amount of stake that has been delegated by token holders"
+	stakedByDelegates: String!
+
+	"Total amount staked on node"
+	stakedTotal: String!
+
+	# "Max amount of (wanted) stake, is this a network param or a node param"
+  # @TODO - add this field
+	# maxIntendedStake: String!
+
+  "Amount of stake on the next epoch"
+	pendingStake: String!
+
+	epochData: EpochData
+
+	# @TODO implement this filter
+	# epochs(last: Int, since: String): [EpochParticipation!]! 
+
+	status: NodeStatus!
+
+	delegations: [Delegation!]!
+}
+
+type Delegation {
+  "Amount delegated"
+	amount: String!
+  
+  "Party which is delegating"
+	partyId: String!
+  
+  "URL of node you are delegating to"
+  node: String!
+  
+  "Epoch of delegation"
+	epoch: Int!
 }
 
 "Represents an asset in vega"
@@ -2395,3 +2536,4 @@ type LiquidityProvision {
   "A reference for the orders created out of this Liquidity provision"
   reference: String
 }
+
