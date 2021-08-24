@@ -226,7 +226,7 @@ func (b *Broker) Send(event events.Event) {
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
 	subs, ok := b.tSubs[t]
-	if !ok && t != events.TxErrEvent {
+	if !ok {
 		// if a typed map isn't set (yet), and it's not the error event, we can return
 		// ALL subscribers directly instead
 		subs = b.tSubs[events.All]
@@ -243,6 +243,7 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 func (b *Broker) Subscribe(s Subscriber) int {
 	b.mu.Lock()
 	k := b.subscribe(s)
+	s.SetID(k)
 	b.mu.Unlock()
 	return k
 }
@@ -295,7 +296,7 @@ func (b *Broker) subscribe(s Subscriber) int {
 		for t := range b.tSubs {
 			// Don't add ALL subs to the map they're already in, and don't add it to the
 			// special TxErrEvent map, but we should add them to all other maps
-			if t != events.All && t != events.TxErrEvent {
+			if t != events.All {
 				b.tSubs[t][k] = &sub
 			}
 		}
