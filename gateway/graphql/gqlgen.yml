@@ -167,4 +167,3 @@ models:
     model: code.vegaprotocol.io/protos/vega.Epoch
   EpochTimestamps:
     model: code.vegaprotocol.io/protos/vega.EpochTimestamps
-  
