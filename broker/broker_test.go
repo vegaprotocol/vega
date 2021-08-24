@@ -95,6 +95,7 @@ func TestSendEvent(t *testing.T) {
 }
 
 func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	defer tstBroker.Finish()
 	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
@@ -143,6 +144,7 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 }
 
 func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	defer tstBroker.Finish()
 	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
@@ -192,6 +194,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 }
 
 func testSubUnsubSuccess(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -215,6 +218,7 @@ func testSubUnsubSuccess(t *testing.T) {
 }
 
 func testSubReuseKey(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -233,6 +237,7 @@ func testSubReuseKey(t *testing.T) {
 }
 
 func testAutoUnsubscribe(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -268,6 +273,7 @@ func testAutoUnsubscribe(t *testing.T) {
 }
 
 func testSendBatch(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	cancelCh := make(chan struct{})
@@ -301,6 +307,7 @@ func testSendBatch(t *testing.T) {
 }
 
 func testSendBatchChannel(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
@@ -382,6 +389,7 @@ func testSendBatchChannel(t *testing.T) {
 }
 
 func testSkipOptional(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
@@ -452,6 +460,7 @@ func testSkipOptional(t *testing.T) {
 }
 
 func testStopCtx(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -472,6 +481,7 @@ func testStopCtx(t *testing.T) {
 }
 
 func testStopCtxSendAgain(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -494,6 +504,7 @@ func testStopCtxSendAgain(t *testing.T) {
 }
 
 func testSubscriberSkip(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -538,6 +549,7 @@ func testSubscriberSkip(t *testing.T) {
 
 // test making sure that events are sent only to subs that are interested in it
 func testEventTypeSubscription(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -596,6 +608,7 @@ func testEventTypeSubscription(t *testing.T) {
 }
 
 func testStreamsOverSocket(t *testing.T) {
+	t.Parallel()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	config := broker.NewDefaultConfig()
@@ -634,6 +647,7 @@ func testStreamsOverSocket(t *testing.T) {
 }
 
 func testStopsProcessOnStreamError(t *testing.T) {
+	t.Parallel()
 	if os.Getenv("RUN_TEST") == "1" {
 		ctx, cfunc := context.WithCancel(context.Background())
 		ctrl := gomock.NewController(t)
