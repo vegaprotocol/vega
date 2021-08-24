@@ -24,6 +24,6 @@ func nodeStatusFromProto(s proto.NodeStatus) (NodeStatus, error) {
 	case proto.NodeStatus_NODE_STATUS_NON_VALIDATOR:
 		return NodeStatusValidator, nil
 	default:
-		return NodeStatus(-1), fmt.Errorf("failed to convert NodeStatus from Proto to GraphQL: %v", s)
+		return NodeStatus(""), fmt.Errorf("failed to convert NodeStatus from Proto to GraphQL: %s", s.String())
 	}
 }
