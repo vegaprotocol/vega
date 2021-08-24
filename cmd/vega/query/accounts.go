@@ -10,10 +10,10 @@ import (
 )
 
 type AccountsCmd struct {
-	Party   AccountsPartyCmd  `command:"party" description:"List accounts for a given party"`
-	Market  AccountsMarketCmd `command:"market" description:"List accounts for a given market"`
-	Network AccountsMarketCmd `command:"network" description:"List accounts owned by the network"`
-	Help    bool              `short:"h" long:"help" description:"Show this help message"`
+	Party   AccountsPartyCmd   `command:"party" description:"List accounts for a given party"`
+	Market  AccountsMarketCmd  `command:"market" description:"List accounts for a given market"`
+	Network AccountsNetworkCmd `command:"network" description:"List accounts owned by the network"`
+	Help    bool               `short:"h" long:"help" description:"Show this help message"`
 }
 
 type AccountsPartyCmd struct {

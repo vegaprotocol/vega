@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	vegapb "code.vegaprotocol.io/protos/vega"
@@ -38,8 +39,10 @@ func (a *Assets) consume() {
 	for {
 		select {
 		case <-a.Closed():
+			fmt.Printf("CLOSED: %v\n")
 			return
 		case asset, ok := <-a.ch:
+			fmt.Printf("NEW EVENT: %v\n", asset)
 			if !ok {
 				// cleanup base
 				a.Halt()
@@ -55,6 +58,7 @@ func (a *Assets) consume() {
 
 func (a *Assets) Push(evts ...events.Event) {
 	for _, e := range evts {
+		fmt.Printf("NEW EVENT: %v\n", e)
 		if ae, ok := e.(assetE); ok {
 			a.ch <- ae.Asset()
 		}

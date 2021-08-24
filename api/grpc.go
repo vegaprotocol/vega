@@ -55,6 +55,7 @@ type GRPC struct {
 	stats         *stats.Stats
 	statusChecker *monitoring.Status
 	timesvc       *vegatime.Svc
+	evtfwd        EvtForwarder
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -90,6 +91,7 @@ func NewGRPC(
 		statusChecker: statusChecker,
 		ctx:           ctx,
 		cfunc:         cfunc,
+		evtfwd:        evtfwd,
 	}
 }
 
@@ -184,6 +186,7 @@ func (g *GRPC) Start() {
 		statusChecker: g.statusChecker,
 		timesvc:       g.timesvc,
 		stats:         g.stats,
+		evtForwarder:  g.evtfwd,
 	}
 	g.trading = tradingSvc
 	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)

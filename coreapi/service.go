@@ -3,6 +3,7 @@ package coreapi
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	"code.vegaprotocol.io/vega/broker"
@@ -34,6 +35,8 @@ func NewService(
 		cfg:    cfg,
 	}
 
+	fmt.Printf("CONFIG: %v\n", cfg)
+
 	if cfg.Accounts {
 		log.Info("starting accounts core api")
 		svc.accounts = services.NewAccounts(ctx)
@@ -43,7 +46,7 @@ func NewService(
 	if cfg.Assets {
 		log.Info("starting assets core api")
 		svc.assets = services.NewAssets(ctx)
-		broker.SubscribeBatch(svc.accounts)
+		broker.SubscribeBatch(svc.assets)
 	}
 
 	return svc

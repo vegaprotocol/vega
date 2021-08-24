@@ -71,6 +71,7 @@ type Broker struct {
 
 // New creates a new base broker
 func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
+	fmt.Printf("NEW BROKER\n\n\n\n")
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
@@ -145,8 +146,14 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 	}
 
 	b.mu.Lock()
+	if t == events.AssetEvent {
+		fmt.Printf("ASSET EVENT\n\n\n")
+	}
 	ch, ok := b.eChans[t]
 	if !ok {
+		if t == events.AssetEvent {
+			fmt.Printf("ASSET EVENT CREATE SUB\n\n\n")
+		}
 		subs := b.getSubsByType(t)
 		ln := len(subs) + 1                      // at least buffer 1
 		ch = make(chan []events.Event, ln*20+20) // create a channel with buffer, min 40
@@ -160,6 +167,10 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 		ch <- evts
 	}
 	if ok {
+		if t == events.AssetEvent {
+			fmt.Printf("ASSET EVENT ALREADY STARTED\n\n\n")
+		}
+
 		// we already started the routine to consume the channel
 		// we can return here
 		return
@@ -170,28 +181,47 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 			delete(b.eChans, t)
 			close(ch)
 			b.mu.Unlock()
+			if t == events.AssetEvent {
+				fmt.Printf("LEFT ASSET\n\n\n\n")
+			}
 		}()
 		for {
 			select {
 			case <-b.ctx.Done():
 				return
-			case events := <-ch:
+			case evts := <-ch:
+				if t == events.AssetEvent {
+					fmt.Printf("RECEIVED EVENT: %v\n\n\n", evts)
+				}
 				b.mu.Lock()
 				subs := b.getSubsByType(t)
 				b.mu.Unlock()
+				if t == events.AssetEvent {
+					fmt.Printf("RECEIVED EVENT: %v | %v\n\n\n", evts, subs)
+				}
 				unsub := make([]int, 0, len(subs))
 				for k, sub := range subs {
 					select {
 					case <-b.ctx.Done():
 						return
 					case <-sub.Skip():
+						if t == events.AssetEvent {
+							fmt.Printf("ASSET EVENT SKIP\n\n\n")
+						}
+
 						continue
 					case <-sub.Closed():
 						unsub = append(unsub, k)
 					default:
+						if t == events.AssetEvent {
+							fmt.Printf("ASSET EVENT REQUIRED: %v\n\n\n", sub.required)
+						}
 						if sub.required {
-							sub.Push(events...)
-						} else if rm := b.sendChannelSync(sub, events); rm {
+							if t == events.AssetEvent {
+								fmt.Printf("ASSET EVENT PUSHING\n\n\n")
+							}
+							sub.Push(evts...)
+						} else if rm := b.sendChannelSync(sub, evts); rm {
 							unsub = append(unsub, k)
 						}
 					}
@@ -225,6 +255,8 @@ func (b *Broker) Send(event events.Event) {
 // simplified version for better performance - unfortunately, we'll still need to copy the map
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
+
+	fmt.Printf("SUBS: %#v\n", b.tSubs)
 	subs, ok := b.tSubs[t]
 	if !ok {
 		// if a typed map isn't set (yet), and it's not the error event, we can return
@@ -259,12 +291,15 @@ func (b *Broker) SubscribeBatch(subs ...Subscriber) {
 
 func (b *Broker) subscribe(s Subscriber) int {
 	k := b.getKey()
+	fmt.Printf("SUBSCRIBING: %#v | key %#v | ACK: %v\n", s, k, s.Ack())
+
 	sub := subscription{
 		Subscriber: s,
 		required:   s.Ack(),
 	}
 	b.subs[k] = sub
 	types := sub.Types()
+	fmt.Printf("types: %v\n\n", types)
 	// filter out weird types values like []events.Type{events.PartyEvent, events.All,}
 	// those subscribers subscribe to all events no matter what, so treat them accordingly
 	isAll := false
