@@ -108,7 +108,7 @@ func TestNodesService_GetAll(t *testing.T) {
 
 	testService.nodeStore.EXPECT().GetAll().Return(expectedNodes).Times(1)
 
-	nodes, err := testService.GetNodes(context.Background())
+	nodes, err := testService.GetNodes(testService.ctx)
 	a.NoError(err)
 	a.Equal(expectedNodes, nodes)
 }
@@ -146,7 +146,7 @@ func TestNodesService_GetByID(t *testing.T) {
 
 		testService.nodeStore.EXPECT().GetByID("node_1").Return(expectedNode, nil).Times(1)
 
-		node, err := testService.GetNodeByID(context.Background(), "node_1")
+		node, err := testService.GetNodeByID(testService.ctx, "node_1")
 		a.NoError(err)
 		a.Equal(expectedNode, node)
 	})
@@ -158,7 +158,7 @@ func TestNodesService_GetByID(t *testing.T) {
 
 		testService.nodeStore.EXPECT().GetByID("non_existing").Return(nil, fmt.Errorf("node not found")).Times(1)
 
-		node, err := testService.GetNodeByID(context.Background(), "non_existing")
+		node, err := testService.GetNodeByID(testService.ctx, "non_existing")
 		a.EqualError(err, "node not found")
 		a.Nil(node)
 	})
@@ -182,7 +182,7 @@ func TestNodesService_GetNodeData(t *testing.T) {
 	testService.nodeStore.EXPECT().GetTotalNodesNumber().Return(10).Times(1)
 	testService.nodeStore.EXPECT().GetValidatingNodesNumber().Return(10).Times(1)
 
-	data, err := testService.GetNodeData(context.Background())
+	data, err := testService.GetNodeData(testService.ctx)
 	a.NoError(err)
 	a.Equal(expectedData, data)
 }

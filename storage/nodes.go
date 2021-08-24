@@ -30,7 +30,7 @@ func NewNode(log *logging.Logger, c Config) *Node {
 	log.SetLevel(c.Level.Get())
 
 	return &Node{
-		nodes:  make(map[string]node),
+		nodes:  map[string]node{},
 		log:    log,
 		Config: c,
 	}
@@ -56,7 +56,7 @@ func (ns *Node) AddNode(n pb.Node) {
 
 	ns.nodes[n.GetPubKey()] = node{
 		n:                           n,
-		delegationsPerEpochPerParty: make(map[string]map[string]pb.Delegation),
+		delegationsPerEpochPerParty: map[string]map[string]pb.Delegation{},
 	}
 }
 
@@ -149,7 +149,7 @@ func (ns *Node) GetStakedTotal(epochID string) string {
 				continue
 			}
 
-			stakedTotal.Add(stakedTotal, amount)
+			stakedTotal.AddSum(amount)
 		}
 	}
 
@@ -157,7 +157,6 @@ func (ns *Node) GetStakedTotal(epochID string) string {
 }
 
 func (ns *Node) nodeProtoFromInternal(n node) *pb.Node {
-	stakedTotal := num.NewUint(0)
 	stakedByOperator := num.NewUint(0)
 	stakedByDelegates := num.NewUint(0)
 
@@ -183,7 +182,7 @@ func (ns *Node) nodeProtoFromInternal(n node) *pb.Node {
 		}
 	}
 
-	stakedTotal.Add(stakedByOperator, stakedByDelegates)
+	stakedTotal := num.Sum(stakedByOperator, stakedByDelegates)
 
 	// @TODO finish these fields
 	// PendingStake string

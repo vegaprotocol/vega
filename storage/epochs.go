@@ -38,7 +38,7 @@ func NewEpoch(log *logging.Logger, nodeStore *Node, c Config) *Epoch {
 
 	return &Epoch{
 		nodeStore: nodeStore,
-		epochs:    make(map[string]epoch),
+		epochs:    map[string]epoch{},
 		log:       log,
 		Config:    c,
 	}
@@ -86,7 +86,7 @@ func (e *Epoch) addEpoch(seq string, startTime int64, endTime int64) {
 		// @TODO this is hack.. Epoch store should consume
 		// some event about node participation in epoch in future
 		nodeIDs:                    e.nodeStore.GetAllIDs(),
-		delegationsPerNodePerParty: make(map[string]map[string]pb.Delegation),
+		delegationsPerNodePerParty: map[string]map[string]pb.Delegation{},
 	}
 
 	e.currentEpoch = seq

@@ -88,7 +88,7 @@ func TestNodesService_GetEpoch(t *testing.T) {
 
 		testService.epochStore.EXPECT().GetEpoch().Return(expectedEpoch, nil).Times(1)
 
-		epoch, err := testService.GetEpoch(context.Background())
+		epoch, err := testService.GetEpoch(testService.ctx)
 		a.NoError(err)
 		a.Equal(expectedEpoch, epoch)
 	})
@@ -100,7 +100,7 @@ func TestNodesService_GetEpoch(t *testing.T) {
 
 		testService.epochStore.EXPECT().GetEpoch().Return(nil, fmt.Errorf("something went wrong")).Times(1)
 
-		epoch, err := testService.GetEpoch(context.Background())
+		epoch, err := testService.GetEpoch(testService.ctx)
 		a.EqualError(err, "something went wrong")
 		a.Nil(epoch)
 	})
@@ -148,7 +148,7 @@ func TestNodesService_GetEpochByID(t *testing.T) {
 
 		testService.epochStore.EXPECT().GetEpochByID("1").Return(expectedEpoch, nil).Times(1)
 
-		epoch, err := testService.GetEpochByID(context.Background(), "1")
+		epoch, err := testService.GetEpochByID(testService.ctx, "1")
 		a.NoError(err)
 		a.Equal(expectedEpoch, epoch)
 	})
@@ -160,7 +160,7 @@ func TestNodesService_GetEpochByID(t *testing.T) {
 
 		testService.epochStore.EXPECT().GetEpochByID("1").Return(nil, fmt.Errorf("something went wrong")).Times(1)
 
-		epoch, err := testService.GetEpochByID(context.Background(), "1")
+		epoch, err := testService.GetEpochByID(testService.ctx, "1")
 		a.EqualError(err, "something went wrong")
 		a.Nil(epoch)
 	})
