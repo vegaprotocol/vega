@@ -1599,7 +1599,7 @@ Scenario: WIP - Testing fees in continuous trading during position resolution wi
 
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep
+Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers
     
     When the following network parameters are set:
       | name                                                | value |
@@ -1681,7 +1681,6 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
     Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            |  
       | 990        | TRADING_MODE_CONTINUOUS |
-      
      
     # For trader4 -
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
