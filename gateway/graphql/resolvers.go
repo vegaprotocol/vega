@@ -1054,6 +1054,23 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 	return result, nil
 }
 
+func (r *myPartyResolver) Delegations(ctx context.Context, obj *types.Party, nodeID *string) ([]*types.Delegation, error) {
+	req := &protoapi.DelegationsRequest{
+		Party: obj.Id,
+	}
+
+	if nodeID != nil {
+		req.NodeId = *nodeID
+	}
+
+	resp, err := r.tradingDataClient.Delegations(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Delegations, nil
+}
+
 // END: Party Resolver
 
 // BEGIN: MarginLevels Resolver
