@@ -1,9 +1,11 @@
 package checkpoint_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/checkpoint"
@@ -36,6 +38,11 @@ func TestGetCheckpoints(t *testing.T) {
 	t.Run("test getting checkpoints - error", testGetCheckpointsErr)
 }
 
+func TestCheckpointIntervals(t *testing.T) {
+	t.Run("test getting checkpoint before interval has passed", testCheckpointBeforeInterval)
+	t.Run("test updating interval creates new checkpoint sooner", testCheckpointUpdatedInterval)
+}
+
 func TestLoadCheckpoints(t *testing.T) {
 	t.Run("test loading checkpoints after generating them - success", testLoadCheckpoints)
 	t.Run("load non-registered components", testLoadMissingCheckpoint)
@@ -64,7 +71,7 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	raw, err := eng.Checkpoint()
+	raw, err := eng.Checkpoint(time.Now())
 	require.NoError(t, err)
 	// now to check if the checkpoint contains the expected data
 	for k, c := range components {
@@ -92,7 +99,7 @@ func testGetCheckpointsAdd(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	raw, err := eng.Checkpoint()
+	raw, err := eng.Checkpoint(time.Now())
 	require.NoError(t, err)
 	// now to check if the checkpoint contains the expected data
 	for k, c := range components {
@@ -149,7 +156,7 @@ func testLoadCheckpoints(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
-	snapshot, err := eng.Checkpoint()
+	snapshot, err := eng.Checkpoint(time.Now())
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
 	// create new components to load data in to
@@ -233,7 +240,7 @@ func testLoadSparse(t *testing.T) {
 	}
 	c := components[types.GovernanceCheckpoint]
 	c.EXPECT().Checkpoint().Times(1).Return(data[types.GovernanceCheckpoint], nil)
-	snapshot, err := eng.Checkpoint()
+	snapshot, err := eng.Checkpoint(time.Now())
 	require.NoError(t, err)
 	require.NoError(t, eng.Add(components[types.AssetsCheckpoint])) // load another component, not part of the checkpoints map
 	c.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
@@ -264,7 +271,7 @@ func testLoadError(t *testing.T) {
 		types.GovernanceCheckpoint: errors.New("random error"),
 		types.AssetsCheckpoint:     nil, // we always load checkpoints in order, so bar will go first, and should not return an error
 	}
-	checkpoints, err := eng.Checkpoint()
+	checkpoints, err := eng.Checkpoint(time.Now())
 	require.NoError(t, err)
 	for k, r := range ret {
 		c := components[k]
@@ -299,10 +306,91 @@ func testGetCheckpointsErr(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], errs[k])
 	}
-	checkpoints, err := eng.Checkpoint()
+	checkpoints, err := eng.Checkpoint(time.Now())
 	require.Nil(t, checkpoints)
 	require.Error(t, err)
 	require.Equal(t, errs[types.GovernanceCheckpoint], err)
+}
+
+func testCheckpointBeforeInterval(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := context.Background()
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
+	}
+	for k, c := range components {
+		c.EXPECT().Name().Times(1).Return(k)
+	}
+	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	require.NoError(t, err)
+	// set interval of 1 hour
+	hour, _ := time.ParseDuration("1h")
+	eng.OnTimeElapsedUpdate(ctx, hour)
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
+	}
+	for k, c := range components {
+		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
+	}
+	now := time.Now()
+	raw, err := eng.Checkpoint(now)
+	require.NoError(t, err)
+
+	halfHour := time.Duration(int64(hour) / 2)
+	now = now.Add(halfHour)
+	raw, err = eng.Checkpoint(now)
+	require.Nil(t, raw)
+	require.Nil(t, err)
+}
+
+// same test as above, but the interval is upadted to trigger a second checkpoint
+// to be created anyway
+func testCheckpointUpdatedInterval(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := context.Background()
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
+	}
+	for k, c := range components {
+		c.EXPECT().Name().Times(1).Return(k)
+	}
+	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	require.NoError(t, err)
+	// set interval of 1 hour
+	hour, _ := time.ParseDuration("1h")
+	eng.OnTimeElapsedUpdate(ctx, hour)
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
+	}
+	for k, c := range components {
+		// we expect 2 calls
+		c.EXPECT().Checkpoint().Times(2).Return(data[k], nil)
+	}
+	now := time.Now()
+	raw, err := eng.Checkpoint(now)
+	require.NoError(t, err)
+
+	// this is before we ought to create a checkpoint, and should return nil
+	halfHour := time.Duration(int64(hour) / 2)
+	now = now.Add(halfHour)
+	raw, err = eng.Checkpoint(now)
+	require.Nil(t, raw)
+	require.Nil(t, err)
+
+	// now the second calls to the components are made
+	now = now.Add(time.Second)             // t+30m1s
+	eng.OnTimeElapsedUpdate(ctx, halfHour) // delta is 30 min
+	raw, err = eng.Checkpoint(now)
+	require.NoError(t, err)
+	require.NotNil(t, raw)
 }
 
 type wrappedMock struct {

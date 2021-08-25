@@ -1,7 +1,9 @@
 package checkpoint
 
 import (
+	"context"
 	"errors"
+	"time"
 
 	"code.vegaprotocol.io/vega/types"
 )
@@ -33,11 +35,14 @@ type State interface {
 type Engine struct {
 	components map[types.CheckpointName]State
 	ordered    []string
+	nextCP     time.Time
+	delta      time.Duration
 }
 
 func New(components ...State) (*Engine, error) {
 	e := &Engine{
 		components: make(map[types.CheckpointName]State, len(components)),
+		nextCP:     time.Time{},
 	}
 	for _, c := range components {
 		if err := e.addComponent(c); err != nil {
@@ -74,7 +79,12 @@ func (e *Engine) addComponent(comp State) error {
 }
 
 // Checkpoint returns the overall checkpoint
-func (e *Engine) Checkpoint() (*types.Snapshot, error) {
+func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
+	// @TODO, pass in time and check it
+	if e.nextCP.After(t) {
+		return nil, nil
+	}
+	e.nextCP = t.Add(e.delta)
 	cp := &types.Checkpoint{}
 	for _, k := range cpOrder {
 		comp, ok := e.components[k]
@@ -120,5 +130,15 @@ func (e *Engine) Load(snap *types.Snapshot) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (e *Engine) OnTimeElapsedUpdate(ctx context.Context, d time.Duration) error {
+	if !e.nextCP.IsZero() {
+		// update the time for the next cp
+		e.nextCP = e.nextCP.Add(-e.delta).Add(d)
+	}
+	// update delta
+	e.delta = d
 	return nil
 }

@@ -514,6 +514,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	// setup rewards engine
 	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
 
+	// checkpoint engine
+	l.checkpoint = checkpoint.New(l.assetService, l.collateral, l.governance, l.netParams)
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
@@ -637,6 +639,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: l.notary.OnDefaultValidatorsVoteRequiredUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.NetworkCheckpointTimeElapsedBetweenCheckpoints,
+			Watcher: l.checkpoint.OnTimeElapsedUpdate,
 		},
 	)
 }

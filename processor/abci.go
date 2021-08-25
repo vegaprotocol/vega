@@ -37,7 +37,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
 type Checkpoint interface {
-	Checkpoint() (*types.Snapshot, error)
+	Checkpoint(time.Time) (*types.Snapshot, error)
 	Load(snap *types.Snapshot) error
 }
 
@@ -274,7 +274,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	resp.Data = app.exec.Hash()
 	// @TODO handle error. Snapshot can be nil if it wasn't time to create a snapshot
-	if snap, _ := app.checkpoint.Checkpoint(); snap != nil {
+	if snap, _ := app.checkpoint.Checkpoint(app.currentTimestamp); snap != nil {
 		resp.Data = append(resp.Data, snap.Hash...)
 		// @TODO error handling
 		_ = app.writeCheckpoint(snap)
