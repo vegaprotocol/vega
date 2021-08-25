@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	cfgencoding "code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
@@ -31,6 +33,13 @@ var (
 
 type badgerStore struct {
 	db *badger.DB
+
+	// GC params
+	discardRatio float64
+	interval     time.Duration
+	retryOnErr   bool
+	// not an option, but cancels the GC routine when connection is closed
+	cfunc context.Canceled
 }
 
 // ConfigOptions are params for creating a DB object.
@@ -109,6 +118,56 @@ func DefaultStoreOptions() ConfigOptions {
 		ChecksumVerificationMode: options.NoVerification, // ChecksumVerificationMode, default NoVerification
 	}
 	return opts
+}
+
+// set GC params
+type badgerGCOpt func(*badgerStore)
+
+// returns wrapped badger connection with periodic GC calls running
+func newBadgerStore(opts badger.Options, gcOpts ...badgerGCOpt) (*badgerStore, error) {
+	db, err := badger.Open(opts)
+	if err != nil {
+		return nil, err
+	}
+	ctx, cfunc := context.WithCancel(context.Backgroun())
+	bs := &badgerStore{
+		db:           db,
+		discardRatio: .5,
+		interval:     5 * time.Minute,
+		retryOnErr:   false,
+		cfunc:        cfunc,
+	}
+
+	// set custom GC stuff if needed
+	for _, o := range gcOpts {
+		o(bs)
+	}
+	// start GC stuff
+	go bs.gcLoop(ctx)
+	return bs, nil
+}
+
+func (bs *badgerStore) gcLoop(ctx context.Context) {
+	ticker := time.NewTicker(bs.interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			err := bs.db.RunValueLogGC(bs.discardRatio)
+			// don't retry if the call just didn't result in a rewrite
+			// or if we got a rejected error (indicating closed connection, or an ongoing call)
+			for err != nil && err != badger.ErrNoRewrite && err != badger.ErrRejected && bs.retryOnErr {
+				err = bs.db.RunValueLogGC(bs.discardRatio)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (bs *badgerStore) Close() error {
+	bs.cfunc() // cancel the context, that stops the GC routine
+	return bs.db.Close()
 }
 
 /*
@@ -385,6 +444,12 @@ func (bs *badgerStore) getAccountTypePrefix(accType types.AccountType) string {
 	default:
 		return "ERR"
 	}
+}
+
+// checkpoints key stuff
+
+func (bs *badgerStore) checkpointKey(hash, block string, height uint64) []byte {
+	return []byte(fmt.Sprintf("CP:%d_B:%s_H:%s", height, block, hash))
 }
 
 // writeBatch writes an arbitrarily large map to a Badger store, using as many
