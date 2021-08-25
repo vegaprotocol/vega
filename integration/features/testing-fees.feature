@@ -1626,9 +1626,8 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | party    | asset | amount    |
       | aux1     | ETH   | 100000000 |
       | aux2     | ETH   | 100000000 |
-      | trader3a | ETH   | 10000     |
-      | trader3b | ETH   | 10000     |
-      | trader4  | ETH   | 10000     |
+      | trader3a | ETH   | 100000    |
+      | trader4  | ETH   | 100000    |
      
     Then the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1639,130 +1638,81 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 1          | -10    |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 1          |  10    |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
       | 1000       | TRADING_MODE_CONTINUOUS |  
 
+   And debug orders
+
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | sell | 1080  | 1      |
       | buy  | 920   | 1      |
-      | buy  | 910   | 210    |
-      | sell | 1090  | 184    |
-
-   Then the parties place the following pegged orders:
-      | party    | market id | side | volume | pegged reference | offset |
-      | trader3a | ETH/DEC21 | buy  | 2      |  MID             | -100    |
-      | trader3b | ETH/DEC21 | buy  | 1      |  MID             | -100    |
-      # | trader4  | ETH/DEC21 | sell | 4      |  MID             |  1   |
-    
-    And debug orders
-    # It is evident from the orders, due to the way offset works w.r.t mark price which is MID too for pegged reference, buy can always be -ve and sell is always +ve, I cannot seem to find a way to cross my orders with LP's orders as they always shall sit in a way they can't be crossed. 
-    Then the parties should have the following account balances:
+      | buy  | 990   | 20     |
+      | sell | 1010  | 20     |
+  
+    Then the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
+      
+     And debug orders
+     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 480    | 9520    |
-      | trader3b | ETH   | ETH/DEC21 | 240    | 9760    |
+      | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
+      | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
     
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-
-    Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |  
-      | 1002       | TRADING_MODE_CONTINUOUS |
+    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
 
     Then the following trades should be executed:
       # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
       # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
       # TODO to be implemented by Core Team
-      | buyer    | price | size | seller  |
-      | trader3a | 1002  | 2    | aux1 |
-      | trader3b | 1002  | 1    | aux1 |
+      | buyer      | price | size | seller  |
+      # | aux1     | 990   | 19   | trader4 |
+        | trader3a | 990   | 10  | trader4 |
+      # Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed
 
-    # For trader3a-
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 2004 = 10.02 = 11 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 2004 = 2.004 = 3 (rounded up to nearest whole value)
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            |  
+      | 990        | TRADING_MODE_CONTINUOUS |
+      
+     
+    # For trader4 -
+    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
 
-    # For trader3b -
-    # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 1 * 1002 = 1002
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 1002 = 2.004 = 3 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
+    # For trader3a -
+    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
 
     Then debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 |  6     | ETH   |
-      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  8     | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  5     | ETH   |
-      | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |  
-      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  6     | ETH   |  
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
+      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
+      | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |  
       # | market  | aux1     | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  5     | ETH   |
 
-    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25
-    # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
-    # Trader3b margin + general account balance = 10000 + 6 ( Maker fees) = 10006
-    # Trader4  margin + general account balance = 10000 - (11+6) ( Maker fees) - 8 (Infra fee) = 99975
-
-    # TODO: Check why margin doesn't go up after the trade WHEN the liquidity provision order gets included (seems to work fine without LP orders) (expecting commented out values)
     Then the parties should have the following account balances:
       | party      | asset | market id | margin | general |
-      # | trader3a    | ETH   | ETH/DEC21 | 690    | 9321    | 
-      # | trader3b    | ETH   | ETH/DEC21 | 339    | 9667    | 
-      # | trader4     | ETH   | ETH/DEC21 | 679    | 9296    |
-      | trader3a    | ETH   | ETH/DEC21 | 480    | 9531    | 
-      | trader3b    | ETH   | ETH/DEC21 | 240    | 9766    | 
-      | trader4     | ETH   | ETH/DEC21 | 679    | 9291    |
-      
-    # And the accumulated infrastructure fee should be "8" for the market "ETH/DEC21"
-   # And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
+      | trader3a    | ETH   | ETH/DEC21 | 3216    | 96834    | 
+      | trader4     | ETH   | ETH/DEC21 | 3600    | 96320    |
 
-    When the network moves ahead "11" blocks
-
-    And the following transfers should happen:
-      | from   | to   | from account                | to account          | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
-
-  # Scenario: WIP - Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep
-    When the following network parameters are set:
-      | name                                                | value |
-      | market.liquidity.providers.fee.distributionTimeStep | 0s    |
-
-       When the parties place the following orders:
-      | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader4 | ETH/DEC21  | sell  | 2     | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-    
-    And the parties place the following orders: 
-      | party   | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21 | buy  | 1     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
-
-    # For trader4 -
-    # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 1 * 1002 = 1002
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 1002 = 2.004 = 3 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
-
-      Then the following transfers should happen:
-      | from      | to       | from account            | to account                       | market id | amount | asset |
-      | trader3a  | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
-      | trader3a  |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 3      | ETH   |
-      | trader3a  | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
-      | market    | trader4  | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
-      
-    And the accumulated liquidity fees should be "2" for the market "ETH/DEC21"
-
-    When the network moves ahead "1" blocks
-
-    And the following transfers should happen:
-      | from   | to   | from account                | to account          | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 2      | ETH   |
+    # And the following transfers should happen:
+    #   | from   | to   | from account                | to account          | market id | amount | asset |
+    #   | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
 
 
 # TO DO -
@@ -1779,9 +1729,10 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
 # <PC> - Even after reducing trader's balance Or increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
 # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
 
-# Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance - 24/08
-# Last 3 API points ? - check and raise issues in ticket on Core Board - Start working - 24/08
+# Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance - 
+# <PC> - Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed so unable to crossed LP pegged orders
 
+# Last 3 API points ? - check and raise issues in ticket on Core Board - Start working - 24/08
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running - Use
 	# MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
 	# MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
