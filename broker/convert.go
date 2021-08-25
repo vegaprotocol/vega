@@ -65,6 +65,14 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.OracleDataEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR:
 		return events.TxErrEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:
+		return events.EpochEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:
+		return events.DelegationBalanceEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:
+		return events.StakingEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:
+		return events.ValidatorUpdateEventFromStream(ctx, be)
 	}
 	return nil
 }

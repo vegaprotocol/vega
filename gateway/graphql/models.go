@@ -103,6 +103,15 @@ type Erc20 struct {
 
 func (Erc20) IsAssetSource() {}
 
+type EpochParticipation struct {
+	Epoch *vega.Epoch `json:"epoch"`
+	// RFC3339 timestamp
+	Offline *string `json:"offline"`
+	// RFC3339 timestamp
+	Online       *string  `json:"online"`
+	TotalRewards *float64 `json:"totalRewards"`
+}
+
 // All the data related to the approval of a withdrawal from the network
 type Erc20WithdrawalApproval struct {
 	// The source asset in the ethereum network
@@ -991,6 +1000,49 @@ func (e *NodeSignatureKind) UnmarshalGQL(v interface{}) error {
 }
 
 func (e NodeSignatureKind) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type NodeStatus string
+
+const (
+	// The node is non-validating
+	NodeStatusNonValidator NodeStatus = "NonValidator"
+	// The node is validating
+	NodeStatusValidator NodeStatus = "Validator"
+)
+
+var AllNodeStatus = []NodeStatus{
+	NodeStatusNonValidator,
+	NodeStatusValidator,
+}
+
+func (e NodeStatus) IsValid() bool {
+	switch e {
+	case NodeStatusNonValidator, NodeStatusValidator:
+		return true
+	}
+	return false
+}
+
+func (e NodeStatus) String() string {
+	return string(e)
+}
+
+func (e *NodeStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = NodeStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid NodeStatus", str)
+	}
+	return nil
+}
+
+func (e NodeStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

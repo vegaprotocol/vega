@@ -257,6 +257,26 @@ func (r *VegaResolverRoot) MarketTimestamps() MarketTimestampsResolver {
 	return (*marketTimestampsResolver)(r)
 }
 
+func (r *VegaResolverRoot) NodeData() NodeDataResolver {
+	return (*nodeDataResolver)(r)
+}
+
+func (r *VegaResolverRoot) Node() NodeResolver {
+	return (*nodeResolver)(r)
+}
+
+func (r *VegaResolverRoot) Delegation() DelegationResolver {
+	return (*delegationResolver)(r)
+}
+
+func (r *VegaResolverRoot) Epoch() EpochResolver {
+	return (*epochResolver)(r)
+}
+
+func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
+	return (*epochTimestampsResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
@@ -721,6 +741,52 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 		return nil, err
 	}
 	return resp.Data, nil
+}
+
+func (r *myQueryResolver) NodeData(ctx context.Context) (*types.NodeData, error) {
+	resp, err := r.tradingDataClient.GetNodeData(ctx, &protoapi.GetNodeDataRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.NodeData, nil
+}
+
+func (r *myQueryResolver) Nodes(ctx context.Context) ([]*types.Node, error) {
+	resp, err := r.tradingDataClient.GetNodes(ctx, &protoapi.GetNodesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Nodes, nil
+}
+
+func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, error) {
+	resp, err := r.tradingDataClient.GetNodeByID(ctx, &protoapi.GetNodeByIDRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Node, nil
+}
+
+func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, error) {
+	var epochID uint64
+	if id != nil {
+		parsedID, err := strconv.ParseUint(*id, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		epochID = parsedID
+	}
+
+	resp, err := r.tradingDataClient.GetEpoch(ctx, &protoapi.GetEpochRequest{Id: epochID})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Epoch, nil
 }
 
 // END: Root Resolver
