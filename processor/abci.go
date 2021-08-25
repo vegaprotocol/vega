@@ -278,11 +278,9 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	defer app.log.Debug("Processor COMMIT completed")
 
 	resp.Data = app.exec.Hash()
-	// @TODO handle error. Snapshot can be nil if it wasn't time to create a snapshot
+	// Snapshot can be nil if it wasn't time to create a snapshot
 	if snap, _ := app.checkpoint.Checkpoint(app.currentTimestamp); snap != nil {
-		// This seems to break stuff
-		// resp.Data = append(resp.Data, snap.Hash...)
-		// @TODO error handling
+		resp.Data = append(resp.Data, snap.Hash...)
 		_ = app.handleCheckpoint(snap)
 	}
 	// Compute the AppHash and update the response
@@ -858,7 +856,11 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) error {
 	if err := snap.SetState(cmd.Data); err != nil {
 		return err
 	}
-	// @TODO handle stuff like assets being enabled during reload, or the collateral
-	// checkpoint will not work
-	return app.checkpoint.Load(ctx, snap)
+	err := app.checkpoint.Load(ctx, snap)
+	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
+		panic(fmt.Errorf("error restoring checkpoint: %w", err))
+	}
+	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
+	// emit an error event perhaps, log, etc...?
+	return err
 }

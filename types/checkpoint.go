@@ -2,11 +2,17 @@ package types
 
 import (
 	"bytes"
+	"errors"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/crypto"
 
 	"github.com/golang/protobuf/proto"
+)
+
+var (
+	ErrSnapshotStateInvalid  = errors.New("state contained in the snapshot is invalid")
+	ErrSnapshotHashIncorrect = errors.New("the hash and snapshot data do not match")
 )
 
 type CheckpointName string
@@ -74,13 +80,16 @@ func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
 	return nil
 }
 
-// IsValid checks the hash, returns false if the hash doesn't match
-func (s Snapshot) IsValid() bool {
+// Validate checks the hash, returns nil if valid
+func (s Snapshot) Validate() error {
 	cp, err := s.GetCheckpoint()
 	if err != nil {
-		return false
+		return ErrSnapshotStateInvalid
 	}
-	return bytes.Equal(crypto.Hash(cp.HashBytes()), s.Hash)
+	if !bytes.Equal(crypto.Hash(cp.HashBytes()), s.Hash) {
+		return ErrSnapshotHashIncorrect
+	}
+	return nil
 }
 
 func NewCheckpointFromProto(pc *snapshot.Checkpoint) *Checkpoint {

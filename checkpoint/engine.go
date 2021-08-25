@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
@@ -12,7 +13,6 @@ import (
 var (
 	ErrUnknownCheckpointName      = errors.New("component for checkpoint not registered")
 	ErrComponentWithDuplicateName = errors.New("multiple components with the same name")
-	ErrSnapshotHashIncorrect      = errors.New("the hash and snapshot data do not match")
 
 	cpOrder = []types.CheckpointName{
 		types.NetParamsCheckpoint,  // net params should go first
@@ -110,7 +110,8 @@ func (e *Engine) addComponent(comp State) error {
 // only containing changes in balances and (perhaps) network parameters...
 func (e *Engine) BalanceCheckpoint() (*types.Snapshot, error) {
 	// no time stuff here, for now we're just taking a full snapshot
-	return e.makeCheckpoint()
+	cp := e.makeCheckpoint()
+	return cp, nil
 }
 
 // Checkpoint returns the overall checkpoint
@@ -124,10 +125,11 @@ func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
 		return nil, nil
 	}
 	e.nextCP = t.Add(e.delta)
-	return e.makeCheckpoint()
+	cp := e.makeCheckpoint()
+	return cp, nil
 }
 
-func (e *Engine) makeCheckpoint() (*types.Snapshot, error) {
+func (e *Engine) makeCheckpoint() *types.Snapshot {
 	cp := &types.Checkpoint{}
 	for _, k := range cpOrder {
 		comp, ok := e.components[k]
@@ -136,7 +138,7 @@ func (e *Engine) makeCheckpoint() (*types.Snapshot, error) {
 		}
 		data, err := comp.Checkpoint()
 		if err != nil {
-			return nil, err
+			panic(fmt.Errorf("failed to generate checkpoint: %w", err))
 		}
 		// set the correct field
 		cp.Set(k, data)
@@ -144,10 +146,10 @@ func (e *Engine) makeCheckpoint() (*types.Snapshot, error) {
 	snap := &types.Snapshot{}
 	// setCheckpoint hides the vega type mess
 	if err := snap.SetCheckpoint(cp); err != nil {
-		return nil, err
+		panic(fmt.Errorf("checkpoint could not be created: %w", err))
 	}
 
-	return snap, nil
+	return snap
 }
 
 // Load - loads checkpoint data for all components by name
@@ -165,8 +167,8 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 		return err
 	}
 	// check the hash
-	if !snap.IsValid() {
-		return ErrSnapshotHashIncorrect
+	if err := snap.Validate(); err != nil {
+		return err
 	}
 	var assets []*types.Asset
 	for _, k := range cpOrder {

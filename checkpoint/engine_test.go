@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -36,12 +35,12 @@ func TestGetCheckpoints(t *testing.T) {
 	t.Run("test getting checkpoints loading in components using Add method - no duplicates", testGetCheckpointsAdd)
 	t.Run("test adding duplicate components using Add methods", testAddDuplicate)
 	t.Run("test adding duplicate component via constructor", testDuplicateConstructor)
-	t.Run("test getting checkpoints - error", testGetCheckpointsErr)
 }
 
 func TestCheckpointIntervals(t *testing.T) {
 	t.Run("test getting checkpoint before interval has passed", testCheckpointBeforeInterval)
 	t.Run("test updating interval creates new checkpoint sooner", testCheckpointUpdatedInterval)
+	t.Run("test getting checkpoint before interval for balance", testCheckpointBalanceInterval)
 }
 
 func TestLoadCheckpoints(t *testing.T) {
@@ -258,7 +257,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	require.NoError(t, eng.UponGenesis(ctx, gen))
 	err = eng.Load(ctx, snap)
 	require.Error(t, err)
-	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
+	require.Equal(t, types.ErrSnapshotHashIncorrect, err)
 }
 
 func testLoadInvalidHash(t *testing.T) {
@@ -288,7 +287,7 @@ func testLoadInvalidHash(t *testing.T) {
 	snap.State = b
 	err = eng.Load(ctx, snap)
 	require.Error(t, err)
-	require.Equal(t, checkpoint.ErrSnapshotHashIncorrect, err)
+	require.Equal(t, types.ErrSnapshotHashIncorrect, err)
 }
 
 func testLoadSparse(t *testing.T) {
@@ -375,38 +374,6 @@ func testLoadError(t *testing.T) {
 	require.Equal(t, ret[types.GovernanceCheckpoint], err)
 }
 
-func testGetCheckpointsErr(t *testing.T) {
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	components := map[types.CheckpointName]*mocks.MockState{
-		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
-		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
-	}
-	for k, c := range components {
-		c.EXPECT().Name().Times(1).Return(k)
-	}
-	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
-	require.NoError(t, err)
-	data := map[types.CheckpointName][]byte{
-		types.GovernanceCheckpoint: nil,
-		types.AssetsCheckpoint:     []byte("bardata"),
-	}
-	errs := map[types.CheckpointName]error{
-		types.GovernanceCheckpoint: fmt.Errorf("random error"),
-		types.AssetsCheckpoint:     nil,
-	}
-	for k, c := range components {
-		c.EXPECT().Checkpoint().Times(1).Return(data[k], errs[k])
-	}
-	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	checkpoints, err := eng.Checkpoint(time.Now())
-	require.Nil(t, checkpoints)
-	require.Error(t, err)
-	require.Equal(t, errs[types.GovernanceCheckpoint], err)
-}
-
 func testCheckpointBeforeInterval(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -443,6 +410,48 @@ func testCheckpointBeforeInterval(t *testing.T) {
 	raw, err = eng.Checkpoint(now)
 	require.Nil(t, raw)
 	require.Nil(t, err)
+}
+
+func testCheckpointBalanceInterval(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := context.Background()
+	components := map[types.CheckpointName]*mocks.MockState{
+		types.GovernanceCheckpoint: mocks.NewMockState(ctrl),
+		types.AssetsCheckpoint:     mocks.NewMockState(ctrl),
+	}
+	for k, c := range components {
+		c.EXPECT().Name().Times(1).Return(k)
+	}
+	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	require.NoError(t, err)
+	// set interval of 1 hour
+	hour, _ := time.ParseDuration("1h")
+	eng.OnTimeElapsedUpdate(ctx, hour)
+	data := map[types.CheckpointName][]byte{
+		types.GovernanceCheckpoint: []byte("foodata"),
+		types.AssetsCheckpoint:     []byte("bardata"),
+	}
+	for k, c := range components {
+		c.EXPECT().Checkpoint().Times(2).Return(data[k], nil)
+	}
+	tm := time.Now().Add(-2 * time.Hour)
+	_, _ = eng.Checkpoint(tm)
+	now := time.Now()
+	raw, err := eng.Checkpoint(now)
+	require.NoError(t, err)
+	require.NotNil(t, raw)
+
+	halfHour := time.Duration(int64(hour) / 2)
+	now = now.Add(halfHour)
+	// progress time, but still not time to create a new checkpoint
+	raw, err = eng.Checkpoint(now)
+	require.Nil(t, raw)
+	require.Nil(t, err)
+	// for a withdrawal, though, we will create one regardless
+	_, err = eng.BalanceCheckpoint()
+	require.NoError(t, err)
 }
 
 // same test as above, but the interval is upadted to trigger a second checkpoint
