@@ -246,9 +246,9 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	defer iter.Close()
 	var event *bridge.BridgeAssetListed
 
-	assetId := strings.TrimPrefix(w.VegaAssetId, "0x")
+	assetID := strings.TrimPrefix(w.VegaAssetId, "0x")
 	for iter.Next() {
-		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetId {
+		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID {
 			event = iter.Event
 			break
 		}
