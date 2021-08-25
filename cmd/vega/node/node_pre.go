@@ -450,7 +450,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	})
 
 	l.stakingAccounts, l.stakeVerifier = staking.New(
-		l.Log, l.conf.Staking, l.broker, l.timeService, l.erc, l.ethClient, l.netParams,
+		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
