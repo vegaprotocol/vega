@@ -76,8 +76,7 @@ const (
 	// length of epoch in seconds
 	ValidatorsEpochLength = "validators.epoch.length"
 	// delegation params
-	DelegationMinAmount            = "validators.delegation.minAmount"
-	DelegationMaxStakePerValidator = "validators.delegation.maxStakePerValidator"
+	DelegationMinAmount = "validators.delegation.minAmount"
 
 	ValidatorsVoteRequired = "validators.vote.required"
 )

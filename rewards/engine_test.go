@@ -150,7 +150,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	epoch := types.Epoch{}
@@ -177,7 +177,7 @@ func testDistributePayout(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 
 	// setup reward account
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -217,7 +217,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -304,7 +304,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 
 	// setup party accounts

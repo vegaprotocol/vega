@@ -119,7 +119,7 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 }
 
 //UpdateMinimumValidatorStakeForStakingRewardScheme updaates the value of minimum validator stake for being considered for rewards
-func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.Context, minValStake *num.Uint) error {
+func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.Context, minValStake int64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
@@ -127,7 +127,7 @@ func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.C
 	rs.Parameters["minValStake"] = types.RewardSchemeParam{
 		Name:  "minValStake",
 		Type:  "uint",
-		Value: minValStake.String(),
+		Value: num.NewUint(uint64(minValStake)).String(),
 	}
 	return nil
 }
