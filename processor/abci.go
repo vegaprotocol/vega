@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
@@ -13,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
@@ -32,12 +35,19 @@ var (
 	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
+type Checkpoint interface {
+	Checkpoint() (*types.Snapshot, error)
+	Load(snap *types.Snapshot) error
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
 	txTotals          []uint64
 	txSizes           []int
+	cBlock            string
 
 	cfg      Config
 	log      *logging.Logger
@@ -63,6 +73,7 @@ type App struct {
 	delegation DelegationEngine
 	limits     Limits
 	stake      StakeVerifier
+	checkpoint Checkpoint
 }
 
 func NewApp(
@@ -88,10 +99,16 @@ func NewApp(
 	delegation DelegationEngine,
 	limits Limits,
 	stake StakeVerifier,
+	checkpoint Checkpoint,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
+	if err := fsutil.EnsureDir(config.CheckpointsPath); err != nil {
+		log.Panic("Could not create checkpoints directory",
+			logging.String("checkpoint-dir", config.CheckpointsPath),
+			logging.Error(err))
+	}
 	app := &App{
 		abci: abci.New(&codec{}),
 
@@ -120,6 +137,7 @@ func NewApp(
 		delegation: delegation,
 		limits:     limits,
 		stake:      stake,
+		checkpoint: checkpoint,
 	}
 
 	// setup handlers
@@ -231,6 +249,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 // OnBeginBlock updates the internal lastBlockTime value with each new block
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
+	app.cBlock = hash
 	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
 
 	now := req.Header.Time
@@ -253,13 +272,39 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
-	// Compute the AppHash and update the response
 	resp.Data = app.exec.Hash()
+	// @TODO handle error. Snapshot can be nil if it wasn't time to create a snapshot
+	if snap, _ := app.checkpoint.Checkpoint(); snap != nil {
+		resp.Data = append(resp.Data, snap.Hash...)
+		// @TODO error handling
+		_ = app.writeCheckpoint(snap)
+	}
+	// Compute the AppHash and update the response
 
 	app.updateStats()
 	app.setBatchStats()
 
 	return resp
+}
+
+func (app *App) writeCheckpoint(snap *types.Snapshot) error {
+	f, err := os.Create(
+		filepath.Join(
+			app.config.CheckpointsPath,
+			fmt.Sprintf(
+				"%s-%s.cp", app.cBlock, hex.EncodeToString(snap.Hash),
+			),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	// write data
+	if _, err = f.Write(snap.State); err != nil {
+		return err
+	}
+	return nil
 }
 
 // OnCheckTx performs soft validations.

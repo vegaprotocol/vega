@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
@@ -305,6 +306,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.delegation,
 		l.limits,
 		l.stakeVerifier,
+		checkpoint.New(l.assetService, l.governance, l.collateral, l.netParams),
 	)
 
 	var abciApp tmtypes.Application
