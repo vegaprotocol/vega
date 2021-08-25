@@ -102,6 +102,15 @@ func (e *Engine) addComponent(comp State) error {
 	return nil
 }
 
+// BalanceCheckpoint is used for deposits and withdrawals. We want a snapshot to be taken in those events
+// but these snapshots should not affect the timing (delta, time between checkpoints). Currently, this call
+// generates a full checkpoint, but we probably will change this to be a sparse checkpoint
+// only contianing changes in balances and (perhaps) network parameters...
+func (e *Engine) BalanceCheckpoint() (*types.Snapshot, error) {
+	// no time stuff here, for now we're just taking a full snapshot
+	return e.makeCheckpoint()
+}
+
 // Checkpoint returns the overall checkpoint
 func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
 	// @TODO, pass in time and check it
@@ -109,6 +118,10 @@ func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
 		return nil, nil
 	}
 	e.nextCP = t.Add(e.delta)
+	return e.makeCheckpoint()
+}
+
+func (e *Engine) makeCheckpoint() (*types.Snapshot, error) {
 	cp := &types.Checkpoint{}
 	for _, k := range cpOrder {
 		comp, ok := e.components[k]

@@ -37,6 +37,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
 type Checkpoint interface {
+	BalanceCheckpoint() (*types.Snapshot, error)
 	Checkpoint(time.Time) (*types.Snapshot, error)
 	Load(ctx context.Context, snap *types.Snapshot) error
 }
@@ -522,7 +523,14 @@ func (app *App) DeliverWithdraw(
 
 	// Convert protobuf to local domain type
 	ws := types.NewWithdrawSubmissionFromProto(w)
-	return app.processWithdraw(ctx, ws, id, tx.Party())
+	if err := app.processWithdraw(ctx, ws, id, tx.Party()); err != nil {
+		return err
+	}
+	snap, err := app.checkpoint.BalanceCheckpoint()
+	if err != nil {
+		return err
+	}
+	return app.handleCheckpoint(snap)
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
