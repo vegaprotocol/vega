@@ -39,7 +39,7 @@ type badgerStore struct {
 	interval     time.Duration
 	retryOnErr   bool
 	// not an option, but cancels the GC routine when connection is closed
-	cfunc context.Canceled
+	cfunc context.CancelFunc
 }
 
 // ConfigOptions are params for creating a DB object.
@@ -129,7 +129,7 @@ func newBadgerStore(opts badger.Options, gcOpts ...badgerGCOpt) (*badgerStore, e
 	if err != nil {
 		return nil, err
 	}
-	ctx, cfunc := context.WithCancel(context.Backgroun())
+	ctx, cfunc := context.WithCancel(context.Background())
 	bs := &badgerStore{
 		db:           db,
 		discardRatio: .5,
