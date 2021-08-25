@@ -162,7 +162,7 @@ type NodeCommand struct {
 	topology       *validators.Topology
 	notary         *notary.Notary
 	evtfwd         *evtforward.EvtForwarder
-	erc            *validators.Witness
+	witness        *validators.Witness
 	banking        *banking.Engine
 	genesisHandler *genesis.Handler
 

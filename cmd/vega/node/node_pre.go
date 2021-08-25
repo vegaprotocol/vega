@@ -283,7 +283,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.assets,
 		l.banking,
 		l.broker,
-		l.erc,
+		l.witness,
 		l.evtfwd,
 		l.executionEngine,
 		commander,
@@ -422,11 +422,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
 
-	l.erc = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
+	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
-	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.erc, l.netParams, now)
+	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.witness, l.netParams, now)
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
@@ -445,7 +445,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
-	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.erc, l.timeService, l.assets, l.notary, l.broker)
+	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
@@ -615,6 +615,14 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
 			Watcher: l.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
+    },
+    netparams.WatchParam{
+			Param:   netparams.ValidatorsVoteRequired,
+			Watcher: l.witness.OnDefaultValidatorsVoteRequiredUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsVoteRequired,
+			Watcher: l.notary.OnDefaultValidatorsVoteRequiredUpdate,
 		},
 	)
 }
@@ -626,7 +634,7 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { l.abciServer.ReloadConf(cfg.Blockchain) },
 		func(cfg config.Config) { l.topology.ReloadConf(cfg.Validators) },
-		func(cfg config.Config) { l.erc.ReloadConf(cfg.Validators) },
+		func(cfg config.Config) { l.witness.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },

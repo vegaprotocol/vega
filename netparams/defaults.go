@@ -92,5 +92,7 @@ func defaultNetParams() map[string]value {
 			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3}"),
 
 		ValidatorsEpochLength: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
+
+		ValidatorsVoteRequired: NewFloat(FloatGTE(0.67), FloatLTE(1.0)).Mutable(true).MustUpdate("0.67"),
 	}
 }
