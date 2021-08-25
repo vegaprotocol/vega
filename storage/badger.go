@@ -156,7 +156,7 @@ func (bs *badgerStore) gcLoop(ctx context.Context) {
 			err := bs.db.RunValueLogGC(bs.discardRatio)
 			// don't retry if the call just didn't result in a rewrite
 			// or if we got a rejected error (indicating closed connection, or an ongoing call)
-			for err != nil && err != badger.ErrNoRewrite && err != badger.ErrRejected && bs.retryOnErr {
+			for bs.retryOnErr && err != nil && err != badger.ErrNoRewrite && err != badger.ErrRejected {
 				err = bs.db.RunValueLogGC(bs.discardRatio)
 			}
 		case <-ctx.Done():

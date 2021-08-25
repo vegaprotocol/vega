@@ -1,10 +1,8 @@
 package storage
 
 import (
-	"sort"
-
 	"code.vegaprotocol.io/data-node/logging"
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"
@@ -54,8 +52,8 @@ func (c *Checkpoints) Close() error {
 	return c.badger.Close()
 }
 
-func (c *Checkpoints) GetAll() ([]*protoapi.Checkpoint, error) {
-	checkpoints := []*protoapi.Checkpoint{}
+func (c *Checkpoints) GetAll() ([]*eventspb.CheckpointEvent, error) {
+	checkpoints := []*eventspb.CheckpointEvent{}
 	bufs := [][]byte{}
 	err := c.badger.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
@@ -79,7 +77,7 @@ func (c *Checkpoints) GetAll() ([]*protoapi.Checkpoint, error) {
 	}
 
 	for _, buf := range bufs {
-		cp := protoapi.Checkpoint{}
+		cp := eventspb.CheckpointEvent{}
 		err := proto.Unmarshal(buf, &cp)
 		if err != nil {
 			c.log.Error("unable to unmarshal checkpoint from badger store",
@@ -90,15 +88,10 @@ func (c *Checkpoints) GetAll() ([]*protoapi.Checkpoint, error) {
 		checkpoints = append(checkpoints, &cp)
 	}
 
-	// default sort by block height, descending
-	sort.SliceStable(checkpoints, func(i, j int) bool {
-		return checkpoints[i].AtBlock > checkpoints[j].AtBlock
-	})
-
 	return checkpoints, nil
 }
 
-func (c *Checkpoints) Save(cp *protoapi.Checkpoint) error {
+func (c *Checkpoints) Save(cp *eventspb.CheckpointEvent) error {
 	buf, err := proto.Marshal(cp)
 	if err != nil {
 		c.log.Error("unable to marshal checkpoint",
@@ -107,7 +100,7 @@ func (c *Checkpoints) Save(cp *protoapi.Checkpoint) error {
 		)
 		return err
 	}
-	cpKey := c.badger.checkpointKey(cp.Hash, cp.BlockHash, cp.AtBlock)
+	cpKey := c.badger.checkpointKey(cp.Hash, cp.BlockHash, cp.BlockHeight)
 	err = c.badger.db.Update(func(txn *badger.Txn) error {
 		return txn.Set(cpKey, buf)
 	})
