@@ -112,6 +112,7 @@ type NodeCommand struct {
 	validatorUpdateSub   *subscribers.ValidatorUpdateSub
 	delegationBalanceSub *subscribers.DelegationBalanceSub
 	epochUpdateSub       *subscribers.EpochUpdateSub
+	timeUpdateSub        *subscribers.Time
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

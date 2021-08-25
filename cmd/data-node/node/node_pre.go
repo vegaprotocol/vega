@@ -103,6 +103,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 }
 
 func (l *NodeCommand) setupSubscibers() {
+	l.timeUpdateSub = subscribers.NewTimeSub(l.ctx, l.timeService, l.Log, true)
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
@@ -216,7 +217,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-		l.liquidityService, l.marketUpdatedSub, l.oracleService)
+		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub)
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
