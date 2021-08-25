@@ -20,6 +20,18 @@ type delegationTest struct {
 	delegation4 pb.Delegation
 }
 
+type ByX []*pb.Delegation
+
+func (o ByX) Len() int      { return len(o) }
+func (o ByX) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o ByX) Less(i, j int) bool {
+	if o[i].Party == o[j].Party {
+		return o[i].NodeId < o[j].NodeId
+	} else {
+		return o[i].Party < o[j].Party
+	}
+}
+
 func setup(t *testing.T) *delegationTest {
 	config, err := storage.NewTestConfig()
 	if err != nil {
@@ -72,7 +84,7 @@ func TestGetAllDelegations(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 4, len(delegations))
 
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
+	sort.Sort(ByX(delegations))
 
 	require.Equal(t, testService.delegation1, *delegations[0])
 	require.Equal(t, testService.delegation2, *delegations[1])
@@ -87,14 +99,14 @@ func TestGetAllDelegationsOnEpoch(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 3, len(delegations))
 
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
+	sort.Sort(ByX(delegations))
 
 	require.Equal(t, testService.delegation1, *delegations[0])
 	require.Equal(t, testService.delegation2, *delegations[1])
 	require.Equal(t, testService.delegation3, *delegations[2])
 
 	delegations, err = testService.ds.GetAllDelegationsOnEpoch("2")
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
+	sort.Sort(ByX(delegations))
 
 	require.Nil(t, err)
 	require.Equal(t, 1, len(delegations))
@@ -105,7 +117,7 @@ func TestGetNodeDelegations(t *testing.T) {
 	testService := setup(t)
 
 	delegations, err := testService.ds.GetNodeDelegations("node1")
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
+	sort.Sort(ByX(delegations))
 
 	require.Nil(t, err)
 	require.Equal(t, 2, len(delegations))
@@ -113,7 +125,7 @@ func TestGetNodeDelegations(t *testing.T) {
 	require.Equal(t, testService.delegation3, *delegations[1])
 
 	delegations, err = testService.ds.GetNodeDelegations("node2")
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
+	sort.Sort(ByX(delegations))
 
 	require.Nil(t, err)
 	require.Equal(t, 2, len(delegations))
@@ -125,7 +137,7 @@ func TestGetNodeDelegationsOnEpoch(t *testing.T) {
 	testService := setup(t)
 
 	delegations, err := testService.ds.GetNodeDelegationsOnEpoch("node1", "1")
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
+	sort.Sort(ByX(delegations))
 
 	require.Nil(t, err)
 	require.Equal(t, 2, len(delegations))
@@ -149,7 +161,7 @@ func TestGetPartyDelegations(t *testing.T) {
 	delegations, err := testService.ds.GetPartyDelegations("party1")
 	require.Nil(t, err)
 	require.Equal(t, 2, len(delegations))
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
+	sort.Sort(ByX(delegations))
 	require.Equal(t, testService.delegation1, *delegations[0])
 	require.Equal(t, testService.delegation2, *delegations[1])
 
@@ -169,13 +181,14 @@ func TestGetPartyDelegationsOnEpoch(t *testing.T) {
 
 	delegations, err := testService.ds.GetPartyDelegationsOnEpoch("party1", "1")
 	require.Nil(t, err)
+	sort.Sort(ByX(delegations))
 	require.Equal(t, 2, len(delegations))
-	sort.Slice(delegations, func(i, j int) bool { return delegations[i].Party < delegations[j].Party })
 	require.Equal(t, testService.delegation1, *delegations[0])
 	require.Equal(t, testService.delegation2, *delegations[1])
 
 	delegations, err = testService.ds.GetPartyDelegationsOnEpoch("party2", "1")
 	require.Nil(t, err)
+	sort.Sort(ByX(delegations))
 	require.Equal(t, 1, len(delegations))
 	require.Equal(t, testService.delegation3, *delegations[0])
 
