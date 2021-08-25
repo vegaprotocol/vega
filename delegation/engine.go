@@ -3,6 +3,7 @@ package delegation
 import (
 	"context"
 	"errors"
+	"math"
 	"sort"
 	"time"
 
@@ -10,6 +11,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+)
+
+const (
+	minVal    = 5.0
+	compLevel = 1.1
 )
 
 var (
@@ -28,6 +34,7 @@ var (
 // ValidatorTopology represents the topology of validators and can check if a given node is a validator
 type ValidatorTopology interface {
 	IsValidatorNode(nodeID string) bool
+	AllPubKeys() []string
 }
 
 // Broker send events
@@ -87,7 +94,6 @@ type Engine struct {
 	nodeDelegationState  map[string]*validatorDelegation               // validator to active delegations
 	partyDelegationState map[string]*partyDelegation                   // party to active delegations
 	pendingState         map[uint64]map[string]*pendingPartyDelegation // epoch seq -> pending delegations/undelegations by party
-	maxStakePerValidator *num.Uint                                     // network param for max stake per validator
 	minDelegationAmount  *num.Uint                                     // min delegation amount per delegation request
 	currentEpoch         types.Epoch                                   // the current epoch for pending delegations
 }
@@ -115,11 +121,6 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 //OnMinAmountChanged updates the network parameter for minDelegationAmount
 func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount *num.Uint) {
 	e.minDelegationAmount = minAmount
-}
-
-//OnMaxDelegationPerNodeChanged updates the network parameter for maxStakePerValidator
-func (e *Engine) OnMaxDelegationPerNodeChanged(ctx context.Context, maxStake *num.Uint) {
-	e.maxStakePerValidator = maxStake
 }
 
 //update the current epoch at which current pending delegations are recorded
@@ -629,6 +630,27 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Ep
 	}
 }
 
+// calculate the total number of tokens (a rough estimate) and the number of nodes
+func (e *Engine) calcTotalDelegatedTokens(epochSeq uint64) *num.Uint {
+	totalDelegatedTokens := num.Zero()
+	for _, nodeDel := range e.nodeDelegationState {
+		totalDelegatedTokens.AddSum(nodeDel.totalDelegated)
+	}
+	if pendingForEpoch, ok := e.pendingState[epochSeq]; ok {
+		for _, pendingDel := range pendingForEpoch {
+			totalDelegatedTokens.AddSum(pendingDel.totalDelegation)
+			totalDelegatedTokens = num.Zero().Sub(totalDelegatedTokens, pendingDel.totalUndelegation)
+		}
+	}
+	return totalDelegatedTokens
+}
+
+func (e *Engine) calcMaxDelegatableTokens(totalTokens *num.Uint, numVal int) *num.Uint {
+	a := math.Max(float64(minVal), float64(numVal)/compLevel)
+	res, _ := num.UintFromDecimal(num.DecimalFromFloat(1 / a).Mul(totalTokens.ToDecimal()))
+	return res
+}
+
 // process pending delegations and undelegations at the end of the epoch and clear the delegation/undelegation maps at the end
 func (e *Engine) processPending(ctx context.Context, epoch types.Epoch) {
 	pendingForEpoch, ok := e.pendingState[epoch.Seq]
@@ -658,10 +680,15 @@ func (e *Engine) processPending(ctx context.Context, epoch types.Epoch) {
 
 	// sort the parties for deterministic handling
 	sort.Strings(parties)
+	// calculate the total number of tokens (a rough estimate)
+	totalTokens := e.calcTotalDelegatedTokens(epoch.Seq)
+	// calculate the max for the next epoch
+	numVal := len(e.topology.AllPubKeys())
+	maxStakePerValidator := e.calcMaxDelegatableTokens(totalTokens, numVal)
 
 	// read the delegation min amount network param
 	e.processPendingUndelegations(parties, epoch)
-	e.processPendingDelegations(parties, e.maxStakePerValidator, epoch)
+	e.processPendingDelegations(parties, maxStakePerValidator, epoch)
 
 	delete(e.pendingState, epoch.Seq)
 
@@ -846,33 +873,40 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 
 //returns the current state of the delegation per node
 func (e *Engine) getValidatorData() []*types.ValidatorData {
-	validators := make([]*types.ValidatorData, 0, len(e.nodeDelegationState))
+	validatorNodes := e.topology.AllPubKeys()
 
-	nodeIDs := make([]string, 0, len(e.nodeDelegationState))
-	for nodeID := range e.nodeDelegationState {
-		nodeIDs = append(nodeIDs, nodeID)
-	}
+	validators := make([]*types.ValidatorData, 0, len(validatorNodes))
 
 	// sort the parties for deterministic handling
-	sort.Strings(nodeIDs)
+	sort.Strings(validatorNodes)
 
-	for _, nodeID := range nodeIDs {
-		validatorState := e.nodeDelegationState[nodeID]
-		validator := &types.ValidatorData{
-			NodeID:     nodeID,
-			Delegators: map[string]*num.Uint{},
-		}
-		selfStake := num.Zero()
-		for delegatingParties, amt := range validatorState.partyToAmount {
-			if delegatingParties == nodeID {
-				selfStake = amt.Clone()
-			} else {
-				validator.Delegators[delegatingParties] = amt.Clone()
+	for _, nodeID := range validatorNodes {
+		validatorState, ok := e.nodeDelegationState[nodeID]
+		if ok {
+			validator := &types.ValidatorData{
+				NodeID:     nodeID,
+				Delegators: map[string]*num.Uint{},
 			}
+			selfStake := num.Zero()
+			for delegatingParties, amt := range validatorState.partyToAmount {
+				if delegatingParties == nodeID {
+					selfStake = amt.Clone()
+				} else {
+					validator.Delegators[delegatingParties] = amt.Clone()
+				}
+			}
+			validator.SelfStake = selfStake
+			validator.StakeByDelegators = num.Zero().Sub(validatorState.totalDelegated, selfStake)
+			validators = append(validators, validator)
+		} else {
+			// validator with no delegation at all
+			validators = append(validators, &types.ValidatorData{
+				NodeID:            nodeID,
+				Delegators:        map[string]*num.Uint{},
+				SelfStake:         num.Zero(),
+				StakeByDelegators: num.Zero(),
+			})
 		}
-		validator.SelfStake = selfStake
-		validator.StakeByDelegators = num.Zero().Sub(validatorState.totalDelegated, selfStake)
-		validators = append(validators, validator)
 	}
 
 	return validators

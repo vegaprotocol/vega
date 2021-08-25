@@ -28,11 +28,16 @@ func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID str
 	// calculate the validator score for each validator and the total score for all
 	validatorNormalisedScores := calcValidatorsNormalisedScore(validatorData, minVal, compLevel)
 
-	return calculateRewards(asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant)
+	minStakePerValidator, err := rewardScheme.Parameters["minValStake"].GetUint()
+	if err != nil {
+		e.log.Panic("failed to read reward scheme param", logging.String("minValStake", rewardScheme.Parameters["minValStake"].Value))
+	}
+
+	return calculateRewards(asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator)
 }
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints
-func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout *num.Uint) *payout {
+func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout, minStakePerValidator *num.Uint) *payout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
 	totalRewardPayout := num.Zero()
@@ -46,7 +51,7 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 	}
 
 	for _, vd := range validatorDelegation {
-		valScore := valScore[vd.NodeID]
+		valScore := valScore[vd.NodeID] // normalised score
 		if valScore == 0 {
 			// if the validator isn't eligible for reward this round, nothing to do here
 			continue
@@ -55,11 +60,20 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 		// how much reward is assigned to the validator and its delegators
 		epochPayoutForValidatorAndDelegators := num.DecimalFromFloat(valScore).Mul(reward.ToDecimal())
 
-		// how much delegators take
-		amountToGiveToDelegators, _ := num.UintFromDecimal(num.NewDecimalFromFloat(delegatorShare).Mul(epochPayoutForValidatorAndDelegators))
+		// calculate the fraction delegators to the validator get
+		totalStakeForValidator := vd.StakeByDelegators.ToDecimal().Add(vd.SelfStake.ToDecimal())
+		delegatorFraction := num.DecimalFromFloat(delegatorShare).Mul(vd.StakeByDelegators.ToDecimal()).Div(totalStakeForValidator)
+		validatorFraction := num.DecimalFromFloat(1.0).Sub(delegatorFraction)
 
+		// if minStake is non zero and the validator has less total stake than required they don't get anything but their delegators still do
+		if !minStakePerValidator.IsZero() && vd.SelfStake.LT(minStakePerValidator) {
+			validatorFraction = num.DecimalFromUint(num.Zero())
+		}
+
+		// how much delegators take
+		amountToGiveToDelegators, _ := num.UintFromDecimal(delegatorFraction.Mul(epochPayoutForValidatorAndDelegators))
 		// calculate the potential reward for delegators and the validator
-		amountToKeepByValidator, _ := num.UintFromDecimal(num.NewDecimalFromFloat(1 - delegatorShare).Mul(epochPayoutForValidatorAndDelegators))
+		amountToKeepByValidator, _ := num.UintFromDecimal(validatorFraction.Mul(epochPayoutForValidatorAndDelegators))
 
 		// check how much reward the validator can accept with the cap per participant
 		rewardForNode, ok := rewards[vd.NodeID]
@@ -96,7 +110,8 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 					rewardForParty = num.Zero()
 				}
 
-				rewardAsUint, _ := num.UintFromDecimal(num.NewDecimalFromFloat(delegatorAmt.Float64() * remainingRewardForDelegators.Float64() / vd.StakeByDelegators.Float64()))
+				delegatorPropotion := delegatorAmt.ToDecimal().Div(vd.StakeByDelegators.ToDecimal())
+				rewardAsUint, _ := num.UintFromDecimal(delegatorPropotion.Mul(remainingRewardForDelegators.ToDecimal()))
 				if maxPayout.IsZero() {
 					totalAwardedThisRound.AddSum(rewardAsUint)
 					totalRewardPayout.AddSum(rewardAsUint)
@@ -154,69 +169,11 @@ func calcValidatorsNormalisedScore(validatorsData []*types.ValidatorData, minVal
 	return valScores
 }
 
-// score_val(stake_val): sqrt(a*stake_val/3)-(sqrt(a*stake_val/3)^3).
-// To avoid issues with floating point computation, the sqrt function is computed to exactly four digits after the point.
-// An example how this can be done using only integer calculations is in the example code.
-/// Also, this function assumes that the stake is normalized, i.e., the sum of stake_val for all validators equals 1.
+// score_val(stake_val): min(1/a, validatorStake/totalStake)
 func calcValidatorScore(normalisedValStake, minVal, compLevel, numVal float64) float64 {
 	a := math.Max(minVal, numVal/compLevel)
-	x := foursqrt(a * normalisedValStake / 3.0)
-	score := x - math.Pow(x, 3.0)
-	if score < 0 {
-		score = 0
-	}
-	return score
-}
 
-// Sqrt returns the square root of x.
-// Based on code found in Hacker's Delight (Addison-Wesley, 2003):
-// http://www.hackersdelight.org/
-func iSqrt(x int) (r int) {
-	if x < 0 {
-		return -1
-	}
-
-	//Fast way to make p highest power of 4 <= x
-	var n uint
-	p := x
-	if int64(p) >= 1<<32 {
-		p >>= 32
-		n = 32
-	}
-	if p >= 1<<16 {
-		p >>= 16
-		n += 16
-	}
-	if p >= 1<<8 {
-		p >>= 8
-		n += 8
-	}
-	if p >= 1<<4 {
-		p >>= 4
-		n += 4
-	}
-	if p >= 1<<2 {
-		n += 2
-	}
-	p = 1 << n
-	var b int
-	for ; p != 0; p >>= 2 {
-		b = r | p
-		r >>= 1
-		if x >= b {
-			x -= b
-			r |= p
-		}
-	}
-	return
-}
-
-// Calculate the square root with 4 digits
-// Use only integer manipualtions to do so.
-func foursqrt(x float64) float64 {
-	y := int(x * 10000 * 10000)
-	s := iSqrt(y)
-	return (float64(s) / 10000)
+	return math.Min(normalisedValStake, 1/a)
 }
 
 // calculate the total amount of tokens delegated to the validators including self and party delegation

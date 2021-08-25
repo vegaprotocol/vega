@@ -2,6 +2,7 @@ package delegation
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -83,9 +84,13 @@ func Test(t *testing.T) {
 	t.Run("process pending is delegating and undelegating and clearing the pending state successfully", testProcessPending)
 
 	// test get validators
-	t.Run("get empty list of validators succeeds", testGetValidatorsEmpty)
-	t.Run("get list of validators succeeds", testGetValidatorsSuccess)
+	//	t.Run("get empty list of validators succeeds", testGetValidatorsEmpty)
+	//	t.Run("get list of validators succeeds", testGetValidatorsSuccess)
 	t.Run("setup delegation with self and parties", testGetValidatorsSuccessWithSelfDelegation)
+
+	// test calculation of total delegated tokens
+	t.Run("calculate total delegated token successfull", testCalculateTotalDelegatedTokens)
+	t.Run("calculate the max stake per validator", testMaxStakePerValidator)
 
 }
 
@@ -1330,65 +1335,101 @@ func testProcessPending(t *testing.T) {
 func testGetValidatorsEmpty(t *testing.T) {
 	testEngine := getEngine(t)
 	validators := testEngine.engine.getValidatorData()
-	require.Equal(t, 0, len(validators))
+	require.Equal(t, 3, len(validators))
+
+	for i, v := range validators {
+		require.Equal(t, strconv.Itoa(i+1), v.NodeID)
+		require.Equal(t, num.Zero(), v.SelfStake)
+		require.Equal(t, num.Zero(), v.StakeByDelegators)
+	}
 }
 
 func testGetValidatorsSuccess(t *testing.T) {
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
-	testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(5))
+	testEngine.topology.nodeToIsValidator["1"] = true
+	testEngine.topology.nodeToIsValidator["2"] = true
+	testEngine.topology.nodeToIsValidator["3"] = true
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(100)
+	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(100)
+	testEngine.stakingAccounts.partyToStake["party3"] = num.NewUint(100)
+	testEngine.stakingAccounts.partyToStake["party4"] = num.NewUint(100)
+	testEngine.stakingAccounts.partyToStake["party5"] = num.NewUint(100)
+
+	testEngine.engine.Delegate(context.Background(), "party1", "1", num.NewUint(20))
+	testEngine.engine.Delegate(context.Background(), "party1", "2", num.NewUint(30))
+	testEngine.engine.Delegate(context.Background(), "party1", "3", num.NewUint(40))
+	testEngine.engine.Delegate(context.Background(), "party2", "1", num.NewUint(30))
+	testEngine.engine.Delegate(context.Background(), "party2", "2", num.NewUint(40))
+	testEngine.engine.Delegate(context.Background(), "party2", "3", num.NewUint(20))
+	testEngine.engine.Delegate(context.Background(), "party3", "1", num.NewUint(40))
+	testEngine.engine.Delegate(context.Background(), "party3", "2", num.NewUint(20))
+	testEngine.engine.Delegate(context.Background(), "party3", "3", num.NewUint(30))
+
 	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
 	validators := testEngine.engine.getValidatorData()
-	require.Equal(t, 2, len(validators))
-	require.Equal(t, "node1", validators[0].NodeID)
-	require.Equal(t, num.NewUint(2), validators[0].StakeByDelegators)
-	require.Equal(t, 1, len(validators[0].Delegators))
-	require.Equal(t, num.NewUint(2), validators[0].Delegators["party1"])
-	require.Equal(t, "node2", validators[1].NodeID)
-	require.Equal(t, num.NewUint(5), validators[1].StakeByDelegators)
-	require.Equal(t, 1, len(validators[1].Delegators))
-	require.Equal(t, num.NewUint(5), validators[1].Delegators["party2"])
+	require.Equal(t, 5, len(validators))
+	require.Equal(t, "1", validators[0].NodeID)
+	require.Equal(t, num.NewUint(54), validators[0].StakeByDelegators)
+	require.Equal(t, 3, len(validators[0].Delegators))
+	require.Equal(t, num.NewUint(20), validators[0].Delegators["party1"])
+	require.Equal(t, num.NewUint(30), validators[0].Delegators["party2"])
+	require.Equal(t, num.NewUint(4), validators[0].Delegators["party3"])
+
+	require.Equal(t, "2", validators[1].NodeID)
+	require.Equal(t, num.NewUint(54), validators[1].StakeByDelegators)
+	require.Equal(t, 2, len(validators[1].Delegators))
+	require.Equal(t, num.NewUint(30), validators[1].Delegators["party1"])
+	require.Equal(t, num.NewUint(24), validators[1].Delegators["party2"])
+
+	require.Equal(t, "3", validators[2].NodeID)
+	require.Equal(t, 2, len(validators[2].Delegators))
+	require.Equal(t, num.NewUint(54), validators[2].StakeByDelegators)
+	require.Equal(t, num.NewUint(40), validators[2].Delegators["party1"])
+	require.Equal(t, num.NewUint(14), validators[2].Delegators["party2"])
 
 }
 
 func testGetValidatorsSuccessWithSelfDelegation(t *testing.T) {
 	testEngine := getEngine(t)
-	testEngine.topology.nodeToIsValidator["node1"] = true
-	testEngine.topology.nodeToIsValidator["node2"] = true
-	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(12)
-	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(7)
-	testEngine.stakingAccounts.partyToStake["node1"] = num.NewUint(1000)
-	testEngine.stakingAccounts.partyToStake["node2"] = num.NewUint(2000)
-	testEngine.engine.OnMaxDelegationPerNodeChanged(context.Background(), num.NewUint(10000))
+	for i := 1; i < 6; i++ {
+		testEngine.topology.nodeToIsValidator[strconv.Itoa(i)] = true
+	}
 
-	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
-	testEngine.engine.Delegate(context.Background(), "node1", "node1", num.NewUint(100))
-	testEngine.engine.Delegate(context.Background(), "node1", "node2", num.NewUint(50))
-	testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(5))
-	testEngine.engine.Delegate(context.Background(), "node2", "node1", num.NewUint(25))
-	testEngine.engine.Delegate(context.Background(), "node2", "node2", num.NewUint(125))
+	for i := 1; i < 6; i++ {
+		testEngine.stakingAccounts.partyToStake[strconv.Itoa(i)] = num.NewUint(10000)
+		err := testEngine.engine.Delegate(context.Background(), strconv.Itoa(i), strconv.Itoa(i), num.NewUint(200))
+		require.Nil(t, err)
+		for j := 1; j < 6; j++ {
+			if i != j {
+				err = testEngine.engine.Delegate(context.Background(), strconv.Itoa(i), strconv.Itoa(j), num.NewUint(100))
+				require.Nil(t, err)
+			}
+		}
+	}
 
-	testEngine.engine.OnMaxDelegationPerNodeChanged(context.Background(), num.NewUint(1000))
+	for i := 1; i < 11; i++ {
+		testEngine.stakingAccounts.partyToStake["party"+strconv.Itoa(i)] = num.NewUint(100)
+		for j := 1; j < 6; j++ {
+			testEngine.engine.Delegate(context.Background(), "party"+strconv.Itoa(i), strconv.Itoa(j), num.NewUint(2))
+		}
+	}
+
 	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
 	validators := testEngine.engine.getValidatorData()
-	require.Equal(t, 2, len(validators))
-	require.Equal(t, "node1", validators[0].NodeID)
-	require.Equal(t, num.NewUint(27), validators[0].StakeByDelegators)
-	require.Equal(t, num.NewUint(100), validators[0].SelfStake)
-	require.Equal(t, 2, len(validators[0].Delegators))
-	require.Equal(t, num.NewUint(2), validators[0].Delegators["party1"])
-	require.Equal(t, num.NewUint(25), validators[0].Delegators["node2"])
 
-	require.Equal(t, "node2", validators[1].NodeID)
-	require.Equal(t, num.NewUint(55), validators[1].StakeByDelegators)
-	require.Equal(t, num.NewUint(125), validators[1].SelfStake)
-	require.Equal(t, 2, len(validators[1].Delegators))
-	require.Equal(t, num.NewUint(5), validators[1].Delegators["party2"])
-	require.Equal(t, num.NewUint(50), validators[1].Delegators["node1"])
+	require.Equal(t, 5, len(validators))
+	for i := 1; i < 6; i++ {
+		require.Equal(t, strconv.Itoa(i), validators[i-1].NodeID)
+		// 100 from each other validator (400) + 2 from each party (20)
+		require.Equal(t, num.NewUint(420), validators[i-1].StakeByDelegators)
+		require.Equal(t, num.NewUint(200), validators[i-1].SelfStake)
+		// 10 parties + 4 other validators
+		require.Equal(t, 14, len(validators[i-1].Delegators))
+
+		for j := 1; j < 11; j++ {
+			require.Equal(t, num.NewUint(2), validators[i-1].Delegators["party"+strconv.Itoa(j)])
+		}
+	}
 }
 
 // try to undelegate more than delegated
@@ -1625,6 +1666,33 @@ func testUndelegateNowAllCleared(t *testing.T) {
 	require.Equal(t, 2, len(testEngine.engine.nodeDelegationState))
 }
 
+func testCalculateTotalDelegatedTokens(t *testing.T) {
+	testEngine := getEngine(t)
+
+	// setup delegation state
+	setupDefaultDelegationState(testEngine, 13, 7)
+	require.Equal(t, num.NewUint(15), testEngine.engine.calcTotalDelegatedTokens(1))
+
+	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
+	require.Nil(t, err)
+	require.Equal(t, num.NewUint(13), testEngine.engine.calcTotalDelegatedTokens(1))
+
+	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(5))
+	require.Nil(t, err)
+	require.Equal(t, num.NewUint(18), testEngine.engine.calcTotalDelegatedTokens(1))
+}
+
+func testMaxStakePerValidator(t *testing.T) {
+	testEngine := getEngine(t)
+	// 1/a = 1/5 = 0.2
+	// max per validator = 0.2 * 1000 = 200
+	require.Equal(t, num.NewUint(200), testEngine.engine.calcMaxDelegatableTokens(num.NewUint(1000), 3))
+
+	// 1/a = 11/1.1 = 0.1
+	// max per validator = 0.1 * 1000 = 100
+	require.Equal(t, num.NewUint(100), testEngine.engine.calcMaxDelegatableTokens(num.NewUint(1000), 11))
+}
+
 func getEngine(t *testing.T) *testEngine {
 	conf := NewDefaultConfig()
 	ctrl := gomock.NewController(t)
@@ -1636,7 +1704,6 @@ func getEngine(t *testing.T) *testEngine {
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{})
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
 	engine.OnMinAmountChanged(context.Background(), num.NewUint(2))
-	engine.OnMaxDelegationPerNodeChanged(context.Background(), num.NewUint(100))
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -1691,4 +1758,8 @@ func newTestTopology() *TestTopology {
 func (tt *TestTopology) IsValidatorNode(nodeID string) bool {
 	v, ok := tt.nodeToIsValidator[nodeID]
 	return ok && v
+}
+
+func (tt *TestTopology) AllPubKeys() []string {
+	return []string{"1", "2", "3", "4", "5"}
 }

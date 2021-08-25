@@ -492,10 +492,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		Param:   netparams.DelegationMinAmount,
 		Watcher: l.delegation.OnMinAmountChanged,
 	})
-	l.netParams.Watch(netparams.WatchParam{
-		Param:   netparams.DelegationMaxStakePerValidator,
-		Watcher: l.delegation.OnMaxDelegationPerNodeChanged,
-	})
 
 	// setup rewards engine
 	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
@@ -615,6 +611,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardDelegatorShare,
 			Watcher: l.rewards.UpdateDelegatorShareForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: l.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
 		},
 	)
 }

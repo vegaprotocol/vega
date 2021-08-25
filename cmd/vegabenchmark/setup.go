@@ -141,10 +141,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		Param:   netparams.DelegationMinAmount,
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
-	netp.Watch(netparams.WatchParam{
-		Param:   netparams.DelegationMaxStakePerValidator,
-		Watcher: delegationEngine.OnMaxDelegationPerNodeChanged,
-	})
 
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)

@@ -1,6 +1,8 @@
 package rewards
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 
 	"code.vegaprotocol.io/vega/types"
@@ -10,7 +12,6 @@ import (
 )
 
 func TestStakingRewards(t *testing.T) {
-	t.Run("Square root with 4 decimal places using only integer operations succeeds", testFourSquare)
 	t.Run("Calculate correctly the validator score", testValidatorScore)
 	t.Run("Calculate correctly the total delegate acorss all validators", testTotalDelegated)
 	t.Run("Calculate normalised validator score", testCalcValidatorsScore)
@@ -22,24 +23,18 @@ func TestStakingRewards(t *testing.T) {
 	t.Run("Reward is calculated correctly when max reward per participant restricted and breached - participant can be topped up", testCalcRewardsMaxPayoutBreachedPartyCanTakeMore)
 }
 
-func testFourSquare(t *testing.T) {
-	require.Equal(t, 4.0, foursqrt(16))
-	require.Equal(t, 3.8729, foursqrt(15))
-}
-
 func testValidatorScore(t *testing.T) {
 	validatorStake := 10000.0
-	totalStake := 50000.0
+	totalStake := 100000.0
 	minVal := 5.0
 	compLevel := 1.1
 
-	// minVal > numVal/compLevel
-	// valScore = sqrt(5 * 0.2 / 3) - sqrt(5 * 0.2 / 3)^3 = 0.5773 - 0.5773^3
-	require.Equal(t, 0.384900175083, calcValidatorScore(validatorStake/totalStake, minVal, compLevel, 5.0))
+	// minVal > numVal/compLevel => a = 5
+	// valScore = 0.1
+	require.Equal(t, 0.1, calcValidatorScore(validatorStake/totalStake, minVal, compLevel, 5.0))
 
-	// minVal < numVal/compLevel
-	// valScore = sqrt(9.0909090909 * 0.2 / 3) - sqrt(9.0909090909 * 0.2 / 3)^3 = 0.7784 - 0.7784^3
-	require.Equal(t, 0.306762333696, calcValidatorScore(validatorStake/totalStake, minVal, compLevel, 10.0))
+	// minVal < numVal/compLevel => a = 20
+	require.Equal(t, 0.05, calcValidatorScore(validatorStake/totalStake, minVal, compLevel, 22))
 }
 
 func testTotalDelegated(t *testing.T) {
@@ -62,54 +57,50 @@ func testTotalDelegated(t *testing.T) {
 }
 
 func testCalcValidatorsScore(t *testing.T) {
-	validator1 := &types.ValidatorData{
-		NodeID:            "node1",
-		SelfStake:         num.Zero(),
-		StakeByDelegators: num.NewUint(10000),
+	validators := []*types.ValidatorData{}
+
+	for i := 0; i < 12; i++ {
+		validators = append(validators, &types.ValidatorData{
+			NodeID:            "node" + strconv.Itoa(i),
+			SelfStake:         num.Zero(),
+			StakeByDelegators: num.NewUint(3700000),
+		})
 	}
-	validator2 := &types.ValidatorData{
-		NodeID:            "node2",
-		SelfStake:         num.NewUint(20000),
+
+	validators = append(validators, &types.ValidatorData{
+		NodeID:            "node13",
+		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.Zero(),
+	})
+
+	valScores := calcValidatorsNormalisedScore(validators, 5.0, 1.1)
+	require.Equal(t, 13, len(valScores))
+
+	for i := 0; i < 12; i++ {
+		require.Equal(t, "0.083", fmt.Sprintf("%.3f", valScores["node"+strconv.Itoa(i)]))
 	}
-	validator3 := &types.ValidatorData{
-		NodeID:            "node3",
-		SelfStake:         num.NewUint(30000),
-		StakeByDelegators: num.NewUint(40000),
+	require.Equal(t, "0.000", fmt.Sprintf("%.3f", valScores["node13"]))
+
+	validators[12] = &types.ValidatorData{
+		NodeID:            "node13",
+		SelfStake:         num.NewUint(3000),
+		StakeByDelegators: num.NewUint(19900),
 	}
+	valScores = calcValidatorsNormalisedScore(validators, 5.0, 1.1)
+	require.Equal(t, "0.001", fmt.Sprintf("%.3f", valScores["node13"]))
 
-	validator4 := &types.ValidatorData{
-		NodeID:            "node4",
-		SelfStake:         num.Zero(),
-		StakeByDelegators: num.Zero(),
+	validators[12] = &types.ValidatorData{
+		NodeID:            "node13",
+		SelfStake:         num.NewUint(3000),
+		StakeByDelegators: num.NewUint(919900),
 	}
+	valScores = calcValidatorsNormalisedScore(validators, 5.0, 1.1)
+	require.Equal(t, "0.020", fmt.Sprintf("%.3f", valScores["node13"]))
 
-	valScores := calcValidatorsNormalisedScore([]*types.ValidatorData{validator1, validator2, validator3, validator4}, 5.0, 1.1)
-	require.Equal(t, 4, len(valScores))
-
-	//a = 5
-	//normalisedStake = 0.1
-	//scoreVal = sqrt(5 * 0.1 / 3) - sqrt(5 * 0.1 / 3)^3
-	require.Equal(t, 0.34018276063200004/0.725082935715, valScores["node1"])
-
-	//a = 5
-	//normalisedStake = 0.2
-	//scoreVal = sqrt(5 * 0.2 / 3) - sqrt(5 * 0.2 / 3)^3
-	require.Equal(t, 0.384900175083/0.725082935715, valScores["node2"])
-
-	//a = 5
-	//normalisedStake = 0.7
-	//scoreVal = sqrt(5 * 0.7 / 3) - sqrt(5 * 0.7 / 3)^3 => note that the score is actually negative
-	require.Equal(t, 0.0, valScores["node3"])
-
-	//a = 5
-	//normalisedStake = 0
-	//scoreVal = sqrt(5 / 3) - sqrt(5 / 3)^3 => note that the score is actually negative
-	require.Equal(t, 0.0, valScores["node4"])
 }
 
 func testCalcRewardNoBalance(t *testing.T) {
-	res := calculateRewards("asset", "rewardsAccountID", num.Zero(), map[string]float64{}, []*types.ValidatorData{}, 0.3, nil)
+	res := calculateRewards("asset", "rewardsAccountID", num.Zero(), map[string]float64{}, []*types.ValidatorData{}, 0.3, nil, num.Zero())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -121,7 +112,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	scores["node3"] = 0.0
 	scores["node4"] = 0.0
 
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, 0.3, nil)
+	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, 0.3, nil, num.Zero())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -161,39 +152,39 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(validatorData, 5.0, 1.1)
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, maxPayout)
+	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, maxPayout, num.Zero())
 
 	// the normalised scores are as follows (from the test above)
-	// node1 - 0.4691639313
-	// node2 - 0.5308360687
-	// node3 - 0
+	// node1 - 0.2
+	// node2 - 0.4
+	// node3 - 0.4
 	// node4 - 0
 	// as node3 and node4 has 0 score they get nothing.
 	// given a reward of 1000000,
-	// node1 and its delegators get 469,163
-	// node2 and its delegators get 530,836
+	//
+	// node1 and its delegators get 200,000
+	// node2 and its delegators get 400,000
+	// node3 and its delegators get 400,000
 	// with a delegator share of 0.3,
-	// for node1 as there's no self stake they get the full 0.3 share
-	// for node1 the validator gets 0.7 of the reward for the node
-	// for node2 there are no delegators so they get none
-	// for node2 the validator gets 100% of the reward
+	// delegators to node1 get 0.3 * 200000 = 60000
+	// party1 gets 0.6 * 60000 = 36000
+	// party2 gets 0.4 * 60000 = 24000
+	// node1 gets 140000
+	// node2 gets 1 * 400000 = 400000
+	// delegators to node3 get 0.3 * 4/7 * 400000 = 68571
+	// party1 gets 68571
+	// node3 gets 1 - (0.3*4/7) = 331428
 
-	// node1, node2, party1, party2
-	require.Equal(t, 4, len(res.partyToAmount))
+	// node1, node2, node3, party1, party2
+	require.Equal(t, 5, len(res.partyToAmount))
 
-	// 0.3 * 0.6 * 469163 = 84,449.34 => 84449
-	require.Equal(t, num.NewUint(84449), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(104571), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(24000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(140000), res.partyToAmount["node1"])
+	require.Equal(t, num.NewUint(400000), res.partyToAmount["node2"])
+	require.Equal(t, num.NewUint(331428), res.partyToAmount["node3"])
 
-	// 0.3 * 0.4 * 469163 = 56,299.56 => 56299
-	require.Equal(t, num.NewUint(56299), res.partyToAmount["party2"])
-
-	// 0.7 * 469163 = 328,414.1 => 328414
-	require.Equal(t, num.NewUint(328414), res.partyToAmount["node1"])
-
-	// 0.7 * 530836 = 371585 => 371585
-	require.Equal(t, num.NewUint(371585), res.partyToAmount["node2"])
-
-	require.Equal(t, num.NewUint(840747), res.totalReward)
+	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
 func testCalcRewardsNoMaxPayout(t *testing.T) {
@@ -239,39 +230,38 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(validatorData, 5.0, 1.1)
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(50000))
+	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(20000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)
-	// node1 - 0.4691639313
-	// node2 - 0.5308360687
-	// node3 - 0
+	// node1 - 0.2
+	// node2 - 0.4
+	// node3 - 0.4
 	// node4 - 0
 	// as node3 and node4 has 0 score they get nothing.
 	// given a reward of 1000000,
-	// node1 and its delegators get 469,163
-	// node2 and its delegators get 530,836
+	//
+	// node1 and its delegators get 200,000
+	// node2 and its delegators get 400,000
+	// node3 and its delegators get 400,000
 	// with a delegator share of 0.3,
-	// for node1 as there's no self stake they get the full 0.3 share
-	// for node1 the validator gets 0.7 of the reward for the node
-	// for node2 there are no delegators so they get none
-	// for node2 the validator gets 100% of the reward
+	// delegators to node1 get 0.3 * 200000 = 60000
+	// party1 gets 0.6 * 60000 = 36000 -> 20000
+	// party2 gets 0.4 * 60000 = 24000 -> 20000
+	// node1 gets 140000 -> -> 20000
+	// node2 gets 1 * 400000 = 400000 -> -> 20000
+	// delegators to node3 get 0.3 * 4/7 * 400000 = 68571
+	// party1 gets 68571 -> -> 20000
+	// node3 gets 1 - (0.3*4/7) = 331428 -> -> 20000
 
-	// node1, node2, party1, party2
-	require.Equal(t, 4, len(res.partyToAmount))
+	// node1, node2, node3, party1, party2
+	require.Equal(t, 5, len(res.partyToAmount))
 
-	// 0.3 * 0.6 * 469163 = 84,449.34 => 84449 => with cap it becomes 50000
-	require.Equal(t, num.NewUint(50000), res.partyToAmount["party1"])
-
-	// 0.3 * 0.4 * 469163 = 56,299.56 => 56299 => with cap it becomes 50000
-	require.Equal(t, num.NewUint(50000), res.partyToAmount["party2"])
-
-	// 0.7 * 469163 = 328,414.1 => 328414 => with cap it becomes 50000
-	require.Equal(t, num.NewUint(50000), res.partyToAmount["node1"])
-
-	// 1 * 530836 = 530,836 => 530836 => with cap it becomes 50000
-	require.Equal(t, num.NewUint(50000), res.partyToAmount["node2"])
-
-	require.Equal(t, num.NewUint(200000), res.totalReward)
+	require.Equal(t, num.NewUint(20000), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(20000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(20000), res.partyToAmount["node1"])
+	require.Equal(t, num.NewUint(20000), res.partyToAmount["node2"])
+	require.Equal(t, num.NewUint(20000), res.partyToAmount["node3"])
+	require.Equal(t, num.NewUint(100000), res.totalReward)
 }
 
 func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
@@ -309,37 +299,35 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(validatorData, 5.0, 1.1)
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(80000))
+	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(40000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)
-	// node1 - 0.4691639313
-	// node2 - 0.5308360687
-	// node3 - 0
+	// node1 - 0.2
+	// node2 - 0.4
+	// node3 - 0.4
 	// node4 - 0
 	// as node3 and node4 has 0 score they get nothing.
 	// given a reward of 1000000,
-	// node1 and its delegators get 469,163
-	// node2 and its delegators get 530,836
+	//
+	// node1 and its delegators get 200,000
+	// node2 and its delegators get 400,000
+	// node3 and its delegators get 400,000
 	// with a delegator share of 0.3,
-	// for node1 as there's no self stake they get the full 0.3 share
-	// for node1 the validator gets 0.7 of the reward for the node
-	// for node2 there are no delegators so they get none
-	// for node2 the validator gets 100% of the reward
-
+	// delegators to node1 get 0.3 * 200000 = 60000
+	// party1 gets 0.6 * 60000 = 36000 -> 36000
+	// party2 gets 0.4 * 60000 = 24000 -> 24000
+	// node1 gets 140000 -> 40000
+	// node2 gets 1 * 400000 = 400000 -> 40000
+	// delegators to node3 get 0.3 * 4/7 * 400000 = 68571
+	// party1 gets 68571 -> 40000
+	// node3 gets 1 - (0.3*4/7) = 331428 -> 40000
 	// node1, node2, party1, party2
-	require.Equal(t, 4, len(res.partyToAmount))
+	require.Equal(t, 5, len(res.partyToAmount))
 
-	// 0.3 * 0.6 * 469163 = 84,449.34 => 84449 => with cap it becomes 80000
-	require.Equal(t, num.NewUint(80000), res.partyToAmount["party1"])
-
-	// 0.3 * 0.4 * 469163 = 56,299.56 => 56299 + the remaining balance that can go to party => 60747
-	require.Equal(t, num.NewUint(60747), res.partyToAmount["party2"])
-
-	// 0.7 * 469163 = 328,414.1 => 328414 => with cap it becomes 80000
-	require.Equal(t, num.NewUint(80000), res.partyToAmount["node1"])
-
-	// 1 * 530836 = 530,836 => 530836 => with cap it becomes 80000
-	require.Equal(t, num.NewUint(80000), res.partyToAmount["node2"])
-
-	require.Equal(t, num.NewUint(300747), res.totalReward)
+	require.Equal(t, num.NewUint(40000), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(24000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(40000), res.partyToAmount["node1"])
+	require.Equal(t, num.NewUint(40000), res.partyToAmount["node2"])
+	require.Equal(t, num.NewUint(40000), res.partyToAmount["node3"])
+	require.Equal(t, num.NewUint(184000), res.totalReward)
 }

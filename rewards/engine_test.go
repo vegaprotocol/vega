@@ -150,7 +150,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
-
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	epoch := types.Epoch{}
@@ -158,22 +158,16 @@ func testCalculateRewards(t *testing.T) {
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 
 	res := engine.calculateRewards(context.Background(), "ETH", rs.RewardPoolAccountIDs[0], rs, num.NewUint(1000000), epoch)
-	// node1, node2, party1, party2
-	require.Equal(t, 4, len(res.partyToAmount))
+	// node1, node2, node3, party1, party2
+	require.Equal(t, 5, len(res.partyToAmount))
 
-	// 0.3 * 0.6 * 469163 = 84,449.34 => 84449
-	require.Equal(t, num.NewUint(84449), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(104571), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(24000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(140000), res.partyToAmount["node1"])
+	require.Equal(t, num.NewUint(400000), res.partyToAmount["node2"])
+	require.Equal(t, num.NewUint(331428), res.partyToAmount["node3"])
 
-	// 0.3 * 0.4 * 469163 = 56,299.56 => 56299
-	require.Equal(t, num.NewUint(56299), res.partyToAmount["party2"])
-
-	// 0.7 * 469163 = 328,414.1 => 328414
-	require.Equal(t, num.NewUint(328414), res.partyToAmount["node1"])
-
-	// 0.7 * 530836 = 371585 => 371585
-	require.Equal(t, num.NewUint(371585), res.partyToAmount["node2"])
-
-	require.Equal(t, num.NewUint(840747), res.totalReward)
+	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
 // test payout distribution
@@ -183,6 +177,7 @@ func testDistributePayout(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 
 	// setup reward account
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -222,6 +217,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -247,6 +243,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party2", "ETH")
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node1", "ETH")
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node2", "ETH")
+	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node3", "ETH")
 
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
@@ -266,14 +263,16 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	party2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party2", "ETH")
 	node1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node1", "ETH")
 	node2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node2", "ETH")
+	node3Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node3", "ETH")
 
-	require.Equal(t, num.NewUint(84449), party1Acc.Balance)
-	require.Equal(t, num.NewUint(56299), party2Acc.Balance)
-	require.Equal(t, num.NewUint(328414), node1Acc.Balance)
-	require.Equal(t, num.NewUint(371585), node2Acc.Balance)
+	require.Equal(t, num.NewUint(104571), party1Acc.Balance)
+	require.Equal(t, num.NewUint(24000), party2Acc.Balance)
+	require.Equal(t, num.NewUint(140000), node1Acc.Balance)
+	require.Equal(t, num.NewUint(400000), node2Acc.Balance)
+	require.Equal(t, num.NewUint(331428), node3Acc.Balance)
 
 	// advance to the end of the delay for the second reward + topup the balance of the reward account to be 1M again
-	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(840747))
+	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(999999))
 	require.Nil(t, err)
 
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
@@ -287,12 +286,14 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	party2Acc, _ = testEngine.collateral.GetPartyGeneralAccount("party2", "ETH")
 	node1Acc, _ = testEngine.collateral.GetPartyGeneralAccount("node1", "ETH")
 	node2Acc, _ = testEngine.collateral.GetPartyGeneralAccount("node2", "ETH")
+	node3Acc, _ = testEngine.collateral.GetPartyGeneralAccount("node3", "ETH")
 
 	// expect balances to have doubled
-	require.Equal(t, num.NewUint(168898), party1Acc.Balance)
-	require.Equal(t, num.NewUint(112598), party2Acc.Balance)
-	require.Equal(t, num.NewUint(656828), node1Acc.Balance)
-	require.Equal(t, num.NewUint(743170), node2Acc.Balance)
+	require.Equal(t, num.NewUint(104571*2), party1Acc.Balance)
+	require.Equal(t, num.NewUint(24000*2), party2Acc.Balance)
+	require.Equal(t, num.NewUint(140000*2), node1Acc.Balance)
+	require.Equal(t, num.NewUint(400000*2), node2Acc.Balance)
+	require.Equal(t, num.NewUint(331428*2), node3Acc.Balance)
 
 }
 
@@ -303,6 +304,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.Zero())
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 
 	// setup party accounts
@@ -310,6 +312,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party2", "ETH")
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node1", "ETH")
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node2", "ETH")
+	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node3", "ETH")
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
@@ -326,7 +329,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.OnEpochEnd(context.Background(), epoch)
-	// total distributed is 999998
+	// total distributed is 999999
 	require.Equal(t, 0, len(engine.pendingPayouts))
 
 	// get party account balances
@@ -334,11 +337,13 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	party2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("party2", "ETH")
 	node1Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node1", "ETH")
 	node2Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node2", "ETH")
+	node3Acc, _ := testEngine.collateral.GetPartyGeneralAccount("node3", "ETH")
 
-	require.Equal(t, num.NewUint(84449), party1Acc.Balance)
-	require.Equal(t, num.NewUint(56299), party2Acc.Balance)
-	require.Equal(t, num.NewUint(328414), node1Acc.Balance)
-	require.Equal(t, num.NewUint(371585), node2Acc.Balance)
+	require.Equal(t, num.NewUint(104571), party1Acc.Balance)
+	require.Equal(t, num.NewUint(24000), party2Acc.Balance)
+	require.Equal(t, num.NewUint(140000), node1Acc.Balance)
+	require.Equal(t, num.NewUint(400000), node2Acc.Balance)
+	require.Equal(t, num.NewUint(331428), node3Acc.Balance)
 }
 
 // test on time update - there are pending payouts but they are not yet due so nothing is paid or changed
