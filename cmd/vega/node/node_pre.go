@@ -280,6 +280,10 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 }
 
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
+	cp, err := checkpoint.New(l.assetService, l.governance, l.collateral, l.netParams)
+	if err != nil {
+		return nil, err
+	}
 	app := processor.NewApp(
 		l.Log,
 		l.conf.Processor,
@@ -306,7 +310,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.delegation,
 		l.limits,
 		l.stakeVerifier,
-		checkpoint.New(l.assetService, l.governance, l.collateral, l.netParams),
+		cp,
 	)
 
 	var abciApp tmtypes.Application

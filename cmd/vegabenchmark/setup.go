@@ -153,6 +153,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 
+	cp, _ := checkpoint.New()
 	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
@@ -179,7 +180,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		delegationEngine,
 		limits,
 		stakeV,
-		checkpoint.New(),
+		cp,
 	)
 
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
