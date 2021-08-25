@@ -84,12 +84,12 @@ func Test(t *testing.T) {
 	t.Run("process pending is delegating and undelegating and clearing the pending state successfully", testProcessPending)
 
 	// test get validators
-	//	t.Run("get empty list of validators succeeds", testGetValidatorsEmpty)
-	//	t.Run("get list of validators succeeds", testGetValidatorsSuccess)
+	t.Run("get empty list of validators succeeds", testGetValidatorsEmpty)
+	t.Run("get list of validators succeeds", testGetValidatorsSuccess)
 	t.Run("setup delegation with self and parties", testGetValidatorsSuccessWithSelfDelegation)
 
 	// test calculation of total delegated tokens
-	t.Run("calculate total delegated token successfull", testCalculateTotalDelegatedTokens)
+	t.Run("calculate total delegated token successful", testCalculateTotalDelegatedTokens)
 	t.Run("calculate the max stake per validator", testMaxStakePerValidator)
 
 }
@@ -1335,7 +1335,7 @@ func testProcessPending(t *testing.T) {
 func testGetValidatorsEmpty(t *testing.T) {
 	testEngine := getEngine(t)
 	validators := testEngine.engine.getValidatorData()
-	require.Equal(t, 3, len(validators))
+	require.Equal(t, 5, len(validators))
 
 	for i, v := range validators {
 		require.Equal(t, strconv.Itoa(i+1), v.NodeID)
