@@ -10,6 +10,10 @@ import (
 	"code.vegaprotocol.io/vega/events"
 )
 
+type DelegationStore interface {
+	AddDelegation(types.Delegation)
+}
+
 type DelegationBalanceEvent interface {
 	events.Event
 	Proto() eventspb.DelegationBalanceEvent
@@ -18,18 +22,27 @@ type DelegationBalanceEvent interface {
 type DelegationBalanceSub struct {
 	*Base
 
-	epochStore EpochStore
-	nodeStore  NodeStore
+	epochStore      EpochStore
+	nodeStore       NodeStore
+	delegationStore DelegationStore
 
 	log *logging.Logger
 }
 
-func NewDelegationBalanceSub(ctx context.Context, nodeStore NodeStore, epochStore EpochStore, log *logging.Logger, ack bool) *DelegationBalanceSub {
+func NewDelegationBalanceSub(
+	ctx context.Context,
+	nodeStore NodeStore,
+	epochStore EpochStore,
+	delegationStore DelegationStore,
+	log *logging.Logger,
+	ack bool,
+) *DelegationBalanceSub {
 	sub := &DelegationBalanceSub{
-		Base:       NewBase(ctx, 10, ack),
-		nodeStore:  nodeStore,
-		epochStore: epochStore,
-		log:        log,
+		Base:            NewBase(ctx, 10, ack),
+		nodeStore:       nodeStore,
+		epochStore:      epochStore,
+		delegationStore: delegationStore,
+		log:             log,
 	}
 
 	if sub.isRunning() {
@@ -72,6 +85,7 @@ func (db *DelegationBalanceSub) Push(evts ...events.Event) {
 
 			db.nodeStore.AddDelegation(delegation)
 			db.epochStore.AddDelegation(delegation)
+			db.delegationStore.AddDelegation(delegation)
 		default:
 			db.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
 		}

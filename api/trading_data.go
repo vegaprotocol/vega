@@ -213,6 +213,18 @@ type EpochService interface {
 	GetEpoch(ctx context.Context) (*pbtypes.Epoch, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_service_mock.go -package mocks code.vegaprotocol.io/data-node/api DelegationService
+type DelegationService interface {
+	GetAllDelegations() ([]*pbtypes.Delegation, error)
+	GetAllDelegationsOnEpoch(epochSeq string) ([]*pbtypes.Delegation, error)
+	GetPartyDelegations(party string) ([]*pbtypes.Delegation, error)
+	GetPartyDelegationsOnEpoch(party string, epochSeq string) ([]*pbtypes.Delegation, error)
+	GetPartyNodeDelegations(party string, node string) ([]*pbtypes.Delegation, error)
+	GetPartyNodeDelegationsOnEpoch(party string, node string, epochSeq string) ([]*pbtypes.Delegation, error)
+	GetNodeDelegations(nodeID string) ([]*pbtypes.Delegation, error)
+	GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pbtypes.Delegation, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -236,6 +248,7 @@ type tradingDataService struct {
 	MarketDepthService      *subscribers.MarketDepthBuilder
 	NetParamsService        NetParamsService
 	LiquidityService        LiquidityService
+	delegationService       DelegationService
 	oracleService           OracleService
 	nodeService             NodeService
 	epochService            EpochService
@@ -263,10 +276,6 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 }
 
 func (t *tradingDataService) Checkpoints(ctx context.Context, in *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (t *tradingDataService) Delegations(ctx context.Context, in *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
 	return nil, errors.New("not implemented")
 }
 
@@ -318,6 +327,39 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 
 func (t *tradingDataService) GetRewardDetails(context.Context, *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
 	return nil, errors.New("not implemented")
+}
+
+func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Delegations")()
+
+	var delegations []*pbtypes.Delegation
+	var err error
+
+	if req.EpochSeq == "" && req.Party == "" && req.NodeId == "" { // all delegations for all parties all nodes across all epochs
+		delegations, err = t.delegationService.GetAllDelegations()
+	} else if req.EpochSeq == "" && req.Party == "" && req.NodeId != "" { // all delegations for node from all parties across all epochs
+		delegations, err = t.delegationService.GetNodeDelegations(req.NodeId)
+	} else if req.EpochSeq == "" && req.Party != "" && req.NodeId == "" { // all delegations by a given party to all nodes across all epochs
+		delegations, err = t.delegationService.GetPartyDelegations(req.Party)
+	} else if req.EpochSeq == "" && req.Party != "" && req.NodeId != "" { // all delegations by a given party to a given node across all epochs
+		delegations, err = t.delegationService.GetPartyNodeDelegations(req.Party, req.NodeId)
+	} else if req.EpochSeq != "" && req.Party == "" && req.NodeId == "" { // all delegations by all parties for all nodes in a given epoch
+		delegations, err = t.delegationService.GetAllDelegationsOnEpoch(req.EpochSeq)
+	} else if req.EpochSeq != "" && req.Party == "" && req.NodeId != "" { // all delegations to a given node on a given epoch
+		delegations, err = t.delegationService.GetNodeDelegationsOnEpoch(req.NodeId, req.EpochSeq)
+	} else if req.EpochSeq != "" && req.Party != "" && req.NodeId == "" { // all delegations by a given party on a given epoch
+		delegations, err = t.delegationService.GetPartyDelegationsOnEpoch(req.Party, req.EpochSeq)
+	} else if req.EpochSeq != "" && req.Party != "" && req.NodeId != "" { // all delegations by a given party to a given node on a given epoch
+		delegations, err = t.delegationService.GetPartyNodeDelegationsOnEpoch(req.Party, req.NodeId, req.EpochSeq)
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.DelegationsResponse{
+		Delegations: delegations,
+	}, nil
 }
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {

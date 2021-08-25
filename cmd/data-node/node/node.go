@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
@@ -87,6 +88,7 @@ type NodeCommand struct {
 	transferResponseStore *storage.TransferResponse
 	nodeStore             *storage.Node
 	epochStore            *storage.Epoch
+	delegationStore       *storage.Delegations
 
 	vegaTradingServiceClient vegaprotoapi.TradingServiceClient
 
@@ -130,6 +132,7 @@ type NodeCommand struct {
 	oracleService     *oracles.Service
 	nodeService       *nodes.Service
 	epochService      *epochs.Service
+	delegationService *delegations.Service
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
@@ -202,6 +205,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.netParamsService,
 		l.nodeService,
 		l.epochService,
+		l.delegationService,
 	)
 
 	// watch configs

@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
@@ -69,6 +70,7 @@ type GRPCServer struct {
 	tradingDataService      *tradingDataService
 	nodeService             *nodes.Service
 	epochService            *epochs.Service
+	delegationService       *delegations.Service
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
@@ -105,6 +107,7 @@ func NewGRPCServer(
 	netParamsService *netparams.Service,
 	nodeService *nodes.Service,
 	epochService *epochs.Service,
+	delegationService *delegations.Service,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -138,6 +141,7 @@ func NewGRPCServer(
 		oracleService:            oracleService,
 		nodeService:              nodeService,
 		epochService:             epochService,
+		delegationService:        delegationService,
 		ctx:                      ctx,
 		cfunc:                    cfunc,
 	}
@@ -257,6 +261,7 @@ func (g *GRPCServer) Start(ctx context.Context) error {
 		oracleService:           g.oracleService,
 		nodeService:             g.nodeService,
 		epochService:            g.epochService,
+		delegationService:       g.delegationService,
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)

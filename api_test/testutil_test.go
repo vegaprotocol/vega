@@ -22,6 +22,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
@@ -117,6 +118,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	}
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
+	delegationStore := storage.NewDelegations(logger, conf.Storage)
+
 	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
 	if marketDepth == nil {
 		return
@@ -185,6 +188,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
+	delegationService := delegations.NewService(logger, conf.Delegations, delegationStore)
 
 	nodeService := nodes.NewService(logger, conf.Nodes, nodeStore, epochStore)
 	epochService := epochs.NewService(logger, conf.Epochs, epochStore)
@@ -232,6 +236,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		netparams,
 		nodeService,
 		epochService,
+		delegationService,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")
