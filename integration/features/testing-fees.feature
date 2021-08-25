@@ -1496,7 +1496,7 @@ Scenario: Testing fees in continuous trading during position resolution
 
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-Scenario: Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid
+Scenario: WIP - Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid
 
  # Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid
  # <PC> - Even after reducing trader's balance Or increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
@@ -1599,7 +1599,7 @@ Scenario: Testing fees in continuous trading during position resolution with ins
 
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-Scenario: Testing fees in continuous trading with two pegged trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep
+Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep
     
     When the following network parameters are set:
       | name                                                | value |
