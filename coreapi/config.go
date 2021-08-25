@@ -10,15 +10,17 @@ const (
 )
 
 type Config struct {
-	LogLevel encoding.LogLevel
-	Accounts bool
-	Assets   bool
+	LogLevel          encoding.LogLevel
+	Accounts          bool
+	Assets            bool
+	NetworkParameters bool
 }
 
 func NewDefaultConfig() Config {
 	return Config{
-		LogLevel: encoding.LogLevel{Level: logging.InfoLevel},
-		Accounts: true,
-		Assets:   true,
+		LogLevel:          encoding.LogLevel{Level: logging.InfoLevel},
+		Accounts:          true,
+		Assets:            true,
+		NetworkParameters: true,
 	}
 }

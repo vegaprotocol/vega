@@ -3,7 +3,6 @@ package coreapi
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	"code.vegaprotocol.io/vega/broker"
@@ -21,8 +20,9 @@ type Service struct {
 	cfg    Config
 	log    *logging.Logger
 
-	accounts *services.Accounts
-	assets   *services.Assets
+	accounts  *services.Accounts
+	assets    *services.Assets
+	netparams *services.NetParams
 }
 
 func NewService(
@@ -35,8 +35,6 @@ func NewService(
 		cfg:    cfg,
 	}
 
-	fmt.Printf("CONFIG: %v\n", cfg)
-
 	if cfg.Accounts {
 		log.Info("starting accounts core api")
 		svc.accounts = services.NewAccounts(ctx)
@@ -47,6 +45,12 @@ func NewService(
 		log.Info("starting assets core api")
 		svc.assets = services.NewAssets(ctx)
 		broker.SubscribeBatch(svc.assets)
+	}
+
+	if cfg.NetworkParameters {
+		log.Info("starting assets core api")
+		svc.netparams = services.NewNetParams(ctx)
+		broker.SubscribeBatch(svc.netparams)
 	}
 
 	return svc
@@ -71,5 +75,16 @@ func (s *Service) ListAssets(
 	}
 	return &coreapipb.ListAssetsResponse{
 		Assets: s.assets.List(in.Asset),
+	}, nil
+}
+
+func (s *Service) ListNetworkParameters(
+	ctx context.Context, in *coreapipb.ListNetworkParametersRequest,
+) (*coreapipb.ListNetworkParametersResponse, error) {
+	if !s.cfg.NetworkParameters {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListNetworkParmatersResponse{
+		NetworkParameters: s.netparams.List(in.Parameter),
 	}, nil
 }
