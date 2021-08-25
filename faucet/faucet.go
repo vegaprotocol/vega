@@ -176,7 +176,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 
 	preq := &api.PropagateChainEventRequest{
-		Evt:       ce,
+		Event:     msg,
 		PubKey:    pubKey,
 		Signature: sig,
 	}

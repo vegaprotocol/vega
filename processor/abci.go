@@ -61,8 +61,8 @@ type App struct {
 	netp       NetworkParameters
 	oracles    *Oracle
 	delegation DelegationEngine
-
-	limits Limits
+	limits     Limits
+	stake      StakeVerifier
 }
 
 func NewApp(
@@ -87,6 +87,7 @@ func NewApp(
 	oracles *Oracle,
 	delegation DelegationEngine,
 	limits Limits,
+	stake StakeVerifier,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -118,6 +119,7 @@ func NewApp(
 		oracles:    oracles,
 		delegation: delegation,
 		limits:     limits,
+		stake:      stake,
 	}
 
 	// setup handlers

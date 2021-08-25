@@ -16,6 +16,12 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks StakeVerifier
+type StakeVerifier interface {
+	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error
+	ProcessStakeDeposited(ctx context.Context, event *types.StakeDeposited) error
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination limits_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Limits
 type Limits interface {
 	CanProposeMarket() bool

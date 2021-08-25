@@ -28,7 +28,7 @@ func getAccountingTest(t *testing.T) *accountingTest {
 	broker := mocks.NewMockBrokerI(ctrl)
 
 	return &accountingTest{
-		Accounting: staking.NewAccounting(log, broker),
+		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker),
 		log:        log,
 		ctrl:       ctrl,
 		broker:     broker,
@@ -60,13 +60,13 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 	acc := getAccountingTest(t)
 	defer acc.ctrl.Finish()
 	cases := []struct {
-		evt    types.StakingEvent
+		evt    types.StakeLinking
 		expect error
 	}{
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid1",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -74,9 +74,9 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid2",
-				Type:   types.StakingEventTypeRemoved,
+				Type:   types.StakeLinkingTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -84,9 +84,9 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid3",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -94,9 +94,9 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid4",
-				Type:   types.StakingEventTypeRemoved,
+				Type:   types.StakeLinkingTypeRemoved,
 				TS:     125,
 				Party:  testParty,
 				Amount: num.NewUint(6),
@@ -105,7 +105,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		},
 	}
 
-	acc.broker.EXPECT().Send(gomock.Any()).Times(4)
+	// acc.broker.EXPECT().Send(gomock.Any()).Times(4)
 
 	for _, c := range cases {
 		c := c
@@ -147,13 +147,13 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 	acc := getAccountingTest(t)
 	defer acc.ctrl.Finish()
 	cases := []struct {
-		evt    types.StakingEvent
+		evt    types.StakeLinking
 		expect error
 	}{
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid1",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -161,9 +161,9 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid2",
-				Type:   types.StakingEventTypeRemoved,
+				Type:   types.StakeLinkingTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -171,9 +171,9 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid3",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -182,7 +182,7 @@ func testAccountingGetAvailableBalanceAt(t *testing.T) {
 		},
 	}
 
-	acc.broker.EXPECT().Send(gomock.Any()).Times(3)
+	// acc.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	for _, c := range cases {
 		c := c

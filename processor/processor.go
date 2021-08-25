@@ -192,3 +192,9 @@ type Limits interface {
 	CanProposeAsset() bool
 	CanTrade() bool
 }
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/processor StakeVerifier
+type StakeVerifier interface {
+	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error
+	ProcessStakeDeposited(ctx context.Context, event *types.StakeDeposited) error
+}

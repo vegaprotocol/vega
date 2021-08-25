@@ -45,6 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/risk"
+	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -52,6 +53,7 @@ import (
 	"code.vegaprotocol.io/vega/transfers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 type AccountStore interface {
@@ -172,6 +174,11 @@ type NodeCommand struct {
 	assetPlugin      *plugins.Asset
 	withdrawalPlugin *plugins.Withdrawal
 	depositPlugin    *plugins.Deposit
+
+	// staking
+	ethClient       *ethclient.Client
+	stakingAccounts *staking.Accounting
+	stakeVerifier   *staking.StakeVerifier
 
 	app *processor.App
 
