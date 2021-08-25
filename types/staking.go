@@ -66,8 +66,8 @@ func StakeDepositedFromProto(
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeDeposited, error) {
-	amount, ok := num.UintFromString(s.Amount, 10)
-	if !ok {
+	amount, overflowed := num.UintFromString(s.Amount, 10)
+	if overflowed {
 		return nil, errors.New("invalid amount (not a base 10 uint)")
 	}
 
@@ -114,8 +114,8 @@ func StakeRemovedFromProto(
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeRemoved, error) {
-	amount, ok := num.UintFromString(s.Amount, 10)
-	if !ok {
+	amount, overflowed := num.UintFromString(s.Amount, 10)
+	if overflowed {
 		return nil, errors.New("invalid amount (not a base 10 uint)")
 	}
 
