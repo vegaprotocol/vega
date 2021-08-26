@@ -2,6 +2,7 @@ package subscribers_test
 
 import (
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -53,6 +54,11 @@ func TestTwoRewardsSamePartyAndAsset(t *testing.T) {
 
 	// Now query for the reward details for that party
 	details, err := re.GetRewardDetails(ctx, partyID)
+
+	sort.Slice(details.RewardDetails[0].Details, func(i, j int) bool {
+		return details.RewardDetails[0].Details[i].PercentageOfTotal < details.RewardDetails[0].Details[j].PercentageOfTotal
+	})
+
 	assert.NotNil(t, details)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(details.RewardDetails))
@@ -88,6 +94,11 @@ func TestTwoDifferentAssetsSameParty(t *testing.T) {
 
 	// Now query for the reward details for that party
 	details, err := re.GetRewardDetails(ctx, partyID)
+
+	sort.Slice(details.RewardDetails[0].Details, func(i, j int) bool {
+		return details.RewardDetails[0].Details[i].PercentageOfTotal < details.RewardDetails[0].Details[j].PercentageOfTotal
+	})
+
 	assert.NotNil(t, details)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(details.RewardDetails))

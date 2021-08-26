@@ -35,30 +35,21 @@ type rewardDetails struct {
 	receivedAt int64
 }
 
-// rewardsPerAssetDetails contains all rewards received per asset
-type rewardsPerAssetDetails struct {
-	// The asset this reward is for
-	asset string
+// rewardsDetails contains all rewards
+type rewardsDetails struct {
 	// Slice containing all rewards we have received
 	rewards []*rewardDetails
 	// Total amount of reward received
 	totalAmount *num.Uint
 }
 
-type rewardsPerPartyDetails struct {
-	// The party that received the reward
-	partyID string
-	// Map of assetID to PerAsset type
-	rewards map[string]*rewardsPerAssetDetails
-}
-
 // RewardCounters hold the details of all the different rewards for each party
 type RewardCounters struct {
 	*Base
 
-	// Map of partyID to reward details
-	rewards map[string]*rewardsPerPartyDetails
-	mu      sync.RWMutex
+	// Map of map per partyID per asset to reward details
+	rewardsPerPartyPerAsset map[string]map[string]*rewardsDetails
+	mu                      sync.RWMutex
 
 	// Logger
 	log *logging.Logger
@@ -67,9 +58,9 @@ type RewardCounters struct {
 // NewRewards constructor to create an object to handle reward totals
 func NewRewards(ctx context.Context, log *logging.Logger, ack bool) *RewardCounters {
 	rc := RewardCounters{
-		Base:    NewBase(ctx, 10, ack),
-		log:     log,
-		rewards: map[string]*rewardsPerPartyDetails{},
+		Base:                    NewBase(ctx, 10, ack),
+		log:                     log,
+		rewardsPerPartyPerAsset: map[string]map[string]*rewardsDetails{},
 	}
 
 	if rc.isRunning() {
@@ -97,31 +88,31 @@ func (rc *RewardCounters) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
 		case RE:
-			rc.updateRewards(et.RewardPayoutEvent())
+			rc.addNewReward(et.RewardPayoutEvent())
 		default:
-			rc.log.Panic("Unknown event type in reward counters", logging.String("Type", et.Type().String()))
+			rc.log.Panic("Unknown event type in reward counters", logging.String("type", et.Type().String()))
 		}
 	}
 }
 
-// Types returns all the message types this subscriber wants to receive
-func (rc *RewardCounters) Types() []events.Type {
-	return []events.Type{
-		events.TransferResponses,
-	}
-}
+func (rc *RewardCounters) addNewReward(rpe types.RewardPayoutEvent) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
 
-func (rc *RewardCounters) addNewReward(perParty *rewardsPerPartyDetails, rpe types.RewardPayoutEvent) {
-	perAsset, ok := perParty.rewards[rpe.Asset]
-	if !ok {
+	if _, ok := rc.rewardsPerPartyPerAsset[rpe.Party]; !ok {
+		rc.rewardsPerPartyPerAsset[rpe.Party] = map[string]*rewardsDetails{}
+	}
+
+	if _, ok := rc.rewardsPerPartyPerAsset[rpe.Party][rpe.Asset]; !ok {
 		// First reward for this asset
-		perAsset = &rewardsPerAssetDetails{
-			asset:       rpe.Asset,
+		perAsset := &rewardsDetails{
 			rewards:     make([]*rewardDetails, 0),
 			totalAmount: num.Zero(),
 		}
-		perParty.rewards[rpe.Asset] = perAsset
+		rc.rewardsPerPartyPerAsset[rpe.Party][rpe.Asset] = perAsset
 	}
+
+	perAsset := rc.rewardsPerPartyPerAsset[rpe.Party][rpe.Asset]
 
 	epoch, err := strconv.ParseUint(rpe.EpochSeq, 10, 64)
 	if err != nil {
@@ -147,29 +138,11 @@ func (rc *RewardCounters) addNewReward(perParty *rewardsPerPartyDetails, rpe typ
 	perAsset.totalAmount.AddSum(rd.amount)
 }
 
-func (rc *RewardCounters) updateRewards(rpe types.RewardPayoutEvent) {
-	rc.mu.RLock()
-	reward, ok := rc.rewards[rpe.Party]
-	rc.mu.RUnlock()
-
-	if !ok {
-		// First reward for this party
-		reward = &rewardsPerPartyDetails{
-			partyID: rpe.Party,
-			rewards: map[string]*rewardsPerAssetDetails{},
-		}
-		rc.mu.Lock()
-		rc.rewards[rpe.Party] = reward
-		rc.mu.Unlock()
-	}
-	rc.addNewReward(reward, rpe)
-}
-
 // GetRewardDetails returns the information relating to rewards for a single party
 func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) (*protoapi.GetRewardDetailsResponse, error) {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
-	rewards, ok := rc.rewards[partyID]
+	rewards, ok := rc.rewardsPerPartyPerAsset[partyID]
 	if !ok {
 		return nil, fmt.Errorf("no rewards found for partyid %s", partyID)
 	}
@@ -179,9 +152,9 @@ func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) 
 		RewardDetails: make([]*vega.RewardPerAssetDetail, 0),
 	}
 
-	for _, rpad := range rewards.rewards {
+	for asset, rpad := range rewards {
 		perAsset := vega.RewardPerAssetDetail{
-			Asset:         rpad.asset,
+			Asset:         asset,
 			TotalForAsset: rpad.totalAmount.String(),
 			Details:       make([]*vega.RewardDetails, 0),
 		}
@@ -199,4 +172,11 @@ func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) 
 		resp.RewardDetails = append(resp.RewardDetails, &perAsset)
 	}
 	return resp, nil
+}
+
+// Types returns all the message types this subscriber wants to receive
+func (rc *RewardCounters) Types() []events.Type {
+	return []events.Type{
+		events.TransferResponses,
+	}
 }
