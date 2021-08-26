@@ -2462,11 +2462,3 @@ func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
 	rewardAccID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalReward)
 	return e.GetAccountByID(rewardAccID)
 }
-
-func (e *Engine) GetAssetDetails(asset string) (*types.Asset, error) {
-	ad, ok := e.enabledAssets[asset]
-	if !ok {
-		return nil, ErrInvalidAssetID
-	}
-	return &ad, nil
-}

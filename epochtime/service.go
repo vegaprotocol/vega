@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 type Broker interface {
@@ -30,8 +29,12 @@ type Svc struct {
 	readyToStartNewEpoch bool
 }
 
+type VegaTime interface {
+	NotifyOnTick(func(context.Context, time.Time))
+}
+
 // NewService instantiates a new epochtime service
-func NewService(l *logging.Logger, conf Config, vt *vegatime.Svc, broker Broker) *Svc {
+func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc {
 	s := &Svc{config: conf,
 		log:                  l,
 		broker:               broker,

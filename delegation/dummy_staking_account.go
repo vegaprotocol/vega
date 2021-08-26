@@ -1,6 +1,7 @@
 package delegation
 
 import (
+	"context"
 	"time"
 
 	"code.vegaprotocol.io/vega/collateral"
@@ -12,8 +13,9 @@ type DummyStakingAccounts struct {
 	asset            string
 }
 
-func (d *DummyStakingAccounts) GovAssetUpdated(asset string) {
+func (d *DummyStakingAccounts) GovAssetUpdated(ctx context.Context, asset string) error {
 	d.asset = asset
+	return nil
 }
 
 //GetBalanceNow returns the current party's governance token balance

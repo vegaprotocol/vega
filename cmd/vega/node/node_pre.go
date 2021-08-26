@@ -434,23 +434,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.witness, l.netParams, now)
 
-	//TODO replace with actual implementation
-	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
-	l.netParams.Watch(netparams.WatchParam{
-		Param:   netparams.GovernanceVoteAsset,
-		Watcher: stakingAccount.GovAssetUpdated,
-	})
-
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.netParams)
-	l.netParams.Watch(netparams.WatchParam{
-		Param:   netparams.DelegationMinAmount,
-		Watcher: l.delegation.OnMinAmountChanged,
-	})
-	l.netParams.Watch(netparams.WatchParam{
-		Param:   netparams.DelegationMaxStakePerValidator,
-		Watcher: l.delegation.OnMaxDelegationPerNodeChanged,
-	})
-
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
@@ -512,6 +495,19 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
+
+	//TODO replace with actual implementation
+	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.GovernanceVoteAsset,
+		Watcher: stakingAccount.GovAssetUpdated,
+	})
+
+	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.epochService)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMinAmount,
+		Watcher: l.delegation.OnMinAmountChanged,
+	})
 
 	// setup rewards engine
 	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
@@ -631,6 +627,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardDelegatorShare,
 			Watcher: l.rewards.UpdateDelegatorShareForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: l.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,

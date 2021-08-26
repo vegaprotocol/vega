@@ -126,6 +126,10 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		broker,
 	)
 
+	bstats := stats.NewBlockchain()
+
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+
 	//TODO replace with actual implementation
 	stakingAccount := delegation.NewDummyStakingAccount(collateral)
 	netp.Watch(netparams.WatchParam{
@@ -133,19 +137,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		Watcher: stakingAccount.GovAssetUpdated,
 	})
 
-	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netp)
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, epochService)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.DelegationMinAmount,
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
-	netp.Watch(netparams.WatchParam{
-		Param:   netparams.DelegationMaxStakePerValidator,
-		Watcher: delegationEngine.OnMaxDelegationPerNodeChanged,
-	})
 
-	bstats := stats.NewBlockchain()
-
-	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
