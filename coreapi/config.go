@@ -14,6 +14,7 @@ type Config struct {
 	Accounts          bool
 	Assets            bool
 	NetworkParameters bool
+	Parties           bool
 }
 
 func NewDefaultConfig() Config {
@@ -22,5 +23,6 @@ func NewDefaultConfig() Config {
 		Accounts:          true,
 		Assets:            true,
 		NetworkParameters: true,
+		Parties:           true,
 	}
 }

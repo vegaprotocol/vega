@@ -23,6 +23,7 @@ type Service struct {
 	accounts  *services.Accounts
 	assets    *services.Assets
 	netparams *services.NetParams
+	parties   *services.Parties
 }
 
 func NewService(
@@ -50,9 +51,15 @@ func NewService(
 	}
 
 	if cfg.NetworkParameters {
-		log.Info("starting assets core api")
+		log.Info("starting network parameters core api")
 		svc.netparams = services.NewNetParams(ctx)
 		broker.SubscribeBatch(svc.netparams)
+	}
+
+	if cfg.Parties {
+		log.Info("starting parties core api")
+		svc.parties = services.NewParties(ctx)
+		broker.SubscribeBatch(svc.parties)
 	}
 
 	return svc
@@ -77,6 +84,17 @@ func (s *Service) ListAssets(
 	}
 	return &coreapipb.ListAssetsResponse{
 		Assets: s.assets.List(in.Asset),
+	}, nil
+}
+
+func (s *Service) ListParties(
+	ctx context.Context, in *coreapipb.ListPartiesRequest,
+) (*coreapipb.ListPartiesResponse, error) {
+	if !s.cfg.Parties {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListPartiesResponse{
+		Parties: s.parties.List(),
 	}, nil
 }
 
