@@ -28,3 +28,7 @@ func (ts *TopologyStub) AllPubKeys() []string {
 	sort.Strings(nodes)
 	return nodes
 }
+
+func (ts *TopologyStub) AddValidator(node string) {
+	ts.validators[node] = node
+}
