@@ -257,13 +257,6 @@ run() {
 		deps
 		return "$?"
 		;;
-	gqlgen) ## Run gqlgen
-		pushd ./gateway/graphql/ 1>/dev/null || return 1
-		go run github.com/99designs/gqlgen --config gqlgen.yml
-		code="$?"
-		popd 1>/dev/null || return 1
-		return "$code"
-		;;
 	install) ## Build apps (in $GOPATH/bin)
 		: # handled below
 		;;
@@ -301,10 +294,6 @@ run() {
 		;;
 	staticcheck) ## Run staticcheck
 		staticcheck -checks 'all,-SA1019,-ST1000,-ST1021' ./...
-		return "$?"
-		;;
-	buflint) ## Run
-		buf lint
 		return "$?"
 		;;
 	misspell) ## Run misspell
