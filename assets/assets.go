@@ -131,6 +131,16 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 	return assetID, nil
 }
 
+func (s *Service) GetEnabledAssets() []*types.Asset {
+	s.amu.RLock()
+	defer s.amu.RUnlock()
+	ret := make([]*types.Asset, 0, len(s.assets))
+	for _, a := range s.assets {
+		ret = append(ret, a.ToAssetType())
+	}
+	return ret
+}
+
 func (s *Service) Get(assetID string) (*Asset, error) {
 	s.amu.RLock()
 	defer s.amu.RUnlock()

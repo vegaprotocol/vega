@@ -67,6 +67,7 @@ func Main(ctx context.Context) error {
 		Wallet,
 		Watch,
 		Tm,
+		Checkpoint,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

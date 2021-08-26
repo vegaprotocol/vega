@@ -79,6 +79,7 @@ type Engine struct {
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
 	activeProposals        []*proposal
+	enactedProposals       []*types.Proposal
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 	assets                 Assets
@@ -104,6 +105,7 @@ func NewEngine(
 		log:                    log,
 		currentTime:            now,
 		activeProposals:        []*proposal{},
+		enactedProposals:       []*types.Proposal{},
 		nodeProposalValidation: NewNodeValidation(log, assets, now, witness),
 		broker:                 broker,
 		assets:                 assets,
@@ -163,6 +165,10 @@ func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
 		startAuction := true
 		if p.State != proto.Proposal_STATE_PASSED {
 			startAuction = false
+		} else {
+			// this proposal needs to be included in the snapshot but we don't need to copy
+			// the proposal here, as it may reach the enacted state shortly
+			e.enactedProposals = append(e.enactedProposals, p)
 		}
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
@@ -240,6 +246,28 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		p.State = proto.Proposal_STATE_REJECTED
 		p.Reason = proto.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
 		e.broker.Send(events.NewProposalEvent(ctx, *p))
+	}
+
+	for _, ep := range toBeEnacted {
+		// this is the new market proposal, and should already be in the slice
+		prop := *ep.Proposal()
+		if prop.Terms.Change.GetTermType() == types.ProposalTerms_NEW_MARKET {
+			// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
+			found := false
+			for i, p := range e.enactedProposals {
+				if p.ID == prop.ID {
+					e.enactedProposals[i] = &prop // replace with pointer to copy
+					found = true
+					break
+				}
+			}
+			// no need to append
+			if found {
+				continue
+			}
+		}
+		// take a copy in the state just before the proposal was enacted
+		e.enactedProposals = append(e.enactedProposals, &prop)
 	}
 
 	// flush here for now

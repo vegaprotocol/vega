@@ -95,5 +95,11 @@ func defaultNetParams() map[string]value {
 		ValidatorsEpochLength: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
 
 		ValidatorsVoteRequired: NewFloat(FloatGTE(0.67), FloatLTE(1.0)).Mutable(true).MustUpdate("0.67"),
+
+		// @TODO add watcher for NetworkEOL > MarketFreezeDate
+		// network checkpoint parameters
+		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(true).MustUpdate("never"),
+		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(true).MustUpdate("never"),
+		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h"),
 	}
 }

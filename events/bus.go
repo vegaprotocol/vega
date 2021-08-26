@@ -97,6 +97,7 @@ const (
 	StakeLinkingEvent
 	ValidatorUpdateEvent
 	RewardPayoutEvent
+	CheckpointEvent
 )
 
 var (
@@ -145,6 +146,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_PENDING_DELEGATION_BALANCE: PendingDelegationBalanceEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:              StakeLinkingEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:           ValidatorUpdateEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:                 CheckpointEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -183,6 +185,7 @@ var (
 		StakeLinkingEvent:             eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING,
 		ValidatorUpdateEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE,
 		RewardPayoutEvent:             eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT,
+		CheckpointEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT,
 	}
 
 	eventStrings = map[Type]string{
@@ -222,6 +225,7 @@ var (
 		StakeLinkingEvent:             "StakeLinkingEvent",
 		ValidatorUpdateEvent:          "ValidatorUpdateEvent",
 		RewardPayoutEvent:             "RewardPayoutEvent",
+		CheckpointEvent:               "CheckpointEvent",
 	}
 )
 

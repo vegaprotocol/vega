@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
@@ -13,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
@@ -32,12 +35,21 @@ var (
 	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
 )
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
+type Checkpoint interface {
+	BalanceCheckpoint() (*types.Snapshot, error)
+	Checkpoint(time.Time) (*types.Snapshot, error)
+	Load(ctx context.Context, snap *types.Snapshot) error
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
 	previousTimestamp time.Time
 	txTotals          []uint64
 	txSizes           []int
+	cBlock            string
+	blockCtx          context.Context // use this to have access to block hash + height in commit call
 
 	cfg      Config
 	log      *logging.Logger
@@ -63,6 +75,7 @@ type App struct {
 	delegation DelegationEngine
 	limits     Limits
 	stake      StakeVerifier
+	checkpoint Checkpoint
 }
 
 func NewApp(
@@ -88,10 +101,16 @@ func NewApp(
 	delegation DelegationEngine,
 	limits Limits,
 	stake StakeVerifier,
+	checkpoint Checkpoint,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
+	if err := fsutil.EnsureDir(config.CheckpointsPath); err != nil {
+		log.Panic("Could not create checkpoints directory",
+			logging.String("checkpoint-dir", config.CheckpointsPath),
+			logging.Error(err))
+	}
 	app := &App{
 		abci: abci.New(&codec{}),
 
@@ -120,6 +139,7 @@ func NewApp(
 		delegation: delegation,
 		limits:     limits,
 		stake:      stake,
+		checkpoint: checkpoint,
 	}
 
 	// setup handlers
@@ -151,7 +171,8 @@ func NewApp(
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
 		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
 		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
-		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate)
+		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate).
+		HandleDeliverTx(txn.CheckpointRestoreCommand, app.DeliverReloadSnapshot)
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -210,6 +231,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	// let's assume genesis block is block 0
 	ctx := contextutil.WithBlockHeight(context.Background(), 0)
 	ctx = contextutil.WithTraceID(ctx, hash)
+	app.blockCtx = ctx
 
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
@@ -231,7 +253,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 // OnBeginBlock updates the internal lastBlockTime value with each new block
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
+	app.cBlock = hash
 	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
+	app.blockCtx = ctx
 
 	now := req.Header.Time
 
@@ -253,13 +277,42 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
-	// Compute the AppHash and update the response
 	resp.Data = app.exec.Hash()
+	// Snapshot can be nil if it wasn't time to create a snapshot
+	if snap, _ := app.checkpoint.Checkpoint(app.currentTimestamp); snap != nil {
+		resp.Data = append(resp.Data, snap.Hash...)
+		_ = app.handleCheckpoint(snap)
+	}
+	// Compute the AppHash and update the response
 
 	app.updateStats()
 	app.setBatchStats()
 
 	return resp
+}
+
+func (app *App) handleCheckpoint(snap *types.Snapshot) error {
+	f, err := os.Create(
+		filepath.Join(
+			app.cfg.CheckpointsPath,
+			fmt.Sprintf(
+				"%s-%s.cp", app.cBlock, hex.EncodeToString(snap.Hash),
+			),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	// write data
+	if _, err = f.Write(snap.State); err != nil {
+		return err
+	}
+	// emit the event indicating a new checkpoint was created
+	// this function is called both for interval checkpoints and withdrawal checkpoints
+	event := events.NewCheckpointEvent(app.blockCtx, snap)
+	app.broker.Send(event)
+	return nil
 }
 
 // OnCheckTx performs soft validations.
@@ -466,7 +519,14 @@ func (app *App) DeliverWithdraw(
 
 	// Convert protobuf to local domain type
 	ws := types.NewWithdrawSubmissionFromProto(w)
-	return app.processWithdraw(ctx, ws, id, tx.Party())
+	if err := app.processWithdraw(ctx, ws, id, tx.Party()); err != nil {
+		return err
+	}
+	snap, err := app.checkpoint.BalanceCheckpoint()
+	if err != nil {
+		return err
+	}
+	return app.handleCheckpoint(snap)
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
@@ -772,4 +832,24 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
 	default:
 		return errors.New("unimplemented")
 	}
+}
+
+func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) error {
+	cmd := &commandspb.RestoreSnapshot{}
+	if err := tx.Unmarshal(cmd); err != nil {
+		return nil
+	}
+
+	// convert to snapshot type:
+	snap := &types.Snapshot{}
+	if err := snap.SetState(cmd.Data); err != nil {
+		return err
+	}
+	err := app.checkpoint.Load(ctx, snap)
+	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
+		panic(fmt.Errorf("error restoring checkpoint: %w", err))
+	}
+	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
+	// emit an error event perhaps, log, etc...?
+	return err
 }

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
@@ -305,6 +306,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.delegation,
 		l.limits,
 		l.stakeVerifier,
+		l.checkpoint,
 	)
 
 	var abciApp tmtypes.Application
@@ -466,11 +468,17 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.netParams.UponGenesis,
 		l.topology.LoadValidatorsOnGenesis,
 		l.limits.UponGenesis,
+		l.checkpoint.UponGenesis,
 	)
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
+	// checkpoint engine
+	l.checkpoint, err = checkpoint.New(l.assets, l.collateral, l.governance, l.netParams)
+	if err != nil {
+		panic(err)
+	}
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
@@ -631,6 +639,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: l.notary.OnDefaultValidatorsVoteRequiredUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.NetworkCheckpointTimeElapsedBetweenCheckpoints,
+			Watcher: l.checkpoint.OnTimeElapsedUpdate,
 		},
 	)
 }
