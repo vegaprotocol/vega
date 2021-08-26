@@ -8,6 +8,8 @@ import (
 
 	protoapi "code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitoring"
@@ -20,6 +22,11 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
 )
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/vega/api EventService
+type EventService interface {
+	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*eventspb.BusEvent, chan<- int)
+}
 
 // TimeService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/api TimeService
@@ -56,6 +63,7 @@ type GRPC struct {
 	statusChecker *monitoring.Status
 	timesvc       *vegatime.Svc
 	evtfwd        EvtForwarder
+	evtService    EventService
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -92,6 +100,7 @@ func NewGRPC(
 		ctx:           ctx,
 		cfunc:         cfunc,
 		evtfwd:        evtfwd,
+		evtService:    eventService,
 	}
 }
 
@@ -187,6 +196,7 @@ func (g *GRPC) Start() {
 		timesvc:       g.timesvc,
 		stats:         g.stats,
 		evtForwarder:  g.evtfwd,
+		eventService:  g.evtService,
 	}
 	g.trading = tradingSvc
 	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)

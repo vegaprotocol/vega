@@ -84,7 +84,7 @@ func (s *Service) ListNetworkParameters(
 	if !s.cfg.NetworkParameters {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListNetworkParmatersResponse{
-		NetworkParameters: s.netparams.List(in.Parameter),
+	return &coreapipb.ListNetworkParametersResponse{
+		NetworkParameters: s.netparams.List(in.NetworkParameterKey),
 	}, nil
 }

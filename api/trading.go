@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -10,11 +11,15 @@ import (
 
 	"code.vegaprotocol.io/go-wallet/crypto"
 	protoapi "code.vegaprotocol.io/protos/vega/api"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/proto"
@@ -38,6 +43,7 @@ type tradingService struct {
 	timesvc       TimeService
 	stats         *stats.Stats
 	statusChecker *monitoring.Status
+	eventService  EventService
 
 	chainID                  string
 	genesisTime              time.Time
@@ -99,6 +105,75 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 	}, nil
 }
 
+func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
+	if req.Event == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	// verify the signature then
+	err := verifySignature(s.log, req.Event, req.Signature, req.PubKey)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid signature: %w", err))
+	}
+
+	evt := commandspb.ChainEvent{}
+	err = proto.Unmarshal(req.Event, &evt)
+	if err != nil {
+		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid chain event: %w", err))
+	}
+
+	var ok = true
+	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
+	if err != nil && err != evtforward.ErrEvtAlreadyExist {
+		s.log.Error("unable to forward chain event",
+			logging.String("pubkey", req.PubKey),
+			logging.Error(err))
+		if err == evtforward.ErrPubKeyNotAllowlisted {
+			return nil, apiError(codes.PermissionDenied, err)
+		} else {
+			return nil, apiError(codes.Internal, err)
+		}
+	}
+
+	return &protoapi.PropagateChainEventResponse{
+		Success: ok,
+	}, nil
+}
+
+func verifySignature(
+	log *logging.Logger,
+	message []byte,
+	sig []byte,
+	pubKey string,
+) error {
+	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519, 1)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to instantiate new algorithm", logging.Error(err))
+		}
+		return err
+	}
+
+	pubKeyBytes, err := hex.DecodeString(pubKey)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to decode hexencoded ubkey", logging.Error(err))
+		}
+		return err
+	}
+	ok, err := validator.Verify(pubKeyBytes, message, sig)
+	if err != nil {
+		if log != nil {
+			log.Error("unable to verify bundle", logging.Error(err))
+		}
+		return err
+	}
+	if !ok {
+		return ErrInvalidSignature
+	}
+	return nil
+}
+
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
@@ -155,82 +230,6 @@ func (t *tradingService) Statistics(ctx context.Context, _ *protoapi.StatisticsR
 	return &protoapi.StatisticsResponse{
 		Statistics: stats,
 	}, nil
-}
-
-func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
-	if req.Evt == nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-	}
-
-	msg, err := req.Evt.PrepareToSign()
-	if err != nil {
-		return nil, apiError(codes.InvalidArgument, err)
-	}
-
-	// verify the signature then
-	err = verifySignature(s.log, msg, req.Signature, req.PubKey)
-	if err != nil {
-		// we try the other signature format
-		msg, err = proto.Marshal(req.Evt)
-		if err != nil {
-			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-		}
-		if err = verifySignature(s.log, msg, req.Signature, req.PubKey); err != nil {
-			s.log.Debug("invalid tx signature", logging.String("pubkey", req.PubKey))
-			return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
-		}
-	}
-
-	var ok = true
-	err = s.evtForwarder.Forward(ctx, req.Evt, req.PubKey)
-	if err != nil && err != evtforward.ErrEvtAlreadyExist {
-		s.log.Error("unable to forward chain event",
-			logging.String("pubkey", req.PubKey),
-			logging.Error(err))
-		if err == evtforward.ErrPubKeyNotAllowlisted {
-			return nil, apiError(codes.PermissionDenied, err)
-		} else {
-			return nil, apiError(codes.Internal, err)
-		}
-	}
-
-	return &protoapi.PropagateChainEventResponse{
-		Success: ok,
-	}, nil
-}
-
-func verifySignature(
-	log *logging.Logger,
-	message []byte,
-	sig []byte,
-	pubKey string,
-) error {
-	validator, err := crypto.NewSignatureAlgorithm(crypto.Ed25519, 1)
-	if err != nil {
-		if log != nil {
-			log.Error("unable to instantiate new algorithm", logging.Error(err))
-		}
-		return err
-	}
-
-	pubKeyBytes, err := hex.DecodeString(pubKey)
-	if err != nil {
-		if log != nil {
-			log.Error("unable to decode hexencoded ubkey", logging.Error(err))
-		}
-		return err
-	}
-	ok, err := validator.Verify(pubKeyBytes, message, sig)
-	if err != nil {
-		if log != nil {
-			log.Error("unable to verify bundle", logging.Error(err))
-		}
-		return err
-	}
-	if !ok {
-		return ErrInvalidSignature
-	}
-	return nil
 }
 
 func (t *tradingService) getTendermintStats(
@@ -327,4 +326,153 @@ func (t *tradingService) getGenesisTimeAndChainID(ctx context.Context) error {
 
 	atomic.StoreUint32(&t.hasGenesisTimeAndChainID, 1)
 	return nil
+}
+
+func (t *tradingService) ObserveEventBus(
+	stream protoapi.TradingService_ObserveEventBusServer) error {
+	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
+
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+
+	// now we start listening for a few seconds in order to get at least the very first message
+	// this will be blocking until the connection by the client is closed
+	// and we will not start processing any events until we receive the original request
+	// indicating filters and batch size.
+	req, err := t.recvEventRequest(stream)
+	if err != nil {
+		// client exited, nothing to do
+		return nil
+	}
+
+	if err := req.Validate(); err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+
+	// now we will aggregate filter out of the initial request
+	types, err := events.ProtoToInternal(req.Type...)
+	if err != nil {
+		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
+	}
+	if len(req.PartyId) == 0 {
+		// no PartyID filter
+		for _, t := range types {
+			// subscription to TxErr events
+			if t == events.TxErrEvent {
+				return apiError(codes.InvalidArgument, ErrMalformedRequest, errors.New("missing party filter for TxError stream"))
+			}
+		}
+	}
+	filters := []subscribers.EventFilter{}
+	if len(req.MarketId) > 0 && len(req.PartyId) > 0 {
+		filters = append(filters, events.GetPartyAndMarketFilter(req.MarketId, req.PartyId))
+	} else {
+		if len(req.MarketId) > 0 {
+			filters = append(filters, events.GetMarketIDFilter(req.MarketId))
+		}
+		if len(req.PartyId) > 0 {
+			filters = append(filters, events.GetPartyIDFilter(req.PartyId))
+		}
+	}
+
+	// number of retries to -1 to have pretty much unlimited retries
+	ch, bCh := t.eventService.ObserveEvents(ctx, t.conf.StreamRetries, types, int(req.BatchSize), filters...)
+	defer close(bCh)
+
+	if req.BatchSize > 0 {
+		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
+		return err
+
+	}
+	err = t.observeEvents(ctx, stream, ch)
+	return err
+}
+
+func (t *tradingService) observeEvents(
+	ctx context.Context,
+	stream protoapi.TradingService_ObserveEventBusServer,
+	ch <-chan []*eventspb.BusEvent,
+) error {
+	for {
+		select {
+		case data, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			resp := &protoapi.ObserveEventBusResponse{
+				Events: data,
+			}
+			if err := stream.Send(resp); err != nil {
+				t.log.Error("Error sending event on stream", logging.Error(err))
+				return apiError(codes.Internal, ErrStreamInternal, err)
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		}
+	}
+}
+
+func (t *tradingService) recvEventRequest(
+	stream protoapi.TradingService_ObserveEventBusServer,
+) (*protoapi.ObserveEventBusRequest, error) {
+	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
+	oebCh := make(chan protoapi.ObserveEventBusRequest)
+	var err error
+	go func() {
+		defer close(oebCh)
+		nb := protoapi.ObserveEventBusRequest{}
+		if err = stream.RecvMsg(&nb); err != nil {
+			cfunc()
+			return
+		}
+		oebCh <- nb
+	}()
+	select {
+	case <-readCtx.Done():
+		if err != nil {
+			// this means the client disconnected
+			return nil, err
+		}
+		// this mean we timedout
+		return nil, readCtx.Err()
+	case nb := <-oebCh:
+		return &nb, nil
+	}
+}
+
+func (t *tradingService) observeEventsWithAck(
+	ctx context.Context,
+	stream protoapi.TradingService_ObserveEventBusServer,
+	batchSize int64,
+	ch <-chan []*eventspb.BusEvent,
+	bCh chan<- int,
+) error {
+	for {
+		select {
+		case data, ok := <-ch:
+			if !ok {
+				return nil
+			}
+			resp := &protoapi.ObserveEventBusResponse{
+				Events: data,
+			}
+			if err := stream.Send(resp); err != nil {
+				t.log.Error("Error sending event on stream", logging.Error(err))
+				return apiError(codes.Internal, ErrStreamInternal, err)
+			}
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		}
+
+		// now we try to read again the new size / ack
+		req, err := t.recvEventRequest(stream)
+		if err != nil {
+			return err
+		}
+
+		if req.BatchSize != batchSize {
+			batchSize = req.BatchSize
+			bCh <- int(batchSize)
+		}
+	}
 }

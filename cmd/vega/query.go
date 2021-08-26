@@ -8,9 +8,10 @@ import (
 )
 
 type QueryCmd struct {
-	Accounts query.AccountsCmd `command:"accounts" description:"Query a vega node to get the state of accounts"`
-	Assets   query.AssetsCmd   `command:"assets" description:"Query a vega node to get the list of available accounts"`
-	Help     bool              `short:"h" long:"help" description:"Show this help message"`
+	Accounts          query.AccountsCmd          `command:"accounts" description:"Query a vega node to get the state of accounts"`
+	Assets            query.AssetsCmd            `command:"assets" description:"Query a vega node to get the list of available assets"`
+	NetworkParameters query.NetworkParametersCmd `command:"netparams" description:"Query a vega node to get the list network parameters"`
+	Help              bool                       `short:"h" long:"help" description:"Show this help message"`
 }
 
 var queryCmd QueryCmd

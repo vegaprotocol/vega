@@ -65,7 +65,7 @@ func (a *NetParams) List(netParamsID string) []*vegapb.NetworkParameter {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	if len(netParamsID) > 0 {
-		return a.getNetParams(netParamsID)
+		return a.getNetParam(netParamsID)
 	}
 	return a.getAllNetParams()
 }
