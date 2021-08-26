@@ -20,10 +20,11 @@ type Service struct {
 	cfg    Config
 	log    *logging.Logger
 
-	accounts  *services.Accounts
-	assets    *services.Assets
-	netparams *services.NetParams
-	parties   *services.Parties
+	accounts   *services.Accounts
+	assets     *services.Assets
+	netparams  *services.NetParams
+	parties    *services.Parties
+	validators *services.Validators
 }
 
 func NewService(
@@ -60,6 +61,12 @@ func NewService(
 		log.Info("starting parties core api")
 		svc.parties = services.NewParties(ctx)
 		broker.SubscribeBatch(svc.parties)
+	}
+
+	if cfg.Validators {
+		log.Info("starting validators core api")
+		svc.validators = services.NewValidators(ctx)
+		broker.SubscribeBatch(svc.validators)
 	}
 
 	return svc
@@ -106,5 +113,16 @@ func (s *Service) ListNetworkParameters(
 	}
 	return &coreapipb.ListNetworkParametersResponse{
 		NetworkParameters: s.netparams.List(in.NetworkParameterKey),
+	}, nil
+}
+
+func (s *Service) ListValidators(
+	ctx context.Context, in *coreapipb.ListValidatorsRequest,
+) (*coreapipb.ListValidatorsResponse, error) {
+	if !s.cfg.Validators {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListValidatorsResponse{
+		Validators: s.validators.List(),
 	}, nil
 }

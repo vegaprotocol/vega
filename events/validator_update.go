@@ -59,6 +59,10 @@ func (vu ValidatorUpdate) Country() string {
 	return vu.country
 }
 
+func (vu ValidatorUpdate) ValidatorUpdate() eventspb.ValidatorUpdate {
+	return vu.Proto()
+}
+
 func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 	return eventspb.ValidatorUpdate{
 		VegaPubKey:      vu.vegaPubKey,
