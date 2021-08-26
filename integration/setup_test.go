@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/vega/epochtime"
-
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/steps/market"

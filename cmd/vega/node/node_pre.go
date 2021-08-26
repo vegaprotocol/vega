@@ -623,8 +623,8 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
 			Watcher: l.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
-    },
-    netparams.WatchParam{
+		},
+		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: l.witness.OnDefaultValidatorsVoteRequiredUpdate,
 		},

@@ -67,7 +67,7 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 
 		// if minStake is non zero and the validator has less total stake than required they don't get anything but their delegators still do
 		if !minStakePerValidator.IsZero() && vd.SelfStake.LT(minStakePerValidator) {
-			validatorFraction = num.DecimalFromUint(num.Zero())
+			validatorFraction = num.DecimalZero()
 		}
 
 		// how much delegators take

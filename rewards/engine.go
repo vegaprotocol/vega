@@ -258,7 +258,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			continue
 		}
 
-		rewardAccountBalance := account.Balance.Clone()
+		rewardAccountBalance := account.Balance
 
 		if rewardAccountBalance.IsZero() {
 			e.log.Debug("reward account has zero balance including pending payouts", logging.String("accountID", accountID))
