@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/epochtime"
+
 	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/steps/market"
@@ -51,8 +54,11 @@ type executionTestSetup struct {
 	executionEngine  *execution.Engine
 	collateralEngine *collateral.Engine
 	oracleEngine     *oracles.Engine
-
-	positionPlugin *plugins.Positions
+	epochEngine      *epochtime.Svc
+	delegationEngine *delegation.Engine
+	positionPlugin   *plugins.Positions
+	topology         *stubs.TopologyStub
+	stakingAccount   *delegation.DummyStakingAccounts
 
 	// save party accounts state
 	markets []types.Market
@@ -79,6 +85,12 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.collateralEngine = collateral.New(
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
+
+	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
+	execsetup.topology = stubs.NewTopologyStub()
+	execsetup.stakingAccount = delegation.NewDummyStakingAccount(execsetup.collateralEngine)
+
+	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine)
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
@@ -161,6 +173,14 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketProbabilityOfTradingTauScaling,
 			Watcher: e.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.GovernanceVoteAsset,
+			Watcher: e.stakingAccount.GovAssetUpdated,
+		},
+		netparams.WatchParam{
+			Param:   netparams.DelegationMinAmount,
+			Watcher: e.delegationEngine.OnMinAmountChanged,
 		},
 	)
 }

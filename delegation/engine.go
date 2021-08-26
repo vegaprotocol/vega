@@ -119,8 +119,9 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 }
 
 //OnMinAmountChanged updates the network parameter for minDelegationAmount
-func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount *num.Uint) {
-	e.minDelegationAmount = minAmount
+func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount int64) error {
+	e.minDelegationAmount = num.NewUint(uint64(minAmount))
+	return nil
 }
 
 //update the current epoch at which current pending delegations are recorded
