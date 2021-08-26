@@ -22,8 +22,7 @@ func (r *nodeResolver) Delegations(ctx context.Context, obj *proto.Node, partyID
 
 	for _, d := range obj.Delagations {
 		if d.Party == *partyID {
-			deleg := d
-			partyDelegations = append(partyDelegations, deleg)
+			partyDelegations = append(partyDelegations, d)
 		}
 	}
 

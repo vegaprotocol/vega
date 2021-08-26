@@ -1275,6 +1275,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) PartyByID(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartyByID", reflect.TypeOf((*MockTradingDataServiceClient)(nil).PartyByID), varargs...)
 }
 
+// PartyStake mocks base method
+func (m *MockTradingDataServiceClient) PartyStake(arg0 context.Context, arg1 *v1.PartyStakeRequest, arg2 ...grpc.CallOption) (*v1.PartyStakeResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PartyStake", varargs...)
+	ret0, _ := ret[0].(*v1.PartyStakeResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PartyStake indicates an expected call of PartyStake
+func (mr *MockTradingDataServiceClientMockRecorder) PartyStake(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PartyStake", reflect.TypeOf((*MockTradingDataServiceClient)(nil).PartyStake), varargs...)
+}
+
 // PositionsByParty mocks base method
 func (m *MockTradingDataServiceClient) PositionsByParty(arg0 context.Context, arg1 *v1.PositionsByPartyRequest, arg2 ...grpc.CallOption) (*v1.PositionsByPartyResponse, error) {
 	m.ctrl.T.Helper()
