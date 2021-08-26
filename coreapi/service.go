@@ -33,6 +33,8 @@ func NewService(
 	svc := &Service{
 		broker: broker,
 		cfg:    cfg,
+		ctx:    ctx,
+		log:    log,
 	}
 
 	if cfg.Accounts {

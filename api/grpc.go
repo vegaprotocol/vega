@@ -74,7 +74,7 @@ type GRPC struct {
 	services []func(*grpc.Server)
 }
 
-// NewGRPCServer create a new instance of the GPRC api for the vega node
+// NewGRPC create a new instance of the GPRC api for the vega node
 func NewGRPC(
 	log *logging.Logger,
 	config Config,
@@ -122,6 +122,7 @@ func (g *GRPC) ReloadConf(cfg Config) {
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
+	g.trading.updateConfig(cfg)
 }
 
 func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {

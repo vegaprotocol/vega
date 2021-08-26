@@ -55,8 +55,8 @@ type tradingService struct {
 }
 
 // no need for a mutext - we only access the config through a value receiver
-func (s *tradingService) updateConfig(conf Config) {
-	s.conf = conf
+func (t *tradingService) updateConfig(conf Config) {
+	t.conf = conf
 }
 
 func (t *tradingService) LastBlockHeight(
@@ -78,7 +78,7 @@ func (t *tradingService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTim
 	}, nil
 }
 
-func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.SubmitTransactionV2Request) (*protoapi.SubmitTransactionV2Response, error) {
+func (t *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.SubmitTransactionV2Request) (*protoapi.SubmitTransactionV2Response, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("SubmitTransactionV2", startTime)
 
@@ -86,17 +86,17 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	if err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionV2Request_TYPE_ASYNC); err != nil {
+	if err := t.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionV2Request_TYPE_ASYNC); err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
 			Details() string
 			Error() string
 		}); ok {
-			s.log.Debug("unable to submit transaction", logging.Error(err))
+			t.log.Debug("unable to submit transaction", logging.Error(err))
 			return nil, apiError(codes.InvalidArgument, err)
 		}
-		s.log.Debug("unable to submit transaction", logging.Error(err))
+		t.log.Debug("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -105,13 +105,13 @@ func (s *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 	}, nil
 }
 
-func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
+func (t *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
 	if req.Event == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
 	// verify the signature then
-	err := verifySignature(s.log, req.Event, req.Signature, req.PubKey)
+	err := verifySignature(t.log, req.Event, req.Signature, req.PubKey)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid signature: %w", err))
 	}
@@ -123,9 +123,9 @@ func (s *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	}
 
 	var ok = true
-	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
+	err = t.evtForwarder.Forward(ctx, &evt, req.PubKey)
 	if err != nil && err != evtforward.ErrEvtAlreadyExist {
-		s.log.Error("unable to forward chain event",
+		t.log.Error("unable to forward chain event",
 			logging.String("pubkey", req.PubKey),
 			logging.Error(err))
 		if err == evtforward.ErrPubKeyNotAllowlisted {

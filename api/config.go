@@ -26,8 +26,8 @@ type Config struct {
 type RESTServiceConfig struct {
 	Port       int           `long:"port" description:"Listen for connection on port <port>"`
 	IP         string        `long:"ip" description:"Bind to address <ip>"`
-	Enabled    encoding.Bool `long:"enabled" choice:"true" choice:"false" description:"Start the REST gateway"`
-	APMEnabled encoding.Bool `long:"apm-enabled" choice:"true" choice:"false" description:" "`
+	Enabled    encoding.Bool `long:"enabled" choice:"true"  description:"Start the REST gateway"`
+	APMEnabled encoding.Bool `long:"apm-enabled" choice:"true"  description:" "`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
