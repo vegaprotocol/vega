@@ -147,6 +147,8 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
+	stakeV := mocks.NewMockStakeVerifier(ctrl)
+
 	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(),
@@ -172,6 +174,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		},
 		delegationEngine,
 		limits,
+		stakeV,
 	)
 
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)

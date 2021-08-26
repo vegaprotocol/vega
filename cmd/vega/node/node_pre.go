@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/pprof"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/risk"
+	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -135,6 +136,8 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethClient, l.configPath); err != nil {
 		return err
 	}
+
+	l.ethClient = ethClient
 
 	return l.nodeWallet.Verify()
 }
@@ -301,6 +304,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		},
 		l.delegation,
 		l.limits,
+		l.stakeVerifier,
 	)
 
 	var abciApp tmtypes.Application
@@ -427,6 +431,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.witness, l.netParams, now)
+
+	l.stakingAccounts, l.stakeVerifier = staking.New(
+		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
+	)
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.

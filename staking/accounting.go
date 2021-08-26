@@ -22,19 +22,23 @@ var (
 
 type Accounting struct {
 	log      *logging.Logger
+	cfg      Config
 	broker   Broker
 	accounts map[string]*StakingAccount
 }
 
-func NewAccounting(log *logging.Logger, broker Broker) *Accounting {
+func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 	return &Accounting{
 		log:      log,
+		cfg:      cfg,
 		broker:   broker,
 		accounts: map[string]*StakingAccount{},
 	}
 }
 
-func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakingEvent) {
+func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	acc, ok := a.accounts[evt.Party]
 	if !ok {
 		acc = NewStakingAccount(evt.Party)
@@ -54,8 +58,6 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakingEvent) {
 			logging.Error(err))
 		return
 	}
-
-	a.broker.Send(events.NewStakingEvent(ctx, *evt))
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {

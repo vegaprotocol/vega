@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/storage"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -91,6 +92,7 @@ type Config struct {
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config   `group:"NetworkParameters" namespace:"netparams"`
 	Limits            limits.Config      `group:"Limits" namespace:"limits"`
+	Staking           staking.Config     `group:"Staking" namespace:"staking"`
 	Broker            broker.Config      `group:"Broker" namespace:"broker"`
 	Rewards           rewards.Config     `group:"Rewards" namespace:"rewards"`
 	Delegation        delegation.Config  `group:"Delegation" namespace:"delegation"`
@@ -143,6 +145,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Subscribers:       subscribers.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
 		Limits:            limits.NewDefaultConfig(),
+		Staking:           staking.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
 		GatewayEnabled:    true,
 		StoresEnabled:     true,

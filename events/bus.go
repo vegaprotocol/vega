@@ -93,7 +93,7 @@ const (
 	OracleDataEvent
 	EpochUpdate
 	DelegationBalanceEvent
-	StakingEvent
+	StakeLinkingEvent
 	ValidatorUpdateEvent
 	RewardPayoutEvent
 )
@@ -141,7 +141,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE:               EpochUpdate,
 		eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT:        RewardPayoutEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE:         DelegationBalanceEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT:              StakingEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:              StakeLinkingEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:           ValidatorUpdateEvent,
 	}
 
@@ -177,7 +177,7 @@ var (
 		OracleDataEvent:               eventspb.BusEventType_BUS_EVENT_TYPE_ORACLE_DATA,
 		EpochUpdate:                   eventspb.BusEventType_BUS_EVENT_TYPE_EPOCH_UPDATE,
 		DelegationBalanceEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_DELEGATION_BALANCE,
-		StakingEvent:                  eventspb.BusEventType_BUS_EVENT_TYPE_STAKING_EVENT,
+		StakeLinkingEvent:             eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING,
 		ValidatorUpdateEvent:          eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE,
 		RewardPayoutEvent:             eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT,
 	}
@@ -215,7 +215,7 @@ var (
 		OracleDataEvent:               "OracleDataEvent",
 		EpochUpdate:                   "EpochUpdate",
 		DelegationBalanceEvent:        "DelegationBalanceEvent",
-		StakingEvent:                  "StakingEvent",
+		StakeLinkingEvent:             "StakeLinkingEvent",
 		ValidatorUpdateEvent:          "ValidatorUpdateEvent",
 		RewardPayoutEvent:             "RewardPayoutEvent",
 	}
