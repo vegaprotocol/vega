@@ -14,9 +14,9 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
@@ -106,7 +106,7 @@ func NewApp(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	if err := fsutil.EnsureDir(config.CheckpointsPath); err != nil {
+	if err := vgfs.EnsureDir(config.CheckpointsPath); err != nil {
 		log.Panic("Could not create checkpoints directory",
 			logging.String("checkpoint-dir", config.CheckpointsPath),
 			logging.Error(err))

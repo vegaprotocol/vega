@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/contextutil"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -15,8 +15,8 @@ type Checkpoint struct {
 }
 
 func NewCheckpointEvent(ctx context.Context, snap *types.Snapshot) *Checkpoint {
-	height, _ := contextutil.BlockHeightFromContext(ctx)
-	_, block := contextutil.TraceIDFromContext(ctx)
+	height, _ := vgcontext.BlockHeightFromContext(ctx)
+	_, block := vgcontext.TraceIDFromContext(ctx)
 	return &Checkpoint{
 		Base: newBase(ctx, CheckpointEvent),
 		data: eventspb.CheckpointEvent{
