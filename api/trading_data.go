@@ -279,6 +279,10 @@ func (t *tradingDataService) Checkpoints(ctx context.Context, in *protoapi.Check
 	return nil, errors.New("not implemented")
 }
 
+func (t *tradingDataService) PartyStake(ctx context.Context, in *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
 // Get data of current node
 func (t *tradingDataService) GetNodeData(ctx context.Context, req *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeData")()

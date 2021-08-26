@@ -13,8 +13,20 @@ func (r *nodeResolver) Status(ctx context.Context, obj *proto.Node) (NodeStatus,
 	return nodeStatusFromProto(obj.Status)
 }
 
-func (r *nodeResolver) Delegations(ctx context.Context, obj *proto.Node) ([]*proto.Delegation, error) {
-	return obj.Delagations, nil
+func (r *nodeResolver) Delegations(ctx context.Context, obj *proto.Node, partyID *string) ([]*proto.Delegation, error) {
+	if partyID == nil || *partyID == "" {
+		return obj.Delagations, nil
+	}
+
+	partyDelegations := []*proto.Delegation{}
+
+	for _, d := range obj.Delagations {
+		if d.Party == *partyID {
+			partyDelegations = append(partyDelegations, d)
+		}
+	}
+
+	return partyDelegations, nil
 }
 
 func nodeStatusFromProto(s proto.NodeStatus) (NodeStatus, error) {

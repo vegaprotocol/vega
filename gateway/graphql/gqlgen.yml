@@ -90,6 +90,8 @@ models:
         resolver: true
       margins:
         resolver: true
+      delegations:
+        resolver: true
   Proposal:
     model: code.vegaprotocol.io/protos/vega.GovernanceData
     fields:
@@ -163,6 +165,9 @@ models:
     model: code.vegaprotocol.io/protos/vega.Delegation
   Node:
     model: code.vegaprotocol.io/protos/vega.Node
+    fields:
+      delegations:
+        resolver: true
   Epoch:
     model: code.vegaprotocol.io/protos/vega.Epoch
   EpochTimestamps:
