@@ -172,5 +172,5 @@ models:
     model: code.vegaprotocol.io/protos/vega.Epoch
   EpochTimestamps:
     model: code.vegaprotocol.io/protos/vega.EpochTimestamps
-  RewardDetails:
-    model: code.vegaprotocol.io/protos/data-node/api/v1.GetRewardDetailsResponse
+  RewardPerAssetDetail:
+    model: code.vegaprotocol.io/protos/vega.RewardPerAssetDetail

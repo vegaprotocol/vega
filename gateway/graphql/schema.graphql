@@ -424,7 +424,7 @@ type Query {
   rewardDetails(
     "ID of the party"
     partyId: ID!
-  ): RewardDetails
+  ): [RewardPerAssetDetail]
 }
 
 enum NodeStatus {
@@ -539,8 +539,7 @@ type Node {
 
 	status: NodeStatus!
 
-  # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String): [Delegation!]
+	delegations(partyID: String): [Delegation!]!
 }
 
 type Delegation {
@@ -1331,9 +1330,6 @@ type Party {
     "An optional reference"
     reference: String
   ): [LiquidityProvision!]
-
-  # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations(nodeId: String): [Delegation!]
 }
 
 """
@@ -2560,13 +2556,8 @@ type Reward {
 }
 
 "Reward information for a given asset"
-type RewardPerAssetDetails {
+type RewardPerAssetDetail {
   Asset: Asset!
   Rewards: [Reward]
   TotalAmount: String!  
-}
-
-"Reward details for a single party including history"
-type RewardDetails {
-  details: [RewardPerAssetDetails]
 }

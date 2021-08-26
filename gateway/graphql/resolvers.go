@@ -277,8 +277,8 @@ func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 	return (*epochTimestampsResolver)(r)
 }
 
-func (r *VegaResolverRoot) RewardDetails() RewardDetailsResolver {
-	return (*rewardDetailsResolver)(r)
+func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
+	return (*rewardPerAssetDetailResolver)(r)
 }
 
 // LiquidityOrder resolver
@@ -791,6 +791,14 @@ func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, 
 	}
 
 	return resp.Epoch, nil
+}
+
+func (r *myQueryResolver) RewardDetails(ctx context.Context, partyID string) ([]*types.RewardPerAssetDetail, error) {
+	req := &protoapi.GetRewardDetailsRequest{
+		PartyId: partyID,
+	}
+	resp, _ := r.tradingDataClient.GetRewardDetails(ctx, req)
+	return resp.RewardDetails, nil
 }
 
 // END: Root Resolver
@@ -2426,12 +2434,4 @@ func getParty(ctx context.Context, log *logging.Logger, client TradingDataServic
 		return nil, customErrorFromStatus(err)
 	}
 	return res.Party, nil
-}
-
-func (r *myQueryResolver) RewardDetails(ctx context.Context, partyID string) (*protoapi.GetRewardDetailsResponse, error) {
-	req := &protoapi.GetRewardDetailsRequest{
-		PartyId: partyID,
-	}
-	resp, _ := r.tradingDataClient.GetRewardDetails(ctx, req)
-	return resp, nil
 }

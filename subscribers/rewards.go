@@ -19,46 +19,46 @@ type RE interface {
 	RewardPayoutEvent() types.RewardPayoutEvent
 }
 
-// RewardDetails holds all the details about a single asset based reward
-type RewardDetails struct {
+// rewardDetails holds all the details about a single asset based reward
+type rewardDetails struct {
 	// The asset this reward is for
-	AssetID string
+	assetID string
 	// The party that received the reward
-	PartyID string
+	partyID string
 	// Which epoch this reward was calculated
-	Epoch uint64
+	epoch uint64
 	// The total amount of reward received
-	Amount *num.Uint
+	amount *num.Uint
 	// Percentage of total reward distributed
-	PercentageAmount float64
+	percentageAmount float64
 	// When the reward was received
-	ReceivedAt int64
+	receivedAt int64
 }
 
-// RewardPerAssetDetails contains all rewards received per asset
-type RewardsPerAssetDetails struct {
+// rewardsPerAssetDetails contains all rewards received per asset
+type rewardsPerAssetDetails struct {
 	// The asset this reward is for
-	Asset string
+	asset string
 	// Slice containing all rewards we have received
-	Rewards []*RewardDetails
+	rewards []*rewardDetails
 	// Total amount of reward received
-	TotalAmount *num.Uint
+	totalAmount *num.Uint
 }
 
-type RewardsPerPartyDetails struct {
+type rewardsPerPartyDetails struct {
 	// The party that received the reward
-	PartyID string
-	// Map of partyID to PerAsset type
-	Rewards map[string]*RewardsPerAssetDetails
+	partyID string
+	// Map of assetID to PerAsset type
+	rewards map[string]*rewardsPerAssetDetails
 }
 
 // RewardCounters hold the details of all the different rewards for each party
 type RewardCounters struct {
 	*Base
-	mu sync.RWMutex
 
 	// Map of partyID to reward details
-	rewards map[string]*RewardsPerPartyDetails
+	rewards map[string]*rewardsPerPartyDetails
+	mu      sync.RWMutex
 
 	// Logger
 	log *logging.Logger
@@ -69,7 +69,7 @@ func NewRewards(ctx context.Context, log *logging.Logger, ack bool) *RewardCount
 	rc := RewardCounters{
 		Base:    NewBase(ctx, 10, ack),
 		log:     log,
-		rewards: map[string]*RewardsPerPartyDetails{},
+		rewards: map[string]*rewardsPerPartyDetails{},
 	}
 
 	if rc.isRunning() {
@@ -111,16 +111,16 @@ func (rc *RewardCounters) Types() []events.Type {
 	}
 }
 
-func (rc *RewardCounters) addNewReward(perParty *RewardsPerPartyDetails, rpe types.RewardPayoutEvent) {
-	perAsset, ok := perParty.Rewards[rpe.Asset]
+func (rc *RewardCounters) addNewReward(perParty *rewardsPerPartyDetails, rpe types.RewardPayoutEvent) {
+	perAsset, ok := perParty.rewards[rpe.Asset]
 	if !ok {
 		// First reward for this asset
-		perAsset = &RewardsPerAssetDetails{
-			Asset:       rpe.Asset,
-			Rewards:     make([]*RewardDetails, 0),
-			TotalAmount: num.Zero(),
+		perAsset = &rewardsPerAssetDetails{
+			asset:       rpe.Asset,
+			rewards:     make([]*rewardDetails, 0),
+			totalAmount: num.Zero(),
 		}
-		perParty.Rewards[rpe.Asset] = perAsset
+		perParty.rewards[rpe.Asset] = perAsset
 	}
 
 	epoch, err := strconv.ParseUint(rpe.EpochSeq, 10, 64)
@@ -134,32 +134,33 @@ func (rc *RewardCounters) addNewReward(perParty *RewardsPerPartyDetails, rpe typ
 	}
 
 	amount, _ := num.UintFromString(rpe.Amount, 10)
-	rd := &RewardDetails{
-		AssetID:          rpe.Asset,
-		PartyID:          rpe.Party,
-		Epoch:            epoch,
-		Amount:           amount,
-		PercentageAmount: percent,
-		ReceivedAt:       0,
+	rd := &rewardDetails{
+		assetID:          rpe.Asset,
+		partyID:          rpe.Party,
+		epoch:            epoch,
+		amount:           amount,
+		percentageAmount: percent,
+		receivedAt:       0,
 	}
 
-	perAsset.Rewards = append(perAsset.Rewards, rd)
-	perAsset.TotalAmount.AddSum(rd.Amount)
+	perAsset.rewards = append(perAsset.rewards, rd)
+	perAsset.totalAmount.AddSum(rd.amount)
 }
 
 func (rc *RewardCounters) updateRewards(rpe types.RewardPayoutEvent) {
 	rc.mu.RLock()
-	defer rc.mu.RUnlock()
-
 	reward, ok := rc.rewards[rpe.Party]
+	rc.mu.RUnlock()
 
 	if !ok {
 		// First reward for this party
-		reward = &RewardsPerPartyDetails{
-			PartyID: rpe.Party,
-			Rewards: map[string]*RewardsPerAssetDetails{},
+		reward = &rewardsPerPartyDetails{
+			partyID: rpe.Party,
+			rewards: map[string]*rewardsPerAssetDetails{},
 		}
+		rc.mu.Lock()
 		rc.rewards[rpe.Party] = reward
+		rc.mu.Unlock()
 	}
 	rc.addNewReward(reward, rpe)
 }
@@ -178,20 +179,20 @@ func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) 
 		RewardDetails: make([]*vega.RewardPerAssetDetail, 0),
 	}
 
-	for _, rpad := range rewards.Rewards {
+	for _, rpad := range rewards.rewards {
 		perAsset := vega.RewardPerAssetDetail{
-			Asset:         rpad.Asset,
-			TotalForAsset: rpad.TotalAmount.String(),
+			Asset:         rpad.asset,
+			TotalForAsset: rpad.totalAmount.String(),
 			Details:       make([]*vega.RewardDetails, 0),
 		}
-		for _, rd := range rpad.Rewards {
+		for _, rd := range rpad.rewards {
 			reward := vega.RewardDetails{
-				AssetId:           rd.AssetID,
-				PartyId:           rd.PartyID,
-				Epoch:             rd.Epoch,
-				Amount:            rd.Amount.String(),
-				PercentageOfTotal: strconv.FormatFloat(rd.PercentageAmount, 'f', 5, 64),
-				ReceivedAt:        rd.ReceivedAt,
+				AssetId:           rd.assetID,
+				PartyId:           rd.partyID,
+				Epoch:             rd.epoch,
+				Amount:            rd.amount.String(),
+				PercentageOfTotal: strconv.FormatFloat(rd.percentageAmount, 'f', 5, 64),
+				ReceivedAt:        rd.receivedAt,
 			}
 			perAsset.Details = append(perAsset.Details, &reward)
 		}

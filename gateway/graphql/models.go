@@ -312,13 +312,6 @@ type Reward struct {
 	ReceivedAt        string `json:"ReceivedAt"`
 }
 
-// Reward information for a given asset
-type RewardPerAssetDetails struct {
-	Asset       *vega.Asset `json:"Asset"`
-	Rewards     []*Reward   `json:"Rewards"`
-	TotalAmount string      `json:"TotalAmount"`
-}
-
 type SettleDistressed struct {
 	// the market in which a position was closed out
 	MarketID string `json:"marketId"`
