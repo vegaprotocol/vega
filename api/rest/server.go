@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	protoapi "code.vegaprotocol.io/protos/vega/api"
+	coreapi "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -83,6 +84,9 @@ func (s *ProxyServer) Start() {
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
 	if err := protoapi.RegisterTradingServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
+	}
+	if err := coreapi.RegisterCoreApiServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
 
