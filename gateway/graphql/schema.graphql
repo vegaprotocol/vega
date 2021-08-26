@@ -419,6 +419,12 @@ type Query {
 
   "get data for a specific epoch, if id omitted it gets the current epoch"
 	epoch(id: String): Epoch!
+
+  "return reward information"
+  rewardDetails(
+    "ID of the party"
+    partyId: ID!
+  ): RewardDetails
 }
 
 enum NodeStatus {
@@ -549,11 +555,6 @@ type Delegation {
   
   "Epoch of delegation"
 	epoch: Int!
-  "return reward information"
-  rewardDetails(
-    "ID of the party"
-    partyId: ID!
-  ): RewardDetails
 }
 
 "Represents an asset in vega"

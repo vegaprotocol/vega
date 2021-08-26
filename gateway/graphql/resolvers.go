@@ -275,6 +275,8 @@ func (r *VegaResolverRoot) Epoch() EpochResolver {
 
 func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 	return (*epochTimestampsResolver)(r)
+}
+
 func (r *VegaResolverRoot) RewardDetails() RewardDetailsResolver {
 	return (*rewardDetailsResolver)(r)
 }
