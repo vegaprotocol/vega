@@ -10,6 +10,7 @@ import (
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/crypto"
@@ -149,9 +150,10 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 
+	cp, _ := checkpoint.New()
 	app := processor.NewApp(
 		log,
-		processor.NewDefaultConfig(),
+		processor.NewDefaultConfig(""),
 		func() {},
 		assets,
 		banking,
@@ -175,6 +177,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		delegationEngine,
 		limits,
 		stakeV,
+		cp,
 	)
 
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)

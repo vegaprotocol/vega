@@ -70,6 +70,15 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
+// UintFromBytes allows for the conversion from Uint.Bytes() back to a Uint
+func UintFromBytes(b []byte) *Uint {
+	u := &Uint{
+		u: uint256.Int{},
+	}
+	u.u.SetBytes(b)
+	return u
+}
+
 // UintFromDecimal returns a decimal version of the Uint, setting the bool to true if overflow occurred
 func UintFromDecimal(d Decimal) (*Uint, bool) {
 	u, ok := d.Uint()

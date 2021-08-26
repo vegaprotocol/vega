@@ -210,6 +210,19 @@ func (p Proposal) DeepClone() *Proposal {
 	return &cpy
 }
 
+func ProposalFromProto(pp *proto.Proposal) *Proposal {
+	return &Proposal{
+		ID:           pp.Id,
+		Reference:    pp.Reference,
+		Party:        pp.PartyId,
+		State:        pp.State,
+		Timestamp:    pp.Timestamp,
+		Terms:        ProposalTermsFromProto(pp.Terms),
+		Reason:       pp.Reason,
+		ErrorDetails: pp.ErrorDetails,
+	}
+}
+
 func (p Proposal) IntoProto() *proto.Proposal {
 	var terms *proto.ProposalTerms
 	if p.Terms != nil {

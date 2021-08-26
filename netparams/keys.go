@@ -79,6 +79,11 @@ const (
 	DelegationMinAmount = "validators.delegation.minAmount"
 
 	ValidatorsVoteRequired = "validators.vote.required"
+
+	// network related parameters
+	NetworkCheckpointMarketFreezeDate              = "network.checkpoint.marketFreezeDate"
+	NetworkCheckpointNetworkEOLDate                = "network.checkpoint.networkEndOfLifeDate"
+	NetworkCheckpointTimeElapsedBetweenCheckpoints = "network.checkpoint.timeElapsedBetweenCheckpoints"
 )
 
 var AllKeys = map[string]struct{}{
@@ -141,4 +146,7 @@ var AllKeys = map[string]struct{}{
 	StakingAndDelegationRewardDelegatorShare:              {},
 	StakingAndDelegationRewardMinimumValidatorStake:       {},
 	ValidatorsVoteRequired:                                {},
+	NetworkCheckpointNetworkEOLDate:                       {},
+	NetworkCheckpointTimeElapsedBetweenCheckpoints:        {},
+	NetworkCheckpointMarketFreezeDate:                     {},
 }

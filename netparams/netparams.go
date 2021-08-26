@@ -19,6 +19,7 @@ var (
 // Broker - event bus
 type Broker interface {
 	Send(e events.Event)
+	SendBatch(evts []events.Event)
 }
 
 type Reset interface {
@@ -85,10 +86,12 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 		return err
 	}
 
+	evts := make([]events.Event, 0, len(s.store))
 	// first we going to send the initial state through the broker
 	for k, v := range s.store {
-		s.broker.Send(events.NewNetworkParameterEvent(ctx, k, v.String()))
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v.String()))
 	}
+	s.broker.SendBatch(evts)
 
 	// now iterate over all parameters and update the existing ones
 	for k, v := range state {
@@ -217,6 +220,25 @@ func (s *Store) Update(ctx context.Context, key, value string) error {
 	// and also send it to the broker
 	s.broker.Send(events.NewNetworkParameterEvent(ctx, key, value))
 
+	return nil
+}
+
+func (s *Store) updateBatch(ctx context.Context, params map[string]string) error {
+	evts := make([]events.Event, 0, len(params))
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for k, v := range params {
+		svalue, ok := s.store[k]
+		if !ok {
+			return ErrUnknownKey
+		}
+		if err := svalue.Update(v); err != nil {
+			return fmt.Errorf("unable to update %s: %w", k, err)
+		}
+		s.paramUpdates[k] = struct{}{}
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v))
+	}
+	s.broker.SendBatch(evts)
 	return nil
 }
 
