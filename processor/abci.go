@@ -312,18 +312,7 @@ func (app *App) handleCheckpoint(snap *types.Snapshot) error {
 	// this function is called both for interval checkpoints and withdrawal checkpoints
 	event := events.NewCheckpointEvent(app.blockCtx, snap)
 	app.broker.Send(event)
-	// ok, now send the transaction for the commander
-	cmd := &commandspb.RestoreSnapshot{
-		Data: snap.State,
-	}
-	ch := make(chan error)
-	app.cmd.Command(context.Background(), txn.CheckpointRestoreCommand, cmd, func(ok bool) {
-		if !ok {
-			ch <- fmt.Errorf("failed to send restore command")
-		}
-		close(ch)
-	})
-	return <-ch
+	return nil
 }
 
 // OnCheckTx performs soft validations.
