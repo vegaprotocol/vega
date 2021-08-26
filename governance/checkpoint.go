@@ -33,6 +33,7 @@ func (e *Engine) Load(data []byte) error {
 		e.currentTime = vegatime.Now()
 	}
 
+	e.activeProposals = make([]*proposal, 0, len(snap.Proposals))
 	for _, p := range snap.Proposals {
 		if p.Terms.ClosingTimestamp < e.currentTime.Unix() {
 			// the proposal in question has expired, ignore it

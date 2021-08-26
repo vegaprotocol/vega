@@ -2,6 +2,7 @@ package checkpoint_test
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -93,7 +94,7 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: raw.Hash,
+			CheckpointHash: hex.EncodeToString(raw.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
@@ -133,7 +134,7 @@ func testGetCheckpointsAdd(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: raw.Hash,
+			CheckpointHash: hex.EncodeToString(raw.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
@@ -211,7 +212,7 @@ func testLoadCheckpoints(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: snapshot.Hash,
+			CheckpointHash: hex.EncodeToString(snapshot.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
@@ -239,7 +240,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: snap.Hash,
+			CheckpointHash: hex.EncodeToString(snap.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
@@ -274,7 +275,7 @@ func testLoadInvalidHash(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: snap.Hash,
+			CheckpointHash: hex.EncodeToString(snap.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
@@ -318,7 +319,7 @@ func testLoadSparse(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: snapshot.Hash,
+			CheckpointHash: hex.EncodeToString(snapshot.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
@@ -363,7 +364,7 @@ func testLoadError(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: checkpoints.Hash,
+			CheckpointHash: hex.EncodeToString(checkpoints.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
@@ -532,13 +533,13 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: raw.Hash,
+			CheckpointHash: hex.EncodeToString(raw.Hash),
 		},
 	}
 	gen, err := json.Marshal(set)
 	require.NoError(t, err)
 	// set the genesis hash to some new value
-	set.CP.CheckpointHash = append(set.CP.CheckpointHash, []byte("foo")...)
+	set.CP.CheckpointHash = hex.EncodeToString(append(raw.Hash, []byte("foo")...))
 	different, err := json.Marshal(set)
 	require.NoError(t, err)
 	// set up the engine to accept that hash
@@ -588,7 +589,7 @@ func testLoadAssets(t *testing.T) {
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
-			CheckpointHash: raw.Hash,
+			CheckpointHash: hex.EncodeToString(raw.Hash),
 		},
 	}
 	// now set the engine to accept the hash of the data we want to load

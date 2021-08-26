@@ -3,6 +3,7 @@ package checkpoint
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -73,7 +74,11 @@ func (e *Engine) UponGenesis(_ context.Context, data []byte) error {
 		return err
 	}
 	if len(state.CheckpointHash) != 0 {
-		e.loadHash = state.CheckpointHash
+		e.loadHash, err = hex.DecodeString(state.CheckpointHash)
+		if err != nil {
+			e.loadHash = nil
+			panic(fmt.Errorf("malformed restore hash in genesis file: %w", err))
+		}
 	}
 	return nil
 }

@@ -3,7 +3,7 @@ package checkpoint
 import "encoding/json"
 
 type GenesisState struct {
-	CheckpointHash []byte `json:"load_hash"`
+	CheckpointHash string `json:"load_hash"`
 }
 
 func DefaultGenesisState() GenesisState {

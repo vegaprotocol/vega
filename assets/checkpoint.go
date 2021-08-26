@@ -25,6 +25,12 @@ func (s *Service) Load(checkpoint []byte) error {
 	if err := proto.Unmarshal(checkpoint, data); err != nil {
 		return err
 	}
+	s.amu.Lock()
+	s.pamu.Lock()
+	s.pendingAssets = map[string]*Asset{}
+	s.assets = map[string]*Asset{}
+	s.pamu.Unlock()
+	s.amu.Unlock()
 	for _, a := range data.Assets {
 		details := types.AssetDetailsFromProto(a.AssetDetails)
 		id, err := s.NewAsset(a.Id, details)
