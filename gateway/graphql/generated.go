@@ -28461,17 +28461,6 @@ func (ec *executionContext) _Candle(ctx context.Context, sel ast.SelectionSet, o
 				}
 				return res
 			})
-		case "rewardDetails":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Delegation_rewardDetails(ctx, field, obj)
-				return res
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
