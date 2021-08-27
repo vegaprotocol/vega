@@ -35,6 +35,7 @@ import (
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
+	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -294,6 +295,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		log.Error("unable to initialise broker", logging.Error(err))
 		return err
 	}
+
+	l.eventService = subscribers.NewService(l.broker)
 
 	now := l.timeService.GetTimeNow()
 	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
