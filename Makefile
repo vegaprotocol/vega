@@ -21,7 +21,7 @@ test: ## Run unit tests
 
 .PHONY: integrationtest
 integrationtest: ## run integration tests, showing ledger movements and full scenario output
-	@./script/build.sh -a integrationtest
+	@./script/integration_tests.sh
 
 .PHONY: spec_feature_test
 spec_feature_test: ## run integration tests in the specs internal repo

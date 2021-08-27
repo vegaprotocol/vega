@@ -267,10 +267,6 @@ run() {
 	install) ## Build apps (in $GOPATH/bin)
 		: # handled below
 		;;
-	integrationtest) ## Run integration tests (godog)
-		go test -v ./integration/... --godog.format=pretty
-		return "$?"
-		;;
 	spec_feature_test) ## Run qa integration tests (godog)
 		local repo="${specsrepo:?}"
 		if test -z "$repo"; then
