@@ -192,6 +192,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 
 	nodeService := nodes.NewService(logger, conf.Nodes, nodeStore, epochStore)
 	epochService := epochs.NewService(logger, conf.Epochs, epochStore)
+	rewardsService := subscribers.NewRewards(ctx, logger, true)
 
 	eventBroker, err = broker.New(ctx, logger, conf.Broker)
 	if err != nil {
@@ -237,6 +238,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		nodeService,
 		epochService,
 		delegationService,
+		rewardsService,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")

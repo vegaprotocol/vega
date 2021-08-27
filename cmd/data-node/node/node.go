@@ -113,6 +113,7 @@ type NodeCommand struct {
 	delegationBalanceSub *subscribers.DelegationBalanceSub
 	epochUpdateSub       *subscribers.EpochUpdateSub
 	timeUpdateSub        *subscribers.Time
+	rewardsSub           *subscribers.RewardCounters
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -207,6 +208,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.nodeService,
 		l.epochService,
 		l.delegationService,
+		l.rewardsSub,
 	)
 
 	// watch configs

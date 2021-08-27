@@ -71,6 +71,7 @@ type GRPCServer struct {
 	nodeService             *nodes.Service
 	epochService            *epochs.Service
 	delegationService       *delegations.Service
+	rewardsService          *subscribers.RewardCounters
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
@@ -108,6 +109,7 @@ func NewGRPCServer(
 	nodeService *nodes.Service,
 	epochService *epochs.Service,
 	delegationService *delegations.Service,
+	rewardsService *subscribers.RewardCounters,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -142,6 +144,7 @@ func NewGRPCServer(
 		nodeService:              nodeService,
 		epochService:             epochService,
 		delegationService:        delegationService,
+		rewardsService:           rewardsService,
 		ctx:                      ctx,
 		cfunc:                    cfunc,
 	}
@@ -262,6 +265,7 @@ func (g *GRPCServer) Start(ctx context.Context) error {
 		nodeService:             g.nodeService,
 		epochService:            g.epochService,
 		delegationService:       g.delegationService,
+		rewardsService:          g.rewardsService,
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)

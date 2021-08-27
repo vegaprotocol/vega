@@ -419,6 +419,12 @@ type Query {
 
   "get data for a specific epoch, if id omitted it gets the current epoch"
 	epoch(id: String): Epoch!
+
+  "return reward information"
+  rewardDetails(
+    "ID of the party"
+    partyId: ID!
+  ): [RewardPerAssetDetail]
 }
 
 enum NodeStatus {
@@ -2541,3 +2547,21 @@ type LiquidityProvision {
   reference: String
 }
 
+"Reward information for a single party"
+type Reward {
+  "The asset for which this reward is associated"
+  AssetId: String!
+
+  PartyId: String!
+  Epoch: Int!
+  Amount: String!
+  PercentageOfTotal: String!
+  ReceivedAt: String!
+}
+
+"Reward information for a given asset"
+type RewardPerAssetDetail {
+  Asset: Asset!
+  Rewards: [Reward]
+  TotalAmount: String!  
+}

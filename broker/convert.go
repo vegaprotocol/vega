@@ -71,6 +71,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.DelegationBalanceEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:
 		return events.ValidatorUpdateEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT:
+		return events.RewardPayoutEventFromStream(ctx, be)
 	}
 	return nil
 }

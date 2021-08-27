@@ -225,6 +225,12 @@ type DelegationService interface {
 	GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pbtypes.Delegation, error)
 }
 
+// RewardsService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/rewards_service_mock.go -package mocks code.vegaprotocol.io/data-node/api RewardsService
+type RewardsService interface {
+	GetRewardDetails(ctx context.Context, party string) (*protoapi.GetRewardDetailsResponse, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -252,6 +258,7 @@ type tradingDataService struct {
 	oracleService           OracleService
 	nodeService             NodeService
 	epochService            EpochService
+	rewardsService          RewardsService
 }
 
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
@@ -327,10 +334,6 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 	return &protoapi.GetNodeByIDResponse{
 		Node: node,
 	}, nil
-}
-
-func (t *tradingDataService) GetRewardDetails(context.Context, *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
-	return nil, errors.New("not implemented")
 }
 
 func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
@@ -596,6 +599,18 @@ func (t *tradingDataService) Deposits(ctx context.Context, req *protoapi.Deposit
 	return &protoapi.DepositsResponse{
 		Deposits: out,
 	}, nil
+}
+
+func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardDetails")()
+	if len(req.PartyId) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+	details, err := t.rewardsService.GetRewardDetails(ctx, req.PartyId)
+	if err != nil {
+		return nil, err
+	}
+	return details, nil
 }
 
 func (t *tradingDataService) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {

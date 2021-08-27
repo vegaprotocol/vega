@@ -122,6 +122,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.validatorUpdateSub = subscribers.NewValidatorUpdateSub(l.ctx, l.nodeStore, l.Log, true)
 	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
 	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
+	l.rewardsSub = subscribers.NewRewards(l.ctx, l.Log, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -211,13 +212,15 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.Log.Error("unable to initialise broker", logging.Error(err))
 		return err
 	}
+
 	l.broker.SubscribeBatch(
 		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub)
+		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub,
+		l.validatorUpdateSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub)
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())

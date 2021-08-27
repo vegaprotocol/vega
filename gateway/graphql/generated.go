@@ -79,6 +79,7 @@ type ResolverRoot interface {
 	Proposal() ProposalResolver
 	ProposalTerms() ProposalTermsResolver
 	Query() QueryResolver
+	RewardPerAssetDetail() RewardPerAssetDetailResolver
 	Statistics() StatisticsResolver
 	Subscription() SubscriptionResolver
 	TradableInstrument() TradableInstrumentResolver
@@ -701,8 +702,24 @@ type ComplexityRoot struct {
 		Party                      func(childComplexity int, id string) int
 		Proposal                   func(childComplexity int, id *string, reference *string) int
 		Proposals                  func(childComplexity int, inState *ProposalState) int
+		RewardDetails              func(childComplexity int, partyID string) int
 		UpdateMarketProposals      func(childComplexity int, marketID *string, inState *ProposalState) int
 		Withdrawal                 func(childComplexity int, id string) int
+	}
+
+	Reward struct {
+		Amount            func(childComplexity int) int
+		AssetID           func(childComplexity int) int
+		Epoch             func(childComplexity int) int
+		PartyID           func(childComplexity int) int
+		PercentageOfTotal func(childComplexity int) int
+		ReceivedAt        func(childComplexity int) int
+	}
+
+	RewardPerAssetDetail struct {
+		Asset       func(childComplexity int) int
+		Rewards     func(childComplexity int) int
+		TotalAmount func(childComplexity int) int
 	}
 
 	RiskFactor struct {
@@ -1181,6 +1198,12 @@ type QueryResolver interface {
 	Nodes(ctx context.Context) ([]*vega.Node, error)
 	Node(ctx context.Context, id string) (*vega.Node, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
+	RewardDetails(ctx context.Context, partyID string) ([]*vega.RewardPerAssetDetail, error)
+}
+type RewardPerAssetDetailResolver interface {
+	Asset(ctx context.Context, obj *vega.RewardPerAssetDetail) (*vega.Asset, error)
+	Rewards(ctx context.Context, obj *vega.RewardPerAssetDetail) ([]*Reward, error)
+	TotalAmount(ctx context.Context, obj *vega.RewardPerAssetDetail) (string, error)
 }
 type StatisticsResolver interface {
 	BlockHeight(ctx context.Context, obj *vega.Statistics) (int, error)
@@ -2951,7 +2974,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Node.Delegations(childComplexity, args["partyId"].(*string)), true
+		return e.complexity.Node.Delegations(childComplexity, args["partyID"].(*string)), true
 
 	case "Node.epochData":
 		if e.complexity.Node.EpochData == nil {
@@ -4094,6 +4117,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Proposals(childComplexity, args["inState"].(*ProposalState)), true
 
+	case "Query.rewardDetails":
+		if e.complexity.Query.RewardDetails == nil {
+			break
+		}
+
+		args, err := ec.field_Query_rewardDetails_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.RewardDetails(childComplexity, args["partyId"].(string)), true
+
 	case "Query.updateMarketProposals":
 		if e.complexity.Query.UpdateMarketProposals == nil {
 			break
@@ -4117,6 +4152,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Withdrawal(childComplexity, args["id"].(string)), true
+
+	case "Reward.Amount":
+		if e.complexity.Reward.Amount == nil {
+			break
+		}
+
+		return e.complexity.Reward.Amount(childComplexity), true
+
+	case "Reward.AssetId":
+		if e.complexity.Reward.AssetID == nil {
+			break
+		}
+
+		return e.complexity.Reward.AssetID(childComplexity), true
+
+	case "Reward.Epoch":
+		if e.complexity.Reward.Epoch == nil {
+			break
+		}
+
+		return e.complexity.Reward.Epoch(childComplexity), true
+
+	case "Reward.PartyId":
+		if e.complexity.Reward.PartyID == nil {
+			break
+		}
+
+		return e.complexity.Reward.PartyID(childComplexity), true
+
+	case "Reward.PercentageOfTotal":
+		if e.complexity.Reward.PercentageOfTotal == nil {
+			break
+		}
+
+		return e.complexity.Reward.PercentageOfTotal(childComplexity), true
+
+	case "Reward.ReceivedAt":
+		if e.complexity.Reward.ReceivedAt == nil {
+			break
+		}
+
+		return e.complexity.Reward.ReceivedAt(childComplexity), true
+
+	case "RewardPerAssetDetail.Asset":
+		if e.complexity.RewardPerAssetDetail.Asset == nil {
+			break
+		}
+
+		return e.complexity.RewardPerAssetDetail.Asset(childComplexity), true
+
+	case "RewardPerAssetDetail.Rewards":
+		if e.complexity.RewardPerAssetDetail.Rewards == nil {
+			break
+		}
+
+		return e.complexity.RewardPerAssetDetail.Rewards(childComplexity), true
+
+	case "RewardPerAssetDetail.TotalAmount":
+		if e.complexity.RewardPerAssetDetail.TotalAmount == nil {
+			break
+		}
+
+		return e.complexity.RewardPerAssetDetail.TotalAmount(childComplexity), true
 
 	case "RiskFactor.long":
 		if e.complexity.RiskFactor.Long == nil {
@@ -5443,6 +5541,12 @@ type Query {
 
   "get data for a specific epoch, if id omitted it gets the current epoch"
 	epoch(id: String): Epoch!
+
+  "return reward information"
+  rewardDetails(
+    "ID of the party"
+    partyId: ID!
+  ): [RewardPerAssetDetail]
 }
 
 enum NodeStatus {
@@ -5557,8 +5661,7 @@ type Node {
 
 	status: NodeStatus!
 
-  # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String): [Delegation!]
+	delegations(partyID: String): [Delegation!]!
 }
 
 type Delegation {
@@ -7565,7 +7668,24 @@ type LiquidityProvision {
   reference: String
 }
 
-`, BuiltIn: false},
+"Reward information for a single party"
+type Reward {
+  "The asset for which this reward is associated"
+  AssetId: String!
+
+  PartyId: String!
+  Epoch: Int!
+  Amount: String!
+  PercentageOfTotal: String!
+  ReceivedAt: String!
+}
+
+"Reward information for a given asset"
+type RewardPerAssetDetail {
+  Asset: Asset!
+  Rewards: [Reward]
+  TotalAmount: String!  
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -7745,14 +7865,14 @@ func (ec *executionContext) field_Node_delegations_args(ctx context.Context, raw
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *string
-	if tmp, ok := rawArgs["partyId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+	if tmp, ok := rawArgs["partyID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyID"))
 		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["partyId"] = arg0
+	args["partyID"] = arg0
 	return args, nil
 }
 
@@ -8368,6 +8488,21 @@ func (ec *executionContext) field_Query_proposals_args(ctx context.Context, rawA
 		}
 	}
 	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_rewardDetails_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
 	return args, nil
 }
 
@@ -17136,18 +17271,21 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Node().Delegations(rctx, obj, args["partyId"].(*string))
+		return ec.resolvers.Node().Delegations(rctx, obj, args["partyID"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.([]*vega.Delegation)
 	fc.Result = res
-	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+	return ec.marshalNDelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeData_stakedTotal(ctx context.Context, field graphql.CollectedField, obj *vega.NodeData) (ret graphql.Marshaler) {
@@ -21902,6 +22040,45 @@ func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.Coll
 	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_rewardDetails(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_rewardDetails_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().RewardDetails(rctx, args["partyId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.RewardPerAssetDetail)
+	fc.Result = res
+	return ec.marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardPerAssetDetail(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -21971,6 +22148,318 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_AssetId(ctx context.Context, field graphql.CollectedField, obj *Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_PartyId(ctx context.Context, field graphql.CollectedField, obj *Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PartyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_Epoch(ctx context.Context, field graphql.CollectedField, obj *Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Epoch, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_Amount(ctx context.Context, field graphql.CollectedField, obj *Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_PercentageOfTotal(ctx context.Context, field graphql.CollectedField, obj *Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PercentageOfTotal, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Reward_ReceivedAt(ctx context.Context, field graphql.CollectedField, obj *Reward) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Reward",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ReceivedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardPerAssetDetail_Asset(ctx context.Context, field graphql.CollectedField, obj *vega.RewardPerAssetDetail) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardPerAssetDetail",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RewardPerAssetDetail().Asset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardPerAssetDetail_Rewards(ctx context.Context, field graphql.CollectedField, obj *vega.RewardPerAssetDetail) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardPerAssetDetail",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RewardPerAssetDetail().Rewards(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Reward)
+	fc.Result = res
+	return ec.marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐReward(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RewardPerAssetDetail_TotalAmount(ctx context.Context, field graphql.CollectedField, obj *vega.RewardPerAssetDetail) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardPerAssetDetail",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RewardPerAssetDetail().TotalAmount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RiskFactor_market(ctx context.Context, field graphql.CollectedField, obj *vega.RiskFactor) (ret graphql.Marshaler) {
@@ -30718,6 +31207,9 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Node_delegations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		default:
@@ -32594,10 +33086,134 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "rewardDetails":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_rewardDetails(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rewardImplementors = []string{"Reward"}
+
+func (ec *executionContext) _Reward(ctx context.Context, sel ast.SelectionSet, obj *Reward) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Reward")
+		case "AssetId":
+			out.Values[i] = ec._Reward_AssetId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "PartyId":
+			out.Values[i] = ec._Reward_PartyId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Epoch":
+			out.Values[i] = ec._Reward_Epoch(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "Amount":
+			out.Values[i] = ec._Reward_Amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "PercentageOfTotal":
+			out.Values[i] = ec._Reward_PercentageOfTotal(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "ReceivedAt":
+			out.Values[i] = ec._Reward_ReceivedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var rewardPerAssetDetailImplementors = []string{"RewardPerAssetDetail"}
+
+func (ec *executionContext) _RewardPerAssetDetail(ctx context.Context, sel ast.SelectionSet, obj *vega.RewardPerAssetDetail) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rewardPerAssetDetailImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RewardPerAssetDetail")
+		case "Asset":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RewardPerAssetDetail_Asset(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "Rewards":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RewardPerAssetDetail_Rewards(ctx, field, obj)
+				return res
+			})
+		case "TotalAmount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RewardPerAssetDetail_TotalAmount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -37325,6 +37941,100 @@ func (ec *executionContext) marshalOProposalVote2ᚖcodeᚗvegaprotocolᚗioᚋd
 		return graphql.Null
 	}
 	return ec._ProposalVote(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOReward2ᚕᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐReward(ctx context.Context, sel ast.SelectionSet, v []*Reward) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐReward(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOReward2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐReward(ctx context.Context, sel ast.SelectionSet, v *Reward) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Reward(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORewardPerAssetDetail2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardPerAssetDetail(ctx context.Context, sel ast.SelectionSet, v []*vega.RewardPerAssetDetail) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalORewardPerAssetDetail2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardPerAssetDetail(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalORewardPerAssetDetail2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardPerAssetDetail(ctx context.Context, sel ast.SelectionSet, v *vega.RewardPerAssetDetail) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RewardPerAssetDetail(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
