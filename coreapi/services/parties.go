@@ -7,6 +7,7 @@ import (
 	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/vega/types"
 )
 
 type partyE interface {
@@ -23,8 +24,11 @@ type Parties struct {
 	ch      chan vegapb.Party
 }
 
-func NewParties(ctx context.Context) (assets *Parties) {
-	defer func() { go assets.consume() }()
+func NewParties(ctx context.Context) (parties *Parties) {
+	defer func() {
+		parties.parties[types.NetworkParty] = vegapb.Party{Id: types.NetworkParty}
+		go parties.consume()
+	}()
 	return &Parties{
 		Base:    subscribers.NewBase(ctx, 1000, true),
 		ctx:     ctx,
