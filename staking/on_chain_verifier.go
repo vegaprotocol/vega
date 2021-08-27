@@ -74,6 +74,12 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
 	for _, address := range o.contractAddresses {
+		if o.log.GetLevel() <= logging.DebugLevel {
+			o.log.Debug("checking stake deposited event on chain",
+				logging.String("bridge-address", address.Hex()),
+				logging.String("event", event.String()),
+			)
+		}
 		filterer, err := NewStakingFilterer(
 			address, o.ethClient)
 		if err != nil {
@@ -100,6 +106,14 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 		amountDeposited := event.Amount.BigInt()
 
 		for iter.Next() {
+			if o.log.GetLevel() <= logging.DebugLevel {
+				o.log.Debug("found stake deposited event on chain",
+					logging.String("bridge-address", address.Hex()),
+					logging.String("amount", iter.Event.Amount.String()),
+					logging.String("user", iter.Event.User.Hex()),
+				)
+			}
+
 			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
 				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
 				iter.Event.Raw.BlockNumber == event.BlockNumber &&
@@ -127,6 +141,12 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
 	for _, address := range o.contractAddresses {
+		if o.log.GetLevel() <= logging.DebugLevel {
+			o.log.Debug("checking stake removed event on chain",
+				logging.String("bridge-address", address.Hex()),
+				logging.String("event", event.String()),
+			)
+		}
 		filterer, err := NewStakingFilterer(
 			address, o.ethClient)
 		if err != nil {
@@ -153,6 +173,14 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 		amountDeposited := event.Amount.BigInt()
 
 		for iter.Next() {
+			if o.log.GetLevel() <= logging.DebugLevel {
+				o.log.Debug("found stake removed event on chain",
+					logging.String("bridge-address", address.Hex()),
+					logging.String("amount", iter.Event.Amount.String()),
+					logging.String("user", iter.Event.User.Hex()),
+				)
+			}
+
 			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
 				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
 				iter.Event.Raw.BlockNumber == event.BlockNumber &&
