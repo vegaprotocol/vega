@@ -281,6 +281,14 @@ func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
 	return (*rewardPerAssetDetailResolver)(r)
 }
 
+func (r *VegaResolverRoot) StakeLinking() StakeLinkingResolver {
+	return (*stakeLinkingResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyStake() PartyStakeResolver {
+	return (*partyStakeResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
@@ -841,6 +849,17 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 		Limit:      limit,
 		Descending: descending,
 	}
+}
+
+func (r *myPartyResolver) Stake(
+	ctx context.Context,
+	party *types.Party,
+) (*protoapi.PartyStakeResponse, error) {
+	return r.tradingDataClient.PartyStake(
+		ctx, &protoapi.PartyStakeRequest{
+			Party: party.Id,
+		},
+	)
 }
 
 func (r *myPartyResolver) LiquidityProvisions(

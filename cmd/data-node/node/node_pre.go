@@ -25,6 +25,7 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -206,6 +207,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.netParamsService = netparams.NewService(l.ctx)
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
+	l.stakingService = staking.NewService(l.ctx, l.Log)
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
@@ -220,7 +222,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub,
-		l.validatorUpdateSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub)
+		l.validatorUpdateSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
+		l.stakingService,
+	)
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())

@@ -18,6 +18,7 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -231,6 +232,12 @@ type RewardsService interface {
 	GetRewardDetails(ctx context.Context, party string) (*protoapi.GetRewardDetailsResponse, error)
 }
 
+// StakingService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_service_mock.go -package mocks code.vegaprotocol.io/data-node/api StakingService
+type StakingService interface {
+	GetStake(party string) (*num.Uint, []eventspb.StakeLinking)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -259,6 +266,23 @@ type tradingDataService struct {
 	nodeService             NodeService
 	epochService            EpochService
 	rewardsService          RewardsService
+	stakingService          StakingService
+}
+
+func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
+	if len(req.Party) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
+	}
+	stake, stakeLinkings := t.stakingService.GetStake(req.Party)
+	outStakeLinkings := make([]*eventspb.StakeLinking, 0, len(stakeLinkings))
+	for _, v := range stakeLinkings {
+		outStakeLinkings = append(outStakeLinkings, &v)
+	}
+
+	return &protoapi.PartyStakeResponse{
+		CurrentStakeAvailable: num.UintToString(stake),
+		StakeLinkings:         outStakeLinkings,
+	}, nil
 }
 
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
@@ -283,10 +307,6 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 }
 
 func (t *tradingDataService) Checkpoints(ctx context.Context, in *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (t *tradingDataService) PartyStake(ctx context.Context, in *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
 	return nil, errors.New("not implemented")
 }
 

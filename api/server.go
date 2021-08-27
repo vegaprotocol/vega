@@ -24,6 +24,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -66,6 +67,7 @@ type GRPCServer struct {
 	depositService          *plugins.Deposit
 	netParamsService        *netparams.Service
 	oracleService           *oracles.Service
+	stakingService          *staking.Service
 	tradingProxySvc         *tradingProxyService
 	tradingDataService      *tradingDataService
 	nodeService             *nodes.Service
@@ -110,6 +112,7 @@ func NewGRPCServer(
 	epochService *epochs.Service,
 	delegationService *delegations.Service,
 	rewardsService *subscribers.RewardCounters,
+	stakingService *staking.Service,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -145,6 +148,7 @@ func NewGRPCServer(
 		epochService:             epochService,
 		delegationService:        delegationService,
 		rewardsService:           rewardsService,
+		stakingService:           stakingService,
 		ctx:                      ctx,
 		cfunc:                    cfunc,
 	}
@@ -266,6 +270,7 @@ func (g *GRPCServer) Start(ctx context.Context) error {
 		epochService:            g.epochService,
 		delegationService:       g.delegationService,
 		rewardsService:          g.rewardsService,
+		stakingService:          g.stakingService,
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)

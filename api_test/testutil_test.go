@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -194,6 +195,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	epochService := epochs.NewService(logger, conf.Epochs, epochStore)
 	rewardsService := subscribers.NewRewards(ctx, logger, true)
 
+	stakingService := staking.NewService(ctx, logger)
+
 	eventBroker, err = broker.New(ctx, logger, conf.Broker)
 	if err != nil {
 		t.Fatalf("failed to create broker: %v", err)
@@ -239,6 +242,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		epochService,
 		delegationService,
 		rewardsService,
+		stakingService,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")

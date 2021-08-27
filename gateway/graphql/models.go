@@ -1796,6 +1796,99 @@ func (e Side) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+// The status of the stake linking
+type StakeLinkingStatus string
+
+const (
+	// The stake linking is pending in the vega network, this means that
+	// the vega network have seen a StakeLinking, but is still to confirm
+	// it's valid on the ethereum chain, and accepted by all nodes of the network
+	StakeLinkingStatusPending StakeLinkingStatus = "Pending"
+	// The stake linking has been accepted and processed fully (balance updated) by the network
+	StakeLinkingStatusAccepted StakeLinkingStatus = "Accepted"
+	// The vega network have rejected this stake linking
+	StakeLinkingStatusRejected StakeLinkingStatus = "Rejected"
+)
+
+var AllStakeLinkingStatus = []StakeLinkingStatus{
+	StakeLinkingStatusPending,
+	StakeLinkingStatusAccepted,
+	StakeLinkingStatusRejected,
+}
+
+func (e StakeLinkingStatus) IsValid() bool {
+	switch e {
+	case StakeLinkingStatusPending, StakeLinkingStatusAccepted, StakeLinkingStatusRejected:
+		return true
+	}
+	return false
+}
+
+func (e StakeLinkingStatus) String() string {
+	return string(e)
+}
+
+func (e *StakeLinkingStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = StakeLinkingStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid StakeLinkingStatus", str)
+	}
+	return nil
+}
+
+func (e StakeLinkingStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+// The type of stake linking
+type StakeLinkingType string
+
+const (
+	// The stake is being linked (deposited) to a vega stake account
+	StakeLinkingTypeLink StakeLinkingType = "Link"
+	// The stake is being unlined (removed) from a vega stake account
+	StakeLinkingTypeUnlink StakeLinkingType = "Unlink"
+)
+
+var AllStakeLinkingType = []StakeLinkingType{
+	StakeLinkingTypeLink,
+	StakeLinkingTypeUnlink,
+}
+
+func (e StakeLinkingType) IsValid() bool {
+	switch e {
+	case StakeLinkingTypeLink, StakeLinkingTypeUnlink:
+		return true
+	}
+	return false
+}
+
+func (e StakeLinkingType) String() string {
+	return string(e)
+}
+
+func (e *StakeLinkingType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = StakeLinkingType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid StakeLinkingType", str)
+	}
+	return nil
+}
+
+func (e StakeLinkingType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 // The way the transaction is sent to the blockchain
 type SubmitTransactionType string
 

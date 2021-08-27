@@ -1,4 +1,4 @@
-/* properties of scmVars (example): 
+/* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
     - GIT_COMMIT:05a1c6fbe7d1ff87cfc40a011a63db574edad7e6
     - GIT_PREVIOUS_COMMIT:5d02b46fdb653f789e799ff6ad304baccc32cbf9
@@ -226,17 +226,20 @@ pipeline {
                 stage('unit tests') {
                     options { retry(3) }
                     steps {
-                        dir('vega') {
-                            sh 'go test -v ./... 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                        dir('data-node') {
+                            sh 'go test -v $(go list ./... | grep -v api_test) 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
                             junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
                         }
                     }
                 }
                 stage('unit tests with race') {
-                    options { retry(3) }
+		    environment {
+                        CGO_ENABLED = 1
+                    }
+		    options { retry(3) }
                     steps {
-                        dir('vega') {
-                            sh 'go test -v -race ./... 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                        dir('data-node') {
+                            sh 'go test -v -race $(go list ./... | grep -v api_test). 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
                             junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                         }
                     }

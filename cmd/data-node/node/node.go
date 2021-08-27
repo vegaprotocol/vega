@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -40,6 +41,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+
 	"golang.org/x/sync/errgroup"
 )
 
@@ -135,6 +137,7 @@ type NodeCommand struct {
 	nodeService       *nodes.Service
 	epochService      *epochs.Service
 	delegationService *delegations.Service
+	stakingService    *staking.Service
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
@@ -209,6 +212,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.epochService,
 		l.delegationService,
 		l.rewardsSub,
+		l.stakingService,
 	)
 
 	// watch configs
