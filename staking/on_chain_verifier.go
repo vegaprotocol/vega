@@ -57,6 +57,15 @@ func (o *OnChainVerifier) OnEthereumConfigUpdate(rawcfg interface{}) error {
 			o.contractAddresses, ethcmn.HexToAddress(address))
 	}
 
+	if o.log.GetLevel() <= logging.DebugLevel {
+		addresses := []string{}
+		for _, v := range o.contractAddresses {
+			addresses = append(addresses, v.Hex())
+		}
+		o.log.Debug("staking bridge addresses updated",
+			logging.Strings("addresses", addresses))
+	}
+
 	return nil
 }
 
@@ -65,9 +74,15 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
+	if o.log.GetLevel() <= logging.DebugLevel {
+		o.log.Debug("checking stake deposited event on chain",
+			logging.String("event", event.String()),
+		)
+	}
+
 	decodedPubKeySlice, err := hex.DecodeString(event.VegaPubKey)
 	if err != nil {
-		o.log.Error("invalid pubkey inn stake deposited event", logging.Error(err))
+		o.log.Error("invalid pubkey in stake deposited event", logging.Error(err))
 		return err
 	}
 	var decodedPubKey [32]byte
@@ -131,6 +146,12 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
+
+	if o.log.GetLevel() <= logging.DebugLevel {
+		o.log.Debug("checking stake removed event on chain",
+			logging.String("event", event.String()),
+		)
+	}
 
 	decodedPubKeySlice, err := hex.DecodeString(event.VegaPubKey)
 	if err != nil {
