@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -261,6 +262,8 @@ func getTestGRPCServer(
 	delegationStore := storage.NewDelegations(logger, conf.Storage)
 	delegationService := delegations.NewService(logger, conf.Delegations, delegationStore)
 
+	stakingService := staking.NewService(ctx)
+
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
@@ -290,6 +293,7 @@ func getTestGRPCServer(
 		epochService,
 		delegationService,
 		rewardsService,
+		stakingService,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

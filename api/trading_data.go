@@ -271,12 +271,11 @@ type tradingDataService struct {
 
 func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
 	if len(req.Party) <= 0 {
-		return nil, errors.New("missing party id")
+		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
 	}
 	stake, stakeLinkings := t.stakingService.GetStake(req.Party)
 	outStakeLinkings := make([]*eventspb.StakeLinking, 0, len(stakeLinkings))
 	for _, v := range stakeLinkings {
-		v := v
 		outStakeLinkings = append(outStakeLinkings, &v)
 	}
 
@@ -284,10 +283,6 @@ func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.Party
 		CurrentStakeAvailable: num.UintToString(stake),
 		StakeLinkings:         outStakeLinkings,
 	}, nil
-}
-
-func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
-	return nil, errors.New("not implemented")
 }
 
 func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
@@ -312,10 +307,6 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 }
 
 func (t *tradingDataService) Checkpoints(ctx context.Context, in *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
-	return nil, errors.New("not implemented")
-}
-
-func (t *tradingDataService) PartyStake(ctx context.Context, in *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
 	return nil, errors.New("not implemented")
 }
 

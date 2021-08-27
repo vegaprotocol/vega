@@ -18,7 +18,7 @@ func convertStakeLinkingTypeFromProto(
 		return StakeLinkingTypeUnlink, nil
 	default:
 		err := fmt.Errorf("failed to convert StakeLinkingType from Proto to GraphQL: %v", s)
-		return StakeLinkingType(-1), err
+		return StakeLinkingType(""), err
 	}
 }
 
@@ -33,7 +33,7 @@ func convertStakeLinkingStatusFromProto(
 		return StakeLinkingStatusRejected, nil
 	default:
 		err := fmt.Errorf("failed to convert StakeLinkingStatus from Proto to GraphQL: %v", s)
-		return StakeLinkingStatus(-1), err
+		return StakeLinkingStatus(""), err
 	}
 }
 

@@ -33,7 +33,7 @@ type Service struct {
 
 func NewService(ctx context.Context) (svc *Service) {
 	defer func() {
-		svc.consume()
+		go svc.consume()
 	}()
 
 	return &Service{
@@ -113,7 +113,11 @@ func (s *Service) computeCurrentBalance(pacc *stakingAccount) {
 			// ignore
 			continue
 		}
-		amount, _ := num.UintFromString(link.Amount, 10)
+		amount, overflowed := num.UintFromString(link.Amount, 10)
+		if overflowed {
+			// not much to do, just ignore this one.
+			continue
+		}
 		switch link.Type {
 		case eventspb.StakeLinking_TYPE_LINK:
 			balance = balance.Add(balance, amount)

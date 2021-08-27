@@ -14,7 +14,6 @@ import (
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
-	dnapiproto "code.vegaprotocol.io/protos/data-node/api/v1"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -855,9 +854,9 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 func (r *myPartyResolver) Stake(
 	ctx context.Context,
 	party *types.Party,
-) (*dnapiproto.PartyStakeResponse, error) {
+) (*protoapi.PartyStakeResponse, error) {
 	return r.tradingDataClient.PartyStake(
-		ctx, &dnapiproto.PartyStakeRequest{
+		ctx, &protoapi.PartyStakeRequest{
 			Party: party.Id,
 		},
 	)
