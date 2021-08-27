@@ -27,8 +27,10 @@ func getAccountingTest(t *testing.T) *accountingTest {
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBrokerI(ctrl)
 
+	sats, _ := num.UintFromString(staking.StakingAssetTotalSupply, 10)
+
 	return &accountingTest{
-		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker),
+		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker, sats),
 		log:        log,
 		ctrl:       ctrl,
 		broker:     broker,

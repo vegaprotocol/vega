@@ -32,11 +32,11 @@ type Broker interface {
 	SendBatch(es []events.Event)
 }
 
-// Accounts ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance Accounts
-type Accounts interface {
-	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
-	GetAssetTotalSupply(asset string) (*num.Uint, error)
+// StakingAccounts ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/governance StakingAccounts
+type StakingAccounts interface {
+	GetAvailableBalance(party string) (*num.Uint, error)
+	GetStakingAssetTotalSupply() *num.Uint
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/governance Assets
@@ -73,7 +73,7 @@ type NetParams interface {
 type Engine struct {
 	Config
 	log         *logging.Logger
-	accs        Accounts
+	accs        StakingAccounts
 	currentTime time.Time
 	// we store proposals in slice
 	// not as easy to access them directly, but by doing this we can keep
@@ -89,7 +89,7 @@ type Engine struct {
 func NewEngine(
 	log *logging.Logger,
 	cfg Config,
-	accs Accounts,
+	accs StakingAccounts,
 	broker Broker,
 	assets Assets,
 	witness Witness,
@@ -486,15 +486,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 			fmt.Errorf("proposal enactment time cannot be before closing time, expected > %v got %v", closeTime, enactTime)
 	}
 
-	// we can't reach a point where the vote asset would not
-	// so we can panic here if it were to happen
-	voteAsset, err := e.netp.Get(netparams.GovernanceVoteAsset)
-	if err != nil {
-		e.log.Panic("error trying to get the vote asset from network parameters",
-			logging.Error(err))
-	}
-
-	proposerTokens, err := getGovernanceTokens(e.accs, proposal.Party, voteAsset)
+	proposerTokens, err := getGovernanceTokens(e.accs, proposal.Party)
 	if err != nil {
 		e.log.Debug("proposer have no governance token",
 			logging.PartyID(proposal.Party),
@@ -577,15 +569,7 @@ func (e *Engine) validateVote(vote types.VoteSubmission, party string) (*proposa
 		return nil, err
 	}
 
-	// we can't reach a point where the vote asset would not
-	// so we can panic here if it were to happen
-	voteAsset, err := e.netp.Get(netparams.GovernanceVoteAsset)
-	if err != nil {
-		e.log.Panic("error trying to get the vote asset from network parameters",
-			logging.Error(err))
-	}
-
-	voterTokens, err := getGovernanceTokens(e.accs, party, voteAsset)
+	voterTokens, err := getGovernanceTokens(e.accs, party)
 	if err != nil {
 		return nil, err
 	}
@@ -665,19 +649,16 @@ func (p *proposal) IsOpen() bool {
 	return p.State == types.ProposalStateOpen
 }
 
-func (p *proposal) Close(asset string, params *ProposalParameters, accounts Accounts) types.ProposalState {
+func (p *proposal) Close(asset string, params *ProposalParameters, accounts StakingAccounts) types.ProposalState {
 	if !p.IsOpen() {
 		return p.State
 	}
 
-	totalStake, err := getAssetTotalSupply(accounts, asset)
-	if err != nil {
-		return p.State
-	}
+	totalStake := accounts.GetStakingAssetTotalSupply()
 
-	yes := p.countVotes(p.yes, accounts, asset)
+	yes := p.countVotes(p.yes, accounts)
 	yesDec := num.DecimalFromUint(yes)
-	no := p.countVotes(p.no, accounts, asset)
+	no := p.countVotes(p.no, accounts)
 	totalVotes := num.Sum(yes, no)
 	totalVotesDec := num.DecimalFromUint(totalVotes)
 	p.weightVotes(p.yes, totalVotesDec)
@@ -699,10 +680,10 @@ func (p *proposal) Close(asset string, params *ProposalParameters, accounts Acco
 	return p.State
 }
 
-func (p *proposal) countVotes(votes map[string]*types.Vote, accounts Accounts, voteAsset string) *num.Uint {
+func (p *proposal) countVotes(votes map[string]*types.Vote, accounts StakingAccounts) *num.Uint {
 	tally := num.Zero()
 	for k, v := range votes {
-		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID, voteAsset)
+		v.TotalGovernanceTokenBalance = getTokensBalance(accounts, v.PartyID)
 		// the user may have withdrawn their governance token
 		// before the end of the vote. We will then remove them from the map if it's the case.
 		if v.TotalGovernanceTokenBalance.IsZero() {
@@ -723,20 +704,16 @@ func (p *proposal) weightVotes(votes map[string]*types.Vote, totalVotes num.Deci
 	}
 }
 
-func getTokensBalance(accounts Accounts, partyID, voteAsset string) *num.Uint {
-	balance, _ := getGovernanceTokens(accounts, partyID, voteAsset)
+func getTokensBalance(accounts StakingAccounts, partyID string) *num.Uint {
+	balance, _ := getGovernanceTokens(accounts, partyID)
 	return balance
 }
 
-func getGovernanceTokens(accounts Accounts, party, voteAsset string) (*num.Uint, error) {
-	account, err := accounts.GetPartyGeneralAccount(party, voteAsset)
+func getGovernanceTokens(accounts StakingAccounts, party string) (*num.Uint, error) {
+	balance, err := accounts.GetAvailableBalance(party)
 	if err != nil {
 		return nil, err
 	}
-	// no need to clone here, as GetPartyGeneralAccount already returns a copy with cloned balance
-	return account.Balance.Clone(), err
-}
 
-func getAssetTotalSupply(accounts Accounts, asset string) (*num.Uint, error) {
-	return accounts.GetAssetTotalSupply(asset)
+	return balance, err
 }

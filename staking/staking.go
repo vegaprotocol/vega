@@ -8,6 +8,8 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+const StakingAssetTotalSupply = "64999723000000000000000000"
+
 type AllEthereumClient interface {
 	EthereumClient
 	EthereumClientConfirmations
@@ -23,7 +25,12 @@ func New(
 	netp *netparams.Store,
 ) (*Accounting, *StakeVerifier) {
 
-	accs := NewAccounting(log, cfg, broker)
+	// @TODO instead of using hardcoded value:
+	// 1. Use the staking abi code to call ethereum and get token ethereum address.
+	// 2. Use the address to call the erc20 abi code an get the total supply of the token.
+	sats, _ := num.UintFromString(StakingAssetTotalSupply, 10)
+
+	accs := NewAccounting(log, cfg, broker, sats)
 	ethCfns := NewEthereumConfirmations(ethClient, nil)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
 	sakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)

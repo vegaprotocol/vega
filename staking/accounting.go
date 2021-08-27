@@ -21,20 +21,23 @@ var (
 )
 
 type Accounting struct {
-	log      *logging.Logger
-	cfg      Config
-	broker   Broker
-	accounts map[string]*StakingAccount
+	log                     *logging.Logger
+	cfg                     Config
+	broker                  Broker
+	accounts                map[string]*StakingAccount
+	stakingAssetTotalSupply *num.Uint
 }
 
-func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
+func NewAccounting(log *logging.Logger, cfg Config, broker Broker, stakingAssetTotalSupply *num.Uint) *Accounting {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
+
 	return &Accounting{
-		log:      log,
-		cfg:      cfg,
-		broker:   broker,
-		accounts: map[string]*StakingAccount{},
+		log:                     log,
+		cfg:                     cfg,
+		broker:                  broker,
+		accounts:                map[string]*StakingAccount{},
+		stakingAssetTotalSupply: stakingAssetTotalSupply,
 	}
 }
 
@@ -88,4 +91,8 @@ func (a *Accounting) GetAvailableBalanceInRange(
 	}
 
 	return acc.GetAvailableBalanceInRange(from, to)
+}
+
+func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
+	return a.stakingAssetTotalSupply
 }

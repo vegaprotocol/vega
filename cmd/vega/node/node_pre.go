@@ -322,7 +322,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
-	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.witness, l.netParams, now)
+	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
 
 	//TODO replace with actual implementation
 	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)

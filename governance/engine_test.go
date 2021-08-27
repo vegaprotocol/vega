@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	errStubbedAccountNotFound = errors.New("account not found")
+	errNoBalanceForParty = errors.New("no balance for party")
 )
 
 type streamEvt interface {
@@ -38,7 +38,7 @@ type voteMatcher struct{}
 type tstEngine struct {
 	*governance.Engine
 	ctrl            *gomock.Controller
-	accounts        *mocks.MockAccounts
+	accounts        *mocks.MockStakingAccounts
 	broker          *bmock.MockBroker
 	witness         *mocks.MockWitness
 	assets          *mocks.MockAssets
@@ -278,7 +278,7 @@ func testSubmittingProposalWithNonexistingAccountFails(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.EqualError(t, err, errStubbedAccountNotFound.Error())
+	assert.EqualError(t, err, errNoBalanceForParty.Error())
 }
 
 func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
@@ -531,7 +531,7 @@ func testSubmittingVoteWithNonexistingAccountFails(t *testing.T) {
 
 	// then
 	assert.Error(t, err)
-	assert.EqualError(t, err, errStubbedAccountNotFound.Error())
+	assert.EqualError(t, err, errNoBalanceForParty.Error())
 }
 
 func testSubmittingVoteWithoutTokenFails(t *testing.T) {
@@ -580,8 +580,8 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	proposal := eng.newOpenProposal(proposer.Id, time.Now())
 
 	// setup
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).
-		Return(num.NewUint(9), nil)
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(9))
 	eng.expectAnyAsset()
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 
@@ -676,8 +676,8 @@ func testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined(t *t
 
 	// setup
 	eng.expectAnyAsset()
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).
-		Return(num.NewUint(800), nil)
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(800))
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 
 	// when
@@ -748,8 +748,8 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 
 	// setup
 	eng.expectAnyAsset()
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).
-		Return(num.NewUint(200), nil)
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(200))
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 
 	// when
@@ -827,15 +827,15 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 	eng.expectAnyAsset()
 
 	partyA := "party-A"
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).AnyTimes().
-		Return(num.NewUint(300), nil)
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().AnyTimes().
+		Return(num.NewUint(300))
 	accountA := types.Account{
 		ID:      partyA + "-account",
 		Owner:   partyA,
 		Balance: num.NewUint(200),
 		Asset:   "VOTE",
 	}
-	eng.accounts.EXPECT().GetPartyGeneralAccount(accountA.Owner, "VOTE").AnyTimes().Return(&accountA, nil)
+	eng.accounts.EXPECT().GetAvailableBalance(accountA.Owner).AnyTimes().Return(accountA.Balance, nil)
 	partyB := "party-B"
 	accountB := types.Account{
 		ID:      partyB + "-account",
@@ -843,7 +843,7 @@ func testMultipleProposalsLifecycle(t *testing.T) {
 		Balance: num.NewUint(100),
 		Asset:   "VOTE",
 	}
-	eng.accounts.EXPECT().GetPartyGeneralAccount(accountB.Owner, "VOTE").AnyTimes().Return(&accountB, nil)
+	eng.accounts.EXPECT().GetAvailableBalance(accountB.Owner).AnyTimes().Return(accountB.Balance, nil)
 
 	const howMany = 100
 	now := time.Now()
@@ -959,8 +959,8 @@ func testSubmittingVoteAndWithdrawingFundsDeclined(t *testing.T) {
 
 	// setup
 	eng.expectAnyAsset()
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).
-		Return(num.NewUint(200), nil)
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(200))
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 
 	// when
@@ -1021,7 +1021,8 @@ func testSubmittingVoteAndWithdrawingFundsDeclined(t *testing.T) {
 		Balance: num.Zero(),
 		Asset:   "VOTE",
 	}
-	eng.accounts.EXPECT().GetPartyGeneralAccount("voter", "VOTE").Times(1).Return(&account, nil)
+
+	eng.accounts.EXPECT().GetAvailableBalance("voter").Times(1).Return(account.Balance, nil)
 
 	_, voteClosed := eng.OnChainTimeUpdate(context.Background(), afterClosing)
 
@@ -1044,7 +1045,7 @@ func testSubmittingVoteAndWithdrawingFundsDeclined(t *testing.T) {
 func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	cfg := governance.NewDefaultConfig()
-	accounts := mocks.NewMockAccounts(ctrl)
+	accounts := mocks.NewMockStakingAccounts(ctrl)
 	assets := mocks.NewMockAssets(ctrl)
 	broker := bmock.NewMockBroker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
@@ -1156,7 +1157,7 @@ func (e *tstEngine) newValidPartyTimes(partyID string, balance uint64, times int
 		Balance: num.NewUint(balance),
 		Asset:   "VOTE",
 	}
-	e.accounts.EXPECT().GetPartyGeneralAccount(partyID, "VOTE").Times(times).Return(&account, nil)
+	e.accounts.EXPECT().GetAvailableBalance(partyID).Times(times).Return(account.Balance, nil)
 	return &proto.Party{Id: partyID}
 }
 
@@ -1250,7 +1251,7 @@ func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types
 		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
 		txErr := be.GetTxErrEvent()
 		assert.NotNil(t, txErr)
-		assert.Equal(t, errStubbedAccountNotFound.Error(), txErr.ErrMsg)
+		assert.Equal(t, errNoBalanceForParty.Error(), txErr.ErrMsg)
 		v := txErr.GetVoteSubmission()
 		assert.NotNil(t, v)
 		pvote := vote.IntoProto()
@@ -1270,7 +1271,7 @@ func (e *tstEngine) expectSendInsufficientTokensErrorEvent(t *testing.T) {
 }
 
 func (e *tstEngine) expectNoAccountForParty(partyID string) {
-	e.accounts.EXPECT().GetPartyGeneralAccount(partyID, gomock.Any()).Times(1).Return(nil, errStubbedAccountNotFound)
+	e.accounts.EXPECT().GetAvailableBalance(partyID).Times(1).Return(nil, errNoBalanceForParty)
 }
 
 func (e *tstEngine) setMinProposerBalance(balance string) {
