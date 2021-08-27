@@ -94,5 +94,5 @@ func (a *Accounting) GetAvailableBalanceInRange(
 }
 
 func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
-	return a.stakingAssetTotalSupply
+	return a.stakingAssetTotalSupply.Clone()
 }
