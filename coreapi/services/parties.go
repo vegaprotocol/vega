@@ -39,7 +39,7 @@ func (a *Parties) consume() {
 		select {
 		case <-a.Closed():
 			return
-		case asset, ok := <-a.ch:
+		case party, ok := <-a.ch:
 			if !ok {
 				// cleanup base
 				a.Halt()
@@ -47,7 +47,7 @@ func (a *Parties) consume() {
 				return
 			}
 			a.mu.Lock()
-			a.parties[asset.Id] = asset
+			a.parties[party.Id] = party
 			a.mu.Unlock()
 		}
 	}
@@ -74,6 +74,6 @@ func (a *Parties) List() []*vegapb.Party {
 
 func (a *Parties) Types() []events.Type {
 	return []events.Type{
-		events.AssetEvent,
+		events.PartyEvent,
 	}
 }

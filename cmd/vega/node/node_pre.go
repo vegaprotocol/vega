@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"code.vegaprotocol.io/vega/epochtime"
-	"code.vegaprotocol.io/vega/rewards"
-
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -18,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
@@ -34,6 +32,7 @@ import (
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
@@ -297,8 +296,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	}
 
 	now := l.timeService.GetTimeNow()
-	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-
 	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
@@ -319,14 +316,17 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.limits = limits.New(l.Log, l.conf.Limits)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
-
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
-
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
-
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
-
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.witness, l.netParams, now)
+
+	//TODO replace with actual implementation
+	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.GovernanceVoteAsset,
+		Watcher: stakingAccount.GovAssetUpdated,
+	})
 
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
@@ -337,6 +337,14 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
+
+	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
+	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.epochService)
+	l.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.DelegationMinAmount,
+			Watcher: l.delegation.OnMinAmountChanged,
+		})
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
