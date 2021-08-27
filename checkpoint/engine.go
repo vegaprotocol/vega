@@ -73,7 +73,7 @@ func (e *Engine) UponGenesis(_ context.Context, data []byte) error {
 	if err != nil {
 		return err
 	}
-	if len(state.CheckpointHash) != 0 {
+	if state != nil && len(state.CheckpointHash) != 0 {
 		e.loadHash, err = hex.DecodeString(state.CheckpointHash)
 		if err != nil {
 			e.loadHash = nil
