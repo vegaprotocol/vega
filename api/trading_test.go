@@ -256,7 +256,7 @@ func getTestGRPCServer(
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
-	rewardsService := subscribers.NewRewards(context.Background(), logger, true)
+	rewardsService := subscribers.NewRewards(ctx, logger, true)
 
 	delegationStore := storage.NewDelegations(logger, conf.Storage)
 	delegationService := delegations.NewService(logger, conf.Delegations, delegationStore)
