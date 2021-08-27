@@ -1,7 +1,9 @@
 package staking
 
 import (
+	"context"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -41,9 +43,11 @@ func NewOnChainVerifier(
 	}
 }
 
-func (o *OnChainVerifier) OnEthereumConfigUpdate(rawcfg interface{}) error {
+func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
 	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
 	if !ok {
+		o.log.Error("invalid ethereum config",
+			logging.String("parameter", fmt.Sprintf("%#v", rawcfg)))
 		return ErrNotAnEthereumConfig
 	}
 

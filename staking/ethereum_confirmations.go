@@ -48,7 +48,7 @@ func NewEthereumConfirmations(
 	}
 }
 
-func (e *EthereumConfirmations) OnEthereumConfigUpdate(rawcfg interface{}) error {
+func (e *EthereumConfirmations) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
 	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
 	if !ok {
 		return ErrNotAnEthereumConfig
