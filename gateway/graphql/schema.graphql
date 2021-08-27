@@ -539,7 +539,8 @@ type Node {
 
 	status: NodeStatus!
 
-	delegations(partyID: String): [Delegation!]!
+  # All delegation for a node by a given party if specified, or all delegations.
+  delegations(partyId: String): [Delegation!]
 }
 
 type Delegation {
