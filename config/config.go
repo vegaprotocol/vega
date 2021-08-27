@@ -72,7 +72,6 @@ type Config struct {
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
-	StoresEnabled  encoding.Bool `long:"stores-enabled" choice:"true" choice:"false" description:" "`
 	UlimitNOFile   uint64        `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
@@ -109,7 +108,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Nodes:             nodes.NewDefaultConfig(),
 		Delegations:       delegations.NewDefaultConfig(),
 		GatewayEnabled:    true,
-		StoresEnabled:     true,
 		UlimitNOFile:      8192,
 	}
 }

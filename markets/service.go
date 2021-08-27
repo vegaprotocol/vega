@@ -63,7 +63,7 @@ func NewService(
 	orderStore OrderStore,
 	marketDataStore MarketDataStore,
 	marketDepth MarketDepth,
-) (*Svc, error) {
+) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -75,7 +75,7 @@ func NewService(
 		orderStore:      orderStore,
 		marketDataStore: marketDataStore,
 		marketDepth:     marketDepth,
-	}, nil
+	}
 }
 
 // ReloadConf update the market service internal configuration

@@ -38,14 +38,11 @@ func getTestService(t *testing.T) *testService {
 	store := mocks.NewMockCandleStore(ctrl)
 	log := logging.NewTestLogger()
 	// create service, pass in mocks, ignore error
-	svc, err := candles.NewService(
+	svc := candles.NewService(
 		log,
 		candles.NewDefaultConfig(),
 		store,
 	)
-	if err != nil {
-		t.Fatalf("Unexpected error getting candle service: %+v", err)
-	}
 	return &testService{
 		Svc:   svc,
 		ctx:   ctx,

@@ -13,7 +13,7 @@ import (
 type Empty struct{}
 
 type RootPathFlag struct {
-	RootPath string `short:"r" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
+	RootPath string `short:"r" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_DATA_NODE_CONFIG"`
 }
 
 func NewRootPathFlag() RootPathFlag {

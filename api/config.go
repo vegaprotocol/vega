@@ -18,7 +18,6 @@ type Config struct {
 	Port             int               `long:"port"`
 	IP               string            `long:"ip"`
 	StreamRetries    int               `long:"stream-retries"`
-	DisableTxCommit  bool              `long:"disable-tx-commit"`
 	CoreNodeIP       string            `long:"core-node-ip"`
 	CoreNodeGRPCPort int               `long:"core-node-grpc-port"`
 }
@@ -33,7 +32,6 @@ func NewDefaultConfig() Config {
 		IP:               "0.0.0.0",
 		Port:             3007,
 		StreamRetries:    3,
-		DisableTxCommit:  true,
 		CoreNodeIP:       "127.0.0.1",
 		CoreNodeGRPCPort: 3002,
 	}

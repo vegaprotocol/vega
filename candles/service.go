@@ -9,8 +9,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
 	types "code.vegaprotocol.io/protos/vega"
-
-	"github.com/pkg/errors"
 )
 
 // CandleStore ...
@@ -31,11 +29,7 @@ type Svc struct {
 }
 
 // NewService instantiate a new candles service
-func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*Svc, error) {
-	if candleStore == nil {
-		return nil, errors.New("candleStore instance is nil when creating candle service instance")
-	}
-
+func NewService(log *logging.Logger, config Config, candleStore CandleStore) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -44,7 +38,7 @@ func NewService(log *logging.Logger, config Config, candleStore CandleStore) (*S
 		log:         log,
 		Config:      config,
 		candleStore: candleStore,
-	}, nil
+	}
 }
 
 // ReloadConf will update the internal configuration of the service

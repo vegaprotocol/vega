@@ -177,12 +177,7 @@ func getTestGRPCServer(
 	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
 
 	// Candle Service
-	candleService, err := candles.NewService(logger, conf.Candles, candleStore)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create candle service")
-		return
-	}
-
+	candleService := candles.NewService(logger, conf.Candles, candleStore)
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
 	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
@@ -191,21 +186,12 @@ func getTestGRPCServer(
 	}
 
 	// Market Service
-	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create market service")
-		return
-	}
-
+	marketService := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	// Time Service (required for Order Service)
 	timeService := vegatime.New(conf.Time)
 
 	// Order Service
-	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create order service")
-		return
-	}
+	orderService := orders.NewService(logger, conf.Orders, orderStore, timeService)
 
 	// Party Service
 	partyService, err := parties.NewService(logger, conf.Parties, partyStore)
@@ -215,11 +201,7 @@ func getTestGRPCServer(
 	}
 
 	// Trade Service
-	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, nil)
-	if err != nil {
-		err = errors.Wrap(err, "failed to create trade service")
-		return
-	}
+	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
 
 	// TransferResponse Service
 	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)

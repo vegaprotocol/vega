@@ -41,7 +41,7 @@ type Svc struct {
 }
 
 // NewService creates an Orders service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -51,7 +51,7 @@ func NewService(log *logging.Logger, config Config, store OrderStore, time TimeS
 		Config:      config,
 		orderStore:  store,
 		timeService: time,
-	}, nil
+	}
 }
 
 // ReloadConf update the internal configuration of the order service
