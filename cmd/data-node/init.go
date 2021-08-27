@@ -98,7 +98,7 @@ func Init(ctx context.Context, parser *flags.Parser) error {
 	}
 
 	short := "Initializes a vega node"
-	long := "Generate the minimal configuration required for a vega dataa-node to start"
+	long := "Generate the minimal configuration required for a vega data-node to start"
 
 	_, err := parser.AddCommand("init", short, long, &initCmd)
 	return err
