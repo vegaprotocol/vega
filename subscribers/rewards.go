@@ -177,6 +177,6 @@ func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) 
 // Types returns all the message types this subscriber wants to receive
 func (rc *RewardCounters) Types() []events.Type {
 	return []events.Type{
-		events.TransferResponses,
+		events.RewardPayoutEvent,
 	}
 }

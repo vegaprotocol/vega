@@ -2,8 +2,8 @@ package gql
 
 import (
 	"context"
-	"strconv"
 
+	"code.vegaprotocol.io/data-node/vegatime"
 	"code.vegaprotocol.io/protos/vega"
 )
 
@@ -29,7 +29,7 @@ func (r *rewardPerAssetDetailResolver) Rewards(ctx context.Context, obj *vega.Re
 			Epoch:             int(rd.Epoch),
 			Amount:            rd.Amount,
 			PercentageOfTotal: rd.PercentageOfTotal,
-			ReceivedAt:        strconv.FormatInt(rd.ReceivedAt, 10),
+			ReceivedAt:        vegatime.Format(vegatime.UnixNano(rd.ReceivedAt)),
 		}
 
 		rewards = append(rewards, &reward)
