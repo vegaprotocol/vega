@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	coreapi "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -41,7 +41,7 @@ func (opts *AccountsPartyCmd) Execute(params []string) error {
 		return errors.New("one party is required")
 	}
 
-	req := coreapi.ListAccountsRequest{
+	req := coreapipb.ListAccountsRequest{
 		Party:  params[0],
 		Market: opts.Market, // at most empty anyway
 	}
@@ -58,11 +58,11 @@ func (opts *AccountsMarketCmd) Execute(params []string) error {
 }
 
 func (opts *AccountsNetworkCmd) Execute(params []string) error {
-	req := coreapi.ListAccountsRequest{}
+	req := coreapipb.ListAccountsRequest{}
 	return getPrintAccounts(opts.NodeAddress, &req)
 }
 
-func getPrintAccounts(nodeAddress string, req *coreapi.ListAccountsRequest) error {
+func getPrintAccounts(nodeAddress string, req *coreapipb.ListAccountsRequest) error {
 	clt, err := getClient(nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not connect to the vega node: %w", err)

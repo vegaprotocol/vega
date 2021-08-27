@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	coreapi "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -13,11 +13,11 @@ type AssetsCmd struct {
 }
 
 func (opts *AssetsCmd) Execute(params []string) error {
-	req := coreapi.ListAssetsRequest{}
+	req := coreapipb.ListAssetsRequest{}
 	return getPrintAssets(opts.NodeAddress, &req)
 }
 
-func getPrintAssets(nodeAddress string, req *coreapi.ListAssetsRequest) error {
+func getPrintAssets(nodeAddress string, req *coreapipb.ListAssetsRequest) error {
 	clt, err := getClient(nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not connect to the vega node: %w", err)
