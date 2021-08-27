@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
@@ -91,6 +92,7 @@ type NodeCommand struct {
 	nodeStore             *storage.Node
 	epochStore            *storage.Epoch
 	delegationStore       *storage.Delegations
+	checkpointStore       *storage.Checkpoints
 
 	vegaTradingServiceClient vegaprotoapi.TradingServiceClient
 
@@ -116,6 +118,7 @@ type NodeCommand struct {
 	epochUpdateSub       *subscribers.EpochUpdateSub
 	timeUpdateSub        *subscribers.Time
 	rewardsSub           *subscribers.RewardCounters
+	checkpointSub        *subscribers.CheckpointSub
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -138,6 +141,7 @@ type NodeCommand struct {
 	epochService      *epochs.Service
 	delegationService *delegations.Service
 	stakingService    *staking.Service
+	checkpointSvc     *checkpoint.Svc
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
@@ -213,6 +217,7 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.delegationService,
 		l.rewardsSub,
 		l.stakingService,
+		l.checkpointSvc,
 	)
 
 	// watch configs
