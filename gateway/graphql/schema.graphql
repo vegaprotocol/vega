@@ -1330,6 +1330,9 @@ type Party {
     "An optional reference"
     reference: String
   ): [LiquidityProvision!]
+
+  # All delegations for a party to a given node if node is specified, or all delegations if not
+  delegations(nodeId: String): [Delegation!]
 }
 
 """
