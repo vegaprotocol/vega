@@ -195,7 +195,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	epochService := epochs.NewService(logger, conf.Epochs, epochStore)
 	rewardsService := subscribers.NewRewards(ctx, logger, true)
 
-	stakingService := staking.NewService(ctx)
+	stakingService := staking.NewService(ctx, logger)
 
 	eventBroker, err = broker.New(ctx, logger, conf.Broker)
 	if err != nil {

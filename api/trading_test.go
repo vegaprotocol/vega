@@ -262,7 +262,7 @@ func getTestGRPCServer(
 	delegationStore := storage.NewDelegations(logger, conf.Storage)
 	delegationService := delegations.NewService(logger, conf.Delegations, delegationStore)
 
-	stakingService := staking.NewService(ctx)
+	stakingService := staking.NewService(ctx, logger)
 
 	g := api.NewGRPCServer(
 		logger,

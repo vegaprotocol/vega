@@ -5,6 +5,7 @@ import (
 	"sort"
 	"sync"
 
+	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/subscribers"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -24,20 +25,22 @@ type stakingAccount struct {
 type Service struct {
 	*subscribers.Base
 
-	ch chan eventspb.StakeLinking
+	log *logging.Logger
+	ch  chan eventspb.StakeLinking
 
 	mu sync.RWMutex
 	// party id -> staking account
 	stakingPerParty map[string]*stakingAccount
 }
 
-func NewService(ctx context.Context) (svc *Service) {
+func NewService(ctx context.Context, log *logging.Logger) (svc *Service) {
 	defer func() {
 		go svc.consume()
 	}()
 
 	return &Service{
 		Base:            subscribers.NewBase(ctx, 10, true),
+		log:             log,
 		ch:              make(chan eventspb.StakeLinking, 100),
 		stakingPerParty: map[string]*stakingAccount{},
 	}
@@ -58,6 +61,7 @@ func (s *Service) Push(evts ...events.Event) {
 	for _, e := range evts {
 		select {
 		case <-s.Closed():
+			close(s.ch)
 			return
 		default:
 			if evt, ok := e.(StakeLinkingEvent); ok {
@@ -74,7 +78,6 @@ func (s *Service) Types() []events.Type {
 }
 
 func (s *Service) consume() {
-	defer func() { close(s.ch) }()
 	for {
 		select {
 		case <-s.Closed():
@@ -115,19 +118,20 @@ func (s *Service) computeCurrentBalance(pacc *stakingAccount) {
 		}
 		amount, overflowed := num.UintFromString(link.Amount, 10)
 		if overflowed {
+			s.log.Error("received non base 10 amount to link", logging.String("amount", link.Amount))
 			// not much to do, just ignore this one.
 			continue
 		}
 		switch link.Type {
 		case eventspb.StakeLinking_TYPE_LINK:
-			balance = balance.Add(balance, amount)
+			balance.Add(balance, amount)
 			continue
 		case eventspb.StakeLinking_TYPE_UNLINK:
 			if amount.GT(balance) {
 				// that's an error, we are missing, events, return now.
 				return
 			}
-			balance = balance.Sub(balance, amount)
+			balance.Sub(balance, amount)
 		}
 	}
 	pacc.currentStakeAvailable.Set(balance)

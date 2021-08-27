@@ -207,7 +207,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.netParamsService = netparams.NewService(l.ctx)
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
-	l.stakingService = staking.NewService(l.ctx)
+	l.stakingService = staking.NewService(l.ctx, l.Log)
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
