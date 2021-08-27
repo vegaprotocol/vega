@@ -28,7 +28,7 @@ type Service struct {
 
 	mu sync.RWMutex
 	// party id -> staking account
-	store map[string]*stakingAccount
+	stakingPerParty map[string]*stakingAccount
 }
 
 func NewService(ctx context.Context) (svc *Service) {
@@ -37,16 +37,16 @@ func NewService(ctx context.Context) (svc *Service) {
 	}()
 
 	return &Service{
-		Base:  subscribers.NewBase(ctx, 10, true),
-		ch:    make(chan eventspb.StakeLinking, 100),
-		store: map[string]*stakingAccount{},
+		Base:            subscribers.NewBase(ctx, 10, true),
+		ch:              make(chan eventspb.StakeLinking, 100),
+		stakingPerParty: map[string]*stakingAccount{},
 	}
 }
 
 func (s *Service) GetStake(party string) (*num.Uint, []eventspb.StakeLinking) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	partyAccount, ok := s.store[party]
+	partyAccount, ok := s.stakingPerParty[party]
 	if !ok {
 		return num.Zero(), nil
 	}
@@ -87,13 +87,13 @@ func (s *Service) consume() {
 				return
 			}
 			s.mu.Lock()
-			partyAccount, ok := s.store[evt.Party]
+			partyAccount, ok := s.stakingPerParty[evt.Party]
 			if !ok {
 				partyAccount = &stakingAccount{
 					currentStakeAvailable: num.Zero(),
 					links:                 []eventspb.StakeLinking{},
 				}
-				s.store[evt.Party] = partyAccount
+				s.stakingPerParty[evt.Party] = partyAccount
 			}
 			partyAccount.links = append(partyAccount.links, evt)
 			s.computeCurrentBalance(partyAccount)
