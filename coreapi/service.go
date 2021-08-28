@@ -25,6 +25,8 @@ type Service struct {
 	netparams  *services.NetParams
 	parties    *services.Parties
 	validators *services.Validators
+	markets    *services.Markets
+	proposals  *services.Proposals
 }
 
 func NewService(
@@ -67,6 +69,18 @@ func NewService(
 		log.Info("starting validators core api")
 		svc.validators = services.NewValidators(ctx)
 		broker.SubscribeBatch(svc.validators)
+	}
+
+	if cfg.Markets {
+		log.Info("starting markets core api")
+		svc.markets = services.NewMarkets(ctx)
+		broker.SubscribeBatch(svc.markets)
+	}
+
+	if cfg.Proposals {
+		log.Info("starting proposals core api")
+		svc.proposals = services.NewProposals(ctx)
+		broker.SubscribeBatch(svc.proposals)
 	}
 
 	return svc
@@ -124,5 +138,27 @@ func (s *Service) ListValidators(
 	}
 	return &coreapipb.ListValidatorsResponse{
 		Validators: s.validators.List(),
+	}, nil
+}
+
+func (s *Service) ListMarkets(
+	ctx context.Context, in *coreapipb.ListMarketsRequest,
+) (*coreapipb.ListMarketsResponse, error) {
+	if !s.cfg.Markets {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListMarketsResponse{
+		Markets: s.markets.List(in.Market),
+	}, nil
+}
+
+func (s *Service) ListProposals(
+	ctx context.Context, in *coreapipb.ListProposalsRequest,
+) (*coreapipb.ListProposalsResponse, error) {
+	if !s.cfg.Proposals {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListProposalsResponse{
+		Proposals: s.proposals.List(in.Proposal, in.Proposer),
 	}, nil
 }

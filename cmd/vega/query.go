@@ -13,6 +13,8 @@ type QueryCmd struct {
 	NetworkParameters query.NetworkParametersCmd `command:"netparams" description:"Query a vega node to get the list network parameters"`
 	Parties           query.PartiesCmd           `command:"parties" description:"Query a vega node to get the list of parties"`
 	Validators        query.ValidatorsCmd        `command:"validators" description:"Query a vega node to get the list of the validators"`
+	Markets           query.MarketsCmd           `command:"markets" description:"Query a vega node to get the list of all markets"`
+	Proposals         query.ProposalsCmd         `command:"proposals" description:"Query a vega node to get the list of all proposals"`
 	Help              bool                       `short:"h" long:"help" description:"Show this help message"`
 }
 

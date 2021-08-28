@@ -16,6 +16,8 @@ type Config struct {
 	NetworkParameters bool
 	Parties           bool
 	Validators        bool
+	Proposals         bool
+	Markets           bool
 }
 
 func NewDefaultConfig() Config {
@@ -26,5 +28,7 @@ func NewDefaultConfig() Config {
 		NetworkParameters: true,
 		Parties:           true,
 		Validators:        true,
+		Markets:           true,
+		Proposals:         true,
 	}
 }
