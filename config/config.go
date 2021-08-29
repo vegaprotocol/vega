@@ -110,7 +110,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Trades:            trades.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),
 		Execution:         execution.NewDefaultConfig(defaultStoreDirPath),
-		Processor:         processor.NewDefaultConfig(),
+		Processor:         processor.NewDefaultConfig(defaultStoreDirPath),
 		API:               api.NewDefaultConfig(),
 		Accounts:          accounts.NewDefaultConfig(),
 		Oracles:           oracles.NewDefaultConfig(),

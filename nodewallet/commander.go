@@ -138,6 +138,14 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 		} else {
 			panic("failed to wrap to ChainEvent")
 		}
+	case txn.CheckpointRestoreCommand:
+		if underlyingCmd, ok := payload.(*commandspb.RestoreSnapshot); ok {
+			data.Command = &commandspb.InputData_RestoreSnapshotSubmission{
+				RestoreSnapshotSubmission: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap RestoreSnapshot")
+		}
 	default:
 		panic(fmt.Errorf("command %v is not supported", cmd))
 	}

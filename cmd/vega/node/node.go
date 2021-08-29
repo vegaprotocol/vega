@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
@@ -156,6 +157,7 @@ type NodeCommand struct {
 	delegation      *delegation.Engine
 	limits          *limits.Engine
 	rewards         *rewards.Engine
+	checkpoint      *checkpoint.Engine
 
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
