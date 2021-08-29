@@ -259,6 +259,163 @@ Feature: Staking & Delegation
     | party1 |  node2   | 20     |       
     | party1 |  node3   | 10     | 
 
+  Scenario: A party cannot delegate to an unknown node 
+    Desciption: A party should fail in trying to delegate to a non existing node
 
+    The parties deposit on staging account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 10000  |  
 
+    Then the parties submit the following delegations:
+    | party  | node id   |   amount | reference | error           |
+    | party1 |  unknown1 |    100   |      a    | invalid node ID |
+    | party1 |  unknonw2 |    200   |      b    | invalid node ID |    
+
+  Scenario: A party cannot undelegate from an unknown node
+    Desciption: A party should fail in trying to undelegate from a non existing node
+
+    The parties deposit on staging account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 10000  |  
+
+    Then the parties submit the following undelegations:
+    | party  | node id   |   amount | reference | error           |
+    | party1 |  unknown1 |    100   |      a    | invalid node ID |
+    | party1 |  unknonw2 |    200   |      b    | invalid node ID |      
+
+  Scenario: A party cannot delegate more than their staking account balance considering all active and pending delegation 
+   Desciption: A party has pending delegations and is trying to exceed their stake account balance delegation, 
+    i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
+
+    The parties deposit on staging account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 10000   |  
+    
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | reference | error                               |
+    | party1 |  node1   |   5000  |           |                                     |
+    | party1 |  node2   |   6000  |     a     | insufficient balance for delegation |    
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1423   | 
+
+    #start a new epoch
+    When time is updated to "2021-08-26T00:00:22Z"    
+
+    #party1 already have 1423 delegated so they can only theoretically delegate 10000-1423 = 8577
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | reference | error                               |
+    | party1 |  node2   |   1000  |           |                                     |    
+    | party1 |  node2   |   7578  |     a     | insufficient balance for delegation |    
+
+  Scenario: A party cannot delegate more than their staking account balance considering all active and pending undelegation 
+   Desciption: A party has pending delegations and undelegations and is trying to exceed their stake account balance delegation, 
+    i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
+
+    The parties deposit on staging account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 10000   |  
+    
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | reference | error                               |
+    | party1 |  node1   |   5000  |           |                                     |
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1423   | 
+
+    #start a new epoch
+    When time is updated to "2021-08-26T00:00:22Z"    
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000   | 
+
+    #party1 already have 423 delegated so they can only theoretically delegate 10000-423 = 9577
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | reference | error                               |
+    | party1 |  node2   |   1000  |           |                                     |    
+    | party1 |  node2   |   8578  |     a     | insufficient balance for delegation |    
+
+  Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
+    Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to node2
+
+    The parties deposit on staging account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 10000   |  
+    
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node1   |   1000  | 
+
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node2   |   1000  | 
+
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node2   | 1000   | 
+
+  Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
+    Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains. 
+
+    The parties deposit on staging account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 10000   |  
+    
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node1   |   1000  | 
+
+     #advance to the end of the epoch
+    Then time is updated to "2021-08-26T00:00:21Z"    
+
+     #start a new epoch 
+    When time is updated to "2021-08-26T00:00:22Z" 
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    Then the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node1   |   100   |
+
+     Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   | 100    | 
+
+  Scenario: A party cannot undelegate more than the delegated balance 
+    Description: A party trying to undeleagte from a node more than the amount that was delegated to it should fail 
+
+    The parties deposit on staging account the following amount:  
+      | party  | asset  | amount |
+      | party1 | VEGA   | 10000  |
+
+    Then the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  100   | 
+    | party1 |  node2   |  200   |       
+    | party1 |  node3   |  300   |   
+
+    #advance to the beginning of the next epoch 
+    Then time is updated to "2021-08-26T00:00:21Z"    
+    Then time is updated to "2021-08-26T00:00:22Z"    
+
+    Then the parties submit the following undelegations:
+    | party  | node id   |   amount | reference | error                                    |
+    | party1 |  node1    |    101   |      a    | incorrect token amount for undelegation  |
+    | party1 |  node2    |    201   |      b    | incorrect token amount for undelegation  |    
+    | party1 |  node3    |    301   |      c    | incorrect token amount for undelegation  |    
+    | party1 |  node1    |    100   |           |                                          |
+    | party1 |  node2    |    200   |           |                                          |    
+    | party1 |  node3    |    300   |           |                                          |  
 

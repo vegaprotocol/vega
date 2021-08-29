@@ -30,7 +30,9 @@ func parseUndelegationTable(table *godog.Table) []RowWrapper {
 		"party",
 		"node id",
 		"amount",
-	}, nil)
+	}, []string{
+		"reference",
+		"error"})
 }
 
 type undelegationRow struct {
