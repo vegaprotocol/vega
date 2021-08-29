@@ -69,6 +69,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		}
 	})
 
+	// validator steps
+	s.Step(`the validators:$`, func(table *godog.Table) error {
+		return steps.TheValidators(execsetup.topology, execsetup.collateralEngine, execsetup.delegationEngine, table)
+	})
+	s.Step(`^the parties should have the following delegation balances for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingDelegationBalances(execsetup.broker, table, epoch)
+	})
+
 	// Market steps
 	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheSimpleRiskModel(marketConfig, name, table)
@@ -150,6 +158,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties deposit on asset's general account the following amount:$`, func(table *godog.Table) error {
 		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
 	})
+	s.Step(`^the parties deposit on staging account the following amount:$`, func(table *godog.Table) error {
+		return steps.PartiesTransferToStakingAccount(execsetup.collateralEngine, execsetup.broker, table)
+	})
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {
 		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
 	})
@@ -161,10 +172,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the parties submit the following delegations:$`, func(table *godog.Table) error {
-		return steps.PartiesDelegateTheFollowingStake(execsetup.executionEngine, table)
+		return steps.PartiesDelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
 	s.Step(`^the parties submit the following undelegations:$`, func(table *godog.Table) error {
-		return steps.PartiesUndelegateTheFollowingStake(execsetup.executionEngine, table)
+		return steps.PartiesUndelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
 
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
@@ -190,6 +201,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	// Assertion steps
+	s.Step(`^the parties should have the following staking account balances:$`, func(table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingStakingAccountBalances(execsetup.stakingAccount, table)
+	})
 	s.Step(`^the parties should have the following account balances:$`, func(table *godog.Table) error {
 		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
 	})

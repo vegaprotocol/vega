@@ -314,6 +314,45 @@ func (b *BrokerStub) GetAccountEvents() []events.Acc {
 	return s
 }
 
+func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.DelegationBalance {
+	batch := b.GetBatch(events.DelegationBalanceEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	s := []events.DelegationBalance{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.DelegationBalance:
+			if et.EpochSeq == epochSeq {
+				s = append(s, et)
+			}
+		case *events.DelegationBalance:
+			if (*et).EpochSeq == string(epochSeq) {
+				s = append(s, *et)
+			}
+		}
+	}
+	return s
+}
+
+func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
+
+	evts := b.GetDelegationBalanceEvents(epochSeq)
+	balances := make([]types.Delegation, 0, len(evts))
+
+	for _, e := range evts {
+		balances = append(balances, types.Delegation{
+			Party:    e.Party,
+			NodeId:   e.NodeID,
+			EpochSeq: string(e.EpochSeq),
+			Amount:   e.Amount.String(),
+		})
+	}
+	return balances
+}
+
 func (b *BrokerStub) GetAccounts() []types.Account {
 	evts := b.GetAccountEvents()
 	accounts := make([]types.Account, 0, len(evts))

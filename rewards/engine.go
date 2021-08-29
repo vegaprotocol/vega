@@ -110,7 +110,7 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 		Type:                      types.RewardSchemeStakingAndDelegation,
 		ScopeType:                 types.RewardSchemeScopeNetwork,
 		Parameters:                map[string]types.RewardSchemeParam{},
-		StartTime:                 time.Now(),
+		StartTime:                 time.Time{},
 		PayoutType:                types.PayoutFractional,
 		MaxPayoutPerAssetPerParty: map[string]*num.Uint{},
 	}
@@ -253,17 +253,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			continue
 		}
 
-		if account.Balance.IsZero() {
-			e.log.Debug("reward account has zero balance", logging.String("accountID", accountID))
-			continue
-		}
-
 		rewardAccountBalance := account.Balance
-
-		if rewardAccountBalance.IsZero() {
-			e.log.Debug("reward account has zero balance including pending payouts", logging.String("accountID", accountID))
-			continue
-		}
 
 		// get how much reward needs to be distributed based on the current balance and the reward scheme
 		rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
@@ -273,7 +263,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 
 		// calculate the rewards per the reward scheme and reword amount
 		payout := e.calculateRewards(ctx, account.Asset, account.ID, rewardScheme, rewardAmt, epoch)
-		if payout.totalReward.IsZero() {
+		if payout == nil || payout.totalReward.IsZero() {
 			continue
 		}
 
@@ -285,6 +275,10 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 // OnEpochEnd calculates the reward amounts parties get for available reward schemes
 func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEnd")
+
+	if (epoch.EndTime == time.Time{}) {
+		return
+	}
 
 	rsIDs := make([]string, 0, len(e.rewardSchemes))
 	for rsID := range e.rewardSchemes {
@@ -379,5 +373,10 @@ func (e *Engine) calculateRewards(ctx context.Context, asset string, accountID s
 
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
 	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
+
+	if rewardBalance.IsZero() {
+		return nil
+	}
+
 	return e.calculatStakingAndDelegationRewards(asset, accountID, rewardScheme, rewardBalance, validatorData)
 }

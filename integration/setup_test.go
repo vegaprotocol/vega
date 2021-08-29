@@ -9,6 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/rewards"
+
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/steps/market"
 	"code.vegaprotocol.io/vega/integration/stubs"
@@ -58,6 +60,7 @@ type executionTestSetup struct {
 	positionPlugin   *plugins.Positions
 	topology         *stubs.TopologyStub
 	stakingAccount   *delegation.DummyStakingAccounts
+	rewardsEngine    *rewards.Engine
 
 	// save party accounts state
 	markets []types.Market
@@ -85,11 +88,20 @@ func newExecutionTestSetup() *executionTestSetup {
 		execsetup.log, collateral.NewDefaultConfig(), execsetup.broker, currentTime,
 	)
 
+	vegaAsset := types.Asset{
+		ID: "VEGA",
+		Details: &types.AssetDetails{
+			Name:   "VEGA",
+			Symbol: "VEGA",
+		},
+	}
+	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
+
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	execsetup.topology = stubs.NewTopologyStub()
 	execsetup.stakingAccount = delegation.NewDummyStakingAccount(execsetup.collateralEngine)
-
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine)
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService)
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
@@ -180,6 +192,31 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
 			Watcher: e.delegationEngine.OnMinAmountChanged,
+		},
+
+		netparams.WatchParam{
+			Param:   netparams.GovernanceVoteAsset,
+			Watcher: e.rewardsEngine.UpdateAssetForStakingAndDelegationRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardPayoutFraction,
+			Watcher: e.rewardsEngine.UpdatePayoutFractionForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardPayoutDelay,
+			Watcher: e.rewardsEngine.UpdatePayoutDelayForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerParticipant,
+			Watcher: e.rewardsEngine.UpdateMaxPayoutPerParticipantForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardDelegatorShare,
+			Watcher: e.rewardsEngine.UpdateDelegatorShareForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: e.rewardsEngine.UpdateMinimumValidatorStakeForStakingRewardScheme,
 		},
 	)
 }

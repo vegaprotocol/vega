@@ -9,28 +9,28 @@ import (
 
 type DelegationBalance struct {
 	*Base
-	party    string
-	nodeID   string
-	amount   *num.Uint
-	epochSeq string
+	Party    string
+	NodeID   string
+	Amount   *num.Uint
+	EpochSeq string
 }
 
 func NewDelegationBalance(ctx context.Context, party, nodeID string, amount *num.Uint, epochSeq string) *DelegationBalance {
 	return &DelegationBalance{
 		Base:     newBase(ctx, DelegationBalanceEvent),
-		party:    party,
-		nodeID:   nodeID,
-		amount:   amount,
-		epochSeq: epochSeq,
+		Party:    party,
+		NodeID:   nodeID,
+		Amount:   amount,
+		EpochSeq: epochSeq,
 	}
 }
 
 func (db DelegationBalance) Proto() eventspb.DelegationBalanceEvent {
 	return eventspb.DelegationBalanceEvent{
-		Party:    db.party,
-		NodeId:   db.nodeID,
-		Amount:   db.amount.Uint64(),
-		EpochSeq: db.epochSeq,
+		Party:    db.Party,
+		NodeId:   db.NodeID,
+		Amount:   db.Amount.Uint64(),
+		EpochSeq: db.EpochSeq,
 	}
 }
 
@@ -54,9 +54,9 @@ func DelegationBalanceEventFromStream(ctx context.Context, be *eventspb.BusEvent
 
 	return &DelegationBalance{
 		Base:     newBaseFromStream(ctx, DelegationBalanceEvent, be),
-		party:    event.GetParty(),
-		nodeID:   event.GetNodeId(),
-		amount:   num.NewUint(event.GetAmount()),
-		epochSeq: event.GetEpochSeq(),
+		Party:    event.GetParty(),
+		NodeID:   event.GetNodeId(),
+		Amount:   num.NewUint(event.GetAmount()),
+		EpochSeq: event.GetEpochSeq(),
 	}
 }
