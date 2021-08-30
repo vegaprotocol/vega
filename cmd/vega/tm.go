@@ -10,19 +10,18 @@ import (
 
 	"github.com/jessevdk/go-flags"
 	"github.com/spf13/cobra"
-
-	cmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
+	tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands/debug"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/cli"
-	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	nm "github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -34,21 +33,21 @@ type tmCmd struct{}
 func (opts *tmCmd) Execute(_ []string) error {
 
 	os.Args = os.Args[1:]
-	rootCmd := cmd.RootCmd
+	rootCmd := tmcmd.RootCmd
 	rootCmd.AddCommand(
-		cmd.GenValidatorCmd,
-		cmd.InitFilesCmd,
-		cmd.ProbeUpnpCmd,
-		cmd.LightCmd,
-		cmd.ReplayCmd,
-		cmd.ReplayConsoleCmd,
-		cmd.ResetAllCmd,
-		cmd.ResetPrivValidatorCmd,
-		cmd.ShowValidatorCmd,
-		cmd.TestnetFilesCmd,
-		cmd.ShowNodeIDCmd,
-		cmd.GenNodeKeyCmd,
-		cmd.VersionCmd,
+		tmcmd.GenValidatorCmd,
+		tmcmd.InitFilesCmd,
+		tmcmd.ProbeUpnpCmd,
+		tmcmd.LightCmd,
+		tmcmd.ReplayCmd,
+		tmcmd.ReplayConsoleCmd,
+		tmcmd.ResetAllCmd,
+		tmcmd.ResetPrivValidatorCmd,
+		tmcmd.ShowValidatorCmd,
+		tmcmd.TestnetFilesCmd,
+		tmcmd.ShowNodeIDCmd,
+		tmcmd.GenNodeKeyCmd,
+		tmcmd.VersionCmd,
 		debug.DebugCmd,
 		cli.NewCompletionCmd(rootCmd, true),
 	)
@@ -56,8 +55,8 @@ func (opts *tmCmd) Execute(_ []string) error {
 	nodeFunc := defaultNewNode
 	rootCmd.AddCommand(newRunNodeCmd(nodeFunc))
 
-	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))
-	if err := cmd.Execute(); err != nil {
+	c := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))
+	if err := c.Execute(); err != nil {
 		panic(err)
 	}
 
@@ -82,33 +81,30 @@ func defaultNewNode(config *cfg.Config, logger tmlog.Logger) (*nm.Node, error) {
 }
 
 func selectGenesisDocProviderFunc(config *cfg.Config) nm.GenesisDocProvider {
-	return func() (*types.GenesisDoc, error) {
-		if len(networkSelect) > 0 {
-			return httpGenesisDocProvider()
-		}
-
-		return nm.DefaultGenesisDocProviderFunc(config)()
+	if len(networkSelect) > 0 {
+		return httpGenesisDocProvider
 	}
+
+	return nm.DefaultGenesisDocProviderFunc(config)
 }
 
-func httpGenesisDocProvider() (*types.GenesisDoc, error) {
-	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect))
+func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
+	genesisFilePath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect)
+	resp, err := http.Get(genesisFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
 	}
 	defer resp.Body.Close()
-	html, err := ioutil.ReadAll(resp.Body)
+	jsonGenesis, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	genesisDoc := &types.GenesisDoc{}
-	err = tmjson.Unmarshal(html, genesisDoc)
+	doc, err := tmtypes.GenesisDocFromJSON(jsonGenesis)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
 	}
-
-	return genesisDoc, nil
+	return doc, nil
 }
 
 // this is taken from tendermint
@@ -118,11 +114,26 @@ func newRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
 		Use:     "start",
 		Aliases: []string{"node", "run"},
 		Short:   "Run the tendermint node",
-		RunE: func(_ *cobra.Command, args []string) error {
-			config, err := cmd.ParseConfig()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() == tmcmd.VersionCmd.Name() {
+				return nil
+			}
+
+			config, err := tmcmd.ParseConfig()
 			if err != nil {
 				return err
 			}
+
+			if config.LogFormat == cfg.LogFormatJSON {
+				logger = tmlog.NewTMJSONLogger(tmlog.NewSyncWriter(os.Stdout))
+			}
+
+			logger, err = tmflags.ParseLogLevel(config.LogLevel, logger, cfg.DefaultLogLevel)
+			if err != nil {
+				return err
+			}
+
+			logger = logger.With("module", "main")
 
 			n, err := nodeProvider(config, logger)
 			if err != nil {
@@ -155,7 +166,7 @@ func newRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
 		"",
 		"The network to start this node with")
 
-	cmd.AddNodeFlags(cobraCmd)
+	tmcmd.AddNodeFlags(cobraCmd)
 	return cobraCmd
 }
 

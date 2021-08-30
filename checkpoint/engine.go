@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -49,14 +50,20 @@ type CollateralState interface {
 }
 
 type Engine struct {
+	log *logging.Logger
+
 	components map[types.CheckpointName]State
 	loadHash   []byte
 	nextCP     time.Time
 	delta      time.Duration
 }
 
-func New(components ...State) (*Engine, error) {
+func New(log *logging.Logger, cfg Config, components ...State) (*Engine, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
+
 	e := &Engine{
+		log:        log,
 		components: make(map[types.CheckpointName]State, len(components)),
 		nextCP:     time.Time{},
 	}
@@ -68,7 +75,16 @@ func New(components ...State) (*Engine, error) {
 	return e, nil
 }
 
-func (e *Engine) UponGenesis(_ context.Context, data []byte) error {
+func (e *Engine) UponGenesis(_ context.Context, data []byte) (err error) {
+	e.log.Debug("Entering checkpoint.Engine.UponGenesis")
+	defer func() {
+		if err != nil {
+			e.log.Debug("Failure in checkpoint.Engine.UponGenesis", logging.Error(err))
+		} else {
+			e.log.Debug("Leaving checkpoint.Engine.UponGenesis without error")
+		}
+	}()
+
 	state, err := LoadGenesisState(data)
 	if err != nil {
 		return err

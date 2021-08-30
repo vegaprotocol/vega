@@ -191,7 +191,14 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 	))
 }
 
-func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte) error {
+func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte) (err error) {
+	t.log.Debug("Entering validators.Topology.LoadValidatorsOnGenesis")
+	defer func() {
+		t.log.Debug("Leaving validators.Topology.LoadValidatorsOnGenesis without error")
+		if err != nil {
+			t.log.Debug("Failure in validators.Topology.LoadValidatorsOnGenesis", logging.Error(err))
+		}
+	}()
 
 	state, err := LoadGenesisState(rawstate)
 	if err != nil {

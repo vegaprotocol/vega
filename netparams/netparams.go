@@ -77,8 +77,16 @@ func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 
 // UponGenesis load the initial network parameters
 // from the genesis state
-func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
-	s.log.Debug("loading genesis configuration")
+func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
+	s.log.Debug("Entering netparams.Store.UponGenesis")
+	defer func() {
+		if err != nil {
+			s.log.Debug("Failure in netparams.Store.UponGenesis", logging.Error(err))
+		} else {
+			s.log.Debug("Leaving netparams.Store.UponGenesis without error")
+		}
+	}()
+
 	state, err := LoadGenesisState(rawState)
 	if err != nil {
 		s.log.Error("unable to load genesis state",
