@@ -2,6 +2,7 @@ package fee
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	"code.vegaprotocol.io/data-node/logging"
@@ -59,9 +60,9 @@ func (s *Svc) EstimateFee(ctx context.Context, o *types.Order) (*types.Fee, erro
 	if err != nil {
 		return nil, err
 	}
-	price, ok := num.UintFromString(o.Price, 10)
-	if !ok {
-
+	price, overflowed := num.UintFromString(o.Price, 10)
+	if overflowed {
+		return nil, errors.New("invalid order price")
 	}
 	if o.PeggedOrder != nil {
 		return &types.Fee{
