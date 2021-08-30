@@ -20,13 +20,15 @@ type Service struct {
 	cfg    Config
 	log    *logging.Logger
 
-	accounts   *services.Accounts
-	assets     *services.Assets
-	netparams  *services.NetParams
-	parties    *services.Parties
-	validators *services.Validators
-	markets    *services.Markets
-	proposals  *services.Proposals
+	accounts    *services.Accounts
+	assets      *services.Assets
+	netparams   *services.NetParams
+	parties     *services.Parties
+	validators  *services.Validators
+	markets     *services.Markets
+	proposals   *services.Proposals
+	votes       *services.Votes
+	marketsData *services.MarketsData
 }
 
 func NewService(
@@ -81,6 +83,18 @@ func NewService(
 		log.Info("starting proposals core api")
 		svc.proposals = services.NewProposals(ctx)
 		broker.SubscribeBatch(svc.proposals)
+	}
+
+	if cfg.MarketsData {
+		log.Info("starting marketsData core api")
+		svc.marketsData = services.NewMarketsData(ctx)
+		broker.SubscribeBatch(svc.marketsData)
+	}
+
+	if cfg.Votes {
+		log.Info("starting votes core api")
+		svc.votes = services.NewVotes(ctx)
+		broker.SubscribeBatch(svc.votes)
 	}
 
 	return svc
@@ -160,5 +174,28 @@ func (s *Service) ListProposals(
 	}
 	return &coreapipb.ListProposalsResponse{
 		Proposals: s.proposals.List(in.Proposal, in.Proposer),
+	}, nil
+}
+
+func (s *Service) ListVotes(
+	ctx context.Context, in *coreapipb.ListVotesRequest,
+) (*coreapipb.ListVotesResponse, error) {
+	if !s.cfg.Votes {
+		return nil, ErrServiceDisabled
+	}
+	votes, err := s.votes.List(in.Proposal, in.Party)
+	return &coreapipb.ListVotesResponse{
+		Votes: votes,
+	}, err
+}
+
+func (s *Service) ListMarketsData(
+	ctx context.Context, in *coreapipb.ListMarketsDataRequest,
+) (*coreapipb.ListMarketsDataResponse, error) {
+	if !s.cfg.MarketsData {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListMarketsDataResponse{
+		MarketsData: s.marketsData.List(in.Market),
 	}, nil
 }

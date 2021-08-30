@@ -18,6 +18,8 @@ type Config struct {
 	Validators        bool
 	Proposals         bool
 	Markets           bool
+	Votes             bool
+	MarketsData       bool
 }
 
 func NewDefaultConfig() Config {
@@ -30,5 +32,7 @@ func NewDefaultConfig() Config {
 		Validators:        true,
 		Markets:           true,
 		Proposals:         true,
+		Votes:             true,
+		MarketsData:       true,
 	}
 }
