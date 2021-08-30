@@ -21,6 +21,7 @@ Describe what the system response was, include the output from the command, auto
 
 **Component:** Specify the components that might be related
 - [ ] [Vega](https://github.com/vegaprotocol/vega/)
+- [ ] [Data node](https://github.com/vegaprotocol/data-node/)
 - [ ] [Tendermint](https://github.com/tendermint/tendermint)
 - [ ] [Console](https://github.com/vegaprotocol/console/)
 - [ ] [Ethereum Bridge](https://github.com/vegaprotocol/Event_Queue)
