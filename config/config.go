@@ -13,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/delegation"
@@ -92,6 +93,7 @@ type Config struct {
 	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	NetworkParameters netparams.Config   `group:"NetworkParameters" namespace:"netparams"`
 	Limits            limits.Config      `group:"Limits" namespace:"limits"`
+	Checkpoint        checkpoint.Config  `group:"Checkpoint" namespace:"checkpoint"`
 	Staking           staking.Config     `group:"Staking" namespace:"staking"`
 	Broker            broker.Config      `group:"Broker" namespace:"broker"`
 	Rewards           rewards.Config     `group:"Rewards" namespace:"rewards"`
@@ -145,6 +147,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Subscribers:       subscribers.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
 		Limits:            limits.NewDefaultConfig(),
+		Checkpoint:        checkpoint.NewDefaultConfig(),
 		Staking:           staking.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
 		GatewayEnabled:    true,

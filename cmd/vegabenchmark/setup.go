@@ -130,7 +130,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
-	//TODO replace with actual implementation
+	// TODO replace with actual implementation
 	stakingAccount := delegation.NewDummyStakingAccount(collateral)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.GovernanceVoteAsset,
@@ -149,8 +149,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
-
-	cp, _ := checkpoint.New()
+	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	app := processor.NewApp(
 		log,
 		processor.NewDefaultConfig(""),

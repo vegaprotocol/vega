@@ -15,14 +15,13 @@ import (
 	"github.com/tendermint/tendermint/cmd/tendermint/commands/debug"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/cli"
-	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	nm "github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -56,8 +55,8 @@ func (opts *tmCmd) Execute(_ []string) error {
 	nodeFunc := defaultNewNode
 	rootCmd.AddCommand(newRunNodeCmd(nodeFunc))
 
-	cmd := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))
-	if err := cmd.Execute(); err != nil {
+	c := cli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", cfg.DefaultTendermintDir)))
+	if err := c.Execute(); err != nil {
 		panic(err)
 	}
 
@@ -82,33 +81,25 @@ func defaultNewNode(config *cfg.Config, logger tmlog.Logger) (*nm.Node, error) {
 }
 
 func selectGenesisDocProviderFunc(config *cfg.Config) nm.GenesisDocProvider {
-	return func() (*types.GenesisDoc, error) {
-		if len(networkSelect) > 0 {
-			return httpGenesisDocProvider()
-		}
-
-		return nm.DefaultGenesisDocProviderFunc(config)()
+	if len(networkSelect) > 0 {
+		return httpGenesisDocProvider
 	}
+
+	return nm.DefaultGenesisDocProviderFunc(config)
 }
 
-func httpGenesisDocProvider() (*types.GenesisDoc, error) {
+func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
 	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect))
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	html, err := ioutil.ReadAll(resp.Body)
+	jsonGenesis, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	genesisDoc := &types.GenesisDoc{}
-	err = tmjson.Unmarshal(html, genesisDoc)
-	if err != nil {
-		return nil, err
-	}
-
-	return genesisDoc, nil
+	return tmtypes.GenesisDocFromJSON(jsonGenesis)
 }
 
 // this is taken from tendermint
