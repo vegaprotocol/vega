@@ -315,7 +315,6 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 
 // make the required transfers for distributing reward payout
 func (e *Engine) distributePayout(ctx context.Context, po *payout) {
-	partyAccountIDToParty := make(map[string]string, len(po.partyToAmount))
 	partyIDs := make([]string, 0, len(po.partyToAmount))
 	for party := range po.partyToAmount {
 		partyIDs = append(partyIDs, party)
@@ -350,7 +349,8 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		// send an event with the reward amount transferred to the party
 		if len(response.Transfers) > 0 {
 			ledgerEntry := response.Transfers[0]
-			party := partyAccountIDToParty[ledgerEntry.ToAccount]
+			party := response.Balances[0].Account.Owner
+			// party := partyAccountIDToParty[ledgerEntry.ToAccount]
 			proportion, _ := ledgerEntry.Amount.ToDecimal().Div(po.totalReward.ToDecimal()).Float64()
 			payoutEvents[party] = events.NewRewardPayout(ctx, po.timestamp, party, po.epochSeq, po.asset, ledgerEntry.Amount, proportion)
 			parties = append(parties, party)

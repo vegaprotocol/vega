@@ -353,6 +353,29 @@ func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
 	return balances
 }
 
+func (b *BrokerStub) GetRewards(epochSeq string) map[string]events.RewardPayout {
+	batch := b.GetBatch(events.RewardPayoutEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	rewards := map[string]events.RewardPayout{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.RewardPayout:
+			if et.EpochSeq == epochSeq {
+				rewards[et.Party] = et
+			}
+		case *events.RewardPayout:
+			if (*et).EpochSeq == string(epochSeq) {
+				rewards[et.Party] = *et
+			}
+		}
+	}
+	return rewards
+}
+
 func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.ValidatorScore {
 	batch := b.GetBatch(events.ValidatorScoreEvent)
 	if len(batch) == 0 {

@@ -106,7 +106,7 @@ func testCalcValidatorsScore(t *testing.T) {
 }
 
 func testCalcRewardNoBalance(t *testing.T) {
-	res := calculateRewards("asset", "rewardsAccountID", num.Zero(), map[string]float64{}, []*types.ValidatorData{}, 0.3, nil, num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]float64{}, []*types.ValidatorData{}, 0.3, nil, num.Zero())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -118,7 +118,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	scores["node3"] = 0.0
 	scores["node4"] = 0.0
 
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, 0.3, nil, num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, 0.3, nil, num.Zero())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -162,7 +162,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, maxPayout, num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, maxPayout, num.Zero())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -244,7 +244,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(20000), num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(20000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -317,7 +317,7 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
-	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(40000), num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(40000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2

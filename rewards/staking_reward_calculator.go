@@ -36,11 +36,11 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 		e.log.Panic("failed to read reward scheme param", logging.String("minValStake", rewardScheme.Parameters["minValStake"].Value))
 	}
 
-	return calculateRewards(asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator)
+	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator)
 }
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints
-func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout, minStakePerValidator *num.Uint) *payout {
+func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout, minStakePerValidator *num.Uint) *payout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
 	totalRewardPayout := num.Zero()
@@ -50,6 +50,7 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 			partyToAmount: rewards,
 			totalReward:   totalRewardPayout,
 			asset:         asset,
+			epochSeq:      epochSeq,
 		}
 	}
 
@@ -147,6 +148,7 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 		partyToAmount: rewards,
 		totalReward:   totalRewardPayout,
 		asset:         asset,
+		epochSeq:      epochSeq,
 	}
 }
 

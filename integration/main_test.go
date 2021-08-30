@@ -69,7 +69,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		}
 	})
 
-	// validator steps
+	// delegation/validator steps
 	s.Step(`the validators:$`, func(table *godog.Table) error {
 		return steps.TheValidators(execsetup.topology, execsetup.collateralEngine, execsetup.delegationEngine, table)
 	})
@@ -79,6 +79,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	s.Step(`^the validators should have the following val scores for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
+	})
+	s.Step(`^the global reward account gets the following deposits:$`, func(table *godog.Table) error {
+		return steps.DepositToRewardAccount(execsetup.collateralEngine, table)
+	})
+
+	s.Step(`^the parties receive the folowing reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
+		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
 	})
 
 	// Market steps
