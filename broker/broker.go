@@ -232,6 +232,7 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 		// ALL subscribers directly instead
 		subs = b.tSubs[events.All]
 	}
+
 	// we still need to create a copy to keep the race detector happy
 	cpy := make(map[int]*subscription, len(subs))
 	for k, v := range subs {
