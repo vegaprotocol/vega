@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/rewards"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -15,7 +16,6 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
-	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
@@ -447,6 +447,12 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 
+	// checkpoint engine
+	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams)
+	if err != nil {
+		panic(err)
+	}
+
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
 		// the node upon genesis will load all asset first in the node
@@ -466,11 +472,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
-	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams)
-	if err != nil {
-		panic(err)
-	}
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
