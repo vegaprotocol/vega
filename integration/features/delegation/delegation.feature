@@ -2,11 +2,11 @@ Feature: Staking & Delegation
 
   Background:
     Given the following network parameters are set:
-      | name                                          | value |
-      | governance.vote.asset                         | VEGA  |
-      | validators.epoch.length                       | 10s   |
-      | validators.delegation.minAmount               | 10    |
-      | reward.staking.delegation.payoutDelay         | 0s    |
+      | name                                            | value |
+      | governance.vote.asset                           | VEGA  |
+      | validators.epoch.length                         | 10s   |
+      | validators.delegation.minAmount                 | 10    |
+      | reward.staking.delegation.payoutDelay           | 0s    |
       
     Given time is updated to "2021-08-26T00:00:00Z"
 
@@ -109,7 +109,7 @@ Feature: Staking & Delegation
     | party1 |  node2   |   0    |       
     | party1 |  node3   |   0    |   
 
-    #advance to teh end of epoch for the undelegation to take place 
+    #advance to the end of epoch for the undelegation to take place 
     When time is updated to "2021-08-26T00:00:32Z"  
     Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |

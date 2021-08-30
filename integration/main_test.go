@@ -77,6 +77,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesShouldHaveTheFollowingDelegationBalances(execsetup.broker, table, epoch)
 	})
 
+	s.Step(`^the validators should have the following val scores for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
+		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
+	})
+
 	// Market steps
 	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheSimpleRiskModel(marketConfig, name, table)

@@ -1,6 +1,7 @@
 package rewards
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"testing"
@@ -8,6 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,6 +60,9 @@ func testTotalDelegated(t *testing.T) {
 }
 
 func testCalcValidatorsScore(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	validators := []*types.ValidatorData{}
 
 	for i := 0; i < 12; i++ {
@@ -73,7 +79,7 @@ func testCalcValidatorsScore(t *testing.T) {
 		StakeByDelegators: num.Zero(),
 	})
 
-	valScores := calcValidatorsNormalisedScore(validators, 5.0, 1.1)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, 5.0, 1.1)
 	require.Equal(t, 13, len(valScores))
 
 	for i := 0; i < 12; i++ {
@@ -86,7 +92,7 @@ func testCalcValidatorsScore(t *testing.T) {
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(19900),
 	}
-	valScores = calcValidatorsNormalisedScore(validators, 5.0, 1.1)
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, 5.0, 1.1)
 	require.Equal(t, "0.001", fmt.Sprintf("%.3f", valScores["node13"]))
 
 	validators[12] = &types.ValidatorData{
@@ -94,7 +100,7 @@ func testCalcValidatorsScore(t *testing.T) {
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(919900),
 	}
-	valScores = calcValidatorsNormalisedScore(validators, 5.0, 1.1)
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, 5.0, 1.1)
 	require.Equal(t, "0.020", fmt.Sprintf("%.3f", valScores["node13"]))
 
 }
@@ -118,6 +124,10 @@ func testCalcRewardsZeroScores(t *testing.T) {
 }
 
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
+	ctrl := gomock.NewController(t)
+	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
 	delegatorForVal1["party2"] = num.NewUint(4000)
@@ -151,7 +161,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	}
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(validatorData, 5.0, 1.1)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
 	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, maxPayout, num.Zero())
 
 	// the normalised scores are as follows (from the test above)
@@ -228,8 +238,12 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 		Delegators:        map[string]*num.Uint{},
 	}
 
+	ctrl := gomock.NewController(t)
+	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(validatorData, 5.0, 1.1)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
 	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(20000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)
@@ -297,8 +311,12 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 		Delegators:        map[string]*num.Uint{},
 	}
 
+	ctrl := gomock.NewController(t)
+	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(validatorData, 5.0, 1.1)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
 	res := calculateRewards("asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(40000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)

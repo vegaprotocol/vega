@@ -1,8 +1,11 @@
 package rewards
 
 import (
+	"context"
 	"math"
+	"sort"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -13,7 +16,7 @@ const (
 	compLevel = 1.1
 )
 
-func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
+func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker Broker, epochSeq, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
 	delegatorShare, err := rewardScheme.Parameters["delegatorShare"].GetFloat()
 	if err != nil {
 		e.log.Panic("failed to read reward scheme param", logging.String("delegatorShare", rewardScheme.Parameters["delegatorShare"].Value))
@@ -26,7 +29,7 @@ func (e *Engine) calculatStakingAndDelegationRewards(asset string, accountID str
 	}
 
 	// calculate the validator score for each validator and the total score for all
-	validatorNormalisedScores := calcValidatorsNormalisedScore(validatorData, minVal, compLevel)
+	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, broker, epochSeq, validatorData, minVal, compLevel)
 
 	minStakePerValidator, err := rewardScheme.Parameters["minValStake"].GetUint()
 	if err != nil {
@@ -148,24 +151,36 @@ func calculateRewards(asset string, accountID string, rewardBalance *num.Uint, v
 }
 
 // calculate the score for each validator and normalise by the total score
-func calcValidatorsNormalisedScore(validatorsData []*types.ValidatorData, minVal, compLevel float64) map[string]float64 {
+func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel float64) map[string]float64 {
 	// calculate the total amount of tokens delegated across all validators
 	totalDelegated := calcTotalDelegated(validatorsData)
 	totalScore := 0.0
 	valScores := make(map[string]float64, len(validatorsData))
+
+	if totalDelegated.IsZero() {
+		return valScores
+	}
+
 	// for each validator calculate the score
+	nodeIDSlice := []string{}
 	for _, vd := range validatorsData {
 		totalValStake := num.Zero().Add(vd.StakeByDelegators, vd.SelfStake)
 		normalisedValStake := totalValStake.Float64() / totalDelegated.Float64()
 		valScore := calcValidatorScore(normalisedValStake, minVal, compLevel, float64(len(validatorsData)))
 		valScores[vd.NodeID] = valScore
 		totalScore += valScore
+		nodeIDSlice = append(nodeIDSlice, vd.NodeID)
 	}
 
-	for k, score := range valScores {
+	sort.Strings(nodeIDSlice)
+	validatorScoreEventSlice := make([]events.Event, 0, len(valScores))
+
+	for _, k := range nodeIDSlice {
+		score := valScores[k]
 		valScores[k] = score / totalScore
+		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, num.NewDecimalFromFloat(score), num.NewDecimalFromFloat(valScores[k])))
 	}
-
+	broker.SendBatch(validatorScoreEventSlice)
 	return valScores
 }
 

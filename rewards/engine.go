@@ -366,7 +366,7 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 
 // delegates the reward calculation to the reward scheme
 //NB currently the only reward scheme type supported is staking and delegation
-func (e *Engine) calculateRewards(ctx context.Context, asset string, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, epoch types.Epoch) *payout {
+func (e *Engine) calculateRewards(ctx context.Context, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, epoch types.Epoch) *payout {
 	if rewardScheme.Type != types.RewardSchemeStakingAndDelegation {
 		e.log.Panic("unsupported reward scheme type", logging.Int("type", int(rewardScheme.Type)))
 	}
@@ -378,5 +378,5 @@ func (e *Engine) calculateRewards(ctx context.Context, asset string, accountID s
 		return nil
 	}
 
-	return e.calculatStakingAndDelegationRewards(asset, accountID, rewardScheme, rewardBalance, validatorData)
+	return e.calculatStakingAndDelegationRewards(ctx, e.broker, num.NewUint(epoch.Seq).String(), asset, accountID, rewardScheme, rewardBalance, validatorData)
 }
