@@ -89,9 +89,10 @@ func selectGenesisDocProviderFunc(config *cfg.Config) nm.GenesisDocProvider {
 }
 
 func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
-	resp, err := http.Get(fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect))
+	genesisFilePath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect)
+	resp, err := http.Get(genesisFilePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
 	}
 	defer resp.Body.Close()
 	jsonGenesis, err := ioutil.ReadAll(resp.Body)
@@ -99,7 +100,11 @@ func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
 		return nil, err
 	}
 
-	return tmtypes.GenesisDocFromJSON(jsonGenesis)
+	doc, err := tmtypes.GenesisDocFromJSON(jsonGenesis)
+	if err != nil {
+		return nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
+	}
+	return doc, nil
 }
 
 // this is taken from tendermint
