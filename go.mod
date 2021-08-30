@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.7.1-0.20210821081008-f1b93babc1c1
+	code.vegaprotocol.io/go-wallet v0.7.1-0.20210830095520-9149a2b7a981 // indirect
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.41.1-0.20210828094956-a6ce4b8a2254
 	code.vegaprotocol.io/quant v0.2.5
@@ -41,6 +41,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.11
+	github.com/vegaprotocol/api v0.38.0-pre2 // indirect
 	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm v1.12.0 // indirect
