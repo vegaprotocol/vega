@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
@@ -204,6 +205,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.eventService = subscribers.NewService(l.broker)
 	l.epochService = epochs.NewService(l.Log, l.conf.Epochs, l.epochStore)
 	l.delegationService = delegations.NewService(l.Log, l.conf.Delegations, l.delegationStore)
+	l.nodeService = nodes.NewService(l.Log, l.conf.Nodes, l.nodeStore, l.epochStore)
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
