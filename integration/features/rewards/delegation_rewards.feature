@@ -7,7 +7,7 @@ Feature: Staking & Delegation
       | validators.epoch.length                           |  10s   |
       | validators.delegation.minAmount                   |  10    |
       | reward.staking.delegation.payoutDelay             |  0s    |
-      | reward.staking.delegation.delegatorShare          |  0.3   |
+      | reward.staking.delegation.delegatorShare          |  0.883 |
       | reward.staking.delegation.minimumValidatorStake   |  100   |
       | reward.staking.delegation.payoutFraction          |  0.5   |
       | reward.staking.delegation.maxPayoutPerParticipant | 100000 |
@@ -89,17 +89,17 @@ Feature: Staking & Delegation
     #node2 has 10k self delegation + 200 from party2 
     #node3 has 10k self delegation + 300 from party3 
     #all other nodes have 10k self delegation 
-    #party1 gets 0.07734 * 50000 * 0.3 * 100/10100 + 0.07810 * 50000 * 0.3 * 200/10200 + 0.07887 * 50000 * 0.3 * 300/10300
-    #node1 gets: (1 - 0.3 * 100/10100) * 0.07734 * 50000
-    #node2 gets: (1 - 0.3 * 200/10200) * 0.07810 * 50000
-    #node3 gets: (1 - 0.3 * 300/10300) * 0.07887 * 50000
+    #party1 gets 0.07734 * 50000 * 0.883 * 100/10100 + 0.07810 * 50000 * 0.883 * 200/10200 + 0.07887 * 50000 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 50000
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
     #node4 - node13 gets: 0.07657 * 50000
-    And the parties receive the folowing reward for epoch 1:
+    And the parties receive the following reward for epoch 1:
     | party  | asset | amount |
-    | party1 | VEGA  |  67    | 
-    | node1  | VEGA  |  3855  | 
-    | node2  | VEGA  |  3882  | 
-    | node3  | VEGA  |  3908  | 
+    | party1 | VEGA  |  201   | 
+    | node1  | VEGA  |  3832  | 
+    | node2  | VEGA  |  3837  | 
+    | node3  | VEGA  |  3841  | 
     | node4  | VEGA  |  3828  | 
     | node5  | VEGA  |  3828  | 
     | node6  | VEGA  |  3828  | 

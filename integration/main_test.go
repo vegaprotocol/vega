@@ -84,7 +84,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.DepositToRewardAccount(execsetup.collateralEngine, table)
 	})
 
-	s.Step(`^the parties receive the folowing reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
+	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
 	})
 
