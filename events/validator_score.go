@@ -11,7 +11,7 @@ type ValidatorScore struct {
 	*Base
 	NodeID          string
 	EpochSeq        string
-	Score           string
+	ValidatorScore  string
 	NormalisedScore string
 }
 
@@ -20,7 +20,7 @@ func NewValidatorScore(ctx context.Context, nodeID, epochSeq string, score, norm
 		Base:            newBase(ctx, ValidatorScoreEvent),
 		NodeID:          nodeID,
 		EpochSeq:        epochSeq,
-		Score:           score.String(),
+		ValidatorScore:  score.String(),
 		NormalisedScore: normalisedScore.String(),
 	}
 }
@@ -29,7 +29,7 @@ func (vd ValidatorScore) Proto() eventspb.ValidatorScoreEvent {
 	return eventspb.ValidatorScoreEvent{
 		NodeId:          vd.NodeID,
 		EpochSeq:        vd.EpochSeq,
-		ValidatorScore:  vd.Score,
+		ValidatorScore:  vd.ValidatorScore,
 		NormalisedScore: vd.NormalisedScore,
 	}
 }
@@ -60,7 +60,7 @@ func ValidatorScoreEventFromStream(ctx context.Context, be *eventspb.BusEvent) *
 		Base:            newBaseFromStream(ctx, ValidatorScoreEvent, be),
 		NodeID:          event.GetNodeId(),
 		EpochSeq:        event.GetEpochSeq(),
-		Score:           event.ValidatorScore,
+		ValidatorScore:  event.ValidatorScore,
 		NormalisedScore: event.NormalisedScore,
 	}
 }

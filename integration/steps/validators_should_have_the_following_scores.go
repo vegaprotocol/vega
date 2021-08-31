@@ -20,7 +20,7 @@ func ValidatorsShouldHaveTheFollowingScores(
 		row := validatorScoreRow{row: r}
 		validatorScore, ok := scores[row.NodeID()]
 
-		score5DP, _ := num.DecimalFromString(validatorScore.Score)
+		score5DP, _ := num.DecimalFromString(validatorScore.ValidatorScore)
 		normScore5DP, _ := num.DecimalFromString(validatorScore.NormalisedScore)
 
 		if !ok {

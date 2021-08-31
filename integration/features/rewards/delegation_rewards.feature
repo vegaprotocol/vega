@@ -48,8 +48,8 @@ Feature: Staking & Delegation
       | node13 |  node13  | 10000  | 
 
     And the global reward account gets the following deposits:
-    | asset | amount |
-    | VEGA  | 100000 | 
+      | asset | amount |
+      | VEGA  | 100000 | 
     
     And the parties deposit on asset's general account the following amount:
       | party  | asset  | amount |

@@ -56,7 +56,7 @@ Feature: Staking & Delegation
   Scenario: A party can delegate to a validator and undelegate at the end of an epoch
     Desciption: A party with a balance in the staking account can delegate to a validator
 
-    The parties deposit on staking account the following amount:  
+    When the parties deposit on staking account the following amount:  
       | party  | asset  | amount |
       | party1 | VEGA   | 10000  |
 
@@ -120,7 +120,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot delegate less than minimum delegateable stake  
     Desciption: A party attempts to delegate less than minimum delegateable stake from its staking account to a validator minimum delegateable stake
       
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000  |  
 
@@ -146,7 +146,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot delegate more than it has in staking account
     Desciption: A party attempts to delegate more than it has in its staking account to a validator
     
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000  |  
 
@@ -172,7 +172,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot delegate stake size such that it exceeds maximum amount of stake for a validator
     Desciption: A party attempts to delegate token stake which exceed maximum stake for a validator
       
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000  |  
 
@@ -207,7 +207,7 @@ Feature: Staking & Delegation
   Scenario: A party changes delegation from one validator to another in the same epoch
     Desciption: A party can change delegatation from one Validator to another
 
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000  |  
 
@@ -262,7 +262,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot delegate to an unknown node 
     Desciption: A party should fail in trying to delegate to a non existing node
 
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000  |  
 
@@ -274,7 +274,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot undelegate from an unknown node
     Desciption: A party should fail in trying to undelegate from a non existing node
 
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000  |  
 
@@ -287,7 +287,7 @@ Feature: Staking & Delegation
    Desciption: A party has pending delegations and is trying to exceed their stake account balance delegation, 
     i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
 
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000   |  
     
@@ -315,7 +315,7 @@ Feature: Staking & Delegation
    Desciption: A party has pending delegations and undelegations and is trying to exceed their stake account balance delegation, 
     i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
 
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000   |  
     
@@ -344,7 +344,7 @@ Feature: Staking & Delegation
   Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
     Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to node2
 
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000   |  
     
@@ -368,7 +368,7 @@ Feature: Staking & Delegation
   Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
     Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains. 
 
-    The parties deposit on staging account the following amount:  
+    When the parties deposit on staging account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 10000   |  
     
