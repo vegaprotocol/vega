@@ -348,6 +348,7 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 
 	node, err := t.nodeService.GetNodeByID(ctx, req.GetId())
 	if err != nil {
+		fmt.Println(err)
 		return nil, apiError(codes.Internal, err)
 	}
 
