@@ -57,7 +57,7 @@ Feature: Staking & Delegation
       | party2 | VEGA   |  20000 |
       | party3 | VEGA   |  30000 |
 
-    And the parties deposit on staging account the following amount:
+    And the parties deposit on staking account the following amount:
       | party  | asset  | amount |
       | party1 | VEGA   | 10000  |  
 
