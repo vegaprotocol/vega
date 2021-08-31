@@ -538,10 +538,10 @@ type Delegation {
   amount: String!
 
   "Party which is delegating"
-  partyId: String!
+  party: Party!
 
   "URL of node you are delegating to"
-  node: String!
+  node: Node!
 
   "Epoch of delegation"
   epoch: Int!
