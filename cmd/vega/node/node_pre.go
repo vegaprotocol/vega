@@ -335,12 +335,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 
-	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams)
-	if err != nil {
-		panic(err)
-	}
-
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.epochService)
 	l.netParams.Watch(
@@ -348,6 +342,12 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 			Param:   netparams.DelegationMinAmount,
 			Watcher: l.delegation.OnMinAmountChanged,
 		})
+
+	// checkpoint engine
+	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams)
+	if err != nil {
+		panic(err)
+	}
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
@@ -373,21 +373,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
 		return err
 	}
-
-	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-
-	// TODO replace with actual implementation
-	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
-	l.netParams.Watch(netparams.WatchParam{
-		Param:   netparams.GovernanceVoteAsset,
-		Watcher: stakingAccount.GovAssetUpdated,
-	})
-
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.epochService)
-	l.netParams.Watch(netparams.WatchParam{
-		Param:   netparams.DelegationMinAmount,
-		Watcher: l.delegation.OnMinAmountChanged,
-	})
 
 	// setup rewards engine
 	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
