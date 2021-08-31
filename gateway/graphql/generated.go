@@ -162,10 +162,10 @@ type ComplexityRoot struct {
 	}
 
 	Delegation struct {
-		Amount  func(childComplexity int) int
-		Epoch   func(childComplexity int) int
-		Node    func(childComplexity int) int
-		PartyID func(childComplexity int) int
+		Amount func(childComplexity int) int
+		Epoch  func(childComplexity int) int
+		Node   func(childComplexity int) int
+		Party  func(childComplexity int) int
 	}
 
 	Deposit struct {
@@ -953,8 +953,8 @@ type ConditionResolver interface {
 	Operator(ctx context.Context, obj *v11.Condition) (ConditionOperator, error)
 }
 type DelegationResolver interface {
-	PartyID(ctx context.Context, obj *vega.Delegation) (string, error)
-	Node(ctx context.Context, obj *vega.Delegation) (string, error)
+	Party(ctx context.Context, obj *vega.Delegation) (*vega.Party, error)
+	Node(ctx context.Context, obj *vega.Delegation) (*vega.Node, error)
 	Epoch(ctx context.Context, obj *vega.Delegation) (int, error)
 }
 type DepositResolver interface {
@@ -1617,12 +1617,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Delegation.Node(childComplexity), true
 
-	case "Delegation.partyId":
-		if e.complexity.Delegation.PartyID == nil {
+	case "Delegation.party":
+		if e.complexity.Delegation.Party == nil {
 			break
 		}
 
-		return e.complexity.Delegation.PartyID(childComplexity), true
+		return e.complexity.Delegation.Party(childComplexity), true
 
 	case "Deposit.amount":
 		if e.complexity.Deposit.Amount == nil {
@@ -5769,10 +5769,10 @@ type Delegation {
   amount: String!
 
   "Party which is delegating"
-  partyId: String!
+  party: Party!
 
   "URL of node you are delegating to"
-  node: String!
+  node: Node!
 
   "Epoch of delegation"
   epoch: Int!
@@ -10347,7 +10347,7 @@ func (ec *executionContext) _Delegation_amount(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Delegation_partyId(ctx context.Context, field graphql.CollectedField, obj *vega.Delegation) (ret graphql.Marshaler) {
+func (ec *executionContext) _Delegation_party(ctx context.Context, field graphql.CollectedField, obj *vega.Delegation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10365,7 +10365,7 @@ func (ec *executionContext) _Delegation_partyId(ctx context.Context, field graph
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Delegation().PartyID(rctx, obj)
+		return ec.resolvers.Delegation().Party(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10377,9 +10377,9 @@ func (ec *executionContext) _Delegation_partyId(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*vega.Party)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNParty2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐParty(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Delegation_node(ctx context.Context, field graphql.CollectedField, obj *vega.Delegation) (ret graphql.Marshaler) {
@@ -10412,9 +10412,9 @@ func (ec *executionContext) _Delegation_node(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*vega.Node)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNNode2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Delegation_epoch(ctx context.Context, field graphql.CollectedField, obj *vega.Delegation) (ret graphql.Marshaler) {
@@ -29039,7 +29039,7 @@ func (ec *executionContext) _Delegation(ctx context.Context, sel ast.SelectionSe
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "partyId":
+		case "party":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -29047,7 +29047,7 @@ func (ec *executionContext) _Delegation(ctx context.Context, sel ast.SelectionSe
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Delegation_partyId(ctx, field, obj)
+				res = ec._Delegation_party(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -36268,6 +36268,10 @@ func (ec *executionContext) marshalNNetworkParameter2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._NetworkParameter(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNNode2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNode(ctx context.Context, sel ast.SelectionSet, v vega.Node) graphql.Marshaler {
+	return ec._Node(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNNode2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Node) graphql.Marshaler {

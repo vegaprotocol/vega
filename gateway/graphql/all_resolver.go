@@ -41,6 +41,20 @@ func (r *allResolver) getAssetByID(ctx context.Context, id string) (*types.Asset
 	return res.Asset, nil
 }
 
+func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, error) {
+	if len(id) <= 0 {
+		return nil, ErrMissingNodeID
+	}
+	resp, err := r.clt.GetNodeByID(
+		ctx, &protoapi.GetNodeByIDRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Node, nil
+
+}
+
 func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {
 	req := &protoapi.AssetsRequest{}
 	res, err := r.clt.Assets(ctx, req)

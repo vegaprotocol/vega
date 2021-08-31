@@ -9,12 +9,12 @@ import (
 
 type delegationResolver VegaResolverRoot
 
-func (r *delegationResolver) PartyID(ctx context.Context, obj *proto.Delegation) (string, error) {
-	return obj.Party, nil
+func (r *delegationResolver) Party(ctx context.Context, obj *proto.Delegation) (*proto.Party, error) {
+	return &proto.Party{Id: obj.Party}, nil
 }
 
-func (r *delegationResolver) Node(ctx context.Context, obj *proto.Delegation) (string, error) {
-	return obj.NodeId, nil
+func (r *delegationResolver) Node(ctx context.Context, obj *proto.Delegation) (*proto.Node, error) {
+	return r.r.getNodeByID(ctx, obj.NodeId)
 }
 
 func (r *delegationResolver) Epoch(ctx context.Context, obj *proto.Delegation) (int, error) {
