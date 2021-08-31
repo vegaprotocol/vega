@@ -77,6 +77,8 @@ type nodeHash struct {
 
 // New creates a new instance of the event forwarder
 func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) *EvtForwarder {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 	var allowlist atomic.Value
 	allowlist.Store(buildAllowlist(cfg))
 	evtf := &EvtForwarder{
@@ -165,6 +167,12 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 		metrics.EvtForwardInc("forward", res)
 	}()
 
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("new event received to be forwarded",
+			logging.String("event", evt.String()),
+		)
+	}
+
 	// check if the sender of the event is whitelisted
 	if !e.isAllowlisted(pubkey) {
 		res = "pubkeynotallowed"
@@ -219,6 +227,12 @@ func (e *EvtForwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, 
 }
 
 func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("trying to send event",
+			logging.String("event", evt.String()),
+		)
+	}
+
 	// error doesn't matter here
 	e.cmd.Command(ctx, txn.ChainEventCommand, evt, nil)
 }
