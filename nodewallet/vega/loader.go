@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/go-wallet/wallet"
 	storev1 "code.vegaprotocol.io/go-wallet/wallet/store/v1"
 	"code.vegaprotocol.io/vega/crypto"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 )
 
 type WalletLoader struct {
@@ -23,7 +23,7 @@ func NewWalletLoader(walletRootPath string) *WalletLoader {
 }
 
 func (l *WalletLoader) Initialise() error {
-	return fsutil.EnsureDir(l.walletRootPath)
+	return vgfs.EnsureDir(l.walletRootPath)
 }
 
 func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, error) {

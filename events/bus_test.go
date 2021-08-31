@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +18,7 @@ func TestTimeEvent(t *testing.T) {
 	assert.Equal(t, e.Time(), now)
 	assert.Equal(t, events.TimeUpdate, e.Type())
 	assert.NotEmpty(t, e.TraceID())
-	_, trace := contextutil.TraceIDFromContext(e.Context())
+	_, trace := vgcontext.TraceIDFromContext(e.Context())
 	assert.NotNil(t, trace)
 	assert.Equal(t, trace, e.TraceID())
 	assert.Zero(t, e.Sequence())

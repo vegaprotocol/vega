@@ -3,6 +3,7 @@ package nodewallet
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/protos/vega/api"
@@ -64,6 +65,8 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 // Command - send command to chain
 func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
 	go func() {
+		ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cfunc()
 		inputData := commands.NewInputData(c.bstats.Height())
 		wrapPayloadIntoInputData(inputData, cmd, payload)
 		marshalledData, err := proto.Marshal(inputData)

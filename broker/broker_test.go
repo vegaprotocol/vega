@@ -15,8 +15,8 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	"go.nanomsg.org/mangos/v3/protocol/pull"
 
@@ -98,7 +98,7 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 	t.Parallel()
 	tstBroker := getBroker(t)
 	defer tstBroker.Finish()
-	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
+	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
 	dataH1 := []events.Event{
 		events.NewTime(ctxH1, time.Now()),
 		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
@@ -147,7 +147,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 	t.Parallel()
 	tstBroker := getBroker(t)
 	defer tstBroker.Finish()
-	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
+	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
 	dataH1 := []events.Event{
 		events.NewTime(ctxH1, time.Now()),
 		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),

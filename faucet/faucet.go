@@ -12,8 +12,9 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	"code.vegaprotocol.io/vega/crypto"
-	vhttp "code.vegaprotocol.io/vega/http"
+	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 
 	"github.com/cenkalti/backoff"
@@ -38,13 +39,13 @@ type Faucet struct {
 	cfg    Config
 	wallet *faucetWallet
 	s      *http.Server
-	rl     *vhttp.RateLimit
+	rl     *vghttp.RateLimit
 	cfunc  context.CancelFunc
 	stopCh chan struct{}
 
 	// node connections stuff
 	clt     api.TradingServiceClient
-	cltdata api.TradingDataServiceClient
+	coreclt coreapipb.CoreApiServiceClient
 	conn    *grpc.ClientConn
 }
 
@@ -74,11 +75,10 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 	}
 
 	client := api.NewTradingServiceClient(conn)
-	clientData := api.NewTradingDataServiceClient(conn)
-
+	coreclient := coreapipb.NewCoreApiServiceClient(conn)
 	ctx, cfunc := context.WithCancel(context.Background())
 
-	rl, err := vhttp.NewRateLimit(ctx, cfg.RateLimit)
+	rl, err := vghttp.NewRateLimit(ctx, cfg.RateLimit)
 	if err != nil {
 		cfunc()
 		return nil, fmt.Errorf("failed to create RateLimit: %v", err)
@@ -90,7 +90,7 @@ func New(log *logging.Logger, cfg Config, passphrase string) (*Faucet, error) {
 		cfg:     cfg,
 		wallet:  wallet,
 		clt:     client,
-		cltdata: clientData,
+		coreclt: coreclient,
 		conn:    conn,
 		cfunc:   cfunc,
 		rl:      rl,
@@ -133,7 +133,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 
 	// rate limit minting by source IP address, party, asset
-	ip, err := vhttp.RemoteAddr(r)
+	ip, err := vghttp.RemoteAddr(r)
 	if err != nil {
 		writeError(w, newError(fmt.Sprintf("failed to get request remote address: %v", err)), http.StatusBadRequest)
 		return
@@ -203,17 +203,20 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 }
 
 func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset string) error {
-	req := &api.AssetByIDRequest{
-		Id: asset,
+	req := &coreapipb.ListAssetsRequest{
+		Asset: asset,
 	}
-	resp, err := f.cltdata.AssetByID(ctx, req)
+	resp, err := f.coreclt.ListAssets(ctx, req)
 	if err != nil {
 		if resp == nil {
 			return ErrAssetNotFound
 		}
 		return err
 	}
-	source := resp.Asset.Details.GetBuiltinAsset()
+	if len(resp.Assets) <= 0 {
+		return ErrAssetNotFound
+	}
+	source := resp.Assets[0].Details.GetBuiltinAsset()
 	if source == nil {
 		return ErrNotABuiltinAsset
 	}

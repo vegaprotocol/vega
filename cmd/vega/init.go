@@ -9,10 +9,9 @@ import (
 
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/faucet"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/storage"
 
 	"github.com/jessevdk/go-flags"
 	"github.com/zannen/toml"
@@ -37,9 +36,9 @@ func (opts *InitCmd) Execute(_ []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
-	rootPathExists, err := fsutil.PathExists(opts.RootPath)
+	rootPathExists, err := vgfs.PathExists(opts.RootPath)
 	if err != nil {
-		if _, ok := err.(*fsutil.PathNotFound); !ok {
+		if _, ok := err.(*vgfs.PathNotFound); !ok {
 			return err
 		}
 	}
@@ -54,26 +53,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 	}
 
 	// create the root
-	if err = fsutil.EnsureDir(opts.RootPath); err != nil {
-		return err
-	}
-
-	fullCandleStorePath := filepath.Join(opts.RootPath, storage.CandlesDataPath)
-	fullOrderStorePath := filepath.Join(opts.RootPath, storage.OrdersDataPath)
-	fullTradeStorePath := filepath.Join(opts.RootPath, storage.TradesDataPath)
-	fullMarketStorePath := filepath.Join(opts.RootPath, storage.MarketsDataPath)
-
-	// create sub-folders
-	if err = fsutil.EnsureDir(fullCandleStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullOrderStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullTradeStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullMarketStorePath); err != nil {
+	if err = vgfs.EnsureDir(opts.RootPath); err != nil {
 		return err
 	}
 

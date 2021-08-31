@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/validators"
@@ -79,7 +79,7 @@ func (opts *updateCmd) Execute(_ []string) error {
 	}
 
 	genesisFilePath := tmConfig.GenesisFile()
-	data, err := fsutil.ReadFile(genesisFilePath)
+	data, err := vgfs.ReadFile(genesisFilePath)
 	if err != nil {
 		return err
 	}
