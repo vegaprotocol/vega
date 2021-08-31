@@ -63,7 +63,7 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
+func (c *Commander) Command(_ context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
 	go func() {
 		ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cfunc()
@@ -80,6 +80,9 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 			// this should never be possible too
 			c.log.Panic("could not sign command", logging.Error(err))
 		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
 		tx := commands.NewTransaction(c.wal.PubKeyOrAddress().Hex(), marshalledData, signature)
 		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionV2Request_TYPE_ASYNC)
