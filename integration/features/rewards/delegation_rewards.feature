@@ -72,7 +72,7 @@ Feature: Staking & Delegation
     Then time is updated to "2021-08-26T00:00:11Z"
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake
-    Desciption: TODO
+    Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
 
     #advance to the end of the epoch
     When time is updated to "2021-08-26T00:00:21Z"

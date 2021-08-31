@@ -56,7 +56,7 @@ Feature: Staking & Delegation
   Scenario: A party can delegate to a validator and undelegate at the end of an epoch
     Desciption: A party with a balance in the staking account can delegate to a validator
 
-    The parties deposit on staging account the following amount:  
+    The parties deposit on staking account the following amount:  
       | party  | asset  | amount |
       | party1 | VEGA   | 10000  |
 
@@ -204,7 +204,7 @@ Feature: Staking & Delegation
     | party1 |  node2   | 1507   |       
     | party1 |  node3   | 1507   |   
 
-  Scenario: A party changes delegation from one validator another in the same epoch
+  Scenario: A party changes delegation from one validator to another in the same epoch
     Desciption: A party can change delegatation from one Validator to another
 
     The parties deposit on staging account the following amount:  

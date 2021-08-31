@@ -169,7 +169,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties deposit on asset's general account the following amount:$`, func(table *godog.Table) error {
 		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
 	})
-	s.Step(`^the parties deposit on staging account the following amount:$`, func(table *godog.Table) error {
+	s.Step(`^the parties deposit on staking account the following amount:$`, func(table *godog.Table) error {
 		return steps.PartiesTransferToStakingAccount(execsetup.collateralEngine, execsetup.broker, table)
 	})
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {
