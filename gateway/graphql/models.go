@@ -125,6 +125,8 @@ type Erc20WithdrawalApproval struct {
 	// Signature aggregate from the nodes, in the following format:
 	// 0x + sig1 + sig2 + ... + sigN
 	Signatures string `json:"signatures"`
+	// The target address which will receive the funds
+	TargetAddress string `json:"targetAddress"`
 }
 
 // Specific details for an erc20 withdrawal
