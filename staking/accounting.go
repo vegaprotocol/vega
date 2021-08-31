@@ -3,12 +3,18 @@ package staking
 import (
 	"context"
 	"errors"
+	"fmt"
+	"sync"
 	"time"
 
+	vgproto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // Broker - the event bus
@@ -16,19 +22,27 @@ type Broker interface {
 	Send(events.Event)
 }
 
+type EthereumClientCaller interface {
+	bind.ContractCaller
+}
+
 var (
 	ErrNoBalanceForParty = errors.New("no balance for party")
 )
 
 type Accounting struct {
-	log                     *logging.Logger
-	cfg                     Config
-	broker                  Broker
-	accounts                map[string]*StakingAccount
+	log       *logging.Logger
+	ethClient EthereumClientCaller
+	cfg       Config
+	broker    Broker
+	accounts  map[string]*StakingAccount
+
 	stakingAssetTotalSupply *num.Uint
+	ethCfg                  vgproto.EthereumConfig
+	mut                     sync.RWMutex
 }
 
-func NewAccounting(log *logging.Logger, cfg Config, broker Broker, stakingAssetTotalSupply *num.Uint) *Accounting {
+func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -37,7 +51,7 @@ func NewAccounting(log *logging.Logger, cfg Config, broker Broker, stakingAssetT
 		cfg:                     cfg,
 		broker:                  broker,
 		accounts:                map[string]*StakingAccount{},
-		stakingAssetTotalSupply: stakingAssetTotalSupply,
+		stakingAssetTotalSupply: num.Zero(),
 	}
 }
 
@@ -62,6 +76,60 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 			logging.Error(err))
 		return
 	}
+}
+
+func (a *Accounting) OnEthereumConfigUpdate(rawcfg interface{}) error {
+	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
+	if !ok {
+		return ErrNotAnEthereumConfig
+	}
+
+	a.mut.Lock()
+	a.ethCfg = *cfg
+	a.mut.Unlock()
+
+	if err := a.updateStakingAssetTotalSupply(); err != nil {
+		a.log.Error("Failed to update staking asset total supply", logging.Error(err))
+	}
+
+	return nil
+}
+
+func (a *Accounting) updateStakingAssetTotalSupply() error {
+	a.mut.Lock()
+	defer a.mut.Unlock()
+
+	var addr common.Address
+	copy(addr[:], []byte(a.ethCfg.BridgeAddress))
+
+	sc, err := NewStakingCaller(addr, a.ethClient)
+	if err != nil {
+		return err
+	}
+
+	st, err := sc.StakingToken(&bind.CallOpts{})
+	if err != nil {
+		return err
+	}
+
+	tc, err := erc20.NewTokenCaller(st, a.ethClient)
+	if err != nil {
+		return err
+	}
+
+	ts, err := tc.TotalSupply(&bind.CallOpts{})
+	if err != nil {
+		return err
+	}
+
+	totalSupply, ok := num.UintFromBig(ts)
+	if ok {
+		return fmt.Errorf("failed to convert big.Int to num.Uint: %s", ts.String())
+	}
+
+	a.stakingAssetTotalSupply = totalSupply
+
+	return nil
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {
@@ -94,5 +162,8 @@ func (a *Accounting) GetAvailableBalanceInRange(
 }
 
 func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
+	a.mut.RLock()
+	defer a.mut.RUnlock()
+
 	return a.stakingAssetTotalSupply.Clone()
 }
