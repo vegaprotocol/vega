@@ -65,12 +65,11 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 			vue := et.Proto()
 
 			vu.nodeStore.AddNode(types.Node{
-				// @TODO - add Id
-				// Id: vue.GetInfoUrl(),
-				PubKey:   vue.GetTmPubKey(),
+				Id:       vue.GetTmPubKey(),
+				PubKey:   vue.GetVegaPubKey(),
 				InfoUrl:  vue.GetInfoUrl(),
 				Location: vue.GetCountry(),
-				Status:   types.NodeStatus_NODE_STATUS_NON_VALIDATOR,
+				Status:   types.NodeStatus_NODE_STATUS_VALIDATOR,
 			})
 		default:
 			vu.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
