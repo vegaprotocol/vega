@@ -23,7 +23,7 @@ func (app *App) processChainEvent(
 ) error {
 
 	if app.log.GetLevel() <= logging.DebugLevel {
-		app.log.Debug("received chain event from non-validator",
+		app.log.Debug("received chain event",
 			logging.String("event", ce.String()),
 			logging.String("pubkey", pubkey),
 		)

@@ -100,7 +100,11 @@ func (t *Topology) Exists(key string) bool {
 		for k := range t.vegaValidatorRefs {
 			validators = append(validators, k)
 		}
-		t.log.Debug("requested non-existing validator",
+		var s = "requested non-existing validator"
+		if ok {
+			s = "requested existing validator"
+		}
+		t.log.Debug(s,
 			logging.Strings("validators", validators),
 			logging.String("pubkey", key),
 		)
