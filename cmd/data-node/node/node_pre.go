@@ -178,6 +178,12 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		}
 	}()
 
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
+	if err != nil {
+		l.Log.Error("unable to initialise broker", logging.Error(err))
+		return err
+	}
+
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.ctx)
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
@@ -206,12 +212,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.epochService = epochs.NewService(l.Log, l.conf.Epochs, l.epochStore)
 	l.delegationService = delegations.NewService(l.Log, l.conf.Delegations, l.delegationStore)
 	l.nodeService = nodes.NewService(l.Log, l.conf.Nodes, l.nodeStore, l.epochStore)
-
-	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
-	if err != nil {
-		l.Log.Error("unable to initialise broker", logging.Error(err))
-		return err
-	}
 
 	l.broker.SubscribeBatch(
 		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
