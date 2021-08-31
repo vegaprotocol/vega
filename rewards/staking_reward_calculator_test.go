@@ -2,7 +2,6 @@ package rewards
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -27,17 +26,19 @@ func TestStakingRewards(t *testing.T) {
 }
 
 func testValidatorScore(t *testing.T) {
-	validatorStake := 10000.0
-	totalStake := 100000.0
-	minVal := 5.0
-	compLevel := 1.1
+	validatorStake := num.DecimalFromInt64(10000)
+	totalStake := num.DecimalFromInt64(100000.0)
+	minVal := num.DecimalFromInt64(5)
+	compLevel, _ := num.DecimalFromString("1.1")
+
+	ratio := validatorStake.Div(totalStake)
 
 	// minVal > numVal/compLevel => a = 5
 	// valScore = 0.1
-	require.Equal(t, 0.1, calcValidatorScore(validatorStake/totalStake, minVal, compLevel, 5.0))
+	require.Equal(t, "0.10", calcValidatorScore(ratio, minVal, compLevel, num.DecimalFromInt64(5)).StringFixed(2))
 
 	// minVal < numVal/compLevel => a = 20
-	require.Equal(t, 0.05, calcValidatorScore(validatorStake/totalStake, minVal, compLevel, 22))
+	require.Equal(t, "0.05", calcValidatorScore(ratio, minVal, compLevel, num.DecimalFromInt64(22)).StringFixed(2))
 }
 
 func testTotalDelegated(t *testing.T) {
@@ -79,51 +80,58 @@ func testCalcValidatorsScore(t *testing.T) {
 		StakeByDelegators: num.Zero(),
 	})
 
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, 5.0, 1.1)
+	minVal := num.DecimalFromInt64(5)
+	compLevel, _ := num.DecimalFromString("1.1")
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel)
 	require.Equal(t, 13, len(valScores))
 
 	for i := 0; i < 12; i++ {
-		require.Equal(t, "0.083", fmt.Sprintf("%.3f", valScores["node"+strconv.Itoa(i)]))
+		require.Equal(t, "0.083", valScores["node"+strconv.Itoa(i)].StringFixed(3))
 	}
-	require.Equal(t, "0.000", fmt.Sprintf("%.3f", valScores["node13"]))
+	require.Equal(t, "0.000", valScores["node13"].StringFixed(3))
 
 	validators[12] = &types.ValidatorData{
 		NodeID:            "node13",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(19900),
 	}
-	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, 5.0, 1.1)
-	require.Equal(t, "0.001", fmt.Sprintf("%.3f", valScores["node13"]))
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel)
+	require.Equal(t, "0.001", valScores["node13"].StringFixed(3))
 
 	validators[12] = &types.ValidatorData{
 		NodeID:            "node13",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(919900),
 	}
-	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, 5.0, 1.1)
-	require.Equal(t, "0.020", fmt.Sprintf("%.3f", valScores["node13"]))
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel)
+	require.Equal(t, "0.020", valScores["node13"].StringFixed(3))
 
 }
 
 func testCalcRewardNoBalance(t *testing.T) {
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]float64{}, []*types.ValidatorData{}, 0.3, nil, num.Zero())
+	delegatorShare, _ := num.DecimalFromString("0.3")
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, nil, num.Zero())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
 
 func testCalcRewardsZeroScores(t *testing.T) {
-	scores := map[string]float64{}
-	scores["node1"] = 0.0
-	scores["node2"] = 0.0
-	scores["node3"] = 0.0
-	scores["node4"] = 0.0
+	delegatorShare, _ := num.DecimalFromString("0.3")
+	scores := map[string]num.Decimal{}
+	scores["node1"] = num.DecimalZero()
+	scores["node2"] = num.DecimalZero()
+	scores["node3"] = num.DecimalZero()
+	scores["node4"] = num.DecimalZero()
 
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, 0.3, nil, num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, nil, num.Zero())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
 
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
+	minVal := num.DecimalFromInt64(5)
+	compLevel, _ := num.DecimalFromString("1.1")
+	delegatorShare, _ := num.DecimalFromString("0.3")
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
@@ -161,8 +169,8 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	}
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, maxPayout, num.Zero())
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel)
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -206,6 +214,9 @@ func testCalcRewardsMaxPayoutNotBreached(t *testing.T) {
 }
 
 func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
+	minVal := num.DecimalFromInt64(5)
+	compLevel, _ := num.DecimalFromString("1.1")
+	delegatorShare, _ := num.DecimalFromString("0.3")
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
 	delegatorForVal1["party2"] = num.NewUint(4000)
@@ -243,8 +254,8 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(20000), num.Zero())
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel)
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -279,6 +290,9 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 }
 
 func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
+	minVal := num.DecimalFromInt64(5)
+	compLevel, _ := num.DecimalFromString("1.1")
+	delegatorShare, _ := num.DecimalFromString("0.3")
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
 	delegatorForVal1["party2"] = num.NewUint(4000)
@@ -316,8 +330,8 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, 5.0, 1.1)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, 0.3, num.NewUint(40000), num.Zero())
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel)
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2

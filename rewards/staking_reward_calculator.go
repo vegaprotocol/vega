@@ -2,7 +2,6 @@ package rewards
 
 import (
 	"context"
-	"math"
 	"sort"
 
 	"code.vegaprotocol.io/vega/events"
@@ -11,13 +10,12 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-const (
-	minVal    = 5.0
-	compLevel = 1.1
-)
+var minVal, _ = num.DecimalFromString("5.0")
+var compLevel, _ = num.DecimalFromString("1.1")
 
 func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker Broker, epochSeq, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
-	delegatorShare, err := rewardScheme.Parameters["delegatorShare"].GetFloat()
+	delegatorShareStr := rewardScheme.Parameters["delegatorShare"].GetString()
+	delegatorShare, err := num.DecimalFromString(delegatorShareStr)
 	if err != nil {
 		e.log.Panic("failed to read reward scheme param", logging.String("delegatorShare", rewardScheme.Parameters["delegatorShare"].Value))
 	}
@@ -40,7 +38,7 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 }
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints
-func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]float64, validatorDelegation []*types.ValidatorData, delegatorShare float64, maxPayout, minStakePerValidator *num.Uint) *payout {
+func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint) *payout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
 	totalRewardPayout := num.Zero()
@@ -56,18 +54,18 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 
 	for _, vd := range validatorDelegation {
 		valScore := valScore[vd.NodeID] // normalised score
-		if valScore == 0 {
+		if valScore.IsZero() {
 			// if the validator isn't eligible for reward this round, nothing to do here
 			continue
 		}
 
 		// how much reward is assigned to the validator and its delegators
-		epochPayoutForValidatorAndDelegators := num.DecimalFromFloat(valScore).Mul(reward.ToDecimal())
+		epochPayoutForValidatorAndDelegators := valScore.Mul(reward.ToDecimal())
 
 		// calculate the fraction delegators to the validator get
 		totalStakeForValidator := vd.StakeByDelegators.ToDecimal().Add(vd.SelfStake.ToDecimal())
-		delegatorFraction := num.DecimalFromFloat(delegatorShare).Mul(vd.StakeByDelegators.ToDecimal()).Div(totalStakeForValidator)
-		validatorFraction := num.DecimalFromFloat(1.0).Sub(delegatorFraction)
+		delegatorFraction := delegatorShare.Mul(vd.StakeByDelegators.ToDecimal()).Div(totalStakeForValidator)
+		validatorFraction := num.DecimalFromInt64(1).Sub(delegatorFraction)
 
 		// if minStake is non zero and the validator has less total stake than required they don't get anything but their delegators still do
 		if !minStakePerValidator.IsZero() && vd.SelfStake.LT(minStakePerValidator) {
@@ -153,11 +151,11 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 }
 
 // calculate the score for each validator and normalise by the total score
-func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel float64) map[string]float64 {
+func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal) map[string]num.Decimal {
 	// calculate the total amount of tokens delegated across all validators
 	totalDelegated := calcTotalDelegated(validatorsData)
-	totalScore := 0.0
-	valScores := make(map[string]float64, len(validatorsData))
+	totalScore := num.DecimalZero()
+	valScores := make(map[string]num.Decimal, len(validatorsData))
 
 	if totalDelegated.IsZero() {
 		return valScores
@@ -167,10 +165,10 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	nodeIDSlice := []string{}
 	for _, vd := range validatorsData {
 		totalValStake := num.Zero().Add(vd.StakeByDelegators, vd.SelfStake)
-		normalisedValStake := totalValStake.Float64() / totalDelegated.Float64()
-		valScore := calcValidatorScore(normalisedValStake, minVal, compLevel, float64(len(validatorsData)))
+		normalisedValStake := totalValStake.ToDecimal().Div(totalDelegated.ToDecimal())
+		valScore := calcValidatorScore(normalisedValStake, minVal, compLevel, num.DecimalFromInt64(int64(len(validatorsData))))
 		valScores[vd.NodeID] = valScore
-		totalScore += valScore
+		totalScore = totalScore.Add(valScore)
 		nodeIDSlice = append(nodeIDSlice, vd.NodeID)
 	}
 
@@ -179,18 +177,18 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 
 	for _, k := range nodeIDSlice {
 		score := valScores[k]
-		valScores[k] = score / totalScore
-		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, num.NewDecimalFromFloat(score), num.NewDecimalFromFloat(valScores[k])))
+		valScores[k] = score.Div(totalScore)
+		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, score, valScores[k]))
 	}
 	broker.SendBatch(validatorScoreEventSlice)
 	return valScores
 }
 
 // score_val(stake_val): min(1/a, validatorStake/totalStake)
-func calcValidatorScore(normalisedValStake, minVal, compLevel, numVal float64) float64 {
-	a := math.Max(minVal, numVal/compLevel)
+func calcValidatorScore(normalisedValStake, minVal, compLevel, numVal num.Decimal) num.Decimal {
+	a := num.MaxD(minVal, numVal.Div(compLevel))
 
-	return math.Min(normalisedValStake, 1/a)
+	return num.MinD(normalisedValStake, num.DecimalFromInt64(1).Div(a))
 }
 
 // calculate the total amount of tokens delegated to the validators including self and party delegation
