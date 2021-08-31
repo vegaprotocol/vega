@@ -119,7 +119,7 @@ func (v *Votes) getPartyVotes(party string) []*vegapb.Vote {
 	}
 
 	out := make([]*vegapb.Vote, 0, len(partyVotes))
-	for k, _ := range partyVotes {
+	for k := range partyVotes {
 		vote := v.votes[k][party]
 		out = append(out, &vote)
 	}

@@ -77,6 +77,8 @@ func (p *Proposals) List(proposal, party string) []*vegapb.Proposal {
 		return p.getAllProposals()
 	} else if len(party) > 0 {
 		return p.getProposalsPerParty(proposal, party)
+	} else if len(proposal) > 0 {
+		return p.getProposalByID(proposal)
 	}
 	return p.getAllProposals()
 }
@@ -97,7 +99,7 @@ func (p *Proposals) getProposalsPerParty(proposal, party string) []*vegapb.Propo
 		return out
 	}
 
-	for k, _ := range partyProposals {
+	for k := range partyProposals {
 		prop := p.proposals[k]
 		out = append(out, &prop)
 	}
