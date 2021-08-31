@@ -20,6 +20,7 @@ Describe what the system response was, include the output from the command, auto
 - [ ] GraphQL
 
 **Component:** Specify the components that might be related
+- [ ] [Data node](https://github.com/vegaprotocol/data-node/)
 - [ ] [Vega](https://github.com/vegaprotocol/vega/)
 - [ ] [Tendermint](https://github.com/tendermint/tendermint)
 - [ ] [Console](https://github.com/vegaprotocol/console/)
