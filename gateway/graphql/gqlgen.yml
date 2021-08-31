@@ -23,7 +23,7 @@ models:
   Account:
     model: code.vegaprotocol.io/protos/vega.Account
   Statistics:
-    model: code.vegaprotocol.io/protos/vega.Statistics
+    model: code.vegaprotocol.io/protos/vega/api.Statistics
   MarketData:
     model: code.vegaprotocol.io/protos/vega.MarketData
   MarginLevels:
