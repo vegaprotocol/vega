@@ -27,7 +27,7 @@ var (
 )
 
 // StakingABI is the input ABI used to generate the binding from.
-const StakingABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Removed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Transfered\",\"type\":\"event\"}]"
+const StakingABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"user\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Removed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"Stake_Transferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"staking_token\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"target\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"vega_public_key\",\"type\":\"bytes32\"}],\"name\":\"stake_balance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"total_staked\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"
 
 // Staking is an auto generated Go binding around an Ethereum contract.
 type Staking struct {
@@ -169,6 +169,84 @@ func (_Staking *StakingTransactorRaw) Transfer(opts *bind.TransactOpts) (*types.
 // Transact invokes the (paid) contract method with params as input values.
 func (_Staking *StakingTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _Staking.Contract.contract.Transact(opts, method, params...)
+}
+
+// StakeBalance is a free data retrieval call binding the contract method 0x274abf34.
+//
+// Solidity: function stake_balance(address target, bytes32 vega_public_key) view returns(uint256)
+func (_Staking *StakingCaller) StakeBalance(opts *bind.CallOpts, target common.Address, vega_public_key [32]byte) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _Staking.contract.Call(opts, out, "stake_balance", target, vega_public_key)
+	return *ret0, err
+}
+
+// StakeBalance is a free data retrieval call binding the contract method 0x274abf34.
+//
+// Solidity: function stake_balance(address target, bytes32 vega_public_key) view returns(uint256)
+func (_Staking *StakingSession) StakeBalance(target common.Address, vega_public_key [32]byte) (*big.Int, error) {
+	return _Staking.Contract.StakeBalance(&_Staking.CallOpts, target, vega_public_key)
+}
+
+// StakeBalance is a free data retrieval call binding the contract method 0x274abf34.
+//
+// Solidity: function stake_balance(address target, bytes32 vega_public_key) view returns(uint256)
+func (_Staking *StakingCallerSession) StakeBalance(target common.Address, vega_public_key [32]byte) (*big.Int, error) {
+	return _Staking.Contract.StakeBalance(&_Staking.CallOpts, target, vega_public_key)
+}
+
+// StakingToken is a free data retrieval call binding the contract method 0x2dc7d74c.
+//
+// Solidity: function staking_token() view returns(address)
+func (_Staking *StakingCaller) StakingToken(opts *bind.CallOpts) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _Staking.contract.Call(opts, out, "staking_token")
+	return *ret0, err
+}
+
+// StakingToken is a free data retrieval call binding the contract method 0x2dc7d74c.
+//
+// Solidity: function staking_token() view returns(address)
+func (_Staking *StakingSession) StakingToken() (common.Address, error) {
+	return _Staking.Contract.StakingToken(&_Staking.CallOpts)
+}
+
+// StakingToken is a free data retrieval call binding the contract method 0x2dc7d74c.
+//
+// Solidity: function staking_token() view returns(address)
+func (_Staking *StakingCallerSession) StakingToken() (common.Address, error) {
+	return _Staking.Contract.StakingToken(&_Staking.CallOpts)
+}
+
+// TotalStaked is a free data retrieval call binding the contract method 0xaf7568dd.
+//
+// Solidity: function total_staked() view returns(uint256)
+func (_Staking *StakingCaller) TotalStaked(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _Staking.contract.Call(opts, out, "total_staked")
+	return *ret0, err
+}
+
+// TotalStaked is a free data retrieval call binding the contract method 0xaf7568dd.
+//
+// Solidity: function total_staked() view returns(uint256)
+func (_Staking *StakingSession) TotalStaked() (*big.Int, error) {
+	return _Staking.Contract.TotalStaked(&_Staking.CallOpts)
+}
+
+// TotalStaked is a free data retrieval call binding the contract method 0xaf7568dd.
+//
+// Solidity: function total_staked() view returns(uint256)
+func (_Staking *StakingCallerSession) TotalStaked() (*big.Int, error) {
+	return _Staking.Contract.TotalStaked(&_Staking.CallOpts)
 }
 
 // StakingStakeDepositedIterator is returned from FilterStakeDeposited and is used to iterate over the raw logs and unpacked data for StakeDeposited events raised by the Staking contract.
@@ -481,9 +559,9 @@ func (_Staking *StakingFilterer) ParseStakeRemoved(log types.Log) (*StakingStake
 	return event, nil
 }
 
-// StakingStakeTransferedIterator is returned from FilterStakeTransfered and is used to iterate over the raw logs and unpacked data for StakeTransfered events raised by the Staking contract.
-type StakingStakeTransferedIterator struct {
-	Event *StakingStakeTransfered // Event containing the contract specifics and raw log
+// StakingStakeTransferredIterator is returned from FilterStakeTransferred and is used to iterate over the raw logs and unpacked data for StakeTransferred events raised by the Staking contract.
+type StakingStakeTransferredIterator struct {
+	Event *StakingStakeTransferred // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -497,7 +575,7 @@ type StakingStakeTransferedIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *StakingStakeTransferedIterator) Next() bool {
+func (it *StakingStakeTransferredIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -506,7 +584,7 @@ func (it *StakingStakeTransferedIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(StakingStakeTransfered)
+			it.Event = new(StakingStakeTransferred)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -521,7 +599,7 @@ func (it *StakingStakeTransferedIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(StakingStakeTransfered)
+		it.Event = new(StakingStakeTransferred)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -537,34 +615,36 @@ func (it *StakingStakeTransferedIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *StakingStakeTransferedIterator) Error() error {
+func (it *StakingStakeTransferredIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *StakingStakeTransferedIterator) Close() error {
+func (it *StakingStakeTransferredIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// StakingStakeTransfered represents a StakeTransfered event raised by the Staking contract.
-type StakingStakeTransfered struct {
+// StakingStakeTransferred represents a StakeTransferred event raised by the Staking contract.
+type StakingStakeTransferred struct {
 	From          common.Address
+	Amount        *big.Int
 	To            common.Address
 	VegaPublicKey [32]byte
 	Raw           types.Log // Blockchain specific contextual infos
 }
 
-// FilterStakeTransfered is a free log retrieval operation binding the contract event 0xb21602c241043c7ee0e4b878b72dd5e2267bd7b5fad1782e67f782ce0890973a.
+// FilterStakeTransferred is a free log retrieval operation binding the contract event 0x296aca09e6f616abedcd9cd45ac378207310452b7a713289374fd1b35e2c2fbe.
 //
-// Solidity: event Stake_Transfered(address indexed from, address indexed to, bytes32 indexed vega_public_key)
-func (_Staking *StakingFilterer) FilterStakeTransfered(opts *bind.FilterOpts, from []common.Address, to []common.Address, vega_public_key [][32]byte) (*StakingStakeTransferedIterator, error) {
+// Solidity: event Stake_Transferred(address indexed from, uint256 amount, address indexed to, bytes32 indexed vega_public_key)
+func (_Staking *StakingFilterer) FilterStakeTransferred(opts *bind.FilterOpts, from []common.Address, to []common.Address, vega_public_key [][32]byte) (*StakingStakeTransferredIterator, error) {
 
 	var fromRule []interface{}
 	for _, fromItem := range from {
 		fromRule = append(fromRule, fromItem)
 	}
+
 	var toRule []interface{}
 	for _, toItem := range to {
 		toRule = append(toRule, toItem)
@@ -574,22 +654,23 @@ func (_Staking *StakingFilterer) FilterStakeTransfered(opts *bind.FilterOpts, fr
 		vega_public_keyRule = append(vega_public_keyRule, vega_public_keyItem)
 	}
 
-	logs, sub, err := _Staking.contract.FilterLogs(opts, "Stake_Transfered", fromRule, toRule, vega_public_keyRule)
+	logs, sub, err := _Staking.contract.FilterLogs(opts, "Stake_Transferred", fromRule, toRule, vega_public_keyRule)
 	if err != nil {
 		return nil, err
 	}
-	return &StakingStakeTransferedIterator{contract: _Staking.contract, event: "Stake_Transfered", logs: logs, sub: sub}, nil
+	return &StakingStakeTransferredIterator{contract: _Staking.contract, event: "Stake_Transferred", logs: logs, sub: sub}, nil
 }
 
-// WatchStakeTransfered is a free log subscription operation binding the contract event 0xb21602c241043c7ee0e4b878b72dd5e2267bd7b5fad1782e67f782ce0890973a.
+// WatchStakeTransferred is a free log subscription operation binding the contract event 0x296aca09e6f616abedcd9cd45ac378207310452b7a713289374fd1b35e2c2fbe.
 //
-// Solidity: event Stake_Transfered(address indexed from, address indexed to, bytes32 indexed vega_public_key)
-func (_Staking *StakingFilterer) WatchStakeTransfered(opts *bind.WatchOpts, sink chan<- *StakingStakeTransfered, from []common.Address, to []common.Address, vega_public_key [][32]byte) (event.Subscription, error) {
+// Solidity: event Stake_Transferred(address indexed from, uint256 amount, address indexed to, bytes32 indexed vega_public_key)
+func (_Staking *StakingFilterer) WatchStakeTransferred(opts *bind.WatchOpts, sink chan<- *StakingStakeTransferred, from []common.Address, to []common.Address, vega_public_key [][32]byte) (event.Subscription, error) {
 
 	var fromRule []interface{}
 	for _, fromItem := range from {
 		fromRule = append(fromRule, fromItem)
 	}
+
 	var toRule []interface{}
 	for _, toItem := range to {
 		toRule = append(toRule, toItem)
@@ -599,7 +680,7 @@ func (_Staking *StakingFilterer) WatchStakeTransfered(opts *bind.WatchOpts, sink
 		vega_public_keyRule = append(vega_public_keyRule, vega_public_keyItem)
 	}
 
-	logs, sub, err := _Staking.contract.WatchLogs(opts, "Stake_Transfered", fromRule, toRule, vega_public_keyRule)
+	logs, sub, err := _Staking.contract.WatchLogs(opts, "Stake_Transferred", fromRule, toRule, vega_public_keyRule)
 	if err != nil {
 		return nil, err
 	}
@@ -609,8 +690,8 @@ func (_Staking *StakingFilterer) WatchStakeTransfered(opts *bind.WatchOpts, sink
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(StakingStakeTransfered)
-				if err := _Staking.contract.UnpackLog(event, "Stake_Transfered", log); err != nil {
+				event := new(StakingStakeTransferred)
+				if err := _Staking.contract.UnpackLog(event, "Stake_Transferred", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -631,12 +712,12 @@ func (_Staking *StakingFilterer) WatchStakeTransfered(opts *bind.WatchOpts, sink
 	}), nil
 }
 
-// ParseStakeTransfered is a log parse operation binding the contract event 0xb21602c241043c7ee0e4b878b72dd5e2267bd7b5fad1782e67f782ce0890973a.
+// ParseStakeTransferred is a log parse operation binding the contract event 0x296aca09e6f616abedcd9cd45ac378207310452b7a713289374fd1b35e2c2fbe.
 //
-// Solidity: event Stake_Transfered(address indexed from, address indexed to, bytes32 indexed vega_public_key)
-func (_Staking *StakingFilterer) ParseStakeTransfered(log types.Log) (*StakingStakeTransfered, error) {
-	event := new(StakingStakeTransfered)
-	if err := _Staking.contract.UnpackLog(event, "Stake_Transfered", log); err != nil {
+// Solidity: event Stake_Transferred(address indexed from, uint256 amount, address indexed to, bytes32 indexed vega_public_key)
+func (_Staking *StakingFilterer) ParseStakeTransferred(log types.Log) (*StakingStakeTransferred, error) {
+	event := new(StakingStakeTransferred)
+	if err := _Staking.contract.UnpackLog(event, "Stake_Transferred", log); err != nil {
 		return nil, err
 	}
 	return event, nil
