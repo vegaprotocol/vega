@@ -20,7 +20,7 @@ type limitsTest struct {
 func getLimitsTest() *limitsTest {
 	log := logging.NewTestLogger()
 	return &limitsTest{
-		Engine: limits.New(limits.NewDefaultConfig(), log),
+		Engine: limits.New(log, limits.NewDefaultConfig()),
 		log:    log,
 	}
 }

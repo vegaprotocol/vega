@@ -10,6 +10,7 @@ import (
 
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/checkpoint/mocks"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
@@ -24,7 +25,8 @@ type testEngine struct {
 
 func getTestEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
-	eng, _ := checkpoint.New()
+	log := logging.NewTestLogger()
+	eng, _ := checkpoint.New(log, checkpoint.NewDefaultConfig())
 	return &testEngine{
 		Engine: eng,
 		ctrl:   ctrl,
@@ -73,7 +75,8 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	log := logging.NewTestLogger()
+	eng, err := checkpoint.New(log, checkpoint.NewDefaultConfig(), components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	data := map[types.CheckpointName][]byte{
 		types.GovernanceCheckpoint: []byte("foodata"),
@@ -164,10 +167,12 @@ func testDuplicateConstructor(t *testing.T) {
 	comp2 := mocks.NewMockState(ctrl)
 	comp2.EXPECT().Name().Times(1).Return(types.GovernanceCheckpoint)
 	// this is all good
-	eng, err := checkpoint.New(comp, comp)
+	log := logging.NewTestLogger()
+	cfg := checkpoint.NewDefaultConfig()
+	eng, err := checkpoint.New(log, cfg, comp, comp)
 	require.NoError(t, err)
 	require.NotNil(t, eng)
-	eng, err = checkpoint.New(comp, comp2)
+	eng, err = checkpoint.New(log, cfg, comp, comp2)
 	require.Error(t, err)
 	require.Nil(t, eng)
 }
@@ -206,7 +211,9 @@ func testLoadCheckpoints(t *testing.T) {
 		c.EXPECT().Name().Times(1).Return(k)
 		c.EXPECT().Load(data[k]).Times(1).Return(nil)
 	}
-	newEng, err := checkpoint.New(wComps[types.GovernanceCheckpoint], wComps[types.AssetsCheckpoint])
+	log := logging.NewTestLogger()
+	cfg := checkpoint.NewDefaultConfig()
+	newEng, err := checkpoint.New(log, cfg, wComps[types.GovernanceCheckpoint], wComps[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	require.NotNil(t, newEng)
 	// pretend like the genesis block specified this hash to restore
@@ -303,7 +310,9 @@ func testLoadSparse(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components[types.GovernanceCheckpoint])
+	log := logging.NewTestLogger()
+	cfg := checkpoint.NewDefaultConfig()
+	eng, err := checkpoint.New(log, cfg, components[types.GovernanceCheckpoint])
 	require.NoError(t, err)
 	data := map[types.CheckpointName][]byte{
 		types.GovernanceCheckpoint: []byte("foodata"),
@@ -340,7 +349,9 @@ func testLoadError(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	log := logging.NewTestLogger()
+	cfg := checkpoint.NewDefaultConfig()
+	eng, err := checkpoint.New(log, cfg, components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	data := map[types.CheckpointName][]byte{
 		types.GovernanceCheckpoint: []byte("foodata"),
@@ -387,7 +398,9 @@ func testCheckpointBeforeInterval(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	log := logging.NewTestLogger()
+	cfg := checkpoint.NewDefaultConfig()
+	eng, err := checkpoint.New(log, cfg, components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	// set interval of 1 hour
 	hour, _ := time.ParseDuration("1h")
@@ -425,7 +438,9 @@ func testCheckpointBalanceInterval(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	log := logging.NewTestLogger()
+	cfg := checkpoint.NewDefaultConfig()
+	eng, err := checkpoint.New(log, cfg, components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	// set interval of 1 hour
 	hour, _ := time.ParseDuration("1h")
@@ -469,7 +484,9 @@ func testCheckpointUpdatedInterval(t *testing.T) {
 	for k, c := range components {
 		c.EXPECT().Name().Times(1).Return(k)
 	}
-	eng, err := checkpoint.New(components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
+	log := logging.NewTestLogger()
+	cfg := checkpoint.NewDefaultConfig()
+	eng, err := checkpoint.New(log, cfg, components[types.GovernanceCheckpoint], components[types.AssetsCheckpoint])
 	require.NoError(t, err)
 	// set interval of 1 hour
 	hour, _ := time.ParseDuration("1h")

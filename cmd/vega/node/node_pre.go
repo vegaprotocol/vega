@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/rewards"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -15,7 +16,6 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/candles"
-	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
@@ -217,7 +217,16 @@ func (l *NodeCommand) setupStorages() (err error) {
 }
 
 // UponGenesis loads all asset from genesis state
-func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) error {
+func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err error) {
+	l.Log.Debug("Entering node.NodeCommand.UponGenesis")
+	defer func() {
+		if err != nil {
+			l.Log.Debug("Failure in node.NodeCommand.UponGenesis", logging.Error(err))
+		} else {
+			l.Log.Debug("Leaving node.NodeCommand.UponGenesis without error")
+		}
+	}()
+
 	state, err := assets.LoadGenesisState(rawstate)
 	if err != nil {
 		return err
@@ -423,7 +432,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.limits = limits.New(l.conf.Limits, l.Log)
+	l.limits = limits.New(l.Log, l.conf.Limits)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
 
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
@@ -437,6 +446,12 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
+
+	// checkpoint engine
+	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams)
+	if err != nil {
+		panic(err)
+	}
 
 	l.genesisHandler.OnGenesisAppStateLoaded(
 		// be sure to keep this in order.
@@ -457,11 +472,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
-	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.assets, l.collateral, l.governance, l.netParams)
-	if err != nil {
-		panic(err)
-	}
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
@@ -496,7 +506,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.eventService = subscribers.NewService(l.broker)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
-	//TODO replace with actual implementation
+	// TODO replace with actual implementation
 	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
 	l.netParams.Watch(netparams.WatchParam{
 		Param:   netparams.GovernanceVoteAsset,

@@ -20,7 +20,7 @@ type Engine struct {
 	proposeMarketEnabledFrom, proposeAssetEnabledFrom time.Time
 }
 
-func New(cfg Config, log *logging.Logger) *Engine {
+func New(log *logging.Logger, cfg Config) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	return &Engine{
@@ -30,8 +30,16 @@ func New(cfg Config, log *logging.Logger) *Engine {
 }
 
 // UponGenesis load the limits from the genersis state
-func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) error {
-	e.log.Debug("loading genesis configuration")
+func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
+	e.log.Debug("Entering limits.Engine.UponGenesis")
+	defer func() {
+		if err != nil {
+			e.log.Debug("Failure in limits.Engine.UponGenesis", logging.Error(err))
+		} else {
+			e.log.Debug("Leaving limits.Engine.UponGenesis without error")
+		}
+	}()
+
 	state, err := LoadGenesisState(rawState)
 	if err != nil && err != ErrNoLimitsGenesisState {
 		e.log.Error("unable to load genesis state",
