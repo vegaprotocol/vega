@@ -507,11 +507,12 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 	}
 
 	return &protoapi.ERC20WithdrawalApprovalResponse{
-		AssetSource: address,
-		Amount:      fmt.Sprintf("%v", withdrawal.Amount),
-		Expiry:      withdrawal.Expiry,
-		Nonce:       withdrawal.Ref,
-		Signatures:  pack,
+		AssetSource:   address,
+		Amount:        fmt.Sprintf("%v", withdrawal.Amount),
+		Expiry:        withdrawal.Expiry,
+		Nonce:         withdrawal.Ref,
+		TargetAddress: withdrawal.Ext.GetErc20().ReceiverAddress,
+		Signatures:    pack,
 	}, nil
 }
 

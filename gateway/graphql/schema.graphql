@@ -1583,6 +1583,8 @@ type Erc20WithdrawalApproval {
   0x + sig1 + sig2 + ... + sigN
   """
   signatures: String!
+  "The target address which will receive the funds"
+  targetAddress: String!
 }
 
 "The details of a withdrawal processed by vega"
