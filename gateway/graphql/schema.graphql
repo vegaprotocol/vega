@@ -244,7 +244,6 @@ type MarketTimestamps {
   close: String
 }
 
-
 "The equity like share of liquidity fee for each liquidity provider"
 type LiquidityProviderFeeShare {
   "The liquidity provider party id"
@@ -288,16 +287,10 @@ type Query {
   oracleSpecs: [OracleSpec!]
 
   "An oracle spec for a given oracle spec ID"
-  oracleSpec(
-    "ID for an oracle spec"
-    oracleSpecID: String!
-  ): OracleSpec
+  oracleSpec("ID for an oracle spec" oracleSpecID: String!): OracleSpec
 
   "All oracle data for a given oracle spec ID"
-  oracleDataBySpec(
-    "ID for an oracle spec"
-    oracleSpecID: String!
-  ): [OracleData!]
+  oracleDataBySpec("ID for an oracle spec" oracleSpecID: String!): [OracleData!]
 
   "An order in the VEGA network found by orderID"
   orderByID(
@@ -418,21 +411,18 @@ type Query {
   node("required id of node" id: String!): Node
 
   "get data for a specific epoch, if id omitted it gets the current epoch"
-	epoch(id: String): Epoch!
+  epoch(id: String): Epoch!
 
   "return reward information"
-  rewardDetails(
-    "ID of the party"
-    partyId: ID!
-  ): [RewardPerAssetDetail]
+  rewardDetails("ID of the party" partyId: ID!): [RewardPerAssetDetail]
 }
 
 enum NodeStatus {
   "The node is non-validating"
-	NonValidator
+  NonValidator
 
-	"The node is validating"
-	Validator
+  "The node is validating"
+  Validator
 }
 
 # Describes in both human readable and block time when an epoch spans.
@@ -459,25 +449,25 @@ type Epoch {
   "Validators that participated in this epoch"
   validators: [Node!]!
 
-	delegations: [Delegation!]!
+  delegations: [Delegation!]!
 }
 
 type NodeData {
   "Total staked amount across all nodes"
-	stakedTotal: String!
+  stakedTotal: String!
 
-	"Total number of nodes"
-	totalNodes: Int!
+  "Total number of nodes"
+  totalNodes: Int!
 
-	"Number of inactive nodes"
-	inactiveNodes: Int!
+  "Number of inactive nodes"
+  inactiveNodes: Int!
 
-	"Number of nodes validating"
-	validatingNodes: Int!
+  "Number of nodes validating"
+  validatingNodes: Int!
 
   # @TODO allow to query based on number of epochs uptime(epochs: Int)
-	"Total uptime for all epochs across all nodes. Or specify a number of epochs"
-	uptime: Float!
+  "Total uptime for all epochs across all nodes. Or specify a number of epochs"
+  uptime: Float!
 }
 
 type EpochParticipation {
@@ -493,51 +483,51 @@ type EpochParticipation {
 }
 
 type EpochData {
-	"Total number of epochs since node was created"
-	total: Int!
+  "Total number of epochs since node was created"
+  total: Int!
 
-	"Total number of offline epochs since node was created"
+  "Total number of offline epochs since node was created"
   offline: Int!
 
-	"Total number of online epochs since node was created"
+  "Total number of online epochs since node was created"
   online: Int!
 }
 
 type Node {
-	"The node url eg n01.vega.xyz"
-	id: String!
+  "The node url eg n01.vega.xyz"
+  id: String!
 
   "Pubkey of the node operator"
   pubkey: String!
 
-	"URL where I can find out more info on the node. Will this be possible?"
-	infoUrl: String!
+  "URL where I can find out more info on the node. Will this be possible?"
+  infoUrl: String!
 
   "Country code for the location of the node"
-	location: String!
+  location: String!
 
-	"The amount the node has put up themselves"
-	stakedByOperator: String!
+  "The amount the node has put up themselves"
+  stakedByOperator: String!
 
-	"The amount of stake that has been delegated by token holders"
-	stakedByDelegates: String!
+  "The amount of stake that has been delegated by token holders"
+  stakedByDelegates: String!
 
-	"Total amount staked on node"
-	stakedTotal: String!
+  "Total amount staked on node"
+  stakedTotal: String!
 
-	# "Max amount of (wanted) stake, is this a network param or a node param"
+  # "Max amount of (wanted) stake, is this a network param or a node param"
   # @TODO - add this field
-	# maxIntendedStake: String!
+  # maxIntendedStake: String!
 
   "Amount of stake on the next epoch"
-	pendingStake: String!
+  pendingStake: String!
 
-	epochData: EpochData
+  epochData: EpochData
 
-	# @TODO implement this filter
-	# epochs(last: Int, since: String): [EpochParticipation!]!
+  # @TODO implement this filter
+  # epochs(last: Int, since: String): [EpochParticipation!]!
 
-	status: NodeStatus!
+  status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
   delegations(partyId: String): [Delegation!]
@@ -545,16 +535,16 @@ type Node {
 
 type Delegation {
   "Amount delegated"
-	amount: String!
+  amount: String!
 
   "Party which is delegating"
-	partyId: String!
+  partyId: String!
 
   "URL of node you are delegating to"
   node: String!
 
   "Epoch of delegation"
-	epoch: Int!
+  epoch: Int!
 }
 
 "Represents an asset in vega"
@@ -796,7 +786,6 @@ type Future {
   "The oracle spec describing the oracle data of interest for trading termination."
   oracleSpecForTradingTermination: OracleSpec!
 
-
   "The binding between the oracle spec and the settlement price"
   oracleSpecBinding: OracleSpecToFutureBinding!
 }
@@ -862,7 +851,6 @@ type Filter {
   """
   conditions: [Condition!]
 }
-
 
 "PropertyKey describes the property key contained in an oracle data."
 type PropertyKey {
