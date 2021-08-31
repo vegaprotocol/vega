@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.7.1-0.20210830095520-9149a2b7a981
+	code.vegaprotocol.io/go-wallet v0.7.1-0.20210831140110-06027dc1a497
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.41.1-0.20210831105504-a2fb8fcd9c11
 	code.vegaprotocol.io/quant v0.2.5
@@ -27,7 +27,6 @@ require (
 	github.com/jinzhu/copier v0.2.8
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/mattn/go-colorable v0.1.4 // indirect
-	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mwitkow/go-proto-validators v0.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
