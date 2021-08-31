@@ -1,5 +1,5 @@
 FROM docker.pkg.github.com/vegaprotocol/devops-infra/geth:1.10.8 AS geth
-FROM docker.pkg.github.com/vegaprotocol/devops-infra/dlv:1.5.0 AS dlv
+FROM docker.pkg.github.com/vegaprotocol/devops-infra/dlv:1.6.1 AS dlv
 
 FROM ubuntu:20.04
 ENTRYPOINT ["/bin/bash"]
