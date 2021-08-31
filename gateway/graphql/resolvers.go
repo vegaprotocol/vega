@@ -23,6 +23,8 @@ import (
 var (
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
+	// ErrMissingNodeID is returned when no node id has been supplied in the query
+	ErrMissingNodeID = errors.New("missing node id")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
 	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
 	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
