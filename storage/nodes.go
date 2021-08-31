@@ -54,7 +54,7 @@ func (ns *Node) AddNode(n pb.Node) {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
 
-	ns.nodes[n.GetPubKey()] = node{
+	ns.nodes[n.GetId()] = node{
 		n:                           n,
 		delegationsPerEpochPerParty: map[string]map[string]pb.Delegation{},
 	}
@@ -107,7 +107,7 @@ func (ns *Node) GetAllIDs() []string {
 
 	ids := make([]string, 0, len(ns.nodes))
 	for _, n := range ns.nodes {
-		ids = append(ids, n.n.GetPubKey())
+		ids = append(ids, n.n.GetId())
 	}
 
 	return ids

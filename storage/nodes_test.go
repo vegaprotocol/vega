@@ -11,6 +11,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type ByXY []*pb.Delegation
+
+func (o ByXY) Len() int      { return len(o) }
+func (o ByXY) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o ByXY) Less(i, j int) bool {
+	if o[i].Amount == o[j].Amount {
+		if o[i].EpochSeq == o[j].EpochSeq {
+			return o[i].Party < o[j].Party
+		}
+		return o[i].EpochSeq < o[j].EpochSeq
+	}
+
+	return o[i].Amount < o[j].Amount
+}
+
 func TestNodes(t *testing.T) {
 	a := assert.New(t)
 
@@ -21,7 +36,7 @@ func TestNodes(t *testing.T) {
 	a.Error(err, errors.New("node 1 not found"))
 
 	testNode := pb.Node{
-		Id:       "1",
+		Id:       "tm_pub_key_1",
 		PubKey:   "pub_key_1",
 		InfoUrl:  "http://info-node-1.vega",
 		Location: "UK",
@@ -29,7 +44,7 @@ func TestNodes(t *testing.T) {
 	}
 
 	expectedNode := &pb.Node{
-		Id:                "1",
+		Id:                "tm_pub_key_1",
 		PubKey:            "pub_key_1",
 		InfoUrl:           "http://info-node-1.vega",
 		Location:          "UK",
@@ -42,26 +57,26 @@ func TestNodes(t *testing.T) {
 
 	nodeStore.AddNode(testNode)
 
-	actualNode, err := nodeStore.GetByID("pub_key_1")
+	actualNode, err := nodeStore.GetByID("tm_pub_key_1")
 	a.NoError(err)
 	a.Equal(expectedNode, actualNode)
 
 	delegations := []*pb.Delegation{
 		{
 			Party:    "1",
-			NodeId:   "pub_key_1",
+			NodeId:   "tm_pub_key_1",
 			Amount:   "20",
 			EpochSeq: "1",
 		},
 		{
 			Party:    "pub_key_1",
-			NodeId:   "pub_key_1",
+			NodeId:   "tm_pub_key_1",
 			Amount:   "10",
 			EpochSeq: "1",
 		},
 		{
 			Party:    "2",
-			NodeId:   "pub_key_1",
+			NodeId:   "tm_pub_key_1",
 			Amount:   "5",
 			EpochSeq: "1",
 		},
@@ -71,12 +86,12 @@ func TestNodes(t *testing.T) {
 	nodeStore.AddDelegation(*delegations[1])
 	nodeStore.AddDelegation(*delegations[2])
 
-	actualNode, err = nodeStore.GetByID("pub_key_1")
+	actualNode, err = nodeStore.GetByID("tm_pub_key_1")
 	a.NoError(err)
 	assertNode(a, actualNode, delegations, "10", "25", "35")
 
 	nodeStore.AddNode(pb.Node{
-		Id:       "2",
+		Id:       "tm_pub_key_2",
 		PubKey:   "pub_key_2",
 		InfoUrl:  "http://info-node-2.vega",
 		Location: "UK",
@@ -86,25 +101,25 @@ func TestNodes(t *testing.T) {
 	delegations = []*pb.Delegation{
 		{
 			Party:    "3",
-			NodeId:   "pub_key_2",
+			NodeId:   "tm_pub_key_2",
 			Amount:   "10",
 			EpochSeq: "1",
 		},
 		{
 			Party:    "4",
-			NodeId:   "pub_key_2",
+			NodeId:   "tm_pub_key_2",
 			Amount:   "50",
 			EpochSeq: "1",
 		},
 		{
 			Party:    "4",
-			NodeId:   "pub_key_2",
+			NodeId:   "tm_pub_key_2",
 			Amount:   "50",
 			EpochSeq: "2",
 		},
 		{
 			Party:    "3",
-			NodeId:   "pub_key_2",
+			NodeId:   "tm_pub_key_2",
 			Amount:   "50",
 			EpochSeq: "2",
 		},
@@ -119,7 +134,7 @@ func TestNodes(t *testing.T) {
 	delegations[3].Amount = "60"
 	nodeStore.AddDelegation(*delegations[3])
 
-	node, err := nodeStore.GetByID("pub_key_2")
+	node, err := nodeStore.GetByID("tm_pub_key_2")
 	a.NoError(err)
 	assertNode(a, node, delegations, "0", "170", "170")
 
@@ -143,13 +158,8 @@ func assertNode(
 	a.Equal(stakedByDelegates, node.StakedByDelegates)
 	a.Equal(stakedTotal, node.StakedTotal)
 
-	sort.Slice(delegations, func(i, j int) bool {
-		return delegations[i].Amount < delegations[j].Amount
-	})
-
-	sort.Slice(node.Delagations, func(i, j int) bool {
-		return node.Delagations[i].Amount < node.Delagations[j].Amount
-	})
+	sort.Sort(ByXY(delegations))
+	sort.Sort(ByXY(node.Delagations))
 
 	a.Equal(len(delegations), len(node.Delagations))
 

@@ -141,12 +141,8 @@ func assertEpoch(
 
 	a.Equal(len(delegations), len(epoch.Delegations))
 
-	sort.Slice(delegations, func(i, j int) bool {
-		return delegations[i].Amount < delegations[j].Amount
-	})
-	sort.Slice(epoch.Delegations, func(i, j int) bool {
-		return epoch.Delegations[i].Amount < epoch.Delegations[j].Amount
-	})
+	sort.Sort(ByXY(delegations))
+	sort.Sort(ByXY(epoch.Delegations))
 
 	for i := range delegations {
 		a.Equal(delegations[i], epoch.Delegations[i])
