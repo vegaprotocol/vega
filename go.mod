@@ -3,9 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
+	code.vegaprotocol.io/go-wallet v0.7.1-0.20210831185441-b7ec69d5d320 // indirect
 	code.vegaprotocol.io/protos v0.42.0-pre4.0.20210901093131-ac6713e2e81d
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/vega v0.41.1-0.20210831115921-cf661fc45ec1
+	code.vegaprotocol.io/vega v0.41.1-0.20210901093522-39a39074d2da
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/fsnotify/fsnotify v1.4.9

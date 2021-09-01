@@ -2346,7 +2346,6 @@ func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*typ
 
 // END: Account Resolver
 
-<<<<<<< HEAD
 type myStatisticsResolver VegaResolverRoot
 
 func (r *myStatisticsResolver) BlockHeight(ctx context.Context, obj *apitypes.Statistics) (int, error) {
@@ -2437,8 +2436,6 @@ func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *apit
 	return int(obj.TradeSubscriptions), nil
 }
 
-=======
->>>>>>> update protos and vega
 func getParty(ctx context.Context, log *logging.Logger, client TradingDataServiceClient, id string) (*types.Party, error) {
 	if len(id) == 0 {
 		return nil, nil
