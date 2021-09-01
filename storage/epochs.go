@@ -175,7 +175,7 @@ func (e *Epoch) epochProtoFromInternal(ie epoch) (*pb.Epoch, error) {
 
 	validators := make([]*pb.Node, 0, len(ie.nodeIDs))
 	for _, id := range ie.nodeIDs {
-		node, err := e.nodeStore.GetByID(id)
+		node, err := e.nodeStore.GetByID(id, ie.seq)
 		if err != nil {
 			e.log.Error("Failed to get node by id", logging.Error(err))
 			continue

@@ -9,10 +9,16 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+type nodeScore struct {
+	score           string
+	normalisedScore string
+}
+
 type node struct {
 	n pb.Node
 
 	delegationsPerEpochPerParty map[string]map[string]pb.Delegation
+	scoresPerEpoch              map[string]nodeScore
 }
 
 type Node struct {
@@ -56,7 +62,24 @@ func (ns *Node) AddNode(n pb.Node) {
 
 	ns.nodes[n.GetId()] = node{
 		n:                           n,
+		scoresPerEpoch:              map[string]nodeScore{},
 		delegationsPerEpochPerParty: map[string]map[string]pb.Delegation{},
+	}
+}
+
+func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore string) {
+	ns.mut.Lock()
+	defer ns.mut.Unlock()
+
+	node, ok := ns.nodes[nodeID]
+	if !ok {
+		ns.log.Error("Received node score for non existing node", logging.String("node_id", nodeID))
+		return
+	}
+
+	node.scoresPerEpoch[epochID] = nodeScore{
+		score:           score,
+		normalisedScore: normalisedScore,
 	}
 }
 
@@ -77,7 +100,8 @@ func (ns *Node) AddDelegation(de pb.Delegation) {
 	node.delegationsPerEpochPerParty[de.GetEpochSeq()][de.GetParty()] = de
 }
 
-func (ns *Node) GetByID(id string) (*pb.Node, error) {
+// GetByID returns a specific node by ID per epoch
+func (ns *Node) GetByID(id, epochID string) (*pb.Node, error) {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
 
@@ -86,16 +110,17 @@ func (ns *Node) GetByID(id string) (*pb.Node, error) {
 		return nil, fmt.Errorf("node %s not found", id)
 	}
 
-	return ns.nodeProtoFromInternal(node), nil
+	return ns.nodeProtoFromInternal(node, epochID), nil
 }
 
-func (ns *Node) GetAll() []*pb.Node {
+// GetAll returns all nodes per epoch
+func (ns *Node) GetAll(epochID string) []*pb.Node {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
 
 	nodes := make([]*pb.Node, 0, len(ns.nodes))
 	for _, n := range ns.nodes {
-		nodes = append(nodes, ns.nodeProtoFromInternal(n))
+		nodes = append(nodes, ns.nodeProtoFromInternal(n, epochID))
 	}
 
 	return nodes
@@ -156,13 +181,13 @@ func (ns *Node) GetStakedTotal(epochID string) string {
 	return stakedTotal.String()
 }
 
-func (ns *Node) nodeProtoFromInternal(n node) *pb.Node {
+func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 	stakedByOperator := num.NewUint(0)
 	stakedByDelegates := num.NewUint(0)
 
-	delegations := make([]*pb.Delegation, 0, len(n.delegationsPerEpochPerParty))
+	var delegations []*pb.Delegation
 
-	for _, dPerParty := range n.delegationsPerEpochPerParty {
+	if dPerParty, ok := n.delegationsPerEpochPerParty[epochID]; ok {
 		for _, d := range dPerParty {
 			delegation := d
 			delegations = append(delegations, &delegation)
@@ -187,8 +212,7 @@ func (ns *Node) nodeProtoFromInternal(n node) *pb.Node {
 	// @TODO finish these fields
 	// PendingStake string
 	// Epoch data
-
-	return &pb.Node{
+	node := &pb.Node{
 		Id:                n.n.GetId(),
 		PubKey:            n.n.GetPubKey(),
 		InfoUrl:           n.n.GetInfoUrl(),
@@ -200,4 +224,11 @@ func (ns *Node) nodeProtoFromInternal(n node) *pb.Node {
 
 		Delagations: delegations,
 	}
+
+	if sc, ok := n.scoresPerEpoch[epochID]; ok {
+		node.Score = sc.score
+		node.NormalisedScore = sc.normalisedScore
+	}
+
+	return node
 }

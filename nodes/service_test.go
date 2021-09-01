@@ -106,7 +106,8 @@ func TestNodesService_GetAll(t *testing.T) {
 		},
 	}
 
-	testService.nodeStore.EXPECT().GetAll().Return(expectedNodes).Times(1)
+	testService.epochStore.EXPECT().GetEpochSeq().Return("1").Times(1)
+	testService.nodeStore.EXPECT().GetAll("1").Return(expectedNodes).Times(1)
 
 	nodes, err := testService.GetNodes(testService.ctx)
 	a.NoError(err)
@@ -144,7 +145,8 @@ func TestNodesService_GetByID(t *testing.T) {
 			},
 		}
 
-		testService.nodeStore.EXPECT().GetByID("node_1").Return(expectedNode, nil).Times(1)
+		testService.epochStore.EXPECT().GetEpochSeq().Return("1").Times(1)
+		testService.nodeStore.EXPECT().GetByID("node_1", "1").Return(expectedNode, nil).Times(1)
 
 		node, err := testService.GetNodeByID(testService.ctx, "node_1")
 		a.NoError(err)
@@ -156,7 +158,8 @@ func TestNodesService_GetByID(t *testing.T) {
 		testService := getTestService(t)
 		defer testService.Finish()
 
-		testService.nodeStore.EXPECT().GetByID("non_existing").Return(nil, fmt.Errorf("node not found")).Times(1)
+		testService.epochStore.EXPECT().GetEpochSeq().Return("1").Times(1)
+		testService.nodeStore.EXPECT().GetByID("non_existing", "1").Return(nil, fmt.Errorf("node not found")).Times(1)
 
 		node, err := testService.GetNodeByID(testService.ctx, "non_existing")
 		a.EqualError(err, "node not found")

@@ -31,7 +31,7 @@ func TestNodes(t *testing.T) {
 
 	nodeStore := storage.NewNode(logging.NewTestLogger(), storage.NewDefaultConfig(""))
 
-	n, err := nodeStore.GetByID("pub_key_1")
+	n, err := nodeStore.GetByID("pub_key_1", "1")
 	a.Nil(n)
 	a.Error(err, errors.New("node 1 not found"))
 
@@ -52,12 +52,11 @@ func TestNodes(t *testing.T) {
 		StakedByOperator:  "0",
 		StakedByDelegates: "0",
 		StakedTotal:       "0",
-		Delagations:       []*pb.Delegation{},
 	}
 
 	nodeStore.AddNode(testNode)
 
-	actualNode, err := nodeStore.GetByID("tm_pub_key_1")
+	actualNode, err := nodeStore.GetByID("tm_pub_key_1", "epoch_1")
 	a.NoError(err)
 	a.Equal(expectedNode, actualNode)
 
@@ -66,19 +65,19 @@ func TestNodes(t *testing.T) {
 			Party:    "1",
 			NodeId:   "tm_pub_key_1",
 			Amount:   "20",
-			EpochSeq: "1",
+			EpochSeq: "epoch_1",
 		},
 		{
 			Party:    "pub_key_1",
 			NodeId:   "tm_pub_key_1",
 			Amount:   "10",
-			EpochSeq: "1",
+			EpochSeq: "epoch_1",
 		},
 		{
 			Party:    "2",
 			NodeId:   "tm_pub_key_1",
 			Amount:   "5",
-			EpochSeq: "1",
+			EpochSeq: "epoch_1",
 		},
 	}
 
@@ -86,9 +85,9 @@ func TestNodes(t *testing.T) {
 	nodeStore.AddDelegation(*delegations[1])
 	nodeStore.AddDelegation(*delegations[2])
 
-	actualNode, err = nodeStore.GetByID("tm_pub_key_1")
+	actualNode, err = nodeStore.GetByID("tm_pub_key_1", "epoch_1")
 	a.NoError(err)
-	assertNode(a, actualNode, delegations, "10", "25", "35")
+	assertNode(a, actualNode, delegations, "10", "25", "35", "", "")
 
 	nodeStore.AddNode(pb.Node{
 		Id:       "tm_pub_key_2",
@@ -97,6 +96,9 @@ func TestNodes(t *testing.T) {
 		Location: "UK",
 		Status:   pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	})
+
+	nodeStore.AddNodeScore("tm_pub_key_2", "1", "20", "0.89")
+	nodeStore.AddNodeScore("tm_pub_key_2", "2", "30", "0.9")
 
 	delegations = []*pb.Delegation{
 		{
@@ -112,13 +114,13 @@ func TestNodes(t *testing.T) {
 			EpochSeq: "1",
 		},
 		{
-			Party:    "4",
+			Party:    "3",
 			NodeId:   "tm_pub_key_2",
-			Amount:   "50",
+			Amount:   "10",
 			EpochSeq: "2",
 		},
 		{
-			Party:    "3",
+			Party:    "4",
 			NodeId:   "tm_pub_key_2",
 			Amount:   "50",
 			EpochSeq: "2",
@@ -131,21 +133,30 @@ func TestNodes(t *testing.T) {
 	nodeStore.AddDelegation(*delegations[3])
 
 	// This delegation should just replace previous one in the epoch - only increase the amount
-	delegations[3].Amount = "60"
-	nodeStore.AddDelegation(*delegations[3])
+	delegations[1].Amount = "60"
+	nodeStore.AddDelegation(*delegations[1])
 
-	node, err := nodeStore.GetByID("tm_pub_key_2")
+	// Get node in first epoch
+	node, err := nodeStore.GetByID("tm_pub_key_2", "1")
 	a.NoError(err)
-	assertNode(a, node, delegations, "0", "170", "170")
+	assertNode(a, node, delegations[0:2], "0", "70", "70", "20", "0.89")
 
-	nodes := nodeStore.GetAll()
+	// Get node in second epoch
+	node, err = nodeStore.GetByID("tm_pub_key_2", "2")
+	a.NoError(err)
+	assertNode(a, node, delegations[2:], "0", "60", "60", "30", "0.9")
+
+	nodes := nodeStore.GetAll("1")
+	a.Equal(2, len(nodes))
+
+	nodes = nodeStore.GetAll("2")
 	a.Equal(2, len(nodes))
 
 	a.Equal(2, nodeStore.GetTotalNodesNumber())
 	a.Equal(2, nodeStore.GetValidatingNodesNumber())
 
-	a.Equal("95", nodeStore.GetStakedTotal("1"))
-	a.Equal("110", nodeStore.GetStakedTotal("2"))
+	a.Equal("70", nodeStore.GetStakedTotal("1"))
+	a.Equal("60", nodeStore.GetStakedTotal("2"))
 }
 
 func assertNode(
@@ -153,10 +164,13 @@ func assertNode(
 	node *pb.Node,
 	delegations []*pb.Delegation,
 	stakedByOperator, stakedByDelegates, stakedTotal string,
+	score, normalisedScore string,
 ) {
 	a.Equal(stakedByOperator, node.StakedByOperator)
 	a.Equal(stakedByDelegates, node.StakedByDelegates)
 	a.Equal(stakedTotal, node.StakedTotal)
+	a.Equal(score, node.Score)
+	a.Equal(normalisedScore, node.NormalisedScore)
 
 	sort.Sort(ByXY(delegations))
 	sort.Sort(ByXY(node.Delagations))
