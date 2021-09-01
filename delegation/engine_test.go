@@ -2,6 +2,7 @@ package delegation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -1732,17 +1733,26 @@ func newTestStakingAccount() *TestStakingAccount {
 	}
 }
 
-func (t *TestStakingAccount) GetBalanceNow(party string) *num.Uint {
-	ret := t.partyToStake[party]
-	return ret
+func (t *TestStakingAccount) GetAvailableBalance(party string) (*num.Uint, error) {
+	ret, ok := t.partyToStake[party]
+	if !ok {
+		return nil, fmt.Errorf("party not found")
+	}
+	return ret, nil
 }
 
-func (t *TestStakingAccount) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
+func (t *TestStakingAccount) GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error) {
 	ret, ok := t.partyToStakeForEpoch[from]
 	if !ok {
-		return nil
+		return nil, fmt.Errorf("time not found")
 	}
-	return ret[party]
+
+	p, ok := ret[party]
+	if !ok {
+		return nil, fmt.Errorf("party not found")
+	}
+
+	return p, nil
 }
 
 type TestTopology struct {

@@ -587,10 +587,9 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 		return
 	}
 
-	asset := e.mustGetGovernanceVoteAsset()
 	params := e.mustGetProposalParams(proposal)
 
-	finalState := proposal.Close(asset, params, e.accs)
+	finalState := proposal.Close(params, e.accs)
 
 	if finalState == types.ProposalStatePassed {
 		e.log.Debug("Proposal passed", logging.ProposalID(proposal.ID))
@@ -628,16 +627,6 @@ func (e *Engine) mustGetProposalParams(proposal *proposal) *ProposalParameters {
 	return params
 }
 
-func (e *Engine) mustGetGovernanceVoteAsset() string {
-	asset, err := e.netp.Get(netparams.GovernanceVoteAsset)
-	if err != nil {
-		e.log.Panic("failed to get the vote asset from network parameters",
-			logging.Error(err),
-		)
-	}
-	return asset
-}
-
 type proposal struct {
 	*types.Proposal
 	yes          map[string]*types.Vote
@@ -649,7 +638,7 @@ func (p *proposal) IsOpen() bool {
 	return p.State == types.ProposalStateOpen
 }
 
-func (p *proposal) Close(asset string, params *ProposalParameters, accounts StakingAccounts) types.ProposalState {
+func (p *proposal) Close(params *ProposalParameters, accounts StakingAccounts) types.ProposalState {
 	if !p.IsOpen() {
 		return p.State
 	}
