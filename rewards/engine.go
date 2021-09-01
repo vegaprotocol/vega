@@ -134,7 +134,7 @@ func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.C
 	return nil
 }
 
-//UpdateCompetitionLevelForStakingRewardScheme
+//UpdateCompetitionLevelForStakingRewardScheme is called when the competition level has changed
 func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel float64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
