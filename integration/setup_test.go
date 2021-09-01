@@ -59,7 +59,7 @@ type executionTestSetup struct {
 	delegationEngine *delegation.Engine
 	positionPlugin   *plugins.Positions
 	topology         *stubs.TopologyStub
-	stakingAccount   *delegation.DummyStakingAccounts
+	stakingAccount   *stubs.StakingAccountStub
 	rewardsEngine    *rewards.Engine
 
 	// save party accounts state
@@ -99,7 +99,9 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
 	execsetup.topology = stubs.NewTopologyStub()
-	execsetup.stakingAccount = delegation.NewDummyStakingAccount(execsetup.collateralEngine)
+
+	execsetup.stakingAccount = stubs.NewStakingAccountStub()
+
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService)
 	execsetup.oracleEngine = oracles.NewEngine(
@@ -186,16 +188,12 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.executionEngine.OnMarketProbabilityOfTradingTauScalingUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
-			Watcher: e.stakingAccount.GovAssetUpdated,
-		},
-		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
 			Watcher: e.delegationEngine.OnMinAmountChanged,
 		},
 
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
+			Param:   netparams.RewardAsset,
 			Watcher: e.rewardsEngine.UpdateAssetForStakingAndDelegationRewardScheme,
 		},
 		netparams.WatchParam{

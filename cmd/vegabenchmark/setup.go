@@ -22,14 +22,17 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/checks"
 	"code.vegaprotocol.io/vega/netparams/dispatch"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/cenkalti/backoff"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
@@ -130,14 +133,19 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
-	// TODO replace with actual implementation
-	stakingAccount := delegation.NewDummyStakingAccount(collateral)
-	netp.Watch(netparams.WatchParam{
-		Param:   netparams.GovernanceVoteAsset,
-		Watcher: stakingAccount.GovAssetUpdated,
-	})
+	// instantiate the ETHClient
+	ethClient, err := ethclient.Dial(nodewallet.NewDefaultConfig().ETH.Address)
+	if err != nil {
+		return nil, nil, err
+	}
 
-	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, epochService)
+	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
+
+	stakingAccounts, _ := staking.New(
+		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams,
+	)
+
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.DelegationMinAmount,
 		Watcher: delegationEngine.OnMinAmountChanged,
@@ -178,7 +186,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		stakeV,
 		cp,
 	)
-
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {
 		return nil, nil, err
@@ -330,8 +337,8 @@ func registerExecutionCallbacks(
 ) error {
 	if err := netps.AddRules(
 		netparams.ParamStringRules(
-			netparams.GovernanceVoteAsset,
-			checks.GovernanceAssetUpdate(log, assets, collateral),
+			netparams.RewardAsset,
+			checks.RewardAssetUpdate(log, assets, collateral),
 		),
 	); err != nil {
 		return err
@@ -340,8 +347,8 @@ func registerExecutionCallbacks(
 	// now add some watcher for our netparams
 	return netps.Watch(
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
-			Watcher: dispatch.GovernanceAssetUpdate(log, assets),
+			Param:   netparams.RewardAsset,
+			Watcher: dispatch.RewardAssetUpdate(log, assets),
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,

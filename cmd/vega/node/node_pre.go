@@ -324,12 +324,19 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
 
+	//TODO replace with actual implementation
+	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
+	l.netParams.Watch(netparams.WatchParam{
+		Param:   netparams.RewardAsset,
+		Watcher: stakingAccount.GovAssetUpdated,
+	})
+
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService)
+	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.epochService)
 	l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
@@ -385,8 +392,8 @@ func (l *NodeCommand) setupNetParameters() error {
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
 	if err := l.netParams.AddRules(
 		netparams.ParamStringRules(
-			netparams.GovernanceVoteAsset,
-			checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+			netparams.RewardAsset,
+			checks.RewardAssetUpdate(l.Log, l.assets, l.collateral),
 		),
 	); err != nil {
 		return err
@@ -395,8 +402,8 @@ func (l *NodeCommand) setupNetParameters() error {
 	// now add some watcher for our netparams
 	return l.netParams.Watch(
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
-			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets),
+			Param:   netparams.RewardAsset,
+			Watcher: dispatch.RewardAssetUpdate(l.Log, l.assets),
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,
@@ -467,7 +474,7 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.epochService.OnEpochLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
+			Param:   netparams.RewardAsset,
 			Watcher: l.rewards.UpdateAssetForStakingAndDelegationRewardScheme,
 		},
 		netparams.WatchParam{

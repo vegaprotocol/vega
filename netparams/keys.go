@@ -21,7 +21,7 @@ const (
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 
-	GovernanceVoteAsset = "governance.vote.asset"
+	RewardAsset = "reward.asset"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
@@ -102,7 +102,7 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
 	MarketPriceMonitoringUpdateFrequency:                  {},
-	GovernanceVoteAsset:                                   {},
+	RewardAsset:                                           {},
 	GovernanceProposalMarketMinClose:                      {},
 	GovernanceProposalMarketMaxClose:                      {},
 	GovernanceProposalMarketMinEnact:                      {},
