@@ -844,11 +844,11 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	}
 }
 
-func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr error) {
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
-		if err != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), cmd))
+		if rerr != nil {
+			app.broker.Send(events.NewTxErrEvent(ctx, rerr, tx.Party(), cmd))
 		}
 	}()
 
