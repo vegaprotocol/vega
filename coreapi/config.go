@@ -20,6 +20,7 @@ type Config struct {
 	Markets           bool
 	Votes             bool
 	MarketsData       bool
+	PartiesStake      bool
 }
 
 func NewDefaultConfig() Config {
@@ -34,5 +35,6 @@ func NewDefaultConfig() Config {
 		Proposals:         true,
 		Votes:             true,
 		MarketsData:       true,
+		PartiesStake:      true,
 	}
 }
