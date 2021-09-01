@@ -32,7 +32,12 @@ func (opts *signCmd) Execute(_ []string) error {
 		return err
 	}
 
-	sps, err := genesis.GetSignedParameters(os.ExpandEnv(opts.TmRoot))
+	_, genesisState, err := genesis.GetLocalGenesisState(os.ExpandEnv(opts.TmRoot))
+	if err != nil {
+		return err
+	}
+
+	sps, err := genesis.GetSignedParameters(genesisState)
 	if err != nil {
 		return err
 	}

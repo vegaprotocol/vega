@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/netparams"
 	tmconfig "github.com/tendermint/tendermint/config"
-	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -24,12 +23,7 @@ var (
 	}
 )
 
-func GetSignedParameters(tmRootPath string) (*SignedParameters, error) {
-	genesisState, err := getGenesisState(tmRootPath)
-	if err != nil {
-		return nil, err
-	}
-
+func GetSignedParameters(genesisState *GenesisState) (*SignedParameters, error) {
 	sps := &SignedParameters{}
 	extractNetworkParameters(genesisState, sps)
 	extractNetworkLimits(genesisState, sps)
@@ -38,28 +32,31 @@ func GetSignedParameters(tmRootPath string) (*SignedParameters, error) {
 	return sps, nil
 }
 
-func getGenesisState(path string) (*GenesisState, error) {
+func GetLocalGenesisState(path string) (*tmtypes.GenesisDoc, *GenesisState, error) {
 	tmConfig := tmconfig.DefaultConfig()
 	tmConfig.SetRoot(path)
 	genesisFilePath := tmConfig.GenesisFile()
 
 	data, err := fsutil.ReadFile(genesisFilePath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	genesisDoc := &tmtypes.GenesisDoc{}
-	err = tmjson.Unmarshal(data, genesisDoc)
+	return GenesisFromJSON(data)
+}
+
+func GenesisFromJSON(rawGenesisDoc []byte) (*tmtypes.GenesisDoc, *GenesisState, error) {
+	genesisDoc, err := tmtypes.GenesisDocFromJSON(rawGenesisDoc)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	genesisState := &GenesisState{}
 	err = json.Unmarshal(genesisDoc.AppState, genesisState)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return genesisState, nil
+	return genesisDoc, genesisState, nil
 }
 
 func extractAssets(genesisState *GenesisState, sps *SignedParameters) {

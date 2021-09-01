@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"code.vegaprotocol.io/vega/genesis"
 	"github.com/jessevdk/go-flags"
 	"github.com/spf13/cobra"
 	tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -89,22 +91,60 @@ func selectGenesisDocProviderFunc(config *cfg.Config) nm.GenesisDocProvider {
 }
 
 func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
-	genesisFilePath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s/genesis.json", networkSelect)
-	resp, err := http.Get(genesisFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
-	}
-	defer resp.Body.Close()
-	jsonGenesis, err := ioutil.ReadAll(resp.Body)
+	genesisFilesRootPath := fmt.Sprintf("https://raw.githubusercontent.com/vegaprotocol/networks/master/%s", networkSelect)
+
+	doc, state, err := getGenesisFromRemote(genesisFilesRootPath)
 	if err != nil {
 		return nil, err
 	}
 
-	doc, err := tmtypes.GenesisDocFromJSON(jsonGenesis)
+	sig, err := getSignatureFromRemote(genesisFilesRootPath)
 	if err != nil {
-		return nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
+		return nil, err
 	}
+
+	validSignature, err := genesis.VerifyGenesisStateSignature(state, sig)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't verify the genesis state signature: %s", err)
+	}
+	if !validSignature {
+		return nil, fmt.Errorf("genesis state doesn't match the signature: %s", sig)
+	}
+
 	return doc, nil
+}
+
+func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
+	genesisFilePath := fmt.Sprintf("%s/genesis.json", genesisFilesRootPath)
+	resp, err := http.Get(genesisFilePath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
+	}
+	defer resp.Body.Close()
+	jsonGenesis, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	doc, state, err := genesis.GenesisFromJSON(jsonGenesis)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
+	}
+	return doc, state, nil
+}
+
+func getSignatureFromRemote(genesisFilesRootPath string) (string, error) {
+	signatureFilePath := fmt.Sprintf("%s/signature.txt", genesisFilesRootPath)
+	sigResp, err := http.Get(signatureFilePath)
+	if err != nil {
+		return "", fmt.Errorf("couldn't load signature file from %s: %w", signatureFilePath, err)
+	}
+	defer sigResp.Body.Close()
+	sig, err := ioutil.ReadAll(sigResp.Body)
+	if err != nil {
+		return "", err
+	}
+	return strings.Trim(string(sig), "\n"), nil
 }
 
 // this is taken from tendermint
