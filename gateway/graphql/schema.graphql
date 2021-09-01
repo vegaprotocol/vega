@@ -532,7 +532,6 @@ type Node {
   # All delegation for a node by a given party if specified, or all delegations.
   delegations(partyId: String): [Delegation!]
 
-  # Node score in given epoch
   score: String!
 
   normalisedScore: String!
