@@ -162,7 +162,7 @@ func (b *BrokerStub) ClearOrderEvents() {
 	b.mu.Unlock()
 }
 
-func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy map[uint64]uint64) {
+func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
 	batch := b.GetImmBatch(events.OrderEvent)
 	if len(batch) == 0 {
 		return nil, nil
@@ -193,7 +193,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 	}
 
 	// now we have all active orders, let's build both sides
-	sell, buy = map[uint64]uint64{}, map[uint64]uint64{}
+	sell, buy = map[string]uint64{}, map[string]uint64{}
 	for _, v := range activeOrders {
 		if v.Side == types.Side_SIDE_BUY {
 			buy[v.Price] = buy[v.Price] + v.Remaining

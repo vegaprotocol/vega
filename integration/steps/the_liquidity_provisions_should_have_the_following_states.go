@@ -33,7 +33,7 @@ func TheLiquidityProvisionsShouldHaveTheFollowingStates(broker *stubs.BrokerStub
 			return errLiquidityProvisionEventNotFound()
 		}
 
-		if e.PartyId != party || e.MarketId != market || e.CommitmentAmount != commitment || e.Status != status {
+		if e.PartyId != party || e.MarketId != market || stringToU64(e.CommitmentAmount) != commitment || e.Status != status {
 			return errLiquidityProvisionEventNotFound()
 		}
 	}

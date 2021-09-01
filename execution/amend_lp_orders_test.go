@@ -141,7 +141,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 
@@ -232,7 +232,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 
@@ -325,7 +325,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 
@@ -614,7 +614,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 
@@ -642,7 +642,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 
@@ -751,7 +751,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 

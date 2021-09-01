@@ -20,8 +20,8 @@ func TheAccumulatedLiquidityFeesShouldBeForTheMarket(
 		return err
 	}
 
-	if acc.Balance != amount {
-		return errInvalidAmountInLiquidityFee(market, amount, acc.Balance)
+	if stringToU64(acc.Balance) != amount {
+		return errInvalidAmountInLiquidityFee(market, amount, stringToU64(acc.Balance))
 	}
 
 	return nil

@@ -19,7 +19,7 @@ func TheInsurancePoolBalanceShouldBeForTheMarket(
 		return errCannotGetInsurancePoolAccountForMarket(market, err)
 	}
 
-	if amount != acc.Balance {
+	if amount != stringToU64(acc.Balance) {
 		return errInvalidMarketInsurancePoolBalance(amount, acc)
 	}
 	return nil

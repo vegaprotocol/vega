@@ -118,7 +118,7 @@ func testSubmissionCRUD(t *testing.T) {
 	}
 
 	lps1 := &commandspb.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: pbBuys, Sells: pbSells,
 	}
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
@@ -177,7 +177,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 
 	// Send a submission to create the shape
 	lpspb := &commandspb.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
 			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
 			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
@@ -244,7 +244,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	// Expectations
 	lpspb := &commandspb.LiquidityProvisionSubmission{
-		CommitmentAmount: 10,
+		CommitmentAmount: "10",
 		MarketId:         tng.marketID,
 		Fee:              "0.1",
 		Buys: []*proto.LiquidityOrder{
@@ -285,7 +285,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	)
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
-		CommitmentAmount: 10,
+		CommitmentAmount: "10",
 		MarketId:         tng.marketID,
 		Fee:              "0.2",
 		Sells: []*proto.LiquidityOrder{
@@ -327,7 +327,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
 		Fee:              "0.3",
-		CommitmentAmount: 10,
+		CommitmentAmount: "10",
 		MarketId:         tng.marketID,
 	}
 	lps, _ = types.LiquidityProvisionSubmissionFromProto(lpspb)
@@ -367,7 +367,7 @@ func TestUpdate(t *testing.T) {
 
 	// Send a submission to create the shape
 	lpspb := &commandspb.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
 			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
 			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
@@ -441,7 +441,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 
 	// Send a submission to create the shape
 	lp1pb := &commandspb.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 100, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
 			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
 			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
@@ -460,7 +460,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
 
 	lp2pb := &commandspb.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 500, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: "500", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
 			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: -3},
 		},
@@ -478,7 +478,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount), suppliedStake)
 
 	lp3pb := &commandspb.LiquidityProvisionSubmission{
-		MarketId: tng.marketID, CommitmentAmount: 962, Fee: "0.5",
+		MarketId: tng.marketID, CommitmentAmount: "962", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
 			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: -5},
 		},

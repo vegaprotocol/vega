@@ -431,7 +431,10 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	app.stats.IncTotalCreateOrder()
 
 	// Convert from proto to domain type
-	os := types.NewOrderSubmissionFromProto(s)
+	os, err := types.NewOrderSubmissionFromProto(s)
+	if err != nil {
+		return err
+	}
 	// Submit the create order request to the execution engine
 	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
 	if conf != nil {
@@ -495,7 +498,10 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	app.log.Debug("Blockchain service received a AMEND ORDER request", logging.String("order-id", order.OrderId))
 
 	// Convert protobuf into local domain type
-	oa := types.NewOrderAmendmentFromProto(order)
+	oa, err := types.NewOrderAmendmentFromProto(order)
+	if err != nil {
+		return err
+	}
 
 	// Submit the cancel new order request to the Vega trading core
 	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
@@ -518,7 +524,10 @@ func (app *App) DeliverWithdraw(
 	}
 
 	// Convert protobuf to local domain type
-	ws := types.NewWithdrawSubmissionFromProto(w)
+	ws, err := types.NewWithdrawSubmissionFromProto(w)
+	if err != nil {
+		return err
+	}
 	if err := app.processWithdraw(ctx, ws, id, tx.Party()); err != nil {
 		return err
 	}
@@ -820,7 +829,12 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
 		return err
 	}
 
-	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
+	amount, overflowed := num.UintFromString(ce.Amount, 10)
+	if overflowed {
+		return errors.New("amount is not a valid base 10 number")
+	}
+
+	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, amount)
 }
 
 func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
@@ -838,7 +852,11 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	case commandspb.UndelegateSubmission_METHOD_NOW:
 		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, num.Zero())
 	case commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH:
-		return app.delegation.UndelegateAtEndOfEpoch(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
+		amount, overflowed := num.UintFromString(ce.Amount, 10)
+		if overflowed {
+			return errors.New("amount is not a valid base 10 number")
+		}
+		return app.delegation.UndelegateAtEndOfEpoch(ctx, tx.Party(), ce.NodeId, amount)
 	default:
 		return errors.New("unimplemented")
 	}

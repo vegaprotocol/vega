@@ -17,13 +17,13 @@ func TheOrderBookOfMarketShouldHaveTheFollowingVolumes(broker *stubs.BrokerStub,
 
 		sell, buy := broker.GetBookDepth(marketID)
 		if side == types.Side_SIDE_SELL {
-			vol := sell[price]
+			vol := sell[u64ToS(price)]
 			if vol != volume {
 				return fmt.Errorf("invalid volume(%d) at price(%d) and side(%s) for market(%v), expected(%v)", vol, price, side.String(), marketID, volume)
 			}
 			continue
 		}
-		vol := buy[price]
+		vol := buy[u64ToS(price)]
 		if vol != volume {
 			return fmt.Errorf("invalid volume(%d) at price(%d) and side(%s) for market(%v), expected(%v)", vol, price, side.String(), marketID, volume)
 		}

@@ -19,7 +19,7 @@ func TheOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table *godo
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || o.Price != price {
+			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != size || stringToU64(o.Price) != price {
 				continue
 			}
 			match = true
