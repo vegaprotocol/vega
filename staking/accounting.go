@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
@@ -39,7 +38,6 @@ type Accounting struct {
 
 	stakingAssetTotalSupply *num.Uint
 	ethCfg                  vgproto.EthereumConfig
-	mut                     sync.RWMutex
 }
 
 func NewAccounting(log *logging.Logger, cfg Config, broker Broker) *Accounting {
@@ -78,27 +76,22 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	}
 }
 
-func (a *Accounting) OnEthereumConfigUpdate(rawcfg interface{}) error {
+func (a *Accounting) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
 	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
 	if !ok {
 		return ErrNotAnEthereumConfig
 	}
 
-	a.mut.Lock()
 	a.ethCfg = *cfg
-	a.mut.Unlock()
 
 	if err := a.updateStakingAssetTotalSupply(); err != nil {
-		a.log.Error("Failed to update staking asset total supply", logging.Error(err))
+		return fmt.Errorf("failed to update staking asset total supply: %w", err)
 	}
 
 	return nil
 }
 
 func (a *Accounting) updateStakingAssetTotalSupply() error {
-	a.mut.Lock()
-	defer a.mut.Unlock()
-
 	var addr common.Address
 	copy(addr[:], []byte(a.ethCfg.BridgeAddress))
 
@@ -162,8 +155,5 @@ func (a *Accounting) GetAvailableBalanceInRange(
 }
 
 func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
-	a.mut.RLock()
-	defer a.mut.RUnlock()
-
 	return a.stakingAssetTotalSupply.Clone()
 }

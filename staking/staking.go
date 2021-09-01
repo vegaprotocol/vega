@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type AllEthereumClient interface {
