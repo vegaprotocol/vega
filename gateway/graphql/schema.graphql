@@ -535,7 +535,7 @@ type Node {
   # Node score in given epoch
   score: String!
 
-  normalizedScore: String!
+  normalisedScore: String!
 }
 
 type Delegation {
