@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/config"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
@@ -80,7 +82,8 @@ func (c *checkpointRestore) Execute(args []string) error {
 }
 
 func (c checkpointRestore) getCommander(log *logging.Logger) (*nodewallet.Commander, error) {
-	nwConf := nodewallet.NewDefaultConfig()
+	cfg := config.NewDefaultConfig(checkpointCmd.RootPath)
+	nwConf := cfg.NodeWallet
 	// instantiate the ETHClient
 	ethclt, err := ethclient.Dial(nwConf.ETH.Address)
 	if err != nil {
@@ -101,11 +104,16 @@ func (c checkpointRestore) getCommander(log *logging.Logger) (*nodewallet.Comman
 	if err := nodeWallet.Verify(); err != nil {
 		return nil, err
 	}
-	stats := stats.New(log, stats.NewDefaultConfig(), CLIVersion, CLIVersionHash)
+	stats := stats.New(log, cfg.Stats, CLIVersion, CLIVersionHash)
 	wal, _ := nodeWallet.Get(nodewallet.Vega)
+	abciClt, err := abci.NewClient(cfg.Blockchain.Tendermint.ClientAddr)
+	if err != nil {
+		return nil, err
+	}
 	commander, err := nodewallet.NewCommander(log, nil, wal, stats)
 	if err != nil {
 		return nil, err
 	}
+	commander.SetChain(blockchain.NewClient(abciClt))
 	return commander, nil
 }
