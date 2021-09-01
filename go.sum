@@ -22,6 +22,8 @@ code.vegaprotocol.io/vega v0.41.1-0.20210901093522-39a39074d2da h1:HSQlIjuwQq8Ls
 code.vegaprotocol.io/vega v0.41.1-0.20210901093522-39a39074d2da/go.mod h1:LNFYtox/729PZ9G4jPmEiq+a4IWD7VzanE883GcfVjs=
 code.vegaprotocol.io/vega v0.41.1-0.20210901104238-d4c9724994ed h1:pfq1Se9d+ia5ZE+4GCjNAoTP3Qo2e7j8vkN+q5oxDhA=
 code.vegaprotocol.io/vega v0.41.1-0.20210901104238-d4c9724994ed/go.mod h1:WvUzKxjZG1OeYZzQHIjVtgUq4bWp38RUHl56Phw6w7A=
+code.vegaprotocol.io/vega v0.41.1-0.20210901144509-c587f6f568b0 h1:ig+VO4MFTkFgmVct083UejYupN43zBo6ziasi/xoQhQ=
+code.vegaprotocol.io/vega v0.41.1-0.20210901144509-c587f6f568b0/go.mod h1:WvUzKxjZG1OeYZzQHIjVtgUq4bWp38RUHl56Phw6w7A=
 code.vegaprotocol.io/vega v0.41.1/go.mod h1:E8Hm0OFL0sdYAxwnYec90KqS+l5xjyl4ss+H9wCLoQw=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=

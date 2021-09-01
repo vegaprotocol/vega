@@ -491,8 +491,10 @@ type ComplexityRoot struct {
 		Id                func(childComplexity int) int
 		InfoUrl           func(childComplexity int) int
 		Location          func(childComplexity int) int
+		NormalizedScore   func(childComplexity int) int
 		PendingStake      func(childComplexity int) int
 		PubKey            func(childComplexity int) int
+		Score             func(childComplexity int) int
 		StakedByDelegates func(childComplexity int) int
 		StakedByOperator  func(childComplexity int) int
 		StakedTotal       func(childComplexity int) int
@@ -1099,6 +1101,8 @@ type NewMarketCommitmentResolver interface {
 type NodeResolver interface {
 	Status(ctx context.Context, obj *vega.Node) (NodeStatus, error)
 	Delegations(ctx context.Context, obj *vega.Node, partyID *string) ([]*vega.Delegation, error)
+
+	NormalizedScore(ctx context.Context, obj *vega.Node) (string, error)
 }
 type NodeDataResolver interface {
 	TotalNodes(ctx context.Context, obj *vega.NodeData) (int, error)
@@ -3017,6 +3021,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.Location(childComplexity), true
 
+	case "Node.normalizedScore":
+		if e.complexity.Node.NormalizedScore == nil {
+			break
+		}
+
+		return e.complexity.Node.NormalizedScore(childComplexity), true
+
 	case "Node.pendingStake":
 		if e.complexity.Node.PendingStake == nil {
 			break
@@ -3030,6 +3041,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Node.PubKey(childComplexity), true
+
+	case "Node.score":
+		if e.complexity.Node.Score == nil {
+			break
+		}
+
+		return e.complexity.Node.Score(childComplexity), true
 
 	case "Node.stakedByDelegates":
 		if e.complexity.Node.StakedByDelegates == nil {
@@ -5743,6 +5761,11 @@ type Node {
 
   # All delegation for a node by a given party if specified, or all delegations.
   delegations(partyId: String): [Delegation!]
+
+  # Node score in given epoch
+  score: String!
+
+  normalizedScore: String!
 }
 
 type Delegation {
@@ -17456,6 +17479,76 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 	res := resTmp.([]*vega.Delegation)
 	fc.Result = res
 	return ec.marshalODelegation2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐDelegationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Node_score(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Score, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Node_normalizedScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Node().NormalizedScore(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeData_stakedTotal(ctx context.Context, field graphql.CollectedField, obj *vega.NodeData) (ret graphql.Marshaler) {
@@ -31761,6 +31854,25 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Node_delegations(ctx, field, obj)
+				return res
+			})
+		case "score":
+			out.Values[i] = ec._Node_score(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "normalizedScore":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Node_normalizedScore(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		default:

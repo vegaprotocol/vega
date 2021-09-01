@@ -13,6 +13,10 @@ func (r *nodeResolver) Status(ctx context.Context, obj *proto.Node) (NodeStatus,
 	return nodeStatusFromProto(obj.Status)
 }
 
+func (r *nodeResolver) NormalizedScore(ctx context.Context, obj *proto.Node) (string, error) {
+	return obj.NormalisedScore, nil
+}
+
 func (r *nodeResolver) Delegations(ctx context.Context, obj *proto.Node, partyID *string) ([]*proto.Delegation, error) {
 	if partyID == nil || *partyID == "" {
 		return obj.Delagations, nil
