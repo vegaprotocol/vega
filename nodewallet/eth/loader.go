@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/vega/crypto"
+	crypto2 "code.vegaprotocol.io/vega/libs/crypto"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -93,7 +94,7 @@ func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, error
 func (l *WalletLoader) newWallet(walletName, passphrase string, data []byte) (*Wallet, error) {
 	// NewKeyStore always create a new wallet key store file
 	// we create this in tmp as we do not want to impact the original one.
-	tempFile := filepath.Join(os.TempDir(), crypto.RandomStr(10))
+	tempFile := filepath.Join(os.TempDir(), crypto2.RandomStr(10))
 	ks := keystore.NewKeyStore(tempFile, keystore.StandardScryptN, keystore.StandardScryptP)
 
 	acc, err := ks.Import(data, passphrase, passphrase)
