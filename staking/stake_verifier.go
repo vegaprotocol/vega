@@ -11,6 +11,11 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 )
 
+const (
+	// 3 weeks, duration of the whole network at first?
+	timeTilCancel = 24 * 21 * time.Hour
+)
+
 var (
 	ErrNoStakeDepositedEventFound    = errors.New("no stake deposited event found")
 	ErrNoStakeRemovedEventFound      = errors.New("no stake removed event found")
@@ -136,7 +141,7 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 	s.broker.Send(events.NewStakeLinking(ctx, *evt))
 
 	return s.witness.StartCheck(
-		pending, s.onEventVerified, s.currentTime.Add(2*time.Hour))
+		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
 }
 
 func (s *StakeVerifier) ProcessStakeDeposited(
@@ -160,7 +165,7 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 	s.broker.Send(events.NewStakeLinking(ctx, *evt))
 
 	return s.witness.StartCheck(
-		pending, s.onEventVerified, s.currentTime.Add(2*time.Hour))
+		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
 }
 
 func (s *StakeVerifier) removePendingStakeDeposited(id string) error {

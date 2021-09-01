@@ -21,8 +21,20 @@ var (
 func (app *App) processChainEvent(
 	ctx context.Context, ce *commandspb.ChainEvent, pubkey string, id string,
 ) error {
+
+	if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("received chain event",
+			logging.String("event", ce.String()),
+			logging.String("pubkey", pubkey),
+		)
+	}
+
 	// first verify the event was emitted by a validator
 	if !app.top.Exists(pubkey) {
+		app.log.Debug("received chain event from non-validator",
+			logging.String("event", ce.String()),
+			logging.String("pubkey", pubkey),
+		)
 		return ErrChainEventFromNonValidator
 	}
 

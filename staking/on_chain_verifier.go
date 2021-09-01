@@ -1,7 +1,9 @@
 package staking
 
 import (
+	"context"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -41,9 +43,11 @@ func NewOnChainVerifier(
 	}
 }
 
-func (o *OnChainVerifier) OnEthereumConfigUpdate(rawcfg interface{}) error {
+func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
 	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
 	if !ok {
+		o.log.Error("invalid ethereum config",
+			logging.String("parameter", fmt.Sprintf("%#v", rawcfg)))
 		return ErrNotAnEthereumConfig
 	}
 
@@ -57,6 +61,15 @@ func (o *OnChainVerifier) OnEthereumConfigUpdate(rawcfg interface{}) error {
 			o.contractAddresses, ethcmn.HexToAddress(address))
 	}
 
+	if o.log.GetLevel() <= logging.DebugLevel {
+		addresses := []string{}
+		for _, v := range o.contractAddresses {
+			addresses = append(addresses, v.Hex())
+		}
+		o.log.Debug("staking bridge addresses updated",
+			logging.Strings("addresses", addresses))
+	}
+
 	return nil
 }
 
@@ -65,15 +78,27 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
+	if o.log.GetLevel() <= logging.DebugLevel {
+		o.log.Debug("checking stake deposited event on chain",
+			logging.String("event", event.String()),
+		)
+	}
+
 	decodedPubKeySlice, err := hex.DecodeString(event.VegaPubKey)
 	if err != nil {
-		o.log.Error("invalid pubkey inn stake deposited event", logging.Error(err))
+		o.log.Error("invalid pubkey in stake deposited event", logging.Error(err))
 		return err
 	}
 	var decodedPubKey [32]byte
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
 	for _, address := range o.contractAddresses {
+		if o.log.GetLevel() <= logging.DebugLevel {
+			o.log.Debug("checking stake deposited event on chain",
+				logging.String("bridge-address", address.Hex()),
+				logging.String("event", event.String()),
+			)
+		}
 		filterer, err := NewStakingFilterer(
 			address, o.ethClient)
 		if err != nil {
@@ -100,6 +125,14 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 		amountDeposited := event.Amount.BigInt()
 
 		for iter.Next() {
+			if o.log.GetLevel() <= logging.DebugLevel {
+				o.log.Debug("found stake deposited event on chain",
+					logging.String("bridge-address", address.Hex()),
+					logging.String("amount", iter.Event.Amount.String()),
+					logging.String("user", iter.Event.User.Hex()),
+				)
+			}
+
 			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
 				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
 				iter.Event.Raw.BlockNumber == event.BlockNumber &&
@@ -118,6 +151,12 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
+	if o.log.GetLevel() <= logging.DebugLevel {
+		o.log.Debug("checking stake removed event on chain",
+			logging.String("event", event.String()),
+		)
+	}
+
 	decodedPubKeySlice, err := hex.DecodeString(event.VegaPubKey)
 	if err != nil {
 		o.log.Error("invalid pubkey inn stake deposited event", logging.Error(err))
@@ -127,6 +166,12 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
 	for _, address := range o.contractAddresses {
+		if o.log.GetLevel() <= logging.DebugLevel {
+			o.log.Debug("checking stake removed event on chain",
+				logging.String("bridge-address", address.Hex()),
+				logging.String("event", event.String()),
+			)
+		}
 		filterer, err := NewStakingFilterer(
 			address, o.ethClient)
 		if err != nil {
@@ -153,6 +198,14 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 		amountDeposited := event.Amount.BigInt()
 
 		for iter.Next() {
+			if o.log.GetLevel() <= logging.DebugLevel {
+				o.log.Debug("found stake removed event on chain",
+					logging.String("bridge-address", address.Hex()),
+					logging.String("amount", iter.Event.Amount.String()),
+					logging.String("user", iter.Event.User.Hex()),
+				)
+			}
+
 			if hex.EncodeToString(iter.Event.VegaPublicKey[:]) == vegaPubKey &&
 				iter.Event.Amount.Cmp(amountDeposited) == 0 &&
 				iter.Event.Raw.BlockNumber == event.BlockNumber &&

@@ -58,8 +58,8 @@ const (
 )
 
 const (
-	minValidationPeriod = 1         // sec minutes
-	maxValidationPeriod = 48 * 3600 // 2 days
+	minValidationPeriod = 1                   // sec minutes
+	maxValidationPeriod = 30 * 24 * time.Hour // 2 days
 	// by default all validators needs to sign
 	defaultValidatorsVoteRequired = 1.0
 )
@@ -224,9 +224,16 @@ func (w *Witness) StartCheck(
 
 func (w *Witness) validateCheckUntil(checkUntil time.Time) error {
 	minValid, maxValid :=
-		w.now.Add(minValidationPeriod*time.Second),
-		w.now.Add(maxValidationPeriod*time.Second)
+		w.now.Add(minValidationPeriod),
+		w.now.Add(maxValidationPeriod)
 	if checkUntil.Unix() < minValid.Unix() || checkUntil.Unix() > maxValid.Unix() {
+		if w.log.GetLevel() <= logging.DebugLevel {
+			w.log.Debug("invalid duration for witness",
+				logging.Time("check-until", checkUntil),
+				logging.Time("min-valid", minValid),
+				logging.Time("max-valid", maxValid),
+			)
+		}
 		return ErrCheckUntilInvalid
 	}
 	return nil

@@ -20,6 +20,10 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 )
 
+const (
+	withdrawalsDefaultExpiry = 24 * 7 * time.Hour
+)
+
 var (
 	ErrWrongAssetTypeUsedInBuiltinAssetChainEvent = errors.New("non builtin asset used for builtin asset chain event")
 	ErrWrongAssetTypeUsedInERC20ChainEvent        = errors.New("non ERC20 for ERC20 chain event")
@@ -327,7 +331,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 	}
 
 	now := e.currentTime
-	expiry := now.Add(e.cfg.WithdrawalExpiry.Duration)
+	expiry := now.Add(withdrawalsDefaultExpiry)
 	wext := &types.WithdrawExt{
 		Ext: &types.WithdrawExt_Erc20{
 			Erc20: ext,
