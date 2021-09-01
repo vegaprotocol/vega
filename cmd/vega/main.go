@@ -57,7 +57,6 @@ func Main(ctx context.Context) error {
 
 	if err := Register(ctx, parser,
 		Faucet,
-		Gateway,
 		genesis.Genesis,
 		Init,
 		Node,
@@ -68,6 +67,7 @@ func Main(ctx context.Context) error {
 		Watch,
 		Tm,
 		Checkpoint,
+		Query,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

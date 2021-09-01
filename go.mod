@@ -3,11 +3,10 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.7.1-0.20210818090756-e2e8f4f1a075
+	code.vegaprotocol.io/go-wallet v0.7.1-0.20210831140110-06027dc1a497
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.41.1-0.20210830063339-86726493b8cb
+	code.vegaprotocol.io/protos v0.41.1-0.20210831105504-a2fb8fcd9c11
 	code.vegaprotocol.io/quant v0.2.5
-	github.com/99designs/gqlgen v0.11.3
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -20,7 +19,6 @@ require (
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.5.2
 	github.com/google/btree v1.0.0
-	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/holiman/uint256 v1.2.0
@@ -28,6 +26,7 @@ require (
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/jinzhu/copier v0.2.8
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mwitkow/go-proto-validators v0.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
@@ -41,7 +40,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.11
-	github.com/vektah/gqlparser/v2 v2.0.1
 	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/apm/module/apmhttp v1.8.0

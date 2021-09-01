@@ -7,7 +7,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/stats"
@@ -53,7 +53,7 @@ func (c *checkpointRestore) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := fsutil.FileExists(c.CPFile); !ok {
+	if ok, err := vgfs.FileExists(c.CPFile); !ok {
 		return fmt.Errorf("checkpoint file not found: %w", err)
 	}
 

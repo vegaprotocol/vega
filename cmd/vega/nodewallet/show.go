@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/fsutil"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
@@ -21,7 +21,7 @@ func (opts *showCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := fsutil.PathExists(rootCmd.RootPath); !ok {
+	if ok, err := vgfs.PathExists(rootCmd.RootPath); !ok {
 		return fmt.Errorf("invalid root directory path: %w", err)
 	}
 

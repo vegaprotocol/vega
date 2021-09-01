@@ -12,11 +12,11 @@ import (
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
@@ -106,7 +106,7 @@ func NewApp(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	if err := fsutil.EnsureDir(config.CheckpointsPath); err != nil {
+	if err := vgfs.EnsureDir(config.CheckpointsPath); err != nil {
 		log.Panic("Could not create checkpoints directory",
 			logging.String("checkpoint-dir", config.CheckpointsPath),
 			logging.Error(err))
@@ -229,8 +229,8 @@ func (app *App) cancel() {
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
 	hash := hex.EncodeToString(crypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
-	ctx := contextutil.WithBlockHeight(context.Background(), 0)
-	ctx = contextutil.WithTraceID(ctx, hash)
+	ctx := vgcontext.WithBlockHeight(context.Background(), 0)
+	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
 	vators := make([]string, 0, len(req.Validators))
@@ -254,7 +254,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
-	ctx = contextutil.WithBlockHeight(contextutil.WithTraceID(context.Background(), hash), req.Header.Height)
+	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(context.Background(), hash), req.Header.Height)
 	app.blockCtx = ctx
 
 	now := req.Header.Time

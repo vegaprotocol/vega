@@ -203,28 +203,11 @@ pipeline {
                         }
                     }
                 }
-                // this task needs to run before linters and tests
-                stage('Run gqlgen codgen checks') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'make gqlgen_check'
-                        }
-                    }
-                }
             }
         }
 
         stage('Linters') {
             parallel {
-                stage('buf lint') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'buf lint'
-                        }
-                    }
-                }
                 stage('static check') {
                     options { retry(3) }
                     steps {

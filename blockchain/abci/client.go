@@ -28,6 +28,27 @@ func NewClient(addr string) (*Client, error) {
 		return nil, ErrEmptyClientAddr
 	}
 
+	clt, err := tmclihttp.New(addr, "/websocket")
+	if err != nil {
+		return nil, err
+	}
+
+	// log errors only
+	clt.Logger = tmlog.NewFilter(
+		tmlog.NewTMLogger(os.Stdout),
+		tmlog.AllowError(),
+	)
+
+	return &Client{
+		tmclt: clt,
+	}, nil
+}
+
+func NewClientCustom(addr string) (*Client, error) {
+	if len(addr) <= 0 {
+		return nil, ErrEmptyClientAddr
+	}
+
 	hClient, err := defaultHTTPClient(addr)
 	if err != nil {
 		return nil, err

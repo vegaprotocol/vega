@@ -1390,7 +1390,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 
 	t.Run("current liquidity fee is 0.5", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.Market{}
+		found := proto.Market{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.MarketUpdated:
@@ -1398,7 +1398,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 			}
 		}
 
-		assert.True(t, found.Fees.Factors.LiquidityFee.Equals(num.DecimalFromFloat(.5)))
+		assert.Equal(t, found.Fees.Factors.LiquidityFee, "0.5")
 	})
 
 	tm.EndOpeningAuction(t, auctionEnd, false)
@@ -1430,7 +1430,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 
 	t.Run("current liquidity fee is still 0.5", func(t *testing.T) {
 		// First collect all the orders events
-		var found *types.Market
+		var found *proto.Market
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.MarketUpdated:
@@ -1455,7 +1455,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 
 	t.Run("current liquidity fee is again 0.1", func(t *testing.T) {
 		// First collect all the orders events
-		found := types.Market{}
+		found := proto.Market{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.MarketUpdated:
@@ -1463,7 +1463,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 			}
 		}
 		// no update to the liquidity fee
-		assert.True(t, found.Fees.Factors.LiquidityFee.Equals(num.DecimalFromFloat(.1)))
+		assert.Equal(t, found.Fees.Factors.LiquidityFee, "0.1")
 	})
 
 }

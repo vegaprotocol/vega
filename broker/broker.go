@@ -175,7 +175,7 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 			select {
 			case <-b.ctx.Done():
 				return
-			case events := <-ch:
+			case evts := <-ch:
 				b.mu.Lock()
 				subs := b.getSubsByType(t)
 				b.mu.Unlock()
@@ -190,8 +190,8 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 						unsub = append(unsub, k)
 					default:
 						if sub.required {
-							sub.Push(events...)
-						} else if rm := b.sendChannelSync(sub, events); rm {
+							sub.Push(evts...)
+						} else if rm := b.sendChannelSync(sub, evts); rm {
 							unsub = append(unsub, k)
 						}
 					}
@@ -225,12 +225,14 @@ func (b *Broker) Send(event events.Event) {
 // simplified version for better performance - unfortunately, we'll still need to copy the map
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
+
 	subs, ok := b.tSubs[t]
 	if !ok {
 		// if a typed map isn't set (yet), and it's not the error event, we can return
 		// ALL subscribers directly instead
 		subs = b.tSubs[events.All]
 	}
+
 	// we still need to create a copy to keep the race detector happy
 	cpy := make(map[int]*subscription, len(subs))
 	for k, v := range subs {

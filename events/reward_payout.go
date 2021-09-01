@@ -65,7 +65,6 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 	}
 
 	amount, _ := num.UintFromString(rp.Amount, 10)
-
 	return &RewardPayout{
 		Base:                    newBaseFromStream(ctx, RewardPayoutEvent, be),
 		Party:                   rp.Party,

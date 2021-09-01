@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
-	"code.vegaprotocol.io/vega/contextutil"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/pkg/errors"
 )
@@ -231,8 +231,8 @@ var (
 
 // A base event holds no data, so the constructor will not be called directly
 func newBase(ctx context.Context, t Type) *Base {
-	ctx, tID := contextutil.TraceIDFromContext(ctx)
-	h, _ := contextutil.BlockHeightFromContext(ctx)
+	ctx, tID := vgcontext.TraceIDFromContext(ctx)
+	h, _ := vgcontext.BlockHeightFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
@@ -349,7 +349,7 @@ func (t Type) ToProto() eventspb.BusEventType {
 }
 
 func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
-	evtCtx := contextutil.WithTraceID(ctx, be.Block)
+	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
