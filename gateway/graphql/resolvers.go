@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"time"
 
-	apitypes "code.vegaprotocol.io/protos/vega/api"
 	"google.golang.org/grpc"
 
 	"code.vegaprotocol.io/data-node/gateway"
@@ -2345,96 +2344,6 @@ func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*typ
 }
 
 // END: Account Resolver
-
-type myStatisticsResolver VegaResolverRoot
-
-func (r *myStatisticsResolver) BlockHeight(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.BlockHeight), nil
-}
-
-func (r *myStatisticsResolver) BacklogLength(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.BacklogLength), nil
-}
-
-func (r *myStatisticsResolver) TotalPeers(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TotalPeers), nil
-}
-
-func (r *myStatisticsResolver) Status(ctx context.Context, obj *apitypes.Statistics) (string, error) {
-	return obj.Status.String(), nil
-}
-
-func (r *myStatisticsResolver) TxPerBlock(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TxPerBlock), nil
-}
-
-func (r *myStatisticsResolver) AverageTxBytes(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.AverageTxBytes), nil
-}
-
-func (r *myStatisticsResolver) AverageOrdersPerBlock(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.AverageOrdersPerBlock), nil
-}
-
-func (r *myStatisticsResolver) TradesPerSecond(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TradesPerSecond), nil
-}
-
-func (r *myStatisticsResolver) OrdersPerSecond(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.OrdersPerSecond), nil
-}
-
-func (r *myStatisticsResolver) TotalMarkets(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TotalMarkets), nil
-}
-
-func (r *myStatisticsResolver) TotalAmendOrder(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TotalAmendOrder), nil
-}
-
-func (r *myStatisticsResolver) TotalCancelOrder(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TotalCancelOrder), nil
-}
-
-func (r *myStatisticsResolver) TotalCreateOrder(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TotalCreateOrder), nil
-}
-
-func (r *myStatisticsResolver) TotalOrders(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TotalOrders), nil
-}
-
-func (r *myStatisticsResolver) TotalTrades(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TotalTrades), nil
-}
-
-func (r *myStatisticsResolver) BlockDuration(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.BlockDuration), nil
-}
-
-func (r *myStatisticsResolver) CandleSubscriptions(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.CandleSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) MarketDepthSubscriptions(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.MarketDepthSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) MarketDepthUpdateSubscriptions(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.MarketDepthUpdatesSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) OrderSubscriptions(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.OrderSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) PositionsSubscriptions(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.PositionsSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *apitypes.Statistics) (int, error) {
-	return int(obj.TradeSubscriptions), nil
-}
 
 func getParty(ctx context.Context, log *logging.Logger, client TradingDataServiceClient, id string) (*types.Party, error) {
 	if len(id) == 0 {
