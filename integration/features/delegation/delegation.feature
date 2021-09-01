@@ -196,7 +196,7 @@ Feature: Staking & Delegation
     | party1 |  node3   | 2500   |        
 
     #however when the epoch ends and the delegations are processed the max allowed delegation per node is calculated as 
-    #roughly 13/1.1 * (13 * 10000 + 1000 + 2000 + 3000) =  ~1507 which means each node will only accept max delegation of ~1507
+    #roughly 1.1/13 * (13 * 10000 + 1000 + 2000 + 3000) =  ~1507 which means each node will only accept max delegation of ~1507
     When time is updated to "2021-08-26T00:00:21Z"    
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
