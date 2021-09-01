@@ -12,6 +12,8 @@ cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2k
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
 code.vegaprotocol.io/go-wallet v0.7.1-0.20210831140110-06027dc1a497 h1:MHqfyZljMqORG8vVLIfzF0De7oot89BhJyGVbGsT2zY=
 code.vegaprotocol.io/go-wallet v0.7.1-0.20210831140110-06027dc1a497/go.mod h1:r3Q8o+luWdjRo9KzulUfwRRVIkMOpejPrjzit+Z+xTw=
+code.vegaprotocol.io/go-wallet v0.7.1-0.20210831185441-b7ec69d5d320 h1:76dmVRPS7E2IHHWcp/zs7YV0SHbdlD6NELgge1/Yk5s=
+code.vegaprotocol.io/go-wallet v0.7.1-0.20210831185441-b7ec69d5d320/go.mod h1:r3Q8o+luWdjRo9KzulUfwRRVIkMOpejPrjzit+Z+xTw=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3 h1:/A09Q3EEiJF+/WiJfKiqzp1zvcWphiYR8lf2N/JSJBU=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
 code.vegaprotocol.io/protos v0.41.1-0.20210831105504-a2fb8fcd9c11 h1:iKP6H/9iX641vvy63he8qT880JXXjajBwq30DTj9qPw=
