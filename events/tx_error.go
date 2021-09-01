@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -76,6 +77,30 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 	case types.WithdrawSubmission:
 		evt.evt.Transaction = &eventspb.TxErrorEvent_WithdrawSubmission{
 			WithdrawSubmission: tv.IntoProto(),
+		}
+	case *commandspb.DelegateSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_DelegateSubmission{
+			DelegateSubmission: tv,
+		}
+	case commandspb.DelegateSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_DelegateSubmission{
+			DelegateSubmission: &tv,
+		}
+	case *commandspb.UndelegateSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_UndelegateSubmission{
+			UndelegateSubmission: tv,
+		}
+	case commandspb.UndelegateSubmission:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_UndelegateSubmission{
+			UndelegateSubmission: &tv,
+		}
+	case *commandspb.RestoreSnapshot:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_RestoreSnapshot{
+			RestoreSnapshot: tv,
+		}
+	case commandspb.RestoreSnapshot:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_RestoreSnapshot{
+			RestoreSnapshot: &tv,
 		}
 	}
 	return evt
