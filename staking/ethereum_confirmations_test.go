@@ -1,6 +1,7 @@
 package staking_test
 
 import (
+	"context"
 	"math/big"
 	"testing"
 	"time"
@@ -21,7 +22,7 @@ func TestEthereumConfirmations(t *testing.T) {
 	ethCfns := staking.NewEthereumConfirmations(ethClient, tim)
 	defer ctrl.Finish()
 
-	ethCfns.OnEthereumConfigUpdate(&vgproto.EthereumConfig{
+	ethCfns.OnEthereumConfigUpdate(context.Background(), &vgproto.EthereumConfig{
 		Confirmations: 30,
 	})
 

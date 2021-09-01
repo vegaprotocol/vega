@@ -86,7 +86,7 @@ func testStartErrorCheckFailed(t *testing.T) {
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
-	checkUntil := erc.startTime.Add(72 * time.Hour)
+	checkUntil := erc.startTime.Add(31 * 24 * time.Hour)
 	cb := func(interface{}, bool) {}
 
 	err := erc.StartCheck(res, cb, checkUntil)

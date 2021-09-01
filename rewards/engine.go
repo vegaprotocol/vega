@@ -79,6 +79,8 @@ type payout struct {
 
 //New instantiate a new rewards engine
 func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService) *Engine {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
 	e := &Engine{
 		config:         config,
 		log:            log.Named(namedLogger),

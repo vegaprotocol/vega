@@ -95,6 +95,20 @@ func (t *Topology) Len() int {
 // Exists check if a vega public key is part of the validator set
 func (t *Topology) Exists(key string) bool {
 	_, ok := t.vegaValidatorRefs[key]
+	if t.log.GetLevel() <= logging.DebugLevel {
+		validators := make([]string, 0, len(t.vegaValidatorRefs))
+		for k := range t.vegaValidatorRefs {
+			validators = append(validators, k)
+		}
+		var s = "requested non-existing validator"
+		if ok {
+			s = "requested existing validator"
+		}
+		t.log.Debug(s,
+			logging.Strings("validators", validators),
+			logging.String("pubkey", key),
+		)
+	}
 	return ok
 }
 
