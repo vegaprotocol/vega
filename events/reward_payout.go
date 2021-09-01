@@ -11,23 +11,23 @@ import (
 
 type RewardPayout struct {
 	*Base
-	party                   string
-	epochSeq                string
-	asset                   string
-	percentageOfTotalReward string
-	amount                  *num.Uint
-	timestamp               int64
+	Party                   string
+	EpochSeq                string
+	Asset                   string
+	PercentageOfTotalReward string
+	Amount                  *num.Uint
+	Timestamp               int64
 }
 
 func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward float64) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
-		party:                   party,
-		epochSeq:                epochSeq,
-		asset:                   asset,
-		percentageOfTotalReward: fmt.Sprintf("%f", percentageOfTotalReward),
-		amount:                  amount,
-		timestamp:               timestamp,
+		Party:                   party,
+		EpochSeq:                epochSeq,
+		Asset:                   asset,
+		PercentageOfTotalReward: fmt.Sprintf("%f", percentageOfTotalReward),
+		Amount:                  amount,
+		Timestamp:               timestamp,
 	}
 }
 
@@ -37,12 +37,12 @@ func (rp RewardPayout) RewardPayoutEvent() eventspb.RewardPayoutEvent {
 
 func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 	return eventspb.RewardPayoutEvent{
-		Party:                rp.party,
-		EpochSeq:             rp.epochSeq,
-		Asset:                rp.asset,
-		Amount:               num.UintToString(rp.amount),
-		PercentOfTotalReward: rp.percentageOfTotalReward,
-		Timestamp:            rp.timestamp,
+		Party:                rp.Party,
+		EpochSeq:             rp.EpochSeq,
+		Asset:                rp.Asset,
+		Amount:               rp.Amount.String(),
+		PercentOfTotalReward: rp.PercentageOfTotalReward,
+		Timestamp:            rp.Timestamp,
 	}
 }
 
@@ -67,10 +67,10 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 	amount, _ := num.UintFromString(rp.Amount, 10)
 	return &RewardPayout{
 		Base:                    newBaseFromStream(ctx, RewardPayoutEvent, be),
-		party:                   rp.Party,
-		epochSeq:                rp.EpochSeq,
-		asset:                   rp.Asset,
-		percentageOfTotalReward: rp.PercentOfTotalReward,
-		amount:                  amount,
+		Party:                   rp.Party,
+		EpochSeq:                rp.EpochSeq,
+		Asset:                   rp.Asset,
+		PercentageOfTotalReward: rp.PercentOfTotalReward,
+		Amount:                  amount,
 	}
 }

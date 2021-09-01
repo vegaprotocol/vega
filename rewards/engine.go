@@ -112,7 +112,7 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 		Type:                      types.RewardSchemeStakingAndDelegation,
 		ScopeType:                 types.RewardSchemeScopeNetwork,
 		Parameters:                map[string]types.RewardSchemeParam{},
-		StartTime:                 time.Now(),
+		StartTime:                 time.Time{},
 		PayoutType:                types.PayoutFractional,
 		MaxPayoutPerAssetPerParty: map[string]*num.Uint{},
 	}
@@ -255,17 +255,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			continue
 		}
 
-		if account.Balance.IsZero() {
-			e.log.Debug("reward account has zero balance", logging.String("accountID", accountID))
-			continue
-		}
-
 		rewardAccountBalance := account.Balance
-
-		if rewardAccountBalance.IsZero() {
-			e.log.Debug("reward account has zero balance including pending payouts", logging.String("accountID", accountID))
-			continue
-		}
 
 		// get how much reward needs to be distributed based on the current balance and the reward scheme
 		rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
@@ -275,7 +265,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 
 		// calculate the rewards per the reward scheme and reword amount
 		payout := e.calculateRewards(ctx, account.Asset, account.ID, rewardScheme, rewardAmt, epoch)
-		if payout.totalReward.IsZero() {
+		if payout == nil || payout.totalReward.IsZero() {
 			continue
 		}
 
@@ -287,6 +277,10 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 // OnEpochEnd calculates the reward amounts parties get for available reward schemes
 func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEnd")
+
+	if (epoch.EndTime == time.Time{}) {
+		return
+	}
 
 	rsIDs := make([]string, 0, len(e.rewardSchemes))
 	for rsID := range e.rewardSchemes {
@@ -323,7 +317,6 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 
 // make the required transfers for distributing reward payout
 func (e *Engine) distributePayout(ctx context.Context, po *payout) {
-	partyAccountIDToParty := make(map[string]string, len(po.partyToAmount))
 	partyIDs := make([]string, 0, len(po.partyToAmount))
 	for party := range po.partyToAmount {
 		partyIDs = append(partyIDs, party)
@@ -358,7 +351,8 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		// send an event with the reward amount transferred to the party
 		if len(response.Transfers) > 0 {
 			ledgerEntry := response.Transfers[0]
-			party := partyAccountIDToParty[ledgerEntry.ToAccount]
+			party := response.Balances[0].Account.Owner
+			// party := partyAccountIDToParty[ledgerEntry.ToAccount]
 			proportion, _ := ledgerEntry.Amount.ToDecimal().Div(po.totalReward.ToDecimal()).Float64()
 			payoutEvents[party] = events.NewRewardPayout(ctx, po.timestamp, party, po.epochSeq, po.asset, ledgerEntry.Amount, proportion)
 			parties = append(parties, party)
@@ -374,12 +368,17 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 
 // delegates the reward calculation to the reward scheme
 //NB currently the only reward scheme type supported is staking and delegation
-func (e *Engine) calculateRewards(ctx context.Context, asset string, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, epoch types.Epoch) *payout {
+func (e *Engine) calculateRewards(ctx context.Context, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, epoch types.Epoch) *payout {
 	if rewardScheme.Type != types.RewardSchemeStakingAndDelegation {
 		e.log.Panic("unsupported reward scheme type", logging.Int("type", int(rewardScheme.Type)))
 	}
 
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
 	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
-	return e.calculatStakingAndDelegationRewards(asset, accountID, rewardScheme, rewardBalance, validatorData)
+
+	if rewardBalance.IsZero() {
+		return nil
+	}
+
+	return e.calculatStakingAndDelegationRewards(ctx, e.broker, num.NewUint(epoch.Seq).String(), asset, accountID, rewardScheme, rewardBalance, validatorData)
 }

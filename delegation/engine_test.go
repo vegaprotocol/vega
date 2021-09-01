@@ -42,7 +42,7 @@ func Test(t *testing.T) {
 
 	// undelegate tests
 	t.Run("Undelegation to an unknown node fails", testUndelegateInvalidNode)
-	t.Run("Undelegation more than the delegated balance succeeds", testUndelegateInvalidAmount)
+	t.Run("Undelegation more than the delegated balance fails", testUndelegateInvalidAmount)
 	t.Run("Undelegate incrememtntally the whole delegated balance succeeds", testUndelegateSuccessNoPreviousPending)
 	t.Run("Undelegate incrememtntally with pending exactly covered by undelegate succeeds", testUndelegateSuccessWithPreviousPendingDelegateExactlyCovered)
 	t.Run("Undelegate with pending delegated covered partly succeeds", testUndelegateSuccessWithPreviousPendingDelegatePartiallyCovered)
@@ -56,8 +56,8 @@ func Test(t *testing.T) {
 	t.Run("Undelegate an amount with pending only delegation succeeds", testUndelegateNowWithPendingOnly)
 	t.Run("Undelegate an amount with active only delegation succeeds", testUndelegateNowWithCommittedOnly)
 	t.Run("Undelegate an amount with both active and pending delegation - sufficient cover in pending succeeds", testUndelegateNowPendingCovers)
-	t.Run("Undelegate an amount  with both active and pending delegation - insufficient cover in pending succeeds", testUndelegateNowCommittedCovers)
-	t.Run("Undelegate an amount  with both active and pending delegation - all delegation removed", testUndelegateNowAllCleared)
+	t.Run("Undelegate an amount with both active and pending delegation - insufficient cover in pending succeeds", testUndelegateNowCommittedCovers)
+	t.Run("Undelegate an amount with both active and pending delegation - all delegation removed", testUndelegateNowAllCleared)
 
 	// test preprocess
 	t.Run("preprocess with no forced undelegation needed", testPreprocessForRewardingNoForcedUndelegationNeeded)

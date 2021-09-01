@@ -391,6 +391,7 @@ func getEngine(t *testing.T) *testEngine {
 	ts.EXPECT().GetTimeNow().AnyTimes()
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	collateral := collateral.New(logger, collateral.NewDefaultConfig(), broker, ts.GetTimeNow())
 	asset := types.Asset{

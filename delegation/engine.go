@@ -433,7 +433,7 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 				// we don't have enough delegation to cover for the undelegate request
 				pendingState.totalDelegation = num.Zero().Sub(pendingState.totalDelegation, availableForUndelegationInPending)
 				delete(pendingState.nodeToDelegateAmount, nodeID)
-				amt = num.Zero().Sub(amt, availableForUndelegationInPending)
+				amt = amt.Sub(amt, availableForUndelegationInPending)
 			}
 
 			if pendingState.totalDelegation.IsZero() && pendingState.totalUndelegation.IsZero() {
@@ -648,7 +648,7 @@ func (e *Engine) calcTotalDelegatedTokens(epochSeq uint64) *num.Uint {
 
 func (e *Engine) calcMaxDelegatableTokens(totalTokens *num.Uint, numVal int) *num.Uint {
 	a := math.Max(float64(minVal), float64(numVal)/compLevel)
-	res, _ := num.UintFromDecimal(num.DecimalFromFloat(1 / a).Mul(totalTokens.ToDecimal()))
+	res, _ := num.UintFromDecimal(totalTokens.ToDecimal().Div(num.DecimalFromFloat(a)))
 	return res
 }
 

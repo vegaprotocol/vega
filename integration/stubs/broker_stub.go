@@ -314,6 +314,91 @@ func (b *BrokerStub) GetAccountEvents() []events.Acc {
 	return s
 }
 
+func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.DelegationBalance {
+	batch := b.GetBatch(events.DelegationBalanceEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	s := []events.DelegationBalance{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.DelegationBalance:
+			if et.EpochSeq == epochSeq {
+				s = append(s, et)
+			}
+		case *events.DelegationBalance:
+			if (*et).EpochSeq == string(epochSeq) {
+				s = append(s, *et)
+			}
+		}
+	}
+	return s
+}
+
+func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
+
+	evts := b.GetDelegationBalanceEvents(epochSeq)
+	balances := make([]types.Delegation, 0, len(evts))
+
+	for _, e := range evts {
+		balances = append(balances, types.Delegation{
+			Party:    e.Party,
+			NodeId:   e.NodeID,
+			EpochSeq: string(e.EpochSeq),
+			Amount:   e.Amount.String(),
+		})
+	}
+	return balances
+}
+
+func (b *BrokerStub) GetRewards(epochSeq string) map[string]events.RewardPayout {
+	batch := b.GetBatch(events.RewardPayoutEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	rewards := map[string]events.RewardPayout{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.RewardPayout:
+			if et.EpochSeq == epochSeq {
+				rewards[et.Party] = et
+			}
+		case *events.RewardPayout:
+			if (*et).EpochSeq == string(epochSeq) {
+				rewards[et.Party] = *et
+			}
+		}
+	}
+	return rewards
+}
+
+func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.ValidatorScore {
+	batch := b.GetBatch(events.ValidatorScoreEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	scores := map[string]events.ValidatorScore{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.ValidatorScore:
+			if et.EpochSeq == epochSeq {
+				scores[et.NodeID] = et
+			}
+		case *events.ValidatorScore:
+			if (*et).EpochSeq == string(epochSeq) {
+				scores[et.NodeID] = *et
+			}
+		}
+	}
+	return scores
+}
+
 func (b *BrokerStub) GetAccounts() []types.Account {
 	evts := b.GetAccountEvents()
 	accounts := make([]types.Account, 0, len(evts))
