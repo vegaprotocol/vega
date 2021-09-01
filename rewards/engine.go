@@ -134,6 +134,20 @@ func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.C
 	return nil
 }
 
+//UpdateCompetitionLevelForStakingRewardScheme
+func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel float64) error {
+	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
+	if !ok {
+		e.log.Panic("reward scheme for staking and delegation must exist")
+	}
+	rs.Parameters["compLevel"] = types.RewardSchemeParam{
+		Name:  "compLevel",
+		Type:  "float",
+		Value: num.NewDecimalFromFloat(compLevel).String(),
+	}
+	return nil
+}
+
 //UpdateAssetForStakingAndDelegationRewardScheme is called when the asset for staking and delegation is available, get the reward pool account and attach it to the scheme
 func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Context, asset string) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]

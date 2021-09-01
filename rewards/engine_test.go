@@ -151,6 +151,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	epoch := types.Epoch{}
@@ -219,6 +220,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
@@ -306,6 +308,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")

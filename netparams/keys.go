@@ -69,6 +69,7 @@ const (
 	StakingAndDelegationRewardPayoutDelay             = "reward.staking.delegation.payoutDelay"
 	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
 	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
+	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
