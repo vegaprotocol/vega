@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
 

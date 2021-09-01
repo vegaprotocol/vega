@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"github.com/golang/protobuf/proto"
 )
