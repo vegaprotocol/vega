@@ -156,6 +156,7 @@ func (p *PartiesStake) computeCurrentBalance(pacc *stakingAccount) {
 			continue
 		case eventspb.StakeLinking_TYPE_UNLINK:
 			if amount.GT(balance) {
+				p.log.Error("could not apply unlink", logging.String("amount", link.Amount))
 				// that's an error, we are missing, events, return now.
 				return
 			}
