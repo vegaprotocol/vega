@@ -532,6 +532,7 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 		e.log.Debug("invalid vote submission",
 			logging.PartyID(party),
 			logging.String("vote", cmd.String()),
+			logging.Error(err),
 		)
 		// vote was not created/accepted, send TxErrEvent
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cmd))
