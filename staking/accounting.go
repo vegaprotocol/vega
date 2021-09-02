@@ -115,8 +115,8 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 		return err
 	}
 
-	totalSupply, ok := num.UintFromBig(ts)
-	if ok {
+	totalSupply, overflowed := num.UintFromBig(ts)
+	if overflowed {
 		return fmt.Errorf("failed to convert big.Int to num.Uint: %s", ts.String())
 	}
 
