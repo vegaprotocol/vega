@@ -95,6 +95,7 @@ Feature: Staking & Delegation
     #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
     #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
     #node4 - node13 gets: 0.07657 * 50000
+    
     And the parties receive the following reward for epoch 1:
     | party  | asset | amount |
     | party1 | VEGA  |  201   | 
@@ -276,3 +277,304 @@ Feature: Staking & Delegation
     | node13 | VEGA  |  3841  | 
 
    
+
+    #party1 gets 0.07760 * 50000 * 0.883 * 100/10100 + 0.07722 * 50000 * 0.883 * 50/10050 
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07760 * 50000
+    #node2 gets: (1 - 0.883 * 50/10050) * 0.07722 * 50000
+    #node3 - node13 gets: 0.07683 * 50000
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  49    | 
+    | node1  | VEGA  |  3846  | 
+    | node2  | VEGA  |  3843  | 
+    | node3  | VEGA  |  3841  | 
+    | node4  | VEGA  |  3841  | 
+    | node5  | VEGA  |  3841  | 
+    | node6  | VEGA  |  3841  | 
+    | node7  | VEGA  |  3841  | 
+    | node8  | VEGA  |  3841  | 
+    | node9  | VEGA  |  3841  | 
+    | node10 | VEGA  |  3841  | 
+    | node11 | VEGA  |  3841  | 
+    | node12 | VEGA  |  3841  | 
+    | node13 | VEGA  |  3841  | 
+
+  Scenario: Parties withdraw from their staking account during an epoch once having active delegations - they should not get rewarded for those uncovered delegations 
+    Desciption: Parties have active delegations on epoch 1 and withdraw stake from the staking account. They should only get rewarded for any delegation that still has cover 
+
+    #party1 has a balance of 10k tokens in their staking account and an active delegation in this epoch of 600. By withdrawing 9850, 450 of their delegation needs to be revoked and they should only get rewarded for the 150 tokens
+    #NB: the undelegation is done proportionally to the stake they have in each node, so for example party1 has 100, 200, 300 in nodes 1-3 respectively so 
+    #after undelegation they will have 25, 50, 75 in nodes 1-3 respectively
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  9850  |
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07703     |     0.07703      |    
+    |  node2  |      0.07722     |     0.07722      |
+    |  node3  |      0.07741     |     0.07741      | 
+    |  node4  |      0.07683     |     0.07683      | 
+
+    #node1 has 10k self delegation + 25 from party1
+    #node2 has 10k self delegation + 50 from party1
+    #node3 has 10k self delegation + 75 from party1
+    #all other nodes have 10k self delegation 
+
+    #party1 gets 0.07703 * 50000 * 0.883 * 25/10025 + 0.07722 * 50000 * 0.883 * 50/10050 + 0.07741 * 50000 * 0.883 * 75/10075
+    #node1 gets: (1 - 0.883 * 25/10025) * 0.07703 * 50000
+    #node2 gets: (1 - 0.883 * 50/10050) * 0.07722 * 50000
+    #node3 gets: (1 - 0.883 * 75/10075) * 0.07741 * 50000
+    #node4 - node13 get: 0.07683 * 50000
+
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  49    | 
+    | node1  | VEGA  |  3842  | 
+    | node2  | VEGA  |  3843  | 
+    | node3  | VEGA  |  3845  | 
+    | node4  | VEGA  |  3841  | 
+    | node5  | VEGA  |  3841  | 
+    | node6  | VEGA  |  3841  | 
+    | node7  | VEGA  |  3841  | 
+    | node8  | VEGA  |  3841  | 
+    | node9  | VEGA  |  3841  | 
+    | node10 | VEGA  |  3841  | 
+    | node11 | VEGA  |  3841  | 
+    | node12 | VEGA  |  3841  | 
+    | node13 | VEGA  |  3841  | 
+
+  Scenario: A party changes delegation from one validator to another in the same epoch
+   Description: A party can change delegatation from one Validator to another
+
+  Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
+    Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to another node
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |    when      |
+    | party1 |  node1   |  100   | end of epoch |
+
+    And the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node4   |   100   | 
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party1 
+    #node3 has 10k self delegation + 300 from party1 
+    #all other nodes have 10k self delegation 
+    #party1 gets 0.07734 * 50000 * 0.883 * 100/10100 + 0.07810 * 50000 * 0.883 * 200/10200 + 0.07887 * 50000 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 50000
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
+    #node4 - node13 gets: 0.07657 * 50000
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  201   | 
+    | node1  | VEGA  |  3832  | 
+    | node2  | VEGA  |  3837  | 
+    | node3  | VEGA  |  3841  | 
+    | node4  | VEGA  |  3828  | 
+    | node5  | VEGA  |  3828  | 
+    | node6  | VEGA  |  3828  | 
+    | node7  | VEGA  |  3828  | 
+    | node8  | VEGA  |  3828  | 
+    | node9  | VEGA  |  3828  | 
+    | node10 | VEGA  |  3828  | 
+    | node11 | VEGA  |  3828  | 
+    | node12 | VEGA  |  3828  | 
+    | node13 | VEGA  |  3828  | 
+
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node4   | 100    | 
+
+    #advance to the beginning and end of the following epoch 
+    When time is updated to "2021-08-26T00:00:22Z"
+    When time is updated to "2021-08-26T00:00:32Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 2:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07657     |     0.07657      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07734     |     0.07734      | 
+    |  node5  |      0.07657     |     0.07657      | 
+
+    #node1 has 10k self delegation
+    #node2 has 10k self delegation + 200 from party1
+    #node3 has 10k self delegation + 300 from party1 
+    #node4 has 10k self delegation + 100 from party1 
+    #all other nodes have 10k self delegation
+
+    #party1 gets 0.07657  * 25004 * 0.883 * 0/10100 + 0.07810 * 25004 * 0.883 * 200/10200 + 0.07887 * 25004 * 0.883 * 300/10300 + 0.07734 * 25004 * 0.883 * 100/10100
+    #node1 gets: (1 - 0.883 * 0/10100) * 0.07657 * 25004
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 25004
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 25004
+    #node4 gets: (1 - 0.883 * 100/10100) * 0.07734 * 25004
+    #node5 - node13 gets: 0.07657 * 25004
+    And the parties receive the following reward for epoch 2:
+    | party  | asset | amount |
+    | party1 | VEGA  |  99    | 
+    | node1  | VEGA  |  1914  | 
+    | node2  | VEGA  |  1919  | 
+    | node3  | VEGA  |  1921  | 
+    | node4  | VEGA  |  1916  | 
+    | node5  | VEGA  |  1914  | 
+    | node6  | VEGA  |  1914  | 
+    | node7  | VEGA  |  1914  | 
+    | node8  | VEGA  |  1914  | 
+    | node9  | VEGA  |  1914  | 
+    | node10 | VEGA  |  1914  | 
+    | node11 | VEGA  |  1914  | 
+    | node12 | VEGA  |  1914  | 
+    | node13 | VEGA  |  1914  | 
+
+  Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
+    Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains.
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"    
+
+    #start a new epoch 
+    When time is updated to "2021-08-26T00:00:22Z" 
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |    when      |
+    | party1 |  node1   |  100   | end of epoch |
+
+    And the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node1   |    50   |
+
+    When time is updated to "2021-08-26T00:00:32Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 2:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      |
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party1
+    #node3 has 10k self delegation + 300 from party1
+    #all other nodes have 10k self delegation
+
+    #party1 gets 0.07734  * 25004 * 0.883 * 100/10100 + 0.07810 * 25004 * 0.883 * 200/10200 + 0.07887 * 25004 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 25004
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 25004
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 25004
+    #node4 - node13 gets: 0.07657 * 25004
+    And the parties receive the following reward for epoch 2:
+    | party  | asset | amount |
+    | party1 | VEGA  |  99    | 
+    | node1  | VEGA  |  1916  | 
+    | node2  | VEGA  |  1919  | 
+    | node3  | VEGA  |  1921  | 
+    | node4  | VEGA  |  1914  | 
+    | node5  | VEGA  |  1914  | 
+    | node6  | VEGA  |  1914  | 
+    | node7  | VEGA  |  1914  | 
+    | node8  | VEGA  |  1914  | 
+    | node9  | VEGA  |  1914  | 
+    | node10 | VEGA  |  1914  | 
+    | node11 | VEGA  |  1914  | 
+    | node12 | VEGA  |  1914  | 
+    | node13 | VEGA  |  1914  | 
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |  50    | 
+
+    #advance to the beginning and end of the following epoch 
+    When time is updated to "2021-08-26T00:00:33Z"
+    When time is updated to "2021-08-26T00:00:43Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 3:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07698     |     0.07698      |    
+    |  node2  |      0.07813     |     0.07813      |
+    |  node3  |      0.07890     |     0.07890      | 
+    |  node4  |      0.07660     |     0.07660      |
+
+    #node1 has 10k self delegation +  50 from party1
+    #node2 has 10k self delegation + 200 from party1
+    #node3 has 10k self delegation + 300 from party1
+    #all other nodes have 10k self delegation
+
+    #party1 gets 0.07698  * 12506 * 0.883 * 50/10050 + 0.07813 * 12506 * 0.883 * 200/10200 + 0.07890 * 12506 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 50/10050)  * 0.07698 * 12506
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07813 * 12506
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07890 * 12506
+    #node4 - node13 gets: 0.07660 * 12506
+
+    And the parties receive the following reward for epoch 3:
+    | party  | asset | amount |
+    | party1 | VEGA  |  45    | 
+    | node1  | VEGA  |  958   | 
+    | node2  | VEGA  |  960   | 
+    | node3  | VEGA  |  961   | 
+    | node4  | VEGA  |  958   | 
+    | node5  | VEGA  |  958   | 
+    | node6  | VEGA  |  958   | 
+    | node7  | VEGA  |  958   | 
+    | node8  | VEGA  |  958   | 
+    | node9  | VEGA  |  958   | 
+    | node10 | VEGA  |  958   | 
+    | node11 | VEGA  |  958   | 
+    | node12 | VEGA  |  958   | 
+    | node13 | VEGA  |  958   | 
+
+  Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant
+   Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch and the reward amount per participant is capped
+  
+    Given the following network parameters are set:
+      | name                                              | value |
+      | reward.staking.delegation.maxPayoutPerParticipant | 3000  |
+
+    #the reward amount for each participant per epoch is capped to 3k by maxPayoutPerParticipant
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      | 
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party2 
+    #node3 has 10k self delegation + 300 from party3 
+    #all other nodes have 10k self delegation 
+    #party1 gets 0.07734 * 50000 * 0.883 * 100/10100 + 0.07810 * 50000 * 0.883 * 200/10200 + 0.07887 * 50000 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 50000
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
+    #node4 - node13 gets: 0.07657 * 50000
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  201   | 
+    | node1  | VEGA  |  3000  | 
+    | node2  | VEGA  |  3000  | 
+    | node3  | VEGA  |  3000  | 
+    | node4  | VEGA  |  3000  | 
+    | node5  | VEGA  |  3000  | 
+    | node6  | VEGA  |  3000  | 
+    | node8  | VEGA  |  3000  | 
+    | node10 | VEGA  |  3000  | 
+    | node11 | VEGA  |  3000  | 
+    | node12 | VEGA  |  3000  | 
+    | node13 | VEGA  |  3000  |
