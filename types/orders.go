@@ -64,10 +64,12 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 		exp, peggedOffset *int64
 	)
 	if p.Price != nil {
-		overflowed := false
-		price, overflowed = num.UintFromString(p.Price.Value, 10)
-		if overflowed {
-			return nil, errors.New("invalid amount")
+		if len(p.Price.Value) > 0 {
+			overflowed := false
+			price, overflowed = num.UintFromString(p.Price.Value, 10)
+			if overflowed {
+				return nil, errors.New("invalid amount")
+			}
 		}
 	}
 	if p.ExpiresAt != nil {

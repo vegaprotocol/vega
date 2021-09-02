@@ -13,9 +13,13 @@ type Delegate struct {
 }
 
 func NewDelegateFromProto(p *commandspb.DelegateSubmission) (*Delegate, error) {
-	amount, overflowed := num.UintFromString(p.Amount, 10)
-	if overflowed {
-		return nil, errors.New("invalid amount")
+	var amount = num.Zero()
+	if len(p.Amount) > 0 {
+		var overflowed = false
+		amount, overflowed = num.UintFromString(p.Amount, 10)
+		if overflowed {
+			return nil, errors.New("invalid amount")
+		}
 	}
 	return &Delegate{
 		NodeID: p.NodeId,

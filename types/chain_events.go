@@ -193,9 +193,13 @@ type BuiltinAssetWithdrawal struct {
 }
 
 func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
-	amount, overflowed := num.UintFromString(p.Amount, 10)
-	if overflowed {
-		return nil, errors.New("invalid amount")
+	var amount = num.Zero()
+	if len(p.Amount) > 0 {
+		var overflowed = false
+		amount, overflowed = num.UintFromString(p.Amount, 10)
+		if overflowed {
+			return nil, errors.New("invalid amount")
+		}
 	}
 	return &BuiltinAssetWithdrawal{
 		VegaAssetId: p.VegaAssetId,
@@ -591,10 +595,12 @@ func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 		SourceEthereumAddress: p.SourceEthereumAddress,
 		TargetPartyID:         p.TargetPartyId,
 	}
-	var failed bool
-	e.Amount, failed = num.UintFromString(p.Amount, 10)
-	if failed {
-		return nil, fmt.Errorf("failed to convert numerical string to Uint: %v", p.Amount)
+	if len(p.Amount) > 0 {
+		var failed bool
+		e.Amount, failed = num.UintFromString(p.Amount, 10)
+		if failed {
+			return nil, fmt.Errorf("failed to convert numerical string to Uint: %v", p.Amount)
+		}
 	}
 	return &e, nil
 }
