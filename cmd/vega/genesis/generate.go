@@ -72,10 +72,10 @@ func (opts *generateCmd) Execute(_ []string) error {
 			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
 			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
 			ethConfig, err = proto.Marshal(&vgproto.EthereumConfig{
-				NetworkId:     "3",
-				ChainId:       "3",
+				NetworkId:     "1",
+				ChainId:       "1",
 				BridgeAddress: "0x4149257d844Ef09f11b02f2e73CbDfaB4c911a73",
-				Confirmations: 3,
+				Confirmations: 50,
 				StakingBridgeAddresses: []string{
 					"0x195064D33f09e0c42cF98E665D9506e0dC17de68",
 					"0x23d1bFE8fA50a167816fBD79D7932577c06011f4",
