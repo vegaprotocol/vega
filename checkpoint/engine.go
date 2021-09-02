@@ -17,9 +17,9 @@ var (
 	ErrComponentWithDuplicateName = errors.New("multiple components with the same name")
 
 	cpOrder = []types.CheckpointName{
-		types.NetParamsCheckpoint,  // net params should go first
-		types.AssetsCheckpoint,     // assets are required for collateral to work
+		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
 		types.CollateralCheckpoint, // without balances, governance (proposals, bonds) are difficult
+		types.NetParamsCheckpoint,  // net params should go right after assets and collateral, so vote tokens are restored
 		types.GovernanceCheckpoint, // depends on all of the above
 		types.EpochCheckpoint,      // restore epoch information...
 		types.DelegationCheckpoint, // so delegation sequence ID's make sense
