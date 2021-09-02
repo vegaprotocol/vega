@@ -70,7 +70,7 @@ func testCheckpointSuccess(t *testing.T) {
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
-		assert.Equal(t, uint64(7), v.TotalGovernanceTokenBalance())
+		assert.Equal(t, "7", v.TotalGovernanceTokenBalance())
 	})
 
 	// checkpoint should be empty at this point

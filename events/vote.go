@@ -47,7 +47,7 @@ func (v *Vote) Value() proto.Vote_Value {
 
 // TotalGovernanceTokenBalance returns the total balance of token used for this
 // vote
-func (v *Vote) TotalGovernanceTokenBalance() uint64 {
+func (v *Vote) TotalGovernanceTokenBalance() string {
 	return v.v.TotalGovernanceTokenBalance
 }
 

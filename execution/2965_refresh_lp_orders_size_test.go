@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -200,7 +201,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			case *events.Order:
 				if evt.Order().PartyId == "party-2" &&
 					evt.Order().Id == "V0000000000-0000000010" {
-					found = append(found, types.OrderFromProto(evt.Order()))
+					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
 		}
@@ -550,4 +551,9 @@ func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, set
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
 
+}
+
+func mustOrderFromProto(o *vegapb.Order) *types.Order {
+	order, _ := types.OrderFromProto(o)
+	return order
 }

@@ -27,16 +27,16 @@ func ThePartiesShouldHaveTheFollowingMarginLevels(
 		}
 
 		var hasError bool
-		if levels.MaintenanceMargin != maintenance {
+		if stringToU64(levels.MaintenanceMargin) != maintenance {
 			hasError = true
 		}
-		if levels.SearchLevel != search {
+		if stringToU64(levels.SearchLevel) != search {
 			hasError = true
 		}
-		if levels.InitialMargin != initial {
+		if stringToU64(levels.InitialMargin) != initial {
 			hasError = true
 		}
-		if levels.CollateralReleaseLevel != release {
+		if stringToU64(levels.CollateralReleaseLevel) != release {
 			hasError = true
 		}
 		if hasError {
@@ -63,10 +63,10 @@ func errInvalidMargins(
 			"release":     u64ToS(release),
 		},
 		map[string]string{
-			"maintenance": u64ToS(levels.MaintenanceMargin),
-			"search":      u64ToS(levels.SearchLevel),
-			"initial":     u64ToS(levels.InitialMargin),
-			"release":     u64ToS(levels.CollateralReleaseLevel),
+			"maintenance": levels.MaintenanceMargin,
+			"search":      levels.SearchLevel,
+			"initial":     levels.InitialMargin,
+			"release":     levels.CollateralReleaseLevel,
 		},
 	)
 }

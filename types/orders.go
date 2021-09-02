@@ -3,6 +3,8 @@
 package types
 
 import (
+	"errors"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -15,17 +17,21 @@ type PriceLevel struct {
 	Volume         uint64
 }
 
-func NewPriceLevelFromProto(p *proto.PriceLevel) *PriceLevel {
+func NewPriceLevelFromProto(p *proto.PriceLevel) (*PriceLevel, error) {
+	price, overflowed := num.UintFromString(p.Price, 10)
+	if overflowed {
+		return nil, errors.New("invalid amount")
+	}
 	return &PriceLevel{
-		Price:          num.NewUint(p.Price),
+		Price:          price,
 		NumberOfOrders: p.NumberOfOrders,
 		Volume:         p.Volume,
-	}
+	}, nil
 }
 
 func (p PriceLevel) IntoProto() *proto.PriceLevel {
 	return &proto.PriceLevel{
-		Price:          p.Price.Uint64(),
+		Price:          num.UintToString(p.Price),
 		NumberOfOrders: p.NumberOfOrders,
 		Volume:         p.Volume,
 	}
@@ -52,13 +58,19 @@ type OrderAmendment struct {
 	PeggedReference PeggedReference
 }
 
-func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) *OrderAmendment {
+func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, error) {
 	var (
 		price             *num.Uint
 		exp, peggedOffset *int64
 	)
 	if p.Price != nil {
-		price = num.NewUint(p.Price.Value)
+		if len(p.Price.Value) > 0 {
+			overflowed := false
+			price, overflowed = num.UintFromString(p.Price.Value, 10)
+			if overflowed {
+				return nil, errors.New("invalid amount")
+			}
+		}
 	}
 	if p.ExpiresAt != nil {
 		e := p.ExpiresAt.Value
@@ -77,7 +89,7 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) *OrderAmendment {
 		TimeInForce:     p.TimeInForce,
 		PeggedOffset:    peggedOffset,
 		PeggedReference: p.PeggedReference,
-	}
+	}, nil
 }
 
 func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
@@ -90,7 +102,7 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 	}
 	if o.Price != nil {
 		r.Price = &proto.Price{
-			Value: o.Price.Uint64(),
+			Value: num.UintToString(o.Price),
 		}
 	}
 	if o.ExpiresAt != nil {

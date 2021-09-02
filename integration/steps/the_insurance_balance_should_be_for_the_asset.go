@@ -19,7 +19,7 @@ func TheInsurancePoolBalanceShouldBeForTheAsset(
 		return errCannotGetInsurancePoolAccountForAsset(asset, err)
 	}
 
-	if amount != acc.Balance {
+	if amount != stringToU64(acc.Balance) {
 		return errInvalidAssetInsurancePoolBalance(amount, acc)
 	}
 	return nil

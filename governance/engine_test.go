@@ -619,7 +619,7 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
-		assert.Equal(t, uint64(7), v.TotalGovernanceTokenBalance())
+		assert.Equal(t, "7", v.TotalGovernanceTokenBalance())
 	})
 
 	// when
@@ -714,7 +714,7 @@ func testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined(t *t
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
-		assert.Equal(t, uint64(100), v.TotalGovernanceTokenBalance())
+		assert.Equal(t, "100", v.TotalGovernanceTokenBalance())
 	})
 
 	// when
@@ -798,7 +798,7 @@ func testSubmittingMajorityOfNoVoteMakesProposalDeclined(t *testing.T) {
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
-		assert.Equal(t, uint64(100), v.TotalGovernanceTokenBalance())
+		assert.Equal(t, "100", v.TotalGovernanceTokenBalance())
 	})
 
 	// when
@@ -1009,7 +1009,7 @@ func testSubmittingVoteAndWithdrawingFundsDeclined(t *testing.T) {
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "0", v.TotalGovernanceTokenWeight())
-		assert.Equal(t, uint64(0), v.TotalGovernanceTokenBalance())
+		assert.Equal(t, "0", v.TotalGovernanceTokenBalance())
 	})
 
 	// when

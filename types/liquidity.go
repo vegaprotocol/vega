@@ -1,6 +1,8 @@
 package types
 
 import (
+	"errors"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -76,7 +78,7 @@ type LiquidityProvisionSubmission struct {
 func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvisionSubmission {
 	lps := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         l.MarketID,
-		CommitmentAmount: l.CommitmentAmount.Uint64(),
+		CommitmentAmount: num.UintToString(l.CommitmentAmount),
 		Fee:              l.Fee.String(),
 		Sells:            make([]*proto.LiquidityOrder, 0, len(l.Sells)),
 		Buys:             make([]*proto.LiquidityOrder, 0, len(l.Buys)),
@@ -109,10 +111,19 @@ func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmi
 		return nil, err
 	}
 
+	var commitmentAmount = num.Zero()
+	if len(p.CommitmentAmount) > 0 {
+		var overflowed = false
+		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid commitment amount")
+		}
+	}
+
 	l := LiquidityProvisionSubmission{
 		Fee:              fee,
 		MarketID:         p.MarketId,
-		CommitmentAmount: num.NewUint(p.CommitmentAmount),
+		CommitmentAmount: commitmentAmount,
 		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
 		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
 		Reference:        p.Reference,
@@ -182,7 +193,7 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 		CreatedAt:        l.CreatedAt,
 		UpdatedAt:        l.UpdatedAt,
 		MarketId:         l.MarketID,
-		CommitmentAmount: l.CommitmentAmount.Uint64(),
+		CommitmentAmount: num.UintToString(l.CommitmentAmount),
 		Fee:              l.Fee.String(),
 		Version:          l.Version,
 		Status:           l.Status,
@@ -217,10 +228,18 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 	return lp
 }
 
-func LiquidityProvisionFromProto(p *proto.LiquidityProvision) *LiquidityProvision {
+func LiquidityProvisionFromProto(p *proto.LiquidityProvision) (*LiquidityProvision, error) {
 	fee, _ := num.DecimalFromString(p.Fee)
+	var commitmentAmount = num.Zero()
+	if len(p.CommitmentAmount) > 0 {
+		var overflowed = false
+		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid commitment amount")
+		}
+	}
 	l := LiquidityProvision{
-		CommitmentAmount: num.NewUint(p.CommitmentAmount),
+		CommitmentAmount: commitmentAmount,
 		CreatedAt:        p.CreatedAt,
 		ID:               p.Id,
 		MarketID:         p.MarketId,
@@ -258,7 +277,7 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) *LiquidityProvisio
 		l.Buys = append(l.Buys, lor)
 	}
 
-	return &l
+	return &l, nil
 }
 
 type LiquidityOrderReference struct {

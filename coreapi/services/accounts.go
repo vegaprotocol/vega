@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	vegapb "code.vegaprotocol.io/protos/vega"
@@ -152,7 +151,7 @@ func toAccount(acc vegapb.Account) *coreapipb.Account {
 	return &coreapipb.Account{
 		Party:   owner,
 		Market:  market,
-		Balance: fmt.Sprintf("%d", acc.Balance),
+		Balance: acc.Balance,
 		Asset:   acc.Asset,
 		Type:    acc.Type.String(),
 	}

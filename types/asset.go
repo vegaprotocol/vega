@@ -111,8 +111,14 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 	case *proto.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
-	total, _ := num.UintFromString(p.TotalSupply, 10)
-	min, _ := num.UintFromString(p.MinLpStake, 10)
+	var total = num.Zero()
+	var min = num.Zero()
+	if len(p.TotalSupply) > 0 {
+		total, _ = num.UintFromString(p.TotalSupply, 10)
+	}
+	if len(p.MinLpStake) > 0 {
+		min, _ = num.UintFromString(p.MinLpStake, 10)
+	}
 	return &AssetDetails{
 		Name:        p.Name,
 		Symbol:      p.Symbol,

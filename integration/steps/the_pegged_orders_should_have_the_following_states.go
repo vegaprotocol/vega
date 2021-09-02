@@ -24,7 +24,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 		match := false
 		for _, e := range data {
 			o := e.Order()
-			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != volume || o.Price != price {
+			if o.PartyId != party || o.Status != status || o.MarketId != marketID || o.Side != side || o.Size != volume || stringToU64(o.Price) != price {
 				continue
 			}
 			if o.PeggedOrder == nil {

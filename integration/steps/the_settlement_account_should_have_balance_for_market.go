@@ -18,7 +18,7 @@ func TheSettlementAccountShouldHaveBalanceForMarket(
 		return errCannotGetSettlementAccountForMarket(market, err)
 	}
 
-	if amount != acc.Balance {
+	if amount != stringToU64(acc.Balance) {
 		return errInvalidSettlementAccountBalanceForMarket(amount, acc)
 	}
 	return nil
