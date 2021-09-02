@@ -11,10 +11,11 @@ import (
 )
 
 type epoch struct {
-	seq       string
-	startTime int64
-	endTime   int64
-	nodeIDs   []string
+	seq        string
+	startTime  int64
+	expiryTime int64
+	endTime    int64
+	nodeIDs    []string
 
 	delegationsPerNodePerParty map[string]map[string]pb.Delegation
 }
@@ -59,12 +60,13 @@ func (e *Epoch) ReloadConf(cfg Config) {
 }
 
 // AddEpoch adds new epoch and updates if epoch already exists
-func (e *Epoch) AddEpoch(seq uint64, startTime int64, endTime int64) {
+func (e *Epoch) AddEpoch(seq uint64, startTime, expiryTime, endTime int64) {
 	epochSeq := strconv.FormatUint(seq, 10)
 
 	e.mut.Lock()
 	if epoch, ok := e.epochs[epochSeq]; ok {
 		epoch.startTime = startTime
+		epoch.expiryTime = expiryTime
 		epoch.endTime = endTime
 		e.epochs[epochSeq] = epoch
 		e.mut.Unlock()
@@ -72,17 +74,18 @@ func (e *Epoch) AddEpoch(seq uint64, startTime int64, endTime int64) {
 	}
 	e.mut.Unlock()
 
-	e.addEpoch(epochSeq, startTime, endTime)
+	e.addEpoch(epochSeq, startTime, expiryTime, endTime)
 }
 
-func (e *Epoch) addEpoch(seq string, startTime int64, endTime int64) {
+func (e *Epoch) addEpoch(seq string, startTime, expiryTime, endTime int64) {
 	e.mut.Lock()
 	defer e.mut.Unlock()
 
 	e.epochs[seq] = epoch{
-		seq:       seq,
-		startTime: startTime,
-		endTime:   endTime,
+		seq:        seq,
+		startTime:  startTime,
+		expiryTime: expiryTime,
+		endTime:    endTime,
 		// @TODO this is hack.. Epoch store should consume
 		// some event about node participation in epoch in future
 		nodeIDs:                    e.nodeStore.GetAllIDs(),
@@ -97,7 +100,7 @@ func (e *Epoch) AddDelegation(de pb.Delegation) {
 	_, ok := e.epochs[de.EpochSeq]
 	e.mut.RUnlock()
 	if !ok {
-		e.addEpoch(de.EpochSeq, 0, 0)
+		e.addEpoch(de.EpochSeq, 0, 0, 0)
 	}
 
 	e.mut.Lock()
@@ -118,9 +121,11 @@ func (e *Epoch) GetTotalNodesUptime() time.Duration {
 
 	var uptime time.Duration
 	for _, e := range e.epochs {
-		uptime += time.Unix(e.endTime, 0).Sub(time.Unix(e.startTime, 0))
+		// Filter out epochs that have not ended yet
+		if e.endTime > 0 {
+			uptime += time.Unix(e.endTime, 0).Sub(time.Unix(e.startTime, 0))
+		}
 	}
-
 	return uptime
 }
 
@@ -195,8 +200,9 @@ func (e *Epoch) epochProtoFromInternal(ie epoch) (*pb.Epoch, error) {
 	return &pb.Epoch{
 		Seq: seq,
 		Timestamps: &pb.EpochTimestamps{
-			StartTime: ie.startTime,
-			EndTime:   ie.endTime,
+			StartTime:  ie.startTime,
+			ExpiryTime: ie.expiryTime,
+			EndTime:    ie.endTime,
 			// @TODO - add those later
 			// FirstBlock: uint64,
 			// LastBlock: uint64,

@@ -207,8 +207,9 @@ type ComplexityRoot struct {
 	}
 
 	EpochTimestamps struct {
-		End   func(childComplexity int) int
-		Start func(childComplexity int) int
+		End    func(childComplexity int) int
+		Expiry func(childComplexity int) int
+		Start  func(childComplexity int) int
 	}
 
 	Erc20WithdrawalApproval struct {
@@ -966,6 +967,7 @@ type EpochResolver interface {
 }
 type EpochTimestampsResolver interface {
 	Start(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
+	Expiry(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 	End(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
 }
 type FutureResolver interface {
@@ -1744,6 +1746,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EpochTimestamps.End(childComplexity), true
+
+	case "EpochTimestamps.expiry":
+		if e.complexity.EpochTimestamps.Expiry == nil {
+			break
+		}
+
+		return e.complexity.EpochTimestamps.Expiry(childComplexity), true
 
 	case "EpochTimestamps.start":
 		if e.complexity.EpochTimestamps.Start == nil {
@@ -5641,6 +5650,8 @@ enum NodeStatus {
 type EpochTimestamps {
   "RFC3339 timestamp - Vega time of epoch start, null if not started"
   start: String
+  "RFC3339 timestamp - Vega time of epoch expiry"
+  expiry: String
   "RFC3339 timestamp - Vega time of epoch end, null if not ended"
   end: String
 
@@ -5744,7 +5755,6 @@ type Node {
   # All delegation for a node by a given party if specified, or all delegations.
   delegations(partyId: String): [Delegation!]
 
-  # Node score in given epoch
   score: String!
 
   normalisedScore: String!
@@ -11211,6 +11221,38 @@ func (ec *executionContext) _EpochTimestamps_start(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.EpochTimestamps().Start(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EpochTimestamps_expiry(ctx context.Context, field graphql.CollectedField, obj *vega.EpochTimestamps) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EpochTimestamps",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EpochTimestamps().Expiry(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29438,6 +29480,17 @@ func (ec *executionContext) _EpochTimestamps(ctx context.Context, sel ast.Select
 					}
 				}()
 				res = ec._EpochTimestamps_start(ctx, field, obj)
+				return res
+			})
+		case "expiry":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EpochTimestamps_expiry(ctx, field, obj)
 				return res
 			})
 		case "end":
