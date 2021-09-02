@@ -15,7 +15,7 @@ type Cmd struct {
 	// Subcommands
 	Generate generateCmd `command:"generate" description:"Generates the genesis file"`
 	Update   updateCmd   `command:"update" description:"Update the genesis file with the app_state"`
-	Help     bool        `short:"h" long:"help" description:"Show this help message"`
+	Sign     signCmd     `command:"sign" description:"Sign a subset of the network parameters"`
 }
 
 var genesisCmd Cmd
@@ -26,6 +26,10 @@ func Genesis(ctx context.Context, parser *flags.Parser) error {
 		RootPathFlag: rootPath,
 		Generate: generateCmd{
 			TmRoot: "$HOME/.tendermint",
+		},
+		Sign: signCmd{
+			TmRoot:     "$HOME/.tendermint",
+			WalletRoot: "$HOME/.vega/wallets",
 		},
 		Update: updateCmd{
 			TmRoot: "$HOME/.tendermint",

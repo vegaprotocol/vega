@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 type newValidatorCmd struct {
@@ -44,7 +44,7 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 		return err
 	}
 
-	validatorDataDoc := types.GenesisValidator{
+	validatorDataDoc := tmtypes.GenesisValidator{
 		Address: pubKey.Address(),
 		PubKey:  pubKey,
 		Power:   10,
