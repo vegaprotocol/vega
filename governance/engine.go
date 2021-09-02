@@ -529,9 +529,20 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
 	proposal, err := e.validateVote(cmd, party)
 	if err != nil {
+		e.log.Debug("invalid vote submission",
+			logging.PartyID(party),
+			logging.String("vote", cmd.String()),
+		)
 		// vote was not created/accepted, send TxErrEvent
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cmd))
 		return err
+	}
+
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("vote submission accepted",
+			logging.PartyID(party),
+			logging.String("vote", cmd.String()),
+		)
 	}
 
 	vote := types.Vote{
