@@ -809,8 +809,13 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 	app.netp.DispatchChanges(ctx)
 }
 
-func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
 	ce := &commandspb.DelegateSubmission{}
+	defer func() {
+		if err != nil {
+			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), ce))
+		}
+	}()
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -818,8 +823,13 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) error {
 	return app.delegation.Delegate(ctx, tx.Party(), ce.NodeId, num.NewUint(ce.Amount))
 }
 
-func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	ce := &commandspb.UndelegateSubmission{}
+	defer func() {
+		if err != nil {
+			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), ce))
+		}
+	}()
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -834,8 +844,14 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) error {
 	}
 }
 
-func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr error) {
 	cmd := &commandspb.RestoreSnapshot{}
+	defer func() {
+		if rerr != nil {
+			app.broker.Send(events.NewTxErrEvent(ctx, rerr, tx.Party(), cmd))
+		}
+	}()
+
 	if err := tx.Unmarshal(cmd); err != nil {
 		return nil
 	}
