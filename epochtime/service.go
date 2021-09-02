@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -61,8 +62,8 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 		// First block so let's create our first epoch
 		s.epoch.Seq = 0
 		s.epoch.StartTime = t
-
 		s.epoch.ExpireTime = t.Add(s.length) // current time + epoch length
+		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_START
 
 		// Send out new epoch event
 		s.notify(ctx, s.epoch)
@@ -79,12 +80,14 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 
 		s.epoch.ExpireTime = t.Add(s.length) // now + epoch length
 		s.epoch.EndTime = time.Time{}
+		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_START
 		s.notify(ctx, s.epoch)
 		return
 	}
 
 	if s.epoch.ExpireTime.Before(t) {
 		s.epoch.EndTime = t
+		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_END
 		// We have expired, send event
 		s.notify(ctx, s.epoch)
 
