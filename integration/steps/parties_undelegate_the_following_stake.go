@@ -16,11 +16,21 @@ func PartiesUndelegateTheFollowingStake(
 	for _, r := range parseUndelegationTable(table) {
 		row := newUndelegationRow(r)
 
-		err := engine.UndelegateAtEndOfEpoch(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
+		if row.When() == "now" {
+			err := engine.UndelegateNow(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
 
-		if err := checkExpectedError(row, err); err != nil {
-			return err
+			if err := checkExpectedError(row, err); err != nil {
+				return err
+			}
+		} else {
+			err := engine.UndelegateAtEndOfEpoch(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
+
+			if err := checkExpectedError(row, err); err != nil {
+				return err
+			}
+
 		}
+
 	}
 	return nil
 }
@@ -30,6 +40,7 @@ func parseUndelegationTable(table *godog.Table) []RowWrapper {
 		"party",
 		"node id",
 		"amount",
+		"when",
 	}, []string{
 		"reference",
 		"error"})
@@ -44,6 +55,10 @@ func newUndelegationRow(r RowWrapper) undelegationRow {
 		row: r,
 	}
 	return row
+}
+
+func (r undelegationRow) When() string {
+	return r.row.MustStr("when")
 }
 
 func (r undelegationRow) Party() string {

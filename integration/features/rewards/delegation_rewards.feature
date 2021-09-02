@@ -116,9 +116,9 @@ Scenario: Parties request to undelegate at the end of the epoch. They get fully 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
     Then the parties submit the following undelegations:
-    | party  | node id  | amount |
-    | party1 |  node2   |  150   |       
-    | party1 |  node3   |  300   |   
+    | party  | node id  | amount | when         |
+    | party1 |  node2   |  150   | end of epoch |      
+    | party1 |  node3   |  300   | end of epoch |
 
 
     #advance to the end of the epoch
