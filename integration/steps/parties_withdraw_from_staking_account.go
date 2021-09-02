@@ -22,7 +22,7 @@ func PartiesWithdrawFromStakingAccount(
 			return errNoGeneralAccountForParty(row, err)
 		}
 		if generalAccount.Balance.LT(row.Amount()) {
-			err = errors.New("incorrect amount")
+			return errors.New("incorrect amount")
 		}
 
 		err = collateralEngine.DecrementBalance(context.Background(), generalAccount.ID, row.Amount())
