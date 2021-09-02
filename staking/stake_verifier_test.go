@@ -70,7 +70,7 @@ func testProcessStakeEventDepositedOK(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
-	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
+	stakev.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	var f func(interface{}, bool)
 	var evt interface{}
@@ -160,7 +160,7 @@ func testProcessStakeEventRemovedOK(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
-	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
+	stakev.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	var f func(interface{}, bool)
 	var evt interface{}
@@ -251,7 +251,7 @@ func testProcessStakeEventMultiOK(t *testing.T) {
 	defer stakev.ctrl.Finish()
 	assert.NotNil(t, stakev)
 
-	stakev.broker.EXPECT().Send(gomock.Any()).Times(1)
+	stakev.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	var f func(interface{}, bool)
 	var evt interface{}
