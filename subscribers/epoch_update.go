@@ -15,7 +15,7 @@ type EpochUpdateEvent interface {
 }
 
 type EpochStore interface {
-	AddEpoch(seq uint64, startTime int64, endTime int64)
+	AddEpoch(seq uint64, startTime int64, expiryTime int64, endTime int64)
 	AddDelegation(types.Delegation)
 }
 
@@ -64,9 +64,9 @@ func (vu *EpochUpdateSub) Push(evts ...events.Event) {
 		switch et := e.(type) {
 		case EpochUpdateEvent:
 			eu := et.Proto()
-			vu.epochStore.AddEpoch(eu.GetSeq(), eu.GetStartTime(), eu.GetEndTime())
+			vu.epochStore.AddEpoch(eu.GetSeq(), eu.GetStartTime(), eu.GetExpireTime(), eu.GetEndTime())
 		default:
-			vu.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
+			vu.log.Panic("Unknown event type in epoch event subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }

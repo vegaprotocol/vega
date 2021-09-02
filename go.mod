@@ -3,9 +3,9 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.42.0-pre5.0.20210902111405-6fa3f5feac09
+	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210902175457-28325c2b814b
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/vega v0.41.1-0.20210902114916-1fa671750058
+	code.vegaprotocol.io/vega v0.41.1-0.20210902191036-8c95864b2ebd
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/fsnotify/fsnotify v1.4.9

@@ -12,12 +12,13 @@ cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2k
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
 code.vegaprotocol.io/go-wallet v0.7.1-0.20210902112024-f2cb9768e483/go.mod h1:bUFU64CWRRxv6aehAXCOYodbB6VwNZQArb8B/LmYh4g=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
-code.vegaprotocol.io/protos v0.42.0-pre5.0.20210902111405-6fa3f5feac09 h1:gDely4RUYT4EmEI8M5RcuawWp2o6WpHyEvXIxDStStQ=
 code.vegaprotocol.io/protos v0.42.0-pre5.0.20210902111405-6fa3f5feac09/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+code.vegaprotocol.io/protos v0.42.0-pre6.0.20210902175457-28325c2b814b h1:1nkaKmAlxXSu27XydH3AeeKuTHIBzv5HY0OFDHKH42U=
+code.vegaprotocol.io/protos v0.42.0-pre6.0.20210902175457-28325c2b814b/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
-code.vegaprotocol.io/vega v0.41.1-0.20210902114916-1fa671750058 h1:+uledtORojKmlt8AHJmmVpMhQSba+c5raZllDQpmKAo=
-code.vegaprotocol.io/vega v0.41.1-0.20210902114916-1fa671750058/go.mod h1:QVJ2oncoaWXVMrcgf6gZScEzvaTMa38XXWx2pI2CsUw=
+code.vegaprotocol.io/vega v0.41.1-0.20210902191036-8c95864b2ebd h1:sO7tCVuwh9oxG8cKAyi6Cvs3XJ7x6Hnsav+z0vwVxTs=
+code.vegaprotocol.io/vega v0.41.1-0.20210902191036-8c95864b2ebd/go.mod h1:YdcHlAdsaJ4GZsHSqYMss0qBFg6Q2DBPXhUfDBukvWI=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/99designs/gqlgen v0.13.0 h1:haLTcUp3Vwp80xMVEg5KRNwzfUrgFdRmtBY8fuB8scA=

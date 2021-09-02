@@ -30,17 +30,18 @@ func TestEpochs(t *testing.T) {
 	a.Nil(epoch)
 
 	startTime := time.Date(2020, time.December, 25, 12, 0, 0, 0, time.UTC)
+	expiryTime := time.Date(2020, time.December, 25, 12, 23, 59, 30, time.UTC)
 	endTime := startTime.Add(24 * time.Hour)
 
-	epochStore.AddEpoch(1, startTime.Unix(), endTime.Unix())
+	epochStore.AddEpoch(1, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	epoch, err = epochStore.GetEpochByID("1")
 	a.NoError(err)
-	assertEpoch(a, epoch, []*pb.Delegation{}, []*pb.Node{}, 1, startTime.Unix(), endTime.Unix())
+	assertEpoch(a, epoch, []*pb.Delegation{}, []*pb.Node{}, 1, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	epoch, err = epochStore.GetEpoch()
 	a.NoError(err)
-	assertEpoch(a, epoch, []*pb.Delegation{}, []*pb.Node{}, 1, startTime.Unix(), endTime.Unix())
+	assertEpoch(a, epoch, []*pb.Delegation{}, []*pb.Node{}, 1, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	delegations := []*pb.Delegation{
 		{
@@ -63,7 +64,7 @@ func TestEpochs(t *testing.T) {
 
 	epoch, err = epochStore.GetEpoch()
 	a.NoError(err)
-	assertEpoch(a, epoch, delegations, []*pb.Node{}, 1, startTime.Unix(), endTime.Unix())
+	assertEpoch(a, epoch, delegations, []*pb.Node{}, 1, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	// Add delegations to epoch that hasn't arrived yet
 	delegations[0].EpochSeq = "2"
@@ -74,19 +75,20 @@ func TestEpochs(t *testing.T) {
 
 	epoch, err = epochStore.GetEpochByID("2")
 	a.NoError(err)
-	assertEpoch(a, epoch, delegations, []*pb.Node{}, 2, 0, 0)
+	assertEpoch(a, epoch, delegations, []*pb.Node{}, 2, 0, 0, 0)
 
 	// Add epoch that already holds delegations - this will update the epoch
 	startTime = startTime.Add(24 * time.Hour)
+	expiryTime = expiryTime.Add(24 * time.Hour)
 	endTime = endTime.Add(24 * time.Hour)
-	epochStore.AddEpoch(2, startTime.Unix(), endTime.Unix())
+	epochStore.AddEpoch(2, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	epoch, err = epochStore.GetEpochByID("2")
 	a.NoError(err)
-	assertEpoch(a, epoch, delegations, []*pb.Node{}, 2, startTime.Unix(), endTime.Unix())
+	assertEpoch(a, epoch, delegations, []*pb.Node{}, 2, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 	epoch, err = epochStore.GetEpoch()
 	a.NoError(err)
-	assertEpoch(a, epoch, delegations, []*pb.Node{}, 2, startTime.Unix(), endTime.Unix())
+	assertEpoch(a, epoch, delegations, []*pb.Node{}, 2, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	uptime := epochStore.GetTotalNodesUptime()
 	a.Equal(48*time.Hour, uptime)
@@ -111,9 +113,10 @@ func TestEpochs(t *testing.T) {
 	nodeStore.AddNode(*nodes[1])
 
 	startTime = startTime.Add(24 * time.Hour)
+	expiryTime = expiryTime.Add(24 * time.Hour)
 	endTime = endTime.Add(24 * time.Hour)
 
-	epochStore.AddEpoch(3, startTime.Unix(), endTime.Unix())
+	epochStore.AddEpoch(3, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	delegations[0].EpochSeq = "3"
 	delegations[1].EpochSeq = "3"
@@ -122,7 +125,7 @@ func TestEpochs(t *testing.T) {
 
 	epoch, err = epochStore.GetEpoch()
 	a.NoError(err)
-	assertEpoch(a, epoch, delegations, nodes, 3, startTime.Unix(), endTime.Unix())
+	assertEpoch(a, epoch, delegations, nodes, 3, startTime.UnixNano(), expiryTime.UnixNano(), endTime.UnixNano())
 
 	a.Equal(72*time.Hour, epochStore.GetTotalNodesUptime())
 }
@@ -133,10 +136,11 @@ func assertEpoch(
 	delegations []*pb.Delegation,
 	nodes []*pb.Node,
 	seq uint64,
-	startTime, endTime int64,
+	startTime, expiryTime, endTime int64,
 ) {
 	a.Equal(epoch.Seq, seq)
 	a.Equal(epoch.Timestamps.StartTime, startTime)
+	a.Equal(epoch.Timestamps.ExpiryTime, expiryTime)
 	a.Equal(epoch.Timestamps.EndTime, endTime)
 
 	a.Equal(len(delegations), len(epoch.Delegations))
