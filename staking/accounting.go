@@ -12,8 +12,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
+	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
 // Broker - the event bus
@@ -98,14 +99,14 @@ func (a *Accounting) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{
 }
 
 func (a *Accounting) updateStakingAssetTotalSupply() error {
-	var addr common.Address
 	if len(a.ethCfg.StakingBridgeAddresses) <= 0 {
 		a.log.Error("no staking bridge address setup",
 			logging.String("eth-cfg", a.ethCfg.String()),
 		)
 		return nil
 	}
-	copy(addr[:], []byte(a.ethCfg.StakingBridgeAddresses[0]))
+
+	addr := ethcmn.HexToAddress(a.ethCfg.StakingBridgeAddresses[0])
 
 	sc, err := NewStakingCaller(addr, a.ethClient)
 	if err != nil {
