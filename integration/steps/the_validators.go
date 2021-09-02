@@ -1,11 +1,8 @@
 package steps
 
 import (
-	"context"
-
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/delegation"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
@@ -14,19 +11,16 @@ import (
 
 func TheValidators(
 	topology *stubs.TopologyStub,
-	collateral *collateral.Engine,
+	stakingAcountStub *stubs.StakingAccountStub,
 	delegtionEngine *delegation.Engine,
 	table *godog.Table,
 ) error {
 	for _, r := range parseTable(table) {
 		row := newValidatorRow(r)
 		topology.AddValidator(row.id())
-		accID, err := collateral.CreatePartyGeneralAccount(context.Background(), row.id(), "VEGA")
-		if err != nil {
-			return err
-		}
+
 		amt, _ := num.UintFromString(row.stakingAccountBalance(), 10)
-		collateral.IncrementBalance(context.Background(), accID, amt)
+		stakingAcountStub.IncrementBalance(row.id(), amt, "")
 	}
 
 	return nil

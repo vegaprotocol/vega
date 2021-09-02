@@ -52,11 +52,26 @@ Feature: Staking & Delegation
       | asset | amount |
       | VEGA  | 100000 | 
     
+    #setting the general accounts for the parties so they can be rewarded
     And the parties deposit on asset's general account the following amount:
-      | party  | asset  | amount |
-      | party1 | VEGA   |  10000 |
-      | party2 | VEGA   |  20000 |
-      | party3 | VEGA   |  30000 |
+      | party  | asset   | amount |
+      | party1 | VEGA    |  1     |
+      | party2 | VEGA    |  1     |
+      | party3 | VEGA    |  1     |
+      | node1  | VEGA    |  1     |
+      | node2  | VEGA    |  1     |
+      | node3  | VEGA    |  1     |
+      | node4  | VEGA    |  1     |
+      | node5  | VEGA    |  1     |
+      | node6  | VEGA    |  1     |
+      | node7  | VEGA    |  1     |
+      | node8  | VEGA    |  1     |
+      | node9  | VEGA    |  1     |
+      | node10  | VEGA   |  1     |
+      | node11  | VEGA   |  1     |
+      | node12  | VEGA   |  1     |
+      | node13  | VEGA   |  1     |
+
 
     And the parties deposit on staking account the following amount:
       | party  | asset  | amount |

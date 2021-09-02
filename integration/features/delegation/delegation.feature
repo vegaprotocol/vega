@@ -45,12 +45,6 @@ Feature: Staking & Delegation
       | node12 |  node12  | 10000  | 
       | node13 |  node13  | 10000  | 
 
-    And the parties deposit on asset's general account the following amount:
-      | party  | asset  | amount |
-      | party1 | VEGA   |  10000 |
-      | party2 | VEGA   |  20000 |
-      | party3 | VEGA   |  30000 |
-
     #complete the first epoch for the self delegation to take effect
     Then time is updated to "2021-08-26T00:00:10Z"
     Then time is updated to "2021-08-26T00:00:11Z"
@@ -398,7 +392,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot undelegate more than the delegated balance 
     Description: A party trying to undeleagte from a node more than the amount that was delegated to it should fail 
 
-    The parties deposit on staking account the following amount:  
+    Given the parties deposit on staking account the following amount:  
       | party  | asset  | amount |
       | party1 | VEGA   | 10000  |
 
