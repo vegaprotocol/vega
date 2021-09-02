@@ -16,6 +16,12 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// StakingAccounts ...
+//go:generate go run github.com/golang/mock/mockgen -destination staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks StakingAccounts
+type StakingAccounts interface {
+	HasBalance(string) bool
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks StakeVerifier
 type StakeVerifier interface {
 	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error

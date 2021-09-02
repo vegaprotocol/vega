@@ -60,6 +60,11 @@ func NewAccounting(
 	}
 }
 
+func (a *Accounting) HasBalance(party string) bool {
+	_, ok := a.accounts[party]
+	return ok
+}
+
 func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	acc, ok := a.accounts[evt.Party]
 	if !ok {
