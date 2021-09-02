@@ -320,7 +320,7 @@ Feature: Staking & Delegation
 
     Given the parties deposit on staking account the following amount:  
     | party  | asset  | amount |
-    | party1 | VEGA   | 10000   |  
+    | party1 | VEGA   | 10000  |  
     
     And the parties submit the following delegations:
     | party  | node id  |  amount | reference | error                               |
@@ -349,11 +349,11 @@ Feature: Staking & Delegation
 
     Given the parties deposit on staking account the following amount:  
     | party  | asset  | amount |
-    | party1 | VEGA   | 10000   |  
+    | party1 | VEGA   | 10000  |  
     
     And the parties submit the following delegations:
-    | party  | node id  |  amount | 
-    | party1 |  node1   |   1000  | 
+    | party  | node id  | amount | 
+    | party1 |  node1   |  1000  | 
 
     And the parties submit the following undelegations:
     | party  | node id  | amount |    when      |
@@ -373,7 +373,7 @@ Feature: Staking & Delegation
 
     Given the parties deposit on staking account the following amount:  
     | party  | asset  | amount |
-    | party1 | VEGA   | 10000   |  
+    | party1 | VEGA   | 10000  |  
     
     And the parties submit the following delegations:
     | party  | node id  |  amount | 
