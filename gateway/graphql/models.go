@@ -153,7 +153,7 @@ type LedgerEntry struct {
 	// account to which the balance was transferred
 	ToAccount string `json:"toAccount"`
 	// the amount transferred
-	Amount int `json:"amount"`
+	Amount string `json:"amount"`
 	// The transfer reference
 	Reference string `json:"reference"`
 	// Type of ledger entry
@@ -452,7 +452,7 @@ type TransferBalance struct {
 	// Account involved in transfer
 	Account *vega.Account `json:"account"`
 	// The new balance of the account
-	Balance int `json:"balance"`
+	Balance string `json:"balance"`
 }
 
 type TransferResponse struct {

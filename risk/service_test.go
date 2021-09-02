@@ -50,7 +50,7 @@ func testMarginEstimateSuccess(t *testing.T) {
 	order := &ptypes.Order{
 		Size:  10,
 		Side:  ptypes.Side_SIDE_BUY,
-		Price: 10,
+		Price: "10",
 	}
 
 	svc.store.EXPECT().GetMarketRiskFactors(gomock.Any()).Times(1).Return(
@@ -84,7 +84,7 @@ func testMarginEstimateSuccess(t *testing.T) {
 	)
 	svc.mktdatastore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
 		ptypes.MarketData{
-			MarkPrice: 200,
+			MarkPrice: "200",
 		},
 		nil,
 	)
@@ -92,10 +92,10 @@ func testMarginEstimateSuccess(t *testing.T) {
 	lvls, err := svc.EstimateMargin(context.Background(), order)
 	assert.NoError(t, err)
 	assert.NotNil(t, lvls)
-	assert.Equal(t, 1000, int(lvls.MaintenanceMargin))
-	assert.Equal(t, 1100, int(lvls.SearchLevel))
-	assert.Equal(t, 1200, int(lvls.InitialMargin))
-	assert.Equal(t, 1300, int(lvls.CollateralReleaseLevel))
+	assert.Equal(t, "1000", lvls.MaintenanceMargin)
+	assert.Equal(t, "1100", lvls.SearchLevel)
+	assert.Equal(t, "1200", lvls.InitialMargin)
+	assert.Equal(t, "1300", lvls.CollateralReleaseLevel)
 }
 
 func testMarginEstimateErrors(t *testing.T) {
@@ -104,7 +104,7 @@ func testMarginEstimateErrors(t *testing.T) {
 
 	order := &ptypes.Order{
 		Size:  10,
-		Price: 10,
+		Price: "10",
 	}
 
 	// first test no risk factors
@@ -195,7 +195,7 @@ func testMarginEstimateErrors(t *testing.T) {
 	)
 	svc.mktdatastore.EXPECT().GetByID(gomock.Any()).Times(1).Return(
 		ptypes.MarketData{
-			MarkPrice: 200,
+			MarkPrice: "200",
 		},
 		nil,
 	)

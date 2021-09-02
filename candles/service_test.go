@@ -125,7 +125,7 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 		for i, it := range intervals {
 			ref := uint64(i + 1 + factor)
 			expectedCandles[market] = append(expectedCandles[market], &types.Candle{
-				Open:     ref,
+				Open:     fmt.Sprintf("%d", ref),
 				Interval: it,
 			})
 			svc.store.EXPECT().Subscribe(itMatcher{market: market, interval: it}).Times(1).Return(ref).Do(func(it *storage.InternalTransport) {
@@ -153,7 +153,7 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 				t.Fatalf("Failed to receive an observed candle")
 			}
 			assert.Equal(t, it, c.Interval)
-			assert.Equal(t, ref, c.Open)
+			assert.Equal(t, fmt.Sprintf("%d", ref), c.Open)
 		}
 	}
 	svc.cfunc() // cancel context, we've made all the calls we needed to make, let's wait for unsubscribe calls to complete

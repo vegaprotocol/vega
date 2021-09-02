@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type proposalResolver VegaResolverRoot
@@ -85,24 +86,32 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 	}
 
 	var yesWeight float64
-	var yesToken uint64
+	var yesToken = num.Zero()
 	for _, yes := range obj.Yes {
 		weight, err := strconv.ParseFloat(yes.TotalGovernanceTokenWeight, 64)
 		if err != nil {
 			return nil, err
 		}
 		yesWeight += weight
-		yesToken += yes.TotalGovernanceTokenBalance
+		yesUint, ok := num.UintFromString(yes.TotalGovernanceTokenBalance, 10)
+		if !ok {
+			continue
+		}
+		yesToken.Add(yesToken, yesUint)
 	}
 	var noWeight float64
-	var noToken uint64
+	var noToken = num.Zero()
 	for _, no := range obj.Yes {
 		weight, err := strconv.ParseFloat(no.TotalGovernanceTokenWeight, 64)
 		if err != nil {
 			return nil, err
 		}
 		noWeight += weight
-		noToken += no.TotalGovernanceTokenBalance
+		noUint, ok := num.UintFromString(no.TotalGovernanceTokenBalance, 10)
+		if !ok {
+			continue
+		}
+		noToken.Add(noToken, noUint)
 	}
 
 	votes := &ProposalVotes{
@@ -110,13 +119,13 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 			Votes:       obj.Yes,
 			TotalNumber: strconv.Itoa(len(obj.Yes)),
 			TotalWeight: strconv.FormatFloat(yesWeight, 'f', -1, 64),
-			TotalTokens: strconv.FormatUint(yesToken, 10),
+			TotalTokens: yesToken.String(),
 		},
 		No: &ProposalVoteSide{
 			Votes:       obj.No,
 			TotalNumber: strconv.Itoa(len(obj.No)),
 			TotalWeight: strconv.FormatFloat(noWeight, 'f', -1, 64),
-			TotalTokens: strconv.FormatUint(noToken, 10),
+			TotalTokens: noToken.String(),
 		},
 	}
 

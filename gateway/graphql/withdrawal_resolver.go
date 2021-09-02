@@ -2,7 +2,6 @@ package gql
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/data-node/vegatime"
@@ -16,7 +15,7 @@ func (r *myWithdrawalResolver) Party(ctx context.Context, obj *types.Withdrawal)
 }
 
 func (r *myWithdrawalResolver) Amount(ctx context.Context, obj *types.Withdrawal) (string, error) {
-	return strconv.FormatUint(obj.Amount, 10), nil
+	return obj.Amount, nil
 }
 
 func (r *myWithdrawalResolver) Asset(ctx context.Context, obj *types.Withdrawal) (*types.Asset, error) {

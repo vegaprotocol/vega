@@ -22,7 +22,7 @@ type TradeStore interface {
 	GetByPartyAndID(ctx context.Context, party string, id string) (*ptypes.Trade, error)
 	GetByOrderID(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*ptypes.Trade, error)
 	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*storage.MarketBucket
-	GetMarkPrice(ctx context.Context, market string) (uint64, error)
+	GetMarkPrice(ctx context.Context, market string) (string, error)
 	Subscribe(trades chan<- []ptypes.Trade) uint64
 	Unsubscribe(id uint64) error
 }

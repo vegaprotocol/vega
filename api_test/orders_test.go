@@ -21,9 +21,10 @@ func TestGetByOrderID(t *testing.T) {
 	conn, broker := NewTestServer(t, ctx, true)
 
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
-		order := be.GetOrder()
+		order, err := types.OrderFromProto(be.GetOrder())
 		require.NotNil(t, order)
-		e := events.NewOrderEvent(ctx, types.OrderFromProto(order))
+		require.NoError(t, err)
+		e := events.NewOrderEvent(ctx, order)
 		return e, nil
 	}, "orders-events.golden")
 

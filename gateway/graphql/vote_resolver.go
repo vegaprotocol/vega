@@ -2,7 +2,6 @@ package gql
 
 import (
 	"context"
-	"strconv"
 
 	"code.vegaprotocol.io/data-node/vegatime"
 	proto "code.vegaprotocol.io/protos/vega"
@@ -22,7 +21,7 @@ func (r *voteResolver) Datetime(_ context.Context, obj *proto.Vote) (string, err
 }
 
 func (r *voteResolver) GovernanceTokenBalance(_ context.Context, obj *proto.Vote) (string, error) {
-	return strconv.FormatUint(obj.TotalGovernanceTokenBalance, 10), nil
+	return obj.TotalGovernanceTokenBalance, nil
 }
 
 func (r *voteResolver) GovernanceTokenWeight(_ context.Context, obj *proto.Vote) (string, error) {

@@ -92,7 +92,11 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
 		case OE:
-			mdb.updateMarketDepth(types.OrderFromProto(et.Order()))
+			order, err := types.OrderFromProto(et.Order())
+			if err != nil {
+				panic(err)
+			}
+			mdb.updateMarketDepth(order)
 		default:
 			mdb.log.Panic("Unknown event type in market depth builder", logging.String("Type", et.Type().String()))
 		}
