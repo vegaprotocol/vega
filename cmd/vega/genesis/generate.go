@@ -22,7 +22,7 @@ import (
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
@@ -86,12 +86,12 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	genesisDoc := types.GenesisDoc{
+	genesisDoc := tmtypes.GenesisDoc{
 		ChainID:         fmt.Sprintf("test-chain-%v", crypto.RandomStr(6)),
 		GenesisTime:     tmtime.Now(),
-		ConsensusParams: types.DefaultConsensusParams(),
+		ConsensusParams: tmtypes.DefaultConsensusParams(),
 		AppState:        rawGenesisState,
-		Validators: []types.GenesisValidator{
+		Validators: []tmtypes.GenesisValidator{
 			{
 				Address: pubKey.Address(),
 				PubKey:  pubKey,
