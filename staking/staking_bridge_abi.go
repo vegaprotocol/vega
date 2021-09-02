@@ -137,7 +137,7 @@ func bindStaking(address common.Address, caller bind.ContractCaller, transactor 
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_Staking *StakingRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_Staking *StakingRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _Staking.Contract.StakingCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -156,7 +156,7 @@ func (_Staking *StakingRaw) Transact(opts *bind.TransactOpts, method string, par
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_Staking *StakingCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_Staking *StakingCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _Staking.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -175,12 +175,17 @@ func (_Staking *StakingTransactorRaw) Transact(opts *bind.TransactOpts, method s
 //
 // Solidity: function stake_balance(address target, bytes32 vega_public_key) view returns(uint256)
 func (_Staking *StakingCaller) StakeBalance(opts *bind.CallOpts, target common.Address, vega_public_key [32]byte) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _Staking.contract.Call(opts, out, "stake_balance", target, vega_public_key)
-	return *ret0, err
+	var out []interface{}
+	err := _Staking.contract.Call(opts, &out, "stake_balance", target, vega_public_key)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // StakeBalance is a free data retrieval call binding the contract method 0x274abf34.
@@ -201,12 +206,17 @@ func (_Staking *StakingCallerSession) StakeBalance(target common.Address, vega_p
 //
 // Solidity: function staking_token() view returns(address)
 func (_Staking *StakingCaller) StakingToken(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _Staking.contract.Call(opts, out, "staking_token")
-	return *ret0, err
+	var out []interface{}
+	err := _Staking.contract.Call(opts, &out, "staking_token")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // StakingToken is a free data retrieval call binding the contract method 0x2dc7d74c.
@@ -227,12 +237,17 @@ func (_Staking *StakingCallerSession) StakingToken() (common.Address, error) {
 //
 // Solidity: function total_staked() view returns(uint256)
 func (_Staking *StakingCaller) TotalStaked(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _Staking.contract.Call(opts, out, "total_staked")
-	return *ret0, err
+	var out []interface{}
+	err := _Staking.contract.Call(opts, &out, "total_staked")
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // TotalStaked is a free data retrieval call binding the contract method 0xaf7568dd.
@@ -401,6 +416,7 @@ func (_Staking *StakingFilterer) ParseStakeDeposited(log types.Log) (*StakingSta
 	if err := _Staking.contract.UnpackLog(event, "Stake_Deposited", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -556,6 +572,7 @@ func (_Staking *StakingFilterer) ParseStakeRemoved(log types.Log) (*StakingStake
 	if err := _Staking.contract.UnpackLog(event, "Stake_Removed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -720,5 +737,6 @@ func (_Staking *StakingFilterer) ParseStakeTransferred(log types.Log) (*StakingS
 	if err := _Staking.contract.UnpackLog(event, "Stake_Transferred", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
