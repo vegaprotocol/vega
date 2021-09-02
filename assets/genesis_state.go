@@ -82,14 +82,14 @@ var (
 	}
 
 	VegaTokenMainNet = AssetDetails{
-		Name:        "VEGA (V2 Test)",
+		Name:        "VEGA",
 		Symbol:      "VEGA",
-		TotalSupply: "6499972300000",
-		Decimals:    5,
+		TotalSupply: "64999723000000000000000000",
+		Decimals:    18,
 		MinLpStake:  "1",
 		Source: &Source{
 			Erc20: &Erc20{
-				ContractAddress: "0xFa521aDcc11925266A518CdE33386FcD9cF2A4A6",
+				ContractAddress: "0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e",
 			},
 		},
 	}
