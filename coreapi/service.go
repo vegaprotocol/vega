@@ -20,15 +20,16 @@ type Service struct {
 	cfg    Config
 	log    *logging.Logger
 
-	accounts    *services.Accounts
-	assets      *services.Assets
-	netparams   *services.NetParams
-	parties     *services.Parties
-	validators  *services.Validators
-	markets     *services.Markets
-	proposals   *services.Proposals
-	votes       *services.Votes
-	marketsData *services.MarketsData
+	accounts     *services.Accounts
+	assets       *services.Assets
+	netparams    *services.NetParams
+	parties      *services.Parties
+	validators   *services.Validators
+	markets      *services.Markets
+	proposals    *services.Proposals
+	votes        *services.Votes
+	marketsData  *services.MarketsData
+	partiesStake *services.PartiesStake
 }
 
 func NewService(
@@ -95,6 +96,12 @@ func NewService(
 		log.Info("starting votes core api")
 		svc.votes = services.NewVotes(ctx)
 		broker.SubscribeBatch(svc.votes)
+	}
+
+	if cfg.PartiesStake {
+		log.Info("starting votes core api")
+		svc.partiesStake = services.NewPartiesStake(ctx, log)
+		broker.SubscribeBatch(svc.partiesStake)
 	}
 
 	return svc
@@ -197,5 +204,16 @@ func (s *Service) ListMarketsData(
 	}
 	return &coreapipb.ListMarketsDataResponse{
 		MarketsData: s.marketsData.List(in.Market),
+	}, nil
+}
+
+func (s *Service) ListPartiesStake(
+	ctx context.Context, in *coreapipb.ListPartiesStakeRequest,
+) (*coreapipb.ListPartiesStakeResponse, error) {
+	if !s.cfg.PartiesStake {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListPartiesStakeResponse{
+		PartiesStake: s.partiesStake.List(in.Party),
 	}, nil
 }
