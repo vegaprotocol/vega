@@ -110,6 +110,8 @@ func (t TxV2) Command() txn.Command {
 		return txn.DelegateCommand
 	case *commandspb.InputData_UndelegateSubmission:
 		return txn.UndelegateCommand
+	case *commandspb.InputData_RestoreSnapshotSubmission:
+		return txn.CheckpointRestoreCommand
 	default:
 		panic("unsupported command")
 	}
@@ -201,6 +203,13 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to UndelegateSubmission")
 		}
 		*underlyingCmd = *cmd.UndelegateSubmission
+	case *commandspb.InputData_RestoreSnapshotSubmission:
+		underlyingCmd, ok := i.(*commandspb.RestoreSnapshot)
+		if !ok {
+			return errors.New("failed to unmarshal RestoreSnapshotSubmission")
+		}
+		*underlyingCmd = *cmd.RestoreSnapshotSubmission
+		break
 
 	default:
 		return errors.New("unsupported command")

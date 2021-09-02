@@ -891,12 +891,17 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
 		if rerr != nil {
+			app.log.Error("Restoring checkpoint failed",
+				logging.Error(rerr),
+			)
 			app.broker.Send(events.NewTxErrEvent(ctx, rerr, tx.Party(), cmd))
+			return
 		}
+		app.log.Info("Checkpoint restored!")
 	}()
 
 	if err := tx.Unmarshal(cmd); err != nil {
-		return nil
+		return err
 	}
 
 	// convert to snapshot type:
@@ -906,7 +911,7 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	}
 	err := app.checkpoint.Load(ctx, snap)
 	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
-		panic(fmt.Errorf("error restoring checkpoint: %w", err))
+		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}
 	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
 	// emit an error event perhaps, log, etc...?

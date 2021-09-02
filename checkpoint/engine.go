@@ -93,9 +93,15 @@ func (e *Engine) UponGenesis(_ context.Context, data []byte) (err error) {
 	}
 	if state != nil && len(state.CheckpointHash) != 0 {
 		e.loadHash, err = hex.DecodeString(state.CheckpointHash)
+		e.log.Warn("Checkpoint restore enabled",
+			logging.String("checkpoint-hash-str", state.CheckpointHash),
+			logging.String("checkpoint-hex-encoded", hex.EncodeToString(e.loadHash)),
+		)
 		if err != nil {
 			e.loadHash = nil
-			panic(fmt.Errorf("malformed restore hash in genesis file: %w", err))
+			e.log.Panic("Malformed restore hash in genesis file",
+				logging.Error(err),
+			)
 		}
 	}
 	return nil
@@ -178,6 +184,13 @@ func (e *Engine) makeCheckpoint() *types.Snapshot {
 // Load - loads checkpoint data for all components by name
 func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
+	if len(e.loadHash) != 0 {
+		e.log.Warn("Checkpoint hash reload requested",
+			logging.String("hash-to-load", hex.EncodeToString(e.loadHash)),
+			logging.String("snapshot-hash", hex.EncodeToString(snap.Hash)),
+			logging.Int("hash-diff", bytes.Compare(e.loadHash, snap.Hash)),
+		)
+	}
 	if e.loadHash == nil || !bytes.Equal(e.loadHash, snap.Hash) {
 		return nil
 	}
