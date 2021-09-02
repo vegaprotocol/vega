@@ -3,7 +3,6 @@ package delegation
 import (
 	"context"
 	"errors"
-	"math"
 	"sort"
 	"time"
 
@@ -13,10 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-const (
-	minVal    = 5.0
-	compLevel = 1.1
-)
+var minVal, _ = num.DecimalFromString("5.0")
 
 var (
 	// ErrPartyHasNoStakingAccount is returned when the staking account for the party cannot be found
@@ -96,6 +92,7 @@ type Engine struct {
 	pendingState         map[uint64]map[string]*pendingPartyDelegation // epoch seq -> pending delegations/undelegations by party
 	minDelegationAmount  *num.Uint                                     // min delegation amount per delegation request
 	currentEpoch         types.Epoch                                   // the current epoch for pending delegations
+	compLevel            num.Decimal
 }
 
 //New instantiate a new delegation engine
@@ -116,6 +113,12 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 	epochEngine.NotifyOnEpoch(e.onEpochEvent)
 
 	return e
+}
+
+//OnCompLevelChanged updates the network parameter for competitionLevel
+func (e *Engine) OnCompLevelChanged(ctx context.Context, compLevel float64) error {
+	e.compLevel = num.DecimalFromFloat(compLevel)
+	return nil
 }
 
 //OnMinAmountChanged updates the network parameter for minDelegationAmount
@@ -646,9 +649,10 @@ func (e *Engine) calcTotalDelegatedTokens(epochSeq uint64) *num.Uint {
 	return totalDelegatedTokens
 }
 
-func (e *Engine) calcMaxDelegatableTokens(totalTokens *num.Uint, numVal int) *num.Uint {
-	a := math.Max(float64(minVal), float64(numVal)/compLevel)
-	res, _ := num.UintFromDecimal(totalTokens.ToDecimal().Div(num.DecimalFromFloat(a)))
+func (e *Engine) calcMaxDelegatableTokens(totalTokens *num.Uint, numVal num.Decimal) *num.Uint {
+	a := num.MaxD(minVal, numVal.Div(e.compLevel))
+
+	res, _ := num.UintFromDecimal(totalTokens.ToDecimal().Div(a))
 	return res
 }
 
@@ -685,7 +689,7 @@ func (e *Engine) processPending(ctx context.Context, epoch types.Epoch) {
 	totalTokens := e.calcTotalDelegatedTokens(epoch.Seq)
 	// calculate the max for the next epoch
 	numVal := len(e.topology.AllPubKeys())
-	maxStakePerValidator := e.calcMaxDelegatableTokens(totalTokens, numVal)
+	maxStakePerValidator := e.calcMaxDelegatableTokens(totalTokens, num.DecimalFromInt64(int64(numVal)))
 
 	// read the delegation min amount network param
 	e.processPendingUndelegations(parties, epoch)

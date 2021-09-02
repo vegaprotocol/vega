@@ -11,6 +11,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.minimumValidatorStake   |  100   |
       | reward.staking.delegation.payoutFraction          |  0.5   |
       | reward.staking.delegation.maxPayoutPerParticipant | 100000 |
+      | reward.staking.delegation.competitionLevel        |  1.1   |
 
     Given time is updated to "2021-08-26T00:00:00Z"
  

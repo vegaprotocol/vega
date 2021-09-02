@@ -7,6 +7,8 @@ Feature: Staking & Delegation
       | validators.epoch.length                         | 10s   |
       | validators.delegation.minAmount                 | 10    |
       | reward.staking.delegation.payoutDelay           | 0s    |
+      | reward.staking.delegation.competitionLevel      | 1.1   |
+
       
     Given time is updated to "2021-08-26T00:00:00Z"
 

@@ -11,13 +11,18 @@ import (
 )
 
 var minVal, _ = num.DecimalFromString("5.0")
-var compLevel, _ = num.DecimalFromString("1.1")
 
 func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker Broker, epochSeq, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
 	delegatorShareStr := rewardScheme.Parameters["delegatorShare"].GetString()
 	delegatorShare, err := num.DecimalFromString(delegatorShareStr)
 	if err != nil {
 		e.log.Panic("failed to read reward scheme param", logging.String("delegatorShare", rewardScheme.Parameters["delegatorShare"].Value))
+	}
+
+	compLevelStr := rewardScheme.Parameters["compLevel"].GetString()
+	compLevel, err := num.DecimalFromString(compLevelStr)
+	if err != nil {
+		e.log.Panic("failed to read reward scheme param", logging.String("compLevel", rewardScheme.Parameters["compLevel"].Value))
 	}
 
 	// max payout is not mandatory, if it's not defined, pass nil so that max payout is not enforced for the asset

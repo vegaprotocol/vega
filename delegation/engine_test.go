@@ -1686,11 +1686,11 @@ func testMaxStakePerValidator(t *testing.T) {
 	testEngine := getEngine(t)
 	// 1/a = 1/5 = 0.2
 	// max per validator = 0.2 * 1000 = 200
-	require.Equal(t, num.NewUint(200), testEngine.engine.calcMaxDelegatableTokens(num.NewUint(1000), 3))
+	require.Equal(t, num.NewUint(200), testEngine.engine.calcMaxDelegatableTokens(num.NewUint(1000), num.DecimalFromFloat(3)))
 
 	// 1/a = 11/1.1 = 0.1
 	// max per validator = 0.1 * 1000 = 100
-	require.Equal(t, num.NewUint(100), testEngine.engine.calcMaxDelegatableTokens(num.NewUint(1000), 11))
+	require.Equal(t, num.NewUint(100), testEngine.engine.calcMaxDelegatableTokens(num.NewUint(1000), num.DecimalFromFloat(11)))
 }
 
 func getEngine(t *testing.T) *testEngine {
@@ -1704,7 +1704,7 @@ func getEngine(t *testing.T) *testEngine {
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{})
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
 	engine.OnMinAmountChanged(context.Background(), 2)
-
+	engine.OnCompLevelChanged(context.Background(), 1.1)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	return &testEngine{
