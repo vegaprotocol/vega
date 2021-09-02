@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/vegatime"
 	pb "code.vegaprotocol.io/protos/vega"
 )
 
@@ -123,7 +124,7 @@ func (e *Epoch) GetTotalNodesUptime() time.Duration {
 	for _, e := range e.epochs {
 		// Filter out epochs that have not ended yet
 		if e.endTime > 0 {
-			uptime += time.Unix(e.endTime, 0).Sub(time.Unix(e.startTime, 0))
+			uptime += vegatime.UnixNano(e.endTime).Sub(vegatime.UnixNano(e.startTime))
 		}
 	}
 	return uptime
