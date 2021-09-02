@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
@@ -18,10 +19,12 @@ type Epoch struct {
 	ExpireTime time.Time
 	// What time did it actually end
 	EndTime time.Time
+	// What action took place
+	Action proto.EpochAction
 }
 
 func (e Epoch) String() string {
-	return fmt.Sprintf("Seq %d StartTime %s ExpireTime %s EndTime %s", e.Seq, e.StartTime, e.ExpireTime, e.EndTime)
+	return fmt.Sprintf("Seq %d StartTime %s ExpireTime %s EndTime %s Action %s", e.Seq, e.StartTime, e.ExpireTime, e.EndTime, e.Action.String())
 }
 
 func NewEpochFromProto(p *eventspb.EpochEvent) *Epoch {
@@ -30,6 +33,7 @@ func NewEpochFromProto(p *eventspb.EpochEvent) *Epoch {
 		StartTime:  time.Unix(0, p.StartTime),
 		ExpireTime: time.Unix(0, p.ExpireTime),
 		EndTime:    time.Unix(0, p.EndTime),
+		Action:     p.Action,
 	}
 	return e
 }
@@ -40,5 +44,6 @@ func (e Epoch) IntoProto() *eventspb.EpochEvent {
 		StartTime:  e.StartTime.UnixNano(),
 		ExpireTime: e.ExpireTime.UnixNano(),
 		EndTime:    e.EndTime.UnixNano(),
+		Action:     e.Action,
 	}
 }
