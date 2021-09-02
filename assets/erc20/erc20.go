@@ -85,7 +85,7 @@ func (b *ERC20) IsValid() bool {
 }
 
 func (b *ERC20) Validate() error {
-	t, err := NewToken(ethcmn.HexToAddress(b.address), b.wallet.Client())
+	t, err := NewErc20(ethcmn.HexToAddress(b.address), b.wallet.Client())
 	if err != nil {
 		return err
 	}
