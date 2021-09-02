@@ -110,15 +110,13 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
 
-
-
-Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake
+  Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
     Then the parties submit the following undelegations:
-    | party  | node id  | amount |
-    | party1 |  node2   |  150   |       
-    | party1 |  node3   |  300   |   
+    | party  | node id  | amount | when         |
+    | party1 |  node2   |  150   | end of epoch |      
+    | party1 |  node3   |  300   | end of epoch |
 
 
     #advance to the end of the epoch
@@ -185,5 +183,96 @@ Scenario: Parties request to undelegate at the end of the epoch. They get fully 
     | node12 | VEGA  |  1921  | 
     | node13 | VEGA  |  1921  | 
 
+  Scenario: Parties request to undelegate now during the epoch. They only get rewarded for the current epoch for the fraction that remained for the whole duration 
+    Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount | when |
+    | party1 |  node2   |  150   | now  |      
+    | party1 |  node3   |  300   | now  |
 
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07760     |     0.07760      |    
+    |  node2  |      0.07722     |     0.07722      |
+    |  node3  |      0.07683     |     0.07683      | 
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 50 from party2 
+    #all other nodes have 10k self delegation 
+
+    #party1 gets 0.07760 * 50000 * 0.883 * 100/10100 + 0.07722 * 50000 * 0.883 * 50/10050 
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07760 * 50000
+    #node2 gets: (1 - 0.883 * 50/10050) * 0.07722 * 50000
+    #node3 - node13 gets: 0.07683 * 50000
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  49    | 
+    | node1  | VEGA  |  3846  | 
+    | node2  | VEGA  |  3843  | 
+    | node3  | VEGA  |  3841  | 
+    | node4  | VEGA  |  3841  | 
+    | node5  | VEGA  |  3841  | 
+    | node6  | VEGA  |  3841  | 
+    | node7  | VEGA  |  3841  | 
+    | node8  | VEGA  |  3841  | 
+    | node9  | VEGA  |  3841  | 
+    | node10 | VEGA  |  3841  | 
+    | node11 | VEGA  |  3841  | 
+    | node12 | VEGA  |  3841  | 
+    | node13 | VEGA  |  3841  | 
+
+  Scenario: Parties withdraw from their staking account during an epoch once having active delegations - they should not get rewarded for those uncovered delegations 
+    Desciption: Parties have active delegations on epoch 1 and withdraw stake from the staking account. They should only get rewarded for any delegation that still has cover 
+
+    #party1 has a balance of 10k tokens in their staking account and an active delegation in this epoch of 600. By withdrawing 9850, 450 of their delegation needs to be revoked and they should only get rewarded for the 150 tokens
+    #NB: the undelegation is done proportionally to the stake they have in each node, so for example party1 has 100, 200, 300 in nodes 1-3 respectively so 
+    #after undelegation they will have 25, 50, 75 in nodes 1-3 respectively
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  9850  |
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07703     |     0.07703      |    
+    |  node2  |      0.07722     |     0.07722      |
+    |  node3  |      0.07741     |     0.07741      | 
+    |  node4  |      0.07683     |     0.07683      | 
+
+    #node1 has 10k self delegation + 25 from party1
+    #node2 has 10k self delegation + 50 from party1
+    #node3 has 10k self delegation + 75 from party1
+    #all other nodes have 10k self delegation 
+
+    #party1 gets 0.07703 * 50000 * 0.883 * 25/10025 + 0.07722 * 50000 * 0.883 * 50/10050 + 0.07741 * 50000 * 0.883 * 75/10075
+    #node1 gets: (1 - 0.883 * 25/10025) * 0.07703 * 50000
+    #node2 gets: (1 - 0.883 * 50/10050) * 0.07722 * 50000
+    #node3 gets: (1 - 0.883 * 75/10075) * 0.07741 * 50000
+    #node4 - node13 get: 0.07683 * 50000
+
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  49    | 
+    | node1  | VEGA  |  3842  | 
+    | node2  | VEGA  |  3843  | 
+    | node3  | VEGA  |  3845  | 
+    | node4  | VEGA  |  3841  | 
+    | node5  | VEGA  |  3841  | 
+    | node6  | VEGA  |  3841  | 
+    | node7  | VEGA  |  3841  | 
+    | node8  | VEGA  |  3841  | 
+    | node9  | VEGA  |  3841  | 
+    | node10 | VEGA  |  3841  | 
+    | node11 | VEGA  |  3841  | 
+    | node12 | VEGA  |  3841  | 
+    | node13 | VEGA  |  3841  | 
+
+   
