@@ -28,7 +28,7 @@ func getAccountingTest(t *testing.T) *accountingTest {
 	broker := mocks.NewMockBrokerI(ctrl)
 
 	return &accountingTest{
-		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker),
+		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker, nil),
 		log:        log,
 		ctrl:       ctrl,
 		broker:     broker,
