@@ -323,11 +323,12 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
-	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
 
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
+
+	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
 
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService)
