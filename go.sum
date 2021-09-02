@@ -10,13 +10,10 @@ cloud.google.com/go/datastore v1.0.0/go.mod h1:LXYbyblFSglQ5pkeyhO+Qmw7ukd3C+pD7
 cloud.google.com/go/firestore v1.1.0/go.mod h1:ulACoGHTpvq5r8rxGJ4ddJZBZqakUQqClKRT5SZwBmk=
 cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2kNxGRt3I=
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
-code.vegaprotocol.io/go-wallet v0.7.1-0.20210831185441-b7ec69d5d320 h1:76dmVRPS7E2IHHWcp/zs7YV0SHbdlD6NELgge1/Yk5s=
-code.vegaprotocol.io/go-wallet v0.7.1-0.20210831185441-b7ec69d5d320/go.mod h1:r3Q8o+luWdjRo9KzulUfwRRVIkMOpejPrjzit+Z+xTw=
+code.vegaprotocol.io/go-wallet v0.7.1-0.20210902094342-2ad5fc584a82 h1:/0H45MGDUcJYCQlUVrD2A/y6wGuH+uEksoMhVPR6ndo=
+code.vegaprotocol.io/go-wallet v0.7.1-0.20210902094342-2ad5fc584a82/go.mod h1:PwHR77l79pQgF79grhPqO4mQZPwz3fzF9ia6ns/nJCc=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3 h1:/A09Q3EEiJF+/WiJfKiqzp1zvcWphiYR8lf2N/JSJBU=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
-code.vegaprotocol.io/protos v0.41.1-0.20210831105504-a2fb8fcd9c11/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
-code.vegaprotocol.io/protos v0.42.0-pre4.0.20210901180735-0a76f0850b67 h1:V0VRiUHwKzsw571nZ+lSTlIHS6GWaMHgQNh1TyU1c9E=
-code.vegaprotocol.io/protos v0.42.0-pre4.0.20210901180735-0a76f0850b67/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/protos v0.42.0-pre5.0.20210902093524-f2d1ae86c440 h1:0+CI4ijtGsr9dTICMnEvtndAhJmFlnPKbcW07Va/Qb4=
 code.vegaprotocol.io/protos v0.42.0-pre5.0.20210902093524-f2d1ae86c440/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
