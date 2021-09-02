@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
@@ -15,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/validators"
+	"github.com/golang/protobuf/proto"
 
 	"github.com/ethereum/go-ethereum/ethclient"
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -63,22 +65,44 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	if len(opts.Network) != 0 {
-		ethConfig := `{"network_id": "%s", "chain_id": "%s", "bridge_address": "%s", "confirmations": %d}`
+		var ethConfig []byte
 		switch opts.Network {
 		case "mainnet":
 			delete(genesisState.Assets, "VOTE")
 			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
 			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3)
+			ethConfig, err = proto.Marshal(&vgproto.EthereumConfig{
+				NetworkId:     "1",
+				ChainId:       "1",
+				BridgeAddress: "0x4149257d844Ef09f11b02f2e73CbDfaB4c911a73",
+				Confirmations: 50,
+				StakingBridgeAddresses: []string{
+					"0x195064D33f09e0c42cF98E665D9506e0dC17de68",
+					"0x23d1bFE8fA50a167816fBD79D7932577c06011f4",
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("couldn't marshal EthereumConfig: %w", err)
+			}
+
 		case "testnet":
 			delete(genesisState.Assets, "VOTE")
 			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenTestNet
 			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3)
+			ethConfig, err = proto.Marshal(&vgproto.EthereumConfig{
+				NetworkId:              "3",
+				ChainId:                "3",
+				BridgeAddress:          "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10",
+				Confirmations:          3,
+				StakingBridgeAddresses: []string{},
+			})
+			if err != nil {
+				return fmt.Errorf("couldn't marshal EthereumConfig: %w", err)
+			}
 		default:
 			return fmt.Errorf("network %s is not supported", opts.Network)
 		}
-		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = ethConfig
+		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = string(ethConfig)
 	}
 
 	rawGenesisState, err := json.Marshal(genesisState)

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	genesisPubKey = "6c9848d1e1dc4b34c5c0f3c0d661b6767c795fce2e0563c9ce40cad6af85c99f"
+	PubKey = "6c9848d1e1dc4b34c5c0f3c0d661b6767c795fce2e0563c9ce40cad6af85c99f"
 )
 
 func VerifyGenesisStateSignature(genesisState *GenesisState, sig string) (bool, error) {
@@ -23,7 +23,7 @@ func VerifyGenesisStateSignature(genesisState *GenesisState, sig string) (bool, 
 		return false, fmt.Errorf("couldn't marshall signed parameters: %w", err)
 	}
 
-	decodedPubKey, err := hex.DecodeString(genesisPubKey)
+	decodedPubKey, err := hex.DecodeString(PubKey)
 	if err != nil {
 		return false, fmt.Errorf("couldn't decode public key: %w", err)
 	}
