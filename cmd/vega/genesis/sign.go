@@ -17,7 +17,6 @@ type signCmd struct {
 	TmRoot             string            `short:"t" long:"tm-root" description:"The root path of tendermint"`
 	WalletRoot         string            `long:"wallet-path" description:"The root path to the wallets"`
 	WalletName         string            `long:"wallet-name" description:"The name of the wallet to use" required:"true"`
-	WalletPubKey       string            `long:"wallet-pubkey" description:"The public key of the wallet used for the signing" required:"true"`
 	WalletPasswordFile config.Passphrase `long:"wallet-password" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 }
 
@@ -64,7 +63,7 @@ func (opts *signCmd) Execute(_ []string) error {
 		return err
 	}
 
-	signature, err := handler.SignAny(opts.WalletName, jsonSps, opts.WalletPubKey)
+	signature, err := handler.SignAny(opts.WalletName, jsonSps, genesis.PubKey)
 	if err != nil {
 		return err
 	}
