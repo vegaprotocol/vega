@@ -43,7 +43,7 @@ pipeline {
             options { retry(3) }
             steps {
                 dir('data-node') {
-                    sh 'go mod download -x'
+                    sh 'GOSUMDB=off go mod download -x'
                 }
             }
         }
