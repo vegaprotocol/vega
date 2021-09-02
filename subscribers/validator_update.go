@@ -14,9 +14,16 @@ type ValidatorUpdateEvent interface {
 	Proto() eventspb.ValidatorUpdate
 }
 
+type ValidatorScoreEvent interface {
+	events.Event
+	Proto() eventspb.ValidatorScoreEvent
+}
+
 type NodeStore interface {
 	AddNode(types.Node)
 	AddDelegation(types.Delegation)
+	GetAllIDs() []string
+	AddNodeScore(nodeID, epochID, score, normalisedScore string)
 }
 
 type ValidatorUpdateSub struct {
@@ -71,6 +78,15 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 				Location: vue.GetCountry(),
 				Status:   types.NodeStatus_NODE_STATUS_VALIDATOR,
 			})
+		case ValidatorScoreEvent:
+			vse := et.Proto()
+
+			vu.nodeStore.AddNodeScore(
+				vse.GetNodeId(),
+				vse.GetEpochSeq(),
+				vse.GetValidatorScore(),
+				vse.GetNormalisedScore(),
+			)
 		default:
 			vu.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
 		}
@@ -80,5 +96,6 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 func (vu *ValidatorUpdateSub) Types() []events.Type {
 	return []events.Type{
 		events.ValidatorUpdateEvent,
+		events.ValidatorScoreEvent,
 	}
 }

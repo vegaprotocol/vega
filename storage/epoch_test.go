@@ -102,7 +102,7 @@ func TestEpochs(t *testing.T) {
 			StakedByOperator:  "0",
 			StakedByDelegates: "0",
 			StakedTotal:       "0",
-			Delagations:       []*pb.Delegation{},
+			Delagations:       nil,
 		})
 	}
 

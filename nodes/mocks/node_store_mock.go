@@ -34,32 +34,32 @@ func (m *MockNodeStore) EXPECT() *MockNodeStoreMockRecorder {
 }
 
 // GetAll mocks base method
-func (m *MockNodeStore) GetAll() []*vega.Node {
+func (m *MockNodeStore) GetAll(arg0 string) []*vega.Node {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll")
+	ret := m.ctrl.Call(m, "GetAll", arg0)
 	ret0, _ := ret[0].([]*vega.Node)
 	return ret0
 }
 
 // GetAll indicates an expected call of GetAll
-func (mr *MockNodeStoreMockRecorder) GetAll() *gomock.Call {
+func (mr *MockNodeStoreMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockNodeStore)(nil).GetAll))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockNodeStore)(nil).GetAll), arg0)
 }
 
 // GetByID mocks base method
-func (m *MockNodeStore) GetByID(arg0 string) (*vega.Node, error) {
+func (m *MockNodeStore) GetByID(arg0, arg1 string) (*vega.Node, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByID", arg0)
+	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
 	ret0, _ := ret[0].(*vega.Node)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetByID indicates an expected call of GetByID
-func (mr *MockNodeStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
+func (mr *MockNodeStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNodeStore)(nil).GetByID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNodeStore)(nil).GetByID), arg0, arg1)
 }
 
 // GetStakedTotal mocks base method

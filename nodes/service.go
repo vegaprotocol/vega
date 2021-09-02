@@ -11,8 +11,8 @@ import (
 // NodeStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/node_store_mock.go -package mocks code.vegaprotocol.io/data-node/nodes NodeStore
 type NodeStore interface {
-	GetByID(id string) (*pb.Node, error)
-	GetAll() []*pb.Node
+	GetByID(id, epochSeq string) (*pb.Node, error)
+	GetAll(epochSeq string) []*pb.Node
 	GetTotalNodesNumber() int
 	GetValidatingNodesNumber() int
 	GetStakedTotal(epochSeq string) string
@@ -79,9 +79,9 @@ func (s *Service) GetNodeData(ctx context.Context) (*pb.NodeData, error) {
 }
 
 func (s *Service) GetNodes(ctx context.Context) ([]*pb.Node, error) {
-	return s.nodeStore.GetAll(), nil
+	return s.nodeStore.GetAll(s.epochStore.GetEpochSeq()), nil
 }
 
 func (s *Service) GetNodeByID(ctx context.Context, id string) (*pb.Node, error) {
-	return s.nodeStore.GetByID(id)
+	return s.nodeStore.GetByID(id, s.epochStore.GetEpochSeq())
 }
