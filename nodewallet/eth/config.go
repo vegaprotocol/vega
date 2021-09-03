@@ -14,7 +14,6 @@ type Config struct {
 // pointer to a logger instance to be used for logging within the package.
 func NewDefaultConfig() Config {
 	return Config{
-		Level:   encoding.LogLevel{Level: logging.InfoLevel},
-		Address: "https://ropsten.infura.io/v3/2d4acb74430e4792b8d783fdfaa3ae82",
+		Level: encoding.LogLevel{Level: logging.InfoLevel},
 	}
 }
