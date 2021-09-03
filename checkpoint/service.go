@@ -20,7 +20,7 @@ type Svc struct {
 
 func NewService(log *logging.Logger, cfg Config, store CheckpointStore) *Svc {
 	log = log.Named(namedLogger)
-	log.SetLevel(config.Level.Get())
+	log.SetLevel(cfg.Level.Get())
 	return &Svc{
 		Config: cfg,
 		store:  store,

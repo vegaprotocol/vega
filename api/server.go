@@ -275,7 +275,7 @@ func (g *GRPCServer) Start(ctx context.Context) error {
 		delegationService:       g.delegationService,
 		rewardsService:          g.rewardsService,
 		stakingService:          g.stakingService,
-		CheckpointService:       g.checkpointSvc,
+		checkpointService:       g.checkpointSvc,
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)

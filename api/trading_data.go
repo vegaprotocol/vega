@@ -313,10 +313,6 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 	}, nil
 }
 
-func (t *tradingDataService) Checkpoints(ctx context.Context, in *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
-	return nil, errors.New("not implemented")
-}
-
 // Get data of current node
 func (t *tradingDataService) GetNodeData(ctx context.Context, req *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeData")()

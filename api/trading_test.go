@@ -177,7 +177,7 @@ func getTestGRPCServer(
 	// checkpoint storage
 	checkpointStore, err := storage.NewCheckpoints(logger, conf.Storage, cancel)
 	if err != nil {
-		err = errors.New(err, "failed to create checkpoint store")
+		err = fmt.Errorf("failed to create checkpoint store: %w", err)
 		return
 	}
 
