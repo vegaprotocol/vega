@@ -43,6 +43,7 @@ type Checkpoint interface {
 	BalanceCheckpoint() (*types.Snapshot, error)
 	Checkpoint(time.Time) (*types.Snapshot, error)
 	Load(ctx context.Context, snap *types.Snapshot) error
+	AwaitingRestore() bool
 }
 
 type App struct {
@@ -53,6 +54,7 @@ type App struct {
 	txSizes           []int
 	cBlock            string
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
+	reloadCP          bool
 
 	cfg      Config
 	log      *logging.Logger
@@ -126,6 +128,7 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
+		reloadCP:        checkpoint.AwaitingRestore(),
 		assets:          assets,
 		banking:         banking,
 		broker:          broker,
@@ -441,6 +444,10 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	if !app.top.Exists(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
@@ -448,6 +455,10 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
@@ -489,6 +500,10 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	porder := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(porder); err != nil {
 		return err
@@ -514,6 +529,10 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -543,6 +562,10 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverWithdraw(
 	ctx context.Context, tx abci.Tx, id string) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
@@ -564,6 +587,10 @@ func (app *App) DeliverWithdraw(
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -616,6 +643,10 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	vote := &commandspb.VoteSubmission{}
 
 	if err := tx.Unmarshal(vote); err != nil {
@@ -638,6 +669,10 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	ns := &commandspb.NodeSignature{}
 	if err := tx.Unmarshal(ns); err != nil {
 		return err
@@ -647,6 +682,10 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -667,6 +706,10 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	vote := &commandspb.NodeVote{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
@@ -676,6 +719,10 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	ce := &commandspb.ChainEvent{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
@@ -685,6 +732,10 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 }
 
 func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
@@ -699,6 +750,10 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
@@ -709,6 +764,10 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {
+	if app.reloadCP {
+		app.log.Debug("This would call on chain time update for governance. We've skipped all tx, so just ignore")
+		return
+	}
 	toEnactProposals, voteClosedProposals := app.gov.OnChainTimeUpdate(ctx, t)
 	for _, voteClosed := range voteClosedProposals {
 		prop := voteClosed.Proposal()
@@ -844,6 +903,10 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 }
 
 func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	ce := &commandspb.DelegateSubmission{}
 	defer func() {
 		if err != nil {
@@ -863,6 +926,10 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
 }
 
 func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	ce := &commandspb.UndelegateSubmission{}
 	defer func() {
 		if err != nil {
@@ -888,6 +955,10 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 }
 
 func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr error) {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
 		if rerr != nil {
@@ -913,6 +984,10 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}
+	// set flag in case the CP has been reloaded
+	app.reloadCP = app.checkpoint.AwaitingRestore()
+	// now we can call onTick for the governance engine updates, and enable the markets
+	app.onTick(ctx, app.time.GetTimeNow())
 	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
 	// emit an error event perhaps, log, etc...?
 	return err

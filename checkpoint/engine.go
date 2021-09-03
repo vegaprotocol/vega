@@ -133,6 +133,11 @@ func (e *Engine) addComponent(comp State) error {
 	return nil
 }
 
+// AwaitingRestore indicates that a checkpoint restore is pending, will return false once CP is restored
+func (e *Engine) AwaitingRestore() bool {
+	return len(e.loadHash) > 0
+}
+
 // BalanceCheckpoint is used for deposits and withdrawals. We want a snapshot to be taken in those events
 // but these snapshots should not affect the timing (delta, time between checkpoints). Currently, this call
 // generates a full checkpoint, but we probably will change this to be a sparse checkpoint
