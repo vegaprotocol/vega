@@ -36,16 +36,20 @@ func TestNodes(t *testing.T) {
 	a.Error(err, errors.New("node 1 not found"))
 
 	testNode := pb.Node{
-		Id:       "tm_pub_key_1",
-		PubKey:   "pub_key_1",
-		InfoUrl:  "http://info-node-1.vega",
-		Location: "UK",
-		Status:   pb.NodeStatus_NODE_STATUS_VALIDATOR,
+		Id:               "pub_key_1",
+		PubKey:           "pub_key_1",
+		TmPubKey:         "tm_pub_key_1",
+		EthereumAdddress: "eth_pub_key_1",
+		InfoUrl:          "http://info-node-1.vega",
+		Location:         "UK",
+		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	}
 
 	expectedNode := &pb.Node{
-		Id:                "tm_pub_key_1",
+		Id:                "pub_key_1",
 		PubKey:            "pub_key_1",
+		TmPubKey:          "tm_pub_key_1",
+		EthereumAdddress:  "eth_pub_key_1",
 		InfoUrl:           "http://info-node-1.vega",
 		Location:          "UK",
 		Status:            pb.NodeStatus_NODE_STATUS_VALIDATOR,
@@ -56,26 +60,26 @@ func TestNodes(t *testing.T) {
 
 	nodeStore.AddNode(testNode)
 
-	actualNode, err := nodeStore.GetByID("tm_pub_key_1", "epoch_1")
+	actualNode, err := nodeStore.GetByID("pub_key_1", "epoch_1")
 	a.NoError(err)
 	a.Equal(expectedNode, actualNode)
 
 	delegations := []*pb.Delegation{
 		{
 			Party:    "1",
-			NodeId:   "tm_pub_key_1",
+			NodeId:   "pub_key_1",
 			Amount:   "20",
 			EpochSeq: "epoch_1",
 		},
 		{
 			Party:    "pub_key_1",
-			NodeId:   "tm_pub_key_1",
+			NodeId:   "pub_key_1",
 			Amount:   "10",
 			EpochSeq: "epoch_1",
 		},
 		{
 			Party:    "2",
-			NodeId:   "tm_pub_key_1",
+			NodeId:   "pub_key_1",
 			Amount:   "5",
 			EpochSeq: "epoch_1",
 		},
@@ -85,43 +89,45 @@ func TestNodes(t *testing.T) {
 	nodeStore.AddDelegation(*delegations[1])
 	nodeStore.AddDelegation(*delegations[2])
 
-	actualNode, err = nodeStore.GetByID("tm_pub_key_1", "epoch_1")
+	actualNode, err = nodeStore.GetByID("pub_key_1", "epoch_1")
 	a.NoError(err)
 	assertNode(a, actualNode, delegations, "10", "25", "35", "", "")
 
 	nodeStore.AddNode(pb.Node{
-		Id:       "tm_pub_key_2",
-		PubKey:   "pub_key_2",
-		InfoUrl:  "http://info-node-2.vega",
-		Location: "UK",
-		Status:   pb.NodeStatus_NODE_STATUS_VALIDATOR,
+		Id:               "pub_key_2",
+		PubKey:           "pub_key_2",
+		TmPubKey:         "tm_pub_key_2",
+		EthereumAdddress: "eth_pub_key_2",
+		InfoUrl:          "http://info-node-2.vega",
+		Location:         "UK",
+		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	})
 
-	nodeStore.AddNodeScore("tm_pub_key_2", "1", "20", "0.89")
-	nodeStore.AddNodeScore("tm_pub_key_2", "2", "30", "0.9")
+	nodeStore.AddNodeScore("pub_key_2", "1", "20", "0.89")
+	nodeStore.AddNodeScore("pub_key_2", "2", "30", "0.9")
 
 	delegations = []*pb.Delegation{
 		{
 			Party:    "3",
-			NodeId:   "tm_pub_key_2",
+			NodeId:   "pub_key_2",
 			Amount:   "10",
 			EpochSeq: "1",
 		},
 		{
 			Party:    "4",
-			NodeId:   "tm_pub_key_2",
+			NodeId:   "pub_key_2",
 			Amount:   "50",
 			EpochSeq: "1",
 		},
 		{
 			Party:    "3",
-			NodeId:   "tm_pub_key_2",
+			NodeId:   "pub_key_2",
 			Amount:   "10",
 			EpochSeq: "2",
 		},
 		{
 			Party:    "4",
-			NodeId:   "tm_pub_key_2",
+			NodeId:   "pub_key_2",
 			Amount:   "50",
 			EpochSeq: "2",
 		},
@@ -137,12 +143,12 @@ func TestNodes(t *testing.T) {
 	nodeStore.AddDelegation(*delegations[1])
 
 	// Get node in first epoch
-	node, err := nodeStore.GetByID("tm_pub_key_2", "1")
+	node, err := nodeStore.GetByID("pub_key_2", "1")
 	a.NoError(err)
 	assertNode(a, node, delegations[0:2], "0", "70", "70", "20", "0.89")
 
 	// Get node in second epoch
-	node, err = nodeStore.GetByID("tm_pub_key_2", "2")
+	node, err = nodeStore.GetByID("pub_key_2", "2")
 	a.NoError(err)
 	assertNode(a, node, delegations[2:], "0", "60", "60", "30", "0.9")
 

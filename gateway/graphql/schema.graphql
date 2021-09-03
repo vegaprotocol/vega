@@ -502,6 +502,12 @@ type Node {
   "Pubkey of the node operator"
   pubkey: String!
 
+  "Public key of Tendermint"
+  tmPubkey: String!
+
+  "Ethereum public key of the node"
+  ethereumAdddress: String!
+
   "URL where I can find out more info on the node. Will this be possible?"
   infoUrl: String!
 

@@ -72,11 +72,13 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 			vue := et.Proto()
 
 			vu.nodeStore.AddNode(types.Node{
-				Id:       vue.GetVegaPubKey(),
-				PubKey:   vue.GetVegaPubKey(),
-				InfoUrl:  vue.GetInfoUrl(),
-				Location: vue.GetCountry(),
-				Status:   types.NodeStatus_NODE_STATUS_VALIDATOR,
+				Id:               vue.GetNodeId(),
+				PubKey:           vue.GetVegaPubKey(),
+				TmPubKey:         vue.GetTmPubKey(),
+				EthereumAdddress: vue.GetEthereumAddress(),
+				InfoUrl:          vue.GetInfoUrl(),
+				Location:         vue.GetCountry(),
+				Status:           types.NodeStatus_NODE_STATUS_VALIDATOR,
 			})
 		case ValidatorScoreEvent:
 			vse := et.Proto()
