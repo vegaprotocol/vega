@@ -20,7 +20,7 @@ func TheValidators(
 		topology.AddValidator(row.id())
 
 		amt, _ := num.UintFromString(row.stakingAccountBalance(), 10)
-		stakingAcountStub.IncrementBalance(row.id(), amt, "")
+		stakingAcountStub.IncrementBalance(row.id(), amt)
 	}
 
 	return nil

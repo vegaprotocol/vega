@@ -101,6 +101,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.topology = stubs.NewTopologyStub()
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
+	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService)

@@ -1,27 +1,42 @@
 package stubs
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 type StakingAccountStub struct {
 	partyToStake         map[string]*num.Uint
-	partyToStakeForEpoch map[time.Time]map[string]*num.Uint
+	partyToStakeForEpoch map[uint64]map[string]*num.Uint
+	currentEpoch         uint64
 }
 
-func (t *StakingAccountStub) IncrementBalance(party string, amount *num.Uint, epoch string) error {
+func (t *StakingAccountStub) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	t.currentEpoch = epoch.Seq
+	emptyT := time.Time{}
+	if epoch.EndTime == emptyT {
+		t.partyToStakeForEpoch[epoch.Seq] = map[string]*num.Uint{}
+		for p, s := range t.partyToStake {
+			t.partyToStakeForEpoch[epoch.Seq][p] = s
+		}
+	}
+}
+
+func (t *StakingAccountStub) IncrementBalance(party string, amount *num.Uint) error {
 	if _, ok := t.partyToStake[party]; !ok {
 		t.partyToStake[party] = num.Zero()
 	}
 	t.partyToStake[party].AddSum(amount)
+
 	return nil
 }
 
-func (t *StakingAccountStub) DecrementBalance(party string, amount *num.Uint, epoch string) error {
+func (t *StakingAccountStub) DecrementBalance(party string, amount *num.Uint) error {
 	if _, ok := t.partyToStake[party]; !ok {
 		return errors.New("party staking accoung is missing")
 	}
@@ -29,13 +44,14 @@ func (t *StakingAccountStub) DecrementBalance(party string, amount *num.Uint, ep
 		return errors.New("incorrect balance for unstaking")
 	}
 	t.partyToStake[party] = t.partyToStake[party].Sub(t.partyToStake[party], amount)
+	t.partyToStakeForEpoch[t.currentEpoch][party] = t.partyToStake[party]
 	return nil
 }
 
 func NewStakingAccountStub() *StakingAccountStub {
 	return &StakingAccountStub{
 		partyToStake:         make(map[string]*num.Uint),
-		partyToStakeForEpoch: make(map[time.Time]map[string]*num.Uint),
+		partyToStakeForEpoch: make(map[uint64]map[string]*num.Uint),
 	}
 }
 

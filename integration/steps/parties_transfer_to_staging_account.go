@@ -14,7 +14,7 @@ func PartiesTransferToStakingAccount(
 ) error {
 	for _, r := range parseDepositAssetTable(table) {
 		row := depositAssetRow{row: r}
-		return stakingAccountStub.IncrementBalance(row.Party(), row.Amount(), epoch)
+		return stakingAccountStub.IncrementBalance(row.Party(), row.Amount())
 	}
 	return nil
 }
