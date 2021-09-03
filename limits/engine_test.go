@@ -49,7 +49,6 @@ func TestLimits(t *testing.T) {
 	t.Run("proposal enabled with time reach becomes enabled", testDisabledUntilTimeIsReach)
 	t.Run("proposals disabled with time reach stay disabled", testStayDisabledIfTimeIsReachedButEnabledIsFalse)
 	t.Run("bootstrap finished enabled proposals", testBootstrapFinishedEnabledProposals)
-	t.Run("bootstrap in progress enabled proposals", testBootstrapInProgressEnabledProposals)
 }
 
 func testEmptyGenesis(t *testing.T) {
@@ -199,10 +198,22 @@ func testBootstrapFinishedEnabledProposals(t *testing.T) {
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanTrade())
 	assert.False(t, lmts.BootstrapFinished())
-}
 
-func testBootstrapInProgressEnabledProposals(t *testing.T) {
+	// block 2, still fasle
+	lmts.OnTick(context.Background(), time.Unix(4000, 0))
 
+	assert.False(t, lmts.CanProposeMarket())
+	assert.False(t, lmts.CanProposeAsset())
+	assert.False(t, lmts.CanTrade())
+	assert.False(t, lmts.BootstrapFinished())
+
+	// block 3, OK
+	lmts.OnTick(context.Background(), time.Unix(5000, 0))
+
+	assert.True(t, lmts.CanProposeMarket())
+	assert.True(t, lmts.CanProposeAsset())
+	assert.True(t, lmts.CanTrade())
+	assert.True(t, lmts.BootstrapFinished())
 }
 
 func timePtr(t time.Time) *time.Time {

@@ -29,10 +29,13 @@ import (
 )
 
 var (
-	ErrPublicKeyCannotSubmitTransactionWithNoBalance = errors.New("public key cannot submit transaction with no balance")
-	ErrTradingDisabled                               = errors.New("trading disabled")
-	ErrMarketProposalDisabled                        = errors.New("market proposal disabled")
-	ErrAssetProposalDisabled                         = errors.New("asset proposal disabled")
+	ErrPublicKeyCannotSubmitTransactionWithNoBalance  = errors.New("public key cannot submit transaction with no balance")
+	ErrTradingDisabled                                = errors.New("trading disabled")
+	ErrNoTransactionAllowedDuringBootstrap            = errors.New("no transactions allowed during boostraping period")
+	ErrMarketProposalDisabled                         = errors.New("market proposal disabled")
+	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
+	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
+	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disaled during bootstrap")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
@@ -373,6 +376,25 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			app.log.Error("cannot submit transaction", logging.Error(err))
 		}
 	}()
+
+	// are we in a bootstrapping period?
+	if !app.limits.BootstrapFinished() {
+		// only validators can send transaction at this point.
+		party := tx.Party()
+		if !app.top.Exists(party) {
+			return ErrNoTransactionAllowedDuringBootstrap
+		}
+		cmd := tx.Command()
+		// make sure this is a validato command and not a checkpoint
+		// checkpoints are ok only after the boostrap period is done.
+		if !cmd.IsValidatorCommand() {
+			return ErrNonValidatorTransactionDisabledDuringBootstrap
+		}
+		if cmd == txn.CheckpointRestoreCommand {
+			return ErrCheckpointRestoreDisabledDuringBootstrap
+		}
+	}
+
 	switch tx.Command() {
 	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
 		if !app.limits.CanTrade() {

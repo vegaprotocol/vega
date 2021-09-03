@@ -55,6 +55,15 @@ var commandName = map[Command]string{
 	CheckpointRestoreCommand:  "Checkpoint Restore",
 }
 
+func (cmd Command) IsValidatorCommand() bool {
+	switch cmd {
+	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, RegisterNodeCommand:
+		return false
+	default:
+		return false
+	}
+}
+
 // String return the
 func (cmd Command) String() string {
 	s, ok := commandName[cmd]

@@ -81,15 +81,18 @@ func (e *Engine) OnTick(_ context.Context, t time.Time) {
 
 	if !e.bootstrapFinished {
 		e.blockCount++
-		if e.blockCount >= e.bootstrapBlockCount {
+		if e.blockCount > e.bootstrapBlockCount {
+			e.log.Info("boostraping period finished, transactions are now allowed")
 			e.bootstrapFinished = true
 		}
 	}
 
 	if !e.canProposeMarket && e.bootstrapFinished && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
+		e.log.Info("all required conditions are met, proposing markets is now allowed")
 		e.canProposeMarket = true
 	}
 	if !e.canProposeAsset && e.bootstrapFinished && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
+		e.log.Info("all required conditions are met, proposing assets is now allowed")
 		e.canProposeAsset = true
 	}
 }
