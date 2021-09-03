@@ -21,6 +21,8 @@ type Engine struct {
 	proposeMarketEnabled, proposeAssetEnabled         bool
 	proposeMarketEnabledFrom, proposeAssetEnabledFrom time.Time
 	bootstrapBlockCount                               uint16
+
+	genesisLoaded bool
 }
 
 func New(log *logging.Logger, cfg Config) *Engine {
@@ -41,6 +43,7 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 		} else {
 			e.log.Debug("Leaving limits.Engine.UponGenesis without error")
 		}
+		e.genesisLoaded = true
 	}()
 
 	state, err := LoadGenesisState(rawState)
@@ -75,14 +78,14 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 }
 
 func (e *Engine) OnTick(_ context.Context, t time.Time) {
-	if e.bootstrapFinished && e.canProposeAsset && e.canProposeMarket {
+	if !e.genesisLoaded || (e.bootstrapFinished && e.canProposeAsset && e.canProposeMarket) {
 		return
 	}
 
 	if !e.bootstrapFinished {
 		e.blockCount++
 		if e.blockCount > e.bootstrapBlockCount {
-			e.log.Info("boostraping period finished, transactions are now allowed")
+			e.log.Info("bootstraping period finished, transactions are now allowed")
 			e.bootstrapFinished = true
 		}
 	}
