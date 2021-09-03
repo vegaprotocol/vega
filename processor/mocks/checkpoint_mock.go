@@ -35,6 +35,20 @@ func (m *MockCheckpoint) EXPECT() *MockCheckpointMockRecorder {
 	return m.recorder
 }
 
+// AwaitingRestore mocks base method
+func (m *MockCheckpoint) AwaitingRestore() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AwaitingRestore")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// AwaitingRestore indicates an expected call of AwaitingRestore
+func (mr *MockCheckpointMockRecorder) AwaitingRestore() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AwaitingRestore", reflect.TypeOf((*MockCheckpoint)(nil).AwaitingRestore))
+}
+
 // BalanceCheckpoint mocks base method
 func (m *MockCheckpoint) BalanceCheckpoint() (*types.Snapshot, error) {
 	m.ctrl.T.Helper()
