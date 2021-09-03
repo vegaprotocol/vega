@@ -112,9 +112,9 @@ go install ./cmd/data-node
   data-node init -r ~/.data-node
   ```
 
-By running this command data node will initiates basic folder structure for data storage and creates default config file.
+By running this command data node will initiates basic folder structure for data storage and creates default configuration file.
 
-Config file can be find in:
+Configuration file can be find in:
 
 ```bash
 cat ~/.data-node/config.toml

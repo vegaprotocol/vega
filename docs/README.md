@@ -1,6 +1,6 @@
 # Vega core architecture
 
-Data node is a standalone product that is built on the top of Vega core product.
+Data node is a stand alone product that is built on the top of Vega core product.
 It consumes stream of events from core Vega via socket using [Broker](./broker.md) then aggregates the events and save them to storage.
 
 ## Component relationships
