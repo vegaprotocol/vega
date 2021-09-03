@@ -332,7 +332,7 @@ func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID 
 			if err != nil {
 				continue
 			}
-			general, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+			general, _ = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
 		}
 
 		rewardTRs = append(rewardTRs, &types.TransferRequest{
