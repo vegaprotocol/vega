@@ -95,6 +95,7 @@ Feature: Staking & Delegation
     #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
     #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
     #node4 - node13 gets: 0.07657 * 50000
+    
     And the parties receive the following reward for epoch 1:
     | party  | asset | amount |
     | party1 | VEGA  |  201   | 
