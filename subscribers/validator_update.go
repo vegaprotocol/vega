@@ -72,7 +72,7 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 			vue := et.Proto()
 
 			vu.nodeStore.AddNode(types.Node{
-				Id:       vue.GetTmPubKey(),
+				Id:       vue.GetVegaPubKey(),
 				PubKey:   vue.GetVegaPubKey(),
 				InfoUrl:  vue.GetInfoUrl(),
 				Location: vue.GetCountry(),
