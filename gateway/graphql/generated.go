@@ -488,6 +488,7 @@ type ComplexityRoot struct {
 	Node struct {
 		Delegations       func(childComplexity int, partyID *string) int
 		EpochData         func(childComplexity int) int
+		EthereumAdddress  func(childComplexity int) int
 		Id                func(childComplexity int) int
 		InfoUrl           func(childComplexity int) int
 		Location          func(childComplexity int) int
@@ -499,6 +500,7 @@ type ComplexityRoot struct {
 		StakedByOperator  func(childComplexity int) int
 		StakedTotal       func(childComplexity int) int
 		Status            func(childComplexity int) int
+		TmPubKey          func(childComplexity int) int
 	}
 
 	NodeData struct {
@@ -2991,6 +2993,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.EpochData(childComplexity), true
 
+	case "Node.ethereumAdddress":
+		if e.complexity.Node.EthereumAdddress == nil {
+			break
+		}
+
+		return e.complexity.Node.EthereumAdddress(childComplexity), true
+
 	case "Node.id":
 		if e.complexity.Node.Id == nil {
 			break
@@ -3067,6 +3076,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Node.Status(childComplexity), true
+
+	case "Node.tmPubkey":
+		if e.complexity.Node.TmPubKey == nil {
+			break
+		}
+
+		return e.complexity.Node.TmPubKey(childComplexity), true
 
 	case "NodeData.inactiveNodes":
 		if e.complexity.NodeData.InactiveNodes == nil {
@@ -5722,6 +5738,12 @@ type Node {
 
   "Pubkey of the node operator"
   pubkey: String!
+
+  "Public key of Tendermint"
+  tmPubkey: String!
+
+  "Ethereum public key of the node"
+  ethereumAdddress: String!
 
   "URL where I can find out more info on the node. Will this be possible?"
   infoUrl: String!
@@ -17173,6 +17195,76 @@ func (ec *executionContext) _Node_pubkey(ctx context.Context, field graphql.Coll
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.PubKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Node_tmPubkey(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TmPubKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Node_ethereumAdddress(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EthereumAdddress, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31678,6 +31770,16 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "pubkey":
 			out.Values[i] = ec._Node_pubkey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "tmPubkey":
+			out.Values[i] = ec._Node_tmPubkey(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "ethereumAdddress":
+			out.Values[i] = ec._Node_ethereumAdddress(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}

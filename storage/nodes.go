@@ -215,6 +215,8 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 	node := &pb.Node{
 		Id:                n.n.GetId(),
 		PubKey:            n.n.GetPubKey(),
+		TmPubKey:          n.n.GetTmPubKey(),
+		EthereumAdddress:  n.n.GetEthereumAdddress(),
 		InfoUrl:           n.n.GetInfoUrl(),
 		Location:          n.n.GetLocation(),
 		Status:            n.n.GetStatus(),
