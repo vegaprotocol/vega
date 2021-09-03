@@ -5,12 +5,11 @@
 package mocks
 
 import (
-	context "context"
-	reflect "reflect"
-
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockDelegationEngine is a mock of DelegationEngine interface
@@ -51,7 +50,7 @@ func (mr *MockDelegationEngineMockRecorder) Delegate(arg0, arg1, arg2, arg3 inte
 }
 
 // ProcessEpochDelegations mocks base method
-func (m *MockDelegationEngine) ProcessEpochDelegations(arg0 context.Context, arg1 *types.Epoch) []*types.ValidatorData {
+func (m *MockDelegationEngine) ProcessEpochDelegations(arg0 context.Context, arg1 types.Epoch) []*types.ValidatorData {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessEpochDelegations", arg0, arg1)
 	ret0, _ := ret[0].([]*types.ValidatorData)
