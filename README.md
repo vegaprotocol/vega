@@ -50,7 +50,10 @@ Data node is initialised with a set of default configuration with the command `d
   LogRemovedOrdersDebug = false
 ```
 
+## Vega core streaming
+
 Data requires an instance of Vega core node for it's meaningful function. Please see [Vega Getting Started](https://github.com/vegaprotocol/vega/blob/develop/GETTING_STARTED.md).
+The data node will listen on default port `3002` for incoming connections from Vega core node.
 
 ## APIs
 
