@@ -318,7 +318,7 @@ func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID stri
 // returns the corresponding transfer request for the slice of transfers
 // if the reward accound doesn't exist return error
 // if the party account doesn't exist log the error and continue
-func (e *Engine) getRewardTransferRequests(rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferRequest, error) {
+func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferRequest, error) {
 	rewardAccount, err := e.GetAccountByID(rewardAccountID)
 	if err != nil {
 		return nil, err
@@ -328,8 +328,11 @@ func (e *Engine) getRewardTransferRequests(rewardAccountID string, transfers []*
 	for _, t := range transfers {
 		general, err := e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
 		if err != nil {
-			e.log.Error("failed to get party general account for reward payout", logging.String("party", t.Owner), logging.String("asset", t.Amount.Asset))
-			continue
+			_, err = e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
+			if err != nil {
+				continue
+			}
+			general, err = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
 		}
 
 		rewardTRs = append(rewardTRs, &types.TransferRequest{
@@ -352,7 +355,7 @@ func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, tr
 		return responses, nil
 	}
 
-	transferReqs, err := e.getRewardTransferRequests(rewardAccountID, transfers)
+	transferReqs, err := e.getRewardTransferRequests(ctx, rewardAccountID, transfers)
 	if err != nil {
 		return nil, err
 	}
