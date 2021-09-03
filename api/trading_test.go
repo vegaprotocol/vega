@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
@@ -173,6 +174,13 @@ func getTestGRPCServer(
 	nodeStore := storage.NewNode(logger, conf.Storage)
 	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
 
+	// checkpoint storage
+	checkpointStore, err := storage.NewCheckpoints(logger, conf.Storage, cancel)
+	if err != nil {
+		err = fmt.Errorf("failed to create checkpoint store: %w", err)
+		return
+	}
+
 	// Account Service
 	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
 
@@ -226,6 +234,7 @@ func getTestGRPCServer(
 	}
 
 	governanceService := governance.NewService(logger, conf.Governance, broker, gov, vote)
+	checkpointSvc := checkpoint.NewService(logger, conf.Checkpoint, checkpointStore)
 
 	nplugin := plugins.NewNotary(context.Background())
 	notaryService := notary.NewService(logger, conf.Notary, nplugin)
@@ -276,6 +285,7 @@ func getTestGRPCServer(
 		delegationService,
 		rewardsService,
 		stakingService,
+		checkpointSvc,
 	)
 	if g == nil {
 		err = fmt.Errorf("failed to create gRPC server")

@@ -238,6 +238,12 @@ type StakingService interface {
 	GetStake(party string) (*num.Uint, []eventspb.StakeLinking)
 }
 
+// CheckpointService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_service_mock.go -package mocks code.vegaprotocol.io/data-node/api CheckpointService
+type CheckpointService interface {
+	GetAll() ([]*protoapi.Checkpoint, error)
+}
+
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
@@ -267,6 +273,7 @@ type tradingDataService struct {
 	epochService            EpochService
 	rewardsService          RewardsService
 	stakingService          StakingService
+	checkpointService       CheckpointService
 }
 
 func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
@@ -304,10 +311,6 @@ func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpoc
 	return &protoapi.GetEpochResponse{
 		Epoch: epoch,
 	}, nil
-}
-
-func (t *tradingDataService) Checkpoints(ctx context.Context, in *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
-	return nil, errors.New("not implemented")
 }
 
 // Get data of current node
@@ -981,6 +984,16 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVeg
 		Timestamp: ts.UnixNano(),
 	}, nil
 
+}
+
+func (t *tradingDataService) Checkpoints(ctx context.Context, _ *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
+	cps, err := t.checkpointService.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CheckpointsResponse{
+		Checkpoints: cps,
+	}, nil
 }
 
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.

@@ -21,6 +21,7 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
@@ -184,6 +185,13 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 
 	stakingService := staking.NewService(ctx, logger)
 
+	checkpointStore, err := storage.NewCheckpoints(logger, conf.Storage, cancel)
+	if err != nil {
+		t.Fatalf("failed to create checkpoint store: %v", err)
+	}
+	checkpointSub := subscribers.NewCheckpointSub(ctx, logger, checkpointStore, true)
+	checkpointSvc := checkpoint.NewService(logger, conf.Checkpoint, checkpointStore)
+
 	eventBroker, err = broker.New(ctx, logger, conf.Broker)
 	if err != nil {
 		t.Fatalf("failed to create broker: %v", err)
@@ -198,7 +206,9 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		oracleService,
 		liquidityService,
 		deposit,
-		withdrawal)
+		withdrawal,
+		checkpointSub,
+	)
 
 	srv := api.NewGRPCServer(
 		logger,
@@ -230,6 +240,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		delegationService,
 		rewardsService,
 		stakingService,
+		checkpointSvc,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")

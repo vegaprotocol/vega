@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
@@ -115,6 +116,7 @@ func (l *NodeCommand) setupSubscibers() {
 	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
 	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
 	l.rewardsSub = subscribers.NewRewards(l.ctx, l.Log, true)
+	l.checkpointSub = subscribers.NewCheckpointSub(l.ctx, l.Log, l.checkpointStore, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
@@ -143,6 +145,9 @@ func (l *NodeCommand) setupStorages() (err error) {
 		return
 	}
 	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage, l.cancel); err != nil {
+		return
+	}
+	if l.checkpointStore, err = storage.NewCheckpoints(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
 
@@ -221,7 +226,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub,
 		l.validatorUpdateSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
-		l.stakingService,
+		l.stakingService, l.checkpointSub,
 	)
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
@@ -231,6 +236,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	}
 
 	l.vegaTradingServiceClient = vegaprotoapi.NewTradingServiceClient(conn)
+
+	l.checkpointSvc = checkpoint.NewService(l.Log, l.conf.Checkpoint, l.checkpointStore)
 
 	// setup config reloads for all services /etc
 	l.setupConfigWatchers()
@@ -256,5 +263,6 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.nodeService.ReloadConf(cfg.Nodes) },
 		func(cfg config.Config) { l.epochService.ReloadConf(cfg.Epochs) },
 		func(cfg config.Config) { l.delegationService.ReloadConf(cfg.Delegations) },
+		func(cfg config.Config) { l.checkpointSvc.ReloadConf(cfg.Checkpoint) },
 	)
 }

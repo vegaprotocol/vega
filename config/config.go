@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/delegations"
 	"code.vegaprotocol.io/data-node/epochs"
@@ -41,33 +42,33 @@ import (
 
 // Config ties together all other application configuration types.
 type Config struct {
-	API         api.Config         `group:"API" namespace:"api"`
-	Accounts    accounts.Config    `group:"Accounts" namespace:"accounts"`
-	Candles     candles.Config     `group:"Candles" namespace:"candles"`
-	Logging     logging.Config     `group:"Logging" namespace:"logging"`
-	Markets     markets.Config     `group:"Markets" namespace:"markets"`
-	Oracles     oracles.Config     `group:"Oracles" namespace:"oracles"`
-	Orders      orders.Config      `group:"Orders" namespace:"orders"`
-	Liquidity   liquidity.Config   `group:"Liquidity" namespace:"liquidity"`
-	Parties     parties.Config     `group:"Parties" namespace:"parties"`
-	Risk        risk.Config        `group:"Risk" namespace:"risk"`
-	Storage     storage.Config     `group:"Storage" namespace:"storage"`
-	Trades      trades.Config      `group:"Trades" namespace:"trades"`
-	Time        vegatime.Config    `group:"Time" namespace:"time"`
-	Gateway     gateway.Config     `group:"Gateway" namespace:"gateway"`
-	Metrics     metrics.Config     `group:"Metrics" namespace:"metrics"`
-	Transfers   transfers.Config   `group:"Transfers" namespace:"transfers"`
-	Governance  governance.Config  `group:"Governance" namespace:"governance"`
-	Assets      assets.Config      `group:"Assets" namespace:"assets"`
-	Notary      notary.Config      `group:"Notary" namespace:"notary"`
-	Subscribers subscribers.Config `group:"Subscribers" namespace:"subscribers"`
-	Stats       stats.Config       `group:"Stats" namespace:"stats"`
-	Fee         fee.Config         `group:"Fee" namespace:"fee"`
-	Broker      broker.Config      `group:"Broker" namespace:"broker"`
-	Nodes       nodes.Config       `group:"Nodes" namespace:"nodes"`
-	Epochs      epochs.Config      `group:"Epochs" namespace:"epochs"`
-	Delegations delegations.Config `group:"Delegations" namespace:"delegations"`
-
+	API               api.Config         `group:"API" namespace:"api"`
+	Accounts          accounts.Config    `group:"Accounts" namespace:"accounts"`
+	Candles           candles.Config     `group:"Candles" namespace:"candles"`
+	Logging           logging.Config     `group:"Logging" namespace:"logging"`
+	Markets           markets.Config     `group:"Markets" namespace:"markets"`
+	Oracles           oracles.Config     `group:"Oracles" namespace:"oracles"`
+	Orders            orders.Config      `group:"Orders" namespace:"orders"`
+	Liquidity         liquidity.Config   `group:"Liquidity" namespace:"liquidity"`
+	Parties           parties.Config     `group:"Parties" namespace:"parties"`
+	Risk              risk.Config        `group:"Risk" namespace:"risk"`
+	Storage           storage.Config     `group:"Storage" namespace:"storage"`
+	Trades            trades.Config      `group:"Trades" namespace:"trades"`
+	Time              vegatime.Config    `group:"Time" namespace:"time"`
+	Gateway           gateway.Config     `group:"Gateway" namespace:"gateway"`
+	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
+	Transfers         transfers.Config   `group:"Transfers" namespace:"transfers"`
+	Governance        governance.Config  `group:"Governance" namespace:"governance"`
+	Assets            assets.Config      `group:"Assets" namespace:"assets"`
+	Notary            notary.Config      `group:"Notary" namespace:"notary"`
+	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
+	Stats             stats.Config       `group:"Stats" namespace:"stats"`
+	Fee               fee.Config         `group:"Fee" namespace:"fee"`
+	Broker            broker.Config      `group:"Broker" namespace:"broker"`
+	Nodes             nodes.Config       `group:"Nodes" namespace:"nodes"`
+	Epochs            epochs.Config      `group:"Epochs" namespace:"epochs"`
+	Delegations       delegations.Config `group:"Delegations" namespace:"delegations"`
+	Checkpoint        checkpoint.Config  `group:"Checkpoint" namespace:"checkpoint"`
 	NetworkParameters netparams.Config
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
