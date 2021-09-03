@@ -1,18 +1,15 @@
-# Vega
+# Data node
 
-Version 0.39.0.
+Version 0.41.0.
 
-A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
+A service exposing read only APIs build on top of [Vega](https://github.com/vegaprotocol/vega) platform.
 
-**Vega** provides the following core features:
+**Data node** provides the following core features:
 
-- Join a Vega network as a validator or non-consensus node.
-- [Governance](./governance/README.md) - proposing and voting for new markets
-- A [matching engine](./matching/README.md)
-- [Configure a node](#configuration) (and its [APIs](#apis))
-- Manage authentication with a network
-- [Run scenario tests](./integration/README.md)
-- Support settlement in cryptocurrency (coming soon)
+- Consume all events from Vega core
+- Aggregates received events and stores the aggregated data
+- Serves stored data via [APIs](#apis)
+- Allows advanced configuration [Configure a node](#configuration)
 
 Additional services that are in this repo, but run separately:
 - [Wallet](./wallet/README.md) can be used provide key management for users.
