@@ -12,19 +12,22 @@ import (
 
 type StakingAccountStub struct {
 	partyToStake         map[string]*num.Uint
-	partyToStakeForEpoch map[uint64]map[string]*num.Uint
-	currentEpoch         uint64
+	partyToStakeForEpoch map[time.Time]map[string]*num.Uint
+	currentEpoch         *types.Epoch
 }
 
 func (t *StakingAccountStub) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
-	t.currentEpoch = epoch.Seq
-	emptyT := time.Time{}
-	if epoch.EndTime == emptyT {
-		t.partyToStakeForEpoch[epoch.Seq] = map[string]*num.Uint{}
-		for p, s := range t.partyToStake {
-			t.partyToStakeForEpoch[epoch.Seq][p] = s
+	if t.currentEpoch == nil || t.currentEpoch.Seq != epoch.Seq {
+		t.currentEpoch = &epoch
+		emptyT := time.Time{}
+		if epoch.EndTime == emptyT {
+			t.partyToStakeForEpoch[epoch.StartTime] = map[string]*num.Uint{}
+			for p, s := range t.partyToStake {
+				t.partyToStakeForEpoch[epoch.StartTime][p] = s
+			}
 		}
 	}
+
 }
 
 func (t *StakingAccountStub) IncrementBalance(party string, amount *num.Uint) error {
@@ -44,14 +47,14 @@ func (t *StakingAccountStub) DecrementBalance(party string, amount *num.Uint) er
 		return errors.New("incorrect balance for unstaking")
 	}
 	t.partyToStake[party] = t.partyToStake[party].Sub(t.partyToStake[party], amount)
-	t.partyToStakeForEpoch[t.currentEpoch][party] = t.partyToStake[party]
+	t.partyToStakeForEpoch[t.currentEpoch.StartTime][party] = t.partyToStake[party]
 	return nil
 }
 
 func NewStakingAccountStub() *StakingAccountStub {
 	return &StakingAccountStub{
 		partyToStake:         make(map[string]*num.Uint),
-		partyToStakeForEpoch: make(map[uint64]map[string]*num.Uint),
+		partyToStakeForEpoch: make(map[time.Time]map[string]*num.Uint),
 	}
 }
 
@@ -64,10 +67,9 @@ func (t *StakingAccountStub) GetAvailableBalance(party string) (*num.Uint, error
 }
 
 func (t *StakingAccountStub) GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error) {
-	//TODO this should be gix to get the minimum balance of the account during the epoch
-	ret, ok := t.partyToStake[party]
+	partyStake, ok := t.partyToStakeForEpoch[from][party]
 	if !ok {
 		return nil, fmt.Errorf("party not found")
 	}
-	return ret, nil
+	return partyStake, nil
 }

@@ -45,21 +45,16 @@ Feature: Staking & Delegation
       | node12 |  node12  | 10000  | 
       | node13 |  node13  | 10000  | 
 
+    And the parties deposit on staking account the following amount:  
+      | party  | asset  | amount |
+      | party1 | VEGA   | 10000  |
+
     #complete the first epoch for the self delegation to take effect
     Then time is updated to "2021-08-26T00:00:10Z"
     Then time is updated to "2021-08-26T00:00:11Z"
 
-
   Scenario: A party can delegate to a validator and undelegate at the end of an epoch
     Desciption: A party with a balance in the staking account can delegate to a validator
-
-    Given the parties deposit on staking account the following amount:  
-      | party  | asset  | amount |
-      | party1 | VEGA   | 10000  |
-
-    And the parties should have the following staking account balances:
-      | party  | asset  | amount |
-      | party1 | VEGA   | 10000  |    
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
@@ -116,12 +111,8 @@ Feature: Staking & Delegation
 
   Scenario: A party cannot delegate less than minimum delegateable stake  
     Desciption: A party attempts to delegate less than minimum delegateable stake from its staking account to a validator minimum delegateable stake
-      
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000  |  
 
-    And the parties submit the following delegations:
+    When the parties submit the following delegations:
     | party  | node id  | amount | reference | error                                                                             |
     | party1 |  node1   |    1   |      a    | delegation amount is lower than the minimum amount for delegation for a validator |
     | party1 |  node2   |    2   |      b    | delegation amount is lower than the minimum amount for delegation for a validator |    
@@ -142,12 +133,8 @@ Feature: Staking & Delegation
 
   Scenario: A party cannot delegate more than it has in staking account
     Desciption: A party attempts to delegate more than it has in its staking account to a validator
-    
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000  |  
 
-    And the parties submit the following delegations:
+    When the parties submit the following delegations:
     | party  | node id  |   amount   | reference | error                               |
     | party1 |  node1   |    10001   |      a    | insufficient balance for delegation |
     | party1 |  node2   |    10002   |      b    | insufficient balance for delegation |    
@@ -168,12 +155,8 @@ Feature: Staking & Delegation
 
   Scenario: A party cannot delegate stake size such that it exceeds maximum amount of stake for a validator
     Desciption: A party attempts to delegate token stake which exceed maximum stake for a validator
-      
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000  |  
 
-    And the parties submit the following delegations:
+    When the parties submit the following delegations:
     | party  | node id  |   amount  | 
     | party1 |  node1   |    1500   | 
     | party1 |  node2   |    2000   | 
@@ -204,11 +187,7 @@ Feature: Staking & Delegation
   Scenario: A party changes delegation from one validator to another in the same epoch
     Desciption: A party can change delegatation from one Validator to another
 
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000  |  
-
-    And the parties submit the following delegations:
+    When the parties submit the following delegations:
     | party  | node id  |   amount  | 
     | party1 |  node1   |    100   | 
     | party1 |  node2   |    100   | 
@@ -259,11 +238,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot delegate to an unknown node 
     Desciption: A party should fail in trying to delegate to a non existing node
 
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000  |  
-
-    Then the parties submit the following delegations:
+    When the parties submit the following delegations:
     | party  | node id   |   amount | reference | error           |
     | party1 |  unknown1 |    100   |      a    | invalid node ID |
     | party1 |  unknonw2 |    200   |      b    | invalid node ID |    
@@ -271,11 +246,7 @@ Feature: Staking & Delegation
   Scenario: A party cannot undelegate from an unknown node
     Desciption: A party should fail in trying to undelegate from a non existing node
 
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000  |  
-
-    Then the parties submit the following undelegations:
+    When the parties submit the following undelegations:
     | party  | node id   |   amount |     when     | reference | error           |
     | party1 |  unknown1 |    100   | end of epoch |      a    | invalid node ID |
     | party1 |  unknonw2 |    200   | end of epoch |      b    | invalid node ID |      
@@ -283,12 +254,8 @@ Feature: Staking & Delegation
   Scenario: A party cannot delegate more than their staking account balance considering all active and pending delegation 
     Desciption: A party has pending delegations and is trying to exceed their stake account balance delegation, 
     i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
-
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000   |  
-    
-    Then the parties submit the following delegations:
+  
+    When the parties submit the following delegations:
     | party  | node id  |  amount | reference | error                               |
     | party1 |  node1   |   5000  |           |                                     |
     | party1 |  node2   |   6000  |     a     | insufficient balance for delegation |    
@@ -311,12 +278,8 @@ Feature: Staking & Delegation
   Scenario: A party cannot delegate more than their staking account balance considering all active and pending undelegation 
     Desciption: A party has pending delegations and undelegations and is trying to exceed their stake account balance delegation, 
     i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
-
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000   |  
     
-    And the parties submit the following delegations:
+    When the parties submit the following delegations:
     | party  | node id  |  amount | reference | error                               |
     | party1 |  node1   |   5000  |           |                                     |
 
@@ -338,14 +301,9 @@ Feature: Staking & Delegation
     | party1 |  node2   |   1000  |           |                                     |    
     | party1 |  node2   |   8578  |     a     | insufficient balance for delegation |    
 
-  Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
-    Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to node2
-
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000   |  
-    
-    And the parties submit the following delegations:
+  Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance    Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to node2
+  
+    When the parties submit the following delegations:
     | party  | node id  |  amount | 
     | party1 |  node1   |   1000  | 
 
@@ -365,11 +323,7 @@ Feature: Staking & Delegation
   Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
     Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains. 
 
-    Given the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party1 | VEGA   | 10000   |  
-    
-    And the parties submit the following delegations:
+    When the parties submit the following delegations:
     | party  | node id  |  amount | 
     | party1 |  node1   |   1000  | 
 
@@ -392,10 +346,6 @@ Feature: Staking & Delegation
 
   Scenario: A party cannot undelegate more than the delegated balance 
     Description: A party trying to undeleagte from a node more than the amount that was delegated to it should fail 
-
-    Given the parties deposit on staking account the following amount:  
-      | party  | asset  | amount |
-      | party1 | VEGA   | 10000  |
 
     And the parties submit the following delegations:
     | party  | node id  | amount |
