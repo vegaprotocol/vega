@@ -29,9 +29,9 @@ import (
 )
 
 var (
-	ErrPublicKeyCannotSubmitTransactionWithNoBalance  = errors.New("public key cannot submit transaction with no balance")
+	ErrPublicKeyCannotSubmitTransactionWithNoBalance  = errors.New("public key cannot submit transaction without balance")
 	ErrTradingDisabled                                = errors.New("trading disabled")
-	ErrNoTransactionAllowedDuringBootstrap            = errors.New("no transactions allowed during boostraping period")
+	ErrNoTransactionAllowedDuringBootstrap            = errors.New("no transaction allowed during the bootstraping period")
 	ErrMarketProposalDisabled                         = errors.New("market proposal disabled")
 	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
@@ -385,8 +385,8 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
 		cmd := tx.Command()
-		// make sure this is a validato command and not a checkpoint
-		// checkpoints are ok only after the boostrap period is done.
+		// make sure this is a validator command and not a checkpoint.
+		// checkpoints are only allow when the bootstrap period is done.
 		if !cmd.IsValidatorCommand() {
 			return ErrNonValidatorTransactionDisabledDuringBootstrap
 		}

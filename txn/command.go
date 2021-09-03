@@ -58,7 +58,7 @@ var commandName = map[Command]string{
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
 	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, RegisterNodeCommand:
-		return false
+		return true
 	default:
 		return false
 	}
