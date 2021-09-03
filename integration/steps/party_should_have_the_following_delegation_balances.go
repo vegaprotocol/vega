@@ -32,7 +32,9 @@ func PartiesShouldHaveTheFollowingDelegationBalances(
 		actualBalance := num.Zero().String()
 		partyDelegations, ok := validatorToAmount[row.Party()]
 		if ok {
-			actualBalance = partyDelegations[row.NodeID()]
+			if _, ok = partyDelegations[row.NodeID()]; ok {
+				actualBalance = partyDelegations[row.NodeID()]
+			}
 		}
 
 		if row.ExpectedAmount() != actualBalance {

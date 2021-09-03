@@ -5,7 +5,7 @@ go 1.16
 require (
 	code.vegaprotocol.io/go-wallet v0.7.1-0.20210902112024-f2cb9768e483
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.42.0-pre5.0.20210902111405-6fa3f5feac09
+	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210902175457-28325c2b814b
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/blang/semver v3.5.1+incompatible
@@ -13,7 +13,7 @@ require (
 	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3
 	github.com/dgraph-io/badger/v2 v2.2007.2
-	github.com/ethereum/go-ethereum v1.9.20
+	github.com/ethereum/go-ethereum v1.9.25
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/golang/mock v1.4.3

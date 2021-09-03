@@ -172,6 +172,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties deposit on staking account the following amount:$`, func(table *godog.Table) error {
 		return steps.PartiesTransferToStakingAccount(execsetup.stakingAccount, execsetup.broker, table, "")
 	})
+	s.Step(`^the parties withdraw from staking account the following amount:$`, func(table *godog.Table) error {
+		return steps.PartiesWithdrawFromStakingAccount(execsetup.collateralEngine, execsetup.broker, table)
+	})
+
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {
 		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
 	})
