@@ -123,7 +123,7 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 		return err
 	}
 
-	tc, err := erc20.NewTokenCaller(st, a.ethClient)
+	tc, err := erc20.NewErc20Caller(st, a.ethClient)
 	if err != nil {
 		return err
 	}
