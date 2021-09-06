@@ -276,4 +276,93 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3841  | 
     | node13 | VEGA  |  3841  | 
 
-   
+  Scenario: A party changes delegation from one validator to another in the same epoch
+   Description: A party can change delegatation from one Validator to another
+
+  Scenario: WIP - A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
+    Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to node2
+    
+    And the parties submit the following delegations:
+    | party  | node id  | amount | 
+    | party1 |  node1   |  1000  | 
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |    when      |
+    | party1 |  node1   |  1000  | end of epoch |
+
+    And the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node2   |   1000  | 
+
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node2   | 1000   | 
+    
+  Scenario: WIP - A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
+    Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains.
+
+     And the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node1   |   1000  | 
+
+      #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"    
+
+      #start a new epoch 
+    When time is updated to "2021-08-26T00:00:22Z" 
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |    when      |
+    | party1 |  node1   |  1000  | end of epoch |
+
+    And the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node1   |   100   |
+
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   | 100    | 
+
+  Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant
+   Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch and the reward amount per participant is capped
+  
+    Given the following network parameters are set:
+      | name                                              | value |
+      | reward.staking.delegation.maxPayoutPerParticipant | 3000  |
+
+    #the reward amount for each participant per epoch is capped to 3k by maxPayoutPerParticipant
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      | 
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party2 
+    #node3 has 10k self delegation + 300 from party3 
+    #all other nodes have 10k self delegation 
+    #party1 gets 0.07734 * 50000 * 0.883 * 100/10100 + 0.07810 * 50000 * 0.883 * 200/10200 + 0.07887 * 50000 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 50000
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
+    #node4 - node13 gets: 0.07657 * 50000
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  201   | 
+    | node1  | VEGA  |  3000  | 
+    | node2  | VEGA  |  3000  | 
+    | node3  | VEGA  |  3000  | 
+    | node4  | VEGA  |  3000  | 
+    | node5  | VEGA  |  3000  | 
+    | node6  | VEGA  |  3000  | 
+    | node8  | VEGA  |  3000  | 
+    | node10 | VEGA  |  3000  | 
+    | node11 | VEGA  |  3000  | 
+    | node12 | VEGA  |  3000  | 
+    | node13 | VEGA  |  3000  |
