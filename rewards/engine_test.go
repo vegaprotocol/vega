@@ -27,6 +27,7 @@ func Test(t *testing.T) {
 	t.Run("Update payout delay for staking and delegation reward succeeds", testUpdatePayoutDelayForStakingRewardScheme)
 	t.Run("Update delegator share for staking and delegation reward succeeds", testUpdateDelegatorShareForStakingRewardScheme)
 	t.Run("Calculation of reward payout succeeds", testCalculateRewards)
+	t.Run("Calculation of reward payout succeeds, epoch reward amount is capped by the max", testCalculateRewardsCappedByMaxPerEpoch)
 	t.Run("Payout distribution succeeds", testDistributePayout)
 	t.Run("Process epoch end to calculate payout with payout delay - all balance left on reward account is paid out", testOnEpochEndFullPayoutWithPayoutDelay)
 	t.Run("Process epoch end to calculate payout with no delay - rewards are distributed successfully", testOnEpochEndNoPayoutDelay)
@@ -151,6 +152,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
@@ -159,6 +161,35 @@ func testCalculateRewards(t *testing.T) {
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 
 	res := engine.calculateRewards(context.Background(), "ETH", rs.RewardPoolAccountIDs[0], rs, num.NewUint(1000000), epoch)
+	// node1, node2, node3, party1, party2
+	require.Equal(t, 5, len(res.partyToAmount))
+
+	require.Equal(t, num.NewUint(104571), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(24000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(140000), res.partyToAmount["node1"])
+	require.Equal(t, num.NewUint(400000), res.partyToAmount["node2"])
+	require.Equal(t, num.NewUint(331428), res.partyToAmount["node3"])
+
+	require.Equal(t, num.NewUint(999999), res.totalReward)
+}
+
+// test calculation of reward payout where the amount for epoch is capped by the max net param
+func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	engine.registerStakingAndDelegationRewardScheme()
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000))
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
+
+	epoch := types.Epoch{}
+
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+
+	res := engine.calculateRewards(context.Background(), "ETH", rs.RewardPoolAccountIDs[0], rs, num.NewUint(100000000), epoch)
 	// node1, node2, node3, party1, party2
 	require.Equal(t, 5, len(res.partyToAmount))
 
@@ -221,6 +252,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
@@ -309,6 +341,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")

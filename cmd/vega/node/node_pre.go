@@ -493,6 +493,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerEpoch,
+			Watcher: l.rewards.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme,
+		},
+		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
 			Watcher: l.rewards.UpdateCompetitionLevelForStakingRewardScheme,
 		},

@@ -39,6 +39,13 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 		e.log.Panic("failed to read reward scheme param", logging.String("minValStake", rewardScheme.Parameters["minValStake"].Value))
 	}
 
+	maxPayoutPerEpoch, err := rewardScheme.Parameters["maxPayoutPerEpoch"].GetUint()
+	if err != nil {
+		e.log.Panic("failed to read reward scheme param", logging.String("maxPayoutPerEpoch", rewardScheme.Parameters["maxPayoutPerEpoch"].Value))
+	}
+
+	rewardBalance = num.Min(maxPayoutPerEpoch, rewardBalance)
+
 	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator)
 }
 

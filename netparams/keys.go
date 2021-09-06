@@ -70,6 +70,7 @@ const (
 	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
 	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
+	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -151,4 +152,5 @@ var AllKeys = map[string]struct{}{
 	NetworkCheckpointTimeElapsedBetweenCheckpoints:        {},
 	NetworkCheckpointMarketFreezeDate:                     {},
 	MarketValueWindowLength:                               {},
+	StakingAndDelegationRewardMaxPayoutPerEpoch:           {},
 }

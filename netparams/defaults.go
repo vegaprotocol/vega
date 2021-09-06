@@ -3,6 +3,8 @@ package netparams
 import (
 	"time"
 
+	"code.vegaprotocol.io/vega/types/num"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams/checks"
 )
@@ -83,6 +85,7 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardDelegatorShare:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.883"),
 		StakingAndDelegationRewardMinimumValidatorStake:   NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		StakingAndDelegationRewardCompetitionLevel:        NewFloat(FloatGT(1), FloatLTE(1000)).Mutable(true).MustUpdate("1.1"),
+		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
