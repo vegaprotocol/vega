@@ -615,26 +615,6 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetVotesByParty(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVotesByParty", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetVotesByParty), varargs...)
 }
 
-// LastBlockHeight mocks base method
-func (m *MockTradingDataServiceClient) LastBlockHeight(arg0 context.Context, arg1 *v1.LastBlockHeightRequest, arg2 ...grpc.CallOption) (*v1.LastBlockHeightResponse, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "LastBlockHeight", varargs...)
-	ret0, _ := ret[0].(*v1.LastBlockHeightResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// LastBlockHeight indicates an expected call of LastBlockHeight
-func (mr *MockTradingDataServiceClientMockRecorder) LastBlockHeight(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastBlockHeight", reflect.TypeOf((*MockTradingDataServiceClient)(nil).LastBlockHeight), varargs...)
-}
-
 // LastTrade mocks base method
 func (m *MockTradingDataServiceClient) LastTrade(arg0 context.Context, arg1 *v1.LastTradeRequest, arg2 ...grpc.CallOption) (*v1.LastTradeResponse, error) {
 	m.ctrl.T.Helper()
