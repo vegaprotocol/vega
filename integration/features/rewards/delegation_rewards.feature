@@ -286,6 +286,10 @@ Feature: Staking & Delegation
     | party  | node id  | amount |    when      |
     | party1 |  node1   |  100   | end of epoch |
 
+    And the parties submit the following delegations:
+    | party  | node id  |  amount | 
+    | party1 |  node4   |   100   | 
+
     #advance to the end of the epoch
     When time is updated to "2021-08-26T00:00:21Z"
 
@@ -315,10 +319,6 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
 
-    And the parties submit the following delegations:
-    | party  | node id  |  amount | 
-    | party1 |  node4   |   100   | 
-
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
     | party1 |  node1   | 0      | 
@@ -331,12 +331,11 @@ Feature: Staking & Delegation
     #verify validator score 
     Then the validators should have the following val scores for epoch 2:
     | node id | validator score  | normalised score |
-    |  node1  |      0.07663     |     0.07663      |    
-    |  node2  |      0.07816     |     0.07816      |
-    |  node3  |      0.07893     |     0.07893      | 
-    |  node4  |      0.07663     |     0.07663      | 
-    |  node5  |      0.07663     |     0.07663      |  
-    # how can node4 and node5 have same validator score when node4 has 100 and node5 has 0 delegatation stake. Also other scores don't match with excel calculations
+    |  node1  |      0.07657     |     0.07657      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07734     |     0.07734      | 
+    |  node5  |      0.07657     |     0.07657      | 
 
     #node1 has 10k self delegation
     #node2 has 10k self delegation + 200 from party1
@@ -344,44 +343,40 @@ Feature: Staking & Delegation
     #node4 has 10k self delegation + 100 from party1 
     #all other nodes have 10k self delegation
 
-    #party1 gets 0.07663  * 25004 * 0.883 * 0/10100 + 0.07816 * 25004 * 0.883 * 200/10200 + 0.07893 * 25004 * 0.883 * 300/10300 + 0.07663 * 25004 * 0.883 * 100/10100
-    #node1 gets: (1 - 0.883 * 0/10100) * 0.07663 * 25004
-    #node2 gets: (1 - 0.883 * 200/10200) * 0.07816 * 25004
-    #node3 gets: (1 - 0.883 * 300/10300) * 0.07893 * 25004
-    #node4 gets: (1 - 0.883 * 100/10100) * 0.07663 * 25004
-    #node5 - node13 gets: 0.07663 * 25004
+    #party1 gets 0.07657  * 25004 * 0.883 * 0/10100 + 0.07810 * 25004 * 0.883 * 200/10200 + 0.07887 * 25004 * 0.883 * 300/10300 + 0.07734 * 25004 * 0.883 * 100/10100
+    #node1 gets: (1 - 0.883 * 0/10100) * 0.07657 * 25004
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 25004
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 25004
+    #node4 gets: (1 - 0.883 * 100/10100) * 0.07734 * 25004
+    #node5 - node13 gets: 0.07657 * 25004
     And the parties receive the following reward for epoch 2:
     | party  | asset | amount |
-    | party1 | VEGA  |  83    | 
-    | node1  | VEGA  |  1916  | 
-    | node2  | VEGA  |  1920  | 
-    | node3  | VEGA  |  1922  | 
+    | party1 | VEGA  |  99    | 
+    | node1  | VEGA  |  1914  | 
+    | node2  | VEGA  |  1919  | 
+    | node3  | VEGA  |  1921  | 
     | node4  | VEGA  |  1916  | 
-    | node5  | VEGA  |  1916  | 
-    | node6  | VEGA  |  1916  | 
-    | node7  | VEGA  |  1916  | 
-    | node8  | VEGA  |  1916  | 
-    | node9  | VEGA  |  1916  | 
-    | node10 | VEGA  |  1916  | 
-    | node11 | VEGA  |  1916  | 
-    | node12 | VEGA  |  1916  | 
-    | node13 | VEGA  |  1916  | 
+    | node5  | VEGA  |  1914  | 
+    | node6  | VEGA  |  1914  | 
+    | node7  | VEGA  |  1914  | 
+    | node8  | VEGA  |  1914  | 
+    | node9  | VEGA  |  1914  | 
+    | node10 | VEGA  |  1914  | 
+    | node11 | VEGA  |  1914  | 
+    | node12 | VEGA  |  1914  | 
+    | node13 | VEGA  |  1914  | 
 
   Scenario: WIP - A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
     Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains.
 
-     And the parties submit the following delegations:
-    | party  | node id  |  amount | 
-    | party1 |  node1   |   1000  | 
-
-      #advance to the end of the epoch
+    #advance to the end of the epoch
     When time is updated to "2021-08-26T00:00:21Z"    
 
-      #start a new epoch 
+    #start a new epoch 
     When time is updated to "2021-08-26T00:00:22Z" 
     Then the parties submit the following undelegations:
     | party  | node id  | amount |    when      |
-    | party1 |  node1   |  1000  | end of epoch |
+    | party1 |  node1   |  100   | end of epoch |
 
     And the parties submit the following delegations:
     | party  | node id  |  amount | 
