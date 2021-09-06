@@ -407,16 +407,6 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	}, nil
 }
 
-func (t *tradingDataService) LastBlockHeight(
-	ctx context.Context,
-	req *protoapi.LastBlockHeightRequest,
-) (*protoapi.LastBlockHeightResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
-	return &protoapi.LastBlockHeightResponse{
-		Height: 0, // @TODO remove this
-	}, nil
-}
-
 func (t *tradingDataService) NetworkParameters(ctx context.Context, req *protoapi.NetworkParametersRequest) (*protoapi.NetworkParametersResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("NetworkParameters")()
 	nps := t.NetParamsService.GetAll()
