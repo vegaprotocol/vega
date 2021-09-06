@@ -385,7 +385,10 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 	defer iter.Close()
 	var event *bridge.BridgeAssetWithdrawn
 	nonce := &big.Int{}
-	nonce.SetString(w.ReferenceNonce, 10)
+	_, ok := nonce.SetString(w.ReferenceNonce, 10)
+	if !ok {
+		return nil, "", 0, fmt.Errorf("could not use reference nonce, expected base 10 integer: %v", w.ReferenceNonce)
+	}
 	for iter.Next() {
 		if nonce.Cmp(iter.Event.Nonce) == 0 &&
 			iter.Event.Raw.BlockNumber == blockNumber &&

@@ -105,10 +105,10 @@ func testAddNodeRegistrationSuccess(t *testing.T) {
 func testAddNodeRegistrationFailure(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
-	top.UpdateValidatorSet([]string{tmPubKey})
+	top.UpdateValidatorSet([]string{"tm-pub-key-1", "tm-pub-key-2"})
 
 	nr := commandspb.NodeRegistration{
-		ChainPubKey:     tmPubKey,
+		ChainPubKey:     "tm-pub-key-1",
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
@@ -116,9 +116,10 @@ func testAddNodeRegistrationFailure(t *testing.T) {
 	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
+	// Add node with existing VegaPubKey
 	nr = commandspb.NodeRegistration{
-		ChainPubKey:     tmPubKey,
-		VegaPubKey:      "vega-key-2",
+		ChainPubKey:     "tm-pub-key-2",
+		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address-2",
 	}
 	err = top.AddNodeRegistration(ctx, &nr)
@@ -185,6 +186,7 @@ func testGetByKey(t *testing.T) {
 	expectedData := &validators.ValidatorData{
 		VegaPubKey:      nr.VegaPubKey,
 		EthereumAddress: "eth-address",
+		TmPubKey:        nr.ChainPubKey,
 		InfoURL:         nr.InfoUrl,
 		Country:         nr.Country,
 	}
@@ -215,6 +217,7 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 
 	updateEvent := events.NewValidatorUpdateEvent(
 		ctx,
+		nr.VegaPubKey,
 		nr.VegaPubKey,
 		nr.EthereumAddress,
 		nr.ChainPubKey,

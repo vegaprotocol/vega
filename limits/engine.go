@@ -12,12 +12,17 @@ type Engine struct {
 	log *logging.Logger
 	cfg Config
 
+	blockCount uint16
+
 	// are these action possible?
-	canProposeMarket, canProposeAsset bool
+	canProposeMarket, canProposeAsset, bootstrapFinished bool
 
 	// Settings from the genesis state
 	proposeMarketEnabled, proposeAssetEnabled         bool
 	proposeMarketEnabledFrom, proposeAssetEnabledFrom time.Time
+	bootstrapBlockCount                               uint16
+
+	genesisLoaded bool
 }
 
 func New(log *logging.Logger, cfg Config) *Engine {
@@ -38,6 +43,7 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 		} else {
 			e.log.Debug("Leaving limits.Engine.UponGenesis without error")
 		}
+		e.genesisLoaded = true
 	}()
 
 	state, err := LoadGenesisState(rawState)
@@ -63,6 +69,7 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	e.proposeMarketEnabled = state.ProposeMarketEnabled
 	e.proposeAssetEnabledFrom = timeFromPtr(state.ProposeAssetEnabledFrom)
 	e.proposeMarketEnabledFrom = timeFromPtr(state.ProposeMarketEnabledFrom)
+	e.bootstrapBlockCount = state.BootstrapBlockCount
 
 	e.log.Info("loaded limits genesis state",
 		logging.String("state", fmt.Sprintf("%#v", *state)))
@@ -71,17 +78,26 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 }
 
 func (e *Engine) OnTick(_ context.Context, t time.Time) {
-	if e.canProposeAsset && e.canProposeMarket {
+	if !e.genesisLoaded || (e.bootstrapFinished && e.canProposeAsset && e.canProposeMarket) {
 		return
 	}
 
-	if !e.canProposeMarket && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
-		e.canProposeMarket = true
-	}
-	if !e.canProposeAsset && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
-		e.canProposeAsset = true
+	if !e.bootstrapFinished {
+		e.blockCount++
+		if e.blockCount > e.bootstrapBlockCount {
+			e.log.Info("bootstraping period finished, transactions are now allowed")
+			e.bootstrapFinished = true
+		}
 	}
 
+	if !e.canProposeMarket && e.bootstrapFinished && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
+		e.log.Info("all required conditions are met, proposing markets is now allowed")
+		e.canProposeMarket = true
+	}
+	if !e.canProposeAsset && e.bootstrapFinished && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
+		e.log.Info("all required conditions are met, proposing assets is now allowed")
+		e.canProposeAsset = true
+	}
 }
 
 func (e *Engine) CanProposeMarket() bool {
@@ -94,6 +110,10 @@ func (e *Engine) CanProposeAsset() bool {
 
 func (e *Engine) CanTrade() bool {
 	return e.canProposeAsset && e.canProposeMarket
+}
+
+func (e *Engine) BootstrapFinished() bool {
+	return e.bootstrapFinished
 }
 
 func timeFromPtr(tptr *time.Time) time.Time {
