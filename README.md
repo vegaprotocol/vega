@@ -2,7 +2,7 @@
 
 Version 0.41.0.
 
-A service exposing read only APIs build on top of [Vega](https://github.com/vegaprotocol/vega) platform.
+A service exposing read only APIs built on top of [Vega](https://github.com/vegaprotocol/vega) platform.
 
 **Data node** provides the following core features:
 
