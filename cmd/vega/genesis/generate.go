@@ -16,9 +16,9 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/validators"
-	"github.com/golang/protobuf/proto"
 
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/golang/protobuf/jsonpb"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -64,14 +64,18 @@ func (opts *generateCmd) Execute(_ []string) error {
 		EthereumAddress: ethAddress,
 	}
 
+	jsonpbm := jsonpb.Marshaler{
+		EmitDefaults: true,
+	}
+
 	if len(opts.Network) != 0 {
-		var ethConfig []byte
+		var ethConfig string
 		switch opts.Network {
 		case "mainnet":
 			delete(genesisState.Assets, "VOTE")
 			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
-			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenTestNet.Symbol
-			ethConfig, err = proto.Marshal(&vgproto.EthereumConfig{
+			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenMainNet.Symbol
+			ethConfig, err = jsonpbm.MarshalToString(&vgproto.EthereumConfig{
 				NetworkId:     "1",
 				ChainId:       "1",
 				BridgeAddress: "0x4149257d844Ef09f11b02f2e73CbDfaB4c911a73",
@@ -89,7 +93,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 			delete(genesisState.Assets, "VOTE")
 			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenTestNet
 			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenTestNet.Symbol
-			ethConfig, err = proto.Marshal(&vgproto.EthereumConfig{
+			ethConfig, err = jsonpbm.MarshalToString(&vgproto.EthereumConfig{
 				NetworkId:              "3",
 				ChainId:                "3",
 				BridgeAddress:          "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10",
@@ -102,7 +106,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 		default:
 			return fmt.Errorf("network %s is not supported", opts.Network)
 		}
-		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = string(ethConfig)
+		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = ethConfig
 	}
 
 	rawGenesisState, err := json.Marshal(genesisState)
