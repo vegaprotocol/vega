@@ -102,7 +102,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// instantiate the ETHClient
 	ethClient, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
 	if err != nil {
-		return fmt.Errorf("could not instanciate ethereum client: %w", err)
+		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
 	// nodewallet
