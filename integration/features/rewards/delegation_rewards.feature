@@ -279,7 +279,7 @@ Feature: Staking & Delegation
   Scenario: A party changes delegation from one validator to another in the same epoch
    Description: A party can change delegatation from one Validator to another
 
-  Scenario: WIP - A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
+  Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
     Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to another node
 
     And the parties submit the following undelegations:
@@ -366,7 +366,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  1914  | 
     | node13 | VEGA  |  1914  | 
 
-  Scenario: WIP - A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
+  Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
     Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains.
 
     #advance to the end of the epoch
@@ -380,11 +380,88 @@ Feature: Staking & Delegation
 
     And the parties submit the following delegations:
     | party  | node id  |  amount | 
-    | party1 |  node1   |   100   |
+    | party1 |  node1   |    50   |
 
-    Then the parties should have the following delegation balances for epoch 3:
+    When time is updated to "2021-08-26T00:00:32Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 2:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      |
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party1
+    #node3 has 10k self delegation + 300 from party1
+    #all other nodes have 10k self delegation
+
+    #party1 gets 0.07734  * 25004 * 0.883 * 100/10100 + 0.07810 * 25004 * 0.883 * 200/10200 + 0.07887 * 25004 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 25004
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 25004
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 25004
+    #node4 - node13 gets: 0.07657 * 25004
+    And the parties receive the following reward for epoch 2:
+    | party  | asset | amount |
+    | party1 | VEGA  |  99    | 
+    | node1  | VEGA  |  1916  | 
+    | node2  | VEGA  |  1919  | 
+    | node3  | VEGA  |  1921  | 
+    | node4  | VEGA  |  1914  | 
+    | node5  | VEGA  |  1914  | 
+    | node6  | VEGA  |  1914  | 
+    | node7  | VEGA  |  1914  | 
+    | node8  | VEGA  |  1914  | 
+    | node9  | VEGA  |  1914  | 
+    | node10 | VEGA  |  1914  | 
+    | node11 | VEGA  |  1914  | 
+    | node12 | VEGA  |  1914  | 
+    | node13 | VEGA  |  1914  | 
+
+    And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
-    | party1 |  node1   | 100    | 
+    | party1 |  node1   |  50    | 
+
+    #advance to the beginning and end of the following epoch 
+    When time is updated to "2021-08-26T00:00:33Z"
+    When time is updated to "2021-08-26T00:00:43Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 3:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07698     |     0.07698      |    
+    |  node2  |      0.07813     |     0.07813      |
+    |  node3  |      0.07890     |     0.07890      | 
+    |  node4  |      0.07660     |     0.07660      |
+
+    #node1 has 10k self delegation +  50 from party1
+    #node2 has 10k self delegation + 200 from party1
+    #node3 has 10k self delegation + 300 from party1
+    #all other nodes have 10k self delegation
+
+    #party1 gets 0.07698  * 12506 * 0.883 * 50/10050 + 0.07813 * 12506 * 0.883 * 200/10200 + 0.07890 * 12506 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 50/10050)  * 0.07698 * 12506
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07813 * 12506
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07890 * 12506
+    #node4 - node13 gets: 0.07660 * 12506
+
+    And the parties receive the following reward for epoch 3:
+    | party  | asset | amount |
+    | party1 | VEGA  |  45    | 
+    | node1  | VEGA  |  958   | 
+    | node2  | VEGA  |  960   | 
+    | node3  | VEGA  |  961   | 
+    | node4  | VEGA  |  958   | 
+    | node5  | VEGA  |  958   | 
+    | node6  | VEGA  |  958   | 
+    | node7  | VEGA  |  958   | 
+    | node8  | VEGA  |  958   | 
+    | node9  | VEGA  |  958   | 
+    | node10 | VEGA  |  958   | 
+    | node11 | VEGA  |  958   | 
+    | node12 | VEGA  |  958   | 
+    | node13 | VEGA  |  958   | 
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant
    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch and the reward amount per participant is capped
