@@ -1,28 +1,22 @@
-# Vega
+# Data node
 
-Version 0.39.0.
+Version 0.41.0.
 
-A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
+A service exposing read only APIs built on top of [Vega](https://github.com/vegaprotocol/vega) platform.
 
-**Vega** provides the following core features:
+**Data node** provides the following core features:
 
-- Join a Vega network as a validator or non-consensus node.
-- [Governance](./governance/README.md) - proposing and voting for new markets
-- A [matching engine](./matching/README.md)
-- [Configure a node](#configuration) (and its [APIs](#apis))
-- Manage authentication with a network
-- [Run scenario tests](./integration/README.md)
-- Support settlement in cryptocurrency (coming soon)
-
-Additional services that are in this repo, but run separately:
-- [Wallet](./wallet/README.md) can be used provide key management for users.
+- Consume all events from Vega core
+- Aggregates received events and stores the aggregated data
+- Serves stored data via [APIs](#apis)
+- Allows advanced configuration [Configure a node](#configuration)
 
 ## Links
 
 - For **new developers**, see [Getting Started](GETTING_STARTED.md).
 - For **updates**, see the [Change log](CHANGELOG.md) for major updates.
 - For **architecture**, please read the [documentation](docs/index.md) to learn about the design for the system and its architecture.
-- Please [open an issue](https://github.com/vegaprotocol/vega/issues/new) if anything is missing or unclear in this documentation.
+- Please [open an issue](https://github.com/vegaprotocol/data-node/issues/new) if anything is missing or unclear in this documentation.
 
 <details>
   <summary><strong>Table of Contents</strong> (click to expand)</summary>
@@ -42,11 +36,11 @@ Additional services that are in this repo, but run separately:
 
 ## Installation
 
-To install `trading-core` and `tendermint`, see [Getting Started](GETTING_STARTED.md).
+To install see [Getting Started](GETTING_STARTED.md).
 
 ## Configuration
 
-Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults edit your `config.toml` typically found in the `~/.vega` directory. Example:
+Data node is initialised with a set of default configuration with the command `data-node init`. To override any of the defaults edit your `config.toml` typically found in the `~/.data-node` directory. Example:
 
 ```toml
 [Matching]
@@ -56,44 +50,22 @@ Vega is initialised with a set of default configuration with the command `vega i
   LogRemovedOrdersDebug = false
 ```
 
-Vega require a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
-The nodewallet can be accessed using the nodewallet subcommand, this nodewallet is initialized / accessed using a passphrase that needs to be specified when initializing vega:
-```shell
-vega init --nodewallet-passphrase="path/to/passphrase/file"
-```
+## Vega core streaming
 
-The init command can also be invoked with a flag in order to generate development purpose only wallets so you do not have to use real wallets when hacking on the code:
-```
-vega init --nodewallet-passphrase="path/to/passphrase/file" --gen-dev-nodewallet
-```
-
-## Vega NodeWallet
-
-A vega node needs to connect to other blockchain for various operation:
-- validate transaction happened on foreign chains
-- verify presence of assets
-- sign transaction to be verified on foreign blockchain
-- and more...
-
-In order to do these different action, the vega node needs to access these chains using their native wallet. To do so the vega command line provide an command line tool:
-`vega nodewallet` allowing users to import foreign blockchain wallets credentials so they can be used at runtime.
-
-For more details on how to use the vega nodewallet run:
-```
-vega nodewallet --help
-```
+Data requires an instance of Vega core node for it's meaningful function. Please see [Vega Getting Started](https://github.com/vegaprotocol/vega/blob/develop/GETTING_STARTED.md).
+The data node will listen on default port `3002` for incoming connections from Vega core node.
 
 ## APIs
 
-In order for clients to communicate with Vega nodes, we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus.
+In order for clients to communicate with data nodes, we expose a set of APIs and methods for reading data.
 
-There are currently three protocols to communicate with the Vega APIs:
+There are currently three protocols to communicate with the data node APIs:
 
 ### gRPC
 
-gRPC is an open source remote procedure call (RPC) system initially developed at Google. In Vega the gRPC API features streaming of events in addition to standard procedure calls.
+gRPC is an open source remote procedure call (RPC) system initially developed at Google. In data node the gRPC API features streaming of events in addition to standard procedure calls.
 
-The default port (configurable) for the gRPC API is 3002 and matches the [gRPC protobuf definition](proto/api/trading.proto).
+The default port (configurable) for the gRPC API is `3007` and matches the [gRPC protobuf definition](https://github.com/vegaprotocol/protos).
 
 ### GraphQL
 
@@ -101,31 +73,18 @@ The default port (configurable) for the gRPC API is 3002 and matches the [gRPC p
 
 The GraphQL API is defined by a [schema](gateway/graphql/schema.graphql). External clients will use this schema to communicate with Vega.
 
-Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3004` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions.
+Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3008` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions.
 
 ### REST
 
 REST provides a standard between computer systems on the web, making it easier for systems to communicate with each other. It is arguably simpler to work with than gRPC and GraphQL. In Vega the REST API is a reverse proxy to the gRPC API, however it does not support streaming.
 
-The default port (configurable) for the REST API is `3003` and we use a reverse proxy to the gRPC API to deliver the REST API implementation.
-
-## Provisioning
-
-The proposal and creation of new markets is handled by the [Governance engine](./governance/README.md).
-
-Vega supports a single fixed market with ID `BTC/DEC20` which can be passed to APIs as the field `Market` in protobuf / REST / GraphQL requests.
-
-
-Cancellations typically go via consensus so the `OrderResponse` will only indicate that the message was accepted and sent out onto the blockchain to be included in a block. It could be rejected at a later stage of processing.
-
+The default port (configurable) for the REST API is `3009` and we use a reverse proxy to the gRPC API to deliver the REST API implementation.
 
 ## Troubleshooting & debugging
 
 The application has structured logging capability, the first port of call for a crash is probably the Vega and Tendermint logs which are available on the console if running locally or by journal plus syslog if running on test networks. Default location for log files:
 
 * `/var/log/vega.log`
-* `/var/log/tendermint.log`
 
 Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `-1` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
-
-Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV.md).

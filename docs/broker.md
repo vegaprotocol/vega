@@ -6,6 +6,8 @@ This document provides some information regarding the design and use of the even
 
 The broker package defines a generic event broker. This is the component to which events are passed to be passed on to the subscribers/consumers. There is just a single `Send()` function. Any registered subscriber can receive the event that was sent through this function. Whether or not they will receive the event depends on the subscriber configuration.
 
+Currently data node version of broker is listening on TCP socket where it can receive events from core Vega. Every event received by socket is then internally dispatch by `Send()` function mentioned above.
+
 Subscribers are registered (and can be removed) using the `Subscribe` and `Unsubscribe` methods:
 
 * `Subscribe(s Subscriber, required bool) int`: This method takes a Subscriber (interface defined in the package), a boolean flag indicating whether or not this subscriber _requires_ all events. The method returns the subscriber `ID` (`int`).

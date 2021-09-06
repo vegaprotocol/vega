@@ -1,6 +1,7 @@
 # Vega core architecture
 
-Our core protocol implementation aims to be a reflection on the protocol design outlined in the whitepaper. It is currently written in Golang.
+Data node is a stand alone product that is built on the top of Vega core product.
+It consumes stream of events from core Vega via socket using [Broker](./broker.md) then aggregates the events and save them to storage.
 
 ## Component relationships
 
@@ -11,12 +12,3 @@ The following diagram shows how the various components of this implementation in
 ## Modelling the domain
 
 Some subdirectories contain Golang packages which represent a discrete domain or concept from the whitepaper.
-
-### Design documentation
-
-In order to document the design, each package should have a single markdown file in the /design directory
-
-1. [Matching package](../matching/README.md)
-2. [Position package](../positions/README.md)
-
-#

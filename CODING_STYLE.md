@@ -55,7 +55,7 @@ All dependencies of the tested unit are mocked using `mockgen`, and expected cal
 ```go
 // FooBuffer ..
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/foo_buffer_mock.go -package mocks code.vegaprotocol.io/vega/foo FooBuffer
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/foo_buffer_mock.go -package mocks code.vegaprotocol.io/data-node/foo FooBuffer
 type FooBuffer interface {
     Add(types.Foo)
 }
@@ -107,7 +107,7 @@ The latter not only looks cleaner, it results in fewer function calls (the `if` 
 Whenever implementing a new feature, new unit tests will have to be written. Unit tests, by definition, should use mocks rather than actual dependencies. We generate mocks for interfaces per package with a simple `//go:generate` command:
 
 ```go
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/some_dependency_mock.go -package mocks code.vegaprotocol.io/vega/pkg SomeDependency
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/some_dependency_mock.go -package mocks code.vegaprotocol.io/data-node/pkg SomeDependency
 type SomeDependency interface {
     DoFoo() error
     DoBar(ctx context.Context, ids []string) ([]*Bar, error)

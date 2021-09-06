@@ -15,7 +15,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mwitkow/go-proto-validators v0.3.2
-	github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84
+	github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/cors v1.7.0
