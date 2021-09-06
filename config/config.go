@@ -30,7 +30,6 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -62,7 +61,6 @@ type Config struct {
 	Assets            assets.Config      `group:"Assets" namespace:"assets"`
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
-	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	Fee               fee.Config         `group:"Fee" namespace:"fee"`
 	Broker            broker.Config      `group:"Broker" namespace:"broker"`
 	Nodes             nodes.Config       `group:"Nodes" namespace:"nodes"`
@@ -100,7 +98,6 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Governance:        governance.NewDefaultConfig(),
 		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
-		Stats:             stats.NewDefaultConfig(),
 		Subscribers:       subscribers.NewDefaultConfig(),
 		Fee:               fee.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),

@@ -27,7 +27,6 @@ import (
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -83,8 +82,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		l.Log.Debug("Set ulimits",
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
-
-	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
@@ -167,7 +164,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.nodeStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.epochStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.stats.ReloadConf(cfg.Stats) },
 		func(cfg config.Config) { l.delegationStore.ReloadConf(cfg.Storage) },
 	)
 

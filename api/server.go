@@ -26,7 +26,6 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
@@ -46,7 +45,6 @@ type GRPCServer struct {
 
 	log                      *logging.Logger
 	srv                      *grpc.Server
-	stats                    *stats.Stats
 	vegaTradingServiceClient TradingServiceClient
 
 	accountsService         *accounts.Svc
@@ -88,7 +86,6 @@ type GRPCServer struct {
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
-	stats *stats.Stats,
 	tradingServiceClient TradingServiceClient,
 	timeService *vegatime.Svc,
 	marketService MarketService,
@@ -125,7 +122,6 @@ func NewGRPCServer(
 	return &GRPCServer{
 		log:                      log,
 		Config:                   config,
-		stats:                    stats,
 		vegaTradingServiceClient: tradingServiceClient,
 		orderService:             orderService,
 		liquidityService:         liquidityService,
@@ -249,7 +245,6 @@ func (g *GRPCServer) Start(ctx context.Context) error {
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,
 		Config:                  g.Config,
-		Stats:                   g.stats,
 		OrderService:            g.orderService,
 		TradeService:            g.tradeService,
 		CandleService:           g.candleService,

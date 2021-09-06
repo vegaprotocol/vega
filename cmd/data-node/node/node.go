@@ -34,7 +34,6 @@ import (
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -146,7 +145,6 @@ type NodeCommand struct {
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
 	conf         config.Config
-	stats        *stats.Stats
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
 
@@ -190,7 +188,6 @@ func (l *NodeCommand) runNode(args []string) error {
 	grpcServer := api.NewGRPCServer(
 		l.Log,
 		l.conf.API,
-		l.stats,
 		l.vegaTradingServiceClient,
 		l.timeService,
 		l.marketService,

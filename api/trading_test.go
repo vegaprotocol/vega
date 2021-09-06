@@ -32,7 +32,6 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -258,7 +257,6 @@ func getTestGRPCServer(
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
-		stats.New(logger, conf.Stats, "ver", "hash"),
 		mockTradingServiceClient,
 		timeService,
 		marketService,
