@@ -31,8 +31,8 @@ func testCheckpointSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	// setup
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).
-		Return(num.NewUint(9), nil)
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(9))
 	eng.expectAnyAsset()
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 

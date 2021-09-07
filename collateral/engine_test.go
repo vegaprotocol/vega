@@ -109,7 +109,6 @@ func TestCreateBondAccount(t *testing.T) {
 func TestTransferRewards(t *testing.T) {
 	t.Run("transfer rewards empty slice", testTransferRewardsEmptySlice)
 	t.Run("transfer rewards missing rewards account", testTransferRewardsNoRewardsAccount)
-	t.Run("transfer rewards missing general account", testTransferRewardsNoGeneralAccount)
 	t.Run("transfer rewards success", testTransferRewardsSuccess)
 }
 
@@ -141,34 +140,6 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 	res, err := eng.Engine.TransferRewards(context.Background(), "rewardAccID", transfers)
 	require.Error(t, errors.New("account does not exists"), err)
 	require.Nil(t, res)
-}
-
-func testTransferRewardsNoGeneralAccount(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
-	defer eng.Finish()
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
-	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
-
-	transfers := []*types.Transfer{
-		&types.Transfer{
-			Amount: &types.FinancialAmount{
-				Amount: num.NewUint(1000),
-				Asset:  "ETH",
-			},
-			MinAmount: num.NewUint(1000),
-			Type:      types.TransferTypeRewardPayout,
-			Owner:     "party1",
-		},
-	}
-
-	res, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
-
-	require.Nil(t, err)
-	require.Equal(t, 0, len(res))
 }
 
 func testTransferRewardsSuccess(t *testing.T) {
