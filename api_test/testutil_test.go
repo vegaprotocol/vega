@@ -9,7 +9,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 	"time"
 
@@ -51,27 +50,29 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
 var logger = logging.NewTestLogger()
 
-const defaultTimout = 30 * time.Second
+const (
+	connBufSize   = 1024 * 1024
+	defaultTimout = 30 * time.Second
+)
 
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.
 func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc.ClientConn, eventBroker *broker.Broker) {
 	t.Helper()
 
-	port := randomPort()
-	path := fmt.Sprintf("vegatest-%d-", port)
+	suffix := randomSuffix()
+	path := fmt.Sprintf("vegatest-%d-", suffix)
 	tmpDir, cleanTempDir, err := storage.TempDir(path)
 	if err != nil {
 		t.Fatalf("failed to create tmp dir: %v", err)
 	}
 
 	conf := config.NewDefaultConfig(tmpDir)
-	conf.API.IP = "127.0.0.1"
-	conf.API.Port = port
 
 	mockCtrl := gomock.NewController(t)
 
@@ -244,7 +245,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatal("failed to create gRPC server")
 	}
 
-	go srv.Start(ctx)
+	lis := bufconn.Listen(connBufSize)
+
+	// Start the gRPC server, then wait for it to be ready.
+	go srv.Start(ctx, lis)
 
 	t.Cleanup(func() {
 		cleanTempDir()
@@ -252,15 +256,11 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	})
 
 	if blocking {
-		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
-		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
+		ctxDialer := func(context.Context, string) (net.Conn, error) { return lis.Dial() }
+		conn, err = grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(ctxDialer), grpc.WithInsecure())
 		if err != nil {
 			t.Fatalf("failed to dial gRPC server: %v", err)
 		}
-
-		// if err = waitForNode(t, ctx, conn); err != nil {
-		// 	t.Fatalf("failed to start gRPC server: %v", err)
-		// }
 	}
 
 	return
@@ -304,58 +304,60 @@ func PublishEvents(
 		s = append(s, e)
 		evts[e.Type()] = s
 	}
+
+	// add time event subscriber so we can verify the time event was received at the end
+	sCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	sub := NewEventSubscriber(sCtx)
+	id := b.Subscribe(sub)
+
 	// we've grouped events per type, now send them all in batches
 	for _, batch := range evts {
 		for _, e := range batch {
 			b.Send(e)
+
+			if err := waitForEvent(sCtx, sub, e); err != nil {
+				t.Fatalf("Did not receive the expected event within reasonable time: %+v", e)
+			}
 		}
 	}
 
 	t.Logf("%d events sent", len(evts))
 
-	// add time event subscriber so we can verify the time event was received at the end
-	sCtx, cfunc := context.WithCancel(ctx)
-	tmConf := NewTimeSub(sCtx)
-	id := b.Subscribe(tmConf)
-
 	// whatever time it is now + 1 second
 	now := time.Now()
 	// the broker reacts to Time events to trigger writes the data stores
-	b.Send(events.NewTime(ctx, now))
+	tue := events.NewTime(ctx, now)
+	b.Send(tue)
 	// await confirmation that we've actually received the time update event
-	if !waitForTime(tmConf, now) {
-		t.Fatal("Did not receive the expected time event within reasonable time")
+	if err := waitForEvent(sCtx, sub, tue); err != nil {
+		t.Fatalf("Did not receive the expected event within reasonable time: %+v", tue)
 	}
 
 	t.Log("time event received")
 
-	// halt the subscriber
-	tmConf.Halt()
 	// cancel the subscriber ctx
-	cfunc()
+	cancel()
+
+	sub.Halt()
 	// unsubscribe the ad-hoc subscriber
 	b.Unsubscribe(id)
-	// we've received the time event, but that could've been received before the other events.
-	// Now send out a second time event to ensure the other events get flushed/persisted
-	b.Send(events.NewTime(ctx, now.Add(time.Second)))
 }
 
-func waitForTime(tmConf *TimeSub, now time.Time) bool {
+func waitForEvent(ctx context.Context, sub *EventSubscriber, event events.Event) error {
 	for {
-		times := tmConf.GetReveivedTimes()
-		if times == nil {
-			// the subscriber context was cancelled, no need to wait for this anylonger
-			return false
+		receivedEvent, err := sub.ReceivedEvent(ctx)
+		if err != nil {
+			return err
 		}
-		for _, tm := range times {
-			if tm.Equal(now) {
-				return true
-			}
+
+		if receivedEvent == event {
+			return nil
 		}
 	}
 }
 
-func randomPort() int {
+func randomSuffix() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(65535-1023) + 1023
 }

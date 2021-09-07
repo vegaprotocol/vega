@@ -218,17 +218,30 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-// Start start the grpc server
-func (g *GRPCServer) Start(ctx context.Context) error {
-
+func (g *GRPCServer) getTCPListener() (net.Listener, error) {
 	ip := g.IP
 	port := strconv.Itoa(g.Port)
 
 	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.String("port", port))
 
-	lis, err := net.Listen("tcp", net.JoinHostPort(ip, port))
+	tpcLis, err := net.Listen("tcp", net.JoinHostPort(ip, port))
 	if err != nil {
-		g.log.Panic("Failure listening on gRPC port", logging.String("port", port), logging.Error(err))
+		return nil, err
+	}
+
+	return tpcLis, nil
+}
+
+// Start start the grpc server.
+// Uses default TCP listener if no provided.
+func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
+	if lis == nil {
+		tpcLis, err := g.getTCPListener()
+		if err != nil {
+			return err
+		}
+
+		lis = tpcLis
 	}
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))

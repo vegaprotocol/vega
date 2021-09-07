@@ -34,6 +34,7 @@ func TestGetPartyAccounts(t *testing.T) {
 			MarketID: acc.MarketId,
 			Type:     acc.Type,
 		})
+
 		return e, nil
 	}, "account-events.golden")
 
