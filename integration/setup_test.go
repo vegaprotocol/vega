@@ -229,5 +229,9 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
 			Watcher: e.delegationEngine.OnCompLevelChanged,
 		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsEpochLength,
+			Watcher: e.epochEngine.OnEpochLengthUpdate,
+		},
 	)
 }

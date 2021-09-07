@@ -4,7 +4,7 @@ Feature: Staking & Delegation
     Given the following network parameters are set:
       | name                                              |  value                   |
       | reward.asset                                      |  VEGA                    |
-      | validators.epoch.length                           |  10s                     |
+      | validators.epoch.length                           |  9s                      |
       | validators.delegation.minAmount                   |  10                      |
       | reward.staking.delegation.payoutDelay             |  0s                      |
       | reward.staking.delegation.delegatorShare          |  0.883                   |
