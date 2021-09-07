@@ -283,6 +283,7 @@ func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.Party
 	stake, stakeLinkings := t.stakingService.GetStake(req.Party)
 	outStakeLinkings := make([]*eventspb.StakeLinking, 0, len(stakeLinkings))
 	for _, v := range stakeLinkings {
+		v := v
 		outStakeLinkings = append(outStakeLinkings, &v)
 	}
 
