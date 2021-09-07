@@ -73,7 +73,7 @@ Feature: Staking & Delegation
     Then time is updated to "2021-08-26T00:00:11Z"
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake
-    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
+    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch.
 
     #advance to the end of the epoch
     When time is updated to "2021-08-26T00:00:21Z"
@@ -111,6 +111,9 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
 
+    Then "party1" should have general account balance of "10201" for asset "VEGA"
+    Then "node1" should have general account balance of "1003832" for asset "VEGA"
+  
   Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake
     Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
@@ -275,6 +278,10 @@ Feature: Staking & Delegation
     | node11 | VEGA  |  3841  | 
     | node12 | VEGA  |  3841  | 
     | node13 | VEGA  |  3841  | 
+ 
+    # General balance for party1 = 10000 - 9850 + 49 = 199
+    Then "party1" should have general account balance of "199" for asset "VEGA"
+    Then "node1" should have general account balance of "1003842" for asset "VEGA"
 
   Scenario: A party changes delegation from one validator to another in the same epoch
    Description: A party can change delegation from one validator to another      
