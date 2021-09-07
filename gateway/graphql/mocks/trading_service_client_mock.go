@@ -35,6 +35,26 @@ func (m *MockTradingProxyServiceClient) EXPECT() *MockTradingProxyServiceClientM
 	return m.recorder
 }
 
+// LastBlockHeight mocks base method
+func (m *MockTradingProxyServiceClient) LastBlockHeight(arg0 context.Context, arg1 *v1.LastBlockHeightRequest, arg2 ...grpc.CallOption) (*v1.LastBlockHeightResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "LastBlockHeight", varargs...)
+	ret0, _ := ret[0].(*v1.LastBlockHeightResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LastBlockHeight indicates an expected call of LastBlockHeight
+func (mr *MockTradingProxyServiceClientMockRecorder) LastBlockHeight(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastBlockHeight", reflect.TypeOf((*MockTradingProxyServiceClient)(nil).LastBlockHeight), varargs...)
+}
+
 // SubmitTransaction mocks base method
 func (m *MockTradingProxyServiceClient) SubmitTransaction(arg0 context.Context, arg1 *v1.SubmitTransactionRequest, arg2 ...grpc.CallOption) (*v1.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()

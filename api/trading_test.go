@@ -32,7 +32,6 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/staking"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -258,7 +257,6 @@ func getTestGRPCServer(
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
-		stats.New(logger, conf.Stats, "ver", "hash"),
 		mockTradingServiceClient,
 		timeService,
 		marketService,
@@ -405,6 +403,58 @@ func TestSubmitTransaction(t *testing.T) {
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, actualResp)
+		assert.Contains(t, err.Error(), "Critical error")
+	})
+}
+
+func TestLastBlockHeight(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	t.Run("proxy call is successful", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
+
+		req := &protoapi.LastBlockHeightRequest{}
+		expectedRes := &protoapi.LastBlockHeightResponse{Height: 20}
+
+		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
+
+		mockTradingServiceClient.EXPECT().
+			LastBlockHeight(gomock.Any(), vegaReq).
+			Return(&vegaprotoapi.LastBlockHeightResponse{Height: 20}, nil).Times(1)
+
+		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedRes, actualResp)
+	})
+
+	t.Run("proxy propagates an error", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
+
+		req := &protoapi.LastBlockHeightRequest{}
+		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
+
+		mockTradingServiceClient.EXPECT().
+			LastBlockHeight(gomock.Any(), vegaReq).
+			Return(nil, fmt.Errorf("Critical error")).Times(1)
+
+		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, actualResp)
 		assert.Contains(t, err.Error(), "Critical error")

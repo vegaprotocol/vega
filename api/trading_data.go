@@ -9,7 +9,6 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
@@ -247,7 +246,6 @@ type CheckpointService interface {
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
-	Stats                   *stats.Stats
 	TimeService             VegaTime
 	OrderService            OrderService
 	TradeService            TradeService
@@ -406,16 +404,6 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	}
 	return &protoapi.LiquidityProvisionsResponse{
 		LiquidityProvisions: out,
-	}, nil
-}
-
-func (t *tradingDataService) LastBlockHeight(
-	ctx context.Context,
-	req *protoapi.LastBlockHeightRequest,
-) (*protoapi.LastBlockHeightResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
-	return &protoapi.LastBlockHeightResponse{
-		Height: t.Stats.Blockchain.Height(),
 	}, nil
 }
 

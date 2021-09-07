@@ -374,7 +374,7 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 type myQueryResolver VegaResolverRoot
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
-	resp, err := r.tradingDataClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
+	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
 	if err != nil {
 		return "0", err
 	}

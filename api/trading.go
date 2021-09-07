@@ -40,6 +40,20 @@ func (s *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoa
 	}, nil
 }
 
+func (s *tradingProxyService) LastBlockHeight(ctx context.Context, req *protoapiv1.LastBlockHeightRequest) (*protoapiv1.LastBlockHeightResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
+	defer cancel()
+
+	vegaResp, err := s.tradingServiceClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return &protoapiv1.LastBlockHeightResponse{
+		Height: vegaResp.GetHeight(),
+	}, nil
+}
+
 func internalToCoreSubmitTransactionRequest(req *protoapiv1.SubmitTransactionRequest) *vegaprotoapi.SubmitTransactionV2Request {
 	requestType, ok := internalToCoreTransactionRequestType[req.Type]
 	if !ok {
