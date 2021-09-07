@@ -141,7 +141,7 @@ func (s *socketClient) getDialAddr() string {
 	return fmt.Sprintf(
 		"%s://%s",
 		strings.ToLower(s.config.Transport),
-		net.JoinHostPort(s.config.IP, fmt.Sprintf("%d", s.config.Port)),
+		net.JoinHostPort(s.config.Address, fmt.Sprintf("%d", s.config.Port)),
 	)
 }
 
