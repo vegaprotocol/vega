@@ -276,29 +276,6 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3841  | 
     | node13 | VEGA  |  3841  | 
 
-   
-
-    #party1 gets 0.07760 * 50000 * 0.883 * 100/10100 + 0.07722 * 50000 * 0.883 * 50/10050 
-    #node1 gets: (1 - 0.883 * 100/10100) * 0.07760 * 50000
-    #node2 gets: (1 - 0.883 * 50/10050) * 0.07722 * 50000
-    #node3 - node13 gets: 0.07683 * 50000
-    And the parties receive the following reward for epoch 1:
-    | party  | asset | amount |
-    | party1 | VEGA  |  49    | 
-    | node1  | VEGA  |  3846  | 
-    | node2  | VEGA  |  3843  | 
-    | node3  | VEGA  |  3841  | 
-    | node4  | VEGA  |  3841  | 
-    | node5  | VEGA  |  3841  | 
-    | node6  | VEGA  |  3841  | 
-    | node7  | VEGA  |  3841  | 
-    | node8  | VEGA  |  3841  | 
-    | node9  | VEGA  |  3841  | 
-    | node10 | VEGA  |  3841  | 
-    | node11 | VEGA  |  3841  | 
-    | node12 | VEGA  |  3841  | 
-    | node13 | VEGA  |  3841  | 
-
   Scenario: Parties withdraw from their staking account during an epoch once having active delegations - they should not get rewarded for those uncovered delegations 
     Desciption: Parties have active delegations on epoch 1 and withdraw stake from the staking account. They should only get rewarded for any delegation that still has cover 
 
