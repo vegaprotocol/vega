@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"strconv"
 	"testing"
 	"time"
 
@@ -48,7 +47,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
+
+const connBufSize = 1024 * 1024
 
 type GRPCServer interface {
 	Start()
@@ -298,12 +300,14 @@ func getTestGRPCServer(
 		cancel()
 	}
 
+	lis := bufconn.Listen(connBufSize)
+	ctxDialer := func(context.Context, string) (net.Conn, error) { return lis.Dial() }
+
 	if startAndWait {
 		// Start the gRPC server, then wait for it to be ready.
-		go g.Start(ctx)
+		go g.Start(ctx, lis)
 
-		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
-		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
+		conn, err = grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(ctxDialer), grpc.WithInsecure())
 		if err != nil {
 			t.Fatalf("Failed to create connection to gRPC server")
 		}

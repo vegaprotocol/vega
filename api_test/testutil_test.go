@@ -9,7 +9,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 	"time"
 
@@ -52,27 +51,29 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
 var logger = logging.NewTestLogger()
 
-const defaultTimout = 30 * time.Second
+const (
+	connBufSize   = 1024 * 1024
+	defaultTimout = 30 * time.Second
+)
 
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.
 func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc.ClientConn, eventBroker *broker.Broker) {
 	t.Helper()
 
-	port := randomPort()
-	path := fmt.Sprintf("vegatest-%d-", port)
+	suffix := randomSuffix()
+	path := fmt.Sprintf("vegatest-%d-", suffix)
 	tmpDir, cleanTempDir, err := storage.TempDir(path)
 	if err != nil {
 		t.Fatalf("failed to create tmp dir: %v", err)
 	}
 
 	conf := config.NewDefaultConfig(tmpDir)
-	conf.API.IP = "127.0.0.1"
-	conf.API.Port = port
 
 	mockCtrl := gomock.NewController(t)
 
@@ -246,7 +247,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatal("failed to create gRPC server")
 	}
 
-	go srv.Start(ctx)
+	lis := bufconn.Listen(connBufSize)
+
+	// Start the gRPC server, then wait for it to be ready.
+	go srv.Start(ctx, lis)
 
 	t.Cleanup(func() {
 		cleanTempDir()
@@ -254,8 +258,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	})
 
 	if blocking {
-		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
-		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
+		ctxDialer := func(context.Context, string) (net.Conn, error) { return lis.Dial() }
+		conn, err = grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(ctxDialer), grpc.WithInsecure())
 		if err != nil {
 			t.Fatalf("failed to dial gRPC server: %v", err)
 		}
@@ -355,7 +359,7 @@ func waitForEvent(ctx context.Context, sub *EventSubscriber, event events.Event)
 	}
 }
 
-func randomPort() int {
+func randomSuffix() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(65535-1023) + 1023
 }

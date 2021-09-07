@@ -229,7 +229,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	eg, ctx := errgroup.WithContext(ctx)
 
 	// start the grpc server
-	eg.Go(func() error { return grpcServer.Start(ctx) })
+	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
 
 	// start gateway
 	if l.conf.GatewayEnabled {
