@@ -2,7 +2,6 @@ package subscribers
 
 import (
 	"context"
-	"strconv"
 
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
@@ -80,7 +79,7 @@ func (db *DelegationBalanceSub) Push(evts ...events.Event) {
 				EpochSeq: dbe.GetEpochSeq(),
 				Party:    dbe.GetParty(),
 				NodeId:   dbe.GetNodeId(),
-				Amount:   strconv.FormatUint(dbe.GetAmount(), 10),
+				Amount:   dbe.GetAmount(),
 			}
 
 			db.nodeStore.AddDelegation(delegation)
