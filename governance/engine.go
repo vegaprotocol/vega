@@ -3,6 +3,7 @@ package governance
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -614,16 +615,25 @@ func (e *Engine) closeProposal(ctx context.Context, proposal *proposal) {
 }
 
 func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.Event {
-	evts := []events.Event{}
+	votes := []*events.Vote{}
 
 	for _, y := range proposal.yes {
-		evts = append(evts, events.NewVoteEvent(ctx, *y))
+		votes = append(votes, events.NewVoteEvent(ctx, *y))
 	}
 	for _, n := range proposal.no {
-		evts = append(evts, events.NewVoteEvent(ctx, *n))
+		votes = append(votes, events.NewVoteEvent(ctx, *n))
 	}
 	for _, n := range proposal.invalidVotes {
-		evts = append(evts, events.NewVoteEvent(ctx, *n))
+		votes = append(votes, events.NewVoteEvent(ctx, *n))
+	}
+
+	sort.Slice(votes, func(i, j int) bool {
+		return votes[i].Proto().Timestamp < votes[j].Proto().Timestamp
+	})
+
+	evts := make([]events.Event, 0, len(votes))
+	for _, e := range votes {
+		evts = append(evts, e)
 	}
 
 	return evts
