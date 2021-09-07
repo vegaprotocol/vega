@@ -37,7 +37,7 @@ var commandCmd CommandCmd
 
 func Command(ctx context.Context, parser *flags.Parser) error {
 	rootPath := config.NewRootPathFlag()
-	nodeCmd = NodeCmd{
+	commandCmd = CommandCmd{
 		RootPathFlag: rootPath,
 	}
 	_, err := parser.AddCommand("command", "Send a command to a vega network", "Send a command to a vega network", &commandCmd)
@@ -61,14 +61,15 @@ func (opts *CommandCmd) Execute(args []string) error {
 
 	command.PubKey = opts.Pubkey
 
-	err = wallet.CheckSubmitTransactionRequest(&command)
-	if err != nil {
+	errs := wallet.CheckSubmitTransactionRequest(&command)
+	if !errs.Empty() {
 		return fmt.Errorf("invalid command payload: %w", err)
 	}
 
-	store, err := wstore.NewStore(filepath.Join(opts.RootPath, "wallets"))
+	walletPath := filepath.Join(opts.RootPath, "wallets")
+	store, err := wstore.NewStore(walletPath)
 	if err != nil {
-		return fmt.Errorf("could not load wallet: %w", err)
+		return fmt.Errorf("could not load wallet from %s: %w", walletPath, err)
 	}
 
 	passphrase, err := opts.Passphrase.Get("wallet")
@@ -78,7 +79,7 @@ func (opts *CommandCmd) Execute(args []string) error {
 
 	w, err := store.GetWallet(opts.WalletName, passphrase)
 	if err != nil {
-		return fmt.Errorf("could not open wallet: %w", err)
+		return fmt.Errorf("could not open wallet from %s: %w", walletPath, err)
 	}
 
 	clt, err := getClient(opts.NodeAddress)
