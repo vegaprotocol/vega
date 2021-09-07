@@ -3,6 +3,8 @@ package netparams
 import (
 	"time"
 
+	"code.vegaprotocol.io/vega/types/num"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams/checks"
 )
@@ -83,12 +85,13 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardDelegatorShare:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.883"),
 		StakingAndDelegationRewardMinimumValidatorStake:   NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 		StakingAndDelegationRewardCompetitionLevel:        NewFloat(FloatGT(1), FloatLTE(1000)).Mutable(true).MustUpdate("1.1"),
+		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff
 		// e.g: assets and collateral when setting up a new ID.
-		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
+		RewardAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
 			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3, \"staking_bridge_addresses\": []}"),

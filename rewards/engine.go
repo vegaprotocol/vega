@@ -120,6 +120,21 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 	e.rewardSchemes[rs.SchemeID] = rs
 }
 
+func (e *Engine) UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(ctx context.Context, maxPerEpoch num.Decimal) error {
+	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
+	if !ok {
+		e.log.Panic("reward scheme for staking and delegation must exist")
+	}
+
+	maxAsUint, _ := num.UintFromDecimal(maxPerEpoch)
+	rs.Parameters["maxPayoutPerEpoch"] = types.RewardSchemeParam{
+		Name:  "maxPayoutPerEpoch",
+		Type:  "uint",
+		Value: maxAsUint.String(),
+	}
+	return nil
+}
+
 //UpdateMinimumValidatorStakeForStakingRewardScheme updaates the value of minimum validator stake for being considered for rewards
 func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.Context, minValStake int64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]

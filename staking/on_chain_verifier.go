@@ -10,6 +10,7 @@ import (
 	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )

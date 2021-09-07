@@ -21,7 +21,7 @@ const (
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 
-	GovernanceVoteAsset = "governance.vote.asset"
+	RewardAsset = "reward.asset"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
@@ -70,6 +70,7 @@ const (
 	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
 	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
+	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -102,7 +103,7 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
 	MarketPriceMonitoringUpdateFrequency:                  {},
-	GovernanceVoteAsset:                                   {},
+	RewardAsset:                                           {},
 	GovernanceProposalMarketMinClose:                      {},
 	GovernanceProposalMarketMaxClose:                      {},
 	GovernanceProposalMarketMinEnact:                      {},
@@ -151,4 +152,5 @@ var AllKeys = map[string]struct{}{
 	NetworkCheckpointTimeElapsedBetweenCheckpoints:        {},
 	NetworkCheckpointMarketFreezeDate:                     {},
 	MarketValueWindowLength:                               {},
+	StakingAndDelegationRewardMaxPayoutPerEpoch:           {},
 }
