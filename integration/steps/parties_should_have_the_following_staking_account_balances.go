@@ -3,19 +3,22 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cucumber/godog"
 )
 
 func PartiesShouldHaveTheFollowingStakingAccountBalances(
-	stakingAccounts *delegation.DummyStakingAccounts,
+	stakingAccounts *stubs.StakingAccountStub,
 	table *godog.Table,
 ) error {
 	for _, r := range parseStakingAccountBalancesTable(table) {
 		row := stakingAccountBalancesRow{row: r}
-		balance := stakingAccounts.GetBalanceNow(row.Party())
+		balance, err := stakingAccounts.GetAvailableBalance(row.Party())
+		if err != nil {
+			return err
+		}
 		if balance.NEQ(row.Amount()) {
 			return errMismatchedStakingAccountBalances(row.Party(), row.Amount(), balance)
 		}

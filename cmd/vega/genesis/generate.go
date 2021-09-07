@@ -70,7 +70,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 		case "mainnet":
 			delete(genesisState.Assets, "VOTE")
 			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
-			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
+			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenTestNet.Symbol
 			ethConfig, err = proto.Marshal(&vgproto.EthereumConfig{
 				NetworkId:     "1",
 				ChainId:       "1",
@@ -88,7 +88,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 		case "testnet":
 			delete(genesisState.Assets, "VOTE")
 			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenTestNet
-			genesisState.NetParams[netparams.GovernanceVoteAsset] = assets.VegaTokenTestNet.Symbol
+			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenTestNet.Symbol
 			ethConfig, err = proto.Marshal(&vgproto.EthereumConfig{
 				NetworkId:              "3",
 				ChainId:                "3",

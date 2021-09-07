@@ -2,16 +2,18 @@ Feature: Staking & Delegation
 
   Background:
     Given the following network parameters are set:
-      | name                                              |  value |
-      | governance.vote.asset                             |  VEGA  |
-      | validators.epoch.length                           |  10s   |
-      | validators.delegation.minAmount                   |  10    |
-      | reward.staking.delegation.payoutDelay             |  0s    |
-      | reward.staking.delegation.delegatorShare          |  0.883 |
-      | reward.staking.delegation.minimumValidatorStake   |  100   |
-      | reward.staking.delegation.payoutFraction          |  0.5   |
-      | reward.staking.delegation.maxPayoutPerParticipant | 100000 |
-      | reward.staking.delegation.competitionLevel        |  1.1   |
+      | name                                              |  value                   |
+      | reward.asset                                      |  VEGA                    |
+      | validators.epoch.length                           |  9s                      |
+      | validators.delegation.minAmount                   |  10                      |
+      | reward.staking.delegation.payoutDelay             |  0s                      |
+      | reward.staking.delegation.delegatorShare          |  0.883                   |
+      | reward.staking.delegation.minimumValidatorStake   |  100                     |
+      | reward.staking.delegation.payoutFraction          |  0.5                     |
+      | reward.staking.delegation.maxPayoutPerParticipant | 100000                   |
+      | reward.staking.delegation.competitionLevel        |  1.1                     |
+      | reward.staking.delegation.maxPayoutPerEpoch       |  50000                   |
+
 
     Given time is updated to "2021-08-26T00:00:00Z"
  
@@ -51,12 +53,6 @@ Feature: Staking & Delegation
     And the global reward account gets the following deposits:
       | asset | amount |
       | VEGA  | 100000 | 
-    
-    And the parties deposit on asset's general account the following amount:
-      | party  | asset  | amount |
-      | party1 | VEGA   |  10000 |
-      | party2 | VEGA   |  20000 |
-      | party3 | VEGA   |  30000 |
 
     And the parties deposit on staking account the following amount:
       | party  | asset  | amount |
@@ -109,6 +105,51 @@ Feature: Staking & Delegation
     | node11 | VEGA  |  3828  | 
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
+
+  Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped 
+    Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
+
+    And the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 120000 |   
+
+    #the available amount for the epoch is 60k but it is capped to 50 by the max.  
+
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      | 
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party2 
+    #node3 has 10k self delegation + 300 from party3 
+    #all other nodes have 10k self delegation 
+    #party1 gets 0.07734 * 50000 * 0.883 * 100/10100 + 0.07810 * 50000 * 0.883 * 200/10200 + 0.07887 * 50000 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 50000
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
+    #node4 - node13 gets: 0.07657 * 50000
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |  201   | 
+    | node1  | VEGA  |  3832  | 
+    | node2  | VEGA  |  3837  | 
+    | node3  | VEGA  |  3841  | 
+    | node4  | VEGA  |  3828  | 
+    | node5  | VEGA  |  3828  | 
+    | node6  | VEGA  |  3828  | 
+    | node8  | VEGA  |  3828  | 
+    | node10 | VEGA  |  3828  | 
+    | node11 | VEGA  |  3828  | 
+    | node12 | VEGA  |  3828  | 
+    | node13 | VEGA  |  3828  | 
+
 
   Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
