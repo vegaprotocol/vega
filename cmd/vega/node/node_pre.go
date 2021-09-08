@@ -339,7 +339,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		})
 
 	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams)
+	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams, l.delegation, l.epochService)
 	if err != nil {
 		panic(err)
 	}

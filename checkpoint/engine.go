@@ -21,6 +21,8 @@ var (
 		types.AssetsCheckpoint,     // assets are required for collateral to work
 		types.CollateralCheckpoint, // without balances, governance (proposals, bonds) are difficult
 		types.GovernanceCheckpoint, // depends on all of the above
+		types.EpochCheckpoint,      // restore epoch information...
+		types.DelegationCheckpoint, // so delegation sequence ID's make sense
 	}
 )
 
@@ -191,7 +193,10 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 	if err := snap.Validate(); err != nil {
 		return err
 	}
-	var assets []*types.Asset
+	var (
+		assets                 []*types.Asset
+		doneAssets, doneCollat bool // just avoids type asserting all components
+	)
 	for _, k := range cpOrder {
 		cpData := cp.Get(k)
 		if len(cpData) == 0 {
@@ -201,19 +206,25 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 		if !ok {
 			return ErrUnknownCheckpointName // data cannot be restored
 		}
-		if ac, ok := c.(AssetsState); ok {
-			if err := c.Load(cpData); err != nil {
-				return err
-			}
-			assets = ac.GetEnabledAssets()
-			continue
-		}
-		// first enable assets, then load the state
-		if cc, ok := c.(CollateralState); ok {
-			for _, a := range assets {
-				if err := cc.EnableAsset(ctx, *a); err != nil {
+		if !doneAssets {
+			if ac, ok := c.(AssetsState); ok {
+				if err := c.Load(cpData); err != nil {
 					return err
 				}
+				assets = ac.GetEnabledAssets()
+				doneAssets = true
+				continue
+			}
+		}
+		// first enable assets, then load the state
+		if !doneCollat {
+			if cc, ok := c.(CollateralState); ok {
+				for _, a := range assets {
+					if err := cc.EnableAsset(ctx, *a); err != nil {
+						return err
+					}
+				}
+				doneCollat = true
 			}
 		}
 		if err := c.Load(cpData); err != nil {

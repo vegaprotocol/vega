@@ -6,6 +6,7 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -22,6 +23,8 @@ const (
 	AssetsCheckpoint     CheckpointName = "assets"
 	CollateralCheckpoint CheckpointName = "collateral"
 	NetParamsCheckpoint  CheckpointName = "netparams"
+	DelegationCheckpoint CheckpointName = "delegation"
+	EpochCheckpoint      CheckpointName = "epoch"
 )
 
 type Snapshot struct {
@@ -34,6 +37,21 @@ type Checkpoint struct {
 	Assets            []byte
 	Collateral        []byte
 	NetworkParameters []byte
+	Delegation        []byte
+	Epoch             []byte
+}
+
+type DelegationEntry struct {
+	Party      string
+	Node       string
+	Amount     *num.Uint
+	Undelegate bool
+	EpochSeq   uint64
+}
+
+type DelegateCP struct {
+	Active  []*DelegationEntry
+	Pending []*DelegationEntry
 }
 
 func NewSnapshotFromProto(ps *snapshot.Snapshot) *Snapshot {
@@ -98,6 +116,8 @@ func NewCheckpointFromProto(pc *snapshot.Checkpoint) *Checkpoint {
 		Assets:            pc.Assets,
 		Collateral:        pc.Collateral,
 		NetworkParameters: pc.NetworkParameters,
+		Delegation:        pc.Delegation,
+		Epoch:             pc.Epoch,
 	}
 }
 
@@ -107,17 +127,21 @@ func (c Checkpoint) IntoProto() *snapshot.Checkpoint {
 		Assets:            c.Assets,
 		Collateral:        c.Collateral,
 		NetworkParameters: c.NetworkParameters,
+		Delegation:        c.Delegation,
+		Epoch:             c.Epoch,
 	}
 }
 
 // HashBytes returns the data contained in the snapshot as a []byte for hashing
 // the order in which the data is added to the slice matters
 func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters))
+	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch))
 	// the order in which we append is quite important
 	ret = append(ret, c.NetworkParameters...)
 	ret = append(ret, c.Assets...)
 	ret = append(ret, c.Collateral...)
+	ret = append(ret, c.Delegation...)
+	ret = append(ret, c.Epoch...)
 	return append(ret, c.Governance...)
 }
 
@@ -132,6 +156,10 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.Collateral = val
 	case NetParamsCheckpoint:
 		c.NetworkParameters = val
+	case DelegationCheckpoint:
+		c.Delegation = val
+	case EpochCheckpoint:
+		c.Epoch = val
 	}
 }
 
@@ -146,6 +174,59 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.Collateral
 	case NetParamsCheckpoint:
 		return c.NetworkParameters
+	case DelegationCheckpoint:
+		return c.Delegation
+	case EpochCheckpoint:
+		return c.Epoch
 	}
 	return nil
+}
+
+func NewDelegationEntryFromProto(de *snapshot.DelegateEntry) *DelegationEntry {
+	amt, _ := num.UintFromString(de.Amount, 10)
+	return &DelegationEntry{
+		Party:      de.Party,
+		Node:       de.Node,
+		Amount:     amt,
+		Undelegate: de.Undelegate,
+		EpochSeq:   de.EpochSeq,
+	}
+}
+
+func (d DelegationEntry) IntoProto() *snapshot.DelegateEntry {
+	return &snapshot.DelegateEntry{
+		Party:      d.Party,
+		Node:       d.Node,
+		Amount:     d.Amount.String(),
+		Undelegate: d.Undelegate,
+		EpochSeq:   d.EpochSeq,
+	}
+}
+
+func NewDelegationCPFromProto(sd *snapshot.Delegate) *DelegateCP {
+	r := &DelegateCP{
+		Active:  make([]*DelegationEntry, 0, len(sd.Active)),
+		Pending: make([]*DelegationEntry, 0, len(sd.Pending)),
+	}
+	for _, a := range sd.Active {
+		r.Active = append(r.Active, NewDelegationEntryFromProto(a))
+	}
+	for _, p := range sd.Pending {
+		r.Pending = append(r.Pending, NewDelegationEntryFromProto(p))
+	}
+	return r
+}
+
+func (d DelegateCP) IntoProto() *snapshot.Delegate {
+	s := &snapshot.Delegate{
+		Active:  make([]*snapshot.DelegateEntry, 0, len(d.Active)),
+		Pending: make([]*snapshot.DelegateEntry, 0, len(d.Pending)),
+	}
+	for _, a := range d.Active {
+		s.Active = append(s.Active, a.IntoProto())
+	}
+	for _, p := range d.Pending {
+		s.Pending = append(s.Pending, p.IntoProto())
+	}
+	return s
 }
