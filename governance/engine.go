@@ -633,7 +633,7 @@ func newUpdatedProposalEvents(ctx context.Context, proposal *proposal) []events.
 
 	evts := make([]events.Event, 0, len(votes))
 	for _, e := range votes {
-		evts = append(evts, *e)
+		evts = append(evts, e)
 	}
 
 	return evts
