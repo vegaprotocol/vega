@@ -1,4 +1,4 @@
-package storage
+package services
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func NewDelegations(ctx context.Context) (delegations *Delegations) {
 		Base:                    subscribers.NewBase(ctx, 1000, true),
 		ctx:                     ctx,
 		epochToPartyDelegations: map[string]map[string]map[string]string{},
-		ch:                      make(chan pb.Delegation, 100),
+		ch:                      make(chan eventspb.DelegationBalanceEvent, 100),
 	}
 }
 

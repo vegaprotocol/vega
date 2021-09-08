@@ -107,7 +107,7 @@ func NewService(
 
 	if cfg.Delegations {
 		log.Info("starting votes core api")
-		svc.delegations = services.NewDelegations(ctx, log)
+		svc.delegations = services.NewDelegations(ctx)
 		broker.SubscribeBatch(svc.delegations)
 	}
 
@@ -232,6 +232,6 @@ func (s *Service) ListDelegations(
 		return nil, ErrServiceDisabled
 	}
 	return &coreapipb.ListDelegationsResponse{
-		PartiesStake: s.delegations.List(in.Party, in.Node, in.Epoch),
+		Delegations: s.delegations.List(in.Party, in.Node, in.EpochSeq),
 	}, nil
 }
