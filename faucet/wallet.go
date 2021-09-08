@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/go-wallet/wallet"
 	storev1 "code.vegaprotocol.io/go-wallet/wallet/store/v1"
+	"code.vegaprotocol.io/go-wallet/wallets"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 )
 
 type faucetWallet struct {
-	handler *wallet.Handler
+	handler *wallets.Handler
 	// publicKey is the one used to retrieve the private key to sign messages.
 	publicKey  string
 	walletName string
@@ -25,17 +26,12 @@ type faucetWallet struct {
 func loadWallet(walletFilePath, passphrase string) (*faucetWallet, error) {
 	walletDir, walletName := filepath.Split(walletFilePath)
 
-	store, err := storev1.NewStore(walletDir)
+	store, err := storev1.InitialiseStore(walletDir)
 	if err != nil {
 		return nil, err
 	}
 
-	err = store.Initialise()
-	if err != nil {
-		return nil, err
-	}
-
-	handler := wallet.NewHandler(store)
+	handler := wallets.NewHandler(store)
 
 	err = handler.LoginWallet(walletName, passphrase)
 	if err != nil {
@@ -69,17 +65,12 @@ func (w *faucetWallet) Sign(message []byte) ([]byte, string, error) {
 func initialiseWallet(walletFilePath, passphrase string) (string, error) {
 	walletDir, walletName := filepath.Split(walletFilePath)
 
-	store, err := storev1.NewStore(walletDir)
+	store, err := storev1.InitialiseStore(walletDir)
 	if err != nil {
 		return "", err
 	}
 
-	err = store.Initialise()
-	if err != nil {
-		return "", err
-	}
-
-	handler := wallet.NewHandler(store)
+	handler := wallets.NewHandler(store)
 
 	// we ignore the mnemonic as this wallet is one-shot.
 	_, err = handler.CreateWallet(walletName, passphrase)

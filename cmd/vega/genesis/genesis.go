@@ -30,7 +30,7 @@ func Genesis(ctx context.Context, parser *flags.Parser) error {
 		},
 		Sign: signCmd{
 			TmRoot:     "$HOME/.tendermint",
-			WalletRoot: "$HOME/.vega/wallets",
+			RootPathFlag: rootPath,
 		},
 		Verify: verifyCmd{
 			TmRoot: "$HOME/.tendermint",

@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"time"
 
+	wcmd "code.vegaprotocol.io/go-wallet/commands"
 	"code.vegaprotocol.io/go-wallet/wallet"
-	wstore "code.vegaprotocol.io/go-wallet/wallet/store/v1"
+	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -61,15 +61,14 @@ func (opts *CommandCmd) Execute(args []string) error {
 
 	command.PubKey = opts.Pubkey
 
-	errs := wallet.CheckSubmitTransactionRequest(&command)
+	errs := wcmd.CheckSubmitTransactionRequest(&command)
 	if !errs.Empty() {
 		return fmt.Errorf("invalid command payload: %w", err)
 	}
 
-	walletPath := filepath.Join(opts.RootPath, "wallets")
-	store, err := wstore.NewStore(walletPath)
+	store, err := wallets.InitialiseStore(opts.VegaHome)
 	if err != nil {
-		return fmt.Errorf("could not load wallet from %s: %w", walletPath, err)
+		return fmt.Errorf("could not load wallet: %w", err)
 	}
 
 	passphrase, err := opts.Passphrase.Get("wallet")
@@ -79,7 +78,7 @@ func (opts *CommandCmd) Execute(args []string) error {
 
 	w, err := store.GetWallet(opts.WalletName, passphrase)
 	if err != nil {
-		return fmt.Errorf("could not open wallet from %s: %w", walletPath, err)
+		return fmt.Errorf("could not open wallet: %w", err)
 	}
 
 	clt, err := getClient(opts.NodeAddress)
@@ -134,12 +133,18 @@ func signTx(w wallet.Wallet, req *walletpb.SubmitTransactionRequest, height uint
 	}
 
 	pubKey := req.GetPubKey()
-	signature, err := w.SignTxV2(pubKey, marshalledData)
+	signature, err := w.SignTx(pubKey, marshalledData)
 	if err != nil {
 		return nil, err
 	}
 
-	return commands.NewTransaction(pubKey, marshalledData, signature), nil
+	protoSig := &commandspb.Signature{
+		Value:   signature.Value,
+		Algo:    signature.Algo,
+		Version: signature.Version,
+	}
+
+	return commands.NewTransaction(pubKey, marshalledData, protoSig), nil
 }
 
 func wrapRequestCommandIntoInputData(data *commandspb.InputData, req *walletpb.SubmitTransactionRequest) error {
