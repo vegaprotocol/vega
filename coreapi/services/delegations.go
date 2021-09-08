@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	pb "code.vegaprotocol.io/protos/vega"
@@ -55,7 +54,7 @@ func (d *Delegations) consume() {
 				NodeId:   de.NodeId,
 				Party:    de.Party,
 				EpochSeq: de.EpochSeq,
-				Amount:   fmt.Sprintf("%d", de.Amount),
+				Amount:   de.Amount,
 			})
 			d.mut.Unlock()
 		}
