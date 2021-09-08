@@ -117,6 +117,7 @@ func NewCheckpointFromProto(pc *snapshot.Checkpoint) *Checkpoint {
 		Collateral:        pc.Collateral,
 		NetworkParameters: pc.NetworkParameters,
 		Delegation:        pc.Delegation,
+		Epoch:             pc.Epoch,
 	}
 }
 
@@ -127,18 +128,20 @@ func (c Checkpoint) IntoProto() *snapshot.Checkpoint {
 		Collateral:        c.Collateral,
 		NetworkParameters: c.NetworkParameters,
 		Delegation:        c.Delegation,
+		Epoch:             c.Epoch,
 	}
 }
 
 // HashBytes returns the data contained in the snapshot as a []byte for hashing
 // the order in which the data is added to the slice matters
 func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation))
+	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch))
 	// the order in which we append is quite important
 	ret = append(ret, c.NetworkParameters...)
 	ret = append(ret, c.Assets...)
 	ret = append(ret, c.Collateral...)
 	ret = append(ret, c.Delegation...)
+	ret = append(ret, c.Epoch...)
 	return append(ret, c.Governance...)
 }
 
@@ -155,6 +158,8 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.NetworkParameters = val
 	case DelegationCheckpoint:
 		c.Delegation = val
+	case EpochCheckpoint:
+		c.Epoch = val
 	}
 }
 
@@ -171,6 +176,8 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.NetworkParameters
 	case DelegationCheckpoint:
 		return c.Delegation
+	case EpochCheckpoint:
+		return c.Epoch
 	}
 	return nil
 }
