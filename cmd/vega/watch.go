@@ -12,7 +12,6 @@ import (
 )
 
 type watch struct {
-	ctx        context.Context
 	Address    string `short:"a" long:"address" description:"Node address" default:"tcp://0.0.0.0:26657"`
 	Positional struct {
 		Filters []string `positional-arg-name:"<FILTERS>"`
