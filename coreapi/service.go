@@ -100,13 +100,13 @@ func NewService(
 	}
 
 	if cfg.PartiesStake {
-		log.Info("starting votes core api")
+		log.Info("starting parties stake core api")
 		svc.partiesStake = services.NewPartiesStake(ctx, log)
 		broker.SubscribeBatch(svc.partiesStake)
 	}
 
 	if cfg.Delegations {
-		log.Info("starting votes core api")
+		log.Info("starting delegations core api")
 		svc.delegations = services.NewDelegations(ctx)
 		broker.SubscribeBatch(svc.delegations)
 	}
