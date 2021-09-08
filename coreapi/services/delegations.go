@@ -69,39 +69,39 @@ func (d *Delegations) Push(evts ...events.Event) {
 	}
 }
 
-func (s *Delegations) List(party, node, epoch string) []*pb.Delegation {
-	s.mut.RLock()
-	defer s.mut.RUnlock()
+func (d *Delegations) List(party, node, epoch string) []*pb.Delegation {
+	d.mut.RLock()
+	defer d.mut.RUnlock()
 
 	var delegations []*pb.Delegation
 	if epoch == "" && party == "" && node == "" { // all delegations for all parties all nodes across all epochs
-		delegations, _ = s.getAllDelegations()
+		delegations, _ = d.getAllDelegations()
 	} else if epoch == "" && party == "" && node != "" { // all delegations for node from all parties across all epochs
-		delegations, _ = s.getNodeDelegations(node)
+		delegations, _ = d.getNodeDelegations(node)
 	} else if epoch == "" && party != "" && node == "" { // all delegations by a given party to all nodes across all epochs
-		delegations, _ = s.getPartyDelegations(party)
+		delegations, _ = d.getPartyDelegations(party)
 	} else if epoch == "" && party != "" && node != "" { // all delegations by a given party to a given node across all epochs
-		delegations, _ = s.getPartyNodeDelegations(party, node)
+		delegations, _ = d.getPartyNodeDelegations(party, node)
 	} else if epoch != "" && party == "" && node == "" { // all delegations by all parties for all nodes in a given epoch
-		delegations, _ = s.getAllDelegationsOnEpoch(epoch)
+		delegations, _ = d.getAllDelegationsOnEpoch(epoch)
 	} else if epoch != "" && party == "" && node != "" { // all delegations to a given node on a given epoch
-		delegations, _ = s.getNodeDelegationsOnEpoch(node, epoch)
+		delegations, _ = d.getNodeDelegationsOnEpoch(node, epoch)
 	} else if epoch != "" && party != "" && node == "" { // all delegations by a given party on a given epoch
-		delegations, _ = s.getPartyDelegationsOnEpoch(party, epoch)
+		delegations, _ = d.getPartyDelegationsOnEpoch(party, epoch)
 	} else if epoch != "" && party != "" && node != "" { // all delegations by a given party to a given node on a given epoch
-		delegations, _ = s.getPartyNodeDelegationsOnEpoch(party, node, epoch)
+		delegations, _ = d.getPartyNodeDelegationsOnEpoch(party, node, epoch)
 	}
 
 	return delegations
 }
 
 //AddDelegation is updated with new delegation update from the subscriber
-func (s *Delegations) addDelegation(de pb.Delegation) {
+func (d *Delegations) addDelegation(de pb.Delegation) {
 	//update party delegations
-	epoch, ok := s.epochToPartyDelegations[de.EpochSeq]
+	epoch, ok := d.epochToPartyDelegations[de.EpochSeq]
 	if !ok {
 		epoch = map[string]map[string]string{}
-		s.epochToPartyDelegations[de.EpochSeq] = epoch
+		d.epochToPartyDelegations[de.EpochSeq] = epoch
 	}
 
 	party, ok := epoch[de.Party]
@@ -113,10 +113,10 @@ func (s *Delegations) addDelegation(de pb.Delegation) {
 }
 
 //GetAllDelegations returns all delegations across all epochs, all parties, all nodes
-func (s *Delegations) getAllDelegations() ([]*pb.Delegation, error) {
+func (d *Delegations) getAllDelegations() ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	for epoch, epochDelegations := range s.epochToPartyDelegations {
+	for epoch, epochDelegations := range d.epochToPartyDelegations {
 		for party, partyDelegations := range epochDelegations {
 			for node, amount := range partyDelegations {
 				delegations = append(delegations, &pb.Delegation{
@@ -132,10 +132,10 @@ func (s *Delegations) getAllDelegations() ([]*pb.Delegation, error) {
 }
 
 //GetAllDelegationsOnEpoch returns all delegation for the given epoch
-func (s *Delegations) getAllDelegationsOnEpoch(epochSeq string) ([]*pb.Delegation, error) {
+func (d *Delegations) getAllDelegationsOnEpoch(epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
+	epochDelegations, ok := d.epochToPartyDelegations[epochSeq]
 	if !ok {
 		return delegations, nil
 	}
@@ -153,10 +153,10 @@ func (s *Delegations) getAllDelegationsOnEpoch(epochSeq string) ([]*pb.Delegatio
 }
 
 //GetNodeDelegations returns all the delegations made to a node across all epochs
-func (s *Delegations) getNodeDelegations(nodeID string) ([]*pb.Delegation, error) {
+func (d *Delegations) getNodeDelegations(nodeID string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	for epoch, epochDelegations := range s.epochToPartyDelegations {
+	for epoch, epochDelegations := range d.epochToPartyDelegations {
 		for party, partyDelegations := range epochDelegations {
 			for node, amount := range partyDelegations {
 				if node != nodeID {
@@ -175,10 +175,10 @@ func (s *Delegations) getNodeDelegations(nodeID string) ([]*pb.Delegation, error
 }
 
 //GetNodeDelegationsOnEpoch returns the delegations to a node by all parties at a given epoch
-func (s *Delegations) getNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pb.Delegation, error) {
+func (d *Delegations) getNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
+	epochDelegations, ok := d.epochToPartyDelegations[epochSeq]
 	if !ok {
 		return delegations, nil
 	}
@@ -201,10 +201,10 @@ func (s *Delegations) getNodeDelegationsOnEpoch(nodeID string, epochSeq string) 
 }
 
 //GetPartyDelegations returns all the delegations by a party across all epochs
-func (s *Delegations) getPartyDelegations(party string) ([]*pb.Delegation, error) {
+func (d *Delegations) getPartyDelegations(party string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	for epoch, epochDelegations := range s.epochToPartyDelegations {
+	for epoch, epochDelegations := range d.epochToPartyDelegations {
 		partyDelAtEpoch, ok := epochDelegations[party]
 		if !ok {
 			continue
@@ -223,10 +223,10 @@ func (s *Delegations) getPartyDelegations(party string) ([]*pb.Delegation, error
 }
 
 //GetPartyDelegationsOnEpoch returns all delegation by party on a given epoch
-func (s *Delegations) getPartyDelegationsOnEpoch(party string, epochSeq string) ([]*pb.Delegation, error) {
+func (d *Delegations) getPartyDelegationsOnEpoch(party string, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
+	epochDelegations, ok := d.epochToPartyDelegations[epochSeq]
 	if !ok {
 		return delegations, nil
 	}
@@ -249,10 +249,10 @@ func (s *Delegations) getPartyDelegationsOnEpoch(party string, epochSeq string) 
 }
 
 //GetPartyNodeDelegations returns the delegations from party to node across all epochs
-func (s *Delegations) getPartyNodeDelegations(party string, node string) ([]*pb.Delegation, error) {
+func (d *Delegations) getPartyNodeDelegations(party string, node string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	for epoch, epochDelegations := range s.epochToPartyDelegations {
+	for epoch, epochDelegations := range d.epochToPartyDelegations {
 		partyDelegations, ok := epochDelegations[party]
 		if !ok {
 			continue
@@ -275,10 +275,10 @@ func (s *Delegations) getPartyNodeDelegations(party string, node string) ([]*pb.
 }
 
 //GetPartyNodeDelegationsOnEpoch returns the delegations from party to node at epoch
-func (s *Delegations) getPartyNodeDelegationsOnEpoch(party, node, epochSeq string) ([]*pb.Delegation, error) {
+func (d *Delegations) getPartyNodeDelegationsOnEpoch(party, node, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
-	epochDelegations, ok := s.epochToPartyDelegations[epochSeq]
+	epochDelegations, ok := d.epochToPartyDelegations[epochSeq]
 	if !ok {
 		return delegations, nil
 	}
