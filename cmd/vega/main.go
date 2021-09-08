@@ -68,6 +68,7 @@ func Main(ctx context.Context) error {
 		Tm,
 		Checkpoint,
 		Query,
+		Command,
 	); err != nil {
 		fmt.Printf("%+v\n", err)
 		return err

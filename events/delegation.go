@@ -29,7 +29,7 @@ func (db DelegationBalance) Proto() eventspb.DelegationBalanceEvent {
 	return eventspb.DelegationBalanceEvent{
 		Party:    db.Party,
 		NodeId:   db.NodeID,
-		Amount:   db.Amount.Uint64(),
+		Amount:   db.Amount.String(),
 		EpochSeq: db.EpochSeq,
 	}
 }
@@ -52,11 +52,16 @@ func DelegationBalanceEventFromStream(ctx context.Context, be *eventspb.BusEvent
 		return nil
 	}
 
+	amt, err := num.UintFromString(event.GetAmount(), 10)
+	if err {
+		return nil
+	}
+
 	return &DelegationBalance{
 		Base:     newBaseFromStream(ctx, DelegationBalanceEvent, be),
 		Party:    event.GetParty(),
 		NodeID:   event.GetNodeId(),
-		Amount:   num.NewUint(event.GetAmount()),
+		Amount:   amt,
 		EpochSeq: event.GetEpochSeq(),
 	}
 }

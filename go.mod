@@ -3,9 +3,9 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.7.1-0.20210902112024-f2cb9768e483
+	code.vegaprotocol.io/go-wallet v0.9.0-pre1.0.20210902202451-07b8234ec078
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210903143929-4a08248c640d
+	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210908080252-ee7272c67dbd
 	code.vegaprotocol.io/quant v0.2.5
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/blang/semver v3.5.1+incompatible
