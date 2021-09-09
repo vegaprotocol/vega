@@ -105,14 +105,13 @@ Feature: Staking & Delegation
     | node4  | VEGA  |  3828  | 
     | node5  | VEGA  |  3828  | 
     | node6  | VEGA  |  3828  | 
+    | node7  | VEGA  |  3828  | 
     | node8  | VEGA  |  3828  | 
+    | node9  | VEGA  |  3828  | 
     | node10 | VEGA  |  3828  | 
     | node11 | VEGA  |  3828  | 
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
-
-    Then "party1" should have general account balance of "10201" for asset "VEGA"
-    Then "node1" should have general account balance of "1003832" for asset "VEGA"
   
   Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake
     Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
@@ -569,6 +568,7 @@ Feature: Staking & Delegation
     | node13 | VEGA  |  958   | 
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant
+
    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch and the reward amount per participant is capped
   
     Given the following network parameters are set:
@@ -606,8 +606,103 @@ Feature: Staking & Delegation
     | node4  | VEGA  |  3000  | 
     | node5  | VEGA  |  3000  | 
     | node6  | VEGA  |  3000  | 
+    | node7  | VEGA  |  3000  | 
     | node8  | VEGA  |  3000  | 
+    | node9  | VEGA  |  3000  | 
     | node10 | VEGA  |  3000  | 
     | node11 | VEGA  |  3000  | 
     | node12 | VEGA  |  3000  | 
     | node13 | VEGA  |  3000  |
+
+  Scenario: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances
+    Description: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances when they get rewarded for a full epoch of having delegated stake
+
+    And the global reward account gets the following deposits:
+      | asset | amount  |
+      | VEGA  | -50000  | 
+    #advance to the end of the epoch
+    When time is updated to "2021-08-26T00:00:21Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      | 
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party2 
+    #node3 has 10k self delegation + 300 from party3 
+    #all other nodes have 10k self delegation 
+    #party1 gets 0.07734 * 25000 * 0.883 * 100/10100 + 0.07810 * 25000 * 0.883 * 200/10200 + 0.07887 * 25000 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 25000
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 25000
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 25000
+    #node4 - node13 gets: 0.07657 * 25000
+    
+    And the parties receive the following reward for epoch 1:
+    | party  | asset | amount |
+    | party1 | VEGA  |   99   | 
+    | node1  | VEGA  |  1916  | 
+    | node2  | VEGA  |  1918  | 
+    | node3  | VEGA  |  1920  | 
+    | node4  | VEGA  |  1914  | 
+    | node5  | VEGA  |  1914  | 
+    | node6  | VEGA  |  1914  | 
+    | node7  | VEGA  |  1914  | 
+    | node8  | VEGA  |  1914  | 
+    | node9  | VEGA  |  1914  | 
+    | node10 | VEGA  |  1914  | 
+    | node11 | VEGA  |  1914  | 
+    | node12 | VEGA  |  1914  | 
+    | node13 | VEGA  |  1914  | 
+
+    Then "party1" should have general account balance of "10099" for asset "VEGA"
+    Then "node1" should have general account balance of "1001916" for asset "VEGA"
+  
+    And the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 74993  | 
+    # The total amount now in rewards account is 100000-50000-24993(rewards payout)+74993=100000
+
+    When time is updated to "2021-08-26T00:00:22Z"
+    When time is updated to "2021-08-26T00:00:32Z"
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 2:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      | 
+
+    #node1 has 10k self delegation + 100 from party1
+    #node2 has 10k self delegation + 200 from party2 
+    #node3 has 10k self delegation + 300 from party3 
+    #all other nodes have 10k self delegation 
+    #party1 gets 0.07734 * 50000 * 0.883 * 100/10100 + 0.07810 * 50000 * 0.883 * 200/10200 + 0.07887 * 50000 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 50000
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
+    #node4 - node13 gets: 0.07657 * 50000
+    
+    And the parties receive the following reward for epoch 2:
+    | party  | asset | amount |
+    | party1 | VEGA  |  201   | 
+    | node1  | VEGA  |  3832  | 
+    | node2  | VEGA  |  3837  | 
+    | node3  | VEGA  |  3841  | 
+    | node4  | VEGA  |  3828  | 
+    | node5  | VEGA  |  3828  | 
+    | node6  | VEGA  |  3828  | 
+    | node8  | VEGA  |  3828  | 
+    | node10 | VEGA  |  3828  | 
+    | node11 | VEGA  |  3828  | 
+    | node12 | VEGA  |  3828  | 
+    | node13 | VEGA  |  3828  | 
+
+    Then "party1" should have general account balance of "10300" for asset "VEGA"
+    Then "node1" should have general account balance of "1005748" for asset "VEGA"
+  
+  
