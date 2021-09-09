@@ -40,12 +40,6 @@ func NewWalletLoader(walletRootPath string, ethClient ETHClient) *WalletLoader {
 }
 
 func (l *WalletLoader) Initialise() error {
-	// just trying to call to make sure there's not issue
-	_, err := l.ethClient.ChainID(context.Background())
-	if err != nil {
-		return err
-	}
-
 	return vgfs.EnsureDir(l.walletRootPath)
 }
 

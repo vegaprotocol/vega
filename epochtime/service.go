@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+
+	"github.com/golang/protobuf/proto"
 )
 
 type Broker interface {
@@ -95,6 +98,27 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 		s.readyToStartNewEpoch = true
 		return
 	}
+}
+
+func (*Svc) Name() types.CheckpointName {
+	return types.EpochCheckpoint
+}
+
+func (s *Svc) Checkpoint() ([]byte, error) {
+	return proto.Marshal(s.epoch.IntoProto())
+}
+
+func (s *Svc) Load(data []byte) error {
+	pb := &eventspb.EpochEvent{}
+	if err := proto.Unmarshal(data, pb); err != nil {
+		return err
+	}
+	e := types.NewEpochFromProto(pb)
+	s.epoch = *e
+	if e.Action == vega.EpochAction_EPOCH_ACTION_START {
+		s.readyToStartNewEpoch = true
+	}
+	return nil
 }
 
 // NotifyOnEpoch allows other services to register a callback function

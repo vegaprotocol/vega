@@ -66,26 +66,27 @@ type App struct {
 	rates    *ratelimit.Rates
 
 	// service injection
-	assets     Assets
-	banking    Banking
-	broker     Broker
-	cmd        Commander
-	witness    Witness
-	evtfwd     EvtForwarder
-	exec       ExecutionEngine
-	ghandler   *genesis.Handler
-	gov        GovernanceEngine
-	notary     Notary
-	stats      Stats
-	time       TimeService
-	top        ValidatorTopology
-	netp       NetworkParameters
-	oracles    *Oracle
-	delegation DelegationEngine
-	limits     Limits
-	stake      StakeVerifier
-	checkpoint Checkpoint
-	spam       SpamEngine
+	assets          Assets
+	banking         Banking
+	broker          Broker
+	cmd             Commander
+	witness         Witness
+	evtfwd          EvtForwarder
+	exec            ExecutionEngine
+	ghandler        *genesis.Handler
+	gov             GovernanceEngine
+	notary          Notary
+	stats           Stats
+	time            TimeService
+	top             ValidatorTopology
+	netp            NetworkParameters
+	oracles         *Oracle
+	delegation      DelegationEngine
+	limits          Limits
+	stake           StakeVerifier
+	stakingAccounts StakingAccounts
+	checkpoint      Checkpoint
+	spam            SpamEngine
 }
 
 func NewApp(
@@ -111,6 +112,7 @@ func NewApp(
 	delegation DelegationEngine,
 	limits Limits,
 	stake StakeVerifier,
+	stakingAccounts StakingAccounts,
 	checkpoint Checkpoint,
 	spam SpamEngine,
 ) *App {
@@ -132,26 +134,28 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:     assets,
-		banking:    banking,
-		broker:     broker,
-		cmd:        cmd,
-		witness:    witness,
-		evtfwd:     evtfwd,
-		exec:       exec,
-		ghandler:   ghandler,
-		gov:        gov,
-		notary:     notary,
-		stats:      stats,
-		time:       time,
-		top:        top,
-		netp:       netp,
-		oracles:    oracles,
-		delegation: delegation,
-		limits:     limits,
-		stake:      stake,
-		checkpoint: checkpoint,
-		spam:       spam,
+
+		assets:          assets,
+		banking:         banking,
+		broker:          broker,
+		cmd:             cmd,
+		witness:         witness,
+		evtfwd:          evtfwd,
+		exec:            exec,
+		ghandler:        ghandler,
+		gov:             gov,
+		notary:          notary,
+		stats:           stats,
+		time:            time,
+		top:             top,
+		netp:            netp,
+		oracles:         oracles,
+		delegation:      delegation,
+		limits:          limits,
+		stake:           stake,
+		stakingAccounts: stakingAccounts,
+		checkpoint:      checkpoint,
+		spam:            spam,
 	}
 
 	// setup handlers
@@ -352,7 +356,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// 	resp.Code = abci.AbciTxnValidationFailure
 	// 	resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
 	// } else if !app.banking.HasBalance(party) {
-	if !app.banking.HasBalance(party) {
+	if !app.banking.HasBalance(party) && !app.stakingAccounts.HasBalance(party) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
 		msgType := tx.Command().String()

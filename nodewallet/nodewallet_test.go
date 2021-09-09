@@ -3,7 +3,6 @@
 package nodewallet_test
 
 import (
-	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
@@ -74,7 +73,7 @@ func testGenerationSuccess(t *testing.T) {
 
 			ctrl := gomock.NewController(tt)
 			ethClient := mocks.NewMockETHClient(ctrl)
-			ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+			// ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 			defer ctrl.Finish()
 
 			nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
@@ -105,7 +104,7 @@ func testVerifySuccess(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockETHClient(ctrl)
-	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	// ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 	defer ctrl.Finish()
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
@@ -158,7 +157,7 @@ func testNewFailureMissingRequiredWallets(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockETHClient(ctrl)
-	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	// ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 	defer ctrl.Finish()
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)
@@ -180,7 +179,7 @@ func testImportNewWallet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockETHClient(ctrl)
 	defer ctrl.Finish()
-	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	// ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, walletRootDir)
 	require.NoError(t, err)
@@ -230,7 +229,7 @@ func testShowSuccess(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	ethClient := mocks.NewMockETHClient(ctrl)
-	ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
+	// ethClient.EXPECT().ChainID(gomock.Any()).Times(1).Return(big.NewInt(42), nil)
 	defer ctrl.Finish()
 
 	nw, err := nodewallet.New(logging.NewTestLogger(), cfg, "somepassphrase", ethClient, rootDir)

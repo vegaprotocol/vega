@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -39,12 +38,7 @@ func (opts *verifyCmd) Execute(_ []string) error {
 		return err
 	}
 
-	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return err
-	}
-
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, rootCmd.RootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, rootCmd.RootPath)
 	if err != nil {
 		return err
 	}

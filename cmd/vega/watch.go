@@ -12,7 +12,6 @@ import (
 )
 
 type watch struct {
-	ctx        context.Context
 	Address    string `short:"a" long:"address" description:"Node address" default:"tcp://0.0.0.0:26657"`
 	Positional struct {
 		Filters []string `positional-arg-name:"<FILTERS>"`
@@ -27,16 +26,16 @@ func (opts *watch) Execute(_ []string) error {
 
 	c, err := abci.NewClient(opts.Address)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not instantiate abci client: %w", err)
 	}
 
-	ctx := opts.ctx
+	ctx := context.Background()
 	fn := func(e tmctypes.ResultEvent) error {
 		bz, err := json.Marshal(e.Data)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("%s", bz)
+		fmt.Printf("%s\n", bz)
 		return nil
 	}
 	if err := c.Subscribe(ctx, fn, args...); err != nil {

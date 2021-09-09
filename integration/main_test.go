@@ -71,7 +71,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 
 	// delegation/validator steps
 	s.Step(`the validators:$`, func(table *godog.Table) error {
-		return steps.TheValidators(execsetup.topology, execsetup.collateralEngine, execsetup.delegationEngine, table)
+		return steps.TheValidators(execsetup.topology, execsetup.stakingAccount, execsetup.delegationEngine, table)
 	})
 	s.Step(`^the parties should have the following delegation balances for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
 		return steps.PartiesShouldHaveTheFollowingDelegationBalances(execsetup.broker, table, epoch)
@@ -170,10 +170,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
 	})
 	s.Step(`^the parties deposit on staking account the following amount:$`, func(table *godog.Table) error {
-		return steps.PartiesTransferToStakingAccount(execsetup.collateralEngine, execsetup.broker, table)
+		return steps.PartiesTransferToStakingAccount(execsetup.stakingAccount, execsetup.broker, table, "")
 	})
 	s.Step(`^the parties withdraw from staking account the following amount:$`, func(table *godog.Table) error {
-		return steps.PartiesWithdrawFromStakingAccount(execsetup.collateralEngine, execsetup.broker, table)
+		return steps.PartiesWithdrawFromStakingAccount(execsetup.stakingAccount, execsetup.broker, table)
 	})
 
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {

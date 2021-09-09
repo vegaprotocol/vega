@@ -1,16 +1,14 @@
 package staking
 
 import (
-	"time"
-
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/types/num"
 )
 
 type AllEthereumClient interface {
 	EthereumClient
 	EthereumClientConfirmations
+	EthereumClientCaller
 }
 
 func New(
@@ -22,8 +20,7 @@ func New(
 	ethClient AllEthereumClient,
 	netp *netparams.Store,
 ) (*Accounting, *StakeVerifier) {
-
-	accs := NewAccounting(log, cfg, broker)
+	accs := NewAccounting(log, cfg, broker, ethClient)
 	ethCfns := NewEthereumConfirmations(ethClient, nil)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
 	sakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)
@@ -36,20 +33,10 @@ func New(
 		Param:   netparams.BlockchainsEthereumConfig,
 		Watcher: ocv.OnEthereumConfigUpdate,
 	})
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.BlockchainsEthereumConfig,
+		Watcher: accs.OnEthereumConfigUpdate,
+	})
 
 	return accs, sakeV
-}
-
-type AccountsW struct {
-	*Accounting
-}
-
-func (a *AccountsW) GetBalanceNow(party string) *num.Uint {
-	balance, _ := a.GetAvailableBalance(party)
-	return balance
-}
-
-func (a *AccountsW) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
-	balance, _ := a.GetAvailableBalanceInRange(party, from, to)
-	return balance
 }
