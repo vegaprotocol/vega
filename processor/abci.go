@@ -36,6 +36,7 @@ var (
 	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
 	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disaled during bootstrap")
+	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
@@ -402,11 +403,22 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	}
 
 	switch tx.Command() {
+	case txn.WithdrawCommand:
+		if app.reloadCP {
+			// we haven't reloaded the collateral data, withdrawals are going to fail
+			return ErrAwaitingCheckpointRestore
+		}
 	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
 		}
+		if app.reloadCP {
+			return ErrAwaitingCheckpointRestore
+		}
 	case txn.ProposeCommand:
+		if app.reloadCP {
+			return ErrAwaitingCheckpointRestore
+		}
 		praw := &commandspb.ProposalSubmission{}
 		if err := tx.Unmarshal(praw); err != nil {
 			return fmt.Errorf("could not unmarshal proposal submission: %w", err)
@@ -444,10 +456,6 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	if !app.top.Exists(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
@@ -455,10 +463,6 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
@@ -500,10 +504,6 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	porder := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(porder); err != nil {
 		return err
@@ -529,10 +529,6 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -562,10 +558,6 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) DeliverWithdraw(
 	ctx context.Context, tx abci.Tx, id string) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	w := &commandspb.WithdrawSubmission{}
 	if err := tx.Unmarshal(w); err != nil {
 		return err
@@ -587,10 +579,6 @@ func (app *App) DeliverWithdraw(
 }
 
 func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -643,10 +631,6 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 }
 
 func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	vote := &commandspb.VoteSubmission{}
 
 	if err := tx.Unmarshal(vote); err != nil {
@@ -669,10 +653,6 @@ func (app *App) DeliverVote(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	ns := &commandspb.NodeSignature{}
 	if err := tx.Unmarshal(ns); err != nil {
 		return err
@@ -682,10 +662,6 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -706,10 +682,6 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	vote := &commandspb.NodeVote{}
 	if err := tx.Unmarshal(vote); err != nil {
 		return err
@@ -719,10 +691,6 @@ func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	ce := &commandspb.ChainEvent{}
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
@@ -732,10 +700,6 @@ func (app *App) DeliverChainEvent(ctx context.Context, tx abci.Tx, id string) er
 }
 
 func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
@@ -750,10 +714,6 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	data := &commandspb.OracleDataSubmission{}
 	if err := tx.Unmarshal(data); err != nil {
 		return err
@@ -955,10 +915,6 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 }
 
 func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr error) {
-	if app.reloadCP {
-		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
-		return nil
-	}
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
 		if rerr != nil {
