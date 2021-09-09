@@ -315,15 +315,16 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3841  | 
     | node13 | VEGA  |  3841  | 
 
-    # General balance for party1 = 10000 - 9850 + 49 = 199
-    Then "party1" should have general account balance of "199" for asset "VEGA"
-    Then "node1" should have general account balance of "1003842" for asset "VEGA"
+    Then "party1" should have general account balance of "49" for asset "VEGA"
+    Then "node1" should have general account balance of "3842" for asset "VEGA"
    
    Scenario: A party changes delegation from one validator to another in the same epoch
    Description: A party can change delegation from one validator to another      
+
     When time is updated to "2021-08-26T00:00:21Z"
     #start epoch 2
     When time is updated to "2021-08-26T00:00:22Z"   
+
     #now request to undelegate from node2 and node3 
     And the parties submit the following undelegations:
     | party  | node id  | amount |      when     |
@@ -333,8 +334,10 @@ Feature: Staking & Delegation
     | party  | node id  | amount | 
     | party1 |  node1   |  180   | 
     | party1 |  node1   |  190   |  
+
     #advance to the end of the epoch for the delegation to become effective
     When time is updated to "2021-08-26T00:00:32Z"    
+
      #verify validator score 
     Then the validators should have the following val scores for epoch 2:
     | node id | validator score  | normalised score |
@@ -342,6 +345,7 @@ Feature: Staking & Delegation
     |  node2  |      0.07810     |     0.07810      |
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      |
+
     #node1 has 10k self delegation + 100 from party1
     #node2 has 10k self delegation + 200 from party1
     #node3 has 10k self delegation + 300 from party1
@@ -351,6 +355,7 @@ Feature: Staking & Delegation
     #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 25004
     #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 25004
     #node4 - node13 gets: 0.07657 * 25004
+
     And the parties receive the following reward for epoch 2:
     | party  | asset | amount |
     | party1 | VEGA  |  99    | 
@@ -372,15 +377,18 @@ Feature: Staking & Delegation
     | party1 |  node1   | 470    | 
     | party1 |  node2   | 20     |       
     | party1 |  node3   |  0     | 
+
      #advance to the beginning and end of the following epoch 
     When time is updated to "2021-08-26T00:00:33Z"
     When time is updated to "2021-08-26T00:00:43Z"
+
     #verify validator score 
     Then the validators should have the following val scores for epoch 3:
     | node id | validator score  | normalised score |
     |  node1  |      0.08024     |     0.08024      |    
     |  node2  |      0.07679     |     0.07679      |
     |  node3  |      0.07663     |     0.07663      | 
+
     #node1 has 10k self delegation + 470 from party1
     #node2 has 10k self delegation + 20 from party1
     #node3 has 10k self delegation + 0 from party1
@@ -390,6 +398,7 @@ Feature: Staking & Delegation
     #node2 gets: (1 - 0.883 * 20/10020) * 0.07679 * 12506
     #node3 gets: (1 - 0.883 * 0/1000) * 0.07663 * 12506
     #node4 - node13 gets: 0.07663 * 12506
+
     And the parties receive the following reward for epoch 3:
     | party  | asset | amount |
     | party1 | VEGA  |  40    | 
@@ -406,6 +415,7 @@ Feature: Staking & Delegation
     | node11 | VEGA  |  958   | 
     | node12 | VEGA  |  958   | 
     | node13 | VEGA  |  958   | 
+  
   Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
     Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to another node
     And the parties submit the following undelegations:
@@ -483,6 +493,7 @@ Feature: Staking & Delegation
     | node11 | VEGA  |  1914  | 
     | node12 | VEGA  |  1914  | 
     | node13 | VEGA  |  1914  | 
+  
   Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
     Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains.
     #advance to the end of the epoch
@@ -566,6 +577,7 @@ Feature: Staking & Delegation
     | node11 | VEGA  |  958   | 
     | node12 | VEGA  |  958   | 
     | node13 | VEGA  |  958   | 
+  
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant
    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch and the reward amount per participant is capped
   
@@ -608,7 +620,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  |  3000  | 
     | node13 | VEGA  |  3000  |
 
-Scenario: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances
+  Scenario: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances
     Description: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances when they get rewarded for a full epoch of having delegated stake
 
      And the global reward account gets the following deposits:
@@ -653,8 +665,8 @@ Scenario: Topping up the reward account and confirming reward transfers are corr
     | node12 | VEGA  |  1914  | 
     | node13 | VEGA  |  1914  | 
 
-    Then "party1" should have general account balance of "10099" for asset "VEGA"
-    Then "node1" should have general account balance of "1001916" for asset "VEGA"
+    Then "party1" should have general account balance of "99" for asset "VEGA"
+    Then "node1" should have general account balance of "1916" for asset "VEGA"
   
     And the global reward account gets the following deposits:
       | asset | amount |
@@ -697,17 +709,17 @@ Scenario: Topping up the reward account and confirming reward transfers are corr
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
 
-    Then "party1" should have general account balance of "10300" for asset "VEGA"
-    Then "node1" should have general account balance of "1005748" for asset "VEGA"
+    Then "party1" should have general account balance of "300" for asset "VEGA"
+    Then "node1" should have general account balance of "5748" for asset "VEGA"
 
-Scenario: Parties get the smallest reward amount of 1 when the reward pot is smallest
+  Scenario: Parties get the smallest reward amount of 1 when the reward pot is smallest
     Description:  Validators get the smallest reward amount of 1 and delegator earns nothing
     # Explanation - 1 vega is actually 1000000000000000000 so when reward account = 27 then that’s a very very very small fraction of a vega. Hence noone gets anything because the calculation is made in integers so anything that ends up being less than one is 0
 
     And the global reward account gets the following deposits:
       | asset | amount  |
       | VEGA  | -99972  | 
-      
+
     #advance to the end of the epoch
     When time is updated to "2021-08-26T00:00:21Z"
 
@@ -746,6 +758,4 @@ Scenario: Parties get the smallest reward amount of 1 when the reward pot is sma
     | node12 | VEGA  | 1 | 
     | node13 | VEGA  | 1 | 
 
-    Then "party1" should have general account balance of "10000" for asset "VEGA"
-    Then "node1" should have general account balance of "1000001" for asset "VEGA"
-
+    Then "node1" should have general account balance of "1" for asset "VEGA"
