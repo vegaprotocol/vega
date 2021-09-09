@@ -23,6 +23,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/sync/errgroup"
 )
 
 type brokerTst struct {
@@ -97,6 +98,7 @@ func TestSendEvent(t *testing.T) {
 
 func TestReceive(t *testing.T) {
 	t.Run("Receives events and sends them to broker", testSendsReceivedEvents)
+	t.Run("Returns an error on version mismatch", testErrorOnVersionMismatch)
 }
 
 func TestTxErrEvents(t *testing.T) {
@@ -262,9 +264,10 @@ func testSendsReceivedEvents(t *testing.T) {
 
 	busEvts := []eventspb.BusEvent{
 		{
-			Id:    "id-1",
-			Block: "1",
-			Type:  eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+			Version: 1,
+			Id:      "id-1",
+			Block:   "1",
+			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
 			Event: &eventspb.BusEvent_TimeUpdate{
 				TimeUpdate: &eventspb.TimeUpdate{
 					Timestamp: 1628173151,
@@ -272,9 +275,10 @@ func testSendsReceivedEvents(t *testing.T) {
 			},
 		},
 		{
-			Id:    "id-2",
-			Block: "2",
-			Type:  eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+			Version: 1,
+			Id:      "id-2",
+			Block:   "2",
+			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
 			Event: &eventspb.BusEvent_TimeUpdate{
 				TimeUpdate: &eventspb.TimeUpdate{
 					Timestamp: 1628173152,
@@ -282,9 +286,10 @@ func testSendsReceivedEvents(t *testing.T) {
 			},
 		},
 		{
-			Id:    "id-3",
-			Block: "3",
-			Type:  eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+			Version: 1,
+			Id:      "id-3",
+			Block:   "3",
+			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
 			Event: &eventspb.BusEvent_TimeUpdate{
 				TimeUpdate: &eventspb.TimeUpdate{
 					Timestamp: 1628173152,
@@ -334,6 +339,80 @@ func testSendsReceivedEvents(t *testing.T) {
 	}
 
 	wg.Wait()
+	cancel()
+}
+
+func testErrorOnVersionMismatch(t *testing.T) {
+	tstBroker := getBroker(t)
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	skipCh, closedCh := make(chan struct{}), make(chan struct{})
+	defer func() {
+		tstBroker.Finish()
+		close(closedCh)
+		close(skipCh)
+	}()
+
+	sub.EXPECT().Types().AnyTimes().Return(nil)
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+
+	k1 := tstBroker.Subscribe(sub)
+	assert.NotZero(t, k1)
+
+	evnt := eventspb.BusEvent{
+		Version: 1,
+		Id:      "id-1",
+		Block:   "1",
+		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+		Event: &eventspb.BusEvent_TimeUpdate{
+			TimeUpdate: &eventspb.TimeUpdate{
+				Timestamp: 1628173151,
+			},
+		},
+	}
+
+	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
+	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
+
+	eg, ctx := errgroup.WithContext(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
+	eg.Go(func() error {
+		return tstBroker.Receive(ctx)
+	})
+
+	var numOfRetries int
+	for {
+		err := tstBroker.sock.Dial(tstBroker.dialAddr)
+		if err == nil {
+			break
+		}
+
+		if err != mangosErr.ErrConnRefused {
+			continue
+		}
+
+		if numOfRetries < 5 {
+			numOfRetries++
+			time.Sleep(time.Microsecond * 500)
+			continue
+		}
+
+		t.Fatal(err)
+	}
+
+	b, err := proto.Marshal(&evnt)
+	assert.NoError(t, err)
+
+	err = tstBroker.sock.Send(b)
+	assert.NoError(t, err)
+
+	eg.Go(func() error {
+		time.Sleep(time.Second * 2)
+		return fmt.Errorf("test has timed out")
+	})
+
+	err = eg.Wait()
+	assert.EqualError(t, err, "mismatched BusEvent version received: 2, want 1")
+
 	cancel()
 }
 
