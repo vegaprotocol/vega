@@ -33,11 +33,24 @@ func (e Checkpoint) Proto() eventspb.CheckpointEvent {
 
 func (e Checkpoint) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    e.eventID(),
-		Block: e.TraceID(),
-		Type:  e.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      e.eventID(),
+		Block:   e.TraceID(),
+		Type:    e.et.ToProto(),
 		Event: &eventspb.BusEvent_Checkpoint{
 			Checkpoint: &e.data,
 		},
+	}
+}
+
+func CheckpointEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Checkpoint {
+	event := be.GetCheckpoint()
+	if event == nil {
+		return nil
+	}
+
+	return &Checkpoint{
+		Base: newBaseFromStream(ctx, CheckpointEvent, be),
+		data: *event,
 	}
 }

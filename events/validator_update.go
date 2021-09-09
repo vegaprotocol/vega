@@ -86,9 +86,10 @@ func (vu ValidatorUpdate) StreamMessage() *eventspb.BusEvent {
 	vuproto := vu.Proto()
 
 	return &eventspb.BusEvent{
-		Id:    vu.eventID(),
-		Block: vu.TraceID(),
-		Type:  vu.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      vu.eventID(),
+		Block:   vu.TraceID(),
+		Type:    vu.et.ToProto(),
 		Event: &eventspb.BusEvent_ValidatorUpdate{
 			ValidatorUpdate: &vuproto,
 		},

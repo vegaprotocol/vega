@@ -37,9 +37,10 @@ func (db DelegationBalance) Proto() eventspb.DelegationBalanceEvent {
 func (db DelegationBalance) StreamMessage() *eventspb.BusEvent {
 	p := db.Proto()
 	return &eventspb.BusEvent{
-		Id:    db.eventID(),
-		Block: db.TraceID(),
-		Type:  db.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      db.eventID(),
+		Block:   db.TraceID(),
+		Type:    db.et.ToProto(),
 		Event: &eventspb.BusEvent_DelegationBalance{
 			DelegationBalance: &p,
 		},
