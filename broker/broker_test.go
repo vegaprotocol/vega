@@ -49,6 +49,7 @@ func getBroker(t *testing.T) *brokerTst {
 	// Use in process transport for testing
 	config := broker.NewDefaultConfig()
 	config.SocketConfig.TransportType = "inproc"
+	config.SocketConfig.IP = t.Name()
 	config.SocketConfig.Port = 8085
 
 	sock, err := push.NewSocket()
@@ -359,7 +360,7 @@ func testErrorOnVersionMismatch(t *testing.T) {
 	assert.NotZero(t, k1)
 
 	evnt := eventspb.BusEvent{
-		Version: 1,
+		Version: 2,
 		Id:      "id-1",
 		Block:   "1",
 		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
