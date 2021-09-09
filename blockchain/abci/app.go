@@ -13,7 +13,8 @@ type TxHandler func(ctx context.Context, tx Tx) error
 
 type App struct {
 	abci.BaseApplication
-	codec Codec
+	codec         Codec
+	spamProtector SpamEngine
 
 	// options
 	replayProtector interface {
@@ -25,6 +26,7 @@ type App struct {
 	// handlers
 	OnInitChain  OnInitChainHandler
 	OnBeginBlock OnBeginBlockHandler
+	OnEndBlock   OnEndBlockHandler
 	OnCheckTx    OnCheckTxHandler
 	OnDeliverTx  OnDeliverTxHandler
 	OnCommit     OnCommitHandler
@@ -41,10 +43,17 @@ type App struct {
 	ctx context.Context
 }
 
-func New(codec Codec) *App {
+type SpamEngine interface {
+	PreBlockAccept(tx Tx) (bool, error)
+	PostBlockAccept(tx Tx) (bool, error)
+	EndOfBlock(blockHeight uint64)
+}
+
+func New(codec Codec, spam SpamEngine) *App {
 	lruCache, _ := lru.New(1024)
 	return &App{
 		codec:           codec,
+		spamProtector:   spam,
 		replayProtector: &replayProtectorNoop{},
 		checkTxs:        map[txn.Command]TxHandler{},
 		deliverTxs:      map[txn.Command]TxHandler{},

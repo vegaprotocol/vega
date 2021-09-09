@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/spam"
+
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -148,6 +150,8 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
+	spamEngine := spam.New(log, spam.NewDefaultConfig(), epochService, stakingAccount)
+
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	app := processor.NewApp(
@@ -177,6 +181,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		limits,
 		stakeV,
 		cp,
+		spamEngine,
 	)
 
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)

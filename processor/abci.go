@@ -45,6 +45,12 @@ type Checkpoint interface {
 	Load(ctx context.Context, snap *types.Snapshot) error
 }
 
+type SpamEngine interface {
+	EndOfBlock(blockHeight uint64)
+	PreBlockAccept(tx abci.Tx) (bool, error)
+	PostBlockAccept(tx abci.Tx) (bool, error)
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -79,6 +85,7 @@ type App struct {
 	limits     Limits
 	stake      StakeVerifier
 	checkpoint Checkpoint
+	spam       SpamEngine
 }
 
 func NewApp(
@@ -105,6 +112,7 @@ func NewApp(
 	limits Limits,
 	stake StakeVerifier,
 	checkpoint Checkpoint,
+	spam SpamEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -115,7 +123,7 @@ func NewApp(
 			logging.Error(err))
 	}
 	app := &App{
-		abci: abci.New(&codec{}),
+		abci: abci.New(&codec{}, spam),
 
 		log:      log,
 		cfg:      config,
@@ -143,6 +151,7 @@ func NewApp(
 		limits:     limits,
 		stake:      stake,
 		checkpoint: checkpoint,
+		spam:       spam,
 	}
 
 	// setup handlers

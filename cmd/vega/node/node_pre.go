@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -215,6 +216,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.limits,
 		l.stakeVerifier,
 		l.checkpoint,
+		l.spam,
 	)
 
 	var abciApp tmtypes.Application
@@ -380,6 +382,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
+
+	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches
