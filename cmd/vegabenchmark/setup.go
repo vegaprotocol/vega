@@ -112,6 +112,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		assets,
 		notary,
 		broker,
+		topology,
 	)
 
 	exec := execution.NewEngine(

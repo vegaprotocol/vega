@@ -16,12 +16,7 @@ func PartiesWithdrawTheFollowingAssets(
 	for _, r := range parseWithdrawAssetTable(table) {
 		row := withdrawAssetRow{row: r}
 
-		_, err := collateral.LockFundsForWithdraw(context.Background(), row.Party(), row.Asset(), row.Amount())
-		if err != nil {
-			return errCannotLockFundsForWithdrawal(row, err)
-		}
-
-		_, err = collateral.Withdraw(context.Background(), row.Party(), row.Asset(), row.Amount())
+		_, err := collateral.Withdraw(context.Background(), row.Party(), row.Asset(), row.Amount())
 		if err := checkExpectedError(row, err); err != nil {
 			return err
 		}

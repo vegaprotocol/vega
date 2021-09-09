@@ -151,7 +151,7 @@ func (app *App) processChainEventERC20(
 		if err := app.checkVegaAssetID(act.Withdrawal, "ERC20.AssetWithdrawal"); err != nil {
 			return err
 		}
-		return app.banking.WithdrawalERC20(ctx, act.Withdrawal, evt.Block, evt.Index, txID)
+		return app.banking.ERC20WithdrawalEvent(ctx, act.Withdrawal, evt.Block, evt.Index, txID)
 	default:
 		return ErrUnsupportedEventAction
 	}

@@ -49,7 +49,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination notary_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Notary
 type Notary interface {
-	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind)
 	SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error
 	IsSigned(ctx context.Context, id string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)

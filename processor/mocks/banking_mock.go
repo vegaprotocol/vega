@@ -64,6 +64,20 @@ func (mr *MockBankingMockRecorder) DepositERC20(arg0, arg1, arg2, arg3, arg4, ar
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositERC20", reflect.TypeOf((*MockBanking)(nil).DepositERC20), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
+// ERC20WithdrawalEvent mocks base method
+func (m *MockBanking) ERC20WithdrawalEvent(arg0 context.Context, arg1 *types.ERC20Withdrawal, arg2, arg3 uint64, arg4 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ERC20WithdrawalEvent", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ERC20WithdrawalEvent indicates an expected call of ERC20WithdrawalEvent
+func (mr *MockBankingMockRecorder) ERC20WithdrawalEvent(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ERC20WithdrawalEvent", reflect.TypeOf((*MockBanking)(nil).ERC20WithdrawalEvent), arg0, arg1, arg2, arg3, arg4)
+}
+
 // EnableBuiltinAsset mocks base method
 func (m *MockBanking) EnableBuiltinAsset(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
@@ -106,44 +120,30 @@ func (mr *MockBankingMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasBalance", reflect.TypeOf((*MockBanking)(nil).HasBalance), arg0)
 }
 
-// LockWithdrawalERC20 mocks base method
-func (m *MockBanking) LockWithdrawalERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint, arg5 *vega.Erc20WithdrawExt) error {
+// WithdrawBuiltinAsset mocks base method
+func (m *MockBanking) WithdrawBuiltinAsset(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LockWithdrawalERC20", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "WithdrawBuiltinAsset", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// LockWithdrawalERC20 indicates an expected call of LockWithdrawalERC20
-func (mr *MockBankingMockRecorder) LockWithdrawalERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+// WithdrawBuiltinAsset indicates an expected call of WithdrawBuiltinAsset
+func (mr *MockBankingMockRecorder) WithdrawBuiltinAsset(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockWithdrawalERC20", reflect.TypeOf((*MockBanking)(nil).LockWithdrawalERC20), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).WithdrawBuiltinAsset), arg0, arg1, arg2, arg3, arg4)
 }
 
-// WithdrawalBuiltinAsset mocks base method
-func (m *MockBanking) WithdrawalBuiltinAsset(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint) error {
+// WithdrawERC20 mocks base method
+func (m *MockBanking) WithdrawERC20(arg0 context.Context, arg1, arg2, arg3 string, arg4 *num.Uint, arg5 *vega.Erc20WithdrawExt) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WithdrawalBuiltinAsset", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "WithdrawERC20", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// WithdrawalBuiltinAsset indicates an expected call of WithdrawalBuiltinAsset
-func (mr *MockBankingMockRecorder) WithdrawalBuiltinAsset(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+// WithdrawERC20 indicates an expected call of WithdrawERC20
+func (mr *MockBankingMockRecorder) WithdrawERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawalBuiltinAsset", reflect.TypeOf((*MockBanking)(nil).WithdrawalBuiltinAsset), arg0, arg1, arg2, arg3, arg4)
-}
-
-// WithdrawalERC20 mocks base method
-func (m *MockBanking) WithdrawalERC20(arg0 context.Context, arg1 *types.ERC20Withdrawal, arg2, arg3 uint64, arg4 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WithdrawalERC20", arg0, arg1, arg2, arg3, arg4)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// WithdrawalERC20 indicates an expected call of WithdrawalERC20
-func (mr *MockBankingMockRecorder) WithdrawalERC20(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawalERC20", reflect.TypeOf((*MockBanking)(nil).WithdrawalERC20), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WithdrawERC20", reflect.TypeOf((*MockBanking)(nil).WithdrawERC20), arg0, arg1, arg2, arg3, arg4, arg5)
 }

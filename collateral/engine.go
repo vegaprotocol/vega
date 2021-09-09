@@ -1483,15 +1483,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		}
 		req.Amount = p.Amount.Amount.Clone()
 		req.MinAmount = p.MinAmount.Clone()
-	case types.TransferTypeWithdrawLock:
-		req.FromAccount = []*types.Account{
-			mEvt.general,
-		}
-		req.ToAccount = []*types.Account{
-			mEvt.lock,
-		}
-		req.Amount = p.Amount.Amount.Clone()
-		req.MinAmount = p.Amount.Amount.Clone()
 	case types.TransferTypeDeposit:
 		// ensure we have the funds req.ToAccount deposit
 		eacc.Balance = eacc.Balance.Add(eacc.Balance, p.Amount.Amount)
@@ -1520,14 +1511,13 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		req.MinAmount = p.Amount.Amount.Clone()
 	case types.TransferTypeWithdraw:
 		req.FromAccount = []*types.Account{
-			mEvt.lock,
+			mEvt.general,
 		}
 		req.ToAccount = []*types.Account{
 			eacc,
 		}
 		req.Amount = p.Amount.Amount.Clone()
 		req.MinAmount = p.Amount.Amount.Clone()
-
 	case types.TransferTypeRewardPayout:
 		rewardAcct, err := e.GetGlobalRewardAccount(asset)
 		if err != nil {
@@ -1956,35 +1946,6 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	return generalID, nil
 }
 
-// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withdrawn by a party
-func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyID, asset string) (*types.Account, error) {
-	if !e.AssetExists(asset) {
-		return nil, ErrInvalidAssetID
-	}
-
-	id := e.accountID(noMarket, partyID, asset, types.AccountTypeLockWithdraw)
-	var (
-		acc *types.Account
-		ok  bool
-	)
-	if acc, ok = e.accs[id]; !ok {
-		acc = &types.Account{
-			ID:       id,
-			Asset:    asset,
-			MarketID: noMarket,
-			Balance:  num.Zero(),
-			Owner:    partyID,
-			Type:     types.AccountTypeLockWithdraw,
-		}
-		e.accs[id] = acc
-		e.addPartyAccount(partyID, id, acc)
-		e.addAccountToHashableSlice(acc)
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	}
-
-	return acc, nil
-}
-
 // RemoveDistressed will remove all distressed party in the event positions
 // for a given market and asset
 func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
@@ -2187,67 +2148,18 @@ func (e *Engine) HasGeneralAccount(party, asset string) bool {
 	return err == nil
 }
 
-// LockFundsForWithdraw will lock funds in a separate account to be withdrawn later on by the party
-func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error) {
-	if !e.AssetExists(asset) {
-		return nil, ErrInvalidAssetID
-	}
-	genacc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeGeneral))
-	if err != nil {
-		return nil, ErrAccountDoesNotExist
-	}
-	if amount.GT(genacc.Balance) {
-		return nil, ErrNotEnoughFundsToWithdraw
-	}
-	lacc, err := e.GetOrCreatePartyLockWithdrawAccount(ctx, partyID, asset)
-	if err != nil {
-		return nil, err
-	}
-	// @TODO ensure this is safe, the balances are pointers here!
-	mEvt := marginUpdate{
-		general: genacc,
-		lock:    lacc,
-	}
-	transf := types.Transfer{
-		Owner: partyID,
-		Amount: &types.FinancialAmount{
-			Amount: amount,
-			Asset:  asset,
-		},
-		Type:      types.TransferTypeWithdrawLock,
-		MinAmount: amount,
-	}
-	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
-	if err != nil {
-		return nil, err
-	}
-	res, err := e.getLedgerEntries(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	// ensure events are sent
-	for _, bal := range res.Balances {
-		if err := e.UpdateBalance(ctx, bal.Account.ID, bal.Account.Balance); err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
 // Withdraw will remove the specified amount from the party
 // general account
 func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
 	}
-	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeLockWithdraw))
+	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeGeneral))
 	if err != nil {
 		return nil, ErrAccountDoesNotExist
 	}
-
-	// check we have more money than required to withdraw
-	if acc.Balance.LT(amount) {
-		return nil, fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
+	if amount.GT(acc.Balance) {
+		return nil, ErrNotEnoughFundsToWithdraw
 	}
 
 	transf := types.Transfer{
@@ -2261,7 +2173,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	}
 	// @TODO ensure this is safe!
 	mEvt := marginUpdate{
-		lock: acc,
+		general: acc,
 	}
 	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
 	if err != nil {

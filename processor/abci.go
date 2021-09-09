@@ -844,13 +844,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	}
 
 	// then instruct the notary to start getting signature from validators
-	if err := app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew); err != nil {
-		prop.State = types.ProposalStateFailed
-		app.log.Error("unable to enact proposal",
-			logging.ProposalID(prop.ID),
-			logging.Error(err))
-		return
-	}
+	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew)
 
 	// if we are not a validator the job is done here
 	if !app.top.IsValidator() {

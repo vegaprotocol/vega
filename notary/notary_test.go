@@ -63,10 +63,8 @@ func testAddKeyForKOResource(t *testing.T) {
 	assert.False(t, ok)
 
 	// then try to start twice an aggregate
-	err = notr.StartAggregate(resID, kind)
-	assert.NoError(t, err)
-	err = notr.StartAggregate(resID, kind)
-	assert.EqualError(t, err, notary.ErrAggregateSigAlreadyStartedForResource.Error())
+	notr.StartAggregate(resID, kind)
+	assert.Panics(t, func() { notr.StartAggregate(resID, kind) }, "expect to panic")
 }
 
 func testAddKeyForOKResource(t *testing.T) {
@@ -77,9 +75,7 @@ func testAddKeyForOKResource(t *testing.T) {
 	key := "123456"
 	sig := []byte("123456")
 
-	err := notr.StartAggregate(resID, kind)
-	assert.NoError(t, err)
-
+	notr.StartAggregate(resID, kind)
 	notr.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
 
 	ns := commandspb.NodeSignature{
@@ -106,8 +102,7 @@ func testAddKeyFinalize(t *testing.T) {
 	notr.top.EXPECT().Len().AnyTimes().Return(1)
 	notr.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
 
-	err := notr.StartAggregate(resID, kind)
-	assert.NoError(t, err)
+	notr.StartAggregate(resID, kind)
 
 	ns := commandspb.NodeSignature{
 		Sig:  sig,

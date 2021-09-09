@@ -360,7 +360,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
-	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
+	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker, l.topology)
 	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
 	// now instantiate the blockchain layer

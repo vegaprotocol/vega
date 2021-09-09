@@ -21,7 +21,11 @@ import (
 )
 
 const (
-	withdrawalsDefaultExpiry = 24 * 7 * time.Hour
+	// this is temporarily used until we remove expiry completely
+	// make the expiry 2 years, which will outlive anyway any
+	// vega network at first.
+	// 24 hours * 365 * days * 2 years
+	withdrawalsDefaultExpiry = 24 * 365 * 2 * time.Hour
 )
 
 var (
@@ -42,7 +46,7 @@ type Assets interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/banking Notary
 type Notary interface {
-	StartAggregate(resID string, kind types.NodeSignatureKind) error
+	StartAggregate(resID string, kind types.NodeSignatureKind)
 	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
@@ -50,11 +54,11 @@ type Notary interface {
 // Collateral engine
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/banking Collateral
 type Collateral interface {
-	Deposit(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error)
-	Withdraw(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error)
-	LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	HasBalance(party string) bool
+	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 }
 
 // Witness provide foreign chain resources validations
@@ -67,6 +71,12 @@ type Witness interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/banking TimeService
 type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
+}
+
+// Topology ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/banking Topology
+type Topology interface {
+	IsValidator() bool
 }
 
 // Broker - the event bus
@@ -85,13 +95,15 @@ var (
 )
 
 type Engine struct {
-	cfg           Config
-	log           *logging.Logger
-	broker        Broker
-	col           Collateral
-	witness       Witness
-	notary        Notary
-	assets        Assets
+	cfg     Config
+	log     *logging.Logger
+	broker  Broker
+	col     Collateral
+	witness Witness
+	notary  Notary
+	assets  Assets
+	top     Topology
+
 	assetActs     map[string]*assetAction
 	seen          map[txRef]struct{}
 	withdrawals   map[string]withdrawalRef
@@ -107,7 +119,7 @@ type withdrawalRef struct {
 	ref *big.Int
 }
 
-func New(log *logging.Logger, cfg Config, col Collateral, witness Witness, tsvc TimeService, assets Assets, notary Notary, broker Broker) (e *Engine) {
+func New(log *logging.Logger, cfg Config, col Collateral, witness Witness, tsvc TimeService, assets Assets, notary Notary, broker Broker, top Topology) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -118,13 +130,14 @@ func New(log *logging.Logger, cfg Config, col Collateral, witness Witness, tsvc 
 		broker:        broker,
 		col:           col,
 		witness:       witness,
-		assetActs:     map[string]*assetAction{},
 		assets:        assets,
-		seen:          map[txRef]struct{}{},
 		notary:        notary,
+		top:           top,
+		assetActs:     map[string]*assetAction{},
+		seen:          map[txRef]struct{}{},
 		withdrawals:   map[string]withdrawalRef{},
-		withdrawalCnt: big.NewInt(0),
 		deposits:      map[string]*types.Deposit{},
+		withdrawalCnt: big.NewInt(0),
 	}
 }
 
@@ -159,76 +172,6 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 	atomic.StoreUint32(&aa.state, newState)
 }
 
-func (e *Engine) EnableBuiltinAsset(ctx context.Context, assetID string) error {
-	return e.finalizeAssetList(ctx, assetID)
-}
-
-func (e *Engine) WithdrawalBuiltinAsset(ctx context.Context, id, party, assetID string, amount *num.Uint) error {
-	asset, err := e.assets.Get(assetID)
-	if err != nil {
-		e.log.Error("unable to get asset by id",
-			logging.AssetID(assetID),
-			logging.Error(err))
-		return err
-	}
-	if !asset.IsBuiltinAsset() {
-		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
-	}
-
-	w, ref := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
-	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-	e.withdrawals[w.ID] = withdrawalRef{w, ref}
-	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
-	if err != nil {
-		w.Status = types.Withdrawal_STATUS_CANCELLED
-		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-		e.withdrawals[w.ID] = withdrawalRef{w, ref}
-		e.log.Error("cannot withdraw asset for party",
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-	w.Status = types.Withdrawal_STATUS_FINALIZED
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
-	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-	e.withdrawals[w.ID] = withdrawalRef{w, ref}
-
-	return e.finalizeWithdrawal(ctx, party, assetID, amount)
-}
-
-func (e *Engine) DepositBuiltinAsset(
-	ctx context.Context, d *types.BuiltinAssetDeposit, id string, nonce uint64) error {
-	now := e.currentTime
-	dep := e.newDeposit(id, d.PartyID, d.VegaAssetID, d.Amount, "") // no hash
-	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	asset, err := e.assets.Get(d.VegaAssetID)
-	if err != nil {
-		dep.Status = types.Deposit_STATUS_CANCELLED
-		e.broker.Send(events.NewDepositEvent(ctx, *dep))
-		e.log.Error("unable to get asset by id",
-			logging.AssetID(d.VegaAssetID),
-			logging.Error(err))
-		return err
-	}
-	if !asset.IsBuiltinAsset() {
-		dep.Status = types.Deposit_STATUS_CANCELLED
-		e.broker.Send(events.NewDepositEvent(ctx, *dep))
-		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
-	}
-
-	aa := &assetAction{
-		id:       dep.ID,
-		state:    pendingState,
-		builtinD: d,
-		asset:    asset,
-	}
-	e.assetActs[aa.id] = aa
-	e.deposits[dep.ID] = dep
-	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
-}
-
 func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
 	asset, _ := e.assets.Get(al.VegaAssetID)
@@ -243,164 +186,6 @@ func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, bloc
 	}
 	e.assetActs[aa.id] = aa
 	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
-}
-
-func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id string, blockNumber, txIndex uint64, txHash string) error {
-	now := e.currentTime
-	dep := e.newDeposit(id, d.TargetPartyID, d.VegaAssetID, d.Amount, txHash)
-	e.broker.Send(events.NewDepositEvent(ctx, *dep))
-	asset, err := e.assets.Get(d.VegaAssetID)
-	if err != nil {
-		dep.Status = types.Deposit_STATUS_CANCELLED
-		e.broker.Send(events.NewDepositEvent(ctx, *dep))
-		e.log.Error("unable to get asset by id",
-			logging.AssetID(d.VegaAssetID),
-			logging.Error(err))
-		return err
-	}
-	if !asset.IsERC20() {
-		dep.Status = types.Deposit_STATUS_CANCELLED
-		e.broker.Send(events.NewDepositEvent(ctx, *dep))
-		return ErrWrongAssetTypeUsedInERC20ChainEvent
-	}
-	aa := &assetAction{
-		id:          dep.ID,
-		state:       pendingState,
-		erc20D:      d,
-		asset:       asset,
-		blockNumber: blockNumber,
-		txIndex:     txIndex,
-		hash:        txHash,
-	}
-	e.assetActs[aa.id] = aa
-	e.deposits[dep.ID] = dep
-	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
-}
-
-func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
-	now := e.currentTime
-	asset, err := e.assets.Get(w.VegaAssetID)
-	if err != nil {
-		e.log.Debug("unable to get asset by id",
-			logging.AssetID(w.VegaAssetID),
-			logging.Error(err))
-		return err
-	}
-
-	// check straight away if the withdrawal is signed
-	nonce := &big.Int{}
-	nonce.SetString(w.ReferenceNonce, 10)
-	withd, err := e.getWithdrawalFromRef(nonce)
-	if err != nil {
-		return err
-	}
-	if withd.Status != types.Withdrawal_STATUS_OPEN {
-		return ErrInvalidWithdrawalState
-	}
-	withd.TxHash = txHash
-	if _, ok := e.notary.IsSigned(ctx, withd.ID, types.NodeSignatureKindAssetWithdrawal); !ok {
-		return ErrWithdrawalNotReady
-	}
-
-	aa := &assetAction{
-		id:          id(w, uint64(now.UnixNano())),
-		state:       pendingState,
-		erc20W:      w,
-		asset:       asset,
-		blockNumber: blockNumber,
-		txIndex:     txIndex,
-		hash:        txHash,
-		withdrawal: &withdrawal{
-			nonce: nonce,
-		},
-	}
-	e.assetActs[aa.id] = aa
-	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
-}
-
-func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID string, amount *num.Uint, ext *types.Erc20WithdrawExt) error {
-	asset, err := e.assets.Get(assetID)
-	if err != nil {
-		e.log.Debug("unable to get asset by id",
-			logging.AssetID(assetID),
-			logging.Error(err))
-		return err
-	}
-	if !asset.IsERC20() {
-		return ErrWrongAssetUsedForERC20Withdraw
-	}
-
-	now := e.currentTime
-	expiry := now.Add(withdrawalsDefaultExpiry)
-	wext := &types.WithdrawExt{
-		Ext: &types.WithdrawExt_Erc20{
-			Erc20: ext,
-		},
-	}
-	w, ref := e.newWithdrawal(id, party, assetID, amount, expiry, wext)
-	e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-	e.withdrawals[w.ID] = withdrawalRef{w, ref}
-	// try to lock the funds
-	res, err := e.col.LockFundsForWithdraw(ctx, party, assetID, amount)
-	if err != nil {
-		w.Status = types.Withdrawal_STATUS_CANCELLED
-		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-		e.withdrawals[w.ID] = withdrawalRef{w, ref}
-		e.log.Debug("cannot withdraw asset for party",
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
-
-	// we were able to lock the funds, then we can send the vote through the network
-	if err := e.notary.StartAggregate(w.ID, types.NodeSignatureKindAssetWithdrawal); err != nil {
-		w.Status = types.Withdrawal_STATUS_CANCELLED
-		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-		e.withdrawals[w.ID] = withdrawalRef{w, ref}
-		e.log.Error("unable to start aggregating signature for the withdrawal",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-
-	// then get the signature for the withdrawal and send it
-	erc20asset, _ := asset.ERC20() // no check error as we checked earlier we had an erc20 asset.
-	_, sig, err := erc20asset.SignWithdrawal(amount.Clone(), w.ExpirationDate, ext.GetReceiverAddress(), ref)
-	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to sign withdrawal",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-
-	err = e.notary.SendSignature(
-		ctx, w.ID, sig, types.NodeSignatureKindAssetWithdrawal)
-	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to send node signature",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(party),
-			logging.AssetID(assetID),
-			logging.BigUint("amount", amount),
-			logging.Error(err))
-		return err
-	}
-
-	return nil
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
@@ -461,24 +246,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		dep := e.deposits[aa.id]
 		return e.finalizeDeposit(ctx, dep)
 	case aa.IsERC20AssetList():
-		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
-	case aa.IsERC20Withdrawal():
-		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
-		if err != nil {
-			// Nothing to do, withdrawal does not exists
-			return err
-		}
-		if w.Status != types.Withdrawal_STATUS_OPEN {
-			// withdrawal was already canceled or finalized
-			return ErrInvalidWithdrawalState
-		}
-		now := e.currentTime
-		// update with finalize time + tx hash
-		w.Status = types.Withdrawal_STATUS_FINALIZED
-		w.WithdrawalDate = now.UnixNano()
-		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
-		e.withdrawals[w.ID] = withdrawalRef{w, aa.withdrawal.nonce}
-		return e.finalizeWithdrawal(ctx, w.PartyID, w.Asset, w.Amount)
+		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetId)
 	default:
 		return ErrUnknownAssetAction
 	}
@@ -487,7 +255,6 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	for _, v := range e.withdrawals {
 		if v.ref.Cmp(ref) == 0 {
-
 			return v.w, nil
 		}
 	}
@@ -496,22 +263,30 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 }
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
-	d.Status = types.Deposit_STATUS_FINALIZED
-	d.CreditDate = e.currentTime.UnixNano()
-	e.broker.Send(events.NewDepositEvent(ctx, *d))
+	defer func() { e.broker.Send(events.NewDepositEvent(ctx, *d)) }()
 	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, d.Amount)
 	if err != nil {
+		d.Status = types.DepositStatusCancelled
 		return err
 	}
+
+	d.Status = types.DepositStatusFinalized
+	d.CreditDate = e.currentTime.UnixNano()
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	return nil
 }
 
-func (e *Engine) finalizeWithdrawal(ctx context.Context, party, asset string, amount *num.Uint) error {
-	res, err := e.col.Withdraw(ctx, party, asset, amount)
+func (e *Engine) withdraw(
+	ctx context.Context, w *types.Withdrawal) error {
+	// always send the withdrawal event
+	defer func() { e.broker.Send(events.NewWithdrawalEvent(ctx, *w)) }()
+
+	res, err := e.col.Withdraw(ctx, w.PartyID, w.Asset, w.Amount.Clone())
 	if err != nil {
 		return err
 	}
+
+	w.Status = types.WithdrawalStatusFinalized
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	return nil
 }
@@ -541,11 +316,12 @@ func (e *Engine) newWithdrawal(
 ) (w *types.Withdrawal, ref *big.Int) {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
+	// reference needs to be an int, deterministic for the contracts
 	ref = big.NewInt(0).Add(e.withdrawalCnt, big.NewInt(e.currentTime.Unix()))
 	e.withdrawalCnt.Add(e.withdrawalCnt, big.NewInt(1))
 	w = &types.Withdrawal{
 		ID:             id,
-		Status:         types.Withdrawal_STATUS_OPEN,
+		Status:         types.WithdrawalStatusOpen,
 		PartyID:        partyID,
 		Asset:          asset,
 		Amount:         amount,
@@ -564,7 +340,7 @@ func (e *Engine) newDeposit(
 	asset = strings.TrimPrefix(asset, "0x")
 	return &types.Deposit{
 		ID:           id,
-		Status:       types.Deposit_STATUS_OPEN,
+		Status:       types.DepositStatusOpen,
 		PartyID:      partyID,
 		Asset:        asset,
 		Amount:       amount,
