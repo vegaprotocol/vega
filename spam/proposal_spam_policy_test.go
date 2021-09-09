@@ -1,0 +1,275 @@
+package spam
+
+import (
+	"strconv"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
+)
+
+var insufficientPropTokens, _ = num.UintFromString("50000000000000000000000", 10)
+
+var sufficientPropTokens, _ = num.UintFromString("100000000000000000000000", 10)
+
+func TestProposalSpamProtection(t *testing.T) {
+	t.Run("Pre reject proposal from party with insufficient balance at the beginning of the epoch", testProposalPreRejectInsufficientBalance)
+	t.Run("Pre reject proposal from party that is banned for the epochs", testProposalPreRejectBannedParty)
+	t.Run("Pre reject proposal from party that already had more than 3 proposal for the epoch", testProposalPreRejectTooManyProposals)
+	t.Run("Pre accept proposal success", testProposalPreAccept)
+	t.Run("Post accept proposal success", testProposalPostAccept)
+	t.Run("Post reject proposal from party with too many proposals in total all from current block", testProposalPostRejectTooManyProposals)
+	t.Run("Proposal counts from the block successfully applied on state", testProposalCountersUpdated)
+	t.Run("Ban offensive party", testProposalBanOffensiveParty)
+	t.Run("Start of epoch resets counters", testProposalReset)
+}
+
+// reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch
+func testProposalPreRejectInsufficientBalance(t *testing.T) {
+	policy := NewProposalSpamPolicy()
+	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": insufficientPropTokens})
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	accept, err := policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, ErrInsufficientTokensForProposal, err)
+}
+
+// reject proposal requests from banned parties for as long as they are banned
+func testProposalPreRejectBannedParty(t *testing.T) {
+	policy := NewProposalSpamPolicy()
+
+	// epoch 0 started party1 has enough balance
+	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": sufficientPropTokens})
+
+	// trigger banning of party1 by causing it to post reject 3/6 of the proposal
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	for i := 0; i < 6; i++ {
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, false, accept)
+		require.Equal(t, ErrTooManyProposals, err)
+	}
+
+	// end the block for banning to take place
+	policy.EndOfBlock(1)
+
+	require.Equal(t, uint64(3), policy.bannedParties["party1"])
+	accept, err := policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, ErrPartyIsBannedFromProposal, err)
+
+	// advance epochs - verify still banned until epoch 3 (including)
+	for i := 0; i < 4; i++ {
+		policy.Reset(types.Epoch{Seq: uint64(i)}, map[string]*num.Uint{"party1": sufficientPropTokens})
+		require.Equal(t, uint64(3), policy.bannedParties["party1"])
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, false, accept)
+		require.Equal(t, ErrPartyIsBannedFromProposal, err)
+	}
+	// should be released from ban on epoch 4
+	policy.Reset(types.Epoch{Seq: 4}, map[string]*num.Uint{"party1": sufficientPropTokens})
+	accept, err = policy.PreBlockAccept(tx)
+	require.Equal(t, true, accept)
+	require.Nil(t, err)
+}
+
+func testProposalPreRejectTooManyProposals(t *testing.T) {
+	policy := NewProposalSpamPolicy()
+	// epoch 0 block 0
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientPropTokens
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+
+	// propose 5 proposals, all preaccepted 3 post accepted
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	//pre accepted
+	for i := 0; i < 4; i++ {
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	// 3 post accepted
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	// end block 0
+	policy.EndOfBlock(1)
+
+	// try to submit proposal - pre rejected because it already have 3 proposals
+	accept, err := policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, ErrTooManyProposals, err)
+
+	// advance to next epoch to reset limits
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	for i := 0; i < 3; i++ {
+		tx := &testTx{party: "party1", proposal: "proposal1"}
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+}
+
+func testProposalPreAccept(t *testing.T) {
+	policy := NewProposalSpamPolicy()
+	// epoch 0 block 0
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientPropTokens
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+
+	// propose 5 times all pre accepted, 3 for each post accepted
+	for i := 0; i < 2; i++ {
+		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
+		//pre accepted
+		for i := 0; i < 5; i++ {
+			accept, err := policy.PreBlockAccept(tx)
+			require.Equal(t, true, accept)
+			require.Nil(t, err)
+		}
+	}
+}
+
+func testProposalPostAccept(t *testing.T) {
+	policy := NewProposalSpamPolicy()
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientPropTokens
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	//pre accepted
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	//post accepted
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	require.Equal(t, blockRejectInfo{total: 3, rejected: 0}, *policy.partyBlockRejects["party1"])
+}
+
+func testProposalPostRejectTooManyProposals(t *testing.T) {
+	policy := NewProposalSpamPolicy()
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientPropTokens
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	//pre accepted
+	for i := 0; i < 5; i++ {
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	//post accepted
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	//post rejected
+	for i := 0; i < 2; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, false, accept)
+		require.Equal(t, ErrTooManyProposals, err)
+	}
+
+	require.Equal(t, blockRejectInfo{total: 5, rejected: 2}, *policy.partyBlockRejects["party1"])
+}
+
+func testProposalCountersUpdated(t *testing.T) {
+	policy := NewProposalSpamPolicy()
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientPropTokens
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+
+	tx := &testTx{party: "party1", proposal: "proposal"}
+	//pre accepted
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	//post accepted
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	policy.EndOfBlock(1)
+	require.Equal(t, 1, len(policy.partyToProposalCount))
+	require.Equal(t, uint64(3), policy.partyToProposalCount["party1"])
+}
+
+func testProposalBanOffensiveParty(t *testing.T) {
+	//TODO
+}
+
+func testProposalReset(t *testing.T) {
+	// set state
+	policy := NewProposalSpamPolicy()
+
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientPropTokens
+
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	//pre accepted
+	for i := 0; i < 6; i++ {
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+	//post accepted
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+	}
+
+	for i := 0; i < 3; i++ {
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, false, accept)
+		require.Equal(t, ErrTooManyProposals, err)
+	}
+
+	// trigger ban of party1 until epoch 4
+	policy.EndOfBlock(1)
+	// verify reset at the start of new epoch, party1 should still be banned for the epoch until epoch 4
+	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
+	require.Equal(t, 0, len(policy.partyToProposalCount))
+	require.Equal(t, 1, len(policy.bannedParties))
+	require.Equal(t, 1, len(policy.tokenBalance))
+
+	// advance epochs until the ban is lifted fro party1
+	policy.Reset(types.Epoch{Seq: 2}, tokenMap)
+	require.Equal(t, 1, len(policy.bannedParties))
+	policy.Reset(types.Epoch{Seq: 3}, tokenMap)
+	require.Equal(t, 1, len(policy.bannedParties))
+	policy.Reset(types.Epoch{Seq: 4}, tokenMap)
+	require.Equal(t, 0, len(policy.bannedParties))
+
+}

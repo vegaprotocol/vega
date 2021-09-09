@@ -39,6 +39,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -71,17 +72,17 @@ type NodeCommand struct {
 	conf       config.Config
 	cfgwatchr  *config.Watcher
 
-	executionEngine *execution.Engine
-	governance      *governance.Engine
-	collateral      *collateral.Engine
-	oracle          *oracles.Engine
-	oracleAdaptors  *adaptors.Adaptors
-	netParams       *netparams.Store
-	delegation      *delegation.Engine
-	limits          *limits.Engine
-	rewards         *rewards.Engine
-	checkpoint      *checkpoint.Engine
-
+	executionEngine      *execution.Engine
+	governance           *governance.Engine
+	collateral           *collateral.Engine
+	oracle               *oracles.Engine
+	oracleAdaptors       *adaptors.Adaptors
+	netParams            *netparams.Store
+	delegation           *delegation.Engine
+	limits               *limits.Engine
+	rewards              *rewards.Engine
+	checkpoint           *checkpoint.Engine
+	spam                 *spam.Engine
 	nodeWallet           *nodewallet.Service
 	nodeWalletPassphrase string
 

@@ -42,11 +42,31 @@ func (tx *testTx) Validate() error {
 	return nil
 }
 
+type testSpam struct {
+}
+
+func (*testSpam) EndOfBlock(blockHeight uint64) {
+}
+
+func (*testSpam) PreBlockAccept(tx abci.Tx) (bool, error) {
+	return true, nil
+}
+
+func (*testSpam) PostBlockAccept(tx abci.Tx) (bool, error) {
+	return true, nil
+}
+
 type testCodec struct {
 	txs map[string]abci.Tx
 }
 
 func newTestCodec() *testCodec {
+	return &testCodec{
+		txs: map[string]abci.Tx{},
+	}
+}
+
+func newSpamProtection() *testCodec {
 	return &testCodec{
 		txs: map[string]abci.Tx{},
 	}
@@ -79,7 +99,7 @@ var (
 func TestABCICheckTx(t *testing.T) {
 	cdc := newTestCodec()
 
-	app := abci.New(cdc).
+	app := abci.New(cdc, &testSpam{}).
 		HandleCheckTx(testCommandA, func(ctx context.Context, tx abci.Tx) error {
 			require.Equal(t, "val", ctx.Value(testKey))
 			return nil
@@ -187,7 +207,7 @@ func TestReplayProtectionByDistance(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		app := abci.New(cdc).
+		app := abci.New(cdc, &testSpam{}).
 			HandleDeliverTx(
 				testCommandA,
 				func(ctx context.Context, tx abci.Tx) error { return nil },
@@ -223,7 +243,7 @@ func TestReplayProtectionByCache(t *testing.T) {
 		command:     testCommandA,
 	})
 
-	app := abci.New(cdc).HandleDeliverTx(
+	app := abci.New(cdc, &testSpam{}).HandleDeliverTx(
 		testCommandA,
 		func(ctx context.Context, tx abci.Tx) error { return nil },
 	)

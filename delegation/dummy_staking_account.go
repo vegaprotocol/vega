@@ -13,6 +13,10 @@ type DummyStakingAccounts struct {
 	asset            string
 }
 
+func (a *DummyStakingAccounts) GetAllAvailableBalances() map[string]*num.Uint {
+	return map[string]*num.Uint{}
+}
+
 func (d *DummyStakingAccounts) GovAssetUpdated(ctx context.Context, asset string) error {
 	d.asset = asset
 	return nil
