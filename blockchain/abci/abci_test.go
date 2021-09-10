@@ -178,6 +178,10 @@ func setGenesisState(app *abci.App, state *abci.GenesisState) {
 	})
 }
 
+func TestSpamProtection(t *testing.T) {
+
+}
+
 func TestReplayProtectionByDistance(t *testing.T) {
 	cdc := newTestCodec()
 	tx := []byte("tx")

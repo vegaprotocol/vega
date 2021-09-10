@@ -34,10 +34,7 @@ func TestVotingSpamProtection(t *testing.T) {
 	t.Run("Post reject vote from party with too many votes in total all from current block", testPostRejectTooManyVotes)
 	t.Run("Vote counts from the block successfully applied on state", testCountersUpdated)
 	t.Run("Calculate mean rejection rate correctly in the last n blocks", testCalcMeanRejectionRate)
-	t.Run("Ban offensive party", testBanOffencsiveParty)
-	t.Run("Increase limit over blocks", testIncreaseLimitsOverBlocks)
 	t.Run("On epoch start voting counters are reset", testReset)
-
 }
 
 // reject vote requests when the voter doesn't have sufficient balance at the beginning of the epoch
@@ -433,15 +430,24 @@ func testCountersUpdated(t *testing.T) {
 }
 
 func testCalcMeanRejectionRate(t *testing.T) {
-	//TODO
-}
+	// set state
+	policy := NewVoteSpamPolicy()
 
-func testBanOffencsiveParty(t *testing.T) {
-	//TODO
-}
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientTokensForVoting
 
-func testIncreaseLimitsOverBlocks(t *testing.T) {
-	//TODO
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.recentBlocksRejectStats[0] = &blockRejectInfo{total: 10, rejected: 5}
+	require.Equal(t, 0.5, policy.calcRejectAverage())
+
+	policy.recentBlocksRejectStats[1] = &blockRejectInfo{total: 15, rejected: 10}
+	require.Equal(t, 0.6, policy.calcRejectAverage())
+
+	for i := 2; i < 10; i++ {
+		policy.recentBlocksRejectStats[i] = &blockRejectInfo{total: uint64(10 * i), rejected: uint64(4 * i)}
+	}
+	//total: 465 rejected: 191
+	require.Equal(t, 0.410752688172043, policy.calcRejectAverage())
 }
 
 func testReset(t *testing.T) {

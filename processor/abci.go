@@ -161,6 +161,7 @@ func NewApp(
 	// setup handlers
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
+	app.abci.OnEndBlock = app.OnEndBlock
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
@@ -264,6 +265,16 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	}
 
 	return tmtypes.ResponseInitChain{}
+}
+
+func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {
+	app.log.Debug("ABCI service END block completed",
+		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
+		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
+		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
+		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+	)
+	return
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block

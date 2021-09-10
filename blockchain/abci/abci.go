@@ -53,7 +53,9 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBegi
 
 func (app *App) EndBlock(req types.RequestEndBlock) (resp types.ResponseEndBlock) {
 	height := uint64(req.Height)
-	app.spamProtector.EndOfBlock(height)
+	if app.spamProtector != nil {
+		app.spamProtector.EndOfBlock(height)
+	}
 
 	if fn := app.OnEndBlock; fn != nil {
 		app.ctx, resp = fn(req)
