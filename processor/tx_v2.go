@@ -117,6 +117,43 @@ func (t TxV2) Command() txn.Command {
 	}
 }
 
+func (t TxV2) GetCmd() interface{} {
+	switch cmd := t.inputData.Command.(type) {
+	case *commandspb.InputData_OrderSubmission:
+		return cmd.OrderSubmission
+	case *commandspb.InputData_OrderCancellation:
+		return cmd.OrderCancellation
+	case *commandspb.InputData_OrderAmendment:
+		return cmd.OrderAmendment
+	case *commandspb.InputData_VoteSubmission:
+		return cmd.VoteSubmission
+	case *commandspb.InputData_WithdrawSubmission:
+		return cmd.WithdrawSubmission
+	case *commandspb.InputData_LiquidityProvisionSubmission:
+		return cmd.LiquidityProvisionSubmission
+	case *commandspb.InputData_ProposalSubmission:
+		return cmd.ProposalSubmission
+	case *commandspb.InputData_NodeRegistration:
+		return cmd.NodeRegistration
+	case *commandspb.InputData_NodeVote:
+		return cmd.NodeVote
+	case *commandspb.InputData_NodeSignature:
+		return cmd.NodeSignature
+	case *commandspb.InputData_ChainEvent:
+		return cmd.ChainEvent
+	case *commandspb.InputData_OracleDataSubmission:
+		return cmd.OracleDataSubmission
+	case *commandspb.InputData_DelegateSubmission:
+		return cmd.DelegateSubmission
+	case *commandspb.InputData_UndelegateSubmission:
+		return cmd.UndelegateSubmission
+	case *commandspb.InputData_RestoreSnapshotSubmission:
+		return cmd.RestoreSnapshotSubmission
+	default:
+		return errors.New("unsupported command")
+	}
+}
+
 func (t TxV2) Unmarshal(i interface{}) error {
 	switch cmd := t.inputData.Command.(type) {
 	case *commandspb.InputData_OrderSubmission:
