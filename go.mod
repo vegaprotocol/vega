@@ -3,7 +3,7 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210909150650-8ce3cf709a05
+	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210910100600-3f6f3278ea06
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/vega v0.41.1-0.20210909151448-a09ea10280a6
 	github.com/99designs/gqlgen v0.13.0
