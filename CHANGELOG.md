@@ -14,8 +14,8 @@
 - [3977](https://github.com/vegaprotocol/vega/pull/3977) - Add undelegate, delegate and register snapshot errors
 - [3976](https://github.com/vegaprotocol/vega/pull/3976) - Add network parameter for competition level 
 - [3975](https://github.com/vegaprotocol/vega/pull/3975) - Add parties stake api
-- [3978](https://github.com/vegaprotocol/vega/pull/3978) - Update dependancies
-- [3980](https://github.com/vegaprotocol/vega/pull/3980) - Update protos dependancies
+- [3978](https://github.com/vegaprotocol/vega/pull/3978) - Update dependencies
+- [3980](https://github.com/vegaprotocol/vega/pull/3980) - Update protos dependencies
 - [3910](https://github.com/vegaprotocol/vega/pull/3910) - Change all price, amounts, balances from uint64 to string
 - [3969](https://github.com/vegaprotocol/vega/pull/3969) - Bump dlv and geth to latest versions
 - [3925](https://github.com/vegaprotocol/vega/pull/3925) - Add command to sign a subset of network parameters
@@ -26,7 +26,7 @@
 - [3988](https://github.com/vegaprotocol/vega/pull/3988) - Update the go-ethereum dependency
 - [3991](https://github.com/vegaprotocol/vega/pull/3991) - Remove hardcoded address to the ethereum node
 - [3990](https://github.com/vegaprotocol/vega/pull/3990) - Network bootstrapping
-- [3992](https://github.com/vegaprotocol/vega/pull/3992) - Check big int convertion from string in erc20 code
+- [3992](https://github.com/vegaprotocol/vega/pull/3992) - Check big int conversion from string in erc20 code
 - [3993](https://github.com/vegaprotocol/vega/pull/3993) - Use the vega public key as node id
 - [3955](https://github.com/vegaprotocol/vega/pull/3955) - Use staking accounts in governance
 - [4004](https://github.com/vegaprotocol/vega/pull/4004) - Broker configuration: change IP to address Address
@@ -35,14 +35,14 @@
 - [4009](https://github.com/vegaprotocol/vega/pull/4009) - Add delegation core apis
 - [4014](https://github.com/vegaprotocol/vega/pull/4014) - Implement delegation and epoch for Limited Network Life
 - [3914](https://github.com/vegaprotocol/vega/pull/3914) - Implement staking event verification
-- [3940](https://github.com/vegaprotocol/vega/pull/3940) - Remove ming validator signature from configuration and add network parmeters
+- [3940](https://github.com/vegaprotocol/vega/pull/3940) - Remove ming validator signature from configuration and add network parameters
 - [3938](https://github.com/vegaprotocol/vega/pull/3938) - Add more logging informations on the witness vote failures
 - [3932](https://github.com/vegaprotocol/vega/pull/3932) - Adding asset details to reward events
 - [3706](https://github.com/vegaprotocol/vega/pull/3706) - Remove startup markets workaround
 - [3905](https://github.com/vegaprotocol/vega/pull/3905) - Add vega genesis new validator sub-command
 - [3895](https://github.com/vegaprotocol/vega/pull/3895) - Add command to create a new genesis block with app_state
 - [3900](https://github.com/vegaprotocol/vega/pull/3900) - Create reward engine
-- [](https://github.com/vegaprotocol/vega/pull/3847) - Modified staking account to be backed by governance token accouunt balance
+- [](https://github.com/vegaprotocol/vega/pull/3847) - Modified staking account to be backed by governance token account balance
 - [3907](https://github.com/vegaprotocol/vega/pull/3907) - Tune system tests
 - [3904](https://github.com/vegaprotocol/vega/pull/3904) - Update Jenkins file to run all System Tests
 - [3795](https://github.com/vegaprotocol/vega/pull/3795) - Add capability to sent events to a socket stream
