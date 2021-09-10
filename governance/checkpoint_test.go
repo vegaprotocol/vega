@@ -86,9 +86,6 @@ func testCheckpointSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
-	// setup
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
-
 	// when
 	err = eng.AddVote(ctx, types.VoteSubmission{
 		Value:      proto.Vote_VALUE_NO,

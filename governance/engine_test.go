@@ -33,8 +33,6 @@ type streamEvt interface {
 	StreamMessage() *eventspb.BusEvent
 }
 
-type voteMatcher struct{}
-
 type tstEngine struct {
 	*governance.Engine
 	ctrl            *gomock.Controller
@@ -270,7 +268,6 @@ func testSubmittingProposalWithNonexistingAccountFails(t *testing.T) {
 	// setup
 	eng.expectAnyAsset()
 	eng.expectNoAccountForParty(noAccountPartyID)
-	eng.expectSendTxErrorProposalEvent(t, noAccountPartyID)
 	eng.expectSendRejectedProposalEvent(t, noAccountPartyID)
 
 	// when
@@ -292,7 +289,6 @@ func testSubmittingProposalWithoutEnoughStakeFails(t *testing.T) {
 	// setup
 	eng.setMinProposerBalance("10000")
 	eng.expectAnyAsset()
-	eng.expectSendTxErrorProposalEvent(t, emptyParty.Id)
 	eng.expectSendRejectedProposalEvent(t, emptyParty.Id)
 
 	// when
@@ -335,7 +331,6 @@ func testSubmittingProposalWithBadClosingTimeFails(t *testing.T) {
 
 			// setup
 			eng.expectAnyAsset()
-			eng.expectSendTxErrorProposalEvent(t, party.Id)
 			eng.expectSendRejectedProposalEvent(t, party.Id)
 
 			// when
@@ -380,7 +375,6 @@ func testSubmittingProposalWithBadEnactmentTimeFails(t *testing.T) {
 
 			// setup
 			eng.expectAnyAsset()
-			eng.expectSendTxErrorProposalEvent(t, party.Id)
 			eng.expectSendRejectedProposalEvent(t, party.Id)
 
 			// when
@@ -410,7 +404,7 @@ func testSubmittingProposalWithBadRiskParameter(t *testing.T) {
 	}
 
 	// setup
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	// when
 	_, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
@@ -432,7 +426,7 @@ func testSubmittingProposalWithClosingTimeBeforeValidationTimeFails(t *testing.T
 	proposal.Terms.Change = &types.ProposalTerms_NewAsset{}
 
 	// setup
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	// when
 	_, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
@@ -487,7 +481,6 @@ func testSubmittingVoteOnNonexistingProposalFails(t *testing.T) {
 
 	// setup
 	eng.expectAnyAsset()
-	eng.expectSendProposalNotFoundErrorEvent(t, voteSub)
 
 	// when
 	err := eng.AddVote(context.Background(), voteSub, voter.Id)
@@ -524,7 +517,6 @@ func testSubmittingVoteWithNonexistingAccountFails(t *testing.T) {
 
 	// setup
 	eng.expectNoAccountForParty(voterNoAccount)
-	eng.expectSendAccountNotFoundErrorEvent(t, vote)
 
 	// when
 	err = eng.AddVote(context.Background(), vote, voterNoAccount)
@@ -554,9 +546,6 @@ func testSubmittingVoteWithoutTokenFails(t *testing.T) {
 
 	// given
 	voterWithEmptyAccount := eng.newValidParty("empty-account", 0)
-
-	// setup
-	eng.expectSendInsufficientTokensErrorEvent(t)
 
 	// when
 	err = eng.AddVote(context.Background(), types.VoteSubmission{
@@ -625,9 +614,6 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	// when
 	eng.OnChainTimeUpdate(context.Background(), afterClosing)
 
-	// setup
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
-
 	// when
 	err = eng.AddVote(context.Background(), types.VoteSubmission{
 		Value:      proto.Vote_VALUE_NO,
@@ -648,9 +634,6 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	// then
 	assert.Len(t, toBeEnacted, 1)
 	assert.Equal(t, proposal.ID, toBeEnacted[0].Proposal().ID)
-
-	// setup
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 
 	// when
 	err = eng.AddVote(context.Background(), types.VoteSubmission{
@@ -1217,59 +1200,6 @@ func (e *tstEngine) expectSendRejectedProposalEvent(t *testing.T, partyID string
 	})
 }
 
-func (e *tstEngine) expectSendTxErrorProposalEvent(t *testing.T, partyID string) {
-	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
-		pe, ok := e.(*events.TxErr)
-		assert.True(t, ok)
-		assert.True(t, pe.IsParty(partyID))
-	})
-}
-
-func (e *tstEngine) expectSendProposalNotFoundErrorEvent(t *testing.T, vote types.VoteSubmission) {
-	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
-		assert.Equal(t, events.TxErrEvent, evt.Type())
-		se, ok := evt.(streamEvt)
-		assert.True(t, ok)
-		be := se.StreamMessage()
-		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
-		txErr := be.GetTxErrEvent()
-		assert.NotNil(t, txErr)
-		assert.Equal(t, governance.ErrProposalNotFound.Error(), txErr.ErrMsg)
-		v := txErr.GetVoteSubmission()
-		assert.NotNil(t, v)
-		pvote := vote.IntoProto()
-		assert.Equal(t, *pvote, *v)
-	})
-}
-
-func (e *tstEngine) expectSendAccountNotFoundErrorEvent(t *testing.T, vote types.VoteSubmission) {
-	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
-		assert.Equal(t, events.TxErrEvent, evt.Type())
-		se, ok := evt.(streamEvt)
-		assert.True(t, ok)
-		be := se.StreamMessage()
-		assert.Equal(t, eventspb.BusEventType_BUS_EVENT_TYPE_TX_ERROR, be.Type)
-		txErr := be.GetTxErrEvent()
-		assert.NotNil(t, txErr)
-		assert.Equal(t, errNoBalanceForParty.Error(), txErr.ErrMsg)
-		v := txErr.GetVoteSubmission()
-		assert.NotNil(t, v)
-		pvote := vote.IntoProto()
-		assert.Equal(t, *pvote, *v)
-	})
-}
-
-func (e *tstEngine) expectSendInsufficientTokensErrorEvent(t *testing.T) {
-	e.broker.EXPECT().Send(voteMatcher{}).Times(1).Do(func(evt events.Event) {
-		ve, ok := evt.(streamEvt)
-		assert.True(t, ok)
-		be := ve.StreamMessage()
-		txErr := be.GetTxErrEvent()
-		assert.NotNil(t, txErr)
-		assert.Equal(t, governance.ErrVoterInsufficientTokens.Error(), txErr.ErrMsg)
-	})
-}
-
 func (e *tstEngine) expectNoAccountForParty(partyID string) {
 	e.accounts.EXPECT().GetAvailableBalance(partyID).Times(1).Return(nil, errNoBalanceForParty)
 }
@@ -1293,27 +1223,4 @@ func (e *tstEngine) expectSendVoteEvent(t *testing.T, party *proto.Party, propos
 		assert.Equal(t, proposal.ID, vote.ProposalId)
 		assert.Equal(t, party.Id, vote.PartyId)
 	})
-}
-
-func (v voteMatcher) String() string {
-	return "Vote TX error event"
-}
-
-func (v voteMatcher) Matches(x interface{}) bool {
-	evt, ok := x.(streamEvt)
-	if !ok {
-		return false
-	}
-	if evt.Type() != events.TxErrEvent {
-		return false
-	}
-	be := evt.StreamMessage()
-	txErr := be.GetTxErrEvent()
-	if txErr == nil {
-		return false
-	}
-	if vote := txErr.GetVoteSubmission(); vote == nil {
-		return false
-	}
-	return true
 }
