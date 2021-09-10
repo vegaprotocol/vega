@@ -4,11 +4,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/stretchr/testify/require"
 )
 
 type testTx struct {

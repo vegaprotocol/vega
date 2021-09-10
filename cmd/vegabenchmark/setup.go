@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/spam"
-
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -27,6 +25,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"

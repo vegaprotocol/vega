@@ -4,10 +4,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/stretchr/testify/require"
 )
 
 var insufficientPropTokens, _ = num.UintFromString("50000000000000000000000", 10)
