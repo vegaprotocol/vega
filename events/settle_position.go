@@ -70,9 +70,10 @@ func (s SettlePos) Proto() eventspb.SettlePosition {
 func (s SettlePos) StreamMessage() *eventspb.BusEvent {
 	p := s.Proto()
 	return &eventspb.BusEvent{
-		Id:    s.eventID(),
-		Block: s.TraceID(),
-		Type:  s.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      s.eventID(),
+		Block:   s.TraceID(),
+		Type:    s.et.ToProto(),
 		Event: &eventspb.BusEvent_SettlePosition{
 			SettlePosition: &p,
 		},

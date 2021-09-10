@@ -51,9 +51,10 @@ func (m MarketTick) MarketProto() eventspb.MarketEvent {
 func (m MarketTick) StreamMessage() *eventspb.BusEvent {
 	p := m.Proto()
 	return &eventspb.BusEvent{
-		Id:    m.eventID(),
-		Block: m.TraceID(),
-		Type:  m.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      m.eventID(),
+		Block:   m.TraceID(),
+		Type:    m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarketTick{
 			MarketTick: &p,
 		},

@@ -41,9 +41,10 @@ func (vd ValidatorScore) ValidatorScoreEvent() eventspb.ValidatorScoreEvent {
 func (vd ValidatorScore) StreamMessage() *eventspb.BusEvent {
 	p := vd.Proto()
 	return &eventspb.BusEvent{
-		Id:    vd.eventID(),
-		Block: vd.TraceID(),
-		Type:  vd.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      vd.eventID(),
+		Block:   vd.TraceID(),
+		Type:    vd.et.ToProto(),
 		Event: &eventspb.BusEvent_ValidatorScore{
 			ValidatorScore: &p,
 		},

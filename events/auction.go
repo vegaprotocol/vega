@@ -104,9 +104,10 @@ func (a Auction) Proto() eventspb.AuctionEvent {
 func (a Auction) StreamMessage() *eventspb.BusEvent {
 	p := a.Proto()
 	return &eventspb.BusEvent{
-		Id:    a.eventID(),
-		Block: a.TraceID(),
-		Type:  a.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      a.eventID(),
+		Block:   a.TraceID(),
+		Type:    a.et.ToProto(),
 		Event: &eventspb.BusEvent_Auction{
 			Auction: &p,
 		},
@@ -117,9 +118,10 @@ func (a Auction) StreamMessage() *eventspb.BusEvent {
 // containing just market ID and a string akin to a log message
 func (a Auction) StreamMarketMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    a.eventID(),
-		Block: a.TraceID(),
-		Type:  eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
+		Version: eventspb.Version,
+		Id:      a.eventID(),
+		Block:   a.TraceID(),
+		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
 		Event: &eventspb.BusEvent_Market{
 			Market: &eventspb.MarketEvent{
 				MarketId: a.marketID,
