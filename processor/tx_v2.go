@@ -209,8 +209,6 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshal RestoreSnapshotSubmission")
 		}
 		*underlyingCmd = *cmd.RestoreSnapshotSubmission
-		break
-
 	default:
 		return errors.New("unsupported command")
 	}
