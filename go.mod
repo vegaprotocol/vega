@@ -3,9 +3,9 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.42.0-pre6.0.20210910100600-3f6f3278ea06
+	code.vegaprotocol.io/protos v0.42.0
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/vega v0.41.1-0.20210909151448-a09ea10280a6
+	code.vegaprotocol.io/vega v0.42.0
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/fsnotify/fsnotify v1.4.9
@@ -15,7 +15,6 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mwitkow/go-proto-validators v0.3.2
-	github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/cors v1.7.0
