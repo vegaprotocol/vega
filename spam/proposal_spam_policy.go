@@ -22,7 +22,7 @@ type ProposalSpamPolicy struct {
 	bannedParties             map[string]uint64           // parties banned until epoch seq
 	partyBlockRejects         map[string]*blockRejectInfo // total vs rejection in the current block
 	currentEpochSeq           uint64                      // current epoch sequence
-	lock                      sync.Mutex                  // global lock to sync calls from multiple tendermint threads
+	lock                      sync.RWMutex                // global lock to sync calls from multiple tendermint threads
 }
 
 //NewProposalSpamPolicy instantiates the proposal spam policy
@@ -35,7 +35,7 @@ func NewProposalSpamPolicy() *ProposalSpamPolicy {
 		tokenBalance:              map[string]*num.Uint{},
 		bannedParties:             map[string]uint64{},
 		partyBlockRejects:         map[string]*blockRejectInfo{},
-		lock:                      sync.Mutex{},
+		lock:                      sync.RWMutex{},
 	}
 }
 
@@ -134,8 +134,8 @@ func (psp *ProposalSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 func (psp *ProposalSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 
-	psp.lock.Lock()
-	defer psp.lock.Unlock()
+	psp.lock.RLock()
+	defer psp.lock.RUnlock()
 
 	// check if the party is banned
 	_, ok := psp.bannedParties[party]

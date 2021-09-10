@@ -49,7 +49,7 @@ type VoteSpamPolicy struct {
 	currentBlockIndex       int                                              // the index of the current block in the circular buffer <recentBlocksRejectStats>
 	lastIncreaseBlock       uint64                                           // the last block we've increased the number of <minVotingTokens>
 	currentEpochSeq         uint64                                           // the sequence id of the current epoch
-	lock                    sync.Mutex                                       // global lock to sync calls from multiple tendermint threads
+	lock                    sync.RWMutex                                     // global lock to sync calls from multiple tendermint threads
 }
 
 func NewVoteSpamPolicy() *VoteSpamPolicy {
@@ -66,7 +66,7 @@ func NewVoteSpamPolicy() *VoteSpamPolicy {
 		partyBlockRejects:     map[string]*blockRejectInfo{},
 		currentBlockIndex:     0,
 		lastIncreaseBlock:     0,
-		lock:                  sync.Mutex{},
+		lock:                  sync.RWMutex{},
 	}
 }
 
@@ -238,8 +238,8 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 
-	vsp.lock.Lock()
-	defer vsp.lock.Unlock()
+	vsp.lock.RLock()
+	defer vsp.lock.RUnlock()
 
 	_, ok := vsp.bannedParties[party]
 	if ok {
