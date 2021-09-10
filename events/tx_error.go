@@ -116,9 +116,10 @@ func (t TxErr) Proto() eventspb.TxErrorEvent {
 
 func (t TxErr) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    t.eventID(),
-		Block: t.TraceID(),
-		Type:  t.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      t.eventID(),
+		Block:   t.TraceID(),
+		Type:    t.et.ToProto(),
 		Event: &eventspb.BusEvent_TxErrEvent{
 			TxErrEvent: t.evt,
 		},

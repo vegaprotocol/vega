@@ -63,9 +63,10 @@ func (s SettleDistressed) Proto() eventspb.SettleDistressed {
 func (s SettleDistressed) StreamMessage() *eventspb.BusEvent {
 	p := s.Proto()
 	return &eventspb.BusEvent{
-		Id:    s.eventID(),
-		Block: s.TraceID(),
-		Type:  s.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      s.eventID(),
+		Block:   s.TraceID(),
+		Type:    s.et.ToProto(),
 		Event: &eventspb.BusEvent_SettleDistressed{
 			SettleDistressed: &p,
 		},

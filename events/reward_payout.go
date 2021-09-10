@@ -49,9 +49,10 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 func (rp RewardPayout) StreamMessage() *eventspb.BusEvent {
 	p := rp.Proto()
 	return &eventspb.BusEvent{
-		Id:    rp.eventID(),
-		Block: rp.TraceID(),
-		Type:  rp.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      rp.eventID(),
+		Block:   rp.TraceID(),
+		Type:    rp.et.ToProto(),
 		Event: &eventspb.BusEvent_RewardPayout{
 			RewardPayout: &p,
 		},
