@@ -1,6 +1,8 @@
 package spam
 
 import (
+	"sync"
+
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/types"
@@ -47,6 +49,7 @@ type VoteSpamPolicy struct {
 	currentBlockIndex       int                                              // the index of the current block in the circular buffer <recentBlocksRejectStats>
 	lastIncreaseBlock       uint64                                           // the last block we've increased the number of <minVotingTokens>
 	currentEpochSeq         uint64                                           // the sequence id of the current epoch
+	lock                    sync.Mutex                                       // global lock to sync calls from multiple tendermint threads
 }
 
 func NewVoteSpamPolicy() *VoteSpamPolicy {
@@ -63,11 +66,14 @@ func NewVoteSpamPolicy() *VoteSpamPolicy {
 		partyBlockRejects:     map[string]*blockRejectInfo{},
 		currentBlockIndex:     0,
 		lastIncreaseBlock:     0,
+		lock:                  sync.Mutex{},
 	}
 }
 
 //Reset is called at the beginning of an epoch to reset the settings for the epoch
 func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint) {
+	vsp.lock.Lock()
+	defer vsp.lock.Unlock()
 	// reset the token count factor to 1
 	vsp.minVotingTokensFactor = num.NewUint(1)
 	vsp.effectiveMinTokens = vsp.minVotingTokens
@@ -108,6 +114,8 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*nu
 
 //EndOfBlock is called at the end of the block to allow updating of the state for the next block
 func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
+	vsp.lock.Lock()
+	defer vsp.lock.Unlock()
 	// add the block's vote counters to the epoch's
 	for p, v := range vsp.blockPartyToVote {
 		if _, ok := vsp.partyToVote[p]; !ok {
@@ -164,6 +172,9 @@ func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
 //NB: this is called as part of the processing of the block
 func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
+
+	vsp.lock.Lock()
+	defer vsp.lock.Unlock()
 
 	vote := &commandspb.VoteSubmission{}
 	if err := tx.Unmarshal(vote); err != nil {
@@ -226,6 +237,9 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 //NB: this is done at mempool before adding to block
 func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
+
+	vsp.lock.Lock()
+	defer vsp.lock.Unlock()
 
 	_, ok := vsp.bannedParties[party]
 	if ok {

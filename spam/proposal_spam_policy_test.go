@@ -88,7 +88,7 @@ func testProposalPreRejectTooManyProposals(t *testing.T) {
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 
-	// propose 5 proposals, all preaccepted 3 post accepted
+	// propose 4 proposals, all preaccepted 3 post accepted
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	//pre accepted
 	for i := 0; i < 4; i++ {
@@ -113,7 +113,7 @@ func testProposalPreRejectTooManyProposals(t *testing.T) {
 	require.Equal(t, spam.ErrTooManyProposals, err)
 
 	// advance to next epoch to reset limits
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
 	for i := 0; i < 3; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal1"}
 		accept, err := policy.PreBlockAccept(tx)

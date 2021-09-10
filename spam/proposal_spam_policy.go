@@ -1,6 +1,8 @@
 package spam
 
 import (
+	"sync"
+
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -20,6 +22,7 @@ type ProposalSpamPolicy struct {
 	bannedParties             map[string]uint64           // parties banned until epoch seq
 	partyBlockRejects         map[string]*blockRejectInfo // total vs rejection in the current block
 	currentEpochSeq           uint64                      // current epoch sequence
+	lock                      sync.Mutex                  // global lock to sync calls from multiple tendermint threads
 }
 
 //NewProposalSpamPolicy instantiates the proposal spam policy
@@ -32,11 +35,14 @@ func NewProposalSpamPolicy() *ProposalSpamPolicy {
 		tokenBalance:              map[string]*num.Uint{},
 		bannedParties:             map[string]uint64{},
 		partyBlockRejects:         map[string]*blockRejectInfo{},
+		lock:                      sync.Mutex{},
 	}
 }
 
 //Reset is called when the epoch begins to reset policy state
 func (psp *ProposalSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint) {
+	psp.lock.Lock()
+	defer psp.lock.Unlock()
 	psp.currentEpochSeq = epoch.Seq
 
 	// reset proposal counts
@@ -58,6 +64,8 @@ func (psp *ProposalSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string
 
 //EndOfBlock is called at the end of the processing of the block to carry over state and trigger bans if necessary
 func (psp *ProposalSpamPolicy) EndOfBlock(blockHeight uint64) {
+	psp.lock.Lock()
+	defer psp.lock.Unlock()
 	// add the block's proposal counters to the epoch's
 	for party, count := range psp.blockPartyToProposalCount {
 		if _, ok := psp.partyToProposalCount[party]; !ok {
@@ -79,6 +87,9 @@ func (psp *ProposalSpamPolicy) EndOfBlock(blockHeight uint64) {
 //PostBlockAccept is called to verify a transaction from the block before passed to the application layer
 func (psp *ProposalSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
+
+	psp.lock.Lock()
+	defer psp.lock.Unlock()
 
 	// get number of proposals preceding the block in this epoch
 	var epochProposals uint64 = 0
@@ -122,6 +133,9 @@ func (psp *ProposalSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 //PreBlockAccept checks if the proposal violates spam rules based on the information we had about the number of existing proposals preceding the current block
 func (psp *ProposalSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
+
+	psp.lock.Lock()
+	defer psp.lock.Unlock()
 
 	// check if the party is banned
 	_, ok := psp.bannedParties[party]
