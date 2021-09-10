@@ -66,12 +66,6 @@ func newTestCodec() *testCodec {
 	}
 }
 
-func newSpamProtection() *testCodec {
-	return &testCodec{
-		txs: map[string]abci.Tx{},
-	}
-}
-
 func (c *testCodec) addTx(in []byte, tx abci.Tx) *testCodec {
 	c.txs[string(in)] = tx
 	return c
