@@ -14,6 +14,7 @@ import (
 var (
 	ErrSnapshotStateInvalid  = errors.New("state contained in the snapshot is invalid")
 	ErrSnapshotHashIncorrect = errors.New("the hash and snapshot data do not match")
+	ErrSnapshotHasNoState    = errors.New("there is no state set on the checkpoint")
 )
 
 type CheckpointName string
@@ -25,7 +26,12 @@ const (
 	NetParamsCheckpoint  CheckpointName = "netparams"
 	DelegationCheckpoint CheckpointName = "delegation"
 	EpochCheckpoint      CheckpointName = "epoch"
+	BlockCheckpoint      CheckpointName = "block" // pseudo-checkpoint, really...
 )
+
+type Block struct {
+	Height int64
+}
 
 type Snapshot struct {
 	State []byte
@@ -39,6 +45,7 @@ type Checkpoint struct {
 	NetworkParameters []byte
 	Delegation        []byte
 	Epoch             []byte
+	Block             []byte
 }
 
 type DelegationEntry struct {
@@ -88,6 +95,18 @@ func (s *Snapshot) SetState(state []byte) error {
 	return nil
 }
 
+func (s Snapshot) GetBlockHeight() (int64, error) {
+	if len(s.State) == 0 {
+		return 0, ErrSnapshotHasNoState
+	}
+	cp := &snapshot.Checkpoint{}
+	if err := proto.Unmarshal(s.State, cp); err != nil {
+		return 0, err
+	}
+	c := NewCheckpointFromProto(cp)
+	return c.GetBlockHeight()
+}
+
 func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
 	b, err := proto.Marshal(cp.IntoProto())
 	if err != nil {
@@ -118,6 +137,7 @@ func NewCheckpointFromProto(pc *snapshot.Checkpoint) *Checkpoint {
 		NetworkParameters: pc.NetworkParameters,
 		Delegation:        pc.Delegation,
 		Epoch:             pc.Epoch,
+		Block:             pc.Block,
 	}
 }
 
@@ -129,19 +149,33 @@ func (c Checkpoint) IntoProto() *snapshot.Checkpoint {
 		NetworkParameters: c.NetworkParameters,
 		Delegation:        c.Delegation,
 		Epoch:             c.Epoch,
+		Block:             c.Block,
 	}
+}
+
+func (c *Checkpoint) SetBlockHeight(height int64) error {
+	b := Block{
+		Height: height,
+	}
+	bb, err := proto.Marshal(b.IntoProto())
+	if err != nil {
+		return err
+	}
+	c.Block = bb
+	return nil
 }
 
 // HashBytes returns the data contained in the snapshot as a []byte for hashing
 // the order in which the data is added to the slice matters
 func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch))
+	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block))
 	// the order in which we append is quite important
 	ret = append(ret, c.NetworkParameters...)
 	ret = append(ret, c.Assets...)
 	ret = append(ret, c.Collateral...)
 	ret = append(ret, c.Delegation...)
 	ret = append(ret, c.Epoch...)
+	ret = append(ret, c.Block...)
 	return append(ret, c.Governance...)
 }
 
@@ -160,6 +194,8 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.Delegation = val
 	case EpochCheckpoint:
 		c.Epoch = val
+	case BlockCheckpoint:
+		c.Block = val
 	}
 }
 
@@ -178,8 +214,18 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.Delegation
 	case EpochCheckpoint:
 		return c.Epoch
+	case BlockCheckpoint:
+		return c.Block
 	}
 	return nil
+}
+
+func (c Checkpoint) GetBlockHeight() (int64, error) {
+	pb := &snapshot.Block{}
+	if err := proto.Unmarshal(c.Block, pb); err != nil {
+		return 0, err
+	}
+	return pb.Height, nil
 }
 
 func NewDelegationEntryFromProto(de *snapshot.DelegateEntry) *DelegationEntry {
@@ -229,4 +275,16 @@ func (d DelegateCP) IntoProto() *snapshot.Delegate {
 		s.Pending = append(s.Pending, p.IntoProto())
 	}
 	return s
+}
+
+func NewBlockFromProto(bp *snapshot.Block) *Block {
+	return &Block{
+		Height: bp.Height,
+	}
+}
+
+func (b Block) IntoProto() *snapshot.Block {
+	return &snapshot.Block{
+		Height: b.Height,
+	}
 }

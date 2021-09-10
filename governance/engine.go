@@ -306,10 +306,6 @@ func (e *Engine) SubmitProposal(
 	}
 
 	defer func() {
-		if err != nil {
-			// also submit a TxErr
-			e.broker.Send(events.NewTxErrEvent(ctx, err, party, psub))
-		}
 		e.broker.Send(events.NewProposalEvent(ctx, p))
 	}()
 	perr, err := e.validateOpenProposal(p)
@@ -535,8 +531,6 @@ func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party st
 			logging.String("vote", cmd.String()),
 			logging.Error(err),
 		)
-		// vote was not created/accepted, send TxErrEvent
-		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cmd))
 		return err
 	}
 

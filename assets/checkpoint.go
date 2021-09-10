@@ -37,6 +37,10 @@ func (s *Service) Load(checkpoint []byte) error {
 		if err != nil {
 			return err
 		}
+		pa, _ := s.Get(a.Id)
+		if err := pa.Validate(); err != nil {
+			return err
+		}
 		if err := s.Enable(id); err != nil {
 			return err
 		}
