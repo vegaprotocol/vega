@@ -14,6 +14,7 @@ import (
 var (
 	ErrSnapshotStateInvalid  = errors.New("state contained in the snapshot is invalid")
 	ErrSnapshotHashIncorrect = errors.New("the hash and snapshot data do not match")
+	ErrSnapshotHasNoState    = errors.New("there is no state set on the checkpoint")
 )
 
 type CheckpointName string
@@ -92,6 +93,18 @@ func (s *Snapshot) SetState(state []byte) error {
 	s.State = state
 	s.Hash = crypto.Hash(c.HashBytes())
 	return nil
+}
+
+func (s Snapshot) GetBlockHeight() (int64, error) {
+	if len(s.State) == 0 {
+		return 0, ErrSnapshotHasNoState
+	}
+	cp := &snapshot.Checkpoint{}
+	if err := proto.Unmarshal(s.State, cp); err != nil {
+		return 0, err
+	}
+	c := NewCheckpointFromProto(cp)
+	return c.GetBlockHeight()
 }
 
 func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
@@ -205,6 +218,14 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.Block
 	}
 	return nil
+}
+
+func (c Checkpoint) GetBlockHeight() (int64, error) {
+	pb := &snapshot.Block{}
+	if err := proto.Unmarshal(c.Block, pb); err != nil {
+		return 0, err
+	}
+	return pb.Height, nil
 }
 
 func NewDelegationEntryFromProto(de *snapshot.DelegateEntry) *DelegationEntry {

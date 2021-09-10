@@ -936,6 +936,13 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	if err := snap.SetState(cmd.Data); err != nil {
 		return err
 	}
+	bh, err := snap.GetBlockHeight()
+	if err != nil {
+		app.log.Panic("Failed to get blockheight from checkpoint", logging.Error(err))
+	}
+	// ensure block height is set
+	ctx = vgcontext.WithBlockHeight(ctx, bh)
+	app.blockCtx = ctx
 	err := app.checkpoint.Load(ctx, snap)
 	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
