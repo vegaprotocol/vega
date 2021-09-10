@@ -943,7 +943,7 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	// ensure block height is set
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
 	app.blockCtx = ctx
-	err := app.checkpoint.Load(ctx, snap)
+	err = app.checkpoint.Load(ctx, snap)
 	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}
