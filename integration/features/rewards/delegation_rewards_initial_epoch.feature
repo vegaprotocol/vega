@@ -12,6 +12,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.payoutFraction          |  0.5   |
       | reward.staking.delegation.maxPayoutPerParticipant | 100000 |
       | reward.staking.delegation.competitionLevel        |  1.1   |
+      | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
   
     And the average block duration is "1"
     And time is updated to "2021-09-10T00:00:00Z"
