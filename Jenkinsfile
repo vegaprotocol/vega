@@ -412,6 +412,9 @@ pipeline {
                             retry(3) {
                                 script {
                                     dir('system-tests/scripts') {
+                                        sh label: 'print logs from all the containers', script: '''
+                                            make logs
+                                        '''
                                         sh label: 'stop dockerised-vega', script: '''
                                             make stop-dockerised-vega
                                         '''
