@@ -166,23 +166,33 @@ func NewApp(
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData)
 
 	app.abci.
-		HandleDeliverTx(txn.SubmitOrderCommand, app.DeliverSubmitOrder).
-		HandleDeliverTx(txn.CancelOrderCommand, app.DeliverCancelOrder).
-		HandleDeliverTx(txn.AmendOrderCommand, app.DeliverAmendOrder).
-		HandleDeliverTx(txn.WithdrawCommand, addDeterministicID(app.DeliverWithdraw)).
-		HandleDeliverTx(txn.ProposeCommand, addDeterministicID(app.DeliverPropose)).
-		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
+		HandleDeliverTx(txn.SubmitOrderCommand,
+			app.SendEventOnError(app.DeliverSubmitOrder)).
+		HandleDeliverTx(txn.CancelOrderCommand,
+			app.SendEventOnError(app.DeliverCancelOrder)).
+		HandleDeliverTx(txn.AmendOrderCommand,
+			app.SendEventOnError(app.DeliverAmendOrder)).
+		HandleDeliverTx(txn.WithdrawCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
+		HandleDeliverTx(txn.ProposeCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverPropose))).
+		HandleDeliverTx(txn.VoteCommand,
+			app.SendEventOnError(app.DeliverVote)).
 		HandleDeliverTx(txn.NodeSignatureCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
-		HandleDeliverTx(txn.LiquidityProvisionCommand, addDeterministicID(app.DeliverLiquidityProvision)).
+		HandleDeliverTx(txn.LiquidityProvisionCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverLiquidityProvision))).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
 		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
-		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
-		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate).
-		HandleDeliverTx(txn.CheckpointRestoreCommand, app.DeliverReloadSnapshot)
+		HandleDeliverTx(txn.DelegateCommand,
+			app.SendEventOnError(app.DeliverDelegate)).
+		HandleDeliverTx(txn.UndelegateCommand,
+			app.SendEventOnError(app.DeliverUndelegate)).
+		HandleDeliverTx(txn.CheckpointRestoreCommand,
+			app.SendEventOnError(app.DeliverReloadSnapshot))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -209,6 +219,18 @@ func (app *App) RequireValidatorPubKeyW(
 			return err
 		}
 		return f(ctx, tx)
+	}
+}
+
+func (app *App) SendEventOnError(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := f(ctx, tx); err != nil {
+			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd()))
+			return err
+		}
+		return nil
 	}
 }
 
@@ -868,11 +890,6 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
 		return nil
 	}
 	ce := &commandspb.DelegateSubmission{}
-	defer func() {
-		if err != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), ce))
-		}
-	}()
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -891,11 +908,6 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 		return nil
 	}
 	ce := &commandspb.UndelegateSubmission{}
-	defer func() {
-		if err != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), ce))
-		}
-	}()
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -921,7 +933,6 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 			app.log.Error("Restoring checkpoint failed",
 				logging.Error(rerr),
 			)
-			app.broker.Send(events.NewTxErrEvent(ctx, rerr, tx.Party(), cmd))
 			return
 		}
 		app.log.Info("Checkpoint restored!")
