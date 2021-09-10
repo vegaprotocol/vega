@@ -95,8 +95,6 @@ func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan 
 	})
 
 	eg.Go(func() error {
-		defer close(receiveCh)
-
 		var recvTimeouts int
 
 		for {
@@ -126,6 +124,10 @@ func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan 
 				continue
 			}
 
+			if be.Version != eventspb.Version {
+				return fmt.Errorf("mismatched BusEvent version received: %d, want %d", be.Version, eventspb.Version)
+			}
+
 			evt := toEvent(ctx, &be)
 			if evt == nil {
 				s.log.Error("Can not convert proto event to internal event", logging.String("event_type", be.GetType().String()))
@@ -139,7 +141,11 @@ func (s socketServer) receive(ctx context.Context) (<-chan events.Event, <-chan 
 	})
 
 	go func() {
-		defer close(errCh)
+		defer func() {
+			close(receiveCh)
+			close(errCh)
+		}()
+
 		if err := eg.Wait(); err != nil {
 			errCh <- err
 		}

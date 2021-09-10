@@ -77,6 +77,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.StakeLinkingFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE:
 		return events.ValidatorScoreEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:
+		return events.CheckpointEventFromStream(ctx, be)
 	}
 	return nil
 }
