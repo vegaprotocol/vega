@@ -8,7 +8,6 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
@@ -27,11 +26,6 @@ import (
 var (
 	errNoBalanceForParty = errors.New("no balance for party")
 )
-
-type streamEvt interface {
-	events.Event
-	StreamMessage() *eventspb.BusEvent
-}
 
 type tstEngine struct {
 	*governance.Engine
