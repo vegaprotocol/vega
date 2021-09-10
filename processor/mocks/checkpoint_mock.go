@@ -50,33 +50,33 @@ func (mr *MockCheckpointMockRecorder) AwaitingRestore() *gomock.Call {
 }
 
 // BalanceCheckpoint mocks base method
-func (m *MockCheckpoint) BalanceCheckpoint() (*types.Snapshot, error) {
+func (m *MockCheckpoint) BalanceCheckpoint(arg0 context.Context) (*types.Snapshot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BalanceCheckpoint")
+	ret := m.ctrl.Call(m, "BalanceCheckpoint", arg0)
 	ret0, _ := ret[0].(*types.Snapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // BalanceCheckpoint indicates an expected call of BalanceCheckpoint
-func (mr *MockCheckpointMockRecorder) BalanceCheckpoint() *gomock.Call {
+func (mr *MockCheckpointMockRecorder) BalanceCheckpoint(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceCheckpoint", reflect.TypeOf((*MockCheckpoint)(nil).BalanceCheckpoint))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceCheckpoint", reflect.TypeOf((*MockCheckpoint)(nil).BalanceCheckpoint), arg0)
 }
 
 // Checkpoint mocks base method
-func (m *MockCheckpoint) Checkpoint(arg0 time.Time) (*types.Snapshot, error) {
+func (m *MockCheckpoint) Checkpoint(arg0 context.Context, arg1 time.Time) (*types.Snapshot, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checkpoint", arg0)
+	ret := m.ctrl.Call(m, "Checkpoint", arg0, arg1)
 	ret0, _ := ret[0].(*types.Snapshot)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Checkpoint indicates an expected call of Checkpoint
-func (mr *MockCheckpointMockRecorder) Checkpoint(arg0 interface{}) *gomock.Call {
+func (mr *MockCheckpointMockRecorder) Checkpoint(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockCheckpoint)(nil).Checkpoint), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockCheckpoint)(nil).Checkpoint), arg0, arg1)
 }
 
 // Load mocks base method
