@@ -31,11 +31,19 @@ func (o OracleSpec) Proto() oraclespb.OracleSpec {
 func (o OracleSpec) StreamMessage() *eventspb.BusEvent {
 	spec := o.o
 	return &eventspb.BusEvent{
-		Id:    o.eventID(),
-		Block: o.TraceID(),
-		Type:  o.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      o.eventID(),
+		Block:   o.TraceID(),
+		Type:    o.et.ToProto(),
 		Event: &eventspb.BusEvent_OracleSpec{
 			OracleSpec: &spec,
 		},
+	}
+}
+
+func OracleSpecEventFromStream(ctx context.Context, be *eventspb.BusEvent) *OracleSpec {
+	return &OracleSpec{
+		Base: newBaseFromStream(ctx, OracleSpecEvent, be),
+		o:    *be.GetOracleSpec(),
 	}
 }

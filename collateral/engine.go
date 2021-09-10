@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -313,6 +313,71 @@ func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *t
 
 func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {
 	return e.transferFees(ctx, marketID, assetID, ft)
+}
+
+// returns the corresponding transfer request for the slice of transfers
+// if the reward accound doesn't exist return error
+// if the party account doesn't exist log the error and continue
+func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferRequest, error) {
+	rewardAccount, err := e.GetAccountByID(rewardAccountID)
+	if err != nil {
+		return nil, err
+	}
+
+	rewardTRs := make([]*types.TransferRequest, 0, len(transfers))
+	for _, t := range transfers {
+		general, err := e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+		if err != nil {
+			_, err = e.CreatePartyGeneralAccount(ctx, t.Owner, t.Amount.Asset)
+			if err != nil {
+				continue
+			}
+			general, _ = e.GetPartyGeneralAccount(t.Owner, t.Amount.Asset)
+		}
+
+		rewardTRs = append(rewardTRs, &types.TransferRequest{
+			Amount:      t.Amount.Amount.Clone(),
+			MinAmount:   t.Amount.Amount.Clone(),
+			Asset:       t.Amount.Asset,
+			Reference:   types.TransferTypeRewardPayout.String(),
+			FromAccount: []*types.Account{rewardAccount},
+			ToAccount:   []*types.Account{general},
+		})
+	}
+	return rewardTRs, nil
+}
+
+//TransferRewards takes a slice of transfers and serves them to transfer rewards from the reward account to parties general account
+func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
+	responses := make([]*types.TransferResponse, 0, len(transfers))
+
+	if len(transfers) == 0 {
+		return responses, nil
+	}
+
+	transferReqs, err := e.getRewardTransferRequests(ctx, rewardAccountID, transfers)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, req := range transferReqs {
+		res, err := e.getLedgerEntries(ctx, req)
+		if err != nil {
+			e.log.Error("Failed to transfer funds", logging.Error(err))
+			return nil, err
+		}
+		for _, bal := range res.Balances {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+				e.log.Error("Could not update the target account in transfer",
+					logging.String("account-id", bal.Account.ID),
+					logging.Error(err))
+				return nil, err
+			}
+		}
+		responses = append(responses, res)
+	}
+
+	return responses, nil
 }
 
 func (e *Engine) TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error) {

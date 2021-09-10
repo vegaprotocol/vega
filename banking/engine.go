@@ -12,12 +12,16 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
+)
+
+const (
+	withdrawalsDefaultExpiry = 24 * 7 * time.Hour
 )
 
 var (
@@ -327,7 +331,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 	}
 
 	now := e.currentTime
-	expiry := now.Add(e.cfg.WithdrawalExpiry.Duration)
+	expiry := now.Add(withdrawalsDefaultExpiry)
 	wext := &types.WithdrawExt{
 		Ext: &types.WithdrawExt_Erc20{
 			Erc20: ext,

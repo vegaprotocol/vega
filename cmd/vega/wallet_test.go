@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/go-wallet/wallet"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,11 +16,11 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 	ctx := context.Background()
 
 	// Initialise the wallet
-	_, err = suite.RunMain(ctx, "wallet init --no-version-check --root-path %s", path)
+	_, err = suite.RunMain(ctx, "wallet init --output json --no-version-check --root-path %s", path)
 	require.NoError(t, err)
 
 	// Generate a Key pair
-	_, err = suite.RunMain(ctx, "wallet key generate --no-version-check --root-path %s --passphrase %s/passphrase --name test", path, path)
+	_, err = suite.RunMain(ctx, "wallet key generate --output json --no-version-check --root-path %s --passphrase-file \"%s/password\" --name test", path, path)
 	require.NoError(t, err)
 
 	// List the wallet and keep it
@@ -31,13 +30,13 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 
 	t.Run("Sign/Verify", func(t *testing.T) {
 		// Sign and retrieve the signature (base64 encoded)
-		out, err = suite.RunMain(ctx, "wallet sign --no-version-check --root-path %s --passphrase %s/passphrase --name test -m aG9sYQo= -k %s", path, path, pub)
+		out, err = suite.RunMain(ctx, "wallet sign --output json --no-version-check --root-path %s --passphrase-file \"%s/password\"  --name test -m aG9sYQo= -k %s", path, path, pub)
 		require.NoError(t, err)
 		sig := out
 
 		// Verify
 		t.Run("Verify", func(t *testing.T) {
-			out, err = suite.RunMain(ctx, "wallet verify --no-version-check --root-path %s --passphrase %s/passphrase --name test -m aG9sYQo= -k %s -s %s", path, path, pub, sig)
+			out, err = suite.RunMain(ctx, "wallet verify --output json --no-version-check --root-path %s --passphrase-file \"%s/password\" --name test -m aG9sYQo= -k %s -s %s", path, path, pub, sig)
 			require.NoError(t, err)
 			require.Equal(t, "true\n", string(out))
 		})
@@ -45,7 +44,7 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 
 	// Meta
 	t.Run("Meta", func(t *testing.T) {
-		_, err = suite.RunMain(ctx, "wallet key meta --no-version-check --root-path %s --passphrase %s/passphrase --name test -k %s -m primary:true;asset:BTC", path, path, pub)
+		_, err = suite.RunMain(ctx, "wallet key meta --output json --no-version-check --root-path %s --passphrase \"%s/passphrase\" --name test -k %s -m primary:true;asset:BTC", path, path, pub)
 		require.NoError(t, err)
 		keyPairs := suite.ListKeyPairs(t, path)
 		require.NotEmpty(t, keyPairs)
@@ -64,7 +63,7 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 func (suite *CommandSuite) ListKeyPairs(t *testing.T, path string) []wallet.HDKeyPair {
 	ctx := context.Background()
 
-	out, err := suite.RunMain(ctx, "wallet key list --no-version-check --root-path %s --passphrase %s/passphrase --name test", path, path)
+	out, err := suite.RunMain(ctx, "wallet key list --output json --no-version-check --root-path %s --passphrase \"%s/passphrase\" --name test", path, path)
 	require.NoError(t, err)
 
 	w := []wallet.HDKeyPair{}

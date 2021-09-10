@@ -10,40 +10,33 @@ import (
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/checks"
 	"code.vegaprotocol.io/vega/netparams/dispatch"
+	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/cenkalti/backoff"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
 )
-
-type DummyStakingAccounts struct {
-}
-
-func (DummyStakingAccounts) GetBalanceNow(party string) *num.Uint {
-	return num.Zero()
-}
-
-func (DummyStakingAccounts) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
-	return num.Zero()
-}
 
 func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
@@ -97,6 +90,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		log,
 		validators.NewDefaultConfig(),
 		wallet{pubKey},
+		broker,
 	)
 
 	witness := validators.NewWitness(
@@ -129,26 +123,45 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
 
-	netparams := netparams.New(
+	netp := netparams.New(
 		log,
 		netparams.NewDefaultConfig(),
 		broker,
 	)
 
-	//TODO replace with actual implementation
-	stakingAccount := DummyStakingAccounts{}
-	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccount, netparams)
-
 	bstats := stats.NewBlockchain()
+
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+
+	// instantiate the ETHClient
+	ethClient, err := ethclient.Dial(nodewallet.NewDefaultConfig().ETH.Address)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
+
+	stakingAccounts, _ := staking.New(
+		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams,
+	)
+
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.DelegationMinAmount,
+		Watcher: delegationEngine.OnMinAmountChanged,
+	})
 
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
+	stakeV := mocks.NewMockStakeVerifier(ctrl)
+	stakingA := mocks.NewMockStakingAccounts(ctrl)
+	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	app := processor.NewApp(
 		log,
-		processor.NewDefaultConfig(),
+		processor.NewDefaultConfig(""),
 		func() {},
 		assets,
 		banking,
@@ -162,17 +175,20 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		notary,
 		bstats,
 		timeService,
+		epochService,
 		topology,
-		netparams,
+		netp,
 		&processor.Oracle{
 			Engine:   oraclesM,
 			Adaptors: oraclesAdaptors,
 		},
 		delegationEngine,
 		limits,
+		stakeV,
+		stakingA,
+		cp,
 	)
-
-	err = registerExecutionCallbacks(log, netparams, exec, assets, collateral)
+	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -193,7 +209,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		uponGenesisW,
 		genesisHandler,
 		timeService,
-		netparams,
+		netp,
 		topology,
 	)
 
@@ -323,8 +339,8 @@ func registerExecutionCallbacks(
 ) error {
 	if err := netps.AddRules(
 		netparams.ParamStringRules(
-			netparams.GovernanceVoteAsset,
-			checks.GovernanceAssetUpdate(log, assets, collateral),
+			netparams.RewardAsset,
+			checks.RewardAssetUpdate(log, assets, collateral),
 		),
 	); err != nil {
 		return err
@@ -333,8 +349,8 @@ func registerExecutionCallbacks(
 	// now add some watcher for our netparams
 	return netps.Watch(
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
-			Watcher: dispatch.GovernanceAssetUpdate(log, assets),
+			Param:   netparams.RewardAsset,
+			Watcher: dispatch.RewardAssetUpdate(log, assets),
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,

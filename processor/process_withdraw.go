@@ -12,7 +12,7 @@ var (
 	ErrMissingWithdrawERC20Ext = errors.New("missing withdraw submission erc20 ext")
 )
 
-func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission, id string, party string) error {
+func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission, id string, party string) (err error) {
 	asset, err := app.assets.Get(w.Asset)
 	if err != nil {
 		app.log.Error("invalid vega asset ID for withdrawal",

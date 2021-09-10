@@ -21,7 +21,7 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		if err != nil {
 			return errCannotGetPartyGeneralAccount(row.Party(), row.Asset(), err)
 		}
-		if generalAccount.GetBalance() != row.GeneralAccountBalance() {
+		if stringToU64(generalAccount.GetBalance()) != row.GeneralAccountBalance() {
 			hasError = true
 		}
 
@@ -33,11 +33,11 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		var bondAcc types.Account
 		if row.ExpectBondAccountBalance() {
 			bondAcc, err = broker.GetPartyBondAccount(row.Party(), row.Asset())
-			if err == nil && bondAcc.Balance != row.BondAccountBalance() {
+			if err == nil && stringToU64(bondAcc.Balance) != row.BondAccountBalance() {
 				hasError = true
 			}
 		}
-		if marginAccount.GetBalance() != row.MarginAccountBalance() {
+		if stringToU64(marginAccount.GetBalance()) != row.MarginAccountBalance() {
 			hasError = true
 		}
 
@@ -72,9 +72,9 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 				"bond account balance":    u64ToS(row.BondAccountBalance()),
 			},
 			map[string]string{
-				"margin account balance":  u64ToS(marginAccount.GetBalance()),
-				"general account balance": u64ToS(generalAccount.GetBalance()),
-				"bond account balance":    u64ToS(bondAcc.Balance),
+				"margin account balance":  marginAccount.GetBalance(),
+				"general account balance": generalAccount.GetBalance(),
+				"bond account balance":    bondAcc.Balance,
 			},
 		)
 	}
@@ -85,8 +85,8 @@ func errMismatchedAccountBalances(row accountBalancesRow, marginAccount, general
 			"general account balance": u64ToS(row.GeneralAccountBalance()),
 		},
 		map[string]string{
-			"margin account balance":  u64ToS(marginAccount.GetBalance()),
-			"general account balance": u64ToS(generalAccount.GetBalance()),
+			"margin account balance":  marginAccount.GetBalance(),
+			"general account balance": generalAccount.GetBalance(),
 		},
 	)
 }

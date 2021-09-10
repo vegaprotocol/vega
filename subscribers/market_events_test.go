@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -84,5 +85,6 @@ func (m meStub) MarketEvent() string {
 	return m.str
 }
 
-func (m meStub) SetSequenceID(s uint64) {}
-func (m meStub) Sequence() uint64       { return 0 }
+func (m meStub) SetSequenceID(s uint64)            {}
+func (m meStub) Sequence() uint64                  { return 0 }
+func (m meStub) StreamMessage() *eventspb.BusEvent { return nil }

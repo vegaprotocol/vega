@@ -63,11 +63,23 @@ func (s SettleDistressed) Proto() eventspb.SettleDistressed {
 func (s SettleDistressed) StreamMessage() *eventspb.BusEvent {
 	p := s.Proto()
 	return &eventspb.BusEvent{
-		Id:    s.eventID(),
-		Block: s.TraceID(),
-		Type:  s.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      s.eventID(),
+		Block:   s.TraceID(),
+		Type:    s.et.ToProto(),
 		Event: &eventspb.BusEvent_SettleDistressed{
 			SettleDistressed: &p,
 		},
+	}
+}
+
+func SettleDistressedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *SettleDistressed {
+	sd := be.GetSettleDistressed()
+	return &SettleDistressed{
+		Base:     newBaseFromStream(ctx, SettleDistressedEvent, be),
+		partyID:  sd.PartyId,
+		marketID: sd.MarketId,
+		margin:   num.NewUint(sd.Margin),
+		price:    num.NewUint(sd.Price),
 	}
 }

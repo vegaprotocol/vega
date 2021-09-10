@@ -19,7 +19,6 @@ import (
 
 var (
 	ErrInvalidSignature              = errors.New("invalid signature")
-	ErrVegaWalletRequired            = errors.New("vega wallet required")
 	ErrChainEventFromNonValidator    = errors.New("chain event emitted from a non-validator node")
 	ErrUnsupportedChainEvent         = errors.New("unsupported chain event")
 	ErrNodeSignatureFromNonValidator = errors.New("node signature not sent by validator")
@@ -33,12 +32,17 @@ type TimeService interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/processor EpochService
+type EpochService interface {
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
 type DelegationEngine interface {
 	Delegate(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
-	OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData
+	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -114,11 +118,11 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(nr *commandspb.NodeRegistration) error
-	UpdateValidatorSet(keys [][]byte)
-	Exists(key []byte) bool
+	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
+	UpdateValidatorSet(keys []string)
+	Exists(key string) bool
 	Len() int
-	AllPubKeys() [][]byte
+	AllPubKeys() []string
 	IsValidator() bool
 }
 
@@ -131,7 +135,7 @@ type Broker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
 type Notary interface {
 	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
-	AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
+	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
 	IsSigned(context.Context, string, commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 }
 
@@ -145,6 +149,12 @@ type Witness interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/evtforwarder_mock.go -package mocks code.vegaprotocol.io/vega/processor EvtForwarder
 type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
+}
+
+// StakingAccounts ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
+type StakingAccounts interface {
+	HasBalance(string) bool
 }
 
 // Banking ...
@@ -187,4 +197,11 @@ type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
 	CanTrade() bool
+	BootstrapFinished() bool
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/processor StakeVerifier
+type StakeVerifier interface {
+	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error
+	ProcessStakeDeposited(ctx context.Context, event *types.StakeDeposited) error
 }

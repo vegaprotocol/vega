@@ -5,12 +5,17 @@ import (
 	"errors"
 	"fmt"
 
+	wcrypto "code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/proto"
+)
+
+var (
+	ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
 )
 
 type TxV2 struct {
@@ -27,6 +32,14 @@ func DecodeTxV2(payload []byte) (*TxV2, error) {
 	}
 
 	inputData, err := commands.CheckTransaction(tx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = checkSignature(tx)
+	if err != nil {
+		return nil, err
+	}
 
 	return &TxV2{
 		originalTx: payload,
@@ -34,6 +47,37 @@ func DecodeTxV2(payload []byte) (*TxV2, error) {
 		inputData:  inputData,
 		err:        err,
 	}, nil
+}
+
+func checkSignature(tx *commandspb.Transaction) error {
+	algo, err := wcrypto.NewSignatureAlgorithm(tx.Signature.Algo, tx.Signature.Version)
+	if err != nil {
+		return err
+	}
+
+	decodedSig, err := hex.DecodeString(tx.Signature.Value)
+	if err != nil {
+		return err
+	}
+
+	if len(tx.GetPubKey()) == 0 {
+		return ErrUnsupportedFromValueInTransaction
+	}
+	pubKeyOrAddress, err := hex.DecodeString(tx.GetPubKey())
+	if err != nil {
+		return fmt.Errorf("invalid public key, %w", err)
+	}
+
+	verified, err := algo.Verify(pubKeyOrAddress, tx.InputData, decodedSig)
+	if err != nil {
+		return err
+	}
+
+	if !verified {
+		return ErrInvalidSignature
+	}
+
+	return nil
 }
 
 func (t TxV2) Command() txn.Command {
@@ -66,8 +110,47 @@ func (t TxV2) Command() txn.Command {
 		return txn.DelegateCommand
 	case *commandspb.InputData_UndelegateSubmission:
 		return txn.UndelegateCommand
+	case *commandspb.InputData_RestoreSnapshotSubmission:
+		return txn.CheckpointRestoreCommand
 	default:
 		panic("unsupported command")
+	}
+}
+
+func (t TxV2) GetCmd() interface{} {
+	switch cmd := t.inputData.Command.(type) {
+	case *commandspb.InputData_OrderSubmission:
+		return cmd.OrderSubmission
+	case *commandspb.InputData_OrderCancellation:
+		return cmd.OrderCancellation
+	case *commandspb.InputData_OrderAmendment:
+		return cmd.OrderAmendment
+	case *commandspb.InputData_VoteSubmission:
+		return cmd.VoteSubmission
+	case *commandspb.InputData_WithdrawSubmission:
+		return cmd.WithdrawSubmission
+	case *commandspb.InputData_LiquidityProvisionSubmission:
+		return cmd.LiquidityProvisionSubmission
+	case *commandspb.InputData_ProposalSubmission:
+		return cmd.ProposalSubmission
+	case *commandspb.InputData_NodeRegistration:
+		return cmd.NodeRegistration
+	case *commandspb.InputData_NodeVote:
+		return cmd.NodeVote
+	case *commandspb.InputData_NodeSignature:
+		return cmd.NodeSignature
+	case *commandspb.InputData_ChainEvent:
+		return cmd.ChainEvent
+	case *commandspb.InputData_OracleDataSubmission:
+		return cmd.OracleDataSubmission
+	case *commandspb.InputData_DelegateSubmission:
+		return cmd.DelegateSubmission
+	case *commandspb.InputData_UndelegateSubmission:
+		return cmd.UndelegateSubmission
+	case *commandspb.InputData_RestoreSnapshotSubmission:
+		return cmd.RestoreSnapshotSubmission
+	default:
+		return errors.New("unsupported command")
 	}
 }
 
@@ -157,7 +240,12 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to UndelegateSubmission")
 		}
 		*underlyingCmd = *cmd.UndelegateSubmission
-
+	case *commandspb.InputData_RestoreSnapshotSubmission:
+		underlyingCmd, ok := i.(*commandspb.RestoreSnapshot)
+		if !ok {
+			return errors.New("failed to unmarshal RestoreSnapshotSubmission")
+		}
+		*underlyingCmd = *cmd.RestoreSnapshotSubmission
 	default:
 		return errors.New("unsupported command")
 	}
@@ -170,6 +258,10 @@ func (t TxV2) PubKey() []byte {
 		panic("pub key should be hex encoded")
 	}
 	return decodedPubKey
+}
+
+func (t TxV2) PubKeyHex() string {
+	return t.tx.GetPubKey()
 }
 
 func (t TxV2) Party() string {

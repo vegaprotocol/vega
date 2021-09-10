@@ -38,11 +38,19 @@ func (t Trade) Proto() ptypes.Trade {
 
 func (t Trade) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    t.eventID(),
-		Block: t.TraceID(),
-		Type:  t.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      t.eventID(),
+		Block:   t.TraceID(),
+		Type:    t.et.ToProto(),
 		Event: &eventspb.BusEvent_Trade{
 			Trade: &t.t,
 		},
+	}
+}
+
+func TradeEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Trade {
+	return &Trade{
+		Base: newBaseFromStream(ctx, TradeEvent, be),
+		t:    *be.GetTrade(),
 	}
 }

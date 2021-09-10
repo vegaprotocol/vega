@@ -78,11 +78,31 @@ func (l LossSoc) Proto() eventspb.LossSocialization {
 func (l LossSoc) StreamMessage() *eventspb.BusEvent {
 	p := l.Proto()
 	return &eventspb.BusEvent{
-		Id:    l.eventID(),
-		Block: l.TraceID(),
-		Type:  l.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      l.eventID(),
+		Block:   l.TraceID(),
+		Type:    l.et.ToProto(),
 		Event: &eventspb.BusEvent_LossSocialization{
 			LossSocialization: &p,
 		},
 	}
+}
+
+func LossSocializationEventFromStream(ctx context.Context, be *eventspb.BusEvent) *LossSoc {
+	lse := &LossSoc{
+		Base:     newBaseFromStream(ctx, LossSocializationEvent, be),
+		partyID:  be.GetLossSocialization().PartyId,
+		marketID: be.GetLossSocialization().MarketId,
+	}
+
+	amt := be.GetLossSocialization().Amount
+	if amt < 0 {
+		lse.neg = true
+		amt *= -1
+		lse.amount = num.NewUint(uint64(amt))
+		return lse
+	}
+
+	lse.amount = num.NewUint(uint64(amt))
+	return lse
 }

@@ -2,6 +2,7 @@ package validators_test
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -85,7 +86,7 @@ func testStartErrorCheckFailed(t *testing.T) {
 	res := testRes{"resource-id-1", func() error {
 		return nil
 	}}
-	checkUntil := erc.startTime.Add(72 * time.Hour)
+	checkUntil := erc.startTime.Add(31 * 24 * time.Hour)
 	cb := func(interface{}, bool) {}
 
 	err := erc.StartCheck(res, cb, checkUntil)
@@ -198,7 +199,7 @@ func testOnChainTimeUpdate(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
-	selfPubKey := []byte("selfPubKey")
+	selfPubKey := "a5ee437dc100d629"
 
 	erc.top.EXPECT().Len().AnyTimes().Return(2)
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(true)
@@ -228,7 +229,8 @@ func testOnChainTimeUpdate(t *testing.T) {
 
 	// then we propagate our own vote
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: selfPubKey})
+	pubKeyBytes, _ := hex.DecodeString(selfPubKey)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: pubKeyBytes})
 	assert.NoError(t, err)
 
 	// second vote from another validator
@@ -249,7 +251,7 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 	defer erc.ctrl.Finish()
 	defer erc.Stop()
 
-	selfPubKey := []byte("selfPubKey")
+	selfPubKey := "a5ee437dc100d629"
 
 	erc.top.EXPECT().Len().AnyTimes().Return(2)
 	erc.top.EXPECT().IsValidator().AnyTimes().Return(false)
@@ -272,7 +274,8 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 
 	// then we propagate our own vote
 	erc.top.EXPECT().Exists(gomock.Any()).Times(1).Return(true)
-	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: selfPubKey})
+	pubKeyBytes, _ := hex.DecodeString(selfPubKey)
+	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: pubKeyBytes})
 	assert.NoError(t, err)
 
 	// second vote from another validator

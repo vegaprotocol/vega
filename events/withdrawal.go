@@ -37,11 +37,19 @@ func (w Withdrawal) Proto() proto.Withdrawal {
 func (w Withdrawal) StreamMessage() *eventspb.BusEvent {
 	wit := w.w
 	return &eventspb.BusEvent{
-		Id:    w.eventID(),
-		Block: w.TraceID(),
-		Type:  w.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      w.eventID(),
+		Block:   w.TraceID(),
+		Type:    w.et.ToProto(),
 		Event: &eventspb.BusEvent_Withdrawal{
 			Withdrawal: &wit,
 		},
+	}
+}
+
+func WithdrawalEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Withdrawal {
+	return &Withdrawal{
+		Base: newBaseFromStream(ctx, WithdrawalEvent, be),
+		w:    *be.GetWithdrawal(),
 	}
 }

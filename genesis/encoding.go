@@ -6,6 +6,8 @@ import (
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/checkpoint"
+	vgjson "code.vegaprotocol.io/vega/libs/json"
 	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/validators"
@@ -17,6 +19,7 @@ type GenesisState struct {
 	Network    abci.GenesisState       `json:"network"`
 	NetParams  netparams.GenesisState  `json:"network_parameters"`
 	Limits     limits.GenesisState     `json:"network_limits"`
+	Checkpoint checkpoint.GenesisState `json:"checkpoint"`
 }
 
 func DefaultGenesisState() GenesisState {
@@ -26,25 +29,8 @@ func DefaultGenesisState() GenesisState {
 		Validators: validators.DefaultGenesisState(),
 		Network:    abci.DefaultGenesis(),
 		NetParams:  netparams.DefaultGenesisState(),
+		Checkpoint: checkpoint.DefaultGenesisState(),
 	}
-}
-
-func DumpDefault() (string, error) {
-	gstate := DefaultGenesisState()
-	return Dump(&gstate)
-}
-
-func Dump(s *GenesisState) (string, error) {
-	bytes, err := json.MarshalIndent(s, "  ", "  ")
-	if err != nil {
-		return "", err
-	}
-	return string(bytes), nil
-}
-
-func UpdateInPlaceDefault(tmCfgPath string) error {
-	gs := DefaultGenesisState()
-	return UpdateInPlace(&gs, tmCfgPath)
 }
 
 func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
@@ -65,7 +51,7 @@ func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
 	}
 
 	tmGenesis["app_state"] = json.RawMessage(rawState)
-	tmCfgBytes, err = json.MarshalIndent(&tmGenesis, "  ", "  ")
+	tmCfgBytes, err = vgjson.Prettify(&tmGenesis)
 	if err != nil {
 		return err
 	}

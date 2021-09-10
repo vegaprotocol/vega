@@ -1,0 +1,53 @@
+package nodewallet
+
+import (
+	"fmt"
+
+	"code.vegaprotocol.io/vega/config"
+	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallet"
+
+	"github.com/jessevdk/go-flags"
+)
+
+type verifyCmd struct {
+	Config nodewallet.Config
+}
+
+func (opts *verifyCmd) Execute(_ []string) error {
+	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
+	defer log.AtExit()
+
+	if ok, err := vgfs.PathExists(rootCmd.RootPath); !ok {
+		return fmt.Errorf("invalid root directory path: %w", err)
+	}
+
+	pass, err := rootCmd.PassphraseFile.Get("node wallet")
+	if err != nil {
+		return err
+	}
+
+	conf, err := config.Read(rootCmd.RootPath)
+	if err != nil {
+		return err
+	}
+	opts.Config = conf.NodeWallet
+
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, rootCmd.RootPath)
+	if err != nil {
+		return err
+	}
+
+	err = nw.Verify()
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("ok")
+	return nil
+}

@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/types/num"
 	validators "github.com/mwitkow/go-proto-validators"
 )
 
@@ -196,6 +197,159 @@ func FloatLT(f float64) func(float64) error {
 	}
 }
 
+type DecimalRule func(num.Decimal) error
+
+type Decimal struct {
+	*baseValue
+	value   num.Decimal
+	rawval  string
+	rules   []DecimalRule
+	mutable bool
+}
+
+func NewDecimal(rules ...DecimalRule) *Decimal {
+	return &Decimal{
+		baseValue: &baseValue{},
+		rules:     rules,
+	}
+}
+
+func (f *Decimal) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(context.Context, num.Decimal) error)
+		return fn(ctx, f.value)
+	}
+}
+
+func (f *Decimal) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(context.Context, num.Decimal) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, float64) error")
+	}
+	return nil
+}
+
+func (f *Decimal) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(DecimalRule)
+		if !ok {
+			return errors.New("floats require DecimalRule functions")
+		}
+		f.rules = append(f.rules, v)
+	}
+
+	return nil
+}
+
+func (f *Decimal) ToDecimal() (num.Decimal, error) {
+	return f.value, nil
+}
+
+func (f *Decimal) Validate(value string) error {
+	valf, err := num.DecimalFromString(value)
+	if err != nil {
+		return err
+	}
+
+	if !f.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	for _, fn := range f.rules {
+		if newerr := fn(valf); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	return err
+}
+
+func (f *Decimal) Update(value string) error {
+	if !f.mutable {
+		return errors.New("value is not mutable")
+	}
+	valf, err := num.DecimalFromString(value)
+	if err != nil {
+		return err
+	}
+
+	for _, fn := range f.rules {
+		if newerr := fn(valf); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err == nil {
+		f.rawval = value
+		f.value = valf
+	}
+
+	return err
+}
+
+func (f *Decimal) Mutable(b bool) *Decimal {
+	f.mutable = b
+	return f
+}
+
+func (f *Decimal) MustUpdate(value string) *Decimal {
+	err := f.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
+func (f *Decimal) String() string {
+	return f.rawval
+}
+
+func DecimalGTE(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.GreaterThanOrEqual(f) {
+			return nil
+		}
+		return fmt.Errorf("expect >= %v got %v", f, val)
+	}
+}
+
+func DecimalGT(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.GreaterThan(f) {
+			return nil
+		}
+		return fmt.Errorf("expect > %v got %v", f, val)
+	}
+}
+
+func DecimaLTE(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.LessThanOrEqual(f) {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v got %v", f, val)
+	}
+}
+
+func DecimalLT(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.LessThan(f) {
+			return nil
+		}
+		return fmt.Errorf("expect < %v got %v", f, val)
+	}
+}
+
 type IntRule func(int64) error
 
 type Int struct {
@@ -346,6 +500,150 @@ func IntLT(i int64) func(int64) error {
 		}
 		return fmt.Errorf("expect < %v got %v", i, val)
 	}
+}
+
+type TimeRule func(time.Time) error
+
+type Time struct {
+	*baseValue
+	value   time.Time
+	rawval  string
+	rules   []TimeRule
+	mutable bool
+}
+
+func NewTime(rules ...TimeRule) *Time {
+	return &Time{
+		baseValue: &baseValue{},
+		rules:     rules,
+	}
+}
+
+func (t *Time) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(context.Context, time.Time) error)
+		return fn(ctx, t.value)
+	}
+}
+
+func (t *Time) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(context.Context, time.Time) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, time.Time) error")
+	}
+	return nil
+}
+
+func (t *Time) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(TimeRule)
+		if !ok {
+			return errors.New("times require TimeRule functions")
+		}
+		t.rules = append(t.rules, v)
+	}
+
+	return nil
+}
+
+func (t *Time) ToTime() (time.Time, error) {
+	return t.value, nil
+}
+
+func (t *Time) Validate(value string) error {
+	if !t.mutable {
+		return errors.New("value is not mutable")
+	}
+	pVal, err := parseTime(value)
+	if err != nil {
+		return err
+	}
+	tVal := *pVal
+	for _, fn := range t.rules {
+		if newerr := fn(tVal); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+	return err
+}
+
+func (t *Time) Update(value string) error {
+	if !t.mutable {
+		return errors.New("value is not mutable")
+	}
+	pVal, err := parseTime(value)
+	if err != nil {
+		return err
+	}
+	tVal := *pVal
+	for _, fn := range t.rules {
+		if newerr := fn(tVal); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err == nil {
+		t.rawval = value
+		t.value = tVal
+	}
+	return nil
+}
+
+func (t *Time) Mutable(b bool) *Time {
+	t.mutable = b
+	return t
+}
+
+func (t *Time) MustUpdate(value string) *Time {
+	if err := t.Update(value); err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func (t *Time) String() string {
+	return t.rawval
+}
+
+func TimeNonZero() func(time.Time) error {
+	return func(val time.Time) error {
+		if !val.IsZero() {
+			return nil
+		}
+		return fmt.Errorf("expect non-zero time")
+	}
+}
+
+func parseTime(v string) (*time.Time, error) {
+	if v == "never" {
+		return &time.Time{}, nil
+	}
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		if tVal, err := time.Parse(f, v); err == nil {
+			return &tVal, nil
+		}
+	}
+	// last attempt -> timestamp
+	i, err := strconv.ParseInt(v, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	t := time.Unix(i, 0)
+	return &t, nil
 }
 
 type DurationRule func(time.Duration) error

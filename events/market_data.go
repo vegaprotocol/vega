@@ -34,11 +34,19 @@ func (m MarketData) Proto() proto.MarketData {
 
 func (m MarketData) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    m.eventID(),
-		Block: m.TraceID(),
-		Type:  m.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      m.eventID(),
+		Block:   m.TraceID(),
+		Type:    m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarketData{
 			MarketData: &m.md,
 		},
+	}
+}
+
+func MarketDataEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarketData {
+	return &MarketData{
+		Base: newBaseFromStream(ctx, MarketDataEvent, be),
+		md:   *be.GetMarketData(),
 	}
 }

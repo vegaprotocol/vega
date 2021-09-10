@@ -162,7 +162,7 @@ func (b *BrokerStub) ClearOrderEvents() {
 	b.mu.Unlock()
 }
 
-func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy map[uint64]uint64) {
+func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
 	batch := b.GetImmBatch(events.OrderEvent)
 	if len(batch) == 0 {
 		return nil, nil
@@ -193,7 +193,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[uint64]uint64, buy ma
 	}
 
 	// now we have all active orders, let's build both sides
-	sell, buy = map[uint64]uint64{}, map[uint64]uint64{}
+	sell, buy = map[string]uint64{}, map[string]uint64{}
 	for _, v := range activeOrders {
 		if v.Side == types.Side_SIDE_BUY {
 			buy[v.Price] = buy[v.Price] + v.Remaining
@@ -312,6 +312,91 @@ func (b *BrokerStub) GetAccountEvents() []events.Acc {
 		s = append(s, e)
 	}
 	return s
+}
+
+func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.DelegationBalance {
+	batch := b.GetBatch(events.DelegationBalanceEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	s := []events.DelegationBalance{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.DelegationBalance:
+			if et.EpochSeq == epochSeq {
+				s = append(s, et)
+			}
+		case *events.DelegationBalance:
+			if (*et).EpochSeq == string(epochSeq) {
+				s = append(s, *et)
+			}
+		}
+	}
+	return s
+}
+
+func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
+
+	evts := b.GetDelegationBalanceEvents(epochSeq)
+	balances := make([]types.Delegation, 0, len(evts))
+
+	for _, e := range evts {
+		balances = append(balances, types.Delegation{
+			Party:    e.Party,
+			NodeId:   e.NodeID,
+			EpochSeq: string(e.EpochSeq),
+			Amount:   e.Amount.String(),
+		})
+	}
+	return balances
+}
+
+func (b *BrokerStub) GetRewards(epochSeq string) map[string]events.RewardPayout {
+	batch := b.GetBatch(events.RewardPayoutEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	rewards := map[string]events.RewardPayout{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.RewardPayout:
+			if et.EpochSeq == epochSeq {
+				rewards[et.Party] = et
+			}
+		case *events.RewardPayout:
+			if (*et).EpochSeq == string(epochSeq) {
+				rewards[et.Party] = *et
+			}
+		}
+	}
+	return rewards
+}
+
+func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.ValidatorScore {
+	batch := b.GetBatch(events.ValidatorScoreEvent)
+	if len(batch) == 0 {
+		return nil
+	}
+
+	scores := map[string]events.ValidatorScore{}
+
+	for _, e := range batch {
+		switch et := e.(type) {
+		case events.ValidatorScore:
+			if et.EpochSeq == epochSeq {
+				scores[et.NodeID] = et
+			}
+		case *events.ValidatorScore:
+			if (*et).EpochSeq == string(epochSeq) {
+				scores[et.NodeID] = *et
+			}
+		}
+	}
+	return scores
 }
 
 func (b *BrokerStub) GetAccounts() []types.Account {

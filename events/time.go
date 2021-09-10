@@ -35,11 +35,19 @@ func (t Time) Proto() eventspb.TimeUpdate {
 func (t Time) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
 	return &eventspb.BusEvent{
-		Id:    t.eventID(),
-		Block: t.TraceID(),
-		Type:  t.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      t.eventID(),
+		Block:   t.TraceID(),
+		Type:    t.et.ToProto(),
 		Event: &eventspb.BusEvent_TimeUpdate{
 			TimeUpdate: &p,
 		},
+	}
+}
+
+func TimeEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Time {
+	return &Time{
+		Base:      newBaseFromStream(ctx, TimeUpdate, be),
+		blockTime: time.Unix(be.GetTimeUpdate().Timestamp, 0).UTC(),
 	}
 }

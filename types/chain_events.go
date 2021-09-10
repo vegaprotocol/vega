@@ -63,7 +63,7 @@ func (w *Withdrawal) IntoProto() *proto.Withdrawal {
 	return &proto.Withdrawal{
 		Id:                 w.ID,
 		PartyId:            w.PartyID,
-		Amount:             w.Amount.Uint64(),
+		Amount:             num.UintToString(w.Amount),
 		Asset:              w.Asset,
 		Status:             w.Status,
 		Ref:                w.Ref,
@@ -114,7 +114,7 @@ func (d *Deposit) IntoProto() *proto.Deposit {
 		Status:            d.Status,
 		PartyId:           d.PartyID,
 		Asset:             d.Asset,
-		Amount:            d.Amount.String(),
+		Amount:            num.UintToString(d.Amount),
 		TxHash:            d.TxHash,
 		CreditedTimestamp: d.CreditDate,
 		CreatedTimestamp:  d.CreationDate,
@@ -192,19 +192,27 @@ type BuiltinAssetWithdrawal struct {
 	Amount *num.Uint
 }
 
-func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) *BuiltinAssetWithdrawal {
+func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
+	var amount = num.Zero()
+	if len(p.Amount) > 0 {
+		var overflowed = false
+		amount, overflowed = num.UintFromString(p.Amount, 10)
+		if overflowed {
+			return nil, errors.New("invalid amount")
+		}
+	}
 	return &BuiltinAssetWithdrawal{
 		VegaAssetId: p.VegaAssetId,
 		PartyId:     p.PartyId,
-		Amount:      num.NewUint(p.Amount),
-	}
+		Amount:      amount,
+	}, nil
 }
 
 func (b BuiltinAssetWithdrawal) IntoProto() *proto.BuiltinAssetWithdrawal {
 	return &proto.BuiltinAssetWithdrawal{
 		VegaAssetId: b.VegaAssetId,
 		PartyId:     b.PartyId,
-		Amount:      num.UintToUint64(b.Amount),
+		Amount:      num.UintToString(b.Amount),
 	}
 }
 
@@ -254,14 +262,17 @@ type builtinAssetEventAction interface {
 }
 
 func NewBuiltinAssetEventFromProto(p *proto.BuiltinAssetEvent) (*BuiltinAssetEvent, error) {
-	ae := &BuiltinAssetEvent{}
+	var (
+		ae  = &BuiltinAssetEvent{}
+		err error
+	)
 	switch e := p.Action.(type) {
 	case *proto.BuiltinAssetEvent_Deposit:
 		ae.Action = NewBuiltinAssetEventDeposit(e)
 		return ae, nil
 	case *proto.BuiltinAssetEvent_Withdrawal:
-		ae.Action = NewBuiltinAssetEventWithdrawal(e)
-		return ae, nil
+		ae.Action, err = NewBuiltinAssetEventWithdrawal(e)
+		return ae, err
 	default:
 		return nil, errors.New("unknown asset event type")
 	}
@@ -306,10 +317,14 @@ type BuiltinAssetEventWithdrawal struct {
 	Withdrawal *BuiltinAssetWithdrawal
 }
 
-func NewBuiltinAssetEventWithdrawal(p *proto.BuiltinAssetEvent_Withdrawal) *BuiltinAssetEventWithdrawal {
-	return &BuiltinAssetEventWithdrawal{
-		Withdrawal: NewBuiltinAssetWithdrawalFromProto(p.Withdrawal),
+func NewBuiltinAssetEventWithdrawal(p *proto.BuiltinAssetEvent_Withdrawal) (*BuiltinAssetEventWithdrawal, error) {
+	withdrawal, err := NewBuiltinAssetWithdrawalFromProto(p.Withdrawal)
+	if err != nil {
+		return nil, err
 	}
+	return &BuiltinAssetEventWithdrawal{
+		Withdrawal: withdrawal,
+	}, nil
 }
 
 func (b BuiltinAssetEventWithdrawal) IntoProto() *proto.BuiltinAssetEvent_Withdrawal {
@@ -580,10 +595,12 @@ func NewERC20DepositFromProto(p *proto.ERC20Deposit) (*ERC20Deposit, error) {
 		SourceEthereumAddress: p.SourceEthereumAddress,
 		TargetPartyID:         p.TargetPartyId,
 	}
-	var failed bool
-	e.Amount, failed = num.UintFromString(p.Amount, 10)
-	if failed {
-		return nil, fmt.Errorf("failed to convert numerical string to Uint: %v", p.Amount)
+	if len(p.Amount) > 0 {
+		var failed bool
+		e.Amount, failed = num.UintFromString(p.Amount, 10)
+		if failed {
+			return nil, fmt.Errorf("failed to convert numerical string to Uint: %v", p.Amount)
+		}
 	}
 	return &e, nil
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	vgproto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -18,10 +19,22 @@ var (
 )
 
 func (app *App) processChainEvent(
-	ctx context.Context, ce *commandspb.ChainEvent, pubkey []byte, id string,
+	ctx context.Context, ce *commandspb.ChainEvent, pubkey string, id string,
 ) error {
+
+	if app.log.GetLevel() <= logging.DebugLevel {
+		app.log.Debug("received chain event",
+			logging.String("event", ce.String()),
+			logging.String("pubkey", pubkey),
+		)
+	}
+
 	// first verify the event was emitted by a validator
 	if !app.top.Exists(pubkey) {
+		app.log.Debug("received chain event from non-validator",
+			logging.String("event", ce.String()),
+			logging.String("pubkey", pubkey),
+		)
 		return ErrChainEventFromNonValidator
 	}
 
@@ -35,6 +48,27 @@ func (app *App) processChainEvent(
 	// OK the event was newly acknowledged, so now we need to
 	// figure out what to do with it.
 	switch c := ce.Event.(type) {
+	case *commandspb.ChainEvent_StakingEvent:
+		blockNumber := c.StakingEvent.Block
+		logIndex := c.StakingEvent.Index
+		switch evt := c.StakingEvent.Action.(type) {
+		case *vgproto.StakingEvent_StakeDeposited:
+			stakeDeposited, err := types.StakeDepositedFromProto(
+				evt.StakeDeposited, blockNumber, logIndex, ce.TxId, id)
+			if err != nil {
+				return err
+			}
+			return app.stake.ProcessStakeDeposited(ctx, stakeDeposited)
+		case *vgproto.StakingEvent_StakeRemoved:
+			stakeRemoved, err := types.StakeRemovedFromProto(
+				evt.StakeRemoved, blockNumber, logIndex, ce.TxId, id)
+			if err != nil {
+				return err
+			}
+			return app.stake.ProcessStakeRemoved(ctx, stakeRemoved)
+		default:
+			return errors.New("unsupported StakingEvent")
+		}
 	case *commandspb.ChainEvent_Builtin:
 		// Convert from protobuf to local domain type
 		ceb, err := types.NewChainEventBuiltinFromProto(c)

@@ -34,11 +34,19 @@ func (p Party) Proto() proto.Party {
 
 func (p Party) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    p.eventID(),
-		Block: p.TraceID(),
-		Type:  p.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      p.eventID(),
+		Block:   p.TraceID(),
+		Type:    p.et.ToProto(),
 		Event: &eventspb.BusEvent_Party{
 			Party: &p.p,
 		},
+	}
+}
+
+func PartyEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Party {
+	return &Party{
+		Base: newBaseFromStream(ctx, PartyEvent, be),
+		p:    *be.GetParty(),
 	}
 }

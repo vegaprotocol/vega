@@ -43,11 +43,19 @@ func (a Acc) Proto() ptypes.Account {
 
 func (a Acc) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    a.eventID(),
-		Block: a.TraceID(),
-		Type:  a.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      a.eventID(),
+		Block:   a.TraceID(),
+		Type:    a.et.ToProto(),
 		Event: &eventspb.BusEvent_Account{
 			Account: &a.a,
 		},
+	}
+}
+
+func AccountEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Acc {
+	return &Acc{
+		Base: newBaseFromStream(ctx, AccountEvent, be),
+		a:    *be.GetAccount(),
 	}
 }

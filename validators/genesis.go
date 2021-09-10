@@ -1,6 +1,8 @@
 package validators
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type GenesisState ValidatorMapping
 

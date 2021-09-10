@@ -31,11 +31,19 @@ func (n NodeSignature) Proto() commandspb.NodeSignature {
 
 func (n NodeSignature) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    n.eventID(),
-		Block: n.TraceID(),
-		Type:  n.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      n.eventID(),
+		Block:   n.TraceID(),
+		Type:    n.et.ToProto(),
 		Event: &eventspb.BusEvent_NodeSignature{
 			NodeSignature: &n.e,
 		},
+	}
+}
+
+func NodeSignatureEventFromStream(ctx context.Context, be *eventspb.BusEvent) *NodeSignature {
+	return &NodeSignature{
+		Base: newBaseFromStream(ctx, NodeSignatureEvent, be),
+		e:    *be.GetNodeSignature(),
 	}
 }

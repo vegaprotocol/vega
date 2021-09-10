@@ -32,6 +32,20 @@ func (m *MockLimits) EXPECT() *MockLimitsMockRecorder {
 	return m.recorder
 }
 
+// BootstrapFinished mocks base method
+func (m *MockLimits) BootstrapFinished() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BootstrapFinished")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// BootstrapFinished indicates an expected call of BootstrapFinished
+func (mr *MockLimitsMockRecorder) BootstrapFinished() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BootstrapFinished", reflect.TypeOf((*MockLimits)(nil).BootstrapFinished))
+}
+
 // CanProposeAsset mocks base method
 func (m *MockLimits) CanProposeAsset() bool {
 	m.ctrl.T.Helper()

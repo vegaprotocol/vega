@@ -11,11 +11,13 @@ type Tx interface {
 	Command() txn.Command
 	Unmarshal(interface{}) error
 	PubKey() []byte
+	PubKeyHex() string
 	Party() string
 	Hash() []byte
 	Signature() []byte
 	Validate() error
 	BlockHeight() uint64
+	GetCmd() interface{}
 }
 
 type Codec interface {

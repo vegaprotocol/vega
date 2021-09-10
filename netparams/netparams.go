@@ -9,6 +9,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -18,6 +19,7 @@ var (
 // Broker - event bus
 type Broker interface {
 	Send(e events.Event)
+	SendBatch(evts []events.Event)
 }
 
 type Reset interface {
@@ -75,8 +77,16 @@ func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 
 // UponGenesis load the initial network parameters
 // from the genesis state
-func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
-	s.log.Debug("loading genesis configuration")
+func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
+	s.log.Debug("Entering netparams.Store.UponGenesis")
+	defer func() {
+		if err != nil {
+			s.log.Debug("Failure in netparams.Store.UponGenesis", logging.Error(err))
+		} else {
+			s.log.Debug("Leaving netparams.Store.UponGenesis without error")
+		}
+	}()
+
 	state, err := LoadGenesisState(rawState)
 	if err != nil {
 		s.log.Error("unable to load genesis state",
@@ -84,12 +94,14 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 		return err
 	}
 
+	evts := make([]events.Event, 0, len(s.store))
 	// first we going to send the initial state through the broker
 	for k, v := range s.store {
-		s.broker.Send(events.NewNetworkParameterEvent(ctx, k, v.String()))
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v.String()))
 	}
+	s.broker.SendBatch(evts)
 
-	// now iterate overal parameters and update the existing ones
+	// now iterate over all parameters and update the existing ones
 	for k, v := range state {
 		if err := s.Update(ctx, k, v); err != nil {
 			return fmt.Errorf("%v: %v", k, err)
@@ -219,6 +231,25 @@ func (s *Store) Update(ctx context.Context, key, value string) error {
 	return nil
 }
 
+func (s *Store) updateBatch(ctx context.Context, params map[string]string) error {
+	evts := make([]events.Event, 0, len(params))
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for k, v := range params {
+		svalue, ok := s.store[k]
+		if !ok {
+			return ErrUnknownKey
+		}
+		if err := svalue.Update(v); err != nil {
+			return fmt.Errorf("unable to update %s: %w", k, err)
+		}
+		s.paramUpdates[k] = struct{}{}
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v))
+	}
+	s.broker.SendBatch(evts)
+	return nil
+}
+
 // Exists check if a value exist for the given key
 func (s *Store) Exists(key string) bool {
 	s.mu.RLock()
@@ -261,14 +292,18 @@ func (s *Store) GetInt(key string) (int64, error) {
 }
 
 // GetUint a value associated to the given key
-func (s *Store) GetUint(key string) (uint64, error) {
+func (s *Store) GetUint(key string) (*num.Uint, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	svalue, ok := s.store[key]
 	if !ok {
-		return 0, ErrUnknownKey
+		return num.Zero(), ErrUnknownKey
 	}
-	return svalue.ToUint()
+	asUint64, err := svalue.ToUint()
+	if err != nil {
+		return num.Zero(), err
+	}
+	return num.NewUint(asUint64), nil
 }
 
 // GetBool a value associated to the given key

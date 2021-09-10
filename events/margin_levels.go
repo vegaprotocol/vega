@@ -47,11 +47,19 @@ func (m MarginLevels) Proto() proto.MarginLevels {
 
 func (m MarginLevels) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    m.eventID(),
-		Block: m.TraceID(),
-		Type:  m.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      m.eventID(),
+		Block:   m.TraceID(),
+		Type:    m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarginLevels{
 			MarginLevels: &m.l,
 		},
+	}
+}
+
+func MarginLevelsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarginLevels {
+	return &MarginLevels{
+		Base: newBaseFromStream(ctx, MarginLevelsEvent, be),
+		l:    *be.GetMarginLevels(),
 	}
 }

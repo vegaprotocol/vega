@@ -46,11 +46,19 @@ func (t *TransferResponse) Proto() eventspb.TransferResponses {
 func (t TransferResponse) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
 	return &eventspb.BusEvent{
-		Id:    t.eventID(),
-		Block: t.TraceID(),
-		Type:  t.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      t.eventID(),
+		Block:   t.TraceID(),
+		Type:    t.et.ToProto(),
 		Event: &eventspb.BusEvent_TransferResponses{
 			TransferResponses: &p,
 		},
+	}
+}
+
+func TransferResponseEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferResponse {
+	return &TransferResponse{
+		Base:      newBaseFromStream(ctx, TransferResponses, be),
+		responses: be.GetTransferResponses().Responses,
 	}
 }

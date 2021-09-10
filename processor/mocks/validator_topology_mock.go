@@ -6,6 +6,7 @@ package mocks
 
 import (
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,24 +35,24 @@ func (m *MockValidatorTopology) EXPECT() *MockValidatorTopologyMockRecorder {
 }
 
 // AddNodeRegistration mocks base method
-func (m *MockValidatorTopology) AddNodeRegistration(arg0 *v1.NodeRegistration) error {
+func (m *MockValidatorTopology) AddNodeRegistration(arg0 context.Context, arg1 *v1.NodeRegistration) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddNodeRegistration", arg0)
+	ret := m.ctrl.Call(m, "AddNodeRegistration", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddNodeRegistration indicates an expected call of AddNodeRegistration
-func (mr *MockValidatorTopologyMockRecorder) AddNodeRegistration(arg0 interface{}) *gomock.Call {
+func (mr *MockValidatorTopologyMockRecorder) AddNodeRegistration(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeRegistration", reflect.TypeOf((*MockValidatorTopology)(nil).AddNodeRegistration), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNodeRegistration", reflect.TypeOf((*MockValidatorTopology)(nil).AddNodeRegistration), arg0, arg1)
 }
 
 // AllPubKeys mocks base method
-func (m *MockValidatorTopology) AllPubKeys() [][]byte {
+func (m *MockValidatorTopology) AllPubKeys() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AllPubKeys")
-	ret0, _ := ret[0].([][]byte)
+	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
@@ -62,7 +63,7 @@ func (mr *MockValidatorTopologyMockRecorder) AllPubKeys() *gomock.Call {
 }
 
 // Exists mocks base method
-func (m *MockValidatorTopology) Exists(arg0 []byte) bool {
+func (m *MockValidatorTopology) Exists(arg0 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Exists", arg0)
 	ret0, _ := ret[0].(bool)
@@ -104,7 +105,7 @@ func (mr *MockValidatorTopologyMockRecorder) Len() *gomock.Call {
 }
 
 // UpdateValidatorSet mocks base method
-func (m *MockValidatorTopology) UpdateValidatorSet(arg0 [][]byte) {
+func (m *MockValidatorTopology) UpdateValidatorSet(arg0 []string) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateValidatorSet", arg0)
 }

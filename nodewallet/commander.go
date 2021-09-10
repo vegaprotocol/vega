@@ -3,6 +3,7 @@ package nodewallet
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/protos/commands"
 	"code.vegaprotocol.io/protos/vega/api"
@@ -13,6 +14,10 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+)
+
+const (
+	commanderNamedLogger = "commander"
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallet Chain
@@ -58,9 +63,11 @@ func (c *Commander) SetChain(bc *blockchain.Client) {
 }
 
 // Command - send command to chain
-func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
+func (c *Commander) Command(_ context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
 	go func() {
-		inputData := commandspb.NewInputData(c.bstats.Height())
+		ctx, cfunc := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cfunc()
+		inputData := commands.NewInputData(c.bstats.Height())
 		wrapPayloadIntoInputData(inputData, cmd, payload)
 		marshalledData, err := proto.Marshal(inputData)
 		if err != nil {
@@ -95,7 +102,7 @@ func (c *Commander) sign(marshalledData []byte) (*commandspb.Signature, error) {
 		return nil, err
 	}
 
-	return commandspb.NewSignature(sig, c.wal.Algo(), c.wal.Version()), nil
+	return commands.NewSignature(sig, c.wal.Algo(), c.wal.Version()), nil
 }
 
 func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, payload proto.Message) {
@@ -133,6 +140,14 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 			}
 		} else {
 			panic("failed to wrap to ChainEvent")
+		}
+	case txn.CheckpointRestoreCommand:
+		if underlyingCmd, ok := payload.(*commandspb.RestoreSnapshot); ok {
+			data.Command = &commandspb.InputData_RestoreSnapshotSubmission{
+				RestoreSnapshotSubmission: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap RestoreSnapshot")
 		}
 	default:
 		panic(fmt.Errorf("command %v is not supported", cmd))

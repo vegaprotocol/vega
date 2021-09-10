@@ -44,6 +44,32 @@ func NewClient(addr string) (*Client, error) {
 	}, nil
 }
 
+func NewClientCustom(addr string) (*Client, error) {
+	if len(addr) <= 0 {
+		return nil, ErrEmptyClientAddr
+	}
+
+	hClient, err := defaultHTTPClient(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	clt, err := tmclihttp.NewWithClient(addr, "/websocket", hClient)
+	if err != nil {
+		return nil, err
+	}
+
+	// log errors only
+	clt.Logger = tmlog.NewFilter(
+		tmlog.NewTMLogger(os.Stdout),
+		tmlog.AllowError(),
+	)
+
+	return &Client{
+		tmclt: clt,
+	}, nil
+}
+
 func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) error {
 	// Fire off the transaction for consensus
 	_, err := c.tmclt.BroadcastTxAsync(ctx, bytes)

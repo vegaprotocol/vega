@@ -2,19 +2,26 @@ package broker_test
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"net"
+	"os"
+	"os/exec"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
 	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/contextutil"
 	"code.vegaprotocol.io/vega/events"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/logging"
+	"go.nanomsg.org/mangos/v3/protocol/pull"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -35,8 +42,9 @@ type evt struct {
 func getBroker(t *testing.T) *brokerTst {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())
 	return &brokerTst{
-		Broker: broker.New(ctx),
+		Broker: broker,
 		cfunc:  cfunc,
 		ctx:    ctx,
 		ctrl:   ctrl,
@@ -71,6 +79,11 @@ func TestSubscribe(t *testing.T) {
 	t.Run("Unsubscribe automatically if subscriber is closed", testAutoUnsubscribe)
 }
 
+func TestStream(t *testing.T) {
+	t.Run("Streams events over socket", testStreamsOverSocket)
+	t.Run("Stops process if can not send to socket", testStopsProcessOnStreamError)
+}
+
 func TestSendEvent(t *testing.T) {
 	t.Run("Skip optional subscribers", testSkipOptional)
 	t.Run("Skip optional subscribers in a batch send", testSendBatchChannel)
@@ -81,14 +94,11 @@ func TestSendEvent(t *testing.T) {
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
 }
 
-func TestTxErrEvents(t *testing.T) {
-	t.Run("Ensure TxErrEvents are hidden from ALL subscribers", testTxErrNotAll)
-}
-
 func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	defer tstBroker.Finish()
-	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
+	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
 	dataH1 := []events.Event{
 		events.NewTime(ctxH1, time.Now()),
 		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
@@ -115,6 +125,7 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 			close(done)
 		}
 	})
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k := tstBroker.Subscribe(sub)
 	// send batches for both events - hash 2 after hash 1
 	tstBroker.SendBatch(dataH1)
@@ -133,9 +144,10 @@ func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
 }
 
 func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	defer tstBroker.Finish()
-	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
+	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
 	dataH1 := []events.Event{
 		events.NewTime(ctxH1, time.Now()),
 		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
@@ -160,6 +172,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 			close(done)
 		}
 	})
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k := tstBroker.Subscribe(sub)
 	// We can't use sendBatch here: we use the traceID of the first event in the batch to determine
 	// the hash (batch-sending events can only happen within a single block)
@@ -181,6 +194,7 @@ func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
 }
 
 func testSubUnsubSuccess(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -188,8 +202,10 @@ func testSubUnsubSuccess(t *testing.T) {
 	// subscribe + unsubscribe -> 2 calls
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	reqSub.EXPECT().Types().Times(2).Return(nil)
 	reqSub.EXPECT().Ack().Times(1).Return(true)
+	reqSub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub)    // not required
 	k2 := broker.Subscribe(reqSub) // required
 	assert.NotZero(t, k1)
@@ -202,11 +218,13 @@ func testSubUnsubSuccess(t *testing.T) {
 }
 
 func testSubReuseKey(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	sub.EXPECT().Types().Times(4).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(2)
 	k1 := broker.Subscribe(sub)
 	sub.EXPECT().Ack().Times(1).Return(true)
 	assert.NotZero(t, k1)
@@ -219,12 +237,14 @@ func testSubReuseKey(t *testing.T) {
 }
 
 func testAutoUnsubscribe(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	// sub, auto-unsub, sub again
 	sub.EXPECT().Types().Times(3).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(2)
 	k1 := broker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	// set up sub to be closed
@@ -253,6 +273,7 @@ func testAutoUnsubscribe(t *testing.T) {
 }
 
 func testSendBatch(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	cancelCh := make(chan struct{})
@@ -262,6 +283,7 @@ func testSendBatch(t *testing.T) {
 	}()
 	sub.EXPECT().Types().Times(1).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	data := []events.Event{
@@ -285,6 +307,7 @@ func testSendBatch(t *testing.T) {
 }
 
 func testSendBatchChannel(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
@@ -299,6 +322,7 @@ func testSendBatchChannel(t *testing.T) {
 		twg.Done()
 	})
 	sub.EXPECT().Ack().AnyTimes().Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	batch2 := []events.Event{
@@ -365,6 +389,7 @@ func testSendBatchChannel(t *testing.T) {
 }
 
 func testSkipOptional(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
@@ -379,6 +404,7 @@ func testSkipOptional(t *testing.T) {
 		twg.Done()
 	})
 	sub.EXPECT().Ack().AnyTimes().Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 
@@ -434,6 +460,7 @@ func testSkipOptional(t *testing.T) {
 }
 
 func testStopCtx(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -444,6 +471,7 @@ func testStopCtx(t *testing.T) {
 	broker.cfunc()
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	broker.Send(broker.randomEvt())
@@ -453,6 +481,7 @@ func testStopCtx(t *testing.T) {
 }
 
 func testStopCtxSendAgain(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -463,6 +492,7 @@ func testStopCtxSendAgain(t *testing.T) {
 	broker.cfunc()
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	broker.Send(broker.randomEvt())
@@ -474,6 +504,7 @@ func testStopCtxSendAgain(t *testing.T) {
 }
 
 func testSubscriberSkip(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -503,6 +534,7 @@ func testSubscriberSkip(t *testing.T) {
 	sub.EXPECT().Push(events[1]).Times(1)
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	for _, e := range events {
@@ -517,6 +549,7 @@ func testSubscriberSkip(t *testing.T) {
 
 // test making sure that events are sent only to subs that are interested in it
 func testEventTypeSubscription(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -552,6 +585,9 @@ func testEventTypeSubscription(t *testing.T) {
 	sub.EXPECT().Ack().AnyTimes().Return(true)
 	diffSub.EXPECT().Ack().AnyTimes().Return(true)
 	allSub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	diffSub.EXPECT().SetID(gomock.Any()).Times(1)
+	allSub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub)     // required sub
 	k2 := broker.Subscribe(diffSub) // required sub, but won't be used anyway
 	k3 := broker.Subscribe(allSub)
@@ -559,14 +595,8 @@ func testEventTypeSubscription(t *testing.T) {
 	assert.NotZero(t, k2)
 	assert.NotZero(t, k3)
 	assert.NotEqual(t, k1, k2)
-	// send the TxErrEvent, a special case none of the subscribers ought to ever receive
-	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("random err"), "party-1", types.Vote{
-		PartyId:    "party-1",
-		Value:      types.Vote_VALUE_YES,
-		ProposalId: "prop-1",
-	}))
-	// send the correct event
-	broker.Send(event)
+	// send a time event
+	broker.Send(events.NewTime(context.Background(), time.Now()))
 	// ensure the event was delivered
 	wg.Wait()
 	// unsubscribe the subscriber, now we're done
@@ -577,64 +607,93 @@ func testEventTypeSubscription(t *testing.T) {
 	close(closeCh)
 }
 
-func testTxErrNotAll(t *testing.T) {
-	broker := getBroker(t)
-	defer broker.Finish()
-	sub := mocks.NewMockSubscriber(broker.ctrl)
-	allSub := mocks.NewMockSubscriber(broker.ctrl)
-	skipCh, closeCh := make(chan struct{}), make(chan struct{})
+func testStreamsOverSocket(t *testing.T) {
+	t.Parallel()
+	ctx, cfunc := context.WithCancel(context.Background())
+	ctrl := gomock.NewController(t)
+	config := broker.NewDefaultConfig()
+	config.Socket.Enabled = true
+	config.Socket.Transport = "inproc"
 
-	// we'll send error events. Once both have been sent to the subscriber
-	// we're certain none of them were pushed to the ALL subscriber
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	// Closed check
-	sub.EXPECT().Closed().AnyTimes().Return(closeCh)
-	allSub.EXPECT().Closed().AnyTimes().Return(closeCh)
-	// skip check
-	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	allSub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	sock, err := pull.NewSocket()
+	assert.NoError(t, err)
 
-	// all subscriber ought to never receive anything, so don't specify an EXPECT
-	// allSub.EXPECT().Push(gomock.Any()).Times(0)
-	// actually push the event - diffSub expects nothing
-	sub.EXPECT().Push(gomock.Any()).Times(2).Do(func(_ interface{}) {
-		wg.Done()
-	})
-	// the event types this subscriber is interested in
-	sub.EXPECT().Types().AnyTimes().Return([]events.Type{events.TxErrEvent})
-	allSub.EXPECT().Types().AnyTimes().Return(nil) // subscribed to ALL events
+	addr := fmt.Sprintf(
+		"inproc://%s",
+		net.JoinHostPort(config.Socket.Address, fmt.Sprintf("%d", config.Socket.Port)),
+	)
+	err = sock.Listen(addr)
+	assert.NoError(t, err)
 
-	// both subscribers are ack'ing
-	sub.EXPECT().Ack().AnyTimes().Return(true)
-	allSub.EXPECT().Ack().AnyTimes().Return(true)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
 
-	// TxErrEvent
-	evt := events.NewTxErrEvent(broker.ctx, errors.New("some error"), "party-1", types.Vote{
-		PartyId:    "party-1",
-		Value:      types.Vote_VALUE_YES,
-		ProposalId: "prop-1",
-	})
-	k1 := broker.Subscribe(sub)
-	k2 := broker.Subscribe(allSub)
-	assert.NotZero(t, k1)
-	assert.NotZero(t, k2)
-	assert.NotEqual(t, k1, k2)
-	// send the correct event
-	broker.Send(evt)
-	// send a second event
-	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("some error 2"), "party-2", types.Vote{
-		PartyId:    "party-2",
-		Value:      types.Vote_VALUE_NO,
-		ProposalId: "prop-2",
-	}))
-	// ensure the event was delivered
-	wg.Wait()
-	// unsubscribe the subscriber, now we're done
-	broker.Unsubscribe(k1)
-	broker.Unsubscribe(k2)
-	close(skipCh)
-	close(closeCh)
+	defer func() {
+		cfunc()
+		ctrl.Finish()
+		sock.Close()
+	}()
+
+	sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 00, 01, 01, 0, time.UTC))
+
+	broker.Send(sentEvent)
+
+	receivedBytes, err := sock.Recv()
+	assert.NoError(t, err)
+
+	var receivedEvent eventspb.BusEvent
+	err = proto.Unmarshal(receivedBytes, &receivedEvent)
+	assert.NoError(t, err)
+	assert.Equal(t, *sentEvent.StreamMessage(), receivedEvent)
+}
+
+func testStopsProcessOnStreamError(t *testing.T) {
+	t.Parallel()
+	if os.Getenv("RUN_TEST") == "1" {
+		ctx, cfunc := context.WithCancel(context.Background())
+		ctrl := gomock.NewController(t)
+		config := broker.NewDefaultConfig()
+		config.Socket.Enabled = true
+		config.Socket.Transport = "inproc"
+
+		// Having such a small buffers will make the process fail
+		config.Socket.SocketChannelBufferSize = 0
+		config.Socket.EventChannelBufferSize = 0
+
+		sock, err := pull.NewSocket()
+		assert.NoError(t, err)
+
+		addr := fmt.Sprintf(
+			"inproc://%s",
+			net.JoinHostPort(config.Socket.Address, fmt.Sprintf("%d", config.Socket.Port)),
+		)
+		err = sock.Listen(addr)
+		assert.NoError(t, err)
+
+		broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+
+		defer func() {
+			cfunc()
+			ctrl.Finish()
+			sock.Close()
+		}()
+
+		sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 00, 01, 01, 0, time.UTC))
+
+		broker.Send(sentEvent)
+		// One of the next call should terminate the process
+		broker.Send(sentEvent)
+		broker.Send(sentEvent)
+		broker.Send(sentEvent)
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestStream/Stops_process_if_can_not_send_to_socket")
+	cmd.Env = append(os.Environ(), "RUN_TEST=1")
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	t.Fatalf("process ran with err %v, want exit status 1", err)
 }
 
 func (e evt) Type() events.Type {
@@ -655,4 +714,8 @@ func (e evt) Sequence() uint64 {
 
 func (e evt) TraceID() string {
 	return e.id
+}
+
+func (e evt) StreamMessage() *eventspb.BusEvent {
+	return nil
 }

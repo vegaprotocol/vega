@@ -8,10 +8,11 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+var minVal, _ = num.DecimalFromString("5.0")
 
 var (
 	// ErrPartyHasNoStakingAccount is returned when the staking account for the party cannot be found
@@ -29,6 +30,7 @@ var (
 // ValidatorTopology represents the topology of validators and can check if a given node is a validator
 type ValidatorTopology interface {
 	IsValidatorNode(nodeID string) bool
+	AllPubKeys() []string
 }
 
 // Broker send events
@@ -40,8 +42,12 @@ type Broker interface {
 
 // StakingAccounts provides access to the staking balance of a given party now and within a duration of an epoch
 type StakingAccounts interface {
-	GetBalanceNow(party string) *num.Uint
-	GetBalanceForEpoch(party string, from, to time.Time) *num.Uint
+	GetAvailableBalance(party string) (*num.Uint, error)
+	GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error)
+}
+
+type EpochEngine interface {
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
 }
 
 // validator delegation state - updated at the end of each epoch
@@ -70,7 +76,7 @@ type pendingPartyDelegation struct {
 // Engine is handling the delegations balances from parties to validators
 // The delegation engine is designed in the following way with the following assumptions:
 // 1. during epoch it is called with delegation requests that are added to a pending data structure and only applied at the end of the epoch
-// 2. At the end of the epoch the engine is called and does the following:
+// 2. At the end of the epoch - this is not necessarily at the end of the epoch but rather when told to process later than the end of epoch- the engine is called and does the following:
 // 2.1 updates the delegated balances to match the epoch's staking account balance for each party such that if a party withdrew from their
 //     staking account during the epoch it will not count for them for rewarding
 // 2.2 capture the state after 2.1 to be returned to the rewarding engine
@@ -79,22 +85,19 @@ type Engine struct {
 	log                  *logging.Logger
 	config               Config
 	broker               Broker
-	topology             ValidatorTopology                  // an interface to the topoology to interact with validator nodes if needed
-	stakingAccounts      StakingAccounts                    // an interface to the staking account for getting party balances
-	nodeDelegationState  map[string]*validatorDelegation    // validator to active delegations
-	partyDelegationState map[string]*partyDelegation        // party to active delegations
-	pendingState         map[string]*pendingPartyDelegation // pending delegations/undelegations by party
-	netp                 NetParams                          // network parameter interface for reading needed network parameters
-}
-
-//NetParams provides access to network parameters
-//use mock from mocks/netparams_mock.go
-type NetParams interface {
-	Get(string) (string, error)
+	topology             ValidatorTopology                             // an interface to the topoology to interact with validator nodes if needed
+	stakingAccounts      StakingAccounts                               // an interface to the staking account for getting party balances
+	nodeDelegationState  map[string]*validatorDelegation               // validator to active delegations
+	partyDelegationState map[string]*partyDelegation                   // party to active delegations
+	pendingState         map[uint64]map[string]*pendingPartyDelegation // epoch seq -> pending delegations/undelegations by party
+	minDelegationAmount  *num.Uint                                     // min delegation amount per delegation request
+	currentEpoch         types.Epoch                                   // the current epoch for pending delegations
+	compLevel            num.Decimal
 }
 
 //New instantiate a new delegation engine
-func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, netp NetParams) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, epochEngine EpochEngine) *Engine {
+
 	e := &Engine{
 		config:               config,
 		log:                  log.Named(namedLogger),
@@ -103,24 +106,90 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		stakingAccounts:      stakingAccounts,
 		nodeDelegationState:  map[string]*validatorDelegation{},
 		partyDelegationState: map[string]*partyDelegation{},
-		pendingState:         map[string]*pendingPartyDelegation{},
-		netp:                 netp,
+		pendingState:         map[uint64]map[string]*pendingPartyDelegation{},
 	}
+
+	// register for epoch notifications
+	epochEngine.NotifyOnEpoch(e.onEpochEvent)
+
 	return e
 }
 
-//OnEpochEnd updates the delegation engine state at the end of an epoch and returns the last epoch's validation-delegation data for rewarding
+//OnCompLevelChanged updates the network parameter for competitionLevel
+func (e *Engine) OnCompLevelChanged(ctx context.Context, compLevel float64) error {
+	e.compLevel = num.DecimalFromFloat(compLevel)
+	return nil
+}
+
+//OnMinAmountChanged updates the network parameter for minDelegationAmount
+func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount int64) error {
+	e.minDelegationAmount = num.NewUint(uint64(minAmount))
+	return nil
+}
+
+//update the current epoch at which current pending delegations are recorded
+//regardless if the event is start or stop of the epoch. the sequence is what identifies the epoch
+func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
+	e.currentEpoch = epoch
+}
+
+//ProcessEpochDelegations updates the delegation engine state at the end of a given epoch and returns the validation-delegation data for rewarding for that epoch
 // step 1: process delegation data for the epoch - undelegate if the balance of the staking account doesn't cover all delegations
 // step 2: capture validator delegation data to be returned
 // step 3: apply pending undelegations
 // step 4: apply pending delegations
-func (e *Engine) OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData {
+// epoch here is the epoch that ended
+func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData {
 	if e.log.IsDebug() {
-		e.log.Debug("on epoch end:", logging.Time("start", start), logging.Time("end", end))
+		e.log.Debug("on epoch end:", logging.Time("start", epoch.StartTime), logging.Time("end", epoch.EndTime))
 	}
-	e.preprocessEpochForRewarding(ctx, start, end)
+
+	partiesForEvents := map[string]map[string]string{}
+
+	if pendingForEpoch, ok := e.pendingState[epoch.Seq]; ok {
+		for party, nodes := range pendingForEpoch {
+			partiesForEvents[party] = map[string]string{}
+			for node := range nodes.nodeToDelegateAmount {
+				partiesForEvents[party][node] = node
+			}
+			for node := range nodes.nodeToUndelegateAmount {
+				partiesForEvents[party][node] = node
+			}
+		}
+	}
+	for party, nodes := range e.partyDelegationState {
+		if _, ok := partiesForEvents[party]; !ok {
+			partiesForEvents[party] = map[string]string{}
+		}
+		for node := range nodes.nodeToAmount {
+			partiesForEvents[party][node] = node
+		}
+	}
+
+	partiesForEventsSlice := make([]string, 0, len(partiesForEvents))
+	for party := range partiesForEvents {
+		partiesForEventsSlice = append(partiesForEventsSlice, party)
+	}
+	sort.Strings(partiesForEventsSlice)
+
+	e.preprocessEpochForRewarding(ctx, epoch)
 	stateForRewards := e.getValidatorData()
-	e.processPending(ctx)
+	e.processPending(ctx, epoch)
+
+	// we need to send an event for the following epoch
+	for _, party := range partiesForEventsSlice {
+		nodesForParty := partiesForEvents[party]
+		nodesSlice := make([]string, 0, len(nodesForParty))
+		for node := range nodesForParty {
+			nodesSlice = append(nodesSlice, node)
+		}
+		sort.Strings(nodesSlice)
+		for _, node := range nodesSlice {
+			e.sendNextEpochBalanceEvent(ctx, party, node, epoch.Seq)
+		}
+
+	}
+
 	return stateForRewards
 }
 
@@ -134,37 +203,34 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	}
 
 	// check if the delegator has a staking account
-	partyBalance := e.stakingAccounts.GetBalanceNow(party)
-	if partyBalance == nil {
+	partyBalance, err := e.stakingAccounts.GetAvailableBalance(party)
+	if err != nil {
 		return ErrPartyHasNoStakingAccount
 	}
 
-	// read the delegation min amount network param
-	validatorsDelegationMinAmount, err := e.netp.Get(netparams.DelegationMinAmount)
-	if err != nil {
-		return err
-	}
-	minAmount, ok := num.UintFromString(validatorsDelegationMinAmount, 10)
-	if ok {
-		e.log.Panic("unable to read", logging.String(netparams.DelegationMinAmount, validatorsDelegationMinAmount))
+	if amt.LT(e.minDelegationAmount) {
+		return ErrAmountLTMinAmountForDelegation
 	}
 
-	if amt.LT(minAmount) {
-		return ErrAmountLTMinAmountForDelegation
+	// get the pending state for the current epoch - there may be more than one unprocessed pending epochs depending
+	pendingForEpoch, ok := e.pendingState[e.currentEpoch.Seq]
+	if !ok {
+		pendingForEpoch = map[string]*pendingPartyDelegation{}
+		e.pendingState[e.currentEpoch.Seq] = pendingForEpoch
 	}
 
 	// check if the delegator has sufficient balance in their staking account including all pending and committed delegations and undelegations
 	// this is basically just fail fast - the delegation may still fail
-	currentPendingPartyDelegation, ok := e.pendingState[party]
+	currentPendingPartyDelegation, ok := pendingForEpoch[party]
 	if !ok {
-		e.pendingState[party] = &pendingPartyDelegation{
+		pendingForEpoch[party] = &pendingPartyDelegation{
 			party:                  party,
 			totalDelegation:        num.Zero(),
 			totalUndelegation:      num.Zero(),
 			nodeToUndelegateAmount: map[string]*num.Uint{},
 			nodeToDelegateAmount:   map[string]*num.Uint{},
 		}
-		currentPendingPartyDelegation = e.pendingState[party]
+		currentPendingPartyDelegation = pendingForEpoch[party]
 	}
 	partyDelegation, ok := e.partyDelegationState[party]
 	partyDelegationBalance := num.Zero()
@@ -214,14 +280,14 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 			remainingBalanceForDelegate = num.Zero().Sub(remainingBalanceForDelegate, partyPendingUndelegationForNode)
 			delete(currentPendingPartyDelegation.nodeToUndelegateAmount, nodeID)
 			currentPendingPartyDelegation.totalUndelegation = num.Zero().Sub(currentPendingPartyDelegation.totalUndelegation, partyPendingUndelegationForNode)
-			currentPendingPartyDelegation.totalDelegation = num.Zero().Add(currentPendingPartyDelegation.totalDelegation, remainingBalanceForDelegate)
+			currentPendingPartyDelegation.totalDelegation = num.Sum(currentPendingPartyDelegation.totalDelegation, remainingBalanceForDelegate)
 
 			if !remainingBalanceForDelegate.IsZero() {
 				currentPendingPartyDelegation.nodeToDelegateAmount[nodeID] = remainingBalanceForDelegate
 			} else {
 				delete(currentPendingPartyDelegation.nodeToDelegateAmount, nodeID)
-				if currentPendingPartyDelegation.totalUndelegation.EQ(num.Zero()) && currentPendingPartyDelegation.totalDelegation.EQ(num.Zero()) {
-					delete(e.pendingState, party)
+				if currentPendingPartyDelegation.totalUndelegation.IsZero() && currentPendingPartyDelegation.totalDelegation.IsZero() {
+					delete(pendingForEpoch, party)
 				}
 			}
 		} else {
@@ -236,11 +302,11 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 		if !dok {
 			partyPendingDelegationForNode = num.Zero()
 		}
-		currentPendingPartyDelegation.nodeToDelegateAmount[nodeID] = num.Zero().Add(partyPendingDelegationForNode, remainingBalanceForDelegate)
-		currentPendingPartyDelegation.totalDelegation = num.Zero().Add(currentPendingPartyDelegation.totalDelegation, remainingBalanceForDelegate)
+		currentPendingPartyDelegation.nodeToDelegateAmount[nodeID] = num.Sum(partyPendingDelegationForNode, remainingBalanceForDelegate)
+		currentPendingPartyDelegation.totalDelegation = num.Sum(currentPendingPartyDelegation.totalDelegation, remainingBalanceForDelegate)
 	}
 
-	e.sendPendingBalanceEvent(ctx, party, nodeID)
+	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
 
 	return nil
 }
@@ -249,10 +315,16 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error {
 	amt := amount.Clone()
 
+	pendingForEpoch, ok := e.pendingState[e.currentEpoch.Seq]
+	if !ok {
+		pendingForEpoch = map[string]*pendingPartyDelegation{}
+		e.pendingState[e.currentEpoch.Seq] = pendingForEpoch
+	}
+
 	if amt.IsZero() {
 		// calculate how much we have available for undelegation including pending and committed
 		availableForUndelegationInPending := num.Zero()
-		if pendingState, ok := e.pendingState[party]; ok {
+		if pendingState, ok := pendingForEpoch[party]; ok {
 			if nodeDelegation, ok := pendingState.nodeToDelegateAmount[nodeID]; ok {
 				availableForUndelegationInPending = num.Sum(availableForUndelegationInPending, nodeDelegation)
 			}
@@ -285,7 +357,7 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 	pendingUndelegateToNodeAmount := num.Zero()
 
 	// check if there is anything pending
-	currentPendingPartyDelegation, ok := e.pendingState[party]
+	currentPendingPartyDelegation, ok := pendingForEpoch[party]
 	if ok {
 		pendingDelegateToNodeAmount, ok = currentPendingPartyDelegation.nodeToDelegateAmount[nodeID]
 		if !ok {
@@ -306,7 +378,7 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 		}
 	}
 
-	totalDelegationBalance := num.Zero().Add(partyDelegatedToNodeAmount, pendingDelegateToNodeAmount)
+	totalDelegationBalance := num.Sum(partyDelegatedToNodeAmount, pendingDelegateToNodeAmount)
 	totalDelegationBalance = num.Zero().Sub(totalDelegationBalance, pendingUndelegateToNodeAmount)
 
 	// if the amount is greater than the available balance to undelegate return error
@@ -321,15 +393,15 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 			// the undelegation amount is greater than or equal to the delegated amount, we can clear the whole delegation and leave the remaining undelegation
 			remainingBalanceForUndelegate = num.Zero().Sub(remainingBalanceForUndelegate, pendingDelegateToNodeAmount)
 			currentPendingPartyDelegation.totalDelegation = num.Zero().Sub(currentPendingPartyDelegation.totalDelegation, pendingDelegateToNodeAmount)
-			currentPendingPartyDelegation.totalUndelegation = num.Zero().Add(currentPendingPartyDelegation.totalUndelegation, remainingBalanceForUndelegate)
+			currentPendingPartyDelegation.totalUndelegation = num.Sum(currentPendingPartyDelegation.totalUndelegation, remainingBalanceForUndelegate)
 
 			delete(currentPendingPartyDelegation.nodeToDelegateAmount, nodeID)
 			if !remainingBalanceForUndelegate.IsZero() {
 				currentPendingPartyDelegation.nodeToUndelegateAmount[nodeID] = remainingBalanceForUndelegate
 			} else {
 				delete(currentPendingPartyDelegation.nodeToUndelegateAmount, nodeID)
-				if currentPendingPartyDelegation.totalUndelegation.EQ(num.Zero()) && currentPendingPartyDelegation.totalDelegation.EQ(num.Zero()) {
-					delete(e.pendingState, party)
+				if currentPendingPartyDelegation.totalUndelegation.IsZero() && currentPendingPartyDelegation.totalDelegation.IsZero() {
+					delete(pendingForEpoch, party)
 				}
 			}
 		} else {
@@ -340,17 +412,17 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 		}
 	} else {
 		// there are no pending delegations we can just update the pending undelegation
-		currentPendingPartyDelegation.nodeToUndelegateAmount[nodeID] = num.Zero().Add(pendingUndelegateToNodeAmount, remainingBalanceForUndelegate)
-		currentPendingPartyDelegation.totalUndelegation = num.Zero().Add(currentPendingPartyDelegation.totalUndelegation, remainingBalanceForUndelegate)
+		currentPendingPartyDelegation.nodeToUndelegateAmount[nodeID] = num.Sum(pendingUndelegateToNodeAmount, remainingBalanceForUndelegate)
+		currentPendingPartyDelegation.totalUndelegation = num.Sum(currentPendingPartyDelegation.totalUndelegation, remainingBalanceForUndelegate)
 	}
 
-	_, ok = e.pendingState[party]
+	_, ok = pendingForEpoch[party]
 	// if there was no previous undelegation and we ended up undelegating, add to state
 	if !ok && !currentPendingPartyDelegation.totalUndelegation.IsZero() {
-		e.pendingState[party] = currentPendingPartyDelegation
+		pendingForEpoch[party] = currentPendingPartyDelegation
 	}
 
-	e.sendPendingBalanceEvent(ctx, party, nodeID)
+	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
 	return nil
 }
 
@@ -359,19 +431,28 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error {
 	// first check available balance for undelegation and error if the requested amount is greater than
 	availableForUndelegationInPending := num.Zero()
-	if pendingState, ok := e.pendingState[party]; ok {
-		if nodeDelegation, ok := pendingState.nodeToDelegateAmount[nodeID]; ok {
-			availableForUndelegationInPending = num.Zero().Add(availableForUndelegationInPending, nodeDelegation)
+
+	// check if we have any pending in any unprocessed epoch
+	pendingEpochs := []uint64{}
+	for epoch, pendingForEpoch := range e.pendingState {
+		if pendingState, ok := pendingForEpoch[party]; ok {
+			pendingEpochs = append(pendingEpochs, epoch)
+			if nodeDelegation, ok := pendingState.nodeToDelegateAmount[nodeID]; ok {
+				availableForUndelegationInPending = num.Sum(availableForUndelegationInPending, nodeDelegation)
+			}
 		}
 	}
+	// sort pendingEpochs descending so we can start from the last pending epoch
+	sort.Slice(pendingEpochs, func(i, j int) bool { return pendingEpochs[i] > pendingEpochs[j] })
+
 	availableForUndelegationInActive := num.Zero()
 	if partyDelegation, ok := e.partyDelegationState[party]; ok {
 		if nodeDelegation, ok := partyDelegation.nodeToAmount[nodeID]; ok {
-			availableForUndelegationInActive = num.Zero().Add(availableForUndelegationInActive, nodeDelegation)
+			availableForUndelegationInActive = num.Sum(availableForUndelegationInActive, nodeDelegation)
 		}
 	}
 
-	totalAvailableForUndelegation := num.Zero().Add(availableForUndelegationInPending, availableForUndelegationInActive)
+	totalAvailableForUndelegation := num.Sum(availableForUndelegationInPending, availableForUndelegationInActive)
 
 	// if the party passes 0 they want to undelegate all
 	var amt = amount.Clone()
@@ -385,36 +466,37 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 
 	// strart with undelegating from pending, if not enough go to active
 	if !availableForUndelegationInPending.IsZero() {
-		pendingState := e.pendingState[party]
-		if amt.LTE(availableForUndelegationInPending) {
-			pendingState.nodeToDelegateAmount[nodeID] = num.Zero().Sub(availableForUndelegationInPending, amt)
-			pendingState.totalDelegation = num.Zero().Sub(pendingState.totalDelegation, amt)
-			if pendingState.nodeToDelegateAmount[nodeID].EQ(num.Zero()) {
+		for _, epoch := range pendingEpochs {
+			pendingForEpoch := e.pendingState[epoch]
+			pendingState := pendingForEpoch[party]
+			if amt.LTE(availableForUndelegationInPending) {
+				pendingState.nodeToDelegateAmount[nodeID] = num.Zero().Sub(availableForUndelegationInPending, amt)
+				pendingState.totalDelegation = num.Zero().Sub(pendingState.totalDelegation, amt)
+				if pendingState.nodeToDelegateAmount[nodeID].IsZero() {
+					delete(pendingState.nodeToDelegateAmount, nodeID)
+				}
+				amt = num.Zero()
+			} else {
+				// we don't have enough delegation to cover for the undelegate request
+				pendingState.totalDelegation = num.Zero().Sub(pendingState.totalDelegation, availableForUndelegationInPending)
 				delete(pendingState.nodeToDelegateAmount, nodeID)
+				amt = amt.Sub(amt, availableForUndelegationInPending)
 			}
-			amt = num.Zero()
-		} else {
-			// we don't have enough delegation to cover for the undelegate request
-			pendingState.totalDelegation = num.Zero().Sub(pendingState.totalDelegation, availableForUndelegationInPending)
-			delete(pendingState.nodeToDelegateAmount, nodeID)
-			amt = num.Zero().Sub(amt, availableForUndelegationInPending)
-		}
 
-		if pendingState.totalDelegation.EQ(num.Zero()) && pendingState.totalUndelegation.EQ(num.Zero()) {
-			delete(e.pendingState, party)
+			if pendingState.totalDelegation.IsZero() && pendingState.totalUndelegation.IsZero() {
+				delete(pendingForEpoch, party)
+			}
 		}
-
-		e.sendPendingBalanceEvent(ctx, party, nodeID)
 	}
 	// if there's still some balance to undelegate we go to the delegated state
 	if !amt.IsZero() {
 		partyDelegation := e.partyDelegationState[party]
 		partyDelegation.totalDelegated = num.Zero().Sub(partyDelegation.totalDelegated, amt)
 		partyDelegation.nodeToAmount[nodeID] = num.Zero().Sub(partyDelegation.nodeToAmount[nodeID], amt)
-		if partyDelegation.nodeToAmount[nodeID].EQ(num.Zero()) {
+		if partyDelegation.nodeToAmount[nodeID].IsZero() {
 			delete(partyDelegation.nodeToAmount, nodeID)
 		}
-		if partyDelegation.totalDelegated.EQ(num.Zero()) {
+		if partyDelegation.totalDelegated.IsZero() {
 			delete(e.partyDelegationState, party)
 		}
 		nodeDelegation, ok := e.nodeDelegationState[nodeID]
@@ -423,36 +505,50 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 		}
 		nodeDelegation.totalDelegated = num.Zero().Sub(nodeDelegation.totalDelegated, amt)
 		nodeDelegation.partyToAmount[party] = num.Zero().Sub(nodeDelegation.partyToAmount[party], amt)
-		if nodeDelegation.partyToAmount[party].EQ(num.Zero()) {
+		if nodeDelegation.partyToAmount[party].IsZero() {
 			delete(nodeDelegation.partyToAmount, party)
 		}
-		if nodeDelegation.totalDelegated.EQ(num.Zero()) {
+		if nodeDelegation.totalDelegated.IsZero() {
 			delete(e.nodeDelegationState, nodeID)
 		}
-		e.sendDelegatedBalanceEvent(ctx, party, nodeID)
+
 	}
+	e.sendDelegatedBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
+	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
 	return nil
 }
 
-func (e *Engine) sendPendingBalanceEvent(ctx context.Context, party, nodeID string) {
-	pendingState, ok := e.pendingState[party]
+// sends the expected balance for the next epoch
+func (e *Engine) sendNextEpochBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {
+	pendingState, ok := e.pendingState[seq][party]
+
+	pendingDelegated := num.Zero()
+	pendingUndelegated := num.Zero()
+	var dok, udok bool
 
 	if ok {
-		pendingDelegated, dok := pendingState.nodeToDelegateAmount[nodeID]
+		pendingDelegated, dok = pendingState.nodeToDelegateAmount[nodeID]
 		if !dok {
 			pendingDelegated = num.Zero()
 		}
-		pendingUndelegated, udok := pendingState.nodeToUndelegateAmount[nodeID]
+		pendingUndelegated, udok = pendingState.nodeToUndelegateAmount[nodeID]
 		if !udok {
 			pendingUndelegated = num.Zero()
 		}
-		e.broker.Send(events.NewPendingDelegationBalance(ctx, party, nodeID, pendingDelegated, pendingUndelegated))
-	} else {
-		e.broker.Send(events.NewPendingDelegationBalance(ctx, party, nodeID, num.Zero(), num.Zero()))
 	}
+	delegatedToNode := num.Zero()
+	if currentlyInPlay, ok := e.partyDelegationState[party]; ok {
+		if nodeDelegation, ok := currentlyInPlay.nodeToAmount[nodeID]; ok {
+			delegatedToNode = nodeDelegation
+		}
+	}
+
+	amt := num.Zero().Sub(num.Sum(delegatedToNode, pendingDelegated), pendingUndelegated)
+	effEpoch := seq + 1
+	e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(effEpoch).String()))
 }
 
-func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID string) {
+func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {
 	delegated, ok := e.partyDelegationState[party]
 
 	if ok {
@@ -460,10 +556,11 @@ func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID st
 		if !ok {
 			amt = num.Zero()
 		}
-		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt))
-	} else {
-		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, num.Zero()))
+		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(seq).String()))
+		return
 	}
+
+	e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, num.Zero(), num.NewUint(seq).String()))
 }
 
 func (e *Engine) decreaseDelegationAmountBy(party, nodeID string, amt *num.Uint) {
@@ -475,10 +572,10 @@ func (e *Engine) decreaseDelegationAmountBy(party, nodeID string, amt *num.Uint)
 	partyDelegation.totalDelegated = num.Zero().Sub(partyDelegation.totalDelegated, amt)
 
 	// if there's no more delegations, remove the entry for the nodeID
-	if partyDelegation.nodeToAmount[nodeID].EQ(num.Zero()) {
+	if partyDelegation.nodeToAmount[nodeID].IsZero() {
 		delete(partyDelegation.nodeToAmount, nodeID)
 	}
-	if partyDelegation.totalDelegated.EQ(num.Zero()) {
+	if partyDelegation.totalDelegated.IsZero() {
 		delete(e.partyDelegationState, party)
 	}
 
@@ -487,10 +584,10 @@ func (e *Engine) decreaseDelegationAmountBy(party, nodeID string, amt *num.Uint)
 	nodeDelegation.totalDelegated = num.Zero().Sub(nodeDelegation.totalDelegated, amt)
 
 	// if there's no more delegations, remove the entry for the nodeID
-	if nodeDelegation.partyToAmount[party].EQ(num.Zero()) {
+	if nodeDelegation.partyToAmount[party].IsZero() {
 		delete(nodeDelegation.partyToAmount, party)
 	}
-	if nodeDelegation.totalDelegated.EQ(num.Zero()) {
+	if nodeDelegation.totalDelegated.IsZero() {
 		delete(e.nodeDelegationState, nodeID)
 	}
 
@@ -511,7 +608,7 @@ func (e *Engine) sortNodes(nodes map[string]*num.Uint) []string {
 // preprocessEpoch is called at the end of an epoch and updates the state to be returned for rewarding calculation
 // check balance for the epoch duration and undelegate if delegations don't have sufficient cover
 // the state of the engine by the end of this method reflects the state to be used for reward engine
-func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epochStart, epochEnd time.Time) {
+func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Epoch) {
 	parties := make([]string, 0, len(e.partyDelegationState))
 	for party := range e.partyDelegationState {
 		parties = append(parties, party)
@@ -525,7 +622,11 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epochStart, ep
 		partyDelegation := e.partyDelegationState[party]
 
 		// get the party stake balance for the epoch
-		stakeBalance := e.stakingAccounts.GetBalanceForEpoch(party, epochStart, epochEnd)
+		stakeBalance, err := e.stakingAccounts.GetAvailableBalanceInRange(party, epoch.StartTime, epoch.EndTime)
+		if err != nil {
+			e.log.Error("Failed to get available balance in range", logging.Error(err))
+			continue
+		}
 
 		// if the stake covers the total delegated balance nothing to do further for the party
 		if stakeBalance.GTE(partyDelegation.totalDelegated) {
@@ -547,12 +648,12 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epochStart, ep
 			balanceToTake := num.Zero().Mul(balance, remainingBalanceToUndelegate)
 			balanceToTake = num.Zero().Div(balanceToTake, totalDeletation)
 
-			if balanceToTake.EQ(num.Zero()) {
+			if balanceToTake.IsZero() {
 				continue
 			}
 
 			e.decreaseDelegationAmountBy(party, nodeID, balanceToTake)
-			totalTaken = num.Zero().Add(totalTaken, balanceToTake)
+			totalTaken = num.Sum(totalTaken, balanceToTake)
 		}
 
 		// if there was a remainder, the maximum that we need to take more from each node is 1,
@@ -567,7 +668,7 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epochStart, ep
 				}
 				if !balance.IsZero() {
 					e.decreaseDelegationAmountBy(party, nodeID, num.NewUint(1))
-					totalTaken = num.Zero().Add(totalTaken, num.NewUint(1))
+					totalTaken = num.Sum(totalTaken, num.NewUint(1))
 				}
 			}
 		}
@@ -577,16 +678,43 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epochStart, ep
 		}
 
 		for _, nodeID := range nodeIDs {
-			e.sendDelegatedBalanceEvent(ctx, party, nodeID)
+			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epoch.Seq)
 		}
 	}
 }
 
+// calculate the total number of tokens (a rough estimate) and the number of nodes
+func (e *Engine) calcTotalDelegatedTokens(epochSeq uint64) *num.Uint {
+	totalDelegatedTokens := num.Zero()
+	for _, nodeDel := range e.nodeDelegationState {
+		totalDelegatedTokens.AddSum(nodeDel.totalDelegated)
+	}
+	if pendingForEpoch, ok := e.pendingState[epochSeq]; ok {
+		for _, pendingDel := range pendingForEpoch {
+			totalDelegatedTokens = totalDelegatedTokens.Sub(totalDelegatedTokens.AddSum(pendingDel.totalDelegation), pendingDel.totalUndelegation)
+		}
+	}
+	return totalDelegatedTokens
+}
+
+func (e *Engine) calcMaxDelegatableTokens(totalTokens *num.Uint, numVal num.Decimal) *num.Uint {
+	a := num.MaxD(minVal, numVal.Div(e.compLevel))
+
+	res, _ := num.UintFromDecimal(totalTokens.ToDecimal().Div(a))
+	return res
+}
+
 // process pending delegations and undelegations at the end of the epoch and clear the delegation/undelegation maps at the end
-func (e *Engine) processPending(ctx context.Context) {
-	parties := make([]string, 0, len(e.pendingState))
+func (e *Engine) processPending(ctx context.Context, epoch types.Epoch) {
+	pendingForEpoch, ok := e.pendingState[epoch.Seq]
+	if !ok {
+		// no pending for epoch
+		return
+	}
+
+	parties := make([]string, 0, len(pendingForEpoch))
 	partyNodes := map[string][]string{}
-	for party, state := range e.pendingState {
+	for party, state := range pendingForEpoch {
 		parties = append(parties, party)
 		nodes := map[string]bool{}
 		for node := range state.nodeToDelegateAmount {
@@ -605,34 +733,28 @@ func (e *Engine) processPending(ctx context.Context) {
 
 	// sort the parties for deterministic handling
 	sort.Strings(parties)
+	// calculate the total number of tokens (a rough estimate)
+	totalTokens := e.calcTotalDelegatedTokens(epoch.Seq)
+	// calculate the max for the next epoch
+	numVal := len(e.topology.AllPubKeys())
+	maxStakePerValidator := e.calcMaxDelegatableTokens(totalTokens, num.DecimalFromInt64(int64(numVal)))
 
 	// read the delegation min amount network param
-	maxStakePerValidatorStr, err := e.netp.Get(netparams.DelegationMaxStakePerValidator)
-	if err != nil {
-		e.log.Panic("Cannot find validators.delegation.maxStakePerValidator")
-	}
-	maxStakePerValidator, ok := num.UintFromString(maxStakePerValidatorStr, 10)
-	if ok {
-		e.log.Panic("unable to read", logging.String(netparams.DelegationMaxStakePerValidator, maxStakePerValidatorStr))
-	}
+	e.processPendingUndelegations(parties, epoch)
+	e.processPendingDelegations(parties, maxStakePerValidator, epoch)
 
-	e.processPendingUndelegations(parties)
-	e.processPendingDelegations(parties, maxStakePerValidator)
-
-	e.pendingState = map[string]*pendingPartyDelegation{}
-	for _, party := range parties {
-		nodes := partyNodes[party]
-		for _, node := range nodes {
-			e.sendDelegatedBalanceEvent(ctx, party, node)
-			e.sendPendingBalanceEvent(ctx, party, node)
-		}
-	}
+	delete(e.pendingState, epoch.Seq)
 }
 
 // process pending undelegations for all parties
-func (e *Engine) processPendingUndelegations(parties []string) {
+func (e *Engine) processPendingUndelegations(parties []string, epoch types.Epoch) {
+	pendingForEpoch, ok := e.pendingState[epoch.Seq]
+	if !ok {
+		return
+	}
+
 	for _, party := range parties {
-		pending, ok := e.pendingState[party]
+		pending, ok := pendingForEpoch[party]
 		if !ok {
 			continue
 		}
@@ -683,19 +805,19 @@ func (e *Engine) processPendingUndelegations(parties []string) {
 			validatorDelegation.partyToAmount[party] = num.Zero().Sub(validatorPartyDelegationAmount, amountForUndelegate)
 
 			// if no more delegations for the party for the node, remove the mapping
-			if validatorDelegation.partyToAmount[party].EQ(num.Zero()) {
+			if validatorDelegation.partyToAmount[party].IsZero() {
 				delete(validatorDelegation.partyToAmount, party)
 			}
 			validatorDelegation.totalDelegated = num.Zero().Sub(validatorDelegation.totalDelegated, amountForUndelegate)
 			// if no more delegations for the node, clear it from the state
-			if validatorDelegation.totalDelegated.EQ(num.Zero()) {
+			if validatorDelegation.totalDelegated.IsZero() {
 				delete(e.nodeDelegationState, nodeID)
 			}
 
 			// update undelegation for party
 			committedDelegations.totalDelegated = num.Zero().Sub(committedDelegations.totalDelegated, amountForUndelegate)
 			committedDelegations.nodeToAmount[nodeID] = num.Zero().Sub(committedForNode, amountForUndelegate)
-			if committedDelegations.nodeToAmount[nodeID].EQ(num.Zero()) {
+			if committedDelegations.nodeToAmount[nodeID].IsZero() {
 				delete(committedDelegations.nodeToAmount, nodeID)
 			}
 
@@ -712,15 +834,24 @@ func (e *Engine) processPendingUndelegations(parties []string) {
 }
 
 // process pending delegations for all parties
-func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidator *num.Uint) {
+func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidator *num.Uint, epoch types.Epoch) {
+	pendingForEpoch, ok := e.pendingState[epoch.Seq]
+	if !ok {
+		return
+	}
+
 	// process undelegations for all parties first
 	for _, party := range parties {
-		pending, ok := e.pendingState[party]
+		pending, ok := pendingForEpoch[party]
 		if !ok {
 			continue
 		}
 		// get account balance
-		partyBalance := e.stakingAccounts.GetBalanceNow(party)
+		partyBalance, err := e.stakingAccounts.GetAvailableBalance(party)
+		if err != nil {
+			e.log.Error("Failed to get available staking balance", logging.Error(err))
+			continue
+		}
 
 		// get committed delegations for the party
 		committedDelegations, ok := e.partyDelegationState[party]
@@ -756,7 +887,7 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 			}
 
 			// check that the amount is not greater than the available for delegation
-			if amount.GT(availableForDelegation) || amount.EQ(num.Zero()) {
+			if amount.GT(availableForDelegation) || amount.IsZero() {
 				e.log.Debug("the amount requested for delegation is greater than available for delegation at end of epoch", logging.String("party", party), logging.String("nodeID", nodeID), logging.Uint64("amt", amount.Uint64()))
 				continue
 			}
@@ -774,8 +905,8 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 			if !ok {
 				currentDelegationAmtForParty = num.Zero()
 			}
-			currentValidatorDelegation.partyToAmount[party] = num.Zero().Add(currentDelegationAmtForParty, amount)
-			currentValidatorDelegation.totalDelegated = num.Zero().Add(currentValidatorDelegation.totalDelegated, amount)
+			currentValidatorDelegation.partyToAmount[party] = num.Sum(currentDelegationAmtForParty, amount)
+			currentValidatorDelegation.totalDelegated = num.Sum(currentValidatorDelegation.totalDelegated, amount)
 			e.nodeDelegationState[nodeID] = currentValidatorDelegation
 
 			// update undelegation for party
@@ -783,8 +914,8 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 			if !ok {
 				committedForNode = num.Zero()
 			}
-			committedDelegations.totalDelegated = num.Zero().Add(committedDelegations.totalDelegated, amount)
-			committedDelegations.nodeToAmount[nodeID] = num.Zero().Add(committedForNode, amount)
+			committedDelegations.totalDelegated = num.Sum(committedDelegations.totalDelegated, amount)
+			committedDelegations.nodeToAmount[nodeID] = num.Sum(committedForNode, amount)
 			e.partyDelegationState[party] = committedDelegations
 		}
 	}
@@ -792,27 +923,40 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 
 //returns the current state of the delegation per node
 func (e *Engine) getValidatorData() []*types.ValidatorData {
-	validators := make([]*types.ValidatorData, 0, len(e.nodeDelegationState))
+	validatorNodes := e.topology.AllPubKeys()
 
-	nodeIDs := make([]string, 0, len(e.nodeDelegationState))
-	for nodeID := range e.nodeDelegationState {
-		nodeIDs = append(nodeIDs, nodeID)
-	}
+	validators := make([]*types.ValidatorData, 0, len(validatorNodes))
 
 	// sort the parties for deterministic handling
-	sort.Strings(nodeIDs)
+	sort.Strings(validatorNodes)
 
-	for _, nodeID := range nodeIDs {
-		validatorState := e.nodeDelegationState[nodeID]
-		validator := &types.ValidatorData{
+	for _, nodeID := range validatorNodes {
+		validatorState, ok := e.nodeDelegationState[nodeID]
+		if ok {
+			validator := &types.ValidatorData{
+				NodeID:     nodeID,
+				Delegators: map[string]*num.Uint{},
+			}
+			selfStake := num.Zero()
+			for delegatingParties, amt := range validatorState.partyToAmount {
+				if delegatingParties == nodeID {
+					selfStake = amt.Clone()
+				} else {
+					validator.Delegators[delegatingParties] = amt.Clone()
+				}
+			}
+			validator.SelfStake = selfStake
+			validator.StakeByDelegators = num.Zero().Sub(validatorState.totalDelegated, selfStake)
+			validators = append(validators, validator)
+			continue
+		}
+		// validator with no delegation at all
+		validators = append(validators, &types.ValidatorData{
 			NodeID:            nodeID,
-			StakeByDelegators: validatorState.totalDelegated.Clone(),
 			Delegators:        map[string]*num.Uint{},
-		}
-		for delegatingParties, amt := range validatorState.partyToAmount {
-			validator.Delegators[delegatingParties] = amt.Clone()
-		}
-		validators = append(validators, validator)
+			SelfStake:         num.Zero(),
+			StakeByDelegators: num.Zero(),
+		})
 	}
 
 	return validators

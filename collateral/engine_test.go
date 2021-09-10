@@ -3,6 +3,7 @@ package collateral_test
 import (
 	"context"
 	"encoding/hex"
+	"strconv"
 	"testing"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -104,6 +106,77 @@ func TestCreateBondAccount(t *testing.T) {
 	t.Run("create a bond account with - failure no general account", testCreateBondAccountFailureNoGeneral)
 }
 
+func TestTransferRewards(t *testing.T) {
+	t.Run("transfer rewards empty slice", testTransferRewardsEmptySlice)
+	t.Run("transfer rewards missing rewards account", testTransferRewardsNoRewardsAccount)
+	t.Run("transfer rewards success", testTransferRewardsSuccess)
+}
+
+func testTransferRewardsEmptySlice(t *testing.T) {
+	eng := getTestEngine(t, "test-market")
+	defer eng.Finish()
+
+	res, err := eng.Engine.TransferRewards(context.Background(), "reward", []*types.Transfer{})
+	assert.Nil(t, err)
+	assert.Equal(t, 0, len(res))
+}
+
+func testTransferRewardsNoRewardsAccount(t *testing.T) {
+	eng := getTestEngine(t, "test-market")
+	defer eng.Finish()
+
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
+			Owner:     "party1",
+		},
+	}
+
+	res, err := eng.Engine.TransferRewards(context.Background(), "rewardAccID", transfers)
+	require.Error(t, errors.New("account does not exists"), err)
+	require.Nil(t, res)
+}
+
+func testTransferRewardsSuccess(t *testing.T) {
+	eng := getTestEngine(t, "test-market")
+	defer eng.Finish()
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
+
+	transfers := []*types.Transfer{
+		&types.Transfer{
+			Owner: "party1",
+			Amount: &types.FinancialAmount{
+				Amount: num.NewUint(1000),
+				Asset:  "ETH",
+			},
+			MinAmount: num.NewUint(1000),
+			Type:      types.TransferTypeRewardPayout,
+		},
+	}
+
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	_, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
+	require.Nil(t, err)
+	partyAccount, _ := eng.Engine.GetAccountByID(partyAccountID)
+	require.Equal(t, num.NewUint(1000), partyAccount.Balance)
+
+	rewardAccount, _ := eng.Engine.GetGlobalRewardAccount("ETH")
+	require.Equal(t, num.Zero(), rewardAccount.Balance)
+}
+
 func testPartyWithoutAccountHasNoBalance(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
@@ -133,7 +206,7 @@ func testPartyWithAccountHasABalance(t *testing.T) {
 	require.True(t, ok)
 	account := ae.Account()
 	// balance of the account after all of the events should be 500
-	require.Equal(t, bal.Uint64(), account.Balance)
+	require.Equal(t, bal.String(), account.Balance)
 	assert.True(t, eng.HasBalance(party))
 }
 
@@ -157,7 +230,7 @@ func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
 	require.True(t, ok)
 	account := ae.Account()
 	// balance of the account after all of the events should be 500
-	require.Equal(t, bal.Uint64(), account.Balance)
+	require.Equal(t, bal.String(), account.Balance)
 
 	// then add some money
 	err = eng.DecrementBalance(context.Background(), acc, bal)
@@ -168,7 +241,7 @@ func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
 	// this type assertion is guaranteed to work here anyway
 	ae = evt.(accEvt)
 	// balance should be zero
-	require.Zero(t, ae.Account().Balance)
+	require.Zero(t, stringToInt(ae.Account().Balance))
 
 	// HasBalance returns true, seeing as zero is technically a balance...
 	assert.True(t, eng.HasBalance(party))
@@ -207,11 +280,11 @@ func testCreateBondAccountSuccess(t *testing.T) {
 	ae, ok := evt.(accEvt)
 	require.True(t, ok)
 	account := ae.Account()
-	require.Equal(t, bal.Uint64(), account.Balance)
+	require.Equal(t, bal.String(), account.Balance)
 	// these two checks are a bit redundant at this point
 	// but at least we're verifying that the GetAccountByID and the latest event return the same state
 	bndacc, _ := eng.GetAccountByID(bnd)
-	assert.Equal(t, account.Balance, bndacc.Balance.Uint64())
+	assert.Equal(t, account.Balance, bndacc.Balance.String())
 }
 
 func testFeesTransferContinuousNoTransfer(t *testing.T) {
@@ -496,11 +569,11 @@ func testFeeTransferContinuousOKCheckAccountEvents(t *testing.T) {
 		accRaw := evt.(*events.Acc)
 		acc := accRaw.Account()
 		if acc.Type == types.AccountTypeFeesInfrastructure {
-			assert.Equal(t, 1000, int(acc.Balance))
+			assert.Equal(t, 1000, stringToInt(acc.Balance))
 			seenInfra = true
 		}
 		if acc.Type == types.AccountTypeFeesLiquidity {
-			assert.Equal(t, 3000, int(acc.Balance))
+			assert.Equal(t, 3000, stringToInt(acc.Balance))
 			seenLiqui = true
 		}
 	})
@@ -972,10 +1045,10 @@ func TestLossSocialization(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == winParty1 && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, uint64(1066), acc.Balance)
+			assert.Equal(t, 1066, stringToInt(acc.Balance))
 		}
 		if acc.Owner == winParty2 && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, uint64(534), acc.Balance)
+			assert.Equal(t, 534, stringToInt(acc.Balance))
 		}
 	})
 	raw, err := eng.FinalSettlement(context.Background(), testMarketID, transfers)
@@ -1226,10 +1299,10 @@ func testRemoveDistressedBalance(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Id == marginID {
-			assert.Zero(t, acc.Balance)
+			assert.Zero(t, stringToInt(acc.Balance))
 		} else {
 			// this doesn't happen yet
-			assert.Equal(t, num.Zero().Add(insBalance, num.NewUint(100)).Uint64(), acc.Balance)
+			assert.Equal(t, num.Zero().Add(insBalance, num.NewUint(100)).String(), acc.Balance)
 		}
 	})
 	resp, err := eng.RemoveDistressed(context.Background(), data, testMarketID, testMarketAsset)
@@ -1771,10 +1844,10 @@ func TestMTMLossSocialization(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == winParty1 && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, uint64(1066), acc.Balance)
+			assert.Equal(t, 1066, stringToInt(acc.Balance))
 		}
 		if acc.Owner == winParty2 && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, uint64(534), acc.Balance)
+			assert.Equal(t, 534, stringToInt(acc.Balance))
 		}
 	})
 	transfers := eng.getTestMTMTransfer(pos)
@@ -1816,7 +1889,7 @@ func testMarginUpdateOnOrderOK(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, acc.Balance, uint64(100))
+			assert.Equal(t, stringToInt(acc.Balance), 100)
 		}
 	})
 	resp, closed, err := eng.Engine.MarginUpdateOnOrder(context.Background(), testMarketID, evt)
@@ -1859,7 +1932,7 @@ func testMarginUpdateOnOrderOKNotShortFallWithBondAccount(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, acc.Balance, uint64(100))
+			assert.Equal(t, stringToInt(acc.Balance), 100)
 		}
 	})
 	resp, closed, err := eng.Engine.MarginUpdateOnOrder(context.Background(), testMarketID, evt)
@@ -1902,7 +1975,7 @@ func testMarginUpdateOnOrderOKUseBondAccount(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, acc.Balance, uint64(100))
+			assert.Equal(t, stringToInt(acc.Balance), 100)
 		}
 	})
 	resp, closed, err := eng.Engine.MarginUpdateOnOrder(context.Background(), testMarketID, evt)
@@ -1956,7 +2029,7 @@ func testMarginUpdateOnOrderOKUseBondAndGeneralAccounts(t *testing.T) {
 		// first call is to be updated to 70 with bond accoutns funds
 		// then to 100 with general account funds
 		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.True(t, int(acc.Balance) == 70 || int(acc.Balance) == 100)
+			assert.True(t, stringToInt(acc.Balance) == 70 || stringToInt(acc.Balance) == 100)
 		}
 	})
 
@@ -2013,10 +2086,10 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, int(acc.Balance), 100)
+			assert.Equal(t, stringToInt(acc.Balance), 100)
 		}
 		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, int(acc.Balance), 400)
+			assert.Equal(t, stringToInt(acc.Balance), 400)
 		}
 	})
 	resp, closed, err := eng.Engine.MarginUpdateOnOrder(context.Background(), testMarketID, evt)
@@ -2040,10 +2113,10 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Owner == party && acc.Type == types.AccountTypeMargin {
-			assert.Equal(t, int(acc.Balance), 0)
+			assert.Equal(t, stringToInt(acc.Balance), 0)
 		}
 		if acc.Owner == party && acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, int(acc.Balance), 500)
+			assert.Equal(t, stringToInt(acc.Balance), 500)
 		}
 	})
 	resp, err = eng.Engine.RollbackMarginUpdateOnOrder(context.Background(), testMarketID, testMarketAsset, rollback)
@@ -2235,10 +2308,10 @@ func TestWithdrawalOK(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, 400, int(acc.Balance))
+			assert.Equal(t, 400, stringToInt(acc.Balance))
 		} else if acc.Type == types.AccountTypeLockWithdraw {
 			// once to create the lock account, once to set its balance to 100
-			assert.Equal(t, 100*call, int(acc.Balance))
+			assert.Equal(t, 100*call, stringToInt(acc.Balance))
 			call++
 		} else {
 			t.FailNow()
@@ -2253,7 +2326,7 @@ func TestWithdrawalOK(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 0, int(acc.Balance))
+			assert.Equal(t, 0, stringToInt(acc.Balance))
 		} else {
 			t.FailNow()
 		}
@@ -2281,9 +2354,9 @@ func TestWithdrawalExact(t *testing.T) {
 		acc := ae.Account()
 		// fmt.Printf("ACCOUNT: %v\n", acc)
 		if acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, 0, int(acc.Balance))
+			assert.Equal(t, 0, stringToInt(acc.Balance))
 		} else if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 500, int(acc.Balance))
+			assert.Equal(t, 500, stringToInt(acc.Balance))
 		} else {
 			t.FailNow()
 		}
@@ -2297,7 +2370,7 @@ func TestWithdrawalExact(t *testing.T) {
 		assert.True(t, ok)
 		acc := ae.Account()
 		if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 0, int(acc.Balance))
+			assert.Equal(t, 0, stringToInt(acc.Balance))
 		} else {
 			t.FailNow()
 		}
@@ -2600,4 +2673,9 @@ func TestHash(t *testing.T) {
 		require.Equal(t, hash, got)
 	}
 
+}
+
+func stringToInt(s string) int {
+	i, _ := strconv.Atoi(s)
+	return i
 }

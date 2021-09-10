@@ -70,7 +70,7 @@ func (v *VoteSub) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
 		case VoteE:
-			var ok bool = true
+			ok := true
 			vote := et.Vote()
 			for _, f := range v.filters {
 				if !f(vote) {

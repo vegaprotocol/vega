@@ -2,10 +2,12 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/logging"
 )
 
 // Subscriber interface allows pushing values to subscribers, can be set to
@@ -34,6 +36,12 @@ type BrokerI interface {
 	Unsubscribe(k int)
 }
 
+// SocketClient is an interface to send serialized events over a socket.
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/socket_client_mock.go -package mocks code.vegaprotocol.io/vega/broker SocketClient
+type SocketClient interface {
+	SendBatch(events []events.Event) error
+}
+
 type subscription struct {
 	Subscriber
 	required bool
@@ -42,7 +50,8 @@ type subscription struct {
 // Broker - the base broker type
 // perhaps we can extend this to embed into type-specific brokers
 type Broker struct {
-	ctx   context.Context
+	ctx context.Context
+
 	mu    sync.Mutex
 	tSubs map[events.Type]map[int]*subscription
 	// these fields ensure a unique ID for all subscribers, regardless of what event types they subscribe to
@@ -53,18 +62,39 @@ type Broker struct {
 	eChans map[events.Type]chan []events.Event
 
 	seqGen *gen
+
+	log *logging.Logger
+
+	config       Config
+	socketClient SocketClient
 }
 
 // New creates a new base broker
-func New(ctx context.Context) *Broker {
-	return &Broker{
+func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
+	b := &Broker{
 		ctx:    ctx,
+		log:    log,
 		tSubs:  map[events.Type]map[int]*subscription{},
 		subs:   map[int]subscription{},
 		keys:   []int{},
 		eChans: map[events.Type]chan []events.Event{},
 		seqGen: newGen(),
+		config: config,
 	}
+
+	if config.Socket.Enabled {
+		sc, err := newSocketClient(ctx, log, &config.Socket)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize socket client: %w", err)
+		}
+
+		b.socketClient = sc
+	}
+
+	return b, nil
 }
 
 func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
@@ -108,6 +138,12 @@ func (b *Broker) sendChannelSync(sub Subscriber, evts []events.Event) bool {
 }
 
 func (b *Broker) startSending(t events.Type, evts []events.Event) {
+	if b.streamingEnabled() {
+		if err := b.socketClient.SendBatch(evts); err != nil {
+			b.log.Fatal("Failed to send to socket client", logging.Error(err))
+		}
+	}
+
 	b.mu.Lock()
 	ch, ok := b.eChans[t]
 	if !ok {
@@ -139,7 +175,7 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 			select {
 			case <-b.ctx.Done():
 				return
-			case events := <-ch:
+			case evts := <-ch:
 				b.mu.Lock()
 				subs := b.getSubsByType(t)
 				b.mu.Unlock()
@@ -154,8 +190,8 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 						unsub = append(unsub, k)
 					default:
 						if sub.required {
-							sub.Push(events...)
-						} else if rm := b.sendChannelSync(sub, events); rm {
+							sub.Push(evts...)
+						} else if rm := b.sendChannelSync(sub, evts); rm {
 							unsub = append(unsub, k)
 						}
 					}
@@ -189,12 +225,14 @@ func (b *Broker) Send(event events.Event) {
 // simplified version for better performance - unfortunately, we'll still need to copy the map
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
+
 	subs, ok := b.tSubs[t]
-	if !ok && t != events.TxErrEvent {
+	if !ok {
 		// if a typed map isn't set (yet), and it's not the error event, we can return
 		// ALL subscribers directly instead
 		subs = b.tSubs[events.All]
 	}
+
 	// we still need to create a copy to keep the race detector happy
 	cpy := make(map[int]*subscription, len(subs))
 	for k, v := range subs {
@@ -207,6 +245,7 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 func (b *Broker) Subscribe(s Subscriber) int {
 	b.mu.Lock()
 	k := b.subscribe(s)
+	s.SetID(k)
 	b.mu.Unlock()
 	return k
 }
@@ -259,7 +298,7 @@ func (b *Broker) subscribe(s Subscriber) int {
 		for t := range b.tSubs {
 			// Don't add ALL subs to the map they're already in, and don't add it to the
 			// special TxErrEvent map, but we should add them to all other maps
-			if t != events.All && t != events.TxErrEvent {
+			if t != events.All {
 				b.tSubs[t][k] = &sub
 			}
 		}
@@ -313,4 +352,8 @@ func (b *Broker) rmSubs(keys ...int) {
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
 	}
+}
+
+func (b *Broker) streamingEnabled() bool {
+	return bool(b.config.Socket.Enabled) && b.socketClient != nil
 }

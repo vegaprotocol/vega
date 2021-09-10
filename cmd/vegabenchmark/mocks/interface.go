@@ -16,11 +16,24 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+// StakingAccounts ...
+//go:generate go run github.com/golang/mock/mockgen -destination staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks StakingAccounts
+type StakingAccounts interface {
+	HasBalance(string) bool
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks StakeVerifier
+type StakeVerifier interface {
+	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error
+	ProcessStakeDeposited(ctx context.Context, event *types.StakeDeposited) error
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination limits_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Limits
 type Limits interface {
 	CanProposeMarket() bool
 	CanProposeAsset() bool
 	CanTrade() bool
+	BootstrapFinished() bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination node_wallet_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks NodeWallet
@@ -39,7 +52,7 @@ type Notary interface {
 	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
 	SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error
 	IsSigned(ctx context.Context, id string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
-	AddSig(ctx context.Context, pubKey []byte, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
+	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination witness_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Witness

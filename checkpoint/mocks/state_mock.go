@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,11 +34,12 @@ func (m *MockState) EXPECT() *MockStateMockRecorder {
 }
 
 // Checkpoint mocks base method
-func (m *MockState) Checkpoint() []byte {
+func (m *MockState) Checkpoint() ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Checkpoint")
 	ret0, _ := ret[0].([]byte)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Checkpoint indicates an expected call of Checkpoint
@@ -46,39 +48,25 @@ func (mr *MockStateMockRecorder) Checkpoint() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockState)(nil).Checkpoint))
 }
 
-// Hash mocks base method
-func (m *MockState) Hash() []byte {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Hash")
-	ret0, _ := ret[0].([]byte)
-	return ret0
-}
-
-// Hash indicates an expected call of Hash
-func (mr *MockStateMockRecorder) Hash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockState)(nil).Hash))
-}
-
 // Load mocks base method
-func (m *MockState) Load(arg0, arg1 []byte) error {
+func (m *MockState) Load(arg0 []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", arg0, arg1)
+	ret := m.ctrl.Call(m, "Load", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Load indicates an expected call of Load
-func (mr *MockStateMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockStateMockRecorder) Load(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockState)(nil).Load), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockState)(nil).Load), arg0)
 }
 
 // Name mocks base method
-func (m *MockState) Name() string {
+func (m *MockState) Name() types.CheckpointName {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(types.CheckpointName)
 	return ret0
 }
 

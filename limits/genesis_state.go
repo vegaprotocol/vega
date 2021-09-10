@@ -15,6 +15,7 @@ type GenesisState struct {
 	ProposeAssetEnabled      bool       `json:"propose_asset_enabled"`
 	ProposeMarketEnabledFrom *time.Time `json:"propose_market_enabled_from,omitempty"`
 	ProposeAssetEnabledFrom  *time.Time `json:"propose_asset_enabled_from,omitempty"`
+	BootstrapBlockCount      uint16     `json:"bootstrap_block_count"`
 }
 
 func DefaultGenesisState() GenesisState {

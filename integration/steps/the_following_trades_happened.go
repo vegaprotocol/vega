@@ -23,7 +23,7 @@ func TheFollowingTradesShouldBeExecuted(
 		data := broker.GetTrades()
 		var found bool
 		for _, v := range data {
-			if v.Buyer == buyer && v.Seller == seller && v.Price == price && v.Size == size {
+			if v.Buyer == buyer && v.Seller == seller && stringToU64(v.Price) == price && v.Size == size {
 				found = true
 			}
 		}
@@ -63,9 +63,9 @@ func TheAuctionTradedVolumeAndPriceShouldBe(broker *stubs.BrokerStub, volume, pr
 		if t.Timestamp > now.UnixNano() {
 			continue
 		}
-		if t.Price != p {
+		if stringToU64(t.Price) != p {
 			return fmt.Errorf(
-				"expected trades to happen at price %d, instead saw a trade of size %d at price %d (%#v)",
+				"expected trades to happen at price %d, instead saw a trade of size %d at price %s (%#v)",
 				p, t.Size, t.Price, t,
 			)
 		}

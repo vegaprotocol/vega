@@ -17,7 +17,7 @@ func TheCumulatedBalanceForAllAccountsShouldBeWorth(broker *stubs.BrokerStub, ra
 	for _, v := range accounts {
 		// remove vote token
 		if v.Asset != "VOTE" {
-			cumulatedBalance += v.Balance
+			cumulatedBalance += stringToU64(v.Balance)
 		}
 	}
 

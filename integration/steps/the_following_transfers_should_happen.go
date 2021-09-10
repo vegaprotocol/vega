@@ -59,10 +59,10 @@ func matchTransfers(transfers []*types.LedgerEntry, row transferRow) (bool, []ui
 	divergingAmounts := []uint64{}
 	for _, transfer := range transfers {
 		if transfer.FromAccount == row.FromAccountID() && transfer.ToAccount == row.ToAccountID() {
-			if transfer.Amount == row.Amount() {
+			if stringToU64(transfer.Amount) == row.Amount() {
 				return true, nil
 			}
-			divergingAmounts = append(divergingAmounts, transfer.Amount)
+			divergingAmounts = append(divergingAmounts, stringToU64(transfer.Amount))
 		}
 	}
 	return false, divergingAmounts

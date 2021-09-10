@@ -11,7 +11,7 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/txn"
@@ -39,9 +39,9 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
 type ValidatorTopology interface {
-	SelfVegaPubKey() []byte
-	Exists(key []byte) bool
-	AllPubKeys() [][]byte
+	SelfVegaPubKey() string
+	Exists(key string) bool
+	AllPubKeys() []string
 }
 
 // EvtForwarder receive events from the blockchain queue
@@ -77,6 +77,8 @@ type nodeHash struct {
 
 // New creates a new instance of the event forwarder
 func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) *EvtForwarder {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 	var allowlist atomic.Value
 	allowlist.Store(buildAllowlist(cfg))
 	evtf := &EvtForwarder{
@@ -164,6 +166,13 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	defer func() {
 		metrics.EvtForwardInc("forward", res)
 	}()
+
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("new event received to be forwarded",
+			logging.String("event", evt.String()),
+		)
+	}
+
 	// check if the sender of the event is whitelisted
 	if !e.isAllowlisted(pubkey) {
 		res = "pubkeynotallowed"
@@ -192,15 +201,15 @@ func (e *EvtForwarder) updateValidatorsList() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	e.self = string(e.top.SelfVegaPubKey())
+	e.self = e.top.SelfVegaPubKey()
 	// reset slice
 	// preemptive alloc, we can expect to have most likely
 	// as much validator
 	e.nodes = make([]nodeHash, 0, len(e.nodes))
 	// get all keys
 	for _, key := range e.top.AllPubKeys() {
-		h := e.hash(key)
-		e.nodes = append(e.nodes, nodeHash{string(key), h})
+		h := e.hash([]byte(key))
+		e.nodes = append(e.nodes, nodeHash{key, h})
 	}
 	sort.SliceStable(e.nodes, func(i, j int) bool { return e.nodes[i].hash < e.nodes[j].hash })
 }
@@ -218,6 +227,12 @@ func (e *EvtForwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, 
 }
 
 func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("trying to send event",
+			logging.String("event", evt.String()),
+		)
+	}
+
 	// error doesn't matter here
 	e.cmd.Command(ctx, txn.ChainEventCommand, evt, nil)
 }
@@ -232,6 +247,7 @@ func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
 	}
 	node := e.nodes[h%uint64(len(e.nodes))]
 	e.mu.RUnlock()
+
 	return node.node == e.self
 }
 

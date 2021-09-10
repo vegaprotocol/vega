@@ -47,7 +47,7 @@ func (v *Vote) Value() proto.Vote_Value {
 
 // TotalGovernanceTokenBalance returns the total balance of token used for this
 // vote
-func (v *Vote) TotalGovernanceTokenBalance() uint64 {
+func (v *Vote) TotalGovernanceTokenBalance() string {
 	return v.v.TotalGovernanceTokenBalance
 }
 
@@ -63,11 +63,19 @@ func (v Vote) Proto() proto.Vote {
 
 func (v Vote) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    v.eventID(),
-		Block: v.TraceID(),
-		Type:  v.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      v.eventID(),
+		Block:   v.TraceID(),
+		Type:    v.et.ToProto(),
 		Event: &eventspb.BusEvent_Vote{
 			Vote: &v.v,
 		},
+	}
+}
+
+func VoteEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Vote {
+	return &Vote{
+		Base: newBaseFromStream(ctx, VoteEvent, be),
+		v:    *be.GetVote(),
 	}
 }

@@ -21,7 +21,7 @@ const (
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 
-	GovernanceVoteAsset = "governance.vote.asset"
+	RewardAsset = "reward.asset"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
@@ -63,12 +63,29 @@ const (
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
 
+	// staking and delegation reward network params
+	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
+	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
+	StakingAndDelegationRewardPayoutDelay             = "reward.staking.delegation.payoutDelay"
+	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
+	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
+	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
+	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
+
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
+	// length of epoch in seconds
+	ValidatorsEpochLength = "validators.epoch.length"
 	// delegation params
-	DelegationMinAmount            = "validators.delegation.minAmount"
-	DelegationMaxStakePerValidator = "validators.delegation.maxStakePerValidator"
+	DelegationMinAmount = "validators.delegation.minAmount"
+
+	ValidatorsVoteRequired = "validators.vote.required"
+
+	// network related parameters
+	NetworkCheckpointMarketFreezeDate              = "network.checkpoint.marketFreezeDate"
+	NetworkCheckpointNetworkEOLDate                = "network.checkpoint.networkEndOfLifeDate"
+	NetworkCheckpointTimeElapsedBetweenCheckpoints = "network.checkpoint.timeElapsedBetweenCheckpoints"
 )
 
 var AllKeys = map[string]struct{}{
@@ -86,7 +103,7 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
 	MarketPriceMonitoringUpdateFrequency:                  {},
-	GovernanceVoteAsset:                                   {},
+	RewardAsset:                                           {},
 	GovernanceProposalMarketMinClose:                      {},
 	GovernanceProposalMarketMaxClose:                      {},
 	GovernanceProposalMarketMinEnact:                      {},
@@ -123,6 +140,17 @@ var AllKeys = map[string]struct{}{
 	MarketLiquidityProvisionShapesMaxSize:                 {},
 	MarketProbabilityOfTradingTauScaling:                  {},
 	MarketMinProbabilityOfTradingForLPOrders:              {},
+	ValidatorsEpochLength:                                 {},
 	DelegationMinAmount:                                   {},
-	DelegationMaxStakePerValidator:                        {},
+	StakingAndDelegationRewardPayoutFraction:              {},
+	StakingAndDelegationRewardMaxPayoutPerParticipant:     {},
+	StakingAndDelegationRewardPayoutDelay:                 {},
+	StakingAndDelegationRewardDelegatorShare:              {},
+	StakingAndDelegationRewardMinimumValidatorStake:       {},
+	ValidatorsVoteRequired:                                {},
+	NetworkCheckpointNetworkEOLDate:                       {},
+	NetworkCheckpointTimeElapsedBetweenCheckpoints:        {},
+	NetworkCheckpointMarketFreezeDate:                     {},
+	MarketValueWindowLength:                               {},
+	StakingAndDelegationRewardMaxPayoutPerEpoch:           {},
 }
