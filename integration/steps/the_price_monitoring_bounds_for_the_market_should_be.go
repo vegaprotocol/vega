@@ -3,12 +3,11 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/cucumber/godog"
 )
 
-func ThePriceMonitoringBoundsForTheMarketShouldBe(engine *execution.Engine, marketID string, table *godog.Table) error {
+func ThePriceMonitoringBoundsForTheMarketShouldBe(engine Execution, marketID string, table *godog.Table) error {
 	marketData, err := engine.GetMarketData(marketID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)
