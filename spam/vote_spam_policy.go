@@ -122,6 +122,8 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 		}
 	}
 
+	vsp.blockPartyToVote = map[string]map[string]uint64{}
+
 	// ban parties with more than <banFactor> rejection rate in the block
 	for p, bStats := range vsp.partyBlockRejects {
 		if float64(bStats.rejected)/float64(bStats.total) >= banFactor {

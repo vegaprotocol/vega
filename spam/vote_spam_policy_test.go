@@ -1,9 +1,10 @@
-package spam
+package spam_test
 
 import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -31,24 +32,23 @@ func TestVotingSpamProtection(t *testing.T) {
 	t.Run("Pre accept vote success", testPreAccept)
 	t.Run("Post accept vote success", testPostAccept)
 	t.Run("Post reject vote from party with too many votes in total all from current block", testPostRejectTooManyVotes)
-	t.Run("Vote counts from the block successfully applied on state", testCountersUpdated)
-	t.Run("Calculate mean rejection rate correctly in the last n blocks", testCalcMeanRejectionRate)
+	t.Run("Vote counts from the block carried over to next block", testCountersUpdated)
 	t.Run("On epoch start voting counters are reset", testReset)
 }
 
 // reject vote requests when the voter doesn't have sufficient balance at the beginning of the epoch
 func testPreRejectInsufficientBalance(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": num.NewUint(50)})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, ErrInsufficientTokensForVoting, err)
+	require.Equal(t, spam.ErrInsufficientTokensForVoting, err)
 }
 
 // reject votes requests when the voter doesn't have sufficient balance with a factored min tokens
 func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
 	tokenMap := make(map[string]*num.Uint, 2)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -82,7 +82,7 @@ func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		accept, err := policy.PostBlockAccept(tx1)
 		require.Equal(t, false, accept)
-		require.Equal(t, ErrTooManyVotes, err)
+		require.Equal(t, spam.ErrTooManyVotes, err)
 	}
 
 	// party2 gets 3 post accepted and 1 post rejected
@@ -94,7 +94,7 @@ func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 
 	accept, err := policy.PostBlockAccept(tx2)
 	require.Equal(t, false, accept)
-	require.Equal(t, ErrTooManyVotes, err)
+	require.Equal(t, spam.ErrTooManyVotes, err)
 
 	// end the block for doubling of min amount to take place
 	policy.EndOfBlock(1)
@@ -102,16 +102,16 @@ func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 	// in the next block party1 should not have enough balance to vote while party2 still has, but has no more votes
 	accept, err = policy.PreBlockAccept(tx1)
 	require.Equal(t, false, accept)
-	require.Equal(t, ErrInsufficientTokensForVoting, err)
+	require.Equal(t, spam.ErrInsufficientTokensForVoting, err)
 
 	accept, err = policy.PreBlockAccept(tx2)
 	require.Equal(t, false, accept)
-	require.Equal(t, ErrTooManyVotes, err)
+	require.Equal(t, spam.ErrTooManyVotes, err)
 }
 
 // attack for a number of blocks until the min tokens reach 1600
 func testFactoringOfMinTokens(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
 	tokenMap := make(map[string]*num.Uint, 2)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -140,7 +140,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 		for i := 0; i < 2; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, false, accept)
-			require.Equal(t, ErrTooManyVotes, err)
+			require.Equal(t, spam.ErrTooManyVotes, err)
 		}
 
 		for j := 0; j < 11; j++ {
@@ -156,7 +156,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, false, accept)
-			require.Equal(t, ErrInsufficientTokensForVoting, err)
+			require.Equal(t, spam.ErrInsufficientTokensForVoting, err)
 		}
 	}
 
@@ -175,7 +175,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, ErrTooManyVotes, err)
+		require.Equal(t, spam.ErrTooManyVotes, err)
 	}
 
 	// advance to the next epoch so we reset the balances and all should be able to succeed with their token balances
@@ -199,7 +199,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 		for i := 0; i < 2; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, false, accept)
-			require.Equal(t, ErrTooManyVotes, err)
+			require.Equal(t, spam.ErrTooManyVotes, err)
 		}
 
 		for j := 0; j < 11; j++ {
@@ -212,7 +212,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 
 // reject vote requests from banned parties for as long as they are banned
 func testPreRejectBannedParty(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 
 	// epoch 0 started party1 has enough balance
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
@@ -232,24 +232,22 @@ func testPreRejectBannedParty(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, ErrTooManyVotes, err)
+		require.Equal(t, spam.ErrTooManyVotes, err)
 	}
 
 	// end the block for banning to take place
 	policy.EndOfBlock(1)
 
-	require.Equal(t, uint64(3), policy.bannedParties["party1"])
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
-	require.Equal(t, ErrPartyIsBannedFromVoting, err)
+	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 
 	// advance epochs - verify still banned until epoch 3 (including)
 	for i := 0; i < 4; i++ {
 		policy.Reset(types.Epoch{Seq: uint64(i)}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
-		require.Equal(t, uint64(3), policy.bannedParties["party1"])
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, ErrPartyIsBannedFromVoting, err)
+		require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 	}
 	// should be released from ban on epoch 4
 	policy.Reset(types.Epoch{Seq: 4}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
@@ -259,7 +257,7 @@ func testPreRejectBannedParty(t *testing.T) {
 }
 
 func testPreRejectTooManyVotesPerProposal(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -292,7 +290,7 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 		//pre rejected
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
-		require.Equal(t, ErrTooManyVotes, err)
+		require.Equal(t, spam.ErrTooManyVotes, err)
 	}
 
 	tx := &testTx{party: "party1", proposal: "proposal3"}
@@ -314,7 +312,7 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 }
 
 func testPreAccept(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -333,7 +331,7 @@ func testPreAccept(t *testing.T) {
 }
 
 func testPostAccept(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -356,13 +354,10 @@ func testPostAccept(t *testing.T) {
 			require.Nil(t, err)
 		}
 	}
-
-	require.Equal(t, blockRejectInfo{total: 6, rejected: 0}, *policy.partyBlockRejects["party1"])
-	require.Equal(t, blockRejectInfo{total: 6, rejected: 0}, *policy.blockPostRejects)
 }
 
 func testPostRejectTooManyVotes(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -389,23 +384,20 @@ func testPostRejectTooManyVotes(t *testing.T) {
 		for i := 0; i < 2; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, false, accept)
-			require.Equal(t, ErrTooManyVotes, err)
+			require.Equal(t, spam.ErrTooManyVotes, err)
 		}
 	}
-
-	require.Equal(t, blockRejectInfo{total: 10, rejected: 4}, *policy.partyBlockRejects["party1"])
-	require.Equal(t, blockRejectInfo{total: 10, rejected: 4}, *policy.blockPostRejects)
 }
 
 func testCountersUpdated(t *testing.T) {
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		//pre accepted
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 2; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
 			require.Nil(t, err)
@@ -415,7 +407,7 @@ func testCountersUpdated(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		//post accepted
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 2; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, true, accept)
 			require.Nil(t, err)
@@ -423,35 +415,34 @@ func testCountersUpdated(t *testing.T) {
 	}
 
 	policy.EndOfBlock(1)
-	require.Equal(t, 1, len(policy.partyToVote))
-	require.Equal(t, uint64(3), policy.partyToVote["party1"]["proposal1"])
-	require.Equal(t, uint64(3), policy.partyToVote["party1"]["proposal2"])
-}
-
-func testCalcMeanRejectionRate(t *testing.T) {
-	// set state
-	policy := NewVoteSpamPolicy()
-
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
-	policy.recentBlocksRejectStats[0] = &blockRejectInfo{total: 10, rejected: 5}
-	require.Equal(t, 0.5, policy.calcRejectAverage())
-
-	policy.recentBlocksRejectStats[1] = &blockRejectInfo{total: 15, rejected: 10}
-	require.Equal(t, 0.6, policy.calcRejectAverage())
-
-	for i := 2; i < 10; i++ {
-		policy.recentBlocksRejectStats[i] = &blockRejectInfo{total: uint64(10 * i), rejected: uint64(4 * i)}
+	for i := 0; i < 2; i++ {
+		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
+		//pre accepted
+		for i := 0; i < 2; i++ {
+			accept, err := policy.PreBlockAccept(tx)
+			require.Equal(t, true, accept)
+			require.Nil(t, err)
+		}
 	}
-	//total: 465 rejected: 191
-	require.Equal(t, 0.410752688172043, policy.calcRejectAverage())
+	for i := 0; i < 2; i++ {
+		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
+		//post accepted
+		accept, err := policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+
+		//post rejected
+		accept, err = policy.PostBlockAccept(tx)
+		require.Equal(t, false, accept)
+		require.Equal(t, spam.ErrTooManyVotes, err)
+
+	}
+
 }
 
 func testReset(t *testing.T) {
 	// set state
-	policy := NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy()
 
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -479,7 +470,7 @@ func testReset(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, false, accept)
-			require.Equal(t, ErrTooManyVotes, err)
+			require.Equal(t, spam.ErrTooManyVotes, err)
 		}
 	}
 
@@ -487,20 +478,23 @@ func testReset(t *testing.T) {
 	policy.EndOfBlock(1)
 	// verify reset at the start of new epoch, party1 should still be banned for the epoch until epoch 4
 	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
-	require.Equal(t, sufficientTokensForVoting, policy.effectiveMinTokens)
-	require.Equal(t, uint64(0), policy.lastIncreaseBlock)
-	require.Equal(t, 0, len(policy.partyToVote))
-	require.Equal(t, 0, policy.currentBlockIndex)
-	require.Equal(t, 1, len(policy.bannedParties))
-	require.Equal(t, 1, len(policy.tokenBalance))
-	require.Equal(t, sufficientTokensForVoting, policy.tokenBalance["party1"])
-	require.Equal(t, blockRejectInfo{total: 0, rejected: 0}, *policy.blockPostRejects)
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	accept, err := policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 
 	policy.Reset(types.Epoch{Seq: 2}, tokenMap)
-	require.Equal(t, 1, len(policy.bannedParties))
-	policy.Reset(types.Epoch{Seq: 3}, tokenMap)
-	require.Equal(t, 1, len(policy.bannedParties))
-	policy.Reset(types.Epoch{Seq: 4}, tokenMap)
-	require.Equal(t, 0, len(policy.bannedParties))
+	accept, err = policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 
+	policy.Reset(types.Epoch{Seq: 3}, tokenMap)
+	accept, err = policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
+
+	policy.Reset(types.Epoch{Seq: 4}, tokenMap)
+	accept, err = policy.PostBlockAccept(tx)
+	require.Equal(t, true, accept)
+	require.Nil(t, err)
 }

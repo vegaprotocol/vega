@@ -365,6 +365,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
+	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
@@ -377,8 +378,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
-
-	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches

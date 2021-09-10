@@ -56,7 +56,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
 		config:                  config,
-		log:                     log.Named(namedLogger),
+		log:                     log,
 		accounting:              accounting,
 		transactionTypeToPolicy: map[txn.Command]SpamPolicy{},
 	}
@@ -90,7 +90,6 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 
 //EndOfBlock is called when the block is finished
 func (e *Engine) EndOfBlock(blockHeight uint64) {
-	e.log.Info("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
 	}
@@ -102,8 +101,6 @@ func (e *Engine) EndOfBlock(blockHeight uint64) {
 //PreBlockAccept is called from onCheckTx before a tx is added to mempool
 //returns false is rejected by spam engine with a corresponding error
 func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
-	e.log.Info("Spam protection PreBlockAccept called", logging.String("party", tx.Party()))
-
 	command := tx.Command()
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
 		return true, nil
@@ -117,7 +114,6 @@ func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
 //PostBlockAccept is called from onDeliverTx before the block is processed
 //returns false is rejected by spam engine with a corresponding error
 func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
-	e.log.Info("Spam protection PostBlockAccept called", logging.String("party", tx.Party()))
 	command := tx.Command()
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
 		return true, nil
