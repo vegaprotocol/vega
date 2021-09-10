@@ -9,31 +9,32 @@ import (
 	"strconv"
 	"time"
 
-	wrapperspb "github.com/golang/protobuf/ptypes/wrappers"
 	"google.golang.org/grpc"
 
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
 	"code.vegaprotocol.io/data-node/vegatime"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
 var (
 	// ErrMissingIDOrReference is returned when neither id nor reference has been supplied in the query
 	ErrMissingIDOrReference = errors.New("missing id or reference")
+	// ErrMissingNodeID is returned when no node id has been supplied in the query
+	ErrMissingNodeID = errors.New("missing node id")
 	// ErrInvalidVotesSubscription is returned if neither proposal ID nor party ID is specified
 	ErrInvalidVotesSubscription = errors.New("invalid subscription, either proposal or party ID required")
 	// ErrInvalidProposal is returned when invalid governance data is received by proposal resolver
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
-// TradingServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingServiceClient
-type TradingServiceClient interface {
-	protoapi.TradingServiceClient
+// TradingProxyServiceClient ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingProxyServiceClient
+type TradingProxyServiceClient interface {
+	protoapi.TradingProxyServiceClient
 }
 
 // TradingDataServiceClient ...
@@ -46,26 +47,26 @@ type TradingDataServiceClient interface {
 type VegaResolverRoot struct {
 	gateway.Config
 
-	log               *logging.Logger
-	tradingClient     TradingServiceClient
-	tradingDataClient TradingDataServiceClient
-	r                 allResolver
+	log                *logging.Logger
+	tradingProxyClient TradingProxyServiceClient
+	tradingDataClient  TradingDataServiceClient
+	r                  allResolver
 }
 
 // NewResolverRoot instantiate a graphql root resolver
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
-	tradingClient TradingServiceClient,
+	tradingClient TradingProxyServiceClient,
 	tradingDataClient TradingDataServiceClient,
 ) *VegaResolverRoot {
 
 	return &VegaResolverRoot{
-		log:               log,
-		Config:            config,
-		tradingClient:     tradingClient,
-		tradingDataClient: tradingDataClient,
-		r:                 allResolver{log, tradingDataClient},
+		log:                log,
+		Config:             config,
+		tradingProxyClient: tradingClient,
+		tradingDataClient:  tradingDataClient,
+		r:                  allResolver{log, tradingDataClient},
 	}
 }
 
@@ -142,11 +143,6 @@ func (r *VegaResolverRoot) Subscription() SubscriptionResolver {
 // Account returns the accounts resolver
 func (r *VegaResolverRoot) Account() AccountResolver {
 	return (*myAccountResolver)(r)
-}
-
-// Statistics returns the statistics resolver
-func (r *VegaResolverRoot) Statistics() StatisticsResolver {
-	return (*myStatisticsResolver)(r)
 }
 
 // Proposal returns the proposal resolver
@@ -250,12 +246,40 @@ func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
 }
 
-func (r *VegaResolverRoot) NewMarketCommitment() NewMarketCommitmentResolver {
-	return (*newMarketCommitmentResolver)(r)
-}
-
 func (r *VegaResolverRoot) MarketTimestamps() MarketTimestampsResolver {
 	return (*marketTimestampsResolver)(r)
+}
+
+func (r *VegaResolverRoot) NodeData() NodeDataResolver {
+	return (*nodeDataResolver)(r)
+}
+
+func (r *VegaResolverRoot) Node() NodeResolver {
+	return (*nodeResolver)(r)
+}
+
+func (r *VegaResolverRoot) Delegation() DelegationResolver {
+	return (*delegationResolver)(r)
+}
+
+func (r *VegaResolverRoot) Epoch() EpochResolver {
+	return (*epochResolver)(r)
+}
+
+func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
+	return (*epochTimestampsResolver)(r)
+}
+
+func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
+	return (*rewardPerAssetDetailResolver)(r)
+}
+
+func (r *VegaResolverRoot) StakeLinking() StakeLinkingResolver {
+	return (*stakeLinkingResolver)(r)
+}
+
+func (r *VegaResolverRoot) PartyStake() PartyStakeResolver {
+	return (*partyStakeResolver)(r)
 }
 
 // LiquidityOrder resolver
@@ -303,8 +327,8 @@ func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types
 func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
-func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (int, error) {
-	return int(obj.CommitmentAmount), nil
+func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
+	return obj.CommitmentAmount, nil
 }
 
 func (r *myLiquidityProvisionResolver) Status(ctx context.Context, obj *types.LiquidityProvision) (LiquidityProvisionStatus, error) {
@@ -350,7 +374,7 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 type myQueryResolver VegaResolverRoot
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
-	resp, err := r.tradingDataClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
+	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
 	if err != nil {
 		return "0", err
 	}
@@ -446,18 +470,13 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	order := &types.Order{}
 
 	var (
-		p   uint64
 		err error
 	)
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	if price != nil {
-		p, err = safeStringUint64(*price)
-		if err != nil {
-			return nil, err
-		}
+		order.Price = *price
 	}
-	order.Price = p
 	s, err := safeStringUint64(size)
 	if err != nil {
 		return nil, err
@@ -509,9 +528,9 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	ttf := resp.Fee.MakerFee + resp.Fee.InfrastructureFee + resp.Fee.LiquidityFee
 
 	fee := TradeFee{
-		MakerFee:          fmt.Sprintf("%d", resp.Fee.MakerFee),
-		InfrastructureFee: fmt.Sprintf("%d", resp.Fee.InfrastructureFee),
-		LiquidityFee:      fmt.Sprintf("%d", resp.Fee.LiquidityFee),
+		MakerFee:          resp.Fee.MakerFee,
+		InfrastructureFee: resp.Fee.InfrastructureFee,
+		LiquidityFee:      resp.Fee.LiquidityFee,
 	}
 
 	// now we calculate the margins
@@ -528,7 +547,7 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 
 	return &OrderEstimate{
 		Fee:            &fee,
-		TotalFeeAmount: fmt.Sprintf("%d", ttf),
+		TotalFeeAmount: ttf,
 		MarginLevels:   respm.MarginLevels,
 	}, nil
 
@@ -724,6 +743,55 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 	return resp.Data, nil
 }
 
+func (r *myQueryResolver) NodeData(ctx context.Context) (*types.NodeData, error) {
+	resp, err := r.tradingDataClient.GetNodeData(ctx, &protoapi.GetNodeDataRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.NodeData, nil
+}
+
+func (r *myQueryResolver) Nodes(ctx context.Context) ([]*types.Node, error) {
+	resp, err := r.tradingDataClient.GetNodes(ctx, &protoapi.GetNodesRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Nodes, nil
+}
+
+func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, error) {
+	return r.r.getNodeByID(ctx, id)
+}
+
+func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, error) {
+	var epochID uint64
+	if id != nil {
+		parsedID, err := strconv.ParseUint(*id, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		epochID = parsedID
+	}
+
+	resp, err := r.tradingDataClient.GetEpoch(ctx, &protoapi.GetEpochRequest{Id: epochID})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Epoch, nil
+}
+
+func (r *myQueryResolver) RewardDetails(ctx context.Context, partyID string) ([]*types.RewardPerAssetDetail, error) {
+	req := &protoapi.GetRewardDetailsRequest{
+		PartyId: partyID,
+	}
+	resp, _ := r.tradingDataClient.GetRewardDetails(ctx, req)
+	return resp.RewardDetails, nil
+}
+
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot
@@ -764,6 +832,17 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 		Limit:      limit,
 		Descending: descending,
 	}
+}
+
+func (r *myPartyResolver) Stake(
+	ctx context.Context,
+	party *types.Party,
+) (*protoapi.PartyStakeResponse, error) {
+	return r.tradingDataClient.PartyStake(
+		ctx, &protoapi.PartyStakeRequest{
+			Party: party.Id,
+		},
+	)
 }
 
 func (r *myPartyResolver) LiquidityProvisions(
@@ -989,6 +1068,23 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 	return result, nil
 }
 
+func (r *myPartyResolver) Delegations(ctx context.Context, obj *types.Party, nodeID *string) ([]*types.Delegation, error) {
+	req := &protoapi.DelegationsRequest{
+		Party: obj.Id,
+	}
+
+	if nodeID != nil {
+		req.NodeId = *nodeID
+	}
+
+	resp, err := r.tradingDataClient.Delegations(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Delegations, nil
+}
+
 // END: Party Resolver
 
 // BEGIN: MarginLevels Resolver
@@ -1020,19 +1116,19 @@ func (r *myMarginLevelsResolver) Asset(ctx context.Context, m *types.MarginLevel
 }
 
 func (r *myMarginLevelsResolver) CollateralReleaseLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.CollateralReleaseLevel, 10), nil
+	return m.CollateralReleaseLevel, nil
 }
 
 func (r *myMarginLevelsResolver) InitialLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.InitialMargin, 10), nil
+	return m.InitialMargin, nil
 }
 
 func (r *myMarginLevelsResolver) SearchLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.SearchLevel, 10), nil
+	return m.SearchLevel, nil
 }
 
 func (r *myMarginLevelsResolver) MaintenanceLevel(_ context.Context, m *types.MarginLevels) (string, error) {
-	return strconv.FormatUint(m.MaintenanceMargin, 10), nil
+	return m.MaintenanceMargin, nil
 }
 
 func (r *myMarginLevelsResolver) Timestamp(_ context.Context, m *types.MarginLevels) (string, error) {
@@ -1066,7 +1162,7 @@ func (r *myMarketDataResolver) MarketTradingMode(_ context.Context, m *types.Mar
 }
 
 func (r *myMarketDataResolver) IndicativePrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.IndicativePrice, 10), nil
+	return m.IndicativePrice, nil
 }
 
 func (r *myMarketDataResolver) IndicativeVolume(_ context.Context, m *types.MarketData) (string, error) {
@@ -1074,11 +1170,11 @@ func (r *myMarketDataResolver) IndicativeVolume(_ context.Context, m *types.Mark
 }
 
 func (r *myMarketDataResolver) BestBidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestBidPrice, 10), nil
+	return m.BestBidPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticBidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestStaticBidPrice, 10), nil
+	return m.BestStaticBidPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticBidVolume(_ context.Context, m *types.MarketData) (string, error) {
@@ -1094,11 +1190,11 @@ func (r *myMarketDataResolver) BestBidVolume(_ context.Context, m *types.MarketD
 }
 
 func (r *myMarketDataResolver) BestOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestOfferPrice, 10), nil
+	return m.BestOfferPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticOfferPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.BestStaticOfferPrice, 10), nil
+	return m.BestStaticOfferPrice, nil
 }
 
 func (r *myMarketDataResolver) BestStaticOfferVolume(_ context.Context, m *types.MarketData) (string, error) {
@@ -1110,15 +1206,15 @@ func (r *myMarketDataResolver) BestOfferVolume(_ context.Context, m *types.Marke
 }
 
 func (r *myMarketDataResolver) MidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.MidPrice, 10), nil
+	return m.MidPrice, nil
 }
 
 func (r *myMarketDataResolver) StaticMidPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.StaticMidPrice, 10), nil
+	return m.StaticMidPrice, nil
 }
 
 func (r *myMarketDataResolver) MarkPrice(_ context.Context, m *types.MarketData) (string, error) {
-	return strconv.FormatUint(m.MarkPrice, 10), nil
+	return m.MarkPrice, nil
 }
 
 func (r *myMarketDataResolver) Timestamp(_ context.Context, m *types.MarketData) (string, error) {
@@ -1155,8 +1251,8 @@ func (r *myMarketDataResolver) PriceMonitoringBounds(ctx context.Context, obj *t
 	ret := make([]*PriceMonitoringBounds, 0, len(obj.PriceMonitoringBounds))
 	for _, b := range obj.PriceMonitoringBounds {
 		bounds := &PriceMonitoringBounds{
-			MinValidPrice: strconv.FormatUint(b.MinValidPrice, 10),
-			MaxValidPrice: strconv.FormatUint(b.MaxValidPrice, 10),
+			MinValidPrice: b.MinValidPrice,
+			MaxValidPrice: b.MaxValidPrice,
 			Trigger: &PriceMonitoringTrigger{
 				HorizonSecs:          int(b.Trigger.Horizon),
 				Probability:          b.Trigger.Probability,
@@ -1259,7 +1355,7 @@ func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*O
 }
 
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return obj.Price, nil
 }
 func (r *myOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
 	return convertOrderTimeInForceFromProto(obj.TimeInForce)
@@ -1381,7 +1477,7 @@ func (r *myTradeResolver) Aggressor(ctx context.Context, obj *types.Trade) (Side
 }
 
 func (r *myTradeResolver) Price(ctx context.Context, obj *types.Trade) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return obj.Price, nil
 }
 
 func (r *myTradeResolver) Size(ctx context.Context, obj *types.Trade) (string, error) {
@@ -1440,9 +1536,9 @@ func (r *myTradeResolver) BuyerFee(ctx context.Context, obj *types.Trade) (*Trad
 		LiquidityFee:      "0",
 	}
 	if obj.BuyerFee != nil {
-		fee.MakerFee = strconv.FormatUint(obj.BuyerFee.MakerFee, 10)
-		fee.InfrastructureFee = strconv.FormatUint(obj.BuyerFee.InfrastructureFee, 10)
-		fee.LiquidityFee = strconv.FormatUint(obj.BuyerFee.LiquidityFee, 10)
+		fee.MakerFee = obj.BuyerFee.MakerFee
+		fee.InfrastructureFee = obj.BuyerFee.InfrastructureFee
+		fee.LiquidityFee = obj.BuyerFee.LiquidityFee
 	}
 	return &fee, nil
 }
@@ -1459,9 +1555,9 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 		LiquidityFee:      "0",
 	}
 	if obj.SellerFee != nil {
-		fee.MakerFee = strconv.FormatUint(obj.SellerFee.MakerFee, 10)
-		fee.InfrastructureFee = strconv.FormatUint(obj.SellerFee.InfrastructureFee, 10)
-		fee.LiquidityFee = strconv.FormatUint(obj.SellerFee.LiquidityFee, 10)
+		fee.MakerFee = obj.SellerFee.MakerFee
+		fee.InfrastructureFee = obj.SellerFee.InfrastructureFee
+		fee.LiquidityFee = obj.SellerFee.LiquidityFee
 	}
 	return &fee, nil
 }
@@ -1473,16 +1569,16 @@ func (r *myTradeResolver) SellerFee(ctx context.Context, obj *types.Trade) (*Tra
 type myCandleResolver VegaResolverRoot
 
 func (r *myCandleResolver) High(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.High, 10), nil
+	return obj.High, nil
 }
 func (r *myCandleResolver) Low(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.Low, 10), nil
+	return obj.Low, nil
 }
 func (r *myCandleResolver) Open(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.Open, 10), nil
+	return obj.Open, nil
 }
 func (r *myCandleResolver) Close(ctx context.Context, obj *types.Candle) (string, error) {
-	return strconv.FormatUint(obj.Close, 10), nil
+	return obj.Close, nil
 }
 func (r *myCandleResolver) Volume(ctx context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
@@ -1504,7 +1600,7 @@ func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Int
 type myPriceLevelResolver VegaResolverRoot
 
 func (r *myPriceLevelResolver) Price(ctx context.Context, obj *types.PriceLevel) (string, error) {
-	return strconv.FormatUint(obj.Price, 10), nil
+	return obj.Price, nil
 }
 
 func (r *myPriceLevelResolver) Volume(ctx context.Context, obj *types.PriceLevel) (string, error) {
@@ -1553,15 +1649,15 @@ func (r *myPositionResolver) OpenVolume(ctx context.Context, obj *types.Position
 }
 
 func (r *myPositionResolver) RealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatInt(obj.RealisedPnl, 10), nil
+	return obj.RealisedPnl, nil
 }
 
 func (r *myPositionResolver) UnrealisedPnl(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatInt(obj.UnrealisedPnl, 10), nil
+	return obj.UnrealisedPnl, nil
 }
 
 func (r *myPositionResolver) AverageEntryPrice(ctx context.Context, obj *types.Position) (string, error) {
-	return strconv.FormatUint(obj.AverageEntryPrice, 10), nil
+	return obj.AverageEntryPrice, nil
 }
 
 func (r *myPositionResolver) Party(ctx context.Context, obj *types.Position) (*types.Party, error) {
@@ -1593,41 +1689,7 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 
 type myMutationResolver VegaResolverRoot
 
-func (r *myMutationResolver) PrepareWithdrawal(
-	ctx context.Context,
-	amount, asset string,
-	erc20Details *Erc20WithdrawalDetailsInput,
-) (*PreparedWithdrawal, error) {
-	var ext *types.WithdrawExt
-	if erc20Details != nil {
-		ext = erc20Details.IntoProtoExt()
-	}
-
-	amountU, err := safeStringUint64(amount)
-	if err != nil {
-		return nil, err
-	}
-
-	req := protoapi.PrepareWithdrawRequest{
-		Withdraw: &commandspb.WithdrawSubmission{
-			Asset:  asset,
-			Amount: amountU,
-			Ext:    ext,
-		},
-	}
-
-	res, err := r.tradingClient.PrepareWithdraw(ctx, &req)
-	if err != nil {
-		return nil, err
-	}
-
-	return &PreparedWithdrawal{
-		Blob: base64.StdEncoding.EncodeToString(res.Blob),
-	}, nil
-}
-
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
-
 	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
 	if ty != nil {
 		switch *ty {
@@ -1646,18 +1708,19 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 	if err != nil {
 		return nil, err
 	}
+
 	req := &protoapi.SubmitTransactionRequest{
-		Tx: &types.SignedBundle{
-			Tx: decodedData,
-			Sig: &types.Signature{
-				Sig:     decodedSig,
-				Version: uint32(sig.Version),
+		Tx: &commandspb.Transaction{
+			InputData: decodedData,
+			Signature: &commandspb.Signature{
+				Value:   string(decodedSig),
 				Algo:    sig.Algo,
+				Version: uint32(sig.Version),
 			},
 		},
 		Type: pty,
 	}
-	res, err := r.tradingClient.SubmitTransaction(ctx, req)
+	res, err := r.tradingProxyClient.SubmitTransaction(ctx, req)
 	if err != nil {
 		r.log.Error("Failed to submit transaction", logging.Error(err))
 		return nil, customErrorFromStatus(err)
@@ -1667,295 +1730,6 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 		Success: res.Success,
 	}, nil
 }
-
-func (r *myMutationResolver) PrepareOrderSubmit(ctx context.Context, market string, price *string, size string, side Side,
-	timeInForce OrderTimeInForce, expiration *string, ty OrderType, reference *string, po *PeggedOrderInput) (*PreparedSubmitOrder, error) {
-
-	orderSubmission := &commandspb.OrderSubmission{}
-
-	var (
-		p   uint64
-		err error
-	)
-
-	// We need to convert strings to uint64 (JS doesn't yet support uint64)
-	if price != nil {
-		p, err = safeStringUint64(*price)
-		if err != nil {
-			return nil, err
-		}
-	}
-	orderSubmission.Price = p
-	s, err := safeStringUint64(size)
-	if err != nil {
-		return nil, err
-	}
-	orderSubmission.Size = s
-	if len(market) <= 0 {
-		return nil, errors.New("market missing or empty")
-	}
-	orderSubmission.MarketId = market
-
-	if orderSubmission.TimeInForce, err = convertOrderTimeInForceToProto(timeInForce); err != nil {
-		return nil, err
-	}
-	if orderSubmission.Side, err = convertSideToProto(side); err != nil {
-		return nil, err
-	}
-	if orderSubmission.Type, err = convertOrderTypeToProto(ty); err != nil {
-		return nil, err
-	}
-
-	if po != nil {
-		pegreference, err := convertPeggedReferenceToProto(po.Reference)
-		if err != nil {
-			return nil, err
-		}
-		offset, err := safeStringInt64(po.Offset)
-		if err != nil {
-			return nil, err
-		}
-		orderSubmission.PeggedOrder = &types.PeggedOrder{Reference: pegreference,
-			Offset: offset}
-	}
-
-	// GTT must have an expiration value
-	if orderSubmission.TimeInForce == types.Order_TIME_IN_FORCE_GTT && expiration != nil {
-		var expiresAt time.Time
-		expiresAt, err = vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-
-		// move to pure timestamps or convert an RFC format shortly
-		orderSubmission.ExpiresAt = expiresAt.UnixNano()
-	}
-	if reference != nil {
-		orderSubmission.Reference = *reference
-	}
-
-	req := protoapi.PrepareSubmitOrderRequest{
-		Submission: orderSubmission,
-	}
-
-	// Pass the order over for consensus (service layer will use RPC client internally and handle errors etc)
-	resp, err := r.tradingClient.PrepareSubmitOrder(ctx, &req)
-	if err != nil {
-		r.log.Error("Failed to create order using rpc client in graphQL resolver", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedSubmitOrder{
-		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareOrderCancel(ctx context.Context, id *string, market *string) (*PreparedCancelOrder, error) {
-	order := &commandspb.OrderCancellation{}
-	if market != nil {
-		order.MarketId = *market
-	}
-	if id != nil {
-		order.OrderId = *id
-	}
-
-	// Pass the cancellation over for consensus (service layer will use RPC client internally and handle errors etc)
-
-	req := protoapi.PrepareCancelOrderRequest{
-		Cancellation: order,
-	}
-	pendingOrder, err := r.tradingClient.PrepareCancelOrder(ctx, &req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedCancelOrder{
-		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-	}, nil
-
-}
-
-func (r *myMutationResolver) PrepareProposal(
-	ctx context.Context, partyID string, reference *string, proposalTerms ProposalTermsInput) (*PreparedProposal, error) {
-	var ref string
-	if reference != nil {
-		ref = *reference
-	}
-
-	terms, err := proposalTerms.IntoProto()
-	if err != nil {
-		return nil, err
-	}
-
-	pendingProposal, err := r.tradingClient.PrepareProposalSubmission(ctx, &protoapi.PrepareProposalSubmissionRequest{
-		Submission: &commandspb.ProposalSubmission{
-			Reference: ref,
-			Terms:     terms,
-		},
-	})
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedProposal{
-		Blob: base64.StdEncoding.EncodeToString(pendingProposal.Blob),
-		PendingProposal: &types.GovernanceData{
-			Proposal: &types.Proposal{
-				Reference: ref,
-				Terms:     terms,
-				PartyId:   partyID,
-				State:     types.Proposal_STATE_OPEN,
-			},
-		},
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareVote(ctx context.Context, value VoteValue, partyID, proposalID string) (*PreparedVote, error) {
-	_, err := getParty(ctx, r.log, r.tradingDataClient, partyID)
-	if err != nil {
-		return nil, err
-	}
-	protoValue, err := convertVoteValueToProto(value)
-	if err != nil {
-		return nil, err
-	}
-	req := &protoapi.PrepareVoteSubmissionRequest{
-		Submission: &commandspb.VoteSubmission{
-			Value:      protoValue,
-			ProposalId: proposalID,
-		},
-	}
-	resp, err := r.tradingClient.PrepareVoteSubmission(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	return &PreparedVote{
-		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
-		Vote: &ProposalVote{
-			Vote: &types.Vote{
-				Value:      req.Submission.Value,
-				PartyId:    partyID,
-				ProposalId: proposalID,
-			},
-			ProposalID: resp.Submission.ProposalId,
-		},
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareOrderAmend(ctx context.Context, id, price, size string,
-	expiration *string, tif OrderTimeInForce, peggedReference *PeggedReference, peggedOffset *string) (*PreparedAmendOrder, error) {
-	order := &commandspb.OrderAmendment{}
-
-	// Cancellation currently only requires ID and Market to be set, all other fields will be added
-	if len(id) == 0 {
-		return nil, errors.New("id missing or empty")
-	}
-	order.OrderId = id
-
-	var err error
-	priceValue, err := strconv.ParseUint(price, 10, 64)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to convert price from string in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid price, could not convert to unsigned int")
-	}
-	order.Price = &types.Price{Value: priceValue}
-
-	order.SizeDelta, err = strconv.ParseInt(size, 10, 64)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to convert size from string in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid size, could not convert to unsigned int")
-	}
-
-	order.TimeInForce, err = convertOrderTimeInForceToProto(tif)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to parse time in force in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid time in force, could not convert to vega time in force")
-	}
-
-	if expiration != nil {
-		expiresAt, err := vegatime.Parse(*expiration)
-		if err != nil {
-			return nil, fmt.Errorf("cannot parse expiration time: %s - invalid format sent to create order (example: 2018-01-02T15:04:05Z)", *expiration)
-		}
-		// move to pure timestamps or convert an RFC format shortly
-		order.ExpiresAt = &types.Timestamp{Value: expiresAt.UnixNano()}
-	}
-
-	if peggedOffset != nil {
-		po, err := strconv.ParseInt(*peggedOffset, 10, 64)
-		if err != nil {
-			if r.log.GetLevel() == logging.DebugLevel {
-				r.log.Debug("unable to parse pegged offset in order amend", logging.Error(err))
-			}
-			return nil, errors.New("invalid pegged offset, could not convert to proto pegged offset")
-		}
-		order.PeggedOffset = &wrapperspb.Int64Value{Value: po}
-	}
-
-	order.PeggedReference, err = convertPeggedReferenceToProto(*peggedReference)
-	if err != nil {
-		if r.log.GetLevel() == logging.DebugLevel {
-			r.log.Debug("unable to parse pegged reference in order amend", logging.Error(err))
-		}
-		return nil, errors.New("invalid pegged reference, could not convert to proto pegged reference")
-	}
-
-	req := protoapi.PrepareAmendOrderRequest{
-		Amendment: order,
-	}
-	pendingOrder, err := r.tradingClient.PrepareAmendOrder(ctx, &req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-	return &PreparedAmendOrder{
-		Blob: base64.StdEncoding.EncodeToString(pendingOrder.Blob),
-	}, nil
-}
-
-func (r *myMutationResolver) PrepareLiquidityProvision(ctx context.Context, marketID string, commitmentAmount int, fee string, sells []*LiquidityOrderInput, buys []*LiquidityOrderInput, maybeRef *string) (*PreparedLiquidityProvision, error) {
-	if commitmentAmount < 0 {
-		return nil, errors.New("commitmentAmount can't be negative")
-	}
-
-	pBuys, err := LiquidityOrderInputs(buys).IntoProto()
-	if err != nil {
-		return nil, err
-	}
-
-	pSells, err := LiquidityOrderInputs(sells).IntoProto()
-	if err != nil {
-		return nil, err
-	}
-
-	var ref string
-	if maybeRef != nil {
-		ref = *maybeRef
-	}
-
-	req := &protoapi.PrepareLiquidityProvisionRequest{
-		Submission: &commandspb.LiquidityProvisionSubmission{
-			MarketId:         marketID,
-			CommitmentAmount: uint64(commitmentAmount),
-			Fee:              fee,
-			Buys:             pBuys,
-			Sells:            pSells,
-			Reference:        ref,
-		},
-	}
-	resp, err := r.tradingClient.PrepareLiquidityProvision(ctx, req)
-	if err != nil {
-		return nil, customErrorFromStatus(err)
-	}
-
-	return &PreparedLiquidityProvision{
-		Blob: base64.StdEncoding.EncodeToString(resp.Blob),
-	}, nil
-}
-
-// END: Mutation Resolver
 
 // BEGIN: Subscription Resolver
 
@@ -2541,8 +2315,7 @@ func (r *mySubscriptionResolver) busEventsWithBatch(
 type myAccountResolver VegaResolverRoot
 
 func (r *myAccountResolver) Balance(ctx context.Context, acc *types.Account) (string, error) {
-	bal := fmt.Sprintf("%d", acc.Balance)
-	return bal, nil
+	return acc.Balance, nil
 }
 
 func (r *myAccountResolver) Market(ctx context.Context, acc *types.Account) (*types.Market, error) {
@@ -2561,96 +2334,6 @@ func (r *myAccountResolver) Asset(ctx context.Context, obj *types.Account) (*typ
 }
 
 // END: Account Resolver
-
-type myStatisticsResolver VegaResolverRoot
-
-func (r *myStatisticsResolver) BlockHeight(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.BlockHeight), nil
-}
-
-func (r *myStatisticsResolver) BacklogLength(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.BacklogLength), nil
-}
-
-func (r *myStatisticsResolver) TotalPeers(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalPeers), nil
-}
-
-func (r *myStatisticsResolver) Status(ctx context.Context, obj *types.Statistics) (string, error) {
-	return obj.Status.String(), nil
-}
-
-func (r *myStatisticsResolver) TxPerBlock(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TxPerBlock), nil
-}
-
-func (r *myStatisticsResolver) AverageTxBytes(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.AverageTxBytes), nil
-}
-
-func (r *myStatisticsResolver) AverageOrdersPerBlock(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.AverageOrdersPerBlock), nil
-}
-
-func (r *myStatisticsResolver) TradesPerSecond(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TradesPerSecond), nil
-}
-
-func (r *myStatisticsResolver) OrdersPerSecond(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.OrdersPerSecond), nil
-}
-
-func (r *myStatisticsResolver) TotalMarkets(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalMarkets), nil
-}
-
-func (r *myStatisticsResolver) TotalAmendOrder(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalAmendOrder), nil
-}
-
-func (r *myStatisticsResolver) TotalCancelOrder(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalCancelOrder), nil
-}
-
-func (r *myStatisticsResolver) TotalCreateOrder(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalCreateOrder), nil
-}
-
-func (r *myStatisticsResolver) TotalOrders(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalOrders), nil
-}
-
-func (r *myStatisticsResolver) TotalTrades(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TotalTrades), nil
-}
-
-func (r *myStatisticsResolver) BlockDuration(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.BlockDuration), nil
-}
-
-func (r *myStatisticsResolver) CandleSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.CandleSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) MarketDepthSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.MarketDepthSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) MarketDepthUpdateSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.MarketDepthUpdatesSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) OrderSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.OrderSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) PositionsSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.PositionsSubscriptions), nil
-}
-
-func (r *myStatisticsResolver) TradeSubscriptions(ctx context.Context, obj *types.Statistics) (int, error) {
-	return int(obj.TradeSubscriptions), nil
-}
 
 func getParty(ctx context.Context, log *logging.Logger, client TradingDataServiceClient, id string) (*types.Party, error) {
 	if len(id) == 0 {

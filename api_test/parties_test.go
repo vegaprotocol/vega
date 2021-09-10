@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	pb "code.vegaprotocol.io/data-node/proto"
-	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
+	pb "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 )
 
 func TestPartyByID(t *testing.T) {

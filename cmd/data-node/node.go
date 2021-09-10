@@ -10,31 +10,18 @@ import (
 )
 
 type NodeCmd struct {
-	config.Passphrase `long:"nodewallet-passphrase"`
 	config.RootPathFlag
 
 	config.Config
-	Help bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 var nodeCmd NodeCmd
 
 func (cmd *NodeCmd) Execute(args []string) error {
-	if cmd.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega node subcommand help",
-		}
-	}
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
 	defer log.AtExit()
-
-	pass, err := cmd.Passphrase.Get("node wallet")
-	if err != nil {
-		return err
-	}
 
 	// we define this option to parse the cli args each time the config is
 	// loaded. So that we can respect the cli flag precedence.
@@ -55,7 +42,6 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	}).Run(
 		cfgwatchr,
 		cmd.RootPath,
-		pass,
 		args,
 	)
 }
@@ -66,7 +52,7 @@ func Node(ctx context.Context, parser *flags.Parser) error {
 		RootPathFlag: rootPath,
 		Config:       config.NewDefaultConfig(rootPath.RootPath),
 	}
-	cmd, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
+	cmd, err := parser.AddCommand("node", "Runs a vega data node", "Runs a vega data node as defined by the config files", &nodeCmd)
 	if err != nil {
 		return err
 	}

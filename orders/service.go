@@ -5,19 +5,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/data-node/commands"
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-
-	"github.com/pkg/errors"
-	uuid "github.com/satori/go.uuid"
-)
-
-var (
-	// ErrEmptyPrepareRequest empty prepare request
-	ErrEmptyPrepareRequest = errors.New("empty prepare request")
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 // TimeService ...
@@ -51,7 +41,7 @@ type Svc struct {
 }
 
 // NewService creates an Orders service with the necessary dependencies
-func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, store OrderStore, time TimeService) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -61,7 +51,7 @@ func NewService(log *logging.Logger, config Config, store OrderStore, time TimeS
 		Config:      config,
 		orderStore:  store,
 		timeService: time,
-	}, nil
+	}
 }
 
 // ReloadConf update the internal configuration of the order service
@@ -76,30 +66,6 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
-}
-
-func (s *Svc) PrepareSubmitOrder(_ context.Context, cmd *commandspb.OrderSubmission) error {
-	if cmd == nil {
-		return ErrEmptyPrepareRequest
-	}
-
-	if cmd.Reference == "" {
-		cmd.Reference = uuid.NewV4().String()
-	}
-
-	return commands.CheckOrderSubmission(cmd)
-}
-
-func (s *Svc) PrepareCancelOrder(_ context.Context, cmd *commandspb.OrderCancellation) error {
-	return nil
-}
-
-func (s *Svc) PrepareAmendOrder(_ context.Context, cmd *commandspb.OrderAmendment) error {
-	if cmd == nil {
-		return ErrEmptyPrepareRequest
-	}
-
-	return commands.CheckOrderAmendment(cmd)
 }
 
 // GetByOrderID find an order using its orderID

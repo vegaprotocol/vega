@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 )
 
 type MLE interface {
@@ -72,7 +72,6 @@ func (m *MarginLevelSub) Push(evts ...events.Event) {
 }
 
 func (m *MarginLevelSub) flush() {
-	m.log.Error("Margin level flush")
 	m.mu.Lock()
 	buf := m.buf
 	m.buf = map[string]map[string]types.MarginLevels{}

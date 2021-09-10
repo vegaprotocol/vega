@@ -51,6 +51,8 @@ things working. The default option used in this project is:
   Remember that source that does not use Go Modules will have to be treated
   differently.
 
+* Set `GONOSUMDB` to `code.vegaprotocol.io/*` to assure that private package dependencies can be installed. This is because data node relies on some private vega packages.
+
 For advanced Golang users who are happy to support the system themselves:
 
 * Set `GO111MODULE` to `auto`. Install source that **uses** Go Modules
@@ -73,108 +75,61 @@ ssh-keygen -t rsa -b 4096
 Add the public key (found in `$HOME/.ssh/id_rsa.pub`) to GitHub:
 https://github.com/settings/keys
 
-## Get vega
+## Get data node
 
-The `vega` repo uses Vega's `quant` repo. Ensure Go knows to use `ssh`
+The `data-node` repo uses Vega's `protos` and `vega` repos. Ensure Go knows to use `ssh`
 instead of `https` when accessing `vegaprotocol` repositories on Github:
 
 ```bash
 git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
 ```
 
-Next, clone `vega`:
+Next, clone `data-node`:
 
 ```bash
 cd $GOPATH/src
-git clone git@github.com:vegaprotocol/vega.git
-cd vega
+git clone git@github.com:vegaprotocol/data-node.git
+cd data-node
 git status # On branch develop, Your branch is up to date with 'origin/develop'.
-
-make deps # get the source dependencies
-make install # build the binaries and put them in $GOPATH/bin
-
-# Now check:
-git rev-parse HEAD | cut -b1-8
-vega --version
-# hashes should match.
 ```
 
-## Get Tendermint
+## Get Vega core node
 
-**Required version: 0.33.8**
+The data node on it's own doesn't do much as it relies on Vega core node to send events to it.
+Because of that it is vital to run Vega core node next to it.
+Please refer to [Vega Getting Started](https://github.com/vegaprotocol/vega/blob/develop/GETTING_STARTED.md).
 
-[Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html)
-performs Byzantine Fault Tolerant (BFT) state machine replication (SMR) for
-arbitrary deterministic, finite state machines. It is required for Vega nodes to
-communicate.
+## Running data node
 
-It is quicker and easier to download a pre-built binary, rather than compiling
-from source.
+* Build node from source
+```
+go install ./cmd/data-node
+```
 
-Download Tendermint from https://github.com/tendermint/tendermint/releases/.
-Install the binary somewhere on `$PATH`. If needed, see also the
-[Tendermint installation guide](https://tendermint.com/docs/introduction/install.html).
-
-## Running Vega
-
-* To create a new configuration file, use:
+* To initiate data node with a default configuration, use:
 
   ```bash
-  vega init -f
+  data-node init -r ~/.data-node
   ```
-this will trigger a password prompt which will be used to encrypt your vega nodewallet.
 
-If used in automation you can specify a file containing the password:
+By running this command data node will initiates basic folder structure for data storage and creates default configuration file.
+
+Configuration file can be find in:
+
 ```bash
-vega init -f --nodewallet-password="path/to/file"
+cat ~/.data-node/config.toml
 ```
 
-you can also generate dev usage wallet for all vega supported foreign chains:
-```bash
-vega init -f --gen-dev-nodewallet
+* To remove data node store content then run a data node, use:
+
+  ```bash
+  rm -rf "~/.data-node"*[r,e]store
+  data-node node -r ~/.data-node
 ```
 
-* To remove Vega store content then run a Vega node, use:
+## Developing data node
 
-  ```bash
-  rm -rf "$HOME/.vega/"*[r,e]store
-  vega node
-```
-
-If used in automation you can specify a file containing the password:
-```bash
-vega node --nodewallet-password="path/to/file"
-```
-
-## Running Tendermint
-
-* The version must match the required version (above). To check the version,
-  use:
-  ```bash
-  tendermint version
-  ```
-
-* To create a new configuration file, use:
-  ```bash
-  tendermint init
-  ```
-* To remove chain data (go back to genesis) then run a Tendermint node, use:
-
-  ```bash
-  tendermint unsafe_reset_all
-  tendermint node
-  ```
-* At this stage, you should be able to watch the block production (an other Tendermint events) using:
-  ```bash
-  vega watch "tm.event = 'NewBlock'"
-  ```
-
-* Optional: To run a multi-node network, use `tendermint testnet` to generate
-  configuration files for nodes.
-
-## Developing trading-core
-
-In order to develop trading core, more tools are needed. Install them with:
+In order to develop data node, more tools are needed. Install them with:
 
 ```bash
 # get the dev tools
@@ -182,14 +137,3 @@ make gettools_develop
 make gqlgen_check # warning: This may take a minute, with no output.
 make proto_check
 ```
-
-## Running Traderbot
-
-Clone Traderbot from https://github.com/vegaprotocol/traderbot/ into
-`$GOPATH/src`.
-
-Build: `make install`
-
-Run: `traderbot -config configfiles/localhost.yaml`
-
-Start traders: `curl --silent -XPUT "http://localhost:8081/traders?action=start"`

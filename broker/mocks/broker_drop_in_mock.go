@@ -3,7 +3,7 @@ package mocks
 import (
 	"sync"
 
-	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/vega/events"
 	"github.com/golang/mock/gomock"
 )
 
@@ -53,35 +53,6 @@ func (b *MockBroker) Send(event events.Event) {
 			m = map[string]events.Event{}
 		}
 		m[id] = event
-		b.lastEvtsID[t] = m
-	}
-	b.mu.Unlock()
-}
-
-// SendBatch - same as Send: call mock first, then add arguments to the maps
-func (b *MockBroker) SendBatch(evts []events.Event) {
-	b.MockBrokerI.SendBatch(evts)
-	if len(evts) == 0 {
-		return
-	}
-	b.mu.Lock()
-	first := evts[0]
-	t := first.Type()
-	s, ok := b.allEvts[t]
-	if !ok {
-		s = make([]events.Event, 0, cap(evts))
-	}
-	s = append(s, evts...)
-	b.allEvts[t] = s
-	last := evts[len(evts)-1]
-	// batched events must all be of the same type anyway
-	b.lastEvts[t] = last
-	if ok, id := isIDEvt(last); ok {
-		m, ok := b.lastEvtsID[t]
-		if !ok {
-			m = map[string]events.Event{}
-		}
-		m[id] = last
 		b.lastEvtsID[t] = m
 	}
 	b.mu.Unlock()

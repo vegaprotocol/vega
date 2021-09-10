@@ -9,7 +9,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"strconv"
 	"testing"
 	"time"
 
@@ -17,72 +16,70 @@ import (
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
-	"code.vegaprotocol.io/data-node/api/mocks"
+	apimocks "code.vegaprotocol.io/data-node/api/mocks"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/delegations"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
-	types "code.vegaprotocol.io/data-node/proto"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 	"code.vegaprotocol.io/data-node/risk"
-	"code.vegaprotocol.io/data-node/stats"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	types "code.vegaprotocol.io/protos/vega"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
 
 	"github.com/golang/mock/gomock"
-	tmp2p "github.com/tendermint/tendermint/p2p"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 )
 
 var logger = logging.NewTestLogger()
 
-const defaultTimout = 30 * time.Second
+const (
+	connBufSize   = 1024 * 1024
+	defaultTimout = 30 * time.Second
+)
 
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.
 func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc.ClientConn, eventBroker *broker.Broker) {
 	t.Helper()
 
-	port := randomPort()
-	path := fmt.Sprintf("vegatest-%d-", port)
+	suffix := randomSuffix()
+	path := fmt.Sprintf("vegatest-%d-", suffix)
 	tmpDir, cleanTempDir, err := storage.TempDir(path)
 	if err != nil {
 		t.Fatalf("failed to create tmp dir: %v", err)
 	}
 
 	conf := config.NewDefaultConfig(tmpDir)
-	conf.API.IP = "127.0.0.1"
-	conf.API.Port = port
 
 	mockCtrl := gomock.NewController(t)
-	blockchainClient := mocks.NewMockBlockchainClient(mockCtrl)
-	blockchainClient.EXPECT().Health().AnyTimes().Return(&tmctypes.ResultHealth{}, nil)
-	blockchainClient.EXPECT().GetStatus(gomock.Any()).AnyTimes().Return(&tmctypes.ResultStatus{
-		NodeInfo:      tmp2p.DefaultNodeInfo{Version: "0.33.8"},
-		SyncInfo:      tmctypes.SyncInfo{},
-		ValidatorInfo: tmctypes.ValidatorInfo{},
-	}, nil)
-	blockchainClient.EXPECT().GetUnconfirmedTxCount(gomock.Any()).AnyTimes().Return(0, nil)
-	blockchainClient.EXPECT().GetNetworkInfo(gomock.Any()).AnyTimes().Return(&tmctypes.ResultNetInfo{
-		Listening: true,
-		NPeers:    1,
-	}, nil)
+
+	mockTradingServiceClient := apimocks.NewMockTradingServiceClient(mockCtrl)
+	mockTradingServiceClient.EXPECT().
+		SubmitTransactionV2(gomock.Any(), gomock.Any()).
+		Return(&vegaprotoapi.SubmitTransactionV2Response{}, nil)
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -99,10 +96,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatalf("failed to create candle store: %v", err)
 	}
 
-	candleService, err := candles.NewService(logger, conf.Candles, candleStore)
-	if err != nil {
-		t.Fatalf("failed to create candle service: %v", err)
-	}
+	candleService := candles.NewService(logger, conf.Candles, candleStore)
 
 	orderStore, err := storage.NewOrders(logger, conf.Storage, cancel)
 	if err != nil {
@@ -111,10 +105,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 
 	timeService := vegatime.New(conf.Time)
 
-	orderService, err := orders.NewService(logger, conf.Orders, orderStore, timeService)
-	if err != nil {
-		t.Fatalf("failed to create order service: %v", err)
-	}
+	orderService := orders.NewService(logger, conf.Orders, orderStore, timeService)
 	orderSub := subscribers.NewOrderEvent(ctx, conf.Subscribers, logger, orderStore, true)
 
 	marketStore, err := storage.NewMarkets(logger, conf.Storage, cancel)
@@ -123,16 +114,14 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	}
 	marketDataStore := storage.NewMarketData(logger, conf.Storage)
 
+	delegationStore := storage.NewDelegations(logger, conf.Storage)
+
 	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
 	if marketDepth == nil {
 		return
 	}
 
-	marketService, err := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
-	if err != nil {
-		t.Fatalf("failed to create market service: %v", err)
-		return
-	}
+	marketService := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, logger, true)
 
 	partyStore, err := storage.NewParties(conf.Storage)
@@ -164,10 +153,10 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		t.Fatalf("failed to create trade store: %v", err)
 	}
 
-	tradeService, err := trades.NewService(logger, conf.Trades, tradeStore, nil)
-	if err != nil {
-		t.Fatalf("failed to create trade service: %v", err)
-	}
+	nodeStore := storage.NewNode(logger, conf.Storage)
+	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
+
+	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
 	tradeSub := subscribers.NewTradeSub(ctx, tradeStore, logger, true)
 
 	liquidityService := liquidity.NewService(ctx, logger, conf.Liquidity)
@@ -188,8 +177,25 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	deposit := plugins.NewDeposit(ctx)
 	netparams := netparams.NewService(ctx)
 	oracleService := oracles.NewService(ctx)
+	delegationService := delegations.NewService(logger, conf.Delegations, delegationStore)
 
-	eventBroker = broker.New(ctx)
+	nodeService := nodes.NewService(logger, conf.Nodes, nodeStore, epochStore)
+	epochService := epochs.NewService(logger, conf.Epochs, epochStore)
+	rewardsService := subscribers.NewRewards(ctx, logger, true)
+
+	stakingService := staking.NewService(ctx, logger)
+
+	checkpointStore, err := storage.NewCheckpoints(logger, conf.Storage, cancel)
+	if err != nil {
+		t.Fatalf("failed to create checkpoint store: %v", err)
+	}
+	checkpointSub := subscribers.NewCheckpointSub(ctx, logger, checkpointStore, true)
+	checkpointSvc := checkpoint.NewService(logger, conf.Checkpoint, checkpointStore)
+
+	eventBroker, err = broker.New(ctx, logger, conf.Broker)
+	if err != nil {
+		t.Fatalf("failed to create broker: %v", err)
+	}
 	eventBroker.SubscribeBatch(
 		accountSub,
 		transferSub,
@@ -200,12 +206,14 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		oracleService,
 		liquidityService,
 		deposit,
-		withdrawal)
+		withdrawal,
+		checkpointSub,
+	)
 
 	srv := api.NewGRPCServer(
 		logger,
 		conf.API,
-		stats.New(logger, conf.Stats, "ver", "hash"),
+		mockTradingServiceClient,
 		timeService,
 		marketService,
 		partyService,
@@ -226,29 +234,33 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		deposit,
 		marketDepth,
 		netparams,
+		nodeService,
+		epochService,
+		delegationService,
+		rewardsService,
+		stakingService,
+		checkpointSvc,
 	)
 	if srv == nil {
 		t.Fatal("failed to create gRPC server")
 	}
 
-	go srv.Start()
+	lis := bufconn.Listen(connBufSize)
+
+	// Start the gRPC server, then wait for it to be ready.
+	go srv.Start(ctx, lis)
 
 	t.Cleanup(func() {
-		srv.Stop()
 		cleanTempDir()
 		cancel()
 	})
 
 	if blocking {
-		target := net.JoinHostPort(conf.API.IP, strconv.Itoa(conf.API.Port))
-		conn, err = grpc.DialContext(ctx, target, grpc.WithInsecure(), grpc.WithBlock())
+		ctxDialer := func(context.Context, string) (net.Conn, error) { return lis.Dial() }
+		conn, err = grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(ctxDialer), grpc.WithInsecure())
 		if err != nil {
 			t.Fatalf("failed to dial gRPC server: %v", err)
 		}
-
-		// if err = waitForNode(t, ctx, conn); err != nil {
-		// 	t.Fatalf("failed to start gRPC server: %v", err)
-		// }
 	}
 
 	return
@@ -292,56 +304,60 @@ func PublishEvents(
 		s = append(s, e)
 		evts[e.Type()] = s
 	}
+
+	// add time event subscriber so we can verify the time event was received at the end
+	sCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	sub := NewEventSubscriber(sCtx)
+	id := b.Subscribe(sub)
+
 	// we've grouped events per type, now send them all in batches
-	for _, e := range evts {
-		b.SendBatch(e)
+	for _, batch := range evts {
+		for _, e := range batch {
+			b.Send(e)
+
+			if err := waitForEvent(sCtx, sub, e); err != nil {
+				t.Fatalf("Did not receive the expected event within reasonable time: %+v", e)
+			}
+		}
 	}
 
 	t.Logf("%d events sent", len(evts))
 
-	// add time event subscriber so we can verify the time event was received at the end
-	sCtx, cfunc := context.WithCancel(ctx)
-	tmConf := NewTimeSub(sCtx)
-	id := b.Subscribe(tmConf)
-
 	// whatever time it is now + 1 second
 	now := time.Now()
 	// the broker reacts to Time events to trigger writes the data stores
-	b.Send(events.NewTime(ctx, now))
+	tue := events.NewTime(ctx, now)
+	b.Send(tue)
 	// await confirmation that we've actually received the time update event
-	if !waitForTime(tmConf, now) {
-		t.Fatal("Did not receive the expected time event within reasonable time")
+	if err := waitForEvent(sCtx, sub, tue); err != nil {
+		t.Fatalf("Did not receive the expected event within reasonable time: %+v", tue)
 	}
 
 	t.Log("time event received")
 
-	// halt the subscriber
-	tmConf.Halt()
 	// cancel the subscriber ctx
-	cfunc()
+	cancel()
+
+	sub.Halt()
 	// unsubscribe the ad-hoc subscriber
 	b.Unsubscribe(id)
-	// we've received the time event, but that could've been received before the other events.
-	// Now send out a second time event to ensure the other events get flushed/persisted
-	b.Send(events.NewTime(ctx, now.Add(time.Second)))
 }
 
-func waitForTime(tmConf *TimeSub, now time.Time) bool {
+func waitForEvent(ctx context.Context, sub *EventSubscriber, event events.Event) error {
 	for {
-		times := tmConf.GetReveivedTimes()
-		if times == nil {
-			// the subscriber context was cancelled, no need to wait for this anylonger
-			return false
+		receivedEvent, err := sub.ReceivedEvent(ctx)
+		if err != nil {
+			return err
 		}
-		for _, tm := range times {
-			if tm.Equal(now) {
-				return true
-			}
+
+		if receivedEvent == event {
+			return nil
 		}
 	}
 }
 
-func randomPort() int {
+func randomSuffix() int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(65535-1023) + 1023
 }

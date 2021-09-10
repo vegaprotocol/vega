@@ -4,9 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/events"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/subscribers"
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 
 	"github.com/pkg/errors"
 )

@@ -8,9 +8,9 @@ import (
 
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
-	ptypes "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/storage"
-	"code.vegaprotocol.io/data-node/types"
+	ptypes "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types"
 )
 
 // TradeStore represents an abstraction over a trade storage
@@ -22,7 +22,7 @@ type TradeStore interface {
 	GetByPartyAndID(ctx context.Context, party string, id string) (*ptypes.Trade, error)
 	GetByOrderID(ctx context.Context, orderID string, skip, limit uint64, descending bool, market *string) ([]*ptypes.Trade, error)
 	GetTradesBySideBuckets(ctx context.Context, party string) map[string]*storage.MarketBucket
-	GetMarkPrice(ctx context.Context, market string) (uint64, error)
+	GetMarkPrice(ctx context.Context, market string) (string, error)
 	Subscribe(trades chan<- []ptypes.Trade) uint64
 	Unsubscribe(id uint64) error
 }
@@ -46,7 +46,7 @@ type Svc struct {
 }
 
 // NewService instantiate a new Trades service
-func NewService(log *logging.Logger, config Config, tradeStore TradeStore, posPlug PositionsPlugin) (*Svc, error) {
+func NewService(log *logging.Logger, config Config, tradeStore TradeStore, posPlug PositionsPlugin) *Svc {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -56,7 +56,7 @@ func NewService(log *logging.Logger, config Config, tradeStore TradeStore, posPl
 		Config:     config,
 		tradeStore: tradeStore,
 		positions:  posPlug,
-	}, nil
+	}
 }
 
 // ReloadConf update the internal configuration of the service

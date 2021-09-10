@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/markets/mocks"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -35,7 +35,7 @@ func getTestService(t *testing.T) *testService {
 	marketdepth := mocks.NewMockMarketDepth(ctrl)
 	log := logging.NewTestLogger()
 	ctx, cfunc := context.WithCancel(context.Background())
-	svc, err := markets.NewService(
+	svc := markets.NewService(
 		log,
 		markets.NewDefaultConfig(),
 		market,
@@ -43,7 +43,6 @@ func getTestService(t *testing.T) *testService {
 		marketdata,
 		marketdepth,
 	)
-	assert.NoError(t, err)
 	return &testService{
 		Svc:         svc,
 		ctx:         ctx,

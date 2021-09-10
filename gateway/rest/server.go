@@ -2,13 +2,14 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
 
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"
@@ -57,7 +58,7 @@ func (s *ProxyServer) ReloadConf(cfg gateway.Config) {
 }
 
 // Start start the server
-func (s *ProxyServer) Start() {
+func (s *ProxyServer) Start() error {
 	logger := s.log
 
 	logger.Info("Starting REST<>GRPC based API",
@@ -82,7 +83,7 @@ func (s *ProxyServer) Start() {
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := protoapi.RegisterTradingServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+	if err := protoapi.RegisterTradingProxyServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
 	if err := protoapi.RegisterTradingDataServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
@@ -111,9 +112,10 @@ func (s *ProxyServer) Start() {
 	// Start http server on port specified
 	err := s.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		logger.Panic("Failure serving REST proxy API", logging.Error(err))
+		return fmt.Errorf("failure serving REST proxy API %w", err)
 	}
 
+	return nil
 }
 
 // Stop stops the server

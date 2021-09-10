@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/subscribers"
-	"code.vegaprotocol.io/data-node/types"
+	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -35,14 +35,14 @@ func testGetByID(t *testing.T) {
 	lastState := proto.Proposal_STATE_FAILED
 	for _, id := range ids {
 		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-			PartyId: "party",
-			Id:      id,
-			State:   proto.Proposal_STATE_OPEN,
+			Party: "party",
+			ID:    id,
+			State: proto.Proposal_STATE_OPEN,
 		}))
 		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-			PartyId: "party",
-			Id:      id,
-			State:   lastState,
+			Party: "party",
+			ID:    id,
+			State: lastState,
 		}))
 	}
 	for _, id := range ids {
@@ -78,9 +78,9 @@ func testFilterByState(t *testing.T) {
 	}
 	for i, s := range states {
 		prop := types.Proposal{
-			PartyId: party,
-			Id:      fmt.Sprintf("test-prop-%d", i),
-			State:   s,
+			Party: party,
+			ID:    fmt.Sprintf("test-prop-%d", i),
+			State: s,
 		}
 		sub.Push(events.NewProposalEvent(ctx, prop))
 	}
@@ -103,16 +103,16 @@ func testFilterByParty(t *testing.T) {
 	}
 	for _, id := range ids {
 		prop := types.Proposal{
-			PartyId: party,
-			Id:      id,
-			State:   proto.Proposal_STATE_OPEN,
+			Party: party,
+			ID:    id,
+			State: proto.Proposal_STATE_OPEN,
 		}
 		sub.Push(events.NewProposalEvent(ctx, prop))
 	}
 	sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-		PartyId: "some-other-party",
-		Id:      "foobar",
-		State:   proto.Proposal_STATE_OPEN,
+		Party: "some-other-party",
+		ID:    "foobar",
+		State: proto.Proposal_STATE_OPEN,
 	}))
 	data := sub.Filter(false, subscribers.ProposalByPartyID(party))
 	assert.Equal(t, len(ids), len(data))
@@ -138,9 +138,9 @@ func testNoFilterVotes(t *testing.T) {
 	// last vote will always be yes
 	for i, p := range parties {
 		sub.Push(events.NewProposalEvent(ctx, types.Proposal{
-			PartyId: p,
-			Id:      props[i],
-			State:   proto.Proposal_STATE_OPEN,
+			Party: p,
+			ID:    props[i],
+			State: proto.Proposal_STATE_OPEN,
 		}))
 	}
 	for _, p := range parties {

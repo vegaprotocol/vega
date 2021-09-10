@@ -4,19 +4,20 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"time"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	pbtypes "code.vegaprotocol.io/data-node/proto"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
-	oraclespb "code.vegaprotocol.io/data-node/proto/oracles/v1"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	pbtypes "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -98,7 +99,6 @@ type AccountsService interface {
 	GetFeeInfrastructureAccounts(asset string) ([]*pbtypes.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty pbtypes.AccountType) (candleCh <-chan []*pbtypes.Account, ref uint64)
 	GetAccountSubscribersCount() int32
-	PrepareWithdraw(context.Context, *commandspb.WithdrawSubmission) error
 }
 
 // TransferResponseService ...
@@ -139,13 +139,13 @@ type RiskService interface {
 	EstimateMargin(ctx context.Context, order *pbtypes.Order) (*pbtypes.MarginLevels, error)
 }
 
-// Notary ...
+// NotaryService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  NotaryService
 type NotaryService interface {
 	GetByID(id string) ([]commandspb.NodeSignature, error)
 }
 
-// Withdrawal ...
+// WithdrawalService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/withdrawal_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  WithdrawalService
 type WithdrawalService interface {
 	GetByID(id string) (pbtypes.Withdrawal, error)
@@ -160,7 +160,7 @@ type OracleService interface {
 	GetOracleDataBySpecID(string) ([]oraclespb.OracleData, error)
 }
 
-// Deposit ...
+// DepositService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/deposit_service_mock.go -package mocks code.vegaprotocol.io/data-node/api  DepositService
 type DepositService interface {
 	GetByID(id string) (pbtypes.Deposit, error)
@@ -186,6 +186,7 @@ type NetParamsService interface {
 	GetAll() []pbtypes.NetworkParameter
 }
 
+// EventService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/event_service_mock.go -package mocks code.vegaprotocol.io/data-node/api EventService
 type EventService interface {
 	ObserveEvents(ctx context.Context, retries int, eTypes []events.Type, batchSize int, filters ...subscribers.EventFilter) (<-chan []*eventspb.BusEvent, chan<- int)
@@ -194,14 +195,57 @@ type EventService interface {
 // LiquidityService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/liquidity_service_mock.go -package mocks code.vegaprotocol.io/data-node/api LiquidityService
 type LiquidityService interface {
-	PrepareLiquidityProvisionSubmission(context.Context, *commandspb.LiquidityProvisionSubmission) error
 	Get(party, market string) ([]pbtypes.LiquidityProvision, error)
+}
+
+// NodeService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/node_service_mock.go -package mocks code.vegaprotocol.io/data-node/api NodeService
+type NodeService interface {
+	GetNodeData(ctx context.Context) (*pbtypes.NodeData, error)
+	GetNodes(ctx context.Context) ([]*pbtypes.Node, error)
+	GetNodeByID(ctx context.Context, id string) (*pbtypes.Node, error)
+}
+
+// EpochService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/data-node/api EpochService
+type EpochService interface {
+	GetEpochByID(ctx context.Context, id string) (*pbtypes.Epoch, error)
+	GetEpoch(ctx context.Context) (*pbtypes.Epoch, error)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_service_mock.go -package mocks code.vegaprotocol.io/data-node/api DelegationService
+type DelegationService interface {
+	GetAllDelegations() ([]*pbtypes.Delegation, error)
+	GetAllDelegationsOnEpoch(epochSeq string) ([]*pbtypes.Delegation, error)
+	GetPartyDelegations(party string) ([]*pbtypes.Delegation, error)
+	GetPartyDelegationsOnEpoch(party string, epochSeq string) ([]*pbtypes.Delegation, error)
+	GetPartyNodeDelegations(party string, node string) ([]*pbtypes.Delegation, error)
+	GetPartyNodeDelegationsOnEpoch(party string, node string, epochSeq string) ([]*pbtypes.Delegation, error)
+	GetNodeDelegations(nodeID string) ([]*pbtypes.Delegation, error)
+	GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pbtypes.Delegation, error)
+}
+
+// RewardsService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/rewards_service_mock.go -package mocks code.vegaprotocol.io/data-node/api RewardsService
+type RewardsService interface {
+	GetRewardDetails(ctx context.Context, party string) (*protoapi.GetRewardDetailsResponse, error)
+}
+
+// StakingService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_service_mock.go -package mocks code.vegaprotocol.io/data-node/api StakingService
+type StakingService interface {
+	GetStake(party string) (*num.Uint, []eventspb.StakeLinking)
+}
+
+// CheckpointService ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_service_mock.go -package mocks code.vegaprotocol.io/data-node/api CheckpointService
+type CheckpointService interface {
+	GetAll() ([]*protoapi.Checkpoint, error)
 }
 
 type tradingDataService struct {
 	log                     *logging.Logger
 	Config                  Config
-	Stats                   *stats.Stats
 	TimeService             VegaTime
 	OrderService            OrderService
 	TradeService            TradeService
@@ -221,7 +265,130 @@ type tradingDataService struct {
 	MarketDepthService      *subscribers.MarketDepthBuilder
 	NetParamsService        NetParamsService
 	LiquidityService        LiquidityService
+	delegationService       DelegationService
 	oracleService           OracleService
+	nodeService             NodeService
+	epochService            EpochService
+	rewardsService          RewardsService
+	stakingService          StakingService
+	checkpointService       CheckpointService
+}
+
+func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {
+	if len(req.Party) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing party id"))
+	}
+	stake, stakeLinkings := t.stakingService.GetStake(req.Party)
+	outStakeLinkings := make([]*eventspb.StakeLinking, 0, len(stakeLinkings))
+	for _, v := range stakeLinkings {
+		v := v
+		outStakeLinkings = append(outStakeLinkings, &v)
+	}
+
+	return &protoapi.PartyStakeResponse{
+		CurrentStakeAvailable: num.UintToString(stake),
+		StakeLinkings:         outStakeLinkings,
+	}, nil
+}
+
+func (t *tradingDataService) GetEpoch(ctx context.Context, req *protoapi.GetEpochRequest) (*protoapi.GetEpochResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetEpoch")()
+
+	var epoch *pbtypes.Epoch
+	var err error
+
+	if req.GetId() == 0 {
+		epoch, err = t.epochService.GetEpoch(ctx)
+	} else {
+		epoch, err = t.epochService.GetEpochByID(ctx, strconv.FormatUint(req.GetId(), 10))
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetEpochResponse{
+		Epoch: epoch,
+	}, nil
+}
+
+// Get data of current node
+func (t *tradingDataService) GetNodeData(ctx context.Context, req *protoapi.GetNodeDataRequest) (*protoapi.GetNodeDataResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeData")()
+
+	nodeData, err := t.nodeService.GetNodeData(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNodeDataResponse{
+		NodeData: nodeData,
+	}, nil
+}
+
+// List all known network nodes
+func (t *tradingDataService) GetNodes(ctx context.Context, req *protoapi.GetNodesRequest) (*protoapi.GetNodesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodes")()
+
+	nodes, err := t.nodeService.GetNodes(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetNodesResponse{
+		Nodes: nodes,
+	}, nil
+}
+
+// Get a specific node by ID
+func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetNodeByIDRequest) (*protoapi.GetNodeByIDResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNodeByID")()
+
+	if req.GetId() == "" {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
+	}
+
+	node, err := t.nodeService.GetNodeByID(ctx, req.GetId())
+	if err != nil {
+		return nil, apiError(codes.NotFound, err)
+	}
+
+	return &protoapi.GetNodeByIDResponse{
+		Node: node,
+	}, nil
+}
+
+func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("Delegations")()
+
+	var delegations []*pbtypes.Delegation
+	var err error
+
+	if req.EpochSeq == "" && req.Party == "" && req.NodeId == "" { // all delegations for all parties all nodes across all epochs
+		delegations, err = t.delegationService.GetAllDelegations()
+	} else if req.EpochSeq == "" && req.Party == "" && req.NodeId != "" { // all delegations for node from all parties across all epochs
+		delegations, err = t.delegationService.GetNodeDelegations(req.NodeId)
+	} else if req.EpochSeq == "" && req.Party != "" && req.NodeId == "" { // all delegations by a given party to all nodes across all epochs
+		delegations, err = t.delegationService.GetPartyDelegations(req.Party)
+	} else if req.EpochSeq == "" && req.Party != "" && req.NodeId != "" { // all delegations by a given party to a given node across all epochs
+		delegations, err = t.delegationService.GetPartyNodeDelegations(req.Party, req.NodeId)
+	} else if req.EpochSeq != "" && req.Party == "" && req.NodeId == "" { // all delegations by all parties for all nodes in a given epoch
+		delegations, err = t.delegationService.GetAllDelegationsOnEpoch(req.EpochSeq)
+	} else if req.EpochSeq != "" && req.Party == "" && req.NodeId != "" { // all delegations to a given node on a given epoch
+		delegations, err = t.delegationService.GetNodeDelegationsOnEpoch(req.NodeId, req.EpochSeq)
+	} else if req.EpochSeq != "" && req.Party != "" && req.NodeId == "" { // all delegations by a given party on a given epoch
+		delegations, err = t.delegationService.GetPartyDelegationsOnEpoch(req.Party, req.EpochSeq)
+	} else if req.EpochSeq != "" && req.Party != "" && req.NodeId != "" { // all delegations by a given party to a given node on a given epoch
+		delegations, err = t.delegationService.GetPartyNodeDelegationsOnEpoch(req.Party, req.NodeId, req.EpochSeq)
+	}
+
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.DelegationsResponse{
+		Delegations: delegations,
+	}, nil
 }
 
 func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *protoapi.LiquidityProvisionsRequest) (*protoapi.LiquidityProvisionsResponse, error) {
@@ -237,16 +404,6 @@ func (t *tradingDataService) LiquidityProvisions(ctx context.Context, req *proto
 	}
 	return &protoapi.LiquidityProvisionsResponse{
 		LiquidityProvisions: out,
-	}, nil
-}
-
-func (t *tradingDataService) LastBlockHeight(
-	ctx context.Context,
-	req *protoapi.LastBlockHeightRequest,
-) (*protoapi.LastBlockHeightResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
-	return &protoapi.LastBlockHeightResponse{
-		Height: t.Stats.Blockchain.Height(),
 	}, nil
 }
 
@@ -342,11 +499,12 @@ func (t *tradingDataService) ERC20WithdrawalApproval(ctx context.Context, req *p
 	}
 
 	return &protoapi.ERC20WithdrawalApprovalResponse{
-		AssetSource: address,
-		Amount:      fmt.Sprintf("%v", withdrawal.Amount),
-		Expiry:      withdrawal.Expiry,
-		Nonce:       withdrawal.Ref,
-		Signatures:  pack,
+		AssetSource:   address,
+		Amount:        fmt.Sprintf("%v", withdrawal.Amount),
+		Expiry:        withdrawal.Expiry,
+		Nonce:         withdrawal.Ref,
+		TargetAddress: withdrawal.Ext.GetErc20().ReceiverAddress,
+		Signatures:    pack,
 	}, nil
 }
 
@@ -454,6 +612,18 @@ func (t *tradingDataService) Deposits(ctx context.Context, req *protoapi.Deposit
 	return &protoapi.DepositsResponse{
 		Deposits: out,
 	}, nil
+}
+
+func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardDetails")()
+	if len(req.PartyId) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+	details, err := t.rewardsService.GetRewardDetails(ctx, req.PartyId)
+	if err != nil {
+		return nil, err
+	}
+	return details, nil
 }
 
 func (t *tradingDataService) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {
@@ -803,6 +973,16 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVeg
 		Timestamp: ts.UnixNano(),
 	}, nil
 
+}
+
+func (t *tradingDataService) Checkpoints(ctx context.Context, _ *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
+	cps, err := t.checkpointService.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	return &protoapi.CheckpointsResponse{
+		Checkpoints: cps,
+	}, nil
 }
 
 // TransferResponsesSubscribe opens a subscription to transfer response data provided by the transfer response service.

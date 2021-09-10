@@ -33,15 +33,15 @@ func DefaultVegaDir() string {
 	}
 	exPath := filepath.Dir(ex)
 	if exPath == "/usr/bin" {
-		return "/etc/vega"
+		return "/etc/vega_data_node"
 	}
 	if exPath == "/usr/local/vega/bin" {
-		return "/usr/local/vega/etc"
+		return "/usr/local/vega_data_node/etc"
 	}
 	if exPath == "/usr/local/bin" {
-		return "/usr/local/etc/vega"
+		return "/usr/local/etc/vega_data_node"
 	}
-	return os.ExpandEnv("$HOME/.vega")
+	return os.ExpandEnv("$HOME/.vega_data_node")
 }
 
 // EnsureDir will make sure a directory exists or is created at a given filesystem path.

@@ -5,13 +5,13 @@ import (
 	"io"
 	"testing"
 
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
+	pb "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/data-node/events"
-	pb "code.vegaprotocol.io/data-node/proto"
-	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 )
 
 func TestObserveTransferResponses(t *testing.T) {
@@ -68,7 +68,7 @@ func TestObserveTransferResponses(t *testing.T) {
 	require.NotNil(t, resp)
 	require.Equal(t, "076BB86A5AA41E3E*6d9d35f657589e40ddfb448b7ad4a7463b66efb307527fedd2aa7df1bbd5ea616", resp.Response.Transfers[0].FromAccount)
 	require.Equal(t, "076BB86A5AA41E3E0f3d86044f8e7efff27131227235fb6db82574e24f788c30723d67f888b51d616d9d35f657589e40ddfb448b7ad4a7463b66efb307527fedd2aa7df1bbd5ea613", resp.Response.Transfers[0].ToAccount)
-	require.Equal(t, uint64(10412267), resp.Response.Transfers[0].Amount)
+	require.Equal(t, "10412267", resp.Response.Transfers[0].Amount)
 	require.Equal(t, "TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE", resp.Response.Transfers[0].Reference)
 	require.Equal(t, "settlement", resp.Response.Transfers[0].Type)
 	require.Equal(t, int64(1622563663355188728), resp.Response.Transfers[0].Timestamp)

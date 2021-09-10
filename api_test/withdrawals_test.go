@@ -5,14 +5,13 @@ import (
 	"testing"
 	"time"
 
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"code.vegaprotocol.io/data-node/events"
-	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
 )
 
 func TestWithdrawals(t *testing.T) {
@@ -27,7 +26,7 @@ func TestWithdrawals(t *testing.T) {
 		e := events.NewWithdrawalEvent(ctx, types.Withdrawal{
 			ID:             withdrawal.Id,
 			PartyID:        withdrawal.PartyId,
-			Amount:         num.NewUint(withdrawal.Amount),
+			Amount:         mustUintFromString(withdrawal.Amount),
 			Asset:          withdrawal.Asset,
 			Status:         withdrawal.Status,
 			Ref:            withdrawal.Ref,

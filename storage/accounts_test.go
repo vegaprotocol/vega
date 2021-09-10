@@ -5,8 +5,8 @@ import (
 
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/storage"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -156,42 +156,42 @@ func getTestAccounts() []*types.Account {
 			MarketId: testAccountMarket1,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetGBP,
-			Balance:  1024,
+			Balance:  "1024",
 		},
 		{
 			Owner:    testAccountParty1,
 			MarketId: testAccountMarket1,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetGBP,
-			Balance:  1024,
+			Balance:  "1024",
 		},
 		{
 			Owner:    testAccountParty1,
 			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetUSD,
-			Balance:  1,
+			Balance:  "1",
 		},
 		{
 			Owner:    testAccountParty1,
 			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetUSD,
-			Balance:  9,
+			Balance:  "9",
 		},
 		{
 			Owner:    testAccountParty2,
 			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_GENERAL,
 			Asset:    testAssetEUR,
-			Balance:  2048,
+			Balance:  "2048",
 		},
 		{
 			Owner:    testAccountParty2,
 			MarketId: testAccountMarket2,
 			Type:     types.AccountType_ACCOUNT_TYPE_MARGIN,
 			Asset:    testAssetEUR,
-			Balance:  1024,
+			Balance:  "1024",
 		},
 	}
 	return accs

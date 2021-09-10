@@ -3,8 +3,8 @@ package gql
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/vegatime"
+	proto "code.vegaprotocol.io/protos/vega"
 )
 
 type marketTimestampsResolver VegaResolverRoot

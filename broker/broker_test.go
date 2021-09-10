@@ -3,6 +3,7 @@ package broker_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -10,19 +11,28 @@ import (
 
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/broker/mocks"
-	"code.vegaprotocol.io/data-node/contextutil"
-	"code.vegaprotocol.io/data-node/events"
-	types "code.vegaprotocol.io/data-node/proto"
+	"code.vegaprotocol.io/data-node/logging"
+	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"go.nanomsg.org/mangos/v3/protocol"
+	"go.nanomsg.org/mangos/v3/protocol/push"
+
+	"github.com/golang/protobuf/proto"
+	mangosErr "go.nanomsg.org/mangos/v3/errors"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/sync/errgroup"
 )
 
 type brokerTst struct {
 	*broker.Broker
-	cfunc context.CancelFunc
-	ctx   context.Context
-	ctrl  *gomock.Controller
+	cfunc    context.CancelFunc
+	ctx      context.Context
+	ctrl     *gomock.Controller
+	sock     protocol.Socket
+	dialAddr string
 }
 
 type evt struct {
@@ -35,11 +45,25 @@ type evt struct {
 func getBroker(t *testing.T) *brokerTst {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
+
+	// Use in process transport for testing
+	config := broker.NewDefaultConfig()
+	config.SocketConfig.TransportType = "inproc"
+	config.SocketConfig.IP = t.Name()
+	config.SocketConfig.Port = 8085
+
+	sock, err := push.NewSocket()
+	assert.NoError(t, err)
+	socketConfig := config.SocketConfig
+
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
 	return &brokerTst{
-		Broker: broker.New(ctx),
-		cfunc:  cfunc,
-		ctx:    ctx,
-		ctrl:   ctrl,
+		Broker:   broker,
+		cfunc:    cfunc,
+		ctx:      ctx,
+		ctrl:     ctrl,
+		sock:     sock,
+		dialAddr: fmt.Sprintf("%s://%s:%d", socketConfig.TransportType, socketConfig.IP, socketConfig.Port),
 	}
 }
 
@@ -60,11 +84,6 @@ func (b *brokerTst) Finish() {
 	b.ctrl.Finish()
 }
 
-func TestSequenceIDGen(t *testing.T) {
-	t.Run("Sequence ID is correctly - events dispatched per block (ordered)", testSequenceIDGenSeveralBlocksOrdered)
-	t.Run("Sequence ID is correctly - events dispatched for several blocks at the same time", testSequenceIDGenSeveralBlocksUnordered)
-}
-
 func TestSubscribe(t *testing.T) {
 	t.Run("Subscribe and unsubscribe required - success", testSubUnsubSuccess)
 	t.Run("Subscribe reuses keys", testSubReuseKey)
@@ -73,110 +92,18 @@ func TestSubscribe(t *testing.T) {
 
 func TestSendEvent(t *testing.T) {
 	t.Run("Skip optional subscribers", testSkipOptional)
-	t.Run("Skip optional subscribers in a batch send", testSendBatchChannel)
-	t.Run("Send batch to ack subscriber", testSendBatch)
 	t.Run("Stop sending if context is cancelled", testStopCtx)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
 }
 
+func TestReceive(t *testing.T) {
+	t.Run("Receives events and sends them to broker", testSendsReceivedEvents)
+	t.Run("Returns an error on version mismatch", testErrorOnVersionMismatch)
+}
+
 func TestTxErrEvents(t *testing.T) {
 	t.Run("Ensure TxErrEvents are hidden from ALL subscribers", testTxErrNotAll)
-}
-
-func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
-	tstBroker := getBroker(t)
-	defer tstBroker.Finish()
-	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
-	dataH1 := []events.Event{
-		events.NewTime(ctxH1, time.Now()),
-		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
-	}
-	dataH2 := []events.Event{
-		events.NewTime(ctxH2, time.Now()),
-		events.NewPartyEvent(ctxH2, types.Party{Id: "test-party-h2"}),
-	}
-	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
-	done := make(chan struct{})
-	mu := sync.Mutex{}
-	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	sub.EXPECT().Types().Times(2).Return(nil)
-	sub.EXPECT().Ack().Times(1).Return(true)
-	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
-	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
-	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
-		// race detector complains about appending here, because data comes from
-		// different go routines, so we'll use a quick & dirty fix: mutex the slice
-		mu.Lock()
-		defer mu.Unlock()
-		allData = append(allData, evts...)
-		if len(allData) >= cap(allData) {
-			close(done)
-		}
-	})
-	k := tstBroker.Subscribe(sub)
-	// send batches for both events - hash 2 after hash 1
-	tstBroker.SendBatch(dataH1)
-	tstBroker.SendBatch(dataH2)
-	seqH1 := []uint64{}
-	seqH2 := []uint64{}
-	for i := range dataH1 {
-		seqH1 = append(seqH1, dataH1[i].Sequence())
-		seqH2 = append(seqH2, dataH2[i].Sequence())
-	}
-	assert.Equal(t, seqH1, seqH2)
-	<-done
-	tstBroker.Unsubscribe(k)
-	assert.NotEqual(t, seqH1[0], seqH2[1]) // the two are equal, we can compare X-slice
-	assert.Equal(t, len(allData), len(dataH1)+len(dataH2))
-}
-
-func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
-	tstBroker := getBroker(t)
-	defer tstBroker.Finish()
-	ctxH1, ctxH2 := contextutil.WithTraceID(tstBroker.ctx, "hash-1"), contextutil.WithTraceID(tstBroker.ctx, "hash-2")
-	dataH1 := []events.Event{
-		events.NewTime(ctxH1, time.Now()),
-		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
-	}
-	dataH2 := []events.Event{
-		events.NewTime(ctxH2, time.Now()),
-		events.NewPartyEvent(ctxH2, types.Party{Id: "test-party-h2"}),
-	}
-	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
-	mu := sync.Mutex{}
-	done := make(chan struct{})
-	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	sub.EXPECT().Types().Times(2).Return(nil)
-	sub.EXPECT().Ack().Times(1).Return(true)
-	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
-	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
-	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
-		mu.Lock()
-		defer mu.Unlock()
-		allData = append(allData, evts...)
-		if len(allData) >= cap(allData) {
-			close(done)
-		}
-	})
-	k := tstBroker.Subscribe(sub)
-	// We can't use sendBatch here: we use the traceID of the first event in the batch to determine
-	// the hash (batch-sending events can only happen within a single block)
-	for i := range dataH1 {
-		tstBroker.Send(dataH1[i])
-		tstBroker.Send(dataH2[i])
-	}
-	seqH1 := []uint64{}
-	seqH2 := []uint64{}
-	for i := range dataH1 {
-		seqH1 = append(seqH1, dataH1[i].Sequence())
-		seqH2 = append(seqH2, dataH2[i].Sequence())
-	}
-	assert.Equal(t, seqH1, seqH2)
-	<-done
-	tstBroker.Unsubscribe(k)
-	assert.NotEqual(t, seqH1[0], seqH2[1]) // the two are equal, we can compare X-slice
-	assert.Equal(t, len(allData), len(dataH1)+len(dataH2))
 }
 
 func testSubUnsubSuccess(t *testing.T) {
@@ -251,118 +178,6 @@ func testAutoUnsubscribe(t *testing.T) {
 	assert.Equal(t, k1, k2)
 }
 
-func testSendBatch(t *testing.T) {
-	tstBroker := getBroker(t)
-	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	cancelCh := make(chan struct{})
-	defer func() {
-		tstBroker.Finish()
-		close(cancelCh)
-	}()
-	sub.EXPECT().Types().Times(1).Return(nil)
-	sub.EXPECT().Ack().AnyTimes().Return(true)
-	k1 := tstBroker.Subscribe(sub)
-	assert.NotZero(t, k1)
-	data := []events.Event{
-		tstBroker.randomEvt(),
-		tstBroker.randomEvt(),
-		tstBroker.randomEvt(),
-	}
-	// ensure all 3 events are being sent (wait for routine to spawn)
-	sub.EXPECT().Closed().AnyTimes().Return(cancelCh)
-	sub.EXPECT().Skip().AnyTimes().Return(cancelCh)
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	sub.EXPECT().Push(gomock.Any()).Times(1).Do(func(evts ...events.Event) {
-		assert.Equal(t, len(data), len(evts))
-		wg.Done()
-	})
-
-	// send events
-	tstBroker.SendBatch(data)
-	wg.Wait()
-}
-
-func testSendBatchChannel(t *testing.T) {
-	tstBroker := getBroker(t)
-	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
-	defer func() {
-		tstBroker.Finish()
-		close(closedCh)
-		close(skipCh)
-	}()
-	twg := sync.WaitGroup{}
-	twg.Add(2)
-	sub.EXPECT().Types().Times(2).Return(nil).Do(func() {
-		twg.Done()
-	})
-	sub.EXPECT().Ack().AnyTimes().Return(false)
-	k1 := tstBroker.Subscribe(sub)
-	assert.NotZero(t, k1)
-	batch2 := []events.Event{
-		tstBroker.randomEvt(),
-		tstBroker.randomEvt(),
-	}
-	evts := []events.Event{
-		tstBroker.randomEvt(),
-		tstBroker.randomEvt(),
-		tstBroker.randomEvt(),
-	}
-	// ensure both batches are sent
-	wg := sync.WaitGroup{}
-	// 3 calls, only the first batch will be sent
-	// third call is routine that tries to send the second batch. This will of course fail
-	wg.Add(3)
-	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
-	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	// we try to get the channel 3 times, only 1 of the attempts will actually publish the events
-	sub.EXPECT().C().Times(3).Return(cCh).Do(func() {
-		// Done call each time we tried sending an event
-		wg.Done()
-	})
-
-	// send events
-	tstBroker.SendBatch(evts)
-	tstBroker.SendBatch(batch2)
-	wg.Wait()
-	// we've tried to send 2 batches of events, subscriber could only accept one. Check state of all the things
-	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
-	// because there's a loop calling functions that are returning the channels we're closing here
-	tstBroker.Unsubscribe(k1)
-	// ensure unsubscribe has returned
-	twg.Wait()
-
-	// get our batches
-	batches := [][]events.Event{
-		<-cCh, <-cCh,
-	}
-
-	// assert we have all events now.
-	batchSizes := map[int]struct{}{}
-	evtSeq := map[uint64]struct{}{}
-	for _, batch := range batches {
-		batchSizes[len(batch)] = struct{}{}
-		for _, v := range batch {
-			evtSeq[v.Sequence()] = struct{}{}
-		}
-	}
-
-	// now ensure we have the batch with right sizes
-	_, ok := batchSizes[len(batch2)]
-	assert.True(t, ok, "missing batch of size ", len(batch2))
-	_, ok = batchSizes[len(evts)]
-	assert.True(t, ok, "missing batch of size ", len(evts))
-
-	// now ensure we got all sequence IDs
-	for _, v := range append(evts, batch2...) {
-		_, ok := evtSeq[v.Sequence()]
-		if !ok {
-			t.Fatalf("missing event sequence from batches %v", v.Sequence())
-		}
-	}
-}
-
 func testSkipOptional(t *testing.T) {
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
@@ -430,6 +245,176 @@ func testSkipOptional(t *testing.T) {
 
 	// make sure the channel is empty (no writes were pending)
 	assert.Equal(t, 0, len(cCh))
+}
+
+func testSendsReceivedEvents(t *testing.T) {
+	tstBroker := getBroker(t)
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	skipCh, closedCh := make(chan struct{}), make(chan struct{})
+	defer func() {
+		tstBroker.Finish()
+		close(closedCh)
+		close(skipCh)
+	}()
+
+	sub.EXPECT().Types().AnyTimes().Return(nil)
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+
+	k1 := tstBroker.Subscribe(sub)
+	assert.NotZero(t, k1)
+
+	busEvts := []eventspb.BusEvent{
+		{
+			Version: 1,
+			Id:      "id-1",
+			Block:   "1",
+			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+			Event: &eventspb.BusEvent_TimeUpdate{
+				TimeUpdate: &eventspb.TimeUpdate{
+					Timestamp: 1628173151,
+				},
+			},
+		},
+		{
+			Version: 1,
+			Id:      "id-2",
+			Block:   "2",
+			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+			Event: &eventspb.BusEvent_TimeUpdate{
+				TimeUpdate: &eventspb.TimeUpdate{
+					Timestamp: 1628173152,
+				},
+			},
+		},
+		{
+			Version: 1,
+			Id:      "id-3",
+			Block:   "3",
+			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+			Event: &eventspb.BusEvent_TimeUpdate{
+				TimeUpdate: &eventspb.TimeUpdate{
+					Timestamp: 1628173152,
+				},
+			},
+		},
+	}
+
+	// ensure all 3 events are being sent
+	wg := sync.WaitGroup{}
+	wg.Add(3)
+	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
+	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	sub.EXPECT().Push(gomock.Any()).Times(3).Do(func(events ...interface{}) {
+		wg.Done()
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go tstBroker.Receive(ctx)
+
+	var numOfRetries int
+	for {
+		err := tstBroker.sock.Dial(tstBroker.dialAddr)
+		if err == nil {
+			break
+		}
+
+		if err != mangosErr.ErrConnRefused {
+			continue
+		}
+
+		if numOfRetries < 5 {
+			numOfRetries++
+			time.Sleep(time.Microsecond * 500)
+			continue
+		}
+
+		t.Fatal(err)
+	}
+
+	for _, evnt := range busEvts {
+		b, err := proto.Marshal(&evnt)
+		assert.NoError(t, err)
+
+		err = tstBroker.sock.Send(b)
+		assert.NoError(t, err)
+	}
+
+	wg.Wait()
+	cancel()
+}
+
+func testErrorOnVersionMismatch(t *testing.T) {
+	tstBroker := getBroker(t)
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	skipCh, closedCh := make(chan struct{}), make(chan struct{})
+	defer func() {
+		tstBroker.Finish()
+		close(closedCh)
+		close(skipCh)
+	}()
+
+	sub.EXPECT().Types().AnyTimes().Return(nil)
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+
+	k1 := tstBroker.Subscribe(sub)
+	assert.NotZero(t, k1)
+
+	evnt := eventspb.BusEvent{
+		Version: 2,
+		Id:      "id-1",
+		Block:   "1",
+		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
+		Event: &eventspb.BusEvent_TimeUpdate{
+			TimeUpdate: &eventspb.TimeUpdate{
+				Timestamp: 1628173151,
+			},
+		},
+	}
+
+	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
+	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
+
+	eg, ctx := errgroup.WithContext(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
+	eg.Go(func() error {
+		return tstBroker.Receive(ctx)
+	})
+
+	var numOfRetries int
+	for {
+		err := tstBroker.sock.Dial(tstBroker.dialAddr)
+		if err == nil {
+			break
+		}
+
+		if err != mangosErr.ErrConnRefused {
+			continue
+		}
+
+		if numOfRetries < 5 {
+			numOfRetries++
+			time.Sleep(time.Microsecond * 500)
+			continue
+		}
+
+		t.Fatal(err)
+	}
+
+	b, err := proto.Marshal(&evnt)
+	assert.NoError(t, err)
+
+	err = tstBroker.sock.Send(b)
+	assert.NoError(t, err)
+
+	eg.Go(func() error {
+		time.Sleep(time.Second * 2)
+		return fmt.Errorf("test has timed out")
+	})
+
+	err = eg.Wait()
+	assert.EqualError(t, err, "mismatched BusEvent version received: 2, want 1")
+
+	cancel()
 }
 
 func testStopCtx(t *testing.T) {
@@ -633,4 +618,8 @@ func (e evt) Sequence() uint64 {
 
 func (e evt) TraceID() string {
 	return e.id
+}
+
+func (e evt) StreamMessage() *eventspb.BusEvent {
+	return nil
 }

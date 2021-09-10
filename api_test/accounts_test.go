@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	pb "code.vegaprotocol.io/data-node/proto"
-	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
+	pb "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestGetPartyAccounts(t *testing.T) {
@@ -25,14 +25,16 @@ func TestGetPartyAccounts(t *testing.T) {
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		acc := be.GetAccount()
 		require.NotNil(t, acc)
+		balance, _ := num.UintFromString(acc.Balance, 10)
 		e := events.NewAccountEvent(ctx, types.Account{
-			Id:       acc.Id,
+			ID:       acc.Id,
 			Owner:    acc.Owner,
-			Balance:  num.NewUint(acc.Balance),
+			Balance:  balance,
 			Asset:    acc.Asset,
-			MarketId: acc.MarketId,
+			MarketID: acc.MarketId,
 			Type:     acc.Type,
 		})
+
 		return e, nil
 	}, "account-events.golden")
 

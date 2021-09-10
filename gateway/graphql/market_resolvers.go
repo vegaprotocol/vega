@@ -5,9 +5,9 @@ import (
 	"errors"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
 	"code.vegaprotocol.io/data-node/vegatime"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 type myMarketResolver VegaResolverRoot

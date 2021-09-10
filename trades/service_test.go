@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/trades/mocks"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -31,13 +31,12 @@ func getTestService(t *testing.T) *testService {
 	trade := mocks.NewMockTradeStore(ctrl)
 	pos := mocks.NewMockPositionsPlugin(ctrl)
 	log := logging.NewTestLogger()
-	svc, err := trades.NewService(
+	svc := trades.NewService(
 		log,
 		trades.NewDefaultConfig(),
 		trade,
 		pos,
 	)
-	assert.NoError(t, err)
 	return &testService{
 		Svc:   svc,
 		ctx:   ctx,
@@ -61,9 +60,9 @@ func TestGetByMarket(t *testing.T) {
 	invalid := "LTC/DEC19"
 	expErr := errors.New("phobos communications link interrupted")
 	expect := []*types.Trade{
-		{Type: types.Trade_TYPE_DEFAULT, Id: "A", MarketId: market, Price: 100},
-		{Type: types.Trade_TYPE_DEFAULT, Id: "B", MarketId: market, Price: 200},
-		{Type: types.Trade_TYPE_DEFAULT, Id: "C", MarketId: market, Price: 300},
+		{Type: types.Trade_TYPE_DEFAULT, Id: "A", MarketId: market, Price: "100"},
+		{Type: types.Trade_TYPE_DEFAULT, Id: "B", MarketId: market, Price: "200"},
+		{Type: types.Trade_TYPE_DEFAULT, Id: "C", MarketId: market, Price: "300"},
 	}
 
 	ui0, ui1, uiDefault := uint64(0), uint64(1), svc.Config.PageSizeDefault
@@ -93,12 +92,12 @@ func TestTradeService_GetByParty(t *testing.T) {
 
 	expect := map[string][]*types.Trade{
 		partyA: {
-			{Type: types.Trade_TYPE_DEFAULT, Id: "A", Buyer: partyA, Seller: partyB, Price: 100},
-			{Type: types.Trade_TYPE_DEFAULT, Id: "B", Buyer: partyB, Seller: partyA, Price: 200},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "A", Buyer: partyA, Seller: partyB, Price: "100"},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "B", Buyer: partyB, Seller: partyA, Price: "200"},
 		},
 		partyB: {
-			{Type: types.Trade_TYPE_DEFAULT, Id: "C", Buyer: partyB, Seller: partyA, Price: 100},
-			{Type: types.Trade_TYPE_DEFAULT, Id: "D", Buyer: partyA, Seller: partyB, Price: 200},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "C", Buyer: partyB, Seller: partyA, Price: "100"},
+			{Type: types.Trade_TYPE_DEFAULT, Id: "D", Buyer: partyA, Seller: partyB, Price: "200"},
 		},
 		invalid: nil,
 	}
@@ -143,7 +142,7 @@ func testObserveTradesSuccess(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketId: market,
-			Price:    1000,
+			Price:    "1000",
 			Size:     1,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -152,7 +151,7 @@ func testObserveTradesSuccess(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketId: market,
-			Price:    1200,
+			Price:    "1200",
 			Size:     2,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -194,7 +193,7 @@ func testObserveTradesNoWrite(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketId: market,
-			Price:    1000,
+			Price:    "1000",
 			Size:     1,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -203,7 +202,7 @@ func testObserveTradesNoWrite(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketId: market,
-			Price:    1200,
+			Price:    "1200",
 			Size:     2,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -250,7 +249,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketId: market,
-			Price:    1000,
+			Price:    "1000",
 			Size:     1,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -259,7 +258,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketId: market,
-			Price:    1200,
+			Price:    "1200",
 			Size:     2,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -268,7 +267,7 @@ func testObserveTradesFilterSuccess(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade3",
 			MarketId: filterMarket,
-			Price:    1200,
+			Price:    "1200",
 			Size:     2,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -313,7 +312,7 @@ func testObserveTradesFilterNone(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade1",
 			MarketId: market,
-			Price:    1000,
+			Price:    "1000",
 			Size:     1,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -322,7 +321,7 @@ func testObserveTradesFilterNone(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade2",
 			MarketId: market,
-			Price:    1200,
+			Price:    "1200",
 			Size:     2,
 			Buyer:    buyer,
 			Seller:   seller,
@@ -331,7 +330,7 @@ func testObserveTradesFilterNone(t *testing.T) {
 			Type:     types.Trade_TYPE_DEFAULT,
 			Id:       "trade3",
 			MarketId: filterMarket,
-			Price:    1200,
+			Price:    "1200",
 			Size:     2,
 			Buyer:    buyer,
 			Seller:   seller,

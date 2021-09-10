@@ -4,11 +4,11 @@ import (
 	"encoding/hex"
 	"time"
 
-	"code.vegaprotocol.io/data-node/events"
-	ptypes "code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
+	ptypes "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"go.uber.org/zap"
 )

@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/subscribers"
+	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
+
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/golang/mock/gomock"
 )
@@ -82,6 +84,10 @@ func (m meStub) Type() events.Type {
 
 func (m meStub) MarketEvent() string {
 	return m.str
+}
+
+func (m meStub) StreamMessage() *eventspb.BusEvent {
+	return &eventspb.BusEvent{}
 }
 
 func (m meStub) SetSequenceID(s uint64) {}

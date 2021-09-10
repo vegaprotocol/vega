@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	types "code.vegaprotocol.io/protos/vega"
 )
 
 type allResolver struct {
@@ -39,6 +39,20 @@ func (r *allResolver) getAssetByID(ctx context.Context, id string) (*types.Asset
 		return nil, err
 	}
 	return res.Asset, nil
+}
+
+func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, error) {
+	if len(id) <= 0 {
+		return nil, ErrMissingNodeID
+	}
+	resp, err := r.clt.GetNodeByID(
+		ctx, &protoapi.GetNodeByIDRequest{Id: id})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Node, nil
+
 }
 
 func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {

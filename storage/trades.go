@@ -9,7 +9,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"
@@ -357,14 +357,14 @@ func (ts *Trade) GetByOrderID(ctx context.Context, orderID string, skip, limit u
 }
 
 // GetMarkPrice returns the current market price, for a requested market.
-func (ts *Trade) GetMarkPrice(ctx context.Context, market string) (uint64, error) {
+func (ts *Trade) GetMarkPrice(ctx context.Context, market string) (string, error) {
 	recentTrade, err := ts.GetByMarket(ctx, market, 0, 1, true)
 	if err != nil {
-		return 0, err
+		return "0", err
 	}
 
 	if len(recentTrade) == 0 {
-		return 0, errors.New("no trades available when getting market price")
+		return "0", errors.New("no trades available when getting market price")
 	}
 
 	return recentTrade[0].Price, nil

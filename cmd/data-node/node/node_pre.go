@@ -2,18 +2,23 @@ package node
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/delegations"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
@@ -21,12 +26,15 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
-	"code.vegaprotocol.io/data-node/stats"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+
+	"google.golang.org/grpc"
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
@@ -43,10 +51,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 
 	conf := l.cfgwatchr.Get()
-
-	if flagProvided("--no-stores") {
-		conf.StoresEnabled = false
-	}
 
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
@@ -79,24 +83,17 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 			logging.Uint64("nofile", l.conf.UlimitNOFile))
 	}
 
-	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
-
 	// set up storage, this should be persistent
 	if err := l.setupStorages(); err != nil {
 		return err
 	}
 	l.setupSubscibers()
 
-	if !l.conf.StoresEnabled {
-		l.Log.Info("node setted up without badger store support")
-	} else {
-		l.Log.Info("node setted up with badger store support")
-	}
-
 	return nil
 }
 
 func (l *NodeCommand) setupSubscibers() {
+	l.timeUpdateSub = subscribers.NewTimeSub(l.ctx, l.timeService, l.Log, true)
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
@@ -112,13 +109,17 @@ func (l *NodeCommand) setupSubscibers() {
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, l.Log, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
+	l.validatorUpdateSub = subscribers.NewValidatorUpdateSub(l.ctx, l.nodeStore, l.Log, true)
+	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
+	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
+	l.rewardsSub = subscribers.NewRewards(l.ctx, l.Log, true)
+	l.checkpointSub = subscribers.NewCheckpointSub(l.ctx, l.Log, l.checkpointStore, true)
 }
 
 func (l *NodeCommand) setupStorages() (err error) {
 	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
 	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
 
-	// always enabled market,parties etc stores as they are in memory or boths use them
 	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
@@ -127,15 +128,6 @@ func (l *NodeCommand) setupStorages() (err error) {
 		return
 	}
 	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
-		return
-	}
-
-	// if stores are not enabled, initialise the noop stores and do nothing else
-	if !l.conf.StoresEnabled {
-		l.orderStore = storage.NewNoopOrders(l.Log, l.conf.Storage)
-		l.tradeStore = storage.NewNoopTrades(l.Log, l.conf.Storage)
-		l.accounts = storage.NewNoopAccounts(l.Log, l.conf.Storage)
-		l.candleStore = storage.NewNoopCandles(l.Log, l.conf.Storage)
 		return
 	}
 
@@ -152,6 +144,13 @@ func (l *NodeCommand) setupStorages() (err error) {
 	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage, l.cancel); err != nil {
 		return
 	}
+	if l.checkpointStore, err = storage.NewCheckpoints(l.Log, l.conf.Storage, l.cancel); err != nil {
+		return
+	}
+
+	l.nodeStore = storage.NewNode(l.Log, l.conf.Storage)
+	l.epochStore = storage.NewEpoch(l.Log, l.nodeStore, l.conf.Storage)
+	l.delegationStore = storage.NewDelegations(l.Log, l.conf.Storage)
 
 	l.cfgwatchr.OnConfigUpdate(
 		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },
@@ -163,7 +162,9 @@ func (l *NodeCommand) setupStorages() (err error) {
 		func(cfg config.Config) { l.riskStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketDataStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.marketStore.ReloadConf(cfg.Storage) },
-		func(cfg config.Config) { l.stats.ReloadConf(cfg.Stats) },
+		func(cfg config.Config) { l.nodeStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.epochStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.delegationStore.ReloadConf(cfg.Storage) },
 	)
 
 	return
@@ -178,45 +179,30 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		}
 	}()
 
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
+	if err != nil {
+		l.Log.Error("unable to initialise broker", logging.Error(err))
+		return err
+	}
+
 	// plugins
 	l.settlePlugin = plugins.NewPositions(l.ctx)
 	l.notaryPlugin = plugins.NewNotary(l.ctx)
 	l.assetPlugin = plugins.NewAsset(l.ctx)
 	l.withdrawalPlugin = plugins.NewWithdrawal(l.ctx)
 	l.depositPlugin = plugins.NewDeposit(l.ctx)
-
 	l.netParamsService = netparams.NewService(l.ctx)
 	l.liquidityService = liquidity.NewService(l.ctx, l.Log, l.conf.Liquidity)
 	l.oracleService = oracles.NewService(l.ctx)
-
-	l.broker = broker.New(l.ctx)
-	l.broker.SubscribeBatch(
-		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
-		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
-		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
-		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
-		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
-		l.liquidityService, l.marketUpdatedSub, l.oracleService)
+	l.stakingService = staking.NewService(l.ctx, l.Log)
 
 	// start services
-	if l.candleService, err = candles.NewService(l.Log, l.conf.Candles, l.candleStore); err != nil {
-		return
-	}
-
-	if l.orderService, err = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService); err != nil {
-		return
-	}
-
-	if l.tradeService, err = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin); err != nil {
-		return
-	}
-	if l.marketService, err = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub); err != nil {
-		return
-	}
+	l.candleService = candles.NewService(l.Log, l.conf.Candles, l.candleStore)
+	l.tradeService = trades.NewService(l.Log, l.conf.Trades, l.tradeStore, l.settlePlugin)
+	l.marketService = markets.NewService(l.Log, l.conf.Markets, l.marketStore, l.orderStore, l.marketDataStore, l.marketDepthSub)
 	l.riskService = risk.NewService(l.Log, l.conf.Risk, l.riskStore, l.marketStore, l.marketDataStore)
 	l.governanceService = governance.NewService(l.Log, l.conf.Governance, l.broker, l.governanceSub, l.voteSub)
-
-	// last assignment to err, no need to check here, if something went wrong, we'll know about it
+	l.orderService = orders.NewService(l.Log, l.conf.Orders, l.orderStore, l.timeService)
 	l.feeService = fee.NewService(l.Log, l.conf.Fee, l.marketStore, l.marketDataStore)
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
@@ -224,6 +210,30 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
+	l.epochService = epochs.NewService(l.Log, l.conf.Epochs, l.epochStore)
+	l.delegationService = delegations.NewService(l.Log, l.conf.Delegations, l.delegationStore)
+	l.nodeService = nodes.NewService(l.Log, l.conf.Nodes, l.nodeStore, l.epochStore)
+
+	l.broker.SubscribeBatch(
+		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
+		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
+		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
+		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
+		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
+		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub,
+		l.validatorUpdateSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
+		l.stakingService, l.checkpointSub,
+	)
+
+	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
+	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())
+	if err != nil {
+		return err
+	}
+
+	l.vegaTradingServiceClient = vegaprotoapi.NewTradingServiceClient(conn)
+
+	l.checkpointSvc = checkpoint.NewService(l.Log, l.conf.Checkpoint, l.checkpointStore)
 
 	// setup config reloads for all services /etc
 	l.setupConfigWatchers()
@@ -246,5 +256,9 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.transfersService.ReloadConf(cfg.Transfers) },
 		func(cfg config.Config) { l.accountsService.ReloadConf(cfg.Accounts) },
 		func(cfg config.Config) { l.partyService.ReloadConf(cfg.Parties) },
+		func(cfg config.Config) { l.nodeService.ReloadConf(cfg.Nodes) },
+		func(cfg config.Config) { l.epochService.ReloadConf(cfg.Epochs) },
+		func(cfg config.Config) { l.delegationService.ReloadConf(cfg.Delegations) },
+		func(cfg config.Config) { l.checkpointSvc.ReloadConf(cfg.Checkpoint) },
 	)
 }

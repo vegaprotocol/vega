@@ -7,9 +7,9 @@ import (
 	"context"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/plugins"
-	"code.vegaprotocol.io/data-node/types/num"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"

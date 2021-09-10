@@ -3,8 +3,8 @@ package subscribers
 import (
 	"context"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/events"
 )
 
 type ME interface {

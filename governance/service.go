@@ -6,33 +6,29 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/broker"
-	"code.vegaprotocol.io/data-node/commands"
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
 	"code.vegaprotocol.io/data-node/subscribers"
-
-	uuid "github.com/satori/go.uuid"
+	proto "code.vegaprotocol.io/protos/vega"
 )
 
 var (
 	ErrProposalNotFound = errors.New("proposal not found")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/data-node EventBus
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/event_bus_mock.go -package mocks code.vegaprotocol.io/data-node/governance EventBus
 type EventBus interface {
 	Subscribe(s broker.Subscriber) int
 	Unsubscribe(id int)
 }
 
 // GovernanceDataSub - the subscriber that will be aggregating all governance data, used in non-stream calls
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_sub_mock.go -package mocks code.vegaprotocol.io/data-node GovernanceDataSub
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/governance_data_sub_mock.go -package mocks code.vegaprotocol.io/data-node/governance GovernanceDataSub
 type GovernanceDataSub interface {
 	Filter(uniqueVotes bool, filters ...subscribers.ProposalFilter) []*proto.GovernanceData
 }
 
 // VoteSub - subscriber containing all votes, which we can filter out
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_sub_mock.go -package mocks code.vegaprotocol.io/data-node VoteSub
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/vote_sub_mock.go -package mocks code.vegaprotocol.io/data-node/governance VoteSub
 type VoteSub interface {
 	Filter(filters ...subscribers.VoteFilter) []*proto.Vote
 }
@@ -322,33 +318,4 @@ func (s *Svc) GetNewAssetProposals(inState *proto.Proposal_State) []*proto.Gover
 		filters = append(filters, subscribers.ProposalByState(*inState))
 	}
 	return s.gov.Filter(true, filters...)
-}
-
-// PrepareProposal performs basic validation and bundles together fields required for a proposal
-func (s *Svc) PrepareProposal(
-	_ context.Context, reference string, terms *proto.ProposalTerms,
-) (*commandspb.ProposalSubmission, error) {
-	if len(reference) <= 0 {
-		reference = uuid.NewV4().String()
-	}
-
-	cmd := &commandspb.ProposalSubmission{
-		Reference: reference,
-		Terms:     terms,
-	}
-
-	if err := commands.CheckProposalSubmission(cmd); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
-}
-
-// PrepareVote - some additional validation on the vote message we're preparing
-func (s *Svc) PrepareVote(cmd *commandspb.VoteSubmission) (*commandspb.VoteSubmission, error) {
-	if err := commands.CheckVoteSubmission(cmd); err != nil {
-		return nil, err
-	}
-
-	return cmd, nil
 }

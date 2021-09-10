@@ -2,10 +2,12 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/data-node/events"
+	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/vega/events"
 )
 
 // Subscriber interface allows pushing values to subscribers, can be set to
@@ -28,10 +30,10 @@ type Subscriber interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/broker_mock.go -package mocks code.vegaprotocol.io/data-node/broker BrokerI
 type BrokerI interface {
 	Send(event events.Event)
-	SendBatch(events []events.Event)
 	Subscribe(s Subscriber) int
 	SubscribeBatch(subs ...Subscriber)
 	Unsubscribe(k int)
+	Receive(ctx context.Context) error
 }
 
 type subscription struct {
@@ -52,19 +54,31 @@ type Broker struct {
 	keys   []int
 	eChans map[events.Type]chan []events.Event
 
-	seqGen *gen
+	socketServer *socketServer
+	quit         chan struct{}
 }
 
 // New creates a new base broker
-func New(ctx context.Context) *Broker {
-	return &Broker{
-		ctx:    ctx,
-		tSubs:  map[events.Type]map[int]*subscription{},
-		subs:   map[int]subscription{},
-		keys:   []int{},
-		eChans: map[events.Type]chan []events.Event{},
-		seqGen: newGen(),
+func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
+
+	socketServer, err := newSocketServer(log, &config.SocketConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
 	}
+
+	b := &Broker{
+		ctx:          ctx,
+		tSubs:        map[events.Type]map[int]*subscription{},
+		subs:         map[int]subscription{},
+		keys:         []int{},
+		eChans:       map[events.Type]chan []events.Event{},
+		socketServer: socketServer,
+		quit:         make(chan struct{}),
+	}
+
+	return b, nil
 }
 
 func (b *Broker) sendChannel(sub Subscriber, evts []events.Event) {
@@ -165,20 +179,9 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 	}(ch, t)
 }
 
-// SendBatch sends a slice of events to subscribers that can handle the events in the slice
-// the events don't have to be of the same type, and most subscribers will ignore unknown events
-// but this will slow down those subscribers, so avoid doing silly things
-func (b *Broker) SendBatch(events []events.Event) {
-	if len(events) == 0 {
-		return
-	}
-	evts := b.seqGen.setSequence(events...)
-	b.startSending(events[0].Type(), evts)
-}
-
 // Send sends an event to all subscribers
 func (b *Broker) Send(event events.Event) {
-	b.startSending(event.Type(), b.seqGen.setSequence(event))
+	b.startSending(event.Type(), []events.Event{event})
 }
 
 // simplified version for better performance - unfortunately, we'll still need to copy the map
@@ -307,5 +310,24 @@ func (b *Broker) rmSubs(keys ...int) {
 		}
 		delete(b.subs, k)
 		b.keys = append(b.keys, k)
+	}
+}
+
+func (b *Broker) Receive(ctx context.Context) error {
+	if err := b.socketServer.listen(); err != nil {
+		return err
+	}
+
+	receiveCh, errCh := b.socketServer.receive(ctx)
+
+	for e := range receiveCh {
+		b.Send(e)
+	}
+
+	select {
+	case err := <-errCh:
+		return err
+	default:
+		return nil
 	}
 }

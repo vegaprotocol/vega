@@ -5,9 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto"
-	v1 "code.vegaprotocol.io/data-node/proto/commands/v1"
-	context "context"
+	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -36,10 +34,10 @@ func (m *MockLiquidityService) EXPECT() *MockLiquidityServiceMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockLiquidityService) Get(arg0, arg1 string) ([]proto.LiquidityProvision, error) {
+func (m *MockLiquidityService) Get(arg0, arg1 string) ([]vega.LiquidityProvision, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0, arg1)
-	ret0, _ := ret[0].([]proto.LiquidityProvision)
+	ret0, _ := ret[0].([]vega.LiquidityProvision)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -48,18 +46,4 @@ func (m *MockLiquidityService) Get(arg0, arg1 string) ([]proto.LiquidityProvisio
 func (mr *MockLiquidityServiceMockRecorder) Get(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockLiquidityService)(nil).Get), arg0, arg1)
-}
-
-// PrepareLiquidityProvisionSubmission mocks base method
-func (m *MockLiquidityService) PrepareLiquidityProvisionSubmission(arg0 context.Context, arg1 *v1.LiquidityProvisionSubmission) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrepareLiquidityProvisionSubmission", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PrepareLiquidityProvisionSubmission indicates an expected call of PrepareLiquidityProvisionSubmission
-func (mr *MockLiquidityServiceMockRecorder) PrepareLiquidityProvisionSubmission(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareLiquidityProvisionSubmission", reflect.TypeOf((*MockLiquidityService)(nil).PrepareLiquidityProvisionSubmission), arg0, arg1)
 }

@@ -19,14 +19,14 @@ command, there is no need to run `go get` or `go install` to fetch or install
 The file `candles/service.go` has:
 
 ```go
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/vega/candles CandleStore
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/candle_store_mock.go -package mocks code.vegaprotocol.io/data-node/candles CandleStore
 type CandleStore interface { /* ... */ }
 ```
 
 In order to recreate just the candle mocks:
 
 ```bash
-cd .../go/src/vega/candles # trading-core
+cd .../go/src/data-node/candles
 rm -rf mocks
 go generate .
 git diff # hopefully no differences

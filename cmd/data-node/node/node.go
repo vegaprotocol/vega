@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,7 +13,10 @@ import (
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
+	"code.vegaprotocol.io/data-node/delegations"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway/server"
 	"code.vegaprotocol.io/data-node/governance"
@@ -21,20 +25,24 @@ import (
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/risk"
-	"code.vegaprotocol.io/data-node/stats"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	types "code.vegaprotocol.io/protos/vega"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type AccountStore interface {
@@ -80,24 +88,36 @@ type NodeCommand struct {
 	partyStore            *storage.Party
 	riskStore             *storage.Risk
 	transferResponseStore *storage.TransferResponse
+	nodeStore             *storage.Node
+	epochStore            *storage.Epoch
+	delegationStore       *storage.Delegations
+	checkpointStore       *storage.Checkpoints
+
+	vegaTradingServiceClient vegaprotoapi.TradingServiceClient
 
 	broker *broker.Broker
 
-	transferSub      *subscribers.TransferResponse
-	marketEventSub   *subscribers.MarketEvent
-	orderSub         *subscribers.OrderEvent
-	accountSub       *subscribers.AccountSub
-	partySub         *subscribers.PartySub
-	tradeSub         *subscribers.TradeSub
-	marginLevelSub   *subscribers.MarginLevelSub
-	governanceSub    *subscribers.GovernanceDataSub
-	voteSub          *subscribers.VoteSub
-	marketDataSub    *subscribers.MarketDataSub
-	newMarketSub     *subscribers.Market
-	marketUpdatedSub *subscribers.MarketUpdated
-	candleSub        *subscribers.CandleSub
-	riskFactorSub    *subscribers.RiskFactorSub
-	marketDepthSub   *subscribers.MarketDepthBuilder
+	transferSub          *subscribers.TransferResponse
+	marketEventSub       *subscribers.MarketEvent
+	orderSub             *subscribers.OrderEvent
+	accountSub           *subscribers.AccountSub
+	partySub             *subscribers.PartySub
+	tradeSub             *subscribers.TradeSub
+	marginLevelSub       *subscribers.MarginLevelSub
+	governanceSub        *subscribers.GovernanceDataSub
+	voteSub              *subscribers.VoteSub
+	marketDataSub        *subscribers.MarketDataSub
+	newMarketSub         *subscribers.Market
+	marketUpdatedSub     *subscribers.MarketUpdated
+	candleSub            *subscribers.CandleSub
+	riskFactorSub        *subscribers.RiskFactorSub
+	marketDepthSub       *subscribers.MarketDepthBuilder
+	validatorUpdateSub   *subscribers.ValidatorUpdateSub
+	delegationBalanceSub *subscribers.DelegationBalanceSub
+	epochUpdateSub       *subscribers.EpochUpdateSub
+	timeUpdateSub        *subscribers.Time
+	rewardsSub           *subscribers.RewardCounters
+	checkpointSub        *subscribers.CheckpointSub
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc
@@ -116,15 +136,17 @@ type NodeCommand struct {
 	eventService      *subscribers.Service
 	netParamsService  *netparams.Service
 	oracleService     *oracles.Service
+	nodeService       *nodes.Service
+	epochService      *epochs.Service
+	delegationService *delegations.Service
+	stakingService    *staking.Service
+	checkpointSvc     *checkpoint.Svc
 
 	pproffhandlr *pprof.Pprofhandler
 	configPath   string
 	conf         config.Config
-	stats        *stats.Stats
 	Log          *logging.Logger
 	cfgwatchr    *config.Watcher
-
-	mktscfg []types.Market
 
 	// plugins
 	settlePlugin     *plugins.Positions
@@ -137,7 +159,7 @@ type NodeCommand struct {
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWalletPassphrase string, args []string) error {
+func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, args []string) error {
 	l.cfgwatchr = cfgwatchr
 
 	l.conf, l.configPath = cfgwatchr.Get(), rootPath
@@ -166,7 +188,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	grpcServer := api.NewGRPCServer(
 		l.Log,
 		l.conf.API,
-		l.stats,
+		l.vegaTradingServiceClient,
 		l.timeService,
 		l.marketService,
 		l.partyService,
@@ -187,6 +209,12 @@ func (l *NodeCommand) runNode(args []string) error {
 		l.depositPlugin,
 		l.marketDepthSub,
 		l.netParamsService,
+		l.nodeService,
+		l.epochService,
+		l.delegationService,
+		l.rewardsSub,
+		l.stakingService,
+		l.checkpointSvc,
 	)
 
 	// watch configs
@@ -194,57 +222,47 @@ func (l *NodeCommand) runNode(args []string) error {
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 	)
 
+	ctx, cancel := context.WithCancel(l.ctx)
+	eg, ctx := errgroup.WithContext(ctx)
+
 	// start the grpc server
-	go grpcServer.Start()
-	metrics.Start(l.conf.Metrics)
+	eg.Go(func() error { return grpcServer.Start(ctx, nil) })
 
 	// start gateway
-	var (
-		gty *server.Server
-	)
 	if l.conf.GatewayEnabled {
-		gty = server.New(l.conf.Gateway, l.Log)
-		if err := gty.Start(); err != nil {
-			return err
+		gty := server.New(l.conf.Gateway, l.Log)
+
+		eg.Go(func() error { return gty.Start(ctx) })
+	}
+
+	eg.Go(func() error {
+		return l.broker.Receive(ctx)
+	})
+
+	// waitSig will wait for a sigterm or sigint interrupt.
+	eg.Go(func() error {
+		var gracefulStop = make(chan os.Signal, 1)
+		signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
+
+		select {
+		case sig := <-gracefulStop:
+			l.Log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
+			cancel()
+		case <-ctx.Done():
+			return ctx.Err()
 		}
+
+		return nil
+	})
+
+	metrics.Start(l.conf.Metrics)
+
+	l.Log.Info("Vega data node startup complete")
+
+	err := eg.Wait()
+	if errors.Is(err, context.Canceled) {
+		return nil
 	}
 
-	l.Log.Info("Vega startup complete")
-	waitSig(l.ctx, l.Log)
-
-	// Clean up and close resources
-	grpcServer.Stop()
-
-	// cleanup gateway
-	if l.conf.GatewayEnabled {
-		if gty != nil {
-			gty.Stop()
-		}
-	}
-
-	return nil
-}
-
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-	case <-ctx.Done():
-		// nothing to do
-	}
-}
-
-func flagProvided(flag string) bool {
-	for _, v := range os.Args[1:] {
-		if v == flag {
-			return true
-		}
-	}
-
-	return false
+	return err
 }

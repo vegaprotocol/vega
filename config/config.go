@@ -9,8 +9,12 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
 	"code.vegaprotocol.io/data-node/assets"
+	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config/encoding"
+	"code.vegaprotocol.io/data-node/delegations"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/governance"
@@ -19,13 +23,13 @@ import (
 	"code.vegaprotocol.io/data-node/markets"
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
-	"code.vegaprotocol.io/data-node/stats"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -57,13 +61,16 @@ type Config struct {
 	Assets            assets.Config      `group:"Assets" namespace:"assets"`
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
-	Stats             stats.Config       `group:"Stats" namespace:"stats"`
 	Fee               fee.Config         `group:"Fee" namespace:"fee"`
+	Broker            broker.Config      `group:"Broker" namespace:"broker"`
+	Nodes             nodes.Config       `group:"Nodes" namespace:"nodes"`
+	Epochs            epochs.Config      `group:"Epochs" namespace:"epochs"`
+	Delegations       delegations.Config `group:"Delegations" namespace:"delegations"`
+	Checkpoint        checkpoint.Config  `group:"Checkpoint" namespace:"checkpoint"`
 	NetworkParameters netparams.Config
 
 	Pprof          pprof.Config  `group:"Pprof" namespace:"pprof"`
 	GatewayEnabled encoding.Bool `long:"gateway-enabled" choice:"true" choice:"false" description:" "`
-	StoresEnabled  encoding.Bool `long:"stores-enabled" choice:"true" choice:"false" description:" "`
 	UlimitNOFile   uint64        `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
@@ -91,12 +98,14 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Governance:        governance.NewDefaultConfig(),
 		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
-		Stats:             stats.NewDefaultConfig(),
 		Subscribers:       subscribers.NewDefaultConfig(),
 		Fee:               fee.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
+		Broker:            broker.NewDefaultConfig(),
+		Epochs:            epochs.NewDefaultConfig(),
+		Nodes:             nodes.NewDefaultConfig(),
+		Delegations:       delegations.NewDefaultConfig(),
 		GatewayEnabled:    true,
-		StoresEnabled:     true,
 		UlimitNOFile:      8192,
 	}
 }

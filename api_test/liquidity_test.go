@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TestLiquidity_Get(t *testing.T) {
@@ -37,14 +37,14 @@ func TestLiquidity_Get(t *testing.T) {
 			b := types.LiquidityOrderReferenceFromProto(v)
 			sells = append(buys, b)
 		}
-
+		commitmentAmount, _ := num.UintFromString(lp.CommitmentAmount, 10)
 		e := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-			Id:               lp.Id,
-			PartyId:          lp.PartyId,
+			ID:               lp.Id,
+			Party:            lp.PartyId,
 			CreatedAt:        lp.CreatedAt,
 			UpdatedAt:        lp.UpdatedAt,
-			MarketId:         lp.MarketId,
-			CommitmentAmount: num.NewUint(lp.CommitmentAmount),
+			MarketID:         lp.MarketId,
+			CommitmentAmount: commitmentAmount,
 			Fee:              fee,
 			Sells:            sells,
 			Buys:             buys,

@@ -5,8 +5,7 @@
 package mocks
 
 import (
-	proto "code.vegaprotocol.io/data-node/proto"
-	v1 "code.vegaprotocol.io/data-node/proto/commands/v1"
+	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -50,10 +49,10 @@ func (mr *MockAccountsServiceMockRecorder) GetAccountSubscribersCount() *gomock.
 }
 
 // GetFeeInfrastructureAccounts mocks base method
-func (m *MockAccountsService) GetFeeInfrastructureAccounts(arg0 string) ([]*proto.Account, error) {
+func (m *MockAccountsService) GetFeeInfrastructureAccounts(arg0 string) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFeeInfrastructureAccounts", arg0)
-	ret0, _ := ret[0].([]*proto.Account)
+	ret0, _ := ret[0].([]*vega.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -65,10 +64,10 @@ func (mr *MockAccountsServiceMockRecorder) GetFeeInfrastructureAccounts(arg0 int
 }
 
 // GetMarketAccounts mocks base method
-func (m *MockAccountsService) GetMarketAccounts(arg0, arg1 string) ([]*proto.Account, error) {
+func (m *MockAccountsService) GetMarketAccounts(arg0, arg1 string) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketAccounts", arg0, arg1)
-	ret0, _ := ret[0].([]*proto.Account)
+	ret0, _ := ret[0].([]*vega.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -80,10 +79,10 @@ func (mr *MockAccountsServiceMockRecorder) GetMarketAccounts(arg0, arg1 interfac
 }
 
 // GetPartyAccounts mocks base method
-func (m *MockAccountsService) GetPartyAccounts(arg0, arg1, arg2 string, arg3 proto.AccountType) ([]*proto.Account, error) {
+func (m *MockAccountsService) GetPartyAccounts(arg0, arg1, arg2 string, arg3 vega.AccountType) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartyAccounts", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].([]*proto.Account)
+	ret0, _ := ret[0].([]*vega.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -95,10 +94,10 @@ func (mr *MockAccountsServiceMockRecorder) GetPartyAccounts(arg0, arg1, arg2, ar
 }
 
 // ObserveAccounts mocks base method
-func (m *MockAccountsService) ObserveAccounts(arg0 context.Context, arg1 int, arg2, arg3, arg4 string, arg5 proto.AccountType) (<-chan []*proto.Account, uint64) {
+func (m *MockAccountsService) ObserveAccounts(arg0 context.Context, arg1 int, arg2, arg3, arg4 string, arg5 vega.AccountType) (<-chan []*vega.Account, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveAccounts", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(<-chan []*proto.Account)
+	ret0, _ := ret[0].(<-chan []*vega.Account)
 	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
@@ -107,18 +106,4 @@ func (m *MockAccountsService) ObserveAccounts(arg0 context.Context, arg1 int, ar
 func (mr *MockAccountsServiceMockRecorder) ObserveAccounts(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveAccounts", reflect.TypeOf((*MockAccountsService)(nil).ObserveAccounts), arg0, arg1, arg2, arg3, arg4, arg5)
-}
-
-// PrepareWithdraw mocks base method
-func (m *MockAccountsService) PrepareWithdraw(arg0 context.Context, arg1 *v1.WithdrawSubmission) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrepareWithdraw", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PrepareWithdraw indicates an expected call of PrepareWithdraw
-func (mr *MockAccountsServiceMockRecorder) PrepareWithdraw(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareWithdraw", reflect.TypeOf((*MockAccountsService)(nil).PrepareWithdraw), arg0, arg1)
 }

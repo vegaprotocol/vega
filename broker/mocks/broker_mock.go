@@ -6,7 +6,8 @@ package mocks
 
 import (
 	broker "code.vegaprotocol.io/data-node/broker"
-	events "code.vegaprotocol.io/data-node/events"
+	events "code.vegaprotocol.io/vega/events"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -34,6 +35,20 @@ func (m *MockBrokerI) EXPECT() *MockBrokerIMockRecorder {
 	return m.recorder
 }
 
+// Receive mocks base method
+func (m *MockBrokerI) Receive(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Receive", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Receive indicates an expected call of Receive
+func (mr *MockBrokerIMockRecorder) Receive(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Receive", reflect.TypeOf((*MockBrokerI)(nil).Receive), arg0)
+}
+
 // Send mocks base method
 func (m *MockBrokerI) Send(arg0 events.Event) {
 	m.ctrl.T.Helper()
@@ -44,18 +59,6 @@ func (m *MockBrokerI) Send(arg0 events.Event) {
 func (mr *MockBrokerIMockRecorder) Send(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockBrokerI)(nil).Send), arg0)
-}
-
-// SendBatch mocks base method
-func (m *MockBrokerI) SendBatch(arg0 []events.Event) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SendBatch", arg0)
-}
-
-// SendBatch indicates an expected call of SendBatch
-func (mr *MockBrokerIMockRecorder) SendBatch(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBatch", reflect.TypeOf((*MockBrokerI)(nil).SendBatch), arg0)
 }
 
 // Subscribe mocks base method

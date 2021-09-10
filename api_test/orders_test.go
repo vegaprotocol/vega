@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"code.vegaprotocol.io/data-node/events"
-	apipb "code.vegaprotocol.io/data-node/proto/api"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
-	"code.vegaprotocol.io/data-node/types"
+	apipb "code.vegaprotocol.io/protos/data-node/api/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
 )
 
 func TestGetByOrderID(t *testing.T) {
@@ -21,9 +21,10 @@ func TestGetByOrderID(t *testing.T) {
 	conn, broker := NewTestServer(t, ctx, true)
 
 	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
-		order := be.GetOrder()
+		order, err := types.OrderFromProto(be.GetOrder())
 		require.NotNil(t, order)
-		e := events.NewOrderEvent(ctx, types.OrderFromProto(order))
+		require.NoError(t, err)
+		e := events.NewOrderEvent(ctx, order)
 		return e, nil
 	}, "orders-events.golden")
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/types/num"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"go.uber.org/zap"
 )

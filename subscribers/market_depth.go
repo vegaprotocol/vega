@@ -7,11 +7,11 @@ import (
 	"sort"
 	"sync"
 
-	"code.vegaprotocol.io/data-node/events"
 	"code.vegaprotocol.io/data-node/logging"
-	ptypes "code.vegaprotocol.io/data-node/proto"
-	"code.vegaprotocol.io/data-node/types"
-	"code.vegaprotocol.io/data-node/types/num"
+	ptypes "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type priceLevel struct {
@@ -92,7 +92,11 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
 		case OE:
-			mdb.updateMarketDepth(types.OrderFromProto(et.Order()))
+			order, err := types.OrderFromProto(et.Order())
+			if err != nil {
+				panic(err)
+			}
+			mdb.updateMarketDepth(order)
 		default:
 			mdb.log.Panic("Unknown event type in market depth builder", logging.String("Type", et.Type().String()))
 		}
@@ -129,7 +133,7 @@ func (md *MarketDepth) removeOrder(order *types.Order) error {
 	md.changes = append(md.changes, pl)
 
 	// Remove the orderID from the list of live orders
-	delete(md.liveOrders, order.Id)
+	delete(md.liveOrders, order.ID)
 	return nil
 }
 
@@ -141,7 +145,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 		side:        order.Side,
 	}
 
-	if order.Side == types.Side_SIDE_BUY {
+	if order.Side == types.SideBuy {
 		index := sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(order.Price) })
 		if index < len(md.buySide) {
 			// We need to go midslice
@@ -170,7 +174,7 @@ func (md *MarketDepth) createNewPriceLevel(order *types.Order) *priceLevel {
 func (md *MarketDepth) addOrder(order *types.Order) {
 	// Cache the orderID
 	orderCopy := order.Clone()
-	md.liveOrders[order.Id] = orderCopy
+	md.liveOrders[order.ID] = orderCopy
 
 	// Update the price level
 	pl := md.getPriceLevel(order.Side, order.Price)
@@ -207,7 +211,7 @@ func (md *MarketDepth) updateOrder(originalOrder, newOrder *types.Order) {
 
 func (md *MarketDepth) getPriceLevel(side types.Side, price *num.Uint) *priceLevel {
 	var i int
-	if side == types.Side_SIDE_BUY {
+	if side == types.SideBuy {
 		// buy side levels should be ordered in descending
 		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(price) })
 		if i < len(md.buySide) && md.buySide[i].price.EQ(price) {
@@ -225,7 +229,7 @@ func (md *MarketDepth) getPriceLevel(side types.Side, price *num.Uint) *priceLev
 
 func (md *MarketDepth) removePriceLevel(order *types.Order) {
 	var i int
-	if order.Side == types.Side_SIDE_BUY {
+	if order.Side == types.SideBuy {
 		// buy side levels should be ordered in descending
 		i = sort.Search(len(md.buySide), func(i int) bool { return md.buySide[i].price.LTE(order.Price) })
 		if i < len(md.buySide) && md.buySide[i].price.EQ(order.Price) {
@@ -250,47 +254,47 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	defer mdb.mu.Unlock()
 
 	// Non persistent and network orders do not matter
-	if order.Type == types.Order_TYPE_MARKET ||
-		order.TimeInForce == types.Order_TIME_IN_FORCE_FOK ||
-		order.TimeInForce == types.Order_TIME_IN_FORCE_IOC {
+	if order.Type == types.OrderTypeMarket ||
+		order.TimeInForce == types.OrderTimeInForceFOK ||
+		order.TimeInForce == types.OrderTimeInForceIOC {
 		return
 	}
 
 	// Orders that where not valid are ignored
-	if order.Status == types.Order_STATUS_UNSPECIFIED {
+	if order.Status == types.OrderStatusUnspecified {
 		return
 	}
 
 	// See if we already have a MarketDepth item for this market
-	md := mdb.marketDepths[order.MarketId]
+	md := mdb.marketDepths[order.MarketID]
 	if md == nil {
 		// First time we have an update for this market
 		// so we need to create a new MarketDepth
-		md = &MarketDepth{marketID: order.MarketId,
+		md = &MarketDepth{marketID: order.MarketID,
 			liveOrders: map[string]*types.Order{}}
-		mdb.marketDepths[order.MarketId] = md
+		mdb.marketDepths[order.MarketID] = md
 	}
 
 	// Initialise changes slice ready for new items
 	md.changes = []*priceLevel{}
 
 	// Do we know about this order already?
-	originalOrder := md.orderExists(order.Id)
+	originalOrder := md.orderExists(order.ID)
 	if originalOrder != nil {
 		// Check to see if we are updating the order or removing it
-		if order.Status == types.Order_STATUS_CANCELLED ||
-			order.Status == types.Order_STATUS_EXPIRED ||
-			order.Status == types.Order_STATUS_STOPPED ||
-			order.Status == types.Order_STATUS_FILLED ||
-			order.Status == types.Order_STATUS_PARTIALLY_FILLED ||
-			order.Status == types.Order_STATUS_REJECTED ||
-			order.Status == types.Order_STATUS_PARKED {
+		if order.Status == types.OrderStatusCancelled ||
+			order.Status == types.OrderStatusExpired ||
+			order.Status == types.OrderStatusStopped ||
+			order.Status == types.OrderStatusFilled ||
+			order.Status == types.OrderStatusPartiallyFilled ||
+			order.Status == types.OrderStatusRejected ||
+			order.Status == types.OrderStatusParked {
 			md.removeOrder(originalOrder)
 		} else {
 			md.updateOrder(originalOrder, order)
 		}
 	} else {
-		if order.Remaining > 0 && order.Status == types.Order_STATUS_ACTIVE {
+		if order.Remaining > 0 && order.Status == types.OrderStatusActive {
 			md.addOrder(order)
 		}
 	}
@@ -306,7 +310,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 
 	// Send out market depth updates to any listeners
 	for _, pl := range md.changes {
-		if pl.side == types.Side_SIDE_BUY {
+		if pl.side == types.SideBuy {
 			buyPtr = append(buyPtr, &types.PriceLevel{
 				Price:          pl.price.Clone(),
 				NumberOfOrders: pl.totalOrders,
@@ -322,7 +326,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	}
 
 	marketDepthUpdate := &types.MarketDepthUpdate{
-		MarketId:       order.MarketId,
+		MarketId:       order.MarketID,
 		Buy:            types.PriceLevels(buyPtr).IntoProto(),
 		Sell:           types.PriceLevels(sellPtr).IntoProto(),
 		SequenceNumber: md.sequenceNumber,

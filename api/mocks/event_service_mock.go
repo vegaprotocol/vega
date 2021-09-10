@@ -5,9 +5,9 @@
 package mocks
 
 import (
-	events "code.vegaprotocol.io/data-node/events"
-	v1 "code.vegaprotocol.io/data-node/proto/events/v1"
 	subscribers "code.vegaprotocol.io/data-node/subscribers"
+	v1 "code.vegaprotocol.io/protos/vega/events/v1"
+	events "code.vegaprotocol.io/vega/events"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"

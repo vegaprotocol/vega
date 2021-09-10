@@ -6,7 +6,7 @@ import (
 	"sync"
 	"testing"
 
-	types "code.vegaprotocol.io/data-node/proto"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/candles/mocks"
@@ -38,14 +38,11 @@ func getTestService(t *testing.T) *testService {
 	store := mocks.NewMockCandleStore(ctrl)
 	log := logging.NewTestLogger()
 	// create service, pass in mocks, ignore error
-	svc, err := candles.NewService(
+	svc := candles.NewService(
 		log,
 		candles.NewDefaultConfig(),
 		store,
 	)
-	if err != nil {
-		t.Fatalf("Unexpected error getting candle service: %+v", err)
-	}
 	return &testService{
 		Svc:   svc,
 		ctx:   ctx,
@@ -128,7 +125,7 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 		for i, it := range intervals {
 			ref := uint64(i + 1 + factor)
 			expectedCandles[market] = append(expectedCandles[market], &types.Candle{
-				Open:     ref,
+				Open:     fmt.Sprintf("%d", ref),
 				Interval: it,
 			})
 			svc.store.EXPECT().Subscribe(itMatcher{market: market, interval: it}).Times(1).Return(ref).Do(func(it *storage.InternalTransport) {
@@ -156,7 +153,7 @@ func testObserveCandleStoreGetCandles(t *testing.T) {
 				t.Fatalf("Failed to receive an observed candle")
 			}
 			assert.Equal(t, it, c.Interval)
-			assert.Equal(t, ref, c.Open)
+			assert.Equal(t, fmt.Sprintf("%d", ref), c.Open)
 		}
 	}
 	svc.cfunc() // cancel context, we've made all the calls we needed to make, let's wait for unsubscribe calls to complete

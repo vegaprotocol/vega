@@ -9,8 +9,9 @@ import (
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
+	"code.vegaprotocol.io/vega/types/num"
 
-	ptypes "code.vegaprotocol.io/data-node/proto"
+	ptypes "code.vegaprotocol.io/protos/vega"
 )
 
 var (
@@ -67,7 +68,7 @@ func NewService(
 	}
 }
 
-// ReloadConf update the market service internal configuration
+// ReloadConf update the risk service internal configuration
 func (s *Svc) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -112,9 +113,9 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *ptypes.Order) (*ptypes.
 		return nil, ErrInvalidOrderSide
 	}
 
-	f := rf.Short
+	f := num.DecimalFromFloat(rf.Short)
 	if order.Side == ptypes.Side_SIDE_BUY {
-		f = rf.Long
+		f = num.DecimalFromFloat(rf.Long)
 	}
 
 	asset, err := mkt.GetAsset()
@@ -123,17 +124,18 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *ptypes.Order) (*ptypes.
 	}
 
 	// now calculate margin maintenance
-	maintenanceMargin := float64(order.Size) * f * float64(mktData.MarkPrice)
+	markPrice, _ := num.DecimalFromString(mktData.MarkPrice)
+	maintenanceMargin := num.DecimalFromFloat(float64(order.Size)).Mul(f).Mul(markPrice)
 	// now we use the risk factors
 	return &ptypes.MarginLevels{
 		PartyId:                order.PartyId,
 		MarketId:               mkt.GetId(),
 		Asset:                  asset,
 		Timestamp:              0,
-		MaintenanceMargin:      uint64(maintenanceMargin),
-		SearchLevel:            uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel),
-		InitialMargin:          uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin),
-		CollateralReleaseLevel: uint64(maintenanceMargin * mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease),
+		MaintenanceMargin:      maintenanceMargin.String(),
+		SearchLevel:            maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.SearchLevel)).String(),
+		InitialMargin:          maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.InitialMargin)).String(),
+		CollateralReleaseLevel: maintenanceMargin.Mul(num.DecimalFromFloat(mkt.TradableInstrument.MarginCalculator.ScalingFactors.CollateralRelease)).String(),
 	}, nil
 }
 

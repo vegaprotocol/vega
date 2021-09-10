@@ -3,10 +3,39 @@ package gql
 import (
 	"fmt"
 
-	types "code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
-	oraclesv1 "code.vegaprotocol.io/data-node/proto/oracles/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
+
+func convertStakeLinkingTypeFromProto(
+	s eventspb.StakeLinking_Type) (StakeLinkingType, error) {
+	switch s {
+	case eventspb.StakeLinking_TYPE_LINK:
+		return StakeLinkingTypeLink, nil
+	case eventspb.StakeLinking_TYPE_UNLINK:
+		return StakeLinkingTypeUnlink, nil
+	default:
+		err := fmt.Errorf("failed to convert StakeLinkingType from Proto to GraphQL: %v", s)
+		return StakeLinkingType(""), err
+	}
+}
+
+func convertStakeLinkingStatusFromProto(
+	s eventspb.StakeLinking_Status) (StakeLinkingStatus, error) {
+	switch s {
+	case eventspb.StakeLinking_STATUS_PENDING:
+		return StakeLinkingStatusPending, nil
+	case eventspb.StakeLinking_STATUS_ACCEPTED:
+		return StakeLinkingStatusAccepted, nil
+	case eventspb.StakeLinking_STATUS_REJECTED:
+		return StakeLinkingStatusRejected, nil
+	default:
+		err := fmt.Errorf("failed to convert StakeLinkingStatus from Proto to GraphQL: %v", s)
+		return StakeLinkingStatus(""), err
+	}
+}
 
 func convertOracleSpecStatusFromProto(s oraclesv1.OracleSpec_Status) (OracleSpecStatus, error) {
 	switch s {
@@ -593,20 +622,6 @@ func convertSideFromProto(x types.Side) (Side, error) {
 	}
 }
 
-func convertPeggedReferenceToProto(x PeggedReference) (types.PeggedReference, error) {
-	switch x {
-	case PeggedReferenceMid:
-		return types.PeggedReference_PEGGED_REFERENCE_MID, nil
-	case PeggedReferenceBestBid:
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_BID, nil
-	case PeggedReferenceBestAsk:
-		return types.PeggedReference_PEGGED_REFERENCE_BEST_ASK, nil
-	default:
-		err := fmt.Errorf("failed to convert PeggedReference from GraphQL to Proto: %v", x)
-		return types.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED, err
-	}
-}
-
 func convertPeggedReferenceFromProto(x types.PeggedReference) (PeggedReference, error) {
 	switch x {
 	case types.PeggedReference_PEGGED_REFERENCE_MID:
@@ -675,19 +690,6 @@ func convertTradeTypeFromProto(x types.Trade_Type) (TradeType, error) {
 	default:
 		err := fmt.Errorf("failed to convert TradeType from Proto to GraphQL: %v", x)
 		return TradeTypeDefault, err
-	}
-}
-
-// convertVoteValueToProto converts a GraphQL enum to a Proto enum
-func convertVoteValueToProto(x VoteValue) (types.Vote_Value, error) {
-	switch x {
-	case VoteValueNo:
-		return types.Vote_VALUE_NO, nil
-	case VoteValueYes:
-		return types.Vote_VALUE_YES, nil
-	default:
-		err := fmt.Errorf("failed to convert VoteValue from GraphQL to Proto: %v", x)
-		return types.Vote_VALUE_UNSPECIFIED, err
 	}
 }
 

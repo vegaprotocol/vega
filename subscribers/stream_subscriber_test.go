@@ -5,11 +5,11 @@ import (
 	"sync"
 	"testing"
 
-	"code.vegaprotocol.io/data-node/events"
-	types "code.vegaprotocol.io/data-node/proto"
-	eventspb "code.vegaprotocol.io/data-node/proto/events/v1"
 	"code.vegaprotocol.io/data-node/subscribers"
-	dtypes "code.vegaprotocol.io/data-node/types"
+	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/events"
+	dtypes "code.vegaprotocol.io/vega/types"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -89,10 +89,10 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 	defer sub.cfunc()
 	set := []events.Event{
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id: "acc-1",
+			ID: "acc-1",
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id: "acc-2",
+			ID: "acc-2",
 		}),
 	}
 
@@ -112,7 +112,7 @@ func testUnfilteredWithEventsPush(t *testing.T) {
 	// we expect to see no events
 	assert.Equal(t, len(set), len(data))
 	last := events.NewAccountEvent(sub.ctx, dtypes.Account{
-		Id: "acc-3",
+		ID: "acc-3",
 	})
 
 	go getData()
@@ -134,12 +134,12 @@ func testFilteredNoValidEvents(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0, accMarketIDFilter("valid"))
 	set := []events.Event{
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc-1",
-			MarketId: "invalid",
+			ID:       "acc-1",
+			MarketID: "invalid",
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc-2",
-			MarketId: "also-invalid",
+			ID:       "acc-2",
+			MarketID: "also-invalid",
 		}),
 	}
 	sub.Push(set...)
@@ -161,12 +161,12 @@ func testFilteredSomeValidEvents(t *testing.T) {
 	defer sub.cfunc()
 	set := []events.Event{
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc-1",
-			MarketId: "invalid",
+			ID:       "acc-1",
+			MarketID: "invalid",
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc-2",
-			MarketId: "valid",
+			ID:       "acc-2",
+			MarketID: "valid",
 		}),
 	}
 
@@ -198,16 +198,16 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	sent, rec := make(chan struct{}), make(chan struct{})
 	set1 := []events.Event{
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc1",
-			MarketId: mID,
+			ID:       "acc1",
+			MarketID: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc2",
-			MarketId: mID,
+			ID:       "acc2",
+			MarketID: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc50",
-			MarketId: "other-market",
+			ID:       "acc50",
+			MarketID: "other-market",
 		}),
 	}
 	sendRoutine := func(ch chan struct{}, sub *tstStreamSub, set []events.Event) {
@@ -263,40 +263,40 @@ func testCloseChannelWrite(t *testing.T) {
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0, accMarketIDFilter(mID))
 	set := []events.Event{
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc1",
-			MarketId: mID,
+			ID:       "acc1",
+			MarketID: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc2",
-			MarketId: mID,
+			ID:       "acc2",
+			MarketID: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc50",
-			MarketId: "other-market",
+			ID:       "acc50",
+			MarketID: "other-market",
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc3",
-			MarketId: mID,
+			ID:       "acc3",
+			MarketID: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc4",
-			MarketId: mID,
+			ID:       "acc4",
+			MarketID: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc51",
-			MarketId: "other-market",
+			ID:       "acc51",
+			MarketID: "other-market",
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc5",
-			MarketId: "other-market",
+			ID:       "acc5",
+			MarketID: "other-market",
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc6",
-			MarketId: mID,
+			ID:       "acc6",
+			MarketID: mID,
 		}),
 		events.NewAccountEvent(sub.ctx, dtypes.Account{
-			Id:       "acc7",
-			MarketId: mID,
+			ID:       "acc7",
+			MarketID: mID,
 		}),
 	}
 	started := make(chan struct{})

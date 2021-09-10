@@ -9,25 +9,30 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
 	"code.vegaprotocol.io/data-node/candles"
+	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/contextutil"
+	"code.vegaprotocol.io/data-node/delegations"
+	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/netparams"
+	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/notary"
 	"code.vegaprotocol.io/data-node/oracles"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/risk"
-	"code.vegaprotocol.io/data-node/stats"
+	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	"golang.org/x/sync/errgroup"
 
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -38,9 +43,9 @@ import (
 type GRPCServer struct {
 	Config
 
-	log   *logging.Logger
-	srv   *grpc.Server
-	stats *stats.Stats
+	log                      *logging.Logger
+	srv                      *grpc.Server
+	vegaTradingServiceClient TradingServiceClient
 
 	accountsService         *accounts.Svc
 	candleService           *candles.Svc
@@ -61,7 +66,14 @@ type GRPCServer struct {
 	depositService          *plugins.Deposit
 	netParamsService        *netparams.Service
 	oracleService           *oracles.Service
+	stakingService          *staking.Service
+	tradingProxySvc         *tradingProxyService
 	tradingDataService      *tradingDataService
+	nodeService             *nodes.Service
+	epochService            *epochs.Service
+	delegationService       *delegations.Service
+	rewardsService          *subscribers.RewardCounters
+	checkpointSvc           *checkpoint.Svc
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
@@ -74,7 +86,7 @@ type GRPCServer struct {
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
-	stats *stats.Stats,
+	tradingServiceClient TradingServiceClient,
 	timeService *vegatime.Svc,
 	marketService MarketService,
 	partyService *parties.Svc,
@@ -95,6 +107,12 @@ func NewGRPCServer(
 	depositService *plugins.Deposit,
 	marketDepthService *subscribers.MarketDepthBuilder,
 	netParamsService *netparams.Service,
+	nodeService *nodes.Service,
+	epochService *epochs.Service,
+	delegationService *delegations.Service,
+	rewardsService *subscribers.RewardCounters,
+	stakingService *staking.Service,
+	checkpointSvc *checkpoint.Svc,
 ) *GRPCServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -102,31 +120,37 @@ func NewGRPCServer(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &GRPCServer{
-		log:                     log,
-		Config:                  config,
-		stats:                   stats,
-		orderService:            orderService,
-		liquidityService:        liquidityService,
-		tradeService:            tradeService,
-		candleService:           candleService,
-		timeService:             timeService,
-		marketService:           marketService,
-		partyService:            partyService,
-		accountsService:         accountsService,
-		transferResponseService: transferResponseService,
-		riskService:             riskService,
-		governanceService:       governanceService,
-		notaryService:           notaryService,
-		assetService:            assetService,
-		feeService:              feeService,
-		eventService:            eventService,
-		withdrawalService:       withdrawalService,
-		depositService:          depositService,
-		marketDepthService:      marketDepthService,
-		netParamsService:        netParamsService,
-		oracleService:           oracleService,
-		ctx:                     ctx,
-		cfunc:                   cfunc,
+		log:                      log,
+		Config:                   config,
+		vegaTradingServiceClient: tradingServiceClient,
+		orderService:             orderService,
+		liquidityService:         liquidityService,
+		tradeService:             tradeService,
+		candleService:            candleService,
+		timeService:              timeService,
+		marketService:            marketService,
+		partyService:             partyService,
+		accountsService:          accountsService,
+		transferResponseService:  transferResponseService,
+		riskService:              riskService,
+		governanceService:        governanceService,
+		notaryService:            notaryService,
+		assetService:             assetService,
+		feeService:               feeService,
+		eventService:             eventService,
+		withdrawalService:        withdrawalService,
+		depositService:           depositService,
+		marketDepthService:       marketDepthService,
+		netParamsService:         netParamsService,
+		oracleService:            oracleService,
+		nodeService:              nodeService,
+		epochService:             epochService,
+		delegationService:        delegationService,
+		rewardsService:           rewardsService,
+		stakingService:           stakingService,
+		checkpointSvc:            checkpointSvc,
+		ctx:                      ctx,
+		cfunc:                    cfunc,
 	}
 }
 
@@ -194,26 +218,46 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-// Start start the grpc server
-func (g *GRPCServer) Start() {
-
+func (g *GRPCServer) getTCPListener() (net.Listener, error) {
 	ip := g.IP
 	port := strconv.Itoa(g.Port)
 
 	g.log.Info("Starting gRPC based API", logging.String("addr", ip), logging.String("port", port))
 
-	lis, err := net.Listen("tcp", net.JoinHostPort(ip, port))
+	tpcLis, err := net.Listen("tcp", net.JoinHostPort(ip, port))
 	if err != nil {
-		g.log.Panic("Failure listening on gRPC port", logging.String("port", port), logging.Error(err))
+		return nil, err
+	}
+
+	return tpcLis, nil
+}
+
+// Start start the grpc server.
+// Uses default TCP listener if no provided.
+func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
+	if lis == nil {
+		tpcLis, err := g.getTCPListener()
+		if err != nil {
+			return err
+		}
+
+		lis = tpcLis
 	}
 
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	g.srv = grpc.NewServer(intercept)
 
+	tradingProxySvc := &tradingProxyService{
+		log:                  g.log,
+		conf:                 g.Config,
+		tradingServiceClient: g.vegaTradingServiceClient,
+	}
+	g.tradingProxySvc = tradingProxySvc
+	protoapi.RegisterTradingProxyServiceServer(g.srv, tradingProxySvc)
+
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,
 		Config:                  g.Config,
-		Stats:                   g.stats,
 		OrderService:            g.orderService,
 		TradeService:            g.tradeService,
 		CandleService:           g.candleService,
@@ -234,18 +278,32 @@ func (g *GRPCServer) Start() {
 		NetParamsService:        g.netParamsService,
 		LiquidityService:        g.liquidityService,
 		oracleService:           g.oracleService,
+		nodeService:             g.nodeService,
+		epochService:            g.epochService,
+		delegationService:       g.delegationService,
+		rewardsService:          g.rewardsService,
+		stakingService:          g.stakingService,
+		checkpointService:       g.checkpointSvc,
 	}
 	g.tradingDataService = tradingDataSvc
 	protoapi.RegisterTradingDataServiceServer(g.srv, tradingDataSvc)
 
-	err = g.srv.Serve(lis)
-	if err != nil {
-		g.log.Panic("Failure serving gRPC API", logging.Error(err))
-	}
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error {
+		<-ctx.Done()
+		g.stop()
+		return ctx.Err()
+	})
+
+	eg.Go(func() error {
+		return g.srv.Serve(lis)
+	})
+
+	return eg.Wait()
 }
 
-// Stop stops the GRPC server
-func (g *GRPCServer) Stop() {
+func (g *GRPCServer) stop() {
 	if g.srv == nil {
 		return
 	}

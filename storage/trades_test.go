@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/storage"
+	types "code.vegaprotocol.io/protos/vega"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -185,7 +185,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		MarketId:    testMarket,
 		PartyId:     testPartyA,
 		Side:        types.Side_SIDE_SELL,
-		Price:       100,
+		Price:       "100",
 		Size:        1000,
 		Remaining:   1000,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -198,7 +198,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 		MarketId:    testMarket,
 		PartyId:     testPartyB,
 		Side:        types.Side_SIDE_BUY,
-		Price:       100,
+		Price:       "100",
 		Size:        100,
 		Remaining:   100,
 		TimeInForce: types.Order_TIME_IN_FORCE_GTC,
@@ -209,7 +209,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	trade1 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-1",
-		Price:     100,
+		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
 		Buyer:     testPartyB,
@@ -223,7 +223,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	trade2 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-2",
-		Price:     100,
+		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
 		Buyer:     testPartyB,
@@ -237,7 +237,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	trade3 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-3",
-		Price:     100,
+		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
 		Buyer:     testPartyB,
@@ -251,7 +251,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	trade4 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-4",
-		Price:     100,
+		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
 		Buyer:     testPartyB,
@@ -265,7 +265,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	trade5 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-5",
-		Price:     100,
+		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
 		Buyer:     testPartyB,
@@ -279,7 +279,7 @@ func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage
 	trade6 := &types.Trade{
 		Type:      types.Trade_TYPE_DEFAULT,
 		Id:        "trade-id-6",
-		Price:     100,
+		Price:     "100",
 		Size:      100,
 		MarketId:  testMarket,
 		Buyer:     testPartyB,

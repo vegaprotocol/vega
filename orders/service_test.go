@@ -7,8 +7,8 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/orders"
 	"code.vegaprotocol.io/data-node/orders/mocks"
-	types "code.vegaprotocol.io/data-node/proto"
-	commandspb "code.vegaprotocol.io/data-node/proto/commands/v1"
+	types "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"github.com/golang/mock/gomock"
 
 	"github.com/stretchr/testify/assert"
@@ -20,7 +20,7 @@ var (
 	orderSubmission = commandspb.OrderSubmission{
 		Type:        types.Order_TYPE_LIMIT,
 		MarketId:    "market_id",
-		Price:       10000,
+		Price:       "10000",
 		Size:        1,
 		Side:        types.Side(1),
 		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
@@ -89,10 +89,7 @@ func getTestService(t *testing.T) *testService {
 	orderStore := mocks.NewMockOrderStore(ctrl)
 	timeSvc := mocks.NewMockTimeService(ctrl)
 	conf := orders.NewDefaultConfig()
-	svc, err := orders.NewService(log, conf, orderStore, timeSvc)
-	if err != nil {
-		t.Fatalf("Failed to get test service: %+v", err)
-	}
+	svc := orders.NewService(log, conf, orderStore, timeSvc)
 	return &testService{
 		ctrl:       ctrl,
 		orderStore: orderStore,

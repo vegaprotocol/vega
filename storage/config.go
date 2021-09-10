@@ -18,6 +18,8 @@ const (
 	AccountsDataPath = "accountstore"
 	// CandlesDataPath is the default path for the candle store files
 	CandlesDataPath = "candlestore"
+	// CheckpointsDataPath is the default path for the checkpoints store files
+	CheckpointsDataPath = "checkpointstore"
 	// MarketsDataPath is the default path for the market store files
 	MarketsDataPath = "marketstore"
 	// OrdersDataPath is the default path for the order store files
@@ -34,11 +36,12 @@ const (
 
 // Config provides package level settings, configuration and logging.
 type Config struct {
-	Accounts ConfigOptions
-	Candles  ConfigOptions
-	Markets  ConfigOptions
-	Orders   ConfigOptions
-	Trades   ConfigOptions
+	Accounts    ConfigOptions
+	Candles     ConfigOptions
+	Checkpoints ConfigOptions
+	Markets     ConfigOptions
+	Orders      ConfigOptions
+	Trades      ConfigOptions
 	//Parties   ConfigOptions  // Further badger store or hybrid store options
 	//Depth     ConfigOptions  // will go here in the future (examples shown)
 	//Risk      ConfigOptions
@@ -48,11 +51,12 @@ type Config struct {
 
 	Timeout encoding.Duration `long:"timeout"`
 
-	AccountsDirPath string `long:"accounts-dir-path" description:" "`
-	CandlesDirPath  string `long:"candles-dir-path" description:" "`
-	MarketsDirPath  string `long:"markets-dir-path" description:" "`
-	OrdersDirPath   string `long:"orders-dir-path" description:" "`
-	TradesDirPath   string `long:"trades-dir-path" description:" "`
+	AccountsDirPath    string `long:"accounts-dir-path" description:" "`
+	CandlesDirPath     string `long:"candles-dir-path" description:" "`
+	CheckpointsDirPath string `long:"checkpoints-dir-path" description:" "`
+	MarketsDirPath     string `long:"markets-dir-path" description:" "`
+	OrdersDirPath      string `long:"orders-dir-path" description:" "`
+	TradesDirPath      string `long:"trades-dir-path" description:" "`
 
 	LogPositionStoreDebug bool `long:"log-position-store-debug"`
 }
@@ -65,6 +69,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 	return Config{
 		Accounts:              DefaultStoreOptions(),
 		Candles:               DefaultStoreOptions(),
+		Checkpoints:           DefaultStoreOptions(),
 		Markets:               DefaultMarketStoreOptions(),
 		Orders:                DefaultStoreOptions(),
 		Trades:                DefaultStoreOptions(),
@@ -73,6 +78,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		OrdersDirPath:         filepath.Join(defaultStoreDirPath, OrdersDataPath),
 		TradesDirPath:         filepath.Join(defaultStoreDirPath, TradesDataPath),
 		CandlesDirPath:        filepath.Join(defaultStoreDirPath, CandlesDataPath),
+		CheckpointsDirPath:    filepath.Join(defaultStoreDirPath, CheckpointsDataPath),
 		MarketsDirPath:        filepath.Join(defaultStoreDirPath, MarketsDataPath),
 		LogPositionStoreDebug: false,
 		Timeout:               encoding.Duration{Duration: defaultStorageAccessTimeout},

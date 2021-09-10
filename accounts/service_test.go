@@ -6,8 +6,8 @@ import (
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/accounts/mocks"
 	"code.vegaprotocol.io/data-node/logging"
-	types "code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/storage"
+	types "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
 	uuid "github.com/satori/go.uuid"
@@ -105,7 +105,7 @@ func getTestAccounts(owner, market string, accTypes ...types.AccountType) []*typ
 		acc := &types.Account{
 			Id:       uuid.NewV4().String(),
 			Owner:    owner,
-			Balance:  0,
+			Balance:  "0",
 			Asset:    asset,
 			MarketId: market,
 			Type:     t,

@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	protoapi "code.vegaprotocol.io/data-node/proto/api"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	"google.golang.org/grpc"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -31,10 +31,10 @@ const (
 type GraphServer struct {
 	gateway.Config
 
-	log               *logging.Logger
-	tradingClient     protoapi.TradingServiceClient
-	tradingDataClient protoapi.TradingDataServiceClient
-	srv               *http.Server
+	log                *logging.Logger
+	tradingProxyClient protoapi.TradingProxyServiceClient
+	tradingDataClient  protoapi.TradingDataServiceClient
+	srv                *http.Server
 }
 
 // New returns a new instance of the grapqhl server
@@ -58,13 +58,13 @@ func New(
 	if err != nil {
 		return nil, err
 	}
-	tradingClient := protoapi.NewTradingServiceClient(tconn)
+	tradingClient := protoapi.NewTradingProxyServiceClient(tconn)
 
 	return &GraphServer{
-		log:               log,
-		Config:            config,
-		tradingClient:     tradingClient,
-		tradingDataClient: tradingDataClient,
+		log:                log,
+		Config:             config,
+		tradingProxyClient: tradingClient,
+		tradingDataClient:  tradingDataClient,
 	}, nil
 }
 
@@ -85,7 +85,7 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 }
 
 // Start start the server in order receive http request
-func (g *GraphServer) Start() {
+func (g *GraphServer) Start() error {
 	// <--- cors support - configure for production
 	corz := cors.AllowAll()
 	var up = websocket.Upgrader{
@@ -106,7 +106,7 @@ func (g *GraphServer) Start() {
 	resolverRoot := NewResolverRoot(
 		g.log,
 		g.Config,
-		g.tradingClient,
+		g.tradingProxyClient,
 		g.tradingDataClient,
 	)
 	var config = Config{
@@ -152,8 +152,10 @@ func (g *GraphServer) Start() {
 
 	err := g.srv.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
-		g.log.Panic("Failed to listen and serve on graphQL server", logging.Error(err))
+		return fmt.Errorf("failed to listen and serve on graphQL server: %w", err)
 	}
+
+	return nil
 }
 
 // Stop will close the http server gracefully

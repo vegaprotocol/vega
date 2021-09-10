@@ -5,10 +5,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 )
 
-// namedLogger is the identifier for package and should ideally match the package name
-// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
-const namedLogger = "oracles"
-
 // Config represent the configuration of the oracle engine
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`

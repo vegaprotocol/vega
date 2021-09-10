@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/logging"
-	"code.vegaprotocol.io/data-node/proto"
 	"code.vegaprotocol.io/data-node/storage"
+	proto "code.vegaprotocol.io/protos/vega"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -32,12 +32,12 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 		{
 			PartyId:           "p1",
 			MarketId:          "m1",
-			MaintenanceMargin: 42,
+			MaintenanceMargin: "42",
 		},
 		{
 			PartyId:           "p1",
 			MarketId:          "m3",
-			MaintenanceMargin: 84,
+			MaintenanceMargin: "84",
 		},
 	})
 	margins, err := tstore.store.GetMarginLevelsByID("p1", "m1")
@@ -45,7 +45,7 @@ func testGetMarginLevelsByPartyID(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, margins[0].PartyId, "p1")
 	assert.Equal(t, margins[0].MarketId, "m1")
-	assert.Equal(t, margins[0].MaintenanceMargin, uint64(42))
+	assert.Equal(t, margins[0].MaintenanceMargin, "42")
 }
 
 func testGetMarginLevelsByPartyIDAndMarketID(t *testing.T) {
@@ -54,12 +54,12 @@ func testGetMarginLevelsByPartyIDAndMarketID(t *testing.T) {
 		{
 			PartyId:           "p1",
 			MarketId:          "m1",
-			MaintenanceMargin: 42,
+			MaintenanceMargin: "42",
 		},
 		{
 			PartyId:           "p2",
 			MarketId:          "m3",
-			MaintenanceMargin: 84,
+			MaintenanceMargin: "84",
 		},
 	})
 	margins, err := tstore.store.GetMarginLevelsByID("p2", "")
@@ -67,7 +67,7 @@ func testGetMarginLevelsByPartyIDAndMarketID(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, margins[0].PartyId, "p2")
 	assert.Equal(t, margins[0].MarketId, "m3")
-	assert.Equal(t, margins[0].MaintenanceMargin, uint64(84))
+	assert.Equal(t, margins[0].MaintenanceMargin, "84")
 
 }
 
