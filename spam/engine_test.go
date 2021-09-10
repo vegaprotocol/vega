@@ -50,6 +50,10 @@ func (t *testTx) BlockHeight() uint64 {
 	return 0
 }
 
+func (t *testTx) GetCmd() interface{} {
+	return nil
+}
+
 func TestEngine(t *testing.T) {
 	t.Run("pre block goes is handled by the appropriate spam policy", testPreBlockAccept)
 	t.Run("post block goes is handled by the appropriate spam policy", testPostBlockAccept)
