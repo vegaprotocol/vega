@@ -75,23 +75,24 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 //OnEpochEvent is a callback for epoch events
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if e.currentEpoch == nil || e.currentEpoch.Seq != epoch.Seq {
+		if e.log.GetLevel() <= logging.DebugLevel {
+			e.log.Debug("Spam protection new epoch started", logging.Uint64("epochSeq", epoch.Seq))
+		}
 		e.currentEpoch = &epoch
-		e.Reset(epoch)
-	}
-}
-
-//Reset is called when the epoch is starting to reset the state of the various policies
-func (e *Engine) Reset(epoch types.Epoch) {
-	balances := e.accounting.GetAllAvailableBalances()
-	for _, policy := range e.transactionTypeToPolicy {
-		policy.(SpamPolicy).Reset(epoch, balances)
+		balances := e.accounting.GetAllAvailableBalances()
+		for _, policy := range e.transactionTypeToPolicy {
+			policy.Reset(epoch, balances)
+		}
 	}
 }
 
 //EndOfBlock is called when the block is finished
 func (e *Engine) EndOfBlock(blockHeight uint64) {
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("Spam protection EndOfBlock called", logging.Uint64("blockHeight", blockHeight))
+	}
 	for _, policy := range e.transactionTypeToPolicy {
-		policy.(SpamPolicy).EndOfBlock(blockHeight)
+		policy.EndOfBlock(blockHeight)
 	}
 }
 
@@ -102,7 +103,10 @@ func (e *Engine) PreBlockAccept(tx abci.Tx) (bool, error) {
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
 		return true, nil
 	}
-	return e.transactionTypeToPolicy[command].(SpamPolicy).PreBlockAccept(tx)
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("Spam protection PreBlockAccept called for policy", logging.String("command", string(command)))
+	}
+	return e.transactionTypeToPolicy[command].PreBlockAccept(tx)
 }
 
 //PostBlockAccept is called from onDeliverTx before the block is processed
@@ -112,5 +116,8 @@ func (e *Engine) PostBlockAccept(tx abci.Tx) (bool, error) {
 	if _, ok := e.transactionTypeToPolicy[command]; !ok {
 		return true, nil
 	}
-	return e.transactionTypeToPolicy[command].(SpamPolicy).PostBlockAccept(tx)
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("Spam protection PostBlockAccept called for policy", logging.String("command", string(command)))
+	}
+	return e.transactionTypeToPolicy[command].PostBlockAccept(tx)
 }

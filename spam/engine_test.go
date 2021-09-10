@@ -61,7 +61,7 @@ func testPreBlockAccept(t *testing.T) {
 	engine := testEngine.engine
 	testEngine.accounts.balances = map[string]*num.Uint{"party1": sufficientPropTokens}
 
-	engine.Reset(types.Epoch{Seq: 0})
+	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
 	accept, _ := engine.PreBlockAccept(tx1)
@@ -85,7 +85,7 @@ func testPostBlockAccept(t *testing.T) {
 	engine := testEngine.engine
 	testEngine.accounts.balances = map[string]*num.Uint{"party1": sufficientPropTokens}
 
-	engine.Reset(types.Epoch{Seq: 0})
+	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
 	for i := 0; i < 3; i++ {
 		tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
@@ -111,7 +111,7 @@ func testEndOfBlock(t *testing.T) {
 	engine := testEngine.engine
 	testEngine.accounts.balances = map[string]*num.Uint{"party1": sufficientPropTokens}
 
-	engine.Reset(types.Epoch{Seq: 0})
+	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
 	for i := 0; i < 3; i++ {
 		tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
