@@ -92,7 +92,7 @@ func (e *ERC20MultiSigControl) AddSigner(
 
 	args := abi.Arguments([]abi.Argument{
 		{
-			Name: "address",
+			Name: "new_signer",
 			Type: typAddr,
 		},
 		{
@@ -143,7 +143,7 @@ func (e *ERC20MultiSigControl) RemoveSigner(
 
 	args := abi.Arguments([]abi.Argument{
 		{
-			Name: "address",
+			Name: "old_signer",
 			Type: typAddr,
 		},
 		{
