@@ -3,13 +3,12 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 func TheMarkPriceForTheMarketIs(
-	exec *execution.Engine,
+	exec Execution,
 	market, markPriceStr string,
 ) error {
 	markPrice := parseMarkPrice(markPriceStr)

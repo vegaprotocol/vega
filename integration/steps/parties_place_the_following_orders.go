@@ -7,13 +7,12 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 func PartiesPlaceTheFollowingOrders(
-	exec *execution.Engine,
+	exec Execution,
 	table *godog.Table,
 ) error {
 	for _, r := range parseSubmitOrderTable(table) {
