@@ -4,11 +4,10 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/execution"
 )
 
 func TheTradingModeShouldBeForMarket(
-	engine *execution.Engine,
+	engine Execution,
 	market, tradingModeStr string,
 ) error {
 	tradingMode, err := TradingMode(tradingModeStr)

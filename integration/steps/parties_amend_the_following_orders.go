@@ -6,7 +6,6 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -23,7 +22,7 @@ func (o OrderAmendmentError) Error() string {
 
 func PartiesAmendTheFollowingOrders(
 	broker *stubs.BrokerStub,
-	exec *execution.Engine,
+	exec Execution,
 	table *godog.Table,
 ) error {
 	for _, r := range parseAmendOrderTable(table) {

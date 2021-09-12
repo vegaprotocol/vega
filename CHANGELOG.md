@@ -1,5 +1,74 @@
 # Changelog
 
+## 0.42.0
+*2021-09-10*
+
+### Improvements
+- [3862](https://github.com/vegaprotocol/vega/pull/3862) - Collateral snapshot: Add checkpoints where needed, update processor (ABCI app) to write checkpoint data to file.
+- [3926](https://github.com/vegaprotocol/vega/pull/3926) - Add epoch to delegation balance events and changes to the delegation / reward engines
+- [3963](https://github.com/vegaprotocol/vega/pull/3963) - Load tendermint logger configuration
+- [3958](https://github.com/vegaprotocol/vega/pull/3958) - Update istake ABI and run abigen
+- [3933](https://github.com/vegaprotocol/vega/pull/3933) - Remove redundant API from Validator node
+- [3971](https://github.com/vegaprotocol/vega/pull/3971) - Reinstate wallet subcommand tests
+- [3961](https://github.com/vegaprotocol/vega/pull/3961) - Implemented feature test for delegation
+- [3977](https://github.com/vegaprotocol/vega/pull/3977) - Add undelegate, delegate and register snapshot errors
+- [3976](https://github.com/vegaprotocol/vega/pull/3976) - Add network parameter for competition level
+- [3975](https://github.com/vegaprotocol/vega/pull/3975) - Add parties stake api
+- [3978](https://github.com/vegaprotocol/vega/pull/3978) - Update dependencies
+- [3980](https://github.com/vegaprotocol/vega/pull/3980) - Update protobuf dependencies
+- [3910](https://github.com/vegaprotocol/vega/pull/3910) - Change all price, amounts, balances from uint64 to string
+- [3969](https://github.com/vegaprotocol/vega/pull/3969) - Bump dlv and geth to latest versions
+- [3925](https://github.com/vegaprotocol/vega/pull/3925) - Add command to sign a subset of network parameters
+- [3981](https://github.com/vegaprotocol/vega/pull/3981) - Remove the `wallet-pubkey` flag on genesis sign command
+- [3987](https://github.com/vegaprotocol/vega/pull/3987) - Add genesis verify command to verify signature against local genesis file
+- [3984](https://github.com/vegaprotocol/vega/pull/3984) - Update the mainnet addresses in genesis generation command
+- [3983](https://github.com/vegaprotocol/vega/pull/3983) - Added action field to epoch events
+- [3988](https://github.com/vegaprotocol/vega/pull/3988) - Update the go-ethereum dependency
+- [3991](https://github.com/vegaprotocol/vega/pull/3991) - Remove hardcoded address to the Ethereum node
+- [3990](https://github.com/vegaprotocol/vega/pull/3990) - Network bootstrapping
+- [3992](https://github.com/vegaprotocol/vega/pull/3992) - Check big int conversion from string in ERC20 code
+- [3993](https://github.com/vegaprotocol/vega/pull/3993) - Use the vega public key as node id
+- [3955](https://github.com/vegaprotocol/vega/pull/3955) - Use staking accounts in governance
+- [4004](https://github.com/vegaprotocol/vega/pull/4004) - Broker configuration: change IP to address Address
+- [4005](https://github.com/vegaprotocol/vega/pull/4005) - Add a simple subcommand to the vega binary to ease submitting transactions
+- [3997](https://github.com/vegaprotocol/vega/pull/3997) - Do not require Ethereum client when starting the nodewallet
+- [4009](https://github.com/vegaprotocol/vega/pull/4009) - Add delegation core APIs
+- [4014](https://github.com/vegaprotocol/vega/pull/4014) - Implement delegation and epoch for Limited Network Life
+- [3914](https://github.com/vegaprotocol/vega/pull/3914) - Implement staking event verification
+- [3940](https://github.com/vegaprotocol/vega/pull/3940) - Remove validator signature from configuration and add network parameters
+- [3938](https://github.com/vegaprotocol/vega/pull/3938) - Add more logging informations on the witness vote failures
+- [3932](https://github.com/vegaprotocol/vega/pull/3932) - Adding asset details to reward events
+- [3706](https://github.com/vegaprotocol/vega/pull/3706) - Remove startup markets workaround
+- [3905](https://github.com/vegaprotocol/vega/pull/3905) - Add vega genesis new validator sub-command
+- [3895](https://github.com/vegaprotocol/vega/pull/3895) - Add command to create a new genesis block with app_state
+- [3900](https://github.com/vegaprotocol/vega/pull/3900) - Create reward engine
+- [4847](https://github.com/vegaprotocol/vega/pull/3847) - Modified staking account to be backed by governance token account balance
+- [3907](https://github.com/vegaprotocol/vega/pull/3907) - Tune system tests
+- [3904](https://github.com/vegaprotocol/vega/pull/3904) - Update Jenkins file to run all System Tests
+- [3795](https://github.com/vegaprotocol/vega/pull/3795) - Add capability to sent events to a socket stream
+- [3832](https://github.com/vegaprotocol/vega/pull/3832) - Update the genesis topology map
+- [3891](https://github.com/vegaprotocol/vega/pull/3891) - Verify transaction version 2 signature
+- [3813](https://github.com/vegaprotocol/vega/pull/3813) - Implementing epoch time
+- [4031](https://github.com/vegaprotocol/vega/pull/4031) - Send error events in processor through wrapper
+
+### Fixes
+- [3950](https://github.com/vegaprotocol/vega/pull/3950) - `LoadGenesis` returns nil if checkpoint entry is empty
+- [3960](https://github.com/vegaprotocol/vega/pull/3960) - Unstaking events are not seen by all validator nodes in DV
+- [3973](https://github.com/vegaprotocol/vega/pull/3973) - Set ABCI client so it is possible to submit a transaction
+- [3986](https://github.com/vegaprotocol/vega/pull/3986) - Emit Party event when stake link is accepted
+- [3979](https://github.com/vegaprotocol/vega/pull/3979) - Add more delegation / reward scenarios and steps and a bug fix in emitted events
+- [4007](https://github.com/vegaprotocol/vega/pull/4007) - Changed delegation balance event to use string
+- [4006](https://github.com/vegaprotocol/vega/pull/4006) - Sort proposals by timestamp
+- [4012](https://github.com/vegaprotocol/vega/pull/4012) - Fix panic with vega watch
+- [3937](https://github.com/vegaprotocol/vega/pull/3937) - Include `TX_ERROR` events for type ALL subscribers
+- [3930](https://github.com/vegaprotocol/vega/pull/3930) - Added missing function and updated readme with details
+- [3918](https://github.com/vegaprotocol/vega/pull/3918) - Fix the build by updating the module version for the go-wallet
+- [3901](https://github.com/vegaprotocol/vega/pull/3901) - Emit a `TxErrEvent` if withdraw submission is invalid
+- [3874](https://github.com/vegaprotocol/vega/pull/3874) - Fix binary version
+- [3884](https://github.com/vegaprotocol/vega/pull/3884) - Always async transaction
+- [3877](https://github.com/vegaprotocol/vega/pull/3877) - Use a custom http client for the tendermint client
+
+
 ## 0.41.0
 *2021-08-06*
 

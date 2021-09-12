@@ -3,12 +3,11 @@ package steps
 import (
 	"errors"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 func DebugMarketData(
-	exec *execution.Engine,
+	exec Execution,
 	log *logging.Logger,
 	market string,
 ) error {
