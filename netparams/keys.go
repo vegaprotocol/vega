@@ -72,6 +72,12 @@ const (
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
 	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 
+	// spam policies params
+	SpamProtectionMaxVotes             = "spam.protection.max.votes"
+	SpamProtectionMinTokensForVoting   = "spam.protection.voting.min.tokens"
+	SpamProtectionMaxProposals         = "spam.protection.max.proposals"
+	SpamProtectionMinTokensForProposal = "spam.protection.proposal.min.tokens"
+
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
@@ -153,4 +159,8 @@ var AllKeys = map[string]struct{}{
 	NetworkCheckpointMarketFreezeDate:                     {},
 	MarketValueWindowLength:                               {},
 	StakingAndDelegationRewardMaxPayoutPerEpoch:           {},
+	SpamProtectionMinTokensForProposal:                    {},
+	SpamProtectionMaxVotes:                                {},
+	SpamProtectionMaxProposals:                            {},
+	SpamProtectionMinTokensForVoting:                      {},
 }

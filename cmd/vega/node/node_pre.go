@@ -519,6 +519,22 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.NetworkCheckpointTimeElapsedBetweenCheckpoints,
 			Watcher: l.checkpoint.OnTimeElapsedUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxVotes,
+			Watcher: l.spam.OnMaxVotesChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxProposals,
+			Watcher: l.spam.OnMaxProposalsChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForProposal,
+			Watcher: l.spam.OnMinTokensForProposalChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForVoting,
+			Watcher: l.spam.OnMinTokensForVotingChanged,
+		},
 	)
 }
 

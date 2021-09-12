@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -25,9 +26,18 @@ func TestProposalSpamProtection(t *testing.T) {
 	t.Run("Start of epoch resets counters", testProposalReset)
 }
 
+func getProposalSpamPolicy() *spam.ProposalSpamPolicy {
+	policy := spam.NewProposalSpamPolicy()
+	minTokensForProposal, _ := num.UintFromString("100000000000000000000000", 10)
+	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
+	policy.UpdateIntParam(netparams.SpamProtectionMaxProposals, 3)
+	return policy
+}
+
 // reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch
 func testProposalPreRejectInsufficientBalance(t *testing.T) {
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
+
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": insufficientPropTokens})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
@@ -37,7 +47,7 @@ func testProposalPreRejectInsufficientBalance(t *testing.T) {
 
 // reject proposal requests from banned parties for as long as they are banned
 func testProposalPreRejectBannedParty(t *testing.T) {
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
 
 	// epoch 0 started party1 has enough balance
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": sufficientPropTokens})
@@ -82,7 +92,7 @@ func testProposalPreRejectBannedParty(t *testing.T) {
 }
 
 func testProposalPreRejectTooManyProposals(t *testing.T) {
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
@@ -124,7 +134,7 @@ func testProposalPreRejectTooManyProposals(t *testing.T) {
 }
 
 func testProposalPreAccept(t *testing.T) {
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
@@ -143,7 +153,7 @@ func testProposalPreAccept(t *testing.T) {
 }
 
 func testProposalPostAccept(t *testing.T) {
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -164,7 +174,7 @@ func testProposalPostAccept(t *testing.T) {
 }
 
 func testProposalPostRejectTooManyProposals(t *testing.T) {
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -192,7 +202,7 @@ func testProposalPostRejectTooManyProposals(t *testing.T) {
 }
 
 func testProposalCountersUpdated(t *testing.T) {
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -221,7 +231,7 @@ func testProposalCountersUpdated(t *testing.T) {
 
 func testProposalReset(t *testing.T) {
 	// set state
-	policy := spam.NewProposalSpamPolicy()
+	policy := getProposalSpamPolicy()
 
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens

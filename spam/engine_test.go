@@ -209,6 +209,13 @@ func getEngine(t *testing.T) *testEngine {
 
 	engine := spam.New(logger, conf, epochEngine, accounts)
 
+	minTokensForVoting, _ := num.DecimalFromString("100000000000000000000")
+	minTokensForProposal, _ := num.DecimalFromString("100000000000000000000000")
+	engine.OnMaxProposalsChanged(context.Background(), 3)
+	engine.OnMaxVotesChanged(context.Background(), 3)
+	engine.OnMinTokensForVotingChanged(context.Background(), minTokensForVoting)
+	engine.OnMinTokensForProposalChanged(context.Background(), minTokensForProposal)
+
 	return &testEngine{
 		engine:      engine,
 		epochEngine: epochEngine,

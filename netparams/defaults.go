@@ -87,6 +87,12 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardCompetitionLevel:        NewFloat(FloatGT(1), FloatLTE(1000)).Mutable(true).MustUpdate("1.1"),
 		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
 
+		// spam protection policies
+		SpamProtectionMaxVotes:             NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForVoting:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxProposals:         NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForProposal: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000000"),
+
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff

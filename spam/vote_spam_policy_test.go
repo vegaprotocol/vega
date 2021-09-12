@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -36,9 +37,17 @@ func TestVotingSpamProtection(t *testing.T) {
 	t.Run("On epoch start voting counters are reset", testReset)
 }
 
+func getVotingSpamPolicy() *spam.VoteSpamPolicy {
+	policy := spam.NewVoteSpamPolicy()
+	minTokensForVoting, _ := num.UintFromString("100000000000000000000", 10)
+	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForVoting, minTokensForVoting)
+	policy.UpdateIntParam(netparams.SpamProtectionMaxVotes, 3)
+	return policy
+}
+
 // reject vote requests when the voter doesn't have sufficient balance at the beginning of the epoch
 func testPreRejectInsufficientBalance(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": num.NewUint(50)})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
@@ -48,7 +57,7 @@ func testPreRejectInsufficientBalance(t *testing.T) {
 
 // reject votes requests when the voter doesn't have sufficient balance with a factored min tokens
 func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
 	tokenMap := make(map[string]*num.Uint, 2)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -111,7 +120,7 @@ func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 
 // attack for a number of blocks until the min tokens reach 1600
 func testFactoringOfMinTokens(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
 	tokenMap := make(map[string]*num.Uint, 2)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -212,7 +221,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 
 // reject vote requests from banned parties for as long as they are banned
 func testPreRejectBannedParty(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 
 	// epoch 0 started party1 has enough balance
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
@@ -257,7 +266,7 @@ func testPreRejectBannedParty(t *testing.T) {
 }
 
 func testPreRejectTooManyVotesPerProposal(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -312,7 +321,7 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 }
 
 func testPreAccept(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -331,7 +340,7 @@ func testPreAccept(t *testing.T) {
 }
 
 func testPostAccept(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -357,7 +366,7 @@ func testPostAccept(t *testing.T) {
 }
 
 func testPostRejectTooManyVotes(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -390,7 +399,7 @@ func testPostRejectTooManyVotes(t *testing.T) {
 }
 
 func testCountersUpdated(t *testing.T) {
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -442,7 +451,7 @@ func testCountersUpdated(t *testing.T) {
 
 func testReset(t *testing.T) {
 	// set state
-	policy := spam.NewVoteSpamPolicy()
+	policy := getVotingSpamPolicy()
 
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientTokensForVoting

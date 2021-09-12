@@ -1,10 +1,12 @@
 package spam
 
 import (
+	"errors"
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -21,7 +23,6 @@ func (b *blockRejectInfo) add(rejected bool) {
 	}
 }
 
-var minVotingTokens, _ = num.UintFromString("100000000000000000000", 10)
 var maxMinVotingTokens, _ = num.UintFromString("1600000000000000000000", 10)
 var increaseFactor = num.NewUint(2)
 
@@ -30,7 +31,6 @@ const (
 	numberOfEpochsBan              uint64  = 3
 	numberOfBlocksForIncreaseCheck int     = 10
 	banFactor                              = 0.5
-	numVotes                       uint64  = 3
 )
 
 type VoteSpamPolicy struct {
@@ -54,20 +54,43 @@ type VoteSpamPolicy struct {
 
 func NewVoteSpamPolicy() *VoteSpamPolicy {
 	return &VoteSpamPolicy{
-		numVotes:              numVotes,
-		minVotingTokens:       minVotingTokens.Clone(),
 		minVotingTokensFactor: num.NewUint(1),
-		effectiveMinTokens:    minVotingTokens.Clone(),
-		partyToVote:           map[string]map[string]uint64{},
-		blockPartyToVote:      map[string]map[string]uint64{},
-		bannedParties:         map[string]uint64{},
-		tokenBalance:          map[string]*num.Uint{},
-		blockPostRejects:      &blockRejectInfo{total: 0, rejected: 0},
-		partyBlockRejects:     map[string]*blockRejectInfo{},
-		currentBlockIndex:     0,
-		lastIncreaseBlock:     0,
-		lock:                  sync.RWMutex{},
+
+		partyToVote:       map[string]map[string]uint64{},
+		blockPartyToVote:  map[string]map[string]uint64{},
+		bannedParties:     map[string]uint64{},
+		tokenBalance:      map[string]*num.Uint{},
+		blockPostRejects:  &blockRejectInfo{total: 0, rejected: 0},
+		partyBlockRejects: map[string]*blockRejectInfo{},
+		currentBlockIndex: 0,
+		lastIncreaseBlock: 0,
+		lock:              sync.RWMutex{},
 	}
+}
+
+//UpdateUintParam is called to update Uint net params for the policy
+//Specifically the min tokens required for voting
+func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
+	if name == netparams.SpamProtectionMinTokensForVoting {
+		vsp.minVotingTokens = value.Clone()
+		//NB: this means that if during the epoch the min tokens changes externally
+		// and we already have a factor on it, the factor will be applied on the new value for the duration of the epoch
+		vsp.effectiveMinTokens = num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor)
+	} else {
+		return errors.New("unknown parameter for vote spam policy")
+	}
+	return nil
+}
+
+//UpdateIntParam is called to update iint net params for the policy
+//Specifically the number of votes to a proposal a party can submit in an epoch
+func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int) error {
+	if name == netparams.SpamProtectionMaxVotes {
+		vsp.numVotes = uint64(value)
+	} else {
+		return errors.New("unknown parameter for vote spam policy")
+	}
+	return nil
 }
 
 //Reset is called at the beginning of an epoch to reset the settings for the epoch

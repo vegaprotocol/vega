@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	"code.vegaprotocol.io/vega/netparams"
+
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
@@ -48,6 +50,8 @@ type SpamPolicy interface {
 	EndOfBlock(blockHeight uint64)
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
+	UpdateUintParam(name string, value *num.Uint) error
+	UpdateIntParam(name string, value int) error
 }
 
 //New instantiates a new spam engine
@@ -71,6 +75,28 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.log.Info("Spam protection started")
 
 	return e
+}
+
+//OnMaxVotesChanged is called when the net param for max votes per epoch has changed
+func (e *Engine) OnMaxVotesChanged(ctx context.Context, maxVotes int) error {
+	return e.transactionTypeToPolicy[txn.VoteCommand].UpdateIntParam(netparams.SpamProtectionMaxVotes, maxVotes)
+}
+
+//OnMinTokensForVotingChanged is called when the net param for min tokens requirement for voting has changed
+func (e *Engine) OnMinTokensForVotingChanged(ctx context.Context, minTokens num.Decimal) error {
+	minTokensForVoting, _ := num.UintFromDecimal(minTokens)
+	return e.transactionTypeToPolicy[txn.VoteCommand].UpdateUintParam(netparams.SpamProtectionMinTokensForVoting, minTokensForVoting)
+}
+
+//OnMaxProposalsChanged is called when the net param for max proposals per epoch has changed
+func (e *Engine) OnMaxProposalsChanged(ctx context.Context, maxProposals int) error {
+	return e.transactionTypeToPolicy[txn.ProposeCommand].UpdateIntParam(netparams.SpamProtectionMaxProposals, maxProposals)
+}
+
+//OnMinTokensForProposalChanged is called when the net param for min tokens requirement for submitting a proposal has changed
+func (e *Engine) OnMinTokensForProposalChanged(ctx context.Context, minTokens num.Decimal) error {
+	minTokensForProposal, _ := num.UintFromDecimal(minTokens)
+	return e.transactionTypeToPolicy[txn.ProposeCommand].UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
 }
 
 //OnEpochEvent is a callback for epoch events

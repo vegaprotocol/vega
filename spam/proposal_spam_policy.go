@@ -1,16 +1,16 @@
 package spam
 
 import (
+	"errors"
 	"sync"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 const numProposals uint64 = 3
-
-var minTokensForProposal, _ = num.UintFromString("100000000000000000000000", 10)
 
 type ProposalSpamPolicy struct {
 	numProposals         uint64
@@ -28,8 +28,6 @@ type ProposalSpamPolicy struct {
 //NewProposalSpamPolicy instantiates the proposal spam policy
 func NewProposalSpamPolicy() *ProposalSpamPolicy {
 	return &ProposalSpamPolicy{
-		numProposals:              numProposals,
-		minTokensForProposal:      minTokensForProposal,
 		partyToProposalCount:      map[string]uint64{},
 		blockPartyToProposalCount: map[string]uint64{},
 		tokenBalance:              map[string]*num.Uint{},
@@ -37,6 +35,28 @@ func NewProposalSpamPolicy() *ProposalSpamPolicy {
 		partyBlockRejects:         map[string]*blockRejectInfo{},
 		lock:                      sync.RWMutex{},
 	}
+}
+
+//UpdateUintParam is called to update Uint net params for the policy
+//Specifically the min tokens required for making proposals
+func (psp *ProposalSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
+	if name == netparams.SpamProtectionMinTokensForProposal {
+		psp.minTokensForProposal = value.Clone()
+	} else {
+		return errors.New("unknown parameter for proposal spam policy")
+	}
+	return nil
+}
+
+//UpdateIntParam is called to update int net params for the policy
+//Specifically the number of proposals a party can submit in an epoch
+func (psp *ProposalSpamPolicy) UpdateIntParam(name string, value int) error {
+	if name == netparams.SpamProtectionMaxProposals {
+		psp.numProposals = uint64(value)
+	} else {
+		return errors.New("unknown parameter for proposal spam policy")
+	}
+	return nil
 }
 
 //Reset is called when the epoch begins to reset policy state
