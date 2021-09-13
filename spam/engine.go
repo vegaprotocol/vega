@@ -60,7 +60,7 @@ type SpamPolicy interface {
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
 	UpdateUintParam(name string, value *num.Uint) error
-	UpdateIntParam(name string, value int) error
+	UpdateIntParam(name string, value int64) error
 }
 
 //New instantiates a new spam engine
@@ -91,7 +91,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 }
 
 //OnMaxDelegationsChanged is called when the net param for max delegations per epoch has changed
-func (e *Engine) OnMaxDelegationsChanged(ctx context.Context, maxDelegations int) error {
+func (e *Engine) OnMaxDelegationsChanged(ctx context.Context, maxDelegations int64) error {
 	return e.transactionTypeToPolicy[txn.DelegateCommand].UpdateIntParam(netparams.SpamProtectionMaxDelegations, maxDelegations)
 }
 
@@ -102,7 +102,7 @@ func (e *Engine) OnMinTokensForDelegationChanged(ctx context.Context, minTokens 
 }
 
 //OnMaxVotesChanged is called when the net param for max votes per epoch has changed
-func (e *Engine) OnMaxVotesChanged(ctx context.Context, maxVotes int) error {
+func (e *Engine) OnMaxVotesChanged(ctx context.Context, maxVotes int64) error {
 	return e.transactionTypeToPolicy[txn.VoteCommand].UpdateIntParam(netparams.SpamProtectionMaxVotes, maxVotes)
 }
 
@@ -113,7 +113,7 @@ func (e *Engine) OnMinTokensForVotingChanged(ctx context.Context, minTokens num.
 }
 
 //OnMaxProposalsChanged is called when the net param for max proposals per epoch has changed
-func (e *Engine) OnMaxProposalsChanged(ctx context.Context, maxProposals int) error {
+func (e *Engine) OnMaxProposalsChanged(ctx context.Context, maxProposals int64) error {
 	return e.transactionTypeToPolicy[txn.ProposeCommand].UpdateIntParam(netparams.SpamProtectionMaxProposals, maxProposals)
 }
 

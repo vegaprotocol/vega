@@ -81,7 +81,7 @@ func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
 
 //UpdateIntParam is called to update iint net params for the policy
 //Specifically the number of votes to a proposal a party can submit in an epoch
-func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int) error {
+func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int64) error {
 	if name == vsp.maxAllowedParamName {
 		vsp.numVotes = uint64(value)
 	} else {

@@ -54,7 +54,7 @@ func (ssp *SimpleSpamPolicy) UpdateUintParam(name string, value *num.Uint) error
 
 //UpdateIntParam is called to update int net params for the policy
 //Specifically the number of commands a party can submit in an epoch
-func (ssp *SimpleSpamPolicy) UpdateIntParam(name string, value int) error {
+func (ssp *SimpleSpamPolicy) UpdateIntParam(name string, value int64) error {
 	if name == ssp.maxAllowedParamName {
 		ssp.maxAllowedCommands = uint64(value)
 	} else {
