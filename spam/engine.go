@@ -32,7 +32,7 @@ var (
 
 const (
 	rejectRatioForIncrease         float64 = 0.3
-	numberOfEpochsBan              uint64  = 3
+	numberOfEpochsBan              uint64  = 4
 	numberOfBlocksForIncreaseCheck int     = 10
 	banFactor                              = 0.5
 )
