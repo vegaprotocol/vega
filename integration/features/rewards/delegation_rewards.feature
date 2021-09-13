@@ -336,7 +336,7 @@ Feature: Staking & Delegation
    
    Scenario: A party changes delegation from one validator to another in the same epoch
    Description: A party can change delegation from one validator to another      
-   
+
     Given the global reward account gets the following deposits:
       | asset | amount |
       | VEGA  | 100000 | 
@@ -793,3 +793,41 @@ Feature: Staking & Delegation
     | node13 | VEGA  | 1 | 
 
     Then "node1" should have general account balance of "1" for asset "VEGA"
+
+    When time is updated to "2021-08-26T00:00:31Z"
+
+    And the parties receive the following reward for epoch 2:
+    | party  | asset | amount |
+    | party1 | VEGA  | 0 | 
+    | node1  | VEGA  | 0 | 
+    | node2  | VEGA  | 0 | 
+    | node3  | VEGA  | 0 | 
+    | node4  | VEGA  | 0 |
+    | node5  | VEGA  | 0 | 
+    | node6  | VEGA  | 0 | 
+    | node7  | VEGA  | 0 | 
+    | node8  | VEGA  | 0 | 
+    | node9  | VEGA  | 0 | 
+    | node10 | VEGA  | 0 | 
+    | node11 | VEGA  | 0 | 
+    | node12 | VEGA  | 0 | 
+    | node13 | VEGA  | 0 | 
+
+    When time is updated to "2022-08-26T00:00:31Z"
+
+    And the parties receive the following reward for epoch 3153602:
+    | party  | asset | amount |
+    | party1 | VEGA  | 0 | 
+    | node1  | VEGA  | 0 | 
+    | node2  | VEGA  | 0 | 
+    | node3  | VEGA  | 0 | 
+    | node4  | VEGA  | 0 |
+    | node5  | VEGA  | 0 | 
+    | node6  | VEGA  | 0 | 
+    | node7  | VEGA  | 0 | 
+    | node8  | VEGA  | 0 | 
+    | node9  | VEGA  | 0 | 
+    | node10 | VEGA  | 0 | 
+    | node11 | VEGA  | 0 | 
+    | node12 | VEGA  | 0 | 
+    | node13 | VEGA  | 0 | 
