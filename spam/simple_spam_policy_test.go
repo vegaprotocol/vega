@@ -15,19 +15,19 @@ var insufficientPropTokens, _ = num.UintFromString("50000000000000000000000", 10
 
 var sufficientPropTokens, _ = num.UintFromString("100000000000000000000000", 10)
 
-func TestProposalSpamProtection(t *testing.T) {
-	t.Run("Pre reject proposal from party with insufficient balance at the beginning of the epoch", testProposalPreRejectInsufficientBalance)
-	t.Run("Pre reject proposal from party that is banned for the epochs", testProposalPreRejectBannedParty)
-	t.Run("Pre reject proposal from party that already had more than 3 proposal for the epoch", testProposalPreRejectTooManyProposals)
-	t.Run("Pre accept proposal success", testProposalPreAccept)
-	t.Run("Post accept proposal success", testProposalPostAccept)
-	t.Run("Post reject proposal from party with too many proposals in total all from current block", testProposalPostRejectTooManyProposals)
-	t.Run("Proposal counts from the block successfully applied on state", testProposalCountersUpdated)
-	t.Run("Start of epoch resets counters", testProposalReset)
+func TestSimpleSpamProtection(t *testing.T) {
+	t.Run("Pre reject command from party with insufficient balance at the beginning of the epoch", testCommandPreRejectInsufficientBalance)
+	t.Run("Pre reject command from party that is banned for the epochs", testCommandPreRejectBannedParty)
+	t.Run("Pre reject command from party that already had more than 3 proposal for the epoch", testCommandPreRejectTooManyProposals)
+	t.Run("Pre accept command success", testCommandPreAccept)
+	t.Run("Post accept command success", testCommandPostAccept)
+	t.Run("Post reject command from party with too many proposals in total all from current block", testCommandPostRejectTooManyProposals)
+	t.Run("command counts from the block successfully applied on state", testCommandCountersUpdated)
+	t.Run("Start of epoch resets counters", testCommandReset)
 }
 
-func getProposalSpamPolicy() *spam.ProposalSpamPolicy {
-	policy := spam.NewProposalSpamPolicy()
+func getCommandSpamPolicy() *spam.SimpleSpamPolicy {
+	policy := spam.NewSimpleSpamPolicy(netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals)
 	minTokensForProposal, _ := num.UintFromString("100000000000000000000000", 10)
 	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
 	policy.UpdateIntParam(netparams.SpamProtectionMaxProposals, 3)
@@ -35,8 +35,8 @@ func getProposalSpamPolicy() *spam.ProposalSpamPolicy {
 }
 
 // reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch
-func testProposalPreRejectInsufficientBalance(t *testing.T) {
-	policy := getProposalSpamPolicy()
+func testCommandPreRejectInsufficientBalance(t *testing.T) {
+	policy := getCommandSpamPolicy()
 
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": insufficientPropTokens})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
@@ -46,8 +46,8 @@ func testProposalPreRejectInsufficientBalance(t *testing.T) {
 }
 
 // reject proposal requests from banned parties for as long as they are banned
-func testProposalPreRejectBannedParty(t *testing.T) {
-	policy := getProposalSpamPolicy()
+func testCommandPreRejectBannedParty(t *testing.T) {
+	policy := getCommandSpamPolicy()
 
 	// epoch 0 started party1 has enough balance
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": sufficientPropTokens})
@@ -91,8 +91,8 @@ func testProposalPreRejectBannedParty(t *testing.T) {
 	require.Nil(t, err)
 }
 
-func testProposalPreRejectTooManyProposals(t *testing.T) {
-	policy := getProposalSpamPolicy()
+func testCommandPreRejectTooManyProposals(t *testing.T) {
+	policy := getCommandSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
@@ -133,8 +133,8 @@ func testProposalPreRejectTooManyProposals(t *testing.T) {
 
 }
 
-func testProposalPreAccept(t *testing.T) {
-	policy := getProposalSpamPolicy()
+func testCommandPreAccept(t *testing.T) {
+	policy := getCommandSpamPolicy()
 	// epoch 0 block 0
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
@@ -152,8 +152,8 @@ func testProposalPreAccept(t *testing.T) {
 	}
 }
 
-func testProposalPostAccept(t *testing.T) {
-	policy := getProposalSpamPolicy()
+func testCommandPostAccept(t *testing.T) {
+	policy := getCommandSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -173,8 +173,8 @@ func testProposalPostAccept(t *testing.T) {
 	}
 }
 
-func testProposalPostRejectTooManyProposals(t *testing.T) {
-	policy := getProposalSpamPolicy()
+func testCommandPostRejectTooManyProposals(t *testing.T) {
+	policy := getCommandSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -201,8 +201,8 @@ func testProposalPostRejectTooManyProposals(t *testing.T) {
 	}
 }
 
-func testProposalCountersUpdated(t *testing.T) {
-	policy := getProposalSpamPolicy()
+func testCommandCountersUpdated(t *testing.T) {
+	policy := getCommandSpamPolicy()
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
@@ -229,9 +229,9 @@ func testProposalCountersUpdated(t *testing.T) {
 
 }
 
-func testProposalReset(t *testing.T) {
+func testCommandReset(t *testing.T) {
 	// set state
-	policy := getProposalSpamPolicy()
+	policy := getCommandSpamPolicy()
 
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens

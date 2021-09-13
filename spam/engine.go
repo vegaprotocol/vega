@@ -26,6 +26,15 @@ var (
 	ErrTooManyVotes = errors.New("party has already voted the maximum number of times per proposal per epoch")
 	//ErrTooManyProposals is returned when the party has proposed the maximum allowed proposals per epoch
 	ErrTooManyProposals = errors.New("party has already proposed the maximum number of proposals per epoch")
+
+	increaseFactor = num.NewUint(2)
+)
+
+const (
+	rejectRatioForIncrease         float64 = 0.3
+	numberOfEpochsBan              uint64  = 3
+	numberOfBlocksForIncreaseCheck int     = 10
+	banFactor                              = 0.5
 )
 
 type Accounting interface {
@@ -65,16 +74,30 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		transactionTypeToPolicy: map[txn.Command]SpamPolicy{},
 	}
 
-	proposalPolicy := NewProposalSpamPolicy()
-	votePolicy := NewVoteSpamPolicy()
+	proposalPolicy := NewSimpleSpamPolicy(netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals)
+	delegationPolicy := NewSimpleSpamPolicy(netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations)
+	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes)
+
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
+	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
 	e.log.Info("Spam protection started")
 
 	return e
+}
+
+//OnMaxDelegationsChanged is called when the net param for max delegations per epoch has changed
+func (e *Engine) OnMaxDelegationsChanged(ctx context.Context, maxDelegations int) error {
+	return e.transactionTypeToPolicy[txn.DelegateCommand].UpdateIntParam(netparams.SpamProtectionMaxDelegations, maxDelegations)
+}
+
+//OnMinTokensForDelegationChanged is called when the net param for min tokens requirement for voting has changed
+func (e *Engine) OnMinTokensForDelegationChanged(ctx context.Context, minTokens num.Decimal) error {
+	minTokensFoDelegation, _ := num.UintFromDecimal(minTokens)
+	return e.transactionTypeToPolicy[txn.DelegateCommand].UpdateUintParam(netparams.SpamProtectionMinTokensForDelegation, minTokensFoDelegation)
 }
 
 //OnMaxVotesChanged is called when the net param for max votes per epoch has changed

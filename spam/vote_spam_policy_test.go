@@ -38,7 +38,7 @@ func TestVotingSpamProtection(t *testing.T) {
 }
 
 func getVotingSpamPolicy() *spam.VoteSpamPolicy {
-	policy := spam.NewVoteSpamPolicy()
+	policy := spam.NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes)
 	minTokensForVoting, _ := num.UintFromString("100000000000000000000", 10)
 	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForVoting, minTokensForVoting)
 	policy.UpdateIntParam(netparams.SpamProtectionMaxVotes, 3)

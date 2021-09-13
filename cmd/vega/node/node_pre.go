@@ -528,12 +528,20 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.spam.OnMaxProposalsChanged,
 		},
 		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxDelegations,
+			Watcher: l.spam.OnMaxDelegationsChanged,
+		},
+		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMinTokensForProposal,
 			Watcher: l.spam.OnMinTokensForProposalChanged,
 		},
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMinTokensForVoting,
 			Watcher: l.spam.OnMinTokensForVotingChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForDelegation,
+			Watcher: l.spam.OnMinTokensForDelegationChanged,
 		},
 	)
 }

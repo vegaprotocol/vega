@@ -6,7 +6,6 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -24,18 +23,13 @@ func (b *blockRejectInfo) add(rejected bool) {
 }
 
 var maxMinVotingTokens, _ = num.UintFromString("1600000000000000000000", 10)
-var increaseFactor = num.NewUint(2)
-
-const (
-	rejectRatioForIncrease         float64 = 0.3
-	numberOfEpochsBan              uint64  = 3
-	numberOfBlocksForIncreaseCheck int     = 10
-	banFactor                              = 0.5
-)
 
 type VoteSpamPolicy struct {
 	numVotes        uint64
 	minVotingTokens *num.Uint
+
+	minTokensParamName  string
+	maxAllowedParamName string
 
 	minVotingTokensFactor   *num.Uint                                        // a factor applied on the min voting tokens
 	effectiveMinTokens      *num.Uint                                        // minVotingFactor * minVotingTokens
@@ -52,26 +46,29 @@ type VoteSpamPolicy struct {
 	lock                    sync.RWMutex                                     // global lock to sync calls from multiple tendermint threads
 }
 
-func NewVoteSpamPolicy() *VoteSpamPolicy {
+//NewVoteSpamPolicy instantiates vote spam policy
+func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string) *VoteSpamPolicy {
 	return &VoteSpamPolicy{
 		minVotingTokensFactor: num.NewUint(1),
 
-		partyToVote:       map[string]map[string]uint64{},
-		blockPartyToVote:  map[string]map[string]uint64{},
-		bannedParties:     map[string]uint64{},
-		tokenBalance:      map[string]*num.Uint{},
-		blockPostRejects:  &blockRejectInfo{total: 0, rejected: 0},
-		partyBlockRejects: map[string]*blockRejectInfo{},
-		currentBlockIndex: 0,
-		lastIncreaseBlock: 0,
-		lock:              sync.RWMutex{},
+		partyToVote:         map[string]map[string]uint64{},
+		blockPartyToVote:    map[string]map[string]uint64{},
+		bannedParties:       map[string]uint64{},
+		tokenBalance:        map[string]*num.Uint{},
+		blockPostRejects:    &blockRejectInfo{total: 0, rejected: 0},
+		partyBlockRejects:   map[string]*blockRejectInfo{},
+		currentBlockIndex:   0,
+		lastIncreaseBlock:   0,
+		lock:                sync.RWMutex{},
+		minTokensParamName:  minTokensParamName,
+		maxAllowedParamName: maxAllowedParamName,
 	}
 }
 
 //UpdateUintParam is called to update Uint net params for the policy
 //Specifically the min tokens required for voting
 func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
-	if name == netparams.SpamProtectionMinTokensForVoting {
+	if name == vsp.minTokensParamName {
 		vsp.minVotingTokens = value.Clone()
 		//NB: this means that if during the epoch the min tokens changes externally
 		// and we already have a factor on it, the factor will be applied on the new value for the duration of the epoch
@@ -85,7 +82,7 @@ func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
 //UpdateIntParam is called to update iint net params for the policy
 //Specifically the number of votes to a proposal a party can submit in an epoch
 func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int) error {
-	if name == netparams.SpamProtectionMaxVotes {
+	if name == vsp.maxAllowedParamName {
 		vsp.numVotes = uint64(value)
 	} else {
 		return errors.New("unknown parameter for vote spam policy")

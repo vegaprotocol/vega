@@ -88,10 +88,12 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
 
 		// spam protection policies
-		SpamProtectionMaxVotes:             NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
-		SpamProtectionMinTokensForVoting:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000"),
-		SpamProtectionMaxProposals:         NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
-		SpamProtectionMinTokensForProposal: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000000"),
+		SpamProtectionMaxVotes:               NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForVoting:     NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxProposals:           NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForProposal:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000000"),
+		SpamProtectionMaxDelegations:         NewInt(IntGTE(0)).Mutable(true).MustUpdate("390"),
+		SpamProtectionMinTokensForDelegation: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1000000000000000000"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
