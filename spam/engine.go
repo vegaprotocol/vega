@@ -81,6 +81,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
 	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
+	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
