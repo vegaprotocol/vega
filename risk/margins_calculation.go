@@ -52,7 +52,7 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 	// calculate margins without order positions
 	ml := e.calculateMargins(m, markPrice, rf, true, true)
 	// now add the margin levels for orders
-	long, short := num.DecimalFromInt64(m.Buy()), num.DecimalFromInt64(m.Sell())
+	long, short := num.DecimalFromInt(m.Buy()), num.DecimalFromInt(m.Sell())
 	var (
 		lMargin, sMargin num.Decimal
 	)
@@ -95,12 +95,16 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	mPriceDec := markPrice.ToDecimal()
 	// calculate margin maintenance long only if riskiest is > 0
 	// marginMaintenanceLng will be 0 by default
-	if riskiestLng > 0 {
+	if riskiestLng.IsPositive() && riskiestLng > 0 {
 		var (
-			slippageVolume  = num.DecimalFromInt64(max(openVolume, 0))
+			slippageVolume  = num.DecimalFromInt(openVolume)
 			slippagePerUnit = num.Zero()
 			negSlippage     bool
 		)
+		if slippageVolume.Sign() == -1 {
+			slippageVolume = num.DecimalFromInt64(0)
+		}
+
 		if slippageVolume.IsPositive() {
 			var (
 				exitPrice *num.Uint

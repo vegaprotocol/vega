@@ -61,7 +61,8 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
-			logging.Int64("amount", evt.AmountLost()),
+			logging.BigUint("amount", evt.Amount()),
+			logging.Bool("amount sign", evt.Negative()),
 			logging.String("market-id", evt.MarketID()))
 		evts = append(evts, evt)
 	}
@@ -75,7 +76,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		// last one get the remaining bits
 		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(mismatch)
 		// decAmt is negative
-		loss := mismatch.Sub(evt.AmountUint(), mismatch)
+		loss := mismatch.Sub(evt.Amount(), mismatch)
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),

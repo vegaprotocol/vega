@@ -162,7 +162,7 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 
 	return agg.Remaining == 0, trades, impactedOrders, err
 }
-func (l *PriceLevel) getVolumeAllocation(agg, pass *types.Order) uint64 {
+func (l *PriceLevel) getVolumeAllocation(agg, pass *types.Order) *num.Uint {
 	return min(agg.Remaining, pass.Remaining)
 }
 
@@ -183,7 +183,7 @@ func max(x, y uint64) uint64 {
 }
 
 // Creates a trade of a given size between two orders and updates the order details
-func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
+func newTrade(agg, pass *types.Order, size *num.Uint) *types.Trade {
 	var buyer, seller *types.Order
 	if agg.Side == types.SideBuy {
 		buyer = agg

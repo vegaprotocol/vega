@@ -246,7 +246,7 @@ type Trade struct {
 	ID                 string
 	MarketID           string
 	Price              *num.Uint
-	Size               uint64
+	Size               *num.Uint
 	Buyer              string
 	Seller             string
 	Aggressor          Side
@@ -284,7 +284,7 @@ func (t *Trade) IntoProto() *proto.Trade {
 		Id:                 t.ID,
 		MarketId:           t.MarketID,
 		Price:              num.UintToString(t.Price),
-		Size:               t.Size,
+		Size:               t.Size.Uint64(),
 		Buyer:              t.Buyer,
 		Seller:             t.Seller,
 		Aggressor:          t.Aggressor,

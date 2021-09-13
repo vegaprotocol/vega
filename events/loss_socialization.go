@@ -43,20 +43,8 @@ func (l LossSoc) Negative() bool {
 	return l.neg
 }
 
-func (l LossSoc) AmountUint() *num.Uint {
+func (l LossSoc) Amount() *num.Uint {
 	return l.amount.Clone()
-}
-
-func (l LossSoc) Amount() int64 {
-	return int64(l.amount.Uint64())
-}
-
-func (l LossSoc) AmountLost() int64 {
-	amt := int64(l.amount.Uint64())
-	if l.neg {
-		return -amt
-	}
-	return amt
 }
 
 func (l LossSoc) Timestamp() int64 {
@@ -64,9 +52,9 @@ func (l LossSoc) Timestamp() int64 {
 }
 
 func (l LossSoc) Proto() eventspb.LossSocialization {
-	amt := int64(l.amount.Uint64())
+	amt := l.amount.String()
 	if l.neg {
-		amt *= -1
+		amt = "-" + amt
 	}
 	return eventspb.LossSocialization{
 		MarketId: l.marketID,
@@ -96,13 +84,13 @@ func LossSocializationEventFromStream(ctx context.Context, be *eventspb.BusEvent
 	}
 
 	amt := be.GetLossSocialization().Amount
-	if amt < 0 {
+	if len(amt) > 0 && amt[0] == '-' {
 		lse.neg = true
-		amt *= -1
-		lse.amount = num.NewUint(uint64(amt))
+		amt = amt[1:]
+		lse.amount, _ = num.UintFromString(amt, 10)
 		return lse
 	}
 
-	lse.amount = num.NewUint(uint64(amt))
+	lse.amount, _ = num.UintFromString(amt, 10)
 	return lse
 }

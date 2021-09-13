@@ -57,9 +57,9 @@ func (e *Engine) Hash() []byte {
 	var i int
 	for _, p := range e.positionsCpy {
 		values := []uint64{
-			uint64(p.Size()),
-			uint64(p.Buy()),
-			uint64(p.Sell()),
+			p.Size().U.Uint64(),
+			p.Buy().U.Uint64(),
+			p.Sell().U.Uint64(),
 		}
 
 		for _, v := range values {
@@ -148,7 +148,7 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 		ok  bool
 		pos *MarketPosition
 	)
-	size := int64(trade.Size)
+	size := num.IntFromUint(trade.Size, true)
 	if trade.Buyer != "network" {
 		pos, ok = e.positions[trade.Buyer]
 		if !ok {
@@ -156,15 +156,15 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 				logging.Trade(*trade))
 		}
 
-		if pos.buy < int64(trade.Size) {
+		if pos.buy.LT(num.IntFromUint(trade.Size, true)) {
 			e.log.Panic("network trade with a potential buy position < to the trade size",
 				logging.PartyID(trade.Buyer),
-				logging.Int64("potential-buy", pos.buy),
+				logging.BigInt("potential-buy", pos.buy),
 				logging.Trade(*trade))
 		}
 
 		// potential buy pos is smaller now
-		pos.buy -= int64(trade.Size)
+		pos.buy.SubSum(num.IntFromUint(trade.Size, true))
 	} else {
 		pos, ok = e.positions[trade.Seller]
 		if !ok {
@@ -172,19 +172,19 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 				logging.Trade(*trade))
 		}
 
-		if pos.sell < int64(trade.Size) {
+		if pos.sell.LT(num.IntFromUint(trade.Size, true)) {
 			e.log.Panic("network trade with a potential sell position < to the trade size",
 				logging.PartyID(trade.Seller),
-				logging.Int64("potential-sell", pos.sell),
+				logging.BigInt("potential-sell", pos.sell),
 				logging.Trade(*trade))
 		}
 
 		// potential sell pos is smaller now
-		pos.sell -= int64(trade.Size)
+		pos.sell.SubSum(num.IntFromUint(trade.Size, true))
 		// size is negative in case of a sale
-		size = -size
+		size.FlipSign()
 	}
-	pos.size += size
+	pos.size.AddSum(size)
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -206,27 +206,27 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	// now we check if the trade is possible based on the potential positions
 	// this should always be true, no trade can happen without the equivalent
 	// potential position
-	if buyer.buy < int64(trade.Size) {
+	if buyer.buy.LT(num.IntFromUint(trade.Size, true)) {
 		e.log.Panic("trade with a potential buy position < to the trade size",
 			logging.PartyID(trade.Buyer),
-			logging.Int64("potential-buy", buyer.buy),
+			logging.BigInt("potential-buy", buyer.buy),
 			logging.Trade(*trade))
 	}
-	if seller.sell < int64(trade.Size) {
+	if seller.sell.LT(num.IntFromUint(trade.Size, true)) {
 		e.log.Panic("trade with a potential sell position < to the trade size",
 			logging.PartyID(trade.Seller),
-			logging.Int64("potential-sell", buyer.sell),
+			logging.BigInt("potential-sell", buyer.sell),
 			logging.Trade(*trade))
 	}
 
 	// Update long/short actual position for buyer and seller.
 	// The buyer's position increases and the seller's position decreases.
-	buyer.size += int64(trade.Size)
-	seller.size -= int64(trade.Size)
+	buyer.size.AddSum(num.IntFromUint(trade.Size, true))
+	seller.size.SubSum(num.IntFromUint(trade.Size, true))
 
 	// Update potential positions. Potential positions decrease for both buyer and seller.
-	buyer.buy -= int64(trade.Size)
-	seller.sell -= int64(trade.Size)
+	buyer.buy.SubSum(num.IntFromUint(trade.Size, true))
+	seller.sell.SubSum(num.IntFromUint(trade.Size, true))
 
 	ret := []events.MarketPosition{
 		*buyer.Clone(),
@@ -278,21 +278,21 @@ func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	return e.positionsCpy
 }
 
-func (e *Engine) GetOpenInterest() uint64 {
-	openInterest := uint64(0)
+func (e *Engine) GetOpenInterest() *num.Uint {
+	openInterest := num.NewInt(0)
 	for _, pos := range e.positions {
-		if pos.size > 0 {
-			openInterest += uint64(pos.size)
+		if pos.size.IsPositive() {
+			openInterest.AddSum(pos.size)
 		}
 	}
-	return openInterest
+	return openInterest.U
 }
 
-func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
+func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) *num.Uint {
 	oi := e.GetOpenInterest()
-	d := int64(0)
+	d := num.NewInt(0)
 	for _, t := range trades {
-		bSize, sSize := int64(0), int64(0)
+		bSize, sSize := num.NewInt(0), num.NewInt(0)
 		if p, ok := e.positions[t.Buyer]; ok {
 			bSize = p.size
 		}
@@ -302,13 +302,12 @@ func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 		// Change in open interest due to trades equals change in longs
 		d += max(0, bSize+int64(t.Size)) - max(0, bSize) + max(0, sSize-int64(t.Size)) - max(0, sSize)
 	}
-	if d > 0 {
-		oi += uint64(d)
+	if d.IsPositive() {
+		oi.AddSum(d.U)
 	}
-	if d < 0 {
-		oi -= uint64(-d)
+	if d.IsNegative() {
+		oi.SubSum(d.U)
 	}
-
 	return oi
 }
 

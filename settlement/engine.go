@@ -125,7 +125,7 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
 	var (
-		buyerSize, sellerSize int64
+		buyerSize, sellerSize *num.Int
 	)
 	// checking the len of cd shouldn't be required here, but it is needed in the second if
 	// in case the buyer and seller are one and the same...
@@ -133,7 +133,7 @@ func (e *Engine) AddTrade(trade *types.Trade) {
 		e.trades[trade.Buyer] = []*pos{}
 		// check if the buyer already has a known position
 		if pos, ok := e.pos[trade.Buyer]; ok {
-			buyerSize = pos.size
+			buyerSize = pos.size.Clone()
 		}
 	} else {
 		buyerSize = cd[len(cd)-1].newSize

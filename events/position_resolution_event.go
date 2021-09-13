@@ -5,16 +5,17 @@ import (
 	"fmt"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type PosRes struct {
 	*Base
 	distressed, closed int
 	marketID           string
-	markPrice          uint64
+	markPrice          *num.Uint
 }
 
-func NewPositionResolution(ctx context.Context, distressed, closed int, markPrice uint64, marketID string) *PosRes {
+func NewPositionResolution(ctx context.Context, distressed, closed int, markPrice *num.Uint, marketID string) *PosRes {
 	base := newBase(ctx, PositionResolution)
 	return &PosRes{
 		Base:       base,
@@ -34,8 +35,8 @@ func (p PosRes) MarketID() string {
 	return p.marketID
 }
 
-func (p PosRes) MarkPrice() uint64 {
-	return p.markPrice
+func (p PosRes) MarkPrice() *num.Uint {
+	return p.markPrice.Clone()
 }
 
 func (p PosRes) Distressed() int {
@@ -51,7 +52,7 @@ func (p PosRes) Proto() eventspb.PositionResolution {
 		MarketId:   p.marketID,
 		Closed:     int64(p.closed),
 		Distressed: int64(p.distressed),
-		MarkPrice:  p.markPrice,
+		MarkPrice:  p.markPrice.String(),
 	}
 }
 
@@ -89,11 +90,12 @@ func (p PosRes) StreamMarketMessage() *eventspb.BusEvent {
 
 func PositionResolutionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *PosRes {
 	base := newBaseFromStream(ctx, PositionResolution, be)
+	mp, _ := num.UintFromString(be.GetPositionResolution().GetMarkPrice(), 10)
 	return &PosRes{
 		Base:       base,
 		distressed: int(be.GetPositionResolution().Distressed),
 		closed:     int(be.GetPositionResolution().Closed),
-		markPrice:  be.GetPositionResolution().GetMarkPrice(),
+		markPrice:  mp,
 		marketID:   be.GetPositionResolution().MarketId,
 	}
 }

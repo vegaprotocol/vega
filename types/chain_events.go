@@ -156,17 +156,18 @@ type BuiltinAssetDeposit struct {
 }
 
 func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) *BuiltinAssetDeposit {
+	amount, _ := num.UintFromString(p.Amount, 10)
 	return &BuiltinAssetDeposit{
 		VegaAssetID: p.VegaAssetId,
 		PartyID:     p.PartyId,
-		Amount:      num.NewUint(p.Amount),
+		Amount:      amount,
 	}
 }
 
 func (b BuiltinAssetDeposit) IntoProto() *proto.BuiltinAssetDeposit {
-	var amount uint64
+	var amount string
 	if b.Amount != nil {
-		amount = b.Amount.Uint64()
+		amount = b.Amount.String()
 	}
 	return &proto.BuiltinAssetDeposit{
 		VegaAssetId: b.VegaAssetID,

@@ -8,9 +8,9 @@ import (
 // MarketPosition is an event with a change to a position.
 type MarketPosition interface {
 	Party() string
-	Size() int64
-	Buy() int64
-	Sell() int64
+	Size() *num.Int
+	Buy() *num.Int
+	Sell() *num.Int
 	Price() *num.Uint
 	VWBuy() *num.Uint
 	VWSell() *num.Uint
@@ -18,7 +18,7 @@ type MarketPosition interface {
 
 // TradeSettlement Part of the SettlePosition interface -> traces trades as they happened
 type TradeSettlement interface {
-	Size() int64
+	Size() *num.Uint
 	Price() *num.Uint
 }
 
@@ -26,7 +26,7 @@ type TradeSettlement interface {
 type LossSocialization interface {
 	MarketID() string
 	PartyID() string
-	AmountLost() int64
+	AmountLost() *num.Int
 }
 
 // SettlePosition is an event that the settlement buffer will propagate through the system
@@ -36,7 +36,7 @@ type SettlePosition interface {
 	Trades() []TradeSettlement
 	Margin() (uint64, bool)
 	Party() string
-	Price() uint64
+	Price() *num.Uint
 }
 
 // FeeTransfer is a transfer initiated after trade occurs

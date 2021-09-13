@@ -17,6 +17,85 @@ var (
 	zero    = NewUint(0)
 )
 
+// Int a wrapper to a signed big int
+type Int struct {
+	// The unsigned version of the integer
+	U *Uint
+	// The sign of the integer true = positive, false = negative
+	s bool
+}
+
+func IntFromUint(u *Uint, s bool) *Int {
+	copy := &Int{s: s,
+		U: u.Clone()}
+	return copy
+}
+
+// IsNegative
+// true if < 0
+// false if >= 0
+func (i *Int) IsNegative() bool {
+	return i.s == false && !i.U.IsZero()
+}
+
+// IsPositive
+// true if > 0
+// false if <= 0
+func (i *Int) IsPositive() bool {
+	return i.s == true && !i.U.IsZero()
+}
+
+func (i *Int) FlipSign() {
+	i.s = !i.s
+}
+
+func (i Int) Clone() *Int {
+	return &Int{U: i.U.Clone(),
+		s: i.s}
+}
+
+// PETETODO
+func (i Int) GT(o *Int) bool {
+	return true
+}
+
+// PETETODO
+func (i Int) LT(o *Int) bool {
+	return true
+}
+
+// PETETODO
+func (i Int) String() string {
+	return ""
+}
+
+// PETETODO
+func (i *Int) AddSum(vals ...*Int) *Int {
+	//	for _, _ := range vals {
+	//		u.u.Add(&u.u, &x.u)
+	//	}
+	return i
+}
+
+// PETETODO
+func (i *Int) SubSum(vals ...*Int) *Int {
+	//	for _, _ := range vals {
+	//		u.u.Add(&u.u, &x.u)
+	//	}
+	return i
+}
+
+// NewInt creates a new Int with the value of the
+// int64 passed as a parameter.
+func NewInt(val int64) *Int {
+	if val < 0 {
+		return &Int{U: NewUint(uint64(-val)),
+			s: false}
+	}
+	return &Int{U: NewUint(uint64(val)),
+		s: true}
+}
+
 // Uint A wrapper for a big unsigned int
 type Uint struct {
 	u uint256.Int

@@ -11,9 +11,9 @@ import (
 // MarketPosition represents the position of a party inside a market
 type MarketPosition struct {
 	// Actual volume
-	size int64
+	size *num.Int
 	// Potential volume (orders not yet accepted/rejected)
-	buy, sell int64
+	buy, sell *num.Int
 
 	partyID string
 	price   *num.Uint
@@ -25,6 +25,9 @@ type MarketPosition struct {
 func NewMarketPosition(party string) *MarketPosition {
 	return &MarketPosition{
 		partyID:     party,
+		size:        num.NewInt(0),
+		buy:         num.NewInt(0),
+		sell:        num.NewInt(0),
 		price:       num.Zero(),
 		vwBuyPrice:  num.Zero(),
 		vwSellPrice: num.Zero(),
@@ -34,6 +37,9 @@ func NewMarketPosition(party string) *MarketPosition {
 func (p MarketPosition) Clone() *MarketPosition {
 	cpy := p
 	cpy.price = p.price.Clone()
+	cpy.buy = p.buy.Clone()
+	cpy.sell = p.sell.Clone()
+	cpy.size = p.size.Clone()
 	cpy.vwBuyPrice = p.vwBuyPrice.Clone()
 	cpy.vwSellPrice = p.vwSellPrice.Clone()
 	return &cpy
@@ -165,17 +171,17 @@ func (p MarketPosition) String() string {
 }
 
 // Buy will returns the potential buys for a given position
-func (p MarketPosition) Buy() int64 {
+func (p MarketPosition) Buy() *num.Int {
 	return p.buy
 }
 
 // Sell returns the potential sells for the position
-func (p MarketPosition) Sell() int64 {
+func (p MarketPosition) Sell() *num.Int {
 	return p.sell
 }
 
 // Size returns the current size of the position
-func (p MarketPosition) Size() int64 {
+func (p MarketPosition) Size() *num.Int {
 	return p.size
 }
 

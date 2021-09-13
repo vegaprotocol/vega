@@ -296,19 +296,16 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		totalFeesAmounts = map[string]*num.Uint{}
 		partiesFees      = map[string]*types.Fee{}
 		// this is the share of each party to be paid
-		partiesShare     = map[string]*feeShare{}
-		totalAbsolutePos uint64
-		transfers        = []*types.Transfer{}
+		partiesShare               = map[string]*feeShare{}
+		totalAbsolutePos *num.Uint = num.Zero()
+		transfers                  = []*types.Transfer{}
 	)
 
 	// first calculate the share of all distressedParties
 	for _, v := range closedMPs {
-		var size = v.Size()
-		if size < 0 {
-			size = -size
-		}
-		totalAbsolutePos += uint64(size)
-		partiesShare[v.Party()] = &feeShare{pos: uint64(size)}
+		var size = v.Size().Clone()
+		totalAbsolutePos.AddSum(size.U)
+		partiesShare[v.Party()] = &feeShare{pos: size.U.Clone()}
 
 		// while we are at it, we initial the map of all fees per party
 		partiesFees[v.Party()] = types.NewFee()
@@ -317,7 +314,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 	// no we accumulated all the absolute position, we
 	// will get the share of each party
 	for _, v := range partiesShare {
-		v.share = num.DecimalFromInt64(int64(v.pos)).Div(num.DecimalFromInt64(int64(totalAbsolutePos)))
+		v.share = num.DecimalFromUint(v.pos).Div(num.DecimalFromUint(totalAbsolutePos))
 	}
 
 	// now we have the share of each distressed parties
@@ -474,7 +471,7 @@ func (e *Engine) getPositionResolutionFeesTransfers(
 
 type feeShare struct {
 	// the absolute position of the party which had to be recovered
-	pos uint64
+	pos *num.Uint
 	// the share out of the total volume
 	share num.Decimal
 }

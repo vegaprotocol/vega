@@ -23,9 +23,9 @@ type pos struct {
 	// which we can't guarantee through an embedded interface
 	events.MarketPosition
 	party   string
-	size    int64
+	size    *num.Int
 	price   *num.Uint
-	newSize int64 // track this so we can determine when a party switches between long <> short
+	newSize *num.Int // track this so we can determine when a party switches between long <> short
 }
 
 type mtmTransfer struct {
@@ -61,7 +61,7 @@ func (p pos) Party() string {
 }
 
 // Size - part of the MarketPosition interface, used to update position after SettlePreTrade
-func (p pos) Size() int64 {
+func (p pos) Size() *num.Int {
 	return p.size
 }
 
@@ -82,16 +82,16 @@ func (npos) Party() string {
 	return types.NetworkParty
 }
 
-func (npos) Size() int64 {
-	return 0
+func (npos) Size() *num.Int {
+	return num.NewInt(0)
 }
 
-func (npos) Buy() int64 {
-	return 0
+func (npos) Buy() *num.Int {
+	return num.NewInt(0)
 }
 
-func (npos) Sell() int64 {
-	return 0
+func (npos) Sell() *num.Int {
+	return num.NewInt(0)
 }
 
 func (n npos) Price() *num.Uint {
