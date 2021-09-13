@@ -267,7 +267,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 }
 
 func (b *ERC20) SignWithdrawal(
-	amount uint64,
+	amount *num.Uint,
 	expiry int64,
 	ethPartyAddress string,
 	withdrawRef *big.Int,
@@ -322,7 +322,7 @@ func (b *ERC20) SignWithdrawal(
 	// we use the withdrawRef as a nonce
 	// they are unique as generated as an increment from the banking
 	// layer
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(int64(amount)), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
+	buf, err := args.Pack([]interface{}{addr, amount.BigInt(), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}

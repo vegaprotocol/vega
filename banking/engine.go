@@ -371,7 +371,7 @@ func (e *Engine) LockWithdrawalERC20(ctx context.Context, id, party, assetID str
 
 	// then get the signature for the withdrawal and send it
 	erc20asset, _ := asset.ERC20() // no check error as we checked earlier we had an erc20 asset.
-	_, sig, err := erc20asset.SignWithdrawal(amount.Uint64(), w.ExpirationDate, ext.GetReceiverAddress(), ref)
+	_, sig, err := erc20asset.SignWithdrawal(amount.Clone(), w.ExpirationDate, ext.GetReceiverAddress(), ref)
 	if err != nil {
 		// we don't cancel it here
 		// we may not be able to sign for some reason, but other may be able
