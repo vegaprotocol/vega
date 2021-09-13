@@ -76,7 +76,7 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
 		// Delegation default params
-		DelegationMinAmount: NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
+		DelegationMinAmount: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
 
 		// staking and delegation
 		StakingAndDelegationRewardPayoutFraction:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("1.0"),

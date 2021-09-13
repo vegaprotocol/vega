@@ -231,7 +231,7 @@ func (e *Engine) DepositBuiltinAsset(
 
 func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
-	asset, _ := e.assets.Get(al.VegaAssetId)
+	asset, _ := e.assets.Get(al.VegaAssetID)
 	aa := &assetAction{
 		id:          id(al, uint64(now.UnixNano())),
 		state:       pendingState,
@@ -279,10 +279,10 @@ func (e *Engine) DepositERC20(ctx context.Context, d *types.ERC20Deposit, id str
 
 func (e *Engine) WithdrawalERC20(ctx context.Context, w *types.ERC20Withdrawal, blockNumber, txIndex uint64, txHash string) error {
 	now := e.currentTime
-	asset, err := e.assets.Get(w.VegaAssetId)
+	asset, err := e.assets.Get(w.VegaAssetID)
 	if err != nil {
 		e.log.Debug("unable to get asset by id",
-			logging.AssetID(w.VegaAssetId),
+			logging.AssetID(w.VegaAssetID),
 			logging.Error(err))
 		return err
 	}
@@ -461,7 +461,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		dep := e.deposits[aa.id]
 		return e.finalizeDeposit(ctx, dep)
 	case aa.IsERC20AssetList():
-		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetId)
+		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	case aa.IsERC20Withdrawal():
 		w, err := e.getWithdrawalFromRef(aa.withdrawal.nonce)
 		if err != nil {
