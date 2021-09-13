@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/cmd/vega/bridge"
+
 	"github.com/jessevdk/go-flags"
 )
 
