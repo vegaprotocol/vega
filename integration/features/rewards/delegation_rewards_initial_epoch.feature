@@ -33,45 +33,6 @@ Feature: Staking & Delegation
       | node12 |         1000000         |
       | node13 |         1000000         |
 
-  Scenario: No action in first epoch
- 
-    #complete the initial epoch for delegation to take effect
-    #TODO: Debug output seems to suggest epoch lenght is 1s?
-    Then the network moves ahead "86401" blocks
-
-    # TODO: Would be nice to be able to verify validator score in that case, but I'm not even sure if that comes through official API
-    #verify validator score 
-    # Then the validators should have the following val scores for epoch 1:
-    # | node id | validator score  | normalised score |
-    # |  node1  |      0.00000     |     0.00000      |    
-    # |  node2  |      0.00000     |     0.00000      |
-    # |  node3  |      0.00000     |     0.00000      | 
-    # |  node4  |      0.00000     |     0.00000      | 
-    # |  node5  |      0.00000     |     0.00000      | 
-    # |  node6  |      0.00000     |     0.00000      | 
-    # |  node7  |      0.00000     |     0.00000      | 
-    # |  node8  |      0.00000     |     0.00000      | 
-    # |  node9  |      0.00000     |     0.00000      | 
-    # |  node10 |      0.00000     |     0.00000      | 
-    # |  node11 |      0.00000     |     0.00000      | 
-    # |  node12 |      0.00000     |     0.00000      | 
-    # |  node13 |      0.00000     |     0.00000      | 
-
-    And the parties receive the following reward for epoch 1:
-    | party  | asset | amount |
-    | node1  | VEGA  |     0  | 
-    | node2  | VEGA  |     0  | 
-    | node3  | VEGA  |     0  | 
-    | node4  | VEGA  |     0  | 
-    | node5  | VEGA  |     0  | 
-    | node6  | VEGA  |     0  | 
-    | node8  | VEGA  |     0  | 
-    | node10 | VEGA  |     0  | 
-    | node11 | VEGA  |     0  | 
-    | node12 | VEGA  |     0  | 
-    | node13 | VEGA  |     0  | 
-
-
   Scenario: Only a few validators self-delegate, no delegation
 
     #set up the self delegation of the validators (number of validators = min. validators parameter)
@@ -88,7 +49,7 @@ Feature: Staking & Delegation
       | VEGA  | 100000 | 
     
     #complete the initial epoch for delegation to take effect
-    Then the network moves ahead "86401" blocks
+    Then the network moves ahead "172803" blocks
 
     Then the validators should have the following val scores for epoch 1:
     | node id | validator score  | normalised score |
@@ -155,42 +116,8 @@ Feature: Staking & Delegation
       | VEGA  | 100000 | 
     
     #complete the initial epoch for delegation to take effect
-    Then the network moves ahead "86401" blocks
+    Then the network moves ahead "172803" blocks
 
-    # Then the validators should have the following val scores for epoch 1:
-    # | node id | validator score  | normalised score |
-    # |  node1  |      0.08462     |     0.47450      |    
-    # |  node2  |      0.01606     |     0.09000      |
-    # |  node3  |      0.01740     |     0.09759      | 
-    # |  node4  |      0.01874     |     0.10510      | 
-    # |  node5  |      0.02008     |     0.11261      | 
-    # |  node6  |      0.02142     |     0.12011      | 
-    # |  node7  |      0.00000     |     0.00000      | 
-    # |  node8  |      0.00000     |     0.00000      | 
-    # |  node9  |      0.00000     |     0.00000      | 
-    # |  node10 |      0.00000     |     0.00000      | 
-    # |  node11 |      0.00000     |     0.00000      | 
-    # |  node12 |      0.00000     |     0.00000      | 
-    # |  node13 |      0.00000     |     0.00000      | 
-
-    # And the parties receive the following reward for epoch 1:
-    # | party  | asset | amount |
-    # | party1 | VEGA  | 3434   | 
-    # | party2 | VEGA  | 6869   | 
-    # | party3 | VEGA  | 10304  | 
-    # | node1  | VEGA  | 3116   | 
-    # | node2  | VEGA  | 4504   | 
-    # | node3  | VEGA  | 4879   |  
-    # | node4  | VEGA  | 5254   | 
-    # | node5  | VEGA  | 5630   | 
-    # | node6  | VEGA  | 6005   | 
-    # | node8  | VEGA  | 0      | 
-    # | node10 | VEGA  | 0      | 
-    # | node11 | VEGA  | 0      | 
-    # | node12 | VEGA  | 0      | 
-    # | node13 | VEGA  | 0      | 
-
-   #TODO: Expecting values above, but this is what comes out:
    Then the validators should have the following val scores for epoch 1:
     | node id | validator score  | normalised score |
     |  node1  |      0.08462     |     0.16667      |    
@@ -225,8 +152,27 @@ Feature: Staking & Delegation
     | node13 | VEGA  | 0      | 
 
 
-    
-    
+And the following network parameters are set:
+    | name                                              |  value |
+    | reward.staking.delegation.competitionLevel        |  1.2   |
+Then the network moves ahead "86402" blocks
+
+Then the validators should have the following val scores for epoch 2:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.08462     |     0.16667      |    
+    |  node2  |      0.08462     |     0.16667      |
+    |  node3  |      0.08462     |     0.16667      | 
+    |  node4  |      0.08462     |     0.16667      | 
+    |  node5  |      0.08462     |     0.16667      | 
+    |  node6  |      0.08462     |     0.16667      | 
+    |  node7  |      0.00000     |     0.00000      | 
+    |  node8  |      0.00000     |     0.00000      | 
+    |  node9  |      0.00000     |     0.00000      | 
+    |  node10 |      0.00000     |     0.00000      | 
+    |  node11 |      0.00000     |     0.00000      | 
+    |  node12 |      0.00000     |     0.00000      | 
+    |  node13 |      0.00000     |     0.00000      | 
+
 #TODO:
   #  Clarify:
   #   - Not setting up reward account / adding 0 to it prevents validator score from being calculated
