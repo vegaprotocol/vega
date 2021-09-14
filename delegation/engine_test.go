@@ -1704,7 +1704,7 @@ func getEngine(t *testing.T) *testEngine {
 
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{})
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
-	engine.OnMinAmountChanged(context.Background(), 2)
+	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))
 	engine.OnCompLevelChanged(context.Background(), 1.1)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
