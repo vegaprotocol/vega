@@ -38,9 +38,10 @@ func (t Trade) Proto() ptypes.Trade {
 
 func (t Trade) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    t.eventID(),
-		Block: t.TraceID(),
-		Type:  t.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      t.eventID(),
+		Block:   t.TraceID(),
+		Type:    t.et.ToProto(),
 		Event: &eventspb.BusEvent_Trade{
 			Trade: &t.t,
 		},

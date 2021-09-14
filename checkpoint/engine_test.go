@@ -87,8 +87,8 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	}
 	// initialise time
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	raw, err := eng.Checkpoint(time.Now())
+	_, _ = eng.Checkpoint(ctx, tm)
+	raw, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	// now to check if the checkpoint contains the expected data
 	for k, c := range components {
@@ -127,8 +127,8 @@ func testGetCheckpointsAdd(t *testing.T) {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	raw, err := eng.Checkpoint(time.Now())
+	_, _ = eng.Checkpoint(ctx, tm)
+	raw, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	// now to check if the checkpoint contains the expected data
 	for k, c := range components {
@@ -198,8 +198,8 @@ func testLoadCheckpoints(t *testing.T) {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	snapshot, err := eng.Checkpoint(time.Now())
+	_, _ = eng.Checkpoint(ctx, tm)
+	snapshot, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
 	// create new components to load data in to
@@ -320,8 +320,8 @@ func testLoadSparse(t *testing.T) {
 	c := components[types.GovernanceCheckpoint]
 	c.EXPECT().Checkpoint().Times(1).Return(data[types.GovernanceCheckpoint], nil)
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	snapshot, err := eng.Checkpoint(time.Now())
+	_, _ = eng.Checkpoint(ctx, tm)
+	snapshot, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	require.NoError(t, eng.Add(components[types.AssetsCheckpoint])) // load another component, not part of the checkpoints map
 	c.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
@@ -365,8 +365,8 @@ func testLoadError(t *testing.T) {
 		types.AssetsCheckpoint:     nil, // we always load checkpoints in order, so bar will go first, and should not return an error
 	}
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	checkpoints, err := eng.Checkpoint(time.Now())
+	_, _ = eng.Checkpoint(ctx, tm)
+	checkpoints, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	for k, r := range ret {
 		c := components[k]
@@ -413,15 +413,15 @@ func testCheckpointBeforeInterval(t *testing.T) {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
+	_, _ = eng.Checkpoint(ctx, tm)
 	now := time.Now()
-	raw, err := eng.Checkpoint(now)
+	raw, err := eng.Checkpoint(ctx, now)
 	require.NoError(t, err)
 	require.NotNil(t, raw)
 
 	halfHour := time.Duration(int64(hour) / 2)
 	now = now.Add(halfHour)
-	raw, err = eng.Checkpoint(now)
+	raw, err = eng.Checkpoint(ctx, now)
 	require.Nil(t, raw)
 	require.Nil(t, err)
 }
@@ -453,20 +453,20 @@ func testCheckpointBalanceInterval(t *testing.T) {
 		c.EXPECT().Checkpoint().Times(2).Return(data[k], nil)
 	}
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
+	_, _ = eng.Checkpoint(ctx, tm)
 	now := time.Now()
-	raw, err := eng.Checkpoint(now)
+	raw, err := eng.Checkpoint(ctx, now)
 	require.NoError(t, err)
 	require.NotNil(t, raw)
 
 	halfHour := time.Duration(int64(hour) / 2)
 	now = now.Add(halfHour)
 	// progress time, but still not time to create a new checkpoint
-	raw, err = eng.Checkpoint(now)
+	raw, err = eng.Checkpoint(ctx, now)
 	require.Nil(t, raw)
 	require.Nil(t, err)
 	// for a withdrawal, though, we will create one regardless
-	_, err = eng.BalanceCheckpoint()
+	_, err = eng.BalanceCheckpoint(ctx)
 	require.NoError(t, err)
 }
 
@@ -500,23 +500,23 @@ func testCheckpointUpdatedInterval(t *testing.T) {
 		c.EXPECT().Checkpoint().Times(2).Return(data[k], nil)
 	}
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
+	_, _ = eng.Checkpoint(ctx, tm)
 	now := time.Now()
-	raw, err := eng.Checkpoint(now)
+	raw, err := eng.Checkpoint(ctx, now)
 	require.NoError(t, err)
 	require.NotNil(t, raw)
 
 	// this is before we ought to create a checkpoint, and should return nil
 	halfHour := time.Duration(int64(hour) / 2)
 	now = now.Add(halfHour)
-	raw, err = eng.Checkpoint(now)
+	raw, err = eng.Checkpoint(ctx, now)
 	require.Nil(t, raw)
 	require.Nil(t, err)
 
 	// now the second calls to the components are made
 	now = now.Add(time.Second)             // t+30m1s
 	eng.OnTimeElapsedUpdate(ctx, halfHour) // delta is 30 min
-	raw, err = eng.Checkpoint(now)
+	raw, err = eng.Checkpoint(ctx, now)
 	require.NoError(t, err)
 	require.NotNil(t, raw)
 }
@@ -542,8 +542,8 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 		c.EXPECT().Checkpoint().Times(1).Return(data[k], nil)
 	}
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	raw, err := eng.Checkpoint(time.Now())
+	_, _ = eng.Checkpoint(ctx, tm)
+	raw, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	// calling load with this checkpoint now is a noop
 	require.NoError(t, eng.Load(ctx, raw))
@@ -598,8 +598,8 @@ func testLoadAssets(t *testing.T) {
 	require.NoError(t, eng.Add(governance, assets, collateral))
 	// get the checkpoint data
 	tm := time.Now().Add(-2 * time.Hour)
-	_, _ = eng.Checkpoint(tm)
-	raw, err := eng.Checkpoint(time.Now())
+	_, _ = eng.Checkpoint(ctx, tm)
+	raw, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	// calling load with this checkpoint now is a noop
 	require.NoError(t, eng.Load(ctx, raw))

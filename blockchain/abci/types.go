@@ -17,6 +17,7 @@ type Tx interface {
 	Signature() []byte
 	Validate() error
 	BlockHeight() uint64
+	GetCmd() interface{}
 }
 
 type Codec interface {

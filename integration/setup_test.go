@@ -52,7 +52,7 @@ type executionTestSetup struct {
 	ctrl             *gomock.Controller
 	timeService      *stubs.TimeStub
 	broker           *stubs.BrokerStub
-	executionEngine  *execution.Engine
+	executionEngine  *exEng
 	collateralEngine *collateral.Engine
 	oracleEngine     *oracles.Engine
 	epochEngine      *epochtime.Svc
@@ -108,12 +108,15 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
-	execsetup.executionEngine = execution.NewEngine(
-		execsetup.log,
-		execsetup.cfg,
-		execsetup.timeService,
-		execsetup.collateralEngine,
-		execsetup.oracleEngine,
+	execsetup.executionEngine = newExEng(
+		execution.NewEngine(
+			execsetup.log,
+			execsetup.cfg,
+			execsetup.timeService,
+			execsetup.collateralEngine,
+			execsetup.oracleEngine,
+			execsetup.broker,
+		),
 		execsetup.broker,
 	)
 

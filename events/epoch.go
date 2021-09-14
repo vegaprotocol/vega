@@ -30,9 +30,10 @@ func (e EpochEvent) Proto() eventspb.EpochEvent {
 
 func (e EpochEvent) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    e.eventID(),
-		Block: e.TraceID(),
-		Type:  e.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      e.eventID(),
+		Block:   e.TraceID(),
+		Type:    e.et.ToProto(),
 		Event: &eventspb.BusEvent_EpochEvent{
 			EpochEvent: e.e,
 		},

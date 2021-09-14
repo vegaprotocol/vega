@@ -29,9 +29,10 @@ func (n NetworkParameter) Proto() proto.NetworkParameter {
 
 func (n NetworkParameter) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    n.eventID(),
-		Block: n.TraceID(),
-		Type:  n.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      n.eventID(),
+		Block:   n.TraceID(),
+		Type:    n.et.ToProto(),
 		Event: &eventspb.BusEvent_NetworkParameter{
 			NetworkParameter: &n.np,
 		},

@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"sort"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cucumber/godog"
 )
 
-func PartiesSubmitLiquidityProvision(exec *execution.Engine, table *godog.Table) error {
+func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 	lps := map[string]*types.LiquidityProvisionSubmission{}
 	parties := map[string]string{}
 	keys := []string{}

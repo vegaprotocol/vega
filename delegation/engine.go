@@ -122,8 +122,8 @@ func (e *Engine) OnCompLevelChanged(ctx context.Context, compLevel float64) erro
 }
 
 //OnMinAmountChanged updates the network parameter for minDelegationAmount
-func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount int64) error {
-	e.minDelegationAmount = num.NewUint(uint64(minAmount))
+func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount num.Decimal) error {
+	e.minDelegationAmount, _ = num.UintFromDecimal(minAmount)
 	return nil
 }
 
@@ -888,7 +888,9 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 
 			// check that the amount is not greater than the available for delegation
 			if amount.GT(availableForDelegation) || amount.IsZero() {
-				e.log.Debug("the amount requested for delegation is greater than available for delegation at end of epoch", logging.String("party", party), logging.String("nodeID", nodeID), logging.Uint64("amt", amount.Uint64()))
+				if e.log.GetLevel() <= logging.DebugLevel {
+					e.log.Debug("the amount requested for delegation is greater than available for delegation at end of epoch", logging.String("party", party), logging.String("nodeID", nodeID), logging.BigUint("amt", amount))
+				}
 				continue
 			}
 

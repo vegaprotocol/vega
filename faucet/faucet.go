@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	types "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/protos/vega/api"
@@ -16,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
@@ -51,7 +51,7 @@ type Faucet struct {
 
 type MintRequest struct {
 	Party  string `json:"party"`
-	Amount uint64 `json:"amount"`
+	Amount string `json:"amount"`
 	Asset  string `json:"asset"`
 }
 
@@ -114,16 +114,21 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 		writeError(w, newError("missing party field"), http.StatusBadRequest)
 		return
 	}
-	if req.Amount == 0 {
+	if len(req.Amount) <= 0 {
 		writeError(w, newError("amount need to be a > 0 unsigned integer"), http.StatusBadRequest)
 		return
 	}
+	amount, overflowed := num.UintFromString(req.Amount, 10)
+	if overflowed {
+		writeError(w, newError("amount overflowed or was not base 10"), http.StatusBadRequest)
+	}
+
 	if len(req.Asset) <= 0 {
 		writeError(w, newError("missing asset field"), http.StatusBadRequest)
 		return
 	}
 
-	if err := f.getAllowedAmount(r.Context(), req.Amount, req.Asset); err != nil {
+	if err := f.getAllowedAmount(r.Context(), amount, req.Asset); err != nil {
 		if errors.Is(err, ErrAssetNotFound) {
 			writeError(w, newError(err.Error()), http.StatusBadRequest)
 			return
@@ -202,7 +207,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	writeSuccess(w, resp, http.StatusOK)
 }
 
-func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset string) error {
+func (f *Faucet) getAllowedAmount(ctx context.Context, amount *num.Uint, asset string) error {
 	req := &coreapipb.ListAssetsRequest{
 		Asset: asset,
 	}
@@ -220,11 +225,11 @@ func (f *Faucet) getAllowedAmount(ctx context.Context, amount uint64, asset stri
 	if source == nil {
 		return ErrNotABuiltinAsset
 	}
-	maxAmount, err := strconv.ParseUint(source.MaxFaucetAmountMint, 10, 64)
-	if err != nil {
-		return err
+	maxAmount, overflowed := num.UintFromString(source.MaxFaucetAmountMint, 10)
+	if overflowed {
+		return errors.New("invalid source asset max faucet amount min")
 	}
-	if maxAmount < amount {
+	if maxAmount.LT(amount) {
 		return fmt.Errorf("amount request exceed maximal amount of %v", maxAmount)
 	}
 
