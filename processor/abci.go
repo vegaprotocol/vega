@@ -128,7 +128,7 @@ func NewApp(
 			logging.Error(err))
 	}
 	app := &App{
-		abci: abci.New(&codec{}, spam),
+		abci: abci.New(&codec{}),
 
 		log:      log,
 		cfg:      config,
@@ -299,6 +299,10 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
+
+	if app.spam != nil {
+		app.spam.EndOfBlock(uint64(req.Height))
+	}
 	return
 }
 
@@ -384,19 +388,13 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 		return ctx, resp
 	}
 
-	// this is a party
-	// and if we may not want to rate limit it.
-	// in which case we may want to check if it has a balance
-	party := tx.Party()
-	// if limit {
-	// 	resp.Code = abci.AbciTxnValidationFailure
-	// 	resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
-	// } else if !app.banking.HasBalance(party) {
-	if !app.banking.HasBalance(party) && !app.stakingAccounts.HasBalance(party) {
-		resp.Code = abci.AbciTxnValidationFailure
-		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
-		msgType := tx.Command().String()
-		app.log.Error("Rejected as party has no accounts", logging.PartyID(party), logging.String("Command", msgType))
+	if app.spam != nil {
+		if _, err := app.spam.PreBlockAccept(tx); err != nil {
+			app.log.Error(err.Error())
+			resp.Code = abci.AbciSpamError
+			resp.Data = []byte(err.Error())
+			return ctx, resp
+		}
 	}
 
 	return ctx, resp
@@ -491,6 +489,14 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
+	}
+
+	if app.spam != nil {
+		if _, err := app.spam.PostBlockAccept(tx); err != nil {
+			app.log.Error(err.Error())
+			resp.Code = abci.AbciSpamError
+			resp.Data = []byte(err.Error())
+		}
 	}
 
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock

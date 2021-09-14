@@ -52,11 +52,6 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBegi
 }
 
 func (app *App) EndBlock(req types.RequestEndBlock) (resp types.ResponseEndBlock) {
-	height := uint64(req.Height)
-	if app.spamProtector != nil {
-		app.spamProtector.EndOfBlock(height)
-	}
-
 	if fn := app.OnEndBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
@@ -78,10 +73,6 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 
 	if err := app.replayProtector.CheckTx(tx); err != nil {
 		return NewResponseCheckTxError(AbciTxnValidationFailure, err)
-	}
-
-	if _, err := app.spamProtector.PreBlockAccept(tx); err != nil {
-		return NewResponseCheckTxError(AbciSpamError, err)
 	}
 
 	ctx := app.ctx
@@ -116,10 +107,6 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 
 	if err := app.replayProtector.DeliverTx(tx); err != nil {
 		return NewResponseDeliverTxError(AbciTxnValidationFailure, err)
-	}
-
-	if _, err := app.spamProtector.PostBlockAccept(tx); err != nil {
-		return NewResponseDeliverTxError(AbciSpamError, err)
 	}
 
 	// It's been validated by CheckTx so we can skip the validation here
