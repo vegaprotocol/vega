@@ -77,14 +77,14 @@ func testCommandPreRejectBannedParty(t *testing.T) {
 	require.Equal(t, false, accept)
 	require.Equal(t, spam.ErrPartyIsBannedFromProposal, err)
 
-	// advance epochs - verify still banned until epoch 3 (including)
+	// advance epochs - verify still banned until epoch 4 (including)
 	for i := 0; i < 4; i++ {
 		policy.Reset(types.Epoch{Seq: uint64(i + 1)}, map[string]*num.Uint{"party1": sufficientPropTokens})
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
 		require.Equal(t, spam.ErrPartyIsBannedFromProposal, err)
 	}
-	// should be released from ban on epoch 4
+	// should be released from ban on epoch 5
 	policy.Reset(types.Epoch{Seq: 5}, map[string]*num.Uint{"party1": sufficientPropTokens})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, true, accept)

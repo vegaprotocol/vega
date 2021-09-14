@@ -251,7 +251,7 @@ func testPreRejectBannedParty(t *testing.T) {
 	require.Equal(t, false, accept)
 	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 
-	// advance epochs - verify still banned until epoch 3 (including)
+	// advance epochs - verify still banned until epoch 4 (including)
 	for i := 0; i < 4; i++ {
 		policy.Reset(types.Epoch{Seq: uint64(i + 1)}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
 		accept, err := policy.PreBlockAccept(tx)
