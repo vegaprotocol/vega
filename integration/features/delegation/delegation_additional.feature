@@ -613,3 +613,33 @@ Feature: Staking & Delegation
     And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   |  400   |     
+
+  Scenario: A party delegates and then withdraws from their staking account during the same epoch such that delegation is a successful
+    Desciption: A party delegates now and then withdraws from their staking account during the same epoch such that delegation is a successful
+
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1000   | 
+
+    And the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  9000  |
+
+    #end epoch 1 for the delegation to take effect   
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1000   | 
+
+    # start epoch2
+    When time is updated to "2021-08-26T00:00:22Z"    
+    # advance to the end of epoch2
+    When time is updated to "2021-08-26T00:00:32Z" 
+    # we expect the actual balance of epoch 2 for party1 to be upated to 500 to reflect that the party has sufficient balance in their staking account to cover 1000 delegated tokens   
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  |   
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  |     
