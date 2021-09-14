@@ -43,6 +43,7 @@ type App struct {
 	ctx context.Context
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/spam_engine_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/abci SpamEngine
 type SpamEngine interface {
 	PreBlockAccept(tx Tx) (bool, error)
 	PostBlockAccept(tx Tx) (bool, error)

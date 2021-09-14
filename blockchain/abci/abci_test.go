@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/blockchain/abci/mocks"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
-
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
 	htypes "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -41,20 +43,6 @@ func (tx *testTx) Validate() error {
 		return fn()
 	}
 	return nil
-}
-
-type testSpam struct {
-}
-
-func (*testSpam) EndOfBlock(blockHeight uint64) {
-}
-
-func (*testSpam) PreBlockAccept(tx abci.Tx) (bool, error) {
-	return true, nil
-}
-
-func (*testSpam) PostBlockAccept(tx abci.Tx) (bool, error) {
-	return true, nil
 }
 
 type testCodec struct {
@@ -93,8 +81,12 @@ var (
 
 func TestABCICheckTx(t *testing.T) {
 	cdc := newTestCodec()
+	ctrl := gomock.NewController(t)
 
-	app := abci.New(cdc, &testSpam{}).
+	spam := mocks.NewMockSpamEngine(ctrl)
+	spam.EXPECT().PreBlockAccept(gomock.Any()).AnyTimes()
+
+	app := abci.New(cdc, spam).
 		HandleCheckTx(testCommandA, func(ctx context.Context, tx abci.Tx) error {
 			require.Equal(t, "val", ctx.Value(testKey))
 			return nil
@@ -180,7 +172,27 @@ func setGenesisState(app *abci.App, state *abci.GenesisState) {
 }
 
 func TestSpamProtection(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	cdc := newTestCodec()
+	spamEngine := mocks.NewMockSpamEngine(ctrl)
 
+	spamEngine.EXPECT().PreBlockAccept(gomock.Any()).Return(false, spam.ErrPartyIsBannedFromVoting)
+	app := abci.New(cdc, spamEngine)
+	tx := []byte("tx1")
+	cdc.addTx(tx, &testTx{
+		command: testCommandA,
+	})
+
+	req := types.RequestCheckTx{Tx: tx}
+	resp := app.CheckTx(req)
+	require.True(t, resp.IsErr())
+	require.Equal(t, spam.ErrPartyIsBannedFromVoting.Error(), resp.Info)
+
+	spamEngine.EXPECT().PostBlockAccept(gomock.Any()).Return(false, spam.ErrTooManyVotes)
+	delReq := types.RequestDeliverTx{Tx: tx}
+	deliverResp := app.DeliverTx(delReq)
+	require.True(t, deliverResp.IsErr())
+	require.Equal(t, spam.ErrTooManyVotes.Error(), deliverResp.Info)
 }
 
 func TestReplayProtectionByDistance(t *testing.T) {
@@ -205,8 +217,12 @@ func TestReplayProtectionByDistance(t *testing.T) {
 		{"higher distance - long", 200, true},
 	}
 
+	ctrl := gomock.NewController(t)
+	spam := mocks.NewMockSpamEngine(ctrl)
+	spam.EXPECT().PostBlockAccept(gomock.Any()).AnyTimes()
+
 	for _, test := range tests {
-		app := abci.New(cdc, &testSpam{}).
+		app := abci.New(cdc, spam).
 			HandleDeliverTx(
 				testCommandA,
 				func(ctx context.Context, tx abci.Tx) error { return nil },
@@ -242,7 +258,11 @@ func TestReplayProtectionByCache(t *testing.T) {
 		command:     testCommandA,
 	})
 
-	app := abci.New(cdc, &testSpam{}).HandleDeliverTx(
+	ctrl := gomock.NewController(t)
+	spam := mocks.NewMockSpamEngine(ctrl)
+	spam.EXPECT().PostBlockAccept(gomock.Any()).AnyTimes()
+
+	app := abci.New(cdc, spam).HandleDeliverTx(
 		testCommandA,
 		func(ctx context.Context, tx abci.Tx) error { return nil },
 	)
