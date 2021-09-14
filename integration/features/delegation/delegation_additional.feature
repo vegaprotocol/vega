@@ -603,12 +603,16 @@ Feature: Staking & Delegation
     | party  | asset  | amount |
     | party1 | VEGA   |  9600  |
 
+    And the parties should have the following staking account balances:
+    | party  | asset | amount |
+    | party1 | VEGA  | 400    |  
+
     # advance to the end of epoch2
     When time is updated to "2021-08-26T00:00:32Z" 
-    # we expect the actual balance of epoch 2 for party1 has changed retrospectively to 500 to reflect that the party has insufficient balance in their staking account to cover 1000 delegated tokens   
+    # we expect the actual balance of epoch 2 for party1 has changed retrospectively to 400 to reflect that the party has insufficient balance in their staking account to cover 1000-500 delegated tokens   
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
-    | party1 |  node1   |  400   |   
+    | party1 |  node1   |  400   | 
 
     And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
@@ -641,6 +645,10 @@ Feature: Staking & Delegation
     | party  | node id  | amount |
     | party1 |  node1   |  1000  |   
 
+     And the parties should have the following staking account balances:
+    | party  | asset | amount |
+    | party1 | VEGA  | 1000   |  
+
     And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   |  1000  |     
@@ -666,11 +674,58 @@ Feature: Staking & Delegation
     When time is updated to "2021-08-26T00:00:22Z"    
     # advance to the end of epoch2
     When time is updated to "2021-08-26T00:00:32Z" 
-    # we expect the actual balance of epoch 2 for party1 to be upated to 500 to reflect that the party has sufficient balance in their staking account to cover 1000 delegated tokens   
+    # we expect the actual balance of epoch 2 for party1 has changed retrospectively to 0 to reflect that the party has insufficient balance in their staking account to cover 1000 delegated tokens    
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
     | party1 |  node1   |  0     |   
 
+     And the parties should have the following staking account balances:
+    | party  | asset | amount |
+    | party1 | VEGA  | 500    |  
+
     And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
-    | party1 |  node1   |  0     |     
+    | party1 |  node1   |  0     |    
+
+  Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
+    Desciption: A party with delegated stake withdraws from their staking account during an epoch - at the end of the epoch when delegations are processed the party will be forced to undelegate the difference between the stake they have delegated and their staking account balance. 
+
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    #end epoch 1 for the delegation to take effect   
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    # start epoch2
+    When time is updated to "2021-08-26T00:00:22Z"    
+
+     And the parties should have the following staking account balances:
+    | party  | asset | amount |
+    | party1 | VEGA  | 10000  |   
+
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  9500  |
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount | when |
+    | party1 |  node1   |  1000  | now  |    
+
+    # advance to the end of epoch2
+    When time is updated to "2021-08-26T00:00:32Z" 
+    # we expect the actual balance of epoch 2 for party1 has changed retrospectively to 500 to reflect that the party has insufficient balance in their staking account to cover 1000 delegated tokens   
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  0   |   
+
+    # And the parties deposit on staking account the following amount:  
+    # | party  | asset  | amount |
+    # | party1 | VEGA   | 10000  |
+
+    And the parties should have the following staking account balances:
+    | party  | asset | amount |
+    | party1 | VEGA  | 500    |    
