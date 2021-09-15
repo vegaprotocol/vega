@@ -21,28 +21,34 @@ type SimpleSpamPolicy struct {
 	minTokensParamName  string
 	maxAllowedParamName string
 
-	partyToCount      map[string]uint64           // commands that are already on blockchain
-	blockPartyToCount map[string]uint64           // commands in the current block
-	tokenBalance      map[string]*num.Uint        // the balance of the party in governance tokens at the beginning of the epoch
-	bannedParties     map[string]uint64           // parties banned until epoch seq
-	partyBlockRejects map[string]*blockRejectInfo // total vs rejection in the current block
-	currentEpochSeq   uint64                      // current epoch sequence
-	lock              sync.RWMutex                // global lock to sync calls from multiple tendermint threads
+	partyToCount          map[string]uint64           // commands that are already on blockchain
+	blockPartyToCount     map[string]uint64           // commands in the current block
+	tokenBalance          map[string]*num.Uint        // the balance of the party in governance tokens at the beginning of the epoch
+	bannedParties         map[string]uint64           // parties banned until epoch seq
+	partyBlockRejects     map[string]*blockRejectInfo // total vs rejection in the current block
+	currentEpochSeq       uint64                      // current epoch sequence
+	lock                  sync.RWMutex                // global lock to sync calls from multiple tendermint threads
+	banErr                error
+	insufficientTokensErr error
+	tooManyCommands       error
 }
 
 //NewSimpleSpamPolicy instantiates the simple spam policy
 func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *SimpleSpamPolicy {
 	return &SimpleSpamPolicy{
-		log:                 log,
-		policyName:          policyName,
-		partyToCount:        map[string]uint64{},
-		blockPartyToCount:   map[string]uint64{},
-		tokenBalance:        map[string]*num.Uint{},
-		bannedParties:       map[string]uint64{},
-		partyBlockRejects:   map[string]*blockRejectInfo{},
-		lock:                sync.RWMutex{},
-		minTokensParamName:  minTokensParamName,
-		maxAllowedParamName: maxAllowedParamName,
+		log:                   log,
+		policyName:            policyName,
+		partyToCount:          map[string]uint64{},
+		blockPartyToCount:     map[string]uint64{},
+		tokenBalance:          map[string]*num.Uint{},
+		bannedParties:         map[string]uint64{},
+		partyBlockRejects:     map[string]*blockRejectInfo{},
+		lock:                  sync.RWMutex{},
+		minTokensParamName:    minTokensParamName,
+		maxAllowedParamName:   maxAllowedParamName,
+		banErr:                errors.New("party is banned from submitting " + policyName + " in the current epoch"),
+		insufficientTokensErr: errors.New("party has insufficient tokens to submit " + policyName + " request in this epoch"),
+		tooManyCommands:       errors.New("party has already proposed the maximum number of " + policyName + " requests per epoch"),
 	}
 }
 
@@ -141,7 +147,7 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 			ssp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
 		ssp.log.Error("Spam post: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party))
-		return false, ErrTooManyProposals
+		return false, ssp.tooManyCommands
 	}
 
 	// update block counters
@@ -171,19 +177,20 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	_, ok := ssp.bannedParties[party]
 	if ok {
 		ssp.log.Error("Spam pre: party is banned from "+ssp.policyName, logging.String("party", party))
-		return false, ErrPartyIsBannedFromProposal
+		return false, ssp.banErr
 	}
 
 	// check if the party has enough balance to submit commands
 	if balance, ok := ssp.tokenBalance[party]; !ok || balance.LT(ssp.minTokensRequired) {
-		ssp.log.Error("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("balance", num.UintToString(balance)))
-		return false, ErrInsufficientTokensForProposal
+		ssp.log.Error("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("party", party), logging.String("balance", num.UintToString(balance)))
+		return false, ssp.insufficientTokensErr
 	}
+	ssp.log.Info("party has sufficient tokens to submit "+ssp.policyName+" request", logging.String("party", party), logging.String("balance", num.UintToString(ssp.tokenBalance[party])), logging.String("minRequiredTokens", num.UintToString(ssp.minTokensRequired)))
 
 	// Check we have not exceeded our command limit for this given party in this epoch
 	if commandCount, ok := ssp.partyToCount[party]; ok && commandCount >= ssp.maxAllowedCommands {
-		ssp.log.Error("Spam pre: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party))
-		return false, ErrTooManyProposals
+		ssp.log.Error("Spam pre: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party), logging.Uint64("count", commandCount), logging.Uint64("maxAllowed", ssp.maxAllowedCommands))
+		return false, ssp.tooManyCommands
 	}
 
 	return true, nil

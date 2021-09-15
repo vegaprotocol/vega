@@ -2,6 +2,7 @@ package spam_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -92,7 +93,7 @@ func testEngineReset(t *testing.T) {
 
 	accept, err := engine.PreBlockAccept(tx1)
 	require.Equal(t, false, accept)
-	require.Equal(t, spam.ErrTooManyProposals, err)
+	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
 
 	accept, err = engine.PreBlockAccept(tx2)
 	require.Equal(t, false, accept)
@@ -128,7 +129,7 @@ func testPreBlockAccept(t *testing.T) {
 
 	tx1 = &testTx{party: "party2", proposal: "proposal1", command: txn.ProposeCommand}
 	_, err := engine.PreBlockAccept(tx1)
-	require.Equal(t, spam.ErrInsufficientTokensForProposal, err)
+	require.Equal(t, errors.New("party has insufficient tokens to submit proposal request in this epoch"), err)
 
 	tx2 = &testTx{party: "party2", proposal: "proposal1", command: txn.VoteCommand}
 	_, err = engine.PreBlockAccept(tx2)
@@ -154,7 +155,7 @@ func testPostBlockAccept(t *testing.T) {
 
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
 	_, err := engine.PostBlockAccept(tx1)
-	require.Equal(t, spam.ErrTooManyProposals, err)
+	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
 
 	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
 	_, err = engine.PostBlockAccept(tx2)
@@ -180,7 +181,7 @@ func testEndOfBlock(t *testing.T) {
 	engine.EndOfBlock(1)
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
 	_, err := engine.PreBlockAccept(tx1)
-	require.Equal(t, spam.ErrTooManyProposals, err)
+	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
 
 	tx2 := &testTx{party: "party1", proposal: "proposal1", command: txn.VoteCommand}
 	_, err = engine.PreBlockAccept(tx2)

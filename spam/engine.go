@@ -2,7 +2,6 @@ package spam
 
 import (
 	"context"
-	"errors"
 
 	"code.vegaprotocol.io/vega/netparams"
 
@@ -14,19 +13,6 @@ import (
 )
 
 var (
-	//ErrPartyIsBannedFromVoting is returned when the party is banned from voting
-	ErrPartyIsBannedFromVoting = errors.New("party is banned from submitting votes in the current epoch")
-	//ErrPartyIsBannedFromProposal is returned when the party is banned from proposals
-	ErrPartyIsBannedFromProposal = errors.New("party is banned from submitting proposals in the current epoch")
-	//ErrInsufficientTokensForVoting is returned when the party has insufficient tokens for voting
-	ErrInsufficientTokensForVoting = errors.New("party has insufficient tokens to submit votes in this epoch")
-	//ErrInsufficientTokensForProposal is returned when the party has insufficient tokens for proposal
-	ErrInsufficientTokensForProposal = errors.New("party has insufficient tokens to submit proposals in this epoch")
-	//ErrTooManyVotes is returned when the party has voted already the maximum allowed votes per proposal per epoch
-	ErrTooManyVotes = errors.New("party has already voted the maximum number of times per proposal per epoch")
-	//ErrTooManyProposals is returned when the party has proposed the maximum allowed proposals per epoch
-	ErrTooManyProposals = errors.New("party has already proposed the maximum number of proposals per epoch")
-
 	increaseFactor = num.NewUint(2)
 )
 

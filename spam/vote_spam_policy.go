@@ -24,6 +24,14 @@ func (b *blockRejectInfo) add(rejected bool) {
 }
 
 var maxMinVotingTokens, _ = num.UintFromString("1600000000000000000000", 10)
+var (
+	//ErrPartyIsBannedFromVoting is returned when the party is banned from voting
+	ErrPartyIsBannedFromVoting = errors.New("party is banned from submitting votes in the current epoch")
+	//ErrInsufficientTokensForVoting is returned when the party has insufficient tokens for voting
+	ErrInsufficientTokensForVoting = errors.New("party has insufficient tokens to submit votes in this epoch")
+	//ErrTooManyVotes is returned when the party has voted already the maximum allowed votes per proposal per epoch
+	ErrTooManyVotes = errors.New("party has already voted the maximum number of times per proposal per epoch")
+)
 
 type VoteSpamPolicy struct {
 	log             *logging.Logger
@@ -231,7 +239,7 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 		} else {
 			vsp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
-		vsp.log.Error("Spam post: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId))
+		vsp.log.Error("Spam post: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", epochVotes+blockVotes), logging.Uint64("maxAllowed", vsp.numVotes))
 
 		return false, ErrTooManyVotes
 	}
@@ -274,9 +282,10 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 
 	// check if the party has enough balance to submit votes
 	if balance, ok := vsp.tokenBalance[party]; !ok || balance.LT(vsp.effectiveMinTokens) {
-		vsp.log.Error("Spam pre: party has insufficient balance for voting", logging.String("balance", num.UintToString(balance)))
+		vsp.log.Error("Spam pre: party has insufficient balance for voting", logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		return false, ErrInsufficientTokensForVoting
 	}
+	vsp.log.Info("party has sufficient tokens to vote", logging.String("party", party), logging.String("balance", num.UintToString(vsp.tokenBalance[party])), logging.String("minRequiredTokens", num.UintToString(vsp.effectiveMinTokens)))
 
 	vote := &commandspb.VoteSubmission{}
 
@@ -287,7 +296,7 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	// Check we have not exceeded our vote limit for this given proposal in this epoch
 	if partyVotes, ok := vsp.partyToVote[party]; ok {
 		if voteCount, ok := partyVotes[vote.ProposalId]; ok && voteCount >= vsp.numVotes {
-			vsp.log.Error("Spam pre: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId))
+			vsp.log.Error("Spam pre: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", voteCount), logging.Uint64("maxAllowed", vsp.numVotes))
 			return false, ErrTooManyVotes
 		}
 	}
