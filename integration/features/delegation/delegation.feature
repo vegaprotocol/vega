@@ -579,6 +579,9 @@ Feature: Staking & Delegation
      | party1 |  node2   | 1507   |       
      | party1 |  node3   | 1507   |   
 
+# Additonal Scenarios 1:3 to be fine tuned once the above test case
+# Every block in that epoch is full of delegation/undelegation commands - how to manipulate the no. of blocks in an epoch 
+
   Scenario: A party undelegates now and then withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
     Desciption: A party undelegates now and then withdraws from their staking account during an epoch - then immediately delegations are processed the party will be forced to undelegate the difference between the stake they have delegated and their staking account balance. 
 
@@ -687,6 +690,7 @@ Feature: Staking & Delegation
     | party1 |  node1   |  0     |    
 
   Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
+
     Desciption: A party with delegated stake withdraws from their staking account during an epoch - at the end of the epoch when delegations are processed the party will be forced to undelegate the difference between the stake they have delegated and their staking account balance. 
 
     When the parties submit the following delegations:
@@ -719,7 +723,7 @@ Feature: Staking & Delegation
     # we expect the actual balance of epoch 2 for party1 has changed retrospectively to 500 to reflect that the party has insufficient balance in their staking account to cover 1000 delegated tokens   
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
-    | party1 |  node1   |  0   |   
+    | party1 |  node1   |  0     |   
 
     # And the parties deposit on staking account the following amount:  
     # | party  | asset  | amount |
@@ -728,3 +732,42 @@ Feature: Staking & Delegation
     And the parties should have the following staking account balances:
     | party  | asset | amount |
     | party1 | VEGA  | 500    |    
+
+#  Scenario: Validator drops below self owned threshold - What is self owned threshold ?
+
+  Scenario: A Validator owns sufficient tokens, but delegtes to another validator 
+  Desciption: A Validator owns sufficient tokens, but delegtes to another validator
+
+  When the parties submit the following delegations:
+    | party  | node id | amount |
+    | node1  |  node3  |  1000  | 
+    | node2  |  node3  |  2000  |       
+    | party1 |  node3  |  500   |   
+
+     #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id | amount |
+    | node1  |  node3  |  0     | 
+    | node2  |  node3  |  0     |       
+    | party1 |  node3  |  0     |   
+
+    And the parties should have the following delegation balances for epoch 2:
+    | party  | node id | amount |
+    | node1  |  node3  |  1000  | 
+    | node2  |  node3  |  2000  |       
+    | party1 |  node3  |  500   |   
+
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id | amount |
+    | node1  |  node3  |  1000  | 
+    | node2  |  node3  |  296   |       
+    | party1 |  node3  |  0     |   
+
+    # Expecting below values instead
+    # | party  | node id | amount |
+    # | node1  |  node3  |  1000  | 
+    # | node2  |  node3  |  2000  |       
+    # | party1 |  node3  |  500   | 
+
+# Scenario: A delegator owns less than the delegated stake (it sold of the rest0), and tries to redelegate - try it 
