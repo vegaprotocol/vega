@@ -735,7 +735,7 @@ Feature: Staking & Delegation
 
 #  Scenario: Validator drops below self owned threshold - What is self owned threshold ?
 
-  Scenario: A Validator owns sufficient tokens, but delegtes to another validator 
+ Scenario: A Validator owns sufficient tokens, but delegtes to another validator 
   Desciption: A Validator owns sufficient tokens, but delegtes to another validator
 
   When the parties submit the following delegations:
@@ -770,4 +770,4 @@ Feature: Staking & Delegation
     # | node2  |  node3  |  2000  |       
     # | party1 |  node3  |  500   | 
 
-# Scenario: A delegator owns less than the delegated stake (it sold of the rest0), and tries to redelegate - try it 
+#  Scenario: A delegator owns less than the delegated stake (it sold of the rest0), and tries to redelegate
