@@ -205,7 +205,7 @@ func TestSubSum(t *testing.T) {
 
 func TestBruteForce(t *testing.T) {
 	//	t.Run("brute force adds", testAddLoop)
-	//	t.Run("brute force subs", testAddLoop)
+	//	t.Run("brute force subs", testSubLoop)
 }
 
 func testAddLoop(t *testing.T) {
