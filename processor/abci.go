@@ -375,6 +375,15 @@ func (app *App) handleCheckpoint(snap *types.Snapshot) error {
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
 
+	if app.spam != nil {
+		if _, err := app.spam.PreBlockAccept(tx); err != nil {
+			app.log.Error(err.Error())
+			resp.Code = abci.AbciSpamError
+			resp.Data = []byte(err.Error())
+			return ctx, resp
+		}
+	}
+
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
@@ -386,15 +395,6 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	_, isval := app.limitPubkey(tx.PubKeyHex())
 	if isval {
 		return ctx, resp
-	}
-
-	if app.spam != nil {
-		if _, err := app.spam.PreBlockAccept(tx); err != nil {
-			app.log.Error(err.Error())
-			resp.Code = abci.AbciSpamError
-			resp.Data = []byte(err.Error())
-			return ctx, resp
-		}
 	}
 
 	return ctx, resp
@@ -486,17 +486,20 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	app.setTxStats(len(req.Tx))
 
 	var resp tmtypes.ResponseDeliverTx
-	if err := app.canSubmitTx(tx); err != nil {
-		resp.Code = abci.AbciTxnValidationFailure
-		resp.Data = []byte(err.Error())
-	}
 
 	if app.spam != nil {
 		if _, err := app.spam.PostBlockAccept(tx); err != nil {
 			app.log.Error(err.Error())
 			resp.Code = abci.AbciSpamError
 			resp.Data = []byte(err.Error())
+			return ctx, resp
 		}
+
+	}
+
+	if err := app.canSubmitTx(tx); err != nil {
+		resp.Code = abci.AbciTxnValidationFailure
+		resp.Data = []byte(err.Error())
 	}
 
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
