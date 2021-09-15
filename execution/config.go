@@ -31,7 +31,7 @@ type Config struct {
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig(defaultConfigDirPath string) Config {
+func NewDefaultConfig() Config {
 	c := Config{
 		Level:      encoding.LogLevel{Level: logging.InfoLevel},
 		Matching:   matching.NewDefaultConfig(),

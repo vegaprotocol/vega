@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/checkpoint"
-	vgjson "code.vegaprotocol.io/vega/libs/json"
+	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/validators"
