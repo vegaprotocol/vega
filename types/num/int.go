@@ -64,7 +64,7 @@ func (i Int) GT(o *Int) bool {
 	}
 }
 
-// GT returns if i < o
+// LT returns if i < o
 func (i Int) LT(o *Int) bool {
 	if i.IsNegative() {
 		if o.IsPositive() || o.IsZero() {
