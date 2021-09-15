@@ -1,7 +1,6 @@
 package num_test
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 
@@ -204,12 +203,12 @@ func TestSubSum(t *testing.T) {
 }
 
 func TestBruteForce(t *testing.T) {
-	//	t.Run("brute force adds", testAddLoop)
-	//	t.Run("brute force subs", testSubLoop)
+	t.Run("brute force adds", testAddLoop)
+	t.Run("brute force subs", testSubLoop)
 }
 
 func testAddLoop(t *testing.T) {
-	for c := 0; c < 10000000; c++ {
+	for c := 0; c < 10000; c++ {
 		num1 := rand.Int63n(100) - 50
 		num2 := rand.Int63n(100) - 50
 
@@ -219,12 +218,12 @@ func testAddLoop(t *testing.T) {
 		bigNum1.Add(bigNum2)
 
 		assert.Equal(t, num1+num2, bigNum1.Int64())
-		fmt.Println(num1, num2, num1-num2, bigNum1.String())
+		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
 
 func testSubLoop(t *testing.T) {
-	for c := 0; c < 10000000; c++ {
+	for c := 0; c < 10000; c++ {
 		num1 := rand.Int63n(100) - 50
 		num2 := rand.Int63n(100) - 50
 
@@ -234,6 +233,6 @@ func testSubLoop(t *testing.T) {
 		bigNum1.Sub(bigNum2)
 
 		assert.Equal(t, num1-num2, bigNum1.Int64())
-		fmt.Println(num1, num2, num1-num2, bigNum1.String())
+		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }

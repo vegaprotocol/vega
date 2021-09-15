@@ -16,27 +16,27 @@ func IntFromUint(u *Uint, s bool) *Int {
 	return copy
 }
 
-// IsNegative
+// IsNegative tests if the stored value is negative
 // true if < 0
 // false if >= 0
 func (i *Int) IsNegative() bool {
-	return i.s == false && !i.U.IsZero()
+	return !i.s && !i.U.IsZero()
 }
 
-// IsPositive
+// IsPositive tests if the stored value is positive
 // true if > 0
 // false if <= 0
 func (i *Int) IsPositive() bool {
-	return i.s == true && !i.U.IsZero()
+	return i.s && !i.U.IsZero()
 }
 
-// IsZero
+// IsZero tests if the stored value is zero
 // true if == 0
 func (i *Int) IsZero() bool {
 	return i.U.IsZero()
 }
 
-// FlipSing changes the sign of the number from - to + and back again.
+// FlipSign changes the sign of the number from - to + and back again.
 func (i *Int) FlipSign() {
 	i.s = !i.s
 }
@@ -60,10 +60,7 @@ func (i Int) GT(o *Int) bool {
 		}
 		return i.U.GT(o.U)
 	} else {
-		if o.IsNegative() {
-			return true
-		}
-		return false
+		return o.IsNegative()
 	}
 }
 
@@ -80,10 +77,7 @@ func (i Int) LT(o *Int) bool {
 		}
 		return i.U.LT(o.U)
 	} else {
-		if o.IsPositive() {
-			return true
-		}
-		return false
+		return o.IsPositive()
 	}
 }
 
