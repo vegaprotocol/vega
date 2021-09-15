@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
@@ -38,7 +39,8 @@ func TestVotingSpamProtection(t *testing.T) {
 }
 
 func getVotingSpamPolicy() *spam.VoteSpamPolicy {
-	policy := spam.NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes)
+	logger := logging.NewTestLogger()
+	policy := spam.NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, logger)
 	minTokensForVoting, _ := num.UintFromString("100000000000000000000", 10)
 	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForVoting, minTokensForVoting)
 	policy.UpdateIntParam(netparams.SpamProtectionMaxVotes, 3)

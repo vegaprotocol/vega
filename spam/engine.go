@@ -74,9 +74,9 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		transactionTypeToPolicy: map[txn.Command]SpamPolicy{},
 	}
 
-	proposalPolicy := NewSimpleSpamPolicy(netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals)
-	delegationPolicy := NewSimpleSpamPolicy(netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations)
-	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes)
+	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log)
+	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log)
+	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log)
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -12,6 +13,8 @@ import (
 // Simple spam policy supports encforcing of max allowed commands and min required tokens + banning of parties when their reject rate in the block
 // exceeds x%.
 type SimpleSpamPolicy struct {
+	log                *logging.Logger
+	policyName         string
 	maxAllowedCommands uint64
 	minTokensRequired  *num.Uint
 
@@ -28,8 +31,10 @@ type SimpleSpamPolicy struct {
 }
 
 //NewSimpleSpamPolicy instantiates the simple spam policy
-func NewSimpleSpamPolicy(minTokensParamName string, maxAllowedParamName string) *SimpleSpamPolicy {
+func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *SimpleSpamPolicy {
 	return &SimpleSpamPolicy{
+		log:                 log,
+		policyName:          policyName,
 		partyToCount:        map[string]uint64{},
 		blockPartyToCount:   map[string]uint64{},
 		tokenBalance:        map[string]*num.Uint{},
@@ -135,6 +140,7 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 		} else {
 			ssp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
+		ssp.log.Error("Spam post: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party))
 		return false, ErrTooManyProposals
 	}
 
@@ -164,16 +170,19 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	// check if the party is banned
 	_, ok := ssp.bannedParties[party]
 	if ok {
+		ssp.log.Error("Spam pre: party is banned from "+ssp.policyName, logging.String("party", party))
 		return false, ErrPartyIsBannedFromProposal
 	}
 
 	// check if the party has enough balance to submit commands
 	if balance, ok := ssp.tokenBalance[party]; !ok || balance.LT(ssp.minTokensRequired) {
+		ssp.log.Error("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("balance", num.UintToString(balance)))
 		return false, ErrInsufficientTokensForProposal
 	}
 
 	// Check we have not exceeded our command limit for this given party in this epoch
 	if commandCount, ok := ssp.partyToCount[party]; ok && commandCount >= ssp.maxAllowedCommands {
+		ssp.log.Error("Spam pre: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party))
 		return false, ErrTooManyProposals
 	}
 

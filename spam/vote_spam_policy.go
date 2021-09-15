@@ -6,6 +6,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -25,6 +26,7 @@ func (b *blockRejectInfo) add(rejected bool) {
 var maxMinVotingTokens, _ = num.UintFromString("1600000000000000000000", 10)
 
 type VoteSpamPolicy struct {
+	log             *logging.Logger
 	numVotes        uint64
 	minVotingTokens *num.Uint
 
@@ -47,8 +49,9 @@ type VoteSpamPolicy struct {
 }
 
 //NewVoteSpamPolicy instantiates vote spam policy
-func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string) *VoteSpamPolicy {
+func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *VoteSpamPolicy {
 	return &VoteSpamPolicy{
+		log:                   log,
 		minVotingTokensFactor: num.NewUint(1),
 
 		partyToVote:         map[string]map[string]uint64{},
@@ -228,6 +231,8 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 		} else {
 			vsp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
+		vsp.log.Error("Spam post: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId))
+
 		return false, ErrTooManyVotes
 	}
 
@@ -263,11 +268,13 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 
 	_, ok := vsp.bannedParties[party]
 	if ok {
+		vsp.log.Error("Spam pre: party is banned from voting", logging.String("party", party))
 		return false, ErrPartyIsBannedFromVoting
 	}
 
 	// check if the party has enough balance to submit votes
 	if balance, ok := vsp.tokenBalance[party]; !ok || balance.LT(vsp.effectiveMinTokens) {
+		vsp.log.Error("Spam pre: party has insufficient balance for voting", logging.String("balance", num.UintToString(balance)))
 		return false, ErrInsufficientTokensForVoting
 	}
 
@@ -280,6 +287,7 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	// Check we have not exceeded our vote limit for this given proposal in this epoch
 	if partyVotes, ok := vsp.partyToVote[party]; ok {
 		if voteCount, ok := partyVotes[vote.ProposalId]; ok && voteCount >= vsp.numVotes {
+			vsp.log.Error("Spam pre: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId))
 			return false, ErrTooManyVotes
 		}
 	}
