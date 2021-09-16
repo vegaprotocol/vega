@@ -611,7 +611,15 @@ Scenario: Withdrawal followed by undelegate now (next epoch) - results in additi
 
     Then the parties submit the following undelegations:
     | party  | node id  | amount |  when  |
-    | party1 |  node1   |    400 |  now   |
+    | party1 |  node1   |    200 |  now   |
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |    300 |
+
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |  when  |
+    | party1 |  node1   |    200 |  now   |
 
     And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
