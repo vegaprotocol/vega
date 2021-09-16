@@ -126,6 +126,6 @@ The application has structured logging capability, the first port of call for a 
 * `/var/log/vega.log`
 * `/var/log/tendermint.log`
 
-Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `-1` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
+Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `"Debug"` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
 
 Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV.md).

@@ -119,6 +119,7 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 		if err != nil {
 			o.log.Error("could not start stake deposited filter",
 				logging.Error(err))
+			continue
 		}
 		defer iter.Close()
 
@@ -192,6 +193,7 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 		if err != nil {
 			o.log.Error("could not start stake deposited filter",
 				logging.Error(err))
+			continue
 		}
 		defer iter.Close()
 
