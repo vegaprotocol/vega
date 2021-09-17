@@ -489,7 +489,7 @@ Feature: Staking & Delegation
     | party1 |  node1   |   0    | 
     | party1 |  node2   |   123  |  
   
-  Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
+ Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
     Desciption: A party with delegated stake withdraws from their staking account during an epoch - at the end of the epoch when delegations are processed the party will be forced to undelegate the difference between the stake they have delegated and their staking account balance. 
 
     When the parties submit the following delegations:
@@ -517,5 +517,154 @@ Feature: Staking & Delegation
 
     And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
-    | party1 |  node1   |  500   |     
+    | party1 |  node1   |  500   |
 
+  Scenario: Undelegate now followed by withdraw - same behaviour as either underlegate now or withdraw
+
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    #end epoch 1 for the delegation to take effect   
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |  when  |
+    | party1 |  node1   |  500   |  now   |
+
+    # start epoch2
+    When time is updated to "2021-08-26T00:00:22Z"    
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  9600  |
+
+    # advance to the end of epoch2
+    When time is updated to "2021-08-26T00:00:32Z" 
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  400   |   
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |  400   |     
+
+  Scenario: Withdrawal followed by undelegate now (same epoch) - same behaviour as either underlegate now or withdraw
+
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    #end epoch 1 for the delegation to take effect   
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    # start epoch2
+    When time is updated to "2021-08-26T00:00:22Z"    
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  9500  |
+
+    When time is updated to "2021-08-26T00:00:23Z"   
+
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |  when  |
+    | party1 |  node1   |    400 |  now   |
+
+    # advance to the end of epoch2
+    When time is updated to "2021-08-26T00:00:32Z" 
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |    500 |   
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |    500 |    
+
+Scenario: Withdrawal followed by undelegate now (next epoch) - results in additional undelegation
+
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    #end epoch 1 for the delegation to take effect   
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    # start epoch2
+    When time is updated to "2021-08-26T00:00:22Z"    
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  9500  |
+
+    # advance to the end of epoch2
+    When time is updated to "2021-08-26T00:00:32Z" 
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |    500 |   
+
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |  when  |
+    | party1 |  node1   |    200 |  now   |
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |    300 |
+
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |  when  |
+    | party1 |  node1   |    200 |  now   |
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |    100 |    
+
+    When time is updated to "2021-08-26T00:00:42Z" 
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |    100 |    
+
+
+Scenario: Mix undelegate now & end of epoch
+
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    #end epoch 1 for the delegation to take effect   
+    When time is updated to "2021-08-26T00:00:21Z"    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1000  | 
+
+    # start epoch2
+    When time is updated to "2021-08-26T00:00:22Z"    
+
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount | when         |
+    | party1 |  node1   |    500 | now          |
+    | party1 |  node1   |    400 | end of epoch |
+
+    # advance to the end of epoch2
+    When time is updated to "2021-08-26T00:00:32Z" 
+    # we expect the actual balance of epoch 2 for party1 has changed retrospectively to 500 to reflect that the party has insufficient balance in their staking account to cover 1000 delegated tokens   
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |    500 |   
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |    100 |    
+
+    When time is updated to "2021-08-26T00:00:42Z" 
+
+    And the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |    100 |    
