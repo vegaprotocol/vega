@@ -238,15 +238,15 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		e.log.Info("proposal has been validated by nodes, starting now",
 			logging.String("proposal-id", p.ID))
 		p.State = proto.Proposal_STATE_OPEN
-		e.broker.Send(events.NewProposalEvent(ctx, *p))
-		e.startProposal(p) // can't fail, and proposal has been validated at an ulterior time
+		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+		e.startValidatedProposal(p) // can't fail, and proposal has been validated at an ulterior time
 	}
 	for _, p := range rejected {
 		e.log.Info("proposal has not been validated by nodes",
 			logging.String("proposal-id", p.ID))
 		p.State = proto.Proposal_STATE_REJECTED
 		p.Reason = proto.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
-		e.broker.Send(events.NewProposalEvent(ctx, *p))
+		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
 	}
 
 	for _, ep := range toBeEnacted {
@@ -281,7 +281,13 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 			return v, true
 		}
 	}
-	return nil, false
+
+	p, ok := e.nodeProposalValidation.getProposal(id)
+	if !ok {
+		return nil, false
+	}
+
+	return p.proposal, true
 }
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
@@ -387,6 +393,10 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		no:           map[string]*types.Vote{},
 		invalidVotes: map[string]*types.Vote{},
 	})
+}
+
+func (e *Engine) startValidatedProposal(p *proposal) {
+	e.activeProposals = append(e.activeProposals, p)
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {

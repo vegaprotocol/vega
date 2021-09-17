@@ -37,7 +37,7 @@ type NodeValidation struct {
 }
 
 type nodeProposal struct {
-	*types.Proposal
+	*proposal
 	state   uint32
 	checker func() error
 }
@@ -100,7 +100,7 @@ func (n *NodeValidation) removeProposal(id string) {
 }
 
 // OnChainTimeUpdate returns validated proposal by all nodes
-func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Proposal, rejected []*types.Proposal) {
+func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
 	var toRemove []string // id of proposals to remove
@@ -116,9 +116,9 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 
 		switch state {
 		case okProposal:
-			accepted = append(accepted, prop.Proposal)
+			accepted = append(accepted, prop.proposal)
 		case rejectedProposal:
-			rejected = append(rejected, prop.Proposal)
+			rejected = append(rejected, prop.proposal)
 		}
 		toRemove = append(toRemove, prop.ID)
 	}
@@ -162,9 +162,14 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		return err
 	}
 	np := &nodeProposal{
-		Proposal: p,
-		state:    pendingValidationProposal,
-		checker:  checker,
+		proposal: &proposal{
+			Proposal:     p,
+			yes:          map[string]*types.Vote{},
+			no:           map[string]*types.Vote{},
+			invalidVotes: map[string]*types.Vote{},
+		},
+		state:   pendingValidationProposal,
+		checker: checker,
 	}
 	n.nodeProposals = append(n.nodeProposals, np)
 
