@@ -185,7 +185,6 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 		ssp.log.Error("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		return false, ssp.insufficientTokensErr
 	}
-	ssp.log.Info("party has sufficient tokens to submit "+ssp.policyName+" request", logging.String("party", party), logging.String("balance", num.UintToString(ssp.tokenBalance[party])), logging.String("minRequiredTokens", num.UintToString(ssp.minTokensRequired)))
 
 	// Check we have not exceeded our command limit for this given party in this epoch
 	if commandCount, ok := ssp.partyToCount[party]; ok && commandCount >= ssp.maxAllowedCommands {

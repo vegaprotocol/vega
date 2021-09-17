@@ -285,7 +285,6 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 		vsp.log.Error("Spam pre: party has insufficient balance for voting", logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		return false, ErrInsufficientTokensForVoting
 	}
-	vsp.log.Info("party has sufficient tokens to vote", logging.String("party", party), logging.String("balance", num.UintToString(vsp.tokenBalance[party])), logging.String("minRequiredTokens", num.UintToString(vsp.effectiveMinTokens)))
 
 	vote := &commandspb.VoteSubmission{}
 
