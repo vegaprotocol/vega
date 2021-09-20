@@ -201,6 +201,12 @@ func (u *Uint) Delta(x, y *Uint) (*Uint, bool) {
 	return u, false
 }
 
+// DeltaI will subtract y from x and store the result
+func (u *Uint) DeltaI(x, y *Uint) *Int {
+	res := NewIntFromUint(x)
+	return res.Sub(NewIntFromUint(y))
+}
+
 // Mul will multiply x and y then store the result
 // into u
 // this is equivalent to:
