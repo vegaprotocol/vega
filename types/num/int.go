@@ -147,7 +147,9 @@ func (i *Int) Add(a *Int) *Int {
 // i = i - a
 func (i *Int) Sub(a *Int) *Int {
 	a.FlipSign()
-	return i.Add(a)
+	i.Add(a)
+	a.FlipSign()
+	return i
 }
 
 // AddSum adds all of the parameters to i
