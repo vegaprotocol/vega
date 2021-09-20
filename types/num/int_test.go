@@ -120,14 +120,14 @@ func TestString(t *testing.T) {
 
 	assert.Equal(t, "0", mid.String())
 	assert.Equal(t, "-10", low.String())
-	assert.Equal(t, "+10", high.String())
+	assert.Equal(t, "10", high.String())
 }
 
 func TestAdd(t *testing.T) {
 	// Add positive to zero
 	i := num.NewInt(0)
 	i.Add(num.NewInt(10))
-	assert.Equal(t, "+10", i.String())
+	assert.Equal(t, "10", i.String())
 
 	// Add negative to zero
 	i = num.NewInt(0)
@@ -142,7 +142,7 @@ func TestAdd(t *testing.T) {
 	// Add zero to positive
 	i = num.NewInt(10)
 	i.Add(num.NewInt(0))
-	assert.Equal(t, "+10", i.String())
+	assert.Equal(t, "10", i.String())
 
 	// Add zero to zero
 	i = num.NewInt(0)
@@ -152,7 +152,7 @@ func TestAdd(t *testing.T) {
 	// Add positive to positive
 	i = num.NewInt(10)
 	i.Add(num.NewInt(15))
-	assert.Equal(t, "+25", i.String())
+	assert.Equal(t, "25", i.String())
 
 	// Add negative to negative
 	i = num.NewInt(-10)
@@ -167,12 +167,12 @@ func TestAdd(t *testing.T) {
 	// Add positive to negative (sign flip)
 	i = num.NewInt(-10)
 	i.Add(num.NewInt(15))
-	assert.Equal(t, "+5", i.String())
+	assert.Equal(t, "5", i.String())
 
 	// Add negative to positive (no sign flip)
 	i = num.NewInt(10)
 	i.Add(num.NewInt(-5))
-	assert.Equal(t, "+5", i.String())
+	assert.Equal(t, "5", i.String())
 
 	// Add negative to positive (sign flip)
 	i = num.NewInt(10)
@@ -199,7 +199,7 @@ func TestSubSum(t *testing.T) {
 	num5 := num.NewInt(10)
 
 	result := num1.SubSum(num2, num3, num4, num5)
-	assert.Equal(t, "+25", result.String())
+	assert.Equal(t, "25", result.String())
 }
 
 func TestDelta(t *testing.T) {
@@ -214,10 +214,10 @@ func TestDelta(t *testing.T) {
 	assert.Equal(t, "-10", result.String())
 
 	result = zero.Delta(num2, num3)
-	assert.Equal(t, "+35", result.String())
+	assert.Equal(t, "35", result.String())
 
 	result = zero.Delta(num3, num4)
-	assert.Equal(t, "+15", result.String())
+	assert.Equal(t, "15", result.String())
 
 	result = zero.Delta(num4, num5)
 	assert.Equal(t, "-40", result.String())

@@ -1,7 +1,5 @@
 package num
 
-import "fmt"
-
 // Int a wrapper to a signed big int
 type Int struct {
 	// The unsigned version of the integer
@@ -54,14 +52,14 @@ func (i Int) GT(o *Int) bool {
 			return false
 		}
 		return i.U.LT(o.U)
-	} else if i.IsPositive() {
+	}
+	if i.IsPositive() {
 		if o.IsZero() || o.IsNegative() {
 			return true
 		}
 		return i.U.GT(o.U)
-	} else {
-		return o.IsNegative()
 	}
+	return o.IsNegative()
 }
 
 // LT returns if i < o
@@ -71,14 +69,14 @@ func (i Int) LT(o *Int) bool {
 			return true
 		}
 		return i.U.GT(o.U)
-	} else if i.IsPositive() {
+	}
+	if i.IsPositive() {
 		if o.IsZero() || o.IsNegative() {
 			return false
 		}
 		return i.U.LT(o.U)
-	} else {
-		return o.IsPositive()
 	}
+	return o.IsPositive()
 }
 
 func (i Int) Int64() int64 {
@@ -92,25 +90,22 @@ func (i Int) Int64() int64 {
 // String returns a string version of the number
 func (i Int) String() string {
 	val := i.U.String()
-	s := ""
 	if i.IsNegative() {
-		s = "-"
-	} else if i.IsPositive() {
-		s = "+"
+		return "-" + val
 	}
-	return fmt.Sprintf("%s%s", s, val)
+	return val
 }
 
 // Add will add the passed in value to the base value
 // i = i + a
 func (i *Int) Add(a *Int) *Int {
 	// Handle cases where we have a zero
+	if a.IsZero() {
+		return i
+	}
 	if i.IsZero() {
 		i.U.Set(a.U)
 		i.s = a.s
-		return i
-	}
-	if a.IsZero() {
 		return i
 	}
 
@@ -136,17 +131,16 @@ func (i *Int) Add(a *Int) *Int {
 			i.s = true
 		}
 		return i
-	} else {
-		if i.U.GTE(a.U) {
-			// i >= abs(a)
-			i.U.Sub(i.U, a.U)
-		} else {
-			// i < abs(a)
-			i.U.Sub(a.U, i.U)
-			i.s = false
-		}
-		return i
 	}
+	if i.U.GTE(a.U) {
+		// i >= abs(a)
+		i.U.Sub(i.U, a.U)
+	} else {
+		// i < abs(a)
+		i.U.Sub(a.U, i.U)
+		i.s = false
+	}
+	return i
 }
 
 // Sub will subtract the passed in value from the base value
