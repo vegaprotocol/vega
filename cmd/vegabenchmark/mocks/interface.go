@@ -5,6 +5,7 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/nodewallet"
@@ -69,7 +70,7 @@ type OracleEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks OracleAdaptors
 type OracleAdaptors interface {
-	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKeyOrAddress, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination commander_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Commander

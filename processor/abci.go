@@ -13,10 +13,11 @@ import (
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
@@ -212,7 +213,7 @@ func addDeterministicID(
 	f func(context.Context, abci.Tx, string) error,
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
-		return f(ctx, tx, hex.EncodeToString(crypto.Hash(tx.Signature())))
+		return f(ctx, tx, hex.EncodeToString(vgcrypto.Hash(tx.Signature())))
 	}
 }
 
@@ -264,7 +265,7 @@ func (app *App) cancel() {
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
-	hash := hex.EncodeToString(crypto.Hash(req.AppStateBytes))
+	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
 	ctx := vgcontext.WithBlockHeight(context.Background(), 0)
 	ctx = vgcontext.WithTraceID(ctx, hash)
@@ -647,7 +648,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 		// TODO(): for now we are using a hash of the market ID to create
 		// the lp provision ID (well it's still deterministic...)
-		lpid := hex.EncodeToString(crypto.Hash([]byte(nm.Market().ID)))
+		lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
 			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
 		if err != nil {
@@ -744,7 +745,8 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	oracleData, err := app.oracles.Adaptors.Normalise(*data)
+	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return err
 	}
@@ -758,7 +760,8 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	_, err := app.oracles.Adaptors.Normalise(*data)
+	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	_, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	return err
 }
 
