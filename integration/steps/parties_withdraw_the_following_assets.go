@@ -24,12 +24,6 @@ func PartiesWithdrawTheFollowingAssets(
 	return nil
 }
 
-func errCannotLockFundsForWithdrawal(row withdrawAssetRow, err error) error {
-	return fmt.Errorf("couldn't lock funds for withdrawal of amount(%d) for party(%s), asset(%s): %s",
-		row.Amount(), row.Party(), row.Asset(), err.Error(),
-	)
-}
-
 func parseWithdrawAssetTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"party",
