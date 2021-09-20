@@ -102,14 +102,12 @@ func (t *assetAction) checkBuiltinAssetDeposit() error {
 
 func (t *assetAction) checkERC20Deposit() error {
 	asset, _ := t.asset.ERC20()
-	_, _, _, _, _, err := asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
-	return err
+	return asset.ValidateDeposit(t.erc20D, t.blockNumber, t.txIndex)
 }
 
 func (t *assetAction) checkERC20AssetList() error {
 	asset, _ := t.asset.ERC20()
-	_, _, err := asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
-	return err
+	return asset.ValidateAssetList(t.erc20AL, t.blockNumber, t.txIndex)
 }
 
 func (t *assetAction) getRef() txRef {
