@@ -31,7 +31,7 @@ func (e *Engine) WithdrawBuiltinAsset(
 		return ErrWrongAssetTypeUsedInBuiltinAssetChainEvent
 	}
 
-	return e.withdraw(ctx, w)
+	return e.finalizeWithdraw(ctx, w)
 }
 
 func (e *Engine) DepositBuiltinAsset(

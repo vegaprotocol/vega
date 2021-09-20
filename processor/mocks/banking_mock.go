@@ -93,17 +93,17 @@ func (mr *MockBankingMockRecorder) EnableBuiltinAsset(arg0, arg1 interface{}) *g
 }
 
 // EnableERC20 mocks base method
-func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *types.ERC20AssetList, arg2, arg3 uint64, arg4 string) error {
+func (m *MockBanking) EnableERC20(arg0 context.Context, arg1 *types.ERC20AssetList, arg2 string, arg3, arg4 uint64, arg5 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EnableERC20", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "EnableERC20", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EnableERC20 indicates an expected call of EnableERC20
-func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableERC20", reflect.TypeOf((*MockBanking)(nil).EnableERC20), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // HasBalance mocks base method

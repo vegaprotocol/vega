@@ -17,6 +17,27 @@ var (
 	ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
 )
 
+func (e *Engine) EnableERC20(
+	ctx context.Context,
+	al *types.ERC20AssetList,
+	id string,
+	blockNumber, txIndex uint64,
+	txHash string,
+) error {
+	asset, _ := e.assets.Get(al.VegaAssetID)
+	aa := &assetAction{
+		id:          id,
+		state:       pendingState,
+		erc20AL:     al,
+		asset:       asset,
+		blockNumber: blockNumber,
+		txIndex:     txIndex,
+		hash:        txHash,
+	}
+	e.assetActs[aa.id] = aa
+	return e.witness.StartCheck(aa, e.onCheckDone, e.currentTime.Add(defaultValidationDuration))
+}
+
 func (e *Engine) DepositERC20(
 	ctx context.Context,
 	d *types.ERC20Deposit,
@@ -122,7 +143,7 @@ func (e *Engine) WithdrawERC20(
 	}
 
 	// try to withdraw if no error, this'll just abort
-	if err := e.withdraw(ctx, w); err != nil {
+	if err := e.finalizeWithdraw(ctx, w); err != nil {
 		return err
 	}
 

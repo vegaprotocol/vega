@@ -2,9 +2,7 @@ package banking
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
-	"fmt"
 	"math/big"
 	"strings"
 	"sync"
@@ -13,7 +11,6 @@ import (
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -119,7 +116,17 @@ type withdrawalRef struct {
 	ref *big.Int
 }
 
-func New(log *logging.Logger, cfg Config, col Collateral, witness Witness, tsvc TimeService, assets Assets, notary Notary, broker Broker, top Topology) (e *Engine) {
+func New(
+	log *logging.Logger,
+	cfg Config,
+	col Collateral,
+	witness Witness,
+	tsvc TimeService,
+	assets Assets,
+	notary Notary,
+	broker Broker,
+	top Topology,
+) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -153,39 +160,6 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.cfg = cfg
-}
-
-func (e *Engine) HasBalance(party string) bool {
-	return e.col.HasBalance(party)
-}
-
-func (e *Engine) onCheckDone(i interface{}, valid bool) {
-	aa, ok := i.(*assetAction)
-	if !ok {
-		return
-	}
-
-	var newState = rejectedState
-	if valid {
-		newState = okState
-	}
-	atomic.StoreUint32(&aa.state, newState)
-}
-
-func (e *Engine) EnableERC20(ctx context.Context, al *types.ERC20AssetList, blockNumber, txIndex uint64, txHash string) error {
-	now := e.currentTime
-	asset, _ := e.assets.Get(al.VegaAssetID)
-	aa := &assetAction{
-		id:          id(al, uint64(now.UnixNano())),
-		state:       pendingState,
-		erc20AL:     al,
-		asset:       asset,
-		blockNumber: blockNumber,
-		txIndex:     txIndex,
-		hash:        txHash,
-	}
-	e.assetActs[aa.id] = aa
-	return e.witness.StartCheck(aa, e.onCheckDone, now.Add(defaultValidationDuration))
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
@@ -237,6 +211,33 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	}
 }
 
+func (e *Engine) HasBalance(party string) bool {
+	return e.col.HasBalance(party)
+}
+
+func (e *Engine) onCheckDone(i interface{}, valid bool) {
+	aa, ok := i.(*assetAction)
+	if !ok {
+		return
+	}
+
+	var newState = rejectedState
+	if valid {
+		newState = okState
+	}
+	atomic.StoreUint32(&aa.state, newState)
+}
+
+func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
+	for _, v := range e.withdrawals {
+		if v.ref.Cmp(ref) == 0 {
+			return v.w, nil
+		}
+	}
+
+	return nil, ErrNotMatchingWithdrawalForReference
+}
+
 func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	switch {
 	case aa.IsBuiltinAssetDeposit():
@@ -250,45 +251,6 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 	default:
 		return ErrUnknownAssetAction
 	}
-}
-
-func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
-	for _, v := range e.withdrawals {
-		if v.ref.Cmp(ref) == 0 {
-			return v.w, nil
-		}
-	}
-
-	return nil, ErrNotMatchingWithdrawalForReference
-}
-
-func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
-	defer func() { e.broker.Send(events.NewDepositEvent(ctx, *d)) }()
-	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, d.Amount)
-	if err != nil {
-		d.Status = types.DepositStatusCancelled
-		return err
-	}
-
-	d.Status = types.DepositStatusFinalized
-	d.CreditDate = e.currentTime.UnixNano()
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
-	return nil
-}
-
-func (e *Engine) withdraw(
-	ctx context.Context, w *types.Withdrawal) error {
-	// always send the withdrawal event
-	defer func() { e.broker.Send(events.NewWithdrawalEvent(ctx, *w)) }()
-
-	res, err := e.col.Withdraw(ctx, w.PartyID, w.Asset, w.Amount.Clone())
-	if err != nil {
-		return err
-	}
-
-	w.Status = types.WithdrawalStatusFinalized
-	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
-	return nil
 }
 
 func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
@@ -306,6 +268,35 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 		return err
 	}
 	return e.col.EnableAsset(ctx, *asset.ToAssetType())
+}
+
+func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
+	defer func() { e.broker.Send(events.NewDepositEvent(ctx, *d)) }()
+	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, d.Amount)
+	if err != nil {
+		d.Status = types.DepositStatusCancelled
+		return err
+	}
+
+	d.Status = types.DepositStatusFinalized
+	d.CreditDate = e.currentTime.UnixNano()
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	return nil
+}
+
+func (e *Engine) finalizeWithdraw(
+	ctx context.Context, w *types.Withdrawal) error {
+	// always send the withdrawal event
+	defer func() { e.broker.Send(events.NewWithdrawalEvent(ctx, *w)) }()
+
+	res, err := e.col.Withdraw(ctx, w.PartyID, w.Asset, w.Amount.Clone())
+	if err != nil {
+		return err
+	}
+
+	w.Status = types.WithdrawalStatusFinalized
+	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	return nil
 }
 
 func (e *Engine) newWithdrawal(
@@ -334,7 +325,9 @@ func (e *Engine) newWithdrawal(
 }
 
 func (e *Engine) newDeposit(
-	id, partyID, asset string, amount *num.Uint, txHash string,
+	id, partyID, asset string,
+	amount *num.Uint,
+	txHash string,
 ) *types.Deposit {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
@@ -347,12 +340,4 @@ func (e *Engine) newDeposit(
 		CreationDate: e.currentTime.UnixNano(),
 		TxHash:       txHash,
 	}
-}
-
-type HasVegaAssetID interface {
-	GetVegaAssetID() string
-}
-
-func id(s fmt.Stringer, nonce uint64) string {
-	return hex.EncodeToString(crypto.Hash([]byte(fmt.Sprintf("%v%v", s.String(), nonce))))
 }

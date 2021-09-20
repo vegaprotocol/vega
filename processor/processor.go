@@ -164,7 +164,7 @@ type Banking interface {
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
 	WithdrawBuiltinAsset(context.Context, string, string, string, *num.Uint) error
 
-	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64, string) error
+	EnableERC20(context.Context, *types.ERC20AssetList, string, uint64, uint64, string) error
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
 	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
