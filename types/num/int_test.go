@@ -210,16 +210,16 @@ func TestDelta(t *testing.T) {
 	num4 := num.NewInt(-30)
 	num5 := num.NewInt(10)
 
-	result := zero.Delta(num1, num2)
+	result := zero.Delta(num1.Clone(), num2.Clone())
 	assert.Equal(t, "-10", result.String())
 
-	result = zero.Delta(num2, num3)
+	result = zero.Delta(num2.Clone(), num3.Clone())
 	assert.Equal(t, "35", result.String())
 
-	result = zero.Delta(num3, num4)
+	result = zero.Delta(num3.Clone(), num4.Clone())
 	assert.Equal(t, "15", result.String())
 
-	result = zero.Delta(num4, num5)
+	result = zero.Delta(num4.Clone(), num5.Clone())
 	assert.Equal(t, "-40", result.String())
 }
 

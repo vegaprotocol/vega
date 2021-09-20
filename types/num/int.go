@@ -146,9 +146,8 @@ func (i *Int) Add(a *Int) *Int {
 // Sub will subtract the passed in value from the base value
 // i = i - a
 func (i *Int) Sub(a *Int) *Int {
-	b := a.Clone()
-	b.FlipSign()
-	return i.Add(b)
+	a.FlipSign()
+	return i.Add(a)
 }
 
 // AddSum adds all of the parameters to i
