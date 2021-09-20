@@ -2303,7 +2303,7 @@ func TestWithdrawalOK(t *testing.T) {
 	assert.Nil(t, err)
 
 	call := 0
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3).Do(func(evt events.Event) {
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -2318,19 +2318,19 @@ func TestWithdrawalOK(t *testing.T) {
 		}
 	})
 
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(100))
-	assert.NoError(t, err)
+	// _, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(100))
+	// assert.NoError(t, err)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 0, stringToInt(acc.Balance))
-		} else {
-			t.FailNow()
-		}
-	})
+	// eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+	// 	ae, ok := evt.(accEvt)
+	// 	assert.True(t, ok)
+	// 	acc := ae.Account()
+	// 	if acc.Type == types.AccountTypeLockWithdraw {
+	// 		assert.Equal(t, 0, stringToInt(acc.Balance))
+	// 	} else {
+	// 		t.FailNow()
+	// 	}
+	// })
 
 	_, err = eng.Engine.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(100))
 	assert.Nil(t, err)
@@ -2348,36 +2348,40 @@ func TestWithdrawalExact(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		// fmt.Printf("ACCOUNT: %v\n", acc)
-		if acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, 0, stringToInt(acc.Balance))
-		} else if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 500, stringToInt(acc.Balance))
-		} else {
-			t.FailNow()
-		}
-	})
+	// eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+	// 	ae, ok := evt.(accEvt)
+	// 	assert.True(t, ok)
+	// 	acc := ae.Account()
+	// 	// fmt.Printf("ACCOUNT: %v\n", acc)
+	// 	if acc.Type == types.AccountTypeGeneral {
+	// 		assert.Equal(t, 0, stringToInt(acc.Balance))
+	// 	} else if acc.Type == types.AccountTypeLockWithdraw {
+	// 		assert.Equal(t, 500, stringToInt(acc.Balance))
+	// 	} else {
+	// 		t.FailNow()
+	// 	}
+	// })
 
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(500))
-	assert.NoError(t, err)
+	// _, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(500))
+	// assert.NoError(t, err)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 0, stringToInt(acc.Balance))
-		} else {
-			t.FailNow()
-		}
-	})
+	// eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+	// 	ae, ok := evt.(accEvt)
+	// 	assert.True(t, ok)
+	// 	acc := ae.Account()
+	// 	if acc.Type == types.AccountTypeLockWithdraw {
+	// 		assert.Equal(t, 0, stringToInt(acc.Balance))
+	// 	} else {
+	// 		t.FailNow()
+	// 	}
+	// })
 
 	_, err = eng.Engine.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(500))
 	assert.Nil(t, err)
+
+	accAfter, err := eng.Engine.GetPartyGeneralAccount(party, testMarketAsset)
+	assert.NoError(t, err)
+	assert.Equal(t, accAfter.Balance, num.Zero())
 }
 
 func TestWithdrawalNotEnough(t *testing.T) {
@@ -2392,7 +2396,7 @@ func TestWithdrawalNotEnough(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(600))
+	_, err = eng.Engine.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(600))
 	assert.EqualError(t, err, collateral.ErrNotEnoughFundsToWithdraw.Error())
 
 }
@@ -2409,8 +2413,6 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), "invalid", testMarketAsset, num.NewUint(600))
-	assert.Error(t, err)
 	err = nil
 	_, err = eng.Engine.Withdraw(context.Background(), "invalid", testMarketAsset, num.NewUint(600))
 	assert.Error(t, err)

@@ -34,6 +34,7 @@ type testEngine struct {
 	col    *mocks.MockCollateral
 	assets *mocks.MockAssets
 	tsvc   *mocks.MockTimeService
+	top    *mocks.MockTopology
 	broker *bmock.MockBroker
 }
 
@@ -45,9 +46,10 @@ func getTestEngine(t *testing.T) *testEngine {
 	tsvc := mocks.NewMockTimeService(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	broker := bmock.NewMockBroker(ctrl)
+	top := mocks.NewMockTopology(ctrl)
 
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker)
+	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top)
 
 	return &testEngine{
 		Engine: eng,
@@ -57,6 +59,7 @@ func getTestEngine(t *testing.T) *testEngine {
 		assets: assets,
 		tsvc:   tsvc,
 		broker: broker,
+		top:    top,
 	}
 }
 

@@ -246,7 +246,7 @@ func (e *Engine) finalizeAction(ctx context.Context, aa *assetAction) error {
 		dep := e.deposits[aa.id]
 		return e.finalizeDeposit(ctx, dep)
 	case aa.IsERC20AssetList():
-		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetId)
+		return e.finalizeAssetList(ctx, aa.erc20AL.VegaAssetID)
 	default:
 		return ErrUnknownAssetAction
 	}
