@@ -185,3 +185,9 @@ func NewInt(val int64) *Int {
 	return &Int{U: NewUint(uint64(val)),
 		s: true}
 }
+
+// Delta will subtract y from x and store the result
+func (i *Int) Delta(x, y *Int) *Int {
+	i = x.Clone()
+	return i.Sub(y)
+}
