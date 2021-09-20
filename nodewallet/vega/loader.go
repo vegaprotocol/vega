@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/go-wallet/wallet"
 	storev1 "code.vegaprotocol.io/go-wallet/wallet/store/v1"
+	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/vega/crypto"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 )
@@ -28,17 +29,12 @@ func (l *WalletLoader) Initialise() error {
 
 func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, error) {
 	data := map[string]string{}
-	store, err := storev1.NewStore(l.walletRootPath)
+	store, err := storev1.InitialiseStore(l.walletRootPath)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	err = store.Initialise()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	handler := wallet.NewHandler(store)
+	handler := wallets.NewHandler(store)
 
 	walletName := fmt.Sprintf("vega.%v", time.Now().UnixNano())
 	mnemonic, err := handler.CreateWallet(walletName, passphrase)
@@ -60,12 +56,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, 
 }
 
 func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
-	store, err := storev1.NewStore(l.walletRootPath)
-	if err != nil {
-		return nil, err
-	}
-
-	err = store.Initialise()
+	store, err := storev1.InitialiseStore(l.walletRootPath)
 	if err != nil {
 		return nil, err
 	}
@@ -76,12 +67,7 @@ func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, error) {
 	sourcePath, sourceWalletName := filepath.Split(sourceFilePath)
 
-	sourceStore, err := storev1.NewStore(sourcePath)
-	if err != nil {
-		return nil, err
-	}
-
-	err = sourceStore.Initialise()
+	sourceStore, err := storev1.InitialiseStore(sourcePath)
 	if err != nil {
 		return nil, err
 	}
@@ -91,12 +77,7 @@ func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, error
 		return nil, err
 	}
 
-	destStore, err := storev1.NewStore(l.walletRootPath)
-	if err != nil {
-		return nil, err
-	}
-
-	err = destStore.Initialise()
+	destStore, err := storev1.InitialiseStore(l.walletRootPath)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +93,7 @@ func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, error
 }
 
 func newWallet(store *storev1.Store, walletName, passphrase string) (*Wallet, error) {
-	handler := wallet.NewHandler(store)
+	handler := wallets.NewHandler(store)
 
 	err := handler.LoginWallet(walletName, passphrase)
 	if err != nil {

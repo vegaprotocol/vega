@@ -14,6 +14,7 @@ type Empty struct{}
 
 type RootPathFlag struct {
 	RootPath string `short:"r" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
+	VegaHome string `long:"home" description:"Path to the custom home for vega"`
 }
 
 func NewRootPathFlag() RootPathFlag {

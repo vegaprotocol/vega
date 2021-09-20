@@ -3,10 +3,11 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.9.0-pre1.0.20210902202451-07b8234ec078
+	code.vegaprotocol.io/go-wallet v0.9.0-pre2.0.20210915140329-dcd7a6665a37
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.42.1-0.20210913122716-3c9512012d8f
 	code.vegaprotocol.io/quant v0.2.5
+	code.vegaprotocol.io/shared v0.0.0-20210907092733-405b656c2f5b // indirect
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -45,7 +46,7 @@ require (
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/zap v1.13.0
-	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	google.golang.org/genproto v0.0.0-20210611144927-798beca9d670 // indirect
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0

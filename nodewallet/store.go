@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"code.vegaprotocol.io/go-wallet/crypto"
+	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	vgfs "code.vegaprotocol.io/vega/libs/fs"
 )
 
@@ -84,7 +84,7 @@ func (s *storage) Load(passphrase string) (*store, error) {
 		return nil, fmt.Errorf("unable to read store file (%v)", err)
 	}
 
-	decBuf, err := crypto.Decrypt(data, passphrase)
+	decBuf, err := vgcrypto.Decrypt(data, passphrase)
 	if err != nil {
 		return nil, fmt.Errorf("unable to decrypt store file (%v)", err)
 	}
@@ -99,7 +99,7 @@ func (s *storage) Save(store *store, passphrase string) error {
 		return err
 	}
 
-	encBuf, err := crypto.Encrypt(buf, passphrase)
+	encBuf, err := vgcrypto.Encrypt(buf, passphrase)
 	if err != nil {
 		return fmt.Errorf("unable to encrypt store file (%v)", err)
 	}

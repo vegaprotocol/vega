@@ -3,6 +3,7 @@ package validators
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -167,7 +168,11 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 		}
 	}
 	if !ok {
-		return ErrInvalidChainPubKey
+		t.log.Error("invalid validator tendermint pubkey",
+			logging.Strings("expected-keys", t.chainValidators),
+			logging.String("got", nr.ChainPubKey),
+		)
+		return fmt.Errorf("%s: %w", nr.ChainPubKey, ErrInvalidChainPubKey)
 	}
 
 	// then add it to the topology

@@ -324,11 +324,12 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 }
 
 func (app *App) handleCheckpoint(snap *types.Snapshot) error {
+	now := time.Now()
 	f, err := os.Create(
 		filepath.Join(
 			app.cfg.CheckpointsPath,
 			fmt.Sprintf(
-				"%s-%s.cp", app.cBlock, hex.EncodeToString(snap.Hash),
+				"%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash),
 			),
 		),
 	)
