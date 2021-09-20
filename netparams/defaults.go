@@ -104,6 +104,6 @@ func defaultNetParams() map[string]value {
 		// network checkpoint parameters
 		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(true).MustUpdate("never"),
 		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(true).MustUpdate("never"),
-		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1h"),
+		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m"),
 	}
 }
