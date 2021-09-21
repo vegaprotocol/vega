@@ -11,14 +11,37 @@ Feature: Test settlement at expiry
       | property           | type           | binding              |
       | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
 
+    And the following network parameters are set:
+      | name                                                | value |
+      | market.auction.minimumDuration                      | 1     |
+      # | market.stake.target.timeWindow                      | 24h   |
+      # | market.stake.target.scalingFactor                   | 1     |
+      # | market.liquidity.targetstake.triggering.ratio       | 1     |
+      # | market.liquidity.providers.fee.distributionTimeStep | 10s   |
+
+    # And the average block duration is "1"
+    
+    And the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.005     | 2                  |
+    And the price monitoring updated every "1" seconds named "price-monitoring-1":
+      | horizon | probability | auction extension |
+      | 1       | 0.99        | 300               |
+    And the simple risk model named "simple-risk-model-1":
+      | long | short | max move up | min move down | probability of trading |
+      | 0.2  | 0.1   | 100         | -100          | 0.1                    |
+    
+    # And the log normal risk model named "log-normal-risk-model-1":
+    #   | risk aversion | tau | mu | r   | sigma |
+    #   | 0.000001      | 0.1 | 0  | 1.4 | -1    |
+
     And the markets:
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle |
-
-    And the following network parameters are set:
-      | name                           | value |
-      | market.auction.minimumDuration | 1     |
+      # | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      # | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+     
 
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
@@ -132,7 +155,7 @@ Feature: Test settlement at expiry
     And the insurance pool balance should be "5000" for the asset "ETH"
     And the insurance pool balance should be "15000" for the market "ETH/DEC20"
 
-Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses
+  Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses
     Given the initial insurance pool balance is "10000" for the markets:
     Given the parties deposit on asset's general account the following amount:
       | party     | asset | amount    |
@@ -202,9 +225,9 @@ Scenario: Settlement happened when market is being closed - no loss socialisatio
     And the insurance pool balance should be "4542" for the asset "ETH"
     And the insurance pool balance should be "14542" for the market "ETH/DEC20"
 
-Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't covers all losses
+  Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't covers all losses
     Given the initial insurance pool balance is "500" for the markets:
-    Given the parties deposit on asset's general account the following amount:
+     Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | party1   | ETH   | 10000     |
       | party2   | ETH   | 1000      |
@@ -270,3 +293,186 @@ Scenario: Settlement happened when market is being closed - loss socialisation i
     # 500 were taken from the insurance pool to cover the losses of party 2, still not enough to cover losses of (1000-42)*2 for party2
     And the insurance pool balance should be "0" for the asset "ETH"
     And the insurance pool balance should be "500" for the market "ETH/DEC20"
+
+  Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - no insurance taken
+
+  #   # setup accounts
+  #   Given the initial insurance pool balance is "10000" for the markets:
+
+  #   When the parties deposit on asset's general account the following amount:
+  #     | party    | asset | amount    |
+  #     | aux1     | ETH   | 100000000 |
+  #     | aux2     | ETH   | 100000000 |
+  #     | trader3a | ETH   | 10000     |
+  #     | trader4  | ETH   | 10000     |
+  #     | trader5  | ETH   | 5000      |
+  #     | party-lp | ETH   | 100000000 |
+
+  #   Then the parties place the following orders:
+  #     | party   | market id | side  | volume | price | resulting trades | type       | tif     |
+  #     | aux1     | ETH/DEC21 | buy   | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC |
+  #     | aux2     | ETH/DEC21 | sell  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+  #     | trader3a | ETH/DEC21 | buy   | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+  #     | trader4  | ETH/DEC21 | sell  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+ 
+  #   Given the parties submit the following liquidity provision:
+  #     | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+  #     | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    |
+  #     | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    |
+   
+  #   Then the opening auction period ends for market "ETH/DEC21"
+  #   And the mark price should be "1002" for the market "ETH/DEC21"
+  #   Then debug orders
+    
+  #   # Given the parties submit the following liquidity provision:
+  #   #   | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+  #   #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    |
+  #   #   | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    |
+
+  #   #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
+  #   # And the market data for the market "ETH/DEC21" should be:
+  #   #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+  #   #   | 1002       | TRADING_MODE_CONTINUOUS | 1       | 903       | 1101      | 200          | 10000          | 1             |
+
+  #   Then the parties place the following orders:
+  #     | party   | market id  | side  | volume | price | resulting trades | type       | tif     |
+  #     | trader3a | ETH/DEC21  | buy   | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+  #     | trader4  | ETH/DEC21  | sell  | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+
+  #   Then the market data for the market "ETH/DEC21" should be:
+  #     | trading mode                    | auction trigger       |
+  #     | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
+
+  #   Then the network moves ahead "301" blocks
+
+  #   Then the following trades should be executed:
+  #     | buyer    | price | size | seller  |
+  #     | trader3a | 900   | 2    | trader4 |
+
+  #   Then the parties should have the following account balances:
+  #     | party    | asset | market id | margin | general |
+  #     | trader3a | ETH   | ETH/DEC21 | 1222   | 6875    |
+  #     | trader4  | ETH   | ETH/DEC21 | 1660   | 6641    |
+
+  #   And the settlement account should have a balance of "0" for the market "ETH/DEC21"
+  #   And the cumulated balance for all accounts should be worth "300065000"
+
+  #   # # Close positions by aux parties
+  #   # When the parties place the following orders:
+  #   #   | party | market id | side | volume | price | resulting trades | type       | tif     |
+  #   #   | aux1  | ETH/DEC21 | sell | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC |
+  #   #   | aux2  | ETH/DEC21 | buy  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+  #   Then debug orders
+
+  #   When the oracles broadcast data signed with "0xDEADBEEF":
+  #     | name               | value |
+  #     | trading.terminated | true  |
+
+  #      And time is updated to "2020-01-01T01:01:01Z"
+
+  #   Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
+  #   Then the oracles broadcast data signed with "0xDEADBEEF":
+  #     | name             | value |
+  #     | prices.ETH.value | 42    |
+  #   Then time is updated to "2020-01-01T01:01:02Z"
+
+  #   Then the parties place the following orders:
+  #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
+  #     | trader3a | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
+  #   And the parties should have the following account balances:
+  #     | party  | asset | market id | margin | general |
+  #     | trader3a | ETH   | ETH/DEC21 | 0   | 5523    |
+  #     | trader4  | ETH   | ETH/DEC21 | 0   | 9215    |
+
+  #   And the cumulated balance for all accounts should be worth "300048340"
+  #   And the insurance pool balance should be "2500" for the market "ETH/DEC21"
+  #   And the insurance pool balance should be "7500" for the asset "ETH"
+  #   And the insurance pool balance should be "0" for the market "ETH/DEC22"
+
+  # # Given the initial insurance pool balance is "10000" for the markets:
+  # #   Given the parties deposit on asset's general account the following amount:
+  # #     | party    | asset | amount    |
+  # #     | party1   | ETH   | 10000     |
+  # #     | party2   | ETH   | 1000      |
+  # #     | party3   | ETH   | 5000      |
+  # #     | aux1     | ETH   | 100000    |
+  # #     | aux2     | ETH   | 100000    |
+  # #     | party-lp | ETH   | 100000000 |
+  # #   And the parties submit the following liquidity provision:
+  # #     | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
+  # #     | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
+  # #     | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+
+  # #   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  # #   When the parties place the following orders:
+  # #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+  # #     | aux1   | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+  # #     | aux2   | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+  # #     | aux1   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
+  # #     | aux2   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
+  # #   Then the opening auction period ends for market "ETH/DEC19"
+  # #   And the mark price should be "1000" for the market "ETH/DEC19"
+
+  # #   # Set mark price
+  # #   And the parties place the following orders:
+  # #     | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
+  # #     | aux1   | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+  # #     | aux2   | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+
+  # #   And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
+
+  # #   When the parties place the following orders:
+  # #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
+  # #     | party1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+  # #     | party2 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+  # #     | party3 | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-3     |
+
+  # #   Then the following trades should be executed:
+  # #     | buyer  | price | size | seller |
+  # #     | party2 | 1000  |  1   | party1 |
+  # #     | party3 | 1000  |  1   | party1 |
+
+  # #   Then the parties should have the following account balances:
+  # #     | party  | asset | market id | margin | general |
+  # #     | party1 | ETH   | ETH/DEC19 | 240    | 9760    |
+  # #     | party2 | ETH   | ETH/DEC19 | 132    | 868     |
+  # #     | party3 | ETH   | ETH/DEC19 | 132    | 4868    |
+  # #   And the settlement account should have a balance of "0" for the market "ETH/DEC19"
+  # #   And the cumulated balance for all accounts should be worth "100236000"
+
+  # #   # Close positions by aux parties
+  # #   When the parties place the following orders:
+  # #     | party | market id | side | volume | price | resulting trades | type       | tif     |
+  # #     | aux1   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+  # #     | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+
+  # #   When the oracles broadcast data signed with "0xDEADBEEF":
+  # #     | name               | value |
+  # #     | trading.terminated | true  |
+  # #   And time is updated to "2020-01-01T01:01:01Z"
+  # #   Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
+  # #   Then the oracles broadcast data signed with "0xDEADBEEF":
+  # #     | name             | value |
+  # #     | prices.ETH.value | 42    |
+  # #   Then time is updated to "2020-01-01T01:01:02Z"
+
+  # #   Then the parties place the following orders:
+  # #     | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
+  # #     | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
+  # #   And the parties should have the following account balances:
+  # #     | party  | asset | market id | margin | general |
+  # #     | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
+  # #     | party2 | ETH   | ETH/DEC19 | 0      | 42      |
+  # #     | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
+  # #   # And the cumulated balance for all accounts should be worth "100214513"
+  # #   And the insurance pool balance should be "0" for the market "ETH/DEC19"
+  # #   And the insurance pool balance should be "5000" for the asset "ETH"
+  # #   And the insurance pool balance should be "15000" for the market "ETH/DEC20"
+
+
+
+  # # Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - insurance covers losses
+  # # Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - loss socialisation in action - insurance doesn't covers all losses
+
+  # # Scenario: This mechanism does not incur fees to traders that have open positions that are settled at expiry
+
