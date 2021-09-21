@@ -6,10 +6,11 @@ import (
 	"io/ioutil"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/config"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/stats"
@@ -21,7 +22,7 @@ import (
 
 type CheckpointCmd struct {
 	// Global variables
-	config.RootPathFlag
+	config.VegaHomeFlag
 	// wallet config flags
 	config.PassphraseFlag
 	// Subcommands.
@@ -41,8 +42,7 @@ func Checkpoint(ctx context.Context, parser *flags.Parser) error {
 
 	// here we initialize the global exampleCmd with needed default values.
 	checkpointCmd = CheckpointCmd{
-		RootPathFlag: config.NewRootPathFlag(),
-		Restore:      checkpointRestore{},
+		Restore: checkpointRestore{},
 	}
 	_, err := parser.AddCommand("checkpoint", "Restore checkpoint", "Submits restore transaction to the chain to quickly restart the node from a given state", &checkpointCmd)
 	return err
@@ -55,7 +55,11 @@ func (c *checkpointRestore) Execute(args []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := vgfs.FileExists(c.CPFile); !ok {
+	exists, err := vgfs.FileExists(c.CPFile)
+	if err != nil {
+		return fmt.Errorf("couldn't verify file presence at %s: %w", c.CPFile, err)
+	}
+	if !exists {
 		return fmt.Errorf("checkpoint file not found: %w", err)
 	}
 
@@ -63,7 +67,7 @@ func (c *checkpointRestore) Execute(args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read checkpoint file: %w", err)
 	}
-	commander, err := c.getCommander(log)
+	commander, err := getNodeWalletCommander(log)
 	if err != nil {
 		return fmt.Errorf("failed to get commander: %w", err)
 	}
@@ -81,21 +85,27 @@ func (c *checkpointRestore) Execute(args []string) error {
 	return <-ch
 }
 
-func (c checkpointRestore) getCommander(log *logging.Logger) (*nodewallet.Commander, error) {
-	cfg := config.NewDefaultConfig(checkpointCmd.RootPath)
-	nwConf := cfg.NodeWallet
-	// instantiate the ETHClient
-	ethclt, err := ethclient.Dial(nwConf.ETH.Address)
+func getNodeWalletCommander(log *logging.Logger) (*nodewallet.Commander, error) {
+	vegaPaths := paths.NewPaths(checkpointCmd.VegaHome)
+
+	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return nil, err
 	}
+
+	nwConf := cfg.NodeWallet
+
+	ethclt, err := ethclient.Dial(nwConf.ETH.Address)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't instantiate the Ethereum client: %w", err)
+	}
+
 	nodePass, err := checkpointCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return nil, err
 	}
 
-	// nodewallet
-	nodeWallet, err := nodewallet.New(log, nwConf, nodePass, ethclt, checkpointCmd.RootPath)
+	nodeWallet, err := nodewallet.New(log, nwConf, nodePass, ethclt, vegaPaths)
 	if err != nil {
 		return nil, err
 	}

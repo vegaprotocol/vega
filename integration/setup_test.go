@@ -79,7 +79,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	ctrl := gomock.NewController(&reporter)
 	execsetup.ctrl = ctrl
-	execsetup.cfg = execution.NewDefaultConfig("")
+	execsetup.cfg = execution.NewDefaultConfig()
 	execsetup.log = logging.NewTestLogger()
 	execsetup.timeService = stubs.NewTimeStub()
 	execsetup.broker = stubs.NewBrokerStub()

@@ -8,10 +8,11 @@ import (
 	"os"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallet"
@@ -44,7 +45,14 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
+	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
+	if err != nil {
+		return err
+	}
+
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, vegaPaths, conf, pass)
 	if err != nil {
 		return err
 	}
@@ -110,7 +118,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	genesisDoc := tmtypes.GenesisDoc{
-		ChainID:         fmt.Sprintf("test-chain-%v", crypto.RandomStr(6)),
+		ChainID:         fmt.Sprintf("test-chain-%v", vgrand.RandomStr(6)),
 		GenesisTime:     tmtime.Now(),
 		ConsensusParams: tmtypes.DefaultConsensusParams(),
 		AppState:        rawGenesisState,
@@ -156,18 +164,13 @@ func loadTendermintPrivateValidatorKey(tmConfig *tmconfig.Config) (tmcrypto.PubK
 	return pubKey, nil
 }
 
-func loadNodeWalletPubKey(log *logging.Logger, rootPath, pass string) (string, string, error) {
-	conf, err := config.Read(rootPath)
-	if err != nil {
-		return "", "", err
-	}
-
+func loadNodeWalletPubKey(log *logging.Logger, vegaPaths paths.Paths, conf *config.Config, pass string) (string, string, error) {
 	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return "", "", err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, rootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, vegaPaths)
 	if err != nil {
 		return "", "", err
 	}

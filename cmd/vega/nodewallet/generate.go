@@ -3,9 +3,10 @@ package nodewallet
 import (
 	"fmt"
 
+	vgjson "code.vegaprotocol.io/shared/libs/json"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
-	vgjson "code.vegaprotocol.io/vega/libs/json"
+	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 
@@ -13,21 +14,24 @@ import (
 )
 
 type generateCmd struct {
+	config.OutputFlag
+
 	Config nodewallet.Config
 
-	WalletPassphrase config.Passphrase `short:"w" long:"wallet-passphrase"`
+	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
 	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
 	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
+	output, err := opts.GetOutput()
+	if err != nil {
+		return err
+	}
+
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
-
-	if ok, err := vgfs.PathExists(rootCmd.RootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %w", err)
-	}
 
 	pass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
@@ -39,17 +43,20 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	conf, err := config.Read(rootCmd.RootPath)
+	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return err
 	}
+
 	opts.Config = conf.NodeWallet
 
 	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, rootCmd.RootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
 	if err != nil {
 		return err
 	}
@@ -65,12 +72,13 @@ func (opts *generateCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+	data["configFilePath"] = nw.GetConfigFilePath()
 
-	fmt.Println("generation successful")
-	if len(data) != 0 {
-		fmt.Println("additional data:")
-		err := vgjson.PrettyPrint(data)
-		if err != nil {
+	if output.IsHuman() {
+		fmt.Println("generation successful:")
+		vgfmt.PrettyPrint(data)
+	} else if output.IsJSON() {
+		if err := vgjson.Print(data); err != nil {
 			return err
 		}
 	}
