@@ -14,7 +14,7 @@ import (
 // sub-commands itself.
 type ExampleCmd struct {
 	// Global variables
-	config.RootPathFlag
+	config.VegaHomeFlag
 
 	// Subcommands.
 	Foo exampleFoo `command:"foo"`
@@ -28,9 +28,7 @@ var exampleCmd ExampleCmd
 func Example(ctx context.Context, parser *flags.Parser) error {
 
 	// here we initialize the global exampleCmd with needed default values.
-	exampleCmd = ExampleCmd{
-		RootPathFlag: config.NewRootPathFlag(),
-	}
+	exampleCmd = ExampleCmd{}
 	_, err := parser.AddCommand("example", "short desc", "long desc", &exampleCmd)
 	return err
 }

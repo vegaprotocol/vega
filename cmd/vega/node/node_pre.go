@@ -61,7 +61,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}()
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 
-	conf := l.cfgwatchr.Get()
+	conf := l.confWatcher.Get()
 
 	if flagProvided("--no-chain") {
 		conf.Blockchain.ChainProvider = "noop"
@@ -76,13 +76,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		if err != nil {
 			return
 		}
-		l.cfgwatchr.OnConfigUpdate(
+		l.confWatcher.OnConfigUpdate(
 			func(cfg config.Config) { l.pproffhandlr.ReloadConf(cfg.Pprof) },
 		)
 	}
 
 	l.Log.Info("Starting Vega",
-		logging.String("config-path", l.configPath),
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
@@ -100,18 +99,14 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
-	// instantiate the ETHClient
-	ethClient, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+	l.ethClient, err = ethclient.Dial(l.conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
-	// nodewallet
-	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethClient, l.configPath); err != nil {
+	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, l.ethClient, l.vegaPaths); err != nil {
 		return err
 	}
-
-	l.ethClient = ethClient
 
 	return l.nodeWallet.Verify()
 }
@@ -191,6 +186,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
 	app := processor.NewApp(
 		l.Log,
+		l.vegaPaths,
 		l.conf.Processor,
 		l.cancel,
 		l.assets,
@@ -377,7 +373,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
-	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
+	l.timeService.NotifyOnTick(l.confWatcher.OnTimeUpdate)
 
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches
@@ -547,7 +543,7 @@ func (l *NodeCommand) setupNetParameters() error {
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
-	l.cfgwatchr.OnConfigUpdate(
+	l.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },

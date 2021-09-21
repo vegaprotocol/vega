@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/libs/fs"
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/vega/netparams"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -37,7 +37,7 @@ func GetLocalGenesisState(path string) (*tmtypes.GenesisDoc, *GenesisState, erro
 	tmConfig.SetRoot(path)
 	genesisFilePath := tmConfig.GenesisFile()
 
-	data, err := fsutil.ReadFile(genesisFilePath)
+	data, err := vgfs.ReadFile(genesisFilePath)
 	if err != nil {
 		return nil, nil, err
 	}

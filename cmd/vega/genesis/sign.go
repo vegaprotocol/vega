@@ -13,10 +13,10 @@ import (
 )
 
 type signCmd struct {
-	config.RootPathFlag
-	TmRoot             string            `short:"t" long:"tm-root" description:"The root path of tendermint"`
-	WalletName         string            `long:"wallet-name" description:"The name of the wallet to use" required:"true"`
-	WalletPasswordFile config.Passphrase `long:"wallet-password" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+	config.VegaHomeFlag
+	TmRoot           string            `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	WalletName       string            `long:"wallet-name" description:"The name of the wallet to use" required:"true"`
+	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 }
 
 func (opts *signCmd) Execute(_ []string) error {
@@ -25,7 +25,7 @@ func (opts *signCmd) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := opts.WalletPasswordFile.Get("wallet")
+	pass, err := opts.WalletPassphrase.Get("wallet")
 	if err != nil {
 		return err
 	}

@@ -326,7 +326,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 
 	marketID := "testingmarket"
 
-	conf := config.NewDefaultConfig("")
+	conf := config.NewDefaultConfig()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)
@@ -435,7 +435,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 
 	marketID := "testingmarket"
 
-	conf := config.NewDefaultConfig("")
+	conf := config.NewDefaultConfig()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	model := mocks.NewMockModel(ctrl)

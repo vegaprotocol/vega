@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
@@ -10,8 +11,8 @@ import (
 )
 
 type NodeCmd struct {
-	config.Passphrase `long:"nodewallet-passphrase"`
-	config.RootPathFlag
+	config.Passphrase `long:"nodewallet-passphrase-file"`
+	config.VegaHomeFlag
 
 	config.Config
 }
@@ -36,7 +37,9 @@ func (cmd *NodeCmd) Execute(args []string) error {
 		return err
 	}
 
-	cfgwatchr, err := config.NewFromFile(context.Background(), log, cmd.RootPath, cmd.RootPath, config.Use(parseFlagOpt))
+	vegaPaths := paths.NewPaths(cmd.VegaHome)
+
+	confWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}
@@ -46,18 +49,16 @@ func (cmd *NodeCmd) Execute(args []string) error {
 		Version:     CLIVersion,
 		VersionHash: CLIVersionHash,
 	}).Run(
-		cfgwatchr,
-		cmd.RootPath,
+		confWatcher,
+		vegaPaths,
 		pass,
 		args,
 	)
 }
 
 func Node(ctx context.Context, parser *flags.Parser) error {
-	rootPath := config.NewRootPathFlag()
 	nodeCmd = NodeCmd{
-		RootPathFlag: rootPath,
-		Config:       config.NewDefaultConfig(rootPath.RootPath),
+		Config:       config.NewDefaultConfig(),
 	}
 	cmd, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/checkpoint"
@@ -115,7 +116,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	exec := execution.NewEngine(
 		log,
-		execution.NewDefaultConfig(""),
+		execution.NewDefaultConfig(),
 		timeService,
 		collateral,
 		oraclesM,
@@ -164,7 +165,8 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	app := processor.NewApp(
 		log,
-		processor.NewDefaultConfig(""),
+		&paths.DefaultPaths{},
+		processor.NewDefaultConfig(),
 		func() {},
 		assets,
 		banking,

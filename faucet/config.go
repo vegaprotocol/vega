@@ -1,31 +1,26 @@
 package faucet
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"time"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config/encoding"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/zannen/toml"
 )
 
 const (
 	namedLogger     = "faucet"
-	defaultWallet   = "faucet-wallet"
-	configFile      = "faucet.toml"
 	defaultCoolDown = 1 * time.Minute
 )
 
 type Config struct {
 	Level      encoding.LogLevel      `long:"level" description:"Log level"`
 	RateLimit  vghttp.RateLimitConfig `group:"RateLimit" namespace:"rateLimit"`
-	WalletPath string                 `long:"wallet-path" description:" "`
+	WalletName string                 `long:"wallet-name" description:"Name of the wallet to use to sign events"`
 	Port       int                    `long:"port" description:"Listen for connections on port <port>"`
 	IP         string                 `long:"ip" description:"Bind to address <ip>"`
 	Node       NodeConfig             `group:"Node" namespace:"node"`
@@ -37,14 +32,13 @@ type NodeConfig struct {
 	Retries uint64 `long:"retries" description:"Connection retries before fail"`
 }
 
-func NewDefaultConfig(defaultDirPath string) Config {
+func NewDefaultConfig() Config {
 	return Config{
 		Level: encoding.LogLevel{Level: logging.InfoLevel},
 		RateLimit: vghttp.RateLimitConfig{
 			CoolDown:  encoding.Duration{Duration: defaultCoolDown},
 			AllowList: []string{"10.0.0.0/8", "127.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fe80::/10"},
 		},
-		WalletPath: filepath.Join(defaultDirPath, defaultWallet),
 		Node: NodeConfig{
 			IP:      "127.0.0.1",
 			Port:    3002,
@@ -55,79 +49,48 @@ func NewDefaultConfig(defaultDirPath string) Config {
 	}
 }
 
-func LoadConfig(path string) (*Config, error) {
-	buf, err := ioutil.ReadFile(filepath.Join(path, configFile))
-	if err != nil {
-		return nil, err
-	}
-	cfg := Config{}
-	if _, err := toml.Decode(string(buf), &cfg); err != nil {
-		return nil, err
-	}
-
-	return &cfg, nil
+type ConfigLoader struct {
+	configFilePath string
 }
 
-func GenConfig(log *logging.Logger, path, passphrase string, rewrite bool) (string, error) {
-	confPath := filepath.Join(path, configFile)
-	confPathExists, _ := vgfs.PathExists(confPath)
-	if confPathExists {
-		if rewrite {
-			log.Info("removing existing configuration",
-				logging.String("path", confPath))
-			err := os.Remove(confPath)
-			if err != nil {
-				return "", fmt.Errorf("unable to remove configuration: %v", err)
-			}
-		} else {
-			// file exist, but not allowed to rewrite, return an error
-			return "", fmt.Errorf("configuration already exists at path: %v", confPath)
-		}
-	}
-
-	walletPath := filepath.Join(path, defaultWallet)
-	confPathExists, _ = vgfs.PathExists(walletPath)
-	if confPathExists {
-		if rewrite {
-			log.Info("removing existing configuration",
-				logging.String("path", walletPath))
-			err := os.Remove(walletPath)
-			if err != nil {
-				return "", fmt.Errorf("unable to remove configuration: %v", err)
-			}
-		} else {
-			// file exist, but not allowed to rewrite, return an error
-			return "", fmt.Errorf("configuration already exists at path: %v", walletPath)
-		}
-	}
-
-	cfg := NewDefaultConfig(path)
-
-	// write configuration to toml
-	buf := new(bytes.Buffer)
-	if err := toml.NewEncoder(buf).Encode(cfg); err != nil {
-		return "", err
-	}
-
-	// create the configuration file
-	f, err := os.Create(confPath)
+func InitialiseConfigLoader(vegaPaths paths.Paths) (*ConfigLoader, error) {
+	configFilePath, err := vegaPaths.ConfigPathFor(paths.FaucetDefaultConfigFile)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("couldn't get path for %s: %w", paths.FaucetDefaultConfigFile, err)
 	}
 
-	if _, err = f.WriteString(buf.String()); err != nil {
-		return "", err
-	}
+	return &ConfigLoader{
+		configFilePath: configFilePath,
+	}, nil
+}
 
-	f.Chmod(0600)
-	f.Close()
+func (l *ConfigLoader) ConfigFilePath() string {
+	return l.configFilePath
+}
 
-	log.Info("faucet configuration generated successfully", logging.String("path", confPath))
-
-	pubKey, err := initialiseWallet(walletPath, passphrase)
+func (l *ConfigLoader) ConfigExists() (bool, error) {
+	exists, err := vgfs.FileExists(l.configFilePath)
 	if err != nil {
-		return "", err
+		return false, fmt.Errorf("couldn't verify file presence: %w", err)
 	}
+	return exists, nil
+}
 
-	return pubKey, nil
+func (l *ConfigLoader) GetConfig() (*Config, error) {
+	cfg := &Config{}
+	if err := paths.ReadStructuredFile(l.configFilePath, cfg); err != nil {
+		return nil, fmt.Errorf("couldn't read file at %s: %w", l.configFilePath, err)
+	}
+	return cfg, nil
+}
+
+func (l *ConfigLoader) SaveConfig(cfg *Config) error {
+	if err := paths.WriteStructuredFile(l.configFilePath, cfg); err != nil {
+		return fmt.Errorf("couldn't write file at %s: %w", l.configFilePath, err)
+	}
+	return nil
+}
+
+func (l *ConfigLoader) RemoveConfig() {
+	_ = os.RemoveAll(l.configFilePath)
 }
