@@ -44,9 +44,9 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
 type Checkpoint interface {
-	BalanceCheckpoint(ctx context.Context) (*types.Snapshot, error)
-	Checkpoint(ctx context.Context, now time.Time) (*types.Snapshot, error)
-	Load(ctx context.Context, snap *types.Snapshot) error
+	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
+	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
+	Load(ctx context.Context, snap *types.CheckpointState) error
 	AwaitingRestore() bool
 }
 
@@ -293,7 +293,7 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 	return resp
 }
 
-func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Result {
+func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
 	snap, err := types.NewTMSnapshotFromTM(req.Snapshot)
 	// invalid hash?
 	if err != nil || !bytes.Equal(snap.Hash, req.AppHash) {
@@ -392,7 +392,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	return resp
 }
 
-func (app *App) handleCheckpoint(snap *types.Snapshot) error {
+func (app *App) handleCheckpoint(snap *types.CheckpointState) error {
 	now := time.Now()
 	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash))
 	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.SnapshotStateHome, cpFileName))
@@ -1006,7 +1006,7 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	}
 
 	// convert to snapshot type:
-	snap := &types.Snapshot{}
+	snap := &types.CheckpointState{}
 	if err := snap.SetState(cmd.Data); err != nil {
 		return err
 	}
@@ -1018,7 +1018,7 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
 	app.blockCtx = ctx
 	err = app.checkpoint.Load(ctx, snap)
-	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
+	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}
 	// set flag in case the CP has been reloaded

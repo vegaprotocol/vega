@@ -14,7 +14,7 @@ type Checkpoint struct {
 	data eventspb.CheckpointEvent
 }
 
-func NewCheckpointEvent(ctx context.Context, snap *types.Snapshot) *Checkpoint {
+func NewCheckpointEvent(ctx context.Context, snap *types.CheckpointState) *Checkpoint {
 	height, _ := vgcontext.BlockHeightFromContext(ctx)
 	_, block := vgcontext.TraceIDFromContext(ctx)
 	return &Checkpoint{
