@@ -2,7 +2,6 @@ package banking
 
 import (
 	"errors"
-	"math/big"
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
@@ -13,10 +12,6 @@ import (
 var (
 	ErrUnknownAssetAction = errors.New("unknown asset action")
 )
-
-type withdrawal struct {
-	nonce *big.Int
-}
 
 type txRef struct {
 	asset       common.AssetClass
