@@ -82,7 +82,10 @@ func (c *checkpointRestore) Execute(args []string) error {
 }
 
 func (c checkpointRestore) getCommander(log *logging.Logger) (*nodewallet.Commander, error) {
-	cfg := config.NewDefaultConfig(checkpointCmd.RootPath)
+	cfg, err := config.Read(checkpointCmd.RootPath)
+	if err != nil {
+		return nil, err
+	}
 	nwConf := cfg.NodeWallet
 	// instantiate the ETHClient
 	ethclt, err := ethclient.Dial(nwConf.ETH.Address)
