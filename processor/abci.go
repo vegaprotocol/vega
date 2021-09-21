@@ -5,18 +5,18 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
@@ -57,10 +57,11 @@ type App struct {
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
 
-	cfg      Config
-	log      *logging.Logger
-	cancelFn func()
-	rates    *ratelimit.Rates
+	vegaPaths paths.Paths
+	cfg       Config
+	log       *logging.Logger
+	cancelFn  func()
+	rates     *ratelimit.Rates
 
 	// service injection
 	assets          Assets
@@ -87,6 +88,7 @@ type App struct {
 
 func NewApp(
 	log *logging.Logger,
+	vegaPaths paths.Paths,
 	config Config,
 	cancelFn func(),
 	assets Assets,
@@ -114,17 +116,13 @@ func NewApp(
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	if err := vgfs.EnsureDir(config.CheckpointsPath); err != nil {
-		log.Panic("Could not create checkpoints directory",
-			logging.String("checkpoint-dir", config.CheckpointsPath),
-			logging.Error(err))
-	}
 	app := &App{
 		abci: abci.New(&codec{}),
 
-		log:      log,
-		cfg:      config,
-		cancelFn: cancelFn,
+		log:       log,
+		vegaPaths: vegaPaths,
+		cfg:       config,
+		cancelFn:  cancelFn,
 		rates: ratelimit.New(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
@@ -325,21 +323,13 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 func (app *App) handleCheckpoint(snap *types.Snapshot) error {
 	now := time.Now()
-	f, err := os.Create(
-		filepath.Join(
-			app.cfg.CheckpointsPath,
-			fmt.Sprintf(
-				"%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash),
-			),
-		),
-	)
+	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash))
+	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.SnapshotStateHome, cpFileName))
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
 	}
-	defer f.Close()
-	// write data
-	if _, err = f.Write(snap.State); err != nil {
-		return err
+	if err := vgfs.WriteFile(cpFilePath, snap.State); err != nil {
+		return fmt.Errorf("couldn't write checkpoint file at %s: %w", cpFilePath, err)
 	}
 	// emit the event indicating a new checkpoint was created
 	// this function is called both for interval checkpoints and withdrawal checkpoints

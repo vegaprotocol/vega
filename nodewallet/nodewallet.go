@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet/eth"
@@ -48,33 +49,36 @@ type Service struct {
 	store   *store
 	wallets map[Blockchain]Wallet
 
-	storage *storage
+	storage *Loader
 
 	ethWalletLoader  *eth.WalletLoader
 	vegaWalletLoader *vega.WalletLoader
 }
 
-func New(log *logging.Logger, cfg Config, passphrase string, ethClient eth.ETHClient, rootPath string) (*Service, error) {
+func New(log *logging.Logger, cfg Config, passphrase string, ethClient eth.ETHClient, vegaPaths paths.Paths) (*Service, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	storage := newStorage(rootPath)
+	storage, err := InitialiseLoader(vegaPaths, passphrase)
+	if err != nil {
+		log.Error("couldn't initialise the node wallet store", logging.Error(err))
+		return nil, fmt.Errorf("couldn't initialise node wallet store: %v", err)
+	}
+
 	store, err := storage.Load(passphrase)
 	if err != nil {
-		log.Error("unable to load the node wallet", logging.Error(err))
-		return nil, fmt.Errorf("unable to load store: %v", err)
+		log.Error("couldn't load the node wallet store", logging.Error(err))
+		return nil, fmt.Errorf("couldn't load node wallet store: %v", err)
 	}
 
-	ethWalletLoader := eth.NewWalletLoader(storage.WalletDirFor(Ethereum), ethClient)
-	err = ethWalletLoader.Initialise()
+	ethWalletLoader, err := eth.InitialiseWalletLoader(vegaPaths, ethClient)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't initialise Ethereum node wallet loader: %w", err)
 	}
 
-	vegaWalletLoader := vega.NewWalletLoader(storage.WalletDirFor(Vega))
-	err = vegaWalletLoader.Initialise()
+	vegaWalletLoader, err := vega.InitialiseWalletLoader(vegaPaths)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't initialise Vega node wallet loader: %w", err)
 	}
 
 	wallets, err := loadWallets(store, ethWalletLoader, vegaWalletLoader)
@@ -91,6 +95,10 @@ func New(log *logging.Logger, cfg Config, passphrase string, ethClient eth.ETHCl
 		vegaWalletLoader: vegaWalletLoader,
 		storage:          storage,
 	}, nil
+}
+
+func (s *Service) GetConfigFilePath() string {
+	return s.storage.configFilePath
 }
 
 func (s *Service) OnEthereumConfigUpdate(ctx context.Context, v interface{}) error {
@@ -135,57 +143,61 @@ func (s *Service) Generate(chain, passphrase, walletPassphrase string) (map[stri
 	case Vega:
 		w, data, err = s.vegaWalletLoader.Generate(walletPassphrase)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("couldn't generate Vega node wallet: %w", err)
 		}
 	case Ethereum:
-		w, err = s.ethWalletLoader.Generate(walletPassphrase)
+		w, data, err = s.ethWalletLoader.Generate(walletPassphrase)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
 		}
 	default:
 		return nil, fmt.Errorf("unsupported chain wallet %v", chain)
 	}
 
-	err = s.saveWallet(chain, passphrase, walletPassphrase, w)
-	if err != nil {
+	if err = s.saveWallet(chain, passphrase, walletPassphrase, w); err != nil {
 		return nil, err
 	}
 
 	return data, err
 }
 
-func (s *Service) Import(chain, passphrase, walletPassphrase, sourceFilePath string) error {
+func (s *Service) Import(chain, passphrase, walletPassphrase, sourceFilePath string) (map[string]string, error) {
 	if !filepath.IsAbs(sourceFilePath) {
-		return fmt.Errorf("path to the wallet file need to be absolute")
+		return nil, fmt.Errorf("path to the wallet file need to be absolute")
 	}
 
 	var (
-		err error
-		w   Wallet
+		err  error
+		w    Wallet
+		data map[string]string
 	)
 	switch Blockchain(chain) {
 	case Vega:
-		w, err = s.vegaWalletLoader.Import(sourceFilePath, walletPassphrase)
+		w, data, err = s.vegaWalletLoader.Import(sourceFilePath, walletPassphrase)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("couldn't import Vega node wallet: %w", err)
 		}
 	case Ethereum:
-		w, err = s.ethWalletLoader.Import(sourceFilePath, walletPassphrase)
+		w, data, err = s.ethWalletLoader.Import(sourceFilePath, walletPassphrase)
 		if err != nil {
-			return err
+			return nil, fmt.Errorf("couldn't import Ethereum node wallet: %w", err)
 		}
 	default:
-		return fmt.Errorf("unsupported chain wallet %v", chain)
+		return nil, fmt.Errorf("unsupported chain wallet %v", chain)
 	}
 
-	return s.saveWallet(chain, passphrase, walletPassphrase, w)
+	if err := s.saveWallet(chain, passphrase, walletPassphrase, w); err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }
 
 func (s *Service) Verify() error {
 	for _, v := range requiredWallets {
 		_, ok := s.wallets[v]
 		if !ok {
-			return fmt.Errorf("missing required wallet for %v chain", v)
+			return fmt.Errorf("required wallet for %v chain is missing", v)
 		}
 	}
 	return nil
@@ -206,7 +218,11 @@ func (s *Service) saveWallet(chain string, passphrase string, walletPassphrase s
 		Name:       w.Name(),
 	})
 	s.wallets[Blockchain(chain)] = w
-	return s.storage.Save(s.store, passphrase)
+	err := s.storage.Save(s.store, passphrase)
+	if err != nil {
+		return fmt.Errorf("couldn't save node wallets configuration: %w", err)
+	}
+	return nil
 }
 
 // loadWallets takes the wallets configs from the store and try to instantiate
@@ -224,13 +240,13 @@ func loadWallets(store *store, ethWalletLoader *eth.WalletLoader, vegaWalletLoad
 		case Vega:
 			w, err := vegaWalletLoader.Load(w.Name, w.Passphrase)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("couldn't load Vega node wallet: %w", err)
 			}
 			wallets[Vega] = w
 		case Ethereum:
 			w, err := ethWalletLoader.Load(w.Name, w.Passphrase)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("couldn't load Ethereum node wallet: %w", err)
 			}
 			wallets[Ethereum] = w
 		default:

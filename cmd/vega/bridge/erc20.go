@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/bridges"
 	"code.vegaprotocol.io/vega/config"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 type ERC20Cmd struct {
-	config.RootPathFlag
+	config.VegaHomeFlag
 	config.PassphraseFlag
 
 	AddSigner    ERC20AddSignerCmd    `command:"add_signer" description:"Create signature to add a new signer to the erc20 bridge"`
@@ -25,9 +25,7 @@ type ERC20Cmd struct {
 var erc20Cmd *ERC20Cmd
 
 func ERC20() *ERC20Cmd {
-	root := config.NewRootPathFlag()
 	erc20Cmd = &ERC20Cmd{
-		RootPathFlag: root,
 		AddSigner: ERC20AddSignerCmd{
 			Config: nodewallet.NewDefaultConfig(),
 		},
@@ -54,27 +52,26 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := vgfs.PathExists(erc20Cmd.RootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %w", err)
-	}
-
 	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	conf, err := config.Read(erc20Cmd.RootPath)
+	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return err
 	}
+
 	opts.Config = conf.NodeWallet
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, erc20Cmd.RootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
 	if err != nil {
 		return err
 	}
 
-	w, ok := nw.Get(nodewallet.Blockchain("ethereum"))
+	w, ok := nw.Get("ethereum")
 	if !ok {
 		return errors.New("no ethereum wallet configured")
 	}
@@ -107,27 +104,26 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := vgfs.PathExists(erc20Cmd.RootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %w", err)
-	}
-
 	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	conf, err := config.Read(erc20Cmd.RootPath)
+	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return err
 	}
+
 	opts.Config = conf.NodeWallet
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, erc20Cmd.RootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
 	if err != nil {
 		return err
 	}
 
-	w, ok := nw.Get(nodewallet.Blockchain("ethereum"))
+	w, ok := nw.Get("ethereum")
 	if !ok {
 		return errors.New("no ethereum wallet configured")
 	}
@@ -164,27 +160,26 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 		return fmt.Errorf("invalid new threshold, required to be > 0 and <= 1000, got %d", opts.NewThreshold)
 	}
 
-	if ok, err := vgfs.PathExists(erc20Cmd.RootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %w", err)
-	}
-
 	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	conf, err := config.Read(erc20Cmd.RootPath)
+	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return err
 	}
+
 	opts.Config = conf.NodeWallet
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, erc20Cmd.RootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
 	if err != nil {
 		return err
 	}
 
-	w, ok := nw.Get(nodewallet.Blockchain("ethereum"))
+	w, ok := nw.Get("ethereum")
 	if !ok {
 		return errors.New("no ethereum wallet configured")
 	}
