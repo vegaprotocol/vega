@@ -179,11 +179,11 @@ func assertNode(
 	a.Equal(normalisedScore, node.NormalisedScore)
 
 	sort.Sort(ByXY(delegations))
-	sort.Sort(ByXY(node.Delagations))
+	sort.Sort(ByXY(node.Delegations))
 
-	a.Equal(len(delegations), len(node.Delagations))
+	a.Equal(len(delegations), len(node.Delegations))
 
 	for i := range delegations {
-		a.Equal(delegations[i], node.Delagations[i])
+		a.Equal(delegations[i], node.Delegations[i])
 	}
 }
