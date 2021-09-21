@@ -86,18 +86,26 @@ func (c *checkpointRestore) Execute(args []string) error {
 }
 
 func getNodeWalletCommander(log *logging.Logger) (*nodewallet.Commander, error) {
-	cfg := config.NewDefaultConfig()
+	vegaPaths := paths.NewPaths(checkpointCmd.VegaHome)
+
+	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
+	if err != nil {
+		return nil, err
+	}
+
 	nwConf := cfg.NodeWallet
+
 	ethclt, err := ethclient.Dial(nwConf.ETH.Address)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't instantiate the Ethereum client: %w", err)
 	}
+
 	nodePass, err := checkpointCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return nil, err
 	}
 
-	nodeWallet, err := nodewallet.New(log, nwConf, nodePass, ethclt, paths.NewPaths(checkpointCmd.VegaHome))
+	nodeWallet, err := nodewallet.New(log, nwConf, nodePass, ethclt, vegaPaths)
 	if err != nil {
 		return nil, err
 	}
