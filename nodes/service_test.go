@@ -65,7 +65,7 @@ func TestNodesService_GetAll(t *testing.T) {
 			StakedByDelegates: "20",
 			StakedTotal:       "30",
 			Status:            pb.NodeStatus_NODE_STATUS_VALIDATOR,
-			Delagations: []*pb.Delegation{
+			Delegations: []*pb.Delegation{
 				{
 					Party:    "1",
 					NodeId:   "node_1",
@@ -89,7 +89,7 @@ func TestNodesService_GetAll(t *testing.T) {
 			StakedByDelegates: "20",
 			StakedTotal:       "30",
 			Status:            pb.NodeStatus_NODE_STATUS_VALIDATOR,
-			Delagations: []*pb.Delegation{
+			Delegations: []*pb.Delegation{
 				{
 					Party:    "1",
 					NodeId:   "node_2",
@@ -129,7 +129,7 @@ func TestNodesService_GetByID(t *testing.T) {
 			StakedByDelegates: "20",
 			StakedTotal:       "30",
 			Status:            pb.NodeStatus_NODE_STATUS_VALIDATOR,
-			Delagations: []*pb.Delegation{
+			Delegations: []*pb.Delegation{
 				{
 					Party:    "1",
 					NodeId:   "node_1",
