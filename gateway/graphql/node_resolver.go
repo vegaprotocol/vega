@@ -15,12 +15,12 @@ func (r *nodeResolver) Status(ctx context.Context, obj *proto.Node) (NodeStatus,
 
 func (r *nodeResolver) Delegations(ctx context.Context, obj *proto.Node, partyID *string) ([]*proto.Delegation, error) {
 	if partyID == nil || *partyID == "" {
-		return obj.Delagations, nil
+		return obj.Delegations, nil
 	}
 
 	partyDelegations := []*proto.Delegation{}
 
-	for _, d := range obj.Delagations {
+	for _, d := range obj.Delegations {
 		if d.Party == *partyID {
 			partyDelegations = append(partyDelegations, d)
 		}
