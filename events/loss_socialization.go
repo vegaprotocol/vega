@@ -11,18 +11,20 @@ type LossSoc struct {
 	*Base
 	partyID  string
 	marketID string
-	amount   *num.Uint
-	neg      bool
+	amount   *num.Int
 	ts       int64
 }
 
 func NewLossSocializationEvent(ctx context.Context, partyID, marketID string, amount *num.Uint, neg bool, ts int64) *LossSoc {
+	signedAmount := num.NewIntFromUint(amount)
+	if neg {
+		signedAmount.FlipSign()
+	}
 	return &LossSoc{
 		Base:     newBase(ctx, LossSocializationEvent),
 		partyID:  partyID,
 		marketID: marketID,
-		amount:   amount,
-		neg:      neg,
+		amount:   signedAmount,
 		ts:       ts,
 	}
 }
@@ -40,23 +42,11 @@ func (l LossSoc) MarketID() string {
 }
 
 func (l LossSoc) Negative() bool {
-	return l.neg
+	return l.amount.IsNegative()
 }
 
-func (l LossSoc) AmountUint() *num.Uint {
+func (l LossSoc) Amount() *num.Int {
 	return l.amount.Clone()
-}
-
-func (l LossSoc) Amount() int64 {
-	return int64(l.amount.Uint64())
-}
-
-func (l LossSoc) AmountLost() int64 {
-	amt := int64(l.amount.Uint64())
-	if l.neg {
-		return -amt
-	}
-	return amt
 }
 
 func (l LossSoc) Timestamp() int64 {
@@ -64,14 +54,10 @@ func (l LossSoc) Timestamp() int64 {
 }
 
 func (l LossSoc) Proto() eventspb.LossSocialization {
-	amt := int64(l.amount.Uint64())
-	if l.neg {
-		amt *= -1
-	}
 	return eventspb.LossSocialization{
 		MarketId: l.marketID,
 		PartyId:  l.partyID,
-		Amount:   amt,
+		Amount:   l.amount.String(),
 	}
 }
 
@@ -96,13 +82,6 @@ func LossSocializationEventFromStream(ctx context.Context, be *eventspb.BusEvent
 	}
 
 	amt := be.GetLossSocialization().Amount
-	if amt < 0 {
-		lse.neg = true
-		amt *= -1
-		lse.amount = num.NewUint(uint64(amt))
-		return lse
-	}
-
-	lse.amount = num.NewUint(uint64(amt))
+	lse.amount = num.UintFromString(uint64(amt))
 	return lse
 }

@@ -236,3 +236,21 @@ func testSubLoop(t *testing.T) {
 		// fmt.Println(num1, num2, num1-num2, bigNum1.String())
 	}
 }
+
+func TestIntFromString(t *testing.T) {
+	n, overflow := num.IntFromString("100", 10)
+	assert.False(t, overflow)
+	assert.Equal(t, "100", n.String())
+
+	n, overflow = num.IntFromString("+100", 10)
+	assert.False(t, overflow)
+	assert.Equal(t, "100", n.String())
+
+	n, overflow = num.IntFromString("-100", 10)
+	assert.False(t, overflow)
+	assert.Equal(t, "-100", n.String())
+
+	n, overflow = num.IntFromString("0", 10)
+	assert.False(t, overflow)
+	assert.Equal(t, "0", n.String())
+}

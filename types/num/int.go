@@ -1,5 +1,11 @@
 package num
 
+import (
+	"math/big"
+
+	"github.com/holiman/uint256"
+)
+
 // Int a wrapper to a signed big int
 type Int struct {
 	// The unsigned version of the integer
@@ -12,6 +18,36 @@ func IntFromUint(u *Uint, s bool) *Int {
 	copy := &Int{s: s,
 		U: u.Clone()}
 	return copy
+}
+
+// IntFromString creates a new Int from a string
+// interpreted using the give base.
+// A big.Int is used to read the string, so
+// all error related to big.Int parsing applied here.
+// will return true if an error/overflow happened
+func IntFromString(str string, base int) (*Int, bool) {
+	b, ok := big.NewInt(0).SetString(str, base)
+	if !ok {
+		return NewInt(0), true
+	}
+	return IntFromBig(b)
+}
+
+// IntFromBig construct a new Int with a big.Int
+// returns true if overflow happened
+func IntFromBig(b *big.Int) (*Int, bool) {
+	positive := true
+	if b.Sign() < 0 {
+		b.Neg(b)
+		positive = false
+	}
+
+	u, overflow := uint256.FromBig(b)
+	if overflow {
+		return NewInt(0), true
+	}
+	return &Int{U: &Uint{*u},
+		s: positive}, false
 }
 
 // IsNegative tests if the stored value is negative

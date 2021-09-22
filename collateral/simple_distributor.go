@@ -61,7 +61,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		evt = events.NewLossSocializationEvent(ctx, v.request.Owner, s.marketID, loss, true, s.ts)
 		s.log.Warn("loss socialization missing funds to be distributed",
 			logging.String("party-id", evt.PartyID()),
-			logging.Int64("amount", evt.AmountLost()),
+			logging.BigInt("amount", evt.Amount()),
 			logging.String("market-id", evt.MarketID()))
 		evts = append(evts, evt)
 	}

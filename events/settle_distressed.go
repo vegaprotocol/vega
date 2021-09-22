@@ -55,8 +55,8 @@ func (s SettleDistressed) Proto() eventspb.SettleDistressed {
 	return eventspb.SettleDistressed{
 		MarketId: s.marketID,
 		PartyId:  s.partyID,
-		Margin:   s.margin.Uint64(),
-		Price:    s.price.Uint64(),
+		Margin:   s.margin.String(),
+		Price:    s.price.String(),
 	}
 }
 
@@ -75,11 +75,13 @@ func (s SettleDistressed) StreamMessage() *eventspb.BusEvent {
 
 func SettleDistressedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *SettleDistressed {
 	sd := be.GetSettleDistressed()
+	sdMargin, _ := num.UintFromString(sd.Margin, 10)
+	sdPrice, _ := num.UintFromString(sd.Price, 10)
 	return &SettleDistressed{
 		Base:     newBaseFromStream(ctx, SettleDistressedEvent, be),
 		partyID:  sd.PartyId,
 		marketID: sd.MarketId,
-		margin:   num.NewUint(sd.Margin),
-		price:    num.NewUint(sd.Price),
+		margin:   sdMargin,
+		price:    sdPrice,
 	}
 }
