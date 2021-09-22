@@ -79,20 +79,6 @@ func (mr *MockCollateralMockRecorder) GetPartyGeneralAccount(arg0, arg1 interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyGeneralAccount), arg0, arg1)
 }
 
-// HasBalance mocks base method
-func (m *MockCollateral) HasBalance(arg0 string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasBalance", arg0)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HasBalance indicates an expected call of HasBalance
-func (mr *MockCollateralMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasBalance", reflect.TypeOf((*MockCollateral)(nil).HasBalance), arg0)
-}
-
 // Withdraw mocks base method
 func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()

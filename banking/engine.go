@@ -54,7 +54,6 @@ type Collateral interface {
 	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
-	HasBalance(party string) bool
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
 }
 
@@ -209,10 +208,6 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// it in memory
 		delete(e.assetActs, k)
 	}
-}
-
-func (e *Engine) HasBalance(party string) bool {
-	return e.col.HasBalance(party)
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {

@@ -151,12 +151,6 @@ type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
 }
 
-// StakingAccounts ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
-type StakingAccounts interface {
-	HasBalance(string) bool
-}
-
 // Banking ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
@@ -168,8 +162,6 @@ type Banking interface {
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
 	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
-
-	HasBalance(string) bool
 }
 
 // NetworkParameters ...

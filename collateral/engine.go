@@ -106,26 +106,6 @@ func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 	e.currentTime = t.UnixNano()
 }
 
-func (e *Engine) HasBalance(party string) bool {
-	// FIXME(): we temporary just want to make
-	// accs, ok := e.partiesAccs[party]
-	// sure that the party ever deposited at least
-	// once
-	// if !ok {
-	// 	return false
-	// }
-
-	// for _, acc := range accs {
-	// 	if acc.Balance > 0 {
-	// 		return true
-	// 	}
-	// }
-
-	// return false
-	_, ok := e.partiesAccs[party]
-	return ok
-}
-
 func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {
 	accs, ok := e.partiesAccs[party]
 	if !ok {
