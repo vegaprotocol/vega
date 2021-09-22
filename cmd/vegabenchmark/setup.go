@@ -47,7 +47,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	nodeWallet := mocks.NewMockNodeWallet(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
-	ethClient := mocks.NewMockETHClient(ctrl)
+
+	// instantiate the ETHClient
+	ethClient, err := ethclient.Dial(nodewallet.NewDefaultConfig().ETH.Address)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	commander := mocks.NewMockCommander(ctrl)
 	commander.EXPECT().
@@ -137,12 +142,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	bstats := stats.NewBlockchain()
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
-
-	// instantiate the ETHClient
-	ethClient, err := ethclient.Dial(nodewallet.NewDefaultConfig().ETH.Address)
-	if err != nil {
-		return nil, nil, err
-	}
 
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
