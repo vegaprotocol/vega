@@ -9,6 +9,8 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/assets/builtin"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
@@ -17,6 +19,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -60,6 +63,8 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Test multiple proposal lifecycle", testMultipleProposalsLifecycle)
 	t.Run("Test withdrawing asset before proposal end", testSubmittingVoteAndWithdrawingFundsDeclined)
 	t.Run("Validate market proposal commitment", testValidateProposalCommitment)
+
+	t.Run("Can vote during validation period - proposal passed", testSubmittingMajorityOfYesVoteDuringValidationMakesProposalPassed)
 }
 
 func testValidateProposalCommitment(t *testing.T) {
@@ -640,6 +645,140 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
 }
 
+func testSubmittingMajorityOfYesVoteDuringValidationMakesProposalPassed(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// when
+	proposer := eng.newValidParty("proposer", 1)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
+
+	now := time.Now()
+
+	id := eng.newProposalID()
+	proposal := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     proposer.Id,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newValidAssetTerms(), // TODO: add more variaty here (when available)
+		},
+	}
+
+	var bAsset *assets.Asset
+
+	// setup
+	var fcheck func(interface{}, bool)
+	var rescheck validators.Resource
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(ref string, assetDetails *types.AssetDetails) (string, error) {
+		bAsset = assets.NewAsset(builtin.New(ref, assetDetails))
+		return ref, nil
+	})
+	eng.assets.EXPECT().Get(gomock.Any()).Times(1).DoAndReturn(func(id string) (*assets.Asset, error) {
+		return bAsset, nil
+	})
+	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Do(func(r validators.Resource, f func(interface{}, bool), _ time.Time) error {
+		fcheck = f
+		rescheck = r
+		return nil
+	})
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(9))
+	eng.expectAnyAsset()
+	eng.expectSendWaitingForNodeVoteProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// setup
+	eng.expectSendVoteEvent(t, voter1, proposal)
+
+	// then
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_YES,
+		ProposalID: proposal.ID,
+	}, voter1.Id)
+
+	// call success on the validation
+	fcheck(rescheck, true)
+
+	// then
+	assert.NoError(t, err)
+	afterValidation := time.Unix(proposal.Terms.ValidationTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, proto.Proposal_STATE_OPEN, p.State)
+		assert.Equal(t, proposal.ID, p.Id)
+	})
+
+	// when
+	eng.OnChainTimeUpdate(context.Background(), afterValidation)
+
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, proto.Proposal_STATE_PASSED, p.State)
+		assert.Equal(t, proposal.ID, p.Id)
+	})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		v, ok := evts[0].(*events.Vote)
+		assert.True(t, ok)
+		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
+		assert.Equal(t, "7", v.TotalGovernanceTokenBalance())
+	})
+
+	// when
+	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+
+	// when
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_NO,
+		ProposalID: proposal.ID,
+	}, voter2.Id)
+
+	// then
+	assert.Error(t, err)
+	assert.EqualError(t, err, governance.ErrProposalPassed.Error())
+
+	// given
+	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+
+	// when
+	// no calculations, no state change, simply removed from governance engine
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+
+	// then
+	assert.Len(t, toBeEnacted, 1)
+	assert.Equal(t, proposal.ID, toBeEnacted[0].Proposal().ID)
+
+	// when
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_NO,
+		ProposalID: proposal.ID,
+	}, voter2.Id)
+
+	// then
+	assert.Error(t, err)
+	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
+}
+
 func testSubmittingMajorityOfInsuccifientParticipationMakesProposalDeclined(t *testing.T) {
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
@@ -1047,6 +1186,25 @@ func getTestEngine(t *testing.T) *tstEngine {
 	}
 }
 
+func newValidAssetTerms() *types.ProposalTerms_NewAsset {
+	return &types.ProposalTerms_NewAsset{
+		NewAsset: &types.NewAsset{
+			Changes: &types.AssetDetails{
+				Name:        "token",
+				Symbol:      "TKN",
+				TotalSupply: num.NewUint(10000),
+				Decimals:    18,
+				MinLpStake:  num.NewUint(1),
+				Source: &types.AssetDetailsBuiltinAsset{
+					BuiltinAsset: &types.BuiltinAsset{
+						MaxFaucetAmountMint: num.NewUint(1),
+					},
+				},
+			},
+		},
+	}
+}
+
 func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 	return &types.ProposalTerms_NewMarket{
 		NewMarket: &types.NewMarket{
@@ -1179,6 +1337,18 @@ func (e *tstEngine) expectSendOpenProposalEvent(t *testing.T, party *proto.Party
 		assert.True(t, ok)
 		p := pe.Proposal()
 		assert.Equal(t, proto.Proposal_STATE_OPEN, p.State)
+		assert.Equal(t, party.Id, p.PartyId)
+		assert.Equal(t, proposal.ID, p.Id)
+	})
+}
+
+func (e *tstEngine) expectSendWaitingForNodeVoteProposalEvent(t *testing.T, party *proto.Party, proposal types.Proposal) {
+	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(ev events.Event) {
+		pe, ok := ev.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		fmt.Printf("PROPOSAL: %v\n", p.String())
+		assert.Equal(t, proto.Proposal_STATE_WAITING_FOR_NODE_VOTE, p.State)
 		assert.Equal(t, party.Id, p.PartyId)
 		assert.Equal(t, proposal.ID, p.Id)
 	})
