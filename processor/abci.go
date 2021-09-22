@@ -47,6 +47,12 @@ type Checkpoint interface {
 	AwaitingRestore() bool
 }
 
+type SpamEngine interface {
+	EndOfBlock(blockHeight uint64)
+	PreBlockAccept(tx abci.Tx) (bool, error)
+	PostBlockAccept(tx abci.Tx) (bool, error)
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -84,6 +90,7 @@ type App struct {
 	stake           StakeVerifier
 	stakingAccounts StakingAccounts
 	checkpoint      Checkpoint
+	spam            SpamEngine
 }
 
 func NewApp(
@@ -112,6 +119,7 @@ func NewApp(
 	stake StakeVerifier,
 	stakingAccounts StakingAccounts,
 	checkpoint Checkpoint,
+	spam SpamEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -148,11 +156,13 @@ func NewApp(
 		stake:           stake,
 		stakingAccounts: stakingAccounts,
 		checkpoint:      checkpoint,
+		spam:            spam,
 	}
 
 	// setup handlers
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
+	app.abci.OnEndBlock = app.OnEndBlock
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
@@ -280,6 +290,20 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	return tmtypes.ResponseInitChain{}
 }
 
+func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {
+	app.log.Debug("ABCI service END block completed",
+		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
+		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
+		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
+		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+	)
+
+	if app.spam != nil {
+		app.spam.EndOfBlock(uint64(req.Height))
+	}
+	return
+}
+
 // OnBeginBlock updates the internal lastBlockTime value with each new block
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
@@ -342,6 +366,15 @@ func (app *App) handleCheckpoint(snap *types.Snapshot) error {
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
 	resp := tmtypes.ResponseCheckTx{}
 
+	if app.spam != nil {
+		if _, err := app.spam.PreBlockAccept(tx); err != nil {
+			app.log.Error(err.Error())
+			resp.Code = abci.AbciSpamError
+			resp.Data = []byte(err.Error())
+			return ctx, resp
+		}
+	}
+
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())
@@ -353,21 +386,6 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	_, isval := app.limitPubkey(tx.PubKeyHex())
 	if isval {
 		return ctx, resp
-	}
-
-	// this is a party
-	// and if we may not want to rate limit it.
-	// in which case we may want to check if it has a balance
-	party := tx.Party()
-	// if limit {
-	// 	resp.Code = abci.AbciTxnValidationFailure
-	// 	resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
-	// } else if !app.banking.HasBalance(party) {
-	if !app.banking.HasBalance(party) && !app.stakingAccounts.HasBalance(party) {
-		resp.Code = abci.AbciTxnValidationFailure
-		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
-		msgType := tx.Command().String()
-		app.log.Error("Rejected as party has no accounts", logging.PartyID(party), logging.String("Command", msgType))
 	}
 
 	return ctx, resp
@@ -459,6 +477,17 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	app.setTxStats(len(req.Tx))
 
 	var resp tmtypes.ResponseDeliverTx
+
+	if app.spam != nil {
+		if _, err := app.spam.PostBlockAccept(tx); err != nil {
+			app.log.Error(err.Error())
+			resp.Code = abci.AbciSpamError
+			resp.Data = []byte(err.Error())
+			return ctx, resp
+		}
+
+	}
+
 	if err := app.canSubmitTx(tx); err != nil {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(err.Error())

@@ -88,6 +88,15 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	}
 }
 
+//GetAllAvailableBalances returns the staking balance for all parties
+func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
+	balances := map[string]*num.Uint{}
+	for party, acc := range a.accounts {
+		balances[party] = acc.GetAvailableBalance()
+	}
+	return balances
+}
+
 func (a *Accounting) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
 	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
 	if !ok {

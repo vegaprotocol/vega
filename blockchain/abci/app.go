@@ -25,6 +25,7 @@ type App struct {
 	// handlers
 	OnInitChain  OnInitChainHandler
 	OnBeginBlock OnBeginBlockHandler
+	OnEndBlock   OnEndBlockHandler
 	OnCheckTx    OnCheckTxHandler
 	OnDeliverTx  OnDeliverTxHandler
 	OnCommit     OnCommitHandler

@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
@@ -157,6 +158,8 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
+	spamEngine := spam.New(log, spam.NewDefaultConfig(), epochService, stakingAccounts)
+
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 	stakingA := mocks.NewMockStakingAccounts(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
@@ -189,6 +192,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		stakeV,
 		stakingA,
 		cp,
+		spamEngine,
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {
