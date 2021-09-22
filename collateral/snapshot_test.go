@@ -50,5 +50,6 @@ func TestSnapshot(t *testing.T) {
 	loadEng.EnableAsset(ctx, asset)
 	err = loadEng.Load(snapshot)
 	require.NoError(t, err)
-	require.True(t, loadEng.HasBalance(party))
+	_, err = loadEng.GetPartyGeneralAccount(party, asset.ID)
+	require.NoError(t, err)
 }

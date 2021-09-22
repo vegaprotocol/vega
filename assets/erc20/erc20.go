@@ -218,11 +218,11 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) (hash string, logIndex uint, err error) {
+func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
-		return "", 0, err
+		return err
 	}
 
 	var resp = "ok"
@@ -240,7 +240,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
-		return "", 0, err
+		return err
 	}
 
 	defer iter.Close()
@@ -255,15 +255,15 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	}
 
 	if event == nil {
-		return "", 0, ErrUnableToFindERC20AssetList
+		return ErrUnableToFindERC20AssetList
 	}
 
 	// now ensure we have enough confirmations
 	if err := b.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return "", 0, err
+		return err
 	}
 
-	return event.Raw.TxHash.Hex(), event.Raw.Index, nil
+	return nil
 }
 
 func (b *ERC20) SignWithdrawal(
@@ -410,11 +410,11 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 	return nonce, event.Raw.TxHash.Hex(), event.Raw.Index, nil
 }
 
-func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) (partyID, assetID, hash string, amount *num.Uint, logIndex uint, err error) {
+func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
 	bf, err := bridge.NewBridgeFilterer(
 		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
 	if err != nil {
-		return "", "", "", num.NewUint(0), 0, err
+		return err
 	}
 
 	var resp = "ok"
@@ -433,7 +433,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
-		return "", "", "", num.NewUint(0), 0, err
+		return err
 	}
 
 	depamount := d.Amount.BigInt()
@@ -451,17 +451,15 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 	}
 
 	if event == nil {
-		return "", "", "", num.NewUint(0), 0, ErrUnableToFindDeposit
+		return ErrUnableToFindDeposit
 	}
 
 	// now ensure we have enough confirmations
 	if err := b.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return "", "", "", num.NewUint(0), 0, err
+		return err
 	}
 
-	amount, _ = num.UintFromBig(iter.Event.Amount)
-
-	return d.TargetPartyID, d.VegaAssetID, event.Raw.TxHash.Hex(), amount, event.Raw.Index, nil
+	return nil
 }
 
 func (b *ERC20) checkConfirmations(txBlock uint64) error {

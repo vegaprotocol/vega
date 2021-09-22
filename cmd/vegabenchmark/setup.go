@@ -112,6 +112,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		assets,
 		notary,
 		broker,
+		topology,
 	)
 
 	exec := execution.NewEngine(
@@ -161,7 +162,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	spamEngine := spam.New(log, spam.NewDefaultConfig(), epochService, stakingAccounts)
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
-	stakingA := mocks.NewMockStakingAccounts(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	app := processor.NewApp(
 		log,
@@ -190,7 +190,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		delegationEngine,
 		limits,
 		stakeV,
-		stakingA,
 		cp,
 		spamEngine,
 	)
