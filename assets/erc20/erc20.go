@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -41,13 +42,14 @@ var (
 )
 
 type ERC20 struct {
-	asset   *types.Asset
-	address string
-	ok      bool
-	wallet  nodewallet.ETHWallet
+	asset     *types.Asset
+	address   string
+	ok        bool
+	wallet    nodewallet.ETHWallet
+	ethClient eth.ETHClient
 }
 
-func New(id string, asset *types.AssetDetails, w nodewallet.Wallet) (*ERC20, error) {
+func New(id string, asset *types.AssetDetails, w nodewallet.Wallet, ethClient eth.ETHClient) (*ERC20, error) {
 	wal, ok := w.(nodewallet.ETHWallet)
 	if !ok {
 		return nil, ErrMissingETHWalletFromNodeWallet
@@ -63,8 +65,9 @@ func New(id string, asset *types.AssetDetails, w nodewallet.Wallet) (*ERC20, err
 			ID:      id,
 			Details: asset,
 		},
-		address: source.ContractAddress,
-		wallet:  wal,
+		address:   source.ContractAddress,
+		wallet:    wal,
+		ethClient: ethClient,
 	}, nil
 }
 
@@ -85,7 +88,7 @@ func (b *ERC20) IsValid() bool {
 }
 
 func (b *ERC20) Validate() error {
-	t, err := NewErc20(ethcmn.HexToAddress(b.address), b.wallet.Client())
+	t, err := NewErc20(ethcmn.HexToAddress(b.address), b.ethClient)
 	if err != nil {
 		return err
 	}
@@ -220,7 +223,7 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 
 func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
 	bf, err := bridge.NewBridgeFilterer(
-		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.ethClient)
 	if err != nil {
 		return err
 	}
@@ -358,7 +361,7 @@ func (b *ERC20) SignWithdrawal(
 
 func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
 	bf, err := bridge.NewBridgeFilterer(
-		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.ethClient)
 	if err != nil {
 		return nil, "", 0, err
 	}
@@ -412,7 +415,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 
 func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
 	bf, err := bridge.NewBridgeFilterer(
-		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.ethClient)
 	if err != nil {
 		return err
 	}

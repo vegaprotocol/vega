@@ -298,7 +298,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.eventService = subscribers.NewService(l.broker)
 
 	now := l.timeService.GetTimeNow()
-	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
+	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.ethClient, l.timeService)
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)

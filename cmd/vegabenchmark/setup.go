@@ -47,6 +47,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	nodeWallet := mocks.NewMockNodeWallet(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
+	ethClient := mocks.NewMockETHClient(ctrl)
 
 	commander := mocks.NewMockCommander(ctrl)
 	commander.EXPECT().
@@ -82,6 +83,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		log,
 		assets.NewDefaultConfig(),
 		nodeWallet,
+		ethClient,
 		timeService,
 	)
 	pubKey, err := hex.DecodeString(selfPubKey)
