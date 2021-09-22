@@ -18,6 +18,9 @@ const (
 
 	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
 	AbciUnknownCommandError uint32 = 80
+
+	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests
+	AbciSpamError uint32 = 89
 )
 
 func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
@@ -43,6 +46,13 @@ func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBegi
 	}
 
 	if fn := app.OnBeginBlock; fn != nil {
+		app.ctx, resp = fn(req)
+	}
+	return
+}
+
+func (app *App) EndBlock(req types.RequestEndBlock) (resp types.ResponseEndBlock) {
+	if fn := app.OnEndBlock; fn != nil {
 		app.ctx, resp = fn(req)
 	}
 	return
