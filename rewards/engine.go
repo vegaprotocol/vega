@@ -120,16 +120,33 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 	e.rewardSchemes[rs.SchemeID] = rs
 }
 
-//UpdateMinimumValidatorStakeForStakingRewardScheme updaates the value of minimum validator stake for being considered for rewards
-func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.Context, minValStake int64) error {
+func (e *Engine) UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(ctx context.Context, maxPerEpoch num.Decimal) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
+
+	maxAsUint, _ := num.UintFromDecimal(maxPerEpoch)
+	rs.Parameters["maxPayoutPerEpoch"] = types.RewardSchemeParam{
+		Name:  "maxPayoutPerEpoch",
+		Type:  "uint",
+		Value: maxAsUint.String(),
+	}
+	return nil
+}
+
+//UpdateMinimumValidatorStakeForStakingRewardScheme updaates the value of minimum validator stake for being considered for rewards
+func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.Context, minValStake num.Decimal) error {
+	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
+	if !ok {
+		e.log.Panic("reward scheme for staking and delegation must exist")
+	}
+
+	minValidatorStake, _ := num.UintFromDecimal(minValStake)
 	rs.Parameters["minValStake"] = types.RewardSchemeParam{
 		Name:  "minValStake",
 		Type:  "uint",
-		Value: num.NewUint(uint64(minValStake)).String(),
+		Value: minValidatorStake.String(),
 	}
 	return nil
 }
@@ -174,13 +191,14 @@ func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Cont
 }
 
 //UpdateMaxPayoutPerParticipantForStakingRewardScheme is a callback for changes in the network param for max payout per participant
-func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, mayPayoutPerParticipant int64) error {
+func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, maxPayoutPerParticipant num.Decimal) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
 
-	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = num.NewUint(uint64(mayPayoutPerParticipant))
+	maxPayout, _ := num.UintFromDecimal(maxPayoutPerParticipant)
+	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = maxPayout
 	return nil
 }
 

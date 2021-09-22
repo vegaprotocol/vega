@@ -1,6 +1,6 @@
 # Vega
 
-Version 0.41.0.
+Version 0.42.0.
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
@@ -59,12 +59,12 @@ Vega is initialised with a set of default configuration with the command `vega i
 Vega require a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
 The nodewallet can be accessed using the nodewallet subcommand, this nodewallet is initialized / accessed using a passphrase that needs to be specified when initializing vega:
 ```shell
-vega init --nodewallet-passphrase="path/to/passphrase/file"
+vega init
 ```
 
 The init command can also be invoked with a flag in order to generate development purpose only wallets so you do not have to use real wallets when hacking on the code:
 ```
-vega init --nodewallet-passphrase="path/to/passphrase/file" --gen-dev-nodewallet
+vega init
 ```
 
 ## Vega NodeWallet
@@ -126,6 +126,6 @@ The application has structured logging capability, the first port of call for a 
 * `/var/log/vega.log`
 * `/var/log/tendermint.log`
 
-Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `-1` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
+Each internal Go package has a logging level that can be set at runtime by configuration. Setting the logging `Level` to `"Debug"` for a package will enable all debugging messages for the package which can be useful when trying to analyse a crash or issue.
 
 Debugging the application locally is also possible with [Delve](./DEBUG_WITH_DLV.md).

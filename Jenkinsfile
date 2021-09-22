@@ -23,7 +23,7 @@ pipeline {
         string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
         string(name: 'SPECS_INTERNAL_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/specs-internal repository')
         string(name: 'PROTOS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/protos repository')
-        string(name: 'SYSTEM_TESTS_VALIDATOR_NODE_COUNT', defaultValue: '1', description: 'Number of validator nodes when running system-tests')
+        string(name: 'SYSTEM_TESTS_VALIDATOR_NODE_COUNT', defaultValue: '2', description: 'Number of validator nodes when running system-tests')
         string(name: 'SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT', defaultValue: '1', description: 'Number of non-validator nodes when running system-tests')
         string(name: 'SYSTEM_TESTS_TEST_FUNCTION', defaultValue: '', description: 'Run only a tests with a specified function name. This is actually a "pytest -k $TEST_FUNCTION_NAME" command-line argument, see more: https://docs.pytest.org/en/stable/usage.html')
         string(name: 'SYSTEM_TESTS_TEST_DIRECTORY', defaultValue: 'CoreTesting/bvt', description: 'Run tests from files in this directory and all sub-directories')
@@ -412,6 +412,9 @@ pipeline {
                             retry(3) {
                                 script {
                                     dir('system-tests/scripts') {
+                                        sh label: 'print logs from all the containers', script: '''
+                                            make logs
+                                        '''
                                         sh label: 'stop dockerised-vega', script: '''
                                             make stop-dockerised-vega
                                         '''

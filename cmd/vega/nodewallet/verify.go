@@ -3,12 +3,11 @@ package nodewallet
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -20,31 +19,25 @@ func (opts *verifyCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := vgfs.PathExists(rootCmd.RootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %w", err)
-	}
-
 	pass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	conf, err := config.Read(rootCmd.RootPath)
+	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return err
 	}
+
 	opts.Config = conf.NodeWallet
 
 	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return err
-	}
-
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, rootCmd.RootPath)
+	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
 	if err != nil {
 		return err
 	}

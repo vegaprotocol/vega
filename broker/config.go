@@ -26,7 +26,7 @@ func NewDefaultConfig() Config {
 			MaxSendTimeouts:         10,
 			EventChannelBufferSize:  10000000,
 			SocketChannelBufferSize: 1000000,
-			IP:                      "0.0.0.0",
+			Address:                 "127.0.0.1",
 			Port:                    3005,
 			Transport:               "tcp",
 			Enabled:                 false,
@@ -44,7 +44,7 @@ type SocketConfig struct {
 
 	MaxSendTimeouts int `long:"max-send-timeouts" description:" "`
 
-	IP        string        `long:"ip" description:"Data node IP address"`
+	Address   string        `long:"address" description:"Data node's address"`
 	Port      int           `long:"port" description:"Data node port"`
 	Enabled   encoding.Bool `long:"enabled" description:"Enable streaming of bus events over socket"`
 	Transport string        `long:"transport" description:"Transport of socket. tcp/inproc are allowed. Default is TCP"`

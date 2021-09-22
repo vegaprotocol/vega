@@ -42,8 +42,8 @@ type Broker interface {
 
 // StakingAccounts provides access to the staking balance of a given party now and within a duration of an epoch
 type StakingAccounts interface {
-	GetBalanceNow(party string) *num.Uint
-	GetBalanceForEpoch(party string, from, to time.Time) *num.Uint
+	GetAvailableBalance(party string) (*num.Uint, error)
+	GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error)
 }
 
 type EpochEngine interface {
@@ -122,8 +122,8 @@ func (e *Engine) OnCompLevelChanged(ctx context.Context, compLevel float64) erro
 }
 
 //OnMinAmountChanged updates the network parameter for minDelegationAmount
-func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount int64) error {
-	e.minDelegationAmount = num.NewUint(uint64(minAmount))
+func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount num.Decimal) error {
+	e.minDelegationAmount, _ = num.UintFromDecimal(minAmount)
 	return nil
 }
 
@@ -203,8 +203,8 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	}
 
 	// check if the delegator has a staking account
-	partyBalance := e.stakingAccounts.GetBalanceNow(party)
-	if partyBalance == nil {
+	partyBalance, err := e.stakingAccounts.GetAvailableBalance(party)
+	if err != nil {
 		return ErrPartyHasNoStakingAccount
 	}
 
@@ -622,7 +622,11 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Ep
 		partyDelegation := e.partyDelegationState[party]
 
 		// get the party stake balance for the epoch
-		stakeBalance := e.stakingAccounts.GetBalanceForEpoch(party, epoch.StartTime, epoch.EndTime)
+		stakeBalance, err := e.stakingAccounts.GetAvailableBalanceInRange(party, epoch.StartTime, epoch.EndTime)
+		if err != nil {
+			e.log.Error("Failed to get available balance in range", logging.Error(err))
+			continue
+		}
 
 		// if the stake covers the total delegated balance nothing to do further for the party
 		if stakeBalance.GTE(partyDelegation.totalDelegated) {
@@ -843,7 +847,11 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 			continue
 		}
 		// get account balance
-		partyBalance := e.stakingAccounts.GetBalanceNow(party)
+		partyBalance, err := e.stakingAccounts.GetAvailableBalance(party)
+		if err != nil {
+			e.log.Error("Failed to get available staking balance", logging.Error(err))
+			continue
+		}
 
 		// get committed delegations for the party
 		committedDelegations, ok := e.partyDelegationState[party]
@@ -880,7 +888,9 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 
 			// check that the amount is not greater than the available for delegation
 			if amount.GT(availableForDelegation) || amount.IsZero() {
-				e.log.Debug("the amount requested for delegation is greater than available for delegation at end of epoch", logging.String("party", party), logging.String("nodeID", nodeID), logging.Uint64("amt", amount.Uint64()))
+				if e.log.GetLevel() <= logging.DebugLevel {
+					e.log.Debug("the amount requested for delegation is greater than available for delegation at end of epoch", logging.String("party", party), logging.String("nodeID", nodeID), logging.BigUint("amt", amount))
+				}
 				continue
 			}
 

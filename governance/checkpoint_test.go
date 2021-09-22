@@ -31,8 +31,8 @@ func testCheckpointSuccess(t *testing.T) {
 	ctx := context.Background()
 
 	// setup
-	eng.accounts.EXPECT().GetAssetTotalSupply(gomock.Any()).Times(1).
-		Return(num.NewUint(9), nil)
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(9))
 	eng.expectAnyAsset()
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 
@@ -85,9 +85,6 @@ func testCheckpointSuccess(t *testing.T) {
 	data, err = eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
-
-	// setup
-	eng.broker.EXPECT().Send(voteMatcher{}).Times(1)
 
 	// when
 	err = eng.AddVote(ctx, types.VoteSubmission{

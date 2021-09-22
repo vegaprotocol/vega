@@ -5,18 +5,18 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
@@ -36,13 +36,15 @@ var (
 	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
 	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disaled during bootstrap")
+	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
 type Checkpoint interface {
-	BalanceCheckpoint() (*types.Snapshot, error)
-	Checkpoint(time.Time) (*types.Snapshot, error)
+	BalanceCheckpoint(ctx context.Context) (*types.Snapshot, error)
+	Checkpoint(ctx context.Context, now time.Time) (*types.Snapshot, error)
 	Load(ctx context.Context, snap *types.Snapshot) error
+	AwaitingRestore() bool
 }
 
 type SpamEngine interface {
@@ -59,37 +61,40 @@ type App struct {
 	txSizes           []int
 	cBlock            string
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
+	reloadCP          bool
 
-	cfg      Config
-	log      *logging.Logger
-	cancelFn func()
-	rates    *ratelimit.Rates
+	vegaPaths paths.Paths
+	cfg       Config
+	log       *logging.Logger
+	cancelFn  func()
+	rates     *ratelimit.Rates
 
 	// service injection
-	assets     Assets
-	banking    Banking
-	broker     Broker
-	cmd        Commander
-	witness    Witness
-	evtfwd     EvtForwarder
-	exec       ExecutionEngine
-	ghandler   *genesis.Handler
-	gov        GovernanceEngine
-	notary     Notary
-	stats      Stats
-	time       TimeService
-	top        ValidatorTopology
-	netp       NetworkParameters
-	oracles    *Oracle
-	delegation DelegationEngine
-	limits     Limits
-	stake      StakeVerifier
-	checkpoint Checkpoint
-	spam       SpamEngine
+	assets          Assets
+	banking         Banking
+	broker          Broker
+	cmd             Commander
+	witness         Witness
+	evtfwd          EvtForwarder
+	exec            ExecutionEngine
+	ghandler        *genesis.Handler
+	gov             GovernanceEngine
+	notary          Notary
+	stats           Stats
+	time            TimeService
+	top             ValidatorTopology
+	netp            NetworkParameters
+	oracles         *Oracle
+	delegation      DelegationEngine
+	limits          Limits
+	stake           StakeVerifier
+	stakingAccounts StakingAccounts
+	checkpoint      Checkpoint
 }
 
 func NewApp(
 	log *logging.Logger,
+	vegaPaths paths.Paths,
 	config Config,
 	cancelFn func(),
 	assets Assets,
@@ -111,47 +116,45 @@ func NewApp(
 	delegation DelegationEngine,
 	limits Limits,
 	stake StakeVerifier,
+	stakingAccounts StakingAccounts,
 	checkpoint Checkpoint,
 	spam SpamEngine,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	if err := vgfs.EnsureDir(config.CheckpointsPath); err != nil {
-		log.Panic("Could not create checkpoints directory",
-			logging.String("checkpoint-dir", config.CheckpointsPath),
-			logging.Error(err))
-	}
 	app := &App{
 		abci: abci.New(&codec{}, spam),
 
-		log:      log,
-		cfg:      config,
-		cancelFn: cancelFn,
+		log:       log,
+		vegaPaths: vegaPaths,
+		cfg:       config,
+		cancelFn:  cancelFn,
 		rates: ratelimit.New(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		assets:     assets,
-		banking:    banking,
-		broker:     broker,
-		cmd:        cmd,
-		witness:    witness,
-		evtfwd:     evtfwd,
-		exec:       exec,
-		ghandler:   ghandler,
-		gov:        gov,
-		notary:     notary,
-		stats:      stats,
-		time:       time,
-		top:        top,
-		netp:       netp,
-		oracles:    oracles,
-		delegation: delegation,
-		limits:     limits,
-		stake:      stake,
-		checkpoint: checkpoint,
-		spam:       spam,
+		reloadCP:        checkpoint.AwaitingRestore(),
+		assets:          assets,
+		banking:         banking,
+		broker:          broker,
+		cmd:             cmd,
+		witness:         witness,
+		evtfwd:          evtfwd,
+		exec:            exec,
+		ghandler:        ghandler,
+		gov:             gov,
+		notary:          notary,
+		stats:           stats,
+		time:            time,
+		top:             top,
+		netp:            netp,
+		oracles:         oracles,
+		delegation:      delegation,
+		limits:          limits,
+		stake:           stake,
+		stakingAccounts: stakingAccounts,
+		checkpoint:      checkpoint,
 	}
 
 	// setup handlers
@@ -168,23 +171,33 @@ func NewApp(
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData)
 
 	app.abci.
-		HandleDeliverTx(txn.SubmitOrderCommand, app.DeliverSubmitOrder).
-		HandleDeliverTx(txn.CancelOrderCommand, app.DeliverCancelOrder).
-		HandleDeliverTx(txn.AmendOrderCommand, app.DeliverAmendOrder).
-		HandleDeliverTx(txn.WithdrawCommand, addDeterministicID(app.DeliverWithdraw)).
-		HandleDeliverTx(txn.ProposeCommand, addDeterministicID(app.DeliverPropose)).
-		HandleDeliverTx(txn.VoteCommand, app.DeliverVote).
+		HandleDeliverTx(txn.SubmitOrderCommand,
+			app.SendEventOnError(app.DeliverSubmitOrder)).
+		HandleDeliverTx(txn.CancelOrderCommand,
+			app.SendEventOnError(app.DeliverCancelOrder)).
+		HandleDeliverTx(txn.AmendOrderCommand,
+			app.SendEventOnError(app.DeliverAmendOrder)).
+		HandleDeliverTx(txn.WithdrawCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
+		HandleDeliverTx(txn.ProposeCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverPropose))).
+		HandleDeliverTx(txn.VoteCommand,
+			app.SendEventOnError(app.DeliverVote)).
 		HandleDeliverTx(txn.NodeSignatureCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
-		HandleDeliverTx(txn.LiquidityProvisionCommand, addDeterministicID(app.DeliverLiquidityProvision)).
+		HandleDeliverTx(txn.LiquidityProvisionCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverLiquidityProvision))).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
 			app.RequireValidatorPubKeyW(addDeterministicID(app.DeliverChainEvent))).
 		HandleDeliverTx(txn.SubmitOracleDataCommand, app.DeliverSubmitOracleData).
-		HandleDeliverTx(txn.DelegateCommand, app.DeliverDelegate).
-		HandleDeliverTx(txn.UndelegateCommand, app.DeliverUndelegate).
-		HandleDeliverTx(txn.CheckpointRestoreCommand, app.DeliverReloadSnapshot)
+		HandleDeliverTx(txn.DelegateCommand,
+			app.SendEventOnError(app.DeliverDelegate)).
+		HandleDeliverTx(txn.UndelegateCommand,
+			app.SendEventOnError(app.DeliverUndelegate)).
+		HandleDeliverTx(txn.CheckpointRestoreCommand,
+			app.SendEventOnError(app.DeliverReloadSnapshot))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -211,6 +224,18 @@ func (app *App) RequireValidatorPubKeyW(
 			return err
 		}
 		return f(ctx, tx)
+	}
+}
+
+func (app *App) SendEventOnError(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := f(ctx, tx); err != nil {
+			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), tx.GetCmd()))
+			return err
+		}
+		return nil
 	}
 }
 
@@ -291,7 +316,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 
 	resp.Data = app.exec.Hash()
 	// Snapshot can be nil if it wasn't time to create a snapshot
-	if snap, _ := app.checkpoint.Checkpoint(app.currentTimestamp); snap != nil {
+	if snap, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); snap != nil {
 		resp.Data = append(resp.Data, snap.Hash...)
 		_ = app.handleCheckpoint(snap)
 	}
@@ -304,21 +329,14 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 }
 
 func (app *App) handleCheckpoint(snap *types.Snapshot) error {
-	f, err := os.Create(
-		filepath.Join(
-			app.cfg.CheckpointsPath,
-			fmt.Sprintf(
-				"%s-%s.cp", app.cBlock, hex.EncodeToString(snap.Hash),
-			),
-		),
-	)
+	now := time.Now()
+	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash))
+	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.SnapshotStateHome, cpFileName))
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
 	}
-	defer f.Close()
-	// write data
-	if _, err = f.Write(snap.State); err != nil {
-		return err
+	if err := vgfs.WriteFile(cpFilePath, snap.State); err != nil {
+		return fmt.Errorf("couldn't write checkpoint file at %s: %w", cpFilePath, err)
 	}
 	// emit the event indicating a new checkpoint was created
 	// this function is called both for interval checkpoints and withdrawal checkpoints
@@ -352,7 +370,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	// 	resp.Code = abci.AbciTxnValidationFailure
 	// 	resp.Data = []byte(ErrPublicKeyExceededRateLimit.Error())
 	// } else if !app.banking.HasBalance(party) {
-	if !app.banking.HasBalance(party) {
+	if !app.banking.HasBalance(party) && !app.stakingAccounts.HasBalance(party) {
 		resp.Code = abci.AbciTxnValidationFailure
 		resp.Data = []byte(ErrPublicKeyCannotSubmitTransactionWithNoBalance.Error())
 		msgType := tx.Command().String()
@@ -405,11 +423,22 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	}
 
 	switch tx.Command() {
+	case txn.WithdrawCommand:
+		if app.reloadCP {
+			// we haven't reloaded the collateral data, withdrawals are going to fail
+			return ErrAwaitingCheckpointRestore
+		}
 	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
 		}
+		if app.reloadCP {
+			return ErrAwaitingCheckpointRestore
+		}
 	case txn.ProposeCommand:
+		if app.reloadCP {
+			return ErrAwaitingCheckpointRestore
+		}
 		praw := &commandspb.ProposalSubmission{}
 		if err := tx.Unmarshal(praw); err != nil {
 			return fmt.Errorf("could not unmarshal proposal submission: %w", err)
@@ -562,7 +591,7 @@ func (app *App) DeliverWithdraw(
 	if err := app.processWithdraw(ctx, ws, id, tx.Party()); err != nil {
 		return err
 	}
-	snap, err := app.checkpoint.BalanceCheckpoint()
+	snap, err := app.checkpoint.BalanceCheckpoint(ctx)
 	if err != nil {
 		return err
 	}
@@ -715,6 +744,10 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 }
 
 func (app *App) onTick(ctx context.Context, t time.Time) {
+	if app.reloadCP {
+		app.log.Debug("This would call on chain time update for governance. We've skipped all tx, so just ignore")
+		return
+	}
 	toEnactProposals, voteClosedProposals := app.gov.OnChainTimeUpdate(ctx, t)
 	for _, voteClosed := range voteClosedProposals {
 		prop := voteClosed.Proposal()
@@ -850,12 +883,11 @@ func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Pro
 }
 
 func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	ce := &commandspb.DelegateSubmission{}
-	defer func() {
-		if err != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), ce))
-		}
-	}()
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -869,12 +901,11 @@ func (app *App) DeliverDelegate(ctx context.Context, tx abci.Tx) (err error) {
 }
 
 func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
 	ce := &commandspb.UndelegateSubmission{}
-	defer func() {
-		if err != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, err, tx.Party(), ce))
-		}
-	}()
 	if err := tx.Unmarshal(ce); err != nil {
 		return err
 	}
@@ -897,12 +928,16 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
 		if rerr != nil {
-			app.broker.Send(events.NewTxErrEvent(ctx, rerr, tx.Party(), cmd))
+			app.log.Error("Restoring checkpoint failed",
+				logging.Error(rerr),
+			)
+			return
 		}
+		app.log.Info("Checkpoint restored!")
 	}()
 
 	if err := tx.Unmarshal(cmd); err != nil {
-		return nil
+		return err
 	}
 
 	// convert to snapshot type:
@@ -910,10 +945,21 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	if err := snap.SetState(cmd.Data); err != nil {
 		return err
 	}
-	err := app.checkpoint.Load(ctx, snap)
-	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
-		panic(fmt.Errorf("error restoring checkpoint: %w", err))
+	bh, err := snap.GetBlockHeight()
+	if err != nil {
+		app.log.Panic("Failed to get blockheight from checkpoint", logging.Error(err))
 	}
+	// ensure block height is set
+	ctx = vgcontext.WithBlockHeight(ctx, bh)
+	app.blockCtx = ctx
+	err = app.checkpoint.Load(ctx, snap)
+	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
+		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
+	}
+	// set flag in case the CP has been reloaded
+	app.reloadCP = app.checkpoint.AwaitingRestore()
+	// now we can call onTick for the governance engine updates, and enable the markets
+	app.onTick(ctx, app.time.GetTimeNow())
 	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
 	// emit an error event perhaps, log, etc...?
 	return err

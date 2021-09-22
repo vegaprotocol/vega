@@ -2,11 +2,12 @@ package vega
 
 import (
 	"code.vegaprotocol.io/go-wallet/wallet"
+	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/vega/crypto"
 )
 
 type Wallet struct {
-	handler    *wallet.Handler
+	handler    *wallets.Handler
 	walletName string
 	keyPair    wallet.KeyPair
 	pubKey     crypto.PublicKeyOrAddress

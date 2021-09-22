@@ -61,7 +61,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}()
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 
-	conf := l.cfgwatchr.Get()
+	conf := l.confWatcher.Get()
 
 	if flagProvided("--no-chain") {
 		conf.Blockchain.ChainProvider = "noop"
@@ -76,13 +76,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		if err != nil {
 			return
 		}
-		l.cfgwatchr.OnConfigUpdate(
+		l.confWatcher.OnConfigUpdate(
 			func(cfg config.Config) { l.pproffhandlr.ReloadConf(cfg.Pprof) },
 		)
 	}
 
 	l.Log.Info("Starting Vega",
-		logging.String("config-path", l.configPath),
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
@@ -100,18 +99,14 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
-	// instantiate the ETHClient
-	ethClient, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+	l.ethClient, err = ethclient.Dial(l.conf.NodeWallet.ETH.Address)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
-	// nodewallet
-	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethClient, l.configPath); err != nil {
+	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, l.ethClient, l.vegaPaths); err != nil {
 		return err
 	}
-
-	l.ethClient = ethClient
 
 	return l.nodeWallet.Verify()
 }
@@ -191,6 +186,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
 	app := processor.NewApp(
 		l.Log,
+		l.vegaPaths,
 		l.conf.Processor,
 		l.cancel,
 		l.assets,
@@ -215,6 +211,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.delegation,
 		l.limits,
 		l.stakeVerifier,
+		l.stakingAccounts,
 		l.checkpoint,
 		l.spam,
 	)
@@ -324,21 +321,15 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
-	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.collateral, l.broker, l.assets, l.witness, l.netParams, now)
-
-	//TODO replace with actual implementation
-	stakingAccount := delegation.NewDummyStakingAccount(l.collateral)
-	l.netParams.Watch(netparams.WatchParam{
-		Param:   netparams.GovernanceVoteAsset,
-		Watcher: stakingAccount.GovAssetUpdated,
-	})
 
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 
+	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
+
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingAccount, l.epochService)
+	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService)
 	l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
@@ -346,7 +337,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		})
 
 	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams)
+	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams, l.delegation, l.epochService)
 	if err != nil {
 		panic(err)
 	}
@@ -381,7 +372,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
-	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
+	l.timeService.NotifyOnTick(l.confWatcher.OnTimeUpdate)
 
 	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
@@ -396,8 +387,8 @@ func (l *NodeCommand) setupNetParameters() error {
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
 	if err := l.netParams.AddRules(
 		netparams.ParamStringRules(
-			netparams.GovernanceVoteAsset,
-			checks.GovernanceAssetUpdate(l.Log, l.assets, l.collateral),
+			netparams.RewardAsset,
+			checks.RewardAssetUpdate(l.Log, l.assets, l.collateral),
 		),
 	); err != nil {
 		return err
@@ -406,8 +397,8 @@ func (l *NodeCommand) setupNetParameters() error {
 	// now add some watcher for our netparams
 	return l.netParams.Watch(
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
-			Watcher: dispatch.GovernanceAssetUpdate(l.Log, l.assets),
+			Param:   netparams.RewardAsset,
+			Watcher: dispatch.RewardAssetUpdate(l.Log, l.assets),
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,
@@ -478,7 +469,7 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.epochService.OnEpochLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.GovernanceVoteAsset,
+			Param:   netparams.RewardAsset,
 			Watcher: l.rewards.UpdateAssetForStakingAndDelegationRewardScheme,
 		},
 		netparams.WatchParam{
@@ -500,6 +491,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
 			Watcher: l.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerEpoch,
+			Watcher: l.rewards.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
@@ -525,7 +520,7 @@ func (l *NodeCommand) setupNetParameters() error {
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
-	l.cfgwatchr.OnConfigUpdate(
+	l.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },

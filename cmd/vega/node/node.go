@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/rest"
 	"code.vegaprotocol.io/vega/assets"
@@ -68,9 +69,9 @@ type NodeCommand struct {
 	stats        *stats.Stats
 	Log          *logging.Logger
 
-	configPath string
-	conf       config.Config
-	cfgwatchr  *config.Watcher
+	vegaPaths   paths.Paths
+	conf        config.Config
+	confWatcher *config.Watcher
 
 	executionEngine      *execution.Engine
 	governance           *governance.Engine
@@ -112,11 +113,12 @@ type NodeCommand struct {
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWalletPassphrase string, args []string) error {
-	l.cfgwatchr = cfgwatchr
+func (l *NodeCommand) Run(confWatcher *config.Watcher, vegaPaths paths.Paths, nodeWalletPassphrase string, args []string) error {
+	l.confWatcher = confWatcher
 	l.nodeWalletPassphrase = nodeWalletPassphrase
 
-	l.conf, l.configPath = cfgwatchr.Get(), rootPath
+	l.conf = confWatcher.Get()
+	l.vegaPaths = vegaPaths
 
 	tmCfg := l.conf.Blockchain.Tendermint
 	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
@@ -171,7 +173,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	})
 
 	// watch configs
-	l.cfgwatchr.OnConfigUpdate(
+	l.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
 	)

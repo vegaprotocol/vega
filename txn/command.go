@@ -50,7 +50,7 @@ var commandName = map[Command]string{
 	LiquidityProvisionCommand: "Liquidity Provision Order",
 	ChainEventCommand:         "Chain Event",
 	SubmitOracleDataCommand:   "Submit Oracle Data",
-	DelegateCommand:           "Delegatee",
+	DelegateCommand:           "Delegate",
 	UndelegateCommand:         "Undelegate",
 	CheckpointRestoreCommand:  "Checkpoint Restore",
 }

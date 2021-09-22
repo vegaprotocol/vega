@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/vega/types/num"
 	validators "github.com/mwitkow/go-proto-validators"
 )
 
@@ -190,6 +191,159 @@ func FloatLTE(f float64) func(float64) error {
 func FloatLT(f float64) func(float64) error {
 	return func(val float64) error {
 		if val < f {
+			return nil
+		}
+		return fmt.Errorf("expect < %v got %v", f, val)
+	}
+}
+
+type DecimalRule func(num.Decimal) error
+
+type Decimal struct {
+	*baseValue
+	value   num.Decimal
+	rawval  string
+	rules   []DecimalRule
+	mutable bool
+}
+
+func NewDecimal(rules ...DecimalRule) *Decimal {
+	return &Decimal{
+		baseValue: &baseValue{},
+		rules:     rules,
+	}
+}
+
+func (f *Decimal) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(context.Context, num.Decimal) error)
+		return fn(ctx, f.value)
+	}
+}
+
+func (f *Decimal) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(context.Context, num.Decimal) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, float64) error")
+	}
+	return nil
+}
+
+func (f *Decimal) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(DecimalRule)
+		if !ok {
+			return errors.New("floats require DecimalRule functions")
+		}
+		f.rules = append(f.rules, v)
+	}
+
+	return nil
+}
+
+func (f *Decimal) ToDecimal() (num.Decimal, error) {
+	return f.value, nil
+}
+
+func (f *Decimal) Validate(value string) error {
+	valf, err := num.DecimalFromString(value)
+	if err != nil {
+		return err
+	}
+
+	if !f.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	for _, fn := range f.rules {
+		if newerr := fn(valf); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	return err
+}
+
+func (f *Decimal) Update(value string) error {
+	if !f.mutable {
+		return errors.New("value is not mutable")
+	}
+	valf, err := num.DecimalFromString(value)
+	if err != nil {
+		return err
+	}
+
+	for _, fn := range f.rules {
+		if newerr := fn(valf); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err == nil {
+		f.rawval = value
+		f.value = valf
+	}
+
+	return err
+}
+
+func (f *Decimal) Mutable(b bool) *Decimal {
+	f.mutable = b
+	return f
+}
+
+func (f *Decimal) MustUpdate(value string) *Decimal {
+	err := f.Update(value)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
+
+func (f *Decimal) String() string {
+	return f.rawval
+}
+
+func DecimalGTE(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.GreaterThanOrEqual(f) {
+			return nil
+		}
+		return fmt.Errorf("expect >= %v got %v", f, val)
+	}
+}
+
+func DecimalGT(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.GreaterThan(f) {
+			return nil
+		}
+		return fmt.Errorf("expect > %v got %v", f, val)
+	}
+}
+
+func DecimaLTE(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.LessThanOrEqual(f) {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v got %v", f, val)
+	}
+}
+
+func DecimalLT(f num.Decimal) func(num.Decimal) error {
+	return func(val num.Decimal) error {
+		if val.LessThan(f) {
 			return nil
 		}
 		return fmt.Errorf("expect < %v got %v", f, val)

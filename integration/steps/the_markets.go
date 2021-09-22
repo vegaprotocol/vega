@@ -8,7 +8,6 @@ import (
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/steps/market"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -16,7 +15,7 @@ import (
 
 func TheMarkets(
 	config *market.Config,
-	executionEngine *execution.Engine,
+	executionEngine Execution,
 	collateralEngine *collateral.Engine,
 	table *godog.Table,
 ) ([]types.Market, error) {
@@ -41,7 +40,7 @@ func TheMarkets(
 	return markets, nil
 }
 
-func submitMarkets(markets []types.Market, executionEngine *execution.Engine) error {
+func submitMarkets(markets []types.Market, executionEngine Execution) error {
 	for i := range markets {
 		err := executionEngine.SubmitMarket(context.Background(), &markets[i])
 		if err != nil {

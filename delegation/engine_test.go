@@ -2,6 +2,7 @@ package delegation
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -1703,7 +1704,7 @@ func getEngine(t *testing.T) *testEngine {
 
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{})
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
-	engine.OnMinAmountChanged(context.Background(), 2)
+	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))
 	engine.OnCompLevelChanged(context.Background(), 1.1)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
@@ -1732,17 +1733,25 @@ func newTestStakingAccount() *TestStakingAccount {
 	}
 }
 
-func (t *TestStakingAccount) GetBalanceNow(party string) *num.Uint {
-	ret := t.partyToStake[party]
-	return ret
+func (t *TestStakingAccount) GetAvailableBalance(party string) (*num.Uint, error) {
+	ret, ok := t.partyToStake[party]
+	if !ok {
+		return nil, fmt.Errorf("account not found")
+	}
+	return ret, nil
 }
 
-func (t *TestStakingAccount) GetBalanceForEpoch(party string, from, to time.Time) *num.Uint {
+func (t *TestStakingAccount) GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error) {
 	ret, ok := t.partyToStakeForEpoch[from]
 	if !ok {
-		return nil
+		return nil, fmt.Errorf("account not found")
 	}
-	return ret[party]
+
+	p, ok := ret[party]
+	if !ok {
+		return nil, fmt.Errorf("account not found")
+	}
+	return p, nil
 }
 
 type TestTopology struct {

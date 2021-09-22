@@ -30,6 +30,7 @@ type Service struct {
 	votes        *services.Votes
 	marketsData  *services.MarketsData
 	partiesStake *services.PartiesStake
+	delegations  *services.Delegations
 }
 
 func NewService(
@@ -99,9 +100,15 @@ func NewService(
 	}
 
 	if cfg.PartiesStake {
-		log.Info("starting votes core api")
+		log.Info("starting parties stake core api")
 		svc.partiesStake = services.NewPartiesStake(ctx, log)
 		broker.SubscribeBatch(svc.partiesStake)
+	}
+
+	if cfg.Delegations {
+		log.Info("starting delegations core api")
+		svc.delegations = services.NewDelegations(ctx)
+		broker.SubscribeBatch(svc.delegations)
 	}
 
 	return svc
@@ -215,5 +222,16 @@ func (s *Service) ListPartiesStake(
 	}
 	return &coreapipb.ListPartiesStakeResponse{
 		PartiesStake: s.partiesStake.List(in.Party),
+	}, nil
+}
+
+func (s *Service) ListDelegations(
+	ctx context.Context, in *coreapipb.ListDelegationsRequest,
+) (*coreapipb.ListDelegationsResponse, error) {
+	if !s.cfg.Delegations {
+		return nil, ErrServiceDisabled
+	}
+	return &coreapipb.ListDelegationsResponse{
+		Delegations: s.delegations.List(in.Party, in.Node, in.EpochSeq),
 	}, nil
 }

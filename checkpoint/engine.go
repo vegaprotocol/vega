@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -17,10 +18,12 @@ var (
 	ErrComponentWithDuplicateName = errors.New("multiple components with the same name")
 
 	cpOrder = []types.CheckpointName{
-		types.NetParamsCheckpoint,  // net params should go first
-		types.AssetsCheckpoint,     // assets are required for collateral to work
+		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
 		types.CollateralCheckpoint, // without balances, governance (proposals, bonds) are difficult
+		types.NetParamsCheckpoint,  // net params should go right after assets and collateral, so vote tokens are restored
 		types.GovernanceCheckpoint, // depends on all of the above
+		types.EpochCheckpoint,      // restore epoch information...
+		types.DelegationCheckpoint, // so delegation sequence ID's make sense
 	}
 )
 
@@ -91,9 +94,15 @@ func (e *Engine) UponGenesis(_ context.Context, data []byte) (err error) {
 	}
 	if state != nil && len(state.CheckpointHash) != 0 {
 		e.loadHash, err = hex.DecodeString(state.CheckpointHash)
+		e.log.Warn("Checkpoint restore enabled",
+			logging.String("checkpoint-hash-str", state.CheckpointHash),
+			logging.String("checkpoint-hex-encoded", hex.EncodeToString(e.loadHash)),
+		)
 		if err != nil {
 			e.loadHash = nil
-			panic(fmt.Errorf("malformed restore hash in genesis file: %w", err))
+			e.log.Panic("Malformed restore hash in genesis file",
+				logging.Error(err),
+			)
 		}
 	}
 	return nil
@@ -125,18 +134,23 @@ func (e *Engine) addComponent(comp State) error {
 	return nil
 }
 
+// AwaitingRestore indicates that a checkpoint restore is pending, will return false once CP is restored
+func (e *Engine) AwaitingRestore() bool {
+	return len(e.loadHash) > 0
+}
+
 // BalanceCheckpoint is used for deposits and withdrawals. We want a snapshot to be taken in those events
 // but these snapshots should not affect the timing (delta, time between checkpoints). Currently, this call
 // generates a full checkpoint, but we probably will change this to be a sparse checkpoint
 // only containing changes in balances and (perhaps) network parameters...
-func (e *Engine) BalanceCheckpoint() (*types.Snapshot, error) {
+func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.Snapshot, error) {
 	// no time stuff here, for now we're just taking a full snapshot
-	cp := e.makeCheckpoint()
+	cp := e.makeCheckpoint(ctx)
 	return cp, nil
 }
 
 // Checkpoint returns the overall checkpoint
-func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
+func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.Snapshot, error) {
 	// start time will be zero -> add delta to this time, and return
 	if e.nextCP.IsZero() {
 		e.nextCP = t.Add(e.delta)
@@ -146,11 +160,11 @@ func (e *Engine) Checkpoint(t time.Time) (*types.Snapshot, error) {
 		return nil, nil
 	}
 	e.nextCP = t.Add(e.delta)
-	cp := e.makeCheckpoint()
+	cp := e.makeCheckpoint(ctx)
 	return cp, nil
 }
 
-func (e *Engine) makeCheckpoint() *types.Snapshot {
+func (e *Engine) makeCheckpoint(ctx context.Context) *types.Snapshot {
 	cp := &types.Checkpoint{}
 	for _, k := range cpOrder {
 		comp, ok := e.components[k]
@@ -164,6 +178,11 @@ func (e *Engine) makeCheckpoint() *types.Snapshot {
 		// set the correct field
 		cp.Set(k, data)
 	}
+	// add block height to checkpoint
+	h, _ := vegactx.BlockHeightFromContext(ctx)
+	if err := cp.SetBlockHeight(h); err != nil {
+		e.log.Panic("could not set block height", logging.Error(err))
+	}
 	snap := &types.Snapshot{}
 	// setCheckpoint hides the vega type mess
 	if err := snap.SetCheckpoint(cp); err != nil {
@@ -176,6 +195,13 @@ func (e *Engine) makeCheckpoint() *types.Snapshot {
 // Load - loads checkpoint data for all components by name
 func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
+	if len(e.loadHash) != 0 {
+		e.log.Warn("Checkpoint hash reload requested",
+			logging.String("hash-to-load", hex.EncodeToString(e.loadHash)),
+			logging.String("snapshot-hash", hex.EncodeToString(snap.Hash)),
+			logging.Int("hash-diff", bytes.Compare(e.loadHash, snap.Hash)),
+		)
+	}
 	if e.loadHash == nil || !bytes.Equal(e.loadHash, snap.Hash) {
 		return nil
 	}
@@ -191,7 +217,10 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 	if err := snap.Validate(); err != nil {
 		return err
 	}
-	var assets []*types.Asset
+	var (
+		assets                 []*types.Asset
+		doneAssets, doneCollat bool // just avoids type asserting all components
+	)
 	for _, k := range cpOrder {
 		cpData := cp.Get(k)
 		if len(cpData) == 0 {
@@ -201,19 +230,25 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 		if !ok {
 			return ErrUnknownCheckpointName // data cannot be restored
 		}
-		if ac, ok := c.(AssetsState); ok {
-			if err := c.Load(cpData); err != nil {
-				return err
-			}
-			assets = ac.GetEnabledAssets()
-			continue
-		}
-		// first enable assets, then load the state
-		if cc, ok := c.(CollateralState); ok {
-			for _, a := range assets {
-				if err := cc.EnableAsset(ctx, *a); err != nil {
+		if !doneAssets {
+			if ac, ok := c.(AssetsState); ok {
+				if err := c.Load(cpData); err != nil {
 					return err
 				}
+				assets = ac.GetEnabledAssets()
+				doneAssets = true
+				continue
+			}
+		}
+		// first enable assets, then load the state
+		if !doneCollat {
+			if cc, ok := c.(CollateralState); ok {
+				for _, a := range assets {
+					if err := cc.EnableAsset(ctx, *a); err != nil {
+						return err
+					}
+				}
+				doneCollat = true
 			}
 		}
 		if err := c.Load(cpData); err != nil {

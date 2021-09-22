@@ -94,7 +94,7 @@ func (w *Wallet) CurrentHeight(ctx context.Context) (uint64, error) {
 	// ~15 seconds
 	now := time.Now()
 	if w.curHeightLastUpdate.Add(15).Before(now) {
-		// getthe last block header
+		// get the last block header
 		h, err := w.clt.HeaderByNumber(context.Background(), nil)
 		if err != nil {
 			return w.curHeight, err

@@ -10,6 +10,7 @@ import (
 	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
@@ -118,6 +119,7 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 		if err != nil {
 			o.log.Error("could not start stake deposited filter",
 				logging.Error(err))
+			continue
 		}
 		defer iter.Close()
 
@@ -191,6 +193,7 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 		if err != nil {
 			o.log.Error("could not start stake deposited filter",
 				logging.Error(err))
+			continue
 		}
 		defer iter.Close()
 

@@ -4,13 +4,11 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
+	"code.vegaprotocol.io/vega/cmd/vega/faucet"
 	"code.vegaprotocol.io/vega/cmd/vega/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -56,7 +54,7 @@ func Main(ctx context.Context) error {
 	parser := flags.NewParser(&config.Empty{}, flags.Default)
 
 	if err := Register(ctx, parser,
-		Faucet,
+		faucet.Faucet,
 		genesis.Genesis,
 		Init,
 		Node,
@@ -68,8 +66,9 @@ func Main(ctx context.Context) error {
 		Tm,
 		Checkpoint,
 		Query,
+		Bridge,
 	); err != nil {
-		fmt.Printf("%+v\n", err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
 	}
 
@@ -77,18 +76,4 @@ func Main(ctx context.Context) error {
 		return err
 	}
 	return nil
-}
-
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-	case <-ctx.Done():
-		// nothing to do
-	}
 }

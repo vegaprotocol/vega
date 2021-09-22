@@ -620,7 +620,7 @@ func testStreamsOverSocket(t *testing.T) {
 
 	addr := fmt.Sprintf(
 		"inproc://%s",
-		net.JoinHostPort(config.Socket.IP, fmt.Sprintf("%d", config.Socket.Port)),
+		net.JoinHostPort(config.Socket.Address, fmt.Sprintf("%d", config.Socket.Port)),
 	)
 	err = sock.Listen(addr)
 	assert.NoError(t, err)
@@ -664,7 +664,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 
 		addr := fmt.Sprintf(
 			"inproc://%s",
-			net.JoinHostPort(config.Socket.IP, fmt.Sprintf("%d", config.Socket.Port)),
+			net.JoinHostPort(config.Socket.Address, fmt.Sprintf("%d", config.Socket.Port)),
 		)
 		err = sock.Listen(addr)
 		assert.NoError(t, err)

@@ -34,7 +34,7 @@ func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	broker := bmocks.NewMockBrokerI(ctrl)
 	log := logging.NewTestLogger()
 	cfg := staking.NewDefaultConfig()
-	accs := staking.NewAccounting(log, cfg, broker)
+	accs := staking.NewAccounting(log, cfg, broker, nil)
 	ocv := mocks.NewMockEthOnChainVerifier(ctrl)
 	tt := mocks.NewMockTimeTicker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)

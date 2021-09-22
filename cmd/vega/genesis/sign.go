@@ -6,18 +6,17 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/go-wallet/wallet"
-	storev1 "code.vegaprotocol.io/go-wallet/wallet/store/v1"
+	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 type signCmd struct {
-	TmRoot             string            `short:"t" long:"tm-root" description:"The root path of tendermint"`
-	WalletRoot         string            `long:"wallet-path" description:"The root path to the wallets"`
-	WalletName         string            `long:"wallet-name" description:"The name of the wallet to use" required:"true"`
-	WalletPasswordFile config.Passphrase `long:"wallet-password" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
+	config.VegaHomeFlag
+	TmRoot           string            `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	WalletName       string            `long:"wallet-name" description:"The name of the wallet to use" required:"true"`
+	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 }
 
 func (opts *signCmd) Execute(_ []string) error {
@@ -26,7 +25,7 @@ func (opts *signCmd) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := opts.WalletPasswordFile.Get("wallet")
+	pass, err := opts.WalletPassphrase.Get("wallet")
 	if err != nil {
 		return err
 	}
@@ -46,17 +45,12 @@ func (opts *signCmd) Execute(_ []string) error {
 		return err
 	}
 
-	store, err := storev1.NewStore(os.ExpandEnv(opts.WalletRoot))
+	store, err := wallets.InitialiseStore(opts.VegaHome)
 	if err != nil {
 		return err
 	}
 
-	err = store.Initialise()
-	if err != nil {
-		return err
-	}
-
-	handler := wallet.NewHandler(store)
+	handler := wallets.NewHandler(store)
 
 	err = handler.LoginWallet(opts.WalletName, pass)
 	if err != nil {

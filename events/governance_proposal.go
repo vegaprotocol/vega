@@ -44,9 +44,10 @@ func (p Proposal) Proto() proto.Proposal {
 
 func (p Proposal) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    p.eventID(),
-		Block: p.TraceID(),
-		Type:  p.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      p.eventID(),
+		Block:   p.TraceID(),
+		Type:    p.et.ToProto(),
 		Event: &eventspb.BusEvent_Proposal{
 			Proposal: &p.p,
 		},

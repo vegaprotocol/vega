@@ -43,9 +43,10 @@ func (o Order) Proto() ptypes.Order {
 
 func (o Order) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    o.eventID(),
-		Block: o.TraceID(),
-		Type:  o.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      o.eventID(),
+		Block:   o.TraceID(),
+		Type:    o.et.ToProto(),
 		Event: &eventspb.BusEvent_Order{
 			Order: o.o,
 		},

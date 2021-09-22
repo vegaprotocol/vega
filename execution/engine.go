@@ -422,7 +422,6 @@ func (e *Engine) SubmitOrder(
 	timer := metrics.NewTimeCounter(submission.MarketId, "execution", "SubmitOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
-		e.notifyFailureOnError(ctx, returnedErr, submission, party)
 	}()
 
 	if e.log.IsDebug() {
@@ -451,7 +450,6 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
-		e.notifyFailureOnError(ctx, returnedErr, amendment, party)
 	}()
 
 	if e.log.IsDebug() {
@@ -499,7 +497,6 @@ func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellatio
 	timer := metrics.NewTimeCounter(cancel.MarketId, "execution", "CancelOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
-		e.notifyFailureOnError(ctx, returnedErr, cancel, party)
 	}()
 
 	if e.log.IsDebug() {
@@ -578,7 +575,6 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	timer := metrics.NewTimeCounter(sub.MarketID, "execution", "LiquidityProvisionSubmission")
 	defer func() {
 		timer.EngineTimeCounterAdd()
-		e.notifyFailureOnError(ctx, returnedErr, sub, party)
 	}()
 
 	if e.log.IsDebug() {
@@ -928,10 +924,4 @@ func (e *Engine) OnMarketMinProbabilityOfTradingForLPOrdersUpdate(ctx context.Co
 	e.npv.minProbabilityOfTradingLPOrders = v
 
 	return nil
-}
-
-func (e *Engine) notifyFailureOnError(ctx context.Context, err error, tx interface{}, partyID string) {
-	if err != nil {
-		e.broker.Send(events.NewTxErrEvent(ctx, err, partyID, tx))
-	}
 }
