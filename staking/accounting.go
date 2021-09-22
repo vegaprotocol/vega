@@ -9,6 +9,7 @@ import (
 	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/events"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -31,11 +32,12 @@ var (
 )
 
 type Accounting struct {
-	log       *logging.Logger
-	ethClient EthereumClientCaller
-	cfg       Config
-	broker    Broker
-	accounts  map[string]*StakingAccount
+	log              *logging.Logger
+	ethClient        EthereumClientCaller
+	cfg              Config
+	broker           Broker
+	accounts         map[string]*StakingAccount
+	hashableAccounts []*StakingAccount
 
 	stakingAssetTotalSupply *num.Uint
 	ethCfg                  vgproto.EthereumConfig
@@ -60,12 +62,25 @@ func NewAccounting(
 	}
 }
 
+func (a *Accounting) Hash() []byte {
+	output := make([]byte, len(a.hashableAccounts)*32)
+	var i int
+	for _, k := range a.hashableAccounts {
+		bal := k.Balance.Bytes()
+		copy(output[i:], bal[:])
+		i += 32
+	}
+
+	return vgcrypto.Hash(output)
+}
+
 func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	acc, ok := a.accounts[evt.Party]
 	if !ok {
 		a.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: evt.Party}))
 		acc = NewStakingAccount(evt.Party)
 		a.accounts[evt.Party] = acc
+		a.hashableAccounts = append(a.hashableAccounts, acc)
 	}
 
 	// errors here do not really matter I'd say

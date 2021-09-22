@@ -2,6 +2,7 @@ package governance_test
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"testing"
@@ -65,6 +66,8 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Validate market proposal commitment", testValidateProposalCommitment)
 
 	t.Run("Can vote during validation period - proposal passed", testSubmittingMajorityOfYesVoteDuringValidationMakesProposalPassed)
+
+	t.Run("test hash", testGovernanceHash)
 }
 
 func testValidateProposalCommitment(t *testing.T) {
@@ -1156,6 +1159,91 @@ func testSubmittingVoteAndWithdrawingFundsDeclined(t *testing.T) {
 
 	// then
 	assert.Empty(t, toBeEnacted)
+}
+
+func testGovernanceHash(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	require.Equal(t,
+		"a1292c11ccdb876535c6699e8217e1a1294190d83e4233ecc490d32df17a4116",
+		hex.EncodeToString(eng.Hash()),
+		"hash is not deterministic",
+	)
+
+	// when
+	proposer := eng.newValidParty("proposer", 1)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	proposal := eng.newOpenProposal(proposer.Id, time.Now())
+
+	// setup
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(9))
+	eng.expectAnyAsset()
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// setup
+	eng.expectSendVoteEvent(t, voter1, proposal)
+
+	// then
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_YES,
+		ProposalID: proposal.ID,
+	}, voter1.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// test hash before enactement
+	require.Equal(t,
+		"d43f721a8e28c5bad0e78ab7052b8990be753044bb355056519fab76e8de50a7",
+		hex.EncodeToString(eng.Hash()),
+		"hash is not deterministic",
+	)
+
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, proto.Proposal_STATE_PASSED, p.State)
+		assert.Equal(t, proposal.ID, p.Id)
+	})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+
+		v, ok := evts[0].(*events.Vote)
+		assert.True(t, ok)
+		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
+		assert.Equal(t, "7", v.TotalGovernanceTokenBalance())
+	})
+
+	// when
+	eng.OnChainTimeUpdate(context.Background(), afterClosing)
+
+	// given
+	afterEnactment := time.Unix(proposal.Terms.EnactmentTimestamp, 0).Add(time.Second)
+
+	// when
+	// no calculations, no state change, simply removed from governance engine
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterEnactment)
+
+	// then
+	assert.Len(t, toBeEnacted, 1)
+
+	require.Equal(t,
+		"fbf86f159b135501153cda0fc333751df764290a3ae61c3f45f19f9c19445563",
+		hex.EncodeToString(eng.Hash()),
+		"hash is not deterministic",
+	)
 }
 
 func getTestEngine(t *testing.T) *tstEngine {
