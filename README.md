@@ -67,6 +67,21 @@ The init command can also be invoked with a flag in order to generate developmen
 vega init
 ```
 
+### Files location
+
+| Environment variables                          | Unix                                                  | macOS                                                                                                            | Windows                                                   |
+| :--------------------------------------------- | :---------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
+| <kbd><b><samp>XDG_DATA_HOME</samp></b></kbd>   | <kbd>~/.local/share</kbd>                             | <kbd>~/Library/Application Support</kbd>                                                                         | <kbd>%LOCALAPPDATA%</kbd>                                 |
+| <kbd><b><samp>XDG_CONFIG_HOME</samp></b></kbd> | <kbd>~/.config</kbd>                                  | <kbd>~/Library/Application Support</kbd>                                                                         | <kbd>%LOCALAPPDATA%</kbd>                                 |
+| <kbd><b><samp>XDG_STATE_HOME</samp></b></kbd>  | <kbd>~/.local/state</kbd>                             | <kbd>~/Library/Application Support</kbd>                                                                         | <kbd>%LOCALAPPDATA%</kbd>                                 |
+| <kbd><b><samp>XDG_CACHE_HOME</samp></b></kbd>  | <kbd>~/.cache</kbd>                                   | <kbd>~/Library/Caches</kbd>                                                                                      | <kbd>%LOCALAPPDATA%\cache</kbd>                           |
+
+You can override these environment variables, however, bear in mind it will
+apply system-wide.
+
+If you don't want to rely on the default XDG paths, you can use the `--home`
+flag on the command-line.
+
 ## Vega NodeWallet
 
 A vega node needs to connect to other blockchain for various operation:
