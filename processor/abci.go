@@ -58,6 +58,11 @@ type SpamEngine interface {
 
 type Snapshot interface {
 	List() ([]*types.Snapshot, error)
+	ReceiveSnapshot(snap *types.Snapshot) error
+	RejectSnapshot() error
+	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
+	GetMissingChunks() []uint32
+	ApplySnapshot() error
 }
 
 type App struct {
@@ -296,15 +301,72 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
 	snap, err := types.SnapshotFromTM(req.Snapshot)
 	// invalid hash?
-	if err != nil || !bytes.Equal(snap.Hash, req.AppHash) {
+	if err != nil {
+		// sender provided an invalid snapshot, that's not exactly something we can trust
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
+		}
+	}
+	// @TODO this is a placeholder for the actual check
+	// if this node produced the wrong hash, don't accept... earlier snapshots may still be valid
+	if !bytes.Equal(snap.Hash, req.AppHash) {
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
 		}
+	}
+	if err := app.snapshot.ReceiveSnapshot(snap); err != nil {
+		ret := tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		}
+		if err == types.ErrSnapshotMetaMismatch {
+			// hashes match, but the meta doesn't, do not trust
+			ret.Result = tmtypes.ResponseOfferSnapshot_REJECT_SENDER
+		}
+		return ret
 	}
 	// @TODO initialise snapshot engine to restore snapshot?
 	return tmtypes.ResponseOfferSnapshot{
 		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
 	}
+}
+
+func (app *App) ApplySnapshotChunk(req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+	chunk := types.RawChunk{
+		Nr:   req.Index,
+		Data: req.Chunk,
+	}
+	resp := tmtypes.ResponseApplySnapshotChunk{}
+	ready, err := app.snapshot.ApplySnapshotChunk(&chunk)
+	if err != nil {
+		switch err {
+		case types.ErrUnknownSnapshot:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT // we weren't ready?
+		case types.ErrChunkOutOfRange:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT // try another snapshot
+		case types.ErrSnapshotMetaMismatch:
+			// refetch the chunk from someone else
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
+			resp.RejectSenders = []string{req.Sender}
+		case types.ErrMissingChunks:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
+			resp.RefetchChunks = app.snapshot.GetMissingChunks()
+		case types.ErrSnapshotRetryLimit:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+			defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
+		default:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+			// @TODO panic?
+		}
+		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
+			_ = app.snapshot.RejectSnapshot()
+		}
+		return resp
+	}
+	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
+	if ready {
+		_ = app.snapshot.ApplySnapshot()
+	}
+	return resp
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
