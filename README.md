@@ -42,34 +42,41 @@ Additional services that are in this repo, but run separately:
 
 ## Installation
 
-To install `trading-core` and `tendermint`, see [Getting Started](GETTING_STARTED.md).
+To install `trading-core` and `tendermint`,
+see [Getting Started](GETTING_STARTED.md).
 
 ## Configuration
 
-Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults, edit your `config.toml`. Example:
+Vega is initialised with a set of default configuration with the
+command `vega init`. To override any of the defaults, edit your `config.toml`.
+Example:
 
 ```toml
 [Matching]
-  Level = 0
-  ProRataMode = false
-  LogPriceLevelsDebug = false
-  LogRemovedOrdersDebug = false
+Level = 0
+ProRataMode = false
+LogPriceLevelsDebug = false
+LogRemovedOrdersDebug = false
 ```
 
-Vega requires a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
-The node wallets can be accessed using the `nodewallet` subcommand, these node wallets are initialized / accessed using a passphrase that needs to be specified when initializing Vega:
+Vega requires a set of wallets for the internal or external chain it's dealing
+with, the configuration for these wallets are stored in the vega nodewallet. The
+node wallets can be accessed using the `nodewallet` subcommand, these node
+wallets are initialized / accessed using a passphrase that needs to be specified
+when initializing Vega:
+
 ```she
 vega init --nodewallet-passphrase-file "my-passphrase-file.txt"
 ```
 
 ### Files location
 
-| Environment variables                          | Unix                                                  | macOS                                                                                                            | Windows                                                   |
-| :--------------------------------------------- | :---------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------- |
-| <kbd><b><samp>XDG_DATA_HOME</samp></b></kbd>   | <kbd>~/.local/share</kbd>                             | <kbd>~/Library/Application Support</kbd>                                                                         | <kbd>%LOCALAPPDATA%</kbd>                                 |
-| <kbd><b><samp>XDG_CONFIG_HOME</samp></b></kbd> | <kbd>~/.config</kbd>                                  | <kbd>~/Library/Application Support</kbd>                                                                         | <kbd>%LOCALAPPDATA%</kbd>                                 |
-| <kbd><b><samp>XDG_STATE_HOME</samp></b></kbd>  | <kbd>~/.local/state</kbd>                             | <kbd>~/Library/Application Support</kbd>                                                                         | <kbd>%LOCALAPPDATA%</kbd>                                 |
-| <kbd><b><samp>XDG_CACHE_HOME</samp></b></kbd>  | <kbd>~/.cache</kbd>                                   | <kbd>~/Library/Caches</kbd>                                                                                      | <kbd>%LOCALAPPDATA%\cache</kbd>                           |
+| Environment variables | Unix             | macOS                           | Windows                |
+| :-------------------- | :----------------| :------------------------------ | :--------------------- |
+| `XDG_DATA_HOME`       | `~/.local/share` | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
+| `XDG_CONFIG_HOME`     | `~/.config`      | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
+| `XDG_STATE_HOME`      | `~/.local/state` | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
+| `XDG_CACHE_HOME`      | `~/.cache`       | `~/Library/Caches`              | `%LOCALAPPDATA%\cache` |
 
 You can override these environment variables, however, bear in mind it will
 apply system-wide.
