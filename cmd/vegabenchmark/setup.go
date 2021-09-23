@@ -192,6 +192,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		stakeV,
 		cp,
 		spamEngine,
+		nil,
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {
