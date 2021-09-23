@@ -27,18 +27,18 @@ type tradingProxyService struct {
 	eventObserver        *eventObserver
 }
 
-func (s *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+func (t *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	return s.tradingServiceClient.SubmitTransaction(ctx, req)
+	return t.tradingServiceClient.SubmitTransaction(ctx, req)
 }
 
-func (s *tradingProxyService) LastBlockHeight(ctx context.Context, req *protoapi.LastBlockHeightRequest) (*protoapi.LastBlockHeightResponse, error) {
+func (t *tradingProxyService) LastBlockHeight(ctx context.Context, req *protoapi.LastBlockHeightRequest) (*protoapi.LastBlockHeightResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	return s.tradingServiceClient.LastBlockHeight(ctx, req)
+	return t.tradingServiceClient.LastBlockHeight(ctx, req)
 }
 
 func (t *tradingProxyService) GetVegaTime(ctx context.Context, req *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {

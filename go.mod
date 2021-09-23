@@ -5,7 +5,7 @@ go 1.16
 require (
 	code.vegaprotocol.io/protos v0.42.1-0.20210923113049-6d9549525594
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/vega v0.42.2-0.20210923114458-b9fab4875518
+	code.vegaprotocol.io/vega v0.42.2-0.20210923133536-fc67a82b0bce
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/fsnotify/fsnotify v1.4.9
@@ -29,7 +29,6 @@ require (
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
