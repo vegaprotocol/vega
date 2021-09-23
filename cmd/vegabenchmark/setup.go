@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -15,16 +15,16 @@ import (
 	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/checks"
 	"code.vegaprotocol.io/vega/netparams/dispatch"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/spam"
@@ -33,26 +33,24 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-
 	"github.com/cenkalti/backoff"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
 )
 
-func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
+func setupVega() (*processor.App, processor.Stats, error) {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 
 	ctrl := gomock.NewController(&nopeTestReporter{log})
-	nodeWallet := mocks.NewMockNodeWallet(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
 
 	ctx := context.Background()
-	// instantiate the ETHClient
+
 	ethClient, err := ethclient.Dial(ctx, nodewallet.NewDefaultConfig().ETH.Address)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("couldn't initialise Ethereum client: %w", err)
 	}
 
 	commander := mocks.NewMockCommander(ctrl)
@@ -79,6 +77,19 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	timeService := vegatime.New(vegatime.NewDefaultConfig())
 
+	vegaPaths, _ := vgtesting.NewVegaPaths()
+	pass := vgrand.RandomStr(10)
+	if _, err := nodewallet.GenerateEthereumWallet(vegaPaths, pass, pass, false); err != nil {
+		return nil, nil, err
+	}
+	if _, err := nodewallet.GenerateVegaWallet(vegaPaths, pass, pass, false); err != nil {
+		return nil, nil, err
+	}
+	nw, err := nodewallet.GetNodeWallets(vegaPaths, pass)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	collateral := collateral.New(
 		log,
 		collateral.NewDefaultConfig(),
@@ -88,18 +99,17 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	assets := assets.New(
 		log,
 		assets.NewDefaultConfig(),
-		nodeWallet,
+		nw,
 		ethClient,
 		timeService,
 	)
-	pubKey, err := hex.DecodeString(selfPubKey)
 	if err != nil {
 		return nil, nil, err
 	}
 	topology := validators.NewTopology(
 		log,
 		validators.NewDefaultConfig(),
-		wallet{pubKey},
+		nw.Vega,
 		broker,
 	)
 
@@ -417,14 +427,6 @@ func registerExecutionCallbacks(
 			Watcher: exec.OnMarketProbabilityOfTradingTauScalingUpdate,
 		},
 	)
-}
-
-type wallet struct {
-	pubKey []byte
-}
-
-func (w wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
-	return crypto.NewPublicKeyOrAddress(hex.EncodeToString(w.pubKey), w.pubKey)
 }
 
 type nopeTestReporter struct{ log *logging.Logger }

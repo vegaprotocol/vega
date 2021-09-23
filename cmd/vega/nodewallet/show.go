@@ -1,11 +1,13 @@
 package nodewallet
 
 import (
+	"fmt"
+
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -18,7 +20,7 @@ func (opts *showCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	pass, err := rootCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
@@ -36,15 +38,12 @@ func (opts *showCmd) Execute(_ []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
+	nw, err := nodewallet.GetNodeWallets(vegaPaths, registryPass)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
-	wallets := nw.Show()
-
-	err = vgjson.PrettyPrint(wallets)
-	if err != nil {
+	if err = vgjson.PrettyPrint(nw); err != nil {
 		return err
 	}
 	return nil

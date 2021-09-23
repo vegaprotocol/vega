@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -38,7 +38,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.NewPaths(opts.VegaHome)
 
-	nwLoader, err := nodewallet.InitialiseLoader(vegaPaths, pass)
+	nwRegistry, err := nodewallet.InitialiseRegistry(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -77,8 +77,8 @@ func (opts *InitCmd) Execute(_ []string) error {
 			ConfigFilePath string `json:"configFilePath"`
 			NodeWalletConfigFilePath string `json:"nodeWalletConfigFilePath"`
 		}{
-			ConfigFilePath: cfgLoader.ConfigFilePath(),
-			NodeWalletConfigFilePath: nwLoader.GetConfigFilePath(),
+			ConfigFilePath:           cfgLoader.ConfigFilePath(),
+			NodeWalletConfigFilePath: nwRegistry.RegistryFilePath(),
 		})
 	}
 

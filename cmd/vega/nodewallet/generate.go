@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -24,6 +24,11 @@ type generateCmd struct {
 	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
 }
 
+const (
+	ethereumChain = "ethereum"
+	vegaChain = "vega"
+)
+
 func (opts *generateCmd) Execute(_ []string) error {
 	output, err := opts.GetOutput()
 	if err != nil {
@@ -33,7 +38,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	pass, err := rootCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
@@ -56,23 +61,18 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
-	if err != nil {
-		return err
+	var data map[string]string
+	if opts.Chain == ethereumChain {
+		data, err = nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		if err != nil {
+			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
+		}
+	} else if opts.Chain == vegaChain {
+		data, err = nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		if err != nil {
+			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
+		}
 	}
-
-	_, ok := nw.Get(nodewallet.Blockchain(opts.Chain))
-	if ok && opts.Force {
-		log.Warn("a wallet is already present for the current chain, this action will create a new one", logging.String("chain", opts.Chain))
-	} else if ok {
-		return fmt.Errorf("a wallet is already imported for the chain %v, please rerun with option --force to overwrite it", opts.Chain)
-	}
-
-	data, err := nw.Generate(opts.Chain, pass, walletPass)
-	if err != nil {
-		return err
-	}
-	data["configFilePath"] = nw.GetConfigFilePath()
 
 	if output.IsHuman() {
 		fmt.Println("generation successful:")

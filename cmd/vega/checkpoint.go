@@ -12,11 +12,10 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/txn"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -93,37 +92,27 @@ func getNodeWalletCommander(log *logging.Logger) (*nodewallet.Commander, error) 
 		return nil, err
 	}
 
-	nwConf := cfg.NodeWallet
-
-	ethclt, err := ethclient.Dial(nwConf.ETH.Address)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't instantiate the Ethereum client: %w", err)
-	}
-
-	nodePass, err := checkpointCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return nil, err
 	}
 
-	nodeWallet, err := nodewallet.New(log, nwConf, nodePass, ethclt, vegaPaths)
+	vegaWallet, err := nodewallet.GetVegaWallet(vegaPaths, registryPass)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
 	}
 
-	// ensure all require wallet are available
-	if err := nodeWallet.Verify(); err != nil {
-		return nil, err
-	}
-	stats := stats.New(log, cfg.Stats, CLIVersion, CLIVersionHash)
-	wal, _ := nodeWallet.Get(nodewallet.Vega)
-	abciClt, err := abci.NewClient(cfg.Blockchain.Tendermint.ClientAddr)
+	statistics := stats.New(log, cfg.Stats, CLIVersion, CLIVersionHash)
+	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.ClientAddr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}
-	commander, err := nodewallet.NewCommander(log, nil, wal, stats)
+
+	commander, err := nodewallet.NewCommander(log, nil, vegaWallet, statistics)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
-	commander.SetChain(blockchain.NewClient(abciClt))
+	
+	commander.SetChain(blockchain.NewClient(abciClient))
 	return commander, nil
 }

@@ -3,7 +3,6 @@ package genesis
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -11,14 +10,12 @@ import (
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -47,12 +44,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
 
-	_, conf, err := config.EnsureNodeConfig(vegaPaths)
-	if err != nil {
-		return err
-	}
-
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, vegaPaths, conf, pass)
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -164,26 +156,11 @@ func loadTendermintPrivateValidatorKey(tmConfig *tmconfig.Config) (tmcrypto.PubK
 	return pubKey, nil
 }
 
-func loadNodeWalletPubKey(log *logging.Logger, vegaPaths paths.Paths, conf *config.Config, pass string) (string, string, error) {
-	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
+func loadNodeWalletPubKey(vegaPaths paths.Paths, registryPass string) (string, string, error) {
+	nw, err := nodewallet.GetNodeWallets(vegaPaths, registryPass)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, vegaPaths)
-	if err != nil {
-		return "", "", err
-	}
-
-	wVega, ok := nw.Get("vega")
-	if !ok {
-		return "", "", errors.New("no vega wallet stored in node wallet")
-	}
-
-	wEth, ok := nw.Get("ethereum")
-	if !ok {
-		return "", "", errors.New("no ethereum wallet stored in node wallet")
-	}
-
-	return wVega.PubKeyOrAddress().Hex(), wEth.PubKeyOrAddress().Hex(), nil
+	return nw.Vega.PubKeyOrAddress().Hex(), nw.Ethereum.PubKeyOrAddress().Hex(), nil
 }
