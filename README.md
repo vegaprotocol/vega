@@ -42,14 +42,13 @@ Additional services that are in this repo, but run separately:
 
 ## Installation
 
-To install `trading-core` and `tendermint`,
-see [Getting Started](GETTING_STARTED.md).
+To install `trading-core` and `tendermint`, see [Getting Started](GETTING_STARTED.md).
 
 ## Configuration
 
-Vega is initialised with a set of default configuration with the
-command `vega init`. To override any of the defaults, edit your `config.toml`.
-Example:
+Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults, edit your `config.toml`.
+
+**Example**
 
 ```toml
 [Matching]
@@ -59,13 +58,11 @@ LogPriceLevelsDebug = false
 LogRemovedOrdersDebug = false
 ```
 
-Vega requires a set of wallets for the internal or external chain it's dealing
-with, the configuration for these wallets are stored in the vega nodewallet. The
-node wallets can be accessed using the `nodewallet` subcommand, these node
-wallets are initialized / accessed using a passphrase that needs to be specified
-when initializing Vega:
+Vega requires a set of wallets for the internal or external chain it's dealing with.
 
-```she
+The node wallets can be accessed using the `nodewallet` subcommand, these node wallets are initialized / accessed using a passphrase that needs to be specified when initializing Vega:
+
+```sh
 vega init --nodewallet-passphrase-file "my-passphrase-file.txt"
 ```
 
@@ -78,11 +75,9 @@ vega init --nodewallet-passphrase-file "my-passphrase-file.txt"
 | `XDG_STATE_HOME`      | `~/.local/state` | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
 | `XDG_CACHE_HOME`      | `~/.cache`       | `~/Library/Caches`              | `%LOCALAPPDATA%\cache` |
 
-You can override these environment variables, however, bear in mind it will
-apply system-wide.
+You can override these environment variables, however, bear in mind it will apply system-wide.
 
-If you don't want to rely on the default XDG paths, you can use the `--home`
-flag on the command-line.
+If you don't want to rely on the default XDG paths, you can use the `--home` flag on the command-line.
 
 ## Vega node wallets
 
@@ -92,10 +87,10 @@ A Vega node needs to connect to other blockchain for various operation:
 - sign transaction to be verified on foreign blockchain
 - and more...
 
-In order to do these different action, the vega node needs to access these chains using their native wallet. To do so the vega command line provide a command line tool:
+In order to do these different action, the Vega node needs to access these chains using their native wallet. To do so the vega command line provide a command line tool:
 `vega nodewallet` allowing users to import foreign blockchain wallets credentials, so they can be used at runtime.
 
-For more details on how to use the vega nodewallet run:
+For more details on how to use the Vega node wallets run:
 ```
 vega nodewallet --help
 ```
