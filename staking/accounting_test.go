@@ -77,7 +77,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 			evt: types.StakeLinking{
 				ID:     "someid2",
 				Type:   types.StakeLinkingTypeRemoved,
-				TS:     110,
+				TS:     105,
 				Party:  testParty,
 				Amount: num.NewUint(1),
 			},
@@ -87,6 +87,26 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 			evt: types.StakeLinking{
 				ID:     "someid3",
 				Type:   types.StakeLinkingTypeDeposited,
+				TS:     106,
+				Party:  testParty,
+				Amount: num.NewUint(3),
+			},
+			expect: nil,
+		},
+		{
+			evt: types.StakeLinking{
+				ID:     "someid4",
+				Type:   types.StakeLinkingTypeRemoved,
+				TS:     107,
+				Party:  testParty,
+				Amount: num.NewUint(4),
+			},
+			expect: nil,
+		},
+		{
+			evt: types.StakeLinking{
+				ID:     "someid5",
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -95,7 +115,7 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 		},
 		{
 			evt: types.StakeLinking{
-				ID:     "someid4",
+				ID:     "someid6",
 				Type:   types.StakeLinkingTypeRemoved,
 				TS:     125,
 				Party:  testParty,
@@ -125,22 +145,22 @@ func testAccountingGetAvailableBalanceInRange(t *testing.T) {
 	balance, err = acc.GetAvailableBalanceInRange(
 		testParty, time.Unix(0, 101), time.Unix(0, 109))
 	assert.NoError(t, err)
-	assert.Equal(t, num.NewUint(10), balance)
+	assert.Equal(t, num.NewUint(8), balance)
 
 	balance, err = acc.GetAvailableBalanceInRange(
 		testParty, time.Unix(0, 101), time.Unix(0, 111))
 	assert.NoError(t, err)
-	assert.Equal(t, num.NewUint(9), balance)
+	assert.Equal(t, num.NewUint(8), balance)
 
 	balance, err = acc.GetAvailableBalanceInRange(
 		testParty, time.Unix(0, 101), time.Unix(0, 121))
 	assert.NoError(t, err)
-	assert.Equal(t, num.NewUint(10), balance)
+	assert.Equal(t, num.NewUint(8), balance)
 
 	balance, err = acc.GetAvailableBalanceInRange(
 		testParty, time.Unix(0, 101), time.Unix(0, 126))
 	assert.NoError(t, err)
-	assert.Equal(t, num.NewUint(8), balance)
+	assert.Equal(t, num.NewUint(7), balance)
 }
 
 func testAccountingGetAvailableBalanceAt(t *testing.T) {
