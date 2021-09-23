@@ -5,8 +5,8 @@
 
 ### Improvements
 - [4051](https://github.com/vegaprotocol/vega/pull/4051) - New type to handle signed versions of the uint256 values we already support
-- [4090](https://github.com/vegaprotocol/vega/pull/4090) - Update the protos repo dependencies
-- [4023](https://github.com/vegaprotocol/vega/pull/4023) - Implement spam protection engine
+- [4090](https://github.com/vegaprotocol/vega/pull/4090) - Update the proto repository dependencies
+- [4023](https://github.com/vegaprotocol/vega/pull/4023) - Implement the spam protection engine
 - [4063](https://github.com/vegaprotocol/vega/pull/4063) - Migrate to XDG structure
 - [4075](https://github.com/vegaprotocol/vega/pull/4075) - Prefix checkpoint files with time and interval for automated tests
 - [4050](https://github.com/vegaprotocol/vega/pull/4050) - Extend delegation feature test scenarios
