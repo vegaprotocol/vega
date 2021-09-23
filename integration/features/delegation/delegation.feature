@@ -184,14 +184,15 @@ Feature: Staking & Delegation
     | party1 |  node2   | 1507   |       
     | party1 |  node3   | 1507   | 
 
-    When time is updated to "2021-08-26T00:00:33Z"    
-    When time is updated to "2021-08-26T00:00:43Z"    
-  
+    Then the network moves ahead "11" blocks
+    
     Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   | 1500   | 
     | party1 |  node2   | 1507   |       
     | party1 |  node3   | 1507   | 
+
+    Then the network moves ahead "1" blocks
 
     And the parties submit the following undelegations:
     | party  | node id  | amount |     when     |
@@ -199,33 +200,29 @@ Feature: Staking & Delegation
     | party1 |  node2   |  500   | end of epoch |     
     | party1 |  node3   |  500   | end of epoch | 
 
-    When time is updated to "2021-08-26T00:00:42Z"    
-    When time is updated to "2021-08-26T00:00:53Z"
+    Then the network moves ahead "10" blocks
 
     Then the parties should have the following delegation balances for epoch 4:
     | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   | 
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   | 
 
-    When time is updated to "2021-08-26T00:00:54Z"    
-    When time is updated to "2021-08-26T00:01:03Z"
-    When time is updated to "2021-08-26T00:01:13Z"
+    Then the network moves ahead "11" blocks
 
-    Then the parties should have the following delegation balances for epoch 5:
+    Then the parties should have the following delegation balances for epoch 4:
     | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   | 
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   | 
 
-    When time is updated to "2021-08-26T00:01:14Z"
-    When time is updated to "2021-08-26T00:01:24Z"
+   Then the network moves ahead "11" blocks
 
-    Then the parties should have the following delegation balances for epoch 6:
+    Then the parties should have the following delegation balances for epoch 4:
     | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   | 
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   | 
 
   Scenario: A party changes delegation from one validator to another in the same epoch
     Desciption: A party can change delegatation from one Validator to another
