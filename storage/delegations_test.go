@@ -38,7 +38,6 @@ func setup(t *testing.T) *delegationTest {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(logging.NewTestLogger(), config)
 	delegationStore := storage.NewDelegations(logging.NewTestLogger(), config)
 	testService := delegationTest{
 		ds: delegationStore,

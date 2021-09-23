@@ -4,9 +4,11 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/data-node/config/encoding"
+	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
 	types "code.vegaprotocol.io/protos/vega"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -16,18 +18,18 @@ const (
 )
 
 func TestMarkets(t *testing.T) {
-	dir, tidy, err := storage.TempDir("marketstore-test")
-	if err != nil {
-		t.Fatalf("Failed to create tmp dir: %s", err.Error())
-	}
-	defer tidy()
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+
+	st, err := storage.InitialiseStorage(vegaPaths)
+	defer st.Purge()
+	require.NoError(t, err)
 
 	config := storage.Config{
 		Level:          encoding.LogLevel{Level: logging.DebugLevel},
 		Markets:        storage.DefaultMarketStoreOptions(),
-		MarketsDirPath: dir,
 	}
-	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), config, func() {})
+	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), st.MarketsHome, config, func() {})
 	assert.NoError(t, err)
 	assert.NotNil(t, marketStore)
 	if marketStore == nil {

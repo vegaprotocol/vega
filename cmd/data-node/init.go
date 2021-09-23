@@ -1,23 +1,19 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 
 	"code.vegaprotocol.io/data-node/config"
-	"code.vegaprotocol.io/data-node/fsutil"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
+	"code.vegaprotocol.io/shared/paths"
 
 	"github.com/jessevdk/go-flags"
-	"github.com/zannen/toml"
 )
 
 type InitCmd struct {
-	config.RootPathFlag
+	config.VegaHomeFlag
 
 	Force bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
 }
@@ -28,74 +24,43 @@ func (opts *InitCmd) Execute(_ []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
-	rootPathExists, err := fsutil.PathExists(opts.RootPath)
+	vegaPaths := paths.New(opts.VegaHome)
+
+	cfgLoader, err := config.InitialiseLoader(vegaPaths)
 	if err != nil {
-		if _, ok := err.(*fsutil.PathNotFound); !ok {
-			return err
-		}
+		return fmt.Errorf("couldn't initialise configuration loader: %w", err)
 	}
 
-	if rootPathExists && !opts.Force {
-		return fmt.Errorf("configuration already exists at `%v` please remove it first or re-run using -f", opts.RootPath)
-	}
-
-	if rootPathExists && opts.Force {
-		logger.Info("removing existing configuration", logging.String("path", opts.RootPath))
-		os.RemoveAll(opts.RootPath) // ignore any errors here to force removal
-	}
-
-	// create the root
-	if err = fsutil.EnsureDir(opts.RootPath); err != nil {
-		return err
-	}
-
-	fullCandleStorePath := filepath.Join(opts.RootPath, storage.CandlesDataPath)
-	fullOrderStorePath := filepath.Join(opts.RootPath, storage.OrdersDataPath)
-	fullTradeStorePath := filepath.Join(opts.RootPath, storage.TradesDataPath)
-	fullMarketStorePath := filepath.Join(opts.RootPath, storage.MarketsDataPath)
-
-	// create sub-folders
-	if err = fsutil.EnsureDir(fullCandleStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullOrderStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullTradeStorePath); err != nil {
-		return err
-	}
-	if err = fsutil.EnsureDir(fullMarketStorePath); err != nil {
-		return err
-	}
-
-	// generate a default configuration
-	cfg := config.NewDefaultConfig(opts.RootPath)
-
-	// write configuration to toml
-	buf := new(bytes.Buffer)
-	if err = toml.NewEncoder(buf).Encode(cfg); err != nil {
-		return err
-	}
-
-	// create the configuration file
-	f, err := os.Create(filepath.Join(opts.RootPath, "config.toml"))
+	configExists, err := cfgLoader.ConfigExists()
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't verify configuration presence: %w", err)
 	}
 
-	if _, err = f.WriteString(buf.String()); err != nil {
-		return err
+	if configExists && !opts.Force {
+		return fmt.Errorf("configuration already exists at `%s` please remove it first or re-run using -f", cfgLoader.ConfigFilePath())
 	}
 
-	logger.Info("configuration generated successfully", logging.String("path", opts.RootPath))
+	if configExists && opts.Force {
+		cfgLoader.Remove()
+	}
+
+	cfg := config.NewDefaultConfig()
+
+	if err := cfgLoader.Save(&cfg); err != nil {
+		return fmt.Errorf("couldn't save configuration file: %w", err)
+	}
+
+	if _, err = storage.InitialiseStorage(vegaPaths); err != nil {
+		return fmt.Errorf("couldn't initialise storage: %w", err)
+	}
+
+	logger.Info("configuration generated successfully", logging.String("path", cfgLoader.ConfigFilePath()))
 
 	return nil
 }
 
 func Init(ctx context.Context, parser *flags.Parser) error {
-	initCmd = InitCmd{
-		RootPathFlag: config.NewRootPathFlag(),
-	}
+	initCmd = InitCmd{}
 
 	short := "Initializes a vega node"
 	long := "Generate the minimal configuration required for a vega data-node to start"
