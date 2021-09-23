@@ -135,22 +135,22 @@ func (mr *MockTradingServiceClientMockRecorder) Statistics(arg0, arg1 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockTradingServiceClient)(nil).Statistics), varargs...)
 }
 
-// SubmitTransactionV2 mocks base method
-func (m *MockTradingServiceClient) SubmitTransactionV2(arg0 context.Context, arg1 *api.SubmitTransactionV2Request, arg2 ...grpc.CallOption) (*api.SubmitTransactionV2Response, error) {
+// SubmitTransaction mocks base method
+func (m *MockTradingServiceClient) SubmitTransaction(arg0 context.Context, arg1 *api.SubmitTransactionRequest, arg2 ...grpc.CallOption) (*api.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "SubmitTransactionV2", varargs...)
-	ret0, _ := ret[0].(*api.SubmitTransactionV2Response)
+	ret := m.ctrl.Call(m, "SubmitTransaction", varargs...)
+	ret0, _ := ret[0].(*api.SubmitTransactionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SubmitTransactionV2 indicates an expected call of SubmitTransactionV2
-func (mr *MockTradingServiceClientMockRecorder) SubmitTransactionV2(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// SubmitTransaction indicates an expected call of SubmitTransaction
+func (mr *MockTradingServiceClientMockRecorder) SubmitTransaction(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionV2", reflect.TypeOf((*MockTradingServiceClient)(nil).SubmitTransactionV2), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransaction", reflect.TypeOf((*MockTradingServiceClient)(nil).SubmitTransaction), varargs...)
 }

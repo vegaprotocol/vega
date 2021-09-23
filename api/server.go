@@ -33,6 +33,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -253,7 +254,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		tradingServiceClient: g.vegaTradingServiceClient,
 	}
 	g.tradingProxySvc = tradingProxySvc
-	protoapi.RegisterTradingProxyServiceServer(g.srv, tradingProxySvc)
+	vegaprotoapi.RegisterTradingServiceServer(g.srv, tradingProxySvc)
 
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,
