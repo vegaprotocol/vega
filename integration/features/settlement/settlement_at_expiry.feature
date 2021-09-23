@@ -11,6 +11,23 @@ Feature: Test settlement at expiry
       | property           | type           | binding              |
       | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
 
+    And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
+      | property         | type           | binding            |
+      | prices.ETH.value | TYPE_INTEGER   | settlement price   |
+
+    And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
+      | property           | type           | binding              |
+      | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
+
+
+    And the oracle spec for settlement price filtering data from "0xCAFECAFE2" named "ethDec22Oracle":
+      | property         | type           | binding            |
+      | prices.ETH.value | TYPE_INTEGER   | settlement price   |
+
+    And the oracle spec for trading termination filtering data from "0xCAFECAFE2" named "ethDec22Oracle":
+      | property           | type           | binding              |
+      | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
+
     And the following network parameters are set:
       | name                                                | value |
       | market.auction.minimumDuration                      | 1     |
@@ -36,13 +53,12 @@ Feature: Test settlement at expiry
     #   | 0.000001      | 0.1 | 0  | 1.4 | -1    |
 
     And the markets:
-      | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
-      | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | default-eth-for-future |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none | default-none     | ethDec20Oracle |
-      # | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
-      # | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
+      | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | default-eth-for-future |
+      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle         |
+      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle         |
+      | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec22Oracle         |
      
-
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
@@ -124,7 +140,7 @@ Feature: Test settlement at expiry
       | party2 | ETH   | ETH/DEC19 | 132    | 868     |
       | party3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the cumulated balance for all accounts should be worth "100236000"
+    And the cumulated balance for all accounts should be worth "100256000"
 
     # Close positions by aux parties
     When the parties place the following orders:
@@ -152,8 +168,10 @@ Feature: Test settlement at expiry
       | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "5000" for the asset "ETH"
-    And the insurance pool balance should be "15000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "2500" for the asset "ETH"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC20"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC21"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC22"
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses
     Given the initial insurance pool balance is "10000" for the markets:
