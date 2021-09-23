@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/spam"
-
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
@@ -28,6 +26,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
@@ -113,6 +112,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		assets,
 		notary,
 		broker,
+		topology,
 	)
 
 	exec := execution.NewEngine(
@@ -159,10 +159,9 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
-	spamEngine := spam.New(log, spam.NewDefaultConfig(), epochService, stakingAccount)
+	spamEngine := spam.New(log, spam.NewDefaultConfig(), epochService, stakingAccounts)
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
-	stakingA := mocks.NewMockStakingAccounts(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	app := processor.NewApp(
 		log,
@@ -191,7 +190,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		delegationEngine,
 		limits,
 		stakeV,
-		stakingA,
 		cp,
 		spamEngine,
 	)

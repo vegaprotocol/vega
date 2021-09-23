@@ -102,12 +102,14 @@ func (n *Notary) ReloadConf(cfg Config) {
 	n.cfg = cfg
 }
 
-func (n *Notary) StartAggregate(resID string, kind commandspb.NodeSignatureKind) error {
+func (n *Notary) StartAggregate(resID string, kind commandspb.NodeSignatureKind) {
 	if _, ok := n.sigs[idKind{resID, kind}]; ok {
-		return ErrAggregateSigAlreadyStartedForResource
+		n.log.Panic("aggregate already started for a resource",
+			logging.String("resource", resID),
+			logging.String("signature-kind", kind.String()),
+		)
 	}
 	n.sigs[idKind{resID, kind}] = map[nodeSig]struct{}{}
-	return nil
 }
 
 func (n *Notary) AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error) {

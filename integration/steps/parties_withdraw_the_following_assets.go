@@ -16,23 +16,12 @@ func PartiesWithdrawTheFollowingAssets(
 	for _, r := range parseWithdrawAssetTable(table) {
 		row := withdrawAssetRow{row: r}
 
-		_, err := collateral.LockFundsForWithdraw(context.Background(), row.Party(), row.Asset(), row.Amount())
-		if err != nil {
-			return errCannotLockFundsForWithdrawal(row, err)
-		}
-
-		_, err = collateral.Withdraw(context.Background(), row.Party(), row.Asset(), row.Amount())
+		_, err := collateral.Withdraw(context.Background(), row.Party(), row.Asset(), row.Amount())
 		if err := checkExpectedError(row, err); err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func errCannotLockFundsForWithdrawal(row withdrawAssetRow, err error) error {
-	return fmt.Errorf("couldn't lock funds for withdrawal of amount(%d) for party(%s), asset(%s): %s",
-		row.Amount(), row.Party(), row.Asset(), err.Error(),
-	)
 }
 
 func parseWithdrawAssetTable(table *godog.Table) []RowWrapper {

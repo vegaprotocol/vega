@@ -211,7 +211,6 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.delegation,
 		l.limits,
 		l.stakeVerifier,
-		l.stakingAccounts,
 		l.checkpoint,
 		l.spam,
 	)
@@ -360,7 +359,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
-	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
+	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker, l.topology)
+	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
@@ -373,8 +373,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
 	l.timeService.NotifyOnTick(l.confWatcher.OnTimeUpdate)
-
-	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches
@@ -515,6 +513,30 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.NetworkCheckpointTimeElapsedBetweenCheckpoints,
 			Watcher: l.checkpoint.OnTimeElapsedUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxVotes,
+			Watcher: l.spam.OnMaxVotesChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxProposals,
+			Watcher: l.spam.OnMaxProposalsChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxDelegations,
+			Watcher: l.spam.OnMaxDelegationsChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForProposal,
+			Watcher: l.spam.OnMinTokensForProposalChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForVoting,
+			Watcher: l.spam.OnMinTokensForVotingChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForDelegation,
+			Watcher: l.spam.OnMinTokensForDelegationChanged,
 		},
 	)
 }

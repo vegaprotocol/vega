@@ -37,7 +37,7 @@ type EpochEngine interface {
 }
 
 //Delegation engine for getting validation data
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards DelegationEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards Delegation
 type Delegation interface {
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 }

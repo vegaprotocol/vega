@@ -1,8 +1,12 @@
 package spam
 
 import (
+	"errors"
+	"sync"
+
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -19,21 +23,23 @@ func (b *blockRejectInfo) add(rejected bool) {
 	}
 }
 
-var minVotingTokens, _ = num.UintFromString("100000000000000000000", 10)
 var maxMinVotingTokens, _ = num.UintFromString("1600000000000000000000", 10)
-var increaseFactor = num.NewUint(2)
-
-const (
-	rejectRatioForIncrease         float64 = 0.3
-	numberOfEpochsBan              uint64  = 3
-	numberOfBlocksForIncreaseCheck int     = 10
-	banFactor                              = 0.5
-	numVotes                       uint64  = 3
+var (
+	//ErrPartyIsBannedFromVoting is returned when the party is banned from voting
+	ErrPartyIsBannedFromVoting = errors.New("party is banned from submitting votes in the current epoch")
+	//ErrInsufficientTokensForVoting is returned when the party has insufficient tokens for voting
+	ErrInsufficientTokensForVoting = errors.New("party has insufficient tokens to submit votes in this epoch")
+	//ErrTooManyVotes is returned when the party has voted already the maximum allowed votes per proposal per epoch
+	ErrTooManyVotes = errors.New("party has already voted the maximum number of times per proposal per epoch")
 )
 
 type VoteSpamPolicy struct {
+	log             *logging.Logger
 	numVotes        uint64
 	minVotingTokens *num.Uint
+
+	minTokensParamName  string
+	maxAllowedParamName string
 
 	minVotingTokensFactor   *num.Uint                                        // a factor applied on the min voting tokens
 	effectiveMinTokens      *num.Uint                                        // minVotingFactor * minVotingTokens
@@ -47,27 +53,58 @@ type VoteSpamPolicy struct {
 	currentBlockIndex       int                                              // the index of the current block in the circular buffer <recentBlocksRejectStats>
 	lastIncreaseBlock       uint64                                           // the last block we've increased the number of <minVotingTokens>
 	currentEpochSeq         uint64                                           // the sequence id of the current epoch
+	lock                    sync.RWMutex                                     // global lock to sync calls from multiple tendermint threads
 }
 
-func NewVoteSpamPolicy() *VoteSpamPolicy {
+//NewVoteSpamPolicy instantiates vote spam policy
+func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *VoteSpamPolicy {
 	return &VoteSpamPolicy{
-		numVotes:              numVotes,
-		minVotingTokens:       minVotingTokens.Clone(),
+		log:                   log,
 		minVotingTokensFactor: num.NewUint(1),
-		effectiveMinTokens:    minVotingTokens.Clone(),
-		partyToVote:           map[string]map[string]uint64{},
-		blockPartyToVote:      map[string]map[string]uint64{},
-		bannedParties:         map[string]uint64{},
-		tokenBalance:          map[string]*num.Uint{},
-		blockPostRejects:      &blockRejectInfo{total: 0, rejected: 0},
-		partyBlockRejects:     map[string]*blockRejectInfo{},
-		currentBlockIndex:     0,
-		lastIncreaseBlock:     0,
+
+		partyToVote:         map[string]map[string]uint64{},
+		blockPartyToVote:    map[string]map[string]uint64{},
+		bannedParties:       map[string]uint64{},
+		tokenBalance:        map[string]*num.Uint{},
+		blockPostRejects:    &blockRejectInfo{total: 0, rejected: 0},
+		partyBlockRejects:   map[string]*blockRejectInfo{},
+		currentBlockIndex:   0,
+		lastIncreaseBlock:   0,
+		lock:                sync.RWMutex{},
+		minTokensParamName:  minTokensParamName,
+		maxAllowedParamName: maxAllowedParamName,
 	}
+}
+
+//UpdateUintParam is called to update Uint net params for the policy
+//Specifically the min tokens required for voting
+func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
+	if name == vsp.minTokensParamName {
+		vsp.minVotingTokens = value.Clone()
+		//NB: this means that if during the epoch the min tokens changes externally
+		// and we already have a factor on it, the factor will be applied on the new value for the duration of the epoch
+		vsp.effectiveMinTokens = num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor)
+	} else {
+		return errors.New("unknown parameter for vote spam policy")
+	}
+	return nil
+}
+
+//UpdateIntParam is called to update iint net params for the policy
+//Specifically the number of votes to a proposal a party can submit in an epoch
+func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int64) error {
+	if name == vsp.maxAllowedParamName {
+		vsp.numVotes = uint64(value)
+	} else {
+		return errors.New("unknown parameter for vote spam policy")
+	}
+	return nil
 }
 
 //Reset is called at the beginning of an epoch to reset the settings for the epoch
 func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint) {
+	vsp.lock.Lock()
+	defer vsp.lock.Unlock()
 	// reset the token count factor to 1
 	vsp.minVotingTokensFactor = num.NewUint(1)
 	vsp.effectiveMinTokens = vsp.minVotingTokens
@@ -108,6 +145,8 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*nu
 
 //EndOfBlock is called at the end of the block to allow updating of the state for the next block
 func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
+	vsp.lock.Lock()
+	defer vsp.lock.Unlock()
 	// add the block's vote counters to the epoch's
 	for p, v := range vsp.blockPartyToVote {
 		if _, ok := vsp.partyToVote[p]; !ok {
@@ -121,6 +160,8 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 			vsp.partyToVote[p][proposalID] = vsp.partyToVote[p][proposalID] + votes
 		}
 	}
+
+	vsp.blockPartyToVote = map[string]map[string]uint64{}
 
 	// ban parties with more than <banFactor> rejection rate in the block
 	for p, bStats := range vsp.partyBlockRejects {
@@ -163,6 +204,9 @@ func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
 func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 
+	vsp.lock.Lock()
+	defer vsp.lock.Unlock()
+
 	vote := &commandspb.VoteSubmission{}
 	if err := tx.Unmarshal(vote); err != nil {
 		vsp.blockPostRejects.add(true)
@@ -195,6 +239,8 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 		} else {
 			vsp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
+		vsp.log.Error("Spam post: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", epochVotes+blockVotes), logging.Uint64("maxAllowed", vsp.numVotes))
+
 		return false, ErrTooManyVotes
 	}
 
@@ -225,13 +271,18 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 
+	vsp.lock.RLock()
+	defer vsp.lock.RUnlock()
+
 	_, ok := vsp.bannedParties[party]
 	if ok {
+		vsp.log.Error("Spam pre: party is banned from voting", logging.String("party", party))
 		return false, ErrPartyIsBannedFromVoting
 	}
 
 	// check if the party has enough balance to submit votes
 	if balance, ok := vsp.tokenBalance[party]; !ok || balance.LT(vsp.effectiveMinTokens) {
+		vsp.log.Error("Spam pre: party has insufficient balance for voting", logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		return false, ErrInsufficientTokensForVoting
 	}
 
@@ -244,6 +295,7 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	// Check we have not exceeded our vote limit for this given proposal in this epoch
 	if partyVotes, ok := vsp.partyToVote[party]; ok {
 		if voteCount, ok := partyVotes[vote.ProposalId]; ok && voteCount >= vsp.numVotes {
+			vsp.log.Error("Spam pre: party has already voted for proposal the max amount of votes", logging.String("party", party), logging.String("proposal", vote.ProposalId), logging.Uint64("voteCount", voteCount), logging.Uint64("maxAllowed", vsp.numVotes))
 			return false, ErrTooManyVotes
 		}
 	}

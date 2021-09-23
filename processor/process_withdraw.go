@@ -24,13 +24,13 @@ func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission
 
 	switch {
 	case asset.IsBuiltinAsset():
-		return app.banking.WithdrawalBuiltinAsset(ctx, id, party, w.Asset, w.Amount)
+		return app.banking.WithdrawBuiltinAsset(ctx, id, party, w.Asset, w.Amount)
 	case asset.IsERC20():
 		ext := w.Ext.GetErc20()
 		if ext == nil {
 			return ErrMissingWithdrawERC20Ext
 		}
-		return app.banking.LockWithdrawalERC20(ctx, id, party, w.Asset, w.Amount, ext)
+		return app.banking.WithdrawERC20(ctx, id, party, w.Asset, w.Amount, ext)
 	}
 
 	return errors.New("unimplemented withdrawal")
