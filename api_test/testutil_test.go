@@ -78,8 +78,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 
 	mockTradingServiceClient := apimocks.NewMockTradingServiceClient(mockCtrl)
 	mockTradingServiceClient.EXPECT().
-		SubmitTransactionV2(gomock.Any(), gomock.Any()).
-		Return(&vegaprotoapi.SubmitTransactionV2Response{}, nil)
+		SubmitTransaction(gomock.Any(), gomock.Any()).
+		Return(&vegaprotoapi.SubmitTransactionResponse{}, nil)
 
 	ctx, cancel := context.WithCancel(ctx)
 

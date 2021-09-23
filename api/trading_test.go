@@ -327,8 +327,8 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 		defer tidy()
 
-		req := &protoapi.SubmitTransactionRequest{
-			Type: protoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED,
+		req := &vegaprotoapi.SubmitTransactionRequest{
+			Type: vegaprotoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED,
 			Tx: &commandspb.Transaction{
 				InputData: []byte("input data"),
 				Signature: &commandspb.Signature{
@@ -339,10 +339,10 @@ func TestSubmitTransaction(t *testing.T) {
 			},
 		}
 
-		expectedRes := &protoapi.SubmitTransactionResponse{Success: true}
+		expectedRes := &vegaprotoapi.SubmitTransactionResponse{Success: true}
 
-		vegaReq := &vegaprotoapi.SubmitTransactionV2Request{
-			Type: vegaprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED,
+		vegaReq := &vegaprotoapi.SubmitTransactionRequest{
+			Type: vegaprotoapi.SubmitTransactionRequest_TYPE_UNSPECIFIED,
 			Tx: &commandspb.Transaction{
 				InputData: []byte("input data"),
 				Signature: &commandspb.Signature{
@@ -354,10 +354,10 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitTransactionV2(gomock.Any(), vegaReq).
-			Return(&vegaprotoapi.SubmitTransactionV2Response{Success: true}, nil).Times(1)
+			SubmitTransaction(gomock.Any(), vegaReq).
+			Return(&vegaprotoapi.SubmitTransactionResponse{Success: true}, nil).Times(1)
 
-		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
+		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
@@ -375,8 +375,8 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 		defer tidy()
 
-		req := &protoapi.SubmitTransactionRequest{
-			Type: protoapi.SubmitTransactionRequest_TYPE_COMMIT,
+		req := &vegaprotoapi.SubmitTransactionRequest{
+			Type: vegaprotoapi.SubmitTransactionRequest_TYPE_COMMIT,
 			Tx: &commandspb.Transaction{
 				InputData: []byte("input data"),
 				Signature: &commandspb.Signature{
@@ -387,8 +387,8 @@ func TestSubmitTransaction(t *testing.T) {
 			},
 		}
 
-		vegaReq := &vegaprotoapi.SubmitTransactionV2Request{
-			Type: vegaprotoapi.SubmitTransactionV2Request_TYPE_COMMIT,
+		vegaReq := &vegaprotoapi.SubmitTransactionRequest{
+			Type: vegaprotoapi.SubmitTransactionRequest_TYPE_COMMIT,
 			Tx: &commandspb.Transaction{
 				InputData: []byte("input data"),
 				Signature: &commandspb.Signature{
@@ -400,10 +400,10 @@ func TestSubmitTransaction(t *testing.T) {
 		}
 
 		mockTradingServiceClient.EXPECT().
-			SubmitTransactionV2(gomock.Any(), vegaReq).
+			SubmitTransaction(gomock.Any(), vegaReq).
 			Return(nil, errors.New("Critical error"))
 
-		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
+		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
@@ -424,8 +424,8 @@ func TestLastBlockHeight(t *testing.T) {
 		}
 		defer tidy()
 
-		req := &protoapi.LastBlockHeightRequest{}
-		expectedRes := &protoapi.LastBlockHeightResponse{Height: 20}
+		req := &vegaprotoapi.LastBlockHeightRequest{}
+		expectedRes := &vegaprotoapi.LastBlockHeightResponse{Height: 20}
 
 		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
 
@@ -433,7 +433,7 @@ func TestLastBlockHeight(t *testing.T) {
 			LastBlockHeight(gomock.Any(), vegaReq).
 			Return(&vegaprotoapi.LastBlockHeightResponse{Height: 20}, nil).Times(1)
 
-		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
+		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
@@ -448,14 +448,14 @@ func TestLastBlockHeight(t *testing.T) {
 		}
 		defer tidy()
 
-		req := &protoapi.LastBlockHeightRequest{}
+		req := &vegaprotoapi.LastBlockHeightRequest{}
 		vegaReq := &vegaprotoapi.LastBlockHeightRequest{}
 
 		mockTradingServiceClient.EXPECT().
 			LastBlockHeight(gomock.Any(), vegaReq).
 			Return(nil, fmt.Errorf("Critical error")).Times(1)
 
-		proxyClient := protoapi.NewTradingProxyServiceClient(conn)
+		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)

@@ -33,6 +33,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -76,6 +77,8 @@ type GRPCServer struct {
 	checkpointSvc           *checkpoint.Svc
 
 	marketDepthService *subscribers.MarketDepthBuilder
+
+	eventObserver *eventObserver
 
 	// used in order to gracefully close streams
 	ctx   context.Context
@@ -149,8 +152,13 @@ func NewGRPCServer(
 		rewardsService:           rewardsService,
 		stakingService:           stakingService,
 		checkpointSvc:            checkpointSvc,
-		ctx:                      ctx,
-		cfunc:                    cfunc,
+		eventObserver: &eventObserver{
+			log:          log,
+			eventService: eventService,
+			Config:       config,
+		},
+		ctx:   ctx,
+		cfunc: cfunc,
 	}
 }
 
@@ -251,9 +259,10 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		log:                  g.log,
 		conf:                 g.Config,
 		tradingServiceClient: g.vegaTradingServiceClient,
+		eventObserver:        g.eventObserver,
 	}
 	g.tradingProxySvc = tradingProxySvc
-	protoapi.RegisterTradingProxyServiceServer(g.srv, tradingProxySvc)
+	vegaprotoapi.RegisterTradingServiceServer(g.srv, tradingProxySvc)
 
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,
