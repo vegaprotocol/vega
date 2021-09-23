@@ -28,6 +28,7 @@
 - [4042](https://github.com/vegaprotocol/vega/pull/4042) - Extended delegation rewards feature test scenario edits
 - [4034](https://github.com/vegaprotocol/vega/pull/4034) - Update integration tests now TxErr events are not sent in the execution package
 - [4106](https://github.com/vegaprotocol/vega/pull/4106) - Fix a panic when reloading checkpoints
+- [4115](https://github.com/vegaprotocol/vega/pull/4115) - Use block height in checkpoint file names
 
 ## 0.42.0
 *2021-09-10*
