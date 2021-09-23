@@ -36,7 +36,7 @@ func (m *MockChain) EXPECT() *MockChainMockRecorder {
 }
 
 // SubmitTransactionV2 mocks base method
-func (m *MockChain) SubmitTransactionV2(arg0 context.Context, arg1 *v1.Transaction, arg2 api.SubmitTransactionV2Request_Type) error {
+func (m *MockChain) SubmitTransactionV2(arg0 context.Context, arg1 *v1.Transaction, arg2 api.SubmitTransactionRequest_Type) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransactionV2", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
