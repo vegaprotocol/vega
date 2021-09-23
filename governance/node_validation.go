@@ -1,11 +1,13 @@
 package governance
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -63,6 +65,26 @@ func NewNodeValidation(
 		currentTimestamp: now,
 		witness:          witness,
 	}
+}
+
+func (n *NodeValidation) Hash() []byte {
+	// 32 -> len(proposal.ID) = 32 bytes pubkey
+	// vote counts = 3*uint64
+	output := make([]byte, len(n.nodeProposals)*(32+8*3))
+	var i int
+	for _, k := range n.nodeProposals {
+		idbytes := []byte(k.ID)
+		copy(output[i:], idbytes[:])
+		i += 32
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.yes)))
+		i += 8
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.no)))
+		i += 8
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.invalidVotes)))
+		i += 8
+	}
+
+	return vgcrypto.Hash(output)
 }
 
 func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
