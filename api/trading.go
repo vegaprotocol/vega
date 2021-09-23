@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/metrics"
 	protoapi "code.vegaprotocol.io/protos/vega/api"
 	"github.com/pkg/errors"
 )
@@ -23,6 +24,7 @@ type tradingProxyService struct {
 	conf Config
 
 	tradingServiceClient TradingServiceClient
+	eventObserver        *eventObserver
 }
 
 func (s *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
@@ -55,7 +57,8 @@ func (t *tradingProxyService) Statistics(ctx context.Context, req *protoapi.Stat
 
 func (t *tradingProxyService) ObserveEventBus(
 	stream protoapi.TradingService_ObserveEventBusServer) error {
-	return nil
+	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
+	return t.eventObserver.ObserveEventBus(stream)
 }
 
 func (t *tradingProxyService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {

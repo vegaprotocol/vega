@@ -78,6 +78,8 @@ type GRPCServer struct {
 
 	marketDepthService *subscribers.MarketDepthBuilder
 
+	eventObserver *eventObserver
+
 	// used in order to gracefully close streams
 	ctx   context.Context
 	cfunc context.CancelFunc
@@ -150,8 +152,13 @@ func NewGRPCServer(
 		rewardsService:           rewardsService,
 		stakingService:           stakingService,
 		checkpointSvc:            checkpointSvc,
-		ctx:                      ctx,
-		cfunc:                    cfunc,
+		eventObserver: &eventObserver{
+			log:          log,
+			eventService: eventService,
+			Config:       config,
+		},
+		ctx:   ctx,
+		cfunc: cfunc,
 	}
 }
 
@@ -252,6 +259,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		log:                  g.log,
 		conf:                 g.Config,
 		tradingServiceClient: g.vegaTradingServiceClient,
+		eventObserver:        g.eventObserver,
 	}
 	g.tradingProxySvc = tradingProxySvc
 	vegaprotoapi.RegisterTradingServiceServer(g.srv, tradingProxySvc)
