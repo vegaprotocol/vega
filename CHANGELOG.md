@@ -14,6 +14,12 @@
 - [4017](https://github.com/vegaprotocol/vega/pull/4017) - Migrate wallet to XGD file structure
 - [4024](https://github.com/vegaprotocol/vega/pull/4024) - Extend delegation rewards feature test scenarios
 - [4035](https://github.com/vegaprotocol/vega/pull/4035) - Implement multisig control signatures
+- [4083](https://github.com/vegaprotocol/vega/pull/4083) - Remove expiry support for withdrawals
+- [4068](https://github.com/vegaprotocol/vega/pull/4068) - Allow proposal votes to happen during the validation period
+- [4088](https://github.com/vegaprotocol/vega/pull/4088) - Implements the simple JSON oracle source
+- [4105](https://github.com/vegaprotocol/vega/pull/4105) - Add more hashes to the app state hash
+- [4107](https://github.com/vegaprotocol/vega/pull/4107) - Remove the trading proxy service
+- [4101](https://github.com/vegaprotocol/vega/pull/4101) - Remove dependency to the Ethereum client from the Ethereum wallet
 
 ### Fixes
 - [4053](https://github.com/vegaprotocol/vega/pull/4053) - Fix readme explanation for log levels
@@ -21,7 +27,7 @@
 - [4040](https://github.com/vegaprotocol/vega/pull/4040) - Fix bug where the withdrawal signature uses uint64
 - [4042](https://github.com/vegaprotocol/vega/pull/4042) - Extended delegation rewards feature test scenario edits
 - [4034](https://github.com/vegaprotocol/vega/pull/4034) - Update integration tests now TxErr events are not sent in the execution package
-
+- [4106](https://github.com/vegaprotocol/vega/pull/4106) - Fix a panic when reloading checkpoints
 
 ## 0.42.0
 *2021-09-10*
