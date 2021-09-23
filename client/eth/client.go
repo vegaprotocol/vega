@@ -10,6 +10,7 @@ import (
 
 	types "code.vegaprotocol.io/protos/vega"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -70,7 +71,11 @@ func (c *Client) setEthereumConfig(ethConfig *types.EthereumConfig) error {
 	return nil
 }
 
-func (c *Client) BridgeAddress() string {
+func (c *Client) BridgeAddress() ethcommon.Address {
+	return ethcommon.HexToAddress(c.ethConfig.BridgeAddress)
+}
+
+func (c *Client) BridgeAddressHex() string {
 	return c.ethConfig.BridgeAddress
 }
 
