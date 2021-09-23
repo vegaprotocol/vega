@@ -14,7 +14,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
 
-      
+
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
 
@@ -187,7 +187,40 @@ Feature: Staking & Delegation
     | party  | node id  | amount |
     | party1 |  node1   | 1500   | 
     | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   |   
+    | party1 |  node3   | 1507   | 
+
+    Then the network moves ahead "11" blocks
+    
+    # amounts remain constant even as total delegated amount changes (due to application of the cap)
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 1507   |       
+    | party1 |  node3   | 1507   | 
+
+    Then the network moves ahead "1" blocks
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |     when     |
+    | party1 |  node1   |  500   | end of epoch | 
+    | party1 |  node2   |  500   | end of epoch |     
+    | party1 |  node3   |  500   | end of epoch | 
+
+    Then the network moves ahead "10" blocks
+
+    Then the parties should have the following delegation balances for epoch 4:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   | 
+
+    Then the network moves ahead "22" blocks
+
+    Then the parties should have the following delegation balances for epoch 6:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   | 
 
     And the network moves ahead "1" blocks
 
