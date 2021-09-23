@@ -200,7 +200,8 @@ Feature: Staking & Delegation
     | party1 |  node2   |  500   | end of epoch |     
     | party1 |  node3   |  500   | end of epoch | 
 
-    Then the network moves ahead "10" blocks
+     Then the network moves ahead "10" blocks
+    # Then the network moves ahead "11" blocks
 
     Then the parties should have the following delegation balances for epoch 4:
     | party  | node id  | amount |
@@ -210,7 +211,7 @@ Feature: Staking & Delegation
 
     Then the network moves ahead "11" blocks
 
-    Then the parties should have the following delegation balances for epoch 4:
+    Then the parties should have the following delegation balances for epoch 5:
     | party  | node id  | amount |
     | party1 |  node1   | 1000   | 
     | party1 |  node2   | 1007   |       
@@ -218,7 +219,7 @@ Feature: Staking & Delegation
 
    Then the network moves ahead "11" blocks
 
-    Then the parties should have the following delegation balances for epoch 4:
+    Then the parties should have the following delegation balances for epoch 6:
     | party  | node id  | amount |
     | party1 |  node1   | 1000   | 
     | party1 |  node2   | 1007   |       
