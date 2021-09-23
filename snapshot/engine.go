@@ -55,6 +55,7 @@ type Engine struct {
 	avl        *iavl.MutableTree
 	namespaces []string
 	keys       [][]byte
+	sKeys      []string
 	nsKeys     map[string][]string
 	nsTreeKeys map[string][][]byte
 	hashes     map[string][]byte
@@ -104,14 +105,14 @@ func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) 
 }
 
 // List returns all snapshots available
-func (e *Engine) List() ([]*types.TMSnapshot, error) {
-	trees := make([]*types.TMSnapshot, 0, len(e.versions))
+func (e *Engine) List() ([]*types.Snapshot, error) {
+	trees := make([]*types.Snapshot, 0, len(e.versions))
 	for _, v := range e.versions {
 		tree, err := e.avl.GetImmutable(v)
 		if err != nil {
 			return nil, err
 		}
-		snap, err := types.NewTMSnapshotFromIAVL(tree, e.nsTreeKeys)
+		snap, err := types.SnapshotFromIAVL(tree, e.sKeys)
 		if err != nil {
 			return nil, err
 		}
@@ -225,6 +226,7 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 			nsTreeKeys := make([][]byte, 0, len(keys))
 			for _, k := range keys {
 				key := strings.Join([]string{ns, k}, ".")
+				e.sKeys = append(e.sKeys, key)
 				nsTreeKeys = append(nsTreeKeys, []byte(key))
 			}
 			e.nsTreeKeys[ns] = nsTreeKeys
@@ -242,6 +244,7 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 		nsTreeKeys := e.nsTreeKeys[ns]
 		for _, k := range dedup {
 			key := strings.Join([]string{ns, k}, ".")
+			e.sKeys = append(e.sKeys, key)
 			nsTreeKeys = append(nsTreeKeys, []byte(key))
 		}
 		e.nsTreeKeys[ns] = nsTreeKeys
