@@ -46,7 +46,7 @@ To install `trading-core` and `tendermint`, see [Getting Started](GETTING_STARTE
 
 ## Configuration
 
-Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults edit your `config.toml` typically found in the `~/.vega` directory. Example:
+Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults, edit your `config.toml`. Example:
 
 ```toml
 [Matching]
@@ -56,15 +56,10 @@ Vega is initialised with a set of default configuration with the command `vega i
   LogRemovedOrdersDebug = false
 ```
 
-Vega require a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
-The nodewallet can be accessed using the nodewallet subcommand, this nodewallet is initialized / accessed using a passphrase that needs to be specified when initializing vega:
-```shell
-vega init
-```
-
-The init command can also be invoked with a flag in order to generate development purpose only wallets so you do not have to use real wallets when hacking on the code:
-```
-vega init
+Vega requires a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
+The node wallets can be accessed using the `nodewallet` subcommand, these node wallets are initialized / accessed using a passphrase that needs to be specified when initializing Vega:
+```she
+vega init --nodewallet-passphrase-file "my-passphrase-file.txt"
 ```
 
 ### Files location
@@ -82,16 +77,16 @@ apply system-wide.
 If you don't want to rely on the default XDG paths, you can use the `--home`
 flag on the command-line.
 
-## Vega NodeWallet
+## Vega node wallets
 
-A vega node needs to connect to other blockchain for various operation:
+A Vega node needs to connect to other blockchain for various operation:
 - validate transaction happened on foreign chains
 - verify presence of assets
 - sign transaction to be verified on foreign blockchain
 - and more...
 
-In order to do these different action, the vega node needs to access these chains using their native wallet. To do so the vega command line provide an command line tool:
-`vega nodewallet` allowing users to import foreign blockchain wallets credentials so they can be used at runtime.
+In order to do these different action, the vega node needs to access these chains using their native wallet. To do so the vega command line provide a command line tool:
+`vega nodewallet` allowing users to import foreign blockchain wallets credentials, so they can be used at runtime.
 
 For more details on how to use the vega nodewallet run:
 ```
