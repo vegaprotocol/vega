@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -85,4 +86,9 @@ type GovernanceEngine interface {
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
 	Hash() []byte
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination eth_client_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks ETHClient
+type ETHClient interface {
+	eth.ETHClient
 }
