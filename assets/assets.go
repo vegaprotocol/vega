@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/nodewallet/eth"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -46,10 +45,10 @@ type Service struct {
 	pendingAssets map[string]*Asset
 
 	nw        NodeWallet
-	ethClient eth.ETHClient
+	ethClient erc20.ETHClient
 }
 
-func New(log *logging.Logger, cfg Config, nw NodeWallet, ethClient eth.ETHClient, ts TimeService) *Service {
+func New(log *logging.Logger, cfg Config, nw NodeWallet, ethClient erc20.ETHClient, ts TimeService) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 

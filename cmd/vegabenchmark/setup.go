@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/checkpoint"
+	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/crypto"
@@ -34,7 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/cenkalti/backoff"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
@@ -48,8 +48,9 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	notary := mocks.NewMockNotary(ctrl)
 	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
 
+	ctx := context.Background()
 	// instantiate the ETHClient
-	ethClient, err := ethclient.Dial(nodewallet.NewDefaultConfig().ETH.Address)
+	ethClient, err := ethclient.Dial(ctx, nodewallet.NewDefaultConfig().ETH.Address)
 	if err != nil {
 		return nil, nil, err
 	}

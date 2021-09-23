@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
+	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/coreapi"
@@ -46,7 +47,6 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"google.golang.org/grpc"
 )
