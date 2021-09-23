@@ -51,11 +51,16 @@ var (
 		"staking":    StakingSnapshot,
 	}
 
+	ErrSnapshotHashMismatch      = errors.New("snapshot hashes do not match")
+	ErrSnapshotMetaMismatch      = errors.New("snapshot metadata does not match")
 	ErrUnknownSnapshotNamespace  = errors.New("unknown snapshot namespace")
 	ErrNoPrefixFound             = errors.New("no prefix in chunk keys")
 	ErrInconsistentNamespaceKeys = errors.New("chunk contains several namespace keys")
 	ErrChunkHashMismatch         = errors.New("loaded chunk hash does not match metadata")
 	ErrChunkOutOfRange           = errors.New("chunk number out of range")
+	ErrUnknownSnapshot           = errors.New("no shapshot to reject")
+	ErrMissingChunks             = errors.New("missing previous chunks")
+	ErrSnapshotRetryLimit        = errors.New("could not load snapshot, retry limit reached")
 )
 
 type SnapshotFormat = snapshot.Format
@@ -66,6 +71,11 @@ const (
 	SnapshotFormatProtoCompressed = snapshot.Format_FORMAT_PROTO_COMPRESSED
 	SnapshotFormatJSON            = snapshot.Format_FORMAT_JSON
 )
+
+type RawChunk struct {
+	Nr   uint32
+	Data []byte
+}
 
 func SnapshotFromTM(tms *tmtypes.Snapshot) (*Snapshot, error) {
 	snap := Snapshot{
@@ -86,6 +96,16 @@ func SnapshotFromTM(tms *tmtypes.Snapshot) (*Snapshot, error) {
 	}
 	snap.Meta = md
 	return &snap, nil
+}
+
+func (s Snapshot) ToTM() *tmtypes.Snapshot {
+	return &tmtypes.Snapshot{
+		Height:   s.Height,
+		Format:   uint32(s.Format),
+		Chunks:   s.Chunks,
+		Hash:     s.Hash,
+		Metadata: s.Metadata,
+	}
 }
 
 func SnapshotFromIAVL(tree *iavl.ImmutableTree, keys []string) (*Snapshot, error) {
@@ -119,6 +139,23 @@ func SnapshotFromIAVL(tree *iavl.ImmutableTree, keys []string) (*Snapshot, error
 	// divide into chunks, and set the meta...
 	snap.nodesToChunks()
 	return &snap, nil
+}
+
+func (s *Snapshot) ValidateMeta(other *Snapshot) error {
+	if len(s.Meta.ChunkHashes) != len(other.Meta.ChunkHashes) || len(s.Meta.NodeHashes) != len(other.Meta.NodeHashes) {
+		return ErrSnapshotMetaMismatch
+	}
+	for i := range s.Meta.ChunkHashes {
+		if other.Meta.ChunkHashes[i] != s.Meta.ChunkHashes[i] {
+			return ErrSnapshotMetaMismatch
+		}
+	}
+	for i := range s.Meta.NodeHashes {
+		if other.Meta.NodeHashes[i].Hash != s.Meta.NodeHashes[i].Hash {
+			return ErrSnapshotMetaMismatch
+		}
+	}
+	return nil
 }
 
 func (s *Snapshot) nodesToChunks() {
@@ -171,28 +208,43 @@ func (s *Snapshot) hashChunks() {
 	}
 }
 
-func (s *Snapshot) LoadChunk(nr uint32, data []byte) error {
-	if nr > s.Chunks {
+func (s *Snapshot) LoadChunk(chunk *RawChunk) error {
+	if chunk.Nr > s.Chunks {
 		return ErrChunkOutOfRange
 	}
 	if len(s.ByteChunks) == 0 {
 		s.ByteChunks = make([][]byte, int(s.Chunks))
 	}
-	i := int(nr)
+	i := int(chunk.Nr)
 	if len(s.Meta.ChunkHashes) <= i {
 		return ErrChunkOutOfRange
 	}
-	hash := hex.EncodeToString(crypto.Hash(data))
+	hash := hex.EncodeToString(crypto.Hash(chunk.Data))
 	if s.Meta.ChunkHashes[i] != hash {
 		return ErrChunkHashMismatch
 	}
-	s.ByteChunks[i] = data
-	s.byteLen += len(data)
+	s.ByteChunks[i] = chunk.Data
+	s.byteLen += len(chunk.Data)
 	s.ChunksSeen += 1
 	if s.Chunks == s.ChunksSeen {
 		return s.unmarshalChunks()
 	}
+	// this ought to be the last one, but we're clearly missing some
+	if j := i + 1; j == int(s.Chunks) {
+		return ErrMissingChunks
+	}
 	return nil
+}
+
+func (s Snapshot) GetMissing() []uint32 {
+	// no need to check seen vs expected, seen will always be smaller
+	ids := make([]uint32, 0, int(s.Chunks-s.ChunksSeen))
+	for i := range s.ByteChunks {
+		if len(s.ByteChunks) == 0 {
+			ids = append(ids, uint32(i))
+		}
+	}
+	return ids
 }
 
 func (s *Snapshot) unmarshalChunks() error {

@@ -66,6 +66,9 @@ type Engine struct {
 	last    *iavl.ImmutableTree
 	hash    []byte
 	version int64
+
+	snapshot  *types.Snapshot
+	snapRetry int
 }
 
 // New returns a new snapshot engine
@@ -119,6 +122,60 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 		trees = append(trees, snap)
 	}
 	return trees, nil
+}
+
+func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
+	if e.snapshot != nil {
+		// in case other peers provide snapshots, check if their hashes match what we want
+		if !bytes.Compare(e.snapshot.Hash, snap.Hash) {
+			return types.ErrSnapshotHashMismatch
+		}
+		return e.snapshot.ValidateMeta(snap)
+	}
+	// @TODO here's where we check the hash or height we want
+	e.snapshot = snap
+	return nil
+}
+
+func (e *Engine) RejectSnapshot() error {
+	e.snapRetry++
+	if e.RetryLimit < e.snapRetry {
+		return types.ErrSnapshotRetryLimit
+	}
+	if e.snapshot == nil {
+		return types.ErrUnknownSnapshot
+	}
+	e.snapshot = nil
+	return nil
+}
+
+func (e *Engine) ApplySnapshot() error {
+	if e.snapshot == nil {
+		return types.ErrUnknownSnapshot
+	}
+	// @TODO we have all the data we need
+	return nil
+}
+
+func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
+	if e.snapshot == nil {
+		return false, ErrUnknownSnapshot
+	}
+	if err := e.snapshot.LoadChunk(chunk); err != nil {
+		return false, err
+	}
+	return e.snapshot.Ready(), nil
+}
+
+func (e *Engine) GetMissingChunks() []uint32 {
+	if e.snapshot == nil {
+		return nil
+	}
+	return e.snapshot.GetMissing()
+}
+
+func (e *Engine) ReceiveChunk() error {
+	return nil
 }
 
 func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
