@@ -68,7 +68,7 @@ vega init --nodewallet-passphrase-file "my-passphrase-file.txt"
 
 ### Files location
 
-| Environment variables | Unix             | macOS                           | Windows                |
+| Environment variables | Unix             | MacOS                           | Windows                |
 | :-------------------- | :----------------| :------------------------------ | :--------------------- |
 | `XDG_DATA_HOME`       | `~/.local/share` | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
 | `XDG_CONFIG_HOME`     | `~/.config`      | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
