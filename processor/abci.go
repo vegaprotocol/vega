@@ -338,7 +338,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
 
 	// Snapshot can be nil if it wasn't time to create a snapshot
-	if cp, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); snap != nil {
+	if cp, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cp != nil {
 		resp.Data = append(resp.Data, cp.Hash...)
 		_ = app.handleCheckpoint(cp)
 	}
