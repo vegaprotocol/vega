@@ -9,7 +9,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.payoutDelay           | 0s    |
       | reward.staking.delegation.competitionLevel      | 1.1   |
 
-      
+
     Given time is updated to "2021-08-26T00:00:00Z"
 
     And the validators:
@@ -182,7 +182,50 @@ Feature: Staking & Delegation
     | party  | node id  | amount |
     | party1 |  node1   | 1500   | 
     | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   |   
+    | party1 |  node3   | 1507   | 
+
+    When time is updated to "2021-08-26T00:00:33Z"    
+    When time is updated to "2021-08-26T00:00:43Z"    
+  
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 1507   |       
+    | party1 |  node3   | 1507   | 
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |     when     |
+    | party1 |  node1   |  500   | end of epoch | 
+    | party1 |  node2   |  500   | end of epoch |     
+    | party1 |  node3   |  500   | end of epoch | 
+
+    When time is updated to "2021-08-26T00:00:42Z"    
+    When time is updated to "2021-08-26T00:00:53Z"
+
+    Then the parties should have the following delegation balances for epoch 4:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 1507   |       
+    | party1 |  node3   | 1507   | 
+
+    When time is updated to "2021-08-26T00:00:54Z"    
+    When time is updated to "2021-08-26T00:01:03Z"
+    When time is updated to "2021-08-26T00:01:13Z"
+
+    Then the parties should have the following delegation balances for epoch 5:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 1507   |       
+    | party1 |  node3   | 1507   | 
+
+    When time is updated to "2021-08-26T00:01:14Z"
+    When time is updated to "2021-08-26T00:01:24Z"
+
+    Then the parties should have the following delegation balances for epoch 6:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 1507   |       
+    | party1 |  node3   | 1507   | 
 
   Scenario: A party changes delegation from one validator to another in the same epoch
     Desciption: A party can change delegatation from one Validator to another
