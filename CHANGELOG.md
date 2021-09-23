@@ -17,7 +17,7 @@
 
 ### Fixes
 - [4053](https://github.com/vegaprotocol/vega/pull/4053) - Fix readme explanation for log levels
-- [4054](https://github.com/vegaprotocol/vega/pull/4054) - Capture errors with ethereum iterator and continue
+- [4054](https://github.com/vegaprotocol/vega/pull/4054) - Capture errors with Ethereum iterator and continue
 - [4040](https://github.com/vegaprotocol/vega/pull/4040) - Fix bug where the withdrawal signature uses uint64
 - [4042](https://github.com/vegaprotocol/vega/pull/4042) - Extended delegation rewards feature test scenario edits
 - [4034](https://github.com/vegaprotocol/vega/pull/4034) - Update integration tests now TxErr events are not sent in the execution package
