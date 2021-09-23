@@ -4,12 +4,13 @@ Background:
     Given the following network parameters are set:
       | name                                            | value |
       | reward.asset                                    | VEGA  |
-      | validators.epoch.length                         | 9s    |
+      | validators.epoch.length                         | 10s   |
       | validators.delegation.minAmount                 | 10    |
       | reward.staking.delegation.payoutDelay           | 0s    |
       | reward.staking.delegation.competitionLevel      | 1.1   |
 
     Given time is updated to "2021-08-26T00:00:00Z"
+    Given the average block duration is "2"
 
     And the validators:
       | id     | staking account balance |
@@ -44,8 +45,7 @@ Background:
       | party2 | VEGA   | 20000  |
 
     #complete the first epoch for the self delegation to take effect
-    Then time is updated to "2021-08-26T00:00:10Z"
-    Then time is updated to "2021-08-26T00:00:11Z"
+    Then the network moves ahead "7" blocks
 
 Scenario: A party enters auto delegation mode by nominating all of its associated stake 
     Desciption: Once a party has delegated all of its associated stake, it enters auto delegation mode. Once it has more stake associated, it gets automatically distributed between the validators maintaining the same distribution.  
@@ -64,17 +64,15 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party1 |  node10  |  1000  |
 
     #advance to the end of the epoch
-    Then time is updated to "2021-08-26T00:00:21Z"
-
     #by now party1 is in auto delegation mode - start the next epoch
-    Then time is updated to "2021-08-26T00:00:22Z"
+    Then the network moves ahead "7" blocks
 
     And the parties deposit on staking account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 1000   |
 
     # move to the end of the epoch for auto delegation to take place for party1
-    When time is updated to "2021-08-26T00:00:32Z"
+    When the network moves ahead "7" blocks
     Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   | 1100   | 
@@ -105,14 +103,13 @@ Scenario: A party dissociates VEGA token leading to undelegation propotionally t
     | party1 |  node10  |  500   |
 
     #advance to the end of the epoch 1 and start epoch 2
-    When time is updated to "2021-08-26T00:00:21Z"   
-    When time is updated to "2021-08-26T00:00:22Z"    
+    When the network moves ahead "7" blocks  
     Given the parties withdraw from staking account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   |  5000  |
 
     #advance to the end of epoch 2
-    When time is updated to "2021-08-26T00:00:32Z"    
+    When the network moves ahead "7" blocks
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
     | party1 |  node1   |  1000  |
@@ -142,17 +139,13 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party1 |  node9   |  1000  |
     | party1 |  node10  |  1000  |
 
-    #advance to the end of the epoch
-    Then time is updated to "2021-08-26T00:00:21Z"
-
-    #by now party1 is in auto delegation mode - start the next epoch
-    Then time is updated to "2021-08-26T00:00:22Z"
-
+    #advance to the end of the epoch and start a new epoch
+    Given the network moves ahead "7" blocks
     And the parties deposit on staking account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   | 1500   |
 
-    Given the parties submit the following delegations:
+    And the parties submit the following delegations:
     | party  | node id  | amount |
     | party1 |  node1   |  50  |
     | party1 |  node2   |  50  |
@@ -166,8 +159,7 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party1 |  node10  |  50  |
 
     # move to the end of the epoch - auto delegation will not take place party1 because they requested to manually delegate
-    When time is updated to "2021-08-26T00:00:32Z"
-    When time is updated to "2021-08-26T00:00:33Z"
+    When the network moves ahead "7" blocks
     Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   | 1050   | 
@@ -182,8 +174,8 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party1 |  node10  | 1050   |
 
     #on the end of the next epoch however the remaining 1000 tokens will get auto delegated 
-    When time is updated to "2021-08-26T00:00:43Z"
-     Then the parties should have the following delegation balances for epoch 4:
+    When the network moves ahead "7" blocks
+    Then the parties should have the following delegation balances for epoch 4:
     | party  | node id  | amount |
     | party1 |  node1   | 1150   | 
     | party1 |  node2   | 1150   | 
@@ -213,15 +205,14 @@ Scenario: A party qualifies to auto delegation by delegating all of their associ
     | party1 |  node10  |  500   |
 
     #advance to the end of the epoch 1 and start epoch 2
-    When time is updated to "2021-08-26T00:00:21Z"   
-    When time is updated to "2021-08-26T00:00:22Z"    
-   
+    When the network moves ahead "7" blocks"   
+    
     Then the parties submit the following undelegations:
     | party  | node id  | amount |  when  |
     | party1 |  node1   |  100   |  now   |
 
     #advance to the end of epoch 2
-    When time is updated to "2021-08-26T00:00:32Z"   
+    When the network moves ahead "7" blocks 
 
     #as we're out of auto delegation, due to the undelegateNow, no auto delegation will take place until all amount is fully delegated again 
     Then the parties should have the following delegation balances for epoch 2:
@@ -237,8 +228,6 @@ Scenario: A party qualifies to auto delegation by delegating all of their associ
     | party1 |  node9   |  500   |
     | party1 |  node10  |  500   |
 
-    #start epoch 3 
-    When time is updated to "2021-08-26T00:00:33Z"   
     #increase the stake to make it availble however it will not be distributed because auto delegation has been switched off by the undelegation
     Then the parties deposit on staking account the following amount:  
     | party  | asset  | amount |
@@ -249,11 +238,10 @@ Scenario: A party qualifies to auto delegation by delegating all of their associ
     | party1 |  node10  |  100   | 
 
     #by now we qualify again to auto delegation but we don't in this epoch due to the manual delegation 
-    #end epoch3 
-    When time is updated to "2021-08-26T00:00:43Z"   
-    #start and end epoch4 
-    When time is updated to "2021-08-26T00:00:44Z"   
-    When time is updated to "2021-08-26T00:00:54Z"   
+    #end epoch3 - start and end epoch4
+    When the network moves ahead "7" blocks
+    #end epoch4 - start and end epoch5
+    When the network moves ahead "7" blocks
     Then the parties should have the following delegation balances for epoch 5:
     | party  | node id  | amount |
     | party1 |  node1   |  2090  |

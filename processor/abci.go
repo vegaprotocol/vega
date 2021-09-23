@@ -92,6 +92,7 @@ type App struct {
 	stakingAccounts StakingAccounts
 	checkpoint      Checkpoint
 	spam            SpamEngine
+	epoch           EpochService
 }
 
 func NewApp(
@@ -158,6 +159,7 @@ func NewApp(
 		checkpoint:      checkpoint,
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
+		epoch:           epoch,
 	}
 
 	// setup handlers
@@ -298,6 +300,8 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
+
+	app.epoch.OnBlockEnd(ctx)
 
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
