@@ -1,15 +1,14 @@
 package types
 
 import (
-	"bytes"
-	"encoding/json"
+	"encoding/hex"
 	"errors"
-	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"github.com/cosmos/iavl"
+	"github.com/golang/protobuf/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -18,19 +17,45 @@ type SnapshotNamespace string
 const (
 	undefinedSnapshot  SnapshotNamespace = ""
 	AppSnapshot        SnapshotNamespace = "app"
+	AssetsSnapshot     SnapshotNamespace = "assets"
+	BankingSnapshot    SnapshotNamespace = "banking"
+	CheckpointSnapshot SnapshotNamespace = "checkpoint"
 	CollateralSnapshot SnapshotNamespace = "collateral"
+	NetParamsSnapshot  SnapshotNamespace = "netparams"
+	DelegationSnapshot SnapshotNamespace = "delegation"
+	GovernanceSnapshot SnapshotNamespace = "governance"
+	PositionsSnapshot  SnapshotNamespace = "positions"
+	MatchingSnapshot   SnapshotNamespace = "matching"
+	ExecutionSnapshot  SnapshotNamespace = "execution"
+	EpochSnapshot      SnapshotNamespace = "epoch"
+	StakingSnapshot    SnapshotNamespace = "staking"
+
+	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
+	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB
 )
 
 var (
 	nsMap = map[string]SnapshotNamespace{
 		"collateral": CollateralSnapshot,
+		"assets":     AssetsSnapshot,
+		"banking":    BankingSnapshot,
+		"checkpoint": CheckpointSnapshot,
 		"app":        AppSnapshot,
+		"netparams":  NetParamsSnapshot,
+		"delegation": DelegationSnapshot,
+		"governance": GovernanceSnapshot,
+		"positions":  PositionsSnapshot,
+		"matching":   MatchingSnapshot,
+		"execution":  ExecutionSnapshot,
+		"epoch":      EpochSnapshot,
+		"staking":    StakingSnapshot,
 	}
 
 	ErrUnknownSnapshotNamespace  = errors.New("unknown snapshot namespace")
 	ErrNoPrefixFound             = errors.New("no prefix in chunk keys")
 	ErrInconsistentNamespaceKeys = errors.New("chunk contains several namespace keys")
 	ErrChunkHashMismatch         = errors.New("loaded chunk hash does not match metadata")
+	ErrChunkOutOfRange           = errors.New("chunk number out of range")
 )
 
 type SnapshotFormat = snapshot.Format
@@ -42,216 +67,151 @@ const (
 	SnapshotFormatJSON            = snapshot.Format_FORMAT_JSON
 )
 
-// SnapshotMeta the hashes marshalled... could be hashes on a per engine/namespace basis?
-type SnapshotMeta struct {
-	Version    int64  `json:"version"`
-	Collateral []byte `json:"collateral"`
-	App        []byte `json:"app"`
-}
-
-// TMSnapshot is the snapshot type as listed by ListSnapshots etc...
-type TMSnapshot struct {
-	Height   uint64
-	Format   SnapshotFormat
-	Chunks   uint32
-	Hash     []byte
-	Metadata []byte
-	chunks   []*Chunk
-	meta     *SnapshotMeta
-}
-
-type Chunk struct {
-	Namespace SnapshotNamespace
-	Hash      []byte
-	ID        uint32 // chunk number
-	data      map[string][]byte
-	Bytes     []byte
-}
-
-func NewTMSnapshotFromTM(tms *tmtypes.Snapshot) (*TMSnapshot, error) {
-	snap := TMSnapshot{
-		Height:   tms.Height,
-		Format:   SnapshotFormat(tms.Format),
-		Chunks:   tms.Chunks,
-		chunks:   make([]*Chunk, int(tms.Chunks)),
-		Hash:     tms.Hash,
-		Metadata: tms.Metadata,
-		meta:     &SnapshotMeta{},
+func SnapshotFromTM(tms *tmtypes.Snapshot) (*Snapshot, error) {
+	snap := Snapshot{
+		Height:     tms.Height,
+		Format:     SnapshotFormat(tms.Format),
+		Chunks:     tms.Chunks,
+		Hash:       tms.Hash,
+		Metadata:   tms.Metadata,
+		ByteChunks: make([][]byte, int(tms.Chunks)), // have the chunk slice ready for loading
 	}
-	if err := json.Unmarshal(tms.Metadata, snap.meta); err != nil {
+	meta := &snapshot.Metadata{}
+	if err := proto.Unmarshal(tms.Metadata, meta); err != nil {
 		return nil, err
 	}
+	md, err := MetadataFromProto(meta)
+	if err != nil {
+		return nil, err
+	}
+	snap.Meta = md
 	return &snap, nil
 }
 
-func NewTMSnapshotFromIAVL(tree *iavl.ImmutableTree, nsKey map[string][][]byte) (*TMSnapshot, error) {
-	snap := &TMSnapshot{
-		Hash:   tree.Hash(),
-		chunks: make([]*Chunk, 0, len(nsKey)),
-		meta: &SnapshotMeta{
-			Version: tree.Version(),
+func SnapshotFromIAVL(tree *iavl.ImmutableTree, keys []string) (*Snapshot, error) {
+	snap := Snapshot{
+		Hash: tree.Hash(),
+		Meta: &Metadata{
+			Version:     tree.Version(),
+			NodeHashes:  make([]*NodeHash, 0, len(keys)),
+			ChunkHashes: make([]string, 0, len(keys)), // this is probably premature
 		},
+		Nodes: make([]*Payload, 0, len(keys)), // each node as a payload
 	}
-	chunks := make(map[string]*Chunk, len(nsKey))
-	names := make([]string, 0, len(nsKey))
-	for n := range nsKey {
-		names = append(names, n)
-	}
-	// sort the namespaces so the chunks will always match up
-	sort.Strings(names)
-	for _, n := range names {
-		keys := nsKey[n]
-		chunk, ok := chunks[n]
-		if !ok {
-			ns, err := namespaceFromString(n)
-			if err != nil {
-				return nil, err
-			}
-			snap.Chunks++
-			chunk = &Chunk{
-				Namespace: ns,
-				ID:        snap.Chunks,
-				data:      make(map[string][]byte, len(keys)),
-			}
-			snap.chunks = append(snap.chunks, chunk)
-		}
-		// the map as-is, but ready to serialise
-		serialise := make(map[string]json.RawMessage, len(keys))
-		for _, key := range keys {
-			_, val := tree.Get(key)
-			// now get the key without the prefix:
-			k := string(key[len([]byte(n))+1:])
-			// we can just use this as-is, we're only serialising here
-			// and then not re-use the value
-			serialise[k] = json.RawMessage(val)
-			// this is the application data, we need to get the height
-			if n == string(AppSnapshot) {
-				app := &AppState{}
-				if err := json.Unmarshal(val, app); err != nil {
-					return nil, err
-				}
-				snap.Height = app.Height
-			}
-			// we need to copy this, because this may be used by the IAVL
-			// so just in case we write to that for whatever reason
-			cpy := make([]byte, 0, len(val))
-			copy(cpy, val)
-			chunk.data[k] = cpy
-		}
-		// chunk should be done now
-		b, err := json.Marshal(serialise)
-		if err != nil {
+	for _, k := range keys {
+		_, val := tree.Get([]byte(k))
+		pl := &snapshot.Payload{}
+		if err := proto.Unmarshal(val, pl); err != nil {
 			return nil, err
 		}
-		chunk.Bytes = b
-	}
-	// ensure Metadata is set, and chunk hashes have been calculated
-	if err := snap.SetMeta(); err != nil {
-		return nil, err
-	}
-	return snap, nil
-}
-
-func (s TMSnapshot) ChunksLeft() int {
-	i := 0
-	for _, c := range s.chunks {
-		if c == nil {
-			i++
+		payload := PayloadFromProto(pl)
+		payload.raw = val
+		hash := hex.EncodeToString(crypto.Hash(val))
+		nh := &NodeHash{
+			FullKey:   k,
+			Namespace: payload.Namespace(),
+			Key:       payload.Key(),
+			Hash:      hash,
 		}
+		snap.Meta.NodeHashes = append(snap.Meta.NodeHashes, nh)
+		snap.Nodes = append(snap.Nodes, PayloadFromProto(pl))
 	}
-	return i
+	// divide into chunks, and set the meta...
+	snap.nodesToChunks()
+	return &snap, nil
 }
 
-func (s *TMSnapshot) LoadChunk(idx uint32, bytes []byte) error {
-	chunk := &Chunk{
-		Namespace: undefinedSnapshot,
-		ID:        idx,
-		Bytes:     bytes,
-		Hash:      crypto.Hash(bytes),
+func (s *Snapshot) nodesToChunks() {
+	all := &Chunk{
+		Data: s.Nodes[:],
+		Nr:   1,
+		Of:   1,
 	}
-	// ensure the hash of the data matches what we expect
-	if err := s.checkChunkHash(chunk); err != nil {
+	b, _ := proto.Marshal(all.IntoProto())
+	if len(b) < MaxChunkSize {
+		s.DataChunks = []*Chunk{
+			all,
+		}
+		s.hashChunks()
+		return
+	}
+	parts := len(b) / IdealChunkSize
+	if t := parts * IdealChunkSize; t != len(b) {
+		parts++
+	}
+	s.ByteChunks = make([][]byte, 0, parts)
+	step := len(b) / parts
+	for i := 0; i < len(b); i += step {
+		end := i + step
+		if end > len(b) {
+			end = len(b)
+		}
+		s.ByteChunks = append(s.ByteChunks, b[i:end])
+	}
+	s.hashByteChunks()
+}
+
+func (s *Snapshot) hashByteChunks() {
+	s.Meta.ChunkHashes = make([]string, 0, len(s.ByteChunks))
+	for _, b := range s.ByteChunks {
+		s.Meta.ChunkHashes = append(s.Meta.ChunkHashes, hex.EncodeToString(crypto.Hash(b)))
+		s.Chunks++
+	}
+}
+
+func (s *Snapshot) hashChunks() {
+	s.Meta.ChunkHashes = make([]string, 0, len(s.DataChunks))
+	s.ByteChunks = make([][]byte, 0, len(s.DataChunks))
+	for _, c := range s.DataChunks {
+		pc := c.IntoProto()
+		b, _ := proto.Marshal(pc)
+		s.Meta.ChunkHashes = append(s.Meta.ChunkHashes, hex.EncodeToString(crypto.Hash(b)))
+		s.ByteChunks = append(s.ByteChunks, b)
+		s.Chunks++
+	}
+}
+
+func (s *Snapshot) LoadChunk(nr uint32, data []byte) error {
+	if nr > s.Chunks {
+		return ErrChunkOutOfRange
+	}
+	if len(s.ByteChunks) == 0 {
+		s.ByteChunks = make([][]byte, int(s.Chunks))
+	}
+	i := int(nr)
+	if len(s.Meta.ChunkHashes) <= i {
+		return ErrChunkOutOfRange
+	}
+	hash := hex.EncodeToString(crypto.Hash(data))
+	if s.Meta.ChunkHashes[i] != hash {
+		return ErrChunkHashMismatch
+	}
+	s.ByteChunks[i] = data
+	s.byteLen += len(data)
+	s.ChunksSeen += 1
+	if s.Chunks == s.ChunksSeen {
+		return s.unmarshalChunks()
+	}
+	return nil
+}
+
+func (s *Snapshot) unmarshalChunks() error {
+	data := make([]byte, 0, s.byteLen)
+	for _, b := range s.ByteChunks {
+		data = append(data, b...)
+	}
+	sChunk := &snapshot.Chunk{}
+	if err := proto.Unmarshal(data, sChunk); err != nil {
 		return err
 	}
-	data := map[string]json.RawMessage{}
-	if err := json.Unmarshal(bytes, data); err != nil {
-		return err
-	}
-	chunk.data = make(map[string][]byte, len(data))
-	for k, v := range data {
-		// get the namespace
-		i := 0
-		for i < len(k)-1 && k[i] != '.' {
-			i++
-		}
-		if k[i] != '.' {
-			return ErrNoPrefixFound
-		}
-		ns, err := namespaceFromString(string(k[:i]))
-		if err != nil {
-			return err
-		}
-		if chunk.Namespace == undefinedSnapshot {
-			chunk.Namespace = ns
-		} else if ns != chunk.Namespace {
-			return ErrInconsistentNamespaceKeys
-		}
-		chunk.data[k] = []byte(v)
-	}
-	s.chunks[int(idx)] = chunk
-	return nil
-}
-
-func (s *TMSnapshot) SetMeta() error {
-	for _, c := range s.chunks {
-		switch c.Namespace {
-		case CollateralSnapshot:
-			s.meta.Collateral = crypto.Hash(c.Bytes)
-			c.Hash = s.meta.Collateral
-		case AppSnapshot:
-			s.meta.App = crypto.Hash(c.Bytes)
-			c.Hash = s.meta.App
-		}
-	}
-	m, err := json.Marshal(s.meta)
-	if err != nil {
-		return err
-	}
-	s.Metadata = m
-	return nil
-}
-
-func (s TMSnapshot) CheckMeta() error {
-	for _, c := range s.chunks {
-		if err := s.checkChunkHash(c); err != nil {
-			return err
-		}
+	s.DataChunks = []*Chunk{
+		ChunkFromProto(sChunk),
 	}
 	return nil
 }
 
-func (s TMSnapshot) checkChunkHash(c *Chunk) error {
-	switch c.Namespace {
-	case CollateralSnapshot:
-		if !bytes.Equal(c.Hash, s.meta.Collateral) {
-			return ErrChunkHashMismatch
-		}
-	case AppSnapshot:
-		if !bytes.Equal(c.Hash, s.meta.App) {
-			return ErrChunkHashMismatch
-		}
-	}
-	return nil
-}
-
-func (s TMSnapshot) ToTM() *tmtypes.Snapshot {
-	return &tmtypes.Snapshot{
-		Height:   s.Height,
-		Format:   uint32(s.Format),
-		Chunks:   s.Chunks,
-		Hash:     s.Hash,
-		Metadata: s.Metadata,
-	}
+func (s Snapshot) Ready() bool {
+	return s.ChunksSeen == s.Chunks
 }
 
 func namespaceFromString(s string) (SnapshotNamespace, error) {
@@ -260,4 +220,8 @@ func namespaceFromString(s string) (SnapshotNamespace, error) {
 		return undefinedSnapshot, ErrUnknownSnapshotNamespace
 	}
 	return ns, nil
+}
+
+func (n SnapshotNamespace) String() string {
+	return string(n)
 }

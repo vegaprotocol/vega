@@ -57,7 +57,7 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
-	List() ([]*types.TMSnapshot, error)
+	List() ([]*types.Snapshot, error)
 }
 
 type App struct {
@@ -294,7 +294,7 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 }
 
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
-	snap, err := types.NewTMSnapshotFromTM(req.Snapshot)
+	snap, err := types.SnapshotFromTM(req.Snapshot)
 	// invalid hash?
 	if err != nil || !bytes.Equal(snap.Hash, req.AppHash) {
 		return tmtypes.ResponseOfferSnapshot{

@@ -7,20 +7,52 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
+
+	"github.com/golang/protobuf/proto"
 )
 
-type Chunk2 struct {
+type Snapshot struct {
+	Height     uint64
+	Format     SnapshotFormat
+	Chunks     uint32
+	Hash       []byte
+	Metadata   []byte
+	Meta       *Metadata
+	DataChunks []*Chunk
+	Nodes      []*Payload
+	ByteChunks [][]byte
+	ChunksSeen uint32
+	byteLen    int
+}
+
+type Metadata struct {
+	Version     int64
+	ChunkHashes []string
+	NodeHashes  []*NodeHash
+}
+
+type NodeHash struct {
+	FullKey   string
+	Namespace SnapshotNamespace
+	Key       string
+	Hash      string
+}
+
+type Chunk struct {
 	Data   []*Payload
 	Nr, Of int64
 }
 
 type Payload struct {
 	Data isPayload
+	raw  []byte // access to the raw data for chunking
 }
 
 type isPayload interface {
 	isPayload()
 	plToProto() interface{}
+	Namespace() SnapshotNamespace
+	Key() string
 }
 
 type PayloadActiveAssets struct {
@@ -289,19 +321,110 @@ type StakingAccount struct {
 	Events  []*StakeLinking
 }
 
-func ChunkFromProto(c *snapshot.Chunk) *Chunk2 {
+func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
+	meta := &snapshot.Metadata{}
+	if err := proto.Unmarshal(s.Metadata, meta); err != nil {
+		return nil, err
+	}
+	m, err := MetadataFromProto(meta)
+	if err != nil {
+		return nil, err
+	}
+	return &Snapshot{
+		Height:     s.Height,
+		Format:     s.Format,
+		Chunks:     s.Chunks,
+		Hash:       s.Hash,
+		Metadata:   s.Metadata,
+		Meta:       m,
+		DataChunks: make([]*Chunk, 0, int(s.Chunks)),
+	}, nil
+}
+
+func (s Snapshot) IntoProto() (*snapshot.Snapshot, error) {
+	if len(s.Metadata) == 0 {
+		m, err := proto.Marshal(s.Meta.IntoProto())
+		if err != nil {
+			return nil, err
+		}
+		s.Metadata = m
+	}
+	// just make sure the number of chunks is set
+	if s.Chunks == 0 {
+		s.Chunks = uint32(len(s.DataChunks))
+	}
+	return &snapshot.Snapshot{
+		Height:   s.Height,
+		Format:   s.Format,
+		Chunks:   s.Chunks,
+		Hash:     s.Hash,
+		Metadata: s.Metadata,
+	}, nil
+}
+
+func MetadataFromProto(m *snapshot.Metadata) (*Metadata, error) {
+	nh := make([]*NodeHash, 0, len(m.NodeHashes))
+	for _, h := range m.NodeHashes {
+		hh, err := NodeHashFromProto(h)
+		if err != nil {
+			return nil, err
+		}
+		nh = append(nh, hh)
+	}
+	return &Metadata{
+		Version:     m.Version,
+		ChunkHashes: m.ChunkHashes[:],
+		NodeHashes:  nh,
+	}, nil
+}
+
+func (m Metadata) IntoProto() *snapshot.Metadata {
+	nh := make([]*snapshot.NodeHash, 0, len(m.NodeHashes))
+	for _, h := range m.NodeHashes {
+		nh = append(nh, h.IntoProto())
+	}
+	return &snapshot.Metadata{
+		Version:     m.Version,
+		ChunkHashes: m.ChunkHashes[:],
+		NodeHashes:  nh,
+	}
+}
+
+func NodeHashFromProto(nh *snapshot.NodeHash) (*NodeHash, error) {
+	ns, err := namespaceFromString(nh.Namespace)
+	if err != nil {
+		return nil, err
+	}
+	return &NodeHash{
+		FullKey:   nh.FullKey,
+		Namespace: ns,
+		Key:       nh.Key,
+		Hash:      nh.Hash,
+	}, nil
+}
+
+func (n NodeHash) IntoProto() *snapshot.NodeHash {
+	return &snapshot.NodeHash{
+		FullKey:   n.FullKey,
+		Namespace: n.Namespace.String(),
+		Key:       n.Key,
+		Hash:      n.Hash,
+	}
+}
+
+func ChunkFromProto(c *snapshot.Chunk) *Chunk {
 	data := make([]*Payload, 0, len(c.Data))
 	for _, p := range c.Data {
 		data = append(data, PayloadFromProto(p))
 	}
-	return &Chunk2{
+	return &Chunk{
 		Data: data,
 		Nr:   c.Nr,
 		Of:   c.Of,
 	}
 }
 
-func (c Chunk2) IntoProto() *snapshot.Chunk {
+func (c Chunk) IntoProto() *snapshot.Chunk {
 	data := make([]*snapshot.Payload, 0, len(c.Data))
 	for _, p := range c.Data {
 		data = append(data, p.IntoProto())
@@ -356,6 +479,20 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakingAccountsFromProto(dt)
 	}
 	return ret
+}
+
+func (p Payload) Namespace() SnapshotNamespace {
+	if p.Data == nil {
+		return undefinedSnapshot
+	}
+	return p.Data.Namespace()
+}
+
+func (p Payload) Key() string {
+	if p.Data == nil {
+		return ""
+	}
+	return p.Data.Key()
 }
 
 func (p Payload) IntoProto() *snapshot.Payload {
@@ -420,6 +557,14 @@ func (p *PayloadActiveAssets) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadActiveAssets) Namespace() SnapshotNamespace {
+	return AssetsSnapshot
+}
+
+func (*PayloadActiveAssets) Key() string {
+	return "active"
+}
+
 func PayloadPendingAssetsFromProto(ppa *snapshot.Payload_PendingAssets) *PayloadPendingAssets {
 	return &PayloadPendingAssets{
 		PendingAssets: PendingAssetsFromProto(ppa.PendingAssets),
@@ -436,6 +581,14 @@ func (*PayloadPendingAssets) isPayload() {}
 
 func (p *PayloadPendingAssets) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadPendingAssets) Key() string {
+	return "pending"
+}
+
+func (*PayloadPendingAssets) Namespace() SnapshotNamespace {
+	return AssetsSnapshot
 }
 
 func PayloadBankingWithdrawalsFromProto(pbw *snapshot.Payload_BankingWithdrawals) *PayloadBankingWithdrawals {
@@ -456,6 +609,14 @@ func (p *PayloadBankingWithdrawals) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadBankingWithdrawals) Key() string {
+	return "withdrawals"
+}
+
+func (*PayloadBankingWithdrawals) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
 func PayloadBankingDepositsFromProto(pbd *snapshot.Payload_BankingDeposits) *PayloadBankingDeposits {
 	return &PayloadBankingDeposits{
 		BankingDeposits: BankingDepositsFromProto(pbd.BankingDeposits),
@@ -472,6 +633,14 @@ func (*PayloadBankingDeposits) isPayload() {}
 
 func (p *PayloadBankingDeposits) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadBankingDeposits) Key() string {
+	return "deposits"
+}
+
+func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
+	return BankingSnapshot
 }
 
 func PayloadBankingSeenFromProto(pbs *snapshot.Payload_BankingSeen) *PayloadBankingSeen {
@@ -492,6 +661,14 @@ func (p *PayloadBankingSeen) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadBankingSeen) Key() string {
+	return "seen"
+}
+
+func (*PayloadBankingSeen) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
 func PayloadCheckpointFromProto(pc *snapshot.Payload_Checkpoint) *PayloadCheckpoint {
 	return &PayloadCheckpoint{
 		Checkpoint: CheckpointFromProto(pc.Checkpoint),
@@ -508,6 +685,14 @@ func (*PayloadCheckpoint) isPayload() {}
 
 func (p *PayloadCheckpoint) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadCheckpoint) Key() string {
+	return "all"
+}
+
+func (*PayloadCheckpoint) Namespace() SnapshotNamespace {
+	return CheckpointSnapshot
 }
 
 func PayloadCollateralAccountsFromProto(pca *snapshot.Payload_CollateralAccounts) *PayloadCollateralAccounts {
@@ -528,6 +713,14 @@ func (p *PayloadCollateralAccounts) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadCollateralAccounts) Key() string {
+	return "accounts"
+}
+
+func (*PayloadCollateralAccounts) Namespace() SnapshotNamespace {
+	return CollateralSnapshot
+}
+
 func PayloadCollateralAssetsFromProto(pca *snapshot.Payload_CollateralAssets) *PayloadCollateralAssets {
 	return &PayloadCollateralAssets{
 		CollateralAssets: CollateralAssetsFromProto(pca.CollateralAssets),
@@ -544,6 +737,14 @@ func (*PayloadCollateralAssets) isPayload() {}
 
 func (p *PayloadCollateralAssets) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadCollateralAssets) Key() string {
+	return "assets"
+}
+
+func (*PayloadCollateralAssets) Namespace() SnapshotNamespace {
+	return CollateralSnapshot
 }
 
 func PayloadAppStateFromProto(pas *snapshot.Payload_AppState) *PayloadAppState {
@@ -564,6 +765,14 @@ func (p *PayloadAppState) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadAppState) Key() string {
+	return "all"
+}
+
+func (*PayloadAppState) Namespace() SnapshotNamespace {
+	return AppSnapshot
+}
+
 func PayloadNetParamsFromProto(pnp *snapshot.Payload_NetworkParameters) *PayloadNetParams {
 	return &PayloadNetParams{
 		NetParams: NetParamsFromProto(pnp.NetworkParameters),
@@ -580,6 +789,14 @@ func (*PayloadNetParams) isPayload() {}
 
 func (p *PayloadNetParams) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadNetParams) Key() string {
+	return "all"
+}
+
+func (*PayloadNetParams) Namespace() SnapshotNamespace {
+	return NetParamsSnapshot
 }
 
 func PayloadDelegationActiveFromProto(da *snapshot.Payload_DelegationActive) *PayloadDelegationActive {
@@ -600,6 +817,14 @@ func (p *PayloadDelegationActive) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadDelegationActive) Key() string {
+	return "active"
+}
+
+func (*PayloadDelegationActive) Namespace() SnapshotNamespace {
+	return DelegationSnapshot
+}
+
 func PayloadDelegationPendingFromProto(da *snapshot.Payload_DelegationPending) *PayloadDelegationPending {
 	return &PayloadDelegationPending{
 		DelegationPending: DelegationPendingFromProto(da.DelegationPending),
@@ -616,6 +841,14 @@ func (*PayloadDelegationPending) isPayload() {}
 
 func (p *PayloadDelegationPending) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadDelegationPending) Key() string {
+	return "pending"
+}
+
+func (*PayloadDelegationPending) Namespace() SnapshotNamespace {
+	return DelegationSnapshot
 }
 
 func PayloadGovernanceActiveFromProto(ga *snapshot.Payload_GovernanceActive) *PayloadGovernanceActive {
@@ -636,6 +869,14 @@ func (p *PayloadGovernanceActive) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadGovernanceActive) Key() string {
+	return "active"
+}
+
+func (*PayloadGovernanceActive) Namespace() SnapshotNamespace {
+	return GovernanceSnapshot
+}
+
 func PayloadGovernanceEnactedFromProto(ga *snapshot.Payload_GovernanceEnacted) *PayloadGovernanceEnacted {
 	return &PayloadGovernanceEnacted{
 		GovernanceEnacted: GovernanceEnactedFromProto(ga.GovernanceEnacted),
@@ -652,6 +893,14 @@ func (*PayloadGovernanceEnacted) isPayload() {}
 
 func (p *PayloadGovernanceEnacted) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadGovernanceEnacted) Key() string {
+	return "enacted"
+}
+
+func (*PayloadGovernanceEnacted) Namespace() SnapshotNamespace {
+	return GovernanceSnapshot
 }
 
 func PayloadMarketPositionsFromProto(mp *snapshot.Payload_MarketPositions) *PayloadMarketPositions {
@@ -672,6 +921,14 @@ func (p *PayloadMarketPositions) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadMarketPositions) Key() string {
+	return "all"
+}
+
+func (*PayloadMarketPositions) Namespace() SnapshotNamespace {
+	return PositionsSnapshot
+}
+
 func PayloadMatchingBookFromProto(pmb *snapshot.Payload_MatchingBook) *PayloadMatchingBook {
 	return &PayloadMatchingBook{
 		MatchingBook: MatchingBookFromProto(pmb.MatchingBook),
@@ -688,6 +945,14 @@ func (*PayloadMatchingBook) isPayload() {}
 
 func (p *PayloadMatchingBook) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadMatchingBook) Key() string {
+	return "all"
+}
+
+func (*PayloadMatchingBook) Namespace() SnapshotNamespace {
+	return MatchingSnapshot
 }
 
 func PayloadExecutionMarketsFromProto(pem *snapshot.Payload_ExecutionMarkets) *PayloadExecutionMarkets {
@@ -708,6 +973,14 @@ func (p *PayloadExecutionMarkets) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadExecutionMarkets) Key() string {
+	return "markets"
+}
+
+func (*PayloadExecutionMarkets) Namespace() SnapshotNamespace {
+	return ExecutionSnapshot
+}
+
 func PayloadEpochFromProto(e *snapshot.Payload_Epoch) *PayloadEpoch {
 	return &PayloadEpoch{
 		Epoch: NewEpochFromProto(e.Epoch),
@@ -726,6 +999,14 @@ func (p *PayloadEpoch) plToProto() interface{} {
 	return p.IntoProto()
 }
 
+func (*PayloadEpoch) Key() string {
+	return "all"
+}
+
+func (*PayloadEpoch) Namespace() SnapshotNamespace {
+	return EpochSnapshot
+}
+
 func PayloadStakingAccountsFromProto(sa *snapshot.Payload_StakingAccounts) *PayloadStakingAccounts {
 	return &PayloadStakingAccounts{
 		StakingAccounts: StakingAccountsFromProto(sa.StakingAccounts),
@@ -742,6 +1023,14 @@ func (*PayloadStakingAccounts) isPayload() {}
 
 func (p *PayloadStakingAccounts) plToProto() interface{} {
 	return p.IntoProto()
+}
+
+func (*PayloadStakingAccounts) Key() string {
+	return "accounts"
+}
+
+func (*PayloadStakingAccounts) Namespace() SnapshotNamespace {
+	return StakingSnapshot
 }
 
 func ActiveAssetsFromProto(aa *snapshot.ActiveAssets) *ActiveAssets {
