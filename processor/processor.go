@@ -44,6 +44,7 @@ type DelegationEngine interface {
 	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
+	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -71,6 +72,7 @@ type GovernanceEngine interface {
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
+	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -199,4 +201,9 @@ type Limits interface {
 type StakeVerifier interface {
 	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error
 	ProcessStakeDeposited(ctx context.Context, event *types.StakeDeposited) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
+type StakingAccounts interface {
+	Hash() []byte
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -116,6 +117,14 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 	epochEngine.NotifyOnEpoch(e.onEpochEvent)
 
 	return e
+}
+
+func (e *Engine) Hash() []byte {
+	buf, err := e.Checkpoint()
+	if err != nil {
+		e.log.Panic("could not create checkpoint", logging.Error(err))
+	}
+	return crypto.Hash(buf)
 }
 
 //OnCompLevelChanged updates the network parameter for competitionLevel

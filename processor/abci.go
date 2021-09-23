@@ -71,26 +71,27 @@ type App struct {
 	rates     *ratelimit.Rates
 
 	// service injection
-	assets     Assets
-	banking    Banking
-	broker     Broker
-	cmd        Commander
-	witness    Witness
-	evtfwd     EvtForwarder
-	exec       ExecutionEngine
-	ghandler   *genesis.Handler
-	gov        GovernanceEngine
-	notary     Notary
-	stats      Stats
-	time       TimeService
-	top        ValidatorTopology
-	netp       NetworkParameters
-	oracles    *Oracle
-	delegation DelegationEngine
-	limits     Limits
-	stake      StakeVerifier
-	checkpoint Checkpoint
-	spam       SpamEngine
+	assets          Assets
+	banking         Banking
+	broker          Broker
+	cmd             Commander
+	witness         Witness
+	evtfwd          EvtForwarder
+	exec            ExecutionEngine
+	ghandler        *genesis.Handler
+	gov             GovernanceEngine
+	notary          Notary
+	stats           Stats
+	time            TimeService
+	top             ValidatorTopology
+	netp            NetworkParameters
+	oracles         *Oracle
+	delegation      DelegationEngine
+	limits          Limits
+	stake           StakeVerifier
+	stakingAccounts StakingAccounts
+	checkpoint      Checkpoint
+	spam            SpamEngine
 }
 
 func NewApp(
@@ -119,6 +120,7 @@ func NewApp(
 	stake StakeVerifier,
 	checkpoint Checkpoint,
 	spam SpamEngine,
+	stakingAccounts StakingAccounts,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -134,27 +136,28 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:   checkpoint.AwaitingRestore(),
-		assets:     assets,
-		banking:    banking,
-		broker:     broker,
-		cmd:        cmd,
-		witness:    witness,
-		evtfwd:     evtfwd,
-		exec:       exec,
-		ghandler:   ghandler,
-		gov:        gov,
-		notary:     notary,
-		stats:      stats,
-		time:       time,
-		top:        top,
-		netp:       netp,
-		oracles:    oracles,
-		delegation: delegation,
-		limits:     limits,
-		stake:      stake,
-		checkpoint: checkpoint,
-		spam:       spam,
+		reloadCP:        checkpoint.AwaitingRestore(),
+		assets:          assets,
+		banking:         banking,
+		broker:          broker,
+		cmd:             cmd,
+		witness:         witness,
+		evtfwd:          evtfwd,
+		exec:            exec,
+		ghandler:        ghandler,
+		gov:             gov,
+		notary:          notary,
+		stats:           stats,
+		time:            time,
+		top:             top,
+		netp:            netp,
+		oracles:         oracles,
+		delegation:      delegation,
+		limits:          limits,
+		stake:           stake,
+		checkpoint:      checkpoint,
+		spam:            spam,
+		stakingAccounts: stakingAccounts,
 	}
 
 	// setup handlers
@@ -330,6 +333,10 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	defer app.log.Debug("Processor COMMIT completed")
 
 	resp.Data = app.exec.Hash()
+	resp.Data = append(resp.Data, app.delegation.Hash()...)
+	resp.Data = append(resp.Data, app.gov.Hash()...)
+	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+
 	// Snapshot can be nil if it wasn't time to create a snapshot
 	if snap, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); snap != nil {
 		resp.Data = append(resp.Data, snap.Hash...)
