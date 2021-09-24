@@ -83,7 +83,11 @@ func (s *snapState) GetHash(_ string) ([]byte, error) {
 }
 
 func (s *snapState) hashState() ([]byte, error) {
-	data, err := proto.Marshal(s.t.IntoProto())
+	// apparently the payload types can't me marshalled by themselves
+	pl := types.Payload{
+		Data: s.t,
+	}
+	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
 		return nil, err
 	}

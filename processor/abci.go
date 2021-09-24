@@ -171,7 +171,6 @@ func NewApp(
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
-		snapshot:        snap,
 	}
 
 	// setup handlers
