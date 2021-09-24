@@ -2,12 +2,17 @@ Feature: Auto Delegation
 
 Background:
     Given the following network parameters are set:
-      | name                                            | value |
-      | reward.asset                                    | VEGA  |
-      | validators.epoch.length                         | 10s   |
-      | validators.delegation.minAmount                 | 10    |
-      | reward.staking.delegation.payoutDelay           | 0s    |
-      | reward.staking.delegation.competitionLevel      | 1.1   |
+      | name                                              | value  |
+      | reward.asset                                      | VEGA   |
+      | validators.epoch.length                           | 10s    |
+      | validators.delegation.minAmount                   | 10     |
+      | reward.staking.delegation.payoutDelay             |  0s    |
+      | reward.staking.delegation.delegatorShare          |  0.883 |
+      | reward.staking.delegation.minimumValidatorStake   |  100   |
+      | reward.staking.delegation.payoutFraction          |  0.5   |
+      | reward.staking.delegation.maxPayoutPerParticipant | 100000 |
+      | reward.staking.delegation.competitionLevel        |  1.1   |
+      | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
