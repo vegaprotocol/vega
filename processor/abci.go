@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -21,6 +22,7 @@ import (
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -52,6 +54,10 @@ type SpamEngine interface {
 	EndOfBlock(blockHeight uint64)
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
+}
+
+type Snapshot interface {
+	List() ([]*types.TMSnapshot, error)
 }
 
 type App struct {
@@ -93,6 +99,7 @@ type App struct {
 	checkpoint      Checkpoint
 	spam            SpamEngine
 	epoch           EpochService
+	snapshot        Snapshot
 }
 
 func NewApp(
@@ -123,6 +130,8 @@ func NewApp(
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
 ) *App {
+	// @TODO move the initialisation of this elsewhere
+	snap, _ := snapshot.New(context.Background(), snapshot.NewDefaultConfig(), log)
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
@@ -160,6 +169,7 @@ func NewApp(
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
+		snapshot:        snap,
 	}
 
 	// setup handlers
@@ -266,6 +276,34 @@ func (app *App) Abci() *abci.App {
 func (app *App) cancel() {
 	if fn := app.cancelFn; fn != nil {
 		fn()
+	}
+}
+
+func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
+	snapshots, err := app.snapshot.List()
+	resp := tmtypes.ResponseListSnapshots{}
+	if err != nil {
+		app.log.Error("Could not list snapshots", logging.Error(err))
+		return resp
+	}
+	resp.Snapshots = make([]*tmtypes.Snapshot, 0, len(snapshots))
+	for _, snap := range snapshots {
+		resp.Snapshots = append(resp.Snapshots, snap.ToTM())
+	}
+	return resp
+}
+
+func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Result {
+	snap, err := types.NewTMSnapshotFromTM(req.Snapshot)
+	// invalid hash?
+	if err != nil || !bytes.Equal(snap.Hash, req.AppHash) {
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		}
+	}
+	// @TODO initialise snapshot engine to restore snapshot?
+	return tmtypes.ResponseOfferSnapshot{
+		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
 	}
 }
 
