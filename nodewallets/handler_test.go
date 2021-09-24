@@ -1,3 +1,5 @@
+// +build !race
+
 package nodewallet_test
 
 import (
@@ -6,7 +8,7 @@ import (
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
