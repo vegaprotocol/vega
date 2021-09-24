@@ -262,6 +262,85 @@ Feature: Staking & Delegation
     | party1 |  node2   | 1507   |       
     | party1 |  node3   | 1507   |   
 
+  Scenario: Maximum amount of stake for a validator increased by delegations that cannot be met at epoch end due to insufficient token balance after a withdrawal.
+
+    And the parties deposit on staking account the following amount:  
+    | party  | asset  | amount |
+    | party2 | VEGA   | 10000  |
+
+    #epoch1 started
+    When the parties submit the following delegations:
+    | party  | node id  |   amount  | 
+    | party1 |  node1   |    1500   | 
+    | party1 |  node2   |    2000   | 
+    | party2 |  node3   |    2500   | 
+
+    When the network moves ahead "1" blocks
+
+    When the parties submit the following delegations:
+    | party  | node id  |   amount  | 
+    | party2 |  node3   |    2500   | 
+
+    When the network moves ahead "1" blocks
+
+    When the parties submit the following delegations:
+    | party  | node id  |   amount  | 
+    | party2 |  node3   |    2500   |  
+
+    When the network moves ahead "1" blocks
+
+    When the parties submit the following delegations:
+    | party  | node id  |   amount  | 
+    | party2 |  node3   |    2500   | 
+
+    When the network moves ahead "1" blocks  
+
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party2 | VEGA   |  7500  |
+
+    #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | party1 |  node1   |   0    | 
+    | party1 |  node2   |   0    |       
+    | party2 |  node3   |   0    |        
+
+    And the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 2000   |       
+    | party2 |  node3   | 10000  |        
+
+    When the network moves ahead "3" blocks
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 2000   |       
+    | party2 |  node3   | 2142   |
+
+    When the network moves ahead "1" blocks
+
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party2 | VEGA   |   500  |
+
+    When the network moves ahead "1" blocks
+
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 2000   |       
+    | party2 |  node3   | 2142   |
+
+    When the network moves ahead "7" blocks
+
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 2000   |       
+    | party2 |  node3   | 2000   |
+
   Scenario: A party changes delegation from one validator to another in the same epoch
     Description: A party can change delegatation from one Validator to another
 
