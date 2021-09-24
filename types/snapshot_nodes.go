@@ -4,31 +4,10 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
-
-// Types that are valid to be assigned to Data:
-//	*Payload_AppState
-//	*Payload_ActiveAssets
-//	*Payload_PendingAssets
-//	*Payload_BankingWithdrawals
-//	*Payload_BankingDeposits
-//	*Payload_BankingSeen
-//	*Payload_Checkpoint
-//	*Payload_CollateralAccounts
-//	*Payload_CollateralAssets
-//	*Payload_NetworkParameters
-//	*Payload_DelegationActive
-//	*Payload_DelegationPending
-//	*Payload_GovernanceActive
-//	*Payload_GovernanceEnacted
-//	*Payload_MarketPositions
-//	*Payload_MatchingBook
-//	*Payload_ExecutionMarkets
-
-//	*Payload_StakingAccounts
-type Node = snapshot.Payload
 
 type Chunk2 struct {
 	Data   []*Payload
@@ -110,6 +89,14 @@ type PayloadMatchingBook struct {
 
 type PayloadExecutionMarkets struct {
 	ExecutionMarkets *ExecutionMarkets
+}
+
+type PayloadStakingAccounts struct {
+	StakingAccounts *StakingAccounts
+}
+
+type PayloadEpoch struct {
+	Epoch *Epoch
 }
 
 type MatchingBook struct {
@@ -292,6 +279,16 @@ type PPosition struct {
 	VwBuy, VwSell   *num.Uint
 }
 
+type StakingAccounts struct {
+	Accounts []*StakingAccount
+}
+
+type StakingAccount struct {
+	Party   string
+	Balance *num.Uint
+	Events  []*StakeLinking
+}
+
 func ChunkFromProto(c *snapshot.Chunk) *Chunk2 {
 	data := make([]*Payload, 0, len(c.Data))
 	for _, p := range c.Data {
@@ -353,6 +350,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadMatchingBookFromProto(dt)
 	case *snapshot.Payload_ExecutionMarkets:
 		ret.Data = PayloadExecutionMarketsFromProto(dt)
+	case *snapshot.Payload_Epoch:
+		ret.Data = PayloadEpochFromProto(dt)
+	case *snapshot.Payload_StakingAccounts:
+		ret.Data = PayloadStakingAccountsFromProto(dt)
 	}
 	return ret
 }
@@ -394,6 +395,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_GovernanceEnacted:
 		ret.Data = dt
 	case *snapshot.Payload_Checkpoint:
+		ret.Data = dt
+	case *snapshot.Payload_Epoch:
 		ret.Data = dt
 	}
 	return &ret
@@ -702,6 +705,42 @@ func (p PayloadExecutionMarkets) IntoProto() *snapshot.Payload_ExecutionMarkets 
 func (*PayloadExecutionMarkets) isPayload() {}
 
 func (p *PayloadExecutionMarkets) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadEpochFromProto(e *snapshot.Payload_Epoch) *PayloadEpoch {
+	return &PayloadEpoch{
+		Epoch: NewEpochFromProto(e.Epoch),
+	}
+}
+
+func (p PayloadEpoch) IntoProto() *snapshot.Payload_Epoch {
+	return &snapshot.Payload_Epoch{
+		Epoch: p.Epoch.IntoProto(),
+	}
+}
+
+func (*PayloadEpoch) isPayload() {}
+
+func (p *PayloadEpoch) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadStakingAccountsFromProto(sa *snapshot.Payload_StakingAccounts) *PayloadStakingAccounts {
+	return &PayloadStakingAccounts{
+		StakingAccounts: StakingAccountsFromProto(sa.StakingAccounts),
+	}
+}
+
+func (p PayloadStakingAccounts) IntoProto() *snapshot.Payload_StakingAccounts {
+	return &snapshot.Payload_StakingAccounts{
+		StakingAccounts: p.StakingAccounts.IntoProto(),
+	}
+}
+
+func (*PayloadStakingAccounts) isPayload() {}
+
+func (p *PayloadStakingAccounts) plToProto() interface{} {
 	return p.IntoProto()
 }
 
@@ -1460,5 +1499,50 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 	}
 	return &snapshot.ExecutionMarkets{
 		Markets: mkts,
+	}
+}
+
+func StakingAccountsFromProto(sa *snapshot.StakingAccounts) *StakingAccounts {
+	accs := make([]*StakingAccount, 0, len(sa.Accounts))
+	for _, a := range sa.Accounts {
+		accs = append(accs, StakingAccountFromProto(a))
+	}
+	return &StakingAccounts{
+		Accounts: accs,
+	}
+}
+
+func (s StakingAccounts) IntoProto() *snapshot.StakingAccounts {
+	accs := make([]*snapshot.StakingAccount, 0, len(s.Accounts))
+	for _, a := range s.Accounts {
+		accs = append(accs, a.IntoProto())
+	}
+	return &snapshot.StakingAccounts{
+		Accounts: accs,
+	}
+}
+
+func StakingAccountFromProto(sa *snapshot.StakingAccount) *StakingAccount {
+	bal, _ := num.UintFromString(sa.Balance, 10)
+	evts := make([]*StakeLinking, 0, len(sa.Events))
+	for _, e := range sa.Events {
+		evts = append(evts, StakeLinkingFromProto(e))
+	}
+	return &StakingAccount{
+		Party:   sa.Party,
+		Balance: bal,
+		Events:  evts,
+	}
+}
+
+func (s StakingAccount) IntoProto() *snapshot.StakingAccount {
+	evts := make([]*eventspb.StakeLinking, 0, len(s.Events))
+	for _, e := range s.Events {
+		evts = append(evts, e.IntoProto())
+	}
+	return &snapshot.StakingAccount{
+		Party:   s.Party,
+		Balance: s.Balance.String(),
+		Events:  evts,
 	}
 }
