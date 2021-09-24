@@ -40,7 +40,7 @@ func NewDefault() (*Client, error) {
 	return New(defaultAddress)
 }
 
-func (c *Client) Mint(party, asset string, amount uint64) error {
+func (c *Client) Mint(party, asset, amount string) error {
 	body := faucet.MintRequest{
 		Party:  party,
 		Asset:  asset,

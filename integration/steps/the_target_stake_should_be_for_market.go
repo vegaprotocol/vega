@@ -3,11 +3,10 @@ package steps
 import (
 	"fmt"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 )
 
-func TheTargetStakeShouldBeForMarket(engine *execution.Engine, marketID string, wantTargetStake string) error {
+func TheTargetStakeShouldBeForMarket(engine Execution, marketID string, wantTargetStake string) error {
 	marketData, err := engine.GetMarketData(marketID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)

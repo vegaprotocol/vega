@@ -3,8 +3,6 @@ package pprof
 import (
 	"fmt"
 	"net/http"
-	"time"
-
 	// import pprof globally because it's used to init the package
 	// and this comment is mostly here as well in order to make
 	// golint very many much happy
@@ -13,9 +11,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"runtime/pprof"
+	"time"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/vega/config/encoding"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 )
 

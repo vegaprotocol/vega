@@ -66,11 +66,9 @@ func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1, arg2 interface{}) *gomock
 }
 
 // StartAggregate mocks base method
-func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind) error {
+func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "StartAggregate", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "StartAggregate", arg0, arg1)
 }
 
 // StartAggregate indicates an expected call of StartAggregate

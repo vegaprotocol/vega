@@ -100,7 +100,7 @@ func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 	require.Equal(t, 0, len(rs.MaxPayoutPerAssetPerParty))
 
-	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), 10000)
+	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(10000))
 	require.Equal(t, 1, len(rs.MaxPayoutPerAssetPerParty))
 	require.Equal(t, num.NewUint(10000), rs.MaxPayoutPerAssetPerParty[""])
 }
@@ -151,7 +151,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -180,7 +180,7 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -209,7 +209,7 @@ func testDistributePayout(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 
 	// setup reward account
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -249,7 +249,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
@@ -338,7 +338,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	engine.registerStakingAndDelegationRewardScheme()
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
-	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), 0)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
@@ -410,7 +410,7 @@ type testEngine struct {
 	ctrl          *gomock.Controller
 	broker        *bmock.MockBroker
 	epochEngine   *TestEpochEngine
-	delegation    *mocks.MockDelegationEngine
+	delegation    *mocks.MockDelegation
 	collateral    *collateral.Engine
 	validatorData []*types.ValidatorData
 }
@@ -420,7 +420,7 @@ func getEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
-	delegation := mocks.NewMockDelegationEngine(ctrl)
+	delegation := mocks.NewMockDelegation(ctrl)
 	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}
 	ts := mocks.NewMockTimeService(ctrl)
 

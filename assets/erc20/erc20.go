@@ -21,8 +21,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 const (
@@ -40,14 +42,23 @@ var (
 	ErrNotAnErc20Asset                = errors.New("not an erc20 asset")
 )
 
-type ERC20 struct {
-	asset   *types.Asset
-	address string
-	ok      bool
-	wallet  nodewallet.ETHWallet
+type ETHClient interface {
+	bind.ContractBackend
+	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
+	BridgeAddress() ethcommon.Address
+	CurrentHeight(context.Context) (uint64, error)
+	ConfirmationsRequired() uint32
 }
 
-func New(id string, asset *types.AssetDetails, w nodewallet.Wallet) (*ERC20, error) {
+type ERC20 struct {
+	asset     *types.Asset
+	address   string
+	ok        bool
+	wallet    nodewallet.ETHWallet
+	ethClient ETHClient
+}
+
+func New(id string, asset *types.AssetDetails, w nodewallet.Wallet, ethClient ETHClient) (*ERC20, error) {
 	wal, ok := w.(nodewallet.ETHWallet)
 	if !ok {
 		return nil, ErrMissingETHWalletFromNodeWallet
@@ -63,8 +74,9 @@ func New(id string, asset *types.AssetDetails, w nodewallet.Wallet) (*ERC20, err
 			ID:      id,
 			Details: asset,
 		},
-		address: source.ContractAddress,
-		wallet:  wal,
+		address:   source.ContractAddress,
+		wallet:    wal,
+		ethClient: ethClient,
 	}, nil
 }
 
@@ -85,7 +97,7 @@ func (b *ERC20) IsValid() bool {
 }
 
 func (b *ERC20) Validate() error {
-	t, err := NewErc20(ethcmn.HexToAddress(b.address), b.wallet.Client())
+	t, err := NewErc20(ethcommon.HexToAddress(b.address), b.ethClient)
 	if err != nil {
 		return err
 	}
@@ -182,14 +194,14 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	addr := ethcmn.HexToAddress(b.address)
+	addr := ethcommon.HexToAddress(b.address)
 	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.ID)
 	buf, err := args.Pack([]interface{}{addr, vegaAssetIDBytes, nonce, listAssetContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	bridgeAddr := ethcmn.HexToAddress(b.wallet.BridgeAddress())
+	bridgeAddr := b.ethClient.BridgeAddress()
 	args2 := abi.Arguments([]abi.Argument{
 		{
 			Name: "bytes",
@@ -218,11 +230,10 @@ func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	return msg, sig, nil
 }
 
-func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) (hash string, logIndex uint, err error) {
-	bf, err := bridge.NewBridgeFilterer(
-		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
+	bf, err := bridge.NewBridgeFilterer(b.ethClient.BridgeAddress(), b.ethClient)
 	if err != nil {
-		return "", 0, err
+		return err
 	}
 
 	var resp = "ok"
@@ -234,19 +245,19 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		&bind.FilterOpts{
 			Start: blockNumber - 1,
 		},
-		[]ethcmn.Address{ethcmn.HexToAddress(b.address)},
+		[]ethcommon.Address{ethcommon.HexToAddress(b.address)},
 		[][32]byte{},
 	)
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
-		return "", 0, err
+		return err
 	}
 
 	defer iter.Close()
 	var event *bridge.BridgeAssetListed
 
-	assetID := strings.TrimPrefix(w.VegaAssetId, "0x")
+	assetID := strings.TrimPrefix(w.VegaAssetID, "0x")
 	for iter.Next() {
 		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID {
 			event = iter.Event
@@ -255,19 +266,19 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	}
 
 	if event == nil {
-		return "", 0, ErrUnableToFindERC20AssetList
+		return ErrUnableToFindERC20AssetList
 	}
 
 	// now ensure we have enough confirmations
 	if err := b.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return "", 0, err
+		return err
 	}
 
-	return event.Raw.TxHash.Hex(), event.Raw.Index, nil
+	return nil
 }
 
 func (b *ERC20) SignWithdrawal(
-	amount uint64,
+	amount *num.Uint,
 	expiry int64,
 	ethPartyAddress string,
 	withdrawRef *big.Int,
@@ -316,18 +327,18 @@ func (b *ERC20) SignWithdrawal(
 		},
 	})
 
-	addr := ethcmn.HexToAddress(b.address)
-	hexEthPartyAddress := ethcmn.HexToAddress(ethPartyAddress)
+	addr := ethcommon.HexToAddress(b.address)
+	hexEthPartyAddress := ethcommon.HexToAddress(ethPartyAddress)
 
 	// we use the withdrawRef as a nonce
 	// they are unique as generated as an increment from the banking
 	// layer
-	buf, err := args.Pack([]interface{}{addr, big.NewInt(int64(amount)), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
+	buf, err := args.Pack([]interface{}{addr, amount.BigInt(), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	bridgeAddr := ethcmn.HexToAddress(b.wallet.BridgeAddress())
+	bridgeAddr := b.ethClient.BridgeAddress()
 	args2 := abi.Arguments([]abi.Argument{
 		{
 			Name: "bytes",
@@ -357,8 +368,7 @@ func (b *ERC20) SignWithdrawal(
 }
 
 func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
-	bf, err := bridge.NewBridgeFilterer(
-		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+	bf, err := bridge.NewBridgeFilterer(b.ethClient.BridgeAddress(), b.ethClient)
 	if err != nil {
 		return nil, "", 0, err
 	}
@@ -373,9 +383,9 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 			Start: blockNumber - 1,
 		},
 		// user_address
-		[]ethcmn.Address{ethcmn.HexToAddress(w.TargetEthereumAddress)},
+		[]ethcommon.Address{ethcommon.HexToAddress(w.TargetEthereumAddress)},
 		// asset_source
-		[]ethcmn.Address{ethcmn.HexToAddress(b.address)})
+		[]ethcommon.Address{ethcommon.HexToAddress(b.address)})
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
@@ -410,11 +420,10 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 	return nonce, event.Raw.TxHash.Hex(), event.Raw.Index, nil
 }
 
-func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) (partyID, assetID, hash string, amount *num.Uint, logIndex uint, err error) {
-	bf, err := bridge.NewBridgeFilterer(
-		ethcmn.HexToAddress(b.wallet.BridgeAddress()), b.wallet.Client())
+func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
+	bf, err := bridge.NewBridgeFilterer(b.ethClient.BridgeAddress(), b.ethClient)
 	if err != nil {
-		return "", "", "", num.NewUint(0), 0, err
+		return err
 	}
 
 	var resp = "ok"
@@ -427,13 +436,13 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 			Start: blockNumber - 1,
 		},
 		// user_address
-		[]ethcmn.Address{ethcmn.HexToAddress(d.SourceEthereumAddress)},
+		[]ethcommon.Address{ethcommon.HexToAddress(d.SourceEthereumAddress)},
 		// asset_source
-		[]ethcmn.Address{ethcmn.HexToAddress(b.address)})
+		[]ethcommon.Address{ethcommon.HexToAddress(b.address)})
 
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
-		return "", "", "", num.NewUint(0), 0, err
+		return err
 	}
 
 	depamount := d.Amount.BigInt()
@@ -451,27 +460,25 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 	}
 
 	if event == nil {
-		return "", "", "", num.NewUint(0), 0, ErrUnableToFindDeposit
+		return ErrUnableToFindDeposit
 	}
 
 	// now ensure we have enough confirmations
 	if err := b.checkConfirmations(event.Raw.BlockNumber); err != nil {
-		return "", "", "", num.NewUint(0), 0, err
+		return err
 	}
 
-	amount, _ = num.UintFromBig(iter.Event.Amount)
-
-	return d.TargetPartyID, d.VegaAssetID, event.Raw.TxHash.Hex(), amount, event.Raw.Index, nil
+	return nil
 }
 
 func (b *ERC20) checkConfirmations(txBlock uint64) error {
-	curBlock, err := b.wallet.CurrentHeight(context.Background())
+	curBlock, err := b.ethClient.CurrentHeight(context.Background())
 	if err != nil {
 		return err
 	}
 
 	if curBlock < txBlock ||
-		(curBlock-txBlock) < uint64(b.wallet.ConfirmationsRequired()) {
+		(curBlock-txBlock) < uint64(b.ethClient.ConfirmationsRequired()) {
 		return ErrMissingConfirmations
 	}
 

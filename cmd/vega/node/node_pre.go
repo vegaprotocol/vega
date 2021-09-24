@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
+	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
@@ -33,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
@@ -41,7 +43,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/cenkalti/backoff"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -60,7 +61,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}()
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 
-	conf := l.cfgwatchr.Get()
+	conf := l.confWatcher.Get()
 
 	if flagProvided("--no-chain") {
 		conf.Blockchain.ChainProvider = "noop"
@@ -75,13 +76,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		if err != nil {
 			return
 		}
-		l.cfgwatchr.OnConfigUpdate(
+		l.confWatcher.OnConfigUpdate(
 			func(cfg config.Config) { l.pproffhandlr.ReloadConf(cfg.Pprof) },
 		)
 	}
 
 	l.Log.Info("Starting Vega",
-		logging.String("config-path", l.configPath),
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
@@ -99,18 +99,14 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
-	// instantiate the ETHClient
-	ethClient, err := ethclient.Dial(l.conf.NodeWallet.ETH.Address)
+	l.ethClient, err = ethclient.Dial(l.ctx, l.conf.NodeWallet.ETH.Address)
 	if err != nil {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
-	// nodewallet
-	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, ethClient, l.configPath); err != nil {
+	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, l.ethClient, l.vegaPaths); err != nil {
 		return err
 	}
-
-	l.ethClient = ethClient
 
 	return l.nodeWallet.Verify()
 }
@@ -190,6 +186,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
 	app := processor.NewApp(
 		l.Log,
+		l.vegaPaths,
 		l.conf.Processor,
 		l.cancel,
 		l.assets,
@@ -214,8 +211,9 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Comma
 		l.delegation,
 		l.limits,
 		l.stakeVerifier,
-		l.stakingAccounts,
 		l.checkpoint,
+		l.spam,
+		l.stakingAccounts,
 	)
 
 	var abciApp tmtypes.Application
@@ -300,7 +298,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.eventService = subscribers.NewService(l.broker)
 
 	now := l.timeService.GetTimeNow()
-	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.timeService)
+	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.ethClient, l.timeService)
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
@@ -362,7 +360,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
-	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker)
+	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker, l.topology)
+	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
@@ -374,7 +373,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
-	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
+	l.timeService.NotifyOnTick(l.confWatcher.OnTimeUpdate)
 
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches
@@ -431,6 +430,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.BlockchainsEthereumConfig,
 			Watcher: l.nodeWallet.OnEthereumConfigUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.BlockchainsEthereumConfig,
+			Watcher: l.ethClient.OnEthereumConfigUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
@@ -516,11 +519,35 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.NetworkCheckpointTimeElapsedBetweenCheckpoints,
 			Watcher: l.checkpoint.OnTimeElapsedUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxVotes,
+			Watcher: l.spam.OnMaxVotesChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxProposals,
+			Watcher: l.spam.OnMaxProposalsChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMaxDelegations,
+			Watcher: l.spam.OnMaxDelegationsChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForProposal,
+			Watcher: l.spam.OnMinTokensForProposalChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForVoting,
+			Watcher: l.spam.OnMinTokensForVotingChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SpamProtectionMinTokensForDelegation,
+			Watcher: l.spam.OnMinTokensForDelegationChanged,
+		},
 	)
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
-	l.cfgwatchr.OnConfigUpdate(
+	l.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },

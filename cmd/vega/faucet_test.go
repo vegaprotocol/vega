@@ -10,15 +10,18 @@ import (
 )
 
 func (suite *CommandSuite) TestFaucet(t *testing.T) {
-	path, closer := suite.PrepareSandbox(t)
-	defer closer()
+	path, pass, _ := suite.PrepareSandbox(t)
+	// defer closer()
 	ctx, cancel := context.WithCancel(context.Background())
 
-	_, err = suite.RunMain(ctx, "faucet init -r %s -p %s/passphrase", path, path)
+	_, err = suite.RunMain(ctx, "init --output json --home %s --nodewallet-passphrase-file %s", path, pass)
+	require.NoError(t, err)
+
+	_, err = suite.RunMain(ctx, "faucet init --output json --home %s -p %s", path, pass)
 	require.NoError(t, err)
 
 	go func() { time.Sleep(100 * time.Millisecond); cancel() }()
-	out, err = suite.RunMain(ctx, "faucet run -r %s -p %s/passphrase --ip=127.0.0.1 --port=11790", path, path)
+	out, err = suite.RunMain(ctx, "faucet run --home %s -p %s --ip=127.0.0.1 --port=11790", path, pass)
 	require.NoError(t, err)
 
 	assert.Contains(t, string(out), "starting faucet server")

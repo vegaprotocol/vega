@@ -8,9 +8,11 @@ import (
 	"time"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/checkpoint"
+	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/crypto"
@@ -25,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/types"
@@ -32,7 +35,6 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/cenkalti/backoff"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/prometheus/common/log"
@@ -45,6 +47,13 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	nodeWallet := mocks.NewMockNodeWallet(ctrl)
 	notary := mocks.NewMockNotary(ctrl)
 	oraclesAdaptors := mocks.NewMockOracleAdaptors(ctrl)
+
+	ctx := context.Background()
+	// instantiate the ETHClient
+	ethClient, err := ethclient.Dial(ctx, nodewallet.NewDefaultConfig().ETH.Address)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	commander := mocks.NewMockCommander(ctrl)
 	commander.EXPECT().
@@ -80,6 +89,7 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		log,
 		assets.NewDefaultConfig(),
 		nodeWallet,
+		ethClient,
 		timeService,
 	)
 	pubKey, err := hex.DecodeString(selfPubKey)
@@ -110,11 +120,12 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		assets,
 		notary,
 		broker,
+		topology,
 	)
 
 	exec := execution.NewEngine(
 		log,
-		execution.NewDefaultConfig(""),
+		execution.NewDefaultConfig(),
 		timeService,
 		collateral,
 		oraclesM,
@@ -133,12 +144,6 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
-	// instantiate the ETHClient
-	ethClient, err := ethclient.Dial(nodewallet.NewDefaultConfig().ETH.Address)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	stakingAccounts, _ := staking.New(
@@ -156,12 +161,14 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeAsset().AnyTimes().Return(true)
 
+	spamEngine := spam.New(log, spam.NewDefaultConfig(), epochService, stakingAccounts)
+
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
-	stakingA := mocks.NewMockStakingAccounts(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
 	app := processor.NewApp(
 		log,
-		processor.NewDefaultConfig(""),
+		&paths.DefaultPaths{},
+		processor.NewDefaultConfig(),
 		func() {},
 		assets,
 		banking,
@@ -185,8 +192,9 @@ func setupVega(selfPubKey string) (*processor.App, processor.Stats, error) {
 		delegationEngine,
 		limits,
 		stakeV,
-		stakingA,
 		cp,
+		spamEngine,
+		nil,
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {

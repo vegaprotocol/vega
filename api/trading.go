@@ -78,7 +78,7 @@ func (t *tradingService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTim
 	}, nil
 }
 
-func (t *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.SubmitTransactionV2Request) (*protoapi.SubmitTransactionV2Response, error) {
+func (t *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("SubmitTransactionV2", startTime)
 
@@ -86,7 +86,7 @@ func (t *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	if err := t.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionV2Request_TYPE_ASYNC); err != nil {
+	if err := t.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC); err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
@@ -100,7 +100,7 @@ func (t *tradingService) SubmitTransactionV2(ctx context.Context, req *protoapi.
 		return nil, apiError(codes.Internal, err)
 	}
 
-	return &protoapi.SubmitTransactionV2Response{
+	return &protoapi.SubmitTransactionResponse{
 		Success: true,
 	}, nil
 }

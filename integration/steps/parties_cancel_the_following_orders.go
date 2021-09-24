@@ -3,7 +3,6 @@ package steps
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/types"
 
@@ -12,7 +11,7 @@ import (
 
 func PartiesCancelTheFollowingOrders(
 	broker *stubs.BrokerStub,
-	exec *execution.Engine,
+	exec Execution,
 	table *godog.Table,
 ) error {
 	for _, r := range parseCancelOrderTable(table) {
