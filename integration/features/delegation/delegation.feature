@@ -204,6 +204,64 @@ Feature: Staking & Delegation
     | party1 |  node3   | 1507   |   
     | party1 |  node4   | 1551   |   
 
+  Scenario: Maximum amount of stake for a validator is not affected by delegations/undelegations that net each other
+    Description: Expecting same result as above despite multiple delegations/undelegations
+
+    #epoch1 started
+    When the parties submit the following delegations:
+    | party  | node id  |   amount  | 
+    | party1 |  node1   |    1500   | 
+    | party1 |  node2   |    2000   | 
+    | party1 |  node3   |    2500   | 
+    | party1 |  node3   |    2500   | 
+
+    When the network moves ahead "1" blocks
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |  when         |
+    | party1 |  node3   |  500   |  now          |      
+    | party1 |  node3   |  500   |  now          |      
+    | party1 |  node3   |  500   |  now          |      
+    | party1 |  node3   |  500   |  now          |      
+    | party1 |  node3   |  500   |  end of epoch |    
+
+    When the network moves ahead "1" blocks
+
+    When the parties submit the following delegations:
+    | party  | node id  |   amount  | 
+    | party1 |  node2   |    1000   |   
+
+    When the network moves ahead "1" blocks
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |  when     |
+    | party1 |  node2   |  500   |  now      |    
+
+    When the network moves ahead "1" blocks  
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |  when         |
+    | party1 |  node2   |  500   |  end of epoch | 
+
+    #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | party1 |  node1   |   0    | 
+    | party1 |  node2   |   0    |       
+    | party1 |  node3   |   0    |        
+
+    And the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 2000   |       
+    | party1 |  node3   | 2500   |        
+
+    When the network moves ahead "3" blocks
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 1507   |       
+    | party1 |  node3   | 1507   |   
+
   Scenario: A party changes delegation from one validator to another in the same epoch
     Description: A party can change delegatation from one Validator to another
 
