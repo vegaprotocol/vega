@@ -3,9 +3,12 @@ package snapshot
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"strings"
 
+	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cosmos/iavl"
 	db "github.com/tendermint/tm-db"
@@ -34,17 +37,21 @@ type StateProvider interface {
 	// Sync() error
 }
 
+// Engine the snapshot engine
 type Engine struct {
 	Config
 
 	ctx        context.Context
 	cfunc      context.CancelFunc
+	db         db.DB
 	log        *logging.Logger
 	avl        *iavl.MutableTree
 	namespaces []string
 	keys       [][]byte
 	nsKeys     map[string][]string
+	nsTreeKeys map[string][][]byte
 	hashes     map[string][]byte
+	versions   []int64
 
 	providers map[string]StateProvider
 
@@ -53,44 +60,76 @@ type Engine struct {
 	version int64
 }
 
+// New returns a new snapshot engine
 func New(ctx context.Context, conf Config, log *logging.Logger) (*Engine, error) {
 	log = log.Named(namedLogger)
-	tree, err := iavl.NewMutableTree(db.NewMemDB(), 0)
+	dbConn := db.NewMemDB()
+	tree, err := iavl.NewMutableTree(dbConn, 0)
 	if err != nil {
 		log.Error("Could not create AVL tree", logging.Error(err))
 		return nil, err
 	}
 	sctx, cfunc := context.WithCancel(ctx)
+	app := string(types.AppSnapshot)
 	return &Engine{
-		Config:     conf,
-		ctx:        sctx,
-		cfunc:      cfunc,
-		log:        log,
-		avl:        tree,
-		namespaces: []string{},
-		nsKeys:     map[string][]string{},
-		hashes:     map[string][]byte{},
-		providers:  map[string]StateProvider{},
+		Config: conf,
+		ctx:    sctx,
+		cfunc:  cfunc,
+		db:     dbConn,
+		log:    log,
+		avl:    tree,
+		namespaces: []string{
+			app,
+		},
+		nsKeys: map[string][]string{
+			app: []string{"all"},
+		},
+		nsTreeKeys: map[string][][]byte{
+			app: [][]byte{
+				[]byte(strings.Join([]string{app, "all"}, ".")),
+			},
+		},
+		hashes:    map[string][]byte{},
+		providers: map[string]StateProvider{},
+		versions:  make([]int64, 0, conf.Versions), // cap determines how many versions we keep
 	}, nil
 }
 
-func (e *Engine) Snapshot() ([]byte, error) {
+// List returns all snapshots available
+func (e *Engine) List() ([]*types.TMSnapshot, error) {
+	trees := make([]*types.TMSnapshot, 0, len(e.versions))
+	for _, v := range e.versions {
+		tree, err := e.avl.GetImmutable(v)
+		if err != nil {
+			return nil, err
+		}
+		snap, err := types.NewTMSnapshotFromIAVL(tree, e.nsTreeKeys)
+		if err != nil {
+			return nil, err
+		}
+		trees = append(trees, snap)
+	}
+	return trees, nil
+}
+
+func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
 	// always iterate over slices, so loops are deterministic
 	updated := false
 	for _, ns := range e.namespaces {
-		keys := e.nsKeys[ns]
-		for _, k := range keys {
-			u, err := e.update(ns, k)
-			if err != nil {
-				return nil, err
-			}
-			if u {
-				updated = true
-			}
+		u, err := e.update(ns)
+		if err != nil {
+			return nil, err
+		}
+		if u {
+			updated = true
 		}
 	}
 	if !updated {
 		return e.hash, nil
+	}
+	// set height and all that jazz
+	if err := e.addAppSnap(ctx); err != nil {
+		return nil, err
 	}
 	h, v, err := e.avl.SaveVersion()
 	if err != nil {
@@ -98,39 +137,72 @@ func (e *Engine) Snapshot() ([]byte, error) {
 	}
 	e.hash = h
 	e.version = v
+	if len(e.versions) >= cap(e.versions) {
+		// drop first version
+		copy(e.versions[0:], e.versions[1:])
+		// set the last value in the slice to the current version
+		e.versions[len(e.versions)-1] = v
+	} else {
+		// we're still building a backlog of versions
+		e.versions = append(e.versions, v)
+	}
 	// get ptr to current version
 	e.last = e.avl.ImmutableTree
 	return h, nil
 }
 
-func (e *Engine) update(ns, k string) (bool, error) {
-	p := e.providers[ns]
-	nsKey := strings.Join([]string{ns, k}, ".")
-	ch := e.hashes[nsKey]
-	h, err := p.GetHash(k)
+func (e *Engine) addAppSnap(ctx context.Context) error {
+	height, err := vegactx.BlockHeightFromContext(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
-	// current hash matches old one
-	if bytes.Equal(ch, h) {
-		return false, nil
+	_, block := vegactx.TraceIDFromContext(ctx)
+	app := types.AppState{
+		Height: uint64(height),
+		Block:  block,
 	}
-	// hash needs updating
-	v, err := p.GetState(k)
+	as, err := json.Marshal(app)
 	if err != nil {
-		return false, err
+		return err
 	}
-	e.hashes[nsKey] = h
-	key := []byte(nsKey) // key is ns.Key as byte slice
-	_ = e.avl.Set(key, v)
-	return true, nil
+	// we know the key:
+	_ = e.avl.Set(e.nsTreeKeys[string(types.AppSnapshot)][0], as)
+	return nil
 }
 
-func (e *Engine) Hash() ([]byte, error) {
+func (e *Engine) update(ns string) (bool, error) {
+	p := e.providers[ns]
+	update := false
+	for _, nsKey := range e.nsTreeKeys[ns] {
+		sKey := string(nsKey)
+		ch := e.hashes[sKey]
+		pKey := string(nsKey[len([]byte(ns))+1:]) // truncate namespace + . gets key
+		h, err := p.GetHash(pKey)
+		if err != nil {
+			return update, err
+		}
+		if bytes.Equal(ch, h) {
+			// no update, we're done with this key
+			continue
+		}
+		// hashes don't match
+		v, err := p.GetState(pKey)
+		if err != nil {
+			return update, err
+		}
+		// we have new state, and new hash
+		e.hashes[sKey] = h
+		_ = e.avl.Set(nsKey, v)
+		update = true
+	}
+	return update, nil
+}
+
+func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
 	if len(e.hash) != 0 {
 		return e.hash, nil
 	}
-	return e.Snapshot()
+	return e.Snapshot(ctx)
 }
 
 func (e *Engine) AddProviders(provs ...StateProvider) {
@@ -141,6 +213,12 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 		if !ok {
 			// just add
 			e.nsKeys[ns] = keys
+			nsTreeKeys := make([][]byte, 0, len(keys))
+			for _, k := range keys {
+				key := strings.Join([]string{ns, k}, ".")
+				nsTreeKeys = append(nsTreeKeys, []byte(key))
+			}
+			e.nsTreeKeys[ns] = nsTreeKeys
 			e.namespaces = append(e.namespaces, ns)
 			continue
 		}
@@ -152,9 +230,17 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 			e.log.Debug("Skipping keys we already have")
 		}
 		e.nsKeys[ns] = append(haveKeys, dedup...)
+		nsTreeKeys := e.nsTreeKeys[ns]
+		for _, k := range dedup {
+			key := strings.Join([]string{ns, k}, ".")
+			nsTreeKeys = append(nsTreeKeys, []byte(key))
+		}
+		e.nsTreeKeys[ns] = nsTreeKeys
 	}
-	// just create the first snapshot
-	_, _ = e.Snapshot()
+}
+
+func (e *Engine) Close() error {
+	return e.db.Close()
 }
 
 func uniqueSubset(have, add []string) []string {
