@@ -131,7 +131,7 @@ func NewApp(
 	stakingAccounts StakingAccounts,
 ) *App {
 	// @TODO move the initialisation of this elsewhere
-	snap, _ := snapshot.New(context.Background(), snapshot.NewDefaultConfig(), log)
+	snap, _ := snapshot.New(context.Background(), snapshot.NewDefaultConfig(), log, time)
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
