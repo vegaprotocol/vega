@@ -92,6 +92,7 @@ type App struct {
 	stakingAccounts StakingAccounts
 	checkpoint      Checkpoint
 	spam            SpamEngine
+	epoch           EpochService
 }
 
 func NewApp(
@@ -158,6 +159,7 @@ func NewApp(
 		checkpoint:      checkpoint,
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
+		epoch:           epoch,
 	}
 
 	// setup handlers
@@ -299,6 +301,8 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
 
+	app.epoch.OnBlockEnd(ctx)
+
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
@@ -338,9 +342,9 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
 
 	// Snapshot can be nil if it wasn't time to create a snapshot
-	if cp, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cp != nil {
-		resp.Data = append(resp.Data, cp.Hash...)
-		_ = app.handleCheckpoint(cp)
+	if snap, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); snap != nil {
+		resp.Data = append(resp.Data, snap.Hash...)
+		_ = app.handleCheckpoint(snap)
 	}
 	// Compute the AppHash and update the response
 
@@ -350,20 +354,19 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	return resp
 }
 
-func (app *App) handleCheckpoint(cp *types.Snapshot) error {
-	now := app.time.GetTimeNow()
-	height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
-	cpFileName := fmt.Sprintf("%s-%d-%s.cp", now.Format("20060102150405"), height, hex.EncodeToString(cp.Hash))
+func (app *App) handleCheckpoint(snap *types.Snapshot) error {
+	now := time.Now()
+	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash))
 	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.SnapshotStateHome, cpFileName))
 	if err != nil {
 		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
 	}
-	if err := vgfs.WriteFile(cpFilePath, cp.State); err != nil {
+	if err := vgfs.WriteFile(cpFilePath, snap.State); err != nil {
 		return fmt.Errorf("couldn't write checkpoint file at %s: %w", cpFilePath, err)
 	}
 	// emit the event indicating a new checkpoint was created
 	// this function is called both for interval checkpoints and withdrawal checkpoints
-	event := events.NewCheckpointEvent(app.blockCtx, cp)
+	event := events.NewCheckpointEvent(app.blockCtx, snap)
 	app.broker.Send(event)
 	return nil
 }

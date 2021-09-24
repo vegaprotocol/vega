@@ -209,7 +209,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
-		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks)
+		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
 	})
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
 		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.block, execsetup.timeService, total, block)
