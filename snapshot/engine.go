@@ -54,8 +54,7 @@ type Engine struct {
 	log        *logging.Logger
 	avl        *iavl.MutableTree
 	namespaces []string
-	keys       [][]byte
-	sKeys      []string
+	keys       []string
 	nsKeys     map[string][]string
 	nsTreeKeys map[string][][]byte
 	hashes     map[string][]byte
@@ -93,6 +92,7 @@ func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) 
 		namespaces: []string{
 			app,
 		},
+		keys: []string{},
 		nsKeys: map[string][]string{
 			app: {"all"},
 		},
@@ -115,7 +115,7 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 		if err != nil {
 			return nil, err
 		}
-		snap, err := types.SnapshotFromIAVL(tree, e.sKeys)
+		snap, err := types.SnapshotFromIAVL(tree, e.keys)
 		if err != nil {
 			return nil, err
 		}
@@ -283,7 +283,7 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 			nsTreeKeys := make([][]byte, 0, len(keys))
 			for _, k := range keys {
 				key := strings.Join([]string{ns, k}, ".")
-				e.sKeys = append(e.sKeys, key)
+				e.keys = append(e.keys, key)
 				nsTreeKeys = append(nsTreeKeys, []byte(key))
 			}
 			e.nsTreeKeys[ns] = nsTreeKeys
@@ -301,7 +301,7 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 		nsTreeKeys := e.nsTreeKeys[ns]
 		for _, k := range dedup {
 			key := strings.Join([]string{ns, k}, ".")
-			e.sKeys = append(e.sKeys, key)
+			e.keys = append(e.keys, key)
 			nsTreeKeys = append(nsTreeKeys, []byte(key))
 		}
 		e.nsTreeKeys[ns] = nsTreeKeys
