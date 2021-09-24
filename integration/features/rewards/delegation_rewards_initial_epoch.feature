@@ -484,18 +484,19 @@ Scenario: Validator owns more tokens than the minimumValidatorStake, but most of
       | node12 | VEGA  | 0      | 
       | node13 | VEGA  | 0      | 
 
+   # Leave 20 in the account
    Given the parties withdraw from staking account the following amount:  
-    | party  | asset  | amount  |
-    | node2  | VEGA   |  999990 |
+    | party  | asset  | amount |
+    | node2  | VEGA   | 999980 | 
 
   And the parties submit the following undelegations:
     | party | node id | amount | when |
     | node3 |  node7  |   2900 | now  |
     | node8 |  node8  |     60 | now  |
 
-  Then the network moves ahead "10" blocks
+  Then the network moves ahead "1" blocks
 
-  #TODO: Should fail?
+  # Delegation changes due to undelegation are immediate, need to complete the epoch for withdrawal to get registered
   And the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
     | node1  |  node1   |  11000 | 
@@ -510,7 +511,23 @@ Scenario: Validator owns more tokens than the minimumValidatorStake, but most of
     | party1 |  node1   |  22197 | 
     | party2 |  node2   |  33177 | 
 
+  Then the network moves ahead "86401" blocks
 
+  And the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | node1  |  node1   |  11000 | 
+    | node2  |  node2   |      2 |       
+    | node3  |  node3   |     30 | 
+    | node4  |  node4   |  14000 | 
+    | node5  |  node5   |  15000 | 
+    | node6  |  node6   |  16000 | 
+    | node8  |  node8   |     50 |       
+    | node2  |  node7   |     18 |       
+    | node3  |  node7   |    100 | 
+    | party1 |  node1   |  22197 | 
+    | party2 |  node2   |  33177 | 
+
+    
 #TODO:
   #  Clarify:
   #   - Not setting up reward account / adding 0 to it prevents validator score from being calculated
