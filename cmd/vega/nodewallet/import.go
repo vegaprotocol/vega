@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -58,13 +58,14 @@ func (opts *importCmd) Execute(_ []string) error {
 	}
 
 	var data map[string]string
-	if opts.Chain == ethereumChain {
-		data, err = nodewallet.ImportEthereumWallet(vegaPaths, registryPass, walletPass, opts.WalletPath, opts.Force)
+	switch opts.Chain {
+	case ethereumChain:
+		data, err = nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
 		}
-	} else if opts.Chain == vegaChain {
-		data, err = nodewallet.ImportVegaWallet(vegaPaths, registryPass, walletPass, opts.WalletPath, opts.Force)
+	case vegaChain:
+		data, err = nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
 		}

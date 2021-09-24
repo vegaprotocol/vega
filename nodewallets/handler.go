@@ -16,7 +16,7 @@ var (
 )
 
 func GetEthereumWallet(vegaPaths paths.Paths, registryPassphrase string) (*eth.Wallet, error) {
-	registryLoader, err := InitialiseRegistry(vegaPaths, registryPassphrase)
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -44,7 +44,7 @@ func GetEthereumWallet(vegaPaths paths.Paths, registryPassphrase string) (*eth.W
 }
 
 func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wallet, error) {
-	registryLoader, err := InitialiseRegistry(vegaPaths, registryPassphrase)
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -74,7 +74,7 @@ func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wall
 func GetNodeWallets(vegaPaths paths.Paths, registryPassphrase string) (*NodeWallets, error) {
 	nodeWallets := &NodeWallets{}
 
-	registryLoader, err := InitialiseRegistry(vegaPaths, registryPassphrase)
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -112,7 +112,7 @@ func GetNodeWallets(vegaPaths paths.Paths, registryPassphrase string) (*NodeWall
 }
 
 func GenerateEthereumWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphrase string, overwrite bool) (map[string]string, error) {
-	registryLoader, err := InitialiseRegistry(vegaPaths, registryPassphrase)
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -150,7 +150,7 @@ func GenerateEthereumWallet(vegaPaths paths.Paths, registryPassphrase, walletPas
 }
 
 func GenerateVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphrase string, overwrite bool) (map[string]string, error) {
-	registryLoader, err := InitialiseRegistry(vegaPaths, registryPassphrase)
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -192,7 +192,7 @@ func ImportEthereumWallet(vegaPaths paths.Paths, registryPassphrase, walletPassp
 		return nil, fmt.Errorf("path to the wallet file need to be absolute")
 	}
 
-	registryLoader, err := InitialiseRegistry(vegaPaths, registryPassphrase)
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}
@@ -234,7 +234,7 @@ func ImportVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphras
 		return nil, fmt.Errorf("path to the wallet file need to be absolute")
 	}
 
-	registryLoader, err := InitialiseRegistry(vegaPaths, registryPassphrase)
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
 	}

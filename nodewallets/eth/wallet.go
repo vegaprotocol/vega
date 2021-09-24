@@ -35,8 +35,8 @@ func (w *Wallet) Algo() string {
 	return "eth"
 }
 
-func (w *Wallet) Version() uint32 {
-	return 0
+func (w *Wallet) Version() string {
+	return "0"
 }
 
 func (w *Wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {

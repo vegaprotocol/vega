@@ -32,7 +32,7 @@ type RegistryLoader struct {
 	registryFilePath string
 }
 
-func InitialiseRegistry(vegaPaths paths.Paths, passphrase string) (*RegistryLoader, error) {
+func NewRegistryLoader(vegaPaths paths.Paths, passphrase string) (*RegistryLoader, error) {
 	registryFilePath, err := vegaPaths.ConfigPathFor(paths.NodeWalletsConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get config path for %s: %w", paths.NodeWalletsConfigFile, err)

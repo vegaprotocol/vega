@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -26,7 +26,7 @@ type generateCmd struct {
 
 const (
 	ethereumChain = "ethereum"
-	vegaChain = "vega"
+	vegaChain     = "vega"
 )
 
 func (opts *generateCmd) Execute(_ []string) error {
@@ -62,12 +62,13 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	var data map[string]string
-	if opts.Chain == ethereumChain {
+	switch opts.Chain {
+	case ethereumChain:
 		data, err = nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
 		}
-	} else if opts.Chain == vegaChain {
+	case vegaChain:
 		data, err = nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
