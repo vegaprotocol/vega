@@ -64,20 +64,22 @@ func TestEpochService(t *testing.T) {
 	// End time should not be set
 	assert.True(t, epoch.EndTime.IsZero())
 
-	// Move time forward one day
+	// Move time forward one day + one second to start the first block past the expiry of the first epoch
 	now = now.Add((time.Hour * 24) + time.Second)
 	vt.SetTimeNow(ctx, now)
-	// We should have 1 new updates, one for end of epoch.
-	assert.Equal(t, 2, len(epochs))
+
+	// end the block to mark the end of the epoch
+	es.OnBlockEnd(ctx)
+
+	// start the next block to start the second epoch
+	vt.SetTimeNow(ctx, now)
+
+	// We should have 2 new updates, one for end of epoch and one for the beginning of the new one
+	assert.Equal(t, 3, len(epochs))
 	epoch = epochs[1]
 	assert.EqualValues(t, 0, epoch.Seq)
 	assert.Equal(t, now.String(), epoch.EndTime.String())
 
-	// Move time forward one block
-	now = now.Add(time.Second)
-	vt.SetTimeNow(ctx, now)
-	// One update for the new epoch
-	assert.Equal(t, 3, len(epochs))
 	epoch = epochs[2]
 	assert.EqualValues(t, 1, epoch.Seq)
 	assert.Equal(t, now.String(), epoch.StartTime.String())
