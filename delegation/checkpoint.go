@@ -3,7 +3,7 @@ package delegation
 import (
 	"sort"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -22,18 +22,18 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return proto.Marshal(data.IntoProto())
 }
 
-func (e *Engine) Load(checkpoint []byte) error {
-	cp := &snapshot.Delegate{}
-	if err := proto.Unmarshal(checkpoint, cp); err != nil {
+func (e *Engine) Load(data []byte) error {
+	cp := &checkpoint.Delegate{}
+	if err := proto.Unmarshal(data, cp); err != nil {
 		return err
 	}
-	data := types.NewDelegationCPFromProto(cp)
+	cpData := types.NewDelegationCPFromProto(cp)
 	// reset state
 	e.partyDelegationState = map[string]*partyDelegation{}
 	e.nodeDelegationState = map[string]*validatorDelegation{}
-	e.setActive(data.Active)
+	e.setActive(cpData.Active)
 	e.pendingState = map[uint64]map[string]*pendingPartyDelegation{}
-	e.setPending(data.Pending)
+	e.setPending(cpData.Pending)
 	return nil
 }
 
