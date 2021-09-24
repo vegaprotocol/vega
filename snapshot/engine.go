@@ -17,7 +17,7 @@ import (
 
 type StateProvider interface {
 	// Namespace this provider operates in, basically a prefix for the keys
-	Namespace() string
+	Namespace() types.SnapshotNamespace
 	// Keys gets all the nodes this provider populates
 	Keys() []string
 	// GetHash returns the hash for the state for a given key
@@ -94,10 +94,10 @@ func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) 
 			app,
 		},
 		nsKeys: map[string][]string{
-			app: []string{"all"},
+			app: {"all"},
 		},
 		nsTreeKeys: map[string][][]byte{
-			app: [][]byte{
+			app: {
 				[]byte(strings.Join([]string{app, "all"}, ".")),
 			},
 		},
@@ -127,7 +127,7 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
 	if e.snapshot != nil {
 		// in case other peers provide snapshots, check if their hashes match what we want
-		if !bytes.Compare(e.snapshot.Hash, snap.Hash) {
+		if !bytes.Equal(e.snapshot.Hash, snap.Hash) {
 			return types.ErrSnapshotHashMismatch
 		}
 		return e.snapshot.ValidateMeta(snap)
@@ -159,7 +159,7 @@ func (e *Engine) ApplySnapshot() error {
 
 func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
 	if e.snapshot == nil {
-		return false, ErrUnknownSnapshot
+		return false, types.ErrUnknownSnapshot
 	}
 	if err := e.snapshot.LoadChunk(chunk); err != nil {
 		return false, err
@@ -274,7 +274,7 @@ func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
 
 func (e *Engine) AddProviders(provs ...StateProvider) {
 	for _, p := range provs {
-		ns := p.Namespace()
+		ns := p.Namespace().String()
 		keys := p.Keys()
 		haveKeys, ok := e.nsKeys[ns]
 		if !ok {
