@@ -60,18 +60,22 @@ type Store struct {
 
 	watchers     map[string][]WatchParam
 	paramUpdates map[string]struct{}
+
+	state *snapState
 }
 
 func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
+	store := defaultNetParams()
 	return &Store{
 		log:          log,
 		cfg:          cfg,
-		store:        defaultNetParams(),
+		store:        store,
 		broker:       broker,
 		watchers:     map[string][]WatchParam{},
 		paramUpdates: map[string]struct{}{},
+		state:        newSnapState(store),
 	}
 }
 
@@ -227,6 +231,7 @@ func (s *Store) Update(ctx context.Context, key, value string) error {
 	s.paramUpdates[key] = struct{}{}
 	// and also send it to the broker
 	s.broker.Send(events.NewNetworkParameterEvent(ctx, key, value))
+	s.state.update(key, value)
 
 	return nil
 }
@@ -244,6 +249,7 @@ func (s *Store) updateBatch(ctx context.Context, params map[string]string) error
 			return fmt.Errorf("unable to update %s: %w", k, err)
 		}
 		s.paramUpdates[k] = struct{}{}
+		s.state.update(k, v)
 		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v))
 	}
 	s.broker.SendBatch(evts)
