@@ -121,22 +121,22 @@ func (s *snapState) update(k, v string) {
 
 // make Store implement/forward the dataprovider interface
 
-func (s Store) Namespace() types.SnapshotNamespace {
+func (s *Store) Namespace() types.SnapshotNamespace {
 	return s.state.Namespace()
 }
 
-func (s Store) Keys() []string {
+func (s *Store) Keys() []string {
 	return s.state.Keys()
 }
 
-func (s Store) GetHash(k string) ([]byte, error) {
+func (s *Store) GetHash(k string) ([]byte, error) {
 	return s.state.GetHash(k)
 }
 
-func (s Store) Snapshot() (map[string][]byte, error) {
+func (s *Store) Snapshot() (map[string][]byte, error) {
 	return s.state.Snapshot()
 }
 
-func (s Store) GetState(k string) ([]byte, error) {
+func (s *Store) GetState(k string) ([]byte, error) {
 	return s.state.GetState(k)
 }
