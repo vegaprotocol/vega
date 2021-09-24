@@ -103,6 +103,10 @@ type PayloadDelegationPending struct {
 	DelegationPending *DelegationPending
 }
 
+type PayloadDelegationAuto struct {
+	DelegationAuto *DelegationAuto
+}
+
 type PayloadGovernanceActive struct {
 	GovernanceActive *GovernanceActive
 }
@@ -281,6 +285,10 @@ type DelegationActive struct {
 type DelegationPending struct {
 	Delegations  []*Delegation
 	Undelegation []*Delegation
+}
+
+type DelegationAuto struct {
+	Parties []string
 }
 
 type GovernanceActive struct {
@@ -477,6 +485,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadEpochFromProto(dt)
 	case *snapshot.Payload_StakingAccounts:
 		ret.Data = PayloadStakingAccountsFromProto(dt)
+	case *snapshot.Payload_DelegationAuto:
+		ret.Data = PayloadDelegationAutoFromProto(dt)
 	}
 	return ret
 }
@@ -534,6 +544,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Checkpoint:
 		ret.Data = dt
 	case *snapshot.Payload_Epoch:
+		ret.Data = dt
+	case *snapshot.Payload_DelegationAuto:
 		ret.Data = dt
 	}
 	return &ret
@@ -797,6 +809,32 @@ func (*PayloadNetParams) Key() string {
 
 func (*PayloadNetParams) Namespace() SnapshotNamespace {
 	return NetParamsSnapshot
+}
+
+func PayloadDelegationAutoFromProto(da *snapshot.Payload_DelegationAuto) *PayloadDelegationAuto {
+	return &PayloadDelegationAuto{
+		DelegationAuto: DelegationAutoFromProto(da.DelegationAuto),
+	}
+}
+
+func (p PayloadDelegationAuto) IntoProto() *snapshot.Payload_DelegationAuto {
+	return &snapshot.Payload_DelegationAuto{
+		DelegationAuto: p.DelegationAuto.IntoProto(),
+	}
+}
+
+func (*PayloadDelegationAuto) isPayload() {}
+
+func (p *PayloadDelegationAuto) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadDelegationAuto) Key() string {
+	return "auto"
+}
+
+func (*PayloadDelegationAuto) Namespace() SnapshotNamespace {
+	return DelegationSnapshot
 }
 
 func PayloadDelegationActiveFromProto(da *snapshot.Payload_DelegationActive) *PayloadDelegationActive {
@@ -1310,6 +1348,18 @@ func (d DelegationPending) IntoProto() *snapshot.DelegationPending {
 		ret.Undelegation = append(ret.Undelegation, u.IntoProto())
 	}
 	return &ret
+}
+
+func DelegationAutoFromProto(da *snapshot.DelegationAuto) *DelegationAuto {
+	return &DelegationAuto{
+		Parties: da.Parties[:],
+	}
+}
+
+func (d DelegationAuto) IntoProto() *snapshot.DelegationAuto {
+	return &snapshot.DelegationAuto{
+		Parties: d.Parties[:],
+	}
 }
 
 func GovernanceEnactedFromProto(ge *snapshot.GovernanceEnacted) *GovernanceEnacted {
