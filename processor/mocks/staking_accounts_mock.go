@@ -32,16 +32,16 @@ func (m *MockStakingAccounts) EXPECT() *MockStakingAccountsMockRecorder {
 	return m.recorder
 }
 
-// HasBalance mocks base method
-func (m *MockStakingAccounts) HasBalance(arg0 string) bool {
+// Hash mocks base method
+func (m *MockStakingAccounts) Hash() []byte {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasBalance", arg0)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "Hash")
+	ret0, _ := ret[0].([]byte)
 	return ret0
 }
 
-// HasBalance indicates an expected call of HasBalance
-func (mr *MockStakingAccountsMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
+// Hash indicates an expected call of Hash
+func (mr *MockStakingAccountsMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasBalance", reflect.TypeOf((*MockStakingAccounts)(nil).HasBalance), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockStakingAccounts)(nil).Hash))
 }

@@ -6,6 +6,7 @@ package mocks
 
 import (
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	crypto "code.vegaprotocol.io/vega/crypto"
 	oracles "code.vegaprotocol.io/vega/oracles"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -35,16 +36,16 @@ func (m *MockOracleAdaptors) EXPECT() *MockOracleAdaptorsMockRecorder {
 }
 
 // Normalise mocks base method
-func (m *MockOracleAdaptors) Normalise(arg0 v1.OracleDataSubmission) (*oracles.OracleData, error) {
+func (m *MockOracleAdaptors) Normalise(arg0 crypto.PublicKeyOrAddress, arg1 v1.OracleDataSubmission) (*oracles.OracleData, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Normalise", arg0)
+	ret := m.ctrl.Call(m, "Normalise", arg0, arg1)
 	ret0, _ := ret[0].(*oracles.OracleData)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Normalise indicates an expected call of Normalise
-func (mr *MockOracleAdaptorsMockRecorder) Normalise(arg0 interface{}) *gomock.Call {
+func (mr *MockOracleAdaptorsMockRecorder) Normalise(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Normalise", reflect.TypeOf((*MockOracleAdaptors)(nil).Normalise), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Normalise", reflect.TypeOf((*MockOracleAdaptors)(nil).Normalise), arg0, arg1)
 }

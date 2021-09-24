@@ -1,9 +1,11 @@
 package adaptors_test
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"testing"
 
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/oracles/adaptors"
 
@@ -20,6 +22,8 @@ func TestOpenOracleAdaptor(t *testing.T) {
 
 func testOpenOracleAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 	// given
+	pubKeyB := []byte("0xdeadbeef")
+	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData, _ := json.Marshal(struct {
 		Prices       string
 		MarketNumber uint
@@ -29,7 +33,7 @@ func testOpenOracleAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 	})
 
 	// when
-	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(pubKey, rawData)
 
 	// then
 	assert.Error(t, err)
@@ -38,6 +42,8 @@ func testOpenOracleAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 
 func testOpenOracleAdaptorNormalisingCompatibleButInvalidDataFails(t *testing.T) {
 	// given
+	pubKeyB := []byte("0xdeadbeef")
+	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData, _ := json.Marshal(openoracle.OracleResponse{
 		Timestamp: "1611924180",
 		Messages: []string{
@@ -85,7 +91,7 @@ func testOpenOracleAdaptorNormalisingCompatibleButInvalidDataFails(t *testing.T)
 	})
 
 	// when
-	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(pubKey, rawData)
 
 	// then
 	assert.Error(t, err)
@@ -94,6 +100,8 @@ func testOpenOracleAdaptorNormalisingCompatibleButInvalidDataFails(t *testing.T)
 
 func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T) {
 	// given
+	pubKeyB := []byte("0xdeadbeef")
+	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData, _ := json.Marshal(openoracle.OracleResponse{
 		Timestamp: "1611924180",
 		Messages: []string{
@@ -141,7 +149,7 @@ func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T
 	})
 
 	// when
-	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(rawData)
+	normalisedData, err := adaptors.NewOpenOracleAdaptor().Normalise(pubKey, rawData)
 
 	// then
 	expectedData := oracles.OracleData{

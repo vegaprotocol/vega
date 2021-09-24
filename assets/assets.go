@@ -44,10 +44,11 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nw NodeWallet
+	nw        NodeWallet
+	ethClient erc20.ETHClient
 }
 
-func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) *Service {
+func New(log *logging.Logger, cfg Config, nw NodeWallet, ethClient erc20.ETHClient, ts TimeService) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -57,6 +58,7 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) *Servic
 		assets:        map[string]*Asset{},
 		pendingAssets: map[string]*Asset{},
 		nw:            nw,
+		ethClient:     ethClient,
 	}
 	ts.NotifyOnTick(s.onTick)
 	return s
@@ -119,7 +121,7 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 		if !ok {
 			return "", errors.New("missing wallet for ETH")
 		}
-		asset, err := erc20.New(assetID, assetDetails, wal)
+		asset, err := erc20.New(assetID, assetDetails, wal, s.ethClient)
 		if err != nil {
 			return "", err
 		}

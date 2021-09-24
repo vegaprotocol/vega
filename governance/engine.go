@@ -2,6 +2,7 @@ package governance
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"sort"
 	"time"
@@ -9,6 +10,7 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/types"
@@ -112,6 +114,45 @@ func NewEngine(
 		assets:                 assets,
 		netp:                   netp,
 	}
+}
+
+func (e *Engine) Hash() []byte {
+	// get the node proposal hash first
+	npHash := e.nodeProposalValidation.Hash()
+
+	// Create the slice for this state
+	// 32 -> len(proposal.ID) = 32 bytes pubkey
+	// vote counts = 3*uint64
+	// 32 -> len of enactedProposal.ID
+	// len of the np hash
+	output := make(
+		[]byte,
+		(len(e.activeProposals)*(32+8*3) +
+			len(e.enactedProposals)*32 +
+			len(npHash)),
+	)
+
+	var i int
+	for _, k := range e.activeProposals {
+		idbytes := []byte(k.ID)
+		copy(output[i:], idbytes[:])
+		i += 32
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.yes)))
+		i += 8
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.no)))
+		i += 8
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.invalidVotes)))
+		i += 8
+	}
+	for _, k := range e.enactedProposals {
+		idbytes := []byte(k.ID)
+		copy(output[i:], idbytes[:])
+		i += 32
+	}
+	// now add the hash of the nodeProposals
+	copy(output[i:], npHash[:])
+
+	return vgcrypto.Hash(output)
 }
 
 // ReloadConf updates the internal configuration of the governance engine
@@ -238,15 +279,15 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		e.log.Info("proposal has been validated by nodes, starting now",
 			logging.String("proposal-id", p.ID))
 		p.State = proto.Proposal_STATE_OPEN
-		e.broker.Send(events.NewProposalEvent(ctx, *p))
-		e.startProposal(p) // can't fail, and proposal has been validated at an ulterior time
+		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+		e.startValidatedProposal(p) // can't fail, and proposal has been validated at an ulterior time
 	}
 	for _, p := range rejected {
 		e.log.Info("proposal has not been validated by nodes",
 			logging.String("proposal-id", p.ID))
 		p.State = proto.Proposal_STATE_REJECTED
 		p.Reason = proto.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
-		e.broker.Send(events.NewProposalEvent(ctx, *p))
+		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
 	}
 
 	for _, ep := range toBeEnacted {
@@ -281,7 +322,13 @@ func (e *Engine) getProposal(id string) (*proposal, bool) {
 			return v, true
 		}
 	}
-	return nil, false
+
+	p, ok := e.nodeProposalValidation.getProposal(id)
+	if !ok {
+		return nil, false
+	}
+
+	return p.proposal, true
 }
 
 // SubmitProposal submits new proposal to the governance engine so it can be voted on, passed and enacted.
@@ -387,6 +434,10 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		no:           map[string]*types.Vote{},
 		invalidVotes: map[string]*types.Vote{},
 	})
+}
+
+func (e *Engine) startValidatedProposal(p *proposal) {
+	e.activeProposals = append(e.activeProposals, p)
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {

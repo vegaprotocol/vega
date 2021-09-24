@@ -49,6 +49,20 @@ func (mr *MockDelegationEngineMockRecorder) Delegate(arg0, arg1, arg2, arg3 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delegate", reflect.TypeOf((*MockDelegationEngine)(nil).Delegate), arg0, arg1, arg2, arg3)
 }
 
+// Hash mocks base method
+func (m *MockDelegationEngine) Hash() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Hash")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// Hash indicates an expected call of Hash
+func (mr *MockDelegationEngineMockRecorder) Hash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockDelegationEngine)(nil).Hash))
+}
+
 // ProcessEpochDelegations mocks base method
 func (m *MockDelegationEngine) ProcessEpochDelegations(arg0 context.Context, arg1 types.Epoch) []*types.ValidatorData {
 	m.ctrl.T.Helper()

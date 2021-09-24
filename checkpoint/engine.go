@@ -244,8 +244,13 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 		if !doneCollat {
 			if cc, ok := c.(CollateralState); ok {
 				for _, a := range assets {
+					// ignore this error, if the asset is already enabled, that's fine
+					// we can carry on as though nothing happened
 					if err := cc.EnableAsset(ctx, *a); err != nil {
-						return err
+						e.log.Debug("Asset already enabled",
+							logging.String("asset-id", a.ID),
+							logging.Error(err),
+						)
 					}
 				}
 				doneCollat = true

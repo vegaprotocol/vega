@@ -9,7 +9,6 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/txn"
-
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
 	htypes "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -43,31 +42,11 @@ func (tx *testTx) Validate() error {
 	return nil
 }
 
-type testSpam struct {
-}
-
-func (*testSpam) EndOfBlock(blockHeight uint64) {
-}
-
-func (*testSpam) PreBlockAccept(tx abci.Tx) (bool, error) {
-	return true, nil
-}
-
-func (*testSpam) PostBlockAccept(tx abci.Tx) (bool, error) {
-	return true, nil
-}
-
 type testCodec struct {
 	txs map[string]abci.Tx
 }
 
 func newTestCodec() *testCodec {
-	return &testCodec{
-		txs: map[string]abci.Tx{},
-	}
-}
-
-func newSpamProtection() *testCodec {
 	return &testCodec{
 		txs: map[string]abci.Tx{},
 	}
@@ -100,7 +79,7 @@ var (
 func TestABCICheckTx(t *testing.T) {
 	cdc := newTestCodec()
 
-	app := abci.New(cdc, &testSpam{}).
+	app := abci.New(cdc).
 		HandleCheckTx(testCommandA, func(ctx context.Context, tx abci.Tx) error {
 			require.Equal(t, "val", ctx.Value(testKey))
 			return nil
@@ -208,7 +187,7 @@ func TestReplayProtectionByDistance(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		app := abci.New(cdc, &testSpam{}).
+		app := abci.New(cdc).
 			HandleDeliverTx(
 				testCommandA,
 				func(ctx context.Context, tx abci.Tx) error { return nil },
@@ -244,7 +223,7 @@ func TestReplayProtectionByCache(t *testing.T) {
 		command:     testCommandA,
 	})
 
-	app := abci.New(cdc, &testSpam{}).HandleDeliverTx(
+	app := abci.New(cdc).HandleDeliverTx(
 		testCommandA,
 		func(ctx context.Context, tx abci.Tx) error { return nil },
 	)

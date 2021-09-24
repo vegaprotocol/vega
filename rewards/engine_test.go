@@ -410,7 +410,7 @@ type testEngine struct {
 	ctrl          *gomock.Controller
 	broker        *bmock.MockBroker
 	epochEngine   *TestEpochEngine
-	delegation    *mocks.MockDelegationEngine
+	delegation    *mocks.MockDelegation
 	collateral    *collateral.Engine
 	validatorData []*types.ValidatorData
 }
@@ -420,7 +420,7 @@ func getEngine(t *testing.T) *testEngine {
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
-	delegation := mocks.NewMockDelegationEngine(ctrl)
+	delegation := mocks.NewMockDelegation(ctrl)
 	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}
 	ts := mocks.NewMockTimeService(ctrl)
 
