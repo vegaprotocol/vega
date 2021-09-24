@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"time"
 
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
@@ -37,12 +38,18 @@ type StateProvider interface {
 	// Sync() error
 }
 
+type TimeService interface {
+	GetTimeNow() time.Time
+	SetTimeNow(context.Context, time.Time)
+}
+
 // Engine the snapshot engine
 type Engine struct {
 	Config
 
 	ctx        context.Context
 	cfunc      context.CancelFunc
+	time       TimeService
 	db         db.DB
 	log        *logging.Logger
 	avl        *iavl.MutableTree
@@ -61,7 +68,7 @@ type Engine struct {
 }
 
 // New returns a new snapshot engine
-func New(ctx context.Context, conf Config, log *logging.Logger) (*Engine, error) {
+func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
 	log = log.Named(namedLogger)
 	dbConn := db.NewMemDB()
 	tree, err := iavl.NewMutableTree(dbConn, 0)
@@ -75,6 +82,7 @@ func New(ctx context.Context, conf Config, log *logging.Logger) (*Engine, error)
 		Config: conf,
 		ctx:    sctx,
 		cfunc:  cfunc,
+		time:   tm,
 		db:     dbConn,
 		log:    log,
 		avl:    tree,
@@ -160,6 +168,7 @@ func (e *Engine) addAppSnap(ctx context.Context) error {
 	app := types.AppState{
 		Height: uint64(height),
 		Block:  block,
+		Time:   e.time.GetTimeNow().Unix(),
 	}
 	as, err := json.Marshal(app)
 	if err != nil {

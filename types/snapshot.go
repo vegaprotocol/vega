@@ -8,8 +8,8 @@ import (
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"github.com/cosmos/iavl"
-
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -33,13 +33,13 @@ var (
 	ErrChunkHashMismatch         = errors.New("loaded chunk hash does not match metadata")
 )
 
-type SnapshotFormat uint32
+type SnapshotFormat = snapshot.Format
 
 const (
-	SnapshotFormatUnspecified SnapshotFormat = iota
-	SnapshotFormatProto
-	SnapshotFormatJSON
-	SnapshotFormatPJSON
+	SnapshotFormatUnspecified     = snapshot.Format_FORMAT_UNSPECIFIED
+	SnapshotFormatProto           = snapshot.Format_FORMAT_PROTO
+	SnapshotFormatProtoCompressed = snapshot.Format_FORMAT_PROTO_COMPRESSED
+	SnapshotFormatJSON            = snapshot.Format_FORMAT_JSON
 )
 
 // SnapshotMeta the hashes marshalled... could be hashes on a per engine/namespace basis?
@@ -47,11 +47,6 @@ type SnapshotMeta struct {
 	Version    int64  `json:"version"`
 	Collateral []byte `json:"collateral"`
 	App        []byte `json:"app"`
-}
-
-type AppState struct {
-	Height uint64 `json:"height"`
-	Block  string `json:"block"`
 }
 
 // TMSnapshot is the snapshot type as listed by ListSnapshots etc...
