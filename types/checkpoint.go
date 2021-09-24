@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	ErrSnapshotStateInvalid  = errors.New("state contained in the snapshot is invalid")
-	ErrSnapshotHashIncorrect = errors.New("the hash and snapshot data do not match")
-	ErrSnapshotHasNoState    = errors.New("there is no state set on the checkpoint")
+	ErrCheckpointStateInvalid  = errors.New("state contained in the snapshot is invalid")
+	ErrCheckpointHashIncorrect = errors.New("the hash and snapshot data do not match")
+	ErrCheckpointHasNoState    = errors.New("there is no state set on the checkpoint")
 )
 
 type CheckpointName string
@@ -33,7 +33,7 @@ type Block struct {
 	Height int64
 }
 
-type Snapshot struct {
+type CheckpointState struct {
 	State []byte
 	Hash  []byte
 }
@@ -61,22 +61,22 @@ type DelegateCP struct {
 	Pending []*DelegationEntry
 }
 
-func NewSnapshotFromProto(ps *snapshot.Snapshot) *Snapshot {
-	return &Snapshot{
+func NewCheckpointStateFromProto(ps *checkpoint.CheckpointState) *CheckpointState {
+	return &CheckpointState{
 		State: ps.State,
 		Hash:  ps.Hash,
 	}
 }
 
-func (s Snapshot) IntoProto() *snapshot.Snapshot {
-	return &snapshot.Snapshot{
+func (s CheckpointState) IntoProto() *checkpoint.CheckpointState {
+	return &checkpoint.CheckpointState{
 		Hash:  s.Hash,
 		State: s.State,
 	}
 }
 
-func (s Snapshot) GetCheckpoint() (*Checkpoint, error) {
-	pc := &snapshot.Checkpoint{}
+func (s CheckpointState) GetCheckpoint() (*Checkpoint, error) {
+	pc := &checkpoint.Checkpoint{}
 	if err := proto.Unmarshal(s.State, pc); err != nil {
 		return nil, err
 	}
@@ -84,8 +84,8 @@ func (s Snapshot) GetCheckpoint() (*Checkpoint, error) {
 	return cp, nil
 }
 
-func (s *Snapshot) SetState(state []byte) error {
-	cp := &snapshot.Checkpoint{}
+func (s *CheckpointState) SetState(state []byte) error {
+	cp := &checkpoint.Checkpoint{}
 	if err := proto.Unmarshal(state, cp); err != nil {
 		return err
 	}
@@ -95,11 +95,11 @@ func (s *Snapshot) SetState(state []byte) error {
 	return nil
 }
 
-func (s Snapshot) GetBlockHeight() (int64, error) {
+func (s CheckpointState) GetBlockHeight() (int64, error) {
 	if len(s.State) == 0 {
-		return 0, ErrSnapshotHasNoState
+		return 0, ErrCheckpointHasNoState
 	}
-	cp := &snapshot.Checkpoint{}
+	cp := &checkpoint.Checkpoint{}
 	if err := proto.Unmarshal(s.State, cp); err != nil {
 		return 0, err
 	}
@@ -107,7 +107,7 @@ func (s Snapshot) GetBlockHeight() (int64, error) {
 	return c.GetBlockHeight()
 }
 
-func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
+func (s *CheckpointState) SetCheckpoint(cp *Checkpoint) error {
 	b, err := proto.Marshal(cp.IntoProto())
 	if err != nil {
 		return err
@@ -118,18 +118,18 @@ func (s *Snapshot) SetCheckpoint(cp *Checkpoint) error {
 }
 
 // Validate checks the hash, returns nil if valid
-func (s Snapshot) Validate() error {
+func (s CheckpointState) Validate() error {
 	cp, err := s.GetCheckpoint()
 	if err != nil {
-		return ErrSnapshotStateInvalid
+		return ErrCheckpointStateInvalid
 	}
 	if !bytes.Equal(crypto.Hash(cp.HashBytes()), s.Hash) {
-		return ErrSnapshotHashIncorrect
+		return ErrCheckpointHashIncorrect
 	}
 	return nil
 }
 
-func NewCheckpointFromProto(pc *snapshot.Checkpoint) *Checkpoint {
+func NewCheckpointFromProto(pc *checkpoint.Checkpoint) *Checkpoint {
 	return &Checkpoint{
 		Governance:        pc.Governance,
 		Assets:            pc.Assets,
@@ -141,8 +141,8 @@ func NewCheckpointFromProto(pc *snapshot.Checkpoint) *Checkpoint {
 	}
 }
 
-func (c Checkpoint) IntoProto() *snapshot.Checkpoint {
-	return &snapshot.Checkpoint{
+func (c Checkpoint) IntoProto() *checkpoint.Checkpoint {
+	return &checkpoint.Checkpoint{
 		Governance:        c.Governance,
 		Assets:            c.Assets,
 		Collateral:        c.Collateral,
@@ -165,7 +165,7 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 	return nil
 }
 
-// HashBytes returns the data contained in the snapshot as a []byte for hashing
+// HashBytes returns the data contained in the checkpoint as a []byte for hashing
 // the order in which the data is added to the slice matters
 func (c Checkpoint) HashBytes() []byte {
 	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block))
@@ -221,14 +221,14 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 }
 
 func (c Checkpoint) GetBlockHeight() (int64, error) {
-	pb := &snapshot.Block{}
+	pb := &checkpoint.Block{}
 	if err := proto.Unmarshal(c.Block, pb); err != nil {
 		return 0, err
 	}
 	return pb.Height, nil
 }
 
-func NewDelegationEntryFromProto(de *snapshot.DelegateEntry) *DelegationEntry {
+func NewDelegationEntryFromProto(de *checkpoint.DelegateEntry) *DelegationEntry {
 	amt, _ := num.UintFromString(de.Amount, 10)
 	return &DelegationEntry{
 		Party:      de.Party,
@@ -239,8 +239,8 @@ func NewDelegationEntryFromProto(de *snapshot.DelegateEntry) *DelegationEntry {
 	}
 }
 
-func (d DelegationEntry) IntoProto() *snapshot.DelegateEntry {
-	return &snapshot.DelegateEntry{
+func (d DelegationEntry) IntoProto() *checkpoint.DelegateEntry {
+	return &checkpoint.DelegateEntry{
 		Party:      d.Party,
 		Node:       d.Node,
 		Amount:     d.Amount.String(),
@@ -249,7 +249,7 @@ func (d DelegationEntry) IntoProto() *snapshot.DelegateEntry {
 	}
 }
 
-func NewDelegationCPFromProto(sd *snapshot.Delegate) *DelegateCP {
+func NewDelegationCPFromProto(sd *checkpoint.Delegate) *DelegateCP {
 	r := &DelegateCP{
 		Active:  make([]*DelegationEntry, 0, len(sd.Active)),
 		Pending: make([]*DelegationEntry, 0, len(sd.Pending)),
@@ -263,10 +263,10 @@ func NewDelegationCPFromProto(sd *snapshot.Delegate) *DelegateCP {
 	return r
 }
 
-func (d DelegateCP) IntoProto() *snapshot.Delegate {
-	s := &snapshot.Delegate{
-		Active:  make([]*snapshot.DelegateEntry, 0, len(d.Active)),
-		Pending: make([]*snapshot.DelegateEntry, 0, len(d.Pending)),
+func (d DelegateCP) IntoProto() *checkpoint.Delegate {
+	s := &checkpoint.Delegate{
+		Active:  make([]*checkpoint.DelegateEntry, 0, len(d.Active)),
+		Pending: make([]*checkpoint.DelegateEntry, 0, len(d.Pending)),
 	}
 	for _, a := range d.Active {
 		s.Active = append(s.Active, a.IntoProto())
@@ -277,14 +277,14 @@ func (d DelegateCP) IntoProto() *snapshot.Delegate {
 	return s
 }
 
-func NewBlockFromProto(bp *snapshot.Block) *Block {
+func NewBlockFromProto(bp *checkpoint.Block) *Block {
 	return &Block{
 		Height: bp.Height,
 	}
 }
 
-func (b Block) IntoProto() *snapshot.Block {
-	return &snapshot.Block{
+func (b Block) IntoProto() *checkpoint.Block {
+	return &checkpoint.Block{
 		Height: b.Height,
 	}
 }

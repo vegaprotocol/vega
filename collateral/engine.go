@@ -80,6 +80,8 @@ type Engine struct {
 
 	// asset ID to asset
 	enabledAssets map[string]types.Asset
+	// snapshot stuff
+	state *accState
 }
 
 // New instantiates a new collateral engine
@@ -97,6 +99,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
+		state:         newAccState(),
 	}
 }
 
@@ -198,8 +201,11 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.enabledAssets[asset.ID] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// update state
+	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
+	newAccs := make([]*types.Account, 0, 3)
 	infraFeeID := e.accountID("", "", asset.ID, types.AccountTypeFeesInfrastructure)
 	_, ok := e.accs[infraFeeID]
 	if !ok {
@@ -212,6 +218,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountTypeFeesInfrastructure,
 		}
 		e.accs[infraFeeID] = infraFeeAcc
+		newAccs = append(newAccs, infraFeeAcc)
 		e.addAccountToHashableSlice(infraFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *infraFeeAcc))
 	}
@@ -225,6 +232,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			MarketID: noMarket,
 			Type:     types.AccountTypeExternal,
 		}
+		newAccs = append(newAccs, externalAcc)
 		e.accs[externalID] = externalAcc
 		// e.addAccountToHashableSlice(externalAcc)
 	}
@@ -241,10 +249,12 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountTypeGlobalInsurance,
 		}
 		e.accs[globalInsuranceID] = insuranceAcc
+		newAccs = append(newAccs, insuranceAcc)
 		e.addAccountToHashableSlice(insuranceAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
 	}
 
+	e.state.add(newAccs...)
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.ID),
 	)
@@ -1837,6 +1847,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 			Type:     types.AccountTypeBond,
 		}
 		e.accs[bondID] = &acc
+		e.state.add(&acc)
 		e.addPartyAccount(partyID, bondID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
@@ -1874,6 +1885,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 			Type:     types.AccountTypeMargin,
 		}
 		e.accs[marginID] = &acc
+		e.state.add(&acc)
 		e.addPartyAccount(partyID, marginID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
@@ -1917,6 +1929,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountTypeGeneral,
 		}
 		e.accs[generalID] = &acc
+		e.state.add(&acc)
 		e.addPartyAccount(partyID, generalID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
@@ -2067,6 +2080,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeInsurance,
 		}
 		e.accs[insuranceID] = insAcc
+		e.state.add(insAcc)
 		e.addAccountToHashableSlice(insAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
 
@@ -2083,6 +2097,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeSettlement,
 		}
 		e.accs[settleID] = setAcc
+		e.state.add(setAcc)
 		e.addAccountToHashableSlice(setAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
 	}
@@ -2100,6 +2115,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeFeesLiquidity,
 		}
 		e.accs[liquidityFeeID] = liquidityFeeAcc
+		e.state.add(liquidityFeeAcc)
 		e.addAccountToHashableSlice(liquidityFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *liquidityFeeAcc))
 	}
@@ -2115,6 +2131,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeFeesMaker,
 		}
 		e.accs[makerFeeID] = makerFeeAcc
+		e.state.add(makerFeeAcc)
 		e.addAccountToHashableSlice(makerFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
@@ -2231,6 +2248,8 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance.Set(balance)
+	// update
+	e.state.add(acc)
 	if acc.Type != types.AccountTypeExternal {
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
@@ -2245,6 +2264,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance.AddSum(inc)
+	e.state.add(acc)
 	if acc.Type != types.AccountTypeExternal {
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
@@ -2259,6 +2279,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance.Sub(acc.Balance, dec)
+	e.state.add(acc)
 	if acc.Type != types.AccountTypeExternal {
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
@@ -2286,6 +2307,10 @@ func (e *Engine) GetAssetTotalSupply(asset string) (*num.Uint, error) {
 }
 
 func (e *Engine) removeAccount(id string) {
+	acc, ok := e.accs[id]
+	if ok {
+		e.state.delAcc(acc)
+	}
 	delete(e.accs, id)
 	e.removeAccountFromHashableSlice(id)
 }
@@ -2346,6 +2371,7 @@ func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset st
 			Type:     types.AccountTypeGlobalReward,
 		}
 		e.accs[accountID] = &acc
+		e.state.add(&acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
