@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/protos/vega"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -22,11 +24,16 @@ import (
 //	*Payload_GovernanceActive
 //	*Payload_GovernanceEnacted
 //	*Payload_MarketPositions
-
-//	*Payload_StakingAccounts
 //	*Payload_MatchingBook
 //	*Payload_ExecutionMarkets
+
+//	*Payload_StakingAccounts
 type Node = snapshot.Payload
+
+type Chunk2 struct {
+	Data   []*Payload
+	Nr, Of int64
+}
 
 type Payload struct {
 	Data isPayload
@@ -95,6 +102,98 @@ type PayloadGovernanceEnacted struct {
 
 type PayloadMarketPositions struct {
 	MarketPositions *MarketPositions
+}
+
+type PayloadMatchingBook struct {
+	MatchingBook *MatchingBook
+}
+
+type PayloadExecutionMarkets struct {
+	ExecutionMarkets *ExecutionMarkets
+}
+
+type MatchingBook struct {
+	MarketID string
+	Buy      []*Order
+	Sell     []*Order
+}
+
+type ExecutionMarkets struct {
+	Markets []*ExecMarket
+}
+
+type ExecMarket struct {
+	Market                     *Market
+	PriceMonitor               *PriceMonitor
+	AuctionState               *AuctionState
+	PeggedOrders               []*Order
+	ExpiringOrders             []*Order
+	LastBestBid                *num.Uint
+	LastBestAsk                *num.Uint
+	LastMidBid                 *num.Uint
+	LastMidAsk                 *num.Uint
+	LastMarketValueProxy       num.Decimal
+	LastEquityShareDistributed int64
+	EquityShare                *EquityShare
+	CurrentMarkPrice           *num.Uint
+}
+
+type PriceMonitor struct {
+	Initialised         bool
+	FPHorizons          []*DecMap
+	Now                 time.Time
+	Update              time.Time
+	Bounds              []*PriceBound
+	PriceRangeCache     []*PriceRangeCache
+	PriceRangeCacheTime time.Time
+	RefPriceCache       []*DecMap
+	RefPriceCacheTime   time.Time
+}
+
+type PriceBound struct {
+	Active     bool
+	UpFactor   num.Decimal
+	DownFactor num.Decimal
+	Trigger    *PriceMonitoringTrigger
+}
+
+type PriceRangeCache struct {
+	Bound *PriceBound
+	Range *PriceRange
+}
+
+type PriceRange struct {
+	Min num.Decimal
+	Max num.Decimal
+	Ref num.Decimal
+}
+
+type DecMap struct {
+	Key int64
+	Val num.Decimal
+}
+
+type AuctionState struct {
+	Mode        MarketTradingMode
+	DefaultMode MarketTradingMode
+	Begin       time.Time
+	End         *AuctionDuration
+	Start       bool
+	Stop        bool
+	Extension   AuctionTrigger
+}
+
+type EquityShare struct {
+	Mvp                 num.Decimal
+	OpeningAuctionEnded bool
+	Lps                 []*EquityShareLP
+}
+
+type EquityShareLP struct {
+	ID    string
+	Stake num.Decimal
+	Share num.Decimal
+	Avg   num.Decimal
 }
 
 type ActiveAssets struct {
@@ -193,6 +292,30 @@ type PPosition struct {
 	VwBuy, VwSell   *num.Uint
 }
 
+func ChunkFromProto(c *snapshot.Chunk) *Chunk2 {
+	data := make([]*Payload, 0, len(c.Data))
+	for _, p := range c.Data {
+		data = append(data, PayloadFromProto(p))
+	}
+	return &Chunk2{
+		Data: data,
+		Nr:   c.Nr,
+		Of:   c.Of,
+	}
+}
+
+func (c Chunk2) IntoProto() *snapshot.Chunk {
+	data := make([]*snapshot.Payload, 0, len(c.Data))
+	for _, p := range c.Data {
+		data = append(data, p.IntoProto())
+	}
+	return &snapshot.Chunk{
+		Data: data,
+		Nr:   c.Nr,
+		Of:   c.Of,
+	}
+}
+
 func PayloadFromProto(p *snapshot.Payload) *Payload {
 	ret := &Payload{}
 	switch dt := p.Data.(type) {
@@ -226,8 +349,54 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadGovernanceEnactedFromProto(dt)
 	case *snapshot.Payload_MarketPositions:
 		ret.Data = PayloadMarketPositionsFromProto(dt)
+	case *snapshot.Payload_MatchingBook:
+		ret.Data = PayloadMatchingBookFromProto(dt)
+	case *snapshot.Payload_ExecutionMarkets:
+		ret.Data = PayloadExecutionMarketsFromProto(dt)
 	}
 	return ret
+}
+
+func (p Payload) IntoProto() *snapshot.Payload {
+	d := p.Data.plToProto()
+	ret := snapshot.Payload{}
+	switch dt := d.(type) {
+	case *snapshot.Payload_AppState:
+		ret.Data = dt
+	case *snapshot.Payload_ActiveAssets:
+		ret.Data = dt
+	case *snapshot.Payload_PendingAssets:
+		ret.Data = dt
+	case *snapshot.Payload_BankingSeen:
+		ret.Data = dt
+	case *snapshot.Payload_BankingDeposits:
+		ret.Data = dt
+	case *snapshot.Payload_BankingWithdrawals:
+		ret.Data = dt
+	case *snapshot.Payload_CollateralAssets:
+		ret.Data = dt
+	case *snapshot.Payload_CollateralAccounts:
+		ret.Data = dt
+	case *snapshot.Payload_StakingAccounts:
+		ret.Data = dt
+	case *snapshot.Payload_ExecutionMarkets:
+		ret.Data = dt
+	case *snapshot.Payload_MatchingBook:
+		ret.Data = dt
+	case *snapshot.Payload_MarketPositions:
+		ret.Data = dt
+	case *snapshot.Payload_DelegationActive:
+		ret.Data = dt
+	case *snapshot.Payload_DelegationPending:
+		ret.Data = dt
+	case *snapshot.Payload_GovernanceActive:
+		ret.Data = dt
+	case *snapshot.Payload_GovernanceEnacted:
+		ret.Data = dt
+	case *snapshot.Payload_Checkpoint:
+		ret.Data = dt
+	}
+	return &ret
 }
 
 func PayloadActiveAssetsFromProto(paa *snapshot.Payload_ActiveAssets) *PayloadActiveAssets {
@@ -497,6 +666,42 @@ func (p PayloadMarketPositions) IntoProto() *snapshot.Payload_MarketPositions {
 func (*PayloadMarketPositions) isPayload() {}
 
 func (p *PayloadMarketPositions) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadMatchingBookFromProto(pmb *snapshot.Payload_MatchingBook) *PayloadMatchingBook {
+	return &PayloadMatchingBook{
+		MatchingBook: MatchingBookFromProto(pmb.MatchingBook),
+	}
+}
+
+func (p PayloadMatchingBook) IntoProto() *snapshot.Payload_MatchingBook {
+	return &snapshot.Payload_MatchingBook{
+		MatchingBook: p.MatchingBook.IntoProto(),
+	}
+}
+
+func (*PayloadMatchingBook) isPayload() {}
+
+func (p *PayloadMatchingBook) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func PayloadExecutionMarketsFromProto(pem *snapshot.Payload_ExecutionMarkets) *PayloadExecutionMarkets {
+	return &PayloadExecutionMarkets{
+		ExecutionMarkets: ExecutionMarketsFromProto(pem.ExecutionMarkets),
+	}
+}
+
+func (p PayloadExecutionMarkets) IntoProto() *snapshot.Payload_ExecutionMarkets {
+	return &snapshot.Payload_ExecutionMarkets{
+		ExecutionMarkets: p.ExecutionMarkets.IntoProto(),
+	}
+}
+
+func (*PayloadExecutionMarkets) isPayload() {}
+
+func (p *PayloadExecutionMarkets) plToProto() interface{} {
 	return p.IntoProto()
 }
 
@@ -909,4 +1114,351 @@ func (m MarketPositions) IntoProto() *snapshot.MarketPositions {
 		ret.Positions = append(ret.Positions, p.IntoProto())
 	}
 	return &ret
+}
+
+func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
+	ret := MatchingBook{
+		MarketID: mb.MarketId,
+		Buy:      make([]*Order, 0, len(mb.Buy)),
+		Sell:     make([]*Order, 0, len(mb.Sell)),
+	}
+	for _, o := range mb.Buy {
+		or, _ := OrderFromProto(o)
+		ret.Buy = append(ret.Buy, or)
+	}
+	for _, o := range mb.Sell {
+		or, _ := OrderFromProto(o)
+		ret.Sell = append(ret.Sell, or)
+	}
+	return &ret
+}
+
+func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
+	ret := snapshot.MatchingBook{
+		MarketId: m.MarketID,
+		Buy:      make([]*vega.Order, 0, len(m.Buy)),
+		Sell:     make([]*vega.Order, 0, len(m.Sell)),
+	}
+	for _, o := range m.Buy {
+		ret.Buy = append(ret.Buy, o.IntoProto())
+	}
+	for _, o := range m.Sell {
+		ret.Sell = append(ret.Sell, o.IntoProto())
+	}
+	return &ret
+}
+
+func EquityShareFromProto(es *snapshot.EquityShare) *EquityShare {
+	var mvp num.Decimal
+	if len(es.Mvp) > 0 {
+		mvp, _ = num.DecimalFromString(es.Mvp)
+	}
+	ret := EquityShare{
+		Mvp:                 mvp,
+		OpeningAuctionEnded: es.OpeningAuctionEnded,
+		Lps:                 make([]*EquityShareLP, 0, len(es.Lps)),
+	}
+	for _, s := range es.Lps {
+		ret.Lps = append(ret.Lps, EquityShareLPFromProto(s))
+	}
+	return &ret
+}
+
+func (e EquityShare) IntoProto() *snapshot.EquityShare {
+	ret := snapshot.EquityShare{
+		Mvp:                 e.Mvp.String(),
+		OpeningAuctionEnded: e.OpeningAuctionEnded,
+		Lps:                 make([]*snapshot.EquityShareLP, 0, len(e.Lps)),
+	}
+	for _, s := range e.Lps {
+		ret.Lps = append(ret.Lps, s.IntoProto())
+	}
+	return &ret
+}
+
+func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
+	var (
+		stake, share, avg num.Decimal
+	)
+	if len(esl.Stake) > 0 {
+		stake, _ = num.DecimalFromString(esl.Stake)
+	}
+	if len(esl.Share) > 0 {
+		share, _ = num.DecimalFromString(esl.Share)
+	}
+	if len(esl.Avg) > 0 {
+		avg, _ = num.DecimalFromString(esl.Avg)
+	}
+	return &EquityShareLP{
+		ID:    esl.Id,
+		Stake: stake,
+		Share: share,
+		Avg:   avg,
+	}
+}
+
+func (e EquityShareLP) IntoProto() *snapshot.EquityShareLP {
+	return &snapshot.EquityShareLP{
+		Id:    e.ID,
+		Stake: e.Stake.String(),
+		Share: e.Share.String(),
+		Avg:   e.Avg.String(),
+	}
+}
+
+func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
+	var end *AuctionDuration
+	if as.End != nil {
+		end = AuctionDurationFromProto(as.End)
+	}
+	return &AuctionState{
+		Mode:        as.Mode,
+		DefaultMode: as.DefaultMode,
+		Begin:       time.Unix(as.Begin, 0),
+		End:         end,
+		Start:       as.Start,
+		Stop:        as.Stop,
+		Extension:   as.Extension,
+	}
+}
+
+func (a AuctionState) IntoProto() *snapshot.AuctionState {
+	var end *vega.AuctionDuration
+	if a.End != nil {
+		end = a.End.IntoProto()
+	}
+	return &snapshot.AuctionState{
+		Mode:        a.Mode,
+		DefaultMode: a.DefaultMode,
+		Begin:       a.Begin.Unix(),
+		End:         end,
+		Start:       a.Start,
+		Stop:        a.Stop,
+		Extension:   a.Extension,
+	}
+}
+
+func DecMapFromProto(dm *snapshot.DecimalMap) *DecMap {
+	var v num.Decimal
+	if len(dm.Val) > 0 {
+		v, _ = num.DecimalFromString(dm.Val)
+	}
+	return &DecMap{
+		Key: dm.Key,
+		Val: v,
+	}
+}
+
+func (d DecMap) IntoProto() *snapshot.DecimalMap {
+	return &snapshot.DecimalMap{
+		Key: d.Key,
+		Val: d.Val.String(),
+	}
+}
+
+func PriceBoundFromProto(pb *snapshot.PriceBound) *PriceBound {
+	var (
+		up, down num.Decimal
+	)
+	if len(pb.UpFactor) > 0 {
+		up, _ = num.DecimalFromString(pb.UpFactor)
+	}
+	if len(pb.DownFactor) > 0 {
+		down, _ = num.DecimalFromString(pb.DownFactor)
+	}
+	return &PriceBound{
+		Active:     pb.Active,
+		UpFactor:   up,
+		DownFactor: down,
+		Trigger:    PriceMonitoringTriggerFromProto(pb.Trigger),
+	}
+}
+
+func (p PriceBound) IntoProto() *snapshot.PriceBound {
+	return &snapshot.PriceBound{
+		Active:     p.Active,
+		UpFactor:   p.UpFactor.String(),
+		DownFactor: p.DownFactor.String(),
+		Trigger:    p.Trigger.IntoProto(),
+	}
+}
+
+func PriceRangeFromProto(pr *snapshot.PriceRange) *PriceRange {
+	var (
+		min, max, ref num.Decimal
+	)
+	if len(pr.Min) > 0 {
+		min, _ = num.DecimalFromString(pr.Min)
+	}
+	if len(pr.Max) > 0 {
+		max, _ = num.DecimalFromString(pr.Max)
+	}
+	if len(pr.Ref) > 0 {
+		ref, _ = num.DecimalFromString(pr.Ref)
+	}
+	return &PriceRange{
+		Min: min,
+		Max: max,
+		Ref: ref,
+	}
+}
+
+func (p PriceRange) IntoProto() *snapshot.PriceRange {
+	return &snapshot.PriceRange{
+		Min: p.Min.String(),
+		Max: p.Max.String(),
+		Ref: p.Ref.String(),
+	}
+}
+
+func PriceRangeCacheFromProto(prc *snapshot.PriceRangeCache) *PriceRangeCache {
+	return &PriceRangeCache{
+		Bound: PriceBoundFromProto(prc.Bound),
+		Range: PriceRangeFromProto(prc.Range),
+	}
+}
+
+func (p PriceRangeCache) IntoProto() *snapshot.PriceRangeCache {
+	return &snapshot.PriceRangeCache{
+		Bound: p.Bound.IntoProto(),
+		Range: p.Range.IntoProto(),
+	}
+}
+
+func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
+	ret := PriceMonitor{
+		Initialised:         pm.Initialised,
+		FPHorizons:          make([]*DecMap, 0, len(pm.FpHorizons)),
+		Now:                 time.Unix(pm.Now, 0),
+		Update:              time.Unix(pm.Update, 0),
+		Bounds:              make([]*PriceBound, 0, len(pm.Bounds)),
+		PriceRangeCacheTime: time.Unix(pm.PriceRangeCacheTime, 0),
+		PriceRangeCache:     make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
+		RefPriceCacheTime:   time.Unix(pm.RefPriceCacheTime, 0),
+		RefPriceCache:       make([]*DecMap, 0, len(pm.RefPriceCache)),
+	}
+	for _, d := range pm.FpHorizons {
+		ret.FPHorizons = append(ret.FPHorizons, DecMapFromProto(d))
+	}
+	for _, d := range pm.RefPriceCache {
+		ret.RefPriceCache = append(ret.RefPriceCache, DecMapFromProto(d))
+	}
+	for _, b := range pm.Bounds {
+		ret.Bounds = append(ret.Bounds, PriceBoundFromProto(b))
+	}
+	for _, r := range pm.PriceRangeCache {
+		ret.PriceRangeCache = append(ret.PriceRangeCache, PriceRangeCacheFromProto(r))
+	}
+	return &ret
+}
+
+func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
+	ret := snapshot.PriceMonitor{
+		Initialised:         p.Initialised,
+		FpHorizons:          make([]*snapshot.DecimalMap, 0, len(p.FPHorizons)),
+		Now:                 p.Now.Unix(),
+		Update:              p.Update.Unix(),
+		Bounds:              make([]*snapshot.PriceBound, 0, len(p.Bounds)),
+		PriceRangeCacheTime: p.PriceRangeCacheTime.Unix(),
+		PriceRangeCache:     make([]*snapshot.PriceRangeCache, 0, len(p.PriceRangeCache)),
+		RefPriceCacheTime:   p.RefPriceCacheTime.Unix(),
+		RefPriceCache:       make([]*snapshot.DecimalMap, 0, len(p.RefPriceCache)),
+	}
+	for _, d := range p.FPHorizons {
+		ret.FpHorizons = append(ret.FpHorizons, d.IntoProto())
+	}
+	for _, d := range p.RefPriceCache {
+		ret.RefPriceCache = append(ret.RefPriceCache, d.IntoProto())
+	}
+	for _, b := range p.Bounds {
+		ret.Bounds = append(ret.Bounds, b.IntoProto())
+	}
+	for _, r := range p.PriceRangeCache {
+		ret.PriceRangeCache = append(ret.PriceRangeCache, r.IntoProto())
+	}
+	return &ret
+}
+
+func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
+	var (
+		lastBB, lastBA, lastMB, lastMA, markPrice *num.Uint
+		lastMVP                                   num.Decimal
+	)
+	lastBB, _ = num.UintFromString(em.LastBestBid, 10)
+	lastBA, _ = num.UintFromString(em.LastBestAsk, 10)
+	lastMB, _ = num.UintFromString(em.LastMidBid, 10)
+	lastMA, _ = num.UintFromString(em.LastMidAsk, 10)
+	markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
+	if len(em.LastMarketValueProxy) > 0 {
+		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
+	}
+	ret := ExecMarket{
+		Market:                     MarketFromProto(em.Market),
+		PriceMonitor:               PriceMonitorFromProto(em.PriceMonitor),
+		AuctionState:               AuctionStateFromProto(em.AuctionState),
+		PeggedOrders:               make([]*Order, 0, len(em.PeggedOrders)),
+		ExpiringOrders:             make([]*Order, 0, len(em.ExpiringOrders)),
+		LastEquityShareDistributed: em.LastEquityShareDistributed,
+		EquityShare:                EquityShareFromProto(em.EquityShare),
+		LastBestAsk:                lastBA,
+		LastBestBid:                lastBB,
+		LastMidAsk:                 lastMA,
+		LastMidBid:                 lastMB,
+		LastMarketValueProxy:       lastMVP,
+		CurrentMarkPrice:           markPrice,
+	}
+	for _, o := range em.PeggedOrders {
+		or, _ := OrderFromProto(o)
+		ret.PeggedOrders = append(ret.PeggedOrders, or)
+	}
+	for _, o := range em.ExpiringOrders {
+		or, _ := OrderFromProto(o)
+		ret.ExpiringOrders = append(ret.ExpiringOrders, or)
+	}
+	return &ret
+}
+
+func (e ExecMarket) IntoProto() *snapshot.Market {
+	ret := snapshot.Market{
+		Market:                     e.Market.IntoProto(),
+		PriceMonitor:               e.PriceMonitor.IntoProto(),
+		AuctionState:               e.AuctionState.IntoProto(),
+		PeggedOrders:               make([]*vega.Order, 0, len(e.PeggedOrders)),
+		ExpiringOrders:             make([]*vega.Order, 0, len(e.ExpiringOrders)),
+		LastEquityShareDistributed: e.LastEquityShareDistributed,
+		EquityShare:                e.EquityShare.IntoProto(),
+		LastBestAsk:                e.LastBestAsk.String(),
+		LastBestBid:                e.LastBestBid.String(),
+		LastMidAsk:                 e.LastMidAsk.String(),
+		LastMidBid:                 e.LastMidBid.String(),
+		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
+		CurrentMarkPrice:           e.CurrentMarkPrice.String(),
+	}
+	for _, o := range e.PeggedOrders {
+		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())
+	}
+	for _, o := range e.ExpiringOrders {
+		ret.ExpiringOrders = append(ret.ExpiringOrders, o.IntoProto())
+	}
+	return &ret
+}
+
+func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets {
+	mkts := make([]*ExecMarket, 0, len(em.Markets))
+	for _, m := range em.Markets {
+		mkts = append(mkts, ExecMarketFromProto(m))
+	}
+	return &ExecutionMarkets{
+		Markets: mkts,
+	}
+}
+
+func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
+	mkts := make([]*snapshot.Market, 0, len(e.Markets))
+	for _, m := range e.Markets {
+		mkts = append(mkts, m.IntoProto())
+	}
+	return &snapshot.ExecutionMarkets{
+		Markets: mkts,
+	}
 }
