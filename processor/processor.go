@@ -36,6 +36,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/processor EpochService
 type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	OnBlockEnd(ctx context.Context)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
