@@ -5,7 +5,7 @@ go 1.16
 require (
 	code.vegaprotocol.io/go-wallet v0.9.0-pre2.0.20210923113924-f10617e081eb
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.42.1-0.20210924184228-574477978238
+	code.vegaprotocol.io/protos v0.42.1-0.20210924193947-8f56005471eb
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20210920084547-4d2225c561d6
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
