@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/rs/cors"
@@ -83,7 +84,7 @@ func (s *ProxyServer) Start() error {
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := protoapi.RegisterTradingProxyServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+	if err := vegaprotoapi.RegisterTradingServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
 	if err := protoapi.RegisterTradingDataServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {

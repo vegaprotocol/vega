@@ -16,6 +16,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
@@ -34,7 +35,7 @@ var (
 // TradingProxyServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingProxyServiceClient
 type TradingProxyServiceClient interface {
-	protoapi.TradingProxyServiceClient
+	vegaprotoapi.TradingServiceClient
 }
 
 // TradingDataServiceClient ...
@@ -374,7 +375,7 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 type myQueryResolver VegaResolverRoot
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
-	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &protoapi.LastBlockHeightRequest{})
+	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})
 	if err != nil {
 		return "0", err
 	}
@@ -1690,13 +1691,13 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 type myMutationResolver VegaResolverRoot
 
 func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
-	pty := protoapi.SubmitTransactionRequest_TYPE_ASYNC
+	pty := vegaprotoapi.SubmitTransactionRequest_TYPE_ASYNC
 	if ty != nil {
 		switch *ty {
 		case SubmitTransactionTypeSync:
-			pty = protoapi.SubmitTransactionRequest_TYPE_SYNC
+			pty = vegaprotoapi.SubmitTransactionRequest_TYPE_SYNC
 		case SubmitTransactionTypeCommit:
-			pty = protoapi.SubmitTransactionRequest_TYPE_COMMIT
+			pty = vegaprotoapi.SubmitTransactionRequest_TYPE_COMMIT
 		}
 	}
 
@@ -1709,7 +1710,7 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 		return nil, err
 	}
 
-	req := &protoapi.SubmitTransactionRequest{
+	req := &vegaprotoapi.SubmitTransactionRequest{
 		Tx: &commandspb.Transaction{
 			InputData: decodedData,
 			Signature: &commandspb.Signature{

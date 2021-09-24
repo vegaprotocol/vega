@@ -61,6 +61,8 @@ Tendermint
 testnet
 tradable
 traderbot
+TradingService
+TxErr
 unexported
 unparked
 vega

@@ -68,7 +68,7 @@ func TestNodesService_GetEpoch(t *testing.T) {
 					StakedByDelegates: "20",
 					StakedTotal:       "30",
 					Status:            pb.NodeStatus_NODE_STATUS_VALIDATOR,
-					Delagations: []*pb.Delegation{
+					Delegations: []*pb.Delegation{
 						{
 							Party:    "1",
 							NodeId:   "node_1",
@@ -128,7 +128,7 @@ func TestNodesService_GetEpochByID(t *testing.T) {
 					StakedByDelegates: "20",
 					StakedTotal:       "30",
 					Status:            pb.NodeStatus_NODE_STATUS_VALIDATOR,
-					Delagations: []*pb.Delegation{
+					Delegations: []*pb.Delegation{
 						{
 							Party:    "1",
 							NodeId:   "node_1",

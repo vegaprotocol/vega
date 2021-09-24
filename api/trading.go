@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
-	protoapiv1 "code.vegaprotocol.io/protos/data-node/api/v1"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	"code.vegaprotocol.io/data-node/metrics"
+	protoapi "code.vegaprotocol.io/protos/vega/api"
+	"github.com/pkg/errors"
 )
 
 const defaultRequestTimeout = time.Second * 5
@@ -14,7 +15,7 @@ const defaultRequestTimeout = time.Second * 5
 // TradingServiceClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/api TradingServiceClient
 type TradingServiceClient interface {
-	vegaprotoapi.TradingServiceClient
+	protoapi.TradingServiceClient
 }
 
 // trading service acts as a proxy to the trading service in core node
@@ -23,52 +24,43 @@ type tradingProxyService struct {
 	conf Config
 
 	tradingServiceClient TradingServiceClient
+	eventObserver        *eventObserver
 }
 
-func (s *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoapiv1.SubmitTransactionRequest) (*protoapiv1.SubmitTransactionResponse, error) {
+func (t *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	vegaReq := internalToCoreSubmitTransactionRequest(req)
-	vegaResp, err := s.tradingServiceClient.SubmitTransactionV2(ctx, vegaReq)
-	if err != nil {
-		return nil, err
-	}
-
-	return &protoapiv1.SubmitTransactionResponse{
-		Success: vegaResp.Success,
-	}, nil
+	return t.tradingServiceClient.SubmitTransaction(ctx, req)
 }
 
-func (s *tradingProxyService) LastBlockHeight(ctx context.Context, req *protoapiv1.LastBlockHeightRequest) (*protoapiv1.LastBlockHeightResponse, error) {
+func (t *tradingProxyService) LastBlockHeight(ctx context.Context, req *protoapi.LastBlockHeightRequest) (*protoapi.LastBlockHeightResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	vegaResp, err := s.tradingServiceClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})
-	if err != nil {
-		return nil, err
-	}
-
-	return &protoapiv1.LastBlockHeightResponse{
-		Height: vegaResp.GetHeight(),
-	}, nil
+	return t.tradingServiceClient.LastBlockHeight(ctx, req)
 }
 
-func internalToCoreSubmitTransactionRequest(req *protoapiv1.SubmitTransactionRequest) *vegaprotoapi.SubmitTransactionV2Request {
-	requestType, ok := internalToCoreTransactionRequestType[req.Type]
-	if !ok {
-		requestType = vegaprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED
-	}
+func (t *tradingProxyService) GetVegaTime(ctx context.Context, req *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
+	defer cancel()
 
-	return &vegaprotoapi.SubmitTransactionV2Request{
-		Tx:   req.Tx,
-		Type: requestType,
-	}
+	return t.tradingServiceClient.GetVegaTime(ctx, req)
 }
 
-var internalToCoreTransactionRequestType = map[protoapiv1.SubmitTransactionRequest_Type]vegaprotoapi.SubmitTransactionV2Request_Type{
-	protoapiv1.SubmitTransactionRequest_TYPE_UNSPECIFIED: vegaprotoapi.SubmitTransactionV2Request_TYPE_UNSPECIFIED,
-	protoapiv1.SubmitTransactionRequest_TYPE_ASYNC:       vegaprotoapi.SubmitTransactionV2Request_TYPE_ASYNC,
-	protoapiv1.SubmitTransactionRequest_TYPE_SYNC:        vegaprotoapi.SubmitTransactionV2Request_TYPE_SYNC,
-	protoapiv1.SubmitTransactionRequest_TYPE_COMMIT:      vegaprotoapi.SubmitTransactionV2Request_TYPE_COMMIT,
+func (t *tradingProxyService) Statistics(ctx context.Context, req *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
+	defer cancel()
+
+	return t.tradingServiceClient.Statistics(ctx, req)
+}
+
+func (t *tradingProxyService) ObserveEventBus(
+	stream protoapi.TradingService_ObserveEventBusServer) error {
+	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
+	return t.eventObserver.ObserveEventBus(stream)
+}
+
+func (t *tradingProxyService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
+	return nil, errors.New("unimplemented")
 }
