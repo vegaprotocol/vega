@@ -22,7 +22,6 @@ import (
 	vgtm "code.vegaprotocol.io/vega/libs/tm"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/processor/ratelimit"
-	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -135,8 +134,6 @@ func NewApp(
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
 ) *App {
-	// @TODO move the initialisation of this elsewhere
-	snap, _ := snapshot.New(context.Background(), snapshot.NewDefaultConfig(), log, time)
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
@@ -218,7 +215,7 @@ func NewApp(
 		HandleDeliverTx(txn.UndelegateCommand,
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
-			app.SendEventOnError(app.DeliverReloadSnapshot))
+			app.SendEventOnError(app.DeliverReloadCheckpoint))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -1051,7 +1048,7 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	}
 }
 
-func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr error) {
+func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (rerr error) {
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
 		if rerr != nil {

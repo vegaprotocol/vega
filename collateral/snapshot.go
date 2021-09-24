@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -39,7 +39,7 @@ func (e *Engine) Name() types.CheckpointName {
 }
 
 func (e *Engine) Checkpoint() ([]byte, error) {
-	msg := &snapshot.Collateral{
+	msg := &checkpoint.Collateral{
 		Balances: e.getSnapshotBalances(),
 	}
 	ret, err := proto.Marshal(msg)
@@ -49,9 +49,9 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return ret, nil
 }
 
-func (e *Engine) Load(checkpoint []byte) error {
-	msg := snapshot.Collateral{}
-	if err := proto.Unmarshal(checkpoint, &msg); err != nil {
+func (e *Engine) Load(data []byte) error {
+	msg := checkpoint.Collateral{}
+	if err := proto.Unmarshal(data, &msg); err != nil {
 		return err
 	}
 	for _, balance := range msg.Balances {
@@ -76,9 +76,9 @@ func (e *Engine) Load(checkpoint []byte) error {
 }
 
 // get all balances for snapshot
-func (e *Engine) getSnapshotBalances() []*snapshot.AssetBalance {
+func (e *Engine) getSnapshotBalances() []*checkpoint.AssetBalance {
 	parties := make([]string, 0, len(e.partiesAccs))
-	pbal := make(map[string][]*snapshot.AssetBalance, len(e.partiesAccs))
+	pbal := make(map[string][]*checkpoint.AssetBalance, len(e.partiesAccs))
 	entries := 0
 	for party, accs := range e.partiesAccs {
 		assets := make([]string, 0, len(accs))
@@ -106,20 +106,20 @@ func (e *Engine) getSnapshotBalances() []*snapshot.AssetBalance {
 			continue
 		}
 		entries += ln
-		pbal[party] = make([]*snapshot.AssetBalance, 0, len(assets))
+		pbal[party] = make([]*checkpoint.AssetBalance, 0, len(assets))
 		parties = append(parties, party)
 		// sort by asset -> each party will have their balances appended in alphabetic order
 		sort.Strings(assets)
 		for _, a := range assets {
 			bal := balances[a]
-			pbal[party] = append(pbal[party], &snapshot.AssetBalance{
+			pbal[party] = append(pbal[party], &checkpoint.AssetBalance{
 				Party:   party,
 				Asset:   a,
 				Balance: bal.String(),
 			})
 		}
 	}
-	ret := make([]*snapshot.AssetBalance, 0, entries)
+	ret := make([]*checkpoint.AssetBalance, 0, entries)
 	sort.Strings(parties)
 	for _, party := range parties {
 		ret = append(ret, pbal[party]...)
