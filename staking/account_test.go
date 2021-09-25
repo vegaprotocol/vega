@@ -100,7 +100,7 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 	balance, err = acc.GetAvailableBalanceInRange(
 		time.Unix(0, 101), time.Unix(0, 121))
 	assert.NoError(t, err)
-	assert.Equal(t, num.NewUint(10), balance)
+	assert.Equal(t, num.NewUint(9), balance)
 
 	balance, err = acc.GetAvailableBalanceInRange(
 		time.Unix(0, 101), time.Unix(0, 126))

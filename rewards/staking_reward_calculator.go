@@ -46,6 +46,10 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 
 	rewardBalance = num.Min(maxPayoutPerEpoch, rewardBalance)
 
+	// no point in doing anything after this point if the reward balance is 0
+	if rewardBalance.IsZero() {
+		return nil
+	}
 	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator)
 }
 
