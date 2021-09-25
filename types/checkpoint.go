@@ -59,6 +59,7 @@ type DelegationEntry struct {
 type DelegateCP struct {
 	Active  []*DelegationEntry
 	Pending []*DelegationEntry
+	Auto    []string
 }
 
 func NewCheckpointStateFromProto(ps *checkpoint.CheckpointState) *CheckpointState {
@@ -253,6 +254,7 @@ func NewDelegationCPFromProto(sd *checkpoint.Delegate) *DelegateCP {
 	r := &DelegateCP{
 		Active:  make([]*DelegationEntry, 0, len(sd.Active)),
 		Pending: make([]*DelegationEntry, 0, len(sd.Pending)),
+		Auto:    sd.AutoDelegation[:],
 	}
 	for _, a := range sd.Active {
 		r.Active = append(r.Active, NewDelegationEntryFromProto(a))
@@ -265,8 +267,9 @@ func NewDelegationCPFromProto(sd *checkpoint.Delegate) *DelegateCP {
 
 func (d DelegateCP) IntoProto() *checkpoint.Delegate {
 	s := &checkpoint.Delegate{
-		Active:  make([]*checkpoint.DelegateEntry, 0, len(d.Active)),
-		Pending: make([]*checkpoint.DelegateEntry, 0, len(d.Pending)),
+		Active:         make([]*checkpoint.DelegateEntry, 0, len(d.Active)),
+		Pending:        make([]*checkpoint.DelegateEntry, 0, len(d.Pending)),
+		AutoDelegation: d.Auto[:],
 	}
 	for _, a := range d.Active {
 		s.Active = append(s.Active, a.IntoProto())
