@@ -523,3 +523,141 @@ Scenario: Validator owns more tokens than the minimumValidatorStake, but most of
     | node3  |  node7   |    100 | 
     | party1 |  node1   |  22197 | 
     | party2 |  node2   |  33177 | 
+
+Scenario: In presence of max delegation cap self-delegation gets priorities even if submitted later
+
+  Given the parties deposit on asset's general account the following amount:
+    | party  | asset  | amount |
+    | party1 | VEGA   | 111000 |
+    | party2 | VEGA   | 222000 |
+
+  And the parties deposit on staking account the following amount:
+    | party  | asset  | amount |
+    | party1 | VEGA   | 111000 |  
+    | party2 | VEGA   | 222000 |   
+
+  Then the parties submit the following delegations:
+    | party  | node id  | amount  |
+    | party1 |  node1   |  111000 | 
+    | party2 |  node2   |  222000 | 
+
+  Then the network moves ahead "1" blocks
+
+  Then the parties submit the following delegations:
+    | party  | node id  | amount |
+    | node1  |  node1   | 100000 | 
+    | node2  |  node2   |  12000 |       
+    | node3  |  node3   |  13000 | 
+    | node4  |  node4   |  14000 | 
+    | node5  |  node5   |  15000 | 
+    | node6  |  node6   |  16000 | 
+
+  Then the network moves ahead "1" blocks
+
+  And the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | node1  |  node1   | 100000 | 
+    | node2  |  node2   |  12000 |       
+    | node3  |  node3   |  13000 | 
+    | node4  |  node4   |  14000 | 
+    | node5  |  node5   |  15000 | 
+    | node6  |  node6   |  16000 | 
+    | party1 |  node1   | 111000 | 
+    | party2 |  node2   | 222000 | 
+
+    And the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 100000 | 
+    
+    #complete the initial epoch for delegation to take effect
+    Then the network moves ahead "172802" blocks
+
+    And the parties should have the following delegation balances for epoch 1:
+      | party  | node id  | amount |
+      | node1  |  node1   |  42561 | 
+      | node2  |  node2   |  12000 |       
+      | node3  |  node3   |  13000 | 
+      | node4  |  node4   |  14000 | 
+      | node5  |  node5   |  15000 | 
+      | node6  |  node6   |  16000 | 
+      | party1 |  node1   |      0 | 
+      | party2 |  node2   |  30561 | 
+
+    Then the validators should have the following val scores for epoch 1:
+      | node id | validator score  | normalised score |
+      |  node1  |      0.08462     |     0.16667      |    
+      |  node2  |      0.08462     |     0.16667      |
+      |  node3  |      0.08462     |     0.16667      | 
+      |  node4  |      0.08462     |     0.16667      | 
+      |  node5  |      0.08462     |     0.16667      | 
+      |  node6  |      0.08462     |     0.16667      | 
+      |  node7  |      0.00000     |     0.00000      | 
+      |  node8  |      0.00000     |     0.00000      | 
+      |  node9  |      0.00000     |     0.00000      | 
+      |  node10 |      0.00000     |     0.00000      | 
+      |  node11 |      0.00000     |     0.00000      | 
+      |  node12 |      0.00000     |     0.00000      | 
+      |  node13 |      0.00000     |     0.00000      | 
+
+    And the parties receive the following reward for epoch 1:
+      | party  | asset | amount |
+      | party1 | VEGA  | 0      | 
+      | party2 | VEGA  | 5283   | 
+      | node1  | VEGA  | 8333   | 
+      | node2  | VEGA  | 3049   | 
+      | node3  | VEGA  | 8333   |  
+      | node4  | VEGA  | 8333   | 
+      | node5  | VEGA  | 8333   | 
+      | node6  | VEGA  | 8333   | 
+      | node7  | VEGA  | 0      | 
+      | node8  | VEGA  | 0      | 
+      | node10 | VEGA  | 0      | 
+      | node11 | VEGA  | 0      | 
+      | node12 | VEGA  | 0      | 
+      | node13 | VEGA  | 0      | 
+
+Scenario: Validator subset can self-delegate as to push themselves below min validator stake due to max delegatable amount cap
+
+  Then the parties submit the following delegations:
+    | party  | node id  | amount |
+    | node1  |  node1   |    100 | 
+    | node2  |  node2   |    200 |       
+    | node3  |  node3   |    300 | 
+
+  Then the network moves ahead "1" blocks
+
+  And the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | node1  |  node1   |    100 | 
+    | node2  |  node2   |    200 |       
+    | node3  |  node3   |    300 | 
+    | node4  |  node4   |      0 | 
+
+    And the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 100000 | 
+    
+    #complete the initial epoch for delegation to take effect
+    Then the network moves ahead "172802" blocks
+
+    And the parties should have the following delegation balances for epoch 1:
+      | party  | node id  | amount |
+      | node1  |  node1   |     50 | 
+      | node2  |  node2   |     50 |       
+      | node3  |  node3   |     50 | 
+      | node4  |  node4   |     0  | 
+
+    And the parties receive the following reward for epoch 1:
+      | party  | asset | amount |
+      | node1  | VEGA  | 0      | 
+      | node2  | VEGA  | 0      | 
+      | node3  | VEGA  | 0      |  
+      | node4  | VEGA  | 0      | 
+      | node5  | VEGA  | 0      | 
+      | node6  | VEGA  | 0      | 
+      | node7  | VEGA  | 0      | 
+      | node8  | VEGA  | 0      | 
+      | node10 | VEGA  | 0      | 
+      | node11 | VEGA  | 0      | 
+      | node12 | VEGA  | 0      | 
+      | node13 | VEGA  | 0      | 
