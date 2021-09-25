@@ -1709,40 +1709,40 @@ func testCheckPartyEnteringAutoDelegation(t *testing.T) {
 	setupDefaultDelegationState(testEngine, 10, 5)
 
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 }
 
 func testCheckPartyExitingAutoDelegationThroughUndelegateEOE(t *testing.T) {
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 10, 5)
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2})
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(1))
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 2})
 
-	require.Equal(t, false, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.NotContains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 }
 
 func testCheckPartyExitingAutoDelegationThroughUndelegateNow(t *testing.T) {
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 10, 5)
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2})
 	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(1))
-	require.Equal(t, false, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.NotContains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 2})
-	require.Equal(t, false, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.NotContains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 }
 
 func TestPartyInAutoDelegateModeWithManualInterention(t *testing.T) {
@@ -1779,8 +1779,8 @@ func TestPartyInAutoDelegateModeWithManualInterention(t *testing.T) {
 
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
 
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 
 	// // start epoch 1
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
@@ -1790,8 +1790,8 @@ func TestPartyInAutoDelegateModeWithManualInterention(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(100))
 
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party1"])
-	require.Equal(t, true, testEngine.engine.autoDelegationMode["party2"])
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
 
 	// party1 has delegated during the epoch so they don't qualify for auto delegation. party1 had 6 and 4 respectively to node1 and node2 and they manually
 	// delegate 5 more to node 1

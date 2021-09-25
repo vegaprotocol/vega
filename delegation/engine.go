@@ -95,7 +95,7 @@ type Engine struct {
 	minDelegationAmount  *num.Uint                                     // min delegation amount per delegation request
 	currentEpoch         types.Epoch                                   // the current epoch for pending delegations
 	compLevel            num.Decimal                                   // competition level
-	autoDelegationMode   map[string]bool                               // parties entered auto-delegation mode
+	autoDelegationMode   map[string]struct{}                           // parties entered auto-delegation mode
 }
 
 //New instantiate a new delegation engine
@@ -110,7 +110,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		nodeDelegationState:  map[string]*validatorDelegation{},
 		partyDelegationState: map[string]*partyDelegation{},
 		pendingState:         map[uint64]map[string]*pendingPartyDelegation{},
-		autoDelegationMode:   map[string]bool{},
+		autoDelegationMode:   map[string]struct{}{},
 	}
 
 	// register for epoch notifications
@@ -218,7 +218,7 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 		if _, ok := e.autoDelegationMode[p]; !ok {
 			if balance, err := e.stakingAccounts.GetAvailableBalance(p); err == nil {
 				if state.totalDelegated.ToDecimal().Div(balance.ToDecimal()).GreaterThanOrEqual(minRatioForAutoDelegation) {
-					e.autoDelegationMode[p] = true
+					e.autoDelegationMode[p] = struct{}{}
 				}
 			}
 
