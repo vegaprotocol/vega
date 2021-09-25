@@ -39,7 +39,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | asset | amount |
       | VEGA  | 100000 | 
     
-    Then the network moves ahead "172803" blocks
+    Then the network moves ahead "172804" blocks
 
     And the parties receive the following reward for epoch 1:
       | party  | asset | amount |
@@ -96,7 +96,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | node4  |  node4   |     99 |  
       | party1 |  node4   | 111000 |  
 
-    Then the network moves ahead "172803" blocks
+    Then the network moves ahead "172804" blocks
 
     And the parties should have the following delegation balances for epoch 4:
       | party  | node id  | amount |
@@ -153,7 +153,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | VEGA  | 100000 | 
     
     #complete the initial epoch for delegation to take effect
-    Then the network moves ahead "172803" blocks
+    Then the network moves ahead "172804" blocks
 
     Then the validators should have the following val scores for epoch 1:
       | node id | validator score  | normalised score |
@@ -219,7 +219,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | VEGA  | 100000 | 
     
     #complete the initial epoch for delegation to take effect
-    Then the network moves ahead "172803" blocks
+    Then the network moves ahead "172804" blocks
 
     And the parties should have the following delegation balances for epoch 1:
       | party  | node id  |  amount |
@@ -328,7 +328,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | VEGA  | 100000 | 
     
     #complete the initial epoch for delegation to take effect
-    Then the network moves ahead "172803" blocks
+    Then the network moves ahead "172804" blocks
   
     And the parties should have the following delegation balances for epoch 1:
       | party  | node id  |  amount |
@@ -432,7 +432,7 @@ Scenario: Validator owns more tokens than the minimumValidatorStake, but most of
       | VEGA  | 100000 | 
     
     #complete the initial epoch for delegation to take effect
-    Then the network moves ahead "172803" blocks
+    Then the network moves ahead "172804" blocks
 
     And the parties should have the following delegation balances for epoch 1:
       | party  | node id  | amount |
