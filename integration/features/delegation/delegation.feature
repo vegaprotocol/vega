@@ -157,6 +157,25 @@ Feature: Staking & Delegation
     | party1 |  node2   |    0   |       
     | party1 |  node3   |    0   |        
 
+  Scenario: A party cannot cumulatively delegate more than it has in staking account
+    
+    When the parties submit the following delegations:
+    | party  | node id  |   amount   | reference | error                               |
+    | party1 |  node1   |     5000   |           |                                     |
+    | party1 |  node2   |     5001   |      a    | insufficient balance for delegation |
+
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | party1 |  node1   |   0    | 
+    | party1 |  node2   |   0    |       
+    | party1 |  node3   |   0    |        
+
+    And the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |   5000 | 
+    | party1 |  node2   |    0   |       
+    | party1 |  node3   |    0   |        
+  
   Scenario: A party cannot delegate stake size such that it exceeds maximum amount of stake for a validator
     Description: A party attempts to delegate token stake which exceed maximum stake for a validator
 
