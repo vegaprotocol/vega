@@ -1,8 +1,10 @@
 package delegation
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"testing"
 	"time"
@@ -97,6 +99,12 @@ func Test(t *testing.T) {
 	t.Run("a party having all of their stake delegated get into auto delegation successfully", testCheckPartyEnteringAutoDelegation)
 	t.Run("a party is in auto delegation mode which gets cancelled by manually undelegating at the end of an epoch", testCheckPartyExitingAutoDelegationThroughUndelegateEOE)
 	t.Run("a party is in auto delegation mode which gets cancelled by manually undelegating during an epoch", testCheckPartyExitingAutoDelegationThroughUndelegateNow)
+
+	// test checkpoints
+	t.Run("sorting consistently active delegations for checkpoint", testSortActive)
+	t.Run("sorting consistently pending delegations for checkpoint", testSortPending)
+	t.Run("test roundtrip of checkpoint calculation with no pending delegations", testCheckpointRoundtripNoPending)
+	t.Run("test roundtrip of checkpoint calculation with no active delegations", testCheckpointRoundtripOnlyPending)
 }
 
 // pass an invalid node id
@@ -1815,6 +1823,219 @@ func TestPartyInAutoDelegateModeWithManualInterention(t *testing.T) {
 	require.Equal(t, num.NewUint(10994), testEngine.engine.nodeDelegationState["node2"].totalDelegated)
 	require.Equal(t, num.NewUint(600), testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"])
 	require.Equal(t, num.NewUint(394), testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"])
+}
+
+func testSortActive(t *testing.T) {
+	rand.Seed(time.Now().UnixNano())
+	for k := 0; k < 100; k++ {
+		testEngine := getEngine(t)
+		for j := 0; j < 5; j++ {
+			active := []*types.DelegationEntry{}
+			var epochSeq uint64 = 1
+
+			active = append(active, &types.DelegationEntry{
+				Party:    "party1",
+				Node:     "node1",
+				Amount:   num.NewUint(100),
+				EpochSeq: epochSeq,
+			})
+			active = append(active, &types.DelegationEntry{
+				Party:    "party1",
+				Node:     "node2",
+				Amount:   num.NewUint(200),
+				EpochSeq: epochSeq,
+			})
+			active = append(active, &types.DelegationEntry{
+				Party:    "party2",
+				Node:     "node1",
+				Amount:   num.NewUint(300),
+				EpochSeq: epochSeq,
+			})
+			active = append(active, &types.DelegationEntry{
+				Party:    "party2",
+				Node:     "node2",
+				Amount:   num.NewUint(400),
+				EpochSeq: epochSeq,
+			})
+
+			rand.Shuffle(len(active), func(i, j int) { active[i], active[j] = active[j], active[i] })
+
+			testEngine.engine.sortActive(active)
+			require.Equal(t, "party1", active[0].Party)
+			require.Equal(t, "node1", active[0].Node)
+			require.Equal(t, "party1", active[1].Party)
+			require.Equal(t, "node2", active[1].Node)
+			require.Equal(t, "party2", active[2].Party)
+			require.Equal(t, "node1", active[2].Node)
+			require.Equal(t, "party2", active[3].Party)
+			require.Equal(t, "node2", active[3].Node)
+		}
+	}
+}
+
+func testSortPending(t *testing.T) {
+	for k := 0; k < 100; k++ {
+		testEngine := getEngine(t)
+		for j := 0; j < 5; j++ {
+			pending := []*types.DelegationEntry{}
+			var epochSeq uint64 = 1
+
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party1",
+				Node:       "node1",
+				Amount:     num.NewUint(100),
+				EpochSeq:   epochSeq,
+				Undelegate: false,
+			})
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party1",
+				Node:       "node2",
+				Amount:     num.NewUint(200),
+				EpochSeq:   epochSeq,
+				Undelegate: false,
+			})
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party2",
+				Node:       "node1",
+				Amount:     num.NewUint(300),
+				EpochSeq:   epochSeq,
+				Undelegate: false,
+			})
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party2",
+				Node:       "node2",
+				Amount:     num.NewUint(400),
+				EpochSeq:   epochSeq,
+				Undelegate: false,
+			})
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party1",
+				Node:       "node1",
+				Amount:     num.NewUint(50),
+				EpochSeq:   epochSeq + 1,
+				Undelegate: true,
+			})
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party1",
+				Node:       "node2",
+				Amount:     num.NewUint(150),
+				EpochSeq:   epochSeq + 1,
+				Undelegate: false,
+			})
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party2",
+				Node:       "node1",
+				Amount:     num.NewUint(250),
+				EpochSeq:   epochSeq + 1,
+				Undelegate: true,
+			})
+			pending = append(pending, &types.DelegationEntry{
+				Party:      "party2",
+				Node:       "node2",
+				Amount:     num.NewUint(350),
+				EpochSeq:   epochSeq + 1,
+				Undelegate: false,
+			})
+
+			rand.Shuffle(len(pending), func(i, j int) { pending[i], pending[j] = pending[j], pending[i] })
+
+			testEngine.engine.sortPending(pending)
+
+			// sorting by party then node then epoch
+			require.Equal(t, "party1", pending[0].Party)
+			require.Equal(t, "node1", pending[0].Node)
+			require.Equal(t, uint64(1), pending[0].EpochSeq)
+			require.False(t, pending[0].Undelegate)
+			require.Equal(t, num.NewUint(100), pending[0].Amount)
+
+			require.Equal(t, "party1", pending[1].Party)
+			require.Equal(t, "node1", pending[1].Node)
+			require.Equal(t, uint64(2), pending[1].EpochSeq)
+			require.True(t, pending[1].Undelegate)
+			require.Equal(t, num.NewUint(50), pending[1].Amount)
+
+			require.Equal(t, "party1", pending[2].Party)
+			require.Equal(t, "node2", pending[2].Node)
+			require.Equal(t, uint64(1), pending[2].EpochSeq)
+			require.False(t, pending[2].Undelegate)
+			require.Equal(t, num.NewUint(200), pending[2].Amount)
+
+			require.Equal(t, "party1", pending[3].Party)
+			require.Equal(t, "node2", pending[3].Node)
+			require.Equal(t, uint64(2), pending[3].EpochSeq)
+			require.False(t, pending[3].Undelegate)
+			require.Equal(t, num.NewUint(150), pending[3].Amount)
+
+			require.Equal(t, "party2", pending[4].Party)
+			require.Equal(t, "node1", pending[4].Node)
+			require.Equal(t, uint64(1), pending[4].EpochSeq)
+			require.False(t, pending[4].Undelegate)
+			require.Equal(t, num.NewUint(300), pending[4].Amount)
+
+			require.Equal(t, "party2", pending[5].Party)
+			require.Equal(t, "node1", pending[5].Node)
+			require.Equal(t, uint64(2), pending[5].EpochSeq)
+			require.True(t, pending[5].Undelegate)
+			require.Equal(t, num.NewUint(250), pending[5].Amount)
+
+			require.Equal(t, "party2", pending[6].Party)
+			require.Equal(t, "node2", pending[6].Node)
+			require.Equal(t, uint64(1), pending[6].EpochSeq)
+			require.False(t, pending[6].Undelegate)
+			require.Equal(t, num.NewUint(400), pending[6].Amount)
+
+			require.Equal(t, "party2", pending[7].Party)
+			require.Equal(t, "node2", pending[7].Node)
+			require.Equal(t, uint64(2), pending[7].EpochSeq)
+			require.False(t, pending[7].Undelegate)
+			require.Equal(t, num.NewUint(350), pending[7].Amount)
+		}
+	}
+}
+
+func testCheckpointRoundtripNoPending(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		testEngine := getEngine(t)
+		setupDefaultDelegationState(testEngine, 12, 7)
+
+		checkpoint, err := testEngine.engine.Checkpoint()
+		require.Nil(t, err)
+
+		testEngine.engine.Load(checkpoint)
+		checkpoint2, err := testEngine.engine.Checkpoint()
+		require.Nil(t, err)
+		require.True(t, bytes.Equal(checkpoint, checkpoint2))
+	}
+}
+
+func testCheckpointRoundtripOnlyPending(t *testing.T) {
+	for i := 0; i < 100; i++ {
+		testEngine := getEngine(t)
+
+		testEngine.topology.nodeToIsValidator["node1"] = true
+		testEngine.topology.nodeToIsValidator["node2"] = true
+		testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(100)
+		testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(200)
+
+		engine := testEngine.engine
+		err := engine.Delegate(context.Background(), "party1", "node1", num.NewUint(60))
+		require.Nil(t, err)
+		err = engine.Delegate(context.Background(), "party1", "node2", num.NewUint(40))
+		require.Nil(t, err)
+
+		err = engine.Delegate(context.Background(), "party2", "node1", num.NewUint(70))
+		require.Nil(t, err)
+		err = engine.Delegate(context.Background(), "party2", "node2", num.NewUint(130))
+		require.Nil(t, err)
+
+		checkpoint, err := testEngine.engine.Checkpoint()
+		require.Nil(t, err)
+
+		testEngine.engine.Load(checkpoint)
+		checkpoint2, err := testEngine.engine.Checkpoint()
+		require.Nil(t, err)
+		require.True(t, bytes.Equal(checkpoint, checkpoint2))
+	}
 }
 
 func getEngine(t *testing.T) *testEngine {
