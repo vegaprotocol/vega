@@ -1047,6 +1047,7 @@ func EpochFromProto(e *snapshot.EpochState) *EpochState {
 		StartTime:            time.Unix(0, e.StartTime).UTC(),
 		ExpireTime:           time.Unix(0, e.ExpireTime).UTC(),
 		EndTime:              time.Unix(0, e.EndTime).UTC(),
+		Action:               e.Action,
 		ReadyToStartNewEpoch: e.ReadyToStartNewEpoch,
 		ReadyToEndEpoch:      e.ReadyToEndEpoch,
 	}

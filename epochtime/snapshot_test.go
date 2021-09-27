@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,17 +20,27 @@ func TestEpochSnapshotPairwise(t *testing.T) {
 	// Force creation of first epoch to trigger a snapshot of the first epoch
 	vt.SetTimeNow(ctx, now)
 
-	snapshot, err := service.Snapshot()
+	data, err := service.Snapshot()
 	require.Nil(t, err)
-	require.Equal(t, 1, len(snapshot)) //should be one "chunk"
+	require.Equal(t, 1, len(data)) //should be one "chunk"
 
 	snapService := getEpochService(t)
-	snapService.LoadSnapshot(snapshot)
+
+	// Fiddle it into a payload by hand
+	snap := &snapshot.EpochState{}
+	err = proto.Unmarshal(data["all"], snap)
+	require.Nil(t, err)
+
+	snapService.LoadSnapshot(
+		types.PayloadEpochFromProto(
+			&snapshot.Payload_Epoch{Epoch: snap},
+		),
+	)
 
 	// Check that the snapshot of the snapshot is the same as the original snapshot
 	newSnapshot, err := snapService.Snapshot()
 	require.Nil(t, err)
-	require.Equal(t, snapshot, newSnapshot)
+	require.Equal(t, data, newSnapshot)
 
 	// Check functional equivalence by stepping forward in time/blocks
 	epochs = []types.Epoch{}
@@ -86,23 +98,5 @@ func TestEpochSnapshotHash(t *testing.T) {
 	h, err = service.GetHash("")
 	require.Nil(t, err)
 	require.Equal(t, hex.EncodeToString(h), "9882b9cb17fc1a6d4149737996625b6c29040798af16f2efbfcc3e9260d3ac2b")
-
-}
-
-func TestEpochSnapshotCorrupt(t *testing.T) {
-
-	service := getEpochService(t)
-
-	snapshot := map[string][]byte{
-		"invalidkey": {0},
-	}
-
-	err := service.LoadSnapshot(snapshot)
-	require.NotNil(t, err)
-
-	// Add nonsense bytes to correct key
-	snapshot["all"] = []byte{0, 1, 0, 3, 3}
-	err = service.LoadSnapshot(snapshot)
-	require.NotNil(t, err)
 
 }

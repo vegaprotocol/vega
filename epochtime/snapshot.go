@@ -2,9 +2,7 @@ package epochtime
 
 import (
 	"errors"
-	"time"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/types"
@@ -95,23 +93,15 @@ func (s *Svc) GetState(_ string) ([]byte, error) {
 	return s.state.data, nil
 }
 
-func (s *Svc) LoadSnapshot(snapdata map[string][]byte) error {
+func (s *Svc) LoadSnapshot(payload *types.PayloadEpoch) error {
 
-	data, ok := snapdata[s.state.t.Key()]
-	if !ok {
-		return errors.New("key missing from snapshot")
-	}
-
-	var snap snapshot.EpochState
-	if err := proto.Unmarshal(data, &snap); err != nil {
-		return err
-	}
+	snap := payload.EpochState
 
 	s.epoch = types.Epoch{
 		Seq:        snap.Seq,
-		StartTime:  time.Unix(0, snap.StartTime).UTC(),
-		ExpireTime: time.Unix(0, snap.ExpireTime).UTC(),
-		EndTime:    time.Unix(0, snap.EndTime).UTC(),
+		StartTime:  snap.StartTime,
+		ExpireTime: snap.ExpireTime,
+		EndTime:    snap.EndTime,
 		Action:     snap.Action,
 	}
 
