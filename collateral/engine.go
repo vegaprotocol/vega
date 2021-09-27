@@ -1786,10 +1786,6 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		}
 	}
 
-	// for _, acc := range insuranceAccounts {
-	// 	e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	// }
-
 	return append(resps, insuranceLedgerEntries), nil
 }
 
