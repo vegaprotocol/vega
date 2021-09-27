@@ -256,7 +256,7 @@ func (e *Engine) Load(ctx context.Context, snap *types.CheckpointState) error {
 				doneCollat = true
 			}
 		}
-		if err := c.Load(cpData); err != nil {
+		if err := c.Load(ctx, cpData); err != nil {
 			return err
 		}
 	}
