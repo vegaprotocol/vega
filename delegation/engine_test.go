@@ -2014,7 +2014,7 @@ func testCheckpointRoundtripOnlyPending(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 100; i++ {
 		testEngine := getEngine(t)
-		testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+		testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 
 		testEngine.topology.nodeToIsValidator["node1"] = true
 		testEngine.topology.nodeToIsValidator["node2"] = true

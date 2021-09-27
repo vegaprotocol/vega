@@ -37,7 +37,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	e.nodeDelegationState = map[string]*validatorDelegation{}
 	e.setActive(ctx, cpData.Active)
 	e.pendingState = map[uint64]map[string]*pendingPartyDelegation{}
-	e.setPending(cpData.Pending)
+	e.setPending(ctx, cpData.Pending)
 	// e.autoDelegationMode = map[string]struct{}{}
 	// e.setAuto(cpData.Auto)
 
@@ -93,7 +93,9 @@ func (e *Engine) setActive(ctx context.Context, entries []*types.DelegationEntry
 			evts = append(evts, events.NewDelegationBalance(ctx, de.Party, n, amt, num.NewUint(de.EpochSeq).String()))
 		}
 	}
-	e.broker.SendBatch(evts)
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
+	}
 }
 
 func (e *Engine) getActive() []*types.DelegationEntry {
@@ -200,17 +202,26 @@ func (e *Engine) getPending() []*types.DelegationEntry {
 // 	}
 // }
 
-func (e *Engine) setPending(entries []*types.DelegationEntry) {
+func (e *Engine) setPending(ctx context.Context, entries []*types.DelegationEntry) {
+	epochs := make([]uint64, 0, len(entries))
+	var parties []string
+	seenNodes := map[string]struct{}{}
+	nodes := []string{}
 	for _, pe := range entries {
 		// check epoch entry
 		ee, ok := e.pendingState[pe.EpochSeq]
 		if !ok {
 			ee = map[string]*pendingPartyDelegation{}
+			epochs = append(epochs, pe.EpochSeq)
 			e.pendingState[pe.EpochSeq] = ee
 		}
 		// check pending party entry
 		ppe, ok := ee[pe.Party]
 		if !ok {
+			// just allocate a bit more efficiently, even though this looks messy
+			if len(parties) == 0 {
+				parties = make([]string, 0, len(ee))
+			}
 			ppe = &pendingPartyDelegation{
 				party:                  pe.Party,
 				nodeToDelegateAmount:   map[string]*num.Uint{},
@@ -218,7 +229,13 @@ func (e *Engine) setPending(entries []*types.DelegationEntry) {
 				totalDelegation:        num.Zero(),
 				totalUndelegation:      num.Zero(),
 			}
+			// this assumes only 1 epoch... otherwise duplicate events are possible
+			parties = append(parties, pe.Party)
 			ee[pe.Party] = ppe
+		}
+		if _, ok := seenNodes[pe.Node]; !ok {
+			seenNodes[pe.Node] = struct{}{}
+			nodes = append(nodes, pe.Node)
 		}
 		// delegate/undelegate?
 		if pe.Undelegate {
@@ -230,5 +247,21 @@ func (e *Engine) setPending(entries []*types.DelegationEntry) {
 		}
 		// just to be sure the main map is updated...
 		e.pendingState[pe.EpochSeq] = ee
+	}
+	sort.Strings(parties)
+	sort.Strings(nodes)
+	sort.SliceStable(epochs, func(i, j int) bool {
+		return epochs[i] < epochs[j]
+	})
+	evts := make([]events.Event, 0, len(parties)*len(epochs)*len(nodes))
+	for _, seq := range epochs {
+		for _, p := range parties {
+			for _, n := range nodes {
+				evts = append(evts, e.getNextEpochBalanceEvent(ctx, p, n, seq))
+			}
+		}
+	}
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
 	}
 }
