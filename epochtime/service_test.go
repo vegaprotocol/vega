@@ -15,14 +15,13 @@ import (
 )
 
 var (
-	vt     *vegatime.Svc
-	now    time.Time = time.Unix(0, 0).UTC()
+	vt     *vegatime.Svc = vegatime.New(vegatime.NewDefaultConfig())
+	now    time.Time     = time.Unix(0, 0).UTC()
 	epochs []types.Epoch
 )
 
 func getEpochService(t *testing.T) *epochtime.Svc {
 	ctx := context.Background()
-	vt = vegatime.New(vegatime.NewDefaultConfig())
 	log := logging.NewTestLogger()
 	broker, err := broker.New(ctx, log, broker.NewDefaultConfig())
 	assert.NoError(t, err)
@@ -47,6 +46,7 @@ func TestEpochService(t *testing.T) {
 	assert.NotNil(t, es)
 
 	// Subscribe to epoch updates
+	epochs = []types.Epoch{}
 	es.NotifyOnEpoch(onEpoch)
 
 	// Move time forward to generate first epoch
