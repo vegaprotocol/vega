@@ -38,7 +38,7 @@ func (s *Store) Checkpoint() ([]byte, error) {
 	return proto.Marshal(&params)
 }
 
-func (s *Store) Load(data []byte) error {
+func (s *Store) Load(_ context.Context, data []byte) error {
 	params := &snapshot.NetParams{}
 	if err := proto.Unmarshal(data, params); err != nil {
 		return err

@@ -1994,14 +1994,16 @@ func testSortPending(t *testing.T) {
 }
 
 func testCheckpointRoundtripNoPending(t *testing.T) {
+	ctx := context.Background()
 	for i := 0; i < 100; i++ {
 		testEngine := getEngine(t)
+		testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 		setupDefaultDelegationState(testEngine, 12, 7)
 
 		checkpoint, err := testEngine.engine.Checkpoint()
 		require.Nil(t, err)
 
-		testEngine.engine.Load(checkpoint)
+		testEngine.engine.Load(ctx, checkpoint)
 		checkpoint2, err := testEngine.engine.Checkpoint()
 		require.Nil(t, err)
 		require.True(t, bytes.Equal(checkpoint, checkpoint2))
@@ -2009,8 +2011,10 @@ func testCheckpointRoundtripNoPending(t *testing.T) {
 }
 
 func testCheckpointRoundtripOnlyPending(t *testing.T) {
+	ctx := context.Background()
 	for i := 0; i < 100; i++ {
 		testEngine := getEngine(t)
+		testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 
 		testEngine.topology.nodeToIsValidator["node1"] = true
 		testEngine.topology.nodeToIsValidator["node2"] = true
@@ -2031,7 +2035,7 @@ func testCheckpointRoundtripOnlyPending(t *testing.T) {
 		checkpoint, err := testEngine.engine.Checkpoint()
 		require.Nil(t, err)
 
-		testEngine.engine.Load(checkpoint)
+		testEngine.engine.Load(ctx, checkpoint)
 		checkpoint2, err := testEngine.engine.Checkpoint()
 		require.Nil(t, err)
 		require.True(t, bytes.Equal(checkpoint, checkpoint2))

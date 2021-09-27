@@ -49,7 +49,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return ret, nil
 }
 
-func (e *Engine) Load(data []byte) error {
+func (e *Engine) Load(ctx context.Context, data []byte) error {
 	msg := checkpoint.Collateral{}
 	if err := proto.Unmarshal(data, &msg); err != nil {
 		return err
@@ -63,14 +63,14 @@ func (e *Engine) Load(data []byte) error {
 				// then the asset is not yet enabled and we have a problem...
 				return err
 			}
-			e.UpdateBalance(context.Background(), accID, ub)
+			e.UpdateBalance(ctx, accID, ub)
 			continue
 		}
 		accID := e.accountID(noMarket, balance.Party, balance.Asset, types.AccountTypeGeneral)
 		if _, err := e.GetAccountByID(accID); err != nil {
-			accID, _ = e.CreatePartyGeneralAccount(context.Background(), balance.Party, balance.Asset)
+			accID, _ = e.CreatePartyGeneralAccount(ctx, balance.Party, balance.Asset)
 		}
-		e.UpdateBalance(context.Background(), accID, ub)
+		e.UpdateBalance(ctx, accID, ub)
 	}
 	return nil
 }
