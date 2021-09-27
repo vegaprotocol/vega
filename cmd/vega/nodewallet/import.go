@@ -60,14 +60,14 @@ func (opts *importCmd) Execute(_ []string) error {
 	var data map[string]string
 	switch opts.Chain {
 	case ethereumChain:
-		data, err = nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		data, err = nodewallet.ImportEthereumWallet(vegaPaths, registryPass, walletPass, opts.WalletPath, opts.Force)
 		if err != nil {
-			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
+			return fmt.Errorf("couldn't import Ethereum node wallet: %w", err)
 		}
 	case vegaChain:
-		data, err = nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		data, err = nodewallet.ImportVegaWallet(vegaPaths, registryPass, walletPass, opts.WalletPath, opts.Force)
 		if err != nil {
-			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
+			return fmt.Errorf("couldn't import Vega node wallet: %w", err)
 		}
 	}
 
