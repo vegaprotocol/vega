@@ -117,7 +117,13 @@ func (e *Engine) getSnapshotBalances() []*checkpoint.AssetBalance {
 	}
 
 	sort.Slice(out, func(i, j int) bool {
-		return out[i].Party < out[j].Party && out[i].Asset < out[j].Asset
+		switch strings.Compare(out[i].Party, out[j].Party) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+		return out[i].Asset < out[j].Asset
 	})
 	return out
 }
