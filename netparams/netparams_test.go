@@ -237,7 +237,7 @@ func testNonEmptyCheckpoint(t *testing.T) {
 	require.Equal(t, ov, ov2)
 
 	netp2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	require.NoError(t, netp2.Load(data))
+	require.NoError(t, netp2.Load(ctx, data))
 
 	nv2, err := netp2.Get(netparams.GovernanceProposalMarketMinClose)
 	assert.NoError(t, err)
@@ -254,11 +254,12 @@ func testNonEmptyCheckpoint(t *testing.T) {
 func testInvalidCheckpoint(t *testing.T) {
 	netp := getTestNetParams(t)
 	defer netp.ctrl.Finish()
+	ctx := context.Background()
 
 	data, err := netp.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, data)
 
 	data = append(data, []byte("foobar")...) // corrupt the data
-	require.Error(t, netp.Load(data))
+	require.Error(t, netp.Load(ctx, data))
 }
