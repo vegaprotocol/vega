@@ -1,10 +1,12 @@
 package delegation
 
 import (
+	"context"
 	"sort"
 	"strings"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -42,7 +44,10 @@ func (e *Engine) Load(data []byte) error {
 	return nil
 }
 
+// @TODO we probably need the context here
 func (e *Engine) setActive(entries []*types.DelegationEntry) {
+	nodes := []string{}
+	nodeMap := map[string]struct{}{}
 	for _, de := range entries {
 		// add to party state
 		ps, ok := e.partyDelegationState[de.Party]
@@ -53,6 +58,10 @@ func (e *Engine) setActive(entries []*types.DelegationEntry) {
 				totalDelegated: num.Zero(),
 			}
 			e.partyDelegationState[de.Party] = ps
+		}
+		if _, ok := nodeMap[de.Node]; !ok {
+			nodeMap[de.Node] = struct{}{}
+			nodes = append(nodes, de.Node)
 		}
 		ps.totalDelegated.AddSum(de.Amount)
 		ps.nodeToAmount[de.Node] = de.Amount.Clone()
@@ -69,6 +78,22 @@ func (e *Engine) setActive(entries []*types.DelegationEntry) {
 		ns.totalDelegated.AddSum(de.Amount)
 		ns.partyToAmount[de.Party] = de.Amount.Clone()
 	}
+	sort.Strings(nodes)
+	// now that we've fully restored the state, let's iterate over the parties in the same order again, and send events
+	// cap is nr of parties * num of nodes
+	evts := make([]events.Event, 0, len(entries)*len(nodes))
+	for _, de := range entries {
+		// this will always work
+		ps := e.partyDelegationState[de.Party]
+		for _, n := range nodes {
+			amt, ok := ps.nodeToAmount[n]
+			if !ok {
+				amt = num.Zero()
+			}
+			evts = append(evts, events.NewDelegationBalance(context.Background(), de.Party, n, amt, num.NewUint(de.EpochSeq).String()))
+		}
+	}
+	e.broker.SendBatch(evts)
 }
 
 func (e *Engine) getActive() []*types.DelegationEntry {
