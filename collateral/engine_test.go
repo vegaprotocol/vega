@@ -597,7 +597,7 @@ func testEnableAssetSuccess(t *testing.T) {
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
-	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
+	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
 	assert.True(t, assetInsuranceAcc.Balance.IsZero())
 
 }
@@ -2164,7 +2164,7 @@ func TestClearMarket(t *testing.T) {
 	assert.Equal(t, 2, len(responses))
 
 	// as there's only one market and it's being cleared we expect all the balance to go to the global account
-	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
+	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
 	assert.Equal(t, num.NewUint(1000), assetInsuranceAcc.Balance)
 }
 

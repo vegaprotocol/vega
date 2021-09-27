@@ -77,54 +77,55 @@ func (e *Engine) Load(data []byte) error {
 
 // get all balances for snapshot
 func (e *Engine) getSnapshotBalances() []*checkpoint.AssetBalance {
-	parties := make([]string, 0, len(e.partiesAccs))
-	pbal := make(map[string][]*checkpoint.AssetBalance, len(e.partiesAccs))
-	entries := 0
-	for party, accs := range e.partiesAccs {
-		assets := make([]string, 0, len(accs))
-		balances := map[string]*num.Uint{}
-		for _, acc := range accs {
-			switch acc.Type {
-			case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
-				types.AccountTypeInsurance, types.AccountTypeGlobalInsurance:
-				assetBal, ok := balances[acc.Asset]
-				if !ok {
-					assetBal = num.Zero()
-					balances[acc.Asset] = assetBal
-					assets = append(assets, acc.Asset)
-				}
-				assetBal.AddSum(acc.Balance)
-			case types.AccountTypeSettlement:
-				if !acc.Balance.IsZero() {
-					e.log.Panic("Settlement balance is not zero",
-						logging.String("market-id", acc.MarketID))
-				}
-			}
-		}
-		ln := len(assets)
-		if ln == 0 {
+	// party -> asset -> balance
+	balances := make(map[string]map[string]*num.Uint, len(e.accs))
+	for _, acc := range e.accs {
+		if acc.Balance.IsZero() {
 			continue
 		}
-		entries += ln
-		pbal[party] = make([]*checkpoint.AssetBalance, 0, len(assets))
-		parties = append(parties, party)
-		// sort by asset -> each party will have their balances appended in alphabetic order
-		sort.Strings(assets)
-		for _, a := range assets {
-			bal := balances[a]
-			pbal[party] = append(pbal[party], &checkpoint.AssetBalance{
-				Party:   party,
-				Asset:   a,
-				Balance: bal.String(),
+		switch acc.Type {
+		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
+			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance:
+			assets, ok := balances[acc.Owner]
+			if !ok {
+				assets = map[string]*num.Uint{}
+				balances[acc.Owner] = assets
+			}
+			balance, ok := assets[acc.Asset]
+			if !ok {
+				balance = num.Zero()
+				assets[acc.Asset] = balance
+			}
+			balance.AddSum(acc.Balance)
+		case types.AccountTypeSettlement:
+			if !acc.Balance.IsZero() {
+				e.log.Panic("Settlement balance is not zero",
+					logging.String("market-id", acc.MarketID))
+			}
+		}
+	}
+
+	out := make([]*checkpoint.AssetBalance, 0, len(balances))
+	for owner, assets := range balances {
+		for asset, balance := range assets {
+			out = append(out, &checkpoint.AssetBalance{
+				Party:   owner,
+				Asset:   asset,
+				Balance: balance.String(),
 			})
 		}
 	}
-	ret := make([]*checkpoint.AssetBalance, 0, entries)
-	sort.Strings(parties)
-	for _, party := range parties {
-		ret = append(ret, pbal[party]...)
-	}
-	return ret
+
+	sort.Slice(out, func(i, j int) bool {
+		switch strings.Compare(out[i].Party, out[j].Party) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+		return out[i].Asset < out[j].Asset
+	})
+	return out
 }
 
 func (e *Engine) Namespace() string {
