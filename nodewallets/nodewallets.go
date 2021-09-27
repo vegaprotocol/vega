@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrVegaWalletIsMissing            = errors.New("the Vega node wallet is missing")
-	ErrEthereumWalletIsMissing        = errors.New("the Ethereum node wallet is missing")
+	ErrVegaWalletIsMissing     = errors.New("the Vega node wallet is missing")
+	ErrEthereumWalletIsMissing = errors.New("the Ethereum node wallet is missing")
 )
 
 type NodeWallets struct {
