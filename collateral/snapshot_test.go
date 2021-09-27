@@ -18,16 +18,24 @@ import (
 
 func TestSnapshot(t *testing.T) {
 	eng := getTestEngine(t, "market1")
-	ctx := context.Background()
 	defer eng.ctrl.Finish()
+	ctx := context.Background()
 
 	party := "foo"
 	bal := num.NewUint(500)
+	insBal := num.NewUint(42)
 	// create party
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	acc, err := eng.Engine.CreatePartyGeneralAccount(ctx, party, testMarketAsset)
 	assert.NoError(t, err)
 	err = eng.Engine.UpdateBalance(ctx, acc, bal)
+	assert.Nil(t, err)
+
+	// create a market then top insurance pool,
+	// this should get restored in the global pool
+	mktInsAcc, err := eng.GetMarketInsurancePoolAccount(testMarketID, testMarketAsset)
+	assert.NoError(t, err)
+	err = eng.Engine.UpdateBalance(ctx, mktInsAcc.ID, insBal)
 	assert.Nil(t, err)
 
 	snapshot, err := eng.Checkpoint()
@@ -37,7 +45,6 @@ func TestSnapshot(t *testing.T) {
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	// system accounts created
-
 	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.broker, time.Now())
 
 	asset := types.Asset{
@@ -50,6 +57,11 @@ func TestSnapshot(t *testing.T) {
 	loadEng.EnableAsset(ctx, asset)
 	err = loadEng.Load(snapshot)
 	require.NoError(t, err)
-	_, err = loadEng.GetPartyGeneralAccount(party, asset.ID)
+	loadedPartyAcc, err := loadEng.GetPartyGeneralAccount(party, testMarketAsset)
 	require.NoError(t, err)
+	require.Equal(t, bal, loadedPartyAcc.Balance)
+
+	loadedGlobInsPool, err := loadEng.GetAssetInsurancePoolAccount(testMarketAsset)
+	require.NoError(t, err)
+	require.Equal(t, insBal, loadedGlobInsPool.Balance)
 }

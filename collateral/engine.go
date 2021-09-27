@@ -1754,21 +1754,29 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	}
 
 	// add the global account
-	insuranceAccounts = append(insuranceAccounts, e.GetAssetInsurancePoolAccount(asset))
+	// can't fail at this point, if the market exists, the asset exists,
+	// so this exists too
+	globalInsurancePool, _ := e.GetAssetInsurancePoolAccount(asset)
+	insuranceAccounts = append(insuranceAccounts, globalInsurancePool)
 
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
 	req.Amount = marketInsuranceAcc.Balance.Clone()
-	insuranceledgerEntries, err := e.getLedgerEntries(ctx, req)
+	insuranceLedgerEntries, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
 		e.log.Panic("unable to redistribute market insurance funds", logging.Error(err))
 	}
-	for _, acc := range insuranceAccounts {
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	for _, bal := range insuranceLedgerEntries.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return nil, err
+		}
 	}
 
-	return append(resps, insuranceledgerEntries), nil
+	return append(resps, insuranceLedgerEntries), nil
 }
 
 func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) bool {
@@ -2324,10 +2332,9 @@ func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Acc
 }
 
 // GetAssetInsurancePoolAccount returns the global insurance account for the asset
-func (e *Engine) GetAssetInsurancePoolAccount(asset string) *types.Account {
+func (e *Engine) GetAssetInsurancePoolAccount(asset string) (*types.Account, error) {
 	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance)
-	globalInsuranceAcc := e.accs[globalInsuranceID]
-	return globalInsuranceAcc
+	return e.GetAccountByID(globalInsuranceID)
 }
 
 func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {
