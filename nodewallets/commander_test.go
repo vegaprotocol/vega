@@ -2,16 +2,18 @@ package nodewallet_test
 
 import (
 	"context"
-	"encoding/hex"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/crypto"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
-	"code.vegaprotocol.io/vega/nodewallet/mocks"
+	"code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets/mocks"
+	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/txn"
+	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
@@ -25,15 +27,7 @@ type testCommander struct {
 	ctrl   *gomock.Controller
 	chain  *mocks.MockChain
 	bstats *mocks.MockBlockchainStats
-	wal    nodewallet.Wallet
-}
-
-type stubWallet struct {
-	key    []byte
-	chain  string
-	signed []byte
-	err    error
-	name   string
+	wallet *vgnw.Wallet
 }
 
 func getTestCommander(t *testing.T) *testCommander {
@@ -41,9 +35,20 @@ func getTestCommander(t *testing.T) *testCommander {
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
 	bstats := mocks.NewMockBlockchainStats(ctrl)
-	wal := &stubWallet{name: "some_name.1234", chain: string(nodewallet.Vega)}
-	cmd, err := nodewallet.NewCommander(logging.NewTestLogger(), chain, wal, bstats)
-	assert.NoError(t, err)
+
+	vegaPaths, _ := vgtesting.NewVegaPaths()
+	registryPass := vgrand.RandomStr(10)
+	walletPass := vgrand.RandomStr(10)
+
+	_, err := nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, false)
+	require.NoError(t, err)
+	wallet, err := nodewallet.GetVegaWallet(vegaPaths, registryPass)
+	require.NoError(t, err)
+	require.NotNil(t, wallet)
+
+	cmd, err := nodewallet.NewCommander(logging.NewTestLogger(), chain, wallet, bstats)
+	require.NoError(t, err)
+
 	return &testCommander{
 		Commander: cmd,
 		ctx:       ctx,
@@ -51,7 +56,7 @@ func getTestCommander(t *testing.T) *testCommander {
 		ctrl:      ctrl,
 		chain:     chain,
 		bstats:    bstats,
-		wal:       wal,
+		wallet:    wallet,
 	}
 }
 
@@ -114,28 +119,4 @@ func testSignedCommandFailure(t *testing.T) {
 func (t *testCommander) Finish() {
 	t.cfunc()
 	t.ctrl.Finish()
-}
-
-func (s stubWallet) Name() string {
-	return s.name
-}
-
-func (s stubWallet) Chain() string {
-	return s.chain
-}
-
-func (s stubWallet) Algo() string {
-	return "vega/ed25519"
-}
-
-func (s stubWallet) Version() uint32 {
-	return 1
-}
-
-func (s stubWallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
-	return crypto.NewPublicKeyOrAddress(hex.EncodeToString(s.key), s.key)
-}
-
-func (s stubWallet) Sign(_ []byte) ([]byte, error) {
-	return s.signed, s.err
 }
