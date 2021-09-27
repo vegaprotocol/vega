@@ -47,7 +47,7 @@ func (suite *CommandSuite) RunMain(ctx context.Context, format string, args ...i
 // PrepareSandbox creates a sandbox directory where to run a command.
 // It returns the path of the new created directory and a closer function.
 func (suite *CommandSuite) PrepareSandbox(t *testing.T) (string, string, func()) {
-	path := filepath.Join("/tmp", "vegatests", "test-sandbox", vgrand.RandomStr(10))
+	path := filepath.Join("/tmp", "vega-tests", "test-sandbox", vgrand.RandomStr(10))
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {
 		panic(err)
