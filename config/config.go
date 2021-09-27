@@ -30,7 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
@@ -65,9 +65,9 @@ type Config struct {
 	Epoch             epochtime.Config   `group:"Epoch" namespace:"epochtime"`
 	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
 	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
-	Governance        governance.Config  `group:"Governance" namespace:"governance"`
-	NodeWallet        nodewallet.Config  `group:"NodeWallet" namespace:"nodewallet"`
-	Assets            assets.Config      `group:"Assets" namespace:"assets"`
+	Governance governance.Config `group:"Governance" namespace:"governance"`
+	NodeWallet nodewallet.Config `group:"NodeWallet" namespace:"nodewallet"`
+	Assets     assets.Config     `group:"Assets" namespace:"assets"`
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`

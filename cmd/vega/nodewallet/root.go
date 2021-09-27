@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
