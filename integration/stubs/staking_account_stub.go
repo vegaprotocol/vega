@@ -23,7 +23,7 @@ func (t *StakingAccountStub) OnEpochEvent(ctx context.Context, epoch types.Epoch
 		if epoch.EndTime == emptyT {
 			t.partyToStakeForEpoch[epoch.StartTime] = map[string]*num.Uint{}
 			for p, s := range t.partyToStake {
-				t.partyToStakeForEpoch[epoch.StartTime][p] = s
+				t.partyToStakeForEpoch[epoch.StartTime][p] = s.Clone()
 			}
 		}
 	}
@@ -47,7 +47,7 @@ func (t *StakingAccountStub) DecrementBalance(party string, amount *num.Uint) er
 		return errors.New("incorrect balance for unstaking")
 	}
 	t.partyToStake[party] = t.partyToStake[party].Sub(t.partyToStake[party], amount)
-	t.partyToStakeForEpoch[t.currentEpoch.StartTime][party] = t.partyToStake[party]
+	t.partyToStakeForEpoch[t.currentEpoch.StartTime][party] = t.partyToStake[party].Clone()
 	return nil
 }
 

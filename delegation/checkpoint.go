@@ -2,6 +2,7 @@ package delegation
 
 import (
 	"sort"
+	"strings"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
@@ -18,6 +19,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	data := &types.DelegateCP{
 		Active:  e.getActive(),
 		Pending: e.getPending(),
+		// Auto:    e.getAuto(),
 	}
 	return proto.Marshal(data.IntoProto())
 }
@@ -81,11 +83,53 @@ func (e *Engine) getActive() []*types.DelegationEntry {
 	}
 
 	// sort the slice
-	sort.SliceStable(active, func(i, j int) bool {
-		return active[i].Party > active[j].Party && active[i].Node > active[j].Node
-	})
+	e.sortActive(active)
 
 	return active
+}
+
+func (e *Engine) sortActive(active []*types.DelegationEntry) {
+	sort.SliceStable(active, func(i, j int) bool {
+		switch strings.Compare(active[i].Party, active[j].Party) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
+		return active[i].Node < active[j].Node
+	})
+}
+
+// func (e *Engine) getAuto() []string {
+// 	auto := make([]string, 0, len(e.autoDelegationMode))
+// 	for p := range e.autoDelegationMode {
+// 		auto = append(auto, p)
+// 	}
+// 	sort.Strings(auto)
+// 	return auto
+// }
+
+func (e *Engine) sortPending(pending []*types.DelegationEntry) {
+	sort.SliceStable(pending, func(i, j int) bool {
+		pi, pj := pending[i], pending[j]
+
+		switch strings.Compare(pi.Party, pj.Party) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
+		switch strings.Compare(pi.Node, pj.Node) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
+		return pi.EpochSeq < pj.EpochSeq
+	})
 }
 
 func (e *Engine) getPending() []*types.DelegationEntry {
@@ -117,22 +161,16 @@ func (e *Engine) getPending() []*types.DelegationEntry {
 		}
 	}
 
-	sort.SliceStable(pending, func(i, j int) bool {
-		pi, pj := pending[i], pending[j]
-		cmp := pi.EpochSeq > pj.EpochSeq && pi.Party > pj.Party && pi.Node > pj.Node
-		if !cmp {
-			return false
-		}
-		// everything evaluated to true -> delegate/undelegate:
-		if pi.Undelegate == pj.Undelegate {
-			return true
-		}
-		// one is delegate, the other undelegate, just pick one...
-		return pi.Undelegate
-	})
+	e.sortPending(pending)
 
 	return pending
 }
+
+// func (e *Engine) setAuto(parties []string) {
+// 	for _, p := range parties {
+// 		e.autoDelegationMode[p] = struct{}{}
+// 	}
+// }
 
 func (e *Engine) setPending(entries []*types.DelegationEntry) {
 	for _, pe := range entries {
