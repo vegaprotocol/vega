@@ -93,6 +93,10 @@ func Test(t *testing.T) {
 	t.Run("calculate total delegated token successful", testCalculateTotalDelegatedTokens)
 	t.Run("calculate the max stake per validator", testMaxStakePerValidator)
 
+	// test auto delegation
+	t.Run("a party having all of their stake delegated get into auto delegation successfully", testCheckPartyEnteringAutoDelegation)
+	t.Run("a party is in auto delegation mode which gets cancelled by manually undelegating at the end of an epoch", testCheckPartyExitingAutoDelegationThroughUndelegateEOE)
+	t.Run("a party is in auto delegation mode which gets cancelled by manually undelegating during an epoch", testCheckPartyExitingAutoDelegationThroughUndelegateNow)
 }
 
 // pass an invalid node id
@@ -1316,7 +1320,7 @@ func testProcessPending(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node2", num.NewUint(1))
 
-	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
+	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1}, num.NewUint(15))
 	pendingStateForEpoch := testEngine.engine.pendingState[1]
 	require.Equal(t, num.NewUint(10), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
 	require.Equal(t, num.NewUint(8), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
@@ -1366,7 +1370,8 @@ func testGetValidatorsSuccess(t *testing.T) {
 	testEngine.engine.Delegate(context.Background(), "party3", "2", num.NewUint(20))
 	testEngine.engine.Delegate(context.Background(), "party3", "3", num.NewUint(30))
 
-	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
+	totalTokens := testEngine.engine.calcMaxDelegatableTokens(testEngine.engine.calcTotalDelegatedTokens(1, num.Zero()), num.DecimalFromFloat(3))
+	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1}, totalTokens)
 	validators := testEngine.engine.getValidatorData()
 	require.Equal(t, 5, len(validators))
 	require.Equal(t, "1", validators[0].NodeID)
@@ -1415,7 +1420,9 @@ func testGetValidatorsSuccessWithSelfDelegation(t *testing.T) {
 		}
 	}
 
-	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1})
+	totalTokens := testEngine.engine.calcTotalDelegatedTokens(1, num.Zero())
+
+	testEngine.engine.processPending(context.Background(), types.Epoch{Seq: 1}, totalTokens)
 	validators := testEngine.engine.getValidatorData()
 
 	require.Equal(t, 5, len(validators))
@@ -1672,15 +1679,18 @@ func testCalculateTotalDelegatedTokens(t *testing.T) {
 
 	// setup delegation state
 	setupDefaultDelegationState(testEngine, 13, 7)
-	require.Equal(t, num.NewUint(15), testEngine.engine.calcTotalDelegatedTokens(1))
+	require.Equal(t, num.NewUint(15), testEngine.engine.calcTotalDelegatedTokens(1, num.Zero()))
 
 	err := testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(2))
 	require.Nil(t, err)
-	require.Equal(t, num.NewUint(13), testEngine.engine.calcTotalDelegatedTokens(1))
+	require.Equal(t, num.NewUint(13), testEngine.engine.calcTotalDelegatedTokens(1, num.Zero()))
 
 	err = testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(5))
 	require.Nil(t, err)
-	require.Equal(t, num.NewUint(18), testEngine.engine.calcTotalDelegatedTokens(1))
+	require.Equal(t, num.NewUint(18), testEngine.engine.calcTotalDelegatedTokens(1, num.Zero()))
+
+	// with tokens available for auto delegation
+	require.Equal(t, num.NewUint(28), testEngine.engine.calcTotalDelegatedTokens(1, num.NewUint(10)))
 }
 
 func testMaxStakePerValidator(t *testing.T) {
@@ -1692,6 +1702,119 @@ func testMaxStakePerValidator(t *testing.T) {
 	// 1/a = 11/1.1 = 0.1
 	// max per validator = 0.1 * 1000 = 100
 	require.Equal(t, num.NewUint(100), testEngine.engine.calcMaxDelegatableTokens(num.NewUint(1000), num.DecimalFromFloat(11)))
+}
+
+func testCheckPartyEnteringAutoDelegation(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 10, 5)
+
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+}
+
+func testCheckPartyExitingAutoDelegationThroughUndelegateEOE(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 10, 5)
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2})
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party1", "node1", num.NewUint(1))
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 2})
+
+	require.NotContains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+}
+
+func testCheckPartyExitingAutoDelegationThroughUndelegateNow(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 10, 5)
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2})
+	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(1))
+	require.NotContains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 2})
+	require.NotContains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+}
+
+func TestPartyInAutoDelegateModeWithManualInterention(t *testing.T) {
+	testEngine := getEngine(t)
+
+	// epoch 0 - setup delegations
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 0})
+	testEngine.topology.nodeToIsValidator["node1"] = true
+	testEngine.topology.nodeToIsValidator["node2"] = true
+	testEngine.topology.nodeToIsValidator["node3"] = true
+	testEngine.topology.nodeToIsValidator["node4"] = true
+	testEngine.topology.nodeToIsValidator["node5"] = true
+	testEngine.topology.nodeToIsValidator["node6"] = true
+	testEngine.stakingAccounts.partyToStake["party1"] = num.NewUint(1000)
+	testEngine.stakingAccounts.partyToStake["party2"] = num.NewUint(1000)
+	testEngine.stakingAccounts.partyToStake["node1"] = num.NewUint(10000)
+	testEngine.stakingAccounts.partyToStake["node2"] = num.NewUint(10000)
+	testEngine.stakingAccounts.partyToStake["node3"] = num.NewUint(10000)
+	testEngine.stakingAccounts.partyToStake["node4"] = num.NewUint(10000)
+	testEngine.stakingAccounts.partyToStake["node5"] = num.NewUint(10000)
+	testEngine.stakingAccounts.partyToStake["node6"] = num.NewUint(10000)
+
+	testEngine.engine.Delegate(context.Background(), "node1", "node1", num.NewUint(10000))
+	testEngine.engine.Delegate(context.Background(), "node2", "node2", num.NewUint(10000))
+	testEngine.engine.Delegate(context.Background(), "node3", "node3", num.NewUint(10000))
+	testEngine.engine.Delegate(context.Background(), "node4", "node4", num.NewUint(10000))
+	testEngine.engine.Delegate(context.Background(), "node5", "node5", num.NewUint(10000))
+	testEngine.engine.Delegate(context.Background(), "node6", "node6", num.NewUint(10000))
+
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(400))
+	testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(600))
+	testEngine.engine.Delegate(context.Background(), "party2", "node1", num.NewUint(800))
+	testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(150))
+
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
+
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+
+	// // start epoch 1
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
+	//increase association of party1 and party2
+	testEngine.stakingAccounts.partyToStake["party1"].AddSum(num.NewUint(1000))
+	testEngine.stakingAccounts.partyToStake["party2"].AddSum(num.NewUint(1500))
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(100))
+
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 1})
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party1")
+	require.Contains(t, testEngine.engine.autoDelegationMode, "party2")
+
+	// party1 has delegated during the epoch so they don't qualify for auto delegation. party1 had 6 and 4 respectively to node1 and node2 and they manually
+	// delegate 5 more to node 1
+	require.Equal(t, num.NewUint(1100), testEngine.engine.partyDelegationState["party1"].totalDelegated)
+	require.Equal(t, num.NewUint(500), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"])
+	require.Equal(t, num.NewUint(600), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"])
+
+	// party2 has not delegated during the epoch so their newly available stake gets auto delegated
+	// party2 had a delegation of 800 to node1 and 150 to node 2,
+	// the same distribution is applied on the additional 1550 tokens and now they should have additional 1305 and 244 to node 1 and node 2 respectively
+	require.Equal(t, num.NewUint(2499), testEngine.engine.partyDelegationState["party2"].totalDelegated)
+	require.Equal(t, num.NewUint(2105), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"])
+	require.Equal(t, num.NewUint(394), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"])
+
+	// node1 had 10000 from itself, and 400 and 800 from party1 and party2 respectively. This epoch party1 has manually added 100 and party2 has added 1305 = 12605
+	require.Equal(t, num.NewUint(12605), testEngine.engine.nodeDelegationState["node1"].totalDelegated)
+	require.Equal(t, num.NewUint(500), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party1"])
+	require.Equal(t, num.NewUint(2105), testEngine.engine.nodeDelegationState["node1"].partyToAmount["party2"])
+
+	// node2 had 10000 from itself, and 600 and 150 from party1 and party2 respectively. This epoch party2 has added 244 = 10994
+	require.Equal(t, num.NewUint(10994), testEngine.engine.nodeDelegationState["node2"].totalDelegated)
+	require.Equal(t, num.NewUint(600), testEngine.engine.nodeDelegationState["node2"].partyToAmount["party1"])
+	require.Equal(t, num.NewUint(394), testEngine.engine.nodeDelegationState["node2"].partyToAmount["party2"])
 }
 
 func getEngine(t *testing.T) *testEngine {

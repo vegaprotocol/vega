@@ -143,14 +143,14 @@ func (e *Engine) AwaitingRestore() bool {
 // but these snapshots should not affect the timing (delta, time between checkpoints). Currently, this call
 // generates a full checkpoint, but we probably will change this to be a sparse checkpoint
 // only containing changes in balances and (perhaps) network parameters...
-func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.Snapshot, error) {
+func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error) {
 	// no time stuff here, for now we're just taking a full snapshot
 	cp := e.makeCheckpoint(ctx)
 	return cp, nil
 }
 
 // Checkpoint returns the overall checkpoint
-func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.Snapshot, error) {
+func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.CheckpointState, error) {
 	// start time will be zero -> add delta to this time, and return
 	if e.nextCP.IsZero() {
 		e.nextCP = t.Add(e.delta)
@@ -164,7 +164,7 @@ func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.Snapshot, 
 	return cp, nil
 }
 
-func (e *Engine) makeCheckpoint(ctx context.Context) *types.Snapshot {
+func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 	cp := &types.Checkpoint{}
 	for _, k := range cpOrder {
 		comp, ok := e.components[k]
@@ -183,7 +183,7 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.Snapshot {
 	if err := cp.SetBlockHeight(h); err != nil {
 		e.log.Panic("could not set block height", logging.Error(err))
 	}
-	snap := &types.Snapshot{}
+	snap := &types.CheckpointState{}
 	// setCheckpoint hides the vega type mess
 	if err := snap.SetCheckpoint(cp); err != nil {
 		panic(fmt.Errorf("checkpoint could not be created: %w", err))
@@ -193,7 +193,7 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.Snapshot {
 }
 
 // Load - loads checkpoint data for all components by name
-func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
+func (e *Engine) Load(ctx context.Context, snap *types.CheckpointState) error {
 	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
 	if len(e.loadHash) != 0 {
 		e.log.Warn("Checkpoint hash reload requested",

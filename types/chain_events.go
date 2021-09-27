@@ -75,6 +75,23 @@ func (w *Withdrawal) IntoProto() *proto.Withdrawal {
 	}
 }
 
+func WithdrawalFromProto(w *proto.Withdrawal) *Withdrawal {
+	amt, _ := num.UintFromString(w.Amount, 10)
+	return &Withdrawal{
+		ID:             w.Id,
+		PartyID:        w.PartyId,
+		Amount:         amt,
+		Asset:          w.Asset,
+		Status:         w.Status,
+		Ref:            w.Ref,
+		TxHash:         w.TxHash,
+		ExpirationDate: w.Expiry,
+		CreationDate:   w.CreatedTimestamp,
+		WithdrawalDate: w.WithdrawnTimestamp,
+		Ext:            w.Ext,
+	}
+}
+
 type DepositStatus = proto.Deposit_Status
 
 const (
@@ -118,6 +135,20 @@ func (d *Deposit) IntoProto() *proto.Deposit {
 		TxHash:            d.TxHash,
 		CreditedTimestamp: d.CreditDate,
 		CreatedTimestamp:  d.CreationDate,
+	}
+}
+
+func DepositFromProto(d *proto.Deposit) *Deposit {
+	amt, _ := num.UintFromString(d.Amount, 10)
+	return &Deposit{
+		ID:           d.Id,
+		Status:       d.Status,
+		PartyID:      d.PartyId,
+		Asset:        d.Asset,
+		Amount:       amt,
+		TxHash:       d.TxHash,
+		CreditDate:   d.CreditedTimestamp,
+		CreationDate: d.CreatedTimestamp,
 	}
 }
 
