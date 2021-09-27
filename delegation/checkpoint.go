@@ -19,7 +19,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	data := &types.DelegateCP{
 		Active:  e.getActive(),
 		Pending: e.getPending(),
-		Auto:    e.getAuto(),
+		// Auto:    e.getAuto(),
 	}
 	return proto.Marshal(data.IntoProto())
 }
@@ -36,8 +36,8 @@ func (e *Engine) Load(data []byte) error {
 	e.setActive(cpData.Active)
 	e.pendingState = map[uint64]map[string]*pendingPartyDelegation{}
 	e.setPending(cpData.Pending)
-	e.autoDelegationMode = map[string]struct{}{}
-	e.setAuto(cpData.Auto)
+	// e.autoDelegationMode = map[string]struct{}{}
+	// e.setAuto(cpData.Auto)
 
 	return nil
 }
@@ -104,14 +104,14 @@ func (e *Engine) sortActive(active []*types.DelegationEntry) {
 	})
 }
 
-func (e *Engine) getAuto() []string {
-	auto := make([]string, 0, len(e.autoDelegationMode))
-	for p := range e.autoDelegationMode {
-		auto = append(auto, p)
-	}
-	sort.Strings(auto)
-	return auto
-}
+// func (e *Engine) getAuto() []string {
+// 	auto := make([]string, 0, len(e.autoDelegationMode))
+// 	for p := range e.autoDelegationMode {
+// 		auto = append(auto, p)
+// 	}
+// 	sort.Strings(auto)
+// 	return auto
+// }
 
 func (e *Engine) sortPending(pending []*types.DelegationEntry) {
 	sort.SliceStable(pending, func(i, j int) bool {
@@ -169,11 +169,11 @@ func (e *Engine) getPending() []*types.DelegationEntry {
 	return pending
 }
 
-func (e *Engine) setAuto(parties []string) {
-	for _, p := range parties {
-		e.autoDelegationMode[p] = struct{}{}
-	}
-}
+// func (e *Engine) setAuto(parties []string) {
+// 	for _, p := range parties {
+// 		e.autoDelegationMode[p] = struct{}{}
+// 	}
+// }
 
 func (e *Engine) setPending(entries []*types.DelegationEntry) {
 	for _, pe := range entries {
