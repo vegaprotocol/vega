@@ -408,9 +408,5 @@ func (e *Engine) calculateRewards(ctx context.Context, asset, accountID string, 
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
 	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
 
-	if rewardBalance.IsZero() {
-		return nil
-	}
-
 	return e.calculatStakingAndDelegationRewards(ctx, e.broker, num.NewUint(epoch.Seq).String(), asset, accountID, rewardScheme, rewardBalance, validatorData)
 }
