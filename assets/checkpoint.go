@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"context"
 	"sort"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -20,9 +21,9 @@ func (s *Service) Checkpoint() ([]byte, error) {
 	return proto.Marshal(t)
 }
 
-func (s *Service) Load(checkpoint []byte) error {
+func (s *Service) Load(_ context.Context, cp []byte) error {
 	data := &snapshot.Assets{}
-	if err := proto.Unmarshal(checkpoint, data); err != nil {
+	if err := proto.Unmarshal(cp, data); err != nil {
 		return err
 	}
 	s.amu.Lock()

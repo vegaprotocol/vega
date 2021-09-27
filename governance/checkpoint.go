@@ -1,6 +1,8 @@
 package governance
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/protos/vega"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
@@ -23,7 +25,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return proto.Marshal(snap)
 }
 
-func (e *Engine) Load(data []byte) error {
+func (e *Engine) Load(_ context.Context, data []byte) error {
 	snap := &snapshot.Proposals{}
 	if err := proto.Unmarshal(data, snap); err != nil {
 		return err

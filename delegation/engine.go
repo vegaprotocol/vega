@@ -527,8 +527,7 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 	return nil
 }
 
-// sends the expected balance for the next epoch
-func (e *Engine) sendNextEpochBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {
+func (e *Engine) getNextEpochBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) events.Event {
 	pendingState, ok := e.pendingState[seq][party]
 
 	pendingDelegated := num.Zero()
@@ -553,8 +552,12 @@ func (e *Engine) sendNextEpochBalanceEvent(ctx context.Context, party, nodeID st
 	}
 
 	amt := num.Zero().Sub(num.Sum(delegatedToNode, pendingDelegated), pendingUndelegated)
-	effEpoch := seq + 1
-	e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(effEpoch).String()))
+	return events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(seq+1).String())
+}
+
+// sends the expected balance for the next epoch
+func (e *Engine) sendNextEpochBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {
+	e.broker.Send(e.getNextEpochBalanceEvent(ctx, party, nodeID, seq))
 }
 
 func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID string, seq uint64) {

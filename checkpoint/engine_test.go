@@ -92,7 +92,7 @@ func testGetCheckpointsConstructor(t *testing.T) {
 	require.NoError(t, err)
 	// now to check if the checkpoint contains the expected data
 	for k, c := range components {
-		c.EXPECT().Load(data[k]).Times(1).Return(nil)
+		c.EXPECT().Load(gomock.Any(), data[k]).Times(1).Return(nil)
 	}
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
@@ -132,7 +132,7 @@ func testGetCheckpointsAdd(t *testing.T) {
 	require.NoError(t, err)
 	// now to check if the checkpoint contains the expected data
 	for k, c := range components {
-		c.EXPECT().Load(data[k]).Times(1).Return(nil)
+		c.EXPECT().Load(gomock.Any(), data[k]).Times(1).Return(nil)
 	}
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
@@ -209,7 +209,7 @@ func testLoadCheckpoints(t *testing.T) {
 	}
 	for k, c := range wComps {
 		c.EXPECT().Name().Times(1).Return(k)
-		c.EXPECT().Load(data[k]).Times(1).Return(nil)
+		c.EXPECT().Load(gomock.Any(), data[k]).Times(1).Return(nil)
 	}
 	log := logging.NewTestLogger()
 	cfg := checkpoint.NewDefaultConfig()
@@ -324,7 +324,7 @@ func testLoadSparse(t *testing.T) {
 	snapshot, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	require.NoError(t, eng.Add(components[types.AssetsCheckpoint])) // load another component, not part of the checkpoints map
-	c.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
+	c.EXPECT().Load(gomock.Any(), data[types.GovernanceCheckpoint]).Times(1).Return(nil)
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
@@ -370,7 +370,7 @@ func testLoadError(t *testing.T) {
 	require.NoError(t, err)
 	for k, r := range ret {
 		c := components[k]
-		c.EXPECT().Load(data[k]).Times(1).Return(r)
+		c.EXPECT().Load(gomock.Any(), data[k]).Times(1).Return(r)
 	}
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
@@ -567,7 +567,7 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 	require.NoError(t, eng.UponGenesis(ctx, gen))
 	// now we do expect the calls to be made, but only once
 	for k, c := range components {
-		c.EXPECT().Load(data[k]).Times(1).Return(nil)
+		c.EXPECT().Load(gomock.Any(), data[k]).Times(1).Return(nil)
 	}
 	require.NoError(t, eng.Load(ctx, raw))
 	// subsequent calls to load this checkpoint do nothing
@@ -614,9 +614,9 @@ func testLoadAssets(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, eng.UponGenesis(ctx, gen))
 	// now we do expect the calls to be made, but only once
-	governance.EXPECT().Load(data[types.GovernanceCheckpoint]).Times(1).Return(nil)
-	assets.EXPECT().Load(data[types.AssetsCheckpoint]).Times(1).Return(nil)
-	collateral.EXPECT().Load(data[types.CollateralCheckpoint]).Times(1).Return(nil)
+	governance.EXPECT().Load(gomock.Any(), data[types.GovernanceCheckpoint]).Times(1).Return(nil)
+	assets.EXPECT().Load(gomock.Any(), data[types.AssetsCheckpoint]).Times(1).Return(nil)
+	collateral.EXPECT().Load(gomock.Any(), data[types.CollateralCheckpoint]).Times(1).Return(nil)
 	// but assets ought to receive an additional call
 	// return this stubbed asset, we only care about the ID anyway
 	enabled := types.Asset{
@@ -642,7 +642,7 @@ func wrapMock(m *mocks.MockState) *wrappedMock {
 	}
 }
 
-func (w *wrappedMock) Load(data []byte) error {
+func (w *wrappedMock) Load(ctx context.Context, data []byte) error {
 	w.data = data
-	return w.MockState.Load(data)
+	return w.MockState.Load(ctx, data)
 }

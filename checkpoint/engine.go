@@ -35,7 +35,7 @@ var (
 type State interface {
 	Name() types.CheckpointName
 	Checkpoint() ([]byte, error)
-	Load(checkpoint []byte) error
+	Load(ctx context.Context, checkpoint []byte) error
 }
 
 // AssetsState is a bit of a hacky way to get the assets that were enabled when checkpoint was reloaded, so we can enable them in the collateral engine
@@ -232,7 +232,7 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 		}
 		if !doneAssets {
 			if ac, ok := c.(AssetsState); ok {
-				if err := c.Load(cpData); err != nil {
+				if err := c.Load(ctx, cpData); err != nil {
 					return err
 				}
 				assets = ac.GetEnabledAssets()
@@ -256,7 +256,7 @@ func (e *Engine) Load(ctx context.Context, snap *types.Snapshot) error {
 				doneCollat = true
 			}
 		}
-		if err := c.Load(cpData); err != nil {
+		if err := c.Load(ctx, cpData); err != nil {
 			return err
 		}
 	}
