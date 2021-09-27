@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
 )
 
 var (
@@ -41,7 +42,7 @@ type ValidatorMapping map[string]ValidatorData
 type Topology struct {
 	log    *logging.Logger
 	cfg    Config
-	wallet Wallet
+	wallet *vgnw.Wallet
 	broker Broker
 
 	// vega pubkey to validator data
@@ -54,7 +55,7 @@ type Topology struct {
 	mu sync.RWMutex
 }
 
-func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) *Topology {
+func NewTopology(log *logging.Logger, cfg Config, wallet *vgnw.Wallet, broker Broker) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 

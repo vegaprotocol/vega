@@ -27,7 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/checks"
 	"code.vegaprotocol.io/vega/netparams/dispatch"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
@@ -104,11 +104,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
-	if l.nodeWallet, err = nodewallet.New(l.Log, l.conf.NodeWallet, l.nodeWalletPassphrase, l.ethClient, l.vegaPaths); err != nil {
-		return err
+	l.nodeWallets, err = nodewallet.GetNodeWallets(l.vegaPaths, l.nodeWalletPassphrase)
+	if err != nil {
+		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
-	return l.nodeWallet.Verify()
+	return l.nodeWallets.Verify()
 }
 
 // UponGenesis loads all asset from genesis state
@@ -298,7 +299,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.eventService = subscribers.NewService(l.broker)
 
 	now := l.timeService.GetTimeNow()
-	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallet, l.ethClient, l.timeService)
+	l.assets = assets.New(l.Log, l.conf.Assets, l.nodeWallets, l.ethClient, l.timeService)
 	l.collateral = collateral.New(l.Log, l.conf.Collateral, l.broker, now)
 	l.oracle = oracles.NewEngine(l.Log, l.conf.Oracles, now, l.broker, l.timeService)
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
@@ -310,15 +311,14 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	wal, _ := l.nodeWallet.Get(nodewallet.Vega)
-	commander, err := nodewallet.NewCommander(l.Log, nil, wal, l.stats)
+	commander, err := nodewallet.NewCommander(l.Log, nil, l.nodeWallets.Vega, l.stats)
 	if err != nil {
 		return err
 	}
 
 	l.limits = limits.New(l.Log, l.conf.Limits)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
-	l.topology = validators.NewTopology(l.Log, l.conf.Validators, wal, l.broker)
+	l.topology = validators.NewTopology(l.Log, l.conf.Validators, l.nodeWallets.Vega, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 
@@ -426,10 +426,6 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketTargetStakeTimeWindow,
 			Watcher: l.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.BlockchainsEthereumConfig,
-			Watcher: l.nodeWallet.OnEthereumConfigUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.BlockchainsEthereumConfig,
@@ -557,7 +553,6 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },
 		func(cfg config.Config) { l.banking.ReloadConf(cfg.Banking) },
 		func(cfg config.Config) { l.governance.ReloadConf(cfg.Governance) },
-		func(cfg config.Config) { l.nodeWallet.ReloadConf(cfg.NodeWallet) },
 		func(cfg config.Config) { l.app.ReloadConf(cfg.Processor) },
 		func(cfg config.Config) { l.stats.ReloadConf(cfg.Stats) },
 	)

@@ -108,12 +108,12 @@ func newWallet(store *storev1.Store, walletName, passphrase string) (*Wallet, er
 
 	err := handler.LoginWallet(walletName, passphrase)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't login wallet %s: %w", walletName, err)
 	}
 
 	keyPairs, err := handler.ListKeyPairs(walletName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't list wallet key pairs: %w", err)
 	}
 
 	keyPairCount := len(keyPairs)
