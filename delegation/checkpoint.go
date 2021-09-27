@@ -26,7 +26,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return proto.Marshal(data.IntoProto())
 }
 
-func (e *Engine) Load(data []byte) error {
+func (e *Engine) Load(ctx context.Context, data []byte) error {
 	cp := &checkpoint.Delegate{}
 	if err := proto.Unmarshal(data, cp); err != nil {
 		return err
@@ -35,7 +35,7 @@ func (e *Engine) Load(data []byte) error {
 	// reset state
 	e.partyDelegationState = map[string]*partyDelegation{}
 	e.nodeDelegationState = map[string]*validatorDelegation{}
-	e.setActive(cpData.Active)
+	e.setActive(ctx, cpData.Active)
 	e.pendingState = map[uint64]map[string]*pendingPartyDelegation{}
 	e.setPending(cpData.Pending)
 	// e.autoDelegationMode = map[string]struct{}{}
@@ -45,7 +45,7 @@ func (e *Engine) Load(data []byte) error {
 }
 
 // @TODO we probably need the context here
-func (e *Engine) setActive(entries []*types.DelegationEntry) {
+func (e *Engine) setActive(ctx context.Context, entries []*types.DelegationEntry) {
 	nodes := []string{}
 	nodeMap := map[string]struct{}{}
 	for _, de := range entries {
@@ -90,7 +90,7 @@ func (e *Engine) setActive(entries []*types.DelegationEntry) {
 			if !ok {
 				amt = num.Zero()
 			}
-			evts = append(evts, events.NewDelegationBalance(context.Background(), de.Party, n, amt, num.NewUint(de.EpochSeq).String()))
+			evts = append(evts, events.NewDelegationBalance(ctx, de.Party, n, amt, num.NewUint(de.EpochSeq).String()))
 		}
 	}
 	e.broker.SendBatch(evts)

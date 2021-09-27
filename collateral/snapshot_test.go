@@ -55,7 +55,7 @@ func TestSnapshot(t *testing.T) {
 	}
 	// we need to enable the assets before being able to load the balances
 	loadEng.EnableAsset(ctx, asset)
-	err = loadEng.Load(snapshot)
+	err = loadEng.Load(ctx, snapshot)
 	require.NoError(t, err)
 	loadedPartyAcc, err := loadEng.GetPartyGeneralAccount(party, testMarketAsset)
 	require.NoError(t, err)
