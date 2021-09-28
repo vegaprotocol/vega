@@ -9,7 +9,6 @@ import (
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -38,12 +37,8 @@ func (opts *updateCmd) Execute(_ []string) error {
 	}
 
 	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
-	_, conf, err := config.EnsureNodeConfig(vegaPaths)
-	if err != nil {
-		return err
-	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, vegaPaths, conf, pass)
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}

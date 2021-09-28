@@ -64,17 +64,17 @@ func (mr *MockCollateralStateMockRecorder) EnableAsset(arg0, arg1 interface{}) *
 }
 
 // Load mocks base method
-func (m *MockCollateralState) Load(arg0 []byte) error {
+func (m *MockCollateralState) Load(arg0 context.Context, arg1 []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Load", arg0)
+	ret := m.ctrl.Call(m, "Load", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Load indicates an expected call of Load
-func (mr *MockCollateralStateMockRecorder) Load(arg0 interface{}) *gomock.Call {
+func (mr *MockCollateralStateMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCollateralState)(nil).Load), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCollateralState)(nil).Load), arg0, arg1)
 }
 
 // Name mocks base method

@@ -14,7 +14,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
 
-      
+
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
 
@@ -157,6 +157,25 @@ Feature: Staking & Delegation
     | party1 |  node2   |    0   |       
     | party1 |  node3   |    0   |        
 
+  Scenario: A party cannot cumulatively delegate more than it has in staking account
+    
+    When the parties submit the following delegations:
+    | party  | node id  |   amount   | reference | error                               |
+    | party1 |  node1   |     5000   |           |                                     |
+    | party1 |  node2   |     5001   |      a    | insufficient balance for delegation |
+
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | party1 |  node1   |   0    | 
+    | party1 |  node2   |   0    |       
+    | party1 |  node3   |   0    |        
+
+    And the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   |   5000 | 
+    | party1 |  node2   |    0   |       
+    | party1 |  node3   |    0   |        
+  
   Scenario: A party cannot delegate stake size such that it exceeds maximum amount of stake for a validator
     Description: A party attempts to delegate token stake which exceed maximum stake for a validator
 
@@ -187,7 +206,40 @@ Feature: Staking & Delegation
     | party  | node id  | amount |
     | party1 |  node1   | 1500   | 
     | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   |   
+    | party1 |  node3   | 1507   | 
+
+    Then the network moves ahead "7" blocks
+    
+    # amounts remain constant even as total delegated amount changes (due to application of the cap)
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1500   | 
+    | party1 |  node2   | 1507   |       
+    | party1 |  node3   | 1507   | 
+
+    Then the network moves ahead "1" blocks
+
+    And the parties submit the following undelegations:
+    | party  | node id  | amount |     when     |
+    | party1 |  node1   |  500   | end of epoch | 
+    | party1 |  node2   |  500   | end of epoch |     
+    | party1 |  node3   |  500   | end of epoch | 
+
+    Then the network moves ahead "6" blocks
+
+    Then the parties should have the following delegation balances for epoch 4:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   | 
+
+    Then the network moves ahead "14" blocks
+
+    Then the parties should have the following delegation balances for epoch 6:
+    | party  | node id  | amount |
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   | 
 
     And the network moves ahead "1" blocks
 
@@ -195,19 +247,21 @@ Feature: Staking & Delegation
     | party  | node id  |   amount  | 
     | party1 |  node4   |    2000   | 
 
-    Then the parties should have the following delegation balances for epoch 3:
+    And the network moves ahead "1" blocks
+
+    Then the parties should have the following delegation balances for epoch 7:
     | party  | node id  | amount |
     | party1 |  node4   | 2000   |   
 
-    When the network moves ahead "10" blocks
+    When the network moves ahead "6" blocks
 
-    #Given stakes of 1500, 1507, 1507 & 2000 I expect the new max delegation of about 1551
-    Then the parties should have the following delegation balances for epoch 3:
+    #Given stakes of 1000, 1007, 1007 & 2000 I expect the new max delegation of about 1424
+    Then the parties should have the following delegation balances for epoch 7:
     | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   |   
-    | party1 |  node4   | 1551   |   
+    | party1 |  node1   | 1000   | 
+    | party1 |  node2   | 1007   |       
+    | party1 |  node3   | 1007   |   
+    | party1 |  node4   | 1424   |   
 
   Scenario: Maximum amount of stake for a validator is not affected by delegations/undelegations that net each other
     Description: Expecting same result as above despite multiple delegations/undelegations
