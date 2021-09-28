@@ -450,19 +450,19 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	return resp
 }
 
-func (app *App) handleCheckpoint(snap *types.CheckpointState) error {
+func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 	now := time.Now()
-	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash))
+	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(cpt.Hash))
 	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.CheckpointStateHome, cpFileName))
 	if err != nil {
 		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
 	}
-	if err := vgfs.WriteFile(cpFilePath, snap.State); err != nil {
+	if err := vgfs.WriteFile(cpFilePath, cpt.State); err != nil {
 		return fmt.Errorf("couldn't write checkpoint file at %s: %w", cpFilePath, err)
 	}
 	// emit the event indicating a new checkpoint was created
 	// this function is called both for interval checkpoints and withdrawal checkpoints
-	event := events.NewCheckpointEvent(app.blockCtx, snap)
+	event := events.NewCheckpointEvent(app.blockCtx, cpt)
 	app.broker.Send(event)
 	return nil
 }
