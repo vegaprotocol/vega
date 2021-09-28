@@ -86,24 +86,24 @@ func TestEpochSnapshotHash(t *testing.T) {
 	vt.SetTimeNow(ctx, now)
 	h, err := service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "6072379e85f4b60ec80bad60660189ffe1c7a373d449175f6834f4432dad33f4")
+	require.Equal(t, hex.EncodeToString(h), "e17496cd48a1d1cc0e2715e815edebb6c4e981c1a8b2f7af05351f075a823109")
 
 	// Shuffle time along
 	vt.SetTimeNow(ctx, now.Add(time.Hour*25))
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "ca7b6c216960333a6b29f388ed30f55ba7b8a849ed83909d892d095fa7651274")
+	require.Equal(t, hex.EncodeToString(h), "4a589cef1aac4ea4162301f774909c65371fd26081d4f55fa560f58c6c7c2f29")
 
 	// Block ends
 	service.OnBlockEnd(ctx)
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "f7a76fd3d432f9db5c460c8f0860bc77830440434f8aad950f8cc6a7881994c0")
+	require.Equal(t, hex.EncodeToString(h), "b208a3b963b553f318abd9e80c8ce6d0e37a051fe1018e9b82a3016620c0fb21")
 
 	// Shuffle time a bit more
 	vt.SetTimeNow(ctx, now.Add(time.Hour*50))
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "79f02b031cd59fc134a4fdfb895bee309bebbd748743999c3084c43d1cd8bd32")
+	require.Equal(t, hex.EncodeToString(h), "cc94641b5ed8def9ad0ad293da2e12e1b1e4fc9de14c9343271d5de72a8c61f1")
 
 }

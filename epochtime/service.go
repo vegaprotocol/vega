@@ -32,6 +32,10 @@ type Svc struct {
 
 	readyToStartNewEpoch bool
 	readyToEndEpoch      bool
+
+	// Snapshot state
+	data []byte
+	hash []byte
 }
 
 type VegaTime interface {
@@ -63,6 +67,9 @@ func (s *Svc) OnBlockEnd(ctx context.Context) {
 	if s.readyToEndEpoch {
 		s.readyToStartNewEpoch = true
 		s.readyToEndEpoch = false
+
+		// take snapshot
+		s.serialise()
 	}
 }
 
@@ -86,6 +93,9 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 
 		// Send out new epoch event
 		s.notify(ctx, s.epoch)
+
+		// take snapshot
+		s.serialise()
 		return
 	}
 
@@ -105,6 +115,9 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 		s.epoch.EndTime = time.Time{}
 		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_START
 		s.notify(ctx, s.epoch)
+
+		// take snapshot
+		s.serialise()
 		return
 	}
 
@@ -112,6 +125,9 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 	if s.epoch.ExpireTime.Before(t) {
 		// Set the flag to tell us to end the epoch when the block ends
 		s.readyToEndEpoch = true
+
+		// take snapshot
+		s.serialise()
 		return
 	}
 }

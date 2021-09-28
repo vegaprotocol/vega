@@ -1,24 +1,31 @@
 package epochtime
 
 import (
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
 )
 
-func (s *Svc) serialise() ([]byte, error) {
+func (s *Svc) serialise() error {
 
 	pl := types.EpochState{
 		Seq:                  s.epoch.Seq,
 		StartTime:            s.epoch.StartTime,
 		ExpireTime:           s.epoch.ExpireTime,
-		Action:               s.epoch.Action,
 		ReadyToStartNewEpoch: s.readyToStartNewEpoch,
 		ReadyToEndEpoch:      s.readyToEndEpoch,
 	}
 
-	return proto.Marshal(pl.IntoProto())
+	data, err := proto.Marshal(pl.IntoProto())
+	if err != nil {
+		return err
+	}
+
+	s.data = data
+	s.hash = crypto.Hash(data)
+	return nil
 
 }
 
@@ -32,29 +39,16 @@ func (s *Svc) Keys() []string {
 }
 
 func (s *Svc) GetHash(_ string) ([]byte, error) {
-	data, err := s.serialise()
-	if err != nil {
-		return nil, err
-	}
-	return crypto.Hash(data), nil
+	return s.hash, nil
 }
 
 func (s *Svc) Snapshot() (map[string][]byte, error) {
-	data, err := s.serialise()
-	if err != nil {
-		return nil, err
-	}
-
 	t := &types.PayloadEpoch{}
-	return map[string][]byte{t.Key(): data}, nil
+	return map[string][]byte{t.Key(): s.data}, nil
 }
 
 func (s *Svc) GetState(_ string) ([]byte, error) {
-	data, err := s.serialise()
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return s.data, nil
 }
 
 func (s *Svc) LoadSnapshot(payload *types.PayloadEpoch) error {
@@ -65,11 +59,14 @@ func (s *Svc) LoadSnapshot(payload *types.PayloadEpoch) error {
 		Seq:        snap.Seq,
 		StartTime:  snap.StartTime,
 		ExpireTime: snap.ExpireTime,
-		Action:     snap.Action,
+		Action:     vega.EpochAction_EPOCH_ACTION_START,
 	}
 
 	s.readyToStartNewEpoch = snap.ReadyToStartNewEpoch
 	s.readyToEndEpoch = snap.ReadyToEndEpoch
 	s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
+
+	// take snapshot
+	s.serialise()
 	return nil
 }
