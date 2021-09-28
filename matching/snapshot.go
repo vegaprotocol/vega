@@ -10,21 +10,21 @@ import (
 )
 
 const (
-	MATCHING_SNAPSHOT = "matching engine"
+	MatchingSnapshot = "matching engine"
 )
 
 func (ob *OrderBook) Keys() []string {
-	return []string{MATCHING_SNAPSHOT}
+	return []string{MatchingSnapshot}
 }
 
 func (ob *OrderBook) Snapshot() (map[string][]byte, error) {
-	data, err := ob.GetState(MATCHING_SNAPSHOT)
+	data, err := ob.GetState(MatchingSnapshot)
 	if err != nil {
 		return nil, err
 	}
 
-	snapshot := make(map[string][]byte)
-	snapshot[MATCHING_SNAPSHOT] = data
+	snapshot := map[string][]byte{}
+	snapshot[MatchingSnapshot] = data
 	return snapshot, nil
 }
 
@@ -34,7 +34,7 @@ func (ob OrderBook) Namespace() types.SnapshotNamespace {
 }
 
 func (ob *OrderBook) GetHash(key string) ([]byte, error) {
-	if key != MATCHING_SNAPSHOT {
+	if key != MatchingSnapshot {
 		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
 	}
 
@@ -47,7 +47,7 @@ func (ob *OrderBook) GetHash(key string) ([]byte, error) {
 }
 
 func (ob *OrderBook) GetState(key string) ([]byte, error) {
-	if key != MATCHING_SNAPSHOT {
+	if key != MatchingSnapshot {
 		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
 	}
 
