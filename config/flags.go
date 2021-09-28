@@ -94,3 +94,29 @@ func (p Passphrase) getFromFile(path string) (string, error) {
 
 	return strings.TrimRight(string(buf), "\n"), nil
 }
+
+type PromptString string
+
+// Get returns a string if set or prompts user otherwise
+func (p PromptString) Get(prompt, name string) (string, error) {
+	if len(p) == 0 {
+		if vgos.HasNoTTY() {
+			return "", fmt.Errorf("%s flag required without TTY", name)
+		}
+		return p.getFromUser(prompt)
+	}
+
+	return string(p), nil
+}
+
+func (p PromptString) getFromUser(prompt string) (string, error) {
+	var s string
+	fmt.Printf("Enter %s:", prompt)
+	_, err := fmt.Scanf("%s", &s)
+	fmt.Printf("\n")
+	if err != nil {
+		return "", err
+	}
+
+	return s, nil
+}

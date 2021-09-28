@@ -1,4 +1,4 @@
-package eth
+package keystore
 
 import (
 	"fmt"
@@ -7,9 +7,7 @@ import (
 	"path/filepath"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
-	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/crypto"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
 
@@ -42,7 +40,7 @@ func (l *WalletLoader) Generate(passphrase string) (*Wallet, map[string]string, 
 		return nil, nil, fmt.Errorf("couldn't read file %s: %w", acc.URL.Path, err)
 	}
 
-	w, err := l.newWallet(fileName, passphrase, content)
+	w, err := newWallet(fileName, passphrase, content)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't create wallet: %w", err)
 	}
@@ -60,7 +58,12 @@ func (l *WalletLoader) Load(walletName, passphrase string) (*Wallet, error) {
 		return nil, fmt.Errorf("couldn't read wallet file: %v", err)
 	}
 
-	return l.newWallet(walletName, passphrase, data)
+	w, err := newWallet(walletName, passphrase, data)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
 }
 
 func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, map[string]string, error) {
@@ -77,7 +80,7 @@ func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, map[s
 		return nil, nil, fmt.Errorf("couldn't write file %s: %w", walletFilePath, err)
 	}
 
-	w, err := l.newWallet(fileName, passphrase, content)
+	w, err := newWallet(fileName, passphrase, content)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't create wallet: %w", err)
 	}
@@ -87,30 +90,4 @@ func (l *WalletLoader) Import(sourceFilePath, passphrase string) (*Wallet, map[s
 	}
 
 	return w, data, nil
-}
-
-func (l *WalletLoader) newWallet(walletName, passphrase string, data []byte) (*Wallet, error) {
-	// NewKeyStore always create a new wallet key store file
-	// we create this in tmp as we do not want to impact the original one.
-	tempFile := filepath.Join(os.TempDir(), vgrand.RandomStr(10))
-	ks := keystore.NewKeyStore(tempFile, keystore.StandardScryptN, keystore.StandardScryptP)
-
-	acc, err := ks.Import(data, passphrase, passphrase)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't import Ethereum wallet in keystore: %w", err)
-	}
-
-	if err := ks.Unlock(acc, passphrase); err != nil {
-		return nil, fmt.Errorf("couldn't unlock Ethereum wallet: %w", err)
-	}
-
-	address := crypto.NewPublicKey(acc.Address.Hex(), acc.Address.Bytes())
-
-	return &Wallet{
-		name:       walletName,
-		acc:        acc,
-		ks:         ks,
-		passphrase: passphrase,
-		address:    address,
-	}, nil
 }

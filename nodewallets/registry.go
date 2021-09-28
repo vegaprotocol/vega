@@ -13,14 +13,40 @@ var (
 	ErrWrongPassphrase         = errors.New("wrong passphrase")
 )
 
+const (
+	ethereumWalletTypeKeyStore ethereumWalletType = "key-store"
+	ethereumWalletTypeClef     ethereumWalletType = "clef"
+)
+
 type Registry struct {
 	Ethereum *RegisteredEthereumWallet `json:"ethereum,omitempty"`
 	Vega     *RegisteredVegaWallet     `json:"vega,omitempty"`
 }
 
-type RegisteredEthereumWallet struct {
+type ethereumWalletType string
+
+type ethereumWallet interface {
+	ETHWallet()
+}
+
+type EthereumKeyStoreWallet struct {
 	Name       string `json:"name"`
 	Passphrase string `json:"passphrase"`
+}
+
+func (e EthereumKeyStoreWallet) ETHWallet() {}
+
+type EthereumClefWallet struct {
+	Name           string `json:"name"`
+	AccountAddress string `json:"account-address"`
+	ClefAddress    string `json:"clef-address"`
+}
+
+func (e EthereumClefWallet) ETHWallet() {}
+
+type RegisteredEthereumWallet struct {
+	Type    ethereumWalletType `json:"type"`
+	Details ethereumWallet     `json:"details"`
 }
 
 type RegisteredVegaWallet struct {

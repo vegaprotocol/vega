@@ -6,8 +6,10 @@ import (
 )
 
 type Config struct {
-	Level   encoding.LogLevel `long:"log-level"`
-	Address string            `long:"address"`
+	Level       encoding.LogLevel `long:"log-level"`
+	Address     string            `long:"address"`
+	ClefEnabled encoding.Bool     `long:"clef-enabled"`
+	ClefAddress string            `long:"clef-address"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a

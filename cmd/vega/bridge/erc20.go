@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/bridges"
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -62,7 +62,7 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 
 	opts.Config = conf.NodeWallet
 
-	w, err := nodewallet.GetEthereumWallet(vegaPaths, pass)
+	w, err := nodewallet.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
 	if err != nil {
 		return fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 	}
@@ -106,7 +106,7 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 
 	opts.Config = conf.NodeWallet
 
-	w, err := nodewallet.GetEthereumWallet(vegaPaths, pass)
+	w, err := nodewallet.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
 	if err != nil {
 		return fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 	}
@@ -154,7 +154,7 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 
 	opts.Config = conf.NodeWallet
 
-	w, err := nodewallet.GetEthereumWallet(vegaPaths, pass)
+	w, err := nodewallet.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
 	if err != nil {
 		return fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 	}

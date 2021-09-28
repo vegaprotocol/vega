@@ -2,9 +2,17 @@ package eth
 
 import (
 	"code.vegaprotocol.io/vega/crypto"
-	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/accounts/keystore"
 )
+
+type wallet interface {
+	Cleanup() error
+	Name() string
+	Chain() string
+	Sign(data []byte) ([]byte, error)
+	Algo() string
+	Version() string
+	PubKeyOrAddress() crypto.PublicKeyOrAddress
+}
 
 type Wallet struct {
 	name       string
@@ -12,31 +20,36 @@ type Wallet struct {
 	ks         *keystore.KeyStore
 	passphrase string
 	address    crypto.PublicKey
+	w          wallet
+}
+
+func NewWallet(w wallet) *Wallet {
+	return &Wallet{w}
 }
 
 func (w *Wallet) Cleanup() error {
 	// just remove the wallet from the tmp file
-	return w.ks.Delete(w.acc, w.passphrase)
+	return w.w.Cleanup()
 }
 
 func (w *Wallet) Name() string {
-	return w.name
+	return w.w.Name()
 }
 
 func (w *Wallet) Chain() string {
-	return "ethereum"
+	return w.w.Chain()
 }
 
 func (w *Wallet) Sign(data []byte) ([]byte, error) {
-	return w.ks.SignHash(w.acc, data)
+	return w.w.Sign(data)
 }
 
 func (w *Wallet) Algo() string {
-	return "eth"
+	return w.w.Algo()
 }
 
 func (w *Wallet) Version() string {
-	return "0"
+	return w.w.Version()
 }
 
 func (w *Wallet) PubKey() crypto.PublicKey {

@@ -43,11 +43,6 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
-	if err != nil {
-		return err
-	}
-
 	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
@@ -64,15 +59,36 @@ func (opts *generateCmd) Execute(_ []string) error {
 	var data map[string]string
 	switch opts.Chain {
 	case ethereumChain:
-		data, err = nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		var walletPass string
+		if !opts.Config.ETH.ClefEnabled {
+			walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
+			if err != nil {
+				return err
+			}
+		}
+
+		data, err = nodewallet.GenerateEthereumWallet(
+			opts.Config.ETH,
+			vegaPaths,
+			registryPass,
+			walletPass,
+			opts.Force,
+		)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
 		}
 	case vegaChain:
+		walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
+		if err != nil {
+			return err
+		}
+
 		data, err = nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
 		}
+	default:
+		return fmt.Errorf("chain %q is not supported", opts.Chain)
 	}
 
 	if output.IsHuman() {
