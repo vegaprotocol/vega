@@ -7,7 +7,6 @@ import (
 
 	"code.vegaprotocol.io/vega/crypto"
 	"github.com/ethereum/go-ethereum/accounts"
-	"github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -108,11 +107,11 @@ func (w *wallet) contains(testAddr ethcommon.Address) bool {
 	return false
 }
 
-func (w *wallet) listAccounts() ([]common.Address, error) {
+func (w *wallet) listAccounts() ([]ethcommon.Address, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
-	var res []common.Address
+	var res []ethcommon.Address
 	if err := w.client.CallContext(ctx, &res, "account_list"); err != nil {
 		return nil, err
 	}
@@ -137,7 +136,7 @@ func (w *wallet) Sign(data []byte) ([]byte, error) {
 	defer cancel()
 
 	var res hexutil.Bytes
-	signAddress := common.NewMixedcaseAddress(w.account.Address)
+	signAddress := ethcommon.NewMixedcaseAddress(w.account.Address)
 
 	if err := w.client.CallContext(
 		ctx,
