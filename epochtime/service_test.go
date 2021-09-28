@@ -15,12 +15,10 @@ import (
 )
 
 var (
-	vt     *vegatime.Svc = vegatime.New(vegatime.NewDefaultConfig())
-	now    time.Time     = time.Unix(0, 0).UTC()
 	epochs []types.Epoch
 )
 
-func getEpochService(t *testing.T) *epochtime.Svc {
+func getEpochService(t *testing.T, vt *vegatime.Svc) *epochtime.Svc {
 	ctx := context.Background()
 	log := logging.NewTestLogger()
 	broker, err := broker.New(ctx, log, broker.NewDefaultConfig())
@@ -41,11 +39,15 @@ func onEpoch(ctx context.Context, e types.Epoch) {
 }
 
 func TestEpochService(t *testing.T) {
+	now := time.Unix(0, 0).UTC()
+
 	ctx := context.Background()
-	es := getEpochService(t)
+	vt := vegatime.New(vegatime.NewDefaultConfig())
+	es := getEpochService(t, vt)
 	assert.NotNil(t, es)
 
 	// Subscribe to epoch updates
+	// Reset global used in callback so that is doesn't pick up state from another test
 	epochs = []types.Epoch{}
 	es.NotifyOnEpoch(onEpoch)
 

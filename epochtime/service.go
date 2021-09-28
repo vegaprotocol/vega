@@ -32,8 +32,6 @@ type Svc struct {
 
 	readyToStartNewEpoch bool
 	readyToEndEpoch      bool
-
-	state *snapState
 }
 
 type VegaTime interface {
@@ -47,7 +45,6 @@ func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc
 		broker:               broker,
 		readyToStartNewEpoch: false,
 		readyToEndEpoch:      false,
-		state:                newSnapState(),
 	}
 
 	// Subscribe to the vegatime onblocktime event
@@ -66,7 +63,6 @@ func (s *Svc) OnBlockEnd(ctx context.Context) {
 	if s.readyToEndEpoch {
 		s.readyToStartNewEpoch = true
 		s.readyToEndEpoch = false
-		s.setSnapshot()
 	}
 }
 
@@ -75,7 +71,6 @@ func (s *Svc) OnBlockEnd(ctx context.Context) {
 //the flag to be ready to start a new block on the next onTick (i.e. preceding the beginning of the next block). Once we get the next block's on tick we close
 //the epoch and notify on its end and start a new epoch (with incremented sequence) and notify about it.
 func (s *Svc) onTick(ctx context.Context, t time.Time) {
-	defer s.setSnapshot()
 
 	if t.IsZero() {
 		// We haven't got a block time yet, ignore

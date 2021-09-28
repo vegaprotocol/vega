@@ -210,7 +210,6 @@ type EpochState struct {
 	Seq                  uint64
 	StartTime            time.Time
 	ExpireTime           time.Time
-	EndTime              time.Time
 	Action               vega.EpochAction
 	ReadyToStartNewEpoch bool
 	ReadyToEndEpoch      bool
@@ -1046,7 +1045,6 @@ func EpochFromProto(e *snapshot.EpochState) *EpochState {
 		Seq:                  e.Seq,
 		StartTime:            time.Unix(0, e.StartTime).UTC(),
 		ExpireTime:           time.Unix(0, e.ExpireTime).UTC(),
-		EndTime:              time.Unix(0, e.EndTime).UTC(),
 		Action:               e.Action,
 		ReadyToStartNewEpoch: e.ReadyToStartNewEpoch,
 		ReadyToEndEpoch:      e.ReadyToEndEpoch,
@@ -1643,7 +1641,6 @@ func (e *EpochState) IntoProto() *snapshot.EpochState {
 		Seq:                  e.Seq,
 		StartTime:            e.StartTime.UnixNano(),
 		ExpireTime:           e.ExpireTime.UnixNano(),
-		EndTime:              e.EndTime.UnixNano(),
 		Action:               e.Action,
 		ReadyToStartNewEpoch: e.ReadyToStartNewEpoch,
 		ReadyToEndEpoch:      e.ReadyToEndEpoch,

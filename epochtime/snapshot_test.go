@@ -8,14 +8,18 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/vegatime"
+
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEpochSnapshotPairwise(t *testing.T) {
+	now := time.Unix(0, 0).UTC()
 
 	ctx := context.Background()
-	service := getEpochService(t)
+	vt := vegatime.New(vegatime.NewDefaultConfig())
+	service := getEpochService(t, vt)
 
 	// Force creation of first epoch to trigger a snapshot of the first epoch
 	vt.SetTimeNow(ctx, now)
@@ -24,7 +28,7 @@ func TestEpochSnapshotPairwise(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 1, len(data)) //should be one "chunk"
 
-	snapService := getEpochService(t)
+	snapService := getEpochService(t, vt)
 
 	// Fiddle it into a payload by hand
 	snap := &snapshot.EpochState{}
@@ -43,6 +47,7 @@ func TestEpochSnapshotPairwise(t *testing.T) {
 	require.Equal(t, data, newSnapshot)
 
 	// Check functional equivalence by stepping forward in time/blocks
+	// Reset global used in callback so that is doesn't pick up state from another test
 	epochs = []types.Epoch{}
 	service.NotifyOnEpoch(onEpoch)
 	snapService.NotifyOnEpoch(onEpoch)
@@ -71,32 +76,34 @@ func TestEpochSnapshotPairwise(t *testing.T) {
 }
 
 func TestEpochSnapshotHash(t *testing.T) {
+	now := time.Unix(0, 0).UTC()
 
 	ctx := context.Background()
-	service := getEpochService(t)
+	vt := vegatime.New(vegatime.NewDefaultConfig())
+	service := getEpochService(t, vt)
 
 	// Trigger initial block
 	vt.SetTimeNow(ctx, now)
 	h, err := service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "c7868aa2fc1beb249876668a99878c3c34b87e3ff5b4768d784582a5cd428aa0")
+	require.Equal(t, hex.EncodeToString(h), "6072379e85f4b60ec80bad60660189ffe1c7a373d449175f6834f4432dad33f4")
 
 	// Shuffle time along
 	vt.SetTimeNow(ctx, now.Add(time.Hour*25))
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "0bb058c5466345392f998386b340f1b85bc3518c64210e6bf907f7009cda596b")
+	require.Equal(t, hex.EncodeToString(h), "ca7b6c216960333a6b29f388ed30f55ba7b8a849ed83909d892d095fa7651274")
 
 	// Block ends
 	service.OnBlockEnd(ctx)
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "c7868aa2fc1beb249876668a99878c3c34b87e3ff5b4768d784582a5cd428aa0")
+	require.Equal(t, hex.EncodeToString(h), "f7a76fd3d432f9db5c460c8f0860bc77830440434f8aad950f8cc6a7881994c0")
 
 	// Shuffle time a bit more
 	vt.SetTimeNow(ctx, now.Add(time.Hour*50))
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, hex.EncodeToString(h), "9882b9cb17fc1a6d4149737996625b6c29040798af16f2efbfcc3e9260d3ac2b")
+	require.Equal(t, hex.EncodeToString(h), "79f02b031cd59fc134a4fdfb895bee309bebbd748743999c3084c43d1cd8bd32")
 
 }
