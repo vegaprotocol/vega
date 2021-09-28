@@ -29,12 +29,9 @@ type accState struct {
 }
 
 var (
-	hashKeys = []string{
-		"account",
-		"asset",
-	}
-
-	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for collateral snapshot")
+	ErrSnapshotKeyDoesNotExist  = errors.New("unknown key for collateral snapshot")
+	ErrInvalidSnapshotNamespace = errors.New("invalid snapshot namespace")
+	ErrUnknownSnapshotType      = errors.New("snapshot data type not known")
 )
 
 func (e *Engine) Name() types.CheckpointName {
@@ -43,7 +40,7 @@ func (e *Engine) Name() types.CheckpointName {
 
 func (e *Engine) Checkpoint() ([]byte, error) {
 	msg := &checkpoint.Collateral{
-		Balances: e.getSnapshotBalances(),
+		Balances: e.getCheckpointBalances(),
 	}
 	ret, err := proto.Marshal(msg)
 	if err != nil {
@@ -79,7 +76,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 }
 
 // get all balances for snapshot
-func (e *Engine) getSnapshotBalances() []*checkpoint.AssetBalance {
+func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 	// party -> asset -> balance
 	balances := make(map[string]map[string]*num.Uint, len(e.accs))
 	for _, acc := range e.accs {
@@ -148,8 +145,8 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 }
 
 func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
+	r := make(map[string][]byte, len(e.state.hashKeys))
+	for _, k := range e.state.hashKeys {
 		state, err := e.state.getState(k)
 		if err != nil {
 			return nil, err
@@ -157,6 +154,48 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 		r[k] = state
 	}
 	return r, nil
+}
+
+func (e *Engine) LoadState(p *types.Payload) error {
+	if e.Namespace() != p.Data.Namespace() {
+		return ErrInvalidSnapshotNamespace
+	}
+	// see what we're reloading
+	switch pl := p.Data.(type) {
+	case *types.PayloadCollateralAssets:
+		return e.restoreAssets(pl.CollateralAssets)
+	case *types.PayloadCollateralAccounts:
+		return e.restoreAccounts(pl.CollateralAccounts)
+	default:
+		return ErrUnknownSnapshotType
+	}
+}
+
+func (e *Engine) restoreAccounts(accs *types.CollateralAccounts) error {
+	e.accs = make(map[string]*types.Account, len(accs.Accounts))
+	e.partiesAccs = map[string]map[string]*types.Account{}
+	for _, acc := range accs.Accounts {
+		e.accs[acc.ID] = acc
+		if _, ok := e.partiesAccs[acc.Owner]; !ok {
+			e.partiesAccs[acc.Owner] = map[string]*types.Account{}
+		}
+		e.partiesAccs[acc.Owner][acc.ID] = acc
+		e.addAccountToHashableSlice(acc)
+	}
+	return nil
+}
+
+func (e *Engine) restoreAssets(assets *types.CollateralAssets) error {
+	// @TODO the ID and name might not be the same, perhaps we need
+	// to wrap the asset details to preserve that data
+	e.enabledAssets = make(map[string]types.Asset, len(assets.Assets))
+	for _, ad := range assets.Assets {
+		e.enabledAssets[ad.Name] = types.Asset{
+			ID:      ad.Name,
+			Details: ad,
+		}
+	}
+	return nil
 }
 
 func newAccState() *accState {
