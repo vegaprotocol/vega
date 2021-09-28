@@ -1,0 +1,279 @@
+package monitor
+
+import (
+	"context"
+	"time"
+
+	"code.vegaprotocol.io/vega/events"
+	"code.vegaprotocol.io/vega/metrics"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/vegatime"
+)
+
+type AuctionState struct {
+	mode        types.MarketTradingMode // current trading mode
+	defMode     types.MarketTradingMode // default trading mode for market
+	trigger     types.AuctionTrigger    // Set to the value indicating what started the auction
+	begin       *time.Time              // optional setting auction start time (will be set if start flag is true)
+	end         *types.AuctionDuration  // will be set when in auction, defines parameters that end an auction period
+	start, stop bool                    // flags to clarify whether we're entering or leaving auction
+	m           *types.Market           // keep market definition handy, useful to end auctions when default is FBA
+	extension   *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
+	// timer tracks the elapsed time spend in opening auction.
+	timer *metrics.TimeCounter
+}
+
+func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
+	s := AuctionState{
+		mode:    types.MarketTradingModeOpeningAuction,
+		defMode: types.MarketTradingModeContinuous,
+		trigger: types.AuctionTriggerOpening,
+		begin:   &now,
+		end:     mkt.OpeningAuction,
+		start:   true,
+		m:       mkt,
+	}
+	if mkt.GetContinuous() == nil {
+		s.defMode = types.MarketTradingModeBatchAuction
+	}
+	// no opening auction
+	if mkt.OpeningAuction == nil {
+		s.mode = s.defMode
+		if s.mode == types.MarketTradingModeBatchAuction {
+			// @TODO set end params here (FBA is not yet implemented)
+			return &s
+		}
+		// no opening auction
+		s.begin = nil
+		s.start = false
+		s.trigger = types.AuctionTriggerUnspecified
+	}
+	return &s
+}
+
+// StartLiquidityAuction - set the state to start a liquidity triggered auction
+// @TODO these functions will be removed once the types are in proto
+func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration) {
+	a.mode = types.MarketTradingModeMonitoringAuction
+	a.trigger = types.AuctionTriggerLiquidity
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = d
+}
+
+// StartPriceAuction - set the state to start a price triggered auction
+// @TODO these functions will be removed once the types are in proto
+func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) {
+	a.mode = types.MarketTradingModeMonitoringAuction
+	a.trigger = types.AuctionTriggerPrice
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = d
+}
+
+// StartOpeningAuction - set the state to start an opening auction (used for testing)
+// @TODO these functions will be removed once the types are in proto
+func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration) {
+	a.mode = types.MarketTradingModeOpeningAuction
+	a.trigger = types.AuctionTriggerOpening
+	a.start = true
+	a.stop = false
+	a.begin = &t
+	a.end = d
+}
+
+// ExtendAuctionPrice - call from price monitoring to extend the auction
+// sets the extension trigger field accordingly
+func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
+	t := types.AuctionTriggerPrice
+	a.extension = &t
+	a.ExtendAuction(delta)
+}
+
+// ExtendAuctionLiquidity - call from liquidity monitoring to extend the auction
+// sets the extension trigger field accordingly
+func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
+	t := types.AuctionTriggerLiquidity
+	a.extension = &t
+	a.ExtendAuction(delta)
+}
+
+// ExtendAuction extends the current auction, leaving trigger etc... in tact
+// this assumes whatever extended the auction is the same thing that triggered the auction
+func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
+	t := a.trigger
+	a.extension = &t
+	a.end.Duration += delta.Duration
+	a.end.Volume += delta.Volume
+	a.stop = false // the auction was supposed to stop, but we've extended it
+}
+
+// SetReadyToLeave is called by monitoring engines to mark if an auction period has expired
+func (a *AuctionState) SetReadyToLeave() {
+	a.stop = true
+}
+
+// Duration returns a copy of the current auction duration object
+func (a AuctionState) Duration() types.AuctionDuration {
+	if a.end == nil {
+		return types.AuctionDuration{}
+	}
+	return *a.end
+}
+
+// Start - returns time pointer of the start of the auction (nil if not in auction)
+func (a AuctionState) Start() time.Time {
+	if a.begin == nil {
+		return time.Time{} // zero time
+	}
+	return *a.begin
+}
+
+// ExpiresAt returns end as time -> if nil, the auction duration either isn't determined by time
+// or we're simply not in an auction
+func (a AuctionState) ExpiresAt() *time.Time {
+	if a.begin == nil { // no start time == no end time
+		return nil
+	}
+	if a.end == nil || a.end.Duration == 0 { // not time limited
+		return nil
+	}
+	// add duration to start time, return
+	t := a.begin.Add(time.Duration(a.end.Duration) * time.Second)
+	return &t
+}
+
+// Mode returns current trading mode
+func (a AuctionState) Mode() types.MarketTradingMode {
+	return a.mode
+}
+
+// Trigger returns what triggered an auction
+func (a AuctionState) Trigger() types.AuctionTrigger {
+	return a.trigger
+}
+
+// ExtensionTrigger returns what extended an auction
+func (a AuctionState) ExtensionTrigger() types.AuctionTrigger {
+	if a.extension == nil {
+		return types.AuctionTriggerUnspecified
+	}
+	return *a.extension
+}
+
+// InAuction returns bool if the market is in auction for any reason
+// Returns false if auction is triggered, but not yet started by market (execution)
+func (a AuctionState) InAuction() bool {
+	return !a.start && a.trigger != types.AuctionTriggerUnspecified
+}
+
+func (a AuctionState) IsOpeningAuction() bool {
+	return a.trigger == types.AuctionTriggerOpening
+}
+
+func (a AuctionState) IsLiquidityAuction() bool {
+	return a.trigger == types.AuctionTriggerLiquidity
+}
+
+func (a AuctionState) IsPriceAuction() bool {
+	return a.trigger == types.AuctionTriggerPrice
+}
+
+func (a AuctionState) IsFBA() bool {
+	return a.trigger == types.AuctionTriggerBatch
+}
+
+// IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine
+func (a AuctionState) IsMonitorAuction() bool {
+	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidity
+}
+
+// CanLeave bool indicating whether auction should be closed or not, if true, we can still extend the auction
+// but when the market takes over (after monitoring engines), the auction will be closed
+func (a AuctionState) CanLeave() bool {
+	return a.stop
+}
+
+// AuctionStart bool indicates something has already triggered an auction to start, we can skip other monitoring potentially
+// and we know to create an auction event
+func (a AuctionState) AuctionStart() bool {
+	return a.start
+}
+
+// AuctionExtended - called to confirm we will not leave auction, returns the event to be sent
+// or nil if the auction wasn't extended
+func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
+	if a.extension == nil {
+		return nil
+	}
+	a.start = false
+	end := int64(0)
+	if a.begin == nil {
+		b := vegatime.Now()
+		a.begin = &b
+	}
+	if a.end != nil && a.end.Duration > 0 {
+		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
+	}
+	ext := *a.extension
+	// set extension flag to nil
+	a.extension = nil
+	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger, ext)
+}
+
+// AuctionStarted is called by the execution package to set flags indicating the market has started the auction
+func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
+	a.timer = metrics.NewTimeCounter(a.m.ID, "Auction duration", a.trigger.String())
+	a.start = false
+	end := int64(0)
+	if a.begin == nil {
+		b := vegatime.Now()
+		a.begin = &b
+	}
+	if a.end != nil && a.end.Duration > 0 {
+		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
+	}
+	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger)
+}
+
+// Left is called by execution to update internal state indicating this auction was closed
+func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction {
+	a.timer.EngineTimeCounterAdd()
+
+	// the end-of-auction event
+	var start int64 = 0
+	if a.begin != nil {
+		start = a.begin.UnixNano()
+	}
+	evt := events.NewAuctionEvent(ctx, a.m.ID, true, start, now.UnixNano(), a.trigger)
+	a.start, a.stop = false, false
+	a.begin, a.end = nil, nil
+	a.trigger = types.AuctionTriggerUnspecified
+	a.extension = nil
+	a.mode = a.defMode
+	// default mode is auction, this is an FBA market
+	if a.mode == types.MarketTradingModeBatchAuction {
+		a.trigger = types.AuctionTriggerBatch
+	}
+	return evt
+}
+
+// UpdateMinDuration - see if we need to update the end value for current auction duration (if any)
+// if the auction duration increases, an auction event will be returned
+func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction {
+	oldExp := a.ExpiresAt()
+	// oldExp is nil if we're not in auction
+	if oldExp == nil {
+		return nil
+	}
+	// calc new end for auction:
+	newMin := a.begin.Add(d)
+	// no need to check for nil, we already have
+	if newMin.After(*oldExp) {
+		a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using secondws in AuctionDuration type
+		return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), newMin.UnixNano(), a.trigger)
+	}
+	return nil
+}
