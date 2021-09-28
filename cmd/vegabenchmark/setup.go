@@ -24,7 +24,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/checks"
 	"code.vegaprotocol.io/vega/netparams/dispatch"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/spam"
@@ -79,7 +79,10 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	vegaPaths, _ := vgtesting.NewVegaPaths()
 	pass := vgrand.RandomStr(10)
-	if _, err := nodewallet.GenerateEthereumWallet(vegaPaths, pass, pass, false); err != nil {
+
+	config := nodewallet.NewDefaultConfig()
+
+	if _, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, pass, pass, false); err != nil {
 		return nil, nil, err
 	}
 	if _, err := nodewallet.GenerateVegaWallet(vegaPaths, pass, pass, false); err != nil {

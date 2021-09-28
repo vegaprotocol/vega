@@ -80,11 +80,13 @@ func testHandlerGettingEthereumWalletSucceeds(t *testing.T) {
 	registryPass := vgrand.RandomStr(10)
 	walletsPass := vgrand.RandomStr(10)
 
+	config := nodewallet.NewDefaultConfig()
+
 	// setup
 	createTestNodeWallets(vegaPaths, registryPass, walletsPass)
 
 	// when
-	wallet, err := nodewallet.GetEthereumWallet(vegaPaths, registryPass)
+	wallet, err := nodewallet.GetEthereumWallet(config.ETH, vegaPaths, registryPass)
 
 	// assert
 	require.NoError(t, err)
@@ -102,8 +104,10 @@ func testHandlerGettingEthereumWalletWithWrongRegistryPassphraseFails(t *testing
 	// setup
 	createTestNodeWallets(vegaPaths, registryPass, walletsPass)
 
+	config := nodewallet.NewDefaultConfig()
+
 	// when
-	wallet, err := nodewallet.GetEthereumWallet(vegaPaths, wrongRegistryPass)
+	wallet, err := nodewallet.GetEthereumWallet(config.ETH, vegaPaths, wrongRegistryPass)
 
 	// assert
 	require.Error(t, err)
@@ -154,8 +158,10 @@ func testHandlerGeneratingEthereumWalletSucceeds(t *testing.T) {
 	registryPass := vgrand.RandomStr(10)
 	walletPass := vgrand.RandomStr(10)
 
+	config := nodewallet.NewDefaultConfig()
+
 	// when
-	data, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, false)
+	data, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass, false)
 
 	// then
 	require.NoError(t, err)
@@ -170,8 +176,9 @@ func testHandlerGeneratingAlreadyExistingEthereumWalletFails(t *testing.T) {
 	registryPass := vgrand.RandomStr(10)
 	walletPass1 := vgrand.RandomStr(10)
 
+	config := nodewallet.NewDefaultConfig()
 	// when
-	data1, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass1, false)
+	data1, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass1, false)
 
 	// then
 	require.NoError(t, err)
@@ -182,7 +189,7 @@ func testHandlerGeneratingAlreadyExistingEthereumWalletFails(t *testing.T) {
 	walletPass2 := vgrand.RandomStr(10)
 
 	// when
-	data2, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass2, false)
+	data2, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass2, false)
 
 	// then
 	require.EqualError(t, err, nodewallet.ErrEthereumWalletAlreadyExists.Error())
@@ -196,8 +203,10 @@ func testHandlerGeneratingEthereumWalletWithOverwriteSucceeds(t *testing.T) {
 	registryPass := vgrand.RandomStr(10)
 	walletPass1 := vgrand.RandomStr(10)
 
+	config := nodewallet.NewDefaultConfig()
+
 	// when
-	data1, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass1, false)
+	data1, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass1, false)
 
 	// then
 	require.NoError(t, err)
@@ -208,7 +217,7 @@ func testHandlerGeneratingEthereumWalletWithOverwriteSucceeds(t *testing.T) {
 	walletPass2 := vgrand.RandomStr(10)
 
 	// when
-	data2, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass2, true)
+	data2, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass2, true)
 
 	// then
 	require.NoError(t, err)
@@ -300,8 +309,10 @@ func testHandlerImportingEthereumWalletSucceeds(t *testing.T) {
 	registryPass := vgrand.RandomStr(10)
 	walletPass := vgrand.RandomStr(10)
 
+	config := nodewallet.NewDefaultConfig()
+
 	// when
-	genData, err := nodewallet.GenerateEthereumWallet(genVegaPaths, registryPass, walletPass, false)
+	genData, err := nodewallet.GenerateEthereumWallet(config.ETH, genVegaPaths, registryPass, walletPass, false)
 
 	// then
 	require.NoError(t, err)
@@ -311,7 +322,7 @@ func testHandlerImportingEthereumWalletSucceeds(t *testing.T) {
 	defer importCleanupFn()
 
 	// when
-	importData, err := nodewallet.ImportEthereumWallet(importVegaPaths, registryPass, walletPass, genData["walletFilePath"], false)
+	importData, err := nodewallet.ImportEthereumWallet(config.ETH, importVegaPaths, registryPass, walletPass, "", genData["walletFilePath"], false)
 
 	// then
 	require.NoError(t, err)
@@ -328,14 +339,15 @@ func testHandlerImportingAlreadyExistingEthereumWalletFails(t *testing.T) {
 	registryPass := vgrand.RandomStr(10)
 	walletPass := vgrand.RandomStr(10)
 
+	config := nodewallet.NewDefaultConfig()
 	// when
-	genData, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, false)
+	genData, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass, false)
 
 	// then
 	require.NoError(t, err)
 
 	// when
-	importData, err := nodewallet.ImportEthereumWallet(vegaPaths, registryPass, walletPass, genData["walletFilePath"], false)
+	importData, err := nodewallet.ImportEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass, "", genData["walletFilePath"], false)
 
 	// then
 	require.EqualError(t, err, nodewallet.ErrEthereumWalletAlreadyExists.Error())
@@ -348,15 +360,16 @@ func testHandlerImportingEthereumWalletWithOverwriteSucceeds(t *testing.T) {
 	defer cleanupFn()
 	registryPass := vgrand.RandomStr(10)
 	walletPass := vgrand.RandomStr(10)
+	config := nodewallet.NewDefaultConfig()
 
 	// when
-	genData, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, false)
+	genData, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass, false)
 
 	// then
 	require.NoError(t, err)
 
 	// when
-	importData, err := nodewallet.ImportEthereumWallet(vegaPaths, registryPass, walletPass, genData["walletFilePath"], true)
+	importData, err := nodewallet.ImportEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass, "", genData["walletFilePath"], true)
 
 	// then
 	require.NoError(t, err)
@@ -440,7 +453,9 @@ func testHandlerImportingVegaWalletWithOverwriteSucceeds(t *testing.T) {
 }
 
 func createTestNodeWallets(vegaPaths paths.Paths, registryPass, walletPass string) {
-	if _, err := nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, false); err != nil {
+	config := nodewallet.NewDefaultConfig()
+
+	if _, err := nodewallet.GenerateEthereumWallet(config.ETH, vegaPaths, registryPass, walletPass, false); err != nil {
 		panic("couldn't generate Ethereum node wallet for tests")
 	}
 
