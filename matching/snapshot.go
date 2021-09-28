@@ -2,43 +2,30 @@ package matching
 
 import (
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
+	"github.com/golang/protobuf/proto"
 )
 
 const (
-	MARKET_ID          = "market id"
-	BUY_BOOK           = "buy book"
-	SELL_BOOK          = "sell book"
-	LAST_TRADE_PRICE   = "last trade price"
-	LAST_TIMESTAMP     = "last timestamp"
-	AUCTION            = "auction"
-	INDICATIVE_P_AND_V = "indicative price and volume"
+	MATCHING_SNAPSHOT = "matching engine"
 )
 
-var keys = []string{MARKET_ID,
-	BUY_BOOK,
-	SELL_BOOK,
-	LAST_TRADE_PRICE,
-	LAST_TIMESTAMP,
-	AUCTION,
-	INDICATIVE_P_AND_V}
-
 func (ob *OrderBook) Keys() []string {
-	return keys
+	return []string{MATCHING_SNAPSHOT}
 }
 
 func (ob *OrderBook) Snapshot() (map[string][]byte, error) {
-	state := *new(map[string][]byte)
-	for _, k := range keys {
-		v, err := ob.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		state[k] = v
+	data, err := ob.GetState(MATCHING_SNAPSHOT)
+	if err != nil {
+		return nil, err
 	}
-	return state, nil
+
+	snapshot := make(map[string][]byte)
+	snapshot[MATCHING_SNAPSHOT] = data
+	return snapshot, nil
 }
 
 func (ob OrderBook) Namespace() types.SnapshotNamespace {
@@ -47,6 +34,10 @@ func (ob OrderBook) Namespace() types.SnapshotNamespace {
 }
 
 func (ob *OrderBook) GetHash(key string) ([]byte, error) {
+	if key != MATCHING_SNAPSHOT {
+		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
+	}
+
 	b, e := ob.GetState(key)
 	if e != nil {
 		return nil, e
@@ -56,58 +47,105 @@ func (ob *OrderBook) GetHash(key string) ([]byte, error) {
 }
 
 func (ob *OrderBook) GetState(key string) ([]byte, error) {
-	switch key {
-	case MARKET_ID:
-		return ob.getMarketIDState()
-	case BUY_BOOK:
-		return ob.getBuyBookState()
-	case SELL_BOOK:
-		return ob.getSellBookState()
-	case LAST_TRADE_PRICE:
-		return ob.getLastTradePriceState()
-	case LAST_TIMESTAMP:
-		return ob.getLastTimestampState()
-	case INDICATIVE_P_AND_V:
-		return ob.getIndicativePAndVState()
+	if key != MATCHING_SNAPSHOT {
+		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
 	}
-	return nil, fmt.Errorf("Unknown key: %s", key)
-}
 
-func (ob *OrderBook) getMarketIDState() ([]byte, error) {
-	return nil, nil
-}
+	// Copy all the state into a domain object
+	payload := ob.buildPayload()
 
-func (ob *OrderBook) getBuyBookState() ([]byte, error) {
-	return nil, nil
-}
+	// Convert the domain object into a protobuf payload message
+	p := payload.IntoProto()
 
-func (ob *OrderBook) getSellBookState() ([]byte, error) {
-	return nil, nil
-}
-
-func (ob *OrderBook) getLastTradePriceState() ([]byte, error) {
-	return nil, nil
-}
-
-func (ob *OrderBook) getLastTimestampState() ([]byte, error) {
-	return nil, nil
-}
-
-func (ob *OrderBook) getIndicativePAndVState() ([]byte, error) {
-	return nil, nil
-}
-
-/*func (ob *OrderBook) hashState() ([]byte, error) {
-	// apparently the payload types can't me marshalled by themselves
-	pl := types.Payload{
-		Data: s.t,
-	}
-	data, err := proto.Marshal(pl.IntoProto())
+	data, err := proto.Marshal(p)
 	if err != nil {
 		return nil, err
 	}
-	s.data = data
-	s.hash = crypto.Hash(data)
-	s.updated = false
-	return s.hash, nil
-}*/
+	return data, nil
+}
+
+func (ob *OrderBook) buildPayload() *types.Payload {
+	state := types.MatchingBook{}
+
+	state.MarketID = ob.marketID
+	state.Buy = ob.copyBuySide()
+	state.Sell = ob.copySellSide()
+	state.LastTradedPrice = ob.lastTradedPrice
+	state.Auction = ob.auction
+	state.BatchID = ob.batchID
+
+	// Wrap it in a payload
+	payload := &types.PayloadMatchingBook{
+		MatchingBook: &state,
+	}
+
+	// Wrap that in a payload wrapper
+	payloadWrapper := &types.Payload{
+		Data: payload,
+	}
+
+	return payloadWrapper
+}
+
+func (ob *OrderBook) copyBuySide() []*types.Order {
+	orders := make([]*types.Order, 0)
+	pricelevels := ob.buy.getLevels()
+	for _, pl := range pricelevels {
+		for _, order := range pl.orders {
+			orders = append(orders, order.Clone())
+		}
+	}
+
+	// Sort the orders into creation time order
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].CreatedAt < orders[j].CreatedAt
+	})
+
+	return orders
+}
+
+func (ob *OrderBook) copySellSide() []*types.Order {
+	orders := make([]*types.Order, 0)
+	pricelevels := ob.sell.getLevels()
+	for _, pl := range pricelevels {
+		for _, order := range pl.orders {
+			orders = append(orders, order.Clone())
+		}
+	}
+
+	// Sort the orders into creation time order
+	sort.Slice(orders, func(i, j int) bool {
+		return orders[i].CreatedAt < orders[j].CreatedAt
+	})
+
+	return orders
+}
+
+func (ob *OrderBook) LoadState(payload *types.PayloadMatchingBook) {
+	mb := payload.MatchingBook
+
+	ob.reset()
+	ob.marketID = mb.MarketID
+	ob.batchID = mb.BatchID
+	ob.auction = mb.Auction
+	ob.lastTradedPrice = mb.LastTradedPrice
+
+	for _, o := range mb.Buy {
+		_, err := ob.SubmitOrder(o)
+		if err != nil {
+			ob.log.Fatal("Error submitting buy order while loading snapshot")
+		}
+	}
+
+	for _, o := range mb.Sell {
+		_, err := ob.SubmitOrder(o)
+		if err != nil {
+			ob.log.Fatal("Error submitting sell order while loading snapshot")
+		}
+	}
+
+	// If we are in an auction we need to build the IP&V structure
+	if ob.auction {
+		ob.indicativePriceAndVolume = NewIndicativePriceAndVolume(ob.log, ob.buy, ob.sell)
+	}
+}

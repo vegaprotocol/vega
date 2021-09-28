@@ -94,6 +94,17 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 	b.cfgMu.Unlock()
 }
 
+func (b *OrderBook) reset() {
+	b.auction = false
+	b.batchID = 0
+	b.buy = &OrderBookSide{log: b.log, side: types.SideBuy}
+	b.sell = &OrderBookSide{log: b.log, side: types.SideSell}
+	b.indicativePriceAndVolume = nil
+	b.lastTradedPrice = num.Zero()
+	b.ordersByID = map[string]*types.Order{}
+	b.ordersPerParty = map[string]map[string]struct{}{}
+}
+
 // GetCloseoutPrice returns the exit price which would be achieved for a given
 // volume and give side of the book
 func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint, error) {
