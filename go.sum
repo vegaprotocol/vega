@@ -15,8 +15,8 @@ code.vegaprotocol.io/go-wallet v0.9.0-pre2.0.20210923113924-f10617e081eb/go.mod 
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3 h1:/A09Q3EEiJF+/WiJfKiqzp1zvcWphiYR8lf2N/JSJBU=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
 code.vegaprotocol.io/protos v0.42.1-0.20210923113049-6d9549525594/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
-code.vegaprotocol.io/protos v0.42.1-0.20210927145240-dbe77c41f8d5 h1:VsC8ckTAUm+kv8EUIjXmCHfHG992nqZWkGymveNiiqc=
-code.vegaprotocol.io/protos v0.42.1-0.20210927145240-dbe77c41f8d5/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+code.vegaprotocol.io/protos v0.42.1-0.20210928163034-72e7663788cd h1:ZU8sFvDJsYe2lohSMwqCXMAZPcILLp8phKOc2X9lfwc=
+code.vegaprotocol.io/protos v0.42.1-0.20210928163034-72e7663788cd/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20210907092733-405b656c2f5b/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=
