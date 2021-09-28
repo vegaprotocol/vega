@@ -453,7 +453,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 func (app *App) handleCheckpoint(snap *types.CheckpointState) error {
 	now := time.Now()
 	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(snap.Hash))
-	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.SnapshotStateHome, cpFileName))
+	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.CheckpointStateHome, cpFileName))
 	if err != nil {
 		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
 	}
