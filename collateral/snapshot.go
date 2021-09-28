@@ -16,6 +16,8 @@ import (
 )
 
 type accState struct {
+	accPL      types.PayloadCollateralAccounts
+	assPL      types.PayloadCollateralAssets
 	accs       map[string]*types.Account
 	assets     map[string]types.Asset
 	accIDs     []string
@@ -23,6 +25,7 @@ type accState struct {
 	hashes     map[string][]byte
 	updates    map[string]bool
 	serialised map[string][]byte
+	hashKeys   []string
 }
 
 var (
@@ -128,12 +131,12 @@ func (e *Engine) getSnapshotBalances() []*checkpoint.AssetBalance {
 	return out
 }
 
-func (e *Engine) Namespace() string {
-	return string(types.CollateralSnapshot)
+func (e *Engine) Namespace() types.SnapshotNamespace {
+	return types.CollateralSnapshot
 }
 
 func (e *Engine) Keys() []string {
-	return hashKeys
+	return e.state.hashKeys
 }
 
 func (e *Engine) GetHash(k string) ([]byte, error) {
@@ -157,31 +160,35 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 }
 
 func newAccState() *accState {
-	return &accState{
+	state := &accState{
+		accPL: types.PayloadCollateralAccounts{
+			CollateralAccounts: &types.CollateralAccounts{},
+		},
+		assPL: types.PayloadCollateralAssets{
+			CollateralAssets: &types.CollateralAssets{},
+		},
 		accs:     map[string]*types.Account{},
 		assets:   map[string]types.Asset{},
 		accIDs:   []string{},
 		assetIDs: []string{},
-		updates: map[string]bool{
-			"account": false,
-			"asset":   false,
-		},
-		hashes: map[string][]byte{
-			"account": nil,
-			"asset":   nil,
-		},
-		serialised: map[string][]byte{
-			"account": nil,
-			"asset":   nil,
-		},
 	}
+	state.hashKeys = []string{
+		state.accPL.Key(),
+		state.assPL.Key(),
+	}
+	for _, k := range state.hashKeys {
+		state.hashes[k] = nil
+		state.updates[k] = false
+		state.serialised[k] = nil
+	}
+	return state
 }
 
 func (a *accState) enableAsset(asset types.Asset) {
 	a.assets[asset.ID] = asset
 	a.assetIDs = append(a.assetIDs, asset.ID)
 	sort.Strings(a.assetIDs)
-	a.updates["asset"] = true
+	a.updates[a.assPL.Key()] = true
 }
 
 func (a *accState) add(accs ...*types.Account) {
@@ -199,7 +206,7 @@ func (a *accState) add(accs ...*types.Account) {
 		a.accIDs = append(a.accIDs, ids...)
 		sort.Strings(a.accIDs)
 	}
-	a.updates["account"] = true
+	a.updates[a.accPL.Key()] = true
 }
 
 func (a *accState) delAcc(accs ...*types.Account) {
@@ -222,35 +229,55 @@ func (a *accState) delAcc(accs ...*types.Account) {
 		}
 	}
 	if updated {
-		a.updates["account"] = true
+		a.updates[a.accPL.Key()] = true
 	}
 }
 
 func (a *accState) hashAssets() error {
-	if !a.updates["asset"] {
+	k := a.assPL.Key()
+	if !a.updates[k] {
 		return nil
 	}
-	data := []byte(strings.Join(a.assetIDs, ""))
-	// @TODO populate type to persist && serialise, then save it in the serialised field
-	a.hashes["asset"] = crypto.Hash(data)
-	a.updates["asset"] = false
+	assets := make([]*types.AssetDetails, 0, len(a.assetIDs))
+	for _, id := range a.assetIDs {
+		assets = append(assets, a.assets[id].Details)
+	}
+	a.assPL.CollateralAssets.Assets = assets
+	pl := types.Payload{
+		Data: &a.assPL,
+	}
+	data, err := proto.Marshal(pl.IntoProto())
+	if err != nil {
+		return err
+	}
+	a.updates[k] = false
+	a.hashes[k] = crypto.Hash(data)
+	a.serialised[k] = data
 	return nil
 }
 
 func (a *accState) hashAccounts() error {
-	if !a.updates["account"] {
+	k := a.accPL.Key()
+	if !a.updates[k] {
 		return nil
 	}
-	data := make([]byte, 0, len(a.accIDs)*32)
-	i := 0
+	// build slice again
+	accs := make([]*types.Account, 0, len(a.accIDs))
 	for _, id := range a.accIDs {
-		b := a.accs[id].Balance.Bytes()
-		copy(data[i:], b[:])
-		i += 32
-		// @TODO populate type to persist && serialise, then save it in the serialised field
+		accs = append(accs, a.accs[id])
 	}
-	a.hashes["account"] = crypto.Hash(data)
-	a.updates["account"] = false
+	// set new account slice
+	a.accPL.CollateralAccounts.Accounts = accs
+	pl := types.Payload{
+		Data: &a.accPL,
+	}
+	data, err := proto.Marshal(pl.IntoProto())
+	if err != nil {
+		return err
+	}
+	a.serialised[k] = data
+	a.hashes[k] = crypto.Hash(data)
+	a.updates[k] = false
 	return nil
 }
 
@@ -263,7 +290,7 @@ func (a *accState) getState(k string) ([]byte, error) {
 		h := a.serialised[k]
 		return h, nil
 	}
-	if k == "asset" {
+	if k == a.assPL.Key() {
 		if err := a.hashAssets(); err != nil {
 			return nil, err
 		}
@@ -282,7 +309,7 @@ func (a *accState) getHash(k string) ([]byte, error) {
 	// we have a pending update
 	if update {
 		// hash whichever one we need to update
-		if k == "asset" {
+		if k == a.assPL.Key() {
 			if err := a.hashAssets(); err != nil {
 				return nil, err
 			}
