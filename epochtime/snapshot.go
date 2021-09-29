@@ -1,8 +1,6 @@
 package epochtime
 
 import (
-	"errors"
-
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
@@ -10,26 +8,15 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-var (
-	ErrInvalidSnapshotNamespace = errors.New("invalid snapshot namespace")
-	ErrUnknownSnapshotType      = errors.New("snapshot data type not known")
-)
-
 func (s *Svc) serialise() error {
 
-	pl := types.Payload{
-		Data: &types.PayloadEpoch{
-			EpochState: &types.EpochState{
-				Seq:                  s.epoch.Seq,
-				StartTime:            s.epoch.StartTime,
-				ExpireTime:           s.epoch.ExpireTime,
-				ReadyToStartNewEpoch: s.readyToStartNewEpoch,
-				ReadyToEndEpoch:      s.readyToEndEpoch,
-			},
-		},
-	}
+	s.state.Seq = s.epoch.Seq
+	s.state.StartTime = s.epoch.StartTime
+	s.state.ExpireTime = s.epoch.ExpireTime
+	s.state.ReadyToStartNewEpoch = s.readyToStartNewEpoch
+	s.state.ReadyToEndEpoch = s.readyToEndEpoch
 
-	data, err := proto.Marshal(pl.IntoProto())
+	data, err := proto.Marshal(s.pl.IntoProto())
 	if err != nil {
 		return err
 	}
@@ -45,27 +32,32 @@ func (s *Svc) Namespace() types.SnapshotNamespace {
 }
 
 func (s *Svc) Keys() []string {
-	t := &types.PayloadEpoch{}
-	return []string{t.Key()}
+	return []string{s.pl.Key()}
 }
 
-func (s *Svc) GetHash(_ string) ([]byte, error) {
+func (s *Svc) GetHash(k string) ([]byte, error) {
+
+	if k != s.pl.Key() {
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 	return s.hash, nil
 }
 
 func (s *Svc) Snapshot() (map[string][]byte, error) {
-	t := &types.PayloadEpoch{}
-	return map[string][]byte{t.Key(): s.data}, nil
+	return map[string][]byte{s.pl.Key(): s.data}, nil
 }
 
-func (s *Svc) GetState(_ string) ([]byte, error) {
+func (s *Svc) GetState(k string) ([]byte, error) {
+	if k != s.pl.Key() {
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
 	return s.data, nil
 }
 
 func (s *Svc) LoadState(payload *types.Payload) error {
 
 	if s.Namespace() != payload.Data.Namespace() {
-		return ErrInvalidSnapshotNamespace
+		return types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
@@ -86,7 +78,7 @@ func (s *Svc) LoadState(payload *types.Payload) error {
 		return s.serialise()
 
 	default:
-		return ErrUnknownSnapshotType
+		return types.ErrUnknownSnapshotType
 	}
 
 }

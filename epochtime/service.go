@@ -34,8 +34,10 @@ type Svc struct {
 	readyToEndEpoch      bool
 
 	// Snapshot state
-	data []byte
-	hash []byte
+	state *types.EpochState
+	pl    types.Payload
+	data  []byte
+	hash  []byte
 }
 
 type VegaTime interface {
@@ -44,11 +46,19 @@ type VegaTime interface {
 
 // NewService instantiates a new epochtime service
 func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc {
+
 	s := &Svc{config: conf,
 		log:                  l,
 		broker:               broker,
 		readyToStartNewEpoch: false,
 		readyToEndEpoch:      false,
+	}
+
+	s.state = &types.EpochState{}
+	s.pl = types.Payload{
+		Data: &types.PayloadEpoch{
+			EpochState: s.state,
+		},
 	}
 
 	// Subscribe to the vegatime onblocktime event

@@ -78,25 +78,25 @@ func TestEpochSnapshotHash(t *testing.T) {
 
 	// Trigger initial block
 	vt.SetTimeNow(ctx, now)
-	h, err := service.GetHash("")
+	h, err := service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "010bd3281c2cdc839fdd0a3bdf0877b174c47980e7c4790ba32befd802a9e1e1", hex.EncodeToString(h))
 
 	// Shuffle time along
 	vt.SetTimeNow(ctx, now.Add(time.Hour*25))
-	h, err = service.GetHash("")
+	h, err = service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "be09d5e30666b69199c1a40f2ecb3dd6a514b33f55fdfeda25d072c67932dc45", hex.EncodeToString(h))
 
 	// Block ends
 	service.OnBlockEnd(ctx)
-	h, err = service.GetHash("")
+	h, err = service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "e4bbd70ef0aaf86065c14baeeda63d4a13d9cc95e75edb0197ba7bb619683611", hex.EncodeToString(h))
 
 	// Shuffle time a bit more
 	vt.SetTimeNow(ctx, now.Add(time.Hour*50))
-	h, err = service.GetHash("")
+	h, err = service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "9b1cddbbd648b44569a22551b1f1e82379b6d6c664b3e01c18d0ef3edb9a197d", hex.EncodeToString(h))
 
