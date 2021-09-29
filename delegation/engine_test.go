@@ -151,9 +151,9 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 
 	// verify hash and state match
 
-	hashPostReload, err := testEngine.engine.GetHash("active")
+	hashPostReload, _ := testEngine.engine.GetHash("active")
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, err := testEngine.engine.GetState("active")
+	statePostReload, _ := testEngine.engine.GetState("active")
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -194,9 +194,9 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 
 	err = testEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
-	hashPostReload, err := testEngine.engine.GetHash("pending")
+	hashPostReload, _ := testEngine.engine.GetHash("pending")
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, err := testEngine.engine.GetState("pending")
+	statePostReload, _ := testEngine.engine.GetState("pending")
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -241,9 +241,9 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	}
 
 	testEngine.engine.LoadState(context.Background(), payload)
-	hashPostReload, err := testEngine.engine.GetHash("auto")
+	hashPostReload, _ := testEngine.engine.GetHash("auto")
 	require.True(t, bytes.Equal(hashPostUndelegate, hashPostReload))
-	statePostReload, err := testEngine.engine.GetState("auto")
+	statePostReload, _ := testEngine.engine.GetState("auto")
 	require.True(t, bytes.Equal(statePostUndelegate, statePostReload))
 }
 
