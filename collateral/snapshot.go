@@ -202,12 +202,12 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 	e.enabledAssets = make(map[string]types.Asset, len(assets.Assets))
 	e.state.assetIDs = make([]string, 0, len(assets.Assets))
 	e.state.assets = make(map[string]types.Asset, len(assets.Assets))
-	for _, ad := range assets.Assets {
+	for _, a := range assets.Assets {
 		ast := types.Asset{
-			ID:      ad.Name,
-			Details: ad,
+			ID:      a.ID,
+			Details: a.Details,
 		}
-		e.enabledAssets[ad.Name] = ast
+		e.enabledAssets[a.ID] = ast
 		evts = append(evts, events.NewAssetEvent(ctx, ast))
 		e.state.enableAsset(ast)
 	}
@@ -316,9 +316,10 @@ func (a *accState) hashAssets() error {
 	if !a.updates[k] {
 		return nil
 	}
-	assets := make([]*types.AssetDetails, 0, len(a.assetIDs))
+	assets := make([]*types.Asset, 0, len(a.assetIDs))
 	for _, id := range a.assetIDs {
-		assets = append(assets, a.assets[id].Details)
+		ast := a.assets[id]
+		assets = append(assets, &ast)
 	}
 	a.assPL.CollateralAssets.Assets = assets
 	pl := types.Payload{

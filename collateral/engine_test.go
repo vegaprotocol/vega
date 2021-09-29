@@ -2425,7 +2425,13 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset := types.Asset{
 		ID: testMarketAsset,
 		Details: &types.AssetDetails{
-			Symbol: testMarketAsset,
+			Symbol:      testMarketAsset,
+			Name:        testMarketAsset,
+			Decimals:    0,
+			TotalSupply: num.NewUint(10000),
+			Source: &types.AssetDetailsBuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
+			},
 		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
@@ -2434,7 +2440,13 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset = types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
-			Symbol: "ETH",
+			Symbol:      "ETH",
+			Name:        "ETH",
+			Decimals:    18,
+			TotalSupply: num.NewUint(1000000000),
+			Source: &types.AssetDetailsBuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{},
+			},
 		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
