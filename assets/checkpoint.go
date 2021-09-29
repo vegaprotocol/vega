@@ -1,6 +1,7 @@
 package assets
 
 import (
+	"context"
 	"sort"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
@@ -20,7 +21,7 @@ func (s *Service) Checkpoint() ([]byte, error) {
 	return proto.Marshal(t)
 }
 
-func (s *Service) Load(cp []byte) error {
+func (s *Service) Load(_ context.Context, cp []byte) error {
 	data := &checkpoint.Assets{}
 	if err := proto.Unmarshal(cp, data); err != nil {
 		return err

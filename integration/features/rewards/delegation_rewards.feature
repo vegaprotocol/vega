@@ -322,7 +322,30 @@ Feature: Staking & Delegation
 
     Then "party1" should have general account balance of "49" for asset "VEGA"
     Then "node1" should have general account balance of "3842" for asset "VEGA"
-   
+  
+  Scenario: Party has delegation unfunded for majority of the epoch (except for begining and end) - should get no rewards.
+
+    Given the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 100000 | 
+      
+    Given the parties withdraw from staking account the following amount:  
+      | party  | asset | amount |
+      | party1 | VEGA  |  9999  |
+
+    When the network moves ahead "6" blocks
+    
+    And the parties deposit on staking account the following amount:
+      | party  | asset | amount |
+      | party1 | VEGA  | 9999   |  
+
+    #advance to the end of the epoch
+    When the network moves ahead "1" blocks
+
+    And the parties receive the following reward for epoch 1:
+      | party  | asset | amount |
+      | party1 | VEGA  |  0     | 
+
    Scenario: A party changes delegation from one validator to another in the same epoch
    Description: A party can change delegation from one validator to another      
 

@@ -136,7 +136,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
-			assetInsuranceAccount := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
+			assetInsuranceAccount, _ := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
 			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
