@@ -127,21 +127,29 @@ func (ob *OrderBook) LoadState(payload *types.PayloadMatchingBook) {
 	ob.lastTradedPrice = mb.LastTradedPrice
 
 	for _, o := range mb.Buy {
-		_, err := ob.SubmitOrder(o)
-		if err != nil {
-			ob.log.Fatal("Error submitting buy order while loading snapshot")
-		}
+		ob.buy.addOrder(o)
+		ob.ordersByID[o.ID] = o
+		ob.addOrderToPartyMap(o)
 	}
 
 	for _, o := range mb.Sell {
-		_, err := ob.SubmitOrder(o)
-		if err != nil {
-			ob.log.Fatal("Error submitting sell order while loading snapshot")
-		}
+		ob.sell.addOrder(o)
+		ob.ordersByID[o.ID] = o
+		ob.addOrderToPartyMap(o)
 	}
 
 	// If we are in an auction we need to build the IP&V structure
 	if ob.auction {
 		ob.indicativePriceAndVolume = NewIndicativePriceAndVolume(ob.log, ob.buy, ob.sell)
+	}
+}
+
+func (ob *OrderBook) addOrderToPartyMap(o *types.Order) {
+	if orders, ok := ob.ordersPerParty[o.Party]; !ok {
+		ob.ordersPerParty[o.Party] = map[string]struct{}{
+			o.ID: {},
+		}
+	} else {
+		orders[o.ID] = struct{}{}
 	}
 }
