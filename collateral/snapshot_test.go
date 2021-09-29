@@ -273,8 +273,6 @@ func testSnapshotRestore(t *testing.T) {
 		payloads[k] = types.PayloadFromProto(ptype)
 		require.NoError(t, newEng.LoadState(ctx, payloads[k]))
 	}
-	// eng.PrintSnapstate("old")
-	// newEng.PrintSnapstate("new")
 	for k, exp := range hashes {
 		got, err := newEng.GetHash(k)
 		require.NoError(t, err)

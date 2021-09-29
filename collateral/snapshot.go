@@ -2,7 +2,6 @@ package collateral
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -215,12 +214,6 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 	return nil
 }
 
-func (e *Engine) PrintSnapstate(name string) {
-	fmt.Printf("Engine designation: %s\n", name)
-	e.state.printState()
-	fmt.Println("")
-}
-
 func newAccState() *accState {
 	state := &accState{
 		accPL: types.PayloadCollateralAccounts{
@@ -247,20 +240,6 @@ func newAccState() *accState {
 		state.serialised[k] = nil
 	}
 	return state
-}
-
-func (a accState) printState() {
-	fmt.Printf("account IDs%#v\n", a.accIDs)
-	for _, id := range a.accIDs {
-		fmt.Printf("%s: %s\n", id, a.accs[id].Balance.String())
-	}
-	fmt.Println("")
-	fmt.Printf("asset IDs: %#v\n", a.assetIDs)
-	for _, id := range a.assetIDs {
-		fmt.Printf("%s: %#v\n", id, a.assets[id])
-		fmt.Printf("Details: %#v\n", *a.assets[id].Details)
-	}
-	fmt.Println("")
 }
 
 func (a *accState) enableAsset(asset types.Asset) {
