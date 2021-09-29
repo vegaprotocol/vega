@@ -43,7 +43,11 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 		return err
 	}
 
+<<<<<<< HEAD
 	vegaKey, ethAddress, walletID, err := loadNodeWalletPubKey(opts.Config, vegaPaths, pass)
+=======
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(opts.Config, vegaPaths, pass)
+>>>>>>> make genesis commands to use clef
 	if err != nil {
 		return err
 	}
