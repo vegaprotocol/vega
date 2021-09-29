@@ -167,4 +167,5 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinTokensForVoting:                      {},
 	SpamProtectionMaxDelegations:                          {},
 	SpamProtectionMinTokensForDelegation:                  {},
+	StakingAndDelegationRewardCompetitionLevel:            {},
 }
