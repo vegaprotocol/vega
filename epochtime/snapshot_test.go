@@ -31,15 +31,14 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	snapService := getEpochService(t, vt)
 
 	// Fiddle it into a payload by hand
-	snap := &snapshot.EpochState{}
+	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(data["all"], snap)
 	require.Nil(t, err)
 
-	snapService.LoadSnapshot(
-		types.PayloadEpochFromProto(
-			&snapshot.Payload_Epoch{Epoch: snap},
-		),
+	err = snapService.LoadState(
+		types.PayloadFromProto(snap),
 	)
+	require.Nil(t, err)
 
 	// Check functional equivalence by stepping forward in time/blocks
 	// Reset global used in callback so that is doesn't pick up state from another test
@@ -81,25 +80,25 @@ func TestEpochSnapshotHash(t *testing.T) {
 	vt.SetTimeNow(ctx, now)
 	h, err := service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, "e17496cd48a1d1cc0e2715e815edebb6c4e981c1a8b2f7af05351f075a823109", hex.EncodeToString(h))
+	require.Equal(t, "010bd3281c2cdc839fdd0a3bdf0877b174c47980e7c4790ba32befd802a9e1e1", hex.EncodeToString(h))
 
 	// Shuffle time along
 	vt.SetTimeNow(ctx, now.Add(time.Hour*25))
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, "4a589cef1aac4ea4162301f774909c65371fd26081d4f55fa560f58c6c7c2f29", hex.EncodeToString(h))
+	require.Equal(t, "be09d5e30666b69199c1a40f2ecb3dd6a514b33f55fdfeda25d072c67932dc45", hex.EncodeToString(h))
 
 	// Block ends
 	service.OnBlockEnd(ctx)
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, "b208a3b963b553f318abd9e80c8ce6d0e37a051fe1018e9b82a3016620c0fb21", hex.EncodeToString(h))
+	require.Equal(t, "e4bbd70ef0aaf86065c14baeeda63d4a13d9cc95e75edb0197ba7bb619683611", hex.EncodeToString(h))
 
 	// Shuffle time a bit more
 	vt.SetTimeNow(ctx, now.Add(time.Hour*50))
 	h, err = service.GetHash("")
 	require.Nil(t, err)
-	require.Equal(t, "cc94641b5ed8def9ad0ad293da2e12e1b1e4fc9de14c9343271d5de72a8c61f1", hex.EncodeToString(h))
+	require.Equal(t, "9b1cddbbd648b44569a22551b1f1e82379b6d6c664b3e01c18d0ef3edb9a197d", hex.EncodeToString(h))
 
 }
 
@@ -120,15 +119,14 @@ func TestEpochSnapshotCompare(t *testing.T) {
 	snapService := getEpochService(t, vt)
 
 	// Fiddle it into a payload by hand
-	snap := &snapshot.EpochState{}
+	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(data["all"], snap)
 	require.Nil(t, err)
 
-	snapService.LoadSnapshot(
-		types.PayloadEpochFromProto(
-			&snapshot.Payload_Epoch{Epoch: snap},
-		),
+	err = snapService.LoadState(
+		types.PayloadFromProto(snap),
 	)
+	require.Nil(t, err)
 
 	// Check that the snapshot of the snapshot is the same as the original snapshot
 	newSnapshot, err := snapService.Snapshot()
