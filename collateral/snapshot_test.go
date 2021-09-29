@@ -190,7 +190,7 @@ func testSnapshotRestore(t *testing.T) {
 			TotalSupply: num.NewUint(100000000),
 			Decimals:    5,
 			MinLpStake:  num.NewUint(1),
-			Source: types.AssetDetailsBuiltinAsset{
+			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.NewUint(100000000),
 				},
@@ -248,8 +248,6 @@ func testSnapshotRestore(t *testing.T) {
 			}
 		}
 	}
-	tmp := types.PayloadCollateralAssets{}
-	assetKey := tmp.Key()
 	keys := eng.Keys()
 	payloads := make(map[string]*types.Payload, len(keys))
 	data := make(map[string][]byte, len(keys))
@@ -279,9 +277,7 @@ func testSnapshotRestore(t *testing.T) {
 	for k, exp := range hashes {
 		got, err := newEng.GetHash(k)
 		require.NoError(t, err)
-		if k != assetKey {
-			require.EqualValues(t, exp, got)
-		}
+		require.EqualValues(t, exp, got)
 	}
 	require.NoError(t, eng.IncrementBalance(ctx, last, inc))
 	// now we expect 1 different hash
@@ -291,11 +287,9 @@ func testSnapshotRestore(t *testing.T) {
 		require.NoError(t, err)
 		reload, err := newEng.GetHash(k)
 		require.NoError(t, err)
-		if k != assetKey {
-			if !bytes.Equal(h, old) {
-				diff++
-				require.NotEqualValues(t, reload, old)
-			}
+		if !bytes.Equal(h, old) {
+			diff++
+			require.NotEqualValues(t, reload, old)
 		}
 	}
 	require.Equal(t, 1, diff)
@@ -307,8 +301,6 @@ func testSnapshotRestore(t *testing.T) {
 		require.NoError(t, err)
 		restore, err := newEng.GetHash(k)
 		require.NoError(t, err)
-		if k != assetKey {
-			require.EqualValues(t, old, restore)
-		}
+		require.EqualValues(t, old, restore)
 	}
 }

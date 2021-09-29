@@ -258,6 +258,7 @@ func (a accState) printState() {
 	fmt.Printf("asset IDs: %#v\n", a.assetIDs)
 	for _, id := range a.assetIDs {
 		fmt.Printf("%s: %#v\n", id, a.assets[id])
+		fmt.Printf("Details: %#v\n", *a.assets[id].Details)
 	}
 	fmt.Println("")
 }
