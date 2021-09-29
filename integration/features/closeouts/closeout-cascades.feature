@@ -28,7 +28,6 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | auxiliary2| ETH/DEC19 | buy  | 1000   | 1      | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | auxiliary1| ETH/DEC19 | sell | 1000   | 1000   | 0               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
 
-    Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
 
 # insurance pool generation - setup orderbook and setup position
@@ -54,8 +53,8 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
 #check positions
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | trader1 | 0      | 0              | 200          |
-      | trader2 | 0      | 0              | --4010       |
+      | trader1 | 0      | 0              | -200          |
+      | trader2 | 0      | 0              | -4010       |
       | trader3 | 0      | 0              | -50010       |
 
 
