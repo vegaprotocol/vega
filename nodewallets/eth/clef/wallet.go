@@ -15,9 +15,9 @@ import (
 const requestTimeout = time.Second * 5
 
 // TODO make decision about this
-type client interface {
-	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
-}
+// type client interface {
+// 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+// }
 
 type wallet struct {
 	client   *rpc.Client
