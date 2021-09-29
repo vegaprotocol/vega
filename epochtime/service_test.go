@@ -5,13 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/broker"
 	mbroker "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/epochtime/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -27,22 +25,6 @@ type tstSvc struct {
 	time   *mocks.MockVegaTime
 	broker *mbroker.MockBroker
 	cb     func(context.Context, time.Time)
-}
-
-func getEpochService(t *testing.T, vt *vegatime.Svc) *epochtime.Svc {
-	ctx := context.Background()
-	log := logging.NewTestLogger()
-	broker, err := broker.New(ctx, log, broker.NewDefaultConfig())
-	assert.NoError(t, err)
-
-	et := epochtime.NewService(
-		log,
-		epochtime.NewDefaultConfig(),
-		vt,
-		broker,
-	)
-	_ = et.OnEpochLengthUpdate(ctx, time.Hour*24) // set default epoch duration
-	return et
 }
 
 func getEpochServiceMT(t *testing.T) *tstSvc {
@@ -78,18 +60,18 @@ func TestEpochService(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
 	ctx := context.Background()
-	// @TODO get rid of this
-	ft := vegatime.New(vegatime.NewDefaultConfig())
-	es := getEpochService(t, ft)
-	assert.NotNil(t, es)
+	service := getEpochServiceMT(t)
+	defer service.ctrl.Finish()
+
+	service.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	// Subscribe to epoch updates
 	// Reset global used in callback so that is doesn't pick up state from another test
 	epochs = []types.Epoch{}
-	es.NotifyOnEpoch(onEpoch)
+	service.NotifyOnEpoch(onEpoch)
 
 	// Move time forward to generate first epoch
-	ft.SetTimeNow(ctx, now)
+	service.cb(ctx, now)
 	// Check we only have one epoch update
 	assert.Equal(t, 1, len(epochs))
 	epoch := epochs[0]
@@ -105,13 +87,13 @@ func TestEpochService(t *testing.T) {
 
 	// Move time forward one day + one second to start the first block past the expiry of the first epoch
 	now = now.Add((time.Hour * 24) + time.Second)
-	ft.SetTimeNow(ctx, now)
+	service.cb(ctx, now)
 
 	// end the block to mark the end of the epoch
-	es.OnBlockEnd(ctx)
+	service.OnBlockEnd(ctx)
 
 	// start the next block to start the second epoch
-	ft.SetTimeNow(ctx, now)
+	service.cb(ctx, now)
 
 	// We should have 2 new updates, one for end of epoch and one for the beginning of the new one
 	assert.Equal(t, 3, len(epochs))

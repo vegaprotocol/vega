@@ -8,7 +8,6 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
@@ -116,17 +115,20 @@ func TestEpochSnapshotCompare(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
 	ctx := context.Background()
-	vt := vegatime.New(vegatime.NewDefaultConfig())
-	service := getEpochService(t, vt)
+	service := getEpochServiceMT(t)
+	defer service.ctrl.Finish()
+
+	service.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	// Force creation of first epoch to trigger a snapshot of the first epoch
-	vt.SetTimeNow(ctx, now)
+	service.cb(ctx, now)
 
 	data, err := service.Snapshot()
 	require.Nil(t, err)
 	require.Equal(t, 1, len(data)) //should be one "chunk"
 
-	snapService := getEpochService(t, vt)
+	snapService := getEpochServiceMT(t)
+	defer snapService.ctrl.Finish()
 
 	// Fiddle it into a payload by hand
 	snap := &snapshot.Payload{}
