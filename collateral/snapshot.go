@@ -2,10 +2,12 @@ package collateral
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strings"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -156,46 +158,67 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (e *Engine) LoadState(p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
 	if e.Namespace() != p.Data.Namespace() {
 		return ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadCollateralAssets:
-		return e.restoreAssets(pl.CollateralAssets)
+		return e.restoreAssets(ctx, pl.CollateralAssets)
 	case *types.PayloadCollateralAccounts:
-		return e.restoreAccounts(pl.CollateralAccounts)
+		return e.restoreAccounts(ctx, pl.CollateralAccounts)
 	default:
 		return ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreAccounts(accs *types.CollateralAccounts) error {
+func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAccounts) error {
 	e.accs = make(map[string]*types.Account, len(accs.Accounts))
 	e.partiesAccs = map[string]map[string]*types.Account{}
+	evts := make([]events.Event, 0, len(accs.Accounts))
+	e.state.accIDs = make([]string, 0, len(accs.Accounts))
+	e.state.accs = make(map[string]*types.Account, len(accs.Accounts))
 	for _, acc := range accs.Accounts {
 		e.accs[acc.ID] = acc
 		if _, ok := e.partiesAccs[acc.Owner]; !ok {
 			e.partiesAccs[acc.Owner] = map[string]*types.Account{}
 		}
 		e.partiesAccs[acc.Owner][acc.ID] = acc
-		e.addAccountToHashableSlice(acc)
+		if acc.Type != types.AccountTypeExternal {
+			e.addAccountToHashableSlice(acc)
+		}
+		evts = append(evts, events.NewAccountEvent(ctx, *acc))
 	}
+	e.state.add(accs.Accounts...)
+	e.broker.SendBatch(evts)
 	return nil
 }
 
-func (e *Engine) restoreAssets(assets *types.CollateralAssets) error {
+func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAssets) error {
 	// @TODO the ID and name might not be the same, perhaps we need
 	// to wrap the asset details to preserve that data
+	evts := make([]events.Event, 0, len(assets.Assets))
 	e.enabledAssets = make(map[string]types.Asset, len(assets.Assets))
+	e.state.assetIDs = make([]string, 0, len(assets.Assets))
+	e.state.assets = make(map[string]types.Asset, len(assets.Assets))
 	for _, ad := range assets.Assets {
-		e.enabledAssets[ad.Name] = types.Asset{
+		ast := types.Asset{
 			ID:      ad.Name,
 			Details: ad,
 		}
+		e.enabledAssets[ad.Name] = ast
+		evts = append(evts, events.NewAssetEvent(ctx, ast))
+		e.state.enableAsset(ast)
 	}
+	e.broker.SendBatch(evts)
 	return nil
+}
+
+func (e *Engine) PrintSnapstate(name string) {
+	fmt.Printf("Engine designation: %s\n", name)
+	e.state.printState()
+	fmt.Println("")
 }
 
 func newAccState() *accState {
@@ -206,10 +229,13 @@ func newAccState() *accState {
 		assPL: types.PayloadCollateralAssets{
 			CollateralAssets: &types.CollateralAssets{},
 		},
-		accs:     map[string]*types.Account{},
-		assets:   map[string]types.Asset{},
-		accIDs:   []string{},
-		assetIDs: []string{},
+		accs:       map[string]*types.Account{},
+		assets:     map[string]types.Asset{},
+		accIDs:     []string{},
+		assetIDs:   []string{},
+		hashes:     map[string][]byte{},
+		updates:    map[string]bool{},
+		serialised: map[string][]byte{},
 	}
 	state.hashKeys = []string{
 		state.accPL.Key(),
@@ -221,6 +247,19 @@ func newAccState() *accState {
 		state.serialised[k] = nil
 	}
 	return state
+}
+
+func (a accState) printState() {
+	fmt.Printf("account IDs%#v\n", a.accIDs)
+	for _, id := range a.accIDs {
+		fmt.Printf("%s: %s\n", id, a.accs[id].Balance.String())
+	}
+	fmt.Println("")
+	fmt.Printf("asset IDs: %#v\n", a.assetIDs)
+	for _, id := range a.assetIDs {
+		fmt.Printf("%s: %#v\n", id, a.assets[id])
+	}
+	fmt.Println("")
 }
 
 func (a *accState) enableAsset(asset types.Asset) {
