@@ -182,6 +182,11 @@ func testSnapshotConsistentHash(t *testing.T) {
 func testSnapshotRestore(t *testing.T) {
 	mkt := "market1"
 	ctx := context.Background()
+	erc20 := types.AssetDetailsErc20{
+		Erc20: &types.ERC20{
+			ContractAddress: "nowhere",
+		},
+	}
 	asset := types.Asset{
 		ID: "foo",
 		Details: &types.AssetDetails{
@@ -190,11 +195,7 @@ func testSnapshotRestore(t *testing.T) {
 			TotalSupply: num.NewUint(100000000),
 			Decimals:    5,
 			MinLpStake:  num.NewUint(1),
-			Source: &types.AssetDetailsBuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{
-					MaxFaucetAmountMint: num.NewUint(100000000),
-				},
-			},
+			Source:      erc20,
 		},
 	}
 	eng := getTestEngine(t, mkt)
@@ -272,8 +273,8 @@ func testSnapshotRestore(t *testing.T) {
 		payloads[k] = types.PayloadFromProto(ptype)
 		require.NoError(t, newEng.LoadState(ctx, payloads[k]))
 	}
-	eng.PrintSnapstate("old")
-	newEng.PrintSnapstate("new")
+	// eng.PrintSnapstate("old")
+	// newEng.PrintSnapstate("new")
 	for k, exp := range hashes {
 		got, err := newEng.GetHash(k)
 		require.NoError(t, err)
