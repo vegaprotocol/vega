@@ -97,7 +97,7 @@ type Engine struct {
 	compLevel            num.Decimal                                   // competition level
 	autoDelegationMode   map[string]struct{}                           // parties entered auto-delegation mode
 	dss                  *delegationSnapshotState
-	keyToSnapshotHandler map[string]func() ([]byte, []byte, error)
+	keyToSerialiser      map[string]func() ([]byte, error)
 }
 
 //New instantiate a new delegation engine
@@ -113,13 +113,17 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		partyDelegationState: map[string]*partyDelegation{},
 		pendingState:         map[uint64]map[string]*pendingPartyDelegation{},
 		autoDelegationMode:   map[string]struct{}{},
-		dss:                  &delegationSnapshotState{},
-		keyToSnapshotHandler: map[string]func() ([]byte, []byte, error){},
+		dss: &delegationSnapshotState{
+			changed:    map[string]bool{},
+			hash:       map[string][]byte{},
+			serialised: map[string][]byte{},
+		},
+		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
 
-	e.keyToSnapshotHandler["active"] = e.updateActiveAndGet
-	e.keyToSnapshotHandler["pending"] = e.updatePendingAndGet
-	e.keyToSnapshotHandler["auto"] = e.updateAutoAndGet
+	e.keyToSerialiser["active"] = e.serialiseActive
+	e.keyToSerialiser["pending"] = e.serialisePending
+	e.keyToSerialiser["auto"] = e.serialiseAuto
 
 	// register for epoch notifications
 	epochEngine.NotifyOnEpoch(e.onEpochEvent)
@@ -227,7 +231,7 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 			if balance, err := e.stakingAccounts.GetAvailableBalance(p); err == nil {
 				if state.totalDelegated.ToDecimal().Div(balance.ToDecimal()).GreaterThanOrEqual(minRatioForAutoDelegation) {
 					e.autoDelegationMode[p] = struct{}{}
-					e.dss.autoChanged = true
+					e.dss.changed["auto"] = true
 				}
 			}
 
@@ -235,8 +239,8 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 	}
 
 	// once in an epoch set changed to true
-	e.dss.activeChanged = true
-	e.dss.pendingChanged = true
+	e.dss.changed["active"] = true
+	e.dss.changed["pending"] = true
 	return stateForRewards
 }
 
@@ -360,7 +364,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	}
 
 	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
-	e.dss.pendingChanged = true
+	e.dss.changed["pending"] = true
 	return nil
 }
 
@@ -478,7 +482,7 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 	}
 
 	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
-	e.dss.pendingChanged = true
+	e.dss.changed["pending"] = true
 	return nil
 }
 
@@ -575,9 +579,9 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 
 	// get out of auto delegation mode
 	delete(e.autoDelegationMode, party)
-	e.dss.autoChanged = true
-	e.dss.activeChanged = true
-	e.dss.pendingChanged = true
+	e.dss.changed["auto"] = true
+	e.dss.changed["active"] = true
+	e.dss.changed["pending"] = true
 	return nil
 }
 
