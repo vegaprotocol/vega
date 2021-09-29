@@ -9,11 +9,13 @@ import (
 	"testing"
 	"time"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -105,6 +107,144 @@ func Test(t *testing.T) {
 	t.Run("sorting consistently pending delegations for checkpoint", testSortPending)
 	t.Run("test roundtrip of checkpoint calculation with no pending delegations", testCheckpointRoundtripNoPending)
 	t.Run("test roundtrip of checkpoint calculation with no active delegations", testCheckpointRoundtripOnlyPending)
+
+	// test snapshots
+	t.Run("test roundtrip snapshot for active delegations", testActiveSnapshotRoundTrip)
+	t.Run("test roundtrip snapshot for pending delegations", testPendingSnapshotRoundTrip)
+	t.Run("test roundtrip snapshot for auto delegations", testAutoSnapshotRoundTrip)
+
+}
+
+// test round trip of active snapshot hash and serialisation
+func testActiveSnapshotRoundTrip(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 14, 7)
+
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
+
+	// get the has and serialised state
+	hash, err := testEngine.engine.GetHash(activeKey)
+	require.Nil(t, err)
+	state, err := testEngine.engine.GetState(activeKey)
+	require.Nil(t, err)
+
+	// verify hash is consistent in the absence of change
+	hashNoChange, err := testEngine.engine.GetHash(activeKey)
+	require.Nil(t, err)
+	stateNoChange, err := testEngine.engine.GetState(activeKey)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// reload the state
+	var active snapshot.DelegationActive
+	proto.Unmarshal(state, &active)
+
+	payload := &types.Payload{
+		Data: &types.PayloadDelegationActive{
+			DelegationActive: types.DelegationActiveFromProto(&active),
+		},
+	}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.engine.LoadState(context.Background(), payload)
+
+	// verify hash and state match
+
+	hashPostReload, _ := testEngine.engine.GetHash(activeKey)
+	require.True(t, bytes.Equal(hash, hashPostReload))
+	statePostReload, _ := testEngine.engine.GetState(activeKey)
+	require.True(t, bytes.Equal(state, statePostReload))
+}
+
+// test round trip of pending snapshot hash and serialisation
+func testPendingSnapshotRoundTrip(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 20, 7)
+
+	// setup pending delegations
+	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(2))
+	testEngine.engine.Delegate(context.Background(), "party1", "node2", num.NewUint(3))
+	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(1))
+
+	// get the has and serialised state
+	hash, err := testEngine.engine.GetHash(pendingKey)
+	require.Nil(t, err)
+	state, err := testEngine.engine.GetState(pendingKey)
+	require.Nil(t, err)
+
+	// verify hash is consistent in the absence of change
+	hashNoChange, err := testEngine.engine.GetHash(pendingKey)
+	require.Nil(t, err)
+	stateNoChange, err := testEngine.engine.GetState(pendingKey)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// reload the state
+	var pending snapshot.DelegationPending
+	proto.Unmarshal(state, &pending)
+
+	payload := &types.Payload{
+		Data: &types.PayloadDelegationPending{
+			DelegationPending: types.DelegationPendingFromProto(&pending),
+		},
+	}
+
+	err = testEngine.engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	hashPostReload, _ := testEngine.engine.GetHash(pendingKey)
+	require.True(t, bytes.Equal(hash, hashPostReload))
+	statePostReload, _ := testEngine.engine.GetState(pendingKey)
+	require.True(t, bytes.Equal(state, statePostReload))
+}
+
+// test round trip of auto snapshot hash and serialisation
+func testAutoSnapshotRoundTrip(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 10, 5)
+
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
+
+	// by now, auto delegation should be set for both party1 and party2 as all of their association is nominated
+	hash, err := testEngine.engine.GetHash(autoKey)
+	require.Nil(t, err)
+	state, err := testEngine.engine.GetState(autoKey)
+	require.Nil(t, err)
+
+	// verify hash is consistent in the absence of change
+	hashNoChange, err := testEngine.engine.GetHash(autoKey)
+	require.Nil(t, err)
+	stateNoChange, err := testEngine.engine.GetState(autoKey)
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// undelegate now to get out of auto for party1 to verify hash changed
+	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
+	hashPostUndelegate, err := testEngine.engine.GetHash(autoKey)
+	require.Nil(t, err)
+	statePostUndelegate, err := testEngine.engine.GetState(autoKey)
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(hash, hashPostUndelegate))
+	require.False(t, bytes.Equal(state, statePostUndelegate))
+
+	// reload the state
+	var auto snapshot.DelegationAuto
+	proto.Unmarshal(statePostUndelegate, &auto)
+
+	payload := &types.Payload{
+		Data: &types.PayloadDelegationAuto{
+			DelegationAuto: types.DelegationAutoFromProto(&auto),
+		},
+	}
+
+	testEngine.engine.LoadState(context.Background(), payload)
+	hashPostReload, _ := testEngine.engine.GetHash(autoKey)
+	require.True(t, bytes.Equal(hashPostUndelegate, hashPostReload))
+	statePostReload, _ := testEngine.engine.GetState(autoKey)
+	require.True(t, bytes.Equal(statePostUndelegate, statePostReload))
 }
 
 // pass an invalid node id
