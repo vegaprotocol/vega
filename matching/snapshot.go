@@ -9,22 +9,18 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-const (
-	MatchingSnapshot = "matching engine"
-)
-
 func (ob *OrderBook) Keys() []string {
-	return []string{MatchingSnapshot}
+	return []string{ob.snapshot.Key()}
 }
 
 func (ob *OrderBook) Snapshot() (map[string][]byte, error) {
-	data, err := ob.GetState(MatchingSnapshot)
+	data, err := ob.GetState(ob.snapshot.Key())
 	if err != nil {
 		return nil, err
 	}
 
 	snapshot := map[string][]byte{}
-	snapshot[MatchingSnapshot] = data
+	snapshot[ob.snapshot.Key()] = data
 	return snapshot, nil
 }
 
@@ -34,7 +30,7 @@ func (ob OrderBook) Namespace() types.SnapshotNamespace {
 }
 
 func (ob *OrderBook) GetHash(key string) ([]byte, error) {
-	if key != MatchingSnapshot {
+	if key != ob.snapshot.Key() {
 		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
 	}
 
@@ -47,7 +43,7 @@ func (ob *OrderBook) GetHash(key string) ([]byte, error) {
 }
 
 func (ob *OrderBook) GetState(key string) ([]byte, error) {
-	if key != MatchingSnapshot {
+	if key != ob.snapshot.Key() {
 		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
 	}
 
