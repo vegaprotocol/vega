@@ -120,6 +120,8 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	testEngine := getEngine(t)
 	setupDefaultDelegationState(testEngine, 14, 7)
 
+	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
+
 	// get the has and serialised state
 	hash, err := testEngine.engine.GetHash("active")
 	require.Nil(t, err)
@@ -144,10 +146,11 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 			DelegationActive: types.DelegationActiveFromProto(&active),
 		},
 	}
-
-	testEngine.engine.LoadState(payload)
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.engine.LoadState(context.Background(), payload)
 
 	// verify hash and state match
+
 	hashPostReload, err := testEngine.engine.GetHash("active")
 	require.True(t, bytes.Equal(hash, hashPostReload))
 	statePostReload, err := testEngine.engine.GetState("active")
@@ -189,7 +192,7 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 		},
 	}
 
-	err = testEngine.engine.LoadState(payload)
+	err = testEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, err := testEngine.engine.GetHash("pending")
 	require.True(t, bytes.Equal(hash, hashPostReload))
@@ -237,7 +240,7 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 		},
 	}
 
-	testEngine.engine.LoadState(payload)
+	testEngine.engine.LoadState(context.Background(), payload)
 	hashPostReload, err := testEngine.engine.GetHash("auto")
 	require.True(t, bytes.Equal(hashPostUndelegate, hashPostReload))
 	statePostReload, err := testEngine.engine.GetState("auto")

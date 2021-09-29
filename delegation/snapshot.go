@@ -1,6 +1,7 @@
 package delegation
 
 import (
+	"context"
 	"errors"
 	"strconv"
 
@@ -150,16 +151,16 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (e *Engine) LoadState(p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
 	if e.Namespace() != p.Data.Namespace() {
 		return ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadDelegationActive:
-		return e.restoreActive(pl.DelegationActive)
+		return e.restoreActive(ctx, pl.DelegationActive)
 	case *types.PayloadDelegationPending:
-		return e.restorePending(pl.DelegationPending)
+		return e.restorePending(ctx, pl.DelegationPending)
 	case *types.PayloadDelegationAuto:
 		return e.restoreAuto(pl.DelegationAuto)
 	default:
@@ -167,7 +168,7 @@ func (e *Engine) LoadState(p *types.Payload) error {
 	}
 }
 
-func (e *Engine) restoreActive(delegations *types.DelegationActive) error {
+func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive) error {
 	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations))
 	for _, d := range delegations.Delegations {
 		epoch, _ := strconv.ParseUint(d.EpochSeq, 10, 64)
@@ -178,13 +179,13 @@ func (e *Engine) restoreActive(delegations *types.DelegationActive) error {
 			EpochSeq: epoch,
 		})
 	}
-	e.setActive(entries)
+	e.setActive(ctx, entries)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
 	e.dss.activeChanged = true
 	return nil
 }
 
-func (e *Engine) restorePending(delegations *types.DelegationPending) error {
+func (e *Engine) restorePending(ctx context.Context, delegations *types.DelegationPending) error {
 	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations)+len(delegations.Undelegation))
 	for _, d := range delegations.Delegations {
 		epoch, _ := strconv.ParseUint(d.EpochSeq, 10, 64)
@@ -206,7 +207,7 @@ func (e *Engine) restorePending(delegations *types.DelegationPending) error {
 		})
 	}
 	e.sortPending(entries)
-	e.setPending(entries)
+	e.setPending(ctx, entries)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
 	e.dss.pendingChanged = true
 	return nil
