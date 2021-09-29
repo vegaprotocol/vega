@@ -40,6 +40,7 @@ type Svc struct {
 	hash  []byte
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/epochtime VegaTime
 type VegaTime interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }

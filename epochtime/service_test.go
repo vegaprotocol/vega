@@ -6,10 +6,14 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/broker"
+	mbroker "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/epochtime"
+	"code.vegaprotocol.io/vega/epochtime/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,21 +21,15 @@ var (
 	epochs []types.Epoch
 )
 
-type FakeTime struct {
-	listeners []func(context.Context, time.Time)
+type tstSvc struct {
+	*epochtime.Svc
+	ctrl   *gomock.Controller
+	time   *mocks.MockVegaTime
+	broker *mbroker.MockBroker
+	cb     func(context.Context, time.Time)
 }
 
-func (ft *FakeTime) NotifyOnTick(f func(context.Context, time.Time)) {
-	ft.listeners = append(ft.listeners, f)
-}
-
-func (ft *FakeTime) SetTimeNow(ctx context.Context, t time.Time) {
-	for _, f := range ft.listeners {
-		f(ctx, t)
-	}
-}
-
-func getEpochService(t *testing.T, vt epochtime.VegaTime) *epochtime.Svc {
+func getEpochService(t *testing.T, vt *vegatime.Svc) *epochtime.Svc {
 	ctx := context.Background()
 	log := logging.NewTestLogger()
 	broker, err := broker.New(ctx, log, broker.NewDefaultConfig())
@@ -47,6 +45,31 @@ func getEpochService(t *testing.T, vt epochtime.VegaTime) *epochtime.Svc {
 	return et
 }
 
+func getEpochServiceMT(t *testing.T) *tstSvc {
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	tm := mocks.NewMockVegaTime(ctrl)
+	broker := mbroker.NewMockBroker(ctrl)
+	ret := &tstSvc{
+		ctrl:   ctrl,
+		time:   tm,
+		broker: broker,
+	}
+
+	tm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
+		ret.cb = cb
+	})
+
+	ret.Svc = epochtime.NewService(
+		log,
+		epochtime.NewDefaultConfig(),
+		tm,
+		broker,
+	)
+	_ = ret.OnEpochLengthUpdate(context.Background(), time.Hour*24) // set default epoch duration
+	return ret
+}
+
 func onEpoch(ctx context.Context, e types.Epoch) {
 	epochs = append(epochs, e)
 }
@@ -55,8 +78,9 @@ func TestEpochService(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
 	ctx := context.Background()
-	ft := FakeTime{}
-	es := getEpochService(t, &ft)
+	// @TODO get rid of this
+	ft := vegatime.New(vegatime.NewDefaultConfig())
+	es := getEpochService(t, ft)
 	assert.NotNil(t, es)
 
 	// Subscribe to epoch updates
