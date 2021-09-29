@@ -13,14 +13,14 @@ func (ob *OrderBook) Keys() []string {
 	return []string{ob.snapshot.Key()}
 }
 
-func (ob *OrderBook) Snapshot() (map[string][]byte, error) {
-	data, err := ob.GetState(ob.snapshot.Key())
+func (ob *OrderBook) Snapshot() (map[string]*types.Payload, error) {
+	payload, err := ob.GetState(ob.snapshot.Key())
 	if err != nil {
 		return nil, err
 	}
 
-	snapshot := map[string][]byte{}
-	snapshot[ob.snapshot.Key()] = data
+	snapshot := map[string]*types.Payload{}
+	snapshot[ob.snapshot.Key()] = payload
 	return snapshot, nil
 }
 
@@ -34,21 +34,10 @@ func (ob *OrderBook) GetHash(key string) ([]byte, error) {
 		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
 	}
 
-	b, e := ob.GetState(key)
+	payload, e := ob.GetState(key)
 	if e != nil {
 		return nil, e
 	}
-	h := crypto.Hash(b)
-	return h, nil
-}
-
-func (ob *OrderBook) GetState(key string) ([]byte, error) {
-	if key != ob.snapshot.Key() {
-		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
-	}
-
-	// Copy all the state into a domain object
-	payload := ob.buildPayload()
 
 	// Convert the domain object into a protobuf payload message
 	p := payload.IntoProto()
@@ -57,7 +46,20 @@ func (ob *OrderBook) GetState(key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+
+	h := crypto.Hash(data)
+	return h, nil
+}
+
+func (ob *OrderBook) GetState(key string) (*types.Payload, error) {
+	if key != ob.snapshot.Key() {
+		return nil, fmt.Errorf("Unknown key for matching engine: %s", key)
+	}
+
+	// Copy all the state into a domain object
+	payload := ob.buildPayload()
+
+	return payload, nil
 }
 
 func (ob *OrderBook) buildPayload() *types.Payload {
