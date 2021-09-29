@@ -988,8 +988,8 @@ func (p *PayloadMatchingBook) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadMatchingBook) Key() string {
-	return "all"
+func (p *PayloadMatchingBook) Key() string {
+	return p.MatchingBook.MarketID
 }
 
 func (*PayloadMatchingBook) Namespace() SnapshotNamespace {
