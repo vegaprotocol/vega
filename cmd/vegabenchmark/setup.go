@@ -88,7 +88,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	if _, err := nodewallet.GenerateVegaWallet(vegaPaths, pass, pass, false); err != nil {
 		return nil, nil, err
 	}
-	nw, err := nodewallet.GetNodeWallets(vegaPaths, pass)
+	nw, err := nodewallet.GetNodeWallets(config, vegaPaths, pass)
 	if err != nil {
 		return nil, nil, err
 	}

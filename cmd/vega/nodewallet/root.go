@@ -4,9 +4,15 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 
+	"github.com/fatih/color"
 	"github.com/jessevdk/go-flags"
+)
+
+var (
+	yellow = color.New(color.FgYellow).SprintFunc()
+	green  = color.New(color.FgGreen).SprintFunc()
 )
 
 type RootCmd struct {

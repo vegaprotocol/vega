@@ -26,6 +26,10 @@ func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphr
 		return nil, ErrEthereumWalletIsMissing
 	}
 
+	return getEthereumWalletWithRegistry(config, vegaPaths, registry)
+}
+
+func getEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, registry *Registry) (*eth.Wallet, error) {
 	switch walletRegistry := registry.Ethereum.Details.(type) {
 	case EthereumClefWallet:
 		ethAddress := ethcommon.HexToAddress(walletRegistry.AccountAddress)
@@ -76,7 +80,7 @@ func GenerateEthereumWallet(
 
 	var data map[string]string
 
-	if config.ClefEnabled {
+	if config.ClefAddress != "" {
 		w, err := clef.GenerateNewWallet(config.ClefAddress)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate Ethereum clef node wallet: %w", err)
@@ -150,7 +154,7 @@ func ImportEthereumWallet(
 
 	var data map[string]string
 
-	if config.ClefEnabled {
+	if config.ClefAddress != "" {
 		if !ethcommon.IsHexAddress(accountAddress) {
 			return nil, fmt.Errorf("invalid Ethereum hex address %q", accountAddress)
 		}

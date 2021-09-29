@@ -44,8 +44,9 @@ func testHandlerGettingNodeWalletsSucceeds(t *testing.T) {
 	// setup
 	createTestNodeWallets(vegaPaths, registryPass, walletsPass)
 
+	config := nodewallet.NewDefaultConfig()
 	// when
-	nw, err := nodewallet.GetNodeWallets(vegaPaths, registryPass)
+	nw, err := nodewallet.GetNodeWallets(config, vegaPaths, registryPass)
 
 	// assert
 	require.NoError(t, err)
@@ -65,8 +66,9 @@ func testHandlerGettingNodeWalletsWithWrongRegistryPassphraseFails(t *testing.T)
 	// setup
 	createTestNodeWallets(vegaPaths, registryPass, walletsPass)
 
+	config := nodewallet.NewDefaultConfig()
 	// when
-	nw, err := nodewallet.GetNodeWallets(vegaPaths, wrongRegistryPass)
+	nw, err := nodewallet.GetNodeWallets(config, vegaPaths, wrongRegistryPass)
 
 	// assert
 	require.Error(t, err)

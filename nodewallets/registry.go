@@ -1,6 +1,7 @@
 package nodewallet
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -47,6 +48,40 @@ func (e EthereumClefWallet) ETHWallet() {}
 type RegisteredEthereumWallet struct {
 	Type    ethereumWalletType `json:"type"`
 	Details ethereumWallet     `json:"details"`
+}
+
+func (rw *RegisteredEthereumWallet) UnmarshalJSON(data []byte) error {
+	input := struct {
+		Type    string          `json:"type"`
+		Details json.RawMessage `json:"details"`
+	}{}
+
+	if err := json.Unmarshal(data, &input); err != nil {
+		return nil
+	}
+
+	rw.Type = ethereumWalletType(input.Type)
+
+	switch rw.Type {
+	case ethereumWalletTypeKeyStore:
+		var keyStore EthereumKeyStoreWallet
+		if err := json.Unmarshal(input.Details, &keyStore); err != nil {
+			return err
+		}
+
+		rw.Details = keyStore
+	case ethereumWalletTypeClef:
+		var clef EthereumClefWallet
+		if err := json.Unmarshal(input.Details, &clef); err != nil {
+			return err
+		}
+
+		rw.Details = clef
+	default:
+		return fmt.Errorf("unknown Ethereum wallet type %s", rw.Type)
+	}
+
+	return nil
 }
 
 type RegisteredVegaWallet struct {

@@ -8,7 +8,6 @@ import (
 type Config struct {
 	Level       encoding.LogLevel `long:"log-level"`
 	Address     string            `long:"address"`
-	ClefEnabled encoding.Bool     `long:"clef-enabled"`
 	ClefAddress string            `long:"clef-address"`
 }
 

@@ -56,15 +56,19 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
+	fmt.Println(opts.Config.ETH.ClefAddress)
+
 	var data map[string]string
 	switch opts.Chain {
 	case ethereumChain:
 		var walletPass string
-		if !opts.Config.ETH.ClefEnabled {
+		if opts.Config.ETH.ClefAddress == "" {
 			walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
 			if err != nil {
 				return err
 			}
+		} else {
+			fmt.Println(yellow("Warning: Generating a new account in Clef has to be manually approved, and only the Key Store backend is supported. \nPlease consider using the 'import' command instead."))
 		}
 
 		data, err = nodewallet.GenerateEthereumWallet(
@@ -92,7 +96,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	if output.IsHuman() {
-		fmt.Println("generation successful:")
+		fmt.Println(green("generation successful:"))
 		vgfmt.PrettyPrint(data)
 	} else if output.IsJSON() {
 		if err := vgjson.Print(data); err != nil {

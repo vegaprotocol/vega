@@ -27,7 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/netparams/checks"
 	"code.vegaprotocol.io/vega/netparams/dispatch"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
@@ -104,7 +104,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
-	l.nodeWallets, err = nodewallet.GetNodeWallets(l.vegaPaths, l.nodeWalletPassphrase)
+	l.nodeWallets, err = nodewallet.GetNodeWallets(l.conf.NodeWallet, l.vegaPaths, l.nodeWalletPassphrase)
 	if err != nil {
 		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}

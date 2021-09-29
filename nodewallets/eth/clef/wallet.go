@@ -57,6 +57,8 @@ func NewWallet(endpoint string, accountAddr ethcommon.Address) (*wallet, error) 
 	return w, nil
 }
 
+// GenerateNewWallet new wallet will create new account in Clef and returns wallet.
+// Caveat: generating new wallet in Clef has to be manually approved and only key store backend is supported.
 func GenerateNewWallet(endpoint string) (*wallet, error) {
 	client, err := rpc.Dial(endpoint)
 	if err != nil {
@@ -80,7 +82,8 @@ func GenerateNewWallet(endpoint string) (*wallet, error) {
 }
 
 func (w *wallet) generateAccount() (*accounts.Account, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	// increase timeout here as generating new account has to be manually approved in Clef
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout*20)
 	defer cancel()
 
 	var res string

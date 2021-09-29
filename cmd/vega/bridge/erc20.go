@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/jessevdk/go-flags"
 )
 
 type ERC20Cmd struct {
@@ -62,6 +63,10 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 
 	opts.Config = conf.NodeWallet
 
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
 	w, err := nodewallet.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
 	if err != nil {
 		return fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
@@ -105,6 +110,10 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 	}
 
 	opts.Config = conf.NodeWallet
+
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
 
 	w, err := nodewallet.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
 	if err != nil {
@@ -153,6 +162,10 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 	}
 
 	opts.Config = conf.NodeWallet
+
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
 
 	w, err := nodewallet.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
 	if err != nil {

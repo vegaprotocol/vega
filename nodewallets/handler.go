@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/nodewallets/eth"
-	"code.vegaprotocol.io/vega/nodewallets/eth/keystore"
 	"code.vegaprotocol.io/vega/nodewallets/vega"
 )
 
@@ -44,7 +42,7 @@ func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wall
 	return wallet, nil
 }
 
-func GetNodeWallets(vegaPaths paths.Paths, registryPassphrase string) (*NodeWallets, error) {
+func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase string) (*NodeWallets, error) {
 	nodeWallets := &NodeWallets{}
 
 	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
@@ -58,20 +56,12 @@ func GetNodeWallets(vegaPaths paths.Paths, registryPassphrase string) (*NodeWall
 	}
 
 	if registry.Ethereum != nil {
-		ethWalletLoader, err := keystore.InitialiseWalletLoader(vegaPaths)
+		w, err := getEthereumWalletWithRegistry(config.ETH, vegaPaths, registry)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't initialise Ethereum node wallet loader: %w", err)
+			return nil, err
 		}
 
-		switch ethereumRegistry := registry.Ethereum.Details.(type) {
-		case EthereumKeyStoreWallet:
-			w, err := ethWalletLoader.Load(ethereumRegistry.Name, ethereumRegistry.Passphrase)
-			if err != nil {
-				return nil, fmt.Errorf("couldn't load Ethereum node wallet: %w", err)
-			}
-
-			nodeWallets.Ethereum = eth.NewWallet(w)
-		}
+		nodeWallets.Ethereum = w
 	}
 
 	if registry.Vega != nil {

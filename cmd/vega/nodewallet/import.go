@@ -18,8 +18,8 @@ type importCmd struct {
 
 	Config nodewallet.Config
 
-	WalletPassphrase config.Passphrase   `long:"wallet-passphrase-file"`
-	AccountAddress   config.PromptString `long:"account-address" description:"The Ethereum account address to be imported by Vega from Clef. In hex."`
+	WalletPassphrase   config.Passphrase   `long:"wallet-passphrase-file"`
+	ClefAccountAddress config.PromptString `long:"clef-account-address" description:"The Ethereum account address to be imported by Vega from Clef. In hex."`
 
 	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
 	WalletPath config.PromptString `long:"wallet-path" description:"The path to the wallet file to import"`
@@ -53,8 +53,10 @@ func (opts *importCmd) Execute(_ []string) error {
 		return err
 	}
 
+	clefEnabled := opts.Config.ETH.ClefAddress != ""
+
 	var walletPass, walletPath string
-	if opts.Chain == vegaChain || (opts.Chain == ethereumChain && !opts.Config.ETH.ClefEnabled) {
+	if opts.Chain == vegaChain || (opts.Chain == ethereumChain && !clefEnabled) {
 		walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
 		if err != nil {
 			return err
@@ -69,15 +71,15 @@ func (opts *importCmd) Execute(_ []string) error {
 	switch opts.Chain {
 	case ethereumChain:
 		var accountAddress string
-		if opts.Config.ETH.ClefEnabled {
-			accountAddress, err = opts.AccountAddress.Get("Clef account address", "account-address")
+		if clefEnabled {
+			accountAddress, err = opts.ClefAccountAddress.Get("Clef account address", "clef-account-address")
 			if err != nil {
 				return err
 			}
 		}
 
 		data, err = nodewallet.ImportEthereumWallet(
-			conf.NodeWallet.ETH,
+			opts.Config.ETH,
 			vegaPaths,
 			registryPass,
 			walletPass,
@@ -96,7 +98,7 @@ func (opts *importCmd) Execute(_ []string) error {
 	}
 
 	if output.IsHuman() {
-		fmt.Println("import successful:")
+		fmt.Println(green("import successful:"))
 		vgfmt.PrettyPrint(data)
 	} else if output.IsJSON() {
 		if err := vgjson.Print(data); err != nil {
