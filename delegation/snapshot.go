@@ -12,9 +12,9 @@ import (
 
 var (
 	hashKeys = []string{
-		"active",
-		"pending",
-		"auto",
+		activeKey,
+		pendingKey,
+		autoKey,
 	}
 
 	ErrSnapshotKeyDoesNotExist  = errors.New("unknown key for delegation snapshot")
@@ -48,7 +48,14 @@ func (e *Engine) serialiseActive() ([]byte, error) {
 		})
 	}
 
-	return proto.Marshal(types.DelegationActive{Delegations: delegations}.IntoProto())
+	payload := types.Payload{
+		Data: &types.PayloadDelegationActive{
+			DelegationActive: &types.DelegationActive{
+				Delegations: delegations,
+			},
+		},
+	}
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialisePending() ([]byte, error) {
@@ -68,13 +75,26 @@ func (e *Engine) serialisePending() ([]byte, error) {
 			pendingDelegations = append(pendingDelegations, entry)
 		}
 	}
-	return proto.Marshal(types.DelegationPending{Delegations: pendingDelegations, Undelegation: pendingUndelegations}.IntoProto())
+	payload := types.Payload{
+		Data: &types.PayloadDelegationPending{
+			DelegationPending: &types.DelegationPending{
+				Delegations:  pendingDelegations,
+				Undelegation: pendingUndelegations,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseAuto() ([]byte, error) {
 	auto := e.getAuto()
-
-	return proto.Marshal(types.DelegationAuto{Parties: auto}.IntoProto())
+	payload := types.Payload{
+		Data: &types.PayloadDelegationAuto{
+			DelegationAuto: &types.DelegationAuto{Parties: auto},
+		},
+	}
+	return proto.Marshal(payload.IntoProto())
 }
 
 // get the serialised form and hash of the given key
@@ -83,8 +103,7 @@ func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
 	}
 
-	changed, exists := e.dss.changed[k]
-	if exists && !changed {
+	if !e.dss.changed[k] {
 		return e.dss.serialised[k], e.dss.hash[k], nil
 	}
 
@@ -152,7 +171,7 @@ func (e *Engine) restoreActive(ctx context.Context, delegations *types.Delegatio
 	}
 	e.setActive(ctx, entries)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	e.dss.changed["active"] = true
+	e.dss.changed[activeKey] = true
 	return nil
 }
 
@@ -180,13 +199,13 @@ func (e *Engine) restorePending(ctx context.Context, delegations *types.Delegati
 	e.sortPending(entries)
 	e.setPending(ctx, entries)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	e.dss.changed["pending"] = true
+	e.dss.changed[pendingKey] = true
 	return nil
 }
 
 func (e *Engine) restoreAuto(delegations *types.DelegationAuto) error {
 	e.setAuto(delegations.Parties)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	e.dss.changed["auto"] = true
+	e.dss.changed[autoKey] = true
 	return nil
 }

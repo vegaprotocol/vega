@@ -123,15 +123,15 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
 
 	// get the has and serialised state
-	hash, err := testEngine.engine.GetHash("active")
+	hash, err := testEngine.engine.GetHash(activeKey)
 	require.Nil(t, err)
-	state, err := testEngine.engine.GetState("active")
+	state, err := testEngine.engine.GetState(activeKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
-	hashNoChange, err := testEngine.engine.GetHash("active")
+	hashNoChange, err := testEngine.engine.GetHash(activeKey)
 	require.Nil(t, err)
-	stateNoChange, err := testEngine.engine.GetState("active")
+	stateNoChange, err := testEngine.engine.GetState(activeKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -151,9 +151,9 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 
 	// verify hash and state match
 
-	hashPostReload, _ := testEngine.engine.GetHash("active")
+	hashPostReload, _ := testEngine.engine.GetHash(activeKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _ := testEngine.engine.GetState("active")
+	statePostReload, _ := testEngine.engine.GetState(activeKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -168,15 +168,15 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	testEngine.engine.UndelegateAtEndOfEpoch(context.Background(), "party2", "node1", num.NewUint(1))
 
 	// get the has and serialised state
-	hash, err := testEngine.engine.GetHash("pending")
+	hash, err := testEngine.engine.GetHash(pendingKey)
 	require.Nil(t, err)
-	state, err := testEngine.engine.GetState("pending")
+	state, err := testEngine.engine.GetState(pendingKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
-	hashNoChange, err := testEngine.engine.GetHash("pending")
+	hashNoChange, err := testEngine.engine.GetHash(pendingKey)
 	require.Nil(t, err)
-	stateNoChange, err := testEngine.engine.GetState("pending")
+	stateNoChange, err := testEngine.engine.GetState(pendingKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -194,9 +194,9 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 
 	err = testEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
-	hashPostReload, _ := testEngine.engine.GetHash("pending")
+	hashPostReload, _ := testEngine.engine.GetHash(pendingKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _ := testEngine.engine.GetState("pending")
+	statePostReload, _ := testEngine.engine.GetState(pendingKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -208,24 +208,24 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	testEngine.engine.ProcessEpochDelegations(context.Background(), types.Epoch{Seq: 0})
 
 	// by now, auto delegation should be set for both party1 and party2 as all of their association is nominated
-	hash, err := testEngine.engine.GetHash("auto")
+	hash, err := testEngine.engine.GetHash(autoKey)
 	require.Nil(t, err)
-	state, err := testEngine.engine.GetState("auto")
+	state, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
-	hashNoChange, err := testEngine.engine.GetHash("auto")
+	hashNoChange, err := testEngine.engine.GetHash(autoKey)
 	require.Nil(t, err)
-	stateNoChange, err := testEngine.engine.GetState("auto")
+	stateNoChange, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(hash, hashNoChange))
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// undelegate now to get out of auto for party1 to verify hash changed
 	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
-	hashPostUndelegate, err := testEngine.engine.GetHash("auto")
+	hashPostUndelegate, err := testEngine.engine.GetHash(autoKey)
 	require.Nil(t, err)
-	statePostUndelegate, err := testEngine.engine.GetState("auto")
+	statePostUndelegate, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(hash, hashPostUndelegate))
 	require.False(t, bytes.Equal(state, statePostUndelegate))
@@ -241,9 +241,9 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	}
 
 	testEngine.engine.LoadState(context.Background(), payload)
-	hashPostReload, _ := testEngine.engine.GetHash("auto")
+	hashPostReload, _ := testEngine.engine.GetHash(autoKey)
 	require.True(t, bytes.Equal(hashPostUndelegate, hashPostReload))
-	statePostReload, _ := testEngine.engine.GetState("auto")
+	statePostReload, _ := testEngine.engine.GetState(autoKey)
 	require.True(t, bytes.Equal(statePostUndelegate, statePostReload))
 }
 
