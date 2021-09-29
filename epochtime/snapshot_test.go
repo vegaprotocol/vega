@@ -17,18 +17,18 @@ import (
 func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
+	ft := FakeTime{}
 	ctx := context.Background()
-	vt := vegatime.New(vegatime.NewDefaultConfig())
-	service := getEpochService(t, vt)
+	service := getEpochService(t, &ft)
 
 	// Force creation of first epoch to trigger a snapshot of the first epoch
-	vt.SetTimeNow(ctx, now)
+	ft.SetTimeNow(ctx, now)
 
 	data, err := service.Snapshot()
 	require.Nil(t, err)
 	require.Equal(t, 1, len(data)) //should be one "chunk"
 
-	snapService := getEpochService(t, vt)
+	snapService := getEpochService(t, &ft)
 
 	// Fiddle it into a payload by hand
 	snap := &snapshot.Payload{}
@@ -47,20 +47,20 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	snapService.NotifyOnEpoch(onEpoch)
 
 	// Move time forward in time a small amount that should cause no change
-	vt.SetTimeNow(ctx, now.Add(time.Hour))
+	ft.SetTimeNow(ctx, now.Add(time.Hour))
 	require.Equal(t, 0, len(epochs))
 
 	// Now send end block
 	service.OnBlockEnd(ctx)
 	snapService.OnBlockEnd((ctx))
-	vt.SetTimeNow(ctx, now.Add(time.Hour))
+	ft.SetTimeNow(ctx, now.Add(time.Hour))
 	require.Equal(t, 0, len(epochs))
 
 	// Move even further forward
-	vt.SetTimeNow(ctx, now.Add(time.Hour*25))
+	ft.SetTimeNow(ctx, now.Add(time.Hour*25))
 	service.OnBlockEnd(ctx)
 	snapService.OnBlockEnd((ctx))
-	vt.SetTimeNow(ctx, now.Add(time.Hour*50))
+	ft.SetTimeNow(ctx, now.Add(time.Hour*50))
 	require.Equal(t, 4, len(epochs))
 
 	// epochs = {start, end, start, end}
@@ -73,29 +73,24 @@ func TestEpochSnapshotHash(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
 	ctx := context.Background()
-	vt := vegatime.New(vegatime.NewDefaultConfig())
-	service := getEpochService(t, vt)
+	ft := FakeTime{}
+	service := getEpochService(t, &ft)
 
 	// Trigger initial block
-	vt.SetTimeNow(ctx, now)
+	ft.SetTimeNow(ctx, now)
 	h, err := service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "010bd3281c2cdc839fdd0a3bdf0877b174c47980e7c4790ba32befd802a9e1e1", hex.EncodeToString(h))
 
 	// Shuffle time along
-	vt.SetTimeNow(ctx, now.Add(time.Hour*25))
-	h, err = service.GetHash("all")
-	require.Nil(t, err)
-	require.Equal(t, "be09d5e30666b69199c1a40f2ecb3dd6a514b33f55fdfeda25d072c67932dc45", hex.EncodeToString(h))
-
-	// Block ends
+	ft.SetTimeNow(ctx, now.Add(time.Hour*25))
 	service.OnBlockEnd(ctx)
 	h, err = service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "e4bbd70ef0aaf86065c14baeeda63d4a13d9cc95e75edb0197ba7bb619683611", hex.EncodeToString(h))
 
 	// Shuffle time a bit more
-	vt.SetTimeNow(ctx, now.Add(time.Hour*50))
+	ft.SetTimeNow(ctx, now.Add(time.Hour*50))
 	h, err = service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "9b1cddbbd648b44569a22551b1f1e82379b6d6c664b3e01c18d0ef3edb9a197d", hex.EncodeToString(h))

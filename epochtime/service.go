@@ -135,9 +135,6 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 	if s.epoch.ExpireTime.Before(t) {
 		// Set the flag to tell us to end the epoch when the block ends
 		s.readyToEndEpoch = true
-
-		// take snapshot
-		s.serialise()
 		return
 	}
 }

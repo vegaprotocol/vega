@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +17,21 @@ var (
 	epochs []types.Epoch
 )
 
-func getEpochService(t *testing.T, vt *vegatime.Svc) *epochtime.Svc {
+type FakeTime struct {
+	listeners []func(context.Context, time.Time)
+}
+
+func (ft *FakeTime) NotifyOnTick(f func(context.Context, time.Time)) {
+	ft.listeners = append(ft.listeners, f)
+}
+
+func (ft *FakeTime) SetTimeNow(ctx context.Context, t time.Time) {
+	for _, f := range ft.listeners {
+		f(ctx, t)
+	}
+}
+
+func getEpochService(t *testing.T, vt epochtime.VegaTime) *epochtime.Svc {
 	ctx := context.Background()
 	log := logging.NewTestLogger()
 	broker, err := broker.New(ctx, log, broker.NewDefaultConfig())
@@ -42,8 +55,8 @@ func TestEpochService(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
 	ctx := context.Background()
-	vt := vegatime.New(vegatime.NewDefaultConfig())
-	es := getEpochService(t, vt)
+	ft := FakeTime{}
+	es := getEpochService(t, &ft)
 	assert.NotNil(t, es)
 
 	// Subscribe to epoch updates
@@ -52,7 +65,7 @@ func TestEpochService(t *testing.T) {
 	es.NotifyOnEpoch(onEpoch)
 
 	// Move time forward to generate first epoch
-	vt.SetTimeNow(ctx, now)
+	ft.SetTimeNow(ctx, now)
 	// Check we only have one epoch update
 	assert.Equal(t, 1, len(epochs))
 	epoch := epochs[0]
@@ -68,13 +81,13 @@ func TestEpochService(t *testing.T) {
 
 	// Move time forward one day + one second to start the first block past the expiry of the first epoch
 	now = now.Add((time.Hour * 24) + time.Second)
-	vt.SetTimeNow(ctx, now)
+	ft.SetTimeNow(ctx, now)
 
 	// end the block to mark the end of the epoch
 	es.OnBlockEnd(ctx)
 
 	// start the next block to start the second epoch
-	vt.SetTimeNow(ctx, now)
+	ft.SetTimeNow(ctx, now)
 
 	// We should have 2 new updates, one for end of epoch and one for the beginning of the new one
 	assert.Equal(t, 3, len(epochs))
