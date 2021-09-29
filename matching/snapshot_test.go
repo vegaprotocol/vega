@@ -47,7 +47,9 @@ func TestBuyOrdersChangeHash(t *testing.T) {
 	addOrders(t, ob.ob, orders)
 
 	hash1, err := ob.ob.GetHash(key)
+	assert.NoError(t, err)
 	hash2, err := ob.ob.GetHash(key)
+	assert.NoError(t, err)
 	// These should be the same
 	assert.Equal(t, hash1, hash2)
 
@@ -69,6 +71,7 @@ func TestBuyOrdersChangeHash(t *testing.T) {
 	assert.NoError(t, err)
 
 	hash3, err := ob.ob.GetHash(key)
+	assert.NoError(t, err)
 	assert.NotEqual(t, hash1, hash3)
 }
 
@@ -84,7 +87,9 @@ func TestSellOrdersChangeHash(t *testing.T) {
 	addOrders(t, ob.ob, orders)
 
 	hash1, err := ob.ob.GetHash(key)
+	assert.NoError(t, err)
 	hash2, err := ob.ob.GetHash(key)
+	assert.NoError(t, err)
 	// These should be the same
 	assert.Equal(t, hash1, hash2)
 
@@ -106,6 +111,7 @@ func TestSellOrdersChangeHash(t *testing.T) {
 	assert.NoError(t, err)
 
 	hash3, err := ob.ob.GetHash(key)
+	assert.NoError(t, err)
 	assert.NotEqual(t, hash1, hash3)
 }
 
