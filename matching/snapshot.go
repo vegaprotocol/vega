@@ -18,10 +18,7 @@ func (b *OrderBook) Snapshot() (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	snapshot := map[string][]byte{}
-	snapshot[b.snapshot.Key()] = payload
-	return snapshot, nil
+	return map[string][]byte{b.snapshot.Key(): payload}, nil
 }
 
 func (b OrderBook) Namespace() types.SnapshotNamespace {
@@ -38,8 +35,7 @@ func (b *OrderBook) GetHash(key string) ([]byte, error) {
 		return nil, e
 	}
 
-	h := crypto.Hash(payload)
-	return h, nil
+	return crypto.Hash(payload), nil
 }
 
 func (b *OrderBook) GetState(key string) ([]byte, error) {
@@ -53,34 +49,22 @@ func (b *OrderBook) GetState(key string) ([]byte, error) {
 	// Convert the domain object into a protobuf payload message
 	p := payload.IntoProto()
 
-	data, err := proto.Marshal(p)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return proto.Marshal(p)
 }
 
 func (b *OrderBook) buildPayload() *types.Payload {
-	state := types.MatchingBook{}
-
-	state.MarketID = b.marketID
-	state.Buy = b.copyOrders(b.buy)
-	state.Sell = b.copyOrders(b.sell)
-	state.LastTradedPrice = b.lastTradedPrice
-	state.Auction = b.auction
-	state.BatchID = b.batchID
-
-	// Wrap it in a payload
-	payload := &types.PayloadMatchingBook{
-		MatchingBook: &state,
+	return &types.Payload{
+		Data: &types.PayloadMatchingBook{
+			MatchingBook: &types.MatchingBook{
+				MarketID:        b.marketID,
+				Buy:             b.copyOrders(b.buy),
+				Sell:            b.copyOrders(b.sell),
+				LastTradedPrice: b.lastTradedPrice,
+				Auction:         b.auction,
+				BatchID:         b.batchID,
+			},
+		},
 	}
-
-	// Wrap that in a payload wrapper
-	payloadWrapper := &types.Payload{
-		Data: payload,
-	}
-
-	return payloadWrapper
 }
 
 func (b *OrderBook) copyOrders(obs *OrderBookSide) []*types.Order {

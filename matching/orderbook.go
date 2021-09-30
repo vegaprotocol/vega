@@ -75,9 +75,11 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 		batchID:         0,
 		ordersPerParty:  map[string]map[string]struct{}{},
 		lastTradedPrice: num.Zero(),
-		snapshot: &types.PayloadMatchingBook{MatchingBook: &types.MatchingBook{
-			MarketID: marketID,
-		}},
+		snapshot: &types.PayloadMatchingBook{
+			MatchingBook: &types.MatchingBook{
+				MarketID: marketID,
+			},
+		},
 	}
 }
 
