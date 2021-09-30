@@ -228,11 +228,11 @@ type EquityShareLP struct {
 }
 
 type ActiveAssets struct {
-	Assets []*AssetDetails
+	Assets []*Asset
 }
 
 type PendingAssets struct {
-	Assets []*AssetDetails
+	Assets []*Asset
 }
 
 type BankingWithdrawals struct {
@@ -273,7 +273,7 @@ type CollateralAccounts struct {
 }
 
 type CollateralAssets struct {
-	Assets []*AssetDetails
+	Assets []*Asset
 }
 
 type AppState struct {
@@ -1091,17 +1091,17 @@ func (*PayloadStakingAccounts) Namespace() SnapshotNamespace {
 
 func ActiveAssetsFromProto(aa *snapshot.ActiveAssets) *ActiveAssets {
 	ret := ActiveAssets{
-		Assets: make([]*AssetDetails, 0, len(aa.Assets)),
+		Assets: make([]*Asset, 0, len(aa.Assets)),
 	}
 	for _, a := range aa.Assets {
-		ret.Assets = append(ret.Assets, AssetDetailsFromProto(a))
+		ret.Assets = append(ret.Assets, AssetFromProto(a))
 	}
 	return &ret
 }
 
 func (a ActiveAssets) IntoProto() *snapshot.ActiveAssets {
 	ret := &snapshot.ActiveAssets{
-		Assets: make([]*vega.AssetDetails, 0, len(a.Assets)),
+		Assets: make([]*vega.Asset, 0, len(a.Assets)),
 	}
 	for _, a := range a.Assets {
 		ret.Assets = append(ret.Assets, a.IntoProto())
@@ -1111,17 +1111,17 @@ func (a ActiveAssets) IntoProto() *snapshot.ActiveAssets {
 
 func PendingAssetsFromProto(aa *snapshot.PendingAssets) *PendingAssets {
 	ret := PendingAssets{
-		Assets: make([]*AssetDetails, 0, len(aa.Assets)),
+		Assets: make([]*Asset, 0, len(aa.Assets)),
 	}
 	for _, a := range aa.Assets {
-		ret.Assets = append(ret.Assets, AssetDetailsFromProto(a))
+		ret.Assets = append(ret.Assets, AssetFromProto(a))
 	}
 	return &ret
 }
 
 func (a PendingAssets) IntoProto() *snapshot.PendingAssets {
 	ret := &snapshot.PendingAssets{
-		Assets: make([]*vega.AssetDetails, 0, len(a.Assets)),
+		Assets: make([]*vega.Asset, 0, len(a.Assets)),
 	}
 	for _, a := range a.Assets {
 		ret.Assets = append(ret.Assets, a.IntoProto())
@@ -1266,17 +1266,17 @@ func (c CollateralAccounts) IntoProto() *snapshot.CollateralAccounts {
 
 func CollateralAssetsFromProto(ca *snapshot.CollateralAssets) *CollateralAssets {
 	ret := CollateralAssets{
-		Assets: make([]*AssetDetails, 0, len(ca.Assets)),
+		Assets: make([]*Asset, 0, len(ca.Assets)),
 	}
 	for _, a := range ca.Assets {
-		ret.Assets = append(ret.Assets, AssetDetailsFromProto(a))
+		ret.Assets = append(ret.Assets, AssetFromProto(a))
 	}
 	return &ret
 }
 
 func (c CollateralAssets) IntoProto() *snapshot.CollateralAssets {
 	ret := snapshot.CollateralAssets{
-		Assets: make([]*vega.AssetDetails, 0, len(c.Assets)),
+		Assets: make([]*vega.Asset, 0, len(c.Assets)),
 	}
 	for _, a := range c.Assets {
 		ret.Assets = append(ret.Assets, a.IntoProto())
