@@ -282,7 +282,7 @@ func (s *coreService) getTMNetInfo(ctx context.Context) (tmctypes.ResultNetInfo,
 	return *s.netInfo, nil
 }
 
-func (t *coreService) updateNetInfo(ctx context.Context) {
+func (s *coreService) updateNetInfo(ctx context.Context) {
 	// update the net info every 1 minutes
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
@@ -292,13 +292,13 @@ func (t *coreService) updateNetInfo(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			netInfo, err := t.blockchain.GetNetworkInfo(ctx)
+			netInfo, err := s.blockchain.GetNetworkInfo(ctx)
 			if err != nil {
 				continue
 			}
-			t.netInfoMu.Lock()
-			t.netInfo = netInfo
-			t.netInfoMu.Unlock()
+			s.netInfoMu.Lock()
+			s.netInfo = netInfo
+			s.netInfoMu.Unlock()
 		}
 	}
 }
@@ -403,7 +403,7 @@ func (s *coreService) observeEvents(
 	}
 }
 
-func (t *coreService) recvEventRequest(
+func (s *coreService) recvEventRequest(
 	stream protoapi.CoreService_ObserveEventBusServer,
 ) (*protoapi.ObserveEventBusRequest, error) {
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
