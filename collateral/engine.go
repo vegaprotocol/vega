@@ -146,6 +146,7 @@ func (e *Engine) removeAccountFromHashableSlice(id string) {
 
 	copy(e.hashableAccs[i:], e.hashableAccs[i+1:])
 	e.hashableAccs = e.hashableAccs[:len(e.hashableAccs)-1]
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
@@ -162,6 +163,7 @@ func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
 	e.hashableAccs = append(e.hashableAccs, nil)
 	copy(e.hashableAccs[i+1:], e.hashableAccs[i:])
 	e.hashableAccs[i] = acc
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) Hash() []byte {
@@ -254,7 +256,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
 	}
 
-	e.state.add(newAccs...)
 	e.log.Info("new asset added successfully",
 		logging.String("asset-id", asset.ID),
 	)
@@ -1855,7 +1856,6 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 			Type:     types.AccountTypeBond,
 		}
 		e.accs[bondID] = &acc
-		e.state.add(&acc)
 		e.addPartyAccount(partyID, bondID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
@@ -1893,7 +1893,6 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 			Type:     types.AccountTypeMargin,
 		}
 		e.accs[marginID] = &acc
-		e.state.add(&acc)
 		e.addPartyAccount(partyID, marginID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
@@ -1937,7 +1936,6 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 			Type:     types.AccountTypeGeneral,
 		}
 		e.accs[generalID] = &acc
-		e.state.add(&acc)
 		e.addPartyAccount(partyID, generalID, &acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: partyID}))
@@ -2088,7 +2086,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeInsurance,
 		}
 		e.accs[insuranceID] = insAcc
-		e.state.add(insAcc)
 		e.addAccountToHashableSlice(insAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
 
@@ -2105,7 +2102,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeSettlement,
 		}
 		e.accs[settleID] = setAcc
-		e.state.add(setAcc)
 		e.addAccountToHashableSlice(setAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *setAcc))
 	}
@@ -2123,7 +2119,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeFeesLiquidity,
 		}
 		e.accs[liquidityFeeID] = liquidityFeeAcc
-		e.state.add(liquidityFeeAcc)
 		e.addAccountToHashableSlice(liquidityFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *liquidityFeeAcc))
 	}
@@ -2139,7 +2134,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 			Type:     types.AccountTypeFeesMaker,
 		}
 		e.accs[makerFeeID] = makerFeeAcc
-		e.state.add(makerFeeAcc)
 		e.addAccountToHashableSlice(makerFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
@@ -2257,8 +2251,8 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 	}
 	acc.Balance.Set(balance)
 	// update
-	e.state.add(acc)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2272,8 +2266,8 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance.AddSum(inc)
-	e.state.add(acc)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2287,8 +2281,8 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 		return fmt.Errorf("account does not exist: %s", id)
 	}
 	acc.Balance.Sub(acc.Balance, dec)
-	e.state.add(acc)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2315,10 +2309,6 @@ func (e *Engine) GetAssetTotalSupply(asset string) (*num.Uint, error) {
 }
 
 func (e *Engine) removeAccount(id string) {
-	acc, ok := e.accs[id]
-	if ok {
-		e.state.delAcc(acc)
-	}
 	delete(e.accs, id)
 	e.removeAccountFromHashableSlice(id)
 }
@@ -2378,7 +2368,6 @@ func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset st
 			Type:     types.AccountTypeGlobalReward,
 		}
 		e.accs[accountID] = &acc
-		e.state.add(&acc)
 		e.addAccountToHashableSlice(&acc)
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
