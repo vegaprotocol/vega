@@ -33,7 +33,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -44,9 +44,9 @@ import (
 type GRPCServer struct {
 	Config
 
-	log                      *logging.Logger
-	srv                      *grpc.Server
-	vegaTradingServiceClient TradingServiceClient
+	log                   *logging.Logger
+	srv                   *grpc.Server
+	vegaCoreServiceClient CoreServiceClient
 
 	accountsService         *accounts.Svc
 	candleService           *candles.Svc
@@ -68,7 +68,7 @@ type GRPCServer struct {
 	netParamsService        *netparams.Service
 	oracleService           *oracles.Service
 	stakingService          *staking.Service
-	tradingProxySvc         *tradingProxyService
+	tradingProxySvc         *coreProxyService
 	tradingDataService      *tradingDataService
 	nodeService             *nodes.Service
 	epochService            *epochs.Service
@@ -89,7 +89,7 @@ type GRPCServer struct {
 func NewGRPCServer(
 	log *logging.Logger,
 	config Config,
-	tradingServiceClient TradingServiceClient,
+	coreServiceClient CoreServiceClient,
 	timeService *vegatime.Svc,
 	marketService MarketService,
 	partyService *parties.Svc,
@@ -123,35 +123,35 @@ func NewGRPCServer(
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	return &GRPCServer{
-		log:                      log,
-		Config:                   config,
-		vegaTradingServiceClient: tradingServiceClient,
-		orderService:             orderService,
-		liquidityService:         liquidityService,
-		tradeService:             tradeService,
-		candleService:            candleService,
-		timeService:              timeService,
-		marketService:            marketService,
-		partyService:             partyService,
-		accountsService:          accountsService,
-		transferResponseService:  transferResponseService,
-		riskService:              riskService,
-		governanceService:        governanceService,
-		notaryService:            notaryService,
-		assetService:             assetService,
-		feeService:               feeService,
-		eventService:             eventService,
-		withdrawalService:        withdrawalService,
-		depositService:           depositService,
-		marketDepthService:       marketDepthService,
-		netParamsService:         netParamsService,
-		oracleService:            oracleService,
-		nodeService:              nodeService,
-		epochService:             epochService,
-		delegationService:        delegationService,
-		rewardsService:           rewardsService,
-		stakingService:           stakingService,
-		checkpointSvc:            checkpointSvc,
+		log:                     log,
+		Config:                  config,
+		vegaCoreServiceClient:   coreServiceClient,
+		orderService:            orderService,
+		liquidityService:        liquidityService,
+		tradeService:            tradeService,
+		candleService:           candleService,
+		timeService:             timeService,
+		marketService:           marketService,
+		partyService:            partyService,
+		accountsService:         accountsService,
+		transferResponseService: transferResponseService,
+		riskService:             riskService,
+		governanceService:       governanceService,
+		notaryService:           notaryService,
+		assetService:            assetService,
+		feeService:              feeService,
+		eventService:            eventService,
+		withdrawalService:       withdrawalService,
+		depositService:          depositService,
+		marketDepthService:      marketDepthService,
+		netParamsService:        netParamsService,
+		oracleService:           oracleService,
+		nodeService:             nodeService,
+		epochService:            epochService,
+		delegationService:       delegationService,
+		rewardsService:          rewardsService,
+		stakingService:          stakingService,
+		checkpointSvc:           checkpointSvc,
 		eventObserver: &eventObserver{
 			log:          log,
 			eventService: eventService,
@@ -255,14 +255,14 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	g.srv = grpc.NewServer(intercept)
 
-	tradingProxySvc := &tradingProxyService{
-		log:                  g.log,
-		conf:                 g.Config,
-		tradingServiceClient: g.vegaTradingServiceClient,
-		eventObserver:        g.eventObserver,
+	coreProxySvc := &coreProxyService{
+		log:               g.log,
+		conf:              g.Config,
+		coreServiceClient: g.vegaCoreServiceClient,
+		eventObserver:     g.eventObserver,
 	}
-	g.tradingProxySvc = tradingProxySvc
-	vegaprotoapi.RegisterTradingServiceServer(g.srv, tradingProxySvc)
+	g.tradingProxySvc = coreProxySvc
+	vegaprotoapi.RegisterCoreServiceServer(g.srv, coreProxySvc)
 
 	tradingDataSvc := &tradingDataService{
 		log:                     g.log,

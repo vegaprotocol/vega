@@ -32,7 +32,7 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"google.golang.org/grpc"
 )
@@ -231,7 +231,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.vegaTradingServiceClient = vegaprotoapi.NewTradingServiceClient(conn)
+	l.vegaCoreServiceClient = vegaprotoapi.NewCoreServiceClient(conn)
 
 	l.checkpointSvc = checkpoint.NewService(l.Log, l.conf.Checkpoint, l.checkpointStore)
 

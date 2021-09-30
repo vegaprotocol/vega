@@ -16,7 +16,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
@@ -32,10 +32,10 @@ var (
 	ErrInvalidProposal = errors.New("invalid proposal")
 )
 
-// TradingProxyServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql TradingProxyServiceClient
-type TradingProxyServiceClient interface {
-	vegaprotoapi.TradingServiceClient
+// CoreProxyServiceClient ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/gateway/graphql CoreProxyServiceClient
+type CoreProxyServiceClient interface {
+	vegaprotoapi.CoreServiceClient
 }
 
 // TradingDataServiceClient ...
@@ -49,7 +49,7 @@ type VegaResolverRoot struct {
 	gateway.Config
 
 	log                *logging.Logger
-	tradingProxyClient TradingProxyServiceClient
+	tradingProxyClient CoreProxyServiceClient
 	tradingDataClient  TradingDataServiceClient
 	r                  allResolver
 }
@@ -58,7 +58,7 @@ type VegaResolverRoot struct {
 func NewResolverRoot(
 	log *logging.Logger,
 	config gateway.Config,
-	tradingClient TradingProxyServiceClient,
+	tradingClient CoreProxyServiceClient,
 	tradingDataClient TradingDataServiceClient,
 ) *VegaResolverRoot {
 

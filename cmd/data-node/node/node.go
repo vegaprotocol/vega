@@ -40,7 +40,7 @@ import (
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -93,7 +93,7 @@ type NodeCommand struct {
 	delegationStore       *storage.Delegations
 	checkpointStore       *storage.Checkpoints
 
-	vegaTradingServiceClient vegaprotoapi.TradingServiceClient
+	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
 	broker *broker.Broker
 
@@ -188,7 +188,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	grpcServer := api.NewGRPCServer(
 		l.Log,
 		l.conf.API,
-		l.vegaTradingServiceClient,
+		l.vegaCoreServiceClient,
 		l.timeService,
 		l.marketService,
 		l.partyService,
