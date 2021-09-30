@@ -3,9 +3,12 @@ package matching_test
 import (
 	"testing"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -169,12 +172,10 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Load the snapshot back in
-	switch pl := payloadMap[key].Data.(type) {
-	case *types.PayloadMatchingBook:
-		ob.ob.LoadState(pl)
-	default:
-		assert.FailNow(t, "Incorrect payload type")
-	}
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(payloadMap[market], snap)
+	assert.NoError(t, err)
+	ob.ob.LoadState(types.PayloadFromProto(snap))
 
 	// Get the hash and check it's the same as before
 	afterHash, err := ob.ob.GetHash(key)

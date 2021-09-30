@@ -61,6 +61,9 @@ var (
 	ErrUnknownSnapshot           = errors.New("no shapshot to reject")
 	ErrMissingChunks             = errors.New("missing previous chunks")
 	ErrSnapshotRetryLimit        = errors.New("could not load snapshot, retry limit reached")
+	ErrSnapshotKeyDoesNotExist   = errors.New("unknown key for snapshot")
+	ErrInvalidSnapshotNamespace  = errors.New("invalid snapshot namespace")
+	ErrUnknownSnapshotType       = errors.New("snapshot data type not known")
 )
 
 type SnapshotFormat = snapshot.Format

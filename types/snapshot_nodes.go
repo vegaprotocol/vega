@@ -132,7 +132,7 @@ type PayloadStakingAccounts struct {
 }
 
 type PayloadEpoch struct {
-	Epoch *Epoch
+	EpochState *EpochState
 }
 
 type MatchingBook struct {
@@ -207,6 +207,14 @@ type AuctionState struct {
 	Start       bool
 	Stop        bool
 	Extension   AuctionTrigger
+}
+
+type EpochState struct {
+	Seq                  uint64
+	StartTime            time.Time
+	ExpireTime           time.Time
+	ReadyToStartNewEpoch bool
+	ReadyToEndEpoch      bool
 }
 
 type EquityShare struct {
@@ -1024,13 +1032,23 @@ func (*PayloadExecutionMarkets) Namespace() SnapshotNamespace {
 
 func PayloadEpochFromProto(e *snapshot.Payload_Epoch) *PayloadEpoch {
 	return &PayloadEpoch{
-		Epoch: NewEpochFromProto(e.Epoch),
+		EpochState: EpochFromProto(e.Epoch),
 	}
 }
 
 func (p PayloadEpoch) IntoProto() *snapshot.Payload_Epoch {
 	return &snapshot.Payload_Epoch{
-		Epoch: p.Epoch.IntoProto(),
+		Epoch: p.EpochState.IntoProto(),
+	}
+}
+
+func EpochFromProto(e *snapshot.EpochState) *EpochState {
+	return &EpochState{
+		Seq:                  e.Seq,
+		StartTime:            time.Unix(0, e.StartTime).UTC(),
+		ExpireTime:           time.Unix(0, e.ExpireTime).UTC(),
+		ReadyToStartNewEpoch: e.ReadyToStartNewEpoch,
+		ReadyToEndEpoch:      e.ReadyToEndEpoch,
 	}
 }
 
@@ -1623,6 +1641,16 @@ func (a AuctionState) IntoProto() *snapshot.AuctionState {
 		Start:       a.Start,
 		Stop:        a.Stop,
 		Extension:   a.Extension,
+	}
+}
+
+func (e *EpochState) IntoProto() *snapshot.EpochState {
+	return &snapshot.EpochState{
+		Seq:                  e.Seq,
+		StartTime:            e.StartTime.UnixNano(),
+		ExpireTime:           e.ExpireTime.UnixNano(),
+		ReadyToStartNewEpoch: e.ReadyToStartNewEpoch,
+		ReadyToEndEpoch:      e.ReadyToEndEpoch,
 	}
 }
 

@@ -1,7 +1,6 @@
 package matching
 
 import (
-	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -13,31 +12,42 @@ func (b *OrderBook) Keys() []string {
 	return []string{b.snapshot.Key()}
 }
 
-func (b *OrderBook) Snapshot() (map[string]*types.Payload, error) {
+func (b *OrderBook) Snapshot() (map[string][]byte, error) {
 	payload, err := b.GetState(b.snapshot.Key())
 	if err != nil {
 		return nil, err
 	}
 
-	snapshot := map[string]*types.Payload{}
+	snapshot := map[string][]byte{}
 	snapshot[b.snapshot.Key()] = payload
 	return snapshot, nil
 }
 
 func (b OrderBook) Namespace() types.SnapshotNamespace {
-	payload := types.PayloadMatchingBook{}
-	return payload.Namespace()
+	return types.MatchingSnapshot
 }
 
 func (b *OrderBook) GetHash(key string) ([]byte, error) {
 	if key != b.snapshot.Key() {
-		return nil, fmt.Errorf("unknown key for matching engine: %s", key)
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	payload, e := b.GetState(key)
 	if e != nil {
 		return nil, e
 	}
+
+	h := crypto.Hash(payload)
+	return h, nil
+}
+
+func (b *OrderBook) GetState(key string) ([]byte, error) {
+	if key != b.snapshot.Key() {
+		return nil, types.ErrSnapshotKeyDoesNotExist
+	}
+
+	// Copy all the state into a domain object
+	payload := b.buildPayload()
 
 	// Convert the domain object into a protobuf payload message
 	p := payload.IntoProto()
@@ -46,20 +56,7 @@ func (b *OrderBook) GetHash(key string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	h := crypto.Hash(data)
-	return h, nil
-}
-
-func (b *OrderBook) GetState(key string) (*types.Payload, error) {
-	if key != b.snapshot.Key() {
-		return nil, fmt.Errorf("unknown key for matching engine: %s", key)
-	}
-
-	// Copy all the state into a domain object
-	payload := b.buildPayload()
-
-	return payload, nil
+	return data, nil
 }
 
 func (b *OrderBook) buildPayload() *types.Payload {
@@ -119,8 +116,19 @@ func (b *OrderBook) copySellSide() []*types.Order {
 	return orders
 }
 
-func (b *OrderBook) LoadState(payload *types.PayloadMatchingBook) {
-	mb := payload.MatchingBook
+func (b *OrderBook) LoadState(payload *types.Payload) error {
+	if b.Namespace() != payload.Namespace() {
+		return types.ErrInvalidSnapshotNamespace
+	}
+
+	var mb *types.MatchingBook
+
+	switch pl := payload.Data.(type) {
+	case *types.PayloadMatchingBook:
+		mb = pl.MatchingBook
+	default:
+		return types.ErrInvalidType
+	}
 
 	b.reset()
 	b.marketID = mb.MarketID
@@ -130,23 +138,24 @@ func (b *OrderBook) LoadState(payload *types.PayloadMatchingBook) {
 
 	for _, o := range mb.Buy {
 		b.buy.addOrder(o)
-		b.ordersByID[o.ID] = o
-		b.addOrderToPartyMap(o)
+		b.addOrderToMaps(o)
 	}
 
 	for _, o := range mb.Sell {
 		b.sell.addOrder(o)
-		b.ordersByID[o.ID] = o
-		b.addOrderToPartyMap(o)
+		b.addOrderToMaps(o)
 	}
 
 	// If we are in an auction we need to build the IP&V structure
 	if b.auction {
 		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
 	}
+	return nil
 }
 
-func (b *OrderBook) addOrderToPartyMap(o *types.Order) {
+func (b *OrderBook) addOrderToMaps(o *types.Order) {
+	b.ordersByID[o.ID] = o
+
 	if orders, ok := b.ordersPerParty[o.Party]; !ok {
 		b.ordersPerParty[o.Party] = map[string]struct{}{
 			o.ID: {},
