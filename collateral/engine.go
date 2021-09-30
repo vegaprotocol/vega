@@ -207,7 +207,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
-	newAccs := make([]*types.Account, 0, 3)
 	infraFeeID := e.accountID("", "", asset.ID, types.AccountTypeFeesInfrastructure)
 	_, ok := e.accs[infraFeeID]
 	if !ok {
@@ -220,7 +219,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountTypeFeesInfrastructure,
 		}
 		e.accs[infraFeeID] = infraFeeAcc
-		newAccs = append(newAccs, infraFeeAcc)
 		e.addAccountToHashableSlice(infraFeeAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *infraFeeAcc))
 	}
@@ -234,7 +232,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			MarketID: noMarket,
 			Type:     types.AccountTypeExternal,
 		}
-		newAccs = append(newAccs, externalAcc)
 		e.accs[externalID] = externalAcc
 		// e.addAccountToHashableSlice(externalAcc)
 	}
@@ -251,7 +248,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountTypeGlobalInsurance,
 		}
 		e.accs[globalInsuranceID] = insuranceAcc
-		newAccs = append(newAccs, insuranceAcc)
 		e.addAccountToHashableSlice(insuranceAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
 	}
