@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/coreapi/services"
 	"code.vegaprotocol.io/vega/logging"
@@ -115,123 +115,123 @@ func NewService(
 }
 
 func (s *Service) ListAccounts(
-	ctx context.Context, in *coreapipb.ListAccountsRequest,
-) (*coreapipb.ListAccountsResponse, error) {
+	ctx context.Context, in *apipb.ListAccountsRequest,
+) (*apipb.ListAccountsResponse, error) {
 	if !s.cfg.Accounts {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListAccountsResponse{
+	return &apipb.ListAccountsResponse{
 		Accounts: s.accounts.List(in.Party, in.Market),
 	}, nil
 }
 
 func (s *Service) ListAssets(
-	ctx context.Context, in *coreapipb.ListAssetsRequest,
-) (*coreapipb.ListAssetsResponse, error) {
+	ctx context.Context, in *apipb.ListAssetsRequest,
+) (*apipb.ListAssetsResponse, error) {
 	if !s.cfg.Assets {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListAssetsResponse{
+	return &apipb.ListAssetsResponse{
 		Assets: s.assets.List(in.Asset),
 	}, nil
 }
 
 func (s *Service) ListParties(
-	ctx context.Context, in *coreapipb.ListPartiesRequest,
-) (*coreapipb.ListPartiesResponse, error) {
+	ctx context.Context, in *apipb.ListPartiesRequest,
+) (*apipb.ListPartiesResponse, error) {
 	if !s.cfg.Parties {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListPartiesResponse{
+	return &apipb.ListPartiesResponse{
 		Parties: s.parties.List(),
 	}, nil
 }
 
 func (s *Service) ListNetworkParameters(
-	ctx context.Context, in *coreapipb.ListNetworkParametersRequest,
-) (*coreapipb.ListNetworkParametersResponse, error) {
+	ctx context.Context, in *apipb.ListNetworkParametersRequest,
+) (*apipb.ListNetworkParametersResponse, error) {
 	if !s.cfg.NetworkParameters {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListNetworkParametersResponse{
+	return &apipb.ListNetworkParametersResponse{
 		NetworkParameters: s.netparams.List(in.NetworkParameterKey),
 	}, nil
 }
 
 func (s *Service) ListValidators(
-	ctx context.Context, in *coreapipb.ListValidatorsRequest,
-) (*coreapipb.ListValidatorsResponse, error) {
+	ctx context.Context, in *apipb.ListValidatorsRequest,
+) (*apipb.ListValidatorsResponse, error) {
 	if !s.cfg.Validators {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListValidatorsResponse{
+	return &apipb.ListValidatorsResponse{
 		Validators: s.validators.List(),
 	}, nil
 }
 
 func (s *Service) ListMarkets(
-	ctx context.Context, in *coreapipb.ListMarketsRequest,
-) (*coreapipb.ListMarketsResponse, error) {
+	ctx context.Context, in *apipb.ListMarketsRequest,
+) (*apipb.ListMarketsResponse, error) {
 	if !s.cfg.Markets {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListMarketsResponse{
+	return &apipb.ListMarketsResponse{
 		Markets: s.markets.List(in.Market),
 	}, nil
 }
 
 func (s *Service) ListProposals(
-	ctx context.Context, in *coreapipb.ListProposalsRequest,
-) (*coreapipb.ListProposalsResponse, error) {
+	ctx context.Context, in *apipb.ListProposalsRequest,
+) (*apipb.ListProposalsResponse, error) {
 	if !s.cfg.Proposals {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListProposalsResponse{
+	return &apipb.ListProposalsResponse{
 		Proposals: s.proposals.List(in.Proposal, in.Proposer),
 	}, nil
 }
 
 func (s *Service) ListVotes(
-	ctx context.Context, in *coreapipb.ListVotesRequest,
-) (*coreapipb.ListVotesResponse, error) {
+	ctx context.Context, in *apipb.ListVotesRequest,
+) (*apipb.ListVotesResponse, error) {
 	if !s.cfg.Votes {
 		return nil, ErrServiceDisabled
 	}
 	votes, err := s.votes.List(in.Proposal, in.Party)
-	return &coreapipb.ListVotesResponse{
+	return &apipb.ListVotesResponse{
 		Votes: votes,
 	}, err
 }
 
 func (s *Service) ListMarketsData(
-	ctx context.Context, in *coreapipb.ListMarketsDataRequest,
-) (*coreapipb.ListMarketsDataResponse, error) {
+	ctx context.Context, in *apipb.ListMarketsDataRequest,
+) (*apipb.ListMarketsDataResponse, error) {
 	if !s.cfg.MarketsData {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListMarketsDataResponse{
+	return &apipb.ListMarketsDataResponse{
 		MarketsData: s.marketsData.List(in.Market),
 	}, nil
 }
 
 func (s *Service) ListPartiesStake(
-	ctx context.Context, in *coreapipb.ListPartiesStakeRequest,
-) (*coreapipb.ListPartiesStakeResponse, error) {
+	ctx context.Context, in *apipb.ListPartiesStakeRequest,
+) (*apipb.ListPartiesStakeResponse, error) {
 	if !s.cfg.PartiesStake {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListPartiesStakeResponse{
+	return &apipb.ListPartiesStakeResponse{
 		PartiesStake: s.partiesStake.List(in.Party),
 	}, nil
 }
 
 func (s *Service) ListDelegations(
-	ctx context.Context, in *coreapipb.ListDelegationsRequest,
-) (*coreapipb.ListDelegationsResponse, error) {
+	ctx context.Context, in *apipb.ListDelegationsRequest,
+) (*apipb.ListDelegationsResponse, error) {
 	if !s.cfg.Delegations {
 		return nil, ErrServiceDisabled
 	}
-	return &coreapipb.ListDelegationsResponse{
+	return &apipb.ListDelegationsResponse{
 		Delegations: s.delegations.List(in.Party, in.Node, in.EpochSeq),
 	}, nil
 }
