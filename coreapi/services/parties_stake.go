@@ -126,11 +126,21 @@ func (p *PartiesStake) consume() {
 				}
 				p.stakingPerParty[evt.Party] = partyAccount
 			}
-			partyAccount.links = append(partyAccount.links, evt)
+			p.addLink(partyAccount, evt)
 			p.computeCurrentBalance(partyAccount)
 			p.mu.Unlock()
 		}
 	}
+}
+
+func (p *PartiesStake) addLink(partyAccount *stakingAccount, evt eventspb.StakeLinking) {
+	for i, v := range partyAccount.links {
+		if v.Id == evt.Id {
+			partyAccount.links[i] = evt
+			return
+		}
+	}
+	partyAccount.links = append(partyAccount.links, evt)
 }
 
 func (p *PartiesStake) computeCurrentBalance(pacc *stakingAccount) {
