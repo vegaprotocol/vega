@@ -20,6 +20,8 @@ Feature: Test margins releases on position = 0
       | aux    | ETH/DEC19 | buy  | 1      | 1     | 0                | TYPE_LIMIT | TIF_GTC |
       | aux    | ETH/DEC19 | sell | 1      | 15001 | 0                | TYPE_LIMIT | TIF_GTC |
 
+      #jiajia test Git source tree
+
     # Trigger an auction to set the mark price
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
