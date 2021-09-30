@@ -16,9 +16,9 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
    # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party        | asset | amount        |
-      | trader1      | BTC   | 200           |
-      | trader2      | BTC   | 4010          |
-      | trader3      | BTC   | 50010         |
+      | trader1      | BTC   | 100           |
+      | trader2      | BTC   | 4100          |
+      | trader3      | BTC   | 5100          |
       | auxiliary1   | BTC   | 1000000000000 |
       | auxiliary2   | BTC   | 1000000000000 |
 
@@ -26,7 +26,7 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
     Then the parties place the following orders:
       | party     | market id | side | volume | price  | resulting trades| type       | tif     | reference |
       | auxiliary2| ETH/DEC19 | buy  | 10   | 1      | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
-      | auxiliary1| ETH/DEC19 | sell | 10   | 10000   | 0               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | auxiliary1| ETH/DEC19 | sell | 10   | 1000   | 0               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
       | auxiliary2| ETH/DEC19 | buy  | 10     | 10     | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
       | auxiliary1| ETH/DEC19 | sell | 10     | 10     | 0               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
 
@@ -35,12 +35,12 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
 
 # insurance pool generation - setup orderbook and setup position
     When the parties place the following orders:
-      | party     | market id | side | volume| price  | resulting trades | type       | tif     | reference       |
-      | trader2   | ETH/DEC19 | buy  | 40    | 100    | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-      | trader3   | ETH/DEC19 | buy  | 500   | 100    | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-      | auxiliary1| ETH/DEC19 | sell | 540   | 100    | 1                | TYPE_LIMIT | TIF_GTC | buy-provider-1  |
-      | trader1   | ETH/DEC19 | buy  | 40    | 8      | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
-      | trader2   | ETH/DEC19 | buy  | 500   | 9      | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
+      | party     | market id | side | volume| price | resulting trades | type       | tif     | reference       |
+      | trader2   | ETH/DEC19 | buy  | 40   | 100    | 0                | TYPE_LIMIT | TIF_GTC | buy-position-2|
+      | trader3   | ETH/DEC19 | buy  | 50   | 100    | 0                | TYPE_LIMIT | TIF_GTC | buy-position-3 |
+      | auxiliary1| ETH/DEC19 | sell | 90   | 100    | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1  |
+      | trader1   | ETH/DEC19 | buy  | 40   | 80     | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-1 |
+      | trader2   | ETH/DEC19 | buy  | 50   | 90     | 0                | TYPE_LIMIT | TIF_GTC | buy-provider-2 |
 
     Then the opening auction period ends for market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC19"
@@ -58,8 +58,8 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
 #check positions
     Then the parties should have the following profit and loss:
       | party   | volume | unrealised pnl | realised pnl |
-      | trader1 | 0      | 0              | -200          |
-      | trader2 | 0      | 0              | -4010         |
-      | trader3 | 0      | 0              | -50010       |
+      | trader1 | 0      | 0              | -100         |
+      | trader2 | 0      | 0              | -4010        |
+      | trader3 | 0      | 0              | -5100        |
 
 
