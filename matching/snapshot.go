@@ -2,7 +2,6 @@ package matching
 
 import (
 	"log"
-	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
@@ -75,12 +74,6 @@ func (b *OrderBook) copyOrders(obs *OrderBookSide) []*types.Order {
 			orders = append(orders, order.Clone())
 		}
 	}
-
-	// Sort the orders into creation time order
-	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].CreatedAt < orders[j].CreatedAt
-	})
-
 	return orders
 }
 
