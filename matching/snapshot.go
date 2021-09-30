@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"log"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -63,8 +64,8 @@ func (b *OrderBook) buildPayload() *types.Payload {
 	state := types.MatchingBook{}
 
 	state.MarketID = b.marketID
-	state.Buy = b.copyBuySide()
-	state.Sell = b.copySellSide()
+	state.Buy = b.copyOrders(b.buy)
+	state.Sell = b.copyOrders(b.sell)
 	state.LastTradedPrice = b.lastTradedPrice
 	state.Auction = b.auction
 	state.BatchID = b.batchID
@@ -82,26 +83,9 @@ func (b *OrderBook) buildPayload() *types.Payload {
 	return payloadWrapper
 }
 
-func (b *OrderBook) copyBuySide() []*types.Order {
+func (b *OrderBook) copyOrders(obs *OrderBookSide) []*types.Order {
 	orders := make([]*types.Order, 0)
-	pricelevels := b.buy.getLevels()
-	for _, pl := range pricelevels {
-		for _, order := range pl.orders {
-			orders = append(orders, order.Clone())
-		}
-	}
-
-	// Sort the orders into creation time order
-	sort.Slice(orders, func(i, j int) bool {
-		return orders[i].CreatedAt < orders[j].CreatedAt
-	})
-
-	return orders
-}
-
-func (b *OrderBook) copySellSide() []*types.Order {
-	orders := make([]*types.Order, 0)
-	pricelevels := b.sell.getLevels()
+	pricelevels := obs.getLevels()
 	for _, pl := range pricelevels {
 		for _, order := range pl.orders {
 			orders = append(orders, order.Clone())
@@ -130,7 +114,11 @@ func (b *OrderBook) LoadState(payload *types.Payload) error {
 		return types.ErrInvalidType
 	}
 
-	b.reset()
+	// Check we have an empty book here or else we should panic
+	if len(b.buy.levels) > 0 || len(b.sell.levels) > 0 {
+		log.Panic("orderbook is not empty so we should not be loading snapshot state")
+	}
+
 	b.marketID = mb.MarketID
 	b.batchID = mb.BatchID
 	b.auction = mb.Auction

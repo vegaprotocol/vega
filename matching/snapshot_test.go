@@ -172,13 +172,14 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Load the snapshot back in
+	ob2 := getTestOrderBook(t, market)
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(payloadMap[market], snap)
 	assert.NoError(t, err)
-	ob.ob.LoadState(types.PayloadFromProto(snap))
+	ob2.ob.LoadState(types.PayloadFromProto(snap))
 
 	// Get the hash and check it's the same as before
-	afterHash, err := ob.ob.GetHash(key)
+	afterHash, err := ob2.ob.GetHash(key)
 	assert.NoError(t, err)
 	assert.Equal(t, beforeHash, afterHash)
 	assert.NotEqual(t, beforeHash, differentHash)
