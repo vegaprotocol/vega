@@ -451,7 +451,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 }
 
 func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
-	now := time.Now()
+	now := app.currentTimestamp
 	height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
 	cpFileName := fmt.Sprintf("%s-%d-%s.cp", now.Format("20060102150405"), height, hex.EncodeToString(cpt.Hash))
 	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.CheckpointStateHome, cpFileName))
