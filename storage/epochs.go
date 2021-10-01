@@ -70,12 +70,19 @@ func (e *Epoch) AddEpoch(seq uint64, startTime, expiryTime, endTime int64) {
 		epoch.expiryTime = expiryTime
 		epoch.endTime = endTime
 		e.epochs[epochSeq] = epoch
+
+		e.currentEpoch = epochSeq
+
 		e.mut.Unlock()
 		return
 	}
 	e.mut.Unlock()
 
 	e.addEpoch(epochSeq, startTime, expiryTime, endTime)
+
+	e.mut.Lock()
+	e.currentEpoch = epochSeq
+	e.mut.Unlock()
 }
 
 func (e *Epoch) addEpoch(seq string, startTime, expiryTime, endTime int64) {
@@ -92,8 +99,6 @@ func (e *Epoch) addEpoch(seq string, startTime, expiryTime, endTime int64) {
 		nodeIDs:                    e.nodeStore.GetAllIDs(),
 		delegationsPerNodePerParty: map[string]map[string]pb.Delegation{},
 	}
-
-	e.currentEpoch = seq
 }
 
 func (e *Epoch) AddDelegation(de pb.Delegation) {
