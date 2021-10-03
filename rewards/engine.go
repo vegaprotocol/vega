@@ -308,11 +308,11 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			return
 		}
 		timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
-		existingPending, ok := e.pendingPayouts[timeToSend]
+		_, ok := e.pendingPayouts[timeToSend]
 		if !ok {
 			e.pendingPayouts[timeToSend] = []*payout{po}
 		} else {
-			existingPending = append(existingPending, po)
+			e.pendingPayouts[timeToSend] = append(e.pendingPayouts[timeToSend], po)
 		}
 	}
 }
