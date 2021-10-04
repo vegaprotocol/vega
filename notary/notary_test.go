@@ -76,7 +76,7 @@ func testAddKeyForOKResource(t *testing.T) {
 	sig := []byte("123456")
 
 	notr.StartAggregate(resID, kind)
-	notr.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(false)
+	notr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(false)
 
 	ns := commandspb.NodeSignature{
 		Sig:  sig,
@@ -100,7 +100,7 @@ func testAddKeyFinalize(t *testing.T) {
 
 	// add a valid node
 	notr.top.EXPECT().Len().AnyTimes().Return(1)
-	notr.top.EXPECT().Exists(gomock.Any()).AnyTimes().Return(true)
+	notr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
 
 	notr.StartAggregate(resID, kind)
 

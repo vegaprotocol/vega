@@ -11,6 +11,7 @@ type Wallet struct {
 	walletName string
 	keyPair    wallet.KeyPair
 	pubKey     crypto.PublicKeyOrAddress
+	walletID   crypto.PublicKeyOrAddress
 }
 
 func (w *Wallet) Name() string {
@@ -35,4 +36,8 @@ func (w *Wallet) Version() uint32 {
 
 func (w *Wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
 	return w.pubKey
+}
+
+func (w *Wallet) ID() crypto.PublicKeyOrAddress {
+	return w.walletID
 }

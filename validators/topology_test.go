@@ -54,6 +54,7 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	}{
 		Validators: map[string]validators.ValidatorData{
 			defaultTmPubKeyBase64: {
+				ID:         wallet.PubKeyOrAddress().Hex(),
 				VegaPubKey: wallet.PubKeyOrAddress().Hex(),
 				InfoURL:    "n0.xyz.vega/node/123",
 				Country:    "GB",
@@ -93,6 +94,7 @@ func testAddNodeRegistrationSuccess(t *testing.T) {
 	top.UpdateValidatorSet([]string{tmPubKey})
 
 	nr := commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
@@ -108,6 +110,7 @@ func testAddNodeRegistrationFailure(t *testing.T) {
 	top.UpdateValidatorSet([]string{"tm-pub-key-1", "tm-pub-key-2"})
 
 	nr := commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     "tm-pub-key-1",
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
@@ -118,6 +121,7 @@ func testAddNodeRegistrationFailure(t *testing.T) {
 
 	// Add node with existing VegaPubKey
 	nr = commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     "tm-pub-key-2",
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address-2",
@@ -135,6 +139,7 @@ func testGetLen(t *testing.T) {
 	assert.Equal(t, 1, top.Len())
 
 	nr := commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
@@ -151,9 +156,11 @@ func testExists(t *testing.T) {
 	defer top.ctrl.Finish()
 	top.UpdateValidatorSet([]string{tmPubKey})
 
-	assert.False(t, top.Exists("vega-key"))
+	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
+	assert.False(t, top.IsValidatorNode("vega-master-pubkey"))
 
 	nr := commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
@@ -162,7 +169,8 @@ func testExists(t *testing.T) {
 	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
-	assert.True(t, top.Exists("vega-key"))
+	assert.True(t, top.IsValidatorVegaPubKey("vega-key"))
+	assert.True(t, top.IsValidatorNode("vega-master-pubkey"))
 }
 
 func testGetByKey(t *testing.T) {
@@ -170,9 +178,11 @@ func testGetByKey(t *testing.T) {
 	defer top.ctrl.Finish()
 	top.UpdateValidatorSet([]string{tmPubKey})
 
-	assert.False(t, top.Exists("vega-key"))
+	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
+	assert.False(t, top.IsValidatorNode("vega-master-pubkey"))
 
 	nr := commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
@@ -184,6 +194,7 @@ func testGetByKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedData := &validators.ValidatorData{
+		ID:              "vega-master-pubkey",
 		VegaPubKey:      nr.VegaPubKey,
 		EthereumAddress: "eth-address",
 		TmPubKey:        nr.ChainPubKey,
@@ -191,7 +202,7 @@ func testGetByKey(t *testing.T) {
 		Country:         nr.Country,
 	}
 
-	actualData := top.Get(nr.VegaPubKey)
+	actualData := top.Get(nr.Id)
 	assert.NotNil(t, actualData)
 
 	assert.Equal(t, expectedData, actualData)

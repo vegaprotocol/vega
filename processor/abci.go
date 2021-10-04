@@ -499,7 +499,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 // limitPubkey returns whether a request should be rate limited or not
 func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	// Do not rate limit validators nodes.
-	if app.top.Exists(pk) {
+	if app.top.IsValidatorVegaPubKey(pk) {
 		return false, true
 	}
 
@@ -524,7 +524,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	if !app.limits.BootstrapFinished() {
 		// only validators can send transaction at this point.
 		party := tx.Party()
-		if !app.top.Exists(party) {
+		if !app.top.IsValidatorVegaPubKey(party) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
 		cmd := tx.Command()
@@ -603,7 +603,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
-	if !app.top.Exists(tx.PubKeyHex()) {
+	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
 	return nil

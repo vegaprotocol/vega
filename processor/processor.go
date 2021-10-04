@@ -124,9 +124,9 @@ type Commander interface {
 type ValidatorTopology interface {
 	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys []string)
-	Exists(key string) bool
 	Len() int
-	AllPubKeys() []string
+	IsValidatorVegaPubKey(pk string) bool
+	AllVegaPubKeys() []string
 	IsValidator() bool
 }
 
