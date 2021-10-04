@@ -617,7 +617,7 @@ Scenario: Testing fees to confirm fees are collected first and then margin
       | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
       | trader4 | ETH   | ETH/DEC21 | 205    | 0       |
 
-Scenario: Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
+Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
 
    Given the following network parameters are set:
       | name                                                | value |
@@ -668,8 +668,8 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
       | side | price | volume |
       | sell | 1080  | 10     |
       | buy  | 920   | 10     |
-      | buy  | 910   | 60     |
-      | sell | 1090  | 92     |
+      | buy  | 910   | 119    |
+      | sell | 1090  | 184    |
  
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
@@ -1477,7 +1477,7 @@ Scenario: Testing fees in continuous trading during position resolution
 Scenario: WIP - Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid
 
  # Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid
- # <PC> - Even after reducing trader's balance Or increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
+ # <PC> - Even after reducing trader's balance and increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
  # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
 
   Given the fees configuration named "fees-config-1":
