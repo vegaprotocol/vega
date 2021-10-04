@@ -3,6 +3,7 @@ package assets
 import (
 	"context"
 	"errors"
+	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
@@ -36,10 +37,12 @@ func (s *Service) Keys() []string {
 }
 
 func (s *Service) serialiseActive() ([]byte, error) {
+	enabled := s.GetEnabledAssets()
+	sort.SliceStable(enabled, func(i, j int) bool { return enabled[i].ID < enabled[j].ID })
 	payload := types.Payload{
 		Data: &types.PayloadActiveAssets{
 			ActiveAssets: &types.ActiveAssets{
-				Assets: s.GetEnabledAssets(),
+				Assets: enabled,
 			},
 		},
 	}
@@ -47,10 +50,12 @@ func (s *Service) serialiseActive() ([]byte, error) {
 }
 
 func (s *Service) serialisePending() ([]byte, error) {
+	pending := s.getPendingAssets()
+	sort.SliceStable(pending, func(i, j int) bool { return pending[i].ID < pending[j].ID })
 	payload := types.Payload{
 		Data: &types.PayloadPendingAssets{
 			PendingAssets: &types.PendingAssets{
-				Assets: s.getPendingAssets(),
+				Assets: pending,
 			},
 		},
 	}
