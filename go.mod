@@ -3,7 +3,7 @@ module code.vegaprotocol.io/vega
 go 1.16
 
 require (
-	code.vegaprotocol.io/go-wallet v0.9.0-pre3.0.20210930142408-eb05ee881a2d
+	code.vegaprotocol.io/go-wallet v0.9.0-pre3.0.20211004102524-93706c47ca58
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.43.1-0.20211004102853-438b4fd1cd48
 	code.vegaprotocol.io/quant v0.2.5
