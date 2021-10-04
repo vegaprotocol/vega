@@ -32,7 +32,6 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
       | aux1    | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2    | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
 
-   # Then debug transfers
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
@@ -121,7 +120,6 @@ Scenario: Testing fees in continuous trading with two trades and no liquidity pr
       | aux1    | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2    | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
 
-   # Then debug transfers
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
@@ -155,8 +153,6 @@ Scenario: Testing fees in continuous trading with two trades and no liquidity pr
       | buyer    | price | size | seller  |
       | trader3a | 1002  | 2    | trader4 |
       | trader3b | 1002  | 1    | trader4 |
-
-     # Then debug transfers
         
     # For trader3a-
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
@@ -245,10 +241,8 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | side | price | volume |
       | sell | 1080  | 1      |
       | buy  | 920   | 1      |
-      # | buy  | 910   | 105    |
-      # | sell | 1090  | 92     |
       | buy  | 910   | 210    |
-      | sell | 1090  | 184     |
+      | sell | 1090  | 184    |
    
     When the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
@@ -289,8 +283,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
-    Then debug transfers
-
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
@@ -298,8 +290,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  8     | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  5     | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |  
-      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  6     | ETH   |  
-      # | market  | aux1     | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  5     | ETH   |
+      | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  6     | ETH   | 
 
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 8 + 11 + 6 + 0 = 25
     # Trader3a margin + general account balance = 10000 + 11 ( Maker fees) = 10011
@@ -317,13 +308,13 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | trader4     | ETH   | ETH/DEC21 | 679    | 9291    |
       
     # And the accumulated infrastructure fee should be "8" for the market "ETH/DEC21"
-   # And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
 
     And the following transfers should happen:
       | from   | to   | from account                | to account          | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
 
   # Scenario: WIP - Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep
     When the following network parameters are set:
@@ -357,7 +348,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
 
     And the following transfers should happen:
       | from   | to   | from account                | to account          | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 2      | ETH   |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
 
 Scenario: Testing fees get collected when amended order trades
     
@@ -478,16 +469,6 @@ Scenario: Testing fees get collected when amended order trades
       | mark price | trading mode            |  
       | 1002       | TRADING_MODE_CONTINUOUS |
 
-    Then debug transfers
-
-    # And the following transfers should happen:
-    #   | from    | to       | from account            | to account                       | market id | amount | asset |
-    #   | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
-    #   | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 |  6     | ETH   |
-    #   | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  8     | ETH   |
-    #   | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 11     | ETH   |  
-    #   | market  | trader3b | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  6     | ETH   |
-     
      Then the parties should have the following account balances:
       | party      | asset | market id | margin | general |
       | trader3a    | ETH   | ETH/DEC21 | 1159   | 8852    |
@@ -569,13 +550,13 @@ Scenario: Testing fees in continuous trading with insufficient balance in their 
       | market  | trader3  | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
+      | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 17999       | 19798  | 21598   | 25198   |
 
     Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
-      | trader3     | ETH   | ETH/DEC21 | 34129  | 9966378 |
-      | trader4     | ETH   | ETH/DEC21 | 21375  | 0       |
+      | party   | asset | market id | margin | general |
+      | trader3 | ETH   | ETH/DEC21 | 34129  | 9966378 |
+      | trader4 | ETH   | ETH/DEC21 | 21375  | 0       |
 
 Scenario: Testing fees to confirm fees are collected first and then margin
     
@@ -628,13 +609,13 @@ Scenario: Testing fees to confirm fees are collected first and then margin
       | market  | trader3  | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
+      | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 179         | 196    | 214     | 250     |
 
     Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
-      | trader3     | ETH   | ETH/DEC21 | 339    | 9999667 |
-      | trader4     | ETH   | ETH/DEC21 | 205    | 0       |
+      | party   | asset | market id | margin | general |
+      | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
+      | trader4 | ETH   | ETH/DEC21 | 205    | 0       |
 
 Scenario: Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
 
@@ -661,17 +642,17 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party   | asset | amount     |
-      | aux1     | ETH   | 100000000  |
-      | aux2     | ETH   | 100000000  |
-      | trader3  | ETH   | 10000000   |
-      | trader4  | ETH   | 189        |
+      | aux1    | ETH   | 100000000  |
+      | aux2    | ETH   | 100000000  |
+      | trader3 | ETH   | 10000000   |
+      | trader4 | ETH   | 189        |
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1    | ETH/DEC21 | buy  | 10     | 920   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 10     | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/DEC21 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/DEC21 | buy  | 10     | 920   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 10     | 1080  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
@@ -692,8 +673,8 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
  
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
-      | trader3  | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
-      | trader4  | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
+      | trader3 | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
+      | trader4 | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
 
    Then the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
@@ -709,27 +690,26 @@ Scenario: Testing fees in continuous trading when insufficient balance in their 
       | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
       | trader4 |          | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 3      | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
+      | trader4 | market   | ACCOUNT_TYPE_MARGIN      | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 2      | ETH   |
       | market  | trader3  | ACCOUNT_TYPE_FEES_MAKER  | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 6      | ETH   |  
     
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
-      # | trader4 | ETH/DEC21 | 179         | 196    | 214     | 250     |
-      | trader4 | ETH/DEC21 | 0         | 0    | 0     | 0     |
+      | party   | market id | maintenance | search | initial | release |
+      | trader4 | ETH/DEC21 |    0        |   0    |   0     |   0     |
 
     Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
-      | trader3     | ETH   | ETH/DEC21 | 240    | 9999766 |
-      | trader4     | ETH   | ETH/DEC21 | 0    | 0       |
+      | party   | asset | market id | margin | general |
+      | trader3 | ETH   | ETH/DEC21 | 240    | 9999766 |
+      | trader4 | ETH   | ETH/DEC21 |   0    |    0    |
 
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
     And the accumulated liquidity fees should be "4" for the market "ETH/DEC21"
-    # why liquidity fees has been doubled from 2 to 4 incase of confiscation of trade 
 
     When the network moves ahead "11" blocks
 
     And the following transfers should happen:
-      | from   | to   | from account                | to account          | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 4      | ETH   |
+      | from   | to   | from account                | to account           | market id | amount | asset |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 4      | ETH   |
 
 Scenario: Testing fees in auctions session with each side of a trade debited 1/2 IF & LP
     
@@ -789,10 +769,9 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
       | trader3a | 1002  | 1    | trader4 |
 
      Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
+      | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 843    | 9157    |
       | trader4  | ETH   | ETH/DEC21 | 1318   | 8682    |
-      # why the margins are different for both parties
       
       #Scenario: Triggering Liquidity auction
 
@@ -813,7 +792,7 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
 
     When the network moves ahead "1" blocks
 
-    # TODO: This seems to be suming the traded volume from the previous auction, verify and raise a bug.
+    # TODO: This seems to be suming the traded volume from the previous auction, verify and raise a bug - No longer valid 
     # Then the auction ends with a traded volume of "3" at a price of "1002"
 
     Then the following trades should be executed:
@@ -872,7 +851,7 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
       | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  1     | ETH   |
 
      Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
+      | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3204   | 6380    |
       | trader4  | ETH   | ETH/DEC21 | 7140   | 3260    |
 
@@ -1177,7 +1156,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
       | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  2     | ETH   |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
+      | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 4393        | 4832   | 5271    | 6150    |
 
     Then the parties should have the following account balances:
@@ -1324,14 +1303,13 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
 
     # setup accounts
     When the parties deposit on asset's general account the following amount:
-      | party   | asset | amount     |
+      | party    | asset | amount     |
       | aux1     | ETH   | 100000000  |
       | aux2     | ETH   | 100000000  |
       | trader3a | ETH   | 5000       |
-      | trader4  | ETH   | 7465       |
+      | trader4  | ETH   | 7261       |
       # If the trader4 balance is changed to from 7261 to 7465 then the trade goes ahead as the account balance goes above maintenance level after paying fees.
-      # | trader4  | ETH   | 7261       |
-      # If the trader4 balance is changed to 7465 then the trade goes ahead as the account balance goes below maintenance level.
+      # | trader4  | ETH   | 7465       |
 
     Then the parties place the following orders:
       | party   | market id | side  | volume | price | resulting trades | type       | tif     |
@@ -1388,11 +1366,11 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | trader3a | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  2     | ETH   |
 
     Then the parties should have the following margin levels:
-      | party  | market id | maintenance | search | initial | release |
+      | party   | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 4760        | 5236   | 5712    | 6664    |
 
     Then the parties should have the following account balances:
-      | party   | asset | market id | margin | general |
+      | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 0       |
       | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
 
