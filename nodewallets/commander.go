@@ -77,7 +77,7 @@ func (c *Commander) Command(_ context.Context, cmd txn.Command, payload proto.Me
 			c.log.Panic("could not sign command", logging.Error(err))
 		}
 
-		tx := commands.NewTransaction(c.wallet.PubKeyOrAddress().Hex(), marshalledData, signature)
+		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
 		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionRequest_TYPE_ASYNC)
 		if err != nil {
 			// this can happen as network dependent

@@ -38,7 +38,7 @@ func (opts *updateCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(vegaPaths, pass)
+	vegaKey, ethAddress, walletID, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -53,6 +53,7 @@ func (opts *updateCmd) Execute(_ []string) error {
 	}
 	genesisState := genesis.DefaultGenesisState()
 	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
+		ID:              walletID,
 		VegaPubKey:      vegaKey,
 		EthereumAddress: ethAddress,
 	}

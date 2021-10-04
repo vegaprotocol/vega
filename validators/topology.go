@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
@@ -17,11 +16,6 @@ var (
 	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registered with the blockchain node")
 	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
 )
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
-type Wallet interface {
-	PubKeyOrAddress() crypto.PublicKeyOrAddress
-}
 
 // Broker needs no mocks
 type Broker interface {
@@ -131,7 +125,7 @@ func (t *Topology) AllNodeIDs() []string {
 }
 
 func (t *Topology) SelfVegaPubKey() string {
-	return t.wallet.PubKeyOrAddress().Hex()
+	return t.wallet.PubKey().Hex()
 }
 
 func (t *Topology) SelfNodeID() string {
@@ -254,15 +248,11 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		return err
 	}
 
-	// TODO: change this to use the wallet ID
-	// walletID := t.wallet.ID().Hex()
-	pubKey := t.wallet.PubKeyOrAddress().Hex()
+	walletID := t.wallet.ID().Hex()
 
 	// tm is base64 encoded, vega is hex
 	for tm, data := range state {
-		// TODO: change this to use the wallet ID
-		// if walletID == data.ID {
-		if pubKey == data.VegaPubKey {
+		if walletID == data.ID {
 			t.isValidator = true
 		}
 

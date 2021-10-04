@@ -852,7 +852,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return err
@@ -867,7 +867,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	_, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	return err
 }

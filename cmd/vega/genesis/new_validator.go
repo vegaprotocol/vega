@@ -35,7 +35,7 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(vegaPaths, pass)
+	vegaKey, ethAddress, walletID, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -63,9 +63,7 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 
 	validatorDataState := map[string]validators.ValidatorData{
 		base64.StdEncoding.EncodeToString(pubKey.Bytes()): {
-			// TODO: change this with the master public key once available
-			// via the go-wallet
-			ID:              vegaKey,
+			ID:              walletID,
 			VegaPubKey:      vegaKey,
 			EthereumAddress: ethAddress,
 			Country:         opts.Country,

@@ -54,8 +54,8 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	}{
 		Validators: map[string]validators.ValidatorData{
 			defaultTmPubKeyBase64: {
-				ID:         wallet.PubKeyOrAddress().Hex(),
-				VegaPubKey: wallet.PubKeyOrAddress().Hex(),
+				ID:         wallet.PubKey().Hex(),
+				VegaPubKey: wallet.PubKey().Hex(),
 				InfoURL:    "n0.xyz.vega/node/123",
 				Country:    "GB",
 			},
