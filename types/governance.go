@@ -253,6 +253,26 @@ func (v Vote) IntoProto() *proto.Vote {
 	}
 }
 
+func VoteFromProto(v *proto.Vote) (*Vote, error) {
+	ret := Vote{
+		PartyID:    v.PartyId,
+		Value:      v.Value,
+		ProposalID: v.ProposalId,
+		Timestamp:  v.Timestamp,
+	}
+	if len(v.TotalGovernanceTokenBalance) > 0 {
+		ret.TotalGovernanceTokenBalance, _ = num.UintFromString(v.TotalGovernanceTokenBalance, 10)
+	}
+	if len(v.TotalGovernanceTokenWeight) > 0 {
+		w, err := num.DecimalFromString(v.TotalGovernanceTokenWeight)
+		if err != nil {
+			return nil, err
+		}
+		ret.TotalGovernanceTokenWeight = w
+	}
+	return &ret, nil
+}
+
 type NewMarketCommitment struct {
 	CommitmentAmount *num.Uint
 	Fee              num.Decimal

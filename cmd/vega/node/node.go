@@ -18,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
+	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/coreapi"
@@ -33,7 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/oracles/adaptors"
@@ -46,7 +47,6 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"google.golang.org/grpc"
 )
@@ -84,7 +84,7 @@ type NodeCommand struct {
 	rewards              *rewards.Engine
 	checkpoint           *checkpoint.Engine
 	spam                 *spam.Engine
-	nodeWallet           *nodewallet.Service
+	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
 
 	assets         *assets.Service
@@ -145,8 +145,8 @@ func (l *NodeCommand) Run(confWatcher *config.Watcher, vegaPaths paths.Paths, no
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
 	defer func() {
-		if err := l.nodeWallet.Cleanup(); err != nil {
-			l.Log.Error("error cleaning up nodewallet", logging.Error(err))
+		if err := l.nodeWallets.Ethereum.Cleanup(); err != nil {
+			l.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
 		}
 	}()
 

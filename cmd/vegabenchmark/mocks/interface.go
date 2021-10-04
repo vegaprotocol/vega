@@ -5,9 +5,9 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
-	"code.vegaprotocol.io/vega/nodewallet"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -15,12 +15,6 @@ import (
 
 	"github.com/golang/protobuf/proto"
 )
-
-// StakingAccounts ...
-//go:generate go run github.com/golang/mock/mockgen -destination staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks StakingAccounts
-type StakingAccounts interface {
-	HasBalance(string) bool
-}
 
 //go:generate go run github.com/golang/mock/mockgen -destination stake_verifier_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks StakeVerifier
 type StakeVerifier interface {
@@ -36,11 +30,6 @@ type Limits interface {
 	BootstrapFinished() bool
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination node_wallet_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks NodeWallet
-type NodeWallet interface {
-	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination broker_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Broker
 type Broker interface {
 	Send(e events.Event)
@@ -49,7 +38,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination notary_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Notary
 type Notary interface {
-	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind)
 	SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error
 	IsSigned(ctx context.Context, id string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
@@ -75,7 +64,7 @@ type OracleEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks OracleAdaptors
 type OracleAdaptors interface {
-	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKeyOrAddress, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination commander_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Commander
@@ -89,4 +78,5 @@ type GovernanceEngine interface {
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
+	Hash() []byte
 }

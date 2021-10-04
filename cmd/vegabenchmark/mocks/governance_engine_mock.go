@@ -51,6 +51,20 @@ func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1, arg2 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddVote), arg0, arg1, arg2)
 }
 
+// Hash mocks base method
+func (m *MockGovernanceEngine) Hash() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Hash")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// Hash indicates an expected call of Hash
+func (mr *MockGovernanceEngineMockRecorder) Hash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockGovernanceEngine)(nil).Hash))
+}
+
 // OnChainTimeUpdate mocks base method
 func (m *MockGovernanceEngine) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) ([]*governance.ToEnact, []*governance.VoteClosed) {
 	m.ctrl.T.Helper()

@@ -37,7 +37,7 @@ type EpochEngine interface {
 }
 
 //Delegation engine for getting validation data
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards DelegationEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards Delegation
 type Delegation interface {
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 }
@@ -407,10 +407,6 @@ func (e *Engine) calculateRewards(ctx context.Context, asset, accountID string, 
 
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
 	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
-
-	if rewardBalance.IsZero() {
-		return nil
-	}
 
 	return e.calculatStakingAndDelegationRewards(ctx, e.broker, num.NewUint(epoch.Seq).String(), asset, accountID, rewardScheme, rewardBalance, validatorData)
 }

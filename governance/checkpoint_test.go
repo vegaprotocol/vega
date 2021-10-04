@@ -117,13 +117,13 @@ func testCheckpointSuccess(t *testing.T) {
 	defer eng2.ctrl.Finish()
 
 	// Load checkpoint
-	require.NoError(t, eng2.Load(data))
+	require.NoError(t, eng2.Load(ctx, data))
 
 	enact, noClose := eng2.OnChainTimeUpdate(ctx, afterEnactment)
 	require.Empty(t, noClose)
 	require.NotEmpty(t, enact)
 
 	data = append(data, []byte("foo")...)
-	require.Error(t, eng2.Load(data))
+	require.Error(t, eng2.Load(ctx, data))
 
 }

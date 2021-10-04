@@ -3,24 +3,21 @@ package validators_test
 import (
 	"context"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
+	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/nodewallets"
+	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/validators"
-	"code.vegaprotocol.io/vega/validators/mocks"
+	"github.com/stretchr/testify/require"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-)
-
-const (
-	vegaPubKey = "0f9041e6d5b83d3577d02de3e92c39a2ce1e5aeeee2c40cfbd28a339a3e2e265"
 )
 
 var tmPubKey = "tm-pub-key"
@@ -28,19 +25,22 @@ var tmPubKey = "tm-pub-key"
 type testTop struct {
 	*validators.Topology
 	ctrl   *gomock.Controller
-	wallet *mocks.MockWallet
+	wallet *vgnw.Wallet
 	broker *brokerMocks.MockBroker
 }
 
 func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	ctrl := gomock.NewController(t)
-	wallet := mocks.NewMockWallet(ctrl)
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+	_, err := nodewallet.GenerateVegaWallet(vegaPaths, "pass", "pass", false)
+	require.NoError(t, err)
+	wallet, err := nodewallet.GetVegaWallet(vegaPaths, "pass")
+	require.NoError(t, err)
+
 	broker := brokerMocks.NewMockBroker(ctrl)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
-	bytesKey, _ := hex.DecodeString(vegaPubKey)
-	wallet.EXPECT().PubKeyOrAddress().Times(1).Return(crypto.NewPublicKeyOrAddress(vegaPubKey, bytesKey))
 
 	defaultTmPubKey := "default-tm-public-key"
 	defaultTmPubKeyBase64 := base64.StdEncoding.EncodeToString([]byte(defaultTmPubKey))
@@ -54,7 +54,7 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	}{
 		Validators: map[string]validators.ValidatorData{
 			defaultTmPubKeyBase64: {
-				VegaPubKey: vegaPubKey,
+				VegaPubKey: wallet.PubKeyOrAddress().Hex(),
 				InfoURL:    "n0.xyz.vega/node/123",
 				Country:    "GB",
 			},
@@ -201,7 +201,13 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	wallet := mocks.NewMockWallet(ctrl)
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+	_, err := nodewallet.GenerateVegaWallet(vegaPaths, "pass", "pass", false)
+	require.NoError(t, err)
+	wallet, err := nodewallet.GetVegaWallet(vegaPaths, "pass")
+	require.NoError(t, err)
+
 	broker := brokerMocks.NewMockBroker(ctrl)
 	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker)
 	top.UpdateValidatorSet([]string{tmPubKey})
@@ -227,6 +233,5 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 
 	broker.EXPECT().Send(updateEvent).Times(1)
 
-	err := top.AddNodeRegistration(ctx, &nr)
-	assert.NoError(t, err)
+	assert.NoError(t, top.AddNodeRegistration(ctx, &nr))
 }

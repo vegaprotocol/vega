@@ -92,43 +92,33 @@ func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Ui
 		return num.Zero(), err
 	}
 
+	minBalance := balance.Clone()
+
 	// now we have the balance at the from time.
 	// we will want to check how much was added / removed
 	// during the epoch, and make sure that the initial
 	// balance is still covered
 	var (
-		fromUnix  = from.UnixNano()
-		toUnix    = to.UnixNano()
-		deposited = num.Zero()
-		withdrawn = num.Zero()
+		fromUnix = from.UnixNano()
+		toUnix   = to.UnixNano()
 	)
 	for i := 0; i < len(s.Events) && s.Events[i].TS <= toUnix; i++ {
 		if s.Events[i].TS > fromUnix {
 			evt := s.Events[i]
 			switch evt.Type {
 			case types.StakeLinkingTypeDeposited:
-				deposited.Add(deposited, evt.Amount)
+				balance.AddSum(evt.Amount)
 			case types.StakeLinkingTypeRemoved:
-				withdrawn.Add(withdrawn, evt.Amount)
+				if balance.LT(evt.Amount) {
+					return num.Zero(), ErrNegativeBalance
+				}
+				balance.Sub(balance, evt.Amount)
+				minBalance = num.Min(balance, minBalance)
 			}
 		}
 	}
 
-	// now we'll check if what was deposited during the epoch
-	// cover what we have at the start of it. and see
-	if withdrawn.GT(deposited) {
-		// we withdrawn more than we deposited, so we'll deduce
-		// the difference to the stake to be returned
-
-		withdrawn = withdrawn.Sub(withdrawn, deposited)
-		if withdrawn.GT(balance) {
-			return num.Zero(), nil
-		}
-
-		return balance.Sub(balance, withdrawn), nil
-	}
-
-	return balance, nil
+	return minBalance, nil
 }
 
 // computeOnGoingBalance can return only 1 error which would

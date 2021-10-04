@@ -85,9 +85,7 @@ func TestEnableAssets(t *testing.T) {
 }
 
 func TestBalanceTracking(t *testing.T) {
-	t.Run("test a party without any account has no balance", testPartyWithoutAccountHasNoBalance)
 	t.Run("test a party with an account has a balance", testPartyWithAccountHasABalance)
-	t.Run("test a party with accounts cleared out has no balance", testPartyWithAccountsClearedOutHasNoBalance)
 }
 
 func TestCollateralContinuousTradingFeeTransfer(t *testing.T) {
@@ -177,14 +175,6 @@ func testTransferRewardsSuccess(t *testing.T) {
 	require.Equal(t, num.Zero(), rewardAccount.Balance)
 }
 
-func testPartyWithoutAccountHasNoBalance(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
-	defer eng.Finish()
-
-	party := "myparty"
-	assert.False(t, eng.HasBalance(party))
-}
-
 func testPartyWithAccountHasABalance(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
@@ -202,49 +192,8 @@ func testPartyWithAccountHasABalance(t *testing.T) {
 
 	evt := eng.broker.GetLastByTypeAndID(events.AccountEvent, acc)
 	require.NotNil(t, evt)
-	ae, ok := evt.(accEvt)
+	_, ok := evt.(accEvt)
 	require.True(t, ok)
-	account := ae.Account()
-	// balance of the account after all of the events should be 500
-	require.Equal(t, bal.String(), account.Balance)
-	assert.True(t, eng.HasBalance(party))
-}
-
-func testPartyWithAccountsClearedOutHasNoBalance(t *testing.T) {
-	eng := getTestEngine(t, "test-market")
-	defer eng.Finish()
-
-	party := "myparty"
-	bal := num.NewUint(500)
-	// create party
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
-	acc, err := eng.CreatePartyGeneralAccount(context.Background(), party, testMarketAsset)
-	assert.NoError(t, err)
-
-	// then add some money
-	err = eng.UpdateBalance(context.Background(), acc, bal)
-	assert.Nil(t, err)
-	evt := eng.broker.GetLastByTypeAndID(events.AccountEvent, acc)
-	require.NotNil(t, evt)
-	ae, ok := evt.(accEvt)
-	require.True(t, ok)
-	account := ae.Account()
-	// balance of the account after all of the events should be 500
-	require.Equal(t, bal.String(), account.Balance)
-
-	// then add some money
-	err = eng.DecrementBalance(context.Background(), acc, bal)
-	assert.Nil(t, err)
-	// get the last event after decrementing it
-	// we don't have to perform a nil-check here because we know there is an event for this ID anyway
-	evt = eng.broker.GetLastByTypeAndID(events.AccountEvent, acc)
-	// this type assertion is guaranteed to work here anyway
-	ae = evt.(accEvt)
-	// balance should be zero
-	require.Zero(t, stringToInt(ae.Account().Balance))
-
-	// HasBalance returns true, seeing as zero is technically a balance...
-	assert.True(t, eng.HasBalance(party))
 }
 
 func testCreateBondAccountFailureNoGeneral(t *testing.T) {
@@ -648,7 +597,7 @@ func testEnableAssetSuccess(t *testing.T) {
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
-	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
+	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
 	assert.True(t, assetInsuranceAcc.Balance.IsZero())
 
 }
@@ -2215,7 +2164,7 @@ func TestClearMarket(t *testing.T) {
 	assert.Equal(t, 2, len(responses))
 
 	// as there's only one market and it's being cleared we expect all the balance to go to the global account
-	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
+	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
 	assert.Equal(t, num.NewUint(1000), assetInsuranceAcc.Balance)
 }
 
@@ -2303,7 +2252,7 @@ func TestWithdrawalOK(t *testing.T) {
 	assert.Nil(t, err)
 
 	call := 0
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3).Do(func(evt events.Event) {
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
 		ae, ok := evt.(accEvt)
 		assert.True(t, ok)
 		acc := ae.Account()
@@ -2313,20 +2262,6 @@ func TestWithdrawalOK(t *testing.T) {
 			// once to create the lock account, once to set its balance to 100
 			assert.Equal(t, 100*call, stringToInt(acc.Balance))
 			call++
-		} else {
-			t.FailNow()
-		}
-	})
-
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(100))
-	assert.NoError(t, err)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 0, stringToInt(acc.Balance))
 		} else {
 			t.FailNow()
 		}
@@ -2348,36 +2283,12 @@ func TestWithdrawalExact(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		// fmt.Printf("ACCOUNT: %v\n", acc)
-		if acc.Type == types.AccountTypeGeneral {
-			assert.Equal(t, 0, stringToInt(acc.Balance))
-		} else if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 500, stringToInt(acc.Balance))
-		} else {
-			t.FailNow()
-		}
-	})
-
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(500))
-	assert.NoError(t, err)
-
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
-		ae, ok := evt.(accEvt)
-		assert.True(t, ok)
-		acc := ae.Account()
-		if acc.Type == types.AccountTypeLockWithdraw {
-			assert.Equal(t, 0, stringToInt(acc.Balance))
-		} else {
-			t.FailNow()
-		}
-	})
-
 	_, err = eng.Engine.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(500))
 	assert.Nil(t, err)
+
+	accAfter, err := eng.Engine.GetPartyGeneralAccount(party, testMarketAsset)
+	assert.NoError(t, err)
+	assert.Equal(t, accAfter.Balance, num.Zero())
 }
 
 func TestWithdrawalNotEnough(t *testing.T) {
@@ -2392,7 +2303,7 @@ func TestWithdrawalNotEnough(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), party, testMarketAsset, num.NewUint(600))
+	_, err = eng.Engine.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(600))
 	assert.EqualError(t, err, collateral.ErrNotEnoughFundsToWithdraw.Error())
 
 }
@@ -2409,8 +2320,6 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	_, err = eng.Engine.LockFundsForWithdraw(context.Background(), "invalid", testMarketAsset, num.NewUint(600))
-	assert.Error(t, err)
 	err = nil
 	_, err = eng.Engine.Withdraw(context.Background(), "invalid", testMarketAsset, num.NewUint(600))
 	assert.Error(t, err)
@@ -2504,8 +2413,11 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
+			MinLpStake:  num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{},
+				BuiltinAsset: &types.BuiltinAsset{
+					MaxFaucetAmountMint: num.Zero(),
+				},
 			},
 		},
 	}
@@ -2516,7 +2428,16 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset := types.Asset{
 		ID: testMarketAsset,
 		Details: &types.AssetDetails{
-			Symbol: testMarketAsset,
+			Symbol:      testMarketAsset,
+			Name:        testMarketAsset,
+			Decimals:    0,
+			TotalSupply: num.NewUint(10000),
+			MinLpStake:  num.Zero(),
+			Source: &types.AssetDetailsBuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					MaxFaucetAmountMint: num.Zero(),
+				},
+			},
 		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
@@ -2525,7 +2446,16 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset = types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
-			Symbol: "ETH",
+			Symbol:      "ETH",
+			Name:        "ETH",
+			Decimals:    18,
+			TotalSupply: num.NewUint(1000000000),
+			MinLpStake:  num.Zero(),
+			Source: &types.AssetDetailsBuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					MaxFaucetAmountMint: num.Zero(),
+				},
+			},
 		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)

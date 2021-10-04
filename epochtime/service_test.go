@@ -5,36 +5,51 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/broker"
+	mbroker "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/epochtime"
+	"code.vegaprotocol.io/vega/epochtime/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	vt     *vegatime.Svc
-	now    time.Time = time.Unix(0, 0).UTC()
 	epochs []types.Epoch
 )
 
-func getEpochService(t *testing.T) *epochtime.Svc {
-	ctx := context.Background()
-	vt = vegatime.New(vegatime.NewDefaultConfig())
-	log := logging.NewTestLogger()
-	broker, err := broker.New(ctx, log, broker.NewDefaultConfig())
-	assert.NoError(t, err)
+type tstSvc struct {
+	*epochtime.Svc
+	ctrl   *gomock.Controller
+	time   *mocks.MockVegaTime
+	broker *mbroker.MockBroker
+	cb     func(context.Context, time.Time)
+}
 
-	et := epochtime.NewService(
+func getEpochServiceMT(t *testing.T) *tstSvc {
+	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	tm := mocks.NewMockVegaTime(ctrl)
+	broker := mbroker.NewMockBroker(ctrl)
+	ret := &tstSvc{
+		ctrl:   ctrl,
+		time:   tm,
+		broker: broker,
+	}
+
+	tm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
+		ret.cb = cb
+	})
+
+	ret.Svc = epochtime.NewService(
 		log,
 		epochtime.NewDefaultConfig(),
-		vt,
+		tm,
 		broker,
 	)
-	_ = et.OnEpochLengthUpdate(ctx, time.Hour*24) // set default epoch duration
-	return et
+	_ = ret.OnEpochLengthUpdate(context.Background(), time.Hour*24) // set default epoch duration
+	return ret
 }
 
 func onEpoch(ctx context.Context, e types.Epoch) {
@@ -42,15 +57,21 @@ func onEpoch(ctx context.Context, e types.Epoch) {
 }
 
 func TestEpochService(t *testing.T) {
+	now := time.Unix(0, 0).UTC()
+
 	ctx := context.Background()
-	es := getEpochService(t)
-	assert.NotNil(t, es)
+	service := getEpochServiceMT(t)
+	defer service.ctrl.Finish()
+
+	service.broker.EXPECT().Send(gomock.Any()).Times(3)
 
 	// Subscribe to epoch updates
-	es.NotifyOnEpoch(onEpoch)
+	// Reset global used in callback so that is doesn't pick up state from another test
+	epochs = []types.Epoch{}
+	service.NotifyOnEpoch(onEpoch)
 
 	// Move time forward to generate first epoch
-	vt.SetTimeNow(ctx, now)
+	service.cb(ctx, now)
 	// Check we only have one epoch update
 	assert.Equal(t, 1, len(epochs))
 	epoch := epochs[0]
@@ -64,20 +85,22 @@ func TestEpochService(t *testing.T) {
 	// End time should not be set
 	assert.True(t, epoch.EndTime.IsZero())
 
-	// Move time forward one day
+	// Move time forward one day + one second to start the first block past the expiry of the first epoch
 	now = now.Add((time.Hour * 24) + time.Second)
-	vt.SetTimeNow(ctx, now)
-	// We should have 1 new updates, one for end of epoch.
-	assert.Equal(t, 2, len(epochs))
+	service.cb(ctx, now)
+
+	// end the block to mark the end of the epoch
+	service.OnBlockEnd(ctx)
+
+	// start the next block to start the second epoch
+	service.cb(ctx, now)
+
+	// We should have 2 new updates, one for end of epoch and one for the beginning of the new one
+	assert.Equal(t, 3, len(epochs))
 	epoch = epochs[1]
 	assert.EqualValues(t, 0, epoch.Seq)
 	assert.Equal(t, now.String(), epoch.EndTime.String())
 
-	// Move time forward one block
-	now = now.Add(time.Second)
-	vt.SetTimeNow(ctx, now)
-	// One update for the new epoch
-	assert.Equal(t, 3, len(epochs))
 	epoch = epochs[2]
 	assert.EqualValues(t, 1, epoch.Seq)
 	assert.Equal(t, now.String(), epoch.StartTime.String())
