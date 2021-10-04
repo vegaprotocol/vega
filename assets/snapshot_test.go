@@ -38,6 +38,7 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 	_, err = as.NewAsset("asset2", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
+	require.Nil(t, err)
 	err = as.Enable("asset2")
 	require.Nil(t, err)
 
@@ -86,6 +87,7 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 	_, err = as.NewAsset("asset2", &types.AssetDetails{
 		Source: &types.AssetDetailsBuiltinAsset{},
 	})
+	require.Nil(t, err)
 
 	// get the has and serialised state
 	hash, err := as.GetHash(pendingKey)
