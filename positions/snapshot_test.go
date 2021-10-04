@@ -2,6 +2,7 @@ package positions_test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -233,4 +234,15 @@ func TestSnapshotHashUpdateMarkPrice(t *testing.T) {
 	h2, err := engine.GetHash(keys[0])
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(h1, h2))
+}
+
+func TestSnapshotHashNoPositions(t *testing.T) {
+
+	engine := getTestEngine(t)
+
+	keys := engine.Keys()
+	h1, err := engine.GetHash(keys[0])
+	require.Nil(t, err)
+	require.Equal(t, "dccba75b8f8476494426ed67d6e7e2593198260c457e3a51487dcd7ad96c9e3b", hex.EncodeToString(h1))
+
 }

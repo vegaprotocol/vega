@@ -7,30 +7,23 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// shadow returns the positions into the snapshot-version of a position
+// shadow returns the position converted into the snapshot-type of a position
 func (p MarketPosition) shadow() *types.PPosition {
 	return &types.PPosition{
 		PartyID: p.partyID,
-		PSize:   p.size,
-		PBuy:    p.buy,
-		PSell:   p.sell,
-		PPrice:  p.price,
+		Size:    p.size,
+		Buy:     p.buy,
+		Sell:    p.sell,
+		Price:   p.price,
 		VwBuy:   p.vwBuyPrice,
 		VwSell:  p.vwSellPrice,
 	}
 }
 
-// serialise
 func (e *Engine) serialise() error {
 
 	if !e.changed {
 		return nil // we already have what we need
-	}
-
-	e.mp.Positions = make([]*types.PPosition, 0, len(e.positionsCpy))
-	for _, p := range e.positionsCpy {
-		pp := p.(*types.PPosition)
-		e.mp.Positions = append(e.mp.Positions, pp)
 	}
 
 	data, err := proto.Marshal(e.pl.IntoProto())
@@ -50,7 +43,7 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 }
 
 func (e *Engine) Keys() []string {
-	return []string{e.mp.MarketID}
+	return []string{e.pl.Key()}
 }
 
 func (e *Engine) GetHash(k string) ([]byte, error) {
@@ -96,16 +89,18 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 		for _, p := range pl.MarketPositions.Positions {
 			pos := NewMarketPosition(p.PartyID)
 
-			pos.buy = p.PBuy
-			pos.sell = p.PSell
+			pos.price = p.Price
+			pos.buy = p.Buy
+			pos.sell = p.Sell
+			pos.size = p.Size
 			pos.vwBuyPrice = p.VwBuy
 			pos.vwSellPrice = p.VwSell
-			pos.price = p.PPrice
-			pos.size = p.PSize
 
 			e.positions[p.PartyID] = pos
-			e.partyIDToIndex[p.PartyID] = len(e.positionsCpy)
-			e.positionsCpy = append(e.positionsCpy, pos.shadow())
+			e.positionsCpy = append(e.positionsCpy, pos)
+
+			e.partyIDToIndex[p.PartyID] = len(e.mp.Positions)
+			e.mp.Positions = append(e.mp.Positions, pos.shadow())
 		}
 
 		e.changed = true
