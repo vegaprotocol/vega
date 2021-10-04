@@ -166,15 +166,6 @@ func (s *Service) getPendingAssets() []*types.Asset {
 	return ret
 }
 
-func (s *Service) setPendingAssets(assets []*types.Asset) error {
-	for _, a := range assets {
-		if _, err := s.NewAsset(a.ID, a.Details); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (s *Service) Get(assetID string) (*Asset, error) {
 	s.amu.RLock()
 	defer s.amu.RUnlock()
