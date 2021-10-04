@@ -514,8 +514,11 @@ func (p Payload) Key() string {
 }
 
 func (p Payload) IntoProto() *snapshot.Payload {
-	d := p.Data.plToProto()
 	ret := snapshot.Payload{}
+	if p.Data == nil {
+		return &ret
+	}
+	d := p.Data.plToProto()
 	switch dt := d.(type) {
 	case *snapshot.Payload_AppState:
 		ret.Data = dt
