@@ -60,19 +60,22 @@ var (
 		"spam":       SpamSnapshot,
 	}
 
-	ErrSnapshotHashMismatch      = errors.New("snapshot hashes do not match")
-	ErrSnapshotMetaMismatch      = errors.New("snapshot metadata does not match")
-	ErrUnknownSnapshotNamespace  = errors.New("unknown snapshot namespace")
-	ErrNoPrefixFound             = errors.New("no prefix in chunk keys")
-	ErrInconsistentNamespaceKeys = errors.New("chunk contains several namespace keys")
-	ErrChunkHashMismatch         = errors.New("loaded chunk hash does not match metadata")
-	ErrChunkOutOfRange           = errors.New("chunk number out of range")
-	ErrUnknownSnapshot           = errors.New("no shapshot to reject")
-	ErrMissingChunks             = errors.New("missing previous chunks")
-	ErrSnapshotRetryLimit        = errors.New("could not load snapshot, retry limit reached")
-	ErrSnapshotKeyDoesNotExist   = errors.New("unknown key for snapshot")
-	ErrInvalidSnapshotNamespace  = errors.New("invalid snapshot namespace")
-	ErrUnknownSnapshotType       = errors.New("snapshot data type not known")
+	ErrSnapshotHashMismatch       = errors.New("snapshot hashes do not match")
+	ErrSnapshotMetaMismatch       = errors.New("snapshot metadata does not match")
+	ErrUnknownSnapshotNamespace   = errors.New("unknown snapshot namespace")
+	ErrNoPrefixFound              = errors.New("no prefix in chunk keys")
+	ErrInconsistentNamespaceKeys  = errors.New("chunk contains several namespace keys")
+	ErrChunkHashMismatch          = errors.New("loaded chunk hash does not match metadata")
+	ErrChunkOutOfRange            = errors.New("chunk number out of range")
+	ErrUnknownSnapshot            = errors.New("no shapshot to reject")
+	ErrMissingChunks              = errors.New("missing previous chunks")
+	ErrSnapshotRetryLimit         = errors.New("could not load snapshot, retry limit reached")
+	ErrSnapshotKeyDoesNotExist    = errors.New("unknown key for snapshot")
+	ErrInvalidSnapshotNamespace   = errors.New("invalid snapshot namespace")
+	ErrUnknownSnapshotType        = errors.New("snapshot data type not known")
+	ErrUnknownSnapshotChunkHeight = errors.New("no snapshot or chunk found for given height")
+	ErrInvalidSnapshotFormat      = errors.New("invalid snapshot format")
+	ErrSnapshotFormatMismatch     = errors.New("snapshot formats do not match")
 )
 
 type SnapshotFormat = snapshot.Format
@@ -288,4 +291,12 @@ func namespaceFromString(s string) (SnapshotNamespace, error) {
 
 func (n SnapshotNamespace) String() string {
 	return string(n)
+}
+
+func SnapshotFromatFromU32(f uint32) (SnapshotFormat, error) {
+	i32 := int32(f)
+	if _, ok := snapshot.Format_name[i32]; !ok {
+		return SnapshotFormatUnspecified, ErrInvalidSnapshotFormat
+	}
+	return SnapshotFormat(i32), nil
 }

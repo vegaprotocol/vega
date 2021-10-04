@@ -167,6 +167,22 @@ func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
 	return e.snapshot.Ready(), nil
 }
 
+func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error) {
+	if e.snapshot == nil {
+		// @TODO try and retrieve the chunk
+		return nil, types.ErrUnknownSnapshotChunkHeight
+	}
+	// check format:
+	f, err := types.SnapshotFromatFromU32(format)
+	if err != nil {
+		return nil, err
+	}
+	if f != e.snapshot.Format {
+		return nil, types.ErrSnapshotFormatMismatch
+	}
+	return e.snapshot.GetRawChunk(height)
+}
+
 func (e *Engine) GetMissingChunks() []uint32 {
 	if e.snapshot == nil {
 		return nil

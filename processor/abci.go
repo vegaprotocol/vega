@@ -63,6 +63,7 @@ type Snapshot interface {
 	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
 	GetMissingChunks() []uint32
 	ApplySnapshot() error
+	LoadSnapshotChunk(height uint64, format, height uint32) (*types.RawChunk, error)
 }
 
 type App struct {
@@ -364,6 +365,16 @@ func (app *App) ApplySnapshotChunk(req tmtypes.RequestApplySnapshotChunk) tmtype
 		_ = app.snapshot.ApplySnapshot()
 	}
 	return resp
+}
+
+func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+	raw, err := app.snapshot.LoadSnapshotChunk()
+	if err != nil {
+		return tmtypes.ResponseLoadSnapshotChunk{}
+	}
+	return tmtypes.ResponseLoadSnapshotChunk{
+		Chunk: raw.Data,
+	}
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {

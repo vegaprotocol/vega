@@ -461,6 +461,17 @@ func (s Snapshot) IntoProto() (*snapshot.Snapshot, error) {
 	}, nil
 }
 
+func (s Snapshot) GetRawChunk(height uint32) (*RawChunk, error) {
+	if s.Height < uint64(height) {
+		return nil, ErrUnknownSnapshotChunkHeight
+	}
+	i := int(height)
+	return &RawChunk{
+		Nr:   height,
+		Data: s.ByteChunks[i],
+	}, nil
+}
+
 func MetadataFromProto(m *snapshot.Metadata) (*Metadata, error) {
 	nh := make([]*NodeHash, 0, len(m.NodeHashes))
 	for _, h := range m.NodeHashes {
