@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 const requestTimeout = time.Second * 5
@@ -17,6 +16,7 @@ const requestTimeout = time.Second * 5
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/rpc_client_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets/eth/clef Client
 type Client interface {
 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+	Close()
 }
 
 type wallet struct {
@@ -36,12 +36,7 @@ func newAccount(accountAddr ethcommon.Address, endpoint string) *accounts.Accoun
 	}
 }
 
-func NewWallet(endpoint string, accountAddr ethcommon.Address) (*wallet, error) {
-	client, err := rpc.Dial(endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
-	}
-
+func NewWallet(client Client, endpoint string, accountAddr ethcommon.Address) (*wallet, error) {
 	w := &wallet{
 		name:     fmt.Sprintf("clef-%s", endpoint),
 		client:   client,
@@ -59,12 +54,7 @@ func NewWallet(endpoint string, accountAddr ethcommon.Address) (*wallet, error) 
 
 // GenerateNewWallet new wallet will create new account in Clef and returns wallet.
 // Caveat: generating new wallet in Clef has to be manually approved and only key store backend is supported.
-func GenerateNewWallet(endpoint string) (*wallet, error) {
-	client, err := rpc.Dial(endpoint)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
-	}
-
+func GenerateNewWallet(client Client, endpoint string) (*wallet, error) {
 	w := &wallet{
 		name:     fmt.Sprintf("clef-%s", endpoint),
 		client:   client,
@@ -123,6 +113,7 @@ func (w *wallet) listAccounts() ([]ethcommon.Address, error) {
 
 // Cleanup is noop
 func (w *wallet) Cleanup() error {
+	w.client.Close()
 	return nil
 }
 

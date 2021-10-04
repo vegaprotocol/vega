@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallets/eth/clef"
 	"code.vegaprotocol.io/vega/nodewallets/eth/keystore"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 func GetEthereumWallet(config eth.Config, vegaPaths paths.Paths, registryPassphrase string) (*eth.Wallet, error) {
@@ -34,7 +35,12 @@ func getEthereumWalletWithRegistry(config eth.Config, vegaPaths paths.Paths, reg
 	case EthereumClefWallet:
 		ethAddress := ethcommon.HexToAddress(walletRegistry.AccountAddress)
 
-		w, err := clef.NewWallet(config.ClefAddress, ethAddress)
+		client, err := rpc.Dial(config.ClefAddress)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
+		}
+
+		w, err := clef.NewWallet(client, config.ClefAddress, ethAddress)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise Ethereum Clef node wallet: %w", err)
 		}
@@ -81,7 +87,12 @@ func GenerateEthereumWallet(
 	var data map[string]string
 
 	if config.ClefAddress != "" {
-		w, err := clef.GenerateNewWallet(config.ClefAddress)
+		client, err := rpc.Dial(config.ClefAddress)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
+		}
+
+		w, err := clef.GenerateNewWallet(client, config.ClefAddress)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate Ethereum clef node wallet: %w", err)
 		}

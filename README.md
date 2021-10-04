@@ -104,7 +104,7 @@ vega nodewallet --help
 Given that Clef requires manually approving all RPC API calls, it is mandatory to setup
 [custom rules](https://github.com/ethereum/go-ethereum/blob/master/cmd/clef/rules.md#rules) for automatic approvals. Vega requires at least `ApproveListing` and `ApproveSignData` rules to be automatically approved.
 
-Example of simple ruleset js file with approvals required by Vega:
+Example of simple rule set js file with approvals required by Vega:
 ```js
 function ApproveListing() {
   return "Approve"
