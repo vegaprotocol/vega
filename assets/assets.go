@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -40,8 +40,10 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nodeWallets *nodewallet.NodeWallets
-	ethClient erc20.ETHClient
+	nodeWallets     *nodewallet.NodeWallets
+	ethClient       erc20.ETHClient
+	dss             *assetsSnapshotState
+	keyToSerialiser map[string]func() ([]byte, error)
 }
 
 func New(log *logging.Logger, cfg Config, nw *nodewallet.NodeWallets, ethClient erc20.ETHClient, ts TimeService) *Service {
@@ -55,7 +57,16 @@ func New(log *logging.Logger, cfg Config, nw *nodewallet.NodeWallets, ethClient 
 		pendingAssets: map[string]*Asset{},
 		nodeWallets:   nw,
 		ethClient:     ethClient,
+		dss: &assetsSnapshotState{
+			changed:    map[string]bool{activeKey: true, pendingKey: true},
+			hash:       map[string][]byte{},
+			serialised: map[string][]byte{},
+		},
+		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
+
+	s.keyToSerialiser[activeKey] = s.serialiseActive
+	s.keyToSerialiser[pendingKey] = s.serialisePending
 	ts.NotifyOnTick(s.onTick)
 	return s
 }
@@ -89,6 +100,8 @@ func (s *Service) Enable(assetID string) error {
 		defer s.amu.Unlock()
 		s.assets[assetID] = asset
 		delete(s.pendingAssets, assetID)
+		s.dss.changed[activeKey] = true
+		s.dss.changed[pendingKey] = true
 		return nil
 	}
 	return ErrAssetInvalid
@@ -101,28 +114,36 @@ func (s *Service) IsEnabled(assetID string) bool {
 	return ok
 }
 
+func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDetails) (*Asset, error) {
+	switch assetDetails.Source.(type) {
+	case *types.AssetDetailsBuiltinAsset:
+		return &Asset{
+			builtin.New(assetID, assetDetails),
+		}, nil
+	case *types.AssetDetailsErc20:
+		asset, err := erc20.New(assetID, assetDetails, s.nodeWallets.Ethereum, s.ethClient)
+		if err != nil {
+			return nil, err
+		}
+		return &Asset{asset}, nil
+	default:
+		return nil, ErrUnknownAssetSource
+	}
+}
+
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
 // returns the assetID and an error
 func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
-	switch assetDetails.Source.(type) {
-	case *types.AssetDetailsBuiltinAsset:
-		s.pendingAssets[assetID] = &Asset{
-			builtin.New(assetID, assetDetails),
-		}
-	case *types.AssetDetailsErc20:
-		asset, err := erc20.New(assetID, assetDetails, s.nodeWallets.Ethereum, s.ethClient)
-		if err != nil {
-			return "", err
-		}
-		s.pendingAssets[assetID] = &Asset{asset}
-	default:
-		return "", ErrUnknownAssetSource
+	asset, err := s.assetFromDetails(assetID, assetDetails)
+	if err != nil {
+		return "", err
 	}
-
-	return assetID, nil
+	s.pendingAssets[assetID] = asset
+	s.dss.changed[pendingKey] = true
+	return assetID, err
 }
 
 func (s *Service) GetEnabledAssets() []*types.Asset {
@@ -133,6 +154,25 @@ func (s *Service) GetEnabledAssets() []*types.Asset {
 		ret = append(ret, a.ToAssetType())
 	}
 	return ret
+}
+
+func (s *Service) getPendingAssets() []*types.Asset {
+	s.pamu.RLock()
+	defer s.pamu.RUnlock()
+	ret := make([]*types.Asset, 0, len(s.assets))
+	for _, a := range s.pendingAssets {
+		ret = append(ret, a.ToAssetType())
+	}
+	return ret
+}
+
+func (s *Service) setPendingAssets(assets []*types.Asset) error {
+	for _, a := range assets {
+		if _, err := s.NewAsset(a.ID, a.Details); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Service) Get(assetID string) (*Asset, error) {
