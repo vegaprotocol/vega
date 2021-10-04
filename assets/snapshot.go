@@ -18,9 +18,7 @@ var (
 		pendingKey,
 	}
 
-	ErrSnapshotKeyDoesNotExist  = errors.New("unknown key for assets snapshot")
-	ErrUnknownSnapshotType      = errors.New("snapshot data type not known")
-	ErrInvalidSnapshotNamespace = errors.New("invalid snapshot namespace")
+	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for assets snapshot")
 )
 
 type assetsSnapshotState struct {
@@ -106,7 +104,7 @@ func (s *Service) Snapshot() (map[string][]byte, error) {
 
 func (s *Service) LoadState(ctx context.Context, p *types.Payload) error {
 	if s.Namespace() != p.Data.Namespace() {
-		return ErrInvalidSnapshotNamespace
+		return types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
@@ -115,7 +113,7 @@ func (s *Service) LoadState(ctx context.Context, p *types.Payload) error {
 	case *types.PayloadPendingAssets:
 		return s.restorePending(ctx, pl.PendingAssets)
 	default:
-		return ErrUnknownSnapshotType
+		return types.ErrUnknownSnapshotType
 	}
 }
 
