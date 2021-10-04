@@ -88,7 +88,7 @@ func (b *OrderBook) LoadState(payload *types.Payload) error {
 	case *types.PayloadMatchingBook:
 		mb = pl.MatchingBook
 	default:
-		return types.ErrInvalidType
+		return types.ErrUnknownSnapshotType
 	}
 
 	// Check we have an empty book here or else we should panic
