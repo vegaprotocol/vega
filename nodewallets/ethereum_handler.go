@@ -172,7 +172,12 @@ func ImportEthereumWallet(
 
 		ethAddress := ethcommon.HexToAddress(accountAddress)
 
-		w, err := clef.NewWallet(config.ClefAddress, ethAddress)
+		client, err := rpc.Dial(config.ClefAddress)
+		if err != nil {
+			return nil, fmt.Errorf("failed to dial Clef daemon: %w", err)
+		}
+
+		w, err := clef.NewWallet(client, config.ClefAddress, ethAddress)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't initialise Ethereum Clef node wallet: %w", err)
 		}
