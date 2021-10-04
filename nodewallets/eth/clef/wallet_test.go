@@ -24,7 +24,7 @@ func TestNewWallet(t *testing.T) {
 		clientMock.EXPECT().
 			CallContext(gomock.Any(), gomock.Any(), "account_list").
 			Times(1).
-			DoAndReturn(func(a interface{}, accs *[]ethCommon.Address, c interface{}) error {
+			DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
 				*accs = append(*accs, testAddress)
 
 				return nil
@@ -78,7 +78,7 @@ func TestGenerateGenerateNewWallet(t *testing.T) {
 		clientMock.EXPECT().
 			CallContext(gomock.Any(), gomock.Any(), "account_new").
 			Times(1).
-			DoAndReturn(func(a interface{}, addr *string, c interface{}) error {
+			DoAndReturn(func(_ interface{}, addr *string, _ interface{}) error {
 				*addr = testAddress.String()
 
 				return nil
@@ -118,7 +118,7 @@ func TestVersion(t *testing.T) {
 		clientMock.EXPECT().
 			CallContext(gomock.Any(), gomock.Any(), "account_list").
 			Times(1).
-			DoAndReturn(func(a interface{}, accs *[]ethCommon.Address, c interface{}) error {
+			DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
 				*accs = append(*accs, testAddress)
 
 				return nil
@@ -127,7 +127,7 @@ func TestVersion(t *testing.T) {
 		clientMock.EXPECT().
 			CallContext(gomock.Any(), gomock.Any(), "account_version").
 			Times(1).
-			DoAndReturn(func(a interface{}, version *string, c interface{}) error {
+			DoAndReturn(func(_ interface{}, version *string, _ interface{}) error {
 				*version = testVersion
 
 				return nil
@@ -150,7 +150,7 @@ func TestSign(t *testing.T) {
 		clientMock.EXPECT().
 			CallContext(gomock.Any(), gomock.Any(), "account_list").
 			Times(1).
-			DoAndReturn(func(a interface{}, accs *[]ethCommon.Address, c interface{}) error {
+			DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
 				*accs = append(*accs, testAddress)
 
 				return nil
@@ -166,7 +166,7 @@ func TestSign(t *testing.T) {
 				gomock.Any(),
 			).
 			Times(1).
-			DoAndReturn(func(a interface{}, b []byte, c, d, e interface{}) error {
+			DoAndReturn(func(_ interface{}, b []byte, _, _, _ interface{}) error {
 				b = []byte("signed")
 
 				return nil
