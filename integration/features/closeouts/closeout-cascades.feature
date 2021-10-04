@@ -48,11 +48,20 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
  
     And the mark price should be "100" for the market "ETH/DEC19"
 
-   # Then the parties should have the following profit and loss:
-    #  | party   | volume | unrealised pnl | realised pnl |
+   Then the parties should have the following profit and loss:
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader3 | 50      | 0              | 0        |
       #| trader1 | 0      | 0              | -100         |
       #| trader2 | 0      | 0              | -4010        |
-     # | trader3 | 0      | 0              | -5100        |
+
+    And the order book should have the following volumes for market "ETH/DEC19":
+      | side | price | volume |
+      | sell | 1000  | 10     |
+      | buy  | 1     | 10     |
+
+# From spec (https://github.com/vegaprotocol/specs-internal/blob/master/protocol/0019-margin-calculator.md#limit-order-book-linearised-calculation):
+# maintenance_margin_long_open_position = max(slippage_volume * slippage_per_unit, 0) + slippage_volume * [ quantitative_model.risk_factors_long ] . [ Product.value(market_observable) ],
+#                                       = max(50*99,0)+50*0.1*100 = 4950+500 = 5450
 
 # check whether trader 1/2/3 are all closed out, trader3 first, and forced to transfer 500 position to trader2 for price 9
 # then trader2 is closed out, and forced to transfer 40 position to trader 1 for price 8
