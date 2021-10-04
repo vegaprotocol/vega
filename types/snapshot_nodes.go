@@ -1977,7 +1977,7 @@ func (p *ExecutionIDGenerator) plToProto() interface{} {
 }
 
 func (*ExecutionIDGenerator) Namespace() SnapshotNamespace {
-	return "ExecutionIDGenerator"
+	return IDGenSnapshot
 }
 
 func (*ExecutionIDGenerator) Key() string {
