@@ -543,6 +543,12 @@ type Node {
   score: String!
 
   normalisedScore: String!
+
+  # The name of the node
+  name: String!
+
+  # An url to an avatar
+  avatarUrl: String
 }
 
 type Delegation {

@@ -486,12 +486,14 @@ type ComplexityRoot struct {
 	}
 
 	Node struct {
+		AvatarUrl         func(childComplexity int) int
 		Delegations       func(childComplexity int, partyID *string) int
 		EpochData         func(childComplexity int) int
 		EthereumAdddress  func(childComplexity int) int
 		Id                func(childComplexity int) int
 		InfoUrl           func(childComplexity int) int
 		Location          func(childComplexity int) int
+		Name              func(childComplexity int) int
 		NormalisedScore   func(childComplexity int) int
 		PendingStake      func(childComplexity int) int
 		PubKey            func(childComplexity int) int
@@ -2974,6 +2976,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewMarketCommitment.Sells(childComplexity), true
 
+	case "Node.avatarUrl":
+		if e.complexity.Node.AvatarUrl == nil {
+			break
+		}
+
+		return e.complexity.Node.AvatarUrl(childComplexity), true
+
 	case "Node.delegations":
 		if e.complexity.Node.Delegations == nil {
 			break
@@ -3020,6 +3029,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Node.Location(childComplexity), true
+
+	case "Node.name":
+		if e.complexity.Node.Name == nil {
+			break
+		}
+
+		return e.complexity.Node.Name(childComplexity), true
 
 	case "Node.normalisedScore":
 		if e.complexity.Node.NormalisedScore == nil {
@@ -5780,6 +5796,12 @@ type Node {
   score: String!
 
   normalisedScore: String!
+
+  # The name of the node
+  name: String!
+
+  # An url to an avatar
+  avatarUrl: String
 }
 
 type Delegation {
@@ -17665,6 +17687,73 @@ func (ec *executionContext) _Node_normalisedScore(ctx context.Context, field gra
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Node_name(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Node_avatarUrl(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AvatarUrl, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NodeData_stakedTotal(ctx context.Context, field graphql.CollectedField, obj *vega.NodeData) (ret graphql.Marshaler) {
@@ -31850,6 +31939,13 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "name":
+			out.Values[i] = ec._Node_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "avatarUrl":
+			out.Values[i] = ec._Node_avatarUrl(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

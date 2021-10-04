@@ -223,8 +223,9 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 		StakedByOperator:  stakedByOperator.String(),
 		StakedByDelegates: stakedByDelegates.String(),
 		StakedTotal:       stakedTotal.String(),
-
-		Delegations: delegations,
+		Name:              n.n.GetName(),
+		AvatarUrl:         n.n.GetAvatarUrl(),
+		Delegations:       delegations,
 	}
 
 	if sc, ok := n.scoresPerEpoch[epochID]; ok {
