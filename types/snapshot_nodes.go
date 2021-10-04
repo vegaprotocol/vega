@@ -321,10 +321,10 @@ type MarketPositions struct {
 
 // PPosition for Party position, avoids name confict
 type PPosition struct {
-	PartyID         string
-	Size, Buy, Sell int64
-	Price           *num.Uint
-	VwBuy, VwSell   *num.Uint
+	PartyID            string
+	PSize, PBuy, PSell int64
+	PPrice             *num.Uint
+	VwBuy, VwSell      *num.Uint
 }
 
 type StakingAccounts struct {
@@ -967,8 +967,8 @@ func (p *PayloadMarketPositions) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadMarketPositions) Key() string {
-	return "all"
+func (p *PayloadMarketPositions) Key() string {
+	return p.MarketPositions.MarketID
 }
 
 func (*PayloadMarketPositions) Namespace() SnapshotNamespace {
@@ -1463,16 +1463,53 @@ func (g GovernanceActive) IntoProto() *snapshot.GovernanceActive {
 	return &ret
 }
 
+func (p *PPosition) Party() string {
+	return p.PartyID
+}
+
+func (p *PPosition) Size() int64 {
+	return p.PSize
+}
+
+func (p *PPosition) Buy() int64 {
+	return p.PBuy
+}
+
+func (p *PPosition) Sell() int64 {
+	return p.PSell
+}
+
+func (p *PPosition) Price() *num.Uint {
+	if p.PPrice != nil {
+		return p.PPrice.Clone()
+	}
+	return num.Zero()
+}
+
+func (p *PPosition) VWBuy() *num.Uint {
+	if p.VwBuy != nil {
+		return p.VwBuy.Clone()
+	}
+	return num.Zero()
+}
+
+func (p *PPosition) VWSell() *num.Uint {
+	if p.VwSell != nil {
+		return p.VwSell.Clone()
+	}
+	return num.Zero()
+}
+
 func PPositionFromProto(p *snapshot.Position) *PPosition {
 	price, _ := num.UintFromString(p.Price, 10)
 	vwBuy, _ := num.UintFromString(p.VwBuyPrice, 10)
 	vwSell, _ := num.UintFromString(p.VwSellPrice, 10)
 	return &PPosition{
 		PartyID: p.PartyId,
-		Size:    p.Size,
-		Buy:     p.Buy,
-		Sell:    p.Sell,
-		Price:   price,
+		PSize:   p.Size,
+		PBuy:    p.Buy,
+		PSell:   p.Sell,
+		PPrice:  price,
 		VwBuy:   vwBuy,
 		VwSell:  vwSell,
 	}
@@ -1481,10 +1518,10 @@ func PPositionFromProto(p *snapshot.Position) *PPosition {
 func (p PPosition) IntoProto() *snapshot.Position {
 	return &snapshot.Position{
 		PartyId:     p.PartyID,
-		Size:        p.Size,
-		Buy:         p.Buy,
-		Sell:        p.Sell,
-		Price:       p.Price.String(),
+		Size:        p.PSize,
+		Buy:         p.PBuy,
+		Sell:        p.PSell,
+		Price:       p.PPrice.String(),
 		VwBuyPrice:  p.VwBuy.String(),
 		VwSellPrice: p.VwSell.String(),
 	}

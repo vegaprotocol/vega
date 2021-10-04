@@ -2,11 +2,11 @@ package delegation
 
 import (
 	"context"
-	"errors"
 	"strconv"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
+
 	"github.com/golang/protobuf/proto"
 )
 
@@ -16,10 +16,6 @@ var (
 		pendingKey,
 		autoKey,
 	}
-
-	ErrSnapshotKeyDoesNotExist  = errors.New("unknown key for delegation snapshot")
-	ErrUnknownSnapshotType      = errors.New("snapshot data type not known")
-	ErrInvalidSnapshotNamespace = errors.New("invalid snapshot namespace")
 )
 
 type delegationSnapshotState struct {
@@ -100,7 +96,7 @@ func (e *Engine) serialiseAuto() ([]byte, error) {
 // get the serialised form and hash of the given key
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.keyToSerialiser[k]; !ok {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if !e.dss.changed[k] {
@@ -143,7 +139,7 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 
 func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
 	if e.Namespace() != p.Data.Namespace() {
-		return ErrInvalidSnapshotNamespace
+		return types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
@@ -154,7 +150,7 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
 	case *types.PayloadDelegationAuto:
 		return e.restoreAuto(pl.DelegationAuto)
 	default:
-		return ErrUnknownSnapshotType
+		return types.ErrUnknownSnapshotType
 	}
 }
 

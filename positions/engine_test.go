@@ -297,6 +297,7 @@ func testUnregisterOrderUnsuccessful(t *testing.T) {
 func getTestEngine(t *testing.T) *positions.Engine {
 	return positions.New(
 		logging.NewTestLogger(), positions.NewDefaultConfig(),
+		"test_market",
 	)
 }
 

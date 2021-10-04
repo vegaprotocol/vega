@@ -32,21 +32,43 @@ type Engine struct {
 	// not perform a copy when positions a retrieved by other engines
 	// the pointer is hidden behind the interface, and do not expose
 	// any function to mutate them, so we can consider it safe to return
-	// this slice
+	// this slice.
 	positionsCpy []events.MarketPosition
+
+	// partyID -> positionsCpy index.
+	partyIDToIndex map[string]int
+
+	// Snapshot state
+	mp      *types.MarketPositions
+	pl      types.Payload
+	hash    []byte
+	data    []byte
+	changed bool
 }
 
 // New instantiates a new positions engine
-func New(log *logging.Logger, config Config) *Engine {
+func New(log *logging.Logger, config Config, marketID string) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
+
+	mp := &types.MarketPositions{
+		MarketID:  marketID,
+		Positions: []*types.PPosition{},
+	}
 
 	return &Engine{
 		Config:       config,
 		log:          log,
 		positions:    map[string]*MarketPosition{},
 		positionsCpy: []events.MarketPosition{},
+		mp:           mp,
+		pl: types.Payload{
+			Data: &types.PayloadMarketPositions{
+				MarketPositions: mp,
+			},
+		},
+		partyIDToIndex: map[string]int{},
 	}
 }
 
@@ -105,10 +127,16 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	if !found {
 		pos = NewMarketPosition(order.Party)
 		e.positions[order.Party] = pos
-		// append the pointer to the slice as well
-		e.positionsCpy = append(e.positionsCpy, pos)
+
+		// make space in slice
+		e.partyIDToIndex[order.Party] = len(e.positionsCpy)
+		e.positionsCpy = append(e.positionsCpy, nil)
 	}
+
 	pos.RegisterOrder(order)
+
+	e.positionsCpy[e.partyIDToIndex[order.Party]] = pos.shadow()
+	e.changed = true
 	return pos
 }
 
@@ -122,6 +150,10 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 	}
 
 	pos.UnregisterOrder(e.log, order)
+
+	// Update snapshot payload
+	e.positionsCpy[e.partyIDToIndex[order.Party]] = pos.shadow()
+	e.changed = true
 	return pos
 }
 
@@ -134,7 +166,10 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPositio
 			logging.Order(*originalOrder),
 			logging.Order(*newOrder))
 	}
+
 	pos.AmendOrder(e.log, originalOrder, newOrder)
+	e.positionsCpy[e.partyIDToIndex[originalOrder.Party]] = pos.shadow()
+	e.changed = true
 	return pos
 }
 
@@ -185,6 +220,10 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 		size = -size
 	}
 	pos.size += size
+
+	e.positionsCpy[e.partyIDToIndex[pos.partyID]] = pos.shadow()
+	e.changed = true
+
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -240,6 +279,9 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			logging.String("seller-position", fmt.Sprintf("%+v", seller)))
 	}
 
+	e.positionsCpy[e.partyIDToIndex[trade.Buyer]] = buyer.shadow()
+	e.positionsCpy[e.partyIDToIndex[trade.Seller]] = seller.shadow()
+	e.changed = true
 	return ret
 }
 
@@ -262,19 +304,32 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 				e.log.Warn("removing party from positions engine (cpy slice)",
 					logging.String("party-id", party))
 				e.positionsCpy = append(e.positionsCpy[:i], e.positionsCpy[i+1:]...)
+
+				delete(e.partyIDToIndex, party)
+				// removing index i, so all maps to indices > i need to be reduced by one
+				for pID, index := range e.partyIDToIndex {
+					if index > i {
+						e.partyIDToIndex[pID] = index - 1
+					}
+				}
+				e.changed = true
 				break
 			}
 		}
 	}
+
 	return ret
 }
 
 // UpdateMarkPrice update the mark price on all positions and return a slice
 // of the updated positions
 func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
-	for _, pos := range e.positions {
+	for k, pos := range e.positions {
 		pos.price.Set(markPrice)
+		e.positionsCpy[e.partyIDToIndex[k]] = pos.shadow()
 	}
+
+	e.changed = true
 	return e.positionsCpy
 }
 
