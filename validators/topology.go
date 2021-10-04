@@ -29,11 +29,14 @@ type Broker interface {
 }
 
 type ValidatorData struct {
+	ID              string `json:id`
 	VegaPubKey      string `json:"vega_pub_key"`
 	EthereumAddress string `json:"ethereum_address"`
 	TmPubKey        string `json:"tm_pub_key"`
 	InfoURL         string `json:"info_url"`
 	Country         string `json:"country"`
+	Name            string `json:"name"`
+	AvatarURL       string `json:"avatar_url"`
 }
 
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey
@@ -178,11 +181,14 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 
 	// then add it to the topology
 	t.validators[nr.VegaPubKey] = ValidatorData{
+		ID:              nr.Id,
 		VegaPubKey:      nr.VegaPubKey,
 		EthereumAddress: nr.EthereumAddress,
 		TmPubKey:        nr.ChainPubKey,
 		InfoURL:         nr.InfoUrl,
 		Country:         nr.Country,
+		Name:            nr.Name,
+		AvatarURL:       nr.AvatarUrl,
 	}
 
 	// Send event to notify core about new validator
@@ -198,12 +204,14 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.NodeRegistration) {
 	t.broker.Send(events.NewValidatorUpdateEvent(
 		ctx,
-		nr.VegaPubKey,
+		nr.Id,
 		nr.VegaPubKey,
 		nr.EthereumAddress,
 		nr.ChainPubKey,
 		nr.InfoUrl,
 		nr.Country,
+		nr.Name,
+		nr.AvatarUrl,
 	))
 }
 
@@ -230,11 +238,14 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		}
 
 		nr := &commandspb.NodeRegistration{
+			Id:              data.ID,
 			VegaPubKey:      data.VegaPubKey,
 			EthereumAddress: data.EthereumAddress,
 			ChainPubKey:     tm,
 			InfoUrl:         data.InfoURL,
 			Country:         data.Country,
+			Name:            data.Name,
+			AvatarUrl:       data.AvatarURL,
 		}
 		if err := t.AddNodeRegistration(ctx, nr); err != nil {
 			return err

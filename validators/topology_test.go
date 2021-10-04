@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallets"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/stretchr/testify/require"
@@ -214,21 +214,26 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 
 	ctx := context.Background()
 	nr := commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKey,
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 		InfoUrl:         "n0.xyz.vega/node/url/random",
 		Country:         "CZ",
+		Name:            "validator",
+		AvatarUrl:       "http://n0.xyz/avatar",
 	}
 
 	updateEvent := events.NewValidatorUpdateEvent(
 		ctx,
-		nr.VegaPubKey,
+		nr.Id,
 		nr.VegaPubKey,
 		nr.EthereumAddress,
 		nr.ChainPubKey,
 		nr.InfoUrl,
 		nr.Country,
+		nr.Name,
+		nr.AvatarUrl,
 	)
 
 	broker.EXPECT().Send(updateEvent).Times(1)
