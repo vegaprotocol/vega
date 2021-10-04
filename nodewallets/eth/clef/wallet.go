@@ -14,13 +14,13 @@ import (
 
 const requestTimeout = time.Second * 5
 
-// TODO make decision about this
-// type client interface {
-// 	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
-// }
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/rpc_client_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets/eth/clef Client
+type Client interface {
+	CallContext(ctx context.Context, result interface{}, method string, args ...interface{}) error
+}
 
 type wallet struct {
-	client   *rpc.Client
+	client   Client
 	endpoint string
 	name     string
 	account  *accounts.Account
@@ -135,7 +135,7 @@ func (w *wallet) Chain() string {
 }
 
 func (w *wallet) Sign(data []byte) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	var res hexutil.Bytes
@@ -160,8 +160,11 @@ func (w *wallet) Algo() string {
 }
 
 func (w *wallet) Version() string {
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	defer cancel()
+
 	var v string
-	if err := w.client.Call(&v, "account_version"); err != nil {
+	if err := w.client.CallContext(ctx, &v, "account_version"); err != nil {
 		return ""
 	}
 
