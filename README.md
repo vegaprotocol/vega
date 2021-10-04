@@ -130,7 +130,7 @@ Please refer to Clef rules docs for more information.
 #### **Importing and generation account**
 <br />
 
-As of today, Clef does not allow to generate a new account for other backend storages than a local Key Store. Therefore it is preferable to create a new account on the backend of choice and import it to Vega through node wallet CLI.
+As of today, Clef does not allow to generate a new account for other back end storages than a local Key Store. Therefore it is preferable to create a new account on the back end of choice and import it to Vega through node wallet CLI.
 
 Example of import:
 ```bash
