@@ -13,7 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/jessevdk/go-flags"
@@ -27,7 +27,7 @@ import (
 )
 
 type generateCmd struct {
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
@@ -166,8 +166,8 @@ func loadTendermintPrivateValidatorKey(tmConfig *tmconfig.Config) (tmcrypto.PubK
 	return pubKey, nil
 }
 
-func loadNodeWalletPubKey(config nodewallet.Config, vegaPaths paths.Paths, registryPass string) (vegaKey, ethAddr, walletID string, err error) {
-	nw, err := nodewallet.GetNodeWallets(config, vegaPaths, registryPass)
+func loadNodeWalletPubKey(config nodewallets.Config, vegaPaths paths.Paths, registryPass string) (vegaKey, ethAddr, walletID string, err error) {
+	nw, err := nodewallets.GetNodeWallets(config, vegaPaths, registryPass)
 	if err != nil {
 		return "", "", "", fmt.Errorf("couldn't get node wallets: %w", err)
 	}

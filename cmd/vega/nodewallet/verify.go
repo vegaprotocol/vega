@@ -6,13 +6,13 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
 
 type verifyCmd struct {
-	Config nodewallet.Config
+	Config nodewallets.Config
 }
 
 func (opts *verifyCmd) Execute(_ []string) error {
@@ -37,7 +37,7 @@ func (opts *verifyCmd) Execute(_ []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.GetNodeWallets(opts.Config, vegaPaths, registryPass)
+	nw, err := nodewallets.GetNodeWallets(opts.Config, vegaPaths, registryPass)
 	if err != nil {
 		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}

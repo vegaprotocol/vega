@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -16,7 +16,7 @@ import (
 type generateCmd struct {
 	config.OutputFlag
 
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
@@ -67,11 +67,11 @@ func (opts *generateCmd) Execute(_ []string) error {
 			if err != nil {
 				return err
 			}
-		} else {
+		} else if output.IsHuman() {
 			fmt.Println(yellow("Warning: Generating a new account in Clef has to be manually approved, and only the Key Store backend is supported. \nPlease consider using the 'import' command instead."))
 		}
 
-		data, err = nodewallet.GenerateEthereumWallet(
+		data, err = nodewallets.GenerateEthereumWallet(
 			opts.Config.ETH,
 			vegaPaths,
 			registryPass,
@@ -87,7 +87,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 			return err
 		}
 
-		data, err = nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		data, err = nodewallets.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
 		}

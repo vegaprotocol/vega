@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/config"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/fatih/color"
 	"github.com/jessevdk/go-flags"
@@ -32,13 +32,13 @@ var rootCmd RootCmd
 func NodeWallet(ctx context.Context, parser *flags.Parser) error {
 	rootCmd = RootCmd{
 		Generate: generateCmd{
-			Config: nodewallet.NewDefaultConfig(),
+			Config: nodewallets.NewDefaultConfig(),
 		},
 		Import: importCmd{
-			Config: nodewallet.NewDefaultConfig(),
+			Config: nodewallets.NewDefaultConfig(),
 		},
 		Verify: verifyCmd{
-			Config: nodewallet.NewDefaultConfig(),
+			Config: nodewallets.NewDefaultConfig(),
 		},
 	}
 

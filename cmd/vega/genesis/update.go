@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/jessevdk/go-flags"
@@ -22,7 +22,7 @@ import (
 )
 
 type updateCmd struct {
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`

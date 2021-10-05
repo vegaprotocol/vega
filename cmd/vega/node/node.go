@@ -84,7 +84,7 @@ type NodeCommand struct {
 	rewards              *rewards.Engine
 	checkpoint           *checkpoint.Engine
 	spam                 *spam.Engine
-	nodeWallets          *nodewallet.NodeWallets
+	nodeWallets          *nodewallets.NodeWallets
 	nodeWalletPassphrase string
 
 	assets         *assets.Service

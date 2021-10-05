@@ -15,169 +15,183 @@ import (
 var testAddress = ethCommon.HexToAddress("0x1Ff482D42D1237258A1686102Fa4ba925C23Bc42")
 
 func TestNewWallet(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		a := assert.New(t)
-
-		ctrl := gomock.NewController(t)
-		clientMock := mocks.NewMockClient(ctrl)
-
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_list").
-			Times(1).
-			DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
-				*accs = append(*accs, testAddress)
-
-				return nil
-			})
-
-		wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
-		a.NoError(err)
-		a.NotNil(wallet)
-	})
-
-	t.Run("Returns an error if account is not found", func(t *testing.T) {
-		a := assert.New(t)
-
-		ctrl := gomock.NewController(t)
-		clientMock := mocks.NewMockClient(ctrl)
-
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_list").
-			Times(1).
-			Return(nil)
-
-		wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
-		a.EqualError(err, "account with address \"0x1fF482d42D1237258a1686102FA4bA925c23bc42\" not found")
-		a.Nil(wallet)
-	})
-
-	t.Run("Returns an error on RPC call failure", func(t *testing.T) {
-		a := assert.New(t)
-
-		ctrl := gomock.NewController(t)
-		clientMock := mocks.NewMockClient(ctrl)
-
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_list").
-			Times(1).
-			Return(fmt.Errorf("something went wrong"))
-
-		wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
-		a.EqualError(err, "something went wrong")
-		a.Nil(wallet)
-	})
+	t.Run("Success", testNewWalletSuccess)
+	t.Run("Returns an error if account is not found", testNewWalletAccountNotFound)
+	t.Run("Returns an error on RPC call failure", testNewWalletRPCError)
 }
 
-func TestGenerateGenerateNewWallet(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		a := assert.New(t)
+func testNewWalletSuccess(t *testing.T) {
+	a := assert.New(t)
 
-		ctrl := gomock.NewController(t)
-		clientMock := mocks.NewMockClient(ctrl)
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
 
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_new").
-			Times(1).
-			DoAndReturn(func(_ interface{}, addr *string, _ interface{}) error {
-				*addr = testAddress.String()
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		Times(1).
+		DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
+			*accs = append(*accs, testAddress)
 
-				return nil
-			})
+			return nil
+		})
 
-		wallet, err := clef.GenerateNewWallet(clientMock, "http://127.0.0.1:8580")
-		a.NoError(err)
-		a.NotNil(wallet)
-	})
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.NoError(err)
+	a.NotNil(wallet)
+}
 
-	t.Run("Returns an error on RPC call failure", func(t *testing.T) {
-		a := assert.New(t)
+func testNewWalletAccountNotFound(t *testing.T) {
+	a := assert.New(t)
 
-		ctrl := gomock.NewController(t)
-		clientMock := mocks.NewMockClient(ctrl)
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
 
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_new").
-			Times(1).
-			Return(fmt.Errorf("something went wrong"))
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		Times(1).
+		Return(nil)
 
-		wallet, err := clef.GenerateNewWallet(clientMock, "http://127.0.0.1:8580")
-		a.EqualError(err, "something went wrong")
-		a.Nil(wallet)
-	})
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.EqualError(err, "account with address \"0x1fF482d42D1237258a1686102FA4bA925c23bc42\" not found")
+	a.Nil(wallet)
+}
+
+func testNewWalletRPCError(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		Times(1).
+		Return(fmt.Errorf("something went wrong"))
+
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.EqualError(err, "something went wrong")
+	a.Nil(wallet)
+}
+
+func TestGenerateNewWallet(t *testing.T) {
+	t.Run("Success", testGenerateNewWalletSuccess)
+	t.Run("Returns an error on RPC call failure", testGenerateRPCError)
+}
+
+func testGenerateNewWalletSuccess(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_new").
+		Times(1).
+		DoAndReturn(func(_ interface{}, addr *string, _ interface{}) error {
+			*addr = testAddress.String()
+
+			return nil
+		})
+
+	wallet, err := clef.GenerateNewWallet(clientMock, "http://127.0.0.1:8580")
+	a.NoError(err)
+	a.NotNil(wallet)
+}
+
+func testGenerateRPCError(t *testing.T) {
+	a := assert.New(t)
+
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
+
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_new").
+		Times(1).
+		Return(fmt.Errorf("something went wrong"))
+
+	wallet, err := clef.GenerateNewWallet(clientMock, "http://127.0.0.1:8580")
+	a.EqualError(err, "something went wrong")
+	a.Nil(wallet)
 }
 
 func TestVersion(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		a := assert.New(t)
+	t.Run("Success", testVersionSuccess)
+}
 
-		ctrl := gomock.NewController(t)
-		clientMock := mocks.NewMockClient(ctrl)
+func testVersionSuccess(t *testing.T) {
+	a := assert.New(t)
 
-		testVersion := "v1.0.1"
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
 
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_list").
-			Times(1).
-			DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
-				*accs = append(*accs, testAddress)
+	testVersion := "v1.0.1"
 
-				return nil
-			})
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		Times(1).
+		DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
+			*accs = append(*accs, testAddress)
 
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_version").
-			Times(1).
-			DoAndReturn(func(_ interface{}, version *string, _ interface{}) error {
-				*version = testVersion
+			return nil
+		})
 
-				return nil
-			})
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_version").
+		Times(1).
+		DoAndReturn(func(_ interface{}, version *string, _ interface{}) error {
+			*version = testVersion
 
-		wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
-		a.NoError(err)
-		a.NotNil(wallet)
-		a.Equal(testVersion, wallet.Version())
-	})
+			return nil
+		})
+
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.NoError(err)
+	a.NotNil(wallet)
+
+	v, err := wallet.Version()
+	a.NoError(err)
+	a.Equal(testVersion, v)
 }
 
 func TestSign(t *testing.T) {
-	t.Run("Success", func(t *testing.T) {
-		a := assert.New(t)
+	t.Run("Success", testSignSuccess)
+}
 
-		ctrl := gomock.NewController(t)
-		clientMock := mocks.NewMockClient(ctrl)
+func testSignSuccess(t *testing.T) {
+	a := assert.New(t)
 
-		clientMock.EXPECT().
-			CallContext(gomock.Any(), gomock.Any(), "account_list").
-			Times(1).
-			DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
-				*accs = append(*accs, testAddress)
+	ctrl := gomock.NewController(t)
+	clientMock := mocks.NewMockClient(ctrl)
 
-				return nil
-			})
+	clientMock.EXPECT().
+		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		Times(1).
+		DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
+			*accs = append(*accs, testAddress)
 
-		clientMock.EXPECT().
-			CallContext(
-				gomock.Any(),
-				gomock.Any(),
-				"account_signData",
-				accounts.MimetypeTypedData,
-				gomock.Any(),
-				gomock.Any(),
-			).
-			Times(1).
-			DoAndReturn(func(_ interface{}, b []byte, _, _, _ interface{}) error {
-				b = []byte("signed")
+			return nil
+		})
 
-				return nil
-			})
+	clientMock.EXPECT().
+		CallContext(
+			gomock.Any(),
+			gomock.Any(),
+			"account_signData",
+			accounts.MimetypeTypedData,
+			gomock.Any(),
+			gomock.Any(),
+		).
+		Times(1).
+		DoAndReturn(func(_ interface{}, b *[]byte, _, _, _ interface{}) error {
+			*b = []byte("signed")
 
-		wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
-		a.NoError(err)
-		a.NotNil(wallet)
+			return nil
+		})
 
-		sign, err := wallet.Sign([]byte("data"))
-		a.NoError(err)
-		a.Equal([]byte("signed"), sign)
-	})
+	wallet, err := clef.NewWallet(clientMock, "http://127.0.0.1:8580", testAddress)
+	a.NoError(err)
+	a.NotNil(wallet)
+
+	sign, err := wallet.Sign([]byte("data"))
+	a.NoError(err)
+	a.Equal([]byte("signed"), sign)
 }

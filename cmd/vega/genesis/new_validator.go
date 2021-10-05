@@ -8,7 +8,7 @@ import (
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/logging"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -17,7 +17,7 @@ import (
 )
 
 type newValidatorCmd struct {
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	TmRoot    string `short:"t" long:"tm-root" description:"The root path of tendermint"`
 	Country   string `long:"country" description:"The country from which the validator operates" required:"true"`

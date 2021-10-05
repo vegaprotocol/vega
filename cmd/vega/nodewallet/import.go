@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -16,7 +16,7 @@ import (
 type importCmd struct {
 	config.OutputFlag
 
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	WalletPassphrase   config.Passphrase   `long:"wallet-passphrase-file"`
 	ClefAccountAddress config.PromptString `long:"clef-account-address" description:"The Ethereum account address to be imported by Vega from Clef. In hex."`
@@ -78,7 +78,7 @@ func (opts *importCmd) Execute(_ []string) error {
 			}
 		}
 
-		data, err = nodewallet.ImportEthereumWallet(
+		data, err = nodewallets.ImportEthereumWallet(
 			opts.Config.ETH,
 			vegaPaths,
 			registryPass,
@@ -91,7 +91,7 @@ func (opts *importCmd) Execute(_ []string) error {
 			return fmt.Errorf("couldn't import Ethereum node wallet: %w", err)
 		}
 	case vegaChain:
-		data, err = nodewallet.ImportVegaWallet(vegaPaths, registryPass, walletPass, walletPath, opts.Force)
+		data, err = nodewallets.ImportVegaWallet(vegaPaths, registryPass, walletPass, walletPath, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't import Vega node wallet: %w", err)
 		}

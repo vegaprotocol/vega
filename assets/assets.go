@@ -40,11 +40,11 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nodeWallets *nodewallet.NodeWallets
-	ethClient erc20.ETHClient
+	nodeWallets *nodewallets.NodeWallets
+	ethClient   erc20.ETHClient
 }
 
-func New(log *logging.Logger, cfg Config, nw *nodewallet.NodeWallets, ethClient erc20.ETHClient, ts TimeService) *Service {
+func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient erc20.ETHClient, ts TimeService) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 

@@ -63,7 +63,7 @@ func GenerateNewWallet(client Client, endpoint string) (*wallet, error) {
 
 	acc, err := w.generateAccount()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate account: %w", err)
 	}
 
 	w.account = acc
@@ -78,7 +78,7 @@ func (w *wallet) generateAccount() (*accounts.Account, error) {
 
 	var res string
 	if err := w.client.CallContext(ctx, &res, "account_new"); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to call client: %w", err)
 	}
 
 	return newAccount(ethcommon.HexToAddress(res), w.endpoint), nil
@@ -106,12 +106,11 @@ func (w *wallet) listAccounts() ([]ethcommon.Address, error) {
 
 	var res []ethcommon.Address
 	if err := w.client.CallContext(ctx, &res, "account_list"); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to call client: %w", err)
 	}
 	return res, nil
 }
 
-// Cleanup is noop
 func (w *wallet) Cleanup() error {
 	w.client.Close()
 	return nil
@@ -140,7 +139,7 @@ func (w *wallet) Sign(data []byte) ([]byte, error) {
 		&signAddress, // Need to use the pointer here, because of how MarshalJSON is defined
 		hexutil.Encode(data),
 	); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to call client: %w", err)
 	}
 
 	return res, nil
@@ -150,16 +149,16 @@ func (w *wallet) Algo() string {
 	return "eth"
 }
 
-func (w *wallet) Version() string {
+func (w *wallet) Version() (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
 	var v string
 	if err := w.client.CallContext(ctx, &v, "account_version"); err != nil {
-		return ""
+		return "", fmt.Errorf("failed to call client: %w", err)
 	}
 
-	return v
+	return v, nil
 }
 
 func (w *wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {

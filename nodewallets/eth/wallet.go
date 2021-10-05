@@ -10,7 +10,7 @@ type wallet interface {
 	Chain() string
 	Sign(data []byte) ([]byte, error)
 	Algo() string
-	Version() string
+	Version() (string, error)
 	PubKeyOrAddress() crypto.PublicKeyOrAddress
 }
 
@@ -48,7 +48,7 @@ func (w *Wallet) Algo() string {
 	return w.w.Algo()
 }
 
-func (w *Wallet) Version() string {
+func (w *Wallet) Version() (string, error) {
 	return w.w.Version()
 }
 
