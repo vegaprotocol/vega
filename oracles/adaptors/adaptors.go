@@ -17,7 +17,7 @@ var (
 // Adaptor represents an oracle adaptor that consumes and normalises data from
 // a specific type of oracle.
 type Adaptor interface {
-	Normalise(crypto.PublicKeyOrAddress, []byte) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKey, []byte) (*oracles.OracleData, error)
 }
 
 // Adaptors normalises the input data into an oracles.OracleData according to
@@ -38,7 +38,7 @@ func New() *Adaptors {
 }
 
 // Normalise normalises the input data into an oracles.OracleData based on its source.
-func (a *Adaptors) Normalise(txPubKey crypto.PublicKeyOrAddress, data commandspb.OracleDataSubmission) (*oracles.OracleData, error) {
+func (a *Adaptors) Normalise(txPubKey crypto.PublicKey, data commandspb.OracleDataSubmission) (*oracles.OracleData, error) {
 	adaptor, ok := a.Adaptors[data.Source]
 	if !ok {
 		return nil, ErrUnknownOracleSource

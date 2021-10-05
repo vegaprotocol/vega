@@ -140,9 +140,12 @@ type PayloadEpoch struct {
 }
 
 type MatchingBook struct {
-	MarketID string
-	Buy      []*Order
-	Sell     []*Order
+	MarketID        string
+	Buy             []*Order
+	Sell            []*Order
+	LastTradedPrice *num.Uint
+	Auction         bool
+	BatchID         uint64
 }
 
 type ExecutionMarkets struct {
@@ -1010,8 +1013,8 @@ func (p *PayloadMatchingBook) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadMatchingBook) Key() string {
-	return "all"
+func (p *PayloadMatchingBook) Key() string {
+	return p.MatchingBook.MarketID
 }
 
 func (*PayloadMatchingBook) Namespace() SnapshotNamespace {
@@ -1556,10 +1559,14 @@ func (m MarketPositions) IntoProto() *snapshot.MarketPositions {
 }
 
 func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
+	lastTradedPrice, _ := num.UintFromString(mb.LastTradedPrice, 10)
 	ret := MatchingBook{
-		MarketID: mb.MarketId,
-		Buy:      make([]*Order, 0, len(mb.Buy)),
-		Sell:     make([]*Order, 0, len(mb.Sell)),
+		MarketID:        mb.MarketId,
+		Buy:             make([]*Order, 0, len(mb.Buy)),
+		Sell:            make([]*Order, 0, len(mb.Sell)),
+		LastTradedPrice: lastTradedPrice,
+		Auction:         mb.Auction,
+		BatchID:         mb.BatchId,
 	}
 	for _, o := range mb.Buy {
 		or, _ := OrderFromProto(o)
@@ -1574,9 +1581,12 @@ func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
 
 func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 	ret := snapshot.MatchingBook{
-		MarketId: m.MarketID,
-		Buy:      make([]*vega.Order, 0, len(m.Buy)),
-		Sell:     make([]*vega.Order, 0, len(m.Sell)),
+		MarketId:        m.MarketID,
+		Buy:             make([]*vega.Order, 0, len(m.Buy)),
+		Sell:            make([]*vega.Order, 0, len(m.Sell)),
+		LastTradedPrice: m.LastTradedPrice.String(),
+		Auction:         m.Auction,
+		BatchId:         m.BatchID,
 	}
 	for _, o := range m.Buy {
 		ret.Buy = append(ret.Buy, o.IntoProto())

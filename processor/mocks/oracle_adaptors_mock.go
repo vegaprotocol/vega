@@ -5,11 +5,12 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	crypto "code.vegaprotocol.io/vega/crypto"
 	oracles "code.vegaprotocol.io/vega/oracles"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockOracleAdaptors is a mock of OracleAdaptors interface
@@ -36,7 +37,7 @@ func (m *MockOracleAdaptors) EXPECT() *MockOracleAdaptorsMockRecorder {
 }
 
 // Normalise mocks base method
-func (m *MockOracleAdaptors) Normalise(arg0 crypto.PublicKeyOrAddress, arg1 v1.OracleDataSubmission) (*oracles.OracleData, error) {
+func (m *MockOracleAdaptors) Normalise(arg0 crypto.PublicKey, arg1 v1.OracleDataSubmission) (*oracles.OracleData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Normalise", arg0, arg1)
 	ret0, _ := ret[0].(*oracles.OracleData)
