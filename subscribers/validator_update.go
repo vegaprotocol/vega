@@ -79,6 +79,8 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 				InfoUrl:          vue.GetInfoUrl(),
 				Location:         vue.GetCountry(),
 				Status:           types.NodeStatus_NODE_STATUS_VALIDATOR,
+				Name:             vue.GetName(),
+				AvatarUrl:        vue.GetAvatarUrl(),
 			})
 		case ValidatorScoreEvent:
 			vse := et.Proto()

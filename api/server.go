@@ -68,7 +68,7 @@ type GRPCServer struct {
 	netParamsService        *netparams.Service
 	oracleService           *oracles.Service
 	stakingService          *staking.Service
-	tradingProxySvc         *coreProxyService
+	coreProxySvc            *coreProxyService
 	tradingDataService      *tradingDataService
 	nodeService             *nodes.Service
 	epochService            *epochs.Service
@@ -261,7 +261,7 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 		coreServiceClient: g.vegaCoreServiceClient,
 		eventObserver:     g.eventObserver,
 	}
-	g.tradingProxySvc = coreProxySvc
+	g.coreProxySvc = coreProxySvc
 	vegaprotoapi.RegisterCoreServiceServer(g.srv, coreProxySvc)
 
 	tradingDataSvc := &tradingDataService{
