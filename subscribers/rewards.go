@@ -149,7 +149,7 @@ func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) 
 
 	// Now build up the proto message from the details we have stored
 	resp := &protoapi.GetRewardDetailsResponse{
-		RewardDetails: make([]*vega.RewardPerAssetDetail, 0),
+		RewardDetails: make([]*vega.RewardPerAssetDetail, 0, len(rewards)),
 	}
 
 	for asset, rpad := range rewards {
