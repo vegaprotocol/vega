@@ -1,26 +1,63 @@
 package types
 
 import (
+	"errors"
+
+	"code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+type Delegation struct {
+	Party    string
+	NodeID   string
+	Amount   *num.Uint
+	EpochSeq string
+}
+
+func DelegationFromProto(d *vega.Delegation) *Delegation {
+	amt, _ := num.UintFromString(d.Amount, 10)
+	return &Delegation{
+		Party:    d.Party,
+		NodeID:   d.NodeId,
+		Amount:   amt,
+		EpochSeq: d.EpochSeq,
+	}
+}
+
+func (d Delegation) IntoProto() *vega.Delegation {
+	return &vega.Delegation{
+		Party:    d.Party,
+		NodeId:   d.NodeID,
+		Amount:   num.UintToString(d.Amount),
+		EpochSeq: d.EpochSeq,
+	}
+}
 
 type Delegate struct {
 	NodeID string
 	Amount *num.Uint
 }
 
-func NewDelegateFromProto(p *commandspb.DelegateSubmission) *Delegate {
+func NewDelegateFromProto(p *commandspb.DelegateSubmission) (*Delegate, error) {
+	var amount = num.Zero()
+	if len(p.Amount) > 0 {
+		var overflowed = false
+		amount, overflowed = num.UintFromString(p.Amount, 10)
+		if overflowed {
+			return nil, errors.New("invalid amount")
+		}
+	}
 	return &Delegate{
 		NodeID: p.NodeId,
-		Amount: num.NewUint(p.Amount),
-	}
+		Amount: amount,
+	}, nil
 }
 
 func (d Delegate) IntoProto() *commandspb.DelegateSubmission {
 	return &commandspb.DelegateSubmission{
 		NodeId: d.NodeID,
-		Amount: d.Amount.Uint64(),
+		Amount: num.UintToString(d.Amount),
 	}
 }
 
@@ -34,18 +71,22 @@ type Undelegate struct {
 	Method string
 }
 
-func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) *Undelegate {
+func NewUndelegateFromProto(p *commandspb.UndelegateSubmission) (*Undelegate, error) {
+	amount, overflowed := num.UintFromString(p.Amount, 10)
+	if overflowed {
+		return nil, errors.New("invalid amount")
+	}
 	return &Undelegate{
 		NodeID: p.NodeId,
-		Amount: num.NewUint(p.Amount),
+		Amount: amount,
 		Method: p.Method.String(),
-	}
+	}, nil
 }
 
 func (u Undelegate) IntoProto() *commandspb.UndelegateSubmission {
 	return &commandspb.UndelegateSubmission{
 		NodeId: u.NodeID,
-		Amount: u.Amount.Uint64(),
+		Amount: num.UintToString(u.Amount),
 		Method: commandspb.UndelegateSubmission_Method(commandspb.UndelegateSubmission_Method_value[u.Method]),
 	}
 }

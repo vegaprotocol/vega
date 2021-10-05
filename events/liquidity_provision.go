@@ -43,9 +43,10 @@ func (p LiquidityProvision) Proto() *proto.LiquidityProvision {
 
 func (p LiquidityProvision) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    p.eventID(),
-		Block: p.TraceID(),
-		Type:  p.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      p.eventID(),
+		Block:   p.TraceID(),
+		Type:    p.et.ToProto(),
 		Event: &eventspb.BusEvent_LiquidityProvision{
 			LiquidityProvision: p.p,
 		},

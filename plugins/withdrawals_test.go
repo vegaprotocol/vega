@@ -89,15 +89,15 @@ func testGetWithdrawalByID(t *testing.T) {
 	w, err := wit.GetByID("wid1")
 	assert.NoError(t, err)
 	assert.Equal(t, "party1", w.PartyId)
-	assert.Equal(t, 200, int(w.Amount))
+	assert.Equal(t, "200", w.Amount)
 	w, err = wit.GetByID("wid2")
 	assert.NoError(t, err)
 	assert.Equal(t, "party2", w.PartyId)
-	assert.Equal(t, 300, int(w.Amount))
+	assert.Equal(t, "300", w.Amount)
 	w, err = wit.GetByID("wid3")
 	assert.NoError(t, err)
 	assert.Equal(t, "party1", w.PartyId)
-	assert.Equal(t, 500, int(w.Amount))
+	assert.Equal(t, "500", w.Amount)
 }
 
 func testGetWithdrawalByParty(t *testing.T) {

@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	types "code.vegaprotocol.io/vega/types"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -33,11 +35,12 @@ func (m *MockState) EXPECT() *MockStateMockRecorder {
 }
 
 // Checkpoint mocks base method
-func (m *MockState) Checkpoint() []byte {
+func (m *MockState) Checkpoint() ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Checkpoint")
 	ret0, _ := ret[0].([]byte)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Checkpoint indicates an expected call of Checkpoint
@@ -46,22 +49,8 @@ func (mr *MockStateMockRecorder) Checkpoint() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockState)(nil).Checkpoint))
 }
 
-// Hash mocks base method
-func (m *MockState) Hash() []byte {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Hash")
-	ret0, _ := ret[0].([]byte)
-	return ret0
-}
-
-// Hash indicates an expected call of Hash
-func (mr *MockStateMockRecorder) Hash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockState)(nil).Hash))
-}
-
 // Load mocks base method
-func (m *MockState) Load(arg0, arg1 []byte) error {
+func (m *MockState) Load(arg0 context.Context, arg1 []byte) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Load", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -75,10 +64,10 @@ func (mr *MockStateMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // Name mocks base method
-func (m *MockState) Name() string {
+func (m *MockState) Name() types.CheckpointName {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(types.CheckpointName)
 	return ret0
 }
 

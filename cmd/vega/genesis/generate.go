@@ -3,27 +3,25 @@ package genesis
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
+	vgproto "code.vegaprotocol.io/protos/vega"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/privval"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
@@ -31,17 +29,9 @@ type generateCmd struct {
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
-	Help    bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega genesis generate subcommand help",
-		}
-	}
-
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
@@ -52,7 +42,9 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
+	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -72,22 +64,44 @@ func (opts *generateCmd) Execute(_ []string) error {
 	}
 
 	if len(opts.Network) != 0 {
-		ethConfig := `{"network_id": "%s", "chain_id": "%s", "bridge_address": "%s", "confirmations": %d,  "staking_bridge_addresses": %s}`
+		var ethConfig []byte
 		switch opts.Network {
 		case "mainnet":
 			delete(genesisState.Assets, "VOTE")
-			genesisState.Assets["VEGA"] = assets.VegaTokenMainNet
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
+			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
+			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenMainNet.Symbol
+			ethConfig, err = json.Marshal(&vgproto.EthereumConfig{
+				NetworkId:     "1",
+				ChainId:       "1",
+				BridgeAddress: "0x4149257d844Ef09f11b02f2e73CbDfaB4c911a73",
+				Confirmations: 50,
+				StakingBridgeAddresses: []string{
+					"0x195064D33f09e0c42cF98E665D9506e0dC17de68",
+					"0x23d1bFE8fA50a167816fBD79D7932577c06011f4",
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("couldn't marshal EthereumConfig: %w", err)
+			}
+
 		case "testnet":
-			genesisState.Assets["VEGA"] = assets.VegaTokenTestNet
 			delete(genesisState.Assets, "VOTE")
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
+			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenTestNet
+			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenTestNet.Symbol
+			ethConfig, err = json.Marshal(&vgproto.EthereumConfig{
+				NetworkId:              "3",
+				ChainId:                "3",
+				BridgeAddress:          "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10",
+				Confirmations:          3,
+				StakingBridgeAddresses: []string{},
+			})
+			if err != nil {
+				return fmt.Errorf("couldn't marshal EthereumConfig: %w", err)
+			}
 		default:
 			return fmt.Errorf("network %s is not supported", opts.Network)
 		}
-		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = ethConfig
+		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = string(ethConfig)
 	}
 
 	rawGenesisState, err := json.Marshal(genesisState)
@@ -95,12 +109,12 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	genesisDoc := types.GenesisDoc{
-		ChainID:         fmt.Sprintf("test-chain-%v", crypto.RandomStr(6)),
+	genesisDoc := tmtypes.GenesisDoc{
+		ChainID:         fmt.Sprintf("test-chain-%v", vgrand.RandomStr(6)),
 		GenesisTime:     tmtime.Now(),
-		ConsensusParams: types.DefaultConsensusParams(),
+		ConsensusParams: tmtypes.DefaultConsensusParams(),
 		AppState:        rawGenesisState,
-		Validators: []types.GenesisValidator{
+		Validators: []tmtypes.GenesisValidator{
 			{
 				Address: pubKey.Address(),
 				PubKey:  pubKey,
@@ -142,31 +156,11 @@ func loadTendermintPrivateValidatorKey(tmConfig *tmconfig.Config) (tmcrypto.PubK
 	return pubKey, nil
 }
 
-func loadNodeWalletPubKey(log *logging.Logger, rootPath, pass string) (string, string, error) {
-	conf, err := config.Read(rootPath)
+func loadNodeWalletPubKey(vegaPaths paths.Paths, registryPass string) (string, string, error) {
+	nw, err := nodewallet.GetNodeWallets(vegaPaths, registryPass)
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
-	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return "", "", err
-	}
-
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, rootPath)
-	if err != nil {
-		return "", "", err
-	}
-
-	wVega, ok := nw.Get("vega")
-	if !ok {
-		return "", "", errors.New("no vega wallet stored in node wallet")
-	}
-
-	wEth, ok := nw.Get("ethereum")
-	if !ok {
-		return "", "", errors.New("no ethereum wallet stored in node wallet")
-	}
-
-	return wVega.PubKeyOrAddress().Hex(), wEth.PubKeyOrAddress().Hex(), nil
+	return nw.Vega.PubKeyOrAddress().Hex(), nw.Ethereum.PubKeyOrAddress().Hex(), nil
 }

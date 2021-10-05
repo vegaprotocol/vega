@@ -70,6 +70,15 @@ func UintFromBig(b *big.Int) (*Uint, bool) {
 	return &Uint{*u}, false
 }
 
+// UintFromBytes allows for the conversion from Uint.Bytes() back to a Uint
+func UintFromBytes(b []byte) *Uint {
+	u := &Uint{
+		u: uint256.Int{},
+	}
+	u.u.SetBytes(b)
+	return u
+}
+
 // UintFromDecimal returns a decimal version of the Uint, setting the bool to true if overflow occurred
 func UintFromDecimal(d Decimal) (*Uint, bool) {
 	u, ok := d.Uint()
@@ -190,6 +199,12 @@ func (u *Uint) Delta(x, y *Uint) (*Uint, bool) {
 	}
 	_ = u.Sub(x, y)
 	return u, false
+}
+
+// DeltaI will subtract y from x and store the result
+func (u *Uint) DeltaI(x, y *Uint) *Int {
+	d, s := u.Delta(x, y)
+	return IntFromUint(d, !s)
 }
 
 // Mul will multiply x and y then store the result

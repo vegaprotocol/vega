@@ -9,6 +9,7 @@ import (
 // ValidatorUpdate ...
 type ValidatorUpdate struct {
 	*Base
+	nodeID     string
 	vegaPubKey string
 	ethAddress string
 	tmPubKey   string
@@ -18,6 +19,7 @@ type ValidatorUpdate struct {
 
 func NewValidatorUpdateEvent(
 	ctx context.Context,
+	nodeID string,
 	vegaPubKey string,
 	ethAddress string,
 	tmPubKey string,
@@ -26,12 +28,18 @@ func NewValidatorUpdateEvent(
 ) *ValidatorUpdate {
 	return &ValidatorUpdate{
 		Base:       newBase(ctx, ValidatorUpdateEvent),
+		nodeID:     nodeID,
 		vegaPubKey: vegaPubKey,
 		ethAddress: ethAddress,
 		tmPubKey:   tmPubKey,
 		infoURL:    infoURL,
 		country:    country,
 	}
+}
+
+// NodeID returns nodes ID
+func (vu ValidatorUpdate) NodeID() string {
+	return vu.nodeID
 }
 
 // VegaPublicKey returns validator's vega public key
@@ -59,8 +67,13 @@ func (vu ValidatorUpdate) Country() string {
 	return vu.country
 }
 
+func (vu ValidatorUpdate) ValidatorUpdate() eventspb.ValidatorUpdate {
+	return vu.Proto()
+}
+
 func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 	return eventspb.ValidatorUpdate{
+		NodeId:          vu.nodeID,
 		VegaPubKey:      vu.vegaPubKey,
 		EthereumAddress: vu.ethAddress,
 		TmPubKey:        vu.tmPubKey,
@@ -73,9 +86,10 @@ func (vu ValidatorUpdate) StreamMessage() *eventspb.BusEvent {
 	vuproto := vu.Proto()
 
 	return &eventspb.BusEvent{
-		Id:    vu.eventID(),
-		Block: vu.TraceID(),
-		Type:  vu.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      vu.eventID(),
+		Block:   vu.TraceID(),
+		Type:    vu.et.ToProto(),
 		Event: &eventspb.BusEvent_ValidatorUpdate{
 			ValidatorUpdate: &vuproto,
 		},
@@ -90,6 +104,7 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 
 	return &ValidatorUpdate{
 		Base:       newBaseFromStream(ctx, ValidatorUpdateEvent, be),
+		nodeID:     event.GetNodeId(),
 		vegaPubKey: event.GetVegaPubKey(),
 		ethAddress: event.GetEthereumAddress(),
 		tmPubKey:   event.GetTmPubKey(),

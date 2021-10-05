@@ -656,3 +656,8 @@ func panicW(field string, err error) {
 		panic(fmt.Sprintf("couldn't parse %s: %v", field, err))
 	}
 }
+
+func stringToU64(s string) uint64 {
+	i, _ := strconv.ParseUint(s, 10, 64)
+	return i
+}

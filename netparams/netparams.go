@@ -19,6 +19,7 @@ var (
 // Broker - event bus
 type Broker interface {
 	Send(e events.Event)
+	SendBatch(evts []events.Event)
 }
 
 type Reset interface {
@@ -59,25 +60,37 @@ type Store struct {
 
 	watchers     map[string][]WatchParam
 	paramUpdates map[string]struct{}
+
+	state *snapState
 }
 
 func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
+	store := defaultNetParams()
 	return &Store{
 		log:          log,
 		cfg:          cfg,
-		store:        defaultNetParams(),
+		store:        store,
 		broker:       broker,
 		watchers:     map[string][]WatchParam{},
 		paramUpdates: map[string]struct{}{},
+		state:        newSnapState(store),
 	}
 }
 
 // UponGenesis load the initial network parameters
 // from the genesis state
-func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
-	s.log.Debug("loading genesis configuration")
+func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
+	s.log.Debug("Entering netparams.Store.UponGenesis")
+	defer func() {
+		if err != nil {
+			s.log.Debug("Failure in netparams.Store.UponGenesis", logging.Error(err))
+		} else {
+			s.log.Debug("Leaving netparams.Store.UponGenesis without error")
+		}
+	}()
+
 	state, err := LoadGenesisState(rawState)
 	if err != nil {
 		s.log.Error("unable to load genesis state",
@@ -85,10 +98,12 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) error {
 		return err
 	}
 
+	evts := make([]events.Event, 0, len(s.store))
 	// first we going to send the initial state through the broker
 	for k, v := range s.store {
-		s.broker.Send(events.NewNetworkParameterEvent(ctx, k, v.String()))
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v.String()))
 	}
+	s.broker.SendBatch(evts)
 
 	// now iterate over all parameters and update the existing ones
 	for k, v := range state {
@@ -216,7 +231,28 @@ func (s *Store) Update(ctx context.Context, key, value string) error {
 	s.paramUpdates[key] = struct{}{}
 	// and also send it to the broker
 	s.broker.Send(events.NewNetworkParameterEvent(ctx, key, value))
+	s.state.update(key, value)
 
+	return nil
+}
+
+func (s *Store) updateBatch(ctx context.Context, params map[string]string) error {
+	evts := make([]events.Event, 0, len(params))
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for k, v := range params {
+		svalue, ok := s.store[k]
+		if !ok {
+			return ErrUnknownKey
+		}
+		if err := svalue.Update(v); err != nil {
+			return fmt.Errorf("unable to update %s: %w", k, err)
+		}
+		s.paramUpdates[k] = struct{}{}
+		s.state.update(k, v)
+		evts = append(evts, events.NewNetworkParameterEvent(ctx, k, v))
+	}
+	s.broker.SendBatch(evts)
 	return nil
 }
 

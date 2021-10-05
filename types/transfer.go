@@ -24,7 +24,7 @@ func (f FinancialAmount) String() string {
 func (f *FinancialAmount) IntoProto() *proto.FinancialAmount {
 	return &proto.FinancialAmount{
 		Asset:  f.Asset,
-		Amount: f.Amount.Uint64(),
+		Amount: num.UintToString(f.Amount),
 	}
 }
 
@@ -33,7 +33,7 @@ func (t *Transfer) IntoProto() *proto.Transfer {
 		Owner:     t.Owner,
 		Amount:    t.Amount.IntoProto(),
 		Type:      t.Type,
-		MinAmount: num.UintToUint64(t.MinAmount),
+		MinAmount: num.UintToString(t.MinAmount),
 	}
 }
 

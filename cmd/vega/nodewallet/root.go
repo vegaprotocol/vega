@@ -4,13 +4,14 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
+
 	"github.com/jessevdk/go-flags"
 )
 
 type RootCmd struct {
 	// Global options
-	config.RootPathFlag
+	config.VegaHomeFlag
 	config.PassphraseFlag
 
 	// Subcommands
@@ -18,15 +19,12 @@ type RootCmd struct {
 	Generate generateCmd `command:"generate" description:"Generate and register a wallet into the nodewallet"`
 	Import   importCmd   `command:"import" description:"Import the configuration of a wallet required by the vega node"`
 	Verify   verifyCmd   `command:"verify" description:"Verify the configuration imported in the nodewallet"`
-	Help     bool        `short:"h" long:"help" description:"Show this help message"`
 }
 
 var rootCmd RootCmd
 
 func NodeWallet(ctx context.Context, parser *flags.Parser) error {
-	root := config.NewRootPathFlag()
 	rootCmd = RootCmd{
-		RootPathFlag: root,
 		Generate: generateCmd{
 			Config: nodewallet.NewDefaultConfig(),
 		},

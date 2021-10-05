@@ -3,6 +3,8 @@ package netparams
 import (
 	"time"
 
+	"code.vegaprotocol.io/vega/types/num"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/netparams/checks"
 )
@@ -74,24 +76,42 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
 
 		// Delegation default params
-		DelegationMinAmount:            NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
-		DelegationMaxStakePerValidator: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		DelegationMinAmount: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
 
 		// staking and delegation
 		StakingAndDelegationRewardPayoutFraction:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("1.0"),
-		StakingAndDelegationRewardMaxPayoutPerParticipant: NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		StakingAndDelegationRewardMaxPayoutPerParticipant: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0"),
 		StakingAndDelegationRewardPayoutDelay:             NewDuration(DurationGTE(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
-		StakingAndDelegationRewardDelegatorShare:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.8"),
+		StakingAndDelegationRewardDelegatorShare:          NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.883"),
+		StakingAndDelegationRewardMinimumValidatorStake:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0"),
+		StakingAndDelegationRewardCompetitionLevel:        NewFloat(FloatGT(1), FloatLTE(1000)).Mutable(true).MustUpdate("1.1"),
+		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
+
+		// spam protection policies
+		SpamProtectionMaxVotes:               NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForVoting:     NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000"),
+		SpamProtectionMaxProposals:           NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
+		SpamProtectionMinTokensForProposal:   NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("100000000000000000000000"),
+		SpamProtectionMaxDelegations:         NewInt(IntGTE(0)).Mutable(true).MustUpdate("390"),
+		SpamProtectionMinTokensForDelegation: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1000000000000000000"),
 
 		// no validation for this initially as we configure the
 		// the bootstrapping asset.
 		// validation will be added at node startup, so we can use dynamic stuff
 		// e.g: assets and collateral when setting up a new ID.
-		GovernanceVoteAsset: NewString().Mutable(true).MustUpdate("VOTE"),
+		RewardAsset: NewString().Mutable(true).MustUpdate("VOTE"),
 
 		BlockchainsEthereumConfig: NewJSON(&proto.EthereumConfig{}, checks.EthereumConfig()).Mutable(true).
-			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3}"),
+			MustUpdate("{\"network_id\": \"XXX\", \"chain_id\": \"XXX\", \"bridge_address\": \"0xXXX\", \"confirmations\": 3, \"staking_bridge_addresses\": []}"),
 
 		ValidatorsEpochLength: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("24h0m0s"),
+
+		ValidatorsVoteRequired: NewFloat(FloatGTE(0.67), FloatLTE(1.0)).Mutable(true).MustUpdate("0.67"),
+
+		// @TODO add watcher for NetworkEOL > MarketFreezeDate
+		// network checkpoint parameters
+		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(true).MustUpdate("never"),
+		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(true).MustUpdate("never"),
+		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m"),
 	}
 }

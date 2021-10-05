@@ -1,6 +1,7 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -91,7 +92,7 @@ func (o *Order) IntoProto() *proto.Order {
 		MarketId:             o.MarketID,
 		PartyId:              o.Party,
 		Side:                 o.Side,
-		Price:                num.UintToUint64(o.Price),
+		Price:                num.UintToString(o.Price),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
@@ -109,17 +110,25 @@ func (o *Order) IntoProto() *proto.Order {
 	}
 }
 
-func OrderFromProto(o *proto.Order) *Order {
+func OrderFromProto(o *proto.Order) (*Order, error) {
 	var pegged *PeggedOrder
 	if o.PeggedOrder != nil {
 		pegged = NewPeggedOrderFromProto(o.PeggedOrder)
+	}
+	var price = num.Zero()
+	if len(o.Price) > 0 {
+		var overflowed = false
+		price, overflowed = num.UintFromString(o.Price, 10)
+		if overflowed {
+			return nil, errors.New("invalid price")
+		}
 	}
 	return &Order{
 		ID:                   o.Id,
 		MarketID:             o.MarketId,
 		Party:                o.PartyId,
 		Side:                 o.Side,
-		Price:                num.NewUint(o.Price),
+		Price:                price,
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,
@@ -134,7 +143,7 @@ func OrderFromProto(o *proto.Order) *Order {
 		BatchID:              o.BatchId,
 		PeggedOrder:          pegged,
 		LiquidityProvisionID: o.LiquidityProvisionId,
-	}
+	}, nil
 }
 
 // Create sets the creation time (CreatedAt) to t and returns the
@@ -274,7 +283,7 @@ func (t *Trade) IntoProto() *proto.Trade {
 	return &proto.Trade{
 		Id:                 t.ID,
 		MarketId:           t.MarketID,
-		Price:              num.UintToUint64(t.Price),
+		Price:              num.UintToString(t.Price),
 		Size:               t.Size,
 		Buyer:              t.Buyer,
 		Seller:             t.Seller,

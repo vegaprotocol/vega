@@ -194,7 +194,7 @@ func (tm *testMarket) lastOrderUpdate(id string) *types.Order {
 		case *events.Order:
 			ord := evt.Order()
 			if ord.Id == id {
-				order = types.OrderFromProto(ord)
+				order = mustOrderFromProto(ord)
 			}
 		}
 	}
@@ -4828,7 +4828,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5207,7 +5207,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 
@@ -5267,7 +5267,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				if evt.Order().PartyId == "party-2-bis" {
-					found = append(found, types.OrderFromProto(evt.Order()))
+					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
 		}
@@ -5705,7 +5705,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
-				found = append(found, types.OrderFromProto(evt.Order()))
+				found = append(found, mustOrderFromProto(evt.Order()))
 			}
 		}
 

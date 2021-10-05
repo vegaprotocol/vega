@@ -1,8 +1,6 @@
 package execution
 
 import (
-	"path/filepath"
-
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
@@ -17,21 +15,11 @@ const (
 	// namedLogger is the identifier for package and should ideally match the package name
 	// this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 	namedLogger = "execution"
-	// MarketConfigPath is the default path in the config folder for the market configurations
-	MarketConfigPath = "markets"
 )
-
-// MarketConfig represents the configuration of the markets
-type MarketConfig struct {
-	Path    string   `long:"path"`
-	Configs []string `long:"configs"`
-}
 
 // Config is the configuration of the execution package
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
-
-	Markets MarketConfig `group:"Markets" namespace:"markets"`
 
 	Matching   matching.Config   `group:"Matching" namespace:"matching"`
 	Risk       risk.Config       `group:"Risk" namespace:"risk"`
@@ -43,13 +31,9 @@ type Config struct {
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
 // pointer to a logger instance to be used for logging within the package.
-func NewDefaultConfig(defaultConfigDirPath string) Config {
+func NewDefaultConfig() Config {
 	c := Config{
-		Level: encoding.LogLevel{Level: logging.InfoLevel},
-		Markets: MarketConfig{
-			Path:    filepath.Join(defaultConfigDirPath, MarketConfigPath),
-			Configs: []string{},
-		},
+		Level:      encoding.LogLevel{Level: logging.InfoLevel},
 		Matching:   matching.NewDefaultConfig(),
 		Risk:       risk.NewDefaultConfig(),
 		Position:   positions.NewDefaultConfig(),

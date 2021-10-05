@@ -96,6 +96,7 @@ func NewEngine(config Config,
 	priceMonitor PriceMonitor,
 	marketID string,
 ) *Engine {
+	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	return &Engine{
 		marketID:                marketID,

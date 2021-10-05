@@ -17,8 +17,8 @@ func PartyShouldHaveGeneralAccountBalanceForAsset(
 		return err
 	}
 
-	if acc.Balance != balance {
-		return fmt.Errorf("invalid general account balance for asset(%s) for party(%s), expected(%d) got(%d)",
+	if stringToU64(acc.Balance) != balance {
+		return fmt.Errorf("invalid general account balance for asset(%s) for party(%s), expected(%d) got(%s)",
 			asset, party, balance, acc.Balance,
 		)
 	}

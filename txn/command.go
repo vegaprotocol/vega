@@ -33,6 +33,8 @@ const (
 	DelegateCommand Command = 0x52
 	// UndelegateCommand ...
 	UndelegateCommand Command = 0x53
+	// CheckpointRestoreCommand ...
+	CheckpointRestoreCommand Command = 0x54
 )
 
 var commandName = map[Command]string{
@@ -48,8 +50,18 @@ var commandName = map[Command]string{
 	LiquidityProvisionCommand: "Liquidity Provision Order",
 	ChainEventCommand:         "Chain Event",
 	SubmitOracleDataCommand:   "Submit Oracle Data",
-	DelegateCommand:           "Delegatee",
+	DelegateCommand:           "Delegate",
 	UndelegateCommand:         "Undelegate",
+	CheckpointRestoreCommand:  "Checkpoint Restore",
+}
+
+func (cmd Command) IsValidatorCommand() bool {
+	switch cmd {
+	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, RegisterNodeCommand:
+		return true
+	default:
+		return false
+	}
 }
 
 // String return the

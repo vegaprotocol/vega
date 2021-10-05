@@ -4,11 +4,10 @@ import (
 	"fmt"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/execution"
 )
 
 func TheMarketStateShouldBeForMarket(
-	engine *execution.Engine,
+	engine Execution,
 	market, expectedMarketStateStr string,
 ) error {
 	expectedMarketState, err := MarketState(expectedMarketStateStr)

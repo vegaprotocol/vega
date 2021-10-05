@@ -69,6 +69,25 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		}
 	})
 
+	// delegation/validator steps
+	s.Step(`the validators:$`, func(table *godog.Table) error {
+		return steps.TheValidators(execsetup.topology, execsetup.stakingAccount, execsetup.delegationEngine, table)
+	})
+	s.Step(`^the parties should have the following delegation balances for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingDelegationBalances(execsetup.broker, table, epoch)
+	})
+
+	s.Step(`^the validators should have the following val scores for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
+		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
+	})
+	s.Step(`^the global reward account gets the following deposits:$`, func(table *godog.Table) error {
+		return steps.DepositToRewardAccount(execsetup.collateralEngine, table)
+	})
+
+	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
+		return steps.PartiesShouldReceiveTheFollowingReward(execsetup.broker, table, epoch)
+	})
+
 	// Market steps
 	s.Step(`the simple risk model named "([^"]*)":$`, func(name string, table *godog.Table) error {
 		return steps.TheSimpleRiskModel(marketConfig, name, table)
@@ -117,7 +136,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
-			assetInsuranceAccount := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
+			assetInsuranceAccount, _ := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
 			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
@@ -150,6 +169,13 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties deposit on asset's general account the following amount:$`, func(table *godog.Table) error {
 		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
 	})
+	s.Step(`^the parties deposit on staking account the following amount:$`, func(table *godog.Table) error {
+		return steps.PartiesTransferToStakingAccount(execsetup.stakingAccount, execsetup.broker, table, "")
+	})
+	s.Step(`^the parties withdraw from staking account the following amount:$`, func(table *godog.Table) error {
+		return steps.PartiesWithdrawFromStakingAccount(execsetup.stakingAccount, execsetup.broker, table)
+	})
+
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {
 		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
 	})
@@ -161,10 +187,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the parties submit the following delegations:$`, func(table *godog.Table) error {
-		return steps.PartiesDelegateTheFollowingStake(execsetup.executionEngine, table)
+		return steps.PartiesDelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
 	s.Step(`^the parties submit the following undelegations:$`, func(table *godog.Table) error {
-		return steps.PartiesUndelegateTheFollowingStake(execsetup.executionEngine, table)
+		return steps.PartiesUndelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
 
 	s.Step(`^the opening auction period ends for market "([^"]+)"$`, func(marketID string) error {
@@ -183,13 +209,16 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
-		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks)
+		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
 	})
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
 		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.block, execsetup.timeService, total, block)
 	})
 
 	// Assertion steps
+	s.Step(`^the parties should have the following staking account balances:$`, func(table *godog.Table) error {
+		return steps.PartiesShouldHaveTheFollowingStakingAccountBalances(execsetup.stakingAccount, table)
+	})
 	s.Step(`^the parties should have the following account balances:$`, func(table *godog.Table) error {
 		return steps.PartiesShouldHaveTheFollowingAccountBalances(execsetup.broker, table)
 	})

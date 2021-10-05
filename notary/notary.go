@@ -2,6 +2,7 @@ package notary
 
 import (
 	"context"
+	"math"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -10,6 +11,11 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+)
+
+const (
+	// by default all validators needs to sign
+	defaultValidatorsVoteRequired = 1.0
 )
 
 var (
@@ -49,6 +55,8 @@ type Notary struct {
 	top    ValidatorTopology
 	cmd    Commander
 	broker Broker
+
+	validatorVotesRequired float64
 }
 
 type idKind struct {
@@ -65,13 +73,19 @@ type nodeSig struct {
 func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, cmd Commander) *Notary {
 	log = log.Named(namedLogger)
 	return &Notary{
-		cfg:    cfg,
-		log:    log,
-		sigs:   map[idKind]map[nodeSig]struct{}{},
-		top:    top,
-		broker: broker,
-		cmd:    cmd,
+		cfg:                    cfg,
+		log:                    log,
+		sigs:                   map[idKind]map[nodeSig]struct{}{},
+		top:                    top,
+		broker:                 broker,
+		cmd:                    cmd,
+		validatorVotesRequired: defaultValidatorsVoteRequired,
 	}
+}
+
+func (n *Notary) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
+	n.validatorVotesRequired = f
+	return nil
 }
 
 // ReloadConf updates the internal configuration
@@ -88,12 +102,14 @@ func (n *Notary) ReloadConf(cfg Config) {
 	n.cfg = cfg
 }
 
-func (n *Notary) StartAggregate(resID string, kind commandspb.NodeSignatureKind) error {
+func (n *Notary) StartAggregate(resID string, kind commandspb.NodeSignatureKind) {
 	if _, ok := n.sigs[idKind{resID, kind}]; ok {
-		return ErrAggregateSigAlreadyStartedForResource
+		n.log.Panic("aggregate already started for a resource",
+			logging.String("resource", resID),
+			logging.String("signature-kind", kind.String()),
+		)
 	}
 	n.sigs[idKind{resID, kind}] = map[nodeSig]struct{}{}
-	return nil
 }
 
 func (n *Notary) AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error) {
@@ -124,7 +140,7 @@ func (n *Notary) AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSi
 
 func (n *Notary) IsSigned(ctx context.Context, resID string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool) {
 	// early exit if we don't have enough sig anyway
-	if float64(len(n.sigs[idKind{resID, kind}]))/float64(n.top.Len()) < n.cfg.SignaturesRequiredPercent {
+	if !n.votePassed(len(n.sigs[idKind{resID, kind}]), n.top.Len()) {
 		return nil, false
 	}
 
@@ -147,11 +163,15 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind commandspb.Nod
 	}
 
 	// now we check the number of required node sigs
-	if float64(len(sig))/float64(n.top.Len()) >= n.cfg.SignaturesRequiredPercent {
+	if n.votePassed(len(sig), n.top.Len()) {
 		return out, true
 	}
 
 	return nil, false
+}
+
+func (n *Notary) votePassed(votesCount, topLen int) bool {
+	return math.Min((float64(topLen)*n.validatorVotesRequired)+1, float64(topLen)) <= float64(votesCount)
 }
 
 func (n *Notary) SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error {

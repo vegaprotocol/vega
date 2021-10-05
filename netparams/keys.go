@@ -21,7 +21,7 @@ const (
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
 
-	GovernanceVoteAsset = "governance.vote.asset"
+	RewardAsset = "reward.asset"
 
 	// market proposal parameters
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
@@ -68,6 +68,17 @@ const (
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
 	StakingAndDelegationRewardPayoutDelay             = "reward.staking.delegation.payoutDelay"
 	StakingAndDelegationRewardDelegatorShare          = "reward.staking.delegation.delegatorShare"
+	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
+	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
+	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
+
+	// spam policies params
+	SpamProtectionMaxVotes               = "spam.protection.max.votes"
+	SpamProtectionMinTokensForVoting     = "spam.protection.voting.min.tokens"
+	SpamProtectionMaxProposals           = "spam.protection.max.proposals"
+	SpamProtectionMinTokensForProposal   = "spam.protection.proposal.min.tokens"
+	SpamProtectionMaxDelegations         = "spam.protection.max.delegations"
+	SpamProtectionMinTokensForDelegation = "spam.protection.delegation.min.tokens"
 
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
@@ -75,8 +86,14 @@ const (
 	// length of epoch in seconds
 	ValidatorsEpochLength = "validators.epoch.length"
 	// delegation params
-	DelegationMinAmount            = "validators.delegation.minAmount"
-	DelegationMaxStakePerValidator = "validators.delegation.maxStakePerValidator"
+	DelegationMinAmount = "validators.delegation.minAmount"
+
+	ValidatorsVoteRequired = "validators.vote.required"
+
+	// network related parameters
+	NetworkCheckpointMarketFreezeDate              = "network.checkpoint.marketFreezeDate"
+	NetworkCheckpointNetworkEOLDate                = "network.checkpoint.networkEndOfLifeDate"
+	NetworkCheckpointTimeElapsedBetweenCheckpoints = "network.checkpoint.timeElapsedBetweenCheckpoints"
 )
 
 var AllKeys = map[string]struct{}{
@@ -94,7 +111,7 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
 	MarketPriceMonitoringUpdateFrequency:                  {},
-	GovernanceVoteAsset:                                   {},
+	RewardAsset:                                           {},
 	GovernanceProposalMarketMinClose:                      {},
 	GovernanceProposalMarketMaxClose:                      {},
 	GovernanceProposalMarketMinEnact:                      {},
@@ -133,9 +150,22 @@ var AllKeys = map[string]struct{}{
 	MarketMinProbabilityOfTradingForLPOrders:              {},
 	ValidatorsEpochLength:                                 {},
 	DelegationMinAmount:                                   {},
-	DelegationMaxStakePerValidator:                        {},
 	StakingAndDelegationRewardPayoutFraction:              {},
 	StakingAndDelegationRewardMaxPayoutPerParticipant:     {},
 	StakingAndDelegationRewardPayoutDelay:                 {},
 	StakingAndDelegationRewardDelegatorShare:              {},
+	StakingAndDelegationRewardMinimumValidatorStake:       {},
+	ValidatorsVoteRequired:                                {},
+	NetworkCheckpointNetworkEOLDate:                       {},
+	NetworkCheckpointTimeElapsedBetweenCheckpoints:        {},
+	NetworkCheckpointMarketFreezeDate:                     {},
+	MarketValueWindowLength:                               {},
+	StakingAndDelegationRewardMaxPayoutPerEpoch:           {},
+	SpamProtectionMinTokensForProposal:                    {},
+	SpamProtectionMaxVotes:                                {},
+	SpamProtectionMaxProposals:                            {},
+	SpamProtectionMinTokensForVoting:                      {},
+	SpamProtectionMaxDelegations:                          {},
+	SpamProtectionMinTokensForDelegation:                  {},
+	StakingAndDelegationRewardCompetitionLevel:            {},
 }

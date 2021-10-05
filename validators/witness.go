@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"math"
 	"math/rand"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -41,6 +43,7 @@ type ValidatorTopology interface {
 	Len() int
 	IsValidator() bool
 	SelfVegaPubKey() string
+	AllPubKeys() []string
 }
 
 type Resource interface {
@@ -55,9 +58,10 @@ const (
 )
 
 const (
-	minValidationPeriod = 1         // sec minutes
-	maxValidationPeriod = 48 * 3600 // 2 days
-
+	minValidationPeriod = 1                   // sec minutes
+	maxValidationPeriod = 30 * 24 * time.Hour // 2 days
+	// by default all validators needs to sign
+	defaultValidatorsVoteRequired = 1.0
 )
 
 func init() {
@@ -110,6 +114,8 @@ type Witness struct {
 	// handle sending transaction errors
 	needResendMu  sync.Mutex
 	needResendRes map[string]struct{}
+
+	validatorVotesRequired float64
 }
 
 func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
@@ -121,14 +127,20 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 	log.SetLevel(cfg.Level.Get())
 
 	return &Witness{
-		log:           log,
-		cfg:           cfg,
-		now:           tsvc.GetTimeNow(),
-		cmd:           cmd,
-		top:           top,
-		resources:     map[string]*res{},
-		needResendRes: map[string]struct{}{},
+		log:                    log,
+		cfg:                    cfg,
+		now:                    tsvc.GetTimeNow(),
+		cmd:                    cmd,
+		top:                    top,
+		resources:              map[string]*res{},
+		needResendRes:          map[string]struct{}{},
+		validatorVotesRequired: defaultValidatorsVoteRequired,
 	}
+}
+
+func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
+	w.validatorVotesRequired = f
+	return nil
 }
 
 // ReloadConf updates the internal configuration
@@ -212,9 +224,16 @@ func (w *Witness) StartCheck(
 
 func (w *Witness) validateCheckUntil(checkUntil time.Time) error {
 	minValid, maxValid :=
-		w.now.Add(minValidationPeriod*time.Second),
-		w.now.Add(maxValidationPeriod*time.Second)
+		w.now.Add(minValidationPeriod),
+		w.now.Add(maxValidationPeriod)
 	if checkUntil.Unix() < minValid.Unix() || checkUntil.Unix() > maxValid.Unix() {
+		if w.log.GetLevel() <= logging.DebugLevel {
+			w.log.Debug("invalid duration for witness",
+				logging.Time("check-until", checkUntil),
+				logging.Time("min-valid", minValid),
+				logging.Time("max-valid", maxValid),
+			)
+		}
 		return ErrCheckUntilInvalid
 	}
 	return nil
@@ -244,7 +263,6 @@ func (w *Witness) start(ctx context.Context, r *res) {
 
 	err := backoff.Retry(f, backff)
 	if err != nil {
-
 		return
 	}
 
@@ -252,35 +270,52 @@ func (w *Witness) start(ctx context.Context, r *res) {
 	atomic.StoreUint32(&r.state, validated)
 }
 
+func (w *Witness) votePassed(votesCount, topLen int) bool {
+	return math.Min((float64(topLen)*w.validatorVotesRequired)+1, float64(topLen)) <= float64(votesCount)
+}
+
 func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 	w.now = t
 	topLen := w.top.Len()
 	isValidator := w.top.IsValidator()
 
+	// sort resources first
+	resourceIDs := make([]string, 0, len(w.resources))
+	for k := range w.resources {
+		resourceIDs = append(resourceIDs, k)
+	}
+	sort.Strings(resourceIDs)
+
 	// check if any resources passed checks
-	for k, v := range w.resources {
+	for _, k := range resourceIDs {
+		v := w.resources[k]
+
 		state := atomic.LoadUint32(&v.state)
 		votesLen := v.voteCount()
 
-		// if the time is expired,
-		if v.checkUntil.Before(t) ||
-			// if we are a validator, and we want our vote to
-			// be sent + all vote to be arrived
-			(isValidator && votesLen == topLen && state == voteSent) ||
-			// if we are not a validator, and do not care about our
-			// own vote, just to have the validator voting OK
-			(!isValidator && votesLen == topLen) {
+		checkPass := w.votePassed(votesLen, topLen)
 
+		// if the time is expired, or we received enough votes
+		if v.checkUntil.Before(t) || checkPass {
 			// cancel the context so it stops the routine right now
 			v.cfunc()
 
-			// if we have all validators votes, lets proceed
-			checkPass := votesLen >= topLen
 			if !checkPass {
+				votesReceived := []string{}
+				votesMissing := []string{}
+				for _, k := range w.top.AllPubKeys() {
+					if _, ok := v.votes[k]; ok {
+						votesReceived = append(votesReceived, k)
+						continue
+					}
+					votesMissing = append(votesMissing, k)
+				}
 				w.log.Warn("resource checking was not validated by all nodes",
 					logging.String("resource-id", v.res.GetID()),
 					logging.Int("vote-count", votesLen),
 					logging.Int("node-count", topLen),
+					logging.Strings("votes-received", votesReceived),
+					logging.Strings("votes-missing", votesMissing),
 				)
 			}
 

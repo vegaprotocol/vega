@@ -66,20 +66,6 @@ gofmtsimplify:
 install: ## install the binaries in GOPATH/bin
 	@./script/build.sh -a install -t default
 
-.PHONY: gqlgen
-gqlgen: ## run gqlgen
-	@./script/build.sh -a gqlgen
-
-.PHONY: gqlgen_check
-gqlgen_check: ## GraphQL: Check committed files match just-generated files
-	@find gateway/graphql -name '*.graphql' -o -name '*.yml' -exec touch '{}' ';' ; \
-	make gqlgen 1>/dev/null || exit 1 ; \
-	files="$$(git diff --name-only gateway/graphql/)" ; \
-	if test -n "$$files" ; then \
-		echo "Committed files do not match just-generated files:" $$files ; \
-		test -n "$(CI)" && git diff gateway/graphql/ ; \
-		exit 1 ; \
-	fi
 
 .PHONY: ineffectassign
 ineffectassign: ## Check for ineffectual assignments
@@ -98,6 +84,7 @@ print_check: ## Check for fmt.Print functions in Go code
 	find -name vendor -prune -o \
 		-name cmd -prune -o \
 		-name 'json.go' -prune -o \
+		-name 'print.go' -prune -o \
 		-name '*_test.go' -prune -o \
 		-name 'flags.go' -prune -o \
 		-name '*.go' -print0 | \
@@ -130,10 +117,6 @@ spellcheck: ## Run markdown spellcheck container
 .PHONY: staticcheck
 staticcheck: ## Run statick analysis checks
 	@./script/build.sh -a staticcheck
-
-.PHONY: buflint
-buflint: ## Run buf lint
-	@./script/build.sh -a buflint
 
 .PHONY: misspell
 misspell: # Run go specific misspell checks

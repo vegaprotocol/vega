@@ -64,33 +64,19 @@ func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAsset", reflect.TypeOf((*MockCollateral)(nil).EnableAsset), arg0, arg1)
 }
 
-// HasBalance mocks base method
-func (m *MockCollateral) HasBalance(arg0 string) bool {
+// GetPartyGeneralAccount mocks base method
+func (m *MockCollateral) GetPartyGeneralAccount(arg0, arg1 string) (*types.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HasBalance", arg0)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// HasBalance indicates an expected call of HasBalance
-func (mr *MockCollateralMockRecorder) HasBalance(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasBalance", reflect.TypeOf((*MockCollateral)(nil).HasBalance), arg0)
-}
-
-// LockFundsForWithdraw mocks base method
-func (m *MockCollateral) LockFundsForWithdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LockFundsForWithdraw", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(*types.TransferResponse)
+	ret := m.ctrl.Call(m, "GetPartyGeneralAccount", arg0, arg1)
+	ret0, _ := ret[0].(*types.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// LockFundsForWithdraw indicates an expected call of LockFundsForWithdraw
-func (mr *MockCollateralMockRecorder) LockFundsForWithdraw(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// GetPartyGeneralAccount indicates an expected call of GetPartyGeneralAccount
+func (mr *MockCollateralMockRecorder) GetPartyGeneralAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LockFundsForWithdraw", reflect.TypeOf((*MockCollateral)(nil).LockFundsForWithdraw), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyGeneralAccount), arg0, arg1)
 }
 
 // Withdraw mocks base method

@@ -10,16 +10,9 @@ import (
 type VersionCmd struct {
 	version string
 	hash    string
-	Help    bool `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (cmd *VersionCmd) Execute(_ []string) error {
-	if cmd.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega version subcommand help",
-		}
-	}
 	fmt.Printf("Vega CLI %s (%s)\n", cmd.version, cmd.hash)
 	return nil
 }

@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/fsutil"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -35,7 +36,9 @@ func (opts *updateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
+	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -79,7 +82,7 @@ func (opts *updateCmd) Execute(_ []string) error {
 	}
 
 	genesisFilePath := tmConfig.GenesisFile()
-	data, err := fsutil.ReadFile(genesisFilePath)
+	data, err := vgfs.ReadFile(genesisFilePath)
 	if err != nil {
 		return err
 	}

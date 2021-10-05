@@ -257,13 +257,6 @@ run() {
 		deps
 		return "$?"
 		;;
-	gqlgen) ## Run gqlgen
-		pushd ./gateway/graphql/ 1>/dev/null || return 1
-		go run github.com/99designs/gqlgen --config gqlgen.yml
-		code="$?"
-		popd 1>/dev/null || return 1
-		return "$code"
-		;;
 	install) ## Build apps (in $GOPATH/bin)
 		: # handled below
 		;;
@@ -303,14 +296,10 @@ run() {
 		staticcheck -checks 'all,-SA1019,-ST1000,-ST1021' ./...
 		return "$?"
 		;;
-	buflint) ## Run
-		buf lint
-		return "$?"
-		;;
 	misspell) ## Run misspell
 		# Since misspell does not support exluding, we need to specify the
 		# files we want and those we don't
-		find . -name vendor -prune -o "(" -type f -name '*.go' -o -name '*.proto' ")" -print0 | xargs -0 misspell -j 0 -error
+		find . -name vendor -prune -o -name '*_abi.go' -prune -o "(" -type f -name '*.go' -o -name '*.proto' ")" -print0 | xargs -0 misspell -j 0 -error
 		return "$?"
 		;;
 	semgrep) ## Run semgrep

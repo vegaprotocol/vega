@@ -9,22 +9,27 @@ import (
 
 type Cmd struct {
 	// Global options
-	config.RootPathFlag
+	config.VegaHomeFlag
 	config.PassphraseFlag
 
 	// Subcommands
 	Generate generateCmd `command:"generate" description:"Generates the genesis file"`
 	Update   updateCmd   `command:"update" description:"Update the genesis file with the app_state"`
-	Help     bool        `short:"h" long:"help" description:"Show this help message"`
+	Sign     signCmd     `command:"sign" description:"Sign a subset of the network parameters"`
+	Verify   verifyCmd   `command:"verify" description:"Verify the signature of the network parameter against local genesis file"`
 }
 
 var genesisCmd Cmd
 
 func Genesis(ctx context.Context, parser *flags.Parser) error {
-	rootPath := config.NewRootPathFlag()
 	genesisCmd = Cmd{
-		RootPathFlag: rootPath,
 		Generate: generateCmd{
+			TmRoot: "$HOME/.tendermint",
+		},
+		Sign: signCmd{
+			TmRoot:     "$HOME/.tendermint",
+		},
+		Verify: verifyCmd{
 			TmRoot: "$HOME/.tendermint",
 		},
 		Update: updateCmd{

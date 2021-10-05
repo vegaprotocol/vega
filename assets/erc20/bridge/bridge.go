@@ -137,7 +137,7 @@ func bindBridge(address common.Address, caller bind.ContractCaller, transactor b
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_Bridge *BridgeRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_Bridge *BridgeRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _Bridge.Contract.BridgeCaller.contract.Call(opts, result, method, params...)
 }
 
@@ -156,7 +156,7 @@ func (_Bridge *BridgeRaw) Transact(opts *bind.TransactOpts, method string, param
 // sets the output to result. The result type might be a single field for simple
 // returns, a slice of interfaces for anonymous returns and a struct for named
 // returns.
-func (_Bridge *BridgeCallerRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error {
+func (_Bridge *BridgeCallerRaw) Call(opts *bind.CallOpts, result *[]interface{}, method string, params ...interface{}) error {
 	return _Bridge.Contract.contract.Call(opts, result, method, params...)
 }
 
@@ -175,12 +175,17 @@ func (_Bridge *BridgeTransactorRaw) Transact(opts *bind.TransactOpts, method str
 //
 // Solidity: function get_asset_source(bytes32 vega_asset_id) view returns(address)
 func (_Bridge *BridgeCaller) GetAssetSource(opts *bind.CallOpts, vega_asset_id [32]byte) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _Bridge.contract.Call(opts, out, "get_asset_source", vega_asset_id)
-	return *ret0, err
+	var out []interface{}
+	err := _Bridge.contract.Call(opts, &out, "get_asset_source", vega_asset_id)
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // GetAssetSource is a free data retrieval call binding the contract method 0x786b0bc0.
@@ -201,12 +206,17 @@ func (_Bridge *BridgeCallerSession) GetAssetSource(vega_asset_id [32]byte) (comm
 //
 // Solidity: function get_deposit_maximum(address asset_source) view returns(uint256)
 func (_Bridge *BridgeCaller) GetDepositMaximum(opts *bind.CallOpts, asset_source common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _Bridge.contract.Call(opts, out, "get_deposit_maximum", asset_source)
-	return *ret0, err
+	var out []interface{}
+	err := _Bridge.contract.Call(opts, &out, "get_deposit_maximum", asset_source)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // GetDepositMaximum is a free data retrieval call binding the contract method 0x1d501b5d.
@@ -227,12 +237,17 @@ func (_Bridge *BridgeCallerSession) GetDepositMaximum(asset_source common.Addres
 //
 // Solidity: function get_deposit_minimum(address asset_source) view returns(uint256)
 func (_Bridge *BridgeCaller) GetDepositMinimum(opts *bind.CallOpts, asset_source common.Address) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _Bridge.contract.Call(opts, out, "get_deposit_minimum", asset_source)
-	return *ret0, err
+	var out []interface{}
+	err := _Bridge.contract.Call(opts, &out, "get_deposit_minimum", asset_source)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
 }
 
 // GetDepositMinimum is a free data retrieval call binding the contract method 0x4322b1f2.
@@ -253,12 +268,17 @@ func (_Bridge *BridgeCallerSession) GetDepositMinimum(asset_source common.Addres
 //
 // Solidity: function get_multisig_control_address() view returns(address)
 func (_Bridge *BridgeCaller) GetMultisigControlAddress(opts *bind.CallOpts) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _Bridge.contract.Call(opts, out, "get_multisig_control_address")
-	return *ret0, err
+	var out []interface{}
+	err := _Bridge.contract.Call(opts, &out, "get_multisig_control_address")
+
+	if err != nil {
+		return *new(common.Address), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(common.Address)).(*common.Address)
+
+	return out0, err
+
 }
 
 // GetMultisigControlAddress is a free data retrieval call binding the contract method 0xc58dc3b9.
@@ -279,12 +299,17 @@ func (_Bridge *BridgeCallerSession) GetMultisigControlAddress() (common.Address,
 //
 // Solidity: function get_vega_asset_id(address asset_source) view returns(bytes32)
 func (_Bridge *BridgeCaller) GetVegaAssetId(opts *bind.CallOpts, asset_source common.Address) ([32]byte, error) {
-	var (
-		ret0 = new([32]byte)
-	)
-	out := ret0
-	err := _Bridge.contract.Call(opts, out, "get_vega_asset_id", asset_source)
-	return *ret0, err
+	var out []interface{}
+	err := _Bridge.contract.Call(opts, &out, "get_vega_asset_id", asset_source)
+
+	if err != nil {
+		return *new([32]byte), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new([32]byte)).(*[32]byte)
+
+	return out0, err
+
 }
 
 // GetVegaAssetId is a free data retrieval call binding the contract method 0xa06b5d39.
@@ -305,12 +330,17 @@ func (_Bridge *BridgeCallerSession) GetVegaAssetId(asset_source common.Address) 
 //
 // Solidity: function is_asset_listed(address asset_source) view returns(bool)
 func (_Bridge *BridgeCaller) IsAssetListed(opts *bind.CallOpts, asset_source common.Address) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _Bridge.contract.Call(opts, out, "is_asset_listed", asset_source)
-	return *ret0, err
+	var out []interface{}
+	err := _Bridge.contract.Call(opts, &out, "is_asset_listed", asset_source)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
 // IsAssetListed is a free data retrieval call binding the contract method 0x7fd27b7f.
@@ -595,6 +625,7 @@ func (_Bridge *BridgeFilterer) ParseAssetDepositMaximumSet(log types.Log) (*Brid
 	if err := _Bridge.contract.UnpackLog(event, "Asset_Deposit_Maximum_Set", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -740,6 +771,7 @@ func (_Bridge *BridgeFilterer) ParseAssetDepositMinimumSet(log types.Log) (*Brid
 	if err := _Bridge.contract.UnpackLog(event, "Asset_Deposit_Minimum_Set", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -894,6 +926,7 @@ func (_Bridge *BridgeFilterer) ParseAssetDeposited(log types.Log) (*BridgeAssetD
 	if err := _Bridge.contract.UnpackLog(event, "Asset_Deposited", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1047,6 +1080,7 @@ func (_Bridge *BridgeFilterer) ParseAssetListed(log types.Log) (*BridgeAssetList
 	if err := _Bridge.contract.UnpackLog(event, "Asset_Listed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1191,6 +1225,7 @@ func (_Bridge *BridgeFilterer) ParseAssetRemoved(log types.Log) (*BridgeAssetRem
 	if err := _Bridge.contract.UnpackLog(event, "Asset_Removed", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }
 
@@ -1345,5 +1380,6 @@ func (_Bridge *BridgeFilterer) ParseAssetWithdrawn(log types.Log) (*BridgeAssetW
 	if err := _Bridge.contract.UnpackLog(event, "Asset_Withdrawn", log); err != nil {
 		return nil, err
 	}
+	event.Raw = log
 	return event, nil
 }

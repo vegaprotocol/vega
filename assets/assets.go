@@ -9,7 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/builtin"
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -23,10 +23,6 @@ var (
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/assets TimeService
 type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
-}
-
-type NodeWallet interface {
-	Get(chain nodewallet.Blockchain) (nodewallet.Wallet, bool)
 }
 
 type Service struct {
@@ -44,10 +40,11 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nw NodeWallet
+	nodeWallets *nodewallet.NodeWallets
+	ethClient erc20.ETHClient
 }
 
-func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) *Service {
+func New(log *logging.Logger, cfg Config, nw *nodewallet.NodeWallets, ethClient erc20.ETHClient, ts TimeService) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -56,7 +53,8 @@ func New(log *logging.Logger, cfg Config, nw NodeWallet, ts TimeService) *Servic
 		cfg:           cfg,
 		assets:        map[string]*Asset{},
 		pendingAssets: map[string]*Asset{},
-		nw:            nw,
+		nodeWallets:   nw,
+		ethClient:     ethClient,
 	}
 	ts.NotifyOnTick(s.onTick)
 	return s
@@ -115,11 +113,7 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 			builtin.New(assetID, assetDetails),
 		}
 	case *types.AssetDetailsErc20:
-		wal, ok := s.nw.Get(nodewallet.Ethereum)
-		if !ok {
-			return "", errors.New("missing wallet for ETH")
-		}
-		asset, err := erc20.New(assetID, assetDetails, wal)
+		asset, err := erc20.New(assetID, assetDetails, s.nodeWallets.Ethereum, s.ethClient)
 		if err != nil {
 			return "", err
 		}
@@ -129,6 +123,16 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 	}
 
 	return assetID, nil
+}
+
+func (s *Service) GetEnabledAssets() []*types.Asset {
+	s.amu.RLock()
+	defer s.amu.RUnlock()
+	ret := make([]*types.Asset, 0, len(s.assets))
+	for _, a := range s.assets {
+		ret = append(ret, a.ToAssetType())
+	}
+	return ret
 }
 
 func (s *Service) Get(assetID string) (*Asset, error) {

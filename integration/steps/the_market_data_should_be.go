@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -26,7 +25,7 @@ type MappedMD struct {
 
 type ErrStack []error
 
-func TheMarketDataShouldBe(engine *execution.Engine, mID string, data *godog.Table) error {
+func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) error {
 	actual, err := engine.GetMarketData(mID)
 	if err != nil {
 		return err

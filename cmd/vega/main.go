@@ -4,21 +4,19 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
+	"code.vegaprotocol.io/vega/cmd/vega/faucet"
 	"code.vegaprotocol.io/vega/cmd/vega/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/logging"
 	"github.com/jessevdk/go-flags"
 )
 
 var (
-	// VersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
+	// CLIVersionHash specifies the git commit used to build the application. See VERSION_HASH in Makefile for details.
 	CLIVersionHash = ""
 
-	// Version specifies the version used to build the application. See VERSION in Makefile for details.
+	// CLIVersion specifies the version used to build the application. See VERSION in Makefile for details.
 	CLIVersion = ""
 )
 
@@ -56,8 +54,7 @@ func Main(ctx context.Context) error {
 	parser := flags.NewParser(&config.Empty{}, flags.Default)
 
 	if err := Register(ctx, parser,
-		Faucet,
-		Gateway,
+		faucet.Faucet,
 		genesis.Genesis,
 		Init,
 		Node,
@@ -67,33 +64,16 @@ func Main(ctx context.Context) error {
 		Wallet,
 		Watch,
 		Tm,
+		Checkpoint,
+		Query,
+		Bridge,
 	); err != nil {
-		fmt.Printf("%+v\n", err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
 	}
 
 	if _, err := parser.Parse(); err != nil {
-		switch t := err.(type) {
-		case *flags.Error:
-			if t.Type != flags.ErrHelp {
-				parser.WriteHelp(os.Stdout)
-			}
-		}
 		return err
 	}
 	return nil
-}
-
-// waitSig will wait for a sigterm or sigint interrupt.
-func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
-	signal.Notify(gracefulStop, syscall.SIGTERM)
-	signal.Notify(gracefulStop, syscall.SIGINT)
-
-	select {
-	case sig := <-gracefulStop:
-		log.Info("Caught signal", logging.String("name", fmt.Sprintf("%+v", sig)))
-	case <-ctx.Done():
-		// nothing to do
-	}
 }

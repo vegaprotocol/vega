@@ -5,30 +5,22 @@ import (
 	"fmt"
 	"os"
 
-	vgjson "code.vegaprotocol.io/vega/libs/json"
+	vgjson "code.vegaprotocol.io/shared/libs/json"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/validators"
-	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 type newValidatorCmd struct {
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
 	Country string `long:"country" description:"The country from which the validator operates" required:"true"`
 	InfoURL string `long:"info-url" description:"The URL from which people can get to know the validator" required:"true"`
-	Help    bool   `short:"h" long:"help" description:"Show this help message"`
 }
 
 func (opts *newValidatorCmd) Execute(_ []string) error {
-	if opts.Help {
-		return &flags.Error{
-			Type:    flags.ErrHelp,
-			Message: "vega genesis new validator subcommand help",
-		}
-	}
-
 	log := logging.NewLoggerFromConfig(
 		logging.NewDefaultConfig(),
 	)
@@ -39,7 +31,9 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
+	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+
+	vegaKey, ethAddress, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -53,7 +47,7 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 		return err
 	}
 
-	validatorDataDoc := types.GenesisValidator{
+	validatorDataDoc := tmtypes.GenesisValidator{
 		Address: pubKey.Address(),
 		PubKey:  pubKey,
 		Power:   10,

@@ -5,11 +5,10 @@ import (
 	"strings"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/execution"
 	"github.com/cucumber/godog"
 )
 
-func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine *execution.Engine, marketID string, table *godog.Table) error {
+func TheLiquidityProviderFeeSharesForTheMarketShouldBe(engine Execution, marketID string, table *godog.Table) error {
 	marketData, err := engine.GetMarketData(marketID)
 	if err != nil {
 		return errMarketDataNotFound(marketID, err)

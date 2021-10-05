@@ -526,7 +526,7 @@ func TestMarketDepthFields(t *testing.T) {
 	pl := priceLevels[0]
 	assert.NotNil(t, pl)
 	assert.Equal(t, uint64(1), pl.NumberOfOrders)
-	assert.Equal(t, uint64(101), pl.Price)
+	assert.Equal(t, "101", pl.Price)
 	assert.Equal(t, uint64(10), pl.Volume)
 }
 

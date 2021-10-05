@@ -30,9 +30,10 @@ func (a Asset) Proto() proto.Asset {
 
 func (a Asset) StreamMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
-		Id:    a.eventID(),
-		Block: a.TraceID(),
-		Type:  a.et.ToProto(),
+		Version: eventspb.Version,
+		Id:      a.eventID(),
+		Block:   a.TraceID(),
+		Type:    a.et.ToProto(),
 		Event: &eventspb.BusEvent_Asset{
 			Asset: &a.a,
 		},

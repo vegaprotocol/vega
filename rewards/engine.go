@@ -37,9 +37,9 @@ type EpochEngine interface {
 }
 
 //Delegation engine for getting validation data
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards DelegationEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards Delegation
 type Delegation interface {
-	OnEpochEnd(ctx context.Context, start, end time.Time) []*types.ValidatorData
+	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 }
 
 //Collateral engine provides access to account data and transferring rewards
@@ -58,37 +58,37 @@ type TimeService interface {
 
 //Engine is the reward engine handling reward payouts
 type Engine struct {
-	log                              *logging.Logger
-	config                           Config
-	broker                           Broker
-	delegation                       Delegation
-	collateral                       Collateral
-	rewardSchemes                    map[string]*types.RewardScheme
-	pendingPayouts                   map[time.Time][]*pendingPayout
-	rewardPoolToPendingPayoutBalance map[string]*num.Uint
+	log            *logging.Logger
+	config         Config
+	broker         Broker
+	delegation     Delegation
+	collateral     Collateral
+	rewardSchemes  map[string]*types.RewardScheme         // reward scheme id -> reward scheme
+	pendingPayouts map[time.Time]map[types.Epoch][]string // time for payout -> epoch -> reward schemes
 
 	assetForStakingAndDelegationReward string
 }
-
-type pendingPayout struct {
+type payout struct {
 	fromAccount   string
 	asset         string
 	partyToAmount map[string]*num.Uint
 	totalReward   *num.Uint
 	epochSeq      string
+	timestamp     int64
 }
 
 //New instantiate a new rewards engine
 func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService) *Engine {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
 	e := &Engine{
-		config:                           config,
-		log:                              log.Named(namedLogger),
-		broker:                           broker,
-		delegation:                       delegation,
-		collateral:                       collateral,
-		rewardSchemes:                    map[string]*types.RewardScheme{},
-		pendingPayouts:                   map[time.Time][]*pendingPayout{},
-		rewardPoolToPendingPayoutBalance: map[string]*num.Uint{},
+		config:         config,
+		log:            log.Named(namedLogger),
+		broker:         broker,
+		delegation:     delegation,
+		collateral:     collateral,
+		rewardSchemes:  map[string]*types.RewardScheme{},
+		pendingPayouts: map[time.Time]map[types.Epoch][]string{},
 	}
 
 	// register for epoch end notifications
@@ -112,12 +112,57 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 		Type:                      types.RewardSchemeStakingAndDelegation,
 		ScopeType:                 types.RewardSchemeScopeNetwork,
 		Parameters:                map[string]types.RewardSchemeParam{},
-		StartTime:                 time.Now(),
+		StartTime:                 time.Time{},
 		PayoutType:                types.PayoutFractional,
 		MaxPayoutPerAssetPerParty: map[string]*num.Uint{},
 	}
 
 	e.rewardSchemes[rs.SchemeID] = rs
+}
+
+func (e *Engine) UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(ctx context.Context, maxPerEpoch num.Decimal) error {
+	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
+	if !ok {
+		e.log.Panic("reward scheme for staking and delegation must exist")
+	}
+
+	maxAsUint, _ := num.UintFromDecimal(maxPerEpoch)
+	rs.Parameters["maxPayoutPerEpoch"] = types.RewardSchemeParam{
+		Name:  "maxPayoutPerEpoch",
+		Type:  "uint",
+		Value: maxAsUint.String(),
+	}
+	return nil
+}
+
+//UpdateMinimumValidatorStakeForStakingRewardScheme updaates the value of minimum validator stake for being considered for rewards
+func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.Context, minValStake num.Decimal) error {
+	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
+	if !ok {
+		e.log.Panic("reward scheme for staking and delegation must exist")
+	}
+
+	minValidatorStake, _ := num.UintFromDecimal(minValStake)
+	rs.Parameters["minValStake"] = types.RewardSchemeParam{
+		Name:  "minValStake",
+		Type:  "uint",
+		Value: minValidatorStake.String(),
+	}
+	return nil
+}
+
+//UpdateCompetitionLevelForStakingRewardScheme is called when the competition level has changed
+func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel float64) error {
+	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
+	if !ok {
+		e.log.Panic("reward scheme for staking and delegation must exist")
+	}
+	rs.Parameters["compLevel"] = types.RewardSchemeParam{
+		Name:  "compLevel",
+		Type:  "float",
+		Value: num.NewDecimalFromFloat(compLevel).String(),
+	}
+	return nil
 }
 
 //UpdateAssetForStakingAndDelegationRewardScheme is called when the asset for staking and delegation is available, get the reward pool account and attach it to the scheme
@@ -146,13 +191,14 @@ func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Cont
 }
 
 //UpdateMaxPayoutPerParticipantForStakingRewardScheme is a callback for changes in the network param for max payout per participant
-func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, mayPayoutPerParticipant int64) error {
+func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, maxPayoutPerParticipant num.Decimal) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
 		e.log.Panic("reward scheme for staking and delegation must exist")
 	}
 
-	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = num.NewUint(uint64(mayPayoutPerParticipant))
+	maxPayout, _ := num.UintFromDecimal(maxPayoutPerParticipant)
+	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = maxPayout
 	return nil
 }
 
@@ -208,27 +254,65 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	}
 	sort.Slice(payTimes, func(i, j int) bool { return payTimes[i].Before(payTimes[j]) })
 	for _, payTime := range payTimes {
-		payouts := e.pendingPayouts[payTime]
-		if t.After(payTime) {
-			for _, payout := range payouts {
-				// distribute the reward
-				if payout != nil {
-					e.distributePayout(ctx, payout)
-				}
-
-				// subtract the reward from the pending balance
-				pendingBalanceForRewardAccount := e.rewardPoolToPendingPayoutBalance[payout.fromAccount]
-				e.rewardPoolToPendingPayoutBalance[payout.fromAccount] = num.Zero().Sub(pendingBalanceForRewardAccount, payout.totalReward)
+		if !t.Before(payTime) {
+			// sort epochs ascending
+			pendingEpochs := []types.Epoch{}
+			for epoch := range e.pendingPayouts[payTime] {
+				pendingEpochs = append(pendingEpochs, epoch)
 			}
+			sort.Slice(pendingEpochs, func(i, j int) bool { return pendingEpochs[i].Seq < pendingEpochs[j].Seq })
+			for _, epoch := range pendingEpochs {
+				pendingRewardSchemes := e.pendingPayouts[payTime][epoch]
+				sort.Strings(pendingRewardSchemes)
+				for _, rs := range pendingRewardSchemes {
+					if rewardScheme, ok := e.rewardSchemes[rs]; ok {
+						e.processRewards(ctx, rewardScheme, epoch, t)
+					}
+				}
+			}
+
 			// remove all paid payouts from pending
 			delete(e.pendingPayouts, payTime)
 		}
 	}
 }
 
+// process rewards when needed
+func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, t time.Time) {
+	// get the reward pool accounts for the reward scheme
+	for _, accountID := range rewardScheme.RewardPoolAccountIDs {
+		account, err := e.collateral.GetAccountByID(accountID)
+		if err != nil {
+			e.log.Error("failed to get reward account for", logging.String("accountID", accountID))
+			continue
+		}
+
+		rewardAccountBalance := account.Balance
+
+		// get how much reward needs to be distributed based on the current balance and the reward scheme
+		rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
+		if err != nil {
+			e.log.Panic("reward scheme misconfiguration", logging.Error(err))
+		}
+
+		// calculate the rewards per the reward scheme and reword amount
+		payout := e.calculateRewards(ctx, account.Asset, account.ID, rewardScheme, rewardAmt, epoch)
+		if payout == nil || payout.totalReward.IsZero() {
+			continue
+		}
+
+		payout.timestamp = t.UnixNano()
+		e.distributePayout(ctx, payout)
+	}
+}
+
 // OnEpochEnd calculates the reward amounts parties get for available reward schemes
 func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEnd")
+
+	if (epoch.EndTime == time.Time{}) {
+		return
+	}
 
 	rsIDs := make([]string, 0, len(e.rewardSchemes))
 	for rsID := range e.rewardSchemes {
@@ -243,86 +327,41 @@ func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
 			continue
 		}
 
-		// get the reward pool accounts for the reward scheme
-		for _, accountID := range rewardScheme.RewardPoolAccountIDs {
-			account, err := e.collateral.GetAccountByID(accountID)
-			if err != nil {
-				e.log.Error("failed to get reward account for", logging.String("accountID", accountID))
-				continue
-			}
-
-			if account.Balance.IsZero() {
-				e.log.Debug("reward account has zero balance", logging.String("accountID", accountID))
-				continue
-			}
-
-			rewardAccountBalance := account.Balance.Clone()
-
-			// we need to subtract from the balance any pending payouts that are waiting to be awarded
-			pendingPayoutForAccount, ok := e.rewardPoolToPendingPayoutBalance[accountID]
-			if ok {
-				if pendingPayoutForAccount.GT(rewardAccountBalance) {
-					e.log.Panic("reward account balance doesn't cover pending payouts")
-				}
-				rewardAccountBalance = rewardAccountBalance.Sub(rewardAccountBalance, pendingPayoutForAccount)
-			} else {
-				pendingPayoutForAccount = num.Zero()
-			}
-
-			if rewardAccountBalance.IsZero() {
-				e.log.Debug("reward account has zero balance including pending payouts", logging.String("accountID", accountID))
-				continue
-			}
-
-			// get how much reward needs to be distributed based on the current balance and the reward scheme
-			rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
-			if err != nil {
-				e.log.Panic("reward scheme misconfiguration", logging.Error(err))
-			}
-
-			// calculate the rewards per the reward scheme and reword amount
-			pending := e.calculateRewards(ctx, account.Asset, account.ID, rewardScheme, rewardAmt, epoch)
-			if pending.totalReward.IsZero() {
-				continue
-			}
-
-			// if the reward scheme has no delay, distribute the payout now
-			if rewardScheme.PayoutDelay == time.Duration(0) {
-				e.distributePayout(ctx, pending)
-				continue
-			}
-
-			// add the total reward amount to the pending for the account so we can account for it when distributing further rewards
-			// if we need to before this is paid out
-			e.rewardPoolToPendingPayoutBalance[accountID] = pendingPayoutForAccount.AddSum(pending.totalReward)
+		if rewardScheme.PayoutDelay == time.Duration(0) {
+			e.processRewards(ctx, rewardScheme, epoch, epoch.EndTime)
+		} else {
 			timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
 			existingPending, ok := e.pendingPayouts[timeToSend]
 			if !ok {
-				existingPending = []*pendingPayout{}
+				existingPending = map[types.Epoch][]string{epoch: []string{rsID}}
+				e.pendingPayouts[timeToSend] = existingPending
+			} else {
+				_, ok := existingPending[epoch]
+				if !ok {
+					existingPending[epoch] = []string{rsID}
+				} else {
+					existingPending[epoch] = append(existingPending[epoch], rsID)
+				}
 			}
-			existingPending = append(existingPending, pending)
-			e.pendingPayouts[timeToSend] = existingPending
-
 		}
 	}
 }
 
 // make the required transfers for distributing reward payout
-func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
-	partyAccountIDToParty := make(map[string]string, len(payout.partyToAmount))
-	partyIDs := make([]string, 0, len(payout.partyToAmount))
-	for party := range payout.partyToAmount {
+func (e *Engine) distributePayout(ctx context.Context, po *payout) {
+	partyIDs := make([]string, 0, len(po.partyToAmount))
+	for party := range po.partyToAmount {
 		partyIDs = append(partyIDs, party)
 	}
 
 	sort.Strings(partyIDs)
 	transfers := make([]*types.Transfer, 0, len(partyIDs))
 	for _, party := range partyIDs {
-		amt := payout.partyToAmount[party]
+		amt := po.partyToAmount[party]
 		transfers = append(transfers, &types.Transfer{
 			Owner: party,
 			Amount: &types.FinancialAmount{
-				Asset:  payout.asset,
+				Asset:  po.asset,
 				Amount: amt.Clone(),
 			},
 			Type:      types.TransferTypeRewardPayout,
@@ -331,7 +370,7 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 
 	}
 
-	resp, err := e.collateral.TransferRewards(ctx, payout.fromAccount, transfers)
+	resp, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
 	if err != nil {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
@@ -344,9 +383,10 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 		// send an event with the reward amount transferred to the party
 		if len(response.Transfers) > 0 {
 			ledgerEntry := response.Transfers[0]
-			party := partyAccountIDToParty[ledgerEntry.ToAccount]
-			proportion, _ := ledgerEntry.Amount.ToDecimal().Div(payout.totalReward.ToDecimal()).Float64()
-			payoutEvents[party] = events.NewRewardPayout(ctx, ledgerEntry.FromAccount, ledgerEntry.ToAccount, party, payout.epochSeq, payout.asset, ledgerEntry.Amount, proportion)
+			party := response.Balances[0].Account.Owner
+			// party := partyAccountIDToParty[ledgerEntry.ToAccount]
+			proportion, _ := ledgerEntry.Amount.ToDecimal().Div(po.totalReward.ToDecimal()).Float64()
+			payoutEvents[party] = events.NewRewardPayout(ctx, po.timestamp, party, po.epochSeq, po.asset, ledgerEntry.Amount, proportion)
 			parties = append(parties, party)
 		}
 	}
@@ -360,12 +400,13 @@ func (e *Engine) distributePayout(ctx context.Context, payout *pendingPayout) {
 
 // delegates the reward calculation to the reward scheme
 //NB currently the only reward scheme type supported is staking and delegation
-func (e *Engine) calculateRewards(ctx context.Context, asset string, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, epoch types.Epoch) *pendingPayout {
+func (e *Engine) calculateRewards(ctx context.Context, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, epoch types.Epoch) *payout {
 	if rewardScheme.Type != types.RewardSchemeStakingAndDelegation {
 		e.log.Panic("unsupported reward scheme type", logging.Int("type", int(rewardScheme.Type)))
 	}
 
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
-	validatorData := e.delegation.OnEpochEnd(ctx, epoch.StartTime, epoch.EndTime)
-	return e.calculatStakingAndDelegationRewards(asset, accountID, rewardScheme, rewardBalance, validatorData)
+	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
+
+	return e.calculatStakingAndDelegationRewards(ctx, e.broker, num.NewUint(epoch.Seq).String(), asset, accountID, rewardScheme, rewardBalance, validatorData)
 }

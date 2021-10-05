@@ -6,7 +6,8 @@ import (
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/blockchain/abci"
-	vgjson "code.vegaprotocol.io/vega/libs/json"
+	"code.vegaprotocol.io/vega/checkpoint"
+	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/validators"
@@ -18,6 +19,7 @@ type GenesisState struct {
 	Network    abci.GenesisState       `json:"network"`
 	NetParams  netparams.GenesisState  `json:"network_parameters"`
 	Limits     limits.GenesisState     `json:"network_limits"`
+	Checkpoint checkpoint.GenesisState `json:"checkpoint"`
 }
 
 func DefaultGenesisState() GenesisState {
@@ -27,6 +29,7 @@ func DefaultGenesisState() GenesisState {
 		Validators: validators.DefaultGenesisState(),
 		Network:    abci.DefaultGenesis(),
 		NetParams:  netparams.DefaultGenesisState(),
+		Checkpoint: checkpoint.DefaultGenesisState(),
 	}
 }
 

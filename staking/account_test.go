@@ -26,13 +26,13 @@ func TestStakingAccount(t *testing.T) {
 func testGetAvailableBalanceInRange(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
 	cases := []struct {
-		evt    types.StakingEvent
+		evt    types.StakeLinking
 		expect error
 	}{
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid1",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -40,9 +40,9 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid2",
-				Type:   types.StakingEventTypeRemoved,
+				Type:   types.StakeLinkingTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -50,9 +50,9 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid3",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -60,9 +60,9 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid4",
-				Type:   types.StakingEventTypeRemoved,
+				Type:   types.StakeLinkingTypeRemoved,
 				TS:     125,
 				Party:  testParty,
 				Amount: num.NewUint(6),
@@ -100,7 +100,7 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 	balance, err = acc.GetAvailableBalanceInRange(
 		time.Unix(0, 101), time.Unix(0, 121))
 	assert.NoError(t, err)
-	assert.Equal(t, num.NewUint(10), balance)
+	assert.Equal(t, num.NewUint(9), balance)
 
 	balance, err = acc.GetAvailableBalanceInRange(
 		time.Unix(0, 101), time.Unix(0, 126))
@@ -111,13 +111,13 @@ func testGetAvailableBalanceInRange(t *testing.T) {
 func testGetAvailableBalanceAt(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
 	cases := []struct {
-		evt    types.StakingEvent
+		evt    types.StakeLinking
 		expect error
 	}{
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid1",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(10),
@@ -125,9 +125,9 @@ func testGetAvailableBalanceAt(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid2",
-				Type:   types.StakingEventTypeRemoved,
+				Type:   types.StakeLinkingTypeRemoved,
 				TS:     110,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -135,9 +135,9 @@ func testGetAvailableBalanceAt(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid3",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     120,
 				Party:  testParty,
 				Amount: num.NewUint(5),
@@ -171,17 +171,17 @@ func testEventSorting(t *testing.T) {
 	// second one is a deposit
 	// so we would expect at the end for the events to
 	// be sorted and return the actual balance
-	evts := []types.StakingEvent{
+	evts := []types.StakeLinking{
 		{
 			ID:     "someid2",
-			Type:   types.StakingEventTypeRemoved,
+			Type:   types.StakeLinkingTypeRemoved,
 			TS:     100,
 			Party:  testParty,
 			Amount: num.NewUint(1),
 		},
 		{
 			ID:     "someid1",
-			Type:   types.StakingEventTypeDeposited,
+			Type:   types.StakeLinkingTypeDeposited,
 			TS:     100,
 			Party:  testParty,
 			Amount: num.NewUint(100),
@@ -206,13 +206,13 @@ func testEventErrorValidation(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
 
 	cases := []struct {
-		evt    types.StakingEvent
+		evt    types.StakeLinking
 		expect error
 	}{
 		{ // invalid id
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -220,7 +220,7 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrMissingEventID,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid",
 				Type:   10,
 				TS:     100,
@@ -230,9 +230,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrInvalidEventKind,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     0,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -240,9 +240,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrMissingTimestamp,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.Zero(),
@@ -250,9 +250,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrInvalidAmount,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  "not-a-party",
 				Amount: num.NewUint(10),
@@ -260,9 +260,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: staking.ErrInvalidParty,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),
@@ -270,9 +270,9 @@ func testEventErrorValidation(t *testing.T) {
 			expect: nil,
 		},
 		{
-			evt: types.StakingEvent{
+			evt: types.StakeLinking{
 				ID:     "someid",
-				Type:   types.StakingEventTypeDeposited,
+				Type:   types.StakeLinkingTypeDeposited,
 				TS:     100,
 				Party:  testParty,
 				Amount: num.NewUint(1),

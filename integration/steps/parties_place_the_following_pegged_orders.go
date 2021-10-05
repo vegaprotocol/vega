@@ -3,13 +3,12 @@ package steps
 import (
 	"context"
 
-	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cucumber/godog"
 )
 
-func PartiesPlaceTheFollowingPeggedOrders(exec *execution.Engine, table *godog.Table) error {
+func PartiesPlaceTheFollowingPeggedOrders(exec Execution, table *godog.Table) error {
 	for _, r := range parseSubmitPeggedOrderTable(table) {
 		row := submitPeggedOrderRow{row: r}
 

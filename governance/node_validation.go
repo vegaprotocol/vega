@@ -1,11 +1,13 @@
 package governance
 
 import (
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 )
@@ -37,7 +39,7 @@ type NodeValidation struct {
 }
 
 type nodeProposal struct {
-	*types.Proposal
+	*proposal
 	state   uint32
 	checker func() error
 }
@@ -63,6 +65,26 @@ func NewNodeValidation(
 		currentTimestamp: now,
 		witness:          witness,
 	}
+}
+
+func (n *NodeValidation) Hash() []byte {
+	// 32 -> len(proposal.ID) = 32 bytes pubkey
+	// vote counts = 3*uint64
+	output := make([]byte, len(n.nodeProposals)*(32+8*3))
+	var i int
+	for _, k := range n.nodeProposals {
+		idbytes := []byte(k.ID)
+		copy(output[i:], idbytes[:])
+		i += 32
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.yes)))
+		i += 8
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.no)))
+		i += 8
+		binary.BigEndian.PutUint64(output[i:], uint64(len(k.invalidVotes)))
+		i += 8
+	}
+
+	return vgcrypto.Hash(output)
 }
 
 func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
@@ -100,7 +122,7 @@ func (n *NodeValidation) removeProposal(id string) {
 }
 
 // OnChainTimeUpdate returns validated proposal by all nodes
-func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Proposal, rejected []*types.Proposal) {
+func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
 	var toRemove []string // id of proposals to remove
@@ -116,9 +138,9 @@ func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*types.Propo
 
 		switch state {
 		case okProposal:
-			accepted = append(accepted, prop.Proposal)
+			accepted = append(accepted, prop.proposal)
 		case rejectedProposal:
-			rejected = append(rejected, prop.Proposal)
+			rejected = append(rejected, prop.proposal)
 		}
 		toRemove = append(toRemove, prop.ID)
 	}
@@ -162,9 +184,14 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		return err
 	}
 	np := &nodeProposal{
-		Proposal: p,
-		state:    pendingValidationProposal,
-		checker:  checker,
+		proposal: &proposal{
+			Proposal:     p,
+			yes:          map[string]*types.Vote{},
+			no:           map[string]*types.Vote{},
+			invalidVotes: map[string]*types.Vote{},
+		},
+		state:   pendingValidationProposal,
+		checker: checker,
 	}
 	n.nodeProposals = append(n.nodeProposals, np)
 

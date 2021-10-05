@@ -10,7 +10,6 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
-	time "time"
 )
 
 // MockDelegationEngine is a mock of DelegationEngine interface
@@ -50,18 +49,32 @@ func (mr *MockDelegationEngineMockRecorder) Delegate(arg0, arg1, arg2, arg3 inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delegate", reflect.TypeOf((*MockDelegationEngine)(nil).Delegate), arg0, arg1, arg2, arg3)
 }
 
-// OnEpochEnd mocks base method
-func (m *MockDelegationEngine) OnEpochEnd(arg0 context.Context, arg1, arg2 time.Time) []*types.ValidatorData {
+// Hash mocks base method
+func (m *MockDelegationEngine) Hash() []byte {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OnEpochEnd", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Hash")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// Hash indicates an expected call of Hash
+func (mr *MockDelegationEngineMockRecorder) Hash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockDelegationEngine)(nil).Hash))
+}
+
+// ProcessEpochDelegations mocks base method
+func (m *MockDelegationEngine) ProcessEpochDelegations(arg0 context.Context, arg1 types.Epoch) []*types.ValidatorData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessEpochDelegations", arg0, arg1)
 	ret0, _ := ret[0].([]*types.ValidatorData)
 	return ret0
 }
 
-// OnEpochEnd indicates an expected call of OnEpochEnd
-func (mr *MockDelegationEngineMockRecorder) OnEpochEnd(arg0, arg1, arg2 interface{}) *gomock.Call {
+// ProcessEpochDelegations indicates an expected call of ProcessEpochDelegations
+func (mr *MockDelegationEngineMockRecorder) ProcessEpochDelegations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEpochEnd", reflect.TypeOf((*MockDelegationEngine)(nil).OnEpochEnd), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEpochDelegations", reflect.TypeOf((*MockDelegationEngine)(nil).ProcessEpochDelegations), arg0, arg1)
 }
 
 // UndelegateAtEndOfEpoch mocks base method

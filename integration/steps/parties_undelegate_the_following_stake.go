@@ -1,42 +1,49 @@
 package steps
 
 import (
-	"code.vegaprotocol.io/vega/types/num"
+	"context"
+
 	"github.com/cucumber/godog"
 
-	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/execution"
-	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/delegation"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func PartiesUndelegateTheFollowingStake(
-	exec *execution.Engine,
+	engine *delegation.Engine,
 	table *godog.Table,
 ) error {
 	for _, r := range parseUndelegationTable(table) {
 		row := newUndelegationRow(r)
 
-		undelegateStake := types.Undelegate{
-			NodeID: row.NodeID(),
-			Amount: num.NewUint(row.Amount()),
-			Method: commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH.String(),
+		if row.When() == "now" {
+			err := engine.UndelegateNow(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
+
+			if err := checkExpectedError(row, err); err != nil {
+				return err
+			}
+		} else {
+			err := engine.UndelegateAtEndOfEpoch(context.Background(), row.Party(), row.NodeID(), num.NewUint(row.Amount()))
+
+			if err := checkExpectedError(row, err); err != nil {
+				return err
+			}
+
 		}
 
-		_ = undelegateStake
-
-		/*resp, err := exec.Undelegate(context.Background(), &undelegateStake)
-		if err := checkExpectedError(row, err); err != nil {
-			return err
-		}*/
 	}
 	return nil
 }
 
 func parseUndelegationTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
+		"party",
 		"node id",
 		"amount",
-	}, nil)
+		"when",
+	}, []string{
+		"reference",
+		"error"})
 }
 
 type undelegationRow struct {
@@ -50,10 +57,30 @@ func newUndelegationRow(r RowWrapper) undelegationRow {
 	return row
 }
 
+func (r undelegationRow) When() string {
+	return r.row.MustStr("when")
+}
+
+func (r undelegationRow) Party() string {
+	return r.row.MustStr("party")
+}
+
 func (r undelegationRow) NodeID() string {
 	return r.row.MustStr("node id")
 }
 
 func (r undelegationRow) Amount() uint64 {
 	return r.row.MustU64("amount")
+}
+
+func (r undelegationRow) Error() string {
+	return r.row.Str("error")
+}
+
+func (r undelegationRow) ExpectError() bool {
+	return r.row.HasColumn("error")
+}
+
+func (r undelegationRow) Reference() string {
+	return r.row.MustStr("reference")
 }
