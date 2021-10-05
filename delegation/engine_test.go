@@ -2242,6 +2242,6 @@ func (tt *TestTopology) IsValidatorNode(nodeID string) bool {
 	return ok && v
 }
 
-func (tt *TestTopology) AllPubKeys() []string {
+func (tt *TestTopology) AllNodeIDs() []string {
 	return []string{"1", "2", "3", "4", "5"}
 }

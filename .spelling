@@ -79,6 +79,7 @@ testnet
 tradable
 traderbot
 timestamp
+TxErr
 uint
 uint256
 uint64
@@ -88,4 +89,5 @@ unparked
 Unstaking
 vega
 whitepaper
+XDG
 xor

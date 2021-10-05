@@ -23,7 +23,7 @@ func NewOpenOracleAdaptor() *OpenOracleAdaptor {
 // Normalise normalises an Open Oracle / Open Price Feed payload into an oracles.OracleData.
 // The public key from the transaction is not used, only those from the Open
 // Oracle data.
-func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKeyOrAddress, data []byte) (*oracles.OracleData, error) {
+func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKey, data []byte) (*oracles.OracleData, error) {
 	response, err := openoracle.Unmarshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't unmarshal Open Oracle data: %w", err)
