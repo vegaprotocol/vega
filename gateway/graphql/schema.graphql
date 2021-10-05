@@ -587,6 +587,9 @@ type Asset {
 
   "The infrastructure fee account for this asset"
   infrastructureFeeAccount: Account!
+
+  "The global reward pool account for this asset"
+  globalRewardPoolAccount: Account!
 }
 
 "One of the possible asset sources"

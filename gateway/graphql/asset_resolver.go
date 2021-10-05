@@ -29,6 +29,26 @@ func (r *myAssetResolver) InfrastructureFeeAccount(ctx context.Context, obj *typ
 	return acc, nil
 }
 
+func (r *myAssetResolver) GlobalRewardPoolAccount(ctx context.Context, obj *types.Asset) (*types.Account, error) {
+	if len(obj.Id) <= 0 {
+		return nil, ErrMissingIDOrReference
+	}
+	req := &protoapi.GlobalRewardPoolAccountsRequest{
+		Asset: obj.Id,
+	}
+	res, err := r.tradingDataClient.GlobalRewardPoolAccounts(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	var acc *types.Account
+	if len(res.Accounts) > 0 {
+		acc = res.Accounts[0]
+	}
+
+	return acc, nil
+}
+
 func (r myAssetResolver) Name(ctx context.Context, obj *types.Asset) (string, error) {
 	return obj.Details.Name, nil
 }
