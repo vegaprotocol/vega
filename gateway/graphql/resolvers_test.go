@@ -236,30 +236,30 @@ type resolverRoot interface {
 
 type testResolver struct {
 	resolverRoot
-	log                *logging.Logger
-	ctrl               *gomock.Controller
-	tradingProxyClient *mocks.MockTradingProxyServiceClient
-	tradingDataClient  *mocks.MockTradingDataServiceClient
+	log               *logging.Logger
+	ctrl              *gomock.Controller
+	coreProxyClient   *mocks.MockCoreProxyServiceClient
+	tradingDataClient *mocks.MockTradingDataServiceClient
 }
 
 func buildTestResolverRoot(t *testing.T) *testResolver {
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	conf := gateway.NewDefaultConfig()
-	tradingProxyClient := mocks.NewMockTradingProxyServiceClient(ctrl)
+	coreProxyClient := mocks.NewMockCoreProxyServiceClient(ctrl)
 	tradingDataClient := mocks.NewMockTradingDataServiceClient(ctrl)
 	resolver := gql.NewResolverRoot(
 		log,
 		conf,
-		tradingProxyClient,
+		coreProxyClient,
 		tradingDataClient,
 	)
 	return &testResolver{
-		resolverRoot:       resolver,
-		log:                log,
-		ctrl:               ctrl,
-		tradingProxyClient: tradingProxyClient,
-		tradingDataClient:  tradingDataClient,
+		resolverRoot:      resolver,
+		log:               log,
+		ctrl:              ctrl,
+		coreProxyClient:   coreProxyClient,
+		tradingDataClient: tradingDataClient,
 	}
 }
 
