@@ -43,7 +43,7 @@ func NewWallet(client Client, endpoint string, accountAddr ethcommon.Address) (*
 		endpoint: endpoint,
 	}
 
-	if !w.contains(accountAddr) {
+	if err := w.contains(accountAddr); err != nil {
 		return nil, fmt.Errorf("account with address %q not found", accountAddr)
 	}
 
@@ -84,20 +84,20 @@ func (w *wallet) generateAccount() (*accounts.Account, error) {
 	return newAccount(ethcommon.HexToAddress(res), w.endpoint), nil
 }
 
-func (w *wallet) contains(testAddr ethcommon.Address) bool {
+// contains returns nil if account is found, otherwise returns an error
+func (w *wallet) contains(testAddr ethcommon.Address) error {
 	addresses, err := w.listAccounts()
 	if err != nil {
-		// TODO log the error here
-		return false
+		return fmt.Errorf("failed to list accounts: %w", err)
 	}
 
 	for _, addr := range addresses {
 		if testAddr == addr {
-			return true
+			return nil
 		}
 	}
 
-	return false
+	return fmt.Errorf("wallet does not contain accout %q", testAddr)
 }
 
 func (w *wallet) listAccounts() ([]ethcommon.Address, error) {
