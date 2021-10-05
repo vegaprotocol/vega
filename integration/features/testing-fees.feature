@@ -2,7 +2,7 @@ Feature: Fees Calculations
 
 Scenario: Testing fees in continuous trading with one trade and no liquidity providers
     
-    And the fees configuration named "fees-config-1":
+    Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
     And the price monitoring updated every "1000" seconds named "price-monitoring":
@@ -19,37 +19,37 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
 
     # setup accounts
     Given the parties deposit on asset's general account the following amount:
-      | party  | asset | amount     |
+      | party   | asset | amount     |
       | aux1    | ETH   | 100000000  |
       | aux2    | ETH   | 100000000  |
-      | trader3 | ETH   | 10000  |
-      | trader4 | ETH   | 10000  |
+      | trader3 | ETH   |   10000    |
+      | trader4 | ETH   |   10000    |
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1    | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux1    | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2    | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the opening auction period ends for market "ETH/DEC21"
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | 
       | 1000       | TRADING_MODE_CONTINUOUS |  
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
 
     Then the parties should have the following account balances:
-      | party     | asset | market id | margin | general  |
-      | trader3    | ETH   | ETH/DEC21 | 720    | 9280 |
+      | party   | asset | market id | margin | general  |
+      | trader3 | ETH   | ETH/DEC21 | 720    |  9280    |
   
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
   # TODO to be implemented by Core Team
   # And the accumulated infrastructure fees should be "0" for the market "ETH/DEC21"
 
     Then the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     |
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
       | trader4 | ETH/DEC21 | sell  | 4     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
 
     And the market data for the market "ETH/DEC21" should be:
@@ -1679,7 +1679,6 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
 
-    Then debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
@@ -1702,6 +1701,99 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
 
+Scenario: Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers) 
+ Description : Changing net params does change the fees being collected appropriately even if the market is already running
+    
+    Given the fees configuration named "fees-config-1":
+      | maker fee | infrastructure fee |
+      | 0.005     | 0.002              |
+    And the price monitoring updated every "1000" seconds named "price-monitoring":
+      | horizon | probability | auction extension |
+      | 1       | 0.99        | 3                 |
+    
+    And the simple risk model named "simple-risk-model-1":
+      | long | short | max move up | min move down | probability of trading |
+      | 0.2  | 0.1   | 100          | -100         | 0.1                    |
+
+    And the markets:
+      | id        | quote name | asset | risk model          | margin calculator         | auction duration | fees          | price monitoring | oracle config          | maturity date        |
+      | ETH/DEC21 | ETH        | ETH   | simple-risk-model-1 | default-margin-calculator | 2                | fees-config-1 | price-monitoring | default-eth-for-future | 2019-12-31T23:59:59Z |
+
+    # setup accounts
+    Given the parties deposit on asset's general account the following amount:
+      | party   | asset | amount     |
+      | aux1    | ETH   | 100000000  |
+      | aux2    | ETH   | 100000000  |
+      | trader3 | ETH   |   10000    |
+      | trader4 | ETH   |   10000    |
+
+    Then the parties place the following orders:
+      | party | market id | side | volume | price | resulting trades | type       | tif     |
+      | aux1  | ETH/DEC21 | buy  | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 10     | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC21 | sell | 1      | 1100  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the opening auction period ends for market "ETH/DEC21"
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | 
+      | 1000       | TRADING_MODE_CONTINUOUS |  
+    When the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader3 | ETH/DEC21 | buy  | 3      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | ETH   | ETH/DEC21 | 720    |  9280   |
+  
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
+  # TODO to be implemented by Core Team
+  # And the accumulated infrastructure fees should be "0" for the market "ETH/DEC21"
+  
+  #  Changing net params fees factors
+   And the following network parameters are set:
+      | name                                 | value |
+      | market.fee.factors.makerFee          | 0.05  |
+      | market.fee.factors.infrastructureFee | 0.02  |
+
+    Then the parties place the following orders:
+      | party   | market id | side | volume | price | resulting trades | type       | tif     |
+      | trader4 | ETH/DEC21 | sell  | 4     | 1002  | 1                | TYPE_LIMIT | TIF_GTC |
+
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            |  
+      | 1002       | TRADING_MODE_CONTINUOUS |
+
+    Then the following trades should be executed:
+      # | buyer   | price | size | seller  | maker   | taker   |
+      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
+      # TODO to be implemented by Core Team
+      | buyer   | price | size | seller  |
+      | trader3 | 1002  | 3    | trader4 |
+      
+    # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.02 * 3006 = 60.12 = 61 (rounded up to nearest whole value)
+    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.05 * 3006 = 150.30 = 151 (rounded up to nearest whole value)
+    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
+
+    And the following transfers should happen:
+      | from    | to      | from account            | to account                       | market id | amount | asset |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 |  151   | ETH   |
+      | trader4 |         | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           |  61    | ETH   |
+      | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   0    | ETH   |
+      | market  | trader3 | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 |  151   | ETH   |  
+    
+    # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 61 + 151 + 0 = 212
+    # Trader3 margin + general account balance = 10000 + 151 ( Maker fees) = 10151
+    # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 61 (Infra fee) = 9788
+
+    Then the parties should have the following account balances:
+      | party   | asset | market id | margin | general |
+      | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    | 
+      | trader4 | ETH   | ETH/DEC21 | 657    | 9131    | 
+      
+    # And the accumulated infrastructure fee should be "61" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
 # TO DO -
 # Testing fees in continuous trading with two trades and one liquidity providers with 10 & 0s liquidity fee distribution timestep
