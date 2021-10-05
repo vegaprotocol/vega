@@ -41,8 +41,8 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 	top := mocks.NewMockValidatorTopology(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
 
-	top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
-	top.EXPECT().SelfVegaPubKey().AnyTimes().Return(testSelfVegaPubKey)
+	top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
+	top.EXPECT().SelfNodeID().AnyTimes().Return(testSelfVegaPubKey)
 	var cb func(context.Context, time.Time)
 	tim.EXPECT().NotifyOnTick(gomock.Any()).Do(func(f func(context.Context, time.Time)) {
 		cb = f
@@ -80,7 +80,7 @@ func testEventEmitterNotAllowlisted(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
-	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
+	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(11, 0))
 	err := evtfwd.Forward(context.Background(), evt, "not allowlisted")
@@ -92,7 +92,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
-	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
+	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(9, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
@@ -104,7 +104,7 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	defer evtfwd.ctrl.Finish()
 	evt := getTestChainEvent()
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
-	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
+	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(10, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
@@ -118,7 +118,7 @@ func testUpdateValidatorList(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
 	// no event, just call callback to ensure the validator list is updated
-	evtfwd.top.EXPECT().AllPubKeys().Times(1).Return(testAllPubKeys)
+	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	evtfwd.cb(context.Background(), initTime.Add(time.Second))
 }
 

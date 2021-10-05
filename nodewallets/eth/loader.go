@@ -104,7 +104,7 @@ func (l *WalletLoader) newWallet(walletName, passphrase string, data []byte) (*W
 		return nil, fmt.Errorf("couldn't unlock Ethereum wallet: %w", err)
 	}
 
-	address := crypto.NewPublicKeyOrAddress(acc.Address.Hex(), acc.Address.Bytes())
+	address := crypto.NewPublicKey(acc.Address.Hex(), acc.Address.Bytes())
 
 	return &Wallet{
 		name:       walletName,

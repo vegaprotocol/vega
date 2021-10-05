@@ -2,15 +2,14 @@ package vega
 
 import (
 	"code.vegaprotocol.io/go-wallet/wallet"
-	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/vega/crypto"
 )
 
 type Wallet struct {
-	handler    *wallets.Handler
 	walletName string
 	keyPair    wallet.KeyPair
-	pubKey     crypto.PublicKeyOrAddress
+	pubKey     crypto.PublicKey
+	walletID   crypto.PublicKey
 }
 
 func (w *Wallet) Name() string {
@@ -22,7 +21,7 @@ func (w *Wallet) Chain() string {
 }
 
 func (w *Wallet) Sign(data []byte) ([]byte, error) {
-	return w.handler.SignAny(w.walletName, data, w.keyPair.PublicKey())
+	return w.keyPair.SignAny(data)
 }
 
 func (w *Wallet) Algo() string {
@@ -33,6 +32,10 @@ func (w *Wallet) Version() uint32 {
 	return w.keyPair.AlgorithmVersion()
 }
 
-func (w *Wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
+func (w *Wallet) PubKey() crypto.PublicKey {
 	return w.pubKey
+}
+
+func (w *Wallet) ID() crypto.PublicKey {
+	return w.walletID
 }
