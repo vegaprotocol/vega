@@ -99,14 +99,14 @@ func GenerateEthereumWallet(
 
 		data = map[string]string{
 			"clefAddress":    config.ClefAddress,
-			"accountAddress": w.PubKeyOrAddress().Hex(),
+			"accountAddress": w.PubKey().Hex(),
 		}
 
 		registry.Ethereum = &RegisteredEthereumWallet{
 			Type: ethereumWalletTypeClef,
 			Details: EthereumClefWallet{
 				Name:           w.Name(),
-				AccountAddress: w.PubKeyOrAddress().Hex(),
+				AccountAddress: w.PubKey().Hex(),
 				ClefAddress:    config.ClefAddress,
 			},
 		}
@@ -184,14 +184,14 @@ func ImportEthereumWallet(
 
 		data = map[string]string{
 			"clefAddress":    config.ClefAddress,
-			"accountAddress": w.PubKeyOrAddress().Hex(),
+			"accountAddress": w.PubKey().Hex(),
 		}
 
 		registry.Ethereum = &RegisteredEthereumWallet{
 			Type: ethereumWalletTypeClef,
 			Details: EthereumClefWallet{
 				Name:           w.Name(),
-				AccountAddress: w.PubKeyOrAddress().Hex(),
+				AccountAddress: w.PubKey().Hex(),
 				ClefAddress:    config.ClefAddress,
 			},
 		}

@@ -11,16 +11,11 @@ type wallet interface {
 	Sign(data []byte) ([]byte, error)
 	Algo() string
 	Version() (string, error)
-	PubKeyOrAddress() crypto.PublicKeyOrAddress
+	PubKey() crypto.PublicKey
 }
 
 type Wallet struct {
-	name       string
-	acc        accounts.Account
-	ks         *keystore.KeyStore
-	passphrase string
-	address    crypto.PublicKey
-	w          wallet
+	w wallet
 }
 
 func NewWallet(w wallet) *Wallet {
@@ -28,7 +23,6 @@ func NewWallet(w wallet) *Wallet {
 }
 
 func (w *Wallet) Cleanup() error {
-	// just remove the wallet from the tmp file
 	return w.w.Cleanup()
 }
 
@@ -53,5 +47,5 @@ func (w *Wallet) Version() (string, error) {
 }
 
 func (w *Wallet) PubKey() crypto.PublicKey {
-	return w.address
+	return w.w.PubKey()
 }

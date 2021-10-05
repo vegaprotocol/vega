@@ -161,6 +161,6 @@ func (w *wallet) Version() (string, error) {
 	return v, nil
 }
 
-func (w *wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
-	return crypto.NewPublicKeyOrAddress(w.account.Address.Hex(), w.account.Address.Bytes())
+func (w *wallet) PubKey() crypto.PublicKey {
+	return crypto.NewPublicKey(w.account.Address.Hex(), w.account.Address.Bytes())
 }

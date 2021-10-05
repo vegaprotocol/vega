@@ -70,6 +70,6 @@ func (w *Wallet) Version() (string, error) {
 	return "0", nil
 }
 
-func (w *Wallet) PubKeyOrAddress() crypto.PublicKey {
+func (w *Wallet) PubKey() crypto.PublicKey {
 	return w.address
 }
