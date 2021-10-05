@@ -283,7 +283,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
-And debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
