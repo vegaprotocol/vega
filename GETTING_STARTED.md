@@ -122,7 +122,7 @@ Install the binary somewhere on `$PATH`. If needed, see also the
   ```bash
   vega init -f
   ```
-this will trigger a password prompt which will be used to encrypt your vega nodewallets.
+this will trigger a password prompt which will be used to encrypt your vega node wallets.
 
 If used in automation you can specify a file containing the password:
 ```bash
