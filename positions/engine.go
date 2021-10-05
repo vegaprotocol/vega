@@ -21,7 +21,8 @@ var (
 
 // Engine represents the positions engine
 type Engine struct {
-	log *logging.Logger
+	marketID string
+	log      *logging.Logger
 	Config
 
 	cfgMu sync.Mutex
@@ -45,25 +46,15 @@ func New(log *logging.Logger, config Config, marketID string) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	mp := &types.MarketPositions{
-		MarketID:  marketID,
-		Positions: []*types.MarketPosition{},
-	}
-
 	return &Engine{
+		marketID:     marketID,
 		Config:       config,
 		log:          log,
 		positions:    map[string]*MarketPosition{},
 		positionsCpy: []events.MarketPosition{},
 		pss: &positionsSnapshotState{
-			mp: mp,
-			pl: types.Payload{
-				Data: &types.PayloadMarketPositions{
-					MarketPositions: mp,
-				},
-			},
-			partyIDToIndex: map[string]int{},
-			changed:        true,
+			pl:      types.Payload{},
+			changed: true,
 		},
 	}
 }
@@ -129,8 +120,7 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 
 	pos.RegisterOrder(order)
 
-	// update snapshot
-	e.pss.update(pos)
+	e.pss.changed = true
 	return pos
 }
 
@@ -145,8 +135,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 
 	pos.UnregisterOrder(e.log, order)
 
-	// update snapshot
-	e.pss.update(pos)
+	e.pss.changed = true
 	return pos
 }
 
@@ -161,9 +150,7 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPositio
 	}
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-
-	// update snapshot
-	e.pss.update(pos)
+	e.pss.changed = true
 	return pos
 }
 
@@ -215,9 +202,7 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	}
 	pos.size += size
 
-	// update snapshot
-	e.pss.update(pos)
-
+	e.pss.changed = true
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -273,10 +258,7 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			logging.String("seller-position", fmt.Sprintf("%+v", seller)))
 	}
 
-	// update snapshot
-	e.pss.update(buyer)
-	e.pss.update(seller)
-
+	e.pss.changed = true
 	return ret
 }
 
@@ -303,11 +285,9 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 				break
 			}
 		}
-
-		// update snapshot
-		e.pss.remove(party)
 	}
 
+	e.pss.changed = true
 	return ret
 }
 
@@ -316,11 +296,9 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	for _, pos := range e.positions {
 		pos.price.Set(markPrice)
-
-		// update snapshot
-		e.pss.update(pos)
 	}
 
+	e.pss.changed = true
 	return e.positionsCpy
 }
 

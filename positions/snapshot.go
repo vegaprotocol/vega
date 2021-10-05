@@ -7,80 +7,52 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// shadow returns the position converted into the snapshot-type of a position
-func (p MarketPosition) shadow() *types.MarketPosition {
-	return &types.MarketPosition{
-		PartyID: p.partyID,
-		Size:    p.size,
-		Buy:     p.buy,
-		Sell:    p.sell,
-		Price:   p.price,
-		VwBuy:   p.vwBuyPrice,
-		VwSell:  p.vwSellPrice,
-	}
-}
-
 type positionsSnapshotState struct {
-	mp             *types.MarketPositions
-	pl             types.Payload
-	hash           []byte
-	data           []byte
-	changed        bool
-	partyIDToIndex map[string]int
-}
-
-// remove the snapshot state for the position with the given partyID
-func (s *positionsSnapshotState) remove(partyID string) {
-
-	i, found := s.partyIDToIndex[partyID]
-	if !found {
-		return // nothing to remove
-	}
-
-	// remove from slice, and index map
-	s.mp.Positions = append(s.mp.Positions[:i], s.mp.Positions[i+1:]...)
-	delete(s.partyIDToIndex, partyID)
-
-	// all maps to indices > i need to be reduced by one
-	for pID, index := range s.partyIDToIndex {
-		if index > i {
-			s.partyIDToIndex[pID] = index - 1
-		}
-	}
-
-	s.changed = true
-}
-
-// update the snapshot snap with the given mark position
-func (s *positionsSnapshotState) update(p *MarketPosition) {
-
-	if _, ok := s.partyIDToIndex[p.partyID]; !ok {
-		s.partyIDToIndex[p.partyID] = len(s.mp.Positions)
-		s.mp.Positions = append(s.mp.Positions, nil)
-	}
-
-	s.mp.Positions[s.partyIDToIndex[p.partyID]] = p.shadow()
-	s.changed = true
+	pl      types.Payload
+	hash    []byte
+	data    []byte
+	changed bool
 }
 
 // serialise marshal the snapshot state, populating the data and hash fields
 // with updated values
-func (s *positionsSnapshotState) serialise() ([]byte, []byte, error) {
+func (e *Engine) serialise() ([]byte, []byte, error) {
 
-	if !s.changed {
-		return s.data, s.hash, nil // we already have what we need
+	if !e.pss.changed {
+		return e.pss.data, e.pss.hash, nil // we already have what we need
 	}
 
-	data, err := proto.Marshal(s.pl.IntoProto())
+	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
+
+	for _, evt := range e.positionsCpy {
+		pos := &types.MarketPosition{
+			Price:  evt.Price(),
+			Buy:    evt.Buy(),
+			Sell:   evt.Sell(),
+			Size:   evt.Size(),
+			VwBuy:  evt.VWBuy(),
+			VwSell: evt.VWSell(),
+		}
+		positions = append(positions, pos)
+	}
+
+	e.pss.pl.Data = &types.PayloadMarketPositions{
+		MarketPositions: &types.MarketPositions{
+			MarketID:  e.marketID,
+			Positions: positions,
+		},
+	}
+
+	data, err := proto.Marshal(e.pss.pl.IntoProto())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	s.data = data
-	s.hash = crypto.Hash(data)
-	s.changed = false
+	e.pss.data = data
+	e.pss.hash = crypto.Hash(data)
+	e.pss.changed = false
 
-	return s.data, s.hash, nil
+	return e.pss.data, e.pss.hash, nil
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -88,33 +60,33 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 }
 
 func (e *Engine) Keys() []string {
-	return []string{e.pss.pl.Key()}
+	return []string{e.marketID}
 }
 
 func (e *Engine) GetHash(k string) ([]byte, error) {
 
-	if k != e.pss.pl.Key() {
+	if k != e.marketID {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	_, hash, err := e.pss.serialise()
+	_, hash, err := e.serialise()
 	return hash, err
 }
 
 func (e *Engine) GetState(k string) ([]byte, error) {
 
-	if k != e.pss.pl.Key() {
+	if k != e.marketID {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	state, _, err := e.pss.serialise()
+	state, _, err := e.serialise()
 	return state, err
 }
 
 func (e *Engine) Snapshot() (map[string][]byte, error) {
 
-	state, _, err := e.pss.serialise()
-	return map[string][]byte{e.pss.mp.MarketID: state}, err
+	state, _, err := e.serialise()
+	return map[string][]byte{e.marketID: state}, err
 }
 
 func (e *Engine) LoadState(payload *types.Payload) error {
@@ -127,7 +99,7 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 	case *types.PayloadMarketPositions:
 
 		// Check the payload is for this market
-		if e.pss.mp.MarketID != pl.MarketPositions.MarketID {
+		if e.marketID != pl.MarketPositions.MarketID {
 			return types.ErrUnknownSnapshotType
 		}
 
@@ -140,10 +112,9 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 			pos.vwBuyPrice = p.VwBuy
 			pos.vwSellPrice = p.VwSell
 
-			e.positions[p.PartyID] = pos
 			e.positionsCpy = append(e.positionsCpy, pos)
 
-			e.pss.update(pos)
+			e.pss.changed = true
 		}
 		return nil
 
