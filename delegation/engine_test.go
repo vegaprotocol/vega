@@ -138,19 +138,13 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// reload the state
-	var active snapshot.DelegationActive
+	var active snapshot.Payload
 	proto.Unmarshal(state, &active)
-
-	payload := &types.Payload{
-		Data: &types.PayloadDelegationActive{
-			DelegationActive: types.DelegationActiveFromProto(&active),
-		},
-	}
+	payload := types.PayloadFromProto(&active)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.engine.LoadState(context.Background(), payload)
 
 	// verify hash and state match
-
 	hashPostReload, _ := testEngine.engine.GetHash(activeKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
 	statePostReload, _ := testEngine.engine.GetState(activeKey)
@@ -183,15 +177,10 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(state, stateNoChange))
 
 	// reload the state
-	var pending snapshot.DelegationPending
+	var pending snapshot.Payload
 	proto.Unmarshal(state, &pending)
-
-	payload := &types.Payload{
-		Data: &types.PayloadDelegationPending{
-			DelegationPending: types.DelegationPendingFromProto(&pending),
-		},
-	}
-
+	payload := types.PayloadFromProto(&pending)
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	err = testEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := testEngine.engine.GetHash(pendingKey)
@@ -231,14 +220,10 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	require.False(t, bytes.Equal(state, statePostUndelegate))
 
 	// reload the state
-	var auto snapshot.DelegationAuto
+	var auto snapshot.Payload
 	proto.Unmarshal(statePostUndelegate, &auto)
-
-	payload := &types.Payload{
-		Data: &types.PayloadDelegationAuto{
-			DelegationAuto: types.DelegationAutoFromProto(&auto),
-		},
-	}
+	payload := types.PayloadFromProto(&auto)
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 
 	testEngine.engine.LoadState(context.Background(), payload)
 	hashPostReload, _ := testEngine.engine.GetHash(autoKey)
