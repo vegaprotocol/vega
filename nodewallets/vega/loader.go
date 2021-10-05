@@ -104,17 +104,12 @@ func (l *WalletLoader) Import(sourceFilePath string, passphrase string) (*Wallet
 }
 
 func newWallet(store *storev1.Store, walletName, passphrase string) (*Wallet, error) {
-	handler := wallets.NewHandler(store)
-
-	err := handler.LoginWallet(walletName, passphrase)
+	w, err := store.GetWallet(walletName, passphrase)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't login wallet %s: %w", walletName, err)
+		return nil, fmt.Errorf("could not get wallet `%s`: %w", walletName, err)
 	}
 
-	keyPairs, err := handler.ListKeyPairs(walletName)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't list wallet key pairs: %w", err)
-	}
+	keyPairs := w.ListKeyPairs()
 
 	keyPairCount := len(keyPairs)
 	if keyPairCount == 0 {
@@ -130,19 +125,34 @@ func newWallet(store *storev1.Store, walletName, passphrase string) (*Wallet, er
 		return nil, fmt.Errorf("couldn't get public key: %w", err)
 	}
 
+	walletID, err := getID(w)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get wallet ID: %w", err)
+	}
+
 	return &Wallet{
-		handler:    handler,
 		walletName: walletName,
 		keyPair:    keyPair,
 		pubKey:     pubKey,
+		walletID:   walletID,
 	}, nil
 }
 
-func getPubKey(keyPair wallet.KeyPair) (crypto.PublicKeyOrAddress, error) {
+func getPubKey(keyPair wallet.KeyPair) (crypto.PublicKey, error) {
 	decodedPubKey, err := hex.DecodeString(keyPair.PublicKey())
 	if err != nil {
-		return crypto.PublicKeyOrAddress{}, fmt.Errorf("couldn't decode public key as hexadecimal: %w", err)
+		return crypto.PublicKey{}, fmt.Errorf("couldn't decode public key as hexadecimal: %w", err)
 	}
 
-	return crypto.NewPublicKeyOrAddress(keyPair.PublicKey(), decodedPubKey), nil
+	return crypto.NewPublicKey(keyPair.PublicKey(), decodedPubKey), nil
+}
+
+func getID(w wallet.Wallet) (crypto.PublicKey, error) {
+	decodedID, err := hex.DecodeString(w.ID())
+	if err != nil {
+		return crypto.PublicKey{}, fmt.Errorf("couldn't decode wallet ID as hexadecimal: %w", err)
+	}
+
+	return crypto.NewPublicKey(w.ID(), decodedID), nil
+
 }
