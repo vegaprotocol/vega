@@ -33,6 +33,14 @@ type ValidatorData struct {
 	AvatarURL       string `json:"avatar_url"`
 }
 
+func (v ValidatorData) IsValid() bool {
+	if len(v.ID) <= 0 || len(v.VegaPubKey) <= 0 ||
+		len(v.EthereumAddress) <= 0 || len(v.TmPubKey) <= 0 {
+		return false
+	}
+	return true
+}
+
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey
 type ValidatorMapping map[string]ValidatorData
 
@@ -252,6 +260,9 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 
 	// tm is base64 encoded, vega is hex
 	for tm, data := range state {
+		if !data.IsValid() {
+			return fmt.Errorf("missing required field from validator data: %#v", data)
+		}
 		if walletID == data.ID {
 			t.isValidator = true
 		}

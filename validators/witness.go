@@ -166,17 +166,21 @@ func (w *Witness) Stop() {
 
 // AddNodeCheck registers a vote from a validator node for a given resource
 func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error {
+	hexPubKey := hex.EncodeToString(nv.PubKey)
 	// get the node proposal first
 	r, ok := w.resources[nv.Reference]
 	if !ok {
+		w.log.Error("invalid resource ID received for vote",
+			logging.String("ressource-ref", nv.Reference),
+			logging.String("node-id", hexPubKey),
+		)
 		return ErrInvalidResourceIDForNodeVote
 	}
 
 	// ensure the node is a validator
-	hexPubKey := hex.EncodeToString(nv.PubKey)
 	if !w.top.IsValidatorNode(hexPubKey) {
 		w.log.Error("non-validator node tried to register node vote",
-			logging.String("pubkey", hexPubKey))
+			logging.String("node-id", hexPubKey))
 		return ErrVoteFromNonValidator
 	}
 
