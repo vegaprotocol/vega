@@ -19,7 +19,7 @@ func TestJSONAdaptor(t *testing.T) {
 func testJSONAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 	// given
 	pubKeyB := []byte("0xdeadbeef")
-	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
+	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData, _ := json.Marshal(struct {
 		Prices       string
 		MarketNumber uint
@@ -40,7 +40,7 @@ func testJSONAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T) {
 	// given
 	pubKeyB := []byte("0xdeadbeef")
 	hexPubKey := hex.EncodeToString(pubKeyB)
-	pubKey := crypto.NewPublicKeyOrAddress(hexPubKey, pubKeyB)
+	pubKey := crypto.NewPublicKey(hexPubKey, pubKeyB)
 	oracleData := map[string]string{
 		"BTC": "37371.725",
 		"ETH": "1412.67",

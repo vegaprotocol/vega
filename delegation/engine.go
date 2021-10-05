@@ -36,7 +36,7 @@ var (
 // ValidatorTopology represents the topology of validators and can check if a given node is a validator
 type ValidatorTopology interface {
 	IsValidatorNode(nodeID string) bool
-	AllPubKeys() []string
+	AllNodeIDs() []string
 }
 
 // Broker send events
@@ -209,7 +209,7 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 	// calculate the total number of tokens (a rough estimate) - this includes total delegated + applied pending + potential for auto delegation
 	totalTokens := e.calcTotalDelegatedTokens(epoch.Seq, totalAvailableForAutoDelegation)
 	// calculate the max for the next epoch
-	numVal := len(e.topology.AllPubKeys())
+	numVal := len(e.topology.AllNodeIDs())
 	maxStakePerValidator := e.calcMaxDelegatableTokens(totalTokens, num.DecimalFromInt64(int64(numVal)))
 	// process pending undelegations/delegations
 	e.processPending(ctx, epoch, maxStakePerValidator)
@@ -1077,7 +1077,7 @@ func (e *Engine) processAutoDelegation(partyToAvailableBalance map[string]*num.U
 
 //returns the current state of the delegation per node
 func (e *Engine) getValidatorData() []*types.ValidatorData {
-	validatorNodes := e.topology.AllPubKeys()
+	validatorNodes := e.topology.AllNodeIDs()
 
 	validators := make([]*types.ValidatorData, 0, len(validatorNodes))
 

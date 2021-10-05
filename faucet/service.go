@@ -9,9 +9,8 @@ import (
 	"net/http"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/protos/vega/api"
+	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	vghttp "code.vegaprotocol.io/vega/libs/http"
@@ -45,8 +44,8 @@ type Faucet struct {
 	stopCh chan struct{}
 
 	// node connections stuff
-	clt     api.TradingServiceClient
-	coreclt coreapipb.CoreApiServiceClient
+	clt     api.CoreServiceClient
+	coreclt api.CoreStateServiceClient
 	conn    *grpc.ClientConn
 }
 
@@ -80,8 +79,8 @@ func NewService(log *logging.Logger, vegaPaths paths.Paths, cfg Config, passphra
 		return nil, err
 	}
 
-	client := api.NewTradingServiceClient(conn)
-	coreClient := coreapipb.NewCoreApiServiceClient(conn)
+	client := api.NewCoreServiceClient(conn)
+	coreClient := api.NewCoreStateServiceClient(conn)
 	ctx, cfunc := context.WithCancel(context.Background())
 
 	rl, err := vghttp.NewRateLimit(ctx, cfg.RateLimit)
@@ -212,7 +211,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 }
 
 func (f *Faucet) getAllowedAmount(ctx context.Context, amount *num.Uint, asset string) error {
-	req := &coreapipb.ListAssetsRequest{
+	req := &api.ListAssetsRequest{
 		Asset: asset,
 	}
 	resp, err := f.coreclt.ListAssets(ctx, req)
