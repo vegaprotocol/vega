@@ -99,6 +99,13 @@ func TestTwoDifferentAssetsSameParty(t *testing.T) {
 		return details.RewardDetails[0].Details[i].PercentageOfTotal < details.RewardDetails[0].Details[j].PercentageOfTotal
 	})
 
+	// first sort details
+	sort.Slice(details.RewardDetails, func(i, j int) bool { return details.RewardDetails[i].Asset < details.RewardDetails[j].Asset })
+
+	for _, det := range details.RewardDetails {
+		sort.Slice(det.Details, func(i, j int) bool { return det.Details[i].PercentageOfTotal < det.Details[j].PercentageOfTotal })
+	}
+
 	assert.NotNil(t, details)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(details.RewardDetails))
