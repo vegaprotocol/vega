@@ -56,8 +56,6 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	fmt.Println(opts.Config.ETH.ClefAddress)
-
 	var data map[string]string
 	switch opts.Chain {
 	case ethereumChain:
