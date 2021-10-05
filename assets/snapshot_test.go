@@ -59,14 +59,9 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		require.True(t, bytes.Equal(state, stateNoChange))
 
 		// reload the state
-		var active snapshot.ActiveAssets
+		var active snapshot.Payout
 		proto.Unmarshal(state, &active)
-
-		payload := &types.Payload{
-			Data: &types.PayloadActiveAssets{
-				ActiveAssets: types.ActiveAssetsFromProto(&active),
-			},
-		}
+		payload := types.PayloadFromProto(&active)
 
 		err = as.LoadState(context.Background(), payload)
 		require.Nil(t, err)
@@ -109,14 +104,9 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 		require.True(t, bytes.Equal(state, stateNoChange))
 
 		// reload the state
-		var pending snapshot.PendingAssets
+		var pending snapshot.Payout
 		proto.Unmarshal(state, &pending)
-
-		payload := &types.Payload{
-			Data: &types.PayloadPendingAssets{
-				PendingAssets: types.PendingAssetsFromProto(&pending),
-			},
-		}
+		payload := types.PayloadFromProto(&pending)
 
 		err = as.LoadState(context.Background(), payload)
 		require.Nil(t, err)
