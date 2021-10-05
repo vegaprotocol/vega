@@ -844,7 +844,9 @@ func (r *myPartyResolver) RewardDetails(
 	}
 	resp, err := r.tradingDataClient.GetRewardDetails(ctx, req)
 	if err != nil {
-		return nil, err
+		// not returning an error here, as it's we just don't have any rewards
+		// for the given party
+		return nil, nil
 	}
 	return resp.RewardDetails, nil
 }
