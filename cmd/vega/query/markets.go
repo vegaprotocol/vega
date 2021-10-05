@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -13,11 +13,11 @@ type MarketsCmd struct {
 }
 
 func (opts *MarketsCmd) Execute(params []string) error {
-	req := coreapipb.ListMarketsRequest{}
+	req := apipb.ListMarketsRequest{}
 	return getPrintMarkets(opts.NodeAddress, &req)
 }
 
-func getPrintMarkets(nodeAddress string, req *coreapipb.ListMarketsRequest) error {
+func getPrintMarkets(nodeAddress string, req *apipb.ListMarketsRequest) error {
 	clt, err := getClient(nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not connect to the vega node: %w", err)

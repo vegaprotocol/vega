@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/go-wallet/crypto"
-	protoapi "code.vegaprotocol.io/protos/vega/api"
+	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -34,7 +34,7 @@ var (
 	ErrUnknownSubmitTxRequestType = errors.New("invalid broadcast_tx type")
 )
 
-type tradingService struct {
+type coreService struct {
 	log  *logging.Logger
 	conf Config
 
@@ -55,30 +55,30 @@ type tradingService struct {
 }
 
 // no need for a mutext - we only access the config through a value receiver
-func (t *tradingService) updateConfig(conf Config) {
-	t.conf = conf
+func (s *coreService) updateConfig(conf Config) {
+	s.conf = conf
 }
 
-func (t *tradingService) LastBlockHeight(
+func (s *coreService) LastBlockHeight(
 	ctx context.Context,
 	req *protoapi.LastBlockHeightRequest,
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
 	return &protoapi.LastBlockHeightResponse{
-		Height: t.stats.Blockchain.Height(),
+		Height: s.stats.Blockchain.Height(),
 	}, nil
 }
 
 // GetVegaTime returns the latest blockchain header timestamp, in UnixNano format.
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
-func (t *tradingService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
+func (s *coreService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime")()
 	return &protoapi.GetVegaTimeResponse{
-		Timestamp: t.timesvc.GetTimeNow().UnixNano(),
+		Timestamp: s.timesvc.GetTimeNow().UnixNano(),
 	}, nil
 }
 
-func (t *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	startTime := time.Now()
 	defer metrics.APIRequestAndTimeGRPC("SubmitTransactionV2", startTime)
 
@@ -86,17 +86,17 @@ func (t *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	if err := t.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC); err != nil {
+	if err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC); err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
 			Code() uint32
 			Details() string
 			Error() string
 		}); ok {
-			t.log.Debug("unable to submit transaction", logging.Error(err))
+			s.log.Debug("unable to submit transaction", logging.Error(err))
 			return nil, apiError(codes.InvalidArgument, err)
 		}
-		t.log.Debug("unable to submit transaction", logging.Error(err))
+		s.log.Debug("unable to submit transaction", logging.Error(err))
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -105,13 +105,13 @@ func (t *tradingService) SubmitTransaction(ctx context.Context, req *protoapi.Su
 	}, nil
 }
 
-func (t *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
+func (s *coreService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
 	if req.Event == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
 	// verify the signature then
-	err := verifySignature(t.log, req.Event, req.Signature, req.PubKey)
+	err := verifySignature(s.log, req.Event, req.Signature, req.PubKey)
 	if err != nil {
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid signature: %w", err))
 	}
@@ -123,9 +123,9 @@ func (t *tradingService) PropagateChainEvent(ctx context.Context, req *protoapi.
 	}
 
 	var ok = true
-	err = t.evtForwarder.Forward(ctx, &evt, req.PubKey)
+	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
 	if err != nil && err != evtforward.ErrEvtAlreadyExist {
-		t.log.Error("unable to forward chain event",
+		s.log.Error("unable to forward chain event",
 			logging.String("pubkey", req.PubKey),
 			logging.Error(err))
 		if err == evtforward.ErrPubKeyNotAllowlisted {
@@ -177,11 +177,11 @@ func verifySignature(
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
 // Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
-func (t *tradingService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
+func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Statistics")()
 	// Call tendermint and related services to get information for statistics
 	// We load read-only internal statistics through each package level statistics structs
-	epochTime := t.timesvc.GetTimeNow()
+	epochTime := s.timesvc.GetTimeNow()
 
 	// Call tendermint via rpc client
 	var (
@@ -190,10 +190,10 @@ func (t *tradingService) Statistics(ctx context.Context, _ *protoapi.StatisticsR
 		chainID                 string
 	)
 
-	backlogLength, numPeers, gt, chainID, err := t.getTendermintStats(ctx)
+	backlogLength, numPeers, gt, chainID, err := s.getTendermintStats(ctx)
 	if err != nil {
 		// do not return an error, let just eventually log it
-		t.log.Debug("could not load tendermint stats", logging.Error(err))
+		s.log.Debug("could not load tendermint stats", logging.Error(err))
 	}
 
 	// If the chain is replaying then genesis time can be nil
@@ -203,28 +203,28 @@ func (t *tradingService) Statistics(ctx context.Context, _ *protoapi.StatisticsR
 	}
 
 	stats := &protoapi.Statistics{
-		BlockHeight:           t.stats.Blockchain.Height(),
+		BlockHeight:           s.stats.Blockchain.Height(),
 		BacklogLength:         uint64(backlogLength),
 		TotalPeers:            uint64(numPeers),
 		GenesisTime:           genesisTime,
 		CurrentTime:           vegatime.Format(vegatime.Now()),
 		VegaTime:              vegatime.Format(epochTime),
-		Uptime:                vegatime.Format(t.stats.GetUptime()),
-		TxPerBlock:            t.stats.Blockchain.TotalTxLastBatch(),
-		AverageTxBytes:        t.stats.Blockchain.AverageTxSizeBytes(),
-		AverageOrdersPerBlock: t.stats.Blockchain.AverageOrdersPerBatch(),
-		TradesPerSecond:       t.stats.Blockchain.TradesPerSecond(),
-		OrdersPerSecond:       t.stats.Blockchain.OrdersPerSecond(),
-		Status:                t.statusChecker.ChainStatus(),
-		AppVersionHash:        t.stats.GetVersionHash(),
-		AppVersion:            t.stats.GetVersion(),
-		ChainVersion:          t.stats.GetChainVersion(),
-		TotalAmendOrder:       t.stats.Blockchain.TotalAmendOrder(),
-		TotalCancelOrder:      t.stats.Blockchain.TotalCancelOrder(),
-		TotalCreateOrder:      t.stats.Blockchain.TotalCreateOrder(),
-		TotalOrders:           t.stats.Blockchain.TotalOrders(),
-		TotalTrades:           t.stats.Blockchain.TotalTrades(),
-		BlockDuration:         t.stats.Blockchain.BlockDuration(),
+		Uptime:                vegatime.Format(s.stats.GetUptime()),
+		TxPerBlock:            s.stats.Blockchain.TotalTxLastBatch(),
+		AverageTxBytes:        s.stats.Blockchain.AverageTxSizeBytes(),
+		AverageOrdersPerBlock: s.stats.Blockchain.AverageOrdersPerBatch(),
+		TradesPerSecond:       s.stats.Blockchain.TradesPerSecond(),
+		OrdersPerSecond:       s.stats.Blockchain.OrdersPerSecond(),
+		Status:                s.statusChecker.ChainStatus(),
+		AppVersionHash:        s.stats.GetVersionHash(),
+		AppVersion:            s.stats.GetVersion(),
+		ChainVersion:          s.stats.GetChainVersion(),
+		TotalAmendOrder:       s.stats.Blockchain.TotalAmendOrder(),
+		TotalCancelOrder:      s.stats.Blockchain.TotalCancelOrder(),
+		TotalCreateOrder:      s.stats.Blockchain.TotalCreateOrder(),
+		TotalOrders:           s.stats.Blockchain.TotalOrders(),
+		TotalTrades:           s.stats.Blockchain.TotalTrades(),
+		BlockDuration:         s.stats.Blockchain.BlockDuration(),
 		ChainId:               chainID,
 	}
 	return &protoapi.StatisticsResponse{
@@ -232,7 +232,7 @@ func (t *tradingService) Statistics(ctx context.Context, _ *protoapi.StatisticsR
 	}, nil
 }
 
-func (t *tradingService) getTendermintStats(
+func (s *coreService) getTendermintStats(
 	ctx context.Context,
 ) (
 	backlogLength, numPeers int,
@@ -241,14 +241,14 @@ func (t *tradingService) getTendermintStats(
 	err error,
 ) {
 
-	if t.stats == nil || t.stats.Blockchain == nil {
+	if s.stats == nil || s.stats.Blockchain == nil {
 		return 0, 0, nil, "", apiError(codes.Internal, ErrChainNotConnected)
 	}
 
 	const refused = "connection refused"
 
 	// Unconfirmed TX count == current transaction backlog length
-	backlogLength, err = t.blockchain.GetUnconfirmedTxCount(ctx)
+	backlogLength, err = s.blockchain.GetUnconfirmedTxCount(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
 			return 0, 0, nil, "", nil
@@ -256,33 +256,33 @@ func (t *tradingService) getTendermintStats(
 		return 0, 0, nil, "", apiError(codes.Internal, ErrBlockchainBacklogLength, err)
 	}
 
-	if atomic.LoadUint32(&t.hasGenesisTimeAndChainID) == 0 {
-		if err = t.getGenesisTimeAndChainID(ctx); err != nil {
+	if atomic.LoadUint32(&s.hasGenesisTimeAndChainID) == 0 {
+		if err = s.getGenesisTimeAndChainID(ctx); err != nil {
 			return 0, 0, nil, "", err
 		}
 	}
 
 	// Net info provides peer stats etc (block chain network info) == number of peers
-	netInfo, err := t.getTMNetInfo(ctx)
+	netInfo, err := s.getTMNetInfo(ctx)
 	if err != nil {
-		return backlogLength, 0, &t.genesisTime, t.chainID, nil
+		return backlogLength, 0, &s.genesisTime, s.chainID, nil
 	}
 
-	return backlogLength, netInfo.NPeers, &t.genesisTime, t.chainID, nil
+	return backlogLength, netInfo.NPeers, &s.genesisTime, s.chainID, nil
 }
 
-func (t *tradingService) getTMNetInfo(ctx context.Context) (tmctypes.ResultNetInfo, error) {
-	t.netInfoMu.RLock()
-	defer t.netInfoMu.RUnlock()
+func (s *coreService) getTMNetInfo(ctx context.Context) (tmctypes.ResultNetInfo, error) {
+	s.netInfoMu.RLock()
+	defer s.netInfoMu.RUnlock()
 
-	if t.netInfo == nil {
+	if s.netInfo == nil {
 		return tmctypes.ResultNetInfo{}, apiError(codes.Internal, ErrBlockchainNetworkInfo)
 	}
 
-	return *t.netInfo, nil
+	return *s.netInfo, nil
 }
 
-func (t *tradingService) updateNetInfo(ctx context.Context) {
+func (s *coreService) updateNetInfo(ctx context.Context) {
 	// update the net info every 1 minutes
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()
@@ -292,26 +292,26 @@ func (t *tradingService) updateNetInfo(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			netInfo, err := t.blockchain.GetNetworkInfo(ctx)
+			netInfo, err := s.blockchain.GetNetworkInfo(ctx)
 			if err != nil {
 				continue
 			}
-			t.netInfoMu.Lock()
-			t.netInfo = netInfo
-			t.netInfoMu.Unlock()
+			s.netInfoMu.Lock()
+			s.netInfo = netInfo
+			s.netInfoMu.Unlock()
 		}
 	}
 }
 
-func (t *tradingService) getGenesisTimeAndChainID(ctx context.Context) error {
+func (s *coreService) getGenesisTimeAndChainID(ctx context.Context) error {
 	const refused = "connection refused"
 	// just lock in here, ideally we'll come here only once, so not a big issue to lock
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	var err error
 	// Genesis retrieves the current genesis date/time for the blockchain
-	t.genesisTime, err = t.blockchain.GetGenesisTime(ctx)
+	s.genesisTime, err = s.blockchain.GetGenesisTime(ctx)
 	if err != nil {
 		if strings.Contains(err.Error(), refused) {
 			return nil
@@ -319,17 +319,17 @@ func (t *tradingService) getGenesisTimeAndChainID(ctx context.Context) error {
 		return apiError(codes.Internal, ErrBlockchainGenesisTime, err)
 	}
 
-	t.chainID, err = t.blockchain.GetChainID(ctx)
+	s.chainID, err = s.blockchain.GetChainID(ctx)
 	if err != nil {
 		return apiError(codes.Internal, ErrBlockchainChainID, err)
 	}
 
-	atomic.StoreUint32(&t.hasGenesisTimeAndChainID, 1)
+	atomic.StoreUint32(&s.hasGenesisTimeAndChainID, 1)
 	return nil
 }
 
-func (t *tradingService) ObserveEventBus(
-	stream protoapi.TradingService_ObserveEventBusServer) error {
+func (s *coreService) ObserveEventBus(
+	stream protoapi.CoreService_ObserveEventBusServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
 
 	ctx, cfunc := context.WithCancel(stream.Context())
@@ -339,7 +339,7 @@ func (t *tradingService) ObserveEventBus(
 	// this will be blocking until the connection by the client is closed
 	// and we will not start processing any events until we receive the original request
 	// indicating filters and batch size.
-	req, err := t.recvEventRequest(stream)
+	req, err := s.recvEventRequest(stream)
 	if err != nil {
 		// client exited, nothing to do
 		return nil
@@ -367,21 +367,21 @@ func (t *tradingService) ObserveEventBus(
 	}
 
 	// number of retries to -1 to have pretty much unlimited retries
-	ch, bCh := t.eventService.ObserveEvents(ctx, t.conf.StreamRetries, types, int(req.BatchSize), filters...)
+	ch, bCh := s.eventService.ObserveEvents(ctx, s.conf.StreamRetries, types, int(req.BatchSize), filters...)
 	defer close(bCh)
 
 	if req.BatchSize > 0 {
-		err := t.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
+		err := s.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
 		return err
 
 	}
-	err = t.observeEvents(ctx, stream, ch)
+	err = s.observeEvents(ctx, stream, ch)
 	return err
 }
 
-func (t *tradingService) observeEvents(
+func (s *coreService) observeEvents(
 	ctx context.Context,
-	stream protoapi.TradingService_ObserveEventBusServer,
+	stream protoapi.CoreService_ObserveEventBusServer,
 	ch <-chan []*eventspb.BusEvent,
 ) error {
 	for {
@@ -394,7 +394,7 @@ func (t *tradingService) observeEvents(
 				Events: data,
 			}
 			if err := stream.Send(resp); err != nil {
-				t.log.Error("Error sending event on stream", logging.Error(err))
+				s.log.Error("Error sending event on stream", logging.Error(err))
 				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
 		case <-ctx.Done():
@@ -403,8 +403,8 @@ func (t *tradingService) observeEvents(
 	}
 }
 
-func (t *tradingService) recvEventRequest(
-	stream protoapi.TradingService_ObserveEventBusServer,
+func (s *coreService) recvEventRequest(
+	stream protoapi.CoreService_ObserveEventBusServer,
 ) (*protoapi.ObserveEventBusRequest, error) {
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
 	oebCh := make(chan protoapi.ObserveEventBusRequest)
@@ -431,9 +431,9 @@ func (t *tradingService) recvEventRequest(
 	}
 }
 
-func (t *tradingService) observeEventsWithAck(
+func (s *coreService) observeEventsWithAck(
 	ctx context.Context,
-	stream protoapi.TradingService_ObserveEventBusServer,
+	stream protoapi.CoreService_ObserveEventBusServer,
 	batchSize int64,
 	ch <-chan []*eventspb.BusEvent,
 	bCh chan<- int,
@@ -448,7 +448,7 @@ func (t *tradingService) observeEventsWithAck(
 				Events: data,
 			}
 			if err := stream.Send(resp); err != nil {
-				t.log.Error("Error sending event on stream", logging.Error(err))
+				s.log.Error("Error sending event on stream", logging.Error(err))
 				return apiError(codes.Internal, ErrStreamInternal, err)
 			}
 		case <-ctx.Done():
@@ -456,7 +456,7 @@ func (t *tradingService) observeEventsWithAck(
 		}
 
 		// now we try to read again the new size / ack
-		req, err := t.recvEventRequest(stream)
+		req, err := s.recvEventRequest(stream)
 		if err != nil {
 			return err
 		}
