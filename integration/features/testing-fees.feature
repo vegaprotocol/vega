@@ -1721,7 +1721,7 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
 # Liquidity provider orders results in a trade - pegged orders so that orders of LP gets matched and LP gets maker fee. (LP is a price maker and not taker here) with suffficent balance - 
 # <PC> - Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed so unable to crossed LP pegged orders
 
-# Last 3 API points ? - check and raise issues in ticket on Core Board - <PC> - Updated the #3692 issue with API requirement
+# Last 3 API points - <PC> - Updated the #3692 issue with API requirement
 
 # Changing parameters (via governance votes) does change the fees being collected appropriately even if the market is already running - Use
 	# MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
