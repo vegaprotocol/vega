@@ -16,6 +16,7 @@ type AccountStore interface {
 	GetPartyAccounts(string, string, string, types.AccountType) ([]*types.Account, error)
 	GetMarketAccounts(string, string) ([]*types.Account, error)
 	GetFeeInfrastructureAccounts(string) ([]*types.Account, error)
+	GetGlobalRewardPoolAccounts(string) ([]*types.Account, error)
 	Subscribe(c chan []*types.Account) uint64
 	Unsubscribe(id uint64) error
 }
@@ -87,6 +88,22 @@ func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error
 
 func (s *Svc) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error) {
 	accounts, err := s.storage.GetFeeInfrastructureAccounts(asset)
+	// Prevent internal "*" special character from leaking out via owner (similar to above).
+	// There is a ticket to improve and clean this up in the collateral-engine:
+	// https://github.com/vegaprotocol/vega/issues/416
+	for _, acc := range accounts {
+		if acc.Owner == "*" {
+			acc.Owner = ""
+		}
+		if acc.MarketId == "!" {
+			acc.MarketId = ""
+		}
+	}
+	return accounts, err
+}
+
+func (s *Svc) GetGlobalRewardPoolAccounts(asset string) ([]*types.Account, error) {
+	accounts, err := s.storage.GetGlobalRewardPoolAccounts(asset)
 	// Prevent internal "*" special character from leaking out via owner (similar to above).
 	// There is a ticket to improve and clean this up in the collateral-engine:
 	// https://github.com/vegaprotocol/vega/issues/416

@@ -97,6 +97,7 @@ type AccountsService interface {
 	GetPartyAccounts(partyID, marketID, asset string, ty pbtypes.AccountType) ([]*pbtypes.Account, error)
 	GetMarketAccounts(marketID, asset string) ([]*pbtypes.Account, error)
 	GetFeeInfrastructureAccounts(asset string) ([]*pbtypes.Account, error)
+	GetGlobalRewardPoolAccounts(asset string) ([]*pbtypes.Account, error)
 	ObserveAccounts(ctx context.Context, retries int, marketID, partyID, asset string, ty pbtypes.AccountType) (candleCh <-chan []*pbtypes.Account, ref uint64)
 	GetAccountSubscribersCount() int32
 }
@@ -1733,6 +1734,18 @@ func (t *tradingDataService) FeeInfrastructureAccounts(_ context.Context,
 		return nil, apiError(codes.Internal, ErrAccountServiceGetFeeInfrastructureAccounts, err)
 	}
 	return &protoapi.FeeInfrastructureAccountsResponse{
+		Accounts: accs,
+	}, nil
+}
+
+func (t *tradingDataService) GlobalRewardPoolAccounts(_ context.Context,
+	req *protoapi.GlobalRewardPoolAccountsRequest) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("FeeInfrastructureAccounts")()
+	accs, err := t.AccountsService.GetGlobalRewardPoolAccounts(req.Asset)
+	if err != nil {
+		return nil, apiError(codes.Internal, ErrAccountServiceGetGlobalRewardPoolAccounts, err)
+	}
+	return &protoapi.GlobalRewardPoolAccountsResponse{
 		Accounts: accs,
 	}, nil
 }

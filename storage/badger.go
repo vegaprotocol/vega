@@ -380,8 +380,12 @@ func (bs *badgerStore) accountFeeLiquidityIDKey(marketID string, assetID string)
 // accountGeneralKey relates only to a party and asset, no market index/references
 func (bs *badgerStore) accountFeeInfrastructureIDKey(assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_A:%s",
-
 		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE), "!", assetID))
+}
+
+func (bs *badgerStore) accountGlobalRewardPoolIDKey(assetID string) []byte {
+	return []byte(fmt.Sprintf("%s:%s_A:%s",
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD), "!", assetID))
 }
 
 // accountGeneralKey relates only to a party and asset, no market index/references
@@ -441,6 +445,8 @@ func (bs *badgerStore) getAccountTypePrefix(accType types.AccountType) string {
 		return "LW"
 	case types.AccountType_ACCOUNT_TYPE_BOND:
 		return "BD"
+	case types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:
+		return "RE"
 	default:
 		return "ERR"
 	}
