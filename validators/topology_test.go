@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/validators"
 	"github.com/stretchr/testify/require"

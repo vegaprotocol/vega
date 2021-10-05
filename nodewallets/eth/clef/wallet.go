@@ -44,7 +44,7 @@ func NewWallet(client Client, endpoint string, accountAddr ethcommon.Address) (*
 	}
 
 	if err := w.contains(accountAddr); err != nil {
-		return nil, fmt.Errorf("account with address %q not found", accountAddr)
+		return nil, fmt.Errorf("account not found: %w", err)
 	}
 
 	w.account = newAccount(accountAddr, w.endpoint)
@@ -97,7 +97,7 @@ func (w *wallet) contains(testAddr ethcommon.Address) error {
 		}
 	}
 
-	return fmt.Errorf("wallet does not contain accout %q", testAddr)
+	return fmt.Errorf("wallet does not contain account %q", testAddr)
 }
 
 func (w *wallet) listAccounts() ([]ethcommon.Address, error) {
