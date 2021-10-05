@@ -48,9 +48,6 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 	}
 
 	sort.SliceStable(withdrawals, func(i, j int) bool { return withdrawals[i].Ref < withdrawals[j].Ref })
-	for _, w := range withdrawals {
-		println(w.Ref)
-	}
 
 	payload := types.Payload{
 		Data: &types.PayloadBankingWithdrawals{
