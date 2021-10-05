@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -13,11 +13,11 @@ type PartiesCmd struct {
 }
 
 func (opts *PartiesCmd) Execute(params []string) error {
-	req := coreapipb.ListPartiesRequest{}
+	req := apipb.ListPartiesRequest{}
 	return getPrintParties(opts.NodeAddress, &req)
 }
 
-func getPrintParties(nodeAddress string, req *coreapipb.ListPartiesRequest) error {
+func getPrintParties(nodeAddress string, req *apipb.ListPartiesRequest) error {
 	clt, err := getClient(nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not connect to the vega node: %w", err)

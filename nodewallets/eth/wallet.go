@@ -11,7 +11,7 @@ type Wallet struct {
 	acc        accounts.Account
 	ks         *keystore.KeyStore
 	passphrase string
-	address    crypto.PublicKeyOrAddress
+	address    crypto.PublicKey
 }
 
 func (w *Wallet) Cleanup() error {
@@ -39,6 +39,6 @@ func (w *Wallet) Version() string {
 	return "0"
 }
 
-func (w *Wallet) PubKeyOrAddress() crypto.PublicKeyOrAddress {
+func (w *Wallet) PubKey() crypto.PublicKey {
 	return w.address
 }
