@@ -283,6 +283,8 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
+And debug transfers
+
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 11     | ETH   |
@@ -1277,8 +1279,6 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
 Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead
  # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
  # <PC> - Also need to confirm if all 4 internal levels of margin should be non-zero , as in another case where the trade shouldn't be going through it's 0
-
-  Even after reducing trader's balance and increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
  # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
 
   Given the following network parameters are set:
@@ -1585,7 +1585,8 @@ Scenario: WIP - Testing fees in continuous trading during position resolution wi
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
 Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers
-    
+  # <PC> - Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed; but fees look ok
+
     When the following network parameters are set:
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 10s   |
@@ -1687,16 +1688,20 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
       | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |  
-      # | market  | aux1     | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |  5     | ETH   |
 
     Then the parties should have the following account balances:
       | party      | asset | market id | margin | general |
       | trader3a    | ETH   | ETH/DEC21 | 3216    | 96834    | 
       | trader4     | ETH   | ETH/DEC21 | 3600    | 96320    |
 
-    # And the following transfers should happen:
-    #   | from   | to   | from account                | to account          | market id | amount | asset |
-    #   | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_MARGIN | ETH/DEC21 | 5      | ETH   |
+    # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
+    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+
+    When the network moves ahead "11" blocks
+    
+    And the following transfers should happen:
+      | from   | to   | from account                | to account           | market id | amount | asset |
+      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
 
 
 # TO DO -
