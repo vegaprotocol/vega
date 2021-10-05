@@ -20,7 +20,7 @@ func (ts *TopologyStub) IsValidatorNode(nodeID string) bool {
 	return ok
 }
 
-func (ts *TopologyStub) AllPubKeys() []string {
+func (ts *TopologyStub) AllNodeIDs() []string {
 	nodes := make([]string, 0, len(ts.validators))
 	for n := range ts.validators {
 		nodes = append(nodes, n)
@@ -29,6 +29,15 @@ func (ts *TopologyStub) AllPubKeys() []string {
 	return nodes
 }
 
-func (ts *TopologyStub) AddValidator(node string) {
-	ts.validators[node] = node
+func (ts *TopologyStub) AllVegaPubKeys() []string {
+	nodes := make([]string, 0, len(ts.validators))
+	for _, pk := range ts.validators {
+		nodes = append(nodes, pk)
+	}
+	sort.Strings(nodes)
+	return nodes
+}
+
+func (ts *TopologyStub) AddValidator(node string, pubkey string) {
+	ts.validators[node] = pubkey
 }

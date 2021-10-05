@@ -30,7 +30,7 @@ func (app *App) processChainEvent(
 	}
 
 	// first verify the event was emitted by a validator
-	if !app.top.Exists(pubkey) {
+	if !app.top.IsValidatorVegaPubKey(pubkey) {
 		app.log.Debug("received chain event from non-validator",
 			logging.String("event", ce.String()),
 			logging.String("pubkey", pubkey),
