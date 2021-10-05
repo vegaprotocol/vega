@@ -1465,7 +1465,7 @@ func (g GovernanceActive) IntoProto() *snapshot.GovernanceActive {
 	return &ret
 }
 
-func PPositionFromProto(p *snapshot.Position) *MarketPosition {
+func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 	price, _ := num.UintFromString(p.Price, 10)
 	vwBuy, _ := num.UintFromString(p.VwBuyPrice, 10)
 	vwSell, _ := num.UintFromString(p.VwSellPrice, 10)
@@ -1498,7 +1498,7 @@ func MarketPositionsFromProto(mp *snapshot.MarketPositions) *MarketPositions {
 		Positions: make([]*MarketPosition, 0, len(mp.Positions)),
 	}
 	for _, p := range mp.Positions {
-		ret.Positions = append(ret.Positions, PPositionFromProto(p))
+		ret.Positions = append(ret.Positions, MarketPositionFromProto(p))
 	}
 	return &ret
 }
