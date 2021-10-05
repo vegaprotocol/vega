@@ -5,7 +5,7 @@ import (
 	"sort"
 	"sync"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	coreapipb "code.vegaprotocol.io/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
