@@ -110,7 +110,7 @@ func (t *Topology) Get(key string) *ValidatorData {
 	return nil
 }
 
-// AllPubKeys returns all the validators vega public keys
+// AllVegaPubKeys returns all the validators vega public keys
 func (t *Topology) AllVegaPubKeys() []string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
