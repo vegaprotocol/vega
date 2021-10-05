@@ -61,10 +61,13 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 	fmt.Println("Info to add in genesis file under `validators` key")
 	fmt.Println(string(marshalledGenesisDoc))
 
+	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
+
 	validatorDataState := map[string]validators.ValidatorData{
 		base64.StdEncoding.EncodeToString(pubKey.Bytes()): {
 			ID:              walletID,
 			VegaPubKey:      vegaKey,
+			TmPubKey:        b64TmPubKey,
 			EthereumAddress: ethAddress,
 			Country:         opts.Country,
 			InfoURL:         opts.InfoURL,

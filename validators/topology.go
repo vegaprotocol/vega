@@ -222,6 +222,7 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 	t.sendValidatorUpdateEvent(ctx, nr)
 
 	t.log.Info("new node registration successful",
+		logging.String("id", nr.Id),
 		logging.String("vega-key", nr.VegaPubKey),
 		logging.String("eth-addr", nr.EthereumAddress),
 		logging.String("tm-key", nr.ChainPubKey))
