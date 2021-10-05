@@ -618,6 +618,8 @@ Scenario: Testing fees to confirm fees are collected first and then margin
       | trader4 | ETH   | ETH/DEC21 | 205    | 0       |
 
 Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
+ # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
+ # <PC> - Also need to confirm if all 4 internal levels of margin should be 0, as in another case where the trade shouldn't be going through it's non-zero
 
    Given the following network parameters are set:
       | name                                                | value |
@@ -1273,7 +1275,12 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
 Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead
-    
+ # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
+ # <PC> - Also need to confirm if all 4 internal levels of margin should be non-zero , as in another case where the trade shouldn't be going through it's 0
+
+  Even after reducing trader's balance and increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
+ # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
+
   Given the following network parameters are set:
       | name                                                | value |
       | market.stake.target.timeWindow                      | 24h   |
