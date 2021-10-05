@@ -17,7 +17,7 @@ func TheValidators(
 ) error {
 	for _, r := range parseTable(table) {
 		row := newValidatorRow(r)
-		topology.AddValidator(row.id())
+		topology.AddValidator(row.id(), row.id())
 
 		amt, _ := num.UintFromString(row.stakingAccountBalance(), 10)
 		stakingAcountStub.IncrementBalance(row.id(), amt)

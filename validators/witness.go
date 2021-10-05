@@ -39,11 +39,11 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
 type ValidatorTopology interface {
-	Exists(string) bool
 	Len() int
 	IsValidator() bool
-	SelfVegaPubKey() string
-	AllPubKeys() []string
+	SelfNodeID() string
+	AllNodeIDs() []string
+	IsValidatorNode(string) bool
 }
 
 type Resource interface {
@@ -166,17 +166,21 @@ func (w *Witness) Stop() {
 
 // AddNodeCheck registers a vote from a validator node for a given resource
 func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error {
+	hexPubKey := hex.EncodeToString(nv.PubKey)
 	// get the node proposal first
 	r, ok := w.resources[nv.Reference]
 	if !ok {
+		w.log.Error("invalid resource ID received for vote",
+			logging.String("ressource-ref", nv.Reference),
+			logging.String("node-id", hexPubKey),
+		)
 		return ErrInvalidResourceIDForNodeVote
 	}
 
 	// ensure the node is a validator
-	hexPubKey := hex.EncodeToString(nv.PubKey)
-	if !w.top.Exists(hexPubKey) {
+	if !w.top.IsValidatorNode(hexPubKey) {
 		w.log.Error("non-validator node tried to register node vote",
-			logging.String("pubkey", hexPubKey))
+			logging.String("node-id", hexPubKey))
 		return ErrVoteFromNonValidator
 	}
 
@@ -303,7 +307,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			if !checkPass {
 				votesReceived := []string{}
 				votesMissing := []string{}
-				for _, k := range w.top.AllPubKeys() {
+				for _, k := range w.top.AllNodeIDs() {
 					if _, ok := v.votes[k]; ok {
 						votesReceived = append(votesReceived, k)
 						continue
@@ -329,7 +333,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 		// if we are a validator, and the resource was validated
 		// then we try to send our vote.
 		if isValidator && state == validated || w.needResend(k) {
-			pubKey, _ := hex.DecodeString(w.top.SelfVegaPubKey())
+			pubKey, _ := hex.DecodeString(w.top.SelfNodeID())
 			nv := &commandspb.NodeVote{
 				PubKey:    pubKey,
 				Reference: v.res.GetID(),

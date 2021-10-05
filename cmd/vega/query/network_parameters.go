@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -23,13 +23,13 @@ func (opts *NetworkParametersCmd) Execute(params []string) error {
 		key = params[0]
 	}
 
-	req := coreapipb.ListNetworkParametersRequest{
+	req := apipb.ListNetworkParametersRequest{
 		NetworkParameterKey: key,
 	}
 	return getPrintNetworkParameters(opts.NodeAddress, &req)
 }
 
-func getPrintNetworkParameters(nodeAddress string, req *coreapipb.ListNetworkParametersRequest) error {
+func getPrintNetworkParameters(nodeAddress string, req *apipb.ListNetworkParametersRequest) error {
 	clt, err := getClient(nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not connect to the vega node: %w", err)

@@ -1,21 +1,21 @@
 package crypto
 
-type PublicKeyOrAddress struct {
+type PublicKey struct {
 	hex   string
 	bytes []byte
 }
 
-func NewPublicKeyOrAddress(hex string, bytes []byte) PublicKeyOrAddress {
-	return PublicKeyOrAddress{
+func NewPublicKey(hex string, bytes []byte) PublicKey {
+	return PublicKey{
 		hex:   hex,
 		bytes: bytes,
 	}
 }
 
-func (p PublicKeyOrAddress) Hex() string {
+func (p PublicKey) Hex() string {
 	return p.hex
 }
 
-func (p PublicKeyOrAddress) Bytes() []byte {
+func (p PublicKey) Bytes() []byte {
 	return p.bytes
 }
