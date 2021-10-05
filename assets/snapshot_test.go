@@ -29,7 +29,6 @@ func testAssets(t *testing.T) *assets.Service {
 func TestActiveSnapshotRoundTrip(t *testing.T) {
 	activeKey := (&types.PayloadActiveAssets{}).Key()
 	for i := 0; i < 10; i++ {
-		println(i)
 		as := testAssets(t)
 		_, err := as.NewAsset("asset1", &types.AssetDetails{
 			Source: &types.AssetDetailsBuiltinAsset{},
@@ -79,7 +78,6 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 	pendingKey := (&types.PayloadPendingAssets{}).Key()
 
 	for i := 0; i < 10; i++ {
-		print(i)
 		as := testAssets(t)
 		_, err := as.NewAsset("asset1", &types.AssetDetails{
 			Source: &types.AssetDetailsBuiltinAsset{},
