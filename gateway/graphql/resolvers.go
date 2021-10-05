@@ -835,6 +835,22 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
+func (r *myPartyResolver) RewardDetails(
+	ctx context.Context,
+	party *types.Party,
+) ([]*types.RewardPerAssetDetail, error) {
+	req := &protoapi.GetRewardDetailsRequest{
+		PartyId: party.Id,
+	}
+	resp, err := r.tradingDataClient.GetRewardDetails(ctx, req)
+	if err != nil {
+		// not returning an error here, as it's we just don't have any rewards
+		// for the given party
+		return nil, nil
+	}
+	return resp.RewardDetails, nil
+}
+
 func (r *myPartyResolver) Stake(
 	ctx context.Context,
 	party *types.Party,
