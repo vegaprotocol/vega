@@ -7877,7 +7877,7 @@ type Reward {
 
 "Reward information for a given asset"
 type RewardPerAssetDetail {
-  "Asset in which the reward was paied"
+  "Asset in which the reward was paid"
   asset: Asset!
   "A list of rewards received for this asset"
   rewards: [Reward]
