@@ -124,7 +124,7 @@ function ApproveSignData(req) {
 
 Please refer to Clef [rules docs](https://github.com/ethereum/go-ethereum/blob/master/cmd/clef/rules.md#rules) for more information.
 
-#### **Importing and generation account**
+#### Importing and generation account
 
 As of today, Clef does not allow to generate a new account for other back end storages than a local Key Store. Therefore it is preferable to create a new account on the back end of choice and import it to Vega through node wallet CLI.
 
