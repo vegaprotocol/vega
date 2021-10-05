@@ -81,7 +81,6 @@ func LossSocializationEventFromStream(ctx context.Context, be *eventspb.BusEvent
 		marketID: be.GetLossSocialization().MarketId,
 	}
 
-	amt := be.GetLossSocialization().Amount
-	lse.amount = num.UintFromString(uint64(amt))
+	lse.amount, _ = num.IntFromString(be.GetLossSocialization().Amount, 10)
 	return lse
 }

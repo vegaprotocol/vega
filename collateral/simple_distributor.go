@@ -75,7 +75,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		// last one get the remaining bits
 		s.requests[len(s.requests)-1].request.Amount.Amount.AddSum(mismatch)
 		// decAmt is negative
-		loss := mismatch.Sub(evt.AmountUint(), mismatch)
+		loss := mismatch.Sub(evt.Amount().U, mismatch)
 		evts[len(evts)-1] = events.NewLossSocializationEvent(
 			evt.Context(),
 			evt.PartyID(),

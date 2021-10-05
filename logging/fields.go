@@ -107,6 +107,11 @@ func BigUint(key string, val *num.Uint) zap.Field {
 	return String(key, val.String())
 }
 
+// BigUint constructs a field with the given key and value.
+func BigInt(key string, val *num.Int) zap.Field {
+	return String(key, val.String())
+}
+
 // Uint constructs a field with the given key and value.
 func Uint(key string, val uint) zap.Field {
 	return Uint64(key, uint64(val))
