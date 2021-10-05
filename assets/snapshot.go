@@ -123,6 +123,7 @@ func (s *Service) LoadState(ctx context.Context, p *types.Payload) error {
 }
 
 func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets) error {
+	s.assets = map[string]*Asset{}
 	for _, p := range active.Assets {
 		if _, err := s.NewAsset(p.ID, p.Details); err != nil {
 			return err
@@ -136,6 +137,7 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets)
 }
 
 func (s *Service) restorePending(ctx context.Context, pending *types.PendingAssets) error {
+	s.pendingAssets = map[string]*Asset{}
 	for _, p := range pending.Assets {
 		if _, err := s.NewAsset(p.ID, p.Details); err != nil {
 			return err
