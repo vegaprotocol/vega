@@ -9,12 +9,14 @@ allowlist
 allowlisted
 api
 app_state
+assetActions
 async
 barnabee
 base64
 blockchain
 Buf
 CGO
+checkpointing
 CI
 Cleanup
 clef
