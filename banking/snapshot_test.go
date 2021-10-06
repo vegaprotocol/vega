@@ -130,7 +130,7 @@ func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
 		assert.NoError(t, err)
 
 		eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-		eng.assets.EXPECT().Get(gomock.Any()).Times(2).Return(testAsset, nil)
+		eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
 		eng.col.EXPECT().Withdraw(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&types.TransferResponse{}, nil)
 		err = eng.WithdrawBuiltinAsset(context.Background(), "VGT"+strconv.Itoa(i*2), "someparty"+strconv.Itoa(i*2), "VGT"+strconv.Itoa(i*2), num.NewUint(2))
 		require.Nil(t, err)
