@@ -50,10 +50,10 @@ type ETHClient interface {
 }
 
 type ERC20 struct {
-	asset   *types.Asset
-	address string
-	ok      bool
-	wallet  *ethnw.Wallet
+	asset     *types.Asset
+	address   string
+	ok        bool
+	wallet    *ethnw.Wallet
 	ethClient ETHClient
 }
 

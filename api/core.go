@@ -271,7 +271,7 @@ func (s *coreService) getTendermintStats(
 	return backlogLength, netInfo.NPeers, &s.genesisTime, s.chainID, nil
 }
 
-func (s *coreService) getTMNetInfo(ctx context.Context) (tmctypes.ResultNetInfo, error) {
+func (s *coreService) getTMNetInfo(_ context.Context) (tmctypes.ResultNetInfo, error) {
 	s.netInfoMu.RLock()
 	defer s.netInfoMu.RUnlock()
 

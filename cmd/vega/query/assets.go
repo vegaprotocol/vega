@@ -12,7 +12,7 @@ type AssetsCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *AssetsCmd) Execute(params []string) error {
+func (opts *AssetsCmd) Execute(_ []string) error {
 	req := apipb.ListAssetsRequest{}
 	return getPrintAssets(opts.NodeAddress, &req)
 }

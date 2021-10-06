@@ -27,7 +27,7 @@ func Genesis(ctx context.Context, parser *flags.Parser) error {
 			TmRoot: "$HOME/.tendermint",
 		},
 		Sign: signCmd{
-			TmRoot:     "$HOME/.tendermint",
+			TmRoot: "$HOME/.tendermint",
 		},
 		Verify: verifyCmd{
 			TmRoot: "$HOME/.tendermint",

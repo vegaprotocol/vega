@@ -57,7 +57,7 @@ func (opts *AccountsMarketCmd) Execute(params []string) error {
 	return nil
 }
 
-func (opts *AccountsNetworkCmd) Execute(params []string) error {
+func (opts *AccountsNetworkCmd) Execute(_ []string) error {
 	req := apipb.ListAccountsRequest{}
 	return getPrintAccounts(opts.NodeAddress, &req)
 }
