@@ -127,6 +127,10 @@ type PayloadExecutionMarkets struct {
 	ExecutionMarkets *ExecutionMarkets
 }
 
+type PayloadExecutionIDGenerator struct {
+	ExecutionIDGenerator *ExecutionIDGenerator
+}
+
 type PayloadStakingAccounts struct {
 	StakingAccounts *StakingAccounts
 }
@@ -136,13 +140,22 @@ type PayloadEpoch struct {
 }
 
 type MatchingBook struct {
-	MarketID string
-	Buy      []*Order
-	Sell     []*Order
+	MarketID        string
+	Buy             []*Order
+	Sell            []*Order
+	LastTradedPrice *num.Uint
+	Auction         bool
+	BatchID         uint64
 }
 
 type ExecutionMarkets struct {
 	Markets []*ExecMarket
+}
+
+type ExecutionIDGenerator struct {
+	Batches   uint64
+	Orders    uint64
+	Proposals uint64
 }
 
 type ExecMarket struct {
@@ -488,6 +501,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadMatchingBookFromProto(dt)
 	case *snapshot.Payload_ExecutionMarkets:
 		ret.Data = PayloadExecutionMarketsFromProto(dt)
+	case *snapshot.Payload_ExecutionIdGenerator:
+		ret.Data = PayloadExecutionIDGeneratorFromProto(dt)
 	case *snapshot.Payload_Epoch:
 		ret.Data = PayloadEpochFromProto(dt)
 	case *snapshot.Payload_StakingAccounts:
@@ -556,6 +571,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Epoch:
 		ret.Data = dt
 	case *snapshot.Payload_DelegationAuto:
+		ret.Data = dt
+	case *snapshot.Payload_ExecutionIdGenerator:
 		ret.Data = dt
 	}
 	return &ret
@@ -995,12 +1012,38 @@ func (p *PayloadMatchingBook) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadMatchingBook) Key() string {
-	return "all"
+func (p *PayloadMatchingBook) Key() string {
+	return p.MatchingBook.MarketID
 }
 
 func (*PayloadMatchingBook) Namespace() SnapshotNamespace {
 	return MatchingSnapshot
+}
+
+func PayloadExecutionIDGeneratorFromProto(pidg *snapshot.Payload_ExecutionIdGenerator) *PayloadExecutionIDGenerator {
+	return &PayloadExecutionIDGenerator{
+		ExecutionIDGenerator: ExecutionIDGeneratorFromProto(pidg.ExecutionIdGenerator),
+	}
+}
+
+func (p PayloadExecutionIDGenerator) IntoProto() *snapshot.Payload_ExecutionIdGenerator {
+	return &snapshot.Payload_ExecutionIdGenerator{
+		ExecutionIdGenerator: p.ExecutionIDGenerator.IntoProto(),
+	}
+}
+
+func (*PayloadExecutionIDGenerator) isPayload() {}
+
+func (p *PayloadExecutionIDGenerator) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadExecutionIDGenerator) Key() string {
+	return "all"
+}
+
+func (*PayloadExecutionIDGenerator) Namespace() SnapshotNamespace {
+	return ExecutionSnapshot
 }
 
 func PayloadExecutionMarketsFromProto(pem *snapshot.Payload_ExecutionMarkets) *PayloadExecutionMarkets {
@@ -1515,10 +1558,14 @@ func (m MarketPositions) IntoProto() *snapshot.MarketPositions {
 }
 
 func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
+	lastTradedPrice, _ := num.UintFromString(mb.LastTradedPrice, 10)
 	ret := MatchingBook{
-		MarketID: mb.MarketId,
-		Buy:      make([]*Order, 0, len(mb.Buy)),
-		Sell:     make([]*Order, 0, len(mb.Sell)),
+		MarketID:        mb.MarketId,
+		Buy:             make([]*Order, 0, len(mb.Buy)),
+		Sell:            make([]*Order, 0, len(mb.Sell)),
+		LastTradedPrice: lastTradedPrice,
+		Auction:         mb.Auction,
+		BatchID:         mb.BatchId,
 	}
 	for _, o := range mb.Buy {
 		or, _ := OrderFromProto(o)
@@ -1533,9 +1580,12 @@ func MatchingBookFromProto(mb *snapshot.MatchingBook) *MatchingBook {
 
 func (m MatchingBook) IntoProto() *snapshot.MatchingBook {
 	ret := snapshot.MatchingBook{
-		MarketId: m.MarketID,
-		Buy:      make([]*vega.Order, 0, len(m.Buy)),
-		Sell:     make([]*vega.Order, 0, len(m.Sell)),
+		MarketId:        m.MarketID,
+		Buy:             make([]*vega.Order, 0, len(m.Buy)),
+		Sell:            make([]*vega.Order, 0, len(m.Sell)),
+		LastTradedPrice: m.LastTradedPrice.String(),
+		Auction:         m.Auction,
+		BatchId:         m.BatchID,
 	}
 	for _, o := range m.Buy {
 		ret.Buy = append(ret.Buy, o.IntoProto())
@@ -1914,4 +1964,34 @@ func (s StakingAccount) IntoProto() *snapshot.StakingAccount {
 		Balance: s.Balance.String(),
 		Events:  evts,
 	}
+}
+
+func ExecutionIDGeneratorFromProto(eidg *snapshot.ExecutionIDGenerator) *ExecutionIDGenerator {
+	return &ExecutionIDGenerator{
+		Batches:   eidg.Batches,
+		Orders:    eidg.Orders,
+		Proposals: eidg.Proposals,
+	}
+}
+
+func (p ExecutionIDGenerator) IntoProto() *snapshot.ExecutionIDGenerator {
+	return &snapshot.ExecutionIDGenerator{
+		Batches:   p.Batches,
+		Orders:    p.Orders,
+		Proposals: p.Orders,
+	}
+}
+
+func (*ExecutionIDGenerator) isPayload() {}
+
+func (p *ExecutionIDGenerator) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*ExecutionIDGenerator) Namespace() SnapshotNamespace {
+	return IDGenSnapshot
+}
+
+func (*ExecutionIDGenerator) Key() string {
+	return "key"
 }

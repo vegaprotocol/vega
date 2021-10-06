@@ -155,6 +155,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
 }
 
 func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive) error {
+	e.partyDelegationState = map[string]*partyDelegation{}
+	e.nodeDelegationState = map[string]*validatorDelegation{}
 	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations))
 	for _, d := range delegations.Delegations {
 		epoch, _ := strconv.ParseUint(d.EpochSeq, 10, 64)
@@ -172,6 +174,7 @@ func (e *Engine) restoreActive(ctx context.Context, delegations *types.Delegatio
 }
 
 func (e *Engine) restorePending(ctx context.Context, delegations *types.DelegationPending) error {
+	e.pendingState = map[uint64]map[string]*pendingPartyDelegation{}
 	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations)+len(delegations.Undelegation))
 	for _, d := range delegations.Delegations {
 		epoch, _ := strconv.ParseUint(d.EpochSeq, 10, 64)
@@ -200,6 +203,7 @@ func (e *Engine) restorePending(ctx context.Context, delegations *types.Delegati
 }
 
 func (e *Engine) restoreAuto(delegations *types.DelegationAuto) error {
+	e.autoDelegationMode = map[string]struct{}{}
 	e.setAuto(delegations.Parties)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
 	e.dss.changed[autoKey] = true

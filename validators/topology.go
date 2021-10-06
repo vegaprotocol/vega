@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
@@ -18,22 +17,28 @@ var (
 	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
 )
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
-type Wallet interface {
-	PubKeyOrAddress() crypto.PublicKeyOrAddress
-}
-
 // Broker needs no mocks
 type Broker interface {
 	Send(event events.Event)
 }
 
 type ValidatorData struct {
+	ID              string `json:"id"`
 	VegaPubKey      string `json:"vega_pub_key"`
 	EthereumAddress string `json:"ethereum_address"`
 	TmPubKey        string `json:"tm_pub_key"`
 	InfoURL         string `json:"info_url"`
 	Country         string `json:"country"`
+	Name            string `json:"name"`
+	AvatarURL       string `json:"avatar_url"`
+}
+
+func (v ValidatorData) IsValid() bool {
+	if len(v.ID) <= 0 || len(v.VegaPubKey) <= 0 ||
+		len(v.EthereumAddress) <= 0 || len(v.TmPubKey) <= 0 {
+		return false
+	}
+	return true
 }
 
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey
@@ -93,25 +98,6 @@ func (t *Topology) Len() int {
 	return len(t.validators)
 }
 
-// Exists check if a vega public key is part of the validator set
-func (t *Topology) Exists(key string) bool {
-	t.mu.RLock()
-	_, ok := t.validators[key]
-	t.mu.RUnlock()
-
-	if t.log.GetLevel() <= logging.DebugLevel {
-		var s = "requested non-existing validator"
-		if ok {
-			s = "requested existing validator"
-		}
-		t.log.Debug(s,
-			logging.Strings("validators", t.AllPubKeys()),
-			logging.String("pubkey", key),
-		)
-	}
-	return ok
-}
-
 // Get returns validator data based on validator public key
 func (t *Topology) Get(key string) *ValidatorData {
 	t.mu.RLock()
@@ -124,7 +110,19 @@ func (t *Topology) Get(key string) *ValidatorData {
 	return nil
 }
 
-func (t *Topology) AllPubKeys() []string {
+// AllVegaPubKeys returns all the validators vega public keys
+func (t *Topology) AllVegaPubKeys() []string {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	keys := make([]string, 0, len(t.validators))
+	for _, data := range t.validators {
+		keys = append(keys, data.VegaPubKey)
+	}
+	return keys
+}
+
+// AllNodeIDs returns all the validators vega public keys
+func (t *Topology) AllNodeIDs() []string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	keys := make([]string, 0, len(t.validators))
@@ -135,7 +133,12 @@ func (t *Topology) AllPubKeys() []string {
 }
 
 func (t *Topology) SelfVegaPubKey() string {
-	return t.wallet.PubKeyOrAddress().Hex()
+	return t.wallet.PubKey().Hex()
+}
+
+func (t *Topology) SelfNodeID() string {
+	// return t.wallet.ID().Hex()
+	return t.wallet.ID().Hex()
 }
 
 // UpdateValidatorSet updates the chain validator set
@@ -152,11 +155,38 @@ func (t *Topology) IsValidatorNode(nodeID string) bool {
 	return ok
 }
 
+// IsValidatorVegaPubKey takes a nodeID and returns true if the node is a validator node
+func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
+	defer func() {
+		if t.log.GetLevel() <= logging.DebugLevel {
+			var s = "requested non-existing validator"
+			if ok {
+				s = "requested existing validator"
+			}
+			t.log.Debug(s,
+				logging.Strings("validators", t.AllVegaPubKeys()),
+				logging.String("pubkey", pubkey),
+			)
+		}
+	}()
+
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	for _, data := range t.validators {
+		if data.VegaPubKey == pubkey {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	if _, ok := t.validators[nr.VegaPubKey]; ok {
+	if _, ok := t.validators[nr.Id]; ok {
 		return ErrVegaNodeAlreadyRegisterForChain
 	}
 
@@ -177,18 +207,22 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 	}
 
 	// then add it to the topology
-	t.validators[nr.VegaPubKey] = ValidatorData{
+	t.validators[nr.Id] = ValidatorData{
+		ID:              nr.Id,
 		VegaPubKey:      nr.VegaPubKey,
 		EthereumAddress: nr.EthereumAddress,
 		TmPubKey:        nr.ChainPubKey,
 		InfoURL:         nr.InfoUrl,
 		Country:         nr.Country,
+		Name:            nr.Name,
+		AvatarURL:       nr.AvatarUrl,
 	}
 
 	// Send event to notify core about new validator
 	t.sendValidatorUpdateEvent(ctx, nr)
 
 	t.log.Info("new node registration successful",
+		logging.String("id", nr.Id),
 		logging.String("vega-key", nr.VegaPubKey),
 		logging.String("eth-addr", nr.EthereumAddress),
 		logging.String("tm-key", nr.ChainPubKey))
@@ -198,12 +232,14 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.NodeRegistration) {
 	t.broker.Send(events.NewValidatorUpdateEvent(
 		ctx,
-		nr.VegaPubKey,
+		nr.Id,
 		nr.VegaPubKey,
 		nr.EthereumAddress,
 		nr.ChainPubKey,
 		nr.InfoUrl,
 		nr.Country,
+		nr.Name,
+		nr.AvatarUrl,
 	))
 }
 
@@ -221,20 +257,26 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		return err
 	}
 
-	pubKey := t.wallet.PubKeyOrAddress().Hex()
+	walletID := t.wallet.ID().Hex()
 
 	// tm is base64 encoded, vega is hex
 	for tm, data := range state {
-		if pubKey == data.VegaPubKey {
+		if !data.IsValid() {
+			return fmt.Errorf("missing required field from validator data: %#v", data)
+		}
+		if walletID == data.ID {
 			t.isValidator = true
 		}
 
 		nr := &commandspb.NodeRegistration{
+			Id:              data.ID,
 			VegaPubKey:      data.VegaPubKey,
 			EthereumAddress: data.EthereumAddress,
 			ChainPubKey:     tm,
 			InfoUrl:         data.InfoURL,
 			Country:         data.Country,
+			Name:            data.Name,
+			AvatarUrl:       data.AvatarURL,
 		}
 		if err := t.AddNodeRegistration(ctx, nr); err != nil {
 			return err

@@ -19,7 +19,7 @@ func NewJSONAdaptor() *JSONAdaptor {
 }
 
 // Normalise normalises a JSON payload into an oracles.OracleData.
-func (a *JSONAdaptor) Normalise(txPubKey crypto.PublicKeyOrAddress, data []byte) (*oracles.OracleData, error) {
+func (a *JSONAdaptor) Normalise(txPubKey crypto.PublicKey, data []byte) (*oracles.OracleData, error) {
 	kvs := map[string]string{}
 	err := json.Unmarshal(data, &kvs)
 	if err != nil {
