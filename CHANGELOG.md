@@ -23,7 +23,7 @@
 - [4130](https://github.com/vegaprotocol/vega/pull/4130) - Update proto dependencies to latest
 - [4134](https://github.com/vegaprotocol/vega/pull/4134) - Checkpoints and snapshots are 2 different things
 - [4121](https://github.com/vegaprotocol/vega/pull/4121) - Additional test scenarios for delegation & rewards
-- [4111](https://github.com/vegaprotocol/vega/pull/4111) - Simplify nodewallets integration
+- [4111](https://github.com/vegaprotocol/vega/pull/4111) - Simplify nodewallet integration
 - [4110](https://github.com/vegaprotocol/vega/pull/4110) - Auto delegation
 - [4123](https://github.com/vegaprotocol/vega/pull/4123) - Add auto delegation to checkpoint
 - [4120](https://github.com/vegaprotocol/vega/pull/4120) - Snapshot preparation
