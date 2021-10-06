@@ -104,6 +104,7 @@ type ComplexityRoot struct {
 
 	Asset struct {
 		Decimals                 func(childComplexity int) int
+		GlobalRewardPoolAccount  func(childComplexity int) int
 		Id                       func(childComplexity int) int
 		InfrastructureFeeAccount func(childComplexity int) int
 		MinLpStake               func(childComplexity int) int
@@ -937,6 +938,7 @@ type AssetResolver interface {
 	MinLpStake(ctx context.Context, obj *vega.Asset) (string, error)
 	Source(ctx context.Context, obj *vega.Asset) (AssetSource, error)
 	InfrastructureFeeAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
+	GlobalRewardPoolAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
 }
 type AuctionEventResolver interface {
 	AuctionStart(ctx context.Context, obj *v1.AuctionEvent) (string, error)
@@ -1337,6 +1339,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Asset.Decimals(childComplexity), true
+
+	case "Asset.globalRewardPoolAccount":
+		if e.complexity.Asset.GlobalRewardPoolAccount == nil {
+			break
+		}
+
+		return e.complexity.Asset.GlobalRewardPoolAccount(childComplexity), true
 
 	case "Asset.id":
 		if e.complexity.Asset.Id == nil {
@@ -5835,6 +5844,9 @@ type Asset {
 
   "The infrastructure fee account for this asset"
   infrastructureFeeAccount: Account!
+
+  "The global reward pool account for this asset"
+  globalRewardPoolAccount: Account!
 }
 
 "One of the possible asset sources"
@@ -9456,6 +9468,41 @@ func (ec *executionContext) _Asset_infrastructureFeeAccount(ctx context.Context,
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Asset().InfrastructureFeeAccount(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Account)
+	fc.Result = res
+	return ec.marshalNAccount2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAccount(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Asset_globalRewardPoolAccount(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Asset",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Asset().GlobalRewardPoolAccount(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -28913,6 +28960,20 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 					}
 				}()
 				res = ec._Asset_infrastructureFeeAccount(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "globalRewardPoolAccount":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Asset_globalRewardPoolAccount(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
