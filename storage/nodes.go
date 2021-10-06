@@ -97,6 +97,8 @@ func (ns *Node) AddDelegation(de pb.Delegation) {
 		node.delegationsPerEpochPerParty[de.GetEpochSeq()] = map[string]pb.Delegation{}
 	}
 
+	fmt.Printf("Adding Delegation for: %v -> %v \n", de.GetEpochSeq(), de.GetParty())
+
 	node.delegationsPerEpochPerParty[de.GetEpochSeq()][de.GetParty()] = de
 }
 
@@ -184,8 +186,11 @@ func (ns *Node) GetStakedTotal(epochID string) string {
 func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 	stakedByOperator := num.NewUint(0)
 	stakedByDelegates := num.NewUint(0)
+	pendingStake := num.NewUint(0)
 
 	var delegations []*pb.Delegation
+
+	fmt.Printf("Get delegation for node: %v, at epoch %v\n", n.n.Id, epochID)
 
 	if dPerParty, ok := n.delegationsPerEpochPerParty[epochID]; ok {
 		for _, d := range dPerParty {
@@ -223,6 +228,7 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 		StakedByOperator:  stakedByOperator.String(),
 		StakedByDelegates: stakedByDelegates.String(),
 		StakedTotal:       stakedTotal.String(),
+		PendingStake:      pendingStake.String(),
 		Name:              n.n.GetName(),
 		AvatarUrl:         n.n.GetAvatarUrl(),
 		Delegations:       delegations,
