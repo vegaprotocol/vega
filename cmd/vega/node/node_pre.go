@@ -104,7 +104,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
-	l.nodeWallets, err = nodewallet.GetNodeWallets(l.vegaPaths, l.nodeWalletPassphrase)
+	l.nodeWallets, err = nodewallets.GetNodeWallets(l.conf.NodeWallet, l.vegaPaths, l.nodeWalletPassphrase)
 	if err != nil {
 		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}
@@ -184,7 +184,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	return nil
 }
 
-func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallet.Commander) (*processor.App, error) {
+func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Commander) (*processor.App, error) {
 	app := processor.NewApp(
 		l.Log,
 		l.vegaPaths,
@@ -311,7 +311,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	commander, err := nodewallet.NewCommander(l.Log, nil, l.nodeWallets.Vega, l.stats)
+	commander, err := nodewallets.NewCommander(l.Log, nil, l.nodeWallets.Vega, l.stats)
 	if err != nil {
 		return err
 	}

@@ -48,7 +48,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	ctx := context.Background()
 
-	ethClient, err := ethclient.Dial(ctx, nodewallet.NewDefaultConfig().ETH.Address)
+	ethClient, err := ethclient.Dial(ctx, nodewallets.NewDefaultConfig().ETH.Address)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't initialise Ethereum client: %w", err)
 	}
@@ -79,13 +79,16 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	vegaPaths, _ := vgtesting.NewVegaPaths()
 	pass := vgrand.RandomStr(10)
-	if _, err := nodewallet.GenerateEthereumWallet(vegaPaths, pass, pass, false); err != nil {
+
+	config := nodewallets.NewDefaultConfig()
+
+	if _, err := nodewallets.GenerateEthereumWallet(config.ETH, vegaPaths, pass, pass, false); err != nil {
 		return nil, nil, err
 	}
-	if _, err := nodewallet.GenerateVegaWallet(vegaPaths, pass, pass, false); err != nil {
+	if _, err := nodewallets.GenerateVegaWallet(vegaPaths, pass, pass, false); err != nil {
 		return nil, nil, err
 	}
-	nw, err := nodewallet.GetNodeWallets(vegaPaths, pass)
+	nw, err := nodewallets.GetNodeWallets(config, vegaPaths, pass)
 	if err != nil {
 		return nil, nil, err
 	}

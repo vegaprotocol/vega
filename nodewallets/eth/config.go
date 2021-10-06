@@ -6,8 +6,9 @@ import (
 )
 
 type Config struct {
-	Level   encoding.LogLevel `long:"log-level"`
-	Address string            `long:"address"`
+	Level       encoding.LogLevel `long:"log-level"`
+	Address     string            `long:"address"`
+	ClefAddress string            `long:"clef-address" description:"Clef address of running Clef instance. Clef wallet is used if defined"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
