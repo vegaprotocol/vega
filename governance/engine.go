@@ -87,6 +87,10 @@ type Engine struct {
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
+
+	// snapshot state
+	gss             *governanceSnapshotState
+	keyToSerialiser map[string]func() ([]byte, error)
 }
 
 func NewEngine(
@@ -102,7 +106,7 @@ func NewEngine(
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
 
-	return &Engine{
+	e := &Engine{
 		Config:                 cfg,
 		accs:                   accs,
 		log:                    log,
@@ -113,7 +117,17 @@ func NewEngine(
 		broker:                 broker,
 		assets:                 assets,
 		netp:                   netp,
+		gss: &governanceSnapshotState{
+			changed:    map[string]bool{activeKey: true, enactedKey: true},
+			hash:       map[string][]byte{},
+			serialised: map[string][]byte{},
+		},
+		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
+
+	e.keyToSerialiser[activeKey] = e.serialiseActive
+	e.keyToSerialiser[enactedKey] = e.serialiseEnacted
+	return e
 }
 
 func (e *Engine) Hash() []byte {
@@ -208,9 +222,11 @@ func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
 		if p.State != proto.Proposal_STATE_PASSED {
 			startAuction = false
 		} else {
-			// this proposal needs to be included in the snapshot but we don't need to copy
+			// this proposal needs to be included in the checkpoint but we don't need to copy
 			// the proposal here, as it may reach the enacted state shortly
 			e.enactedProposals = append(e.enactedProposals, p)
+
+			e.gss.changed[enactedKey] = true
 		}
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
@@ -225,6 +241,8 @@ func (e *Engine) removeProposal(id string) {
 			copy(e.activeProposals[i:], e.activeProposals[i+1:])
 			e.activeProposals[len(e.activeProposals)-1] = nil
 			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
+
+			e.gss.changed[activeKey] = true
 			return
 		}
 	}
@@ -310,6 +328,10 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		}
 		// take a copy in the state just before the proposal was enacted
 		e.enactedProposals = append(e.enactedProposals, &prop)
+	}
+
+	if len(toBeEnacted) != 0 {
+		e.gss.changed[enactedKey] = true
 	}
 
 	// flush here for now
@@ -434,10 +456,13 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		no:           map[string]*types.Vote{},
 		invalidVotes: map[string]*types.Vote{},
 	})
+
+	e.gss.changed[activeKey] = true
 }
 
 func (e *Engine) startValidatedProposal(p *proposal) {
 	e.activeProposals = append(e.activeProposals, p)
+	e.gss.changed[activeKey] = true
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
