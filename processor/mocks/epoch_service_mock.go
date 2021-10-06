@@ -45,3 +45,15 @@ func (mr *MockEpochServiceMockRecorder) NotifyOnEpoch(arg0 interface{}) *gomock.
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyOnEpoch", reflect.TypeOf((*MockEpochService)(nil).NotifyOnEpoch), arg0)
 }
+
+// OnBlockEnd mocks base method
+func (m *MockEpochService) OnBlockEnd(arg0 context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "OnBlockEnd", arg0)
+}
+
+// OnBlockEnd indicates an expected call of OnBlockEnd
+func (mr *MockEpochServiceMockRecorder) OnBlockEnd(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnBlockEnd", reflect.TypeOf((*MockEpochService)(nil).OnBlockEnd), arg0)
+}

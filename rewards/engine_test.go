@@ -391,8 +391,8 @@ func testOnChainTimeUpdateNoPayoutsToSend(t *testing.T) {
 	payoutTime1 := now.Add(10 * time.Second)
 	payoutTime2 := now.Add(20 * time.Second)
 
-	engine.pendingPayouts[payoutTime1] = []*payout{&payout{}}
-	engine.pendingPayouts[payoutTime2] = []*payout{&payout{}}
+	engine.pendingPayouts[payoutTime1] = []*payout{{}}
+	engine.pendingPayouts[payoutTime2] = []*payout{{}}
 
 	testEngine.engine.onChainTimeUpdate(context.Background(), now)
 

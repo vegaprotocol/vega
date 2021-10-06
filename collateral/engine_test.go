@@ -124,7 +124,7 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 	defer eng.Finish()
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),
 				Asset:  "ETH",
@@ -154,7 +154,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Owner: "party1",
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),

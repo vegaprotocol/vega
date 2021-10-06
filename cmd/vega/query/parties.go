@@ -12,7 +12,7 @@ type PartiesCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *PartiesCmd) Execute(params []string) error {
+func (opts *PartiesCmd) Execute(_ []string) error {
 	req := apipb.ListPartiesRequest{}
 	return getPrintParties(opts.NodeAddress, &req)
 }
