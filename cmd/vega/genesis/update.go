@@ -6,19 +6,24 @@ import (
 	"fmt"
 	"os"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/genesis"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 
+	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	"github.com/tendermint/tendermint/types"
 )
 
 type updateCmd struct {
+	Config nodewallets.Config
+
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
@@ -35,7 +40,13 @@ func (opts *updateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
+	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	vegaKey, ethAddress, walletID, err := loadNodeWalletPubKey(opts.Config, vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -48,10 +59,13 @@ func (opts *updateCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
 	genesisState := genesis.DefaultGenesisState()
 	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
+		ID:              walletID,
 		VegaPubKey:      vegaKey,
 		EthereumAddress: ethAddress,
+		TmPubKey:        b64TmPubKey,
 	}
 
 	if len(opts.Network) != 0 {

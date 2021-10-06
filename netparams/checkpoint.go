@@ -11,11 +11,6 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type vidx struct {
-	key string
-	idx int
-}
-
 func (s *Store) Name() types.CheckpointName {
 	return types.NetParamsCheckpoint
 }
@@ -25,36 +20,25 @@ func (s *Store) Checkpoint() ([]byte, error) {
 	params := snapshot.NetParams{
 		Params: make([]*vega.NetworkParameter, 0, len(s.store)),
 	}
-	keys := make([]vidx, 0, len(s.store))
-	// already convert to string when traversing store here
-	// so creating the sorted output is more efficient
-	vals := make([]string, 0, len(s.store))
 	for k, v := range s.store {
-		keys = append(keys, vidx{
-			key: k,
-			idx: len(vals), // len(vals) == idx of value for key k
+		params.Params = append(params.Params, &vega.NetworkParameter{
+			Key:   k,
+			Value: v.String(),
 		})
-		vals = append(vals, v.String())
 	}
 	s.mu.RUnlock()
 	// no net params, we can stop here
-	if len(vals) == 0 {
+	if len(params.Params) == 0 {
 		return nil, nil
 	}
 	// sort the keys
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i].key < keys[j].key
+	sort.Slice(params.Params, func(i, j int) bool {
+		return params.Params[i].Key < params.Params[j].Key
 	})
-	for _, k := range keys {
-		params.Params = append(params.Params, &vega.NetworkParameter{
-			Key:   k.key,
-			Value: vals[k.idx],
-		})
-	}
 	return proto.Marshal(&params)
 }
 
-func (s *Store) Load(data []byte) error {
+func (s *Store) Load(_ context.Context, data []byte) error {
 	params := &snapshot.NetParams{}
 	if err := proto.Unmarshal(data, params); err != nil {
 		return err

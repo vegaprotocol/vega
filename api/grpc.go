@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	protoapi "code.vegaprotocol.io/protos/vega/api"
+	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -43,7 +43,7 @@ type EvtForwarder interface {
 // Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/api  Blockchain
 type Blockchain interface {
-	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionV2Request_Type) error
+	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionRequest_Type) error
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
@@ -69,7 +69,7 @@ type GRPC struct {
 	ctx   context.Context
 	cfunc context.CancelFunc
 
-	trading *tradingService
+	core *coreService
 
 	services []func(*grpc.Server)
 }
@@ -122,7 +122,7 @@ func (g *GRPC) ReloadConf(cfg Config) {
 	// TODO(): not updating the the actual server for now, may need to look at this later
 	// e.g restart the http server on another port or whatever
 	g.Config = cfg
-	g.trading.updateConfig(cfg)
+	g.core.updateConfig(cfg)
 }
 
 func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
@@ -189,7 +189,7 @@ func (g *GRPC) Start() {
 	intercept := grpc.UnaryInterceptor(remoteAddrInterceptor(g.log))
 	g.srv = grpc.NewServer(intercept)
 
-	tradingSvc := &tradingService{
+	coreSvc := &coreService{
 		log:           g.log,
 		conf:          g.Config,
 		blockchain:    g.client,
@@ -199,14 +199,14 @@ func (g *GRPC) Start() {
 		evtForwarder:  g.evtfwd,
 		eventService:  g.evtService,
 	}
-	g.trading = tradingSvc
-	protoapi.RegisterTradingServiceServer(g.srv, tradingSvc)
+	g.core = coreSvc
+	protoapi.RegisterCoreServiceServer(g.srv, coreSvc)
 
 	for _, f := range g.services {
 		f(g.srv)
 	}
 
-	go g.trading.updateNetInfo(g.ctx)
+	go g.core.updateNetInfo(g.ctx)
 
 	err = g.srv.Serve(lis)
 	if err != nil {

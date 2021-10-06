@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/oracles"
 )
 
@@ -16,31 +17,32 @@ var (
 // Adaptor represents an oracle adaptor that consumes and normalises data from
 // a specific type of oracle.
 type Adaptor interface {
-	Normalise([]byte) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKey, []byte) (*oracles.OracleData, error)
 }
 
 // Adaptors normalises the input data into an oracles.OracleData according to
 // its source.
 type Adaptors struct {
-	// holds all the supported Adaptor⸱s by source.
-	adaptors map[commandspb.OracleDataSubmission_OracleSource]Adaptor
+	// Adaptors holds all the supported Adaptors sorted by source.
+	Adaptors map[commandspb.OracleDataSubmission_OracleSource]Adaptor
 }
 
 // New creates an Adaptors with all the supported oracle Adaptor.
 func New() *Adaptors {
 	return &Adaptors{
-		adaptors: map[commandspb.OracleDataSubmission_OracleSource]Adaptor{
+		Adaptors: map[commandspb.OracleDataSubmission_OracleSource]Adaptor{
 			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: NewOpenOracleAdaptor(),
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        NewJSONAdaptor(),
 		},
 	}
 }
 
 // Normalise normalises the input data into an oracles.OracleData based on its source.
-func (a *Adaptors) Normalise(data commandspb.OracleDataSubmission) (*oracles.OracleData, error) {
-	adaptor, ok := a.adaptors[data.Source]
+func (a *Adaptors) Normalise(txPubKey crypto.PublicKey, data commandspb.OracleDataSubmission) (*oracles.OracleData, error) {
+	adaptor, ok := a.Adaptors[data.Source]
 	if !ok {
 		return nil, ErrUnknownOracleSource
 	}
 
-	return adaptor.Normalise(data.Payload)
+	return adaptor.Normalise(txPubKey, data.Payload)
 }

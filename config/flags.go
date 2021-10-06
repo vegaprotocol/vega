@@ -1,26 +1,61 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"strings"
 
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
+	vgos "code.vegaprotocol.io/vega/libs/os"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Empty is used when a command or sub-command receives no argument and has no execution.
 type Empty struct{}
 
-type RootPathFlag struct {
-	RootPath string `short:"r" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_CONFIG"`
-	VegaHome string `long:"home" description:"Path to the custom home for vega"`
+var (
+	supportedOutputs = []string{
+		"json",
+		"human",
+	}
+)
+
+type OutputFlag struct {
+	Output Output `long:"output" description:"Specify the output format: json,human" default:"human" required:"true"`
 }
 
-func NewRootPathFlag() RootPathFlag {
-	return RootPathFlag{
-		RootPath: vgfs.DefaultVegaDir(),
+func (f OutputFlag) GetOutput() (Output, error) {
+	outputStr := string(f.Output)
+	if !isSupportedOutput(outputStr) {
+		return "", fmt.Errorf("unsupported output \"%s\"", outputStr)
 	}
+	if f.Output == "human" && vgos.HasNoTTY() {
+		return "", errors.New("output \"human\" is not script-friendly, use \"json\" instead")
+	}
+	return f.Output, nil
+}
+
+func isSupportedOutput(output string) bool {
+	for _, o := range supportedOutputs {
+		if output == o {
+			return true
+		}
+	}
+	return false
+}
+
+type Output string
+
+func (o Output) IsHuman() bool {
+	return string(o) == "human"
+}
+
+func (o Output) IsJSON() bool {
+	return string(o) == "json"
+}
+
+type VegaHomeFlag struct {
+	VegaHome string `long:"home" description:"Path to the custom home for vega"`
 }
 
 type PassphraseFlag struct {
@@ -31,6 +66,9 @@ type Passphrase string
 
 func (p Passphrase) Get(prompt string) (string, error) {
 	if len(p) == 0 {
+		if vgos.HasNoTTY() {
+			return "", errors.New("passphrase-file flag required without TTY")
+		}
 		return p.getFromUser(prompt)
 	}
 
@@ -38,7 +76,7 @@ func (p Passphrase) Get(prompt string) (string, error) {
 }
 
 func (p Passphrase) getFromUser(prompt string) (string, error) {
-	fmt.Printf("please enter %s passphrase:", prompt)
+	fmt.Printf("Enter %s passphrase:", prompt)
 	password, err := terminal.ReadPassword(0)
 	fmt.Printf("\n")
 	if err != nil {
@@ -55,4 +93,30 @@ func (p Passphrase) getFromFile(path string) (string, error) {
 	}
 
 	return strings.TrimRight(string(buf), "\n"), nil
+}
+
+type PromptString string
+
+// Get returns a string if set or prompts user otherwise
+func (p PromptString) Get(prompt, name string) (string, error) {
+	if len(p) == 0 {
+		if vgos.HasNoTTY() {
+			return "", fmt.Errorf("%s flag required without TTY", name)
+		}
+		return p.getFromUser(prompt)
+	}
+
+	return string(p), nil
+}
+
+func (p PromptString) getFromUser(prompt string) (string, error) {
+	var s string
+	fmt.Printf("Enter %s:", prompt)
+	_, err := fmt.Scanf("%s", &s)
+	fmt.Printf("\n")
+	if err != nil {
+		return "", fmt.Errorf("failed read the input: %w", err)
+	}
+
+	return s, nil
 }

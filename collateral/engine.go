@@ -80,6 +80,8 @@ type Engine struct {
 
 	// asset ID to asset
 	enabledAssets map[string]types.Asset
+	// snapshot stuff
+	state *accState
 }
 
 // New instantiates a new collateral engine
@@ -97,6 +99,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
+		state:         newAccState(),
 	}
 }
 
@@ -104,26 +107,6 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine
 // in order to be called when the chain time is updated (basically EndBlock)
 func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 	e.currentTime = t.UnixNano()
-}
-
-func (e *Engine) HasBalance(party string) bool {
-	// FIXME(): we temporary just want to make
-	// accs, ok := e.partiesAccs[party]
-	// sure that the party ever deposited at least
-	// once
-	// if !ok {
-	// 	return false
-	// }
-
-	// for _, acc := range accs {
-	// 	if acc.Balance > 0 {
-	// 		return true
-	// 	}
-	// }
-
-	// return false
-	_, ok := e.partiesAccs[party]
-	return ok
 }
 
 func (e *Engine) addPartyAccount(party, accid string, acc *types.Account) {
@@ -163,6 +146,7 @@ func (e *Engine) removeAccountFromHashableSlice(id string) {
 
 	copy(e.hashableAccs[i:], e.hashableAccs[i+1:])
 	e.hashableAccs = e.hashableAccs[:len(e.hashableAccs)-1]
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
@@ -179,6 +163,7 @@ func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
 	e.hashableAccs = append(e.hashableAccs, nil)
 	copy(e.hashableAccs[i+1:], e.hashableAccs[i:])
 	e.hashableAccs[i] = acc
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) Hash() []byte {
@@ -218,6 +203,8 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.enabledAssets[asset.ID] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// update state
+	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
 	infraFeeID := e.accountID("", "", asset.ID, types.AccountTypeFeesInfrastructure)
@@ -1483,15 +1470,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		}
 		req.Amount = p.Amount.Amount.Clone()
 		req.MinAmount = p.MinAmount.Clone()
-	case types.TransferTypeWithdrawLock:
-		req.FromAccount = []*types.Account{
-			mEvt.general,
-		}
-		req.ToAccount = []*types.Account{
-			mEvt.lock,
-		}
-		req.Amount = p.Amount.Amount.Clone()
-		req.MinAmount = p.Amount.Amount.Clone()
 	case types.TransferTypeDeposit:
 		// ensure we have the funds req.ToAccount deposit
 		eacc.Balance = eacc.Balance.Add(eacc.Balance, p.Amount.Amount)
@@ -1520,14 +1498,13 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 		req.MinAmount = p.Amount.Amount.Clone()
 	case types.TransferTypeWithdraw:
 		req.FromAccount = []*types.Account{
-			mEvt.lock,
+			mEvt.general,
 		}
 		req.ToAccount = []*types.Account{
 			eacc,
 		}
 		req.Amount = p.Amount.Amount.Clone()
 		req.MinAmount = p.Amount.Amount.Clone()
-
 	case types.TransferTypeRewardPayout:
 		rewardAcct, err := e.GetGlobalRewardAccount(asset)
 		if err != nil {
@@ -1784,21 +1761,29 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	}
 
 	// add the global account
-	insuranceAccounts = append(insuranceAccounts, e.GetAssetInsurancePoolAccount(asset))
+	// can't fail at this point, if the market exists, the asset exists,
+	// so this exists too
+	globalInsurancePool, _ := e.GetAssetInsurancePoolAccount(asset)
+	insuranceAccounts = append(insuranceAccounts, globalInsurancePool)
 
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
 	req.Amount = marketInsuranceAcc.Balance.Clone()
-	insuranceledgerEntries, err := e.getLedgerEntries(ctx, req)
+	insuranceLedgerEntries, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
 		e.log.Panic("unable to redistribute market insurance funds", logging.Error(err))
 	}
-	for _, acc := range insuranceAccounts {
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	for _, bal := range insuranceLedgerEntries.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return nil, err
+		}
 	}
 
-	return append(resps, insuranceledgerEntries), nil
+	return append(resps, insuranceLedgerEntries), nil
 }
 
 func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) bool {
@@ -1954,35 +1939,6 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 	}
 
 	return generalID, nil
-}
-
-// GetOrCreatePartyLockWithdrawAccount gets or creates an account to lock funds to be withdrawn by a party
-func (e *Engine) GetOrCreatePartyLockWithdrawAccount(ctx context.Context, partyID, asset string) (*types.Account, error) {
-	if !e.AssetExists(asset) {
-		return nil, ErrInvalidAssetID
-	}
-
-	id := e.accountID(noMarket, partyID, asset, types.AccountTypeLockWithdraw)
-	var (
-		acc *types.Account
-		ok  bool
-	)
-	if acc, ok = e.accs[id]; !ok {
-		acc = &types.Account{
-			ID:       id,
-			Asset:    asset,
-			MarketID: noMarket,
-			Balance:  num.Zero(),
-			Owner:    partyID,
-			Type:     types.AccountTypeLockWithdraw,
-		}
-		e.accs[id] = acc
-		e.addPartyAccount(partyID, id, acc)
-		e.addAccountToHashableSlice(acc)
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
-	}
-
-	return acc, nil
 }
 
 // RemoveDistressed will remove all distressed party in the event positions
@@ -2187,67 +2143,18 @@ func (e *Engine) HasGeneralAccount(party, asset string) bool {
 	return err == nil
 }
 
-// LockFundsForWithdraw will lock funds in a separate account to be withdrawn later on by the party
-func (e *Engine) LockFundsForWithdraw(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error) {
-	if !e.AssetExists(asset) {
-		return nil, ErrInvalidAssetID
-	}
-	genacc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeGeneral))
-	if err != nil {
-		return nil, ErrAccountDoesNotExist
-	}
-	if amount.GT(genacc.Balance) {
-		return nil, ErrNotEnoughFundsToWithdraw
-	}
-	lacc, err := e.GetOrCreatePartyLockWithdrawAccount(ctx, partyID, asset)
-	if err != nil {
-		return nil, err
-	}
-	// @TODO ensure this is safe, the balances are pointers here!
-	mEvt := marginUpdate{
-		general: genacc,
-		lock:    lacc,
-	}
-	transf := types.Transfer{
-		Owner: partyID,
-		Amount: &types.FinancialAmount{
-			Amount: amount,
-			Asset:  asset,
-		},
-		Type:      types.TransferTypeWithdrawLock,
-		MinAmount: amount,
-	}
-	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
-	if err != nil {
-		return nil, err
-	}
-	res, err := e.getLedgerEntries(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	// ensure events are sent
-	for _, bal := range res.Balances {
-		if err := e.UpdateBalance(ctx, bal.Account.ID, bal.Account.Balance); err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
 // Withdraw will remove the specified amount from the party
 // general account
 func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
 	}
-	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeLockWithdraw))
+	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeGeneral))
 	if err != nil {
 		return nil, ErrAccountDoesNotExist
 	}
-
-	// check we have more money than required to withdraw
-	if acc.Balance.LT(amount) {
-		return nil, fmt.Errorf("withdraw error, required=%v, available=%v", amount, acc.Balance)
+	if amount.GT(acc.Balance) {
+		return nil, ErrNotEnoughFundsToWithdraw
 	}
 
 	transf := types.Transfer{
@@ -2261,7 +2168,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	}
 	// @TODO ensure this is safe!
 	mEvt := marginUpdate{
-		lock: acc,
+		general: acc,
 	}
 	req, err := e.getTransferRequest(ctx, &transf, nil, nil, &mEvt)
 	if err != nil {
@@ -2339,7 +2246,9 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance.Set(balance)
+	// update
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2354,6 +2263,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 	}
 	acc.Balance.AddSum(inc)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2368,6 +2278,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 	}
 	acc.Balance.Sub(acc.Balance, dec)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2432,10 +2343,9 @@ func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Acc
 }
 
 // GetAssetInsurancePoolAccount returns the global insurance account for the asset
-func (e *Engine) GetAssetInsurancePoolAccount(asset string) *types.Account {
+func (e *Engine) GetAssetInsurancePoolAccount(asset string) (*types.Account, error) {
 	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance)
-	globalInsuranceAcc := e.accs[globalInsuranceID]
-	return globalInsuranceAcc
+	return e.GetAccountByID(globalInsuranceID)
 }
 
 func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {

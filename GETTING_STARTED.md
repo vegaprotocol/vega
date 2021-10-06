@@ -122,16 +122,11 @@ Install the binary somewhere on `$PATH`. If needed, see also the
   ```bash
   vega init -f
   ```
-this will trigger a password prompt which will be used to encrypt your vega nodewallet.
+this will trigger a password prompt which will be used to encrypt your vega node wallets.
 
 If used in automation you can specify a file containing the password:
 ```bash
-vega init -f --nodewallet-password="path/to/file"
-```
-
-you can also generate dev usage wallet for all vega supported foreign chains:
-```bash
-vega init -f --gen-dev-nodewallet
+vega init -f
 ```
 
 * To remove Vega store content then run a Vega node, use:
@@ -143,7 +138,7 @@ vega init -f --gen-dev-nodewallet
 
 If used in automation you can specify a file containing the password:
 ```bash
-vega node --nodewallet-password="path/to/file"
+vega node --nodewallet-passphrase-file="path/to/file"
 ```
 
 ## Running Tendermint

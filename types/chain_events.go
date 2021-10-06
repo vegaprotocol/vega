@@ -19,18 +19,18 @@ type ChainEvent_Validator = commandspb.ChainEvent_Validator
 type BuiltinAssetEvent_Deposit = proto.BuiltinAssetEvent_Deposit
 type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
 
-type Withdrawal_Status = proto.Withdrawal_Status
+type WithdrawalStatus = proto.Withdrawal_Status
 
 const (
-	// Withdrawal_STATUS_UNSPECIFIED Default value, always invalid
-	Withdrawal_STATUS_UNSPECIFIED Withdrawal_Status = 0
-	// Withdrawal_STATUS_OPEN The withdrawal is open and being processed by the network
-	Withdrawal_STATUS_OPEN Withdrawal_Status = 1
-	// Withdrawal_STATUS_CANCELLED The withdrawal have been cancelled
-	Withdrawal_STATUS_CANCELLED Withdrawal_Status = 2
-	// Withdrawal_STATUS_FINALIZED The withdrawal went through and is fully finalised, the funds are removed from the
+	// WithdrawalStatusUnspecified Default value, always invalid
+	WithdrawalStatusUnspecified WithdrawalStatus = 0
+	// WithdrawalStatusOpen The withdrawal is open and being processed by the network
+	WithdrawalStatusOpen WithdrawalStatus = 1
+	// WithdrawalStatusCancelled The withdrawal have been cancelled
+	WithdrawalStatusCancelled WithdrawalStatus = 2
+	// WithdrawalStatusFinalized The withdrawal went through and is fully finalised, the funds are removed from the
 	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network
-	Withdrawal_STATUS_FINALIZED Withdrawal_Status = 3
+	WithdrawalStatusFinalized WithdrawalStatus = 3
 )
 
 type Withdrawal struct {
@@ -43,7 +43,7 @@ type Withdrawal struct {
 	// Asset The asset we want to withdraw funds from
 	Asset string
 	// Status The status of the withdrawal
-	Status Withdrawal_Status
+	Status WithdrawalStatus
 	// Ref The reference which is used by the foreign chain
 	// to refer to this withdrawal
 	Ref string
@@ -75,17 +75,34 @@ func (w *Withdrawal) IntoProto() *proto.Withdrawal {
 	}
 }
 
-type Deposit_Status = proto.Deposit_Status
+func WithdrawalFromProto(w *proto.Withdrawal) *Withdrawal {
+	amt, _ := num.UintFromString(w.Amount, 10)
+	return &Withdrawal{
+		ID:             w.Id,
+		PartyID:        w.PartyId,
+		Amount:         amt,
+		Asset:          w.Asset,
+		Status:         w.Status,
+		Ref:            w.Ref,
+		TxHash:         w.TxHash,
+		ExpirationDate: w.Expiry,
+		CreationDate:   w.CreatedTimestamp,
+		WithdrawalDate: w.WithdrawnTimestamp,
+		Ext:            w.Ext,
+	}
+}
+
+type DepositStatus = proto.Deposit_Status
 
 const (
-	// Deposit_STATUS_UNSPECIFIED Default value, always invalid
-	Deposit_STATUS_UNSPECIFIED Deposit_Status = 0
-	// Deposit_STATUS_OPEN The deposit is being processed by the network
-	Deposit_STATUS_OPEN Deposit_Status = 1
-	// Deposit_STATUS_CANCELLED The deposit has been cancelled by the network
-	Deposit_STATUS_CANCELLED Deposit_Status = 2
-	// Deposit_STATUS_FINALIZED The deposit has been finalised and accounts have been updated
-	Deposit_STATUS_FINALIZED Deposit_Status = 3
+	// DepositStatusUnspecified Default value, always invalid
+	DepositStatusUnspecified DepositStatus = 0
+	// DepositStatusOpen The deposit is being processed by the network
+	DepositStatusOpen DepositStatus = 1
+	// DepositStatusCancelled The deposit has been cancelled by the network
+	DepositStatusCancelled DepositStatus = 2
+	// DepositStatusFinalized The deposit has been finalised and accounts have been updated
+	DepositStatusFinalized DepositStatus = 3
 )
 
 // Deposit represent a deposit on to the Vega network
@@ -93,7 +110,7 @@ type Deposit struct {
 	// ID Unique identifier for the deposit
 	ID string
 	// Status of the deposit
-	Status Deposit_Status
+	Status DepositStatus
 	// Party identifier of the user initiating the deposit
 	PartyID string
 	// Asset The Vega asset targeted by this deposit
@@ -118,6 +135,20 @@ func (d *Deposit) IntoProto() *proto.Deposit {
 		TxHash:            d.TxHash,
 		CreditedTimestamp: d.CreditDate,
 		CreatedTimestamp:  d.CreationDate,
+	}
+}
+
+func DepositFromProto(d *proto.Deposit) *Deposit {
+	amt, _ := num.UintFromString(d.Amount, 10)
+	return &Deposit{
+		ID:           d.Id,
+		Status:       d.Status,
+		PartyID:      d.PartyId,
+		Asset:        d.Asset,
+		Amount:       amt,
+		TxHash:       d.TxHash,
+		CreditDate:   d.CreditedTimestamp,
+		CreationDate: d.CreatedTimestamp,
 	}
 }
 

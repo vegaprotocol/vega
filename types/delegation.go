@@ -3,9 +3,36 @@ package types
 import (
 	"errors"
 
+	"code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+type Delegation struct {
+	Party    string
+	NodeID   string
+	Amount   *num.Uint
+	EpochSeq string
+}
+
+func DelegationFromProto(d *vega.Delegation) *Delegation {
+	amt, _ := num.UintFromString(d.Amount, 10)
+	return &Delegation{
+		Party:    d.Party,
+		NodeID:   d.NodeId,
+		Amount:   amt,
+		EpochSeq: d.EpochSeq,
+	}
+}
+
+func (d Delegation) IntoProto() *vega.Delegation {
+	return &vega.Delegation{
+		Party:    d.Party,
+		NodeId:   d.NodeID,
+		Amount:   num.UintToString(d.Amount),
+		EpochSeq: d.EpochSeq,
+	}
+}
 
 type Delegate struct {
 	NodeID string
