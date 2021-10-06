@@ -10,14 +10,14 @@ import (
 )
 
 var (
-	activeKey  = (&types.PayloadGovernanceActive{}).Key()
-	enactedKey = (&types.PayloadGovernanceEnacted{}).Key()
-	nodeKey    = (&types.PayloadGovernanceNode{}).Key()
+	activeKey         = (&types.PayloadGovernanceActive{}).Key()
+	enactedKey        = (&types.PayloadGovernanceEnacted{}).Key()
+	nodeValidationKey = (&types.PayloadGovernanceNode{}).Key()
 
 	hashKeys = []string{
 		activeKey,
 		enactedKey,
-		nodeKey,
+		nodeValidationKey,
 	}
 )
 
@@ -27,17 +27,8 @@ type governanceSnapshotState struct {
 	changed    map[string]bool
 }
 
-func sortedVotes(votes map[string]*types.Vote) []*types.Vote {
-	ret := make([]*types.Vote, 0, len(votes))
-	for _, v := range votes {
-		ret = append(ret, v)
-	}
-
-	sort.SliceStable(ret, func(i, j int) bool { return ret[i].PartyID < ret[j].PartyID })
-	return ret
-}
-
-func (e *Engine) serialiseActive() ([]byte, error) {
+// serialiseActiveProposals returns the engine's active proposals as marshalled bytes
+func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 
 	if !e.gss.changed[activeKey] {
 		return nil, nil
@@ -48,9 +39,9 @@ func (e *Engine) serialiseActive() ([]byte, error) {
 
 		pp := &types.PendingProposal{
 			Proposal: p.Proposal,
-			Yes:      sortedVotes(p.yes),
-			No:       sortedVotes(p.no),
-			Invalid:  sortedVotes(p.invalidVotes),
+			Yes:      votesAsSlice(p.yes),
+			No:       votesAsSlice(p.no),
+			Invalid:  votesAsSlice(p.invalidVotes),
 		}
 		pending = append(pending, pp)
 	}
@@ -67,7 +58,8 @@ func (e *Engine) serialiseActive() ([]byte, error) {
 
 }
 
-func (e *Engine) serialiseEnacted() ([]byte, error) {
+// serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes
+func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 
 	if !e.gss.changed[enactedKey] {
 		return nil, nil
@@ -83,9 +75,10 @@ func (e *Engine) serialiseEnacted() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-func (e *Engine) serialiseNode() ([]byte, error) {
+// serialiseNodeProposals returns the engine's proposals waiting for node validation
+func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 
-	if !e.gss.changed[nodeKey] {
+	if !e.gss.changed[nodeValidationKey] {
 		return nil, nil
 	}
 
@@ -172,26 +165,26 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadGovernanceActive:
-		return e.restoreActive(pl.GovernanceActive)
+		return e.restoreActiveProposals(pl.GovernanceActive)
 	case *types.PayloadGovernanceEnacted:
-		return e.restoreEnacted(pl.GovernanceEnacted)
+		return e.restoreEnactedProposals(pl.GovernanceEnacted)
 	case *types.PayloadGovernanceNode:
-		return e.restoreNode(pl.GovernanceNode)
+		return e.restoreNodeProposals(pl.GovernanceNode)
 	default:
 		return types.ErrUnknownSnapshotType
 	}
 }
 
-func (e *Engine) restoreActive(active *types.GovernanceActive) error {
+func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {
 
 	e.activeProposals = make([]*proposal, 0, len(active.Proposals))
 	for _, p := range active.Proposals {
 
 		pp := &proposal{
 			Proposal:     p.Proposal,
-			yes:          unpackVotes(p.Yes),
-			no:           unpackVotes(p.No),
-			invalidVotes: unpackVotes(p.Invalid),
+			yes:          votesAsMap(p.Yes),
+			no:           votesAsMap(p.No),
+			invalidVotes: votesAsMap(p.Invalid),
 		}
 
 		e.activeProposals = append(e.activeProposals, pp)
@@ -201,22 +194,33 @@ func (e *Engine) restoreActive(active *types.GovernanceActive) error {
 	return nil
 }
 
-func (e *Engine) restoreEnacted(enacted *types.GovernanceEnacted) error {
+func (e *Engine) restoreEnactedProposals(enacted *types.GovernanceEnacted) error {
 	e.enactedProposals = enacted.Proposals[:]
 	e.gss.changed[enactedKey] = true
 	return nil
 }
 
-func (e *Engine) restoreNode(node *types.GovernanceNode) error {
+func (e *Engine) restoreNodeProposals(node *types.GovernanceNode) error {
 
 	for _, p := range node.Proposals {
 		e.nodeProposalValidation.Start(p)
 	}
-	e.gss.changed[nodeKey] = true
+	e.gss.changed[nodeValidationKey] = true
 	return nil
 }
 
-func unpackVotes(votes []*types.Vote) map[string]*types.Vote {
+// votesAsSlice returns a sorted slice of votes from a given map of votes
+func votesAsSlice(votes map[string]*types.Vote) []*types.Vote {
+	ret := make([]*types.Vote, 0, len(votes))
+	for _, v := range votes {
+		ret = append(ret, v)
+	}
+	sort.SliceStable(ret, func(i, j int) bool { return ret[i].PartyID < ret[j].PartyID })
+	return ret
+}
+
+// votesAsMap returns an partyID => Vote map from the given slice of votes
+func votesAsMap(votes []*types.Vote) map[string]*types.Vote {
 	r := make(map[string]*types.Vote, len(votes))
 	for _, v := range votes {
 		r[v.PartyID] = v
