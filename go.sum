@@ -23,6 +23,8 @@ code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:
 code.vegaprotocol.io/protos v0.43.1-0.20211004102311-d2ad34ada37b/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/protos v0.43.1-0.20211005180140-7218fdcde17d h1:rU0LA2Qd1epCgEZcRZOySg6urbiNWRmwhFlWMPo9nO8=
 code.vegaprotocol.io/protos v0.43.1-0.20211005180140-7218fdcde17d/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+code.vegaprotocol.io/protos v0.43.1-0.20211005185953-7043d8a0f7da h1:AsUafV5xaVvJ+bY4cS724t/Zm+W5Sq5hBD1rUiQEpyw=
+code.vegaprotocol.io/protos v0.43.1-0.20211005185953-7043d8a0f7da/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20210907092733-405b656c2f5b/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=

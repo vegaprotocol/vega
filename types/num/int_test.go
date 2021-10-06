@@ -253,4 +253,12 @@ func TestIntFromString(t *testing.T) {
 	n, overflow = num.IntFromString("0", 10)
 	assert.False(t, overflow)
 	assert.Equal(t, "0", n.String())
+
+	n, overflow = num.IntFromString("1000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
+	assert.True(t, overflow)
+	assert.Equal(t, "0", n.String())
+
+	n, overflow = num.IntFromString("-1000000000000000000000000000000000000000000000000000000000000000000000000000000", 10)
+	assert.True(t, overflow)
+	assert.Equal(t, "0", n.String())
 }

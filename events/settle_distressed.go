@@ -75,8 +75,13 @@ func (s SettleDistressed) StreamMessage() *eventspb.BusEvent {
 
 func SettleDistressedEventFromStream(ctx context.Context, be *eventspb.BusEvent) *SettleDistressed {
 	sd := be.GetSettleDistressed()
-	sdMargin, _ := num.UintFromString(sd.Margin, 10)
-	sdPrice, _ := num.UintFromString(sd.Price, 10)
+	sdMargin, marginOverflow := num.UintFromString(sd.Margin, 10)
+	sdPrice, priceOverflow := num.UintFromString(sd.Price, 10)
+
+	if marginOverflow || priceOverflow {
+		return nil
+	}
+
 	return &SettleDistressed{
 		Base:     newBaseFromStream(ctx, SettleDistressedEvent, be),
 		partyID:  sd.PartyId,
