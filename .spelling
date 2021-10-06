@@ -17,6 +17,7 @@ Buf
 CGO
 CI
 Cleanup
+clef
 codegen
 cyclomatic
 datestamps
@@ -44,6 +45,7 @@ GraphQL
 gRPC
 hardcoded
 hotfix
+IDGenerator
 Ilya
 int
 init
