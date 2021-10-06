@@ -120,40 +120,84 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 
 }
 
+func TestGovernanceSnapshotNodeProposal(t *testing.T) {
+	nodeKey := (&types.PayloadGovernanceNode{}).Key()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// get snapshot hash for active proposals
+	emptyHash, err := eng.GetHash(nodeKey)
+	require.Nil(t, err)
+
+	// Submit a proposal
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newOpenAssetProposal(party.Id, time.Now())
+
+	eng.expectSendWaitingForNodeVoteProposalEvent(t, party, proposal)
+	eng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes()
+	eng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+
+	// submit new asset proposal
+	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
+	require.Nil(t, err)
+
+	// get snapshot hash for node proposals and hope its changed
+	h1, err := eng.GetHash(nodeKey)
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(emptyHash, h1))
+
+	// Get snapshot payload
+	state, err := eng.GetState(nodeKey)
+	require.Nil(t, err)
+
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(state, snap)
+	require.Nil(t, err)
+
+	snapEng := getTestEngine(t)
+	defer snapEng.ctrl.Finish()
+
+	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
+	snapEng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+
+	// Load snapshot into a new engine
+	err = snapEng.LoadState(
+		types.PayloadFromProto(snap),
+	)
+	require.Nil(t, err)
+
+	h2, err := snapEng.GetHash(nodeKey)
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(h1, h2))
+
+}
+
 func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	activeKey := (&types.PayloadGovernanceActive{}).Key()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
 	// initial state
-	h, err := eng.GetHash(activeKey)
+	emptyHash, err := eng.GetHash(activeKey)
 	require.Nil(t, err)
 
 	proposer := eng.newValidParty("proposer", 1)
-	//voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
-	//voter2 := eng.newValidPartyTimes("voter2", 1, 0)
 	proposal := eng.newOpenProposal(proposer.Id, time.Now())
-	proposal2 := eng.newOpenProposal(proposer.Id, time.Now())
 	ctx := context.Background()
 
-	// setup
-	//eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
-	//	Return(num.NewUint(9))
 	eng.expectAnyAsset()
 	eng.expectSendOpenProposalEvent(t, proposer, proposal)
 
 	_, err = eng.SubmitProposal(ctx, *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer.Id)
 	assert.Nil(t, err)
 
-	_, err = eng.SubmitProposal(ctx, *types.ProposalSubmissionFromProposal(&proposal2), proposal2.ID, proposer.Id)
-	assert.Nil(t, err)
-
-	h2, err := eng.GetHash(activeKey)
+	h1, err := eng.GetHash(activeKey)
 	require.Nil(t, err)
-	assert.False(t, bytes.Equal(h, h2))
+	assert.False(t, bytes.Equal(emptyHash, h1))
 
-	engg := getTestEngine(t)
-	defer engg.ctrl.Finish()
+	snapEng := getTestEngine(t)
+	defer snapEng.ctrl.Finish()
 
 	state, err := eng.GetState(activeKey)
 	require.Nil(t, err)
@@ -162,13 +206,11 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
-	err = engg.LoadState(
-		types.PayloadFromProto(snap),
-	)
+	err = snapEng.LoadState(types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
-	h3, err := engg.GetHash(activeKey)
+	h2, err := snapEng.GetHash(activeKey)
 	require.Nil(t, err)
-	require.True(t, bytes.Equal(h2, h3))
+	require.True(t, bytes.Equal(h1, h2))
 
 }

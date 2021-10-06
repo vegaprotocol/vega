@@ -115,6 +115,10 @@ type PayloadGovernanceEnacted struct {
 	GovernanceEnacted *GovernanceEnacted
 }
 
+type PayloadGovernanceNode struct {
+	GovernanceNode *GovernanceNode
+}
+
 type PayloadMarketPositions struct {
 	MarketPositions *MarketPositions
 }
@@ -320,6 +324,10 @@ type GovernanceEnacted struct {
 	Proposals []*Proposal
 }
 
+type GovernanceNode struct {
+	Proposals []*Proposal
+}
+
 type PendingProposal struct {
 	Proposal *Proposal
 	Yes      []*Vote
@@ -496,6 +504,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadGovernanceActiveFromProto(dt)
 	case *snapshot.Payload_GovernanceEnacted:
 		ret.Data = PayloadGovernanceEnactedFromProto(dt)
+	case *snapshot.Payload_GovernanceNode:
+		ret.Data = PayloadGovernanceNodeFromProto(dt)
 	case *snapshot.Payload_MarketPositions:
 		ret.Data = PayloadMarketPositionsFromProto(dt)
 	case *snapshot.Payload_MatchingBook:
@@ -566,6 +576,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_GovernanceActive:
 		ret.Data = dt
 	case *snapshot.Payload_GovernanceEnacted:
+		ret.Data = dt
+	case *snapshot.Payload_GovernanceNode:
 		ret.Data = dt
 	case *snapshot.Payload_Checkpoint:
 		ret.Data = dt
@@ -940,6 +952,32 @@ func (*PayloadGovernanceActive) Key() string {
 }
 
 func (*PayloadGovernanceActive) Namespace() SnapshotNamespace {
+	return GovernanceSnapshot
+}
+
+func PayloadGovernanceNodeFromProto(gn *snapshot.Payload_GovernanceNode) *PayloadGovernanceNode {
+	return &PayloadGovernanceNode{
+		GovernanceNode: GovernanceNodeFromProto(gn.GovernanceNode),
+	}
+}
+
+func (p PayloadGovernanceNode) IntoProto() *snapshot.Payload_GovernanceNode {
+	return &snapshot.Payload_GovernanceNode{
+		GovernanceNode: p.GovernanceNode.IntoProto(),
+	}
+}
+
+func (*PayloadGovernanceNode) isPayload() {}
+
+func (p *PayloadGovernanceNode) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadGovernanceNode) Key() string {
+	return "node"
+}
+
+func (*PayloadGovernanceNode) Namespace() SnapshotNamespace {
 	return GovernanceSnapshot
 }
 
@@ -1438,6 +1476,26 @@ func GovernanceEnactedFromProto(ge *snapshot.GovernanceEnacted) *GovernanceEnact
 
 func (g GovernanceEnacted) IntoProto() *snapshot.GovernanceEnacted {
 	ret := snapshot.GovernanceEnacted{
+		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
+	}
+	for _, p := range g.Proposals {
+		ret.Proposals = append(ret.Proposals, p.IntoProto())
+	}
+	return &ret
+}
+
+func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
+	ret := GovernanceNode{
+		Proposals: make([]*Proposal, 0, len(ge.Proposals)),
+	}
+	for _, p := range ge.Proposals {
+		ret.Proposals = append(ret.Proposals, ProposalFromProto(p))
+	}
+	return &ret
+}
+
+func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
+	ret := snapshot.GovernanceNode{
 		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
 	}
 	for _, p := range g.Proposals {

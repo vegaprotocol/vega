@@ -12,10 +12,12 @@ import (
 var (
 	activeKey  = (&types.PayloadGovernanceActive{}).Key()
 	enactedKey = (&types.PayloadGovernanceEnacted{}).Key()
+	nodeKey    = (&types.PayloadGovernanceNode{}).Key()
 
 	hashKeys = []string{
 		activeKey,
 		enactedKey,
+		nodeKey,
 	}
 )
 
@@ -75,6 +77,35 @@ func (e *Engine) serialiseEnacted() ([]byte, error) {
 		Data: &types.PayloadGovernanceEnacted{
 			GovernanceEnacted: &types.GovernanceEnacted{
 				Proposals: e.enactedProposals,
+			},
+		},
+	}
+	return proto.Marshal(pl.IntoProto())
+}
+
+func (e *Engine) serialiseNode() ([]byte, error) {
+
+	if !e.gss.changed[nodeKey] {
+		return nil, nil
+	}
+
+	nodeProposals := e.nodeProposalValidation.getProposals()
+	proposals := make([]*types.Proposal, 0, len(nodeProposals))
+
+	for _, np := range nodeProposals {
+		// Given a snapshot is always taken at the end of a block the value of `state` in np will
+		// always be pending since any that are not will have already been resolved as accepted/rejected
+		// and removed from the slice. The yes/no/invalid fields in `np.proposal` are also unnecessary to
+		// save since "voting" as is done for active proposals is not done on node-proposals, and so the
+		// maps will always be empty
+		p := np.proposal.Proposal
+		proposals = append(proposals, p)
+	}
+
+	pl := types.Payload{
+		Data: &types.PayloadGovernanceNode{
+			GovernanceNode: &types.GovernanceNode{
+				Proposals: proposals,
 			},
 		},
 	}
@@ -144,6 +175,8 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 		return e.restoreActive(pl.GovernanceActive)
 	case *types.PayloadGovernanceEnacted:
 		return e.restoreEnacted(pl.GovernanceEnacted)
+	case *types.PayloadGovernanceNode:
+		return e.restoreNode(pl.GovernanceNode)
 	default:
 		return types.ErrUnknownSnapshotType
 	}
@@ -171,6 +204,15 @@ func (e *Engine) restoreActive(active *types.GovernanceActive) error {
 func (e *Engine) restoreEnacted(enacted *types.GovernanceEnacted) error {
 	e.enactedProposals = enacted.Proposals[:]
 	e.gss.changed[enactedKey] = true
+	return nil
+}
+
+func (e *Engine) restoreNode(node *types.GovernanceNode) error {
+
+	for _, p := range node.Proposals {
+		e.nodeProposalValidation.Start(p)
+	}
+	e.gss.changed[nodeKey] = true
 	return nil
 }
 

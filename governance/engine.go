@@ -127,6 +127,7 @@ func NewEngine(
 
 	e.keyToSerialiser[activeKey] = e.serialiseActive
 	e.keyToSerialiser[enactedKey] = e.serialiseEnacted
+	e.keyToSerialiser[nodeKey] = e.serialiseNode
 	return e
 }
 
@@ -299,6 +300,8 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		p.State = proto.Proposal_STATE_OPEN
 		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
 		e.startValidatedProposal(p) // can't fail, and proposal has been validated at an ulterior time
+
+		e.gss.changed[nodeKey] = true
 	}
 	for _, p := range rejected {
 		e.log.Info("proposal has not been validated by nodes",
@@ -306,6 +309,8 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		p.State = proto.Proposal_STATE_REJECTED
 		p.Reason = proto.ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED
 		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
+
+		e.gss.changed[nodeKey] = true
 	}
 
 	for _, ep := range toBeEnacted {
@@ -466,6 +471,7 @@ func (e *Engine) startValidatedProposal(p *proposal) {
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
+	e.gss.changed[nodeKey] = true
 	return e.nodeProposalValidation.Start(p)
 }
 
