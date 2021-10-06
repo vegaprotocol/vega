@@ -5,13 +5,13 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
 
 type showCmd struct {
-	Config nodewallet.Config
+	Config nodewallets.Config
 }
 
 func (opts *showCmd) Execute(_ []string) error {
@@ -36,7 +36,7 @@ func (opts *showCmd) Execute(_ []string) error {
 		return err
 	}
 
-	registryLoader, err := nodewallet.NewRegistryLoader(vegaPaths, registryPass)
+	registryLoader, err := nodewallets.NewRegistryLoader(vegaPaths, registryPass)
 	if err != nil {
 		return err
 	}

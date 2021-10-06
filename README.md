@@ -95,6 +95,44 @@ For more details on how to use the Vega node wallets run:
 vega nodewallet --help
 ```
 
+### Using Ethereum Clef wallet
+
+#### Automatic approvals
+
+Given that Clef requires manually approving all RPC API calls, it is mandatory to setup
+[custom rules](https://github.com/ethereum/go-ethereum/blob/master/cmd/clef/rules.md#rules) for automatic approvals. Vega requires at least `ApproveListing` and `ApproveSignData` rules to be automatically approved.
+
+Example of simple rule set JavaScript file with approvals required by Vega:
+```js
+function ApproveListing() {
+  return "Approve"
+}
+
+function ApproveSignData() {
+  return "Approve"
+}
+```
+
+Clef also allows more refined rules for signing. For example approves signs from `ipc` socket:
+```js
+function ApproveSignData(req) {
+  if (req.metadata.scheme == "ipc") {
+    return "Approve"
+  }
+}
+```
+
+Please refer to Clef [rules docs](https://github.com/ethereum/go-ethereum/blob/master/cmd/clef/rules.md#rules) for more information.
+
+#### Importing and generation account
+
+As of today, Clef does not allow to generate a new account for other back end storages than a local Key Store. Therefore it is preferable to create a new account on the back end of choice and import it to Vega through node wallet CLI.
+
+Example of import:
+```sh
+vega nodewallet import --chain=ethereum --eth.clef-address=http://clef-address:port
+```
+
 ## APIs
 
 In order for clients to communicate with Vega nodes, we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus.

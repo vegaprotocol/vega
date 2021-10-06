@@ -1,4 +1,4 @@
-package nodewallet_test
+package nodewallets_test
 
 import (
 	"testing"
@@ -16,7 +16,7 @@ func TestNodeWallet(t *testing.T) {
 }
 
 func testVerifyNodeWalletsSucceeds(t *testing.T) {
-	nw := &nodewallet.NodeWallets{
+	nw := &nodewallets.NodeWallets{
 		Vega:     &vgnw.Wallet{},
 		Ethereum: &ethnw.Wallet{},
 	}
@@ -28,18 +28,18 @@ func testVerifyNodeWalletsFails(t *testing.T) {
 	tcs := []struct {
 		name        string
 		expectedErr error
-		nw          *nodewallet.NodeWallets
+		nw          *nodewallets.NodeWallets
 	}{
 		{
 			name:        "with missing Ethereum wallet",
-			expectedErr: nodewallet.ErrEthereumWalletIsMissing,
-			nw: &nodewallet.NodeWallets{
+			expectedErr: nodewallets.ErrEthereumWalletIsMissing,
+			nw: &nodewallets.NodeWallets{
 				Vega: &vgnw.Wallet{},
 			},
 		}, {
 			name:        "with missing Vega wallet",
-			expectedErr: nodewallet.ErrVegaWalletIsMissing,
-			nw: &nodewallet.NodeWallets{
+			expectedErr: nodewallets.ErrVegaWalletIsMissing,
+			nw: &nodewallets.NodeWallets{
 				Ethereum: &ethnw.Wallet{},
 			},
 		},

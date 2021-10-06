@@ -40,13 +40,13 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nodeWallets     *nodewallet.NodeWallets
-	ethClient       erc20.ETHClient
-	dss             *assetsSnapshotState
+	nodeWallets *nodewallets.NodeWallets
+	ethClient   erc20.ETHClient
+  dss             *assetsSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
 }
 
-func New(log *logging.Logger, cfg Config, nw *nodewallet.NodeWallets, ethClient erc20.ETHClient, ts TimeService) *Service {
+func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient erc20.ETHClient, ts TimeService) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
