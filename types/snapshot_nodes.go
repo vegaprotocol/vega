@@ -329,11 +329,10 @@ type PendingProposal struct {
 
 type MarketPositions struct {
 	MarketID  string
-	Positions []*PPosition
+	Positions []*MarketPosition
 }
 
-// PPosition for Party position, avoids name confict
-type PPosition struct {
+type MarketPosition struct {
 	PartyID         string
 	Size, Buy, Sell int64
 	Price           *num.Uint
@@ -987,8 +986,8 @@ func (p *PayloadMarketPositions) plToProto() interface{} {
 	return p.IntoProto()
 }
 
-func (*PayloadMarketPositions) Key() string {
-	return "all"
+func (p *PayloadMarketPositions) Key() string {
+	return p.MarketPositions.MarketID
 }
 
 func (*PayloadMarketPositions) Namespace() SnapshotNamespace {
@@ -1509,11 +1508,11 @@ func (g GovernanceActive) IntoProto() *snapshot.GovernanceActive {
 	return &ret
 }
 
-func PPositionFromProto(p *snapshot.Position) *PPosition {
+func MarketPositionFromProto(p *snapshot.Position) *MarketPosition {
 	price, _ := num.UintFromString(p.Price, 10)
 	vwBuy, _ := num.UintFromString(p.VwBuyPrice, 10)
 	vwSell, _ := num.UintFromString(p.VwSellPrice, 10)
-	return &PPosition{
+	return &MarketPosition{
 		PartyID: p.PartyId,
 		Size:    p.Size,
 		Buy:     p.Buy,
@@ -1524,7 +1523,7 @@ func PPositionFromProto(p *snapshot.Position) *PPosition {
 	}
 }
 
-func (p PPosition) IntoProto() *snapshot.Position {
+func (p MarketPosition) IntoProto() *snapshot.Position {
 	return &snapshot.Position{
 		PartyId:     p.PartyID,
 		Size:        p.Size,
@@ -1539,10 +1538,10 @@ func (p PPosition) IntoProto() *snapshot.Position {
 func MarketPositionsFromProto(mp *snapshot.MarketPositions) *MarketPositions {
 	ret := MarketPositions{
 		MarketID:  mp.MarketId,
-		Positions: make([]*PPosition, 0, len(mp.Positions)),
+		Positions: make([]*MarketPosition, 0, len(mp.Positions)),
 	}
 	for _, p := range mp.Positions {
-		ret.Positions = append(ret.Positions, PPositionFromProto(p))
+		ret.Positions = append(ret.Positions, MarketPositionFromProto(p))
 	}
 	return &ret
 }

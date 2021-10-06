@@ -29,7 +29,7 @@ type CheckpointCmd struct {
 }
 
 type checkpointRestore struct {
-	nodewallet.Config
+	nodewallets.Config
 	// opts for command
 	CPFile string `short:"f" long:"checkpoint-file" description:"name of the file containing the checkpoint data"`
 }
@@ -84,7 +84,7 @@ func (c *checkpointRestore) Execute(args []string) error {
 	return <-ch
 }
 
-func getNodeWalletCommander(log *logging.Logger) (*nodewallet.Commander, error) {
+func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, error) {
 	vegaPaths := paths.NewPaths(checkpointCmd.VegaHome)
 
 	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
@@ -97,7 +97,7 @@ func getNodeWalletCommander(log *logging.Logger) (*nodewallet.Commander, error) 
 		return nil, err
 	}
 
-	vegaWallet, err := nodewallet.GetVegaWallet(vegaPaths, registryPass)
+	vegaWallet, err := nodewallets.GetVegaWallet(vegaPaths, registryPass)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
 	}
@@ -108,11 +108,11 @@ func getNodeWalletCommander(log *logging.Logger) (*nodewallet.Commander, error) 
 		return nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}
 
-	commander, err := nodewallet.NewCommander(log, nil, vegaWallet, statistics)
+	commander, err := nodewallets.NewCommander(log, nil, vegaWallet, statistics)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
-	
+
 	commander.SetChain(blockchain.NewClient(abciClient))
 	return commander, nil
 }
