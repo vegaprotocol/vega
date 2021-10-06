@@ -20,7 +20,7 @@ import (
 
 func deposit(eng *testEngine, asset, party string, amount *num.Uint) *types.BuiltinAssetDeposit {
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.assets.EXPECT().Get(gomock.Any()).Times(1).Return(testAsset, nil)
+	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(testAsset, nil)
 	now := time.Now()
 	eng.OnTick(context.Background(), now)
 	return &types.BuiltinAssetDeposit{
@@ -29,6 +29,46 @@ func deposit(eng *testEngine, asset, party string, amount *num.Uint) *types.Buil
 		Amount:      amount,
 	}
 
+}
+
+func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
+	aaKey := (&types.PayloadBankingAssetActions{}).Key()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	d1 := deposit(eng, "VGT1", "someparty1", num.NewUint(42))
+	err := eng.DepositBuiltinAsset(context.Background(), d1, "depositid1", 42)
+	assert.NoError(t, err)
+
+	d2 := deposit(eng, "VGT1", "someparty2", num.NewUint(24))
+	err = eng.DepositBuiltinAsset(context.Background(), d2, "depositid2", 24)
+	assert.NoError(t, err)
+
+	// 	eng.OnTick(context.Background(), time.Now())
+	hash, err := eng.GetHash(aaKey)
+	require.Nil(t, err)
+	state, err := eng.GetState(aaKey)
+	require.Nil(t, err)
+
+	// verify hash is consistent in the absence of change
+	hashNoChange, err := eng.GetHash(aaKey)
+	require.Nil(t, err)
+	stateNoChange, err := eng.GetState(aaKey)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// reload the state
+	var assetActions snapshot.Payload
+	proto.Unmarshal(state, &assetActions)
+	payload := types.PayloadFromProto(&assetActions)
+	err = eng.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	hashPostReload, _ := eng.GetHash(aaKey)
+	require.True(t, bytes.Equal(hash, hashPostReload))
+	statePostReload, _ := eng.GetState(aaKey)
+	require.True(t, bytes.Equal(state, statePostReload))
 }
 
 func TestSeenSnapshotRoundTrip(t *testing.T) {
