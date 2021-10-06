@@ -40,6 +40,7 @@ type OrderBook struct {
 	auction                  bool
 	batchID                  uint64
 	indicativePriceAndVolume *IndicativePriceAndVolume
+	snapshot                 *types.PayloadMatchingBook
 }
 
 // CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
@@ -74,6 +75,11 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 		batchID:         0,
 		ordersPerParty:  map[string]map[string]struct{}{},
 		lastTradedPrice: num.Zero(),
+		snapshot: &types.PayloadMatchingBook{
+			MatchingBook: &types.MatchingBook{
+				MarketID: marketID,
+			},
+		},
 	}
 }
 

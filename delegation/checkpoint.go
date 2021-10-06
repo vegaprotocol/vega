@@ -44,7 +44,6 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
-// @TODO we probably need the context here
 func (e *Engine) setActive(ctx context.Context, entries []*types.DelegationEntry) {
 	nodes := []string{}
 	nodeMap := map[string]struct{}{}

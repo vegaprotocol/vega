@@ -106,8 +106,10 @@ type Engine struct {
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
 
-	currentTime time.Time
-	mu          sync.RWMutex
+	currentTime     time.Time
+	mu              sync.RWMutex
+	bss             *bankingSnapshotState
+	keyToSerialiser map[string]func() ([]byte, error)
 }
 
 type withdrawalRef struct {
@@ -130,7 +132,7 @@ func New(
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	return &Engine{
+	e = &Engine{
 		cfg:           cfg,
 		log:           log,
 		broker:        broker,
@@ -144,7 +146,18 @@ func New(
 		withdrawals:   map[string]withdrawalRef{},
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
+		bss: &bankingSnapshotState{
+			changed:    map[string]bool{withdrawalsKey: true, depositsKey: true, seenKey: true},
+			hash:       map[string][]byte{},
+			serialised: map[string][]byte{},
+		},
+		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
+
+	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
+	e.keyToSerialiser[depositsKey] = e.serialiseDeposits
+	e.keyToSerialiser[seenKey] = e.serialiseSeen
+	return
 }
 
 // ReloadConf updates the internal configuration
@@ -276,6 +289,7 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 	d.Status = types.DepositStatusFinalized
 	d.CreditDate = e.currentTime.UnixNano()
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
+	e.bss.changed[depositsKey] = true
 	return nil
 }
 
@@ -290,6 +304,7 @@ func (e *Engine) finalizeWithdraw(
 	}
 
 	w.Status = types.WithdrawalStatusFinalized
+	e.bss.changed[withdrawalsKey] = true
 	e.broker.Send(events.NewTransferResponse(ctx, []*types.TransferResponse{res}))
 	return nil
 }
@@ -316,6 +331,7 @@ func (e *Engine) newWithdrawal(
 		CreationDate:   e.currentTime.UnixNano(),
 		Ref:            ref.String(),
 	}
+	e.bss.changed[withdrawalsKey] = true
 	return
 }
 
@@ -326,6 +342,7 @@ func (e *Engine) newDeposit(
 ) *types.Deposit {
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
+	e.bss.changed[depositsKey] = true
 	return &types.Deposit{
 		ID:           id,
 		Status:       types.DepositStatusOpen,

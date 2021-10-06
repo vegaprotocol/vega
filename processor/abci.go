@@ -451,8 +451,9 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 }
 
 func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
-	now := time.Now()
-	cpFileName := fmt.Sprintf("%s-%s-%s.cp", now.Format("20060102150405"), app.cBlock, hex.EncodeToString(cpt.Hash))
+	now := app.currentTimestamp
+	height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
+	cpFileName := fmt.Sprintf("%s-%d-%s.cp", now.Format("20060102150405"), height, hex.EncodeToString(cpt.Hash))
 	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.CheckpointStateHome, cpFileName))
 	if err != nil {
 		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
@@ -499,7 +500,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 // limitPubkey returns whether a request should be rate limited or not
 func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	// Do not rate limit validators nodes.
-	if app.top.Exists(pk) {
+	if app.top.IsValidatorVegaPubKey(pk) {
 		return false, true
 	}
 
@@ -524,7 +525,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	if !app.limits.BootstrapFinished() {
 		// only validators can send transaction at this point.
 		party := tx.Party()
-		if !app.top.Exists(party) {
+		if !app.top.IsValidatorVegaPubKey(party) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
 		cmd := tx.Command()
@@ -603,7 +604,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
-	if !app.top.Exists(tx.PubKeyHex()) {
+	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
 	return nil
@@ -852,7 +853,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return err
@@ -867,7 +868,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	_, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	return err
 }

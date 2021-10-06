@@ -31,7 +31,7 @@ func testCreatingAdaptorsSucceeds(t *testing.T) {
 func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
 	// given
 	pubKeyB := []byte("0xdeadbeef")
-	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
+	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData := commandspb.OracleDataSubmission{
 		Source:  commandspb.OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED,
 		Payload: dummyOraclePayload(),
@@ -64,7 +64,7 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 		t.Run(tc.name, func(tt *testing.T) {
 			// given
 			pubKeyB := []byte("0xdeadbeef")
-			pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
+			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 			rawData := commandspb.OracleDataSubmission{
 				Source:  tc.source,
 				Payload: dummyOraclePayload(),
@@ -104,7 +104,7 @@ func dummyOraclePayload() []byte {
 type dummyOracleAdaptor struct {
 }
 
-func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKeyOrAddress, payload []byte) (*oracles.OracleData, error) {
+func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	data := &oracles.OracleData{}
 	err := json.Unmarshal(payload, data)
 	return data, err

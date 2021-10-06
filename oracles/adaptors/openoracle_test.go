@@ -23,7 +23,7 @@ func TestOpenOracleAdaptor(t *testing.T) {
 func testOpenOracleAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 	// given
 	pubKeyB := []byte("0xdeadbeef")
-	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
+	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData, _ := json.Marshal(struct {
 		Prices       string
 		MarketNumber uint
@@ -43,7 +43,7 @@ func testOpenOracleAdaptorNormalisingIncompatibleDataFails(t *testing.T) {
 func testOpenOracleAdaptorNormalisingCompatibleButInvalidDataFails(t *testing.T) {
 	// given
 	pubKeyB := []byte("0xdeadbeef")
-	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
+	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData, _ := json.Marshal(openoracle.OracleResponse{
 		Timestamp: "1611924180",
 		Messages: []string{
@@ -101,7 +101,7 @@ func testOpenOracleAdaptorNormalisingCompatibleButInvalidDataFails(t *testing.T)
 func testOpenOracleAdaptorNormalisingCompatibleAndValidDataSucceeds(t *testing.T) {
 	// given
 	pubKeyB := []byte("0xdeadbeef")
-	pubKey := crypto.NewPublicKeyOrAddress(hex.EncodeToString(pubKeyB), pubKeyB)
+	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData, _ := json.Marshal(openoracle.OracleResponse{
 		Timestamp: "1611924180",
 		Messages: []string{
