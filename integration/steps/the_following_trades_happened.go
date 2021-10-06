@@ -19,11 +19,16 @@ func TheFollowingTradesShouldBeExecuted(
 		seller := row.MustStr("seller")
 		price := row.MustU64("price")
 		size := row.MustU64("size")
+		aggressorRaw := row.Str("aggressor side")
+		aggressor, aerr := Side(aggressorRaw)
+		if aggressorRaw != "" && aerr != nil {
+			return aerr
+		}
 
 		data := broker.GetTrades()
 		var found bool
 		for _, v := range data {
-			if v.Buyer == buyer && v.Seller == seller && stringToU64(v.Price) == price && v.Size == size {
+			if v.Buyer == buyer && v.Seller == seller && stringToU64(v.Price) == price && v.Size == size && (aggressorRaw == "" || aggressor == v.GetAggressor()) {
 				found = true
 			}
 		}
@@ -42,7 +47,9 @@ func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 		"seller",
 		"price",
 		"size",
-	}, []string{})
+	}, []string{
+		"aggressor side",
+	})
 }
 
 // TheAuctionTradedVolumeAndPriceShouldBe pass in time at which the trades should happen in case there are previous trades in the broker stub.

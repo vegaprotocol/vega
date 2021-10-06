@@ -1,4 +1,4 @@
-Feature: Fees Calculations
+Feature: Fees calculations
 
 Scenario: Testing fees in continuous trading with one trade and no liquidity providers
     
@@ -44,9 +44,8 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
       | party   | asset | market id | margin | general  |
       | trader3 | ETH   | ETH/DEC21 | 720    |  9280    |
   
+    And the accumulated infrastructure fees should be "0" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-  # TODO to be implemented by Core Team
-  # And the accumulated infrastructure fees should be "0" for the market "ETH/DEC21"
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -57,11 +56,8 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
-      # TODO to be implemented by Core Team
-      | buyer   | price | size | seller  |
-      | trader3 | 1002  | 3    | trader4 |
+      | buyer   | price | size | seller  | aggressor side |
+      | trader3 | 1002  | 3    | trader4 |           sell |
         
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 3006 = 6.012 = 7 (rounded up to nearest whole value)
@@ -84,7 +80,7 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
       | trader3 | ETH   | ETH/DEC21 | 1089   | 8927    | 
       | trader4 | ETH   | ETH/DEC21 | 657    | 9320    | 
       
-    # And the accumulated infrastructure fee should be "7" for the market "ETH/DEC21"
+    And the accumulated infrastructure fees should be "7" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
 Scenario: Testing fees in continuous trading with two trades and no liquidity providers
@@ -135,8 +131,7 @@ Scenario: Testing fees in continuous trading with two trades and no liquidity pr
       | trader3b    | ETH   | ETH/DEC21 | 240    | 9760 |
   
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-  # TODO to be implemented by Core Team
-  # And the accumulated infrastructure fees should be "0" for the market "ETH/DEC21"
+    And the accumulated infrastructure fees should be "0" for the asset "ETH"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -147,12 +142,9 @@ Scenario: Testing fees in continuous trading with two trades and no liquidity pr
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
-      # TODO to be implemented by Core Team
-      | buyer    | price | size | seller  |
-      | trader3a | 1002  | 2    | trader4 |
-      | trader3b | 1002  | 1    | trader4 |
+      | buyer    | price | size | seller  | aggressor side |
+      | trader3a | 1002  | 2    | trader4 |           sell |
+      | trader3b | 1002  | 1    | trader4 |           sell |
         
     # For trader3a-
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
@@ -186,7 +178,7 @@ Scenario: Testing fees in continuous trading with two trades and no liquidity pr
       | trader3b    | ETH   | ETH/DEC21 | 363    | 9643    | 
       | trader4     | ETH   | ETH/DEC21 | 657    | 9318    |
       
-    # And the accumulated infrastructure fee should be "8" for the market "ETH/DEC21"
+    And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
 Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep
@@ -308,7 +300,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | trader3b    | ETH   | ETH/DEC21 | 240    | 9766    | 
       | trader4     | ETH   | ETH/DEC21 | 679    | 9291    |
       
-    # And the accumulated infrastructure fee should be "8" for the market "ETH/DEC21"
+    And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "5" for the market "ETH/DEC21"
 
     When the network moves ahead "11" blocks
@@ -1748,7 +1740,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
   
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
   # TODO to be implemented by Core Team
-  # And the accumulated infrastructure fees should be "0" for the market "ETH/DEC21"
+    And the accumulated infrastructure fees should be "0" for the asset "ETH"
   
   #  Changing net params fees factors
    And the following network parameters are set:
@@ -1792,7 +1784,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
       | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    | 
       | trader4 | ETH   | ETH/DEC21 | 657    | 9131    | 
       
-    # And the accumulated infrastructure fee should be "61" for the market "ETH/DEC21"
+    And the accumulated infrastructure fees should be "61" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
 # TO DO -
