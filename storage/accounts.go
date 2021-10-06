@@ -118,7 +118,7 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 }
 
 func (a *Account) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, "!", false)
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, NoMarket, false)
 	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading fee infrastructure for asset: %s", asset))
@@ -143,7 +143,7 @@ func (a *Account) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, 
 }
 
 func (a *Account) GetGlobalRewardPoolAccounts(asset string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, "!", false)
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, NoMarket, false)
 	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading asset reward pool: %s", asset))

@@ -20,6 +20,9 @@ const (
 	maxBatchesUntilValueLogGC = 300
 	// The identifier/name for BadgerDB logging.
 	badgerNamedLogger = "badger"
+
+	SystemOwner = "*"
+	NoMarket    = "!"
 )
 
 var (
@@ -380,12 +383,12 @@ func (bs *badgerStore) accountFeeLiquidityIDKey(marketID string, assetID string)
 // accountGeneralKey relates only to a party and asset, no market index/references
 func (bs *badgerStore) accountFeeInfrastructureIDKey(assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_A:%s",
-		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE), "!", assetID))
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE), NoMarket, assetID))
 }
 
 func (bs *badgerStore) accountGlobalRewardPoolIDKey(assetID string) []byte {
 	return []byte(fmt.Sprintf("%s:%s_A:%s",
-		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD), "!", assetID))
+		bs.getAccountTypePrefix(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD), NoMarket, assetID))
 }
 
 // accountGeneralKey relates only to a party and asset, no market index/references

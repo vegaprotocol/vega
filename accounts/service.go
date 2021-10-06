@@ -7,6 +7,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/data-node/storage"
 	types "code.vegaprotocol.io/protos/vega"
 )
 
@@ -60,12 +61,12 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 		marketID = ""
 	}
 	accounts, err := s.storage.GetPartyAccounts(partyID, marketID, asset, ty)
-	// Prevent internal "!" special character from leaking out via marketID
+	// Prevent internal "!" (NoMarket) special character from leaking out via marketID
 	// There is a ticket to improve and clean this up in the collateral-engine:
 	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
 		if acc.GetType() == types.AccountType_ACCOUNT_TYPE_GENERAL || acc.GetType() == types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW {
-			if acc.GetMarketId() == "!" {
+			if acc.GetMarketId() == storage.NoMarket {
 				acc.MarketId = ""
 			}
 		}
@@ -75,11 +76,11 @@ func (s *Svc) GetPartyAccounts(partyID, marketID, asset string, ty types.Account
 
 func (s *Svc) GetMarketAccounts(marketID, asset string) ([]*types.Account, error) {
 	accounts, err := s.storage.GetMarketAccounts(marketID, asset)
-	// Prevent internal "*" special character from leaking out via owner (similar to above).
+	// Prevent internal "*" (SystemOwner) special character from leaking out via owner (similar to above).
 	// There is a ticket to improve and clean this up in the collateral-engine:
 	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
-		if acc.Owner == "*" {
+		if acc.Owner == storage.SystemOwner {
 			acc.Owner = ""
 		}
 	}
@@ -92,10 +93,10 @@ func (s *Svc) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, erro
 	// There is a ticket to improve and clean this up in the collateral-engine:
 	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
-		if acc.Owner == "*" {
+		if acc.Owner == storage.SystemOwner {
 			acc.Owner = ""
 		}
-		if acc.MarketId == "!" {
+		if acc.MarketId == storage.NoMarket {
 			acc.MarketId = ""
 		}
 	}
@@ -108,10 +109,10 @@ func (s *Svc) GetGlobalRewardPoolAccounts(asset string) ([]*types.Account, error
 	// There is a ticket to improve and clean this up in the collateral-engine:
 	// https://github.com/vegaprotocol/vega/issues/416
 	for _, acc := range accounts {
-		if acc.Owner == "*" {
+		if acc.Owner == storage.SystemOwner {
 			acc.Owner = ""
 		}
-		if acc.MarketId == "!" {
+		if acc.MarketId == storage.NoMarket {
 			acc.MarketId = ""
 		}
 	}
