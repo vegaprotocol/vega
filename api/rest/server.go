@@ -96,7 +96,7 @@ func (s *ProxyServer) Start() {
 	// Gzip encoding support
 	handler = newGzipHandler(*logger, handler.(http.HandlerFunc))
 	// Metric support
-	handler = MetricCollectionMiddleware(logger, handler)
+	handler = MetricCollectionMiddleware(handler)
 
 	// APM
 	if s.cfg.REST.APMEnabled {
