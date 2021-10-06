@@ -136,7 +136,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		amount, _ := num.UintFromString(amountstr, 10)
 		for _, mkt := range execsetup.markets {
 			asset, _ := mkt.GetAsset()
-			assetInsuranceAccount := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
+			assetInsuranceAccount, _ := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
 			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
@@ -209,7 +209,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`the network moves ahead "([^"]+)" blocks`, func(blocks string) error {
-		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks)
+		return steps.TheNetworkMovesAheadNBlocks(execsetup.block, execsetup.timeService, blocks, execsetup.epochEngine)
 	})
 	s.Step(`the network moves ahead "([^"]+)" with block duration of "([^"]+)"`, func(total, block string) error {
 		return steps.TheNetworkMovesAheadDurationWithBlocks(execsetup.block, execsetup.timeService, total, block)

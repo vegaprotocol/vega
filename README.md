@@ -1,6 +1,6 @@
 # Vega
 
-Version 0.42.0.
+Version 0.43.0.
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
@@ -46,39 +46,51 @@ To install `trading-core` and `tendermint`, see [Getting Started](GETTING_STARTE
 
 ## Configuration
 
-Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults edit your `config.toml` typically found in the `~/.vega` directory. Example:
+Vega is initialised with a set of default configuration with the command `vega init`. To override any of the defaults, edit your `config.toml`.
+
+**Example**
 
 ```toml
 [Matching]
-  Level = 0
-  ProRataMode = false
-  LogPriceLevelsDebug = false
-  LogRemovedOrdersDebug = false
+Level = 0
+ProRataMode = false
+LogPriceLevelsDebug = false
+LogRemovedOrdersDebug = false
 ```
 
-Vega require a set of wallets for the internal or external chain it's dealing with, the configuration for these wallets are stored in the vega nodewallet.
-The nodewallet can be accessed using the nodewallet subcommand, this nodewallet is initialized / accessed using a passphrase that needs to be specified when initializing vega:
-```shell
-vega init --nodewallet-passphrase="path/to/passphrase/file"
+Vega requires a set of wallets for the internal or external chain it's dealing with.
+
+The node wallets can be accessed using the `nodewallet` subcommand, these node wallets are initialized / accessed using a passphrase that needs to be specified when initializing Vega:
+
+```sh
+vega init --nodewallet-passphrase-file "my-passphrase-file.txt"
 ```
 
-The init command can also be invoked with a flag in order to generate development purpose only wallets so you do not have to use real wallets when hacking on the code:
-```
-vega init --nodewallet-passphrase="path/to/passphrase/file" --gen-dev-nodewallet
-```
+### Files location
 
-## Vega NodeWallet
+| Environment variables | Unix             | MacOS                           | Windows                |
+| :-------------------- | :----------------| :------------------------------ | :--------------------- |
+| `XDG_DATA_HOME`       | `~/.local/share` | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
+| `XDG_CONFIG_HOME`     | `~/.config`      | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
+| `XDG_STATE_HOME`      | `~/.local/state` | `~/Library/Application Support` | `%LOCALAPPDATA%`       |
+| `XDG_CACHE_HOME`      | `~/.cache`       | `~/Library/Caches`              | `%LOCALAPPDATA%\cache` |
 
-A vega node needs to connect to other blockchain for various operation:
+You can override these environment variables, however, bear in mind it will apply system-wide.
+
+If you don't want to rely on the default XDG paths, you can use the `--home` flag on the command-line.
+
+## Vega node wallets
+
+A Vega node needs to connect to other blockchain for various operation:
 - validate transaction happened on foreign chains
 - verify presence of assets
 - sign transaction to be verified on foreign blockchain
 - and more...
 
-In order to do these different action, the vega node needs to access these chains using their native wallet. To do so the vega command line provide an command line tool:
-`vega nodewallet` allowing users to import foreign blockchain wallets credentials so they can be used at runtime.
+In order to do these different action, the Vega node needs to access these chains using their native wallet. To do so the vega command line provide a command line tool:
+`vega nodewallet` allowing users to import foreign blockchain wallets credentials, so they can be used at runtime.
 
-For more details on how to use the vega nodewallet run:
+For more details on how to use the Vega node wallets run:
 ```
 vega nodewallet --help
 ```

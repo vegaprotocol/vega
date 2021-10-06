@@ -9,7 +9,7 @@ import (
 
 type Cmd struct {
 	// Global options
-	config.RootPathFlag
+	config.VegaHomeFlag
 	config.PassphraseFlag
 
 	// Subcommands
@@ -22,15 +22,12 @@ type Cmd struct {
 var genesisCmd Cmd
 
 func Genesis(ctx context.Context, parser *flags.Parser) error {
-	rootPath := config.NewRootPathFlag()
 	genesisCmd = Cmd{
-		RootPathFlag: rootPath,
 		Generate: generateCmd{
 			TmRoot: "$HOME/.tendermint",
 		},
 		Sign: signCmd{
 			TmRoot:     "$HOME/.tendermint",
-			RootPathFlag: rootPath,
 		},
 		Verify: verifyCmd{
 			TmRoot: "$HOME/.tendermint",

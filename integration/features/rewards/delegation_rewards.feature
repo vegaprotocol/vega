@@ -4,7 +4,7 @@ Feature: Staking & Delegation
     Given the following network parameters are set:
       | name                                              |  value                   |
       | reward.asset                                      |  VEGA                    |
-      | validators.epoch.length                           |  9s                      |
+      | validators.epoch.length                           |  10s                     |
       | validators.delegation.minAmount                   |  10                      |
       | reward.staking.delegation.payoutDelay             |  0s                      |
       | reward.staking.delegation.delegatorShare          |  0.883                   |
@@ -16,7 +16,8 @@ Feature: Staking & Delegation
 
 
     Given time is updated to "2021-08-26T00:00:00Z"
- 
+    Given the average block duration is "2"
+
     And the validators:
       | id     | staking account balance |
       | node1  |         1000000         |
@@ -61,18 +62,17 @@ Feature: Staking & Delegation
     | party1 |  node3   |  300   |     
 
     #complete the first epoch for the self delegation to take effect
-    Then time is updated to "2021-08-26T00:00:10Z"
-    Then time is updated to "2021-08-26T00:00:11Z"
+    Then the network moves ahead "7" blocks
 
-  Scenario: Parties get rewarded for a full epoch of having delegated stake
+   Scenario: Parties get rewarded for a full epoch of having delegated stake
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
 
     Given the global reward account gets the following deposits:
       | asset | amount |
       | VEGA  | 100000 | 
 
-    #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    #advance to the end of the epoch / start next epoch
+    Then the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
@@ -82,29 +82,19 @@ Feature: Staking & Delegation
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
 
-    #node1 has 10k self delegation + 100 from party1
-    #node2 has 10k self delegation + 200 from party2 
-    #node3 has 10k self delegation + 300 from party3 
-    #all other nodes have 10k self delegation 
-    #party1 gets 0.07734 * 50000 * 0.883 * 100/10100 + 0.07810 * 50000 * 0.883 * 200/10200 + 0.07887 * 50000 * 0.883 * 300/10300
-    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 50000
-    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
-    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
-    #node4 - node13 gets: 0.07657 * 50000
-    And the parties receive the following reward for epoch 1:
-    | party  | asset | amount |
-    | party1 | VEGA  |  201   | 
-    | node1  | VEGA  |  3832  | 
-    | node2  | VEGA  |  3837  | 
-    | node3  | VEGA  |  3841  | 
-    | node4  | VEGA  |  3828  | 
-    | node5  | VEGA  |  3828  | 
-    | node6  | VEGA  |  3828  | 
-    | node8  | VEGA  |  3828  | 
-    | node10 | VEGA  |  3828  | 
-    | node11 | VEGA  |  3828  | 
-    | node12 | VEGA  |  3828  | 
-    | node13 | VEGA  |  3828  | 
+  Scenario: No funds in reward account however validator scores get published
+    Desciption: Parties have had their tokens delegated to nodes for a full epoch but the reward account balance is 0
+
+    #advance to the end of the epoch / start next epoch
+    When the network moves ahead "7" blocks
+
+    #verify validator score 
+    Then the validators should have the following val scores for epoch 1:
+    | node id | validator score  | normalised score |
+    |  node1  |      0.07734     |     0.07734      |    
+    |  node2  |      0.07810     |     0.07810      |
+    |  node3  |      0.07887     |     0.07887      | 
+    |  node4  |      0.07657     |     0.07657      | 
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
@@ -120,7 +110,7 @@ Feature: Staking & Delegation
     #the available amount for the epoch is 60k but it is capped to 50 by the max.  
 
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    Then the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
@@ -168,7 +158,7 @@ Feature: Staking & Delegation
 
 
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    When the network moves ahead "7" blocks
 
     #node1 has 10k self delegation + 100 from party1
     #node2 has 10k self delegation + 200 from party2 
@@ -197,8 +187,7 @@ Feature: Staking & Delegation
     | node13 | VEGA  |  3828  | 
 
     #advance to the beginning and end of the following epoch 
-    When time is updated to "2021-08-26T00:00:22Z"
-    When time is updated to "2021-08-26T00:00:32Z"
+    When the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 2:
@@ -244,7 +233,7 @@ Feature: Staking & Delegation
     | party1 |  node3   |  300   | now  |
 
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    When the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
@@ -293,7 +282,7 @@ Feature: Staking & Delegation
     | party1 | VEGA   |  9850  |
 
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    When the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
@@ -333,7 +322,30 @@ Feature: Staking & Delegation
 
     Then "party1" should have general account balance of "49" for asset "VEGA"
     Then "node1" should have general account balance of "3842" for asset "VEGA"
-   
+  
+  Scenario: Party has delegation unfunded for majority of the epoch (except for begining and end) - should get no rewards.
+
+    Given the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 100000 | 
+      
+    Given the parties withdraw from staking account the following amount:  
+      | party  | asset | amount |
+      | party1 | VEGA  |  9999  |
+
+    When the network moves ahead "6" blocks
+    
+    And the parties deposit on staking account the following amount:
+      | party  | asset | amount |
+      | party1 | VEGA  | 9999   |  
+
+    #advance to the end of the epoch
+    When the network moves ahead "1" blocks
+
+    And the parties receive the following reward for epoch 1:
+      | party  | asset | amount |
+      | party1 | VEGA  |  0     | 
+
    Scenario: A party changes delegation from one validator to another in the same epoch
    Description: A party can change delegation from one validator to another      
 
@@ -341,9 +353,7 @@ Feature: Staking & Delegation
       | asset | amount |
       | VEGA  | 100000 | 
 
-    When time is updated to "2021-08-26T00:00:21Z"
-    #start epoch 2
-    When time is updated to "2021-08-26T00:00:22Z"   
+    When the network moves ahead "7" blocks
 
     #now request to undelegate from node2 and node3 
     And the parties submit the following undelegations:
@@ -356,7 +366,7 @@ Feature: Staking & Delegation
     | party1 |  node1   |  190   |  
 
     #advance to the end of the epoch for the delegation to become effective
-    When time is updated to "2021-08-26T00:00:32Z"    
+    Then the network moves ahead "7" blocks    
 
      #verify validator score 
     Then the validators should have the following val scores for epoch 2:
@@ -399,8 +409,7 @@ Feature: Staking & Delegation
     | party1 |  node3   |  0     | 
 
      #advance to the beginning and end of the following epoch 
-    When time is updated to "2021-08-26T00:00:33Z"
-    When time is updated to "2021-08-26T00:00:43Z"
+    Then the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 3:
@@ -450,7 +459,7 @@ Feature: Staking & Delegation
     | party  | node id  |  amount | 
     | party1 |  node4   |   100   | 
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    Then the network moves ahead "7" blocks
     #node1 has 10k self delegation + 100 from party1
     #node2 has 10k self delegation + 200 from party1 
     #node3 has 10k self delegation + 300 from party1 
@@ -481,8 +490,7 @@ Feature: Staking & Delegation
     | party1 |  node1   | 0      | 
     | party1 |  node4   | 100    | 
     #advance to the beginning and end of the following epoch 
-    When time is updated to "2021-08-26T00:00:22Z"
-    When time is updated to "2021-08-26T00:00:32Z"
+    Then the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 2:
     | node id | validator score  | normalised score |
@@ -527,16 +535,14 @@ Feature: Staking & Delegation
       | VEGA  | 100000 | 
       
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"    
-    #start a new epoch 
-    When time is updated to "2021-08-26T00:00:22Z" 
+    Then the network moves ahead "7" blocks
     Then the parties submit the following undelegations:
     | party  | node id  | amount |    when      |
     | party1 |  node1   |  100   | end of epoch |
     And the parties submit the following delegations:
     | party  | node id  |  amount | 
     | party1 |  node1   |    50   |
-    When time is updated to "2021-08-26T00:00:32Z"
+    When the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 2:
     | node id | validator score  | normalised score |
@@ -573,8 +579,7 @@ Feature: Staking & Delegation
     | party  | node id  | amount |
     | party1 |  node1   |  50    | 
     #advance to the beginning and end of the following epoch 
-    When time is updated to "2021-08-26T00:00:33Z"
-    When time is updated to "2021-08-26T00:00:43Z"
+    When the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 3:
     | node id | validator score  | normalised score |
@@ -620,7 +625,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.maxPayoutPerParticipant | 3000  |
     #the reward amount for each participant per epoch is capped to 3k by maxPayoutPerParticipant
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    When the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
     | node id | validator score  | normalised score |
@@ -662,10 +667,10 @@ Feature: Staking & Delegation
       | VEGA  |  50000 | 
 
     #advance to the end of the epoch
-     When time is updated to "2021-08-26T00:00:21Z"
+    When the network moves ahead "7" blocks
 
     #verify validator score 
-     Then the validators should have the following val scores for epoch 1:
+    Then the validators should have the following val scores for epoch 1:
     | node id | validator score  | normalised score |
     |  node1  |      0.07734     |     0.07734      |    
     |  node2  |      0.07810     |     0.07810      |
@@ -707,8 +712,7 @@ Feature: Staking & Delegation
       | VEGA  | 74993  | 
 
     # The total amount now in rewards account is 100000-50000-24993(rewards payout)+74993 = 100000
-    When time is updated to "2021-08-26T00:00:22Z"
-    When time is updated to "2021-08-26T00:00:32Z"
+    When the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 2:
@@ -755,7 +759,7 @@ Feature: Staking & Delegation
       | VEGA  |     28 | 
 
     #advance to the end of the epoch
-    When time is updated to "2021-08-26T00:00:21Z"
+    When the network moves ahead "7" blocks
 
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
@@ -794,7 +798,7 @@ Feature: Staking & Delegation
 
     Then "node1" should have general account balance of "1" for asset "VEGA"
 
-    When time is updated to "2021-08-26T00:00:31Z"
+    When the network moves ahead "7" blocks
 
     And the parties receive the following reward for epoch 2:
     | party  | asset | amount |
@@ -813,8 +817,7 @@ Feature: Staking & Delegation
     | node12 | VEGA  | 0 | 
     | node13 | VEGA  | 0 | 
 
-    When time is updated to "2022-08-26T00:00:31Z"
-
+    When the network moves ahead "37542" blocks
     And the parties receive the following reward for epoch 3153602:
     | party  | asset | amount |
     | party1 | VEGA  | 0 | 

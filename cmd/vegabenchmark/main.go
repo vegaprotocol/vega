@@ -29,8 +29,6 @@ var (
 		"configs/4899E01009F1A721.json",
 		"configs/5A86B190C384997F.json",
 	}
-
-	selfPubKey = "074ddc82b509801bad2c4d40531e9353e5d7dc96465a5353883225c1dd60c49f"
 )
 
 func init() {
@@ -67,7 +65,7 @@ func runBenchmark(recording string) string {
 		b.N = opts.times //lint:ignore SA3001 it's OK to use b.N in this kind of usage.
 		for n := 0; n < b.N; n++ {
 			// setup a new vega
-			proc, bstats, err := setupVega(selfPubKey)
+			proc, bstats, err := setupVega()
 			if err != nil {
 				reportError(fmt.Sprintf("unable to initialize vega, %v\n", err))
 			}

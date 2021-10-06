@@ -3,10 +3,10 @@ package nodewallet
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -19,32 +19,30 @@ func (opts *verifyCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	if ok, err := vgfs.PathExists(rootCmd.RootPath); !ok {
-		return fmt.Errorf("invalid root directory path: %w", err)
-	}
-
-	pass, err := rootCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
 
-	conf, err := config.Read(rootCmd.RootPath)
+	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
+
+	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return err
 	}
+
 	opts.Config = conf.NodeWallet
 
 	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, rootCmd.RootPath)
+	nw, err := nodewallet.GetNodeWallets(vegaPaths, registryPass)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
-	err = nw.Verify()
-	if err != nil {
+	if err := nw.Verify(); err != nil {
 		return err
 	}
 

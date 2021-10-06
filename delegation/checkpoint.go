@@ -1,9 +1,12 @@
 package delegation
 
 import (
+	"context"
 	"sort"
+	"strings"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -18,26 +21,32 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	data := &types.DelegateCP{
 		Active:  e.getActive(),
 		Pending: e.getPending(),
+		Auto:    e.getAuto(),
 	}
 	return proto.Marshal(data.IntoProto())
 }
 
-func (e *Engine) Load(checkpoint []byte) error {
-	cp := &snapshot.Delegate{}
-	if err := proto.Unmarshal(checkpoint, cp); err != nil {
+func (e *Engine) Load(ctx context.Context, data []byte) error {
+	cp := &checkpoint.Delegate{}
+	if err := proto.Unmarshal(data, cp); err != nil {
 		return err
 	}
-	data := types.NewDelegationCPFromProto(cp)
+	cpData := types.NewDelegationCPFromProto(cp)
 	// reset state
 	e.partyDelegationState = map[string]*partyDelegation{}
 	e.nodeDelegationState = map[string]*validatorDelegation{}
-	e.setActive(data.Active)
+	e.setActive(ctx, cpData.Active)
 	e.pendingState = map[uint64]map[string]*pendingPartyDelegation{}
-	e.setPending(data.Pending)
+	e.setPending(ctx, cpData.Pending)
+	e.autoDelegationMode = map[string]struct{}{}
+	e.setAuto(cpData.Auto)
+
 	return nil
 }
 
-func (e *Engine) setActive(entries []*types.DelegationEntry) {
+func (e *Engine) setActive(ctx context.Context, entries []*types.DelegationEntry) {
+	nodes := []string{}
+	nodeMap := map[string]struct{}{}
 	for _, de := range entries {
 		// add to party state
 		ps, ok := e.partyDelegationState[de.Party]
@@ -48,6 +57,10 @@ func (e *Engine) setActive(entries []*types.DelegationEntry) {
 				totalDelegated: num.Zero(),
 			}
 			e.partyDelegationState[de.Party] = ps
+		}
+		if _, ok := nodeMap[de.Node]; !ok {
+			nodeMap[de.Node] = struct{}{}
+			nodes = append(nodes, de.Node)
 		}
 		ps.totalDelegated.AddSum(de.Amount)
 		ps.nodeToAmount[de.Node] = de.Amount.Clone()
@@ -63,6 +76,24 @@ func (e *Engine) setActive(entries []*types.DelegationEntry) {
 		}
 		ns.totalDelegated.AddSum(de.Amount)
 		ns.partyToAmount[de.Party] = de.Amount.Clone()
+	}
+	sort.Strings(nodes)
+	// now that we've fully restored the state, let's iterate over the parties in the same order again, and send events
+	// cap is nr of parties * num of nodes
+	evts := make([]events.Event, 0, len(entries)*len(nodes))
+	for _, de := range entries {
+		// this will always work
+		ps := e.partyDelegationState[de.Party]
+		for _, n := range nodes {
+			amt, ok := ps.nodeToAmount[n]
+			if !ok {
+				amt = num.Zero()
+			}
+			evts = append(evts, events.NewDelegationBalance(ctx, de.Party, n, amt, num.NewUint(de.EpochSeq).String()))
+		}
+	}
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
 	}
 }
 
@@ -81,11 +112,53 @@ func (e *Engine) getActive() []*types.DelegationEntry {
 	}
 
 	// sort the slice
-	sort.SliceStable(active, func(i, j int) bool {
-		return active[i].Party > active[j].Party && active[i].Node > active[j].Node
-	})
+	e.sortActive(active)
 
 	return active
+}
+
+func (e *Engine) sortActive(active []*types.DelegationEntry) {
+	sort.SliceStable(active, func(i, j int) bool {
+		switch strings.Compare(active[i].Party, active[j].Party) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
+		return active[i].Node < active[j].Node
+	})
+}
+
+func (e *Engine) getAuto() []string {
+	auto := make([]string, 0, len(e.autoDelegationMode))
+	for p := range e.autoDelegationMode {
+		auto = append(auto, p)
+	}
+	sort.Strings(auto)
+	return auto
+}
+
+func (e *Engine) sortPending(pending []*types.DelegationEntry) {
+	sort.SliceStable(pending, func(i, j int) bool {
+		pi, pj := pending[i], pending[j]
+
+		switch strings.Compare(pi.Party, pj.Party) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
+		switch strings.Compare(pi.Node, pj.Node) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+
+		return pi.EpochSeq < pj.EpochSeq
+	})
 }
 
 func (e *Engine) getPending() []*types.DelegationEntry {
@@ -117,34 +190,37 @@ func (e *Engine) getPending() []*types.DelegationEntry {
 		}
 	}
 
-	sort.SliceStable(pending, func(i, j int) bool {
-		pi, pj := pending[i], pending[j]
-		cmp := pi.EpochSeq > pj.EpochSeq && pi.Party > pj.Party && pi.Node > pj.Node
-		if !cmp {
-			return false
-		}
-		// everything evaluated to true -> delegate/undelegate:
-		if pi.Undelegate == pj.Undelegate {
-			return true
-		}
-		// one is delegate, the other undelegate, just pick one...
-		return pi.Undelegate
-	})
+	e.sortPending(pending)
 
 	return pending
 }
 
-func (e *Engine) setPending(entries []*types.DelegationEntry) {
+func (e *Engine) setAuto(parties []string) {
+	for _, p := range parties {
+		e.autoDelegationMode[p] = struct{}{}
+	}
+}
+
+func (e *Engine) setPending(ctx context.Context, entries []*types.DelegationEntry) {
+	epochs := make([]uint64, 0, len(entries))
+	var parties []string
+	seenNodes := map[string]struct{}{}
+	nodes := []string{}
 	for _, pe := range entries {
 		// check epoch entry
 		ee, ok := e.pendingState[pe.EpochSeq]
 		if !ok {
 			ee = map[string]*pendingPartyDelegation{}
+			epochs = append(epochs, pe.EpochSeq)
 			e.pendingState[pe.EpochSeq] = ee
 		}
 		// check pending party entry
 		ppe, ok := ee[pe.Party]
 		if !ok {
+			// just allocate a bit more efficiently, even though this looks messy
+			if len(parties) == 0 {
+				parties = make([]string, 0, len(ee))
+			}
 			ppe = &pendingPartyDelegation{
 				party:                  pe.Party,
 				nodeToDelegateAmount:   map[string]*num.Uint{},
@@ -152,7 +228,13 @@ func (e *Engine) setPending(entries []*types.DelegationEntry) {
 				totalDelegation:        num.Zero(),
 				totalUndelegation:      num.Zero(),
 			}
+			// this assumes only 1 epoch... otherwise duplicate events are possible
+			parties = append(parties, pe.Party)
 			ee[pe.Party] = ppe
+		}
+		if _, ok := seenNodes[pe.Node]; !ok {
+			seenNodes[pe.Node] = struct{}{}
+			nodes = append(nodes, pe.Node)
 		}
 		// delegate/undelegate?
 		if pe.Undelegate {
@@ -164,5 +246,21 @@ func (e *Engine) setPending(entries []*types.DelegationEntry) {
 		}
 		// just to be sure the main map is updated...
 		e.pendingState[pe.EpochSeq] = ee
+	}
+	sort.Strings(parties)
+	sort.Strings(nodes)
+	sort.SliceStable(epochs, func(i, j int) bool {
+		return epochs[i] < epochs[j]
+	})
+	evts := make([]events.Event, 0, len(parties)*len(epochs)*len(nodes))
+	for _, seq := range epochs {
+		for _, p := range parties {
+			for _, n := range nodes {
+				evts = append(evts, e.getNextEpochBalanceEvent(ctx, p, n, seq))
+			}
+		}
+	}
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
 	}
 }

@@ -9,7 +9,6 @@ import (
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/txn"
-
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/abci/types"
 	htypes "github.com/tendermint/tendermint/proto/tendermint/types"

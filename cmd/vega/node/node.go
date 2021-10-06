@@ -8,7 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/rest"
 	"code.vegaprotocol.io/vega/assets"
@@ -17,6 +18,7 @@ import (
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
+	ethclient "code.vegaprotocol.io/vega/client/eth"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/coreapi"
@@ -32,19 +34,19 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/oracles/adaptors"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"google.golang.org/grpc"
 )
@@ -67,22 +69,22 @@ type NodeCommand struct {
 	stats        *stats.Stats
 	Log          *logging.Logger
 
-	configPath string
-	conf       config.Config
-	cfgwatchr  *config.Watcher
+	vegaPaths   paths.Paths
+	conf        config.Config
+	confWatcher *config.Watcher
 
-	executionEngine *execution.Engine
-	governance      *governance.Engine
-	collateral      *collateral.Engine
-	oracle          *oracles.Engine
-	oracleAdaptors  *adaptors.Adaptors
-	netParams       *netparams.Store
-	delegation      *delegation.Engine
-	limits          *limits.Engine
-	rewards         *rewards.Engine
-	checkpoint      *checkpoint.Engine
-
-	nodeWallet           *nodewallet.Service
+	executionEngine      *execution.Engine
+	governance           *governance.Engine
+	collateral           *collateral.Engine
+	oracle               *oracles.Engine
+	oracleAdaptors       *adaptors.Adaptors
+	netParams            *netparams.Store
+	delegation           *delegation.Engine
+	limits               *limits.Engine
+	rewards              *rewards.Engine
+	checkpoint           *checkpoint.Engine
+	spam                 *spam.Engine
+	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
 
 	assets         *assets.Service
@@ -111,11 +113,12 @@ type NodeCommand struct {
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWalletPassphrase string, args []string) error {
-	l.cfgwatchr = cfgwatchr
+func (l *NodeCommand) Run(confWatcher *config.Watcher, vegaPaths paths.Paths, nodeWalletPassphrase string, args []string) error {
+	l.confWatcher = confWatcher
 	l.nodeWalletPassphrase = nodeWalletPassphrase
 
-	l.conf, l.configPath = cfgwatchr.Get(), rootPath
+	l.conf = confWatcher.Get()
+	l.vegaPaths = vegaPaths
 
 	tmCfg := l.conf.Blockchain.Tendermint
 	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
@@ -142,8 +145,8 @@ func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, nodeWallet
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
 	defer func() {
-		if err := l.nodeWallet.Cleanup(); err != nil {
-			l.Log.Error("error cleaning up nodewallet", logging.Error(err))
+		if err := l.nodeWallets.Ethereum.Cleanup(); err != nil {
+			l.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
 		}
 	}()
 
@@ -166,11 +169,11 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	grpcServer.RegisterService(func(server *grpc.Server) {
 		svc := coreapi.NewService(l.ctx, l.Log, l.conf.CoreAPI, l.broker)
-		coreapipb.RegisterCoreApiServiceServer(server, svc)
+		apipb.RegisterCoreStateServiceServer(server, svc)
 	})
 
 	// watch configs
-	l.cfgwatchr.OnConfigUpdate(
+	l.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
 	)

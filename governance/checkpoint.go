@@ -1,8 +1,10 @@
 package governance
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/protos/vega"
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -17,14 +19,14 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	if len(e.enactedProposals) == 0 {
 		return nil, nil
 	}
-	snap := &snapshot.Proposals{
-		Proposals: e.getSnapshotProposals(),
+	snap := &checkpoint.Proposals{
+		Proposals: e.getCheckpointProposals(),
 	}
 	return proto.Marshal(snap)
 }
 
-func (e *Engine) Load(data []byte) error {
-	snap := &snapshot.Proposals{}
+func (e *Engine) Load(_ context.Context, data []byte) error {
+	snap := &checkpoint.Proposals{}
 	if err := proto.Unmarshal(data, snap); err != nil {
 		return err
 	}
@@ -47,7 +49,7 @@ func (e *Engine) Load(data []byte) error {
 	return nil
 }
 
-func (e *Engine) getSnapshotProposals() []*vega.Proposal {
+func (e *Engine) getCheckpointProposals() []*vega.Proposal {
 	ret := make([]*vega.Proposal, 0, len(e.enactedProposals))
 	for _, p := range e.enactedProposals {
 		ret = append(ret, p.IntoProto())

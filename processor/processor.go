@@ -6,6 +6,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/oracles"
@@ -35,6 +36,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/processor EpochService
 type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	OnBlockEnd(ctx context.Context)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
@@ -43,6 +45,7 @@ type DelegationEngine interface {
 	UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
+	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -70,6 +73,7 @@ type GovernanceEngine interface {
 	AddVote(context.Context, types.VoteSubmission, string) error
 	OnChainTimeUpdate(context.Context, time.Time) ([]*governance.ToEnact, []*governance.VoteClosed)
 	RejectProposal(context.Context, *types.Proposal, types.ProposalError, error) error
+	Hash() []byte
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/processor Stats
@@ -120,9 +124,9 @@ type Commander interface {
 type ValidatorTopology interface {
 	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys []string)
-	Exists(key string) bool
 	Len() int
-	AllPubKeys() []string
+	IsValidatorVegaPubKey(pk string) bool
+	AllVegaPubKeys() []string
 	IsValidator() bool
 }
 
@@ -134,7 +138,7 @@ type Broker interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
 type Notary interface {
-	StartAggregate(resID string, kind commandspb.NodeSignatureKind) error
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind)
 	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
 	IsSigned(context.Context, string, commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 }
@@ -151,23 +155,17 @@ type EvtForwarder interface {
 	Ack(*commandspb.ChainEvent) bool
 }
 
-// StakingAccounts ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
-type StakingAccounts interface {
-	HasBalance(string) bool
-}
-
 // Banking ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/banking_mock.go -package mocks code.vegaprotocol.io/vega/processor Banking
 type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
-	WithdrawalBuiltinAsset(context.Context, string, string, string, *num.Uint) error
-	EnableERC20(context.Context, *types.ERC20AssetList, uint64, uint64, string) error
+	WithdrawBuiltinAsset(context.Context, string, string, string, *num.Uint) error
+
+	EnableERC20(context.Context, *types.ERC20AssetList, string, uint64, uint64, string) error
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
-	LockWithdrawalERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
-	WithdrawalERC20(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
-	HasBalance(string) bool
+	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
+	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
 }
 
 // NetworkParameters ...
@@ -189,7 +187,7 @@ type OraclesEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
 type OracleAdaptors interface {
-	Normalise(commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/limits_mock.go -package mocks code.vegaprotocol.io/vega/processor Limits
@@ -204,4 +202,9 @@ type Limits interface {
 type StakeVerifier interface {
 	ProcessStakeRemoved(ctx context.Context, event *types.StakeRemoved) error
 	ProcessStakeDeposited(ctx context.Context, event *types.StakeDeposited) error
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
+type StakingAccounts interface {
+	Hash() []byte
 }

@@ -1,11 +1,14 @@
-package adaptors // TODO Move to adaptors_test package
+package adaptors_test
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/adaptors"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,47 +22,69 @@ func TestAdaptors(t *testing.T) {
 
 func testCreatingAdaptorsSucceeds(t *testing.T) {
 	// when
-	adaptors := New()
+	as := adaptors.New()
 
 	// then
-	assert.NotNil(t, adaptors)
+	assert.NotNil(t, as)
 }
 
 func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
 	// given
+	pubKeyB := []byte("0xdeadbeef")
+	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData := commandspb.OracleDataSubmission{
 		Source:  commandspb.OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED,
 		Payload: dummyOraclePayload(),
 	}
 
 	// when
-	normalisedData, err := stubbedAdaptors().Normalise(rawData)
+	normalisedData, err := stubbedAdaptors().Normalise(pubKey, rawData)
 
 	// then
 	require.Error(t, err)
-	assert.Equal(t, "unknown oracle source", err.Error())
+	assert.EqualError(t, err, adaptors.ErrUnknownOracleSource.Error())
 	assert.Nil(t, normalisedData)
 }
 
 func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
-	// given
-	rawData := commandspb.OracleDataSubmission{
-		Source:  commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
-		Payload: dummyOraclePayload(),
+	tcs := []struct {
+		name   string
+		source commandspb.OracleDataSubmission_OracleSource
+	}{
+		{
+			name:   "with Open Oracle source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
+		}, {
+			name:   "with JSON source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON,
+		},
 	}
 
-	// when
-	normalisedData, err := stubbedAdaptors().Normalise(rawData)
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// given
+			pubKeyB := []byte("0xdeadbeef")
+			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
+			rawData := commandspb.OracleDataSubmission{
+				Source:  tc.source,
+				Payload: dummyOraclePayload(),
+			}
 
-	// then
-	require.NoError(t, err)
-	assert.NotNil(t, normalisedData)
+			// when
+			normalisedData, err := stubbedAdaptors().Normalise(pubKey, rawData)
+
+			// then
+			require.NoError(t, err)
+			assert.NotNil(t, normalisedData)
+		})
+	}
 }
 
-func stubbedAdaptors() *Adaptors {
-	return &Adaptors{
-		adaptors: map[commandspb.OracleDataSubmission_OracleSource]Adaptor{
+func stubbedAdaptors() *adaptors.Adaptors {
+	return &adaptors.Adaptors{
+		Adaptors: map[commandspb.OracleDataSubmission_OracleSource]adaptors.Adaptor{
 			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        &dummyOracleAdaptor{},
 		},
 	}
 }
@@ -79,7 +104,7 @@ func dummyOraclePayload() []byte {
 type dummyOracleAdaptor struct {
 }
 
-func (d *dummyOracleAdaptor) Normalise(payload []byte) (*oracles.OracleData, error) {
+func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	data := &oracles.OracleData{}
 	err := json.Unmarshal(payload, data)
 	return data, err

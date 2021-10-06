@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
-	"code.vegaprotocol.io/protos/vega/api"
+	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"github.com/golang/protobuf/proto"
 
@@ -42,7 +42,7 @@ func NewClient(clt chainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionV2Request_Type) error {
+func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) error {
 	_, err := commands.CheckTransaction(tx)
 	if err != nil {
 		return err
@@ -59,13 +59,13 @@ func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transac
 	return c.sendTxV2(ctx, marshalledTx, ty)
 }
 
-func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionV2Request_Type) error {
+func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) error {
 	switch ty {
-	case api.SubmitTransactionV2Request_TYPE_ASYNC:
+	case api.SubmitTransactionRequest_TYPE_ASYNC:
 		return c.clt.SendTransactionAsync(ctx, msg)
-	case api.SubmitTransactionV2Request_TYPE_SYNC:
+	case api.SubmitTransactionRequest_TYPE_SYNC:
 		return c.clt.SendTransactionSync(ctx, msg)
-	case api.SubmitTransactionV2Request_TYPE_COMMIT:
+	case api.SubmitTransactionRequest_TYPE_COMMIT:
 		return c.clt.SendTransactionCommit(ctx, msg)
 	default:
 		return errors.New("invalid submit transaction request type")

@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"os"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/genesis"
-	vgfs "code.vegaprotocol.io/vega/libs/fs"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/validators"
@@ -35,7 +36,9 @@ func (opts *updateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
+	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+
+	vegaKey, ethAddress, walletID, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -48,10 +51,13 @@ func (opts *updateCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
 	genesisState := genesis.DefaultGenesisState()
 	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
+		ID:              walletID,
 		VegaPubKey:      vegaKey,
 		EthereumAddress: ethAddress,
+		TmPubKey:        b64TmPubKey,
 	}
 
 	if len(opts.Network) != 0 {

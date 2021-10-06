@@ -168,3 +168,14 @@ func TestDeferDoCopy(t *testing.T) {
 	assert.Equal(t, expected1, n1.Uint64())
 	assert.Equal(t, expected2, n2.Uint64())
 }
+
+func TestDeltaI(t *testing.T) {
+	n1 := num.NewUint(10)
+	n2 := num.NewUint(25)
+
+	r1 := num.Zero().DeltaI(n1.Clone(), n2.Clone())
+	assert.Equal(t, "-15", r1.String())
+
+	r2 := num.Zero().DeltaI(n2.Clone(), n1.Clone())
+	assert.Equal(t, "15", r2.String())
+}

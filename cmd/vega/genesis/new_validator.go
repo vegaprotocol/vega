@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	vgjson "code.vegaprotocol.io/vega/libs/json"
+	vgjson "code.vegaprotocol.io/shared/libs/json"
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/validators"
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -14,9 +15,11 @@ import (
 )
 
 type newValidatorCmd struct {
-	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
-	Country string `long:"country" description:"The country from which the validator operates" required:"true"`
-	InfoURL string `long:"info-url" description:"The URL from which people can get to know the validator" required:"true"`
+	TmRoot    string `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	Country   string `long:"country" description:"The country from which the validator operates" required:"true"`
+	InfoURL   string `long:"info-url" description:"The URL from which people can get to know the validator" required:"true"`
+	Name      string `long:"name" description:"The name of the validator node" required:"true"`
+	AvatarURL string `long:"avatar-url" description:"An URL to an avatar for the validator"`
 }
 
 func (opts *newValidatorCmd) Execute(_ []string) error {
@@ -30,7 +33,9 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, genesisCmd.RootPath, pass)
+	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+
+	vegaKey, ethAddress, walletID, err := loadNodeWalletPubKey(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -56,12 +61,18 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 	fmt.Println("Info to add in genesis file under `validators` key")
 	fmt.Println(string(marshalledGenesisDoc))
 
+	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
+
 	validatorDataState := map[string]validators.ValidatorData{
 		base64.StdEncoding.EncodeToString(pubKey.Bytes()): {
+			ID:              walletID,
 			VegaPubKey:      vegaKey,
+			TmPubKey:        b64TmPubKey,
 			EthereumAddress: ethAddress,
 			Country:         opts.Country,
 			InfoURL:         opts.InfoURL,
+			Name:            opts.Name,
+			AvatarURL:       opts.AvatarURL,
 		},
 	}
 	fmt.Println("Info to add in genesis file under `app_state.validators` key")

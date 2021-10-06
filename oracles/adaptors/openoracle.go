@@ -1,6 +1,9 @@
 package adaptors
 
 import (
+	"fmt"
+
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/oracles"
 
 	"code.vegaprotocol.io/oracles-relay/openoracle"
@@ -18,15 +21,17 @@ func NewOpenOracleAdaptor() *OpenOracleAdaptor {
 }
 
 // Normalise normalises an Open Oracle / Open Price Feed payload into an oracles.OracleData.
-func (a *OpenOracleAdaptor) Normalise(data []byte) (*oracles.OracleData, error) {
-	oresp, err := openoracle.Unmarshal(data)
+// The public key from the transaction is not used, only those from the Open
+// Oracle data.
+func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKey, data []byte) (*oracles.OracleData, error) {
+	response, err := openoracle.Unmarshal(data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't unmarshal Open Oracle data: %w", err)
 	}
 
-	pubKeys, kvs, err := openoracle.Verify(*oresp)
+	pubKeys, kvs, err := openoracle.Verify(*response)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("invalid Open Oracle response: %w", err)
 	}
 
 	return &oracles.OracleData{

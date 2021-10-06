@@ -1,9 +1,10 @@
 package assets
 
 import (
+	"context"
 	"sort"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -14,15 +15,15 @@ func (*Service) Name() types.CheckpointName {
 }
 
 func (s *Service) Checkpoint() ([]byte, error) {
-	t := &snapshot.Assets{
+	t := &checkpoint.Assets{
 		Assets: s.getEnabled(),
 	}
 	return proto.Marshal(t)
 }
 
-func (s *Service) Load(checkpoint []byte) error {
-	data := &snapshot.Assets{}
-	if err := proto.Unmarshal(checkpoint, data); err != nil {
+func (s *Service) Load(_ context.Context, cp []byte) error {
+	data := &checkpoint.Assets{}
+	if err := proto.Unmarshal(cp, data); err != nil {
 		return err
 	}
 	s.amu.Lock()
@@ -48,13 +49,13 @@ func (s *Service) Load(checkpoint []byte) error {
 	return nil
 }
 
-func (s *Service) getEnabled() []*snapshot.AssetEntry {
+func (s *Service) getEnabled() []*checkpoint.AssetEntry {
 	s.amu.RLock()
 	keys := make([]string, 0, len(s.assets))
-	vals := make(map[string]*snapshot.AssetEntry, len(s.assets))
+	vals := make(map[string]*checkpoint.AssetEntry, len(s.assets))
 	for k, a := range s.assets {
 		keys = append(keys, k)
-		vals[k] = &snapshot.AssetEntry{
+		vals[k] = &checkpoint.AssetEntry{
 			Id:           k,
 			AssetDetails: a.Type().Details.IntoProto(),
 		}
@@ -63,7 +64,7 @@ func (s *Service) getEnabled() []*snapshot.AssetEntry {
 	if len(keys) == 0 {
 		return nil
 	}
-	ret := make([]*snapshot.AssetEntry, 0, len(vals))
+	ret := make([]*checkpoint.AssetEntry, 0, len(vals))
 	sort.Strings(keys)
 	for _, k := range keys {
 		ret = append(ret, vals[k])
