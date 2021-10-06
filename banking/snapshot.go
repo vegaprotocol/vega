@@ -48,7 +48,7 @@ func (e *Engine) serialiseAssetActions() ([]byte, error) {
 	aa := make([]*types.AssetAction, 0, len(e.assetActs))
 	for _, v := range e.assetActs {
 		aa = append(aa, &types.AssetAction{
-			Id:          v.id,
+			ID:          v.id,
 			State:       v.state,
 			BlockNumber: v.blockNumber,
 			Asset:       v.asset.ToAssetType().ID,
@@ -59,7 +59,7 @@ func (e *Engine) serialiseAssetActions() ([]byte, error) {
 		})
 	}
 
-	sort.SliceStable(aa, func(i, j int) bool { return aa[i].Id < aa[j].Id })
+	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })
 
 	payload := types.Payload{
 		Data: &types.PayloadBankingAssetActions{
@@ -253,8 +253,8 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			e.log.Error("error restoring asset actions for asset", logging.String("asset", v.Asset))
 			continue
 		}
-		e.assetActs[v.Id] = &assetAction{
-			id:          v.Id,
+		e.assetActs[v.ID] = &assetAction{
+			id:          v.ID,
 			state:       v.State,
 			blockNumber: v.BlockNumber,
 			asset:       asset,

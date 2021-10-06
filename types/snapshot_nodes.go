@@ -286,7 +286,7 @@ type BankingAssetActions struct {
 }
 
 type AssetAction struct {
-	Id          string
+	ID          string
 	State       uint32
 	Asset       string
 	BlockNumber uint64
@@ -1324,7 +1324,7 @@ func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
 
 func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
 	ret := &snapshot.AssetAction{
-		Id:          aa.Id,
+		Id:          aa.ID,
 		State:       aa.State,
 		Asset:       aa.Asset,
 		BlockNumber: aa.BlockNumber,
@@ -1356,7 +1356,7 @@ func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAsse
 
 func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
 	aa := &AssetAction{
-		Id:          a.Id,
+		ID:          a.Id,
 		State:       a.State,
 		Asset:       a.Asset,
 		BlockNumber: a.BlockNumber,
