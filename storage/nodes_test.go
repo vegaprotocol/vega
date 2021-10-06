@@ -56,11 +56,12 @@ func TestNodes(t *testing.T) {
 		StakedByOperator:  "0",
 		StakedByDelegates: "0",
 		StakedTotal:       "0",
+		PendingStake:      "0",
 	}
 
 	nodeStore.AddNode(testNode)
 
-	actualNode, err := nodeStore.GetByID("pub_key_1", "epoch_1")
+	actualNode, err := nodeStore.GetByID("pub_key_1", "1")
 	a.NoError(err)
 	a.Equal(expectedNode, actualNode)
 
@@ -69,19 +70,19 @@ func TestNodes(t *testing.T) {
 			Party:    "1",
 			NodeId:   "pub_key_1",
 			Amount:   "20",
-			EpochSeq: "epoch_1",
+			EpochSeq: "1",
 		},
 		{
 			Party:    "pub_key_1",
 			NodeId:   "pub_key_1",
 			Amount:   "10",
-			EpochSeq: "epoch_1",
+			EpochSeq: "1",
 		},
 		{
 			Party:    "2",
 			NodeId:   "pub_key_1",
 			Amount:   "5",
-			EpochSeq: "epoch_1",
+			EpochSeq: "1",
 		},
 	}
 
@@ -89,7 +90,7 @@ func TestNodes(t *testing.T) {
 	nodeStore.AddDelegation(*delegations[1])
 	nodeStore.AddDelegation(*delegations[2])
 
-	actualNode, err = nodeStore.GetByID("pub_key_1", "epoch_1")
+	actualNode, err = nodeStore.GetByID("pub_key_1", "1")
 	a.NoError(err)
 	assertNode(a, actualNode, delegations, "10", "25", "35", "", "")
 
@@ -161,7 +162,7 @@ func TestNodes(t *testing.T) {
 	a.Equal(2, nodeStore.GetTotalNodesNumber())
 	a.Equal(2, nodeStore.GetValidatingNodesNumber())
 
-	a.Equal("70", nodeStore.GetStakedTotal("1"))
+	a.Equal("105", nodeStore.GetStakedTotal("1"))
 	a.Equal("60", nodeStore.GetStakedTotal("2"))
 }
 
