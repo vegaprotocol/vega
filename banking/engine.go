@@ -147,7 +147,7 @@ func New(
 		deposits:      map[string]*types.Deposit{},
 		withdrawalCnt: big.NewInt(0),
 		bss: &bankingSnapshotState{
-			changed:    map[string]bool{withdrawalsKey: true, depositsKey: true, seenKey: true},
+			changed:    map[string]bool{withdrawalsKey: true, depositsKey: true, seenKey: true, assetActionsKey: true},
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
@@ -157,6 +157,7 @@ func New(
 	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
 	e.keyToSerialiser[depositsKey] = e.serialiseDeposits
 	e.keyToSerialiser[seenKey] = e.serialiseSeen
+	e.keyToSerialiser[assetActionsKey] = e.serialiseAssetActions
 	return
 }
 
@@ -220,6 +221,7 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		// us to recover for this event, so we have no real reason to keep
 		// it in memory
 		delete(e.assetActs, k)
+		e.bss.changed[assetActionsKey] = true
 	}
 }
 
@@ -343,6 +345,7 @@ func (e *Engine) newDeposit(
 	partyID = strings.TrimPrefix(partyID, "0x")
 	asset = strings.TrimPrefix(asset, "0x")
 	e.bss.changed[depositsKey] = true
+	e.bss.changed[assetActionsKey] = true
 	return &types.Deposit{
 		ID:           id,
 		Status:       types.DepositStatusOpen,

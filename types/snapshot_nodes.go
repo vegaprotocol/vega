@@ -75,6 +75,10 @@ type PayloadBankingSeen struct {
 	BankingSeen *BankingSeen
 }
 
+type PayloadBankingAssetActions struct {
+	BankingAssetActions *BankingAssetActions
+}
+
 type PayloadCheckpoint struct {
 	Checkpoint *CPState
 }
@@ -275,6 +279,22 @@ type TxRef struct {
 	BlockNr  uint64
 	Hash     string
 	LogIndex uint64
+}
+
+type BankingAssetActions struct {
+	AssetAction []*AssetAction
+}
+
+type AssetAction struct {
+	ID          string
+	State       uint32
+	Asset       string
+	BlockNumber uint64
+	TxIndex     uint64
+	Hash        string
+	BuiltinD    *BuiltinAssetDeposit
+	Erc20D      *ERC20Deposit
+	Erc20AL     *ERC20AssetList
 }
 
 type CPState struct {
@@ -479,6 +499,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingDepositsFromProto(dt)
 	case *snapshot.Payload_BankingSeen:
 		ret.Data = PayloadBankingSeenFromProto(dt)
+	case *snapshot.Payload_BankingAssetActions:
+		ret.Data = PayloadBankingAssetActionsFromProto(dt)
 	case *snapshot.Payload_Checkpoint:
 		ret.Data = PayloadCheckpointFromProto(dt)
 	case *snapshot.Payload_CollateralAssets:
@@ -545,6 +567,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_BankingDeposits:
 		ret.Data = dt
 	case *snapshot.Payload_BankingWithdrawals:
+		ret.Data = dt
+	case *snapshot.Payload_BankingAssetActions:
 		ret.Data = dt
 	case *snapshot.Payload_CollateralAssets:
 		ret.Data = dt
@@ -705,6 +729,32 @@ func (*PayloadBankingSeen) Key() string {
 }
 
 func (*PayloadBankingSeen) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingAssetActionsFromProto(pbs *snapshot.Payload_BankingAssetActions) *PayloadBankingAssetActions {
+	return &PayloadBankingAssetActions{
+		BankingAssetActions: BankingAssetActionsFromProto(pbs.BankingAssetActions),
+	}
+}
+
+func (p PayloadBankingAssetActions) IntoProto() *snapshot.Payload_BankingAssetActions {
+	return &snapshot.Payload_BankingAssetActions{
+		BankingAssetActions: p.BankingAssetActions.IntoProto(),
+	}
+}
+
+func (*PayloadBankingAssetActions) isPayload() {}
+
+func (p *PayloadBankingAssetActions) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingAssetActions) Key() string {
+	return "assetActions"
+}
+
+func (*PayloadBankingAssetActions) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
@@ -1260,6 +1310,76 @@ func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 		ret.Refs = append(ret.Refs, r.IntoProto())
 	}
 	return &ret
+}
+
+func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
+	ret := snapshot.BankingAssetActions{
+		AssetAction: make([]*snapshot.AssetAction, 0, len(a.AssetAction)),
+	}
+	for _, aa := range a.AssetAction {
+		ret.AssetAction = append(ret.AssetAction, aa.IntoProto())
+	}
+	return &ret
+}
+
+func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
+	ret := &snapshot.AssetAction{
+		Id:          aa.ID,
+		State:       aa.State,
+		Asset:       aa.Asset,
+		BlockNumber: aa.BlockNumber,
+		TxIndex:     aa.TxIndex,
+		Hash:        aa.Hash,
+	}
+	if aa.BuiltinD != nil {
+		ret.BuiltinDeposit = aa.BuiltinD.IntoProto()
+	}
+	if aa.Erc20D != nil {
+		ret.Erc20Deposit = aa.Erc20D.IntoProto()
+	}
+	if aa.Erc20AL != nil {
+		ret.AssetList = aa.Erc20AL.IntoProto()
+	}
+	return ret
+}
+
+func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAssetActions {
+	ret := BankingAssetActions{
+		AssetAction: make([]*AssetAction, 0, len(aa.AssetAction)),
+	}
+
+	for _, a := range aa.AssetAction {
+		ret.AssetAction = append(ret.AssetAction, AssetActionFromProto(a))
+	}
+	return &ret
+}
+
+func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
+	aa := &AssetAction{
+		ID:          a.Id,
+		State:       a.State,
+		Asset:       a.Asset,
+		BlockNumber: a.BlockNumber,
+		TxIndex:     a.TxIndex,
+		Hash:        a.Hash,
+	}
+	if a.Erc20Deposit != nil {
+		erc20d, err := NewERC20DepositFromProto(a.Erc20Deposit)
+		if err == nil {
+			aa.Erc20D = erc20d
+		}
+	} else {
+		builtind, err := NewBuiltinAssetDepositFromProto(a.BuiltinDeposit)
+		if err == nil {
+			aa.BuiltinD = builtind
+		}
+	}
+
+	if a.AssetList != nil {
+		aa.Erc20AL = NewERC20AssetListFromProto(a.AssetList)
+	}
+
+	return aa
 }
 
 func TxRefFromProto(t *snapshot.TxRef) *TxRef {
