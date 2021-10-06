@@ -509,6 +509,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakingAccountsFromProto(dt)
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = PayloadDelegationAutoFromProto(dt)
+	case *snapshot.Payload_RewardsPendingPayouts:
+		ret.Data = PayloadRewardPayoutFromProto(dt)
 	}
 	return ret
 }
@@ -1994,4 +1996,139 @@ func (*ExecutionIDGenerator) Namespace() SnapshotNamespace {
 
 func (*ExecutionIDGenerator) Key() string {
 	return "key"
+}
+
+type PayloadRewardsPayout struct {
+	RewardsPendingPayouts *RewardsPendingPayouts
+}
+
+type RewardsPendingPayouts struct {
+	ScheduledRewardsPayout []*ScheduledRewardsPayout
+}
+
+type ScheduledRewardsPayout struct {
+	PayoutTime    int64
+	RewardsPayout []*RewardsPayout
+}
+
+type RewardsPayout struct {
+	FromAccount  string
+	Asset        string
+	PartyAmounts []*RewardsPartyAmount
+	TotalReward  *num.Uint
+	EpochSeq     string
+	Timestamp    int64
+}
+
+type RewardsPartyAmount struct {
+	Party  string
+	Amount *num.Uint
+}
+
+func PayloadRewardPayoutFromProto(rpp *snapshot.Payload_RewardsPendingPayouts) *PayloadRewardsPayout {
+	return &PayloadRewardsPayout{
+		RewardsPendingPayouts: RewardPendingPayoutsFromProto(rpp.RewardsPendingPayouts),
+	}
+}
+
+func RewardPendingPayoutsFromProto(rpps *snapshot.RewardsPendingPayouts) *RewardsPendingPayouts {
+	scheduledPayouts := make([]*ScheduledRewardsPayout, 0, len(rpps.ScheduledRewardsPayout))
+
+	for _, p := range rpps.ScheduledRewardsPayout {
+		scheduledPayouts = append(scheduledPayouts, ScheduledRewardsPayoutFromProto(p))
+	}
+
+	return &RewardsPendingPayouts{
+		ScheduledRewardsPayout: scheduledPayouts,
+	}
+}
+
+func ScheduledRewardsPayoutFromProto(srp *snapshot.ScheduledRewardsPayout) *ScheduledRewardsPayout {
+	payouts := make([]*RewardsPayout, 0, len(srp.RewardsPayout))
+	for _, p := range srp.RewardsPayout {
+		payouts = append(payouts, RewardsPayoutFromProto(p))
+	}
+
+	return &ScheduledRewardsPayout{
+		PayoutTime:    srp.PayoutTime,
+		RewardsPayout: payouts,
+	}
+}
+
+func RewardsPayoutFromProto(p *snapshot.RewardsPayout) *RewardsPayout {
+	totalReward, _ := num.UintFromString(p.TotalReward, 10)
+	partyAmounts := make([]*RewardsPartyAmount, 0, len(p.RewardPartyAmount))
+	for _, pa := range p.RewardPartyAmount {
+		amount, _ := num.UintFromString(pa.Amount, 10)
+		partyAmounts = append(partyAmounts, &RewardsPartyAmount{Party: pa.Party, Amount: amount})
+	}
+
+	return &RewardsPayout{
+		FromAccount:  p.FromAccount,
+		Asset:        p.Asset,
+		TotalReward:  totalReward,
+		EpochSeq:     p.EpochSeq,
+		Timestamp:    p.Timestamp,
+		PartyAmounts: partyAmounts,
+	}
+}
+
+func (p PayloadRewardsPayout) IntoProto() *snapshot.Payload_RewardsPendingPayouts {
+	return &snapshot.Payload_RewardsPendingPayouts{
+		RewardsPendingPayouts: p.RewardsPendingPayouts.IntoProto(),
+	}
+}
+
+func (rpp RewardsPendingPayouts) IntoProto() *snapshot.RewardsPendingPayouts {
+	scheduled := make([]*snapshot.ScheduledRewardsPayout, 0, len(rpp.ScheduledRewardsPayout))
+	for _, p := range rpp.ScheduledRewardsPayout {
+		scheduled = append(scheduled, p.IntoProto())
+	}
+	return &snapshot.RewardsPendingPayouts{
+		ScheduledRewardsPayout: scheduled,
+	}
+}
+
+func (srp ScheduledRewardsPayout) IntoProto() *snapshot.ScheduledRewardsPayout {
+	payouts := make([]*snapshot.RewardsPayout, 0, len(srp.RewardsPayout))
+	for _, p := range srp.RewardsPayout {
+		payouts = append(payouts, p.IntoProto())
+	}
+
+	return &snapshot.ScheduledRewardsPayout{
+		PayoutTime:    srp.PayoutTime,
+		RewardsPayout: payouts,
+	}
+}
+
+func (rp *RewardsPayout) IntoProto() *snapshot.RewardsPayout {
+	totalReward := rp.TotalReward.String()
+	partyAmounts := make([]*snapshot.RewardsPartyAmount, 0, len(rp.PartyAmounts))
+	for _, pa := range rp.PartyAmounts {
+		amount := pa.Amount.String()
+		partyAmounts = append(partyAmounts, &snapshot.RewardsPartyAmount{Party: pa.Party, Amount: amount})
+	}
+
+	return &snapshot.RewardsPayout{
+		FromAccount:       rp.FromAccount,
+		Asset:             rp.Asset,
+		TotalReward:       totalReward,
+		EpochSeq:          rp.EpochSeq,
+		Timestamp:         rp.Timestamp,
+		RewardPartyAmount: partyAmounts,
+	}
+}
+
+func (*PayloadRewardsPayout) isPayload() {}
+
+func (p *PayloadRewardsPayout) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadRewardsPayout) Key() string {
+	return "pendingPayout"
+}
+
+func (*PayloadRewardsPayout) Namespace() SnapshotNamespace {
+	return RewardSnapshot
 }
