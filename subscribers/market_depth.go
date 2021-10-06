@@ -14,6 +14,11 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+type OE interface {
+	events.Event
+	Order() *ptypes.Order
+}
+
 type priceLevel struct {
 	// Price of the price level
 	price *num.Uint

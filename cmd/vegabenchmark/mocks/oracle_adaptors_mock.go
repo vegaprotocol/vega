@@ -5,12 +5,11 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	crypto "code.vegaprotocol.io/vega/crypto"
 	oracles "code.vegaprotocol.io/vega/oracles"
 	gomock "github.com/golang/mock/gomock"
+	reflect "reflect"
 )
 
 // MockOracleAdaptors is a mock of OracleAdaptors interface

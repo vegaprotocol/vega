@@ -12,7 +12,7 @@ type ValidatorsCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *ValidatorsCmd) Execute(params []string) error {
+func (opts *ValidatorsCmd) Execute(_ []string) error {
 	req := apipb.ListValidatorsRequest{}
 	return getPrintValidators(opts.NodeAddress, &req)
 }

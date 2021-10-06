@@ -47,7 +47,7 @@ func Checkpoint(ctx context.Context, parser *flags.Parser) error {
 	return err
 }
 
-func (c *checkpointRestore) Execute(args []string) error {
+func (c *checkpointRestore) Execute(_ []string) error {
 	if c.CPFile == "" {
 		return fmt.Errorf("no file specified")
 	}

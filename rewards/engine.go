@@ -265,7 +265,7 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 }
 
 // process rewards when needed
-func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, t time.Time) {
+func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, _ time.Time) {
 	// get the reward pool accounts for the reward scheme
 	for _, accountID := range rewardScheme.RewardPoolAccountIDs {
 		account, err := e.collateral.GetAccountByID(accountID)

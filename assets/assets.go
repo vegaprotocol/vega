@@ -40,9 +40,9 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nodeWallets *nodewallets.NodeWallets
-	ethClient   erc20.ETHClient
-  dss             *assetsSnapshotState
+	nodeWallets     *nodewallets.NodeWallets
+	ethClient       erc20.ETHClient
+	dss             *assetsSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
 }
 
