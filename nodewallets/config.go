@@ -1,4 +1,4 @@
-package nodewallet
+package nodewallets
 
 import (
 	"code.vegaprotocol.io/vega/config/encoding"

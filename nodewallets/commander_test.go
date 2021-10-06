@@ -1,4 +1,4 @@
-package nodewallet_test
+package nodewallets_test
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 )
 
 type testCommander struct {
-	*nodewallet.Commander
+	*nodewallets.Commander
 	ctx    context.Context
 	cfunc  context.CancelFunc
 	ctrl   *gomock.Controller
@@ -40,13 +40,13 @@ func getTestCommander(t *testing.T) *testCommander {
 	registryPass := vgrand.RandomStr(10)
 	walletPass := vgrand.RandomStr(10)
 
-	_, err := nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, false)
+	_, err := nodewallets.GenerateVegaWallet(vegaPaths, registryPass, walletPass, false)
 	require.NoError(t, err)
-	wallet, err := nodewallet.GetVegaWallet(vegaPaths, registryPass)
+	wallet, err := nodewallets.GetVegaWallet(vegaPaths, registryPass)
 	require.NoError(t, err)
 	require.NotNil(t, wallet)
 
-	cmd, err := nodewallet.NewCommander(logging.NewTestLogger(), chain, wallet, bstats)
+	cmd, err := nodewallets.NewCommander(logging.NewTestLogger(), chain, wallet, bstats)
 	require.NoError(t, err)
 
 	return &testCommander{

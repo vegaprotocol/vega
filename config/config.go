@@ -65,9 +65,9 @@ type Config struct {
 	Epoch             epochtime.Config   `group:"Epoch" namespace:"epochtime"`
 	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
 	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
-	Governance governance.Config `group:"Governance" namespace:"governance"`
-	NodeWallet nodewallet.Config `group:"NodeWallet" namespace:"nodewallet"`
-	Assets     assets.Config     `group:"Assets" namespace:"assets"`
+	Governance        governance.Config  `group:"Governance" namespace:"governance"`
+	NodeWallet        nodewallets.Config `group:"NodeWallet" namespace:"nodewallet"`
+	Assets            assets.Config      `group:"Assets" namespace:"assets"`
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
 	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
@@ -111,7 +111,7 @@ func NewDefaultConfig() Config {
 		Collateral:        collateral.NewDefaultConfig(),
 		Metrics:           metrics.NewDefaultConfig(),
 		Governance:        governance.NewDefaultConfig(),
-		NodeWallet:        nodewallet.NewDefaultConfig(),
+		NodeWallet:        nodewallets.NewDefaultConfig(),
 		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
 		EvtForward:        evtforward.NewDefaultConfig(),

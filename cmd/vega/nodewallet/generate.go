@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	nodewallet "code.vegaprotocol.io/vega/nodewallets"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -16,7 +16,7 @@ import (
 type generateCmd struct {
 	config.OutputFlag
 
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
@@ -43,11 +43,6 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
-	if err != nil {
-		return err
-	}
-
 	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
@@ -64,19 +59,42 @@ func (opts *generateCmd) Execute(_ []string) error {
 	var data map[string]string
 	switch opts.Chain {
 	case ethereumChain:
-		data, err = nodewallet.GenerateEthereumWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		var walletPass string
+		if opts.Config.ETH.ClefAddress == "" {
+			walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
+			if err != nil {
+				return err
+			}
+		} else if output.IsHuman() {
+			fmt.Println(yellow("Warning: Generating a new account in Clef has to be manually approved, and only the Key Store backend is supported. \nPlease consider using the 'import' command instead."))
+		}
+
+		data, err = nodewallets.GenerateEthereumWallet(
+			opts.Config.ETH,
+			vegaPaths,
+			registryPass,
+			walletPass,
+			opts.Force,
+		)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
 		}
 	case vegaChain:
-		data, err = nodewallet.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
+		if err != nil {
+			return err
+		}
+
+		data, err = nodewallets.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
 		}
+	default:
+		return fmt.Errorf("chain %q is not supported", opts.Chain)
 	}
 
 	if output.IsHuman() {
-		fmt.Println("generation successful:")
+		fmt.Println(green("generation successful:"))
 		vgfmt.PrettyPrint(data)
 	} else if output.IsJSON() {
 		if err := vgjson.Print(data); err != nil {

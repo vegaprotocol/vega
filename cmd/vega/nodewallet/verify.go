@@ -12,7 +12,7 @@ import (
 )
 
 type verifyCmd struct {
-	Config nodewallet.Config
+	Config nodewallets.Config
 }
 
 func (opts *verifyCmd) Execute(_ []string) error {
@@ -37,7 +37,7 @@ func (opts *verifyCmd) Execute(_ []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.GetNodeWallets(vegaPaths, registryPass)
+	nw, err := nodewallets.GetNodeWallets(opts.Config, vegaPaths, registryPass)
 	if err != nil {
 		return fmt.Errorf("couldn't get node wallets: %w", err)
 	}
@@ -46,6 +46,6 @@ func (opts *verifyCmd) Execute(_ []string) error {
 		return err
 	}
 
-	fmt.Println("ok")
+	fmt.Println(green("ok"))
 	return nil
 }
