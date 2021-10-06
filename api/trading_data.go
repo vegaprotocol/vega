@@ -1740,7 +1740,7 @@ func (t *tradingDataService) FeeInfrastructureAccounts(_ context.Context,
 
 func (t *tradingDataService) GlobalRewardPoolAccounts(_ context.Context,
 	req *protoapi.GlobalRewardPoolAccountsRequest) (*protoapi.GlobalRewardPoolAccountsResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("FeeInfrastructureAccounts")()
+	defer metrics.StartAPIRequestAndTimeGRPC("GloabRewardPoolAccounts")()
 	accs, err := t.AccountsService.GetGlobalRewardPoolAccounts(req.Asset)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrAccountServiceGetGlobalRewardPoolAccounts, err)
