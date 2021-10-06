@@ -984,7 +984,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	app.cmd.Command(ctx, txn.NodeSignatureCommand, payload, nil)
 }
 
-func (app *App) enactMarket(ctx context.Context, prop *types.Proposal) {
+func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
