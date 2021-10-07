@@ -3,6 +3,7 @@ package execution
 import (
 	"fmt"
 
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -23,12 +24,51 @@ type EquityShares struct {
 	lps map[string]*lp
 
 	openingAuctionEnded bool
+
+	stateChanged bool
 }
 
 func NewEquityShares(mvp num.Decimal) *EquityShares {
 	return &EquityShares{
-		mvp: mvp,
-		lps: map[string]*lp{},
+		mvp:          mvp,
+		lps:          map[string]*lp{},
+		stateChanged: true,
+	}
+}
+
+func (es EquityShares) changed() bool {
+	return es.stateChanged
+}
+
+func (es EquityShares) GetState() *types.EquityShare {
+	lps := make([]*types.EquityShareLP, 0, len(es.lps))
+	for id, lp := range es.lps {
+		lps = append(lps, &types.EquityShareLP{
+			ID:    id,
+			Stake: lp.stake,
+			Share: lp.share,
+			Avg:   lp.avg,
+		})
+	}
+
+	es.stateChanged = false
+
+	return &types.EquityShare{
+		Mvp:                 es.mvp,
+		OpeningAuctionEnded: es.openingAuctionEnded,
+		Lps:                 lps,
+	}
+}
+
+func (es EquityShares) RestoreState(state *types.EquityShare) {
+	es.mvp = state.Mvp
+	es.openingAuctionEnded = state.OpeningAuctionEnded
+	for _, slp := range state.Lps {
+		es.lps[slp.ID] = &lp{
+			stake: slp.Stake,
+			share: slp.Share,
+			avg:   slp.Avg,
+		}
 	}
 }
 
@@ -40,6 +80,7 @@ func (es *EquityShares) OpeningAuctionEnded() {
 		panic("market already left opening auction")
 	}
 	es.openingAuctionEnded = true
+	es.stateChanged = false
 	es.setOpeningAuctionAVG()
 }
 
@@ -54,11 +95,15 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
 	es.mvp = mvp
+	es.stateChanged = false
 	return es
 }
 
 // SetPartyStake sets LP values for a given party.
 func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
+	defer func() {
+		es.stateChanged = false
+	}()
 	if !es.openingAuctionEnded {
 		defer es.setOpeningAuctionAVG()
 	}
@@ -102,6 +147,7 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
 func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 	if v, ok := es.lps[id]; ok {
+		es.stateChanged = false
 		return v.avg
 	}
 	return num.DecimalZero()
@@ -155,6 +201,10 @@ func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]num.De
 		eqshare := eq.Div(totalEquity)
 		shares[id] = eqshare
 		es.lps[id].share = eqshare
+	}
+
+	if len(shares) > 0 {
+		es.stateChanged = false
 	}
 
 	return shares

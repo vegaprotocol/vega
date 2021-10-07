@@ -26,16 +26,19 @@ func (p *PeggedOrders) changed() bool {
 	return p.ordersChanged
 }
 
-func (p *PeggedOrders) resetChange() {
-	p.ordersChanged = false
-}
-
-func (p *PeggedOrders) copyOrders() []*types.Order {
+func (p *PeggedOrders) GetState() []*types.Order {
 	ordersCopy := make([]*types.Order, 0, len(p.orders))
 	for _, o := range p.orders {
 		ordersCopy = append(ordersCopy, o.Clone())
 	}
+
+	p.ordersChanged = false
+
 	return ordersCopy
+}
+
+func (p *PeggedOrders) RestoreState(orders []*types.Order) {
+	p.orders = orders
 }
 
 func (p *PeggedOrders) OnTimeUpdate(t time.Time) {

@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"context"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -35,6 +36,24 @@ func (e *Engine) marketsStates() []*types.ExecMarket {
 	}
 
 	return mks
+}
+
+func (e *Engine) restoreMarketsStates(markets []*types.ExecMarket) error {
+	for _, em := range markets {
+		if _, ok := e.markets[em.Market.ID]; !ok {
+			err := e.submitMarket(context.Background(), em.Market)
+			if err != nil {
+				return err
+			}
+		}
+
+		m, _ := e.markets[em.Market.ID]
+		if err := m.restoreState(em); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, err error) {
@@ -106,4 +125,16 @@ func (e *Engine) GetState(_ string) ([]byte, error) {
 	}
 
 	return serialised, nil
+}
+
+func (e *Engine) LoadState(payload *types.Payload) error {
+	switch pl := payload.Data.(type) {
+	case *types.PayloadExecutionMarkets:
+		for _, m := range pl.ExecutionMarkets.Markets {
+
+		}
+		return nil
+	default:
+		return types.ErrUnknownSnapshotType
+	}
 }

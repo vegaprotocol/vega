@@ -94,8 +94,8 @@ type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 	// Snapshot
 	GetState() *types.PriceMonitor
+	RestoreState(*types.PriceMonitor) error
 	Changed() bool
-	ResetChange()
 }
 
 // LiquidityMonitor.
@@ -146,8 +146,8 @@ type AuctionState interface {
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 	// Snapshot
 	GetState() *types.AuctionState
+	RestoreState(*types.AuctionState) error
 	Changed() bool
-	ResetChange()
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -156,8 +156,7 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	mkt        *types.Market
-	mktChanged bool
+	mkt *types.Market
 
 	closingAt   time.Time
 	currentTime time.Time
@@ -208,29 +207,60 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
+
+	stateChanged bool
 }
 
 func (m *Market) changed() bool {
-	return m.mktChanged && m.pMonitor.Changed() && m.as.Changed() && m.peggedOrders.changed() && m.expiringOrders.changed()
+	return (m.stateChanged &&
+		m.pMonitor.Changed() &&
+		m.as.Changed() &&
+		m.peggedOrders.changed() &&
+		m.expiringOrders.changed() &&
+		m.equityShares.changed())
 }
 
 func (m *Market) getState() *types.ExecMarket {
 	em := &types.ExecMarket{
-		Market:         m.mkt.DeepClone(),
-		PriceMonitor:   m.pMonitor.GetState(),
-		AuctionState:   m.as.GetState(),
-		PeggedOrders:   m.peggedOrders.copyOrders(),
-		ExpiringOrders: m.getOrdersByID(m.expiringOrders.allOrders()),
+		Market:                     m.mkt.DeepClone(),
+		PriceMonitor:               m.pMonitor.GetState(),
+		AuctionState:               m.as.GetState(),
+		PeggedOrders:               m.peggedOrders.GetState(),
+		ExpiringOrders:             m.getOrdersByID(m.expiringOrders.GetState()),
+		LastBestBid:                m.lastBestBidPrice.Clone(),
+		LastBestAsk:                m.lastBestAskPrice.Clone(),
+		LastMidBid:                 m.lastMidBuyPrice.Clone(),
+		LastMidAsk:                 m.lastMidSellPrice.Clone(),
+		LastMarketValueProxy:       m.lastMarketValueProxy,
+		CurrentMarkPrice:           m.getCurrentMarkPrice(),
+		LastEquityShareDistributed: m.lastEquityShareDistributed.Unix(),
+		EquityShare:                m.equityShares.GetState(),
 	}
 
-	// reset the changed rubbish
-	m.mktChanged = false
-	m.pMonitor.ResetChange()
-	m.as.ResetChange()
-	m.peggedOrders.resetChange()
-	m.expiringOrders.resetChange()
+	m.stateChanged = false
 
 	return em
+}
+
+func (m *Market) restoreState(em *types.ExecMarket) error {
+	if err := m.pMonitor.RestoreState(em.PriceMonitor); err != nil {
+		return fmt.Errorf("failed to restore price monitor: %w", err)
+	}
+	if err := m.as.RestoreState(em.AuctionState); err != nil {
+		return fmt.Errorf("failed to restore auction state: %w", err)
+	}
+
+	m.mkt = em.Market
+	m.lastBestBidPrice = em.LastBestBid
+	m.lastBestAskPrice = em.LastBestAsk
+	m.lastMidBuyPrice = em.LastMidBid
+	m.lastMidSellPrice = em.LastMidAsk
+	m.markPrice = em.CurrentMarkPrice
+	m.peggedOrders.RestoreState(em.PeggedOrders)
+	m.expiringOrders.RestoreState(em.ExpiringOrders)
+	m.equityShares.RestoreState(em.EquityShare)
+
+	return nil
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
@@ -509,7 +539,7 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-	m.mktChanged = true
+	m.stateChanged = true
 
 	return nil
 }
@@ -556,7 +586,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
 
-	m.mktChanged = true
+	m.stateChanged = true
 
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
@@ -607,7 +637,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	} else {
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		m.mktChanged = true
+		m.stateChanged = true
 
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
@@ -631,6 +661,7 @@ func (m *Market) updateMarketValueProxy() {
 	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
 		m.marketValueWindowLength, ts)
 	m.equityShares.WithMVP(m.lastMarketValueProxy)
+	m.stateChanged = true
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
@@ -674,7 +705,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-	m.mktChanged = true
+	m.stateChanged = true
 
 	return nil
 }
@@ -789,7 +820,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
 		m.mkt.State = types.MarketStateSuspended
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		m.mktChanged = true
+		m.stateChanged = true
 	}
 }
 
@@ -799,7 +830,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-			m.mktChanged = true
+			m.stateChanged = true
 		}
 	}()
 
@@ -1512,7 +1543,7 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 		m.broker.Send(
 			events.NewMarketUpdatedEvent(ctx, *m.mkt),
 		)
-		m.mktChanged = true
+		m.stateChanged = true
 	}
 }
 
@@ -1978,6 +2009,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	// in the future this will use varying logic based on market config
 	// the responsibility for calculation could be elsewhere for testability
 	m.markPrice = trade.Price.Clone()
+	m.stateChanged = true
 }
 
 // this function handles moving money after settle MTM + risk margin updates

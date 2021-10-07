@@ -100,7 +100,7 @@ type Engine struct {
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
 
-	changed bool
+	stateChanged bool
 }
 
 func serialiseToDecMap(m map[int64]num.Decimal) []*types.DecMap {
@@ -114,6 +114,56 @@ func serialiseToDecMap(m map[int64]num.Decimal) []*types.DecMap {
 	}
 
 	return dm
+}
+
+// NewMonitor returns a new instance of PriceMonitoring.
+func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings) (*Engine, error) {
+	if riskModel == nil {
+		return nil, ErrNilRangeProvider
+	}
+	if settings == nil {
+		return nil, ErrNilPriceMonitoringSettings
+	}
+
+	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
+	for _, p := range settings.Parameters.Triggers {
+		p := *p
+		parameters = append(parameters, &p)
+	}
+
+	// Other functions depend on this sorting
+	sort.Slice(parameters,
+		func(i, j int) bool {
+			return parameters[i].Horizon < parameters[j].Horizon &&
+				parameters[i].Probability.GreaterThanOrEqual(parameters[j].Probability)
+		})
+
+	h := map[int64]num.Decimal{}
+	bounds := make([]*bound, 0, len(parameters))
+	for _, p := range parameters {
+		bounds = append(bounds, &bound{
+			Active:  true,
+			Trigger: p,
+		})
+		if _, ok := h[p.Horizon]; !ok {
+			h[p.Horizon] = p.HDec.Div(secondsPerYear)
+		}
+	}
+
+	e := &Engine{
+		riskModel:       riskModel,
+		fpHorizons:      h,
+		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
+		bounds:          bounds,
+		stateChanged:    true,
+	}
+	// hack to work around the update frequency being 0 causing an infinite loop
+	// for now, this will do
+	// @TODO go through integration and system tests once we validate this properly
+	if settings.UpdateFrequency == 0 {
+		e.updateFrequency = time.Second
+	}
+	return e, nil
 }
 
 func (e *Engine) serialiseBounds() []*types.PriceBound {
@@ -161,15 +211,11 @@ func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
 }
 
 func (e Engine) Changed() bool {
-	return e.changed
-}
-
-func (e *Engine) ResetChange() {
-	e.changed = false
+	return e.stateChanged
 }
 
 func (e *Engine) GetState() *types.PriceMonitor {
-	return &types.PriceMonitor{
+	pm := &types.PriceMonitor{
 		Initialised:         e.initialised,
 		FPHorizons:          serialiseToDecMap(e.fpHorizons),
 		Now:                 e.now,
@@ -180,61 +226,15 @@ func (e *Engine) GetState() *types.PriceMonitor {
 		RefPriceCache:       serialiseToDecMap(e.refPriceCache),
 		RefPriceCacheTime:   e.refPriceCacheTime,
 	}
-}
 
-// NewMonitor returns a new instance of PriceMonitoring.
-func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings) (*Engine, error) {
-	if riskModel == nil {
-		return nil, ErrNilRangeProvider
-	}
-	if settings == nil {
-		return nil, ErrNilPriceMonitoringSettings
-	}
+	e.stateChanged = false
 
-	parameters := make([]*types.PriceMonitoringTrigger, 0, len(settings.Parameters.Triggers))
-	for _, p := range settings.Parameters.Triggers {
-		p := *p
-		parameters = append(parameters, &p)
-	}
-
-	// Other functions depend on this sorting
-	sort.Slice(parameters,
-		func(i, j int) bool {
-			return parameters[i].Horizon < parameters[j].Horizon &&
-				parameters[i].Probability.GreaterThanOrEqual(parameters[j].Probability)
-		})
-
-	h := map[int64]num.Decimal{}
-	bounds := make([]*bound, 0, len(parameters))
-	for _, p := range parameters {
-		bounds = append(bounds, &bound{
-			Active:  true,
-			Trigger: p,
-		})
-		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = p.HDec.Div(secondsPerYear)
-		}
-	}
-
-	e := &Engine{
-		riskModel:       riskModel,
-		fpHorizons:      h,
-		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
-		bounds:          bounds,
-		changed:         true,
-	}
-	// hack to work around the update frequency being 0 causing an infinite loop
-	// for now, this will do
-	// @TODO go through integration and system tests once we validate this properly
-	if settings.UpdateFrequency == 0 {
-		e.updateFrequency = time.Second
-	}
-	return e, nil
+	return pm
 }
 
 func (e *Engine) SetMinDuration(d time.Duration) {
 	e.minDuration = d
-	e.changed = true
+	e.stateChanged = true
 }
 
 // GetHorizonYearFractions returns horizons of all the triggers specified, expressed as year fraction, sorted in ascending order.
@@ -412,6 +412,7 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 	e.priceRangeCacheTime = time.Time{}
 	e.resetBounds()
 	e.updateBounds()
+	e.stateChanged = true
 }
 
 func (e *Engine) resetBounds() {
@@ -420,12 +421,17 @@ func (e *Engine) resetBounds() {
 		b.DownFactor = num.DecimalZero()
 		b.UpFactor = num.DecimalZero()
 	}
+
+	if len(e.bounds) > 0 {
+		e.stateChanged = true
+	}
 }
 
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime.
 func (e *Engine) recordPriceChange(price *num.Uint, volume uint64) {
 	if volume > 0 {
 		e.pricesNow = append(e.pricesNow, currentPrice{Price: price.Clone(), Volume: volume})
+		e.stateChanged = true
 	}
 }
 
@@ -453,6 +459,7 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 		e.pricesNow = e.pricesNow[:0]
 		e.now = now
 		e.updateBounds()
+		e.stateChanged = true
 	}
 	return nil
 }
@@ -498,6 +505,7 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 			}
 		}
 		e.priceRangeCacheTime = e.now
+		e.stateChanged = true
 	}
 	return e.priceRangesCache
 }
@@ -510,6 +518,7 @@ func (e *Engine) updateBounds() {
 	// Iterate update time until in the future
 	for !e.update.After(e.now) {
 		e.update = e.update.Add(e.updateFrequency)
+		e.stateChanged = true
 	}
 
 	for _, b := range e.bounds {
@@ -535,10 +544,12 @@ func (e *Engine) updateBounds() {
 	for i := 0; i < len(e.pricesPast)-1; i++ {
 		if !e.pricesPast[i].Time.Before(minRequiredHorizon) {
 			e.pricesPast = e.pricesPast[i:]
+			e.stateChanged = true
 			return
 		}
 	}
 	e.pricesPast = e.pricesPast[len(e.pricesPast)-1:]
+	e.stateChanged = true
 }
 
 func (e *Engine) getRefPrice(horizon int64) num.Decimal {
@@ -548,6 +559,7 @@ func (e *Engine) getRefPrice(horizon int64) num.Decimal {
 
 	if _, ok := e.refPriceCache[horizon]; !ok {
 		e.refPriceCache[horizon] = e.calculateRefPrice(horizon)
+		e.stateChanged = true
 	}
 	return e.refPriceCache[horizon]
 }
