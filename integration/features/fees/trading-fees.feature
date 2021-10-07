@@ -56,7 +56,7 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-      | buyer   | price | size | seller  | aggressor side |
+      | buyer   | price | size | seller  | aggressor side | 
       | trader3 | 1002  | 3    | trader4 |           sell |
         
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
@@ -255,14 +255,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | mark price | trading mode            |  
       | 1002       | TRADING_MODE_CONTINUOUS |
 
-    Then the following trades should be executed:
-      # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
-      # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
-      # TODO to be implemented by Core Team
-      | buyer    | price | size | seller  |
-      | trader3a | 1002  | 2    | trader4 |
-      | trader3b | 1002  | 1    | trader4 |
-
     # For trader3a-
     # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 2 * 1002 = 2004
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 2004 = 4.008 = 5 (rounded up to nearest whole value)
@@ -275,6 +267,10 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
 
+    Then the following trades should be executed:
+      | buyer    | price | size | seller  | aggressor side | buyer fee  | seller fee | infrastructure fee | maker fee | liquidity fee |
+      | trader3a | 1002  | 2    | trader4 |           sell |         0  |         19 |                  5 |        11 |             3 |
+      | trader3b | 1002  | 1    | trader4 |           sell |         0  |         11 |                  3 |         6 |             2 |
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
@@ -392,6 +388,8 @@ Scenario: Testing fees get collected when amended order trades
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
+    
+
       # | buyer   | price | size | seller  | maker   | taker   |
       # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
       # TODO to be implemented by Core Team
@@ -410,8 +408,6 @@ Scenario: Testing fees get collected when amended order trades
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 1002 = 2.004 = 3 (rounded up to nearest whole value)
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 1002 = 5.01 = 6 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1002 = 1.002 = 2 (rounded up to nearest whole value)
-
-  Then debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
