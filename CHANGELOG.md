@@ -95,10 +95,10 @@
 - [81](https://github.com/vegaprotocol/data-node/pull/81) - Remove types and events
 - [75](https://github.com/vegaprotocol/data-node/pull/75) - Jenkins file various improvements and fixes
 - [69](https://github.com/vegaprotocol/data-node/pull/69) - Fix static check
-- [61](https://github.com/vegaprotocol/data-node/pull/61) - Seperate build for Docker
+- [61](https://github.com/vegaprotocol/data-node/pull/61) - Separate build for Docker
 - [60](https://github.com/vegaprotocol/data-node/pull/60) - Fix the Jenkins file
 - [55](https://github.com/vegaprotocol/data-node/pull/55) - Fix brackets
-- [49](https://github.com/vegaprotocol/data-node/pull/49) - Fix jenkins tag issue
+- [49](https://github.com/vegaprotocol/data-node/pull/49) - Fix Jenkins tag issue
 - [9](https://github.com/vegaprotocol/data-node/pull/9) - Fix mock paths
 - [7](https://github.com/vegaprotocol/data-node/pull/7) - Fix api tests
 
