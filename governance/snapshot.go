@@ -30,10 +30,6 @@ type governanceSnapshotState struct {
 // serialiseActiveProposals returns the engine's active proposals as marshalled bytes
 func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 
-	if !e.gss.changed[activeKey] {
-		return nil, nil
-	}
-
 	pending := make([]*types.PendingProposal, 0, len(e.activeProposals))
 	for _, p := range e.activeProposals {
 
@@ -61,10 +57,6 @@ func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 // serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes
 func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 
-	if !e.gss.changed[enactedKey] {
-		return nil, nil
-	}
-
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceEnacted{
 			GovernanceEnacted: &types.GovernanceEnacted{
@@ -77,10 +69,6 @@ func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 
 // serialiseNodeProposals returns the engine's proposals waiting for node validation
 func (e *Engine) serialiseNodeProposals() ([]byte, error) {
-
-	if !e.gss.changed[nodeValidationKey] {
-		return nil, nil
-	}
 
 	nodeProposals := e.nodeProposalValidation.getProposals()
 	proposals := make([]*types.Proposal, 0, len(nodeProposals))
