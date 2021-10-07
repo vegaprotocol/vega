@@ -118,7 +118,7 @@ func NewEngine(
 		assets:                 assets,
 		netp:                   netp,
 		gss: &governanceSnapshotState{
-			changed:    map[string]bool{activeKey: true, enactedKey: true},
+			changed:    map[string]bool{activeKey: true, enactedKey: true, nodeValidationKey: true},
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},

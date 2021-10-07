@@ -19,8 +19,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	activeKey         = (&types.PayloadGovernanceActive{}).Key()
+	enactedKey        = (&types.PayloadGovernanceEnacted{}).Key()
+	nodeValidationKey = (&types.PayloadGovernanceNode{}).Key()
+)
+
 func TestGovernanceSnapshotProposalReject(t *testing.T) {
-	activeKey := (&types.PayloadGovernanceActive{}).Key()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
@@ -57,8 +62,6 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 }
 
 func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
-	activeKey := (&types.PayloadGovernanceActive{}).Key()
-	enactedKey := (&types.PayloadGovernanceEnacted{}).Key()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
@@ -121,12 +124,11 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 }
 
 func TestGovernanceSnapshotNodeProposal(t *testing.T) {
-	nodeKey := (&types.PayloadGovernanceNode{}).Key()
 	eng := getTestEngine(t)
 	defer eng.ctrl.Finish()
 
 	// get snapshot hash for active proposals
-	emptyHash, err := eng.GetHash(nodeKey)
+	emptyHash, err := eng.GetHash(nodeValidationKey)
 	require.Nil(t, err)
 
 	// Submit a proposal
@@ -143,12 +145,12 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	require.Nil(t, err)
 
 	// get snapshot hash for node proposals and hope its changed
-	h1, err := eng.GetHash(nodeKey)
+	h1, err := eng.GetHash(nodeValidationKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(emptyHash, h1))
 
 	// Get snapshot payload
-	state, err := eng.GetState(nodeKey)
+	state, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
@@ -167,7 +169,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	h2, err := snapEng.GetHash(nodeKey)
+	h2, err := snapEng.GetHash(nodeValidationKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h1, h2))
 
@@ -212,5 +214,24 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	h2, err := snapEng.GetHash(activeKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h1, h2))
+
+}
+
+func TestGovernanceSnapshotEmpty(t *testing.T) {
+	activeKey := (&types.PayloadGovernanceActive{}).Key()
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	h, err := eng.GetHash(activeKey)
+	require.Nil(t, err)
+	require.NotNil(t, h)
+
+	h, err = eng.GetHash(enactedKey)
+	require.Nil(t, err)
+	require.NotNil(t, h)
+
+	h, err = eng.GetHash(nodeValidationKey)
+	require.Nil(t, err)
+	require.NotNil(t, h)
 
 }
