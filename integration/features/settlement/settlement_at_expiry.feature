@@ -52,15 +52,15 @@ Feature: Test settlement at expiry
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | default-eth-for-future |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle         |
-      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle         |
+      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
       | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec22Oracle         |
      
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
       | party  | asset | amount |
       | party1 | ETH   | 10000  |
-      | aux1    | ETH   | 100000 |
-      | aux2    | ETH   | 100000 |
+      | aux1   | ETH   | 100000 |
+      | aux2   | ETH   | 100000 |
 
     # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
     When the parties place the following orders:
@@ -397,12 +397,15 @@ Scenario: Settlement happened when market is being closed after being in Suspend
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0   | 5523    |
-      | trader4  | ETH   | ETH/DEC21 | 0   | 9215    |
+      | trader4  | ETH   | ETH/DEC21 | 0   | 6591    |
 
-    And the cumulated balance for all accounts should be worth "300048340"
-    And the insurance pool balance should be "2500" for the market "ETH/DEC21"
-    And the insurance pool balance should be "7500" for the asset "ETH"
-    And the insurance pool balance should be "0" for the market "ETH/DEC22"
+    And the cumulated balance for all accounts should be worth "300060716"
+    And the insurance pool balance should be "3125" for the market "ETH/DEC19"
+    And the insurance pool balance should be "5625" for the asset "ETH"
+    And the insurance pool balance should be "15625" for the market "ETH/DEC20"
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
+    And the insurance pool balance should be "15625" for the market "ETH/DEC22"
+
 
   # Given the initial insurance pool balance is "10000" for the markets:
   #   Given the parties deposit on asset's general account the following amount:
