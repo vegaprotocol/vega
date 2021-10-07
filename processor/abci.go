@@ -1036,7 +1036,11 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 
 	switch ce.Method {
 	case commandspb.UndelegateSubmission_METHOD_NOW:
-		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, num.Zero())
+		amount, overflowed := num.UintFromString(ce.Amount, 10)
+		if overflowed {
+			return errors.New("amount is not a valid base 10 number")
+		}
+		return app.delegation.UndelegateNow(ctx, tx.Party(), ce.NodeId, amount)
 	case commandspb.UndelegateSubmission_METHOD_AT_END_OF_EPOCH:
 		amount, overflowed := num.UintFromString(ce.Amount, 10)
 		if overflowed {
