@@ -99,6 +99,87 @@ type Engine struct {
 
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
+
+	changed bool
+}
+
+func serialiseToDecMap(m map[int64]num.Decimal) []*types.DecMap {
+	dm := make([]*types.DecMap, 0, len(m))
+
+	for k, v := range m {
+		dm = append(dm, &types.DecMap{
+			Key: k,
+			Val: v,
+		})
+	}
+
+	return dm
+}
+
+func (e *Engine) serialiseBounds() []*types.PriceBound {
+	bounds := make([]*types.PriceBound, 0, len(e.bounds))
+	for _, b := range bounds {
+		bounds = append(bounds, &types.PriceBound{
+			Active:     b.Active,
+			UpFactor:   b.UpFactor,
+			DownFactor: b.DownFactor,
+			Trigger: &types.PriceMonitoringTrigger{
+				Horizon:          b.Trigger.Horizon,
+				HDec:             b.Trigger.HDec,
+				Probability:      b.Trigger.Probability,
+				AuctionExtension: b.Trigger.AuctionExtension,
+			},
+		})
+	}
+
+	return bounds
+}
+
+func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
+	prc := make([]*types.PriceRangeCache, 0, len(e.priceRangesCache))
+	for bound, priceRange := range e.priceRangesCache {
+		prc = append(prc, &types.PriceRangeCache{
+			Bound: &types.PriceBound{
+				Active:     bound.Active,
+				UpFactor:   bound.UpFactor,
+				DownFactor: bound.DownFactor,
+				Trigger: &types.PriceMonitoringTrigger{
+					Horizon:          bound.Trigger.Horizon,
+					HDec:             bound.Trigger.HDec,
+					Probability:      bound.Trigger.Probability,
+					AuctionExtension: bound.Trigger.AuctionExtension,
+				},
+			},
+			Range: &types.PriceRange{
+				Min: priceRange.MinPrice.Original(),
+				Max: priceRange.MaxPrice.Original(),
+				Ref: priceRange.ReferencePrice,
+			},
+		})
+	}
+	return prc
+}
+
+func (e Engine) Changed() bool {
+	return e.changed
+}
+
+func (e *Engine) ResetChange() {
+	e.changed = false
+}
+
+func (e *Engine) GetState() *types.PriceMonitor {
+	return &types.PriceMonitor{
+		Initialised:         e.initialised,
+		FPHorizons:          serialiseToDecMap(e.fpHorizons),
+		Now:                 e.now,
+		Update:              e.update,
+		Bounds:              e.serialiseBounds(),
+		PriceRangeCache:     e.serialisePriceRanges(),
+		PriceRangeCacheTime: e.priceRangeCacheTime,
+		RefPriceCache:       serialiseToDecMap(e.refPriceCache),
+		RefPriceCacheTime:   e.refPriceCacheTime,
+	}
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
@@ -140,6 +221,7 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 		fpHorizons:      h,
 		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
 		bounds:          bounds,
+		changed:         true,
 	}
 	// hack to work around the update frequency being 0 causing an infinite loop
 	// for now, this will do
@@ -152,6 +234,7 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 
 func (e *Engine) SetMinDuration(d time.Duration) {
 	e.minDuration = d
+	e.changed = true
 }
 
 // GetHorizonYearFractions returns horizons of all the triggers specified, expressed as year fraction, sorted in ascending order.

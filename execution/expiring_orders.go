@@ -5,7 +5,8 @@ import (
 )
 
 type ExpiringOrders struct {
-	orders *btree.BTree
+	orders        *btree.BTree
+	ordersChanged bool
 }
 
 type ordersAtTS struct {
@@ -20,8 +21,28 @@ func (a *ordersAtTS) Less(b btree.Item) bool {
 
 func NewExpiringOrders() *ExpiringOrders {
 	return &ExpiringOrders{
-		orders: btree.New(2),
+		orders:        btree.New(2),
+		ordersChanged: true,
 	}
+}
+
+func (a ExpiringOrders) changed() bool {
+	return a.ordersChanged
+}
+
+func (a ExpiringOrders) resetChange() {
+	a.ordersChanged = false
+}
+
+func (a ExpiringOrders) allOrders() []string {
+	orders := make([]string, 0, a.orders.Len())
+
+	a.orders.Ascend(func(item btree.Item) bool {
+		orders = append(orders, item.(*ordersAtTS).orders...)
+		return true
+	})
+
+	return orders
 }
 
 func (a *ExpiringOrders) GetExpiryingOrderCount() int {
@@ -34,10 +55,12 @@ func (a *ExpiringOrders) Insert(
 	item := &ordersAtTS{ts: ts}
 	if item := a.orders.Get(item); item != nil {
 		item.(*ordersAtTS).orders = append(item.(*ordersAtTS).orders, orderID)
+		a.ordersChanged = true
 		return
 	}
 	item.orders = []string{orderID}
 	a.orders.ReplaceOrInsert(item)
+	a.ordersChanged = true
 }
 
 func (a *ExpiringOrders) RemoveOrder(expiresAt int64, orderID string) bool {
@@ -51,6 +74,7 @@ func (a *ExpiringOrders) RemoveOrder(expiresAt int64, orderID string) bool {
 				// if the slice is empty, remove the parent container
 				if len(oat.orders) == 0 {
 					a.orders.Delete(item)
+					a.ordersChanged = true
 				}
 				return true
 			}
@@ -78,6 +102,10 @@ func (a *ExpiringOrders) Expire(ts int64) []string {
 	for _, v := range toDelete {
 		item.ts = v
 		a.orders.Delete(item)
+	}
+
+	if len(toDelete) > 0 {
+		a.ordersChanged = true
 	}
 
 	return orders

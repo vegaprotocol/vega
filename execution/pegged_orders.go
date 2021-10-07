@@ -12,12 +12,30 @@ import (
 type PeggedOrders struct {
 	currentTime int64
 	orders      []*types.Order
+
+	ordersChanged bool
 }
 
 func NewPeggedOrders() *PeggedOrders {
 	return &PeggedOrders{
 		orders: []*types.Order{},
 	}
+}
+
+func (p *PeggedOrders) changed() bool {
+	return p.ordersChanged
+}
+
+func (p *PeggedOrders) resetChange() {
+	p.ordersChanged = false
+}
+
+func (p *PeggedOrders) copyOrders() []*types.Order {
+	ordersCopy := make([]*types.Order, 0, len(p.orders))
+	for _, o := range p.orders {
+		ordersCopy = append(ordersCopy, o.Clone())
+	}
+	return ordersCopy
 }
 
 func (p *PeggedOrders) OnTimeUpdate(t time.Time) {
@@ -28,6 +46,8 @@ func (p *PeggedOrders) Park(o *types.Order) {
 	o.UpdatedAt = p.currentTime
 	o.Status = types.OrderStatusParked
 	o.Price = num.Zero()
+
+	p.ordersChanged = true
 }
 
 func (p *PeggedOrders) GetByID(id string) *types.Order {
@@ -41,6 +61,7 @@ func (p *PeggedOrders) GetByID(id string) *types.Order {
 
 func (p *PeggedOrders) Add(o *types.Order) {
 	p.orders = append(p.orders, o)
+	p.ordersChanged = true
 }
 
 func (p *PeggedOrders) Remove(o *types.Order) {
@@ -50,6 +71,7 @@ func (p *PeggedOrders) Remove(o *types.Order) {
 			copy(p.orders[i:], p.orders[i+1:])
 			p.orders[len(p.orders)-1] = nil
 			p.orders = p.orders[:len(p.orders)-1]
+			p.ordersChanged = true
 			return
 		}
 	}
@@ -59,6 +81,7 @@ func (p *PeggedOrders) Amend(amended *types.Order) {
 	for i, o := range p.orders {
 		if o.ID == amended.ID {
 			p.orders[i] = amended
+			p.ordersChanged = true
 			return
 		}
 	}
@@ -81,6 +104,7 @@ func (p *PeggedOrders) RemoveAllForParty(
 		n++
 	}
 	p.orders = p.orders[:n]
+	p.ordersChanged = true
 	return
 }
 
@@ -101,6 +125,7 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 		n++
 	}
 	p.orders = p.orders[:n]
+	p.ordersChanged = true
 	return
 }
 

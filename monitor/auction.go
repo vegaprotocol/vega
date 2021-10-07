@@ -21,6 +21,8 @@ type AuctionState struct {
 	extension   *types.AuctionTrigger   // Set if the current auction was extended, reset after the event was created
 	// timer tracks the elapsed time spend in opening auction.
 	timer *metrics.TimeCounter
+
+	changed bool
 }
 
 func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
@@ -32,6 +34,7 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 		end:     mkt.OpeningAuction,
 		start:   true,
 		m:       mkt,
+		changed: true,
 	}
 	if mkt.GetContinuous() == nil {
 		s.defMode = types.MarketTradingModeBatchAuction
@@ -51,6 +54,26 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	return &s
 }
 
+func (a AuctionState) Changed() bool {
+	return a.changed
+}
+
+func (a *AuctionState) ResetChange() {
+	a.changed = false
+}
+
+func (a AuctionState) GetState() *types.AuctionState {
+	return &types.AuctionState{
+		Mode:        a.mode,
+		DefaultMode: a.defMode,
+		Begin:       *a.begin,
+		End:         a.end,
+		Start:       a.start,
+		Stop:        a.stop,
+		Extension:   *a.extension,
+	}
+}
+
 // StartLiquidityAuction - set the state to start a liquidity triggered auction
 // @TODO these functions will be removed once the types are in proto.
 func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration) {
@@ -60,6 +83,7 @@ func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDurati
 	a.stop = false
 	a.begin = &t
 	a.end = d
+	a.changed = true
 }
 
 // StartPriceAuction - set the state to start a price triggered auction
@@ -71,6 +95,7 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 	a.stop = false
 	a.begin = &t
 	a.end = d
+	a.changed = true
 }
 
 // StartOpeningAuction - set the state to start an opening auction (used for testing)
@@ -82,6 +107,7 @@ func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration
 	a.stop = false
 	a.begin = &t
 	a.end = d
+	a.changed = true
 }
 
 // ExtendAuctionPrice - call from price monitoring to extend the auction
@@ -108,11 +134,13 @@ func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.end.Duration += delta.Duration
 	a.end.Volume += delta.Volume
 	a.stop = false // the auction was supposed to stop, but we've extended it
+	a.changed = true
 }
 
 // SetReadyToLeave is called by monitoring engines to mark if an auction period has expired.
 func (a *AuctionState) SetReadyToLeave() {
 	a.stop = true
+	a.changed = true
 }
 
 // Duration returns a copy of the current auction duration object.
@@ -220,6 +248,7 @@ func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 	ext := *a.extension
 	// set extension flag to nil
 	a.extension = nil
+	a.changed = true
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger, ext)
 }
 
@@ -235,6 +264,7 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 	if a.end != nil && a.end.Duration > 0 {
 		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
 	}
+	a.changed = true
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger)
 }
 
@@ -257,6 +287,7 @@ func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction 
 	if a.mode == types.MarketTradingModeBatchAuction {
 		a.trigger = types.AuctionTriggerBatch
 	}
+	a.changed = true
 	return evt
 }
 
@@ -269,9 +300,11 @@ func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *
 		newMin := a.begin.Add(d)
 		// no need to check for nil, we already have
 		if newMin.After(*oldExp) {
+			a.changed = true
 			a.end.Duration += int64(newMin.Sub(*oldExp) / time.Second) // we have to divide by seconds as we're using secondws in AuctionDuration type
 			return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), newMin.UnixNano(), a.trigger)
 		}
+
 	}
 	return nil
 }

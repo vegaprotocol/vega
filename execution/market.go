@@ -92,6 +92,10 @@ type PriceMonitor interface {
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
+	// Snapshot
+	GetState() *types.PriceMonitor
+	Changed() bool
+	ResetChange()
 }
 
 // LiquidityMonitor.
@@ -114,6 +118,8 @@ type TargetStakeCalculator interface {
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
 // keep the interface for documentation purposes.
 type AuctionState interface {
+	price.AuctionState
+	lmon.AuctionState
 	// are we in auction, and what auction are we in?
 	InAuction() bool
 	IsOpeningAuction() bool
@@ -129,6 +135,8 @@ type AuctionState interface {
 	Start() time.Time
 	// signal we've started/ended the auction
 	AuctionStarted(ctx context.Context) *events.Auction
+	AuctionExtended(ctx context.Context) *events.Auction
+	ExtendAuction(delta types.AuctionDuration)
 	Left(ctx context.Context, now time.Time) *events.Auction
 	// get some data
 	Mode() types.MarketTradingMode
@@ -136,6 +144,10 @@ type AuctionState interface {
 	ExtensionTrigger() types.AuctionTrigger
 	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
+	// Snapshot
+	GetState() *types.AuctionState
+	Changed() bool
+	ResetChange()
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -144,7 +156,9 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	mkt         *types.Market
+	mkt        *types.Market
+	mktChanged bool
+
 	closingAt   time.Time
 	currentTime time.Time
 
@@ -174,7 +188,7 @@ type Market struct {
 
 	tsCalc TargetStakeCalculator
 
-	as *monitor.AuctionState // @TODO this should be an interface
+	as AuctionState // @TODO this should be an interface
 
 	peggedOrders   *PeggedOrders
 	expiringOrders *ExpiringOrders
@@ -196,7 +210,30 @@ type Market struct {
 	equityShares               *EquityShares
 }
 
-// SetMarketID assigns a deterministic pseudo-random ID to a Market.
+func (m *Market) changed() bool {
+	return m.mktChanged && m.pMonitor.Changed() && m.as.Changed() && m.peggedOrders.changed() && m.expiringOrders.changed()
+}
+
+func (m *Market) getState() *types.ExecMarket {
+	em := &types.ExecMarket{
+		Market:         m.mkt.DeepClone(),
+		PriceMonitor:   m.pMonitor.GetState(),
+		AuctionState:   m.as.GetState(),
+		PeggedOrders:   m.peggedOrders.copyOrders(),
+		ExpiringOrders: m.getOrdersByID(m.expiringOrders.allOrders()),
+	}
+
+	// reset the changed rubbish
+	m.mktChanged = false
+	m.pMonitor.ResetChange()
+	m.as.ResetChange()
+	m.peggedOrders.resetChange()
+	m.expiringOrders.resetChange()
+
+	return em
+}
+
+// SetMarketID assigns a deterministic pseudo-random ID to a Market
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	marketcfg.ID = ""
 	marketbytes, err := proto.Marshal(marketcfg.IntoProto())
@@ -472,6 +509,8 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	m.mktChanged = true
+
 	return nil
 }
 
@@ -516,6 +555,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
+
+	m.mktChanged = true
 
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
@@ -566,6 +607,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	} else {
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		m.mktChanged = true
+
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
 		}
@@ -631,6 +674,8 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	m.mktChanged = true
+
 	return nil
 }
 
@@ -744,6 +789,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
 		m.mkt.State = types.MarketStateSuspended
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		m.mktChanged = true
 	}
 }
 
@@ -753,6 +799,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+			m.mktChanged = true
 		}
 	}()
 
@@ -1465,6 +1512,7 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 		m.broker.Send(
 			events.NewMarketUpdatedEvent(ctx, *m.mkt),
 		)
+		m.mktChanged = true
 	}
 }
 
@@ -2740,6 +2788,22 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 	// remove if order was expiring
 	m.expiringOrders.RemoveOrder(order.ExpiresAt, order.ID)
 	m.peggedOrders.Remove(order)
+}
+
+// getOrdersByID returns orders based on given IDs. Returns NO error if order not found.
+// TODO implement this more efficiently - pre compute?
+func (m *Market) getOrdersByID(ids []string) []*types.Order {
+	orders := make([]*types.Order, 0, len(ids))
+
+	for _, id := range ids {
+		o, _, err := m.getOrderByID(id)
+		if err != nil {
+			continue
+		}
+		orders = append(orders, o.Clone())
+	}
+
+	return orders
 }
 
 // getOrderBy looks for the order in the order book and in the list

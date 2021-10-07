@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
+	vproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -57,6 +57,10 @@ type Engine struct {
 	oracle products.OracleEngine
 
 	npv netParamsValues
+
+	// Snapshot
+	snapshotSerialised []byte
+	snapshotHash       []byte
 }
 
 type netParamsValues struct {
@@ -709,7 +713,7 @@ func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v inter
 		)
 	}
 
-	pscalingFactors, ok := v.(*proto.ScalingFactors)
+	pscalingFactors, ok := v.(*vproto.ScalingFactors)
 	if !ok {
 		return errors.New("invalid types for Margin ScalingFactors")
 	}
