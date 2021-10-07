@@ -26,6 +26,7 @@ faucet
 fix-a-thon
 github
 GitLab
+GlobalRewardPool
 godog
 Golang
 GraphQL
@@ -43,6 +44,7 @@ mutex
 mutexes
 nodewallet
 notarising
+pendingStake
 Prometheus
 proto
 protobuf
