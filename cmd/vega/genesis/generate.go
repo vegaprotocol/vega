@@ -3,7 +3,6 @@ package genesis
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 
@@ -11,14 +10,13 @@ import (
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/assets"
-	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 
-	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/jessevdk/go-flags"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -29,6 +27,8 @@ import (
 )
 
 type generateCmd struct {
+	Config nodewallets.Config
+
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
 	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
@@ -47,12 +47,11 @@ func (opts *generateCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
 
-	_, conf, err := config.EnsureNodeConfig(vegaPaths)
-	if err != nil {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	vegaKey, ethAddress, err := loadNodeWalletPubKey(log, vegaPaths, conf, pass)
+	vegaKey, ethAddress, walletID, err := loadNodeWalletPubKey(opts.Config, vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -65,10 +64,13 @@ func (opts *generateCmd) Execute(_ []string) error {
 	if err != nil {
 		return err
 	}
+	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
 	genesisState := genesis.DefaultGenesisState()
 	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
+		ID:              walletID,
 		VegaPubKey:      vegaKey,
 		EthereumAddress: ethAddress,
+		TmPubKey:        b64TmPubKey,
 	}
 
 	if len(opts.Network) != 0 {
@@ -164,26 +166,11 @@ func loadTendermintPrivateValidatorKey(tmConfig *tmconfig.Config) (tmcrypto.PubK
 	return pubKey, nil
 }
 
-func loadNodeWalletPubKey(log *logging.Logger, vegaPaths paths.Paths, conf *config.Config, pass string) (string, string, error) {
-	ethClient, err := ethclient.Dial(conf.NodeWallet.ETH.Address)
+func loadNodeWalletPubKey(config nodewallets.Config, vegaPaths paths.Paths, registryPass string) (vegaKey, ethAddr, walletID string, err error) {
+	nw, err := nodewallets.GetNodeWallets(config, vegaPaths, registryPass)
 	if err != nil {
-		return "", "", err
+		return "", "", "", fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, ethClient, vegaPaths)
-	if err != nil {
-		return "", "", err
-	}
-
-	wVega, ok := nw.Get("vega")
-	if !ok {
-		return "", "", errors.New("no vega wallet stored in node wallet")
-	}
-
-	wEth, ok := nw.Get("ethereum")
-	if !ok {
-		return "", "", errors.New("no ethereum wallet stored in node wallet")
-	}
-
-	return wVega.PubKeyOrAddress().Hex(), wEth.PubKeyOrAddress().Hex(), nil
+	return nw.Vega.PubKey().Hex(), nw.Ethereum.PubKey().Hex(), nw.Vega.ID().Hex(), nil
 }

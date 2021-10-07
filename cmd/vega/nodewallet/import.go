@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -16,13 +16,14 @@ import (
 type importCmd struct {
 	config.OutputFlag
 
-	Config nodewallet.Config
+	Config nodewallets.Config
 
-	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
+	WalletPassphrase   config.Passphrase   `long:"wallet-passphrase-file"`
+	ClefAccountAddress config.PromptString `long:"clef-account-address" description:"The Ethereum account address to be imported by Vega from Clef. In hex."`
 
-	Chain      string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
-	WalletPath string `long:"wallet-path" required:"true" description:"The path to the wallet file to import"`
-	Force      bool   `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
+	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
+	WalletPath config.PromptString `long:"wallet-path" description:"The path to the wallet file to import"`
+	Force      bool                `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
 }
 
 func (opts *importCmd) Execute(_ []string) error {
@@ -34,12 +35,7 @@ func (opts *importCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	pass, err := rootCmd.PassphraseFile.Get("node wallet")
-	if err != nil {
-		return err
-	}
-
-	walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
@@ -57,26 +53,52 @@ func (opts *importCmd) Execute(_ []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
-	if err != nil {
-		return err
+	clefEnabled := opts.Config.ETH.ClefAddress != ""
+
+	var walletPass, walletPath string
+	if opts.Chain == vegaChain || (opts.Chain == ethereumChain && !clefEnabled) {
+		walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
+		if err != nil {
+			return err
+		}
+		walletPath, err = opts.WalletPath.Get("wallet path", "wallet-path")
+		if err != nil {
+			return err
+		}
 	}
 
-	_, ok := nw.Get(nodewallet.Blockchain(opts.Chain))
-	if ok && opts.Force {
-		log.Warn("a wallet is already imported for the current chain, this action will rewrite the import", logging.String("chain", opts.Chain))
-	} else if ok {
-		return fmt.Errorf("a wallet is already imported for the chain %v, please rerun with option --force to overwrite it", opts.Chain)
-	}
+	var data map[string]string
+	switch opts.Chain {
+	case ethereumChain:
+		var accountAddress string
+		if clefEnabled {
+			accountAddress, err = opts.ClefAccountAddress.Get("Clef account address", "clef-account-address")
+			if err != nil {
+				return err
+			}
+		}
 
-	data, err := nw.Import(opts.Chain, pass, walletPass, opts.WalletPath)
-	if err != nil {
-		return err
+		data, err = nodewallets.ImportEthereumWallet(
+			opts.Config.ETH,
+			vegaPaths,
+			registryPass,
+			walletPass,
+			accountAddress,
+			walletPath,
+			opts.Force,
+		)
+		if err != nil {
+			return fmt.Errorf("couldn't import Ethereum node wallet: %w", err)
+		}
+	case vegaChain:
+		data, err = nodewallets.ImportVegaWallet(vegaPaths, registryPass, walletPass, walletPath, opts.Force)
+		if err != nil {
+			return fmt.Errorf("couldn't import Vega node wallet: %w", err)
+		}
 	}
-	data["configFilePath"] = nw.GetConfigFilePath()
 
 	if output.IsHuman() {
-		fmt.Println("import successful:")
+		fmt.Println(green("import successful:"))
 		vgfmt.PrettyPrint(data)
 	} else if output.IsJSON() {
 		if err := vgjson.Print(data); err != nil {

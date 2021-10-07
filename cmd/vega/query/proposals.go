@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -12,12 +12,12 @@ type ProposalsCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *ProposalsCmd) Execute(params []string) error {
-	req := coreapipb.ListProposalsRequest{}
+func (opts *ProposalsCmd) Execute(_ []string) error {
+	req := apipb.ListProposalsRequest{}
 	return getPrintProposals(opts.NodeAddress, &req)
 }
 
-func getPrintProposals(nodeAddress string, req *coreapipb.ListProposalsRequest) error {
+func getPrintProposals(nodeAddress string, req *apipb.ListProposalsRequest) error {
 	clt, err := getClient(nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not connect to the vega node: %w", err)

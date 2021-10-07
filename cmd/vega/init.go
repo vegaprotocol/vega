@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"github.com/jessevdk/go-flags"
 )
 
@@ -17,7 +17,7 @@ type InitCmd struct {
 	config.OutputFlag
 	config.Passphrase `long:"nodewallet-passphrase-file"`
 
-	Force      bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
+	Force bool `short:"f" long:"force" description:"Erase exiting vega configuration at the specified path"`
 }
 
 var initCmd InitCmd
@@ -38,7 +38,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 
 	vegaPaths := paths.NewPaths(opts.VegaHome)
 
-	nwLoader, err := nodewallet.InitialiseLoader(vegaPaths, pass)
+	nwRegistry, err := nodewallets.NewRegistryLoader(vegaPaths, pass)
 	if err != nil {
 		return err
 	}
@@ -74,11 +74,11 @@ func (opts *InitCmd) Execute(_ []string) error {
 		logger.Info("configuration generated successfully", logging.String("path", cfgLoader.ConfigFilePath()))
 	} else if output.IsJSON() {
 		return vgjson.Print(struct {
-			ConfigFilePath string `json:"configFilePath"`
+			ConfigFilePath           string `json:"configFilePath"`
 			NodeWalletConfigFilePath string `json:"nodeWalletConfigFilePath"`
 		}{
-			ConfigFilePath: cfgLoader.ConfigFilePath(),
-			NodeWalletConfigFilePath: nwLoader.GetConfigFilePath(),
+			ConfigFilePath:           cfgLoader.ConfigFilePath(),
+			NodeWalletConfigFilePath: nwRegistry.RegistryFilePath(),
 		})
 	}
 

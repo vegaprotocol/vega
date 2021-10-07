@@ -39,9 +39,8 @@ type Commander interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
 type ValidatorTopology interface {
-	SelfVegaPubKey() string
-	Exists(key string) bool
-	AllPubKeys() []string
+	SelfNodeID() string
+	AllNodeIDs() []string
 }
 
 // EvtForwarder receive events from the blockchain queue
@@ -86,7 +85,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		log:              log,
 		cmd:              cmd,
 		nodes:            []nodeHash{},
-		self:             string(top.SelfVegaPubKey()),
+		self:             string(top.SelfNodeID()),
 		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},
@@ -201,13 +200,13 @@ func (e *EvtForwarder) updateValidatorsList() {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	e.self = e.top.SelfVegaPubKey()
+	e.self = e.top.SelfNodeID()
 	// reset slice
 	// preemptive alloc, we can expect to have most likely
 	// as much validator
 	e.nodes = make([]nodeHash, 0, len(e.nodes))
 	// get all keys
-	for _, key := range e.top.AllPubKeys() {
+	for _, key := range e.top.AllNodeIDs() {
 		h := e.hash([]byte(key))
 		e.nodes = append(e.nodes, nodeHash{key, h})
 	}

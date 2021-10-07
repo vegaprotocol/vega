@@ -265,12 +265,9 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 
 	// there is remaining 1000000 to distribute as payout
 	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now(), Seq: 1}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEnd(context.Background(), epoch)
-
-	// no account balances should change, no payouts made, just a pending reward scheme waiting to be processed after the delay
-	epochEndPlusDelay := epoch.EndTime.Add(time.Second * 120)
-	require.Equal(t, 1, len(engine.pendingPayouts[epochEndPlusDelay][epoch]))
-	require.Equal(t, rs.SchemeID, engine.pendingPayouts[epochEndPlusDelay][epoch][0])
 
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
@@ -283,11 +280,11 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 
 	// setup another pending reward at a later time to observe that it remains pending after the current payout is made
-	epoch2 := types.Epoch{StartTime: time.Now().Add(60 * time.Second), EndTime: time.Now().Add(90 * time.Second), Seq: 2}
+	epoch2 := types.Epoch{StartTime: time.Now().Add(60 * time.Second), EndTime: time.Now().Add(60 * time.Second), Seq: 2}
 	engine.OnEpochEnd(context.Background(), epoch2)
 
 	// let time advance by 2 minutes
-	engine.onChainTimeUpdate(context.Background(), epochEndPlusDelay)
+	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(rs.PayoutDelay))
 
 	// the second reward is pending
 	require.Equal(t, 1, len(engine.pendingPayouts))
@@ -309,8 +306,6 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(999999))
 	require.Nil(t, err)
 
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.onChainTimeUpdate(context.Background(), epoch2.EndTime.Add(rs.PayoutDelay))
 
 	// nothing is left pending
@@ -365,6 +360,8 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.OnEpochEnd(context.Background(), epoch)
+	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(rs.PayoutDelay))
+
 	// total distributed is 999999
 	require.Equal(t, 0, len(engine.pendingPayouts))
 
@@ -394,8 +391,8 @@ func testOnChainTimeUpdateNoPayoutsToSend(t *testing.T) {
 	payoutTime1 := now.Add(10 * time.Second)
 	payoutTime2 := now.Add(20 * time.Second)
 
-	engine.pendingPayouts[payoutTime1] = map[types.Epoch][]string{types.Epoch{}: []string{""}}
-	engine.pendingPayouts[payoutTime2] = map[types.Epoch][]string{types.Epoch{}: []string{""}}
+	engine.pendingPayouts[payoutTime1] = []*payout{{}}
+	engine.pendingPayouts[payoutTime2] = []*payout{{}}
 
 	testEngine.engine.onChainTimeUpdate(context.Background(), now)
 

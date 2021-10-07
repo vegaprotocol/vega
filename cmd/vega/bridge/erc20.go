@@ -8,9 +8,9 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/bridges"
 	"code.vegaprotocol.io/vega/config"
-	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/jessevdk/go-flags"
 )
 
 type ERC20Cmd struct {
@@ -27,13 +27,13 @@ var erc20Cmd *ERC20Cmd
 func ERC20() *ERC20Cmd {
 	erc20Cmd = &ERC20Cmd{
 		AddSigner: ERC20AddSignerCmd{
-			Config: nodewallet.NewDefaultConfig(),
+			Config: nodewallets.NewDefaultConfig(),
 		},
 		RemoveSigner: ERC20RemoveSignerCmd{
-			Config: nodewallet.NewDefaultConfig(),
+			Config: nodewallets.NewDefaultConfig(),
 		},
 		SetThreshold: ERC20SetThresholdCmd{
-			Config: nodewallet.NewDefaultConfig(),
+			Config: nodewallets.NewDefaultConfig(),
 		},
 	}
 
@@ -41,7 +41,7 @@ func ERC20() *ERC20Cmd {
 }
 
 type ERC20AddSignerCmd struct {
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	NewSigner string `long:"new-signer" required:"true" description:"Ethereum address of the new signer"`
 	Submitter string `long:"submitter" required:"true" description:"Ethereum address of the submitter of the transaction"`
@@ -49,9 +49,6 @@ type ERC20AddSignerCmd struct {
 }
 
 func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
-	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
-	defer log.AtExit()
-
 	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
@@ -66,14 +63,13 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 
 	opts.Config = conf.NodeWallet
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
-	if err != nil {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	w, ok := nw.Get("ethereum")
-	if !ok {
-		return errors.New("no ethereum wallet configured")
+	w, err := nodewallets.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
+	if err != nil {
+		return fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 	}
 
 	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
@@ -94,16 +90,13 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 }
 
 type ERC20RemoveSignerCmd struct {
-	Config    nodewallet.Config
+	Config    nodewallets.Config
 	OldSigner string `long:"old-signer" required:"true" description:"Ethereum address of signer to remove"`
 	Submitter string `long:"submitter" required:"true" description:"Ethereum address of the submitter of the transaction"`
 	Nonce     string `long:"nonce" required:"true" description:"A nonce for this signature"`
 }
 
 func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
-	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
-	defer log.AtExit()
-
 	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
@@ -118,14 +111,13 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 
 	opts.Config = conf.NodeWallet
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
-	if err != nil {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	w, ok := nw.Get("ethereum")
-	if !ok {
-		return errors.New("no ethereum wallet configured")
+	w, err := nodewallets.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
+	if err != nil {
+		return fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 	}
 
 	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
@@ -146,16 +138,13 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 }
 
 type ERC20SetThresholdCmd struct {
-	Config       nodewallet.Config
+	Config       nodewallets.Config
 	NewThreshold uint16 `long:"new-threshold" required:"true" description:"The new threshold to be used on the bridge"`
 	Submitter    string `long:"submitter" required:"true" description:"Ethereum address of the submitter of the transaction"`
 	Nonce        string `long:"nonce" required:"true" description:"A nonce for this signature"`
 }
 
 func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
-	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
-	defer log.AtExit()
-
 	if opts.NewThreshold == 0 || opts.NewThreshold > 1000 {
 		return fmt.Errorf("invalid new threshold, required to be > 0 and <= 1000, got %d", opts.NewThreshold)
 	}
@@ -174,14 +163,13 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 
 	opts.Config = conf.NodeWallet
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
-	if err != nil {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	w, ok := nw.Get("ethereum")
-	if !ok {
-		return errors.New("no ethereum wallet configured")
+	w, err := nodewallets.GetEthereumWallet(opts.Config.ETH, vegaPaths, pass)
+	if err != nil {
+		return fmt.Errorf("couldn't get Ethereum node wallet: %w", err)
 	}
 
 	nonce, overflowed := num.UintFromString(opts.Nonce, 10)

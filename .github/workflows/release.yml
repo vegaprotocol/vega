@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  release-linux:
+    name: Linux release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go 1.x
+      uses: actions/setup-go@v2
+      with:
+        go-version: ^1.13
+      id: go
+
+    - name: Check out code into the Go module directory
+      uses: actions/checkout@v2
+
+    - name: Set release version
+      id: vars
+      run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
+
+    - name: Build
+      env:
+        RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
+      run: |
+        GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o build/vega -ldflags "-X main.CLIVersion=$RELEASE_VERSION" ./cmd/vega
+        cd build && zip vega-linux-amd64.zip vega
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/*.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
