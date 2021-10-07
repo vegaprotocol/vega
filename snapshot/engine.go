@@ -13,10 +13,27 @@ import (
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cosmos/iavl"
+	"github.com/golang/protobuf/proto"
 	db "github.com/tendermint/tm-db"
 	"github.com/tendermint/tm-db/goleveldb"
 	"github.com/tendermint/tm-db/memdb"
 )
+
+type StateProviderT interface {
+	// Namespace this provider operates in, basically a prefix for the keys
+	Namespace() types.SnapshotNamespace
+	// Keys gets all the nodes this provider populates
+	Keys() []string
+	// HasChanged should return true if state for a given key was updated
+	HasChanged(key string) bool
+	// GetState returns the new state as a payload type
+	GetState(key string) *types.Payload
+	// PollChanges waits for an update on a channel - if nothing was updated, then nil can be sent
+	PollChanges(ctx context.Context, ch chan<- *types.Payload, ech chan<- error)
+	// Sync is called when polling for changes, but we need the snapshot data now. Similar to wg.Wait()
+	// on all of the state providers
+	Sync() error
+}
 
 type StateProvider interface {
 	// Namespace this provider operates in, basically a prefix for the keys
@@ -71,6 +88,10 @@ type Engine struct {
 
 	snapshot  *types.Snapshot
 	snapRetry int
+
+	// the general snapshot info this engine is responsable for
+	wrap *types.PayloadAppState
+	app  *types.AppState
 }
 
 // New returns a new snapshot engine
@@ -87,31 +108,46 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		return nil, err
 	}
 	sctx, cfunc := context.WithCancel(ctx)
-	app := string(types.AppSnapshot)
+	appPL := &types.PayloadAppState{
+		AppState: &types.AppState{},
+	}
+	app := appPL.Namespace().String()
 	return &Engine{
-		Config: conf,
-		ctx:    sctx,
-		cfunc:  cfunc,
-		time:   tm,
-		db:     dbConn,
-		log:    log,
-		avl:    tree,
-		namespaces: []string{
-			app,
-		},
-		keys: []string{},
+		Config:     conf,
+		ctx:        sctx,
+		cfunc:      cfunc,
+		time:       tm,
+		db:         dbConn,
+		log:        log,
+		avl:        tree,
+		namespaces: []string{},
+		keys:       []string{},
 		nsKeys: map[string][]string{
-			app: {"all"},
+			app: {appPL.Key()},
 		},
 		nsTreeKeys: map[string][][]byte{
 			app: {
-				[]byte(strings.Join([]string{app, "all"}, ".")),
+				[]byte(strings.Join([]string{app, appPL.Key()}, ".")),
 			},
 		},
 		hashes:    map[string][]byte{},
 		providers: map[string]StateProvider{},
 		versions:  make([]int64, 0, conf.Versions), // cap determines how many versions we keep
+		wrap:      appPL,
+		app:       appPL.AppState,
 	}, nil
+}
+
+func (e *Engine) ReloadConfig(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+	e.Config = cfg
 }
 
 func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
@@ -224,6 +260,30 @@ func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
 			updated = true
 		}
 	}
+	appUpdate := false
+	height, err := vegactx.BlockHeightFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if height != int64(e.app.Height) {
+		appUpdate = true
+		e.app.Height = uint64(height)
+	}
+	_, block := vegactx.TraceIDFromContext(ctx)
+	if block != e.app.Block {
+		appUpdate = true
+		e.app.Block = block
+	}
+	vNow := e.time.GetTimeNow().Unix()
+	if e.app.Time != vNow {
+		e.app.Time = vNow
+		appUpdate = true
+	}
+	if appUpdate {
+		if updated, err = e.updateAppState(); err != nil {
+			return nil, err
+		}
+	}
 	if !updated {
 		return e.hash, nil
 	}
@@ -297,6 +357,27 @@ func (e *Engine) update(ns string) (bool, error) {
 		update = true
 	}
 	return update, nil
+}
+
+func (e *Engine) updateAppState() (bool, error) {
+	keys, ok := e.nsTreeKeys[e.wrap.Namespace().String()]
+	if !ok {
+		return false, types.ErrNoPrefixFound
+	}
+	// there should be only 1 entry here
+	if len(keys) > 1 || len(keys) == 0 {
+		return false, types.ErrUnexpectedKey
+	}
+	// we only have 1 key
+	pl := types.Payload{
+		Data: e.wrap,
+	}
+	data, err := proto.Marshal(pl.IntoProto())
+	if err != nil {
+		return false, err
+	}
+	_ = e.avl.Set(keys[0], data)
+	return true, nil
 }
 
 func (e *Engine) Hash(ctx context.Context) ([]byte, error) {

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -45,8 +46,9 @@ type Chunk struct {
 }
 
 type Payload struct {
-	Data isPayload
-	raw  []byte // access to the raw data for chunking
+	Data    isPayload
+	raw     []byte // access to the raw data for chunking
+	treeKey []byte
 }
 
 type isPayload interface {
@@ -625,6 +627,17 @@ func (p Payload) Key() string {
 		return ""
 	}
 	return p.Data.Key()
+}
+
+func (p *Payload) GetTreeKey() []byte {
+	if len(p.treeKey) == 0 {
+		k := strings.Join([]string{
+			p.Namespace().String(),
+			p.Key(),
+		}, ".")
+		p.treeKey = []byte(k)
+	}
+	return p.treeKey
 }
 
 func (p Payload) IntoProto() *snapshot.Payload {

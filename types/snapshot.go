@@ -76,6 +76,7 @@ var (
 	ErrUnknownSnapshotChunkHeight = errors.New("no snapshot or chunk found for given height")
 	ErrInvalidSnapshotFormat      = errors.New("invalid snapshot format")
 	ErrSnapshotFormatMismatch     = errors.New("snapshot formats do not match")
+	ErrUnexpectedKey              = errors.New("snapshot namespace has unknown/unexpected key(s)")
 )
 
 type SnapshotFormat = snapshot.Format

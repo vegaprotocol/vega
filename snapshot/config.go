@@ -29,3 +29,9 @@ func NewDefaultConfig() Config {
 		Storage:    goLevelDB,
 	}
 }
+
+func NewTestConfig() Config {
+	cfg := NewDefaultConfig()
+	cfg.Storage = memDB
+	return cfg
+}
