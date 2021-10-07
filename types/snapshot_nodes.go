@@ -600,6 +600,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_ExecutionIdGenerator:
 		ret.Data = dt
+	case *snapshot.Payload_RewardsPendingPayouts:
+		ret.Data = dt
 	}
 	return &ret
 }
