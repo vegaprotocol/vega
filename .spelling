@@ -12,9 +12,11 @@ blockchain
 Buf
 codegen
 cyclomatic
+datanode
 datestamps
 datetime
 denylist
+Docker
 DoD
 DoR
 Ed25519
@@ -22,6 +24,7 @@ enum
 enums
 ERC20
 Ethereum
+expiryTime
 faucet
 fix-a-thon
 github
@@ -49,11 +52,13 @@ Prometheus
 proto
 protobuf
 protobufs
+PubKey
 Ropsten
 round_pushpin
 spec
 specs
 struct
+SubmitTransaction
 Suzdalnitski
 syslog
 tada
@@ -66,6 +71,7 @@ traderbot
 TradingService
 TxErr
 unexported
+uint64
 unparked
 vega
 whitepaper
