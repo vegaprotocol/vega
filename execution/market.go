@@ -145,13 +145,8 @@ type AuctionState interface {
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 	// Snapshot
 	GetState() *types.AuctionState
-<<<<<<< HEAD
 	RestoreState(*types.AuctionState)
 	Changed() bool
-=======
-	Changed() bool
-	ResetChange()
->>>>>>> add execution markets snapshot
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -160,12 +155,8 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-<<<<<<< HEAD
-	mkt *types.Market
-=======
 	mkt        *types.Market
 	mktChanged bool
->>>>>>> add execution markets snapshot
 
 	closingAt   time.Time
 	currentTime time.Time
@@ -267,32 +258,6 @@ func (m *Market) restoreState(em *types.ExecMarket) error {
 	return nil
 }
 
-<<<<<<< HEAD
-=======
-func (m *Market) changed() bool {
-	return m.mktChanged && m.pMonitor.Changed() && m.as.Changed() && m.peggedOrders.changed() && m.expiringOrders.changed()
-}
-
-func (m *Market) getState() *types.ExecMarket {
-	em := &types.ExecMarket{
-		Market:         m.mkt.DeepClone(),
-		PriceMonitor:   m.pMonitor.GetState(),
-		AuctionState:   m.as.GetState(),
-		PeggedOrders:   m.peggedOrders.copyOrders(),
-		ExpiringOrders: m.getOrdersByID(m.expiringOrders.allOrders()),
-	}
-
-	// reset the changed rubbish
-	m.mktChanged = false
-	m.pMonitor.ResetChange()
-	m.as.ResetChange()
-	m.peggedOrders.resetChange()
-	m.expiringOrders.resetChange()
-
-	return em
-}
-
->>>>>>> add execution markets snapshot
 // SetMarketID assigns a deterministic pseudo-random ID to a Market
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	marketcfg.ID = ""
@@ -570,11 +535,7 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-<<<<<<< HEAD
 	m.stateChanged = true
-=======
-	m.mktChanged = true
->>>>>>> add execution markets snapshot
 
 	return nil
 }
@@ -621,11 +582,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
 
-<<<<<<< HEAD
 	m.stateChanged = true
-=======
-	m.mktChanged = true
->>>>>>> add execution markets snapshot
 
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
@@ -676,10 +633,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	} else {
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-<<<<<<< HEAD
-=======
-		m.mktChanged = true
->>>>>>> add execution markets snapshot
+		m.stateChanged = true
 
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
@@ -747,12 +701,8 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-<<<<<<< HEAD
-	m.stateChanged = true
-=======
-	m.mktChanged = true
->>>>>>> add execution markets snapshot
 
+	m.stateChanged = true
 	return nil
 }
 
@@ -866,11 +816,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
 		m.mkt.State = types.MarketStateSuspended
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-<<<<<<< HEAD
 		m.stateChanged = true
-=======
-		m.mktChanged = true
->>>>>>> add execution markets snapshot
 	}
 }
 
@@ -880,11 +826,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-<<<<<<< HEAD
 			m.stateChanged = true
-=======
-			m.mktChanged = true
->>>>>>> add execution markets snapshot
 		}
 	}()
 
@@ -1597,11 +1539,7 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 		m.broker.Send(
 			events.NewMarketUpdatedEvent(ctx, *m.mkt),
 		)
-<<<<<<< HEAD
 		m.stateChanged = true
-=======
-		m.mktChanged = true
->>>>>>> add execution markets snapshot
 	}
 }
 

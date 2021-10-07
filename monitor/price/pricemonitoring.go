@@ -443,6 +443,7 @@ func (e *Engine) updateBounds() {
 	// Iterate update time until in the future
 	for !e.update.After(e.now) {
 		e.update = e.update.Add(e.updateFrequency)
+		e.stateChanged = true
 	}
 
 	for _, b := range e.bounds {
@@ -468,10 +469,12 @@ func (e *Engine) updateBounds() {
 	for i := 0; i < len(e.pricesPast)-1; i++ {
 		if !e.pricesPast[i].Time.Before(minRequiredHorizon) {
 			e.pricesPast = e.pricesPast[i:]
+			e.stateChanged = true
 			return
 		}
 	}
 	e.pricesPast = e.pricesPast[len(e.pricesPast)-1:]
+	e.stateChanged = true
 }
 
 func (e *Engine) getRefPrice(horizon int64) num.Decimal {
