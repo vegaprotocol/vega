@@ -1,6 +1,6 @@
 # Data node
 
-Version 0.42.0.
+Version 0.44.0.
 
 A service exposing read only APIs built on top of [Vega](https://github.com/vegaprotocol/vega) platform.
 
