@@ -1,6 +1,5 @@
 # Changelog
 
-
 ## 0.44.0
 *2021-10-07*
 
@@ -102,3 +101,5 @@
 - [49](https://github.com/vegaprotocol/data-node/pull/49) - CI: Fix jenkins tag issue
 - [9](https://github.com/vegaprotocol/data-node/pull/9) - Fix mock paths
 - [7](https://github.com/vegaprotocol/data-node/pull/7) - Fix api tests
+
+
