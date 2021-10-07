@@ -6,61 +6,61 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
-	protoapi "code.vegaprotocol.io/protos/vega/api"
+	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"github.com/pkg/errors"
 )
 
 const defaultRequestTimeout = time.Second * 5
 
-// TradingServiceClient ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/trading_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/api TradingServiceClient
-type TradingServiceClient interface {
-	protoapi.TradingServiceClient
+// CoreServiceClient ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/core_service_client_mock.go -package mocks code.vegaprotocol.io/data-node/api CoreServiceClient
+type CoreServiceClient interface {
+	protoapi.CoreServiceClient
 }
 
-// trading service acts as a proxy to the trading service in core node
-type tradingProxyService struct {
+// core service acts as a proxy to the trading service in core node
+type coreProxyService struct {
 	log  *logging.Logger
 	conf Config
 
-	tradingServiceClient TradingServiceClient
-	eventObserver        *eventObserver
+	coreServiceClient CoreServiceClient
+	eventObserver     *eventObserver
 }
 
-func (t *tradingProxyService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
+func (t *coreProxyService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	return t.tradingServiceClient.SubmitTransaction(ctx, req)
+	return t.coreServiceClient.SubmitTransaction(ctx, req)
 }
 
-func (t *tradingProxyService) LastBlockHeight(ctx context.Context, req *protoapi.LastBlockHeightRequest) (*protoapi.LastBlockHeightResponse, error) {
+func (t *coreProxyService) LastBlockHeight(ctx context.Context, req *protoapi.LastBlockHeightRequest) (*protoapi.LastBlockHeightResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	return t.tradingServiceClient.LastBlockHeight(ctx, req)
+	return t.coreServiceClient.LastBlockHeight(ctx, req)
 }
 
-func (t *tradingProxyService) GetVegaTime(ctx context.Context, req *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
+func (t *coreProxyService) GetVegaTime(ctx context.Context, req *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	return t.tradingServiceClient.GetVegaTime(ctx, req)
+	return t.coreServiceClient.GetVegaTime(ctx, req)
 }
 
-func (t *tradingProxyService) Statistics(ctx context.Context, req *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
+func (t *coreProxyService) Statistics(ctx context.Context, req *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()
 
-	return t.tradingServiceClient.Statistics(ctx, req)
+	return t.coreServiceClient.Statistics(ctx, req)
 }
 
-func (t *tradingProxyService) ObserveEventBus(
-	stream protoapi.TradingService_ObserveEventBusServer) error {
+func (t *coreProxyService) ObserveEventBus(
+	stream protoapi.CoreService_ObserveEventBusServer) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveEventBus")()
 	return t.eventObserver.ObserveEventBus(stream)
 }
 
-func (t *tradingProxyService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
+func (t *coreProxyService) PropagateChainEvent(ctx context.Context, req *protoapi.PropagateChainEventRequest) (*protoapi.PropagateChainEventResponse, error) {
 	return nil, errors.New("unimplemented")
 }

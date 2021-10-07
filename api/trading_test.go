@@ -39,7 +39,7 @@ import (
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 
 	"github.com/golang/mock/gomock"
@@ -98,7 +98,8 @@ func getTestGRPCServer(
 	startAndWait bool,
 ) (
 	tidy func(),
-	conn *grpc.ClientConn, mockTradingServiceClient *mocks.MockTradingServiceClient,
+	conn *grpc.ClientConn,
+	mockCoreServiceClient *mocks.MockCoreServiceClient,
 	err error,
 ) {
 	path := fmt.Sprintf("vegatest-%d-", port)
@@ -117,7 +118,7 @@ func getTestGRPCServer(
 	// Mock BlockchainClient
 	mockCtrl := gomock.NewController(t)
 
-	mockTradingServiceClient = mocks.NewMockTradingServiceClient(mockCtrl)
+	mockCoreServiceClient = mocks.NewMockCoreServiceClient(mockCtrl)
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -259,7 +260,7 @@ func getTestGRPCServer(
 	g := api.NewGRPCServer(
 		logger,
 		conf.API,
-		mockTradingServiceClient,
+		mockCoreServiceClient,
 		timeService,
 		marketService,
 		partyService,
@@ -357,7 +358,7 @@ func TestSubmitTransaction(t *testing.T) {
 			SubmitTransaction(gomock.Any(), vegaReq).
 			Return(&vegaprotoapi.SubmitTransactionResponse{Success: true}, nil).Times(1)
 
-		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
@@ -403,7 +404,7 @@ func TestSubmitTransaction(t *testing.T) {
 			SubmitTransaction(gomock.Any(), vegaReq).
 			Return(nil, errors.New("Critical error"))
 
-		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
@@ -433,7 +434,7 @@ func TestLastBlockHeight(t *testing.T) {
 			LastBlockHeight(gomock.Any(), vegaReq).
 			Return(&vegaprotoapi.LastBlockHeightResponse{Height: 20}, nil).Times(1)
 
-		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)
@@ -455,7 +456,7 @@ func TestLastBlockHeight(t *testing.T) {
 			LastBlockHeight(gomock.Any(), vegaReq).
 			Return(nil, fmt.Errorf("Critical error")).Times(1)
 
-		proxyClient := vegaprotoapi.NewTradingServiceClient(conn)
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.LastBlockHeight(ctx, req)

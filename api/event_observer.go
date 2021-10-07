@@ -6,7 +6,7 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/subscribers"
-	protoapi "code.vegaprotocol.io/protos/vega/api"
+	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	"google.golang.org/grpc/codes"
@@ -19,7 +19,7 @@ type eventObserver struct {
 }
 
 func (e *eventObserver) ObserveEventBus(
-	stream protoapi.TradingService_ObserveEventBusServer) error {
+	stream protoapi.CoreService_ObserveEventBusServer) error {
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 
@@ -69,7 +69,7 @@ func (e *eventObserver) ObserveEventBus(
 
 func (e *eventObserver) observeEvents(
 	ctx context.Context,
-	stream protoapi.TradingService_ObserveEventBusServer,
+	stream protoapi.CoreService_ObserveEventBusServer,
 	ch <-chan []*eventspb.BusEvent,
 ) error {
 	for {
@@ -92,7 +92,7 @@ func (e *eventObserver) observeEvents(
 }
 
 func (e *eventObserver) recvEventRequest(
-	stream protoapi.TradingService_ObserveEventBusServer,
+	stream protoapi.CoreService_ObserveEventBusServer,
 ) (*protoapi.ObserveEventBusRequest, error) {
 	readCtx, cfunc := context.WithTimeout(stream.Context(), 5*time.Second)
 	oebCh := make(chan protoapi.ObserveEventBusRequest)
@@ -121,7 +121,7 @@ func (e *eventObserver) recvEventRequest(
 
 func (e *eventObserver) observeEventsWithAck(
 	ctx context.Context,
-	stream protoapi.TradingService_ObserveEventBusServer,
+	stream protoapi.CoreService_ObserveEventBusServer,
 	batchSize int64,
 	ch <-chan []*eventspb.BusEvent,
 	bCh chan<- int,

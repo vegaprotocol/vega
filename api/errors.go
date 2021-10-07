@@ -76,6 +76,7 @@ var (
 	ErrAccountServiceGetMarketAccounts = errors.New("failed to get market accounts")
 	// AccountService...
 	ErrAccountServiceGetFeeInfrastructureAccounts = errors.New("failed to get fee infrastructure accounts")
+	ErrAccountServiceGetGlobalRewardPoolAccounts  = errors.New("failed to get global reward pool accounts")
 	ErrAccountServiceGetPartyAccounts             = errors.New("failed to get party accounts")
 	// RiskService...
 	ErrRiskServiceGetMarginLevelsByID = errors.New("failed to get margin levels")

@@ -412,9 +412,6 @@ type Query {
 
   "get data for a specific epoch, if id omitted it gets the current epoch"
   epoch(id: String): Epoch!
-
-  "return reward information"
-  rewardDetails("ID of the party" partyId: ID!): [RewardPerAssetDetail]
 }
 
 enum NodeStatus {
@@ -543,6 +540,12 @@ type Node {
   score: String!
 
   normalisedScore: String!
+
+  # The name of the node
+  name: String!
+
+  # An url to an avatar
+  avatarUrl: String
 }
 
 type Delegation {
@@ -584,6 +587,9 @@ type Asset {
 
   "The infrastructure fee account for this asset"
   infrastructureFeeAccount: Account!
+
+  "The global reward pool account for this asset"
+  globalRewardPoolAccount: Account!
 }
 
 "One of the possible asset sources"
@@ -1337,6 +1343,9 @@ type Party {
 
   "The staking informations for this Party"
   stake: PartyStake!
+
+  "return reward information"
+  rewardDetails: [RewardPerAssetDetail]
 }
 
 """
@@ -2608,18 +2617,25 @@ type LiquidityProvision {
 "Reward information for a single party"
 type Reward {
   "The asset for which this reward is associated"
-  AssetId: String!
-
-  PartyId: String!
-  Epoch: Int!
-  Amount: String!
-  PercentageOfTotal: String!
-  ReceivedAt: String!
+  assetId: String!
+  "Party receiving the reward"
+  partyId: String!
+  "Epoch for which this reward was distributed"
+  epoch: Int!
+  "Amount received for this reward"
+  amount: String!
+  "Percentage out of the total distributed reward"
+  percentageOfTotal: String!
+  "Time at which the rewards was received"
+  receivedAt: String!
 }
 
 "Reward information for a given asset"
 type RewardPerAssetDetail {
-  Asset: Asset!
-  Rewards: [Reward]
-  TotalAmount: String!
+  "Asset in which the reward was paid"
+  asset: Asset!
+  "A list of rewards received for this asset"
+  rewards: [Reward]
+  "The total amount of rewards received for this asset."
+  totalAmount: String!
 }

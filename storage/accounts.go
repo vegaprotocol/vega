@@ -118,10 +118,35 @@ func (a *Account) GetMarketAccounts(marketID, asset string) ([]*types.Account, e
 }
 
 func (a *Account) GetFeeInfrastructureAccounts(asset string) ([]*types.Account, error) {
-	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, "!", false)
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE, NoMarket, false)
 	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("error loading fee infrastructure for asset: %s", asset))
+	}
+
+	if len(asset) <= 0 {
+		return accs, nil
+	}
+
+	// in the case of the infrastructure fee account we will get one infrastructure fee account per asset only,
+	// the early exit makes sense there as as soon as we find the account for the required asset,
+	// we know it's the only one
+	out := []*types.Account{}
+	for _, v := range accs {
+		if asset == v.Asset {
+			out = append(out, v)
+			break
+		}
+	}
+
+	return out, nil
+}
+
+func (a *Account) GetGlobalRewardPoolAccounts(asset string) ([]*types.Account, error) {
+	keyPrefix, validFor := a.badger.accountMarketPrefix(types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, NoMarket, false)
+	accs, err := a.getAccountsForPrefix(keyPrefix, validFor, false)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("error loading asset reward pool: %s", asset))
 	}
 
 	if len(asset) <= 0 {
@@ -378,6 +403,11 @@ func (a *Account) parseBatch(accounts ...*types.Account) (map[string][]byte, err
 			infrastructureIDKey := a.badger.accountFeeInfrastructureIDKey(acc.Asset)
 			batch[string(infrastructureIDKey)] = buf
 		}
+		if acc.Type == types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD {
+			rewardIDKey := a.badger.accountGlobalRewardPoolIDKey(acc.Asset)
+			batch[string(rewardIDKey)] = buf
+		}
+
 		// Check the type of account and write only the data required for GENERAL accounts.
 		if acc.Type == types.AccountType_ACCOUNT_TYPE_GENERAL {
 			// General accounts have no scope of an individual market, they span all markets.

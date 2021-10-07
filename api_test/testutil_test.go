@@ -44,7 +44,7 @@ import (
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
-	vegaprotoapi "code.vegaprotocol.io/protos/vega/api"
+	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 
@@ -76,8 +76,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 
 	mockCtrl := gomock.NewController(t)
 
-	mockTradingServiceClient := apimocks.NewMockTradingServiceClient(mockCtrl)
-	mockTradingServiceClient.EXPECT().
+	mockCoreServiceClient := apimocks.NewMockCoreServiceClient(mockCtrl)
+	mockCoreServiceClient.EXPECT().
 		SubmitTransaction(gomock.Any(), gomock.Any()).
 		Return(&vegaprotoapi.SubmitTransactionResponse{}, nil)
 
@@ -213,7 +213,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	srv := api.NewGRPCServer(
 		logger,
 		conf.API,
-		mockTradingServiceClient,
+		mockCoreServiceClient,
 		timeService,
 		marketService,
 		partyService,

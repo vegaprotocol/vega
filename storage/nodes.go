@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 
 	"code.vegaprotocol.io/data-node/logging"
@@ -184,11 +185,14 @@ func (ns *Node) GetStakedTotal(epochID string) string {
 func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 	stakedByOperator := num.NewUint(0)
 	stakedByDelegates := num.NewUint(0)
+	pendingStake := num.NewUint(0)
+	pendingStakeSign := true // true = pos, false = neg
 
 	var delegations []*pb.Delegation
 
+	amounts := map[string]*num.Uint{}
 	if dPerParty, ok := n.delegationsPerEpochPerParty[epochID]; ok {
-		for _, d := range dPerParty {
+		for party, d := range dPerParty {
 			delegation := d
 			delegations = append(delegations, &delegation)
 
@@ -198,16 +202,57 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 				continue
 			}
 
+			amounts[party] = amount
+
 			// If party is equal the node public key we assume this is operator
 			if d.GetParty() == n.n.GetPubKey() {
 				stakedByOperator.Add(stakedByOperator, amount)
 			} else {
 				stakedByDelegates.Add(stakedByDelegates, amount)
 			}
+
+		}
+	}
+
+	// now we try to get the next epoch so we could calculate the pending stake
+	epochSeq, err := strconv.ParseUint(epochID, 10, 64)
+	if err != nil {
+		ns.log.Error("could not convert back epochID to uint", logging.Error(err))
+		return nil
+	}
+
+	// may be nil but that's fine
+	nextDPerParty := n.delegationsPerEpochPerParty[fmt.Sprintf("%d", epochSeq+1)]
+	// compute pending now
+	for party, nextD := range nextDPerParty {
+		nextAmount, ok := num.UintFromString(nextD.GetAmount(), 10)
+		if ok {
+			ns.log.Error("Failed to create amount string", logging.String("string", nextD.GetAmount()))
+			continue
+		}
+
+		amount, ok := amounts[party]
+		if !ok {
+			amount = num.Zero()
+		}
+
+		// add to the pending diff then
+		if nextAmount.GT(amount) {
+			pendingStakeSign = addToPending(pendingStakeSign, pendingStake, num.Zero().Sub(nextAmount, amount))
+		} else {
+			pendingStakeSign = subFromPending(pendingStakeSign, pendingStake, num.Zero().Sub(amount, nextAmount))
 		}
 	}
 
 	stakedTotal := num.Sum(stakedByOperator, stakedByDelegates)
+	pendingStakeString := "0"
+	if !pendingStake.IsZero() {
+		if pendingStakeSign {
+			pendingStakeString = fmt.Sprintf("+%s", pendingStake.String())
+		} else {
+			pendingStakeString = fmt.Sprintf("-%s", pendingStake.String())
+		}
+	}
 
 	// @TODO finish these fields
 	// PendingStake string
@@ -223,8 +268,10 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 		StakedByOperator:  stakedByOperator.String(),
 		StakedByDelegates: stakedByDelegates.String(),
 		StakedTotal:       stakedTotal.String(),
-
-		Delegations: delegations,
+		PendingStake:      pendingStakeString,
+		Name:              n.n.GetName(),
+		AvatarUrl:         n.n.GetAvatarUrl(),
+		Delegations:       delegations,
 	}
 
 	if sc, ok := n.scoresPerEpoch[epochID]; ok {
@@ -233,4 +280,33 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 	}
 
 	return node
+}
+
+func addToPending(sign bool, pending, amount *num.Uint) bool {
+	if sign {
+		// positive just add to it
+		pending.Add(pending, amount)
+		return sign
+	}
+	if pending.GT(amount) {
+		pending.Sub(pending, amount)
+		return sign
+	}
+
+	pending.Sub(amount, pending)
+	return !sign
+}
+
+func subFromPending(sign bool, pending, amount *num.Uint) bool {
+	if !sign {
+		pending.Add(pending, amount)
+		return sign
+	}
+	if pending.GT(amount) {
+		pending.Sub(pending, amount)
+		return sign
+	}
+
+	pending.Sub(amount, pending)
+	return !sign
 }
