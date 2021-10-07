@@ -19,7 +19,7 @@ const (
 
 // Watcher is looking for updates in the configurations files
 type Watcher struct {
-	log  *logging.Logger
+	log            *logging.Logger
 	cfg            Config
 	configFilePath string
 

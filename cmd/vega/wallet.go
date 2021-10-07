@@ -8,7 +8,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type walletCmd struct {}
+type walletCmd struct{}
 
 func (opts *walletCmd) Execute(_ []string) error {
 	os.Args = os.Args[1:]
