@@ -8,7 +8,7 @@ import (
 const (
 	namedLogger = "snapshot"
 	goLevelDB   = "GOLevelDB"
-	memdb       = "memory"
+	memDB       = "memory"
 )
 
 type Config struct {

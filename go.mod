@@ -14,7 +14,7 @@ require (
 	github.com/cosmos/iavl v0.15.3
 	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3
-	github.com/dgraph-io/badger/v2 v2.2007.2
+	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.9
@@ -44,7 +44,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/tendermint/tendermint v0.34.11
-	github.com/tendermint/tm-db v0.6.4
+	github.com/tendermint/tm-db v0.6.5
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1

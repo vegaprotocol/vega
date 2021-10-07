@@ -10,11 +10,12 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/snapshot/ldb"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cosmos/iavl"
 	db "github.com/tendermint/tm-db"
+	"github.com/tendermint/tm-db/goleveldb"
+	"github.com/tendermint/tm-db/memdb"
 )
 
 type StateProvider interface {
@@ -114,10 +115,14 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 }
 
 func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
-	if conf.Storage == memdb {
-		return db.NewMemDB(), nil
+	if conf.Storage == memDB {
+		return memdb.NewDB(), nil
 	}
-	return ldb.OpenDB(vegapath, nil)
+	dbPath, err := vegapath.DataPathFor(paths.SnapshotStateHome)
+	if err != nil {
+		return nil, err
+	}
+	return goleveldb.NewDB("snapshot", dbPath)
 }
 
 // List returns all snapshots available
@@ -193,7 +198,7 @@ func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.
 	if f != e.snapshot.Format {
 		return nil, types.ErrSnapshotFormatMismatch
 	}
-	return e.snapshot.GetRawChunk(height)
+	return e.snapshot.GetRawChunk(uint32(height))
 }
 
 func (e *Engine) GetMissingChunks() []uint32 {

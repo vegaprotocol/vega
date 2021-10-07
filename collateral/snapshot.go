@@ -122,8 +122,8 @@ func newAccState() *accState {
 		serialised: map[string][]byte{},
 	}
 	state.hashKeys = []string{
-		state.accPL.Key(),
 		state.assPL.Key(),
+		state.accPL.Key(),
 	}
 	for _, k := range state.hashKeys {
 		state.hashes[k] = nil
