@@ -7,6 +7,10 @@ import (
 	"time"
 
 	vproto "code.vegaprotocol.io/protos/vega"
+<<<<<<< HEAD
+=======
+	"code.vegaprotocol.io/vega/collateral"
+>>>>>>> add execution markets snapshot
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"

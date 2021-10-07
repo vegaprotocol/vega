@@ -27,10 +27,6 @@ func NewExpiringOrders() *ExpiringOrders {
 	}
 }
 
-func (a ExpiringOrders) changed() bool {
-	return a.ordersChanged
-}
-
 func (a *ExpiringOrders) GetState() []string {
 	orders := make([]string, 0, a.orders.Len())
 	a.orders.Ascend(func(item btree.Item) bool {
@@ -47,6 +43,25 @@ func (a *ExpiringOrders) RestoreState(orders []*types.Order) {
 	for _, o := range orders {
 		a.Insert(o.ID, o.ExpiresAt)
 	}
+}
+
+func (a ExpiringOrders) changed() bool {
+	return a.ordersChanged
+}
+
+func (a ExpiringOrders) resetChange() {
+	a.ordersChanged = false
+}
+
+func (a ExpiringOrders) allOrders() []string {
+	orders := make([]string, 0, a.orders.Len())
+
+	a.orders.Ascend(func(item btree.Item) bool {
+		orders = append(orders, item.(*ordersAtTS).orders...)
+		return true
+	})
+
+	return orders
 }
 
 func (a *ExpiringOrders) GetExpiryingOrderCount() int {

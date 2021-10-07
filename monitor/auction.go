@@ -54,6 +54,26 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 	return &s
 }
 
+func (a AuctionState) Changed() bool {
+	return a.changed
+}
+
+func (a *AuctionState) ResetChange() {
+	a.changed = false
+}
+
+func (a AuctionState) GetState() *types.AuctionState {
+	return &types.AuctionState{
+		Mode:        a.mode,
+		DefaultMode: a.defMode,
+		Begin:       *a.begin,
+		End:         a.end,
+		Start:       a.start,
+		Stop:        a.stop,
+		Extension:   *a.extension,
+	}
+}
+
 // StartLiquidityAuction - set the state to start a liquidity triggered auction
 // @TODO these functions will be removed once the types are in proto.
 func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration) {
