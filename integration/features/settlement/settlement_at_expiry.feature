@@ -52,7 +52,7 @@ Feature: Test settlement at expiry
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | default-eth-for-future |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle         |
-      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | default-eth-for-future |
+      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |
       | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec22Oracle         |
      
   Scenario: Order cannot be placed once the market is expired
@@ -380,13 +380,13 @@ Scenario: Settlement happened when market is being closed after being in Suspend
     #   | aux2  | ETH/DEC21 | buy  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then debug orders
 
-    When the oracles broadcast data signed with "0xDEADBEEF":
+    When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
 
     And time is updated to "2021-01-01T01:01:01Z"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
-    Then the oracles broadcast data signed with "0xDEADBEEF":
+    Then the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
       | prices.ETH.value | 42    |
     Then time is updated to "2021-01-01T01:01:02Z"
