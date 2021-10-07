@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/api/rest"
@@ -34,7 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/oracles/adaptors"
@@ -84,7 +84,7 @@ type NodeCommand struct {
 	rewards              *rewards.Engine
 	checkpoint           *checkpoint.Engine
 	spam                 *spam.Engine
-	nodeWallet           *nodewallet.Service
+	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
 
 	assets         *assets.Service
@@ -145,8 +145,8 @@ func (l *NodeCommand) Run(confWatcher *config.Watcher, vegaPaths paths.Paths, no
 func (l *NodeCommand) runNode(args []string) error {
 	defer l.cancel()
 	defer func() {
-		if err := l.nodeWallet.Cleanup(); err != nil {
-			l.Log.Error("error cleaning up nodewallet", logging.Error(err))
+		if err := l.nodeWallets.Ethereum.Cleanup(); err != nil {
+			l.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
 		}
 	}()
 
@@ -169,7 +169,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	grpcServer.RegisterService(func(server *grpc.Server) {
 		svc := coreapi.NewService(l.ctx, l.Log, l.conf.CoreAPI, l.broker)
-		coreapipb.RegisterCoreApiServiceServer(server, svc)
+		apipb.RegisterCoreStateServiceServer(server, svc)
 	})
 
 	// watch configs

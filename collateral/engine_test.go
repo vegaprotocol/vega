@@ -124,7 +124,7 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 	defer eng.Finish()
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),
 				Asset:  "ETH",
@@ -154,7 +154,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Owner: "party1",
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),
@@ -597,7 +597,7 @@ func testEnableAssetSuccess(t *testing.T) {
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
-	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
+	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
 	assert.True(t, assetInsuranceAcc.Balance.IsZero())
 
 }
@@ -2164,7 +2164,7 @@ func TestClearMarket(t *testing.T) {
 	assert.Equal(t, 2, len(responses))
 
 	// as there's only one market and it's being cleared we expect all the balance to go to the global account
-	assetInsuranceAcc := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
+	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
 	assert.Equal(t, num.NewUint(1000), assetInsuranceAcc.Balance)
 }
 
@@ -2413,8 +2413,11 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
+			MinLpStake:  num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
-				BuiltinAsset: &types.BuiltinAsset{},
+				BuiltinAsset: &types.BuiltinAsset{
+					MaxFaucetAmountMint: num.Zero(),
+				},
 			},
 		},
 	}
@@ -2425,7 +2428,16 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset := types.Asset{
 		ID: testMarketAsset,
 		Details: &types.AssetDetails{
-			Symbol: testMarketAsset,
+			Symbol:      testMarketAsset,
+			Name:        testMarketAsset,
+			Decimals:    0,
+			TotalSupply: num.NewUint(10000),
+			MinLpStake:  num.Zero(),
+			Source: &types.AssetDetailsBuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					MaxFaucetAmountMint: num.Zero(),
+				},
+			},
 		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)
@@ -2434,7 +2446,16 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	asset = types.Asset{
 		ID: "ETH",
 		Details: &types.AssetDetails{
-			Symbol: "ETH",
+			Symbol:      "ETH",
+			Name:        "ETH",
+			Decimals:    18,
+			TotalSupply: num.NewUint(1000000000),
+			MinLpStake:  num.Zero(),
+			Source: &types.AssetDetailsBuiltinAsset{
+				BuiltinAsset: &types.BuiltinAsset{
+					MaxFaucetAmountMint: num.Zero(),
+				},
+			},
 		},
 	}
 	err = eng.EnableAsset(context.Background(), asset)

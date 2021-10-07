@@ -24,6 +24,18 @@ func (a *Account) Clone() *Account {
 	return &acccpy
 }
 
+func AccountFromProto(a *proto.Account) *Account {
+	bal, _ := num.UintFromString(a.Balance, 10)
+	return &Account{
+		ID:       a.Id,
+		Owner:    a.Owner,
+		Balance:  bal,
+		Asset:    a.Asset,
+		MarketID: a.MarketId,
+		Type:     a.Type,
+	}
+}
+
 func (a *Account) IntoProto() *proto.Account {
 	return &proto.Account{
 		Id:       a.ID,

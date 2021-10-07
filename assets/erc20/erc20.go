@@ -15,7 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/metrics"
-	"code.vegaprotocol.io/vega/nodewallet"
+	ethnw "code.vegaprotocol.io/vega/nodewallets/eth"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -34,12 +34,11 @@ const (
 )
 
 var (
-	ErrMissingETHWalletFromNodeWallet = errors.New("missing eth wallet from node wallet")
-	ErrUnableToFindDeposit            = errors.New("unable to find erc20 deposit event")
-	ErrUnableToFindWithdrawal         = errors.New("unable to find erc20 withdrawal event")
-	ErrUnableToFindERC20AssetList     = errors.New("unable to find erc20 asset list event")
-	ErrMissingConfirmations           = errors.New("missing confirmation from ethereum")
-	ErrNotAnErc20Asset                = errors.New("not an erc20 asset")
+	ErrUnableToFindDeposit        = errors.New("unable to find erc20 deposit event")
+	ErrUnableToFindWithdrawal     = errors.New("unable to find erc20 withdrawal event")
+	ErrUnableToFindERC20AssetList = errors.New("unable to find erc20 asset list event")
+	ErrMissingConfirmations       = errors.New("missing confirmation from ethereum")
+	ErrNotAnErc20Asset            = errors.New("not an erc20 asset")
 )
 
 type ETHClient interface {
@@ -54,16 +53,11 @@ type ERC20 struct {
 	asset     *types.Asset
 	address   string
 	ok        bool
-	wallet    nodewallet.ETHWallet
+	wallet    *ethnw.Wallet
 	ethClient ETHClient
 }
 
-func New(id string, asset *types.AssetDetails, w nodewallet.Wallet, ethClient ETHClient) (*ERC20, error) {
-	wal, ok := w.(nodewallet.ETHWallet)
-	if !ok {
-		return nil, ErrMissingETHWalletFromNodeWallet
-	}
-
+func New(id string, asset *types.AssetDetails, w *ethnw.Wallet, ethClient ETHClient) (*ERC20, error) {
 	source := asset.GetErc20()
 	if source == nil {
 		return nil, ErrNotAnErc20Asset
@@ -75,7 +69,7 @@ func New(id string, asset *types.AssetDetails, w nodewallet.Wallet, ethClient ET
 			Details: asset,
 		},
 		address:   source.ContractAddress,
-		wallet:    wal,
+		wallet:    w,
 		ethClient: ethClient,
 	}, nil
 }

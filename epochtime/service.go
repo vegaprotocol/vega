@@ -31,18 +31,36 @@ type Svc struct {
 	broker Broker
 
 	readyToStartNewEpoch bool
+	readyToEndEpoch      bool
+
+	// Snapshot state
+	state *types.EpochState
+	pl    types.Payload
+	data  []byte
+	hash  []byte
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/epochtime VegaTime
 type VegaTime interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
 // NewService instantiates a new epochtime service
 func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc {
+
 	s := &Svc{config: conf,
 		log:                  l,
 		broker:               broker,
-		readyToStartNewEpoch: false}
+		readyToStartNewEpoch: false,
+		readyToEndEpoch:      false,
+	}
+
+	s.state = &types.EpochState{}
+	s.pl = types.Payload{
+		Data: &types.PayloadEpoch{
+			EpochState: s.state,
+		},
+	}
 
 	// Subscribe to the vegatime onblocktime event
 	vt.NotifyOnTick(s.onTick)
@@ -55,7 +73,23 @@ func (s *Svc) ReloadConf(conf Config) {
 	// do nothing here, conf is not used for now
 }
 
+//OnBlockEnd handles a callback from the abci when the block ends
+func (s *Svc) OnBlockEnd(ctx context.Context) {
+	if s.readyToEndEpoch {
+		s.readyToStartNewEpoch = true
+		s.readyToEndEpoch = false
+
+		// take snapshot
+		s.serialise()
+	}
+}
+
+//NB: An epoch is ended when the first block that exceeds the expiry of the current epoch ends. As onTick is called from onBlockStart - to make epoch continuous
+//and avoid no man's epoch - once we get the first block past expiry we mark get ready to end the epoch. Once we get the on block end callback we're setting
+//the flag to be ready to start a new block on the next onTick (i.e. preceding the beginning of the next block). Once we get the next block's on tick we close
+//the epoch and notify on its end and start a new epoch (with incremented sequence) and notify about it.
 func (s *Svc) onTick(ctx context.Context, t time.Time) {
+
 	if t.IsZero() {
 		// We haven't got a block time yet, ignore
 		return
@@ -70,32 +104,38 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 
 		// Send out new epoch event
 		s.notify(ctx, s.epoch)
+
+		// take snapshot
+		s.serialise()
 		return
 	}
 
 	if s.readyToStartNewEpoch {
+		// close previous epoch and send an event
+		s.epoch.EndTime = t
+		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_END
+		s.notify(ctx, s.epoch)
+
 		// Move the epoch details forward
-		s.epoch.Seq += 1
+		s.epoch.Seq++
 		s.readyToStartNewEpoch = false
 
 		// Create a new epoch
 		s.epoch.StartTime = t
-
 		s.epoch.ExpireTime = t.Add(s.length) // now + epoch length
 		s.epoch.EndTime = time.Time{}
 		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_START
 		s.notify(ctx, s.epoch)
+
+		// take snapshot
+		s.serialise()
 		return
 	}
 
+	// if the block time is past the expiry - this is the last block to go into the epoch - when the block ends we end the epoch and start a new one
 	if s.epoch.ExpireTime.Before(t) {
-		s.epoch.EndTime = t
-		s.epoch.Action = vega.EpochAction_EPOCH_ACTION_END
-		// We have expired, send event
-		s.notify(ctx, s.epoch)
-
-		// Set the flag to tell us to start a new epoch next block
-		s.readyToStartNewEpoch = true
+		// Set the flag to tell us to end the epoch when the block ends
+		s.readyToEndEpoch = true
 		return
 	}
 }
@@ -108,7 +148,7 @@ func (s *Svc) Checkpoint() ([]byte, error) {
 	return proto.Marshal(s.epoch.IntoProto())
 }
 
-func (s *Svc) Load(data []byte) error {
+func (s *Svc) Load(_ context.Context, data []byte) error {
 	pb := &eventspb.EpochEvent{}
 	if err := proto.Unmarshal(data, pb); err != nil {
 		return err

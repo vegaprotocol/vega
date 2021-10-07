@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"errors"
@@ -42,9 +43,9 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/checkpoint_mock.go -package mocks code.vegaprotocol.io/vega/processor Checkpoint
 type Checkpoint interface {
-	BalanceCheckpoint(ctx context.Context) (*types.Snapshot, error)
-	Checkpoint(ctx context.Context, now time.Time) (*types.Snapshot, error)
-	Load(ctx context.Context, snap *types.Snapshot) error
+	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
+	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
+	Load(ctx context.Context, snap *types.CheckpointState) error
 	AwaitingRestore() bool
 }
 
@@ -52,6 +53,15 @@ type SpamEngine interface {
 	EndOfBlock(blockHeight uint64)
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
+}
+
+type Snapshot interface {
+	List() ([]*types.Snapshot, error)
+	ReceiveSnapshot(snap *types.Snapshot) error
+	RejectSnapshot() error
+	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
+	GetMissingChunks() []uint32
+	ApplySnapshot() error
 }
 
 type App struct {
@@ -92,6 +102,8 @@ type App struct {
 	stakingAccounts StakingAccounts
 	checkpoint      Checkpoint
 	spam            SpamEngine
+	epoch           EpochService
+	snapshot        Snapshot
 }
 
 func NewApp(
@@ -158,6 +170,7 @@ func NewApp(
 		checkpoint:      checkpoint,
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
+		epoch:           epoch,
 	}
 
 	// setup handlers
@@ -201,7 +214,7 @@ func NewApp(
 		HandleDeliverTx(txn.UndelegateCommand,
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
-			app.SendEventOnError(app.DeliverReloadSnapshot))
+			app.SendEventOnError(app.DeliverReloadCheckpoint))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -267,6 +280,91 @@ func (app *App) cancel() {
 	}
 }
 
+func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
+	snapshots, err := app.snapshot.List()
+	resp := tmtypes.ResponseListSnapshots{}
+	if err != nil {
+		app.log.Error("Could not list snapshots", logging.Error(err))
+		return resp
+	}
+	resp.Snapshots = make([]*tmtypes.Snapshot, 0, len(snapshots))
+	for _, snap := range snapshots {
+		resp.Snapshots = append(resp.Snapshots, snap.ToTM())
+	}
+	return resp
+}
+
+func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
+	snap, err := types.SnapshotFromTM(req.Snapshot)
+	// invalid hash?
+	if err != nil {
+		// sender provided an invalid snapshot, that's not exactly something we can trust
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
+		}
+	}
+	// @TODO this is a placeholder for the actual check
+	// if this node produced the wrong hash, don't accept... earlier snapshots may still be valid
+	if !bytes.Equal(snap.Hash, req.AppHash) {
+		return tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		}
+	}
+	if err := app.snapshot.ReceiveSnapshot(snap); err != nil {
+		ret := tmtypes.ResponseOfferSnapshot{
+			Result: tmtypes.ResponseOfferSnapshot_REJECT,
+		}
+		if err == types.ErrSnapshotMetaMismatch {
+			// hashes match, but the meta doesn't, do not trust
+			ret.Result = tmtypes.ResponseOfferSnapshot_REJECT_SENDER
+		}
+		return ret
+	}
+	// @TODO initialise snapshot engine to restore snapshot?
+	return tmtypes.ResponseOfferSnapshot{
+		Result: tmtypes.ResponseOfferSnapshot_ACCEPT,
+	}
+}
+
+func (app *App) ApplySnapshotChunk(req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+	chunk := types.RawChunk{
+		Nr:   req.Index,
+		Data: req.Chunk,
+	}
+	resp := tmtypes.ResponseApplySnapshotChunk{}
+	ready, err := app.snapshot.ApplySnapshotChunk(&chunk)
+	if err != nil {
+		switch err {
+		case types.ErrUnknownSnapshot:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY_SNAPSHOT // we weren't ready?
+		case types.ErrChunkOutOfRange:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT // try another snapshot
+		case types.ErrSnapshotMetaMismatch:
+			// refetch the chunk from someone else
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
+			resp.RejectSenders = []string{req.Sender}
+		case types.ErrMissingChunks:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
+			resp.RefetchChunks = app.snapshot.GetMissingChunks()
+		case types.ErrSnapshotRetryLimit:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+			defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
+		default:
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+			// @TODO panic?
+		}
+		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
+			_ = app.snapshot.RejectSnapshot()
+		}
+		return resp
+	}
+	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
+	if ready {
+		_ = app.snapshot.ApplySnapshot()
+	}
+	return resp
+}
+
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
@@ -298,6 +396,8 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
+
+	app.epoch.OnBlockEnd(ctx)
 
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
@@ -338,9 +438,9 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
 
 	// Snapshot can be nil if it wasn't time to create a snapshot
-	if cp, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cp != nil {
-		resp.Data = append(resp.Data, cp.Hash...)
-		_ = app.handleCheckpoint(cp)
+	if snap, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); snap != nil {
+		resp.Data = append(resp.Data, snap.Hash...)
+		_ = app.handleCheckpoint(snap)
 	}
 	// Compute the AppHash and update the response
 
@@ -350,20 +450,20 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	return resp
 }
 
-func (app *App) handleCheckpoint(cp *types.Snapshot) error {
-	now := app.time.GetTimeNow()
+func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
+	now := app.currentTimestamp
 	height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
-	cpFileName := fmt.Sprintf("%s-%d-%s.cp", now.Format("20060102150405"), height, hex.EncodeToString(cp.Hash))
-	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.SnapshotStateHome, cpFileName))
+	cpFileName := fmt.Sprintf("%s-%d-%s.cp", now.Format("20060102150405"), height, hex.EncodeToString(cpt.Hash))
+	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.CheckpointStateHome, cpFileName))
 	if err != nil {
 		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
 	}
-	if err := vgfs.WriteFile(cpFilePath, cp.State); err != nil {
+	if err := vgfs.WriteFile(cpFilePath, cpt.State); err != nil {
 		return fmt.Errorf("couldn't write checkpoint file at %s: %w", cpFilePath, err)
 	}
 	// emit the event indicating a new checkpoint was created
 	// this function is called both for interval checkpoints and withdrawal checkpoints
-	event := events.NewCheckpointEvent(app.blockCtx, cp)
+	event := events.NewCheckpointEvent(app.blockCtx, cpt)
 	app.broker.Send(event)
 	return nil
 }
@@ -400,7 +500,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 // limitPubkey returns whether a request should be rate limited or not
 func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	// Do not rate limit validators nodes.
-	if app.top.Exists(pk) {
+	if app.top.IsValidatorVegaPubKey(pk) {
 		return false, true
 	}
 
@@ -425,7 +525,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	if !app.limits.BootstrapFinished() {
 		// only validators can send transaction at this point.
 		party := tx.Party()
-		if !app.top.Exists(party) {
+		if !app.top.IsValidatorVegaPubKey(party) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
 		cmd := tx.Command()
@@ -504,7 +604,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 }
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
-	if !app.top.Exists(tx.PubKeyHex()) {
+	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
 	return nil
@@ -753,7 +853,7 @@ func (app *App) DeliverSubmitOracleData(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	oracleData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	if err != nil {
 		return err
@@ -768,7 +868,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 		return err
 	}
 
-	pubKey := crypto.NewPublicKeyOrAddress(tx.PubKeyHex(), tx.PubKey())
+	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	_, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 	return err
 }
@@ -884,7 +984,7 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 	app.cmd.Command(ctx, txn.NodeSignatureCommand, payload, nil)
 }
 
-func (app *App) enactMarket(ctx context.Context, prop *types.Proposal) {
+func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
@@ -948,7 +1048,7 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	}
 }
 
-func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr error) {
+func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (rerr error) {
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
 		if rerr != nil {
@@ -965,7 +1065,7 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	}
 
 	// convert to snapshot type:
-	snap := &types.Snapshot{}
+	snap := &types.CheckpointState{}
 	if err := snap.SetState(cmd.Data); err != nil {
 		return err
 	}
@@ -977,7 +1077,7 @@ func (app *App) DeliverReloadSnapshot(ctx context.Context, tx abci.Tx) (rerr err
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
 	app.blockCtx = ctx
 	err = app.checkpoint.Load(ctx, snap)
-	if err != nil && err != types.ErrSnapshotStateInvalid && err != types.ErrSnapshotHashIncorrect {
+	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}
 	// set flag in case the CP has been reloaded

@@ -15,6 +15,8 @@ type ValidatorUpdate struct {
 	tmPubKey   string
 	infoURL    string
 	country    string
+	name       string
+	avatarURL  string
 }
 
 func NewValidatorUpdateEvent(
@@ -25,6 +27,8 @@ func NewValidatorUpdateEvent(
 	tmPubKey string,
 	infoURL string,
 	country string,
+	name string,
+	avatarURL string,
 ) *ValidatorUpdate {
 	return &ValidatorUpdate{
 		Base:       newBase(ctx, ValidatorUpdateEvent),
@@ -34,6 +38,8 @@ func NewValidatorUpdateEvent(
 		tmPubKey:   tmPubKey,
 		infoURL:    infoURL,
 		country:    country,
+		name:       name,
+		avatarURL:  avatarURL,
 	}
 }
 
@@ -67,6 +73,16 @@ func (vu ValidatorUpdate) Country() string {
 	return vu.country
 }
 
+// Name return the name of the validator
+func (vu ValidatorUpdate) Name() string {
+	return vu.name
+}
+
+// AvatarURL return an URL to the validator avatar for UI purpose
+func (vu ValidatorUpdate) AvatarURL() string {
+	return vu.avatarURL
+}
+
 func (vu ValidatorUpdate) ValidatorUpdate() eventspb.ValidatorUpdate {
 	return vu.Proto()
 }
@@ -79,6 +95,8 @@ func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 		TmPubKey:        vu.tmPubKey,
 		InfoUrl:         vu.infoURL,
 		Country:         vu.country,
+		Name:            vu.name,
+		AvatarUrl:       vu.avatarURL,
 	}
 }
 
@@ -110,5 +128,7 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 		tmPubKey:   event.GetTmPubKey(),
 		infoURL:    event.GetInfoUrl(),
 		country:    event.GetCountry(),
+		name:       event.GetName(),
+		avatarURL:  event.GetAvatarUrl(),
 	}
 }

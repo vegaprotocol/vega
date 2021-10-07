@@ -36,6 +36,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/processor EpochService
 type EpochService interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
+	OnBlockEnd(ctx context.Context)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor DelegationEngine
@@ -123,9 +124,9 @@ type Commander interface {
 type ValidatorTopology interface {
 	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
 	UpdateValidatorSet(keys []string)
-	Exists(key string) bool
 	Len() int
-	AllPubKeys() []string
+	IsValidatorVegaPubKey(pk string) bool
+	AllVegaPubKeys() []string
 	IsValidator() bool
 }
 
@@ -186,7 +187,7 @@ type OraclesEngine interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_adaptors_mock.go -package mocks code.vegaprotocol.io/vega/processor OracleAdaptors
 type OracleAdaptors interface {
-	Normalise(crypto.PublicKeyOrAddress, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
+	Normalise(crypto.PublicKey, commandspb.OracleDataSubmission) (*oracles.OracleData, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/limits_mock.go -package mocks code.vegaprotocol.io/vega/processor Limits

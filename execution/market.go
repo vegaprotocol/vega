@@ -267,7 +267,7 @@ func NewMarket(
 		as,
 		broker,
 		now.UnixNano(),
-		mkt.GetID(),
+		mkt.ID,
 		asset,
 	)
 	settleEngine := settlement.New(
@@ -277,7 +277,7 @@ func NewMarket(
 		mkt.ID,
 		broker,
 	)
-	positionEngine := positions.New(log, positionConfig)
+	positionEngine := positions.New(log, positionConfig, mkt.ID)
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {

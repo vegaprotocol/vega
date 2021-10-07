@@ -80,6 +80,8 @@ type Engine struct {
 
 	// asset ID to asset
 	enabledAssets map[string]types.Asset
+	// snapshot stuff
+	state *accState
 }
 
 // New instantiates a new collateral engine
@@ -97,6 +99,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
+		state:         newAccState(),
 	}
 }
 
@@ -143,6 +146,7 @@ func (e *Engine) removeAccountFromHashableSlice(id string) {
 
 	copy(e.hashableAccs[i:], e.hashableAccs[i+1:])
 	e.hashableAccs = e.hashableAccs[:len(e.hashableAccs)-1]
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
@@ -159,6 +163,7 @@ func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
 	e.hashableAccs = append(e.hashableAccs, nil)
 	copy(e.hashableAccs[i+1:], e.hashableAccs[i:])
 	e.hashableAccs[i] = acc
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) Hash() []byte {
@@ -198,6 +203,8 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.enabledAssets[asset.ID] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// update state
+	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
 	infraFeeID := e.accountID("", "", asset.ID, types.AccountTypeFeesInfrastructure)
@@ -1754,21 +1761,29 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	}
 
 	// add the global account
-	insuranceAccounts = append(insuranceAccounts, e.GetAssetInsurancePoolAccount(asset))
+	// can't fail at this point, if the market exists, the asset exists,
+	// so this exists too
+	globalInsurancePool, _ := e.GetAssetInsurancePoolAccount(asset)
+	insuranceAccounts = append(insuranceAccounts, globalInsurancePool)
 
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
 	req.ToAccount = insuranceAccounts
 	req.Amount = marketInsuranceAcc.Balance.Clone()
-	insuranceledgerEntries, err := e.getLedgerEntries(ctx, req)
+	insuranceLedgerEntries, err := e.getLedgerEntries(ctx, req)
 	if err != nil {
 		e.log.Panic("unable to redistribute market insurance funds", logging.Error(err))
 	}
-	for _, acc := range insuranceAccounts {
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+	for _, bal := range insuranceLedgerEntries.Balances {
+		if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			e.log.Error("Could not update the target account in transfer",
+				logging.String("account-id", bal.Account.ID),
+				logging.Error(err))
+			return nil, err
+		}
 	}
 
-	return append(resps, insuranceledgerEntries), nil
+	return append(resps, insuranceLedgerEntries), nil
 }
 
 func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) bool {
@@ -2231,7 +2246,9 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance.Set(balance)
+	// update
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2246,6 +2263,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 	}
 	acc.Balance.AddSum(inc)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2260,6 +2278,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 	}
 	acc.Balance.Sub(acc.Balance, dec)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2324,10 +2343,9 @@ func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Acc
 }
 
 // GetAssetInsurancePoolAccount returns the global insurance account for the asset
-func (e *Engine) GetAssetInsurancePoolAccount(asset string) *types.Account {
+func (e *Engine) GetAssetInsurancePoolAccount(asset string) (*types.Account, error) {
 	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance)
-	globalInsuranceAcc := e.accs[globalInsuranceID]
-	return globalInsuranceAcc
+	return e.GetAccountByID(globalInsuranceID)
 }
 
 func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {

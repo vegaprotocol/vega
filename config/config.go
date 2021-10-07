@@ -30,7 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/positions"
@@ -41,7 +41,6 @@ import (
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
-	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -66,11 +65,10 @@ type Config struct {
 	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
 	Metrics           metrics.Config     `group:"Metrics" namespace:"metrics"`
 	Governance        governance.Config  `group:"Governance" namespace:"governance"`
-	NodeWallet        nodewallet.Config  `group:"NodeWallet" namespace:"nodewallet"`
+	NodeWallet        nodewallets.Config `group:"NodeWallet" namespace:"nodewallet"`
 	Assets            assets.Config      `group:"Assets" namespace:"assets"`
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
-	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
 	Genesis           genesis.Config     `group:"Genesis" namespace:"genesis"`
 	Validators        validators.Config  `group:"Validators" namespace:"validators"`
 	Banking           banking.Config     `group:"Banking" namespace:"banking"`
@@ -111,7 +109,7 @@ func NewDefaultConfig() Config {
 		Collateral:        collateral.NewDefaultConfig(),
 		Metrics:           metrics.NewDefaultConfig(),
 		Governance:        governance.NewDefaultConfig(),
-		NodeWallet:        nodewallet.NewDefaultConfig(),
+		NodeWallet:        nodewallets.NewDefaultConfig(),
 		Assets:            assets.NewDefaultConfig(),
 		Notary:            notary.NewDefaultConfig(),
 		EvtForward:        evtforward.NewDefaultConfig(),
@@ -119,7 +117,6 @@ func NewDefaultConfig() Config {
 		Validators:        validators.NewDefaultConfig(),
 		Banking:           banking.NewDefaultConfig(),
 		Stats:             stats.NewDefaultConfig(),
-		Subscribers:       subscribers.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
 		Limits:            limits.NewDefaultConfig(),
 		Checkpoint:        checkpoint.NewDefaultConfig(),

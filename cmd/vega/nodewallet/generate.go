@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/nodewallet"
+	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -16,13 +16,18 @@ import (
 type generateCmd struct {
 	config.OutputFlag
 
-	Config nodewallet.Config
+	Config nodewallets.Config
 
 	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
 	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
 	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
 }
+
+const (
+	ethereumChain = "ethereum"
+	vegaChain     = "vega"
+)
 
 func (opts *generateCmd) Execute(_ []string) error {
 	output, err := opts.GetOutput()
@@ -33,12 +38,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	pass, err := rootCmd.PassphraseFile.Get("node wallet")
-	if err != nil {
-		return err
-	}
-
-	walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
 	if err != nil {
 		return err
 	}
@@ -56,26 +56,45 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	nw, err := nodewallet.New(log, conf.NodeWallet, pass, nil, vegaPaths)
-	if err != nil {
-		return err
-	}
+	var data map[string]string
+	switch opts.Chain {
+	case ethereumChain:
+		var walletPass string
+		if opts.Config.ETH.ClefAddress == "" {
+			walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
+			if err != nil {
+				return err
+			}
+		} else if output.IsHuman() {
+			fmt.Println(yellow("Warning: Generating a new account in Clef has to be manually approved, and only the Key Store backend is supported. \nPlease consider using the 'import' command instead."))
+		}
 
-	_, ok := nw.Get(nodewallet.Blockchain(opts.Chain))
-	if ok && opts.Force {
-		log.Warn("a wallet is already present for the current chain, this action will create a new one", logging.String("chain", opts.Chain))
-	} else if ok {
-		return fmt.Errorf("a wallet is already imported for the chain %v, please rerun with option --force to overwrite it", opts.Chain)
-	}
+		data, err = nodewallets.GenerateEthereumWallet(
+			opts.Config.ETH,
+			vegaPaths,
+			registryPass,
+			walletPass,
+			opts.Force,
+		)
+		if err != nil {
+			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
+		}
+	case vegaChain:
+		walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
+		if err != nil {
+			return err
+		}
 
-	data, err := nw.Generate(opts.Chain, pass, walletPass)
-	if err != nil {
-		return err
+		data, err = nodewallets.GenerateVegaWallet(vegaPaths, registryPass, walletPass, opts.Force)
+		if err != nil {
+			return fmt.Errorf("couldn't generate Vega node wallet: %w", err)
+		}
+	default:
+		return fmt.Errorf("chain %q is not supported", opts.Chain)
 	}
-	data["configFilePath"] = nw.GetConfigFilePath()
 
 	if output.IsHuman() {
-		fmt.Println("generation successful:")
+		fmt.Println(green("generation successful:"))
 		vgfmt.PrettyPrint(data)
 	} else if output.IsJSON() {
 		if err := vgjson.Print(data); err != nil {
