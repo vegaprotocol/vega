@@ -26,15 +26,15 @@ const (
 	// LiquidityProvisionCommand ...
 	LiquidityProvisionCommand Command = 0x4A
 	// ChainEventCommand ...
-	ChainEventCommand Command = 0x50
+	ChainEventCommand Command = 0x4B
 	// SubmitOracleDataCommand ...
-	SubmitOracleDataCommand Command = 0x51
+	SubmitOracleDataCommand Command = 0x4C
 	// DelegateCommand ...
-	DelegateCommand Command = 0x52
+	DelegateCommand Command = 0x4D
 	// UndelegateCommand ...
-	UndelegateCommand Command = 0x53
+	UndelegateCommand Command = 0x4E
 	// CheckpointRestoreCommand ...
-	CheckpointRestoreCommand Command = 0x54
+	CheckpointRestoreCommand Command = 0x4F
 )
 
 var commandName = map[Command]string{

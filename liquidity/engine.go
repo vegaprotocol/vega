@@ -115,7 +115,7 @@ func NewEngine(config Config,
 }
 
 // OnChainTimeUpdate updates the internal engine current time
-func (e *Engine) OnChainTimeUpdate(ctx context.Context, now time.Time) {
+func (e *Engine) OnChainTimeUpdate(_ context.Context, now time.Time) {
 	e.currentTime = now
 }
 

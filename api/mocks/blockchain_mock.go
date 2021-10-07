@@ -5,8 +5,8 @@
 package mocks
 
 import (
-	api "code.vegaprotocol.io/protos/vega/api"
-	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	v1 "code.vegaprotocol.io/protos/vega/api/v1"
+	v10 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	coretypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -128,7 +128,7 @@ func (mr *MockBlockchainMockRecorder) Health() *gomock.Call {
 }
 
 // SubmitTransactionV2 mocks base method
-func (m *MockBlockchain) SubmitTransactionV2(arg0 context.Context, arg1 *v1.Transaction, arg2 api.SubmitTransactionRequest_Type) error {
+func (m *MockBlockchain) SubmitTransactionV2(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransactionV2", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)

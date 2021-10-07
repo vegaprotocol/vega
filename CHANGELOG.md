@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.44.0
+*2021-10-07*
+
+### Improvements
+- [4159](https://github.com/vegaprotocol/vega/pull/4159) - Clean-up and separate checkpoints and snapshots
+- [4172](https://github.com/vegaprotocol/vega/pull/4172) - Added assetActions to banking snapshot
+- [4173](https://github.com/vegaprotocol/vega/pull/4173) - Add tools and linting
+- [4161](https://github.com/vegaprotocol/vega/pull/4161) - Assets snapshot implemented
+- [4142](https://github.com/vegaprotocol/vega/pull/4142) - Add clef wallet
+- [4160](https://github.com/vegaprotocol/vega/pull/4160) - Snapshot positions engine
+- [4170](https://github.com/vegaprotocol/vega/pull/4170) - Update to latest proto and go mod tidy
+- [4157](https://github.com/vegaprotocol/vega/pull/4157) - Adding IDGenerator types
+- [4166](https://github.com/vegaprotocol/vega/pull/4166) - Banking snapshot
+- [4133](https://github.com/vegaprotocol/vega/pull/4133) - Matching engine snapshots
+- [4162](https://github.com/vegaprotocol/vega/pull/4162) - Add fields to validators genesis
+- [4154](https://github.com/vegaprotocol/vega/pull/4154) - Port code to use last version of proto (layout change)
+- [4141](https://github.com/vegaprotocol/vega/pull/4141) - Collateral snapshots
+- [4131](https://github.com/vegaprotocol/vega/pull/4131) - Snapshot epoch engine
+- [4143](https://github.com/vegaprotocol/vega/pull/4143) - Add delegation snapshot
+- [4114](https://github.com/vegaprotocol/vega/pull/4114) - Document default file location
+- [4130](https://github.com/vegaprotocol/vega/pull/4130) - Update proto dependencies to latest
+- [4134](https://github.com/vegaprotocol/vega/pull/4134) - Checkpoints and snapshots are 2 different things
+- [4121](https://github.com/vegaprotocol/vega/pull/4121) - Additional test scenarios for delegation & rewards
+- [4111](https://github.com/vegaprotocol/vega/pull/4111) - Simplify nodewallet integration
+- [4110](https://github.com/vegaprotocol/vega/pull/4110) - Auto delegation
+- [4123](https://github.com/vegaprotocol/vega/pull/4123) - Add auto delegation to checkpoint
+- [4120](https://github.com/vegaprotocol/vega/pull/4120) - Snapshot preparation
+- [4060](https://github.com/vegaprotocol/vega/pull/4060) - Edge case scenarios delegation
+
+### Fixes
+- [4156](https://github.com/vegaprotocol/vega/pull/4156) - Fix filename for checkpoints
+- [4158](https://github.com/vegaprotocol/vega/pull/4158) - Remove delay in reward/delegation calculation
+- [4150](https://github.com/vegaprotocol/vega/pull/4150) - De-duplicate stake linkings
+- [4137](https://github.com/vegaprotocol/vega/pull/4137) - Add missing key to all network parameters key map
+- [4132](https://github.com/vegaprotocol/vega/pull/4132) - Send delegation events
+- [4128](https://github.com/vegaprotocol/vega/pull/4128) - Simplify checkpointing for network parameters and start fixing collateral checkpoint
+- [4124](https://github.com/vegaprotocol/vega/pull/4124) - Fixed non-deterministic checkpoint and added auto delegation to checkpoint
+- [4118](https://github.com/vegaprotocol/vega/pull/4118) - Fixed epoch issue
+
+
 ## 0.43.0
 *2021-09-22*
 

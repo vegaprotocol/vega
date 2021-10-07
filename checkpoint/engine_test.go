@@ -242,7 +242,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	cp := &types.Checkpoint{
 		Assets: []byte("assets"),
 	}
-	snap := &types.Snapshot{}
+	snap := &types.CheckpointState{}
 	snap.SetCheckpoint(cp)
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
@@ -265,7 +265,7 @@ func testLoadMissingCheckpoint(t *testing.T) {
 	require.NoError(t, eng.UponGenesis(ctx, gen))
 	err = eng.Load(ctx, snap)
 	require.Error(t, err)
-	require.Equal(t, types.ErrSnapshotHashIncorrect, err)
+	require.Equal(t, types.ErrCheckpointHashIncorrect, err)
 }
 
 func testLoadInvalidHash(t *testing.T) {
@@ -277,7 +277,7 @@ func testLoadInvalidHash(t *testing.T) {
 	cp := &types.Checkpoint{
 		Assets: []byte("assets"),
 	}
-	snap := &types.Snapshot{}
+	snap := &types.CheckpointState{}
 	snap.SetCheckpoint(cp)
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
@@ -295,7 +295,7 @@ func testLoadInvalidHash(t *testing.T) {
 	snap.State = b
 	err = eng.Load(ctx, snap)
 	require.Error(t, err)
-	require.Equal(t, types.ErrSnapshotHashIncorrect, err)
+	require.Equal(t, types.ErrCheckpointHashIncorrect, err)
 }
 
 func testLoadSparse(t *testing.T) {

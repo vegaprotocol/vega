@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	protoapi "code.vegaprotocol.io/protos/vega/api"
-	coreapi "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	"code.vegaprotocol.io/vega/api"
 	"code.vegaprotocol.io/vega/logging"
 
@@ -83,10 +82,10 @@ func (s *ProxyServer) Start() {
 	)
 
 	opts := []grpc.DialOption{grpc.WithInsecure()}
-	if err := protoapi.RegisterTradingServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+	if err := protoapi.RegisterCoreServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
-	if err := coreapi.RegisterCoreApiServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
+	if err := protoapi.RegisterCoreStateServiceHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
 		logger.Panic("Failure registering trading handler for REST proxy endpoints", logging.Error(err))
 	}
 
@@ -97,7 +96,7 @@ func (s *ProxyServer) Start() {
 	// Gzip encoding support
 	handler = newGzipHandler(*logger, handler.(http.HandlerFunc))
 	// Metric support
-	handler = MetricCollectionMiddleware(logger, handler)
+	handler = MetricCollectionMiddleware(handler)
 
 	// APM
 	if s.cfg.REST.APMEnabled {

@@ -80,6 +80,8 @@ type Engine struct {
 
 	// asset ID to asset
 	enabledAssets map[string]types.Asset
+	// snapshot stuff
+	state *accState
 }
 
 // New instantiates a new collateral engine
@@ -97,6 +99,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine
 		currentTime:   now.UnixNano(),
 		idbuf:         make([]byte, 256),
 		enabledAssets: map[string]types.Asset{},
+		state:         newAccState(),
 	}
 }
 
@@ -143,6 +146,7 @@ func (e *Engine) removeAccountFromHashableSlice(id string) {
 
 	copy(e.hashableAccs[i:], e.hashableAccs[i+1:])
 	e.hashableAccs = e.hashableAccs[:len(e.hashableAccs)-1]
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
@@ -159,6 +163,7 @@ func (e *Engine) addAccountToHashableSlice(acc *types.Account) {
 	e.hashableAccs = append(e.hashableAccs, nil)
 	copy(e.hashableAccs[i+1:], e.hashableAccs[i:])
 	e.hashableAccs[i] = acc
+	e.state.updateAccs(e.hashableAccs)
 }
 
 func (e *Engine) Hash() []byte {
@@ -198,6 +203,8 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 	e.enabledAssets[asset.ID] = asset
 	e.broker.Send(events.NewAssetEvent(ctx, asset))
+	// update state
+	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
 	infraFeeID := e.accountID("", "", asset.ID, types.AccountTypeFeesInfrastructure)
@@ -2239,7 +2246,9 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 		return ErrAccountDoesNotExist
 	}
 	acc.Balance.Set(balance)
+	// update
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2254,6 +2263,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 	}
 	acc.Balance.AddSum(inc)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil
@@ -2268,6 +2278,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 	}
 	acc.Balance.Sub(acc.Balance, dec)
 	if acc.Type != types.AccountTypeExternal {
+		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
 	return nil

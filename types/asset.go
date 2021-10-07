@@ -140,12 +140,16 @@ func (a AssetDetailsBuiltinAsset) IntoProto() *proto.AssetDetails_BuiltinAsset {
 }
 
 func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDetailsBuiltinAsset {
-	max, _ := num.UintFromString(p.BuiltinAsset.MaxFaucetAmountMint, 10)
-	return &AssetDetailsBuiltinAsset{
-		BuiltinAsset: &BuiltinAsset{
-			MaxFaucetAmountMint: max,
-		},
+	if p.BuiltinAsset.MaxFaucetAmountMint != "" {
+		max, _ := num.UintFromString(p.BuiltinAsset.MaxFaucetAmountMint, 10)
+		return &AssetDetailsBuiltinAsset{
+			BuiltinAsset: &BuiltinAsset{
+				MaxFaucetAmountMint: max,
+			},
+		}
 	}
+	return &AssetDetailsBuiltinAsset{}
+
 }
 
 func (a AssetDetailsBuiltinAsset) adIntoProto() interface{} {

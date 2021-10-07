@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	coreapipb "code.vegaprotocol.io/protos/vega/coreapi/v1"
+	apipb "code.vegaprotocol.io/protos/vega/api/v1"
 
 	"github.com/golang/protobuf/jsonpb"
 )
@@ -12,12 +12,12 @@ type ValidatorsCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *ValidatorsCmd) Execute(params []string) error {
-	req := coreapipb.ListValidatorsRequest{}
+func (opts *ValidatorsCmd) Execute(_ []string) error {
+	req := apipb.ListValidatorsRequest{}
 	return getPrintValidators(opts.NodeAddress, &req)
 }
 
-func getPrintValidators(nodeAddress string, req *coreapipb.ListValidatorsRequest) error {
+func getPrintValidators(nodeAddress string, req *apipb.ListValidatorsRequest) error {
 	clt, err := getClient(nodeAddress)
 	if err != nil {
 		return fmt.Errorf("could not connect to the vega node: %w", err)
