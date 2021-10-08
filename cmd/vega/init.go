@@ -31,7 +31,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 		return err
 	}
 
-	pass, err := opts.Passphrase.Get("node wallet")
+	pass, err := opts.Passphrase.Get("node wallet", true)
 	if err != nil {
 		return err
 	}
