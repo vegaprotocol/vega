@@ -100,6 +100,7 @@ func (p *PeggedOrders) RemoveAllForParty(
 			o.Status = status
 			orders = append(orders, o)
 			evts = append(evts, events.NewOrderEvent(ctx, o))
+			p.ordersChanged = true
 			continue
 		}
 		// here we insert back in the slice
@@ -107,7 +108,6 @@ func (p *PeggedOrders) RemoveAllForParty(
 		n++
 	}
 	p.orders = p.orders[:n]
-	p.ordersChanged = true
 	return
 }
 
@@ -115,12 +115,14 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 	ctx context.Context, party string, status types.OrderStatus,
 ) (orders []*types.Order, evts []events.Event) {
 	n := 0
+
 	for _, o := range p.orders {
 		if o.Party == party && o.Status == types.OrderStatusParked {
 			o.UpdatedAt = p.currentTime
 			o.Status = status
 			orders = append(orders, o)
 			evts = append(evts, events.NewOrderEvent(ctx, o))
+			p.ordersChanged = true
 			continue
 		}
 		// here we insert back in the slice
@@ -128,7 +130,6 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 		n++
 	}
 	p.orders = p.orders[:n]
-	p.ordersChanged = true
 	return
 }
 
