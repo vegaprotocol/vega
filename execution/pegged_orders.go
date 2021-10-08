@@ -108,7 +108,6 @@ func (p *PeggedOrders) RemoveAllForParty(
 		n++
 	}
 	p.orders = p.orders[:n]
-	p.ordersChanged = true
 	return
 }
 
@@ -131,7 +130,6 @@ func (p *PeggedOrders) RemoveAllParkedForParty(
 		n++
 	}
 	p.orders = p.orders[:n]
-	p.ordersChanged = true
 	return
 }
 
