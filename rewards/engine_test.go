@@ -59,7 +59,8 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 
 	// there is remaining 1000000 to distribute as payout
-	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now(), Seq: 1}
+	now := time.Now()
+	epoch := types.Epoch{StartTime: now, EndTime: now, Seq: 1}
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEnd(context.Background(), epoch)
@@ -93,6 +94,40 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	require.True(t, bytes.Equal(hash, hashPostReload))
 	statePostReload, _ := engine.GetState(key)
 	require.True(t, bytes.Equal(state, statePostReload))
+
+	// add another pending payout
+	epoch = types.Epoch{StartTime: now.Add(10 * time.Second), EndTime: now.Add(10 * time.Second), Seq: 2}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEnd(context.Background(), epoch)
+
+	// expect hash and state to have changed
+	newHash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	newState, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, newHash))
+	require.False(t, bytes.Equal(state, newState))
+
+	proto.Unmarshal(newState, &rewards)
+	payload = types.PayloadFromProto(&rewards)
+	err = engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	newHashPostReload, _ := engine.GetHash(key)
+	require.True(t, bytes.Equal(newHash, newHashPostReload))
+	newStatePostReload, _ := engine.GetState(key)
+	require.True(t, bytes.Equal(newState, newStatePostReload))
+
+	// advance to after payouts have been paid and cleared
+	engine.onChainTimeUpdate(context.Background(), now.Add(300*time.Second))
+	emptyStateHash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	emptyState, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, emptyStateHash))
+	require.False(t, bytes.Equal(state, emptyState))
 }
 
 //test that registering reward scheme is unsupported

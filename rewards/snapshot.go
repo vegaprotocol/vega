@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/protobuf/proto"
@@ -71,6 +72,8 @@ func (e *Engine) serialisePayout() ([]byte, error) {
 				switch strings.Compare(pending[i].Asset, pending[j].Asset) {
 				case -1:
 					return true
+				case 0:
+					e.log.Panic("multiple payouts for the same epoch, fromAccount, asset", logging.String("fromAccount", pending[i].FromAccount), logging.String("asset", pending[i].Asset), logging.String("epochSeq", pending[i].EpochSeq))
 				default:
 					return false
 				}
