@@ -45,8 +45,10 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 }
 
 func (e *Engine) setActive(ctx context.Context, entries []*types.DelegationEntry) {
-	nodes := []string{}
-	nodeMap := map[string]struct{}{}
+	// each entry results in a delegation event
+	evts := make([]events.Event, 0, len(entries))
+	// bit silly, but has to be more efficient than num.NewUint(EpochSeq).String() every time
+	epochStr := map[uint64]string{}
 	for _, de := range entries {
 		// add to party state
 		ps, ok := e.partyDelegationState[de.Party]
@@ -57,10 +59,6 @@ func (e *Engine) setActive(ctx context.Context, entries []*types.DelegationEntry
 				totalDelegated: num.Zero(),
 			}
 			e.partyDelegationState[de.Party] = ps
-		}
-		if _, ok := nodeMap[de.Node]; !ok {
-			nodeMap[de.Node] = struct{}{}
-			nodes = append(nodes, de.Node)
 		}
 		ps.totalDelegated.AddSum(de.Amount)
 		ps.nodeToAmount[de.Node] = de.Amount.Clone()
@@ -76,21 +74,12 @@ func (e *Engine) setActive(ctx context.Context, entries []*types.DelegationEntry
 		}
 		ns.totalDelegated.AddSum(de.Amount)
 		ns.partyToAmount[de.Party] = de.Amount.Clone()
-	}
-	sort.Strings(nodes)
-	// now that we've fully restored the state, let's iterate over the parties in the same order again, and send events
-	// cap is nr of parties * num of nodes
-	evts := make([]events.Event, 0, len(entries)*len(nodes))
-	for _, de := range entries {
-		// this will always work
-		ps := e.partyDelegationState[de.Party]
-		for _, n := range nodes {
-			amt, ok := ps.nodeToAmount[n]
-			if !ok {
-				amt = num.Zero()
-			}
-			evts = append(evts, events.NewDelegationBalance(ctx, de.Party, n, amt, num.NewUint(de.EpochSeq).String()))
+		eStr, ok := epochStr[de.EpochSeq]
+		if !ok {
+			eStr = num.NewUint(de.EpochSeq).String()
+			epochStr[de.EpochSeq] = eStr
 		}
+		evts = append(evts, events.NewDelegationBalance(ctx, de.Party, de.Node, de.Amount, eStr))
 	}
 	if len(evts) > 0 {
 		e.broker.SendBatch(evts)
