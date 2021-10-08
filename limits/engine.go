@@ -32,14 +32,11 @@ func New(log *logging.Logger, cfg Config) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
-	e := &Engine{
+	return &Engine{
 		log: log,
 		cfg: cfg,
-		lss: &limitsSnapshotState{
-			changed: true,
-		},
+		lss: &limitsSnapshotState{changed: true},
 	}
-	return e
 }
 
 // UponGenesis load the limits from the genesis state
