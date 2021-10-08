@@ -52,7 +52,7 @@ Feature: Test settlement at expiry
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | default-eth-for-future |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle         |
-      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle |
+      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle  |
       | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec22Oracle         |
      
   Scenario: Order cannot be placed once the market is expired
@@ -140,8 +140,8 @@ Feature: Test settlement at expiry
     # Close positions by aux parties
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     |
-      | aux1   | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | aux2   | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
+      | aux1  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
     When the oracles broadcast data signed with "0xDEADBEEF":
       | name               | value |
@@ -232,6 +232,8 @@ Feature: Test settlement at expiry
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
       | party2 | ETH   | ETH/DEC19 | 0      | 0       |
+
+            And debug transfers
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
@@ -380,24 +382,26 @@ Scenario: Settlement happened when market is being closed after being in Suspend
     #   | aux2  | ETH/DEC21 | buy  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then debug orders
 
-    When the oracles broadcast data signed with "0xCAFECAFE1":
+    When the oracles broadcast data signed with "0xDEADBEEF":
       | name               | value |
       | trading.terminated | true  |
 
-    And time is updated to "2021-01-01T01:01:01Z"
+    And time is updated to "2022-01-01T01:01:01Z"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
-    Then the oracles broadcast data signed with "0xCAFECAFE1":
+    Then the oracles broadcast data signed with "0xDEADBEEF":
       | name             | value |
       | prices.ETH.value | 42    |
-    Then time is updated to "2021-01-01T01:01:02Z"
+    Then time is updated to "2022-01-01T01:01:02Z"
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | trader3a | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
     And the parties should have the following account balances:
-      | party  | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 0   | 5523    |
-      | trader4  | ETH   | ETH/DEC21 | 0   | 6591    |
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 5523    |
+      | trader4  | ETH   | ETH/DEC21 | 0      | 6591    |
+
+      And debug transfers
 
     And the cumulated balance for all accounts should be worth "300060716"
     And the insurance pool balance should be "3125" for the market "ETH/DEC19"
