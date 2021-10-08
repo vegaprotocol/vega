@@ -94,7 +94,7 @@ type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 	// Snapshot
 	GetState() *types.PriceMonitor
-	RestoreState(*types.PriceMonitor) error
+	RestoreState(*types.PriceMonitor)
 	Changed() bool
 }
 
@@ -146,7 +146,7 @@ type AuctionState interface {
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
 	// Snapshot
 	GetState() *types.AuctionState
-	RestoreState(*types.AuctionState) error
+	RestoreState(*types.AuctionState)
 	Changed() bool
 }
 
@@ -243,19 +243,14 @@ func (m *Market) getState() *types.ExecMarket {
 }
 
 func (m *Market) restoreState(em *types.ExecMarket) error {
-	if err := m.pMonitor.RestoreState(em.PriceMonitor); err != nil {
-		return fmt.Errorf("failed to restore price monitor: %w", err)
-	}
-	if err := m.as.RestoreState(em.AuctionState); err != nil {
-		return fmt.Errorf("failed to restore auction state: %w", err)
-	}
-
 	m.mkt = em.Market
 	m.lastBestBidPrice = em.LastBestBid
 	m.lastBestAskPrice = em.LastBestAsk
 	m.lastMidBuyPrice = em.LastMidBid
 	m.lastMidSellPrice = em.LastMidAsk
 	m.markPrice = em.CurrentMarkPrice
+	m.as.RestoreState(em.AuctionState)
+	m.pMonitor.RestoreState(em.PriceMonitor)
 	m.peggedOrders.RestoreState(em.PeggedOrders)
 	m.expiringOrders.RestoreState(em.ExpiringOrders)
 	m.equityShares.RestoreState(em.EquityShare)

@@ -103,19 +103,6 @@ type Engine struct {
 	stateChanged bool
 }
 
-func serialiseToDecMap(m map[int64]num.Decimal) []*types.DecMap {
-	dm := make([]*types.DecMap, 0, len(m))
-
-	for k, v := range m {
-		dm = append(dm, &types.DecMap{
-			Key: k,
-			Val: v,
-		})
-	}
-
-	return dm
-}
-
 // NewMonitor returns a new instance of PriceMonitoring.
 func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings) (*Engine, error) {
 	if riskModel == nil {
@@ -164,72 +151,6 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 		e.updateFrequency = time.Second
 	}
 	return e, nil
-}
-
-func (e *Engine) serialiseBounds() []*types.PriceBound {
-	bounds := make([]*types.PriceBound, 0, len(e.bounds))
-	for _, b := range bounds {
-		bounds = append(bounds, &types.PriceBound{
-			Active:     b.Active,
-			UpFactor:   b.UpFactor,
-			DownFactor: b.DownFactor,
-			Trigger: &types.PriceMonitoringTrigger{
-				Horizon:          b.Trigger.Horizon,
-				HDec:             b.Trigger.HDec,
-				Probability:      b.Trigger.Probability,
-				AuctionExtension: b.Trigger.AuctionExtension,
-			},
-		})
-	}
-
-	return bounds
-}
-
-func (e *Engine) serialisePriceRanges() []*types.PriceRangeCache {
-	prc := make([]*types.PriceRangeCache, 0, len(e.priceRangesCache))
-	for bound, priceRange := range e.priceRangesCache {
-		prc = append(prc, &types.PriceRangeCache{
-			Bound: &types.PriceBound{
-				Active:     bound.Active,
-				UpFactor:   bound.UpFactor,
-				DownFactor: bound.DownFactor,
-				Trigger: &types.PriceMonitoringTrigger{
-					Horizon:          bound.Trigger.Horizon,
-					HDec:             bound.Trigger.HDec,
-					Probability:      bound.Trigger.Probability,
-					AuctionExtension: bound.Trigger.AuctionExtension,
-				},
-			},
-			Range: &types.PriceRange{
-				Min: priceRange.MinPrice.Original(),
-				Max: priceRange.MaxPrice.Original(),
-				Ref: priceRange.ReferencePrice,
-			},
-		})
-	}
-	return prc
-}
-
-func (e Engine) Changed() bool {
-	return e.stateChanged
-}
-
-func (e *Engine) GetState() *types.PriceMonitor {
-	pm := &types.PriceMonitor{
-		Initialised:         e.initialised,
-		FPHorizons:          serialiseToDecMap(e.fpHorizons),
-		Now:                 e.now,
-		Update:              e.update,
-		Bounds:              e.serialiseBounds(),
-		PriceRangeCache:     e.serialisePriceRanges(),
-		PriceRangeCacheTime: e.priceRangeCacheTime,
-		RefPriceCache:       serialiseToDecMap(e.refPriceCache),
-		RefPriceCacheTime:   e.refPriceCacheTime,
-	}
-
-	e.stateChanged = false
-
-	return pm
 }
 
 func (e *Engine) SetMinDuration(d time.Duration) {
@@ -515,10 +436,13 @@ func (e *Engine) updateBounds() {
 		return
 	}
 
+	defer func() {
+		e.stateChanged = true
+	}()
+
 	// Iterate update time until in the future
 	for !e.update.After(e.now) {
 		e.update = e.update.Add(e.updateFrequency)
-		e.stateChanged = true
 	}
 
 	for _, b := range e.bounds {
@@ -544,12 +468,10 @@ func (e *Engine) updateBounds() {
 	for i := 0; i < len(e.pricesPast)-1; i++ {
 		if !e.pricesPast[i].Time.Before(minRequiredHorizon) {
 			e.pricesPast = e.pricesPast[i:]
-			e.stateChanged = true
 			return
 		}
 	}
 	e.pricesPast = e.pricesPast[len(e.pricesPast)-1:]
-	e.stateChanged = true
 }
 
 func (e *Engine) getRefPrice(horizon int64) num.Decimal {

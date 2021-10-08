@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -23,6 +24,7 @@ func (e *Engine) sortedMarketIDs() []string {
 }
 
 func (e *Engine) marketsStates() []*types.ExecMarket {
+	// snapshots should be determinisic
 	mktIDs := e.sortedMarketIDs()
 
 	mks := make([]*types.ExecMarket, 0, len(mktIDs))
@@ -38,8 +40,8 @@ func (e *Engine) marketsStates() []*types.ExecMarket {
 	return mks
 }
 
-func (e *Engine) restoreMarketsStates(markets []*types.ExecMarket) error {
-	for _, em := range markets {
+func (e *Engine) restoreMarketsStates(ems []*types.ExecMarket) error {
+	for _, em := range ems {
 		if _, ok := e.markets[em.Market.ID]; !ok {
 			err := e.submitMarket(context.Background(), em.Market)
 			if err != nil {
@@ -130,8 +132,8 @@ func (e *Engine) GetState(_ string) ([]byte, error) {
 func (e *Engine) LoadState(payload *types.Payload) error {
 	switch pl := payload.Data.(type) {
 	case *types.PayloadExecutionMarkets:
-		for _, m := range pl.ExecutionMarkets.Markets {
-
+		if err := e.restoreMarketsStates(pl.ExecutionMarkets.Markets); err != nil {
+			return fmt.Errorf("failed to restore markets states: %w", err)
 		}
 		return nil
 	default:
