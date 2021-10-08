@@ -1,24 +1,13 @@
 package steps
 
 import (
-	"math/rand"
-
 	"github.com/cucumber/godog"
 
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/integration/steps/market"
 )
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func RandStringBytesRmndr(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Int63()%int64(len(letterBytes))]
-	}
-	return string(b)
-}
 
 func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {
 	pubKeys := StrSlice(rawPubKeys, ",")
@@ -49,7 +38,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 		name,
 		specType,
 		&oraclesv1.OracleSpec{
-			Id:      RandStringBytesRmndr(10),
+			Id:      vgrand.RandomStr(10),
 			PubKeys: pubKeys,
 			Filters: filters,
 		},
