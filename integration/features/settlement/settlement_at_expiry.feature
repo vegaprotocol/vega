@@ -233,7 +233,6 @@ Feature: Test settlement at expiry
       | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
       | party2 | ETH   | ETH/DEC19 | 0      | 0       |
 
-            And debug transfers
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
