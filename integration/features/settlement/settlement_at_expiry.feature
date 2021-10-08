@@ -52,7 +52,7 @@ Feature: Test settlement at expiry
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | default-eth-for-future |
       | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle         |
-      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle  |
+      | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle         |
       | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec22Oracle         |
      
   Scenario: Order cannot be placed once the market is expired
@@ -312,7 +312,7 @@ Feature: Test settlement at expiry
     And the insurance pool balance should be "500" for the market "ETH/DEC21"
     And the insurance pool balance should be "500" for the market "ETH/DEC22"
     
-Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - no insurance taken
+ Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - no insurance taken
 
     Given the initial insurance pool balance is "10000" for the markets:
 
@@ -381,13 +381,13 @@ Scenario: Settlement happened when market is being closed after being in Suspend
     #   | aux2  | ETH/DEC21 | buy  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
     Then debug orders
 
-    When the oracles broadcast data signed with "0xDEADBEEF":
+    When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
 
     And time is updated to "2022-01-01T01:01:01Z"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
-    Then the oracles broadcast data signed with "0xDEADBEEF":
+    Then the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
       | prices.ETH.value | 42    |
     Then time is updated to "2022-01-01T01:01:02Z"
@@ -403,11 +403,11 @@ Scenario: Settlement happened when market is being closed after being in Suspend
       And debug transfers
 
     And the cumulated balance for all accounts should be worth "300060716"
-    And the insurance pool balance should be "3125" for the market "ETH/DEC19"
-    And the insurance pool balance should be "5625" for the asset "ETH"
-    And the insurance pool balance should be "15625" for the market "ETH/DEC20"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "2500" for the asset "ETH"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "15625" for the market "ETH/DEC22"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC22"
 
 
   # Given the initial insurance pool balance is "10000" for the markets:
