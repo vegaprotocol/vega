@@ -2360,12 +2360,11 @@ func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset st
 			Asset:    asset,
 			MarketID: noMarket,
 			Balance:  num.Zero(),
-			Owner:    "",
+			Owner:    systemOwner,
 			Type:     types.AccountTypeGlobalReward,
 		}
 		e.accs[accountID] = &acc
 		e.addAccountToHashableSlice(&acc)
-		e.broker.Send(events.NewAccountEvent(ctx, acc))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 	return accountID, nil
