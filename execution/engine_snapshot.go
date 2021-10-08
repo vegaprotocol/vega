@@ -14,7 +14,7 @@ var marketsKey = (&types.PayloadExecutionMarkets{}).Key()
 
 func (e *Engine) sortedMarketIDs() []string {
 	ids := make([]string, 0, len(e.markets))
-	for id, _ := range e.markets {
+	for id := range e.markets {
 		ids = append(ids, id)
 	}
 
@@ -24,7 +24,7 @@ func (e *Engine) sortedMarketIDs() []string {
 }
 
 func (e *Engine) marketsStates() []*types.ExecMarket {
-	// snapshots should be determinisic
+	// snapshots should be deterministic
 	mktIDs := e.sortedMarketIDs()
 
 	mks := make([]*types.ExecMarket, 0, len(mktIDs))
@@ -49,7 +49,7 @@ func (e *Engine) restoreMarketsStates(ems []*types.ExecMarket) error {
 			}
 		}
 
-		m, _ := e.markets[em.Market.ID]
+		m := e.markets[em.Market.ID]
 		if err := m.restoreState(em); err != nil {
 			return err
 		}
