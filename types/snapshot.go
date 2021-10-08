@@ -30,6 +30,7 @@ const (
 	EpochSnapshot      SnapshotNamespace = "epoch"
 	StakingSnapshot    SnapshotNamespace = "staking"
 	IDGenSnapshot      SnapshotNamespace = "idgenerator"
+	RewardSnapshot     SnapshotNamespace = "rewards"
 	LimitSnapshot      SnapshotNamespace = "limits"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
@@ -51,6 +52,7 @@ var (
 		"execution":  ExecutionSnapshot,
 		"epoch":      EpochSnapshot,
 		"staking":    StakingSnapshot,
+		"rewards":    RewardSnapshot,
 	}
 
 	ErrSnapshotHashMismatch      = errors.New("snapshot hashes do not match")
