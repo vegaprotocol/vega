@@ -124,7 +124,7 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 	defer eng.Finish()
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),
 				Asset:  "ETH",
@@ -144,7 +144,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -154,7 +154,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Owner: "party1",
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),

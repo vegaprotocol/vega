@@ -75,6 +75,10 @@ type PayloadBankingSeen struct {
 	BankingSeen *BankingSeen
 }
 
+type PayloadBankingAssetActions struct {
+	BankingAssetActions *BankingAssetActions
+}
+
 type PayloadCheckpoint struct {
 	Checkpoint *CPState
 }
@@ -113,6 +117,10 @@ type PayloadGovernanceActive struct {
 
 type PayloadGovernanceEnacted struct {
 	GovernanceEnacted *GovernanceEnacted
+}
+
+type PayloadGovernanceNode struct {
+	GovernanceNode *GovernanceNode
 }
 
 type PayloadMarketPositions struct {
@@ -277,6 +285,22 @@ type TxRef struct {
 	LogIndex uint64
 }
 
+type BankingAssetActions struct {
+	AssetAction []*AssetAction
+}
+
+type AssetAction struct {
+	ID          string
+	State       uint32
+	Asset       string
+	BlockNumber uint64
+	TxIndex     uint64
+	Hash        string
+	BuiltinD    *BuiltinAssetDeposit
+	Erc20D      *ERC20Deposit
+	Erc20AL     *ERC20AssetList
+}
+
 type CPState struct {
 	NextCp int64
 }
@@ -317,6 +341,10 @@ type GovernanceActive struct {
 }
 
 type GovernanceEnacted struct {
+	Proposals []*Proposal
+}
+
+type GovernanceNode struct {
 	Proposals []*Proposal
 }
 
@@ -479,6 +507,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingDepositsFromProto(dt)
 	case *snapshot.Payload_BankingSeen:
 		ret.Data = PayloadBankingSeenFromProto(dt)
+	case *snapshot.Payload_BankingAssetActions:
+		ret.Data = PayloadBankingAssetActionsFromProto(dt)
 	case *snapshot.Payload_Checkpoint:
 		ret.Data = PayloadCheckpointFromProto(dt)
 	case *snapshot.Payload_CollateralAssets:
@@ -495,6 +525,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadGovernanceActiveFromProto(dt)
 	case *snapshot.Payload_GovernanceEnacted:
 		ret.Data = PayloadGovernanceEnactedFromProto(dt)
+	case *snapshot.Payload_GovernanceNode:
+		ret.Data = PayloadGovernanceNodeFromProto(dt)
 	case *snapshot.Payload_MarketPositions:
 		ret.Data = PayloadMarketPositionsFromProto(dt)
 	case *snapshot.Payload_MatchingBook:
@@ -509,6 +541,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakingAccountsFromProto(dt)
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = PayloadDelegationAutoFromProto(dt)
+	case *snapshot.Payload_RewardsPendingPayouts:
+		ret.Data = PayloadRewardPayoutFromProto(dt)
 	}
 	return ret
 }
@@ -546,6 +580,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = dt
+	case *snapshot.Payload_BankingAssetActions:
+		ret.Data = dt
 	case *snapshot.Payload_CollateralAssets:
 		ret.Data = dt
 	case *snapshot.Payload_CollateralAccounts:
@@ -566,6 +602,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_GovernanceEnacted:
 		ret.Data = dt
+	case *snapshot.Payload_GovernanceNode:
+		ret.Data = dt
 	case *snapshot.Payload_Checkpoint:
 		ret.Data = dt
 	case *snapshot.Payload_Epoch:
@@ -573,6 +611,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = dt
 	case *snapshot.Payload_ExecutionIdGenerator:
+		ret.Data = dt
+	case *snapshot.Payload_RewardsPendingPayouts:
 		ret.Data = dt
 	}
 	return &ret
@@ -705,6 +745,32 @@ func (*PayloadBankingSeen) Key() string {
 }
 
 func (*PayloadBankingSeen) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingAssetActionsFromProto(pbs *snapshot.Payload_BankingAssetActions) *PayloadBankingAssetActions {
+	return &PayloadBankingAssetActions{
+		BankingAssetActions: BankingAssetActionsFromProto(pbs.BankingAssetActions),
+	}
+}
+
+func (p PayloadBankingAssetActions) IntoProto() *snapshot.Payload_BankingAssetActions {
+	return &snapshot.Payload_BankingAssetActions{
+		BankingAssetActions: p.BankingAssetActions.IntoProto(),
+	}
+}
+
+func (*PayloadBankingAssetActions) isPayload() {}
+
+func (p *PayloadBankingAssetActions) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingAssetActions) Key() string {
+	return "assetActions"
+}
+
+func (*PayloadBankingAssetActions) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
@@ -939,6 +1005,32 @@ func (*PayloadGovernanceActive) Key() string {
 }
 
 func (*PayloadGovernanceActive) Namespace() SnapshotNamespace {
+	return GovernanceSnapshot
+}
+
+func PayloadGovernanceNodeFromProto(gn *snapshot.Payload_GovernanceNode) *PayloadGovernanceNode {
+	return &PayloadGovernanceNode{
+		GovernanceNode: GovernanceNodeFromProto(gn.GovernanceNode),
+	}
+}
+
+func (p PayloadGovernanceNode) IntoProto() *snapshot.Payload_GovernanceNode {
+	return &snapshot.Payload_GovernanceNode{
+		GovernanceNode: p.GovernanceNode.IntoProto(),
+	}
+}
+
+func (*PayloadGovernanceNode) isPayload() {}
+
+func (p *PayloadGovernanceNode) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadGovernanceNode) Key() string {
+	return "node"
+}
+
+func (*PayloadGovernanceNode) Namespace() SnapshotNamespace {
 	return GovernanceSnapshot
 }
 
@@ -1262,6 +1354,76 @@ func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 	return &ret
 }
 
+func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
+	ret := snapshot.BankingAssetActions{
+		AssetAction: make([]*snapshot.AssetAction, 0, len(a.AssetAction)),
+	}
+	for _, aa := range a.AssetAction {
+		ret.AssetAction = append(ret.AssetAction, aa.IntoProto())
+	}
+	return &ret
+}
+
+func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
+	ret := &snapshot.AssetAction{
+		Id:          aa.ID,
+		State:       aa.State,
+		Asset:       aa.Asset,
+		BlockNumber: aa.BlockNumber,
+		TxIndex:     aa.TxIndex,
+		Hash:        aa.Hash,
+	}
+	if aa.BuiltinD != nil {
+		ret.BuiltinDeposit = aa.BuiltinD.IntoProto()
+	}
+	if aa.Erc20D != nil {
+		ret.Erc20Deposit = aa.Erc20D.IntoProto()
+	}
+	if aa.Erc20AL != nil {
+		ret.AssetList = aa.Erc20AL.IntoProto()
+	}
+	return ret
+}
+
+func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAssetActions {
+	ret := BankingAssetActions{
+		AssetAction: make([]*AssetAction, 0, len(aa.AssetAction)),
+	}
+
+	for _, a := range aa.AssetAction {
+		ret.AssetAction = append(ret.AssetAction, AssetActionFromProto(a))
+	}
+	return &ret
+}
+
+func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
+	aa := &AssetAction{
+		ID:          a.Id,
+		State:       a.State,
+		Asset:       a.Asset,
+		BlockNumber: a.BlockNumber,
+		TxIndex:     a.TxIndex,
+		Hash:        a.Hash,
+	}
+	if a.Erc20Deposit != nil {
+		erc20d, err := NewERC20DepositFromProto(a.Erc20Deposit)
+		if err == nil {
+			aa.Erc20D = erc20d
+		}
+	} else {
+		builtind, err := NewBuiltinAssetDepositFromProto(a.BuiltinDeposit)
+		if err == nil {
+			aa.BuiltinD = builtind
+		}
+	}
+
+	if a.AssetList != nil {
+		aa.Erc20AL = NewERC20AssetListFromProto(a.AssetList)
+	}
+
+	return aa
+}
+
 func TxRefFromProto(t *snapshot.TxRef) *TxRef {
 	return &TxRef{
 		Asset:    t.Asset,
@@ -1437,6 +1599,26 @@ func GovernanceEnactedFromProto(ge *snapshot.GovernanceEnacted) *GovernanceEnact
 
 func (g GovernanceEnacted) IntoProto() *snapshot.GovernanceEnacted {
 	ret := snapshot.GovernanceEnacted{
+		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
+	}
+	for _, p := range g.Proposals {
+		ret.Proposals = append(ret.Proposals, p.IntoProto())
+	}
+	return &ret
+}
+
+func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
+	ret := GovernanceNode{
+		Proposals: make([]*Proposal, 0, len(ge.Proposals)),
+	}
+	for _, p := range ge.Proposals {
+		ret.Proposals = append(ret.Proposals, ProposalFromProto(p))
+	}
+	return &ret
+}
+
+func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
+	ret := snapshot.GovernanceNode{
 		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
 	}
 	for _, p := range g.Proposals {
@@ -1994,4 +2176,139 @@ func (*ExecutionIDGenerator) Namespace() SnapshotNamespace {
 
 func (*ExecutionIDGenerator) Key() string {
 	return "key"
+}
+
+type PayloadRewardsPayout struct {
+	RewardsPendingPayouts *RewardsPendingPayouts
+}
+
+type RewardsPendingPayouts struct {
+	ScheduledRewardsPayout []*ScheduledRewardsPayout
+}
+
+type ScheduledRewardsPayout struct {
+	PayoutTime    int64
+	RewardsPayout []*RewardsPayout
+}
+
+type RewardsPayout struct {
+	FromAccount  string
+	Asset        string
+	PartyAmounts []*RewardsPartyAmount
+	TotalReward  *num.Uint
+	EpochSeq     string
+	Timestamp    int64
+}
+
+type RewardsPartyAmount struct {
+	Party  string
+	Amount *num.Uint
+}
+
+func PayloadRewardPayoutFromProto(rpp *snapshot.Payload_RewardsPendingPayouts) *PayloadRewardsPayout {
+	return &PayloadRewardsPayout{
+		RewardsPendingPayouts: RewardPendingPayoutsFromProto(rpp.RewardsPendingPayouts),
+	}
+}
+
+func RewardPendingPayoutsFromProto(rpps *snapshot.RewardsPendingPayouts) *RewardsPendingPayouts {
+	scheduledPayouts := make([]*ScheduledRewardsPayout, 0, len(rpps.ScheduledRewardsPayout))
+
+	for _, p := range rpps.ScheduledRewardsPayout {
+		scheduledPayouts = append(scheduledPayouts, ScheduledRewardsPayoutFromProto(p))
+	}
+
+	return &RewardsPendingPayouts{
+		ScheduledRewardsPayout: scheduledPayouts,
+	}
+}
+
+func ScheduledRewardsPayoutFromProto(srp *snapshot.ScheduledRewardsPayout) *ScheduledRewardsPayout {
+	payouts := make([]*RewardsPayout, 0, len(srp.RewardsPayout))
+	for _, p := range srp.RewardsPayout {
+		payouts = append(payouts, RewardsPayoutFromProto(p))
+	}
+
+	return &ScheduledRewardsPayout{
+		PayoutTime:    srp.PayoutTime,
+		RewardsPayout: payouts,
+	}
+}
+
+func RewardsPayoutFromProto(p *snapshot.RewardsPayout) *RewardsPayout {
+	totalReward, _ := num.UintFromString(p.TotalReward, 10)
+	partyAmounts := make([]*RewardsPartyAmount, 0, len(p.RewardPartyAmount))
+	for _, pa := range p.RewardPartyAmount {
+		amount, _ := num.UintFromString(pa.Amount, 10)
+		partyAmounts = append(partyAmounts, &RewardsPartyAmount{Party: pa.Party, Amount: amount})
+	}
+
+	return &RewardsPayout{
+		FromAccount:  p.FromAccount,
+		Asset:        p.Asset,
+		TotalReward:  totalReward,
+		EpochSeq:     p.EpochSeq,
+		Timestamp:    p.Timestamp,
+		PartyAmounts: partyAmounts,
+	}
+}
+
+func (p PayloadRewardsPayout) IntoProto() *snapshot.Payload_RewardsPendingPayouts {
+	return &snapshot.Payload_RewardsPendingPayouts{
+		RewardsPendingPayouts: p.RewardsPendingPayouts.IntoProto(),
+	}
+}
+
+func (rpp RewardsPendingPayouts) IntoProto() *snapshot.RewardsPendingPayouts {
+	scheduled := make([]*snapshot.ScheduledRewardsPayout, 0, len(rpp.ScheduledRewardsPayout))
+	for _, p := range rpp.ScheduledRewardsPayout {
+		scheduled = append(scheduled, p.IntoProto())
+	}
+	return &snapshot.RewardsPendingPayouts{
+		ScheduledRewardsPayout: scheduled,
+	}
+}
+
+func (srp ScheduledRewardsPayout) IntoProto() *snapshot.ScheduledRewardsPayout {
+	payouts := make([]*snapshot.RewardsPayout, 0, len(srp.RewardsPayout))
+	for _, p := range srp.RewardsPayout {
+		payouts = append(payouts, p.IntoProto())
+	}
+
+	return &snapshot.ScheduledRewardsPayout{
+		PayoutTime:    srp.PayoutTime,
+		RewardsPayout: payouts,
+	}
+}
+
+func (rp *RewardsPayout) IntoProto() *snapshot.RewardsPayout {
+	totalReward := rp.TotalReward.String()
+	partyAmounts := make([]*snapshot.RewardsPartyAmount, 0, len(rp.PartyAmounts))
+	for _, pa := range rp.PartyAmounts {
+		amount := pa.Amount.String()
+		partyAmounts = append(partyAmounts, &snapshot.RewardsPartyAmount{Party: pa.Party, Amount: amount})
+	}
+
+	return &snapshot.RewardsPayout{
+		FromAccount:       rp.FromAccount,
+		Asset:             rp.Asset,
+		TotalReward:       totalReward,
+		EpochSeq:          rp.EpochSeq,
+		Timestamp:         rp.Timestamp,
+		RewardPartyAmount: partyAmounts,
+	}
+}
+
+func (*PayloadRewardsPayout) isPayload() {}
+
+func (p *PayloadRewardsPayout) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadRewardsPayout) Key() string {
+	return "pendingPayout"
+}
+
+func (*PayloadRewardsPayout) Namespace() SnapshotNamespace {
+	return RewardSnapshot
 }

@@ -66,6 +66,7 @@ type Engine struct {
 	rewardSchemes                      map[string]*types.RewardScheme // reward scheme id -> reward scheme
 	pendingPayouts                     map[time.Time][]*payout
 	assetForStakingAndDelegationReward string
+	rss                                *rewardsSnapshotState
 }
 type payout struct {
 	fromAccount   string
@@ -88,6 +89,11 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 		collateral:     collateral,
 		rewardSchemes:  map[string]*types.RewardScheme{},
 		pendingPayouts: map[time.Time][]*payout{},
+		rss: &rewardsSnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 
 	// register for epoch end notifications
@@ -261,11 +267,12 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 			e.distributePayout(ctx, p)
 		}
 		delete(e.pendingPayouts, payTime)
+		e.rss.changed = true
 	}
 }
 
 // process rewards when needed
-func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, t time.Time) {
+func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, _ time.Time) {
 	// get the reward pool accounts for the reward scheme
 	for _, accountID := range rewardScheme.RewardPoolAccountIDs {
 		account, err := e.collateral.GetAccountByID(accountID)
@@ -314,6 +321,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		} else {
 			e.pendingPayouts[timeToSend] = append(e.pendingPayouts[timeToSend], po)
 		}
+		e.rss.changed = true
 	}
 }
 

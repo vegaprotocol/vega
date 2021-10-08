@@ -40,9 +40,9 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nodeWallets *nodewallets.NodeWallets
-	ethClient   erc20.ETHClient
-  dss             *assetsSnapshotState
+	nodeWallets     *nodewallets.NodeWallets
+	ethClient       erc20.ETHClient
+	ass             *assetsSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
 }
 
@@ -57,7 +57,7 @@ func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient
 		pendingAssets: map[string]*Asset{},
 		nodeWallets:   nw,
 		ethClient:     ethClient,
-		dss: &assetsSnapshotState{
+		ass: &assetsSnapshotState{
 			changed:    map[string]bool{activeKey: true, pendingKey: true},
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
@@ -100,8 +100,8 @@ func (s *Service) Enable(assetID string) error {
 		defer s.amu.Unlock()
 		s.assets[assetID] = asset
 		delete(s.pendingAssets, assetID)
-		s.dss.changed[activeKey] = true
-		s.dss.changed[pendingKey] = true
+		s.ass.changed[activeKey] = true
+		s.ass.changed[pendingKey] = true
 		return nil
 	}
 	return ErrAssetInvalid
@@ -142,7 +142,7 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 		return "", err
 	}
 	s.pendingAssets[assetID] = asset
-	s.dss.changed[pendingKey] = true
+	s.ass.changed[pendingKey] = true
 	return assetID, err
 }
 

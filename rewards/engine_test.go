@@ -1,10 +1,12 @@
 package rewards
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
 
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
@@ -13,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/rewards/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -32,6 +35,99 @@ func Test(t *testing.T) {
 	t.Run("Process epoch end to calculate payout with payout delay - all balance left on reward account is paid out", testOnEpochEndFullPayoutWithPayoutDelay)
 	t.Run("Process epoch end to calculate payout with no delay - rewards are distributed successfully", testOnEpochEndNoPayoutDelay)
 	t.Run("Process pending payouts on time update - time for payout hasn't come yet so no payouts sent", testOnChainTimeUpdateNoPayoutsToSend)
+	t.Run("Reward snapshot round trip with delayed payout", testRewardSnapshotRoundTrip)
+}
+
+func testRewardSnapshotRoundTrip(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	engine.registerStakingAndDelegationRewardScheme()
+	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+
+	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
+
+	//setup delay
+	rs.PayoutDelay = 120 * time.Second
+
+	//setup reward account balance
+	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
+	require.Nil(t, err)
+
+	// there is remaining 1000000 to distribute as payout
+	now := time.Now()
+	epoch := types.Epoch{StartTime: now, EndTime: now, Seq: 1}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEnd(context.Background(), epoch)
+
+	// now we have a pending payout to be paid 2 minutes later
+	// verify hash is consistent in the absence of change
+	key = "pendingPayout"
+
+	hash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	state, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	hashNoChange, err := engine.GetHash(key)
+	require.Nil(t, err)
+	stateNoChange, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// reload the state
+	var rewards snapshot.Payload
+	proto.Unmarshal(state, &rewards)
+
+	payload := types.PayloadFromProto(&rewards)
+
+	err = engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	hashPostReload, _ := engine.GetHash(key)
+	require.True(t, bytes.Equal(hash, hashPostReload))
+	statePostReload, _ := engine.GetState(key)
+	require.True(t, bytes.Equal(state, statePostReload))
+
+	// add another pending payout
+	epoch = types.Epoch{StartTime: now.Add(10 * time.Second), EndTime: now.Add(10 * time.Second), Seq: 2}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEnd(context.Background(), epoch)
+
+	// expect hash and state to have changed
+	newHash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	newState, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, newHash))
+	require.False(t, bytes.Equal(state, newState))
+
+	proto.Unmarshal(newState, &rewards)
+	payload = types.PayloadFromProto(&rewards)
+	err = engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	newHashPostReload, _ := engine.GetHash(key)
+	require.True(t, bytes.Equal(newHash, newHashPostReload))
+	newStatePostReload, _ := engine.GetState(key)
+	require.True(t, bytes.Equal(newState, newStatePostReload))
+
+	// advance to after payouts have been paid and cleared
+	engine.onChainTimeUpdate(context.Background(), now.Add(300*time.Second))
+	emptyStateHash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	emptyState, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, emptyStateHash))
+	require.False(t, bytes.Equal(state, emptyState))
 }
 
 //test that registering reward scheme is unsupported
@@ -391,8 +487,8 @@ func testOnChainTimeUpdateNoPayoutsToSend(t *testing.T) {
 	payoutTime1 := now.Add(10 * time.Second)
 	payoutTime2 := now.Add(20 * time.Second)
 
-	engine.pendingPayouts[payoutTime1] = []*payout{&payout{}}
-	engine.pendingPayouts[payoutTime2] = []*payout{&payout{}}
+	engine.pendingPayouts[payoutTime1] = []*payout{{}}
+	engine.pendingPayouts[payoutTime2] = []*payout{{}}
 
 	testEngine.engine.onChainTimeUpdate(context.Background(), now)
 
