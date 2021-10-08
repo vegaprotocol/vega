@@ -27,24 +27,6 @@ func NewExpiringOrders() *ExpiringOrders {
 	}
 }
 
-func (a *ExpiringOrders) GetState() []string {
-	orders := make([]string, 0, a.orders.Len())
-	a.orders.Ascend(func(item btree.Item) bool {
-		orders = append(orders, item.(*ordersAtTS).orders...)
-		return true
-	})
-
-	a.ordersChanged = false
-
-	return orders
-}
-
-func (a *ExpiringOrders) RestoreState(orders []*types.Order) {
-	for _, o := range orders {
-		a.Insert(o.ID, o.ExpiresAt)
-	}
-}
-
 func (a ExpiringOrders) changed() bool {
 	return a.ordersChanged
 }
