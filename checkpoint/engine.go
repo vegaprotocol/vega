@@ -27,7 +27,7 @@ var (
 	}
 )
 
-// State interface represents system components that need snapshotting
+// State interface represents system components that need checkpointting
 // Name returns the component name (key in engine map)
 // Hash returns, obviously, the state hash
 // @TODO adding func to get the actual data
@@ -139,12 +139,12 @@ func (e *Engine) AwaitingRestore() bool {
 	return len(e.loadHash) > 0
 }
 
-// BalanceCheckpoint is used for deposits and withdrawals. We want a snapshot to be taken in those events
-// but these snapshots should not affect the timing (delta, time between checkpoints). Currently, this call
+// BalanceCheckpoint is used for deposits and withdrawals. We want a checkpoint to be taken in those events
+// but these checkpoints should not affect the timing (delta, time between checkpoints). Currently, this call
 // generates a full checkpoint, but we probably will change this to be a sparse checkpoint
 // only containing changes in balances and (perhaps) network parameters...
 func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error) {
-	// no time stuff here, for now we're just taking a full snapshot
+	// no time stuff here, for now we're just taking a full checkpoint
 	cp := e.makeCheckpoint(ctx)
 	return cp, nil
 }
@@ -193,28 +193,34 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 }
 
 // Load - loads checkpoint data for all components by name
-func (e *Engine) Load(ctx context.Context, snap *types.CheckpointState) error {
+func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
 	if len(e.loadHash) != 0 {
-		e.log.Warn("Checkpoint hash reload requested",
+		hashDiff := bytes.Compare(e.loadHash, cpt.Hash)
+
+		log := e.log.Info
+		if hashDiff != 0 {
+			log = e.log.Warn
+		}
+		log("Checkpoint hash reload requested",
 			logging.String("hash-to-load", hex.EncodeToString(e.loadHash)),
-			logging.String("snapshot-hash", hex.EncodeToString(snap.Hash)),
-			logging.Int("hash-diff", bytes.Compare(e.loadHash, snap.Hash)),
+			logging.String("checkpoint-hash", hex.EncodeToString(cpt.Hash)),
+			logging.Int("hash-diff", hashDiff),
 		)
 	}
-	if e.loadHash == nil || !bytes.Equal(e.loadHash, snap.Hash) {
+	if e.loadHash == nil || !bytes.Equal(e.loadHash, cpt.Hash) {
 		return nil
 	}
 	// we found the checkpoint we need to load, set value to nil
 	// either the checkpoint was loaded successfully, or it wasn't
 	// if this fails, the node goes down
 	e.loadHash = nil
-	cp, err := snap.GetCheckpoint()
+	cp, err := cpt.GetCheckpoint()
 	if err != nil {
 		return err
 	}
 	// check the hash
-	if err := snap.Validate(); err != nil {
+	if err := cpt.Validate(); err != nil {
 		return err
 	}
 	var (

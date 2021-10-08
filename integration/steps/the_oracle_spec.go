@@ -5,6 +5,7 @@ import (
 
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/integration/steps/market"
 )
 
@@ -37,6 +38,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 		name,
 		specType,
 		&oraclesv1.OracleSpec{
+			Id:      vgrand.RandomStr(10),
 			PubKeys: pubKeys,
 			Filters: filters,
 		},
