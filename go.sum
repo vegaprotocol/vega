@@ -17,6 +17,8 @@ code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:
 code.vegaprotocol.io/protos v0.43.1-0.20211004102311-d2ad34ada37b/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/protos v0.44.0 h1:sF/1xqrzpSBh2sPan9g375uwL49YSeiGbqNM0b1xYPg=
 code.vegaprotocol.io/protos v0.44.0/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+code.vegaprotocol.io/protos v0.44.1-0.20211008131500-3faf32bfbc27 h1:gg4ZVT1dEA8lqPBVj3xr25HdSkhGs6ORJGa3jxR1yC0=
+code.vegaprotocol.io/protos v0.44.1-0.20211008131500-3faf32bfbc27/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20210907092733-405b656c2f5b/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=
