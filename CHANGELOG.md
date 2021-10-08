@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.44.1
+*2021-10-08*
+
+### Fixes
+- [4183](https://github.com/vegaprotocol/vega/pull/4183) - Fix `undelegateNow` to use the passed amount instead of 0
+- [4184](https://github.com/vegaprotocol/vega/pull/4184) - Remove 0 balance events from checkpoint of delegations
+- [4185](https://github.com/vegaprotocol/vega/pull/4185) - Fix event sent on reward pool creation + fix owner
+
+
 ## 0.44.0
 *2021-10-07*
 

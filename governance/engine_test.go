@@ -1409,6 +1409,22 @@ func (e *tstEngine) newOpenProposal(partyID string, now time.Time) types.Proposa
 	}
 }
 
+func (e *tstEngine) newOpenAssetProposal(partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newValidAssetTerms(),
+		},
+	}
+}
+
 func (e *tstEngine) expectAnyAsset() {
 	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
 	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)

@@ -110,6 +110,10 @@ func (n *NodeValidation) getProposal(id string) (*nodeProposal, bool) {
 	return nil, false
 }
 
+func (n *NodeValidation) getProposals() []*nodeProposal {
+	return n.nodeProposals
+}
+
 func (n *NodeValidation) removeProposal(id string) {
 	for i, p := range n.nodeProposals {
 		if p.ID == id {
