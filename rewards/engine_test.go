@@ -32,6 +32,59 @@ func Test(t *testing.T) {
 	t.Run("Process epoch end to calculate payout with payout delay - all balance left on reward account is paid out", testOnEpochEndFullPayoutWithPayoutDelay)
 	t.Run("Process epoch end to calculate payout with no delay - rewards are distributed successfully", testOnEpochEndNoPayoutDelay)
 	t.Run("Process pending payouts on time update - time for payout hasn't come yet so no payouts sent", testOnChainTimeUpdateNoPayoutsToSend)
+	t.Run("Calculate rewards with delays such that pending payouts pile and are accounted for reward amount available for next round next rounds before being distributed", testMultipleEpochsWithPendingPayouts)
+}
+
+func testMultipleEpochsWithPendingPayouts(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	engine.registerStakingAndDelegationRewardScheme()
+	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+
+	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
+
+	//setup delay
+	rs.PayoutDelay = 120 * time.Second
+	rs.PayoutFraction = 0.5
+
+	//setup reward account balance
+	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
+	require.Nil(t, err)
+
+	// there is remaining 1000000 to distribute as payout
+	now := time.Now()
+	epoch1 := types.Epoch{StartTime: now, EndTime: now, Seq: 1}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEnd(context.Background(), epoch1)
+
+	// at this point there should be a payout pending
+	require.Equal(t, 1, len(engine.pendingPayouts))
+	require.Equal(t, num.NewUint(499999), engine.pendingPayouts[now.Add(rs.PayoutDelay)][0].totalReward)
+	require.Equal(t, num.NewUint(499999), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
+
+	// now add reward for epoch 2
+	now2 := now.Add(10 * time.Second)
+	epoch2 := types.Epoch{StartTime: now2, EndTime: now2, Seq: 2}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEnd(context.Background(), epoch2)
+
+	// at this point there should be a payout pending
+	require.Equal(t, 2, len(engine.pendingPayouts))
+	require.Equal(t, num.NewUint(249999), engine.pendingPayouts[now2.Add(rs.PayoutDelay)][0].totalReward)
+	require.Equal(t, num.NewUint(749998), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
+
+	// run to the end of delay to have payouts distributed
+
+	now3 := now2.Add(121 * time.Second)
+	engine.onChainTimeUpdate(context.Background(), now3)
+	require.Equal(t, num.Zero(), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
 }
 
 //test that registering reward scheme is unsupported
@@ -269,6 +322,10 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEnd(context.Background(), epoch)
 
+	// advance to the end of the delay for the second reward + topup the balance of the reward account to be 1M again
+	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(999999))
+	require.Nil(t, err)
+
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party2", "ETH")
@@ -301,10 +358,6 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(140000), node1Acc.Balance)
 	require.Equal(t, num.NewUint(400000), node2Acc.Balance)
 	require.Equal(t, num.NewUint(331428), node3Acc.Balance)
-
-	// advance to the end of the delay for the second reward + topup the balance of the reward account to be 1M again
-	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(999999))
-	require.Nil(t, err)
 
 	engine.onChainTimeUpdate(context.Background(), epoch2.EndTime.Add(rs.PayoutDelay))
 

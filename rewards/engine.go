@@ -264,6 +264,18 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	}
 }
 
+func (e *Engine) calcTotalPendingPayout(accountID string) *num.Uint {
+	totalPendingForRS := num.Zero()
+	for _, payouts := range e.pendingPayouts {
+		for _, po := range payouts {
+			if po.fromAccount == accountID {
+				totalPendingForRS.AddSum(po.totalReward)
+			}
+		}
+	}
+	return totalPendingForRS
+}
+
 // process rewards when needed
 func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, _ time.Time) {
 	// get the reward pool accounts for the reward scheme
@@ -275,6 +287,13 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		}
 
 		rewardAccountBalance := account.Balance
+
+		// account for pending payouts
+		totalPendingPayouts := e.calcTotalPendingPayout(account.ID)
+		if rewardAccountBalance.LT(totalPendingPayouts) {
+			e.log.Panic("insufficient balance in reward account to cover for pending payouts", logging.String("rewardAccountBalance", rewardAccountBalance.String()), logging.String("totalPendingPayouts", totalPendingPayouts.String()))
+		}
+		rewardAccountBalance = num.Zero().Sub(rewardAccountBalance, totalPendingPayouts)
 
 		// get how much reward needs to be distributed based on the current balance and the reward scheme
 		rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
@@ -292,8 +311,9 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		payoutEvents := map[string]*events.RewardPayout{}
 		parties := []string{}
 		for party, amount := range po.partyToAmount {
-			proportion, _ := amount.ToDecimal().Div(po.totalReward.ToDecimal()).Float64()
-			payoutEvents[party] = events.NewRewardPayout(ctx, po.timestamp, party, po.epochSeq, po.asset, amount, proportion)
+			proportion := amount.ToDecimal().Div(po.totalReward.ToDecimal())
+			pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
+			payoutEvents[party] = events.NewRewardPayout(ctx, po.timestamp, party, po.epochSeq, po.asset, amount, pct)
 			parties = append(parties, party)
 		}
 		sort.Strings(parties)
