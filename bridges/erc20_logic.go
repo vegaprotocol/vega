@@ -11,11 +11,6 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
-var (
-	// 10 years
-	expiryDuration = 24 * 356 * 10 * time.Hour
-)
-
 // ERC20Logic yea that's a weird name but
 // it just matched the name of the contract
 type ERC20Logic struct {
@@ -39,6 +34,10 @@ func (e ERC20Logic) ListAsset(
 	if err != nil {
 		return nil, err
 	}
+	typBytes32, err := abi.NewType("bytes32", "", nil)
+	if err != nil {
+		return nil, err
+	}
 	typString, err := abi.NewType("string", "", nil)
 	if err != nil {
 		return nil, err
@@ -55,7 +54,7 @@ func (e ERC20Logic) ListAsset(
 		},
 		{
 			Name: "vega_asset_id",
-			Type: typAddr,
+			Type: typBytes32,
 		},
 		{
 			Name: "nonce",
@@ -69,8 +68,10 @@ func (e ERC20Logic) ListAsset(
 
 	tokenAddressEth := ethcmn.HexToAddress(tokenAddress)
 	vegaAssetIDBytes, _ := hex.DecodeString(vegaAssetID)
+	var vegaAssetIDArray [32]byte
+	copy(vegaAssetIDArray[:], vegaAssetIDBytes[:32])
 	buf, err := args.Pack([]interface{}{
-		tokenAddressEth, vegaAssetIDBytes, nonce.BigInt(), "list_asset"}...)
+		tokenAddressEth, vegaAssetIDArray, nonce.BigInt(), "list_asset"}...)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +86,6 @@ func (e ERC20Logic) ListAsset(
 
 func (e ERC20Logic) RemoveAsset(
 	tokenAddress string,
-	vegaAssetID string,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
 	typAddr, err := abi.NewType("address", "", nil)
@@ -135,7 +135,7 @@ func (e ERC20Logic) WithdrawAsset(
 	tokenAddress string,
 	amount *num.Uint,
 	ethPartyAddress string,
-	currentTime time.Time,
+	expiry time.Time,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
 	typAddr, err := abi.NewType("address", "", nil)
@@ -180,10 +180,10 @@ func (e ERC20Logic) WithdrawAsset(
 
 	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
 	hexEthPartyAddress := ethcmn.HexToAddress(ethPartyAddress)
-	expiry := currentTime.Add(expiryDuration).UnixNano()
+	expiryUnix := expiry.Unix() // require in unix by the bridge
 
 	buf, err := args.Pack([]interface{}{
-		ethTokenAddr, amount.BigInt(), big.NewInt(expiry),
+		ethTokenAddr, amount.BigInt(), big.NewInt(expiryUnix),
 		hexEthPartyAddress, nonce.BigInt(), "withdraw_asset"}...)
 	if err != nil {
 		return nil, err
