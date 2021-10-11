@@ -16,22 +16,18 @@ type SnapshotEngine struct {
 	hash    []byte
 	data    []byte
 	changed bool
-}
-
-// serialise marshal the snapshot state, populating the data and hash fields
-// with updated values.
-func (e *Engine) serialise() ([]byte, []byte, error) {
-	if !e.pss.changed {
-		return e.pss.data, e.pss.hash, nil // we already have what we need
-	}
+	buf     *proto.Buffer
 }
 
 func NewSnapshotEngine(
 	log *logging.Logger, config Config, marketID string) *SnapshotEngine {
+	buf := proto.NewBuffer(nil)
+	buf.SetDeterministic(true)
 	return &SnapshotEngine{
 		Engine:  New(log, config, marketID),
 		pl:      types.Payload{},
 		changed: true,
+		buf:     buf,
 	}
 }
 
@@ -135,9 +131,8 @@ func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 }
 
 // serialise marshal the snapshot state, populating the data and hash fields
-// with updated values
+// with updated values.
 func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
-
 	if !e.changed {
 		return e.data, e.hash, nil // we already have what we need
 	}
@@ -163,13 +158,14 @@ func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 		},
 	}
 
-	data, err := proto.Marshal(e.pl.IntoProto())
+	e.buf.Reset()
+	err := e.buf.Marshal(e.pl.IntoProto())
 	if err != nil {
 		return nil, nil, err
 	}
 
-	e.data = data
-	e.hash = crypto.Hash(data)
+	e.data = e.buf.Bytes()
+	e.hash = crypto.Hash(e.data)
 	e.changed = false
 
 	return e.data, e.hash, nil
