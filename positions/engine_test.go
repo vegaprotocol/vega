@@ -294,9 +294,17 @@ func testUnregisterOrderUnsuccessful(t *testing.T) {
 	})
 }
 
-func getTestEngine(t *testing.T) *positions.Engine {
+func getTestEngine(t *testing.T) *positions.SnapshotEngine {
 	t.Helper()
-	return positions.New(
+	return positions.NewSnapshotEngine(
+		logging.NewTestLogger(), positions.NewDefaultConfig(),
+		"test_market",
+	)
+}
+
+func getTestSnapshotEngine(t *testing.T) *positions.SnapshotEngine {
+	t.Helper()
+	return positions.NewSnapshotEngine(
 		logging.NewTestLogger(), positions.NewDefaultConfig(),
 		"test_market",
 	)
@@ -583,7 +591,7 @@ func TestHash(t *testing.T) {
 	}
 }
 
-func registerOrder(e *positions.Engine, side types.Side, party string, price *num.Uint, size uint64) {
+func registerOrder(e *positions.SnapshotEngine, side types.Side, party string, price *num.Uint, size uint64) {
 	e.RegisterOrder(&types.Order{
 		Party:     party,
 		Side:      side,
