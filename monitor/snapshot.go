@@ -14,7 +14,9 @@ func (a *AuctionState) GetState() *types.AuctionState {
 		End:         a.end,
 		Start:       a.start,
 		Stop:        a.stop,
-		Extension:   *a.extension,
+	}
+	if a.extension != nil {
+		as.Extension = *a.extension
 	}
 
 	a.stateChanged = false
