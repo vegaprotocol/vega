@@ -19,7 +19,7 @@ var (
 const (
 	rejectRatioForIncrease         float64 = 0.3
 	numberOfEpochsBan              uint64  = 4
-	numberOfBlocksForIncreaseCheck int     = 10
+	numberOfBlocksForIncreaseCheck uint64  = 10
 	banFactor                              = 0.5
 )
 
@@ -38,6 +38,8 @@ type Engine struct {
 
 	transactionTypeToPolicy map[txn.Command]SpamPolicy
 	currentEpoch            *types.Epoch
+	policyNameToPolicy      map[string]SpamPolicy
+	hashKeys                []string
 }
 
 type SpamPolicy interface {
@@ -47,6 +49,8 @@ type SpamPolicy interface {
 	PostBlockAccept(tx abci.Tx) (bool, error)
 	UpdateUintParam(name string, value *num.Uint) error
 	UpdateIntParam(name string, value int64) error
+	Serialise() ([]byte, error)
+	Deserialise(payload *types.Payload) error
 }
 
 //New instantiates a new spam engine
@@ -63,6 +67,10 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log)
 	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log)
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log)
+
+	voteKey := (&types.PayloadDelegationActive{}).Key()
+	e.policyNameToPolicy = map[string]SpamPolicy{voteKey: votePolicy, proposalPolicy.policyName: proposalPolicy, delegationPolicy.policyName: delegationPolicy}
+	e.hashKeys = []string{voteKey, proposalPolicy.policyName, delegationPolicy.policyName}
 
 	e.transactionTypeToPolicy[txn.ProposeCommand] = proposalPolicy
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy

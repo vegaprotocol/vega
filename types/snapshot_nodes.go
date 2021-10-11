@@ -543,6 +543,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadDelegationAutoFromProto(dt)
 	case *snapshot.Payload_RewardsPendingPayouts:
 		ret.Data = PayloadRewardPayoutFromProto(dt)
+	case *snapshot.Payload_VoteSpamPolicy:
+		ret.Data = PayloadVoteSpamPolicyFromProto(dt)
+	case *snapshot.Payload_SimpleSpamPolicy:
+		ret.Data = PayloadSimpleSpamPolicyFromProto(dt)
 	}
 	return ret
 }
@@ -613,6 +617,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ExecutionIdGenerator:
 		ret.Data = dt
 	case *snapshot.Payload_RewardsPendingPayouts:
+		ret.Data = dt
+	case *snapshot.Payload_VoteSpamPolicy:
+		ret.Data = dt
+	case *snapshot.Payload_SimpleSpamPolicy:
 		ret.Data = dt
 	}
 	return &ret
@@ -2176,6 +2184,296 @@ func (*ExecutionIDGenerator) Namespace() SnapshotNamespace {
 
 func (*ExecutionIDGenerator) Key() string {
 	return "key"
+}
+
+type PartyTokenBalance struct {
+	Party   string
+	Balance *num.Uint
+}
+
+type PartyProposalVoteCount struct {
+	Party    string
+	Proposal string
+	Count    uint64
+}
+
+type PartyCount struct {
+	Party string
+	Count uint64
+}
+
+type BannedParty struct {
+	Party      string
+	UntilEpoch uint64
+}
+
+type BlockRejectStats struct {
+	Total    uint64
+	Rejected uint64
+}
+
+type PayloadVoteSpamPolicy struct {
+	VoteSpamPolicy *VoteSpamPolicy
+}
+
+type PayloadSimpleSpamPolicy struct {
+	SimpleSpamPolicy *SimpleSpamPolicy
+}
+
+type SimpleSpamPolicy struct {
+	PolicyName        string
+	PartyToCount      []*PartyCount
+	BannedParty       []*BannedParty
+	PartyTokenBalance []*PartyTokenBalance
+	CurrentEpochSeq   uint64
+}
+
+type VoteSpamPolicy struct {
+	PartyProposalVoteCount  []*PartyProposalVoteCount
+	BannedParty             []*BannedParty
+	PartyTokenBalance       []*PartyTokenBalance
+	RecentBlocksRejectStats []*BlockRejectStats
+	CurrentBlockIndex       uint64
+	LastIncreaseBlock       uint64
+	CurrentEpochSeq         uint64
+	MinVotingTokensFactor   *num.Uint
+}
+
+func PayloadSimpleSpamPolicyFromProto(ssp *snapshot.Payload_SimpleSpamPolicy) *PayloadSimpleSpamPolicy {
+	return &PayloadSimpleSpamPolicy{
+		SimpleSpamPolicy: SimpleSpamPolicyFromProto(ssp.SimpleSpamPolicy),
+	}
+}
+
+func PayloadVoteSpamPolicyFromProto(vsp *snapshot.Payload_VoteSpamPolicy) *PayloadVoteSpamPolicy {
+	return &PayloadVoteSpamPolicy{
+		VoteSpamPolicy: VoteSpamPolicyFromProto(vsp.VoteSpamPolicy),
+	}
+}
+
+func SimpleSpamPolicyFromProto(ssp *snapshot.SimpleSpamPolicy) *SimpleSpamPolicy {
+	partyCount := make([]*PartyCount, 0, len(ssp.PartyToCount))
+	for _, ptv := range ssp.PartyToCount {
+		partyCount = append(partyCount, PartyCountFromProto(ptv))
+	}
+
+	bannedParties := make([]*BannedParty, 0, len(ssp.BannedParties))
+	for _, ban := range ssp.BannedParties {
+		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
+	}
+
+	partyBalance := make([]*PartyTokenBalance, 0, len(ssp.TokenBalance))
+	for _, balance := range ssp.TokenBalance {
+		partyBalance = append(partyBalance, PartyTokenBalanceFromProto(balance))
+	}
+
+	return &SimpleSpamPolicy{
+		PolicyName:        ssp.PolicyName,
+		PartyToCount:      partyCount,
+		BannedParty:       bannedParties,
+		PartyTokenBalance: partyBalance,
+		CurrentEpochSeq:   ssp.CurrentEpochSeq,
+	}
+
+}
+
+func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
+	partyProposalVoteCount := make([]*PartyProposalVoteCount, 0, len(vsp.PartyToVote))
+	for _, ptv := range vsp.PartyToVote {
+		partyProposalVoteCount = append(partyProposalVoteCount, PartyProposalVoteCountFromProto(ptv))
+	}
+
+	bannedParties := make([]*BannedParty, 0, len(vsp.BannedParties))
+	for _, ban := range vsp.BannedParties {
+		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
+	}
+
+	partyBalance := make([]*PartyTokenBalance, 0, len(vsp.TokenBalance))
+	for _, balance := range vsp.TokenBalance {
+		partyBalance = append(partyBalance, PartyTokenBalanceFromProto(balance))
+	}
+
+	recentBlocksRejectStats := make([]*BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
+	for _, rejects := range vsp.RecentBlocksRejectStats {
+		recentBlocksRejectStats = append(recentBlocksRejectStats, BlockRejectStatsFromProto(rejects))
+	}
+
+	minTokensFactor, _ := num.UintFromString(vsp.MinVotingTokensFactor, 10)
+
+	return &VoteSpamPolicy{
+		PartyProposalVoteCount:  partyProposalVoteCount,
+		BannedParty:             bannedParties,
+		PartyTokenBalance:       partyBalance,
+		RecentBlocksRejectStats: recentBlocksRejectStats,
+		LastIncreaseBlock:       vsp.LastIncreaseBlock,
+		CurrentBlockIndex:       vsp.CurrentBlockIndex,
+		CurrentEpochSeq:         vsp.CurrentEpochSeq,
+		MinVotingTokensFactor:   minTokensFactor,
+	}
+}
+
+func BlockRejectStatsFromProto(rejects *snapshot.BlockRejectStats) *BlockRejectStats {
+	return &BlockRejectStats{
+		Total:    rejects.Total,
+		Rejected: rejects.Rejected,
+	}
+}
+
+func (brs *BlockRejectStats) IntoProto() *snapshot.BlockRejectStats {
+	return &snapshot.BlockRejectStats{
+		Total:    brs.Total,
+		Rejected: brs.Rejected,
+	}
+}
+
+func PartyTokenBalanceFromProto(balance *snapshot.PartyTokenBalance) *PartyTokenBalance {
+	b, _ := num.UintFromString(balance.Balance, 10)
+	return &PartyTokenBalance{
+		Party:   balance.Party,
+		Balance: b,
+	}
+}
+
+func BannedPartyFromProto(ban *snapshot.BannedParty) *BannedParty {
+	return &BannedParty{
+		Party:      ban.Party,
+		UntilEpoch: ban.UntilEpoch,
+	}
+}
+
+func PartyProposalVoteCountFromProto(ppvc *snapshot.PartyProposalVoteCount) *PartyProposalVoteCount {
+	return &PartyProposalVoteCount{
+		Party:    ppvc.Party,
+		Proposal: ppvc.Proposal,
+		Count:    ppvc.Count,
+	}
+}
+
+func PartyCountFromProto(pc *snapshot.SpamPartyTransactionCount) *PartyCount {
+	return &PartyCount{
+		Party: pc.Party,
+		Count: pc.Count,
+	}
+}
+
+func (p *PartyProposalVoteCount) IntoProto() *snapshot.PartyProposalVoteCount {
+	return &snapshot.PartyProposalVoteCount{
+		Party:    p.Party,
+		Proposal: p.Proposal,
+		Count:    p.Count,
+	}
+}
+
+func (b *BannedParty) IntoProto() *snapshot.BannedParty {
+	return &snapshot.BannedParty{
+		Party:      b.Party,
+		UntilEpoch: b.UntilEpoch,
+	}
+}
+
+func (ptc *PartyTokenBalance) IntoProto() *snapshot.PartyTokenBalance {
+	return &snapshot.PartyTokenBalance{
+		Party:   ptc.Party,
+		Balance: ptc.Balance.String(),
+	}
+}
+
+func (ssp *SimpleSpamPolicy) IntoProto() *snapshot.SimpleSpamPolicy {
+	partyToCount := make([]*snapshot.SpamPartyTransactionCount, 0, len(ssp.PartyToCount))
+	for _, pc := range ssp.PartyToCount {
+		partyToCount = append(partyToCount, &snapshot.SpamPartyTransactionCount{Party: pc.Party, Count: pc.Count})
+	}
+
+	bannedParties := make([]*snapshot.BannedParty, 0, len(ssp.BannedParty))
+	for _, ban := range ssp.BannedParty {
+		bannedParties = append(bannedParties, ban.IntoProto())
+	}
+
+	partyBalance := make([]*snapshot.PartyTokenBalance, 0, len(ssp.PartyTokenBalance))
+	for _, balance := range ssp.PartyTokenBalance {
+		partyBalance = append(partyBalance, balance.IntoProto())
+	}
+
+	return &snapshot.SimpleSpamPolicy{
+		PolicyName:      ssp.PolicyName,
+		PartyToCount:    partyToCount,
+		BannedParties:   bannedParties,
+		TokenBalance:    partyBalance,
+		CurrentEpochSeq: ssp.CurrentEpochSeq,
+	}
+}
+
+func (vsp *VoteSpamPolicy) IntoProto() *snapshot.VoteSpamPolicy {
+
+	partyProposalVoteCount := make([]*snapshot.PartyProposalVoteCount, 0, len(vsp.PartyProposalVoteCount))
+	for _, ptv := range vsp.PartyProposalVoteCount {
+		partyProposalVoteCount = append(partyProposalVoteCount, ptv.IntoProto())
+	}
+
+	bannedParties := make([]*snapshot.BannedParty, 0, len(vsp.BannedParty))
+	for _, ban := range vsp.BannedParty {
+		bannedParties = append(bannedParties, ban.IntoProto())
+	}
+
+	partyBalance := make([]*snapshot.PartyTokenBalance, 0, len(vsp.PartyTokenBalance))
+	for _, balance := range vsp.PartyTokenBalance {
+		partyBalance = append(partyBalance, balance.IntoProto())
+	}
+
+	recentBlocksRejectStats := make([]*snapshot.BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
+	for _, rejects := range vsp.RecentBlocksRejectStats {
+		recentBlocksRejectStats = append(recentBlocksRejectStats, rejects.IntoProto())
+	}
+	return &snapshot.VoteSpamPolicy{
+		PartyToVote:             partyProposalVoteCount,
+		BannedParties:           bannedParties,
+		TokenBalance:            partyBalance,
+		RecentBlocksRejectStats: recentBlocksRejectStats,
+		LastIncreaseBlock:       vsp.LastIncreaseBlock,
+		CurrentBlockIndex:       vsp.CurrentBlockIndex,
+		CurrentEpochSeq:         vsp.CurrentEpochSeq,
+		MinVotingTokensFactor:   vsp.MinVotingTokensFactor.String(),
+	}
+}
+
+func (p *PayloadVoteSpamPolicy) IntoProto() *snapshot.Payload_VoteSpamPolicy {
+	return &snapshot.Payload_VoteSpamPolicy{
+		VoteSpamPolicy: p.VoteSpamPolicy.IntoProto(),
+	}
+}
+
+func (*PayloadVoteSpamPolicy) isPayload() {}
+
+func (p *PayloadVoteSpamPolicy) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadVoteSpamPolicy) Key() string {
+	return "voteSpamPolicy"
+}
+
+func (*PayloadVoteSpamPolicy) Namespace() SnapshotNamespace {
+	return SpamSnapshot
+}
+
+func (p *PayloadSimpleSpamPolicy) IntoProto() *snapshot.Payload_SimpleSpamPolicy {
+	return &snapshot.Payload_SimpleSpamPolicy{
+		SimpleSpamPolicy: p.SimpleSpamPolicy.IntoProto(),
+	}
+}
+
+func (*PayloadSimpleSpamPolicy) isPayload() {}
+
+func (p *PayloadSimpleSpamPolicy) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadSimpleSpamPolicy) Key() string {
+	return p.SimpleSpamPolicy.PolicyName
+}
+
+func (*PayloadSimpleSpamPolicy) Namespace() SnapshotNamespace {
+	return SpamSnapshot
 }
 
 type PayloadRewardsPayout struct {
