@@ -1,13 +1,17 @@
 package positions
 
 import (
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/golang/protobuf/proto"
 )
 
-type positionsSnapshotState struct {
+type SnapshotEngine struct {
+	*Engine
 	pl      types.Payload
 	hash    []byte
 	data    []byte
@@ -20,49 +24,61 @@ func (e *Engine) serialise() ([]byte, []byte, error) {
 	if !e.pss.changed {
 		return e.pss.data, e.pss.hash, nil // we already have what we need
 	}
-
-	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
-
-	for _, evt := range e.positionsCpy {
-		pos := &types.MarketPosition{
-			Price:  evt.Price(),
-			Buy:    evt.Buy(),
-			Sell:   evt.Sell(),
-			Size:   evt.Size(),
-			VwBuy:  evt.VWBuy(),
-			VwSell: evt.VWSell(),
-		}
-		positions = append(positions, pos)
-	}
-
-	e.pss.pl.Data = &types.PayloadMarketPositions{
-		MarketPositions: &types.MarketPositions{
-			MarketID:  e.marketID,
-			Positions: positions,
-		},
-	}
-
-	data, err := proto.Marshal(e.pss.pl.IntoProto())
-	if err != nil {
-		return nil, nil, err
-	}
-
-	e.pss.data = data
-	e.pss.hash = crypto.Hash(data)
-	e.pss.changed = false
-
-	return e.pss.data, e.pss.hash, nil
 }
 
-func (e *Engine) Namespace() types.SnapshotNamespace {
+func NewSnapshotEngine(
+	log *logging.Logger, config Config, marketID string) *SnapshotEngine {
+	return &SnapshotEngine{
+		Engine:  New(log, config, marketID),
+		pl:      types.Payload{},
+		changed: true,
+	}
+}
+
+func (e *SnapshotEngine) RegisterOrder(order *types.Order) *MarketPosition {
+	e.changed = true
+	return e.Engine.RegisterOrder(order)
+}
+
+func (e *SnapshotEngine) UnregisterOrder(order *types.Order) *MarketPosition {
+	e.changed = true
+	return e.Engine.UnregisterOrder(order)
+}
+
+func (e *SnapshotEngine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
+	e.changed = true
+	return e.Engine.AmendOrder(originalOrder, newOrder)
+}
+
+func (e *SnapshotEngine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
+	e.changed = true
+	return e.Engine.UpdateNetwork(trade)
+}
+
+func (e *SnapshotEngine) Update(trade *types.Trade) []events.MarketPosition {
+	e.changed = true
+	return e.Engine.Update(trade)
+}
+
+func (e *SnapshotEngine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
+	e.changed = true
+	return e.Engine.RemoveDistressed(parties)
+}
+
+func (e *SnapshotEngine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
+	e.changed = true
+	return e.Engine.UpdateMarkPrice(markPrice)
+}
+
+func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
 	return types.PositionsSnapshot
 }
 
-func (e *Engine) Keys() []string {
+func (e *SnapshotEngine) Keys() []string {
 	return []string{e.marketID}
 }
 
-func (e *Engine) GetHash(k string) ([]byte, error) {
+func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	if k != e.marketID {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -71,7 +87,7 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *SnapshotEngine) GetState(k string) ([]byte, error) {
 	if k != e.marketID {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -80,12 +96,12 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 	return state, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
+func (e *SnapshotEngine) Snapshot() (map[string][]byte, error) {
 	state, _, err := e.serialise()
 	return map[string][]byte{e.marketID: state}, err
 }
 
-func (e *Engine) LoadState(payload *types.Payload) error {
+func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 	if e.Namespace() != payload.Data.Namespace() {
 		return types.ErrInvalidSnapshotNamespace
 	}
@@ -109,11 +125,52 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 
 			e.positionsCpy = append(e.positionsCpy, pos)
 
-			e.pss.changed = true
+			e.changed = true
 		}
 		return nil
 
 	default:
 		return types.ErrUnknownSnapshotType
 	}
+}
+
+// serialise marshal the snapshot state, populating the data and hash fields
+// with updated values
+func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
+
+	if !e.changed {
+		return e.data, e.hash, nil // we already have what we need
+	}
+
+	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
+
+	for _, evt := range e.positionsCpy {
+		pos := &types.MarketPosition{
+			Price:  evt.Price(),
+			Buy:    evt.Buy(),
+			Sell:   evt.Sell(),
+			Size:   evt.Size(),
+			VwBuy:  evt.VWBuy(),
+			VwSell: evt.VWSell(),
+		}
+		positions = append(positions, pos)
+	}
+
+	e.pl.Data = &types.PayloadMarketPositions{
+		MarketPositions: &types.MarketPositions{
+			MarketID:  e.marketID,
+			Positions: positions,
+		},
+	}
+
+	data, err := proto.Marshal(e.pl.IntoProto())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	e.data = data
+	e.hash = crypto.Hash(data)
+	e.changed = false
+
+	return e.data, e.hash, nil
 }
