@@ -147,6 +147,10 @@ type PayloadEpoch struct {
 	EpochState *EpochState
 }
 
+type PayloadLimitState struct {
+	LimitState *LimitState
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -233,6 +237,17 @@ type EpochState struct {
 	ExpireTime           time.Time
 	ReadyToStartNewEpoch bool
 	ReadyToEndEpoch      bool
+}
+
+type LimitState struct {
+	BlockCount               uint32
+	CanProposeMarket         bool
+	CanProposeAsset          bool
+	GenesisLoaded            bool
+	ProposeMarketEnabled     bool
+	ProposeAssetEnabled      bool
+	ProposeMarketEnabledFrom time.Time
+	ProposeAssetEnabledFrom  time.Time
 }
 
 type EquityShare struct {
@@ -541,6 +556,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakingAccountsFromProto(dt)
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = PayloadDelegationAutoFromProto(dt)
+	case *snapshot.Payload_LimitState:
+		ret.Data = PayloadLimitStateFromProto(dt)
 	case *snapshot.Payload_RewardsPendingPayouts:
 		ret.Data = PayloadRewardPayoutFromProto(dt)
 	case *snapshot.Payload_VoteSpamPolicy:
@@ -615,6 +632,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = dt
 	case *snapshot.Payload_ExecutionIdGenerator:
+		ret.Data = dt
+	case *snapshot.Payload_LimitState:
 		ret.Data = dt
 	case *snapshot.Payload_RewardsPendingPayouts:
 		ret.Data = dt
@@ -1206,6 +1225,45 @@ func (*PayloadEpoch) Key() string {
 
 func (*PayloadEpoch) Namespace() SnapshotNamespace {
 	return EpochSnapshot
+}
+
+func PayloadLimitStateFromProto(l *snapshot.Payload_LimitState) *PayloadLimitState {
+	return &PayloadLimitState{
+		LimitState: LimitFromProto(l.LimitState),
+	}
+}
+
+func (p PayloadLimitState) IntoProto() *snapshot.Payload_LimitState {
+	return &snapshot.Payload_LimitState{
+		LimitState: p.LimitState.IntoProto(),
+	}
+}
+
+func LimitFromProto(l *snapshot.LimitState) *LimitState {
+	return &LimitState{
+		BlockCount:               l.BlockCount,
+		CanProposeMarket:         l.CanProposeMarket,
+		CanProposeAsset:          l.CanProposeAsset,
+		GenesisLoaded:            l.GenesisLoaded,
+		ProposeMarketEnabled:     l.ProposeMarketEnabled,
+		ProposeAssetEnabled:      l.ProposeAssetEnabled,
+		ProposeMarketEnabledFrom: time.Unix(0, l.ProposeMarketEnabledFrom).UTC(),
+		ProposeAssetEnabledFrom:  time.Unix(0, l.ProposeAssetEnabledFrom).UTC(),
+	}
+}
+
+func (*PayloadLimitState) isPayload() {}
+
+func (p *PayloadLimitState) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadLimitState) Key() string {
+	return "all"
+}
+
+func (*PayloadLimitState) Namespace() SnapshotNamespace {
+	return LimitSnapshot
 }
 
 func PayloadStakingAccountsFromProto(sa *snapshot.Payload_StakingAccounts) *PayloadStakingAccounts {
@@ -1883,6 +1941,19 @@ func (e *EpochState) IntoProto() *snapshot.EpochState {
 		ExpireTime:           e.ExpireTime.UnixNano(),
 		ReadyToStartNewEpoch: e.ReadyToStartNewEpoch,
 		ReadyToEndEpoch:      e.ReadyToEndEpoch,
+	}
+}
+
+func (l *LimitState) IntoProto() *snapshot.LimitState {
+	return &snapshot.LimitState{
+		BlockCount:               l.BlockCount,
+		CanProposeMarket:         l.CanProposeMarket,
+		CanProposeAsset:          l.CanProposeAsset,
+		GenesisLoaded:            l.GenesisLoaded,
+		ProposeMarketEnabled:     l.ProposeMarketEnabled,
+		ProposeAssetEnabled:      l.ProposeAssetEnabled,
+		ProposeMarketEnabledFrom: l.ProposeMarketEnabledFrom.UnixNano(),
+		ProposeAssetEnabledFrom:  l.ProposeAssetEnabledFrom.UnixNano(),
 	}
 }
 
