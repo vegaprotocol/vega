@@ -70,7 +70,7 @@ type ERC20SetDepositMinimumCmd struct {
 }
 
 func (opts *ERC20SetDepositMinimumCmd) Execute(_ []string) error {
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ type ERC20SetDepositMaximumCmd struct {
 }
 
 func (opts *ERC20SetDepositMaximumCmd) Execute(_ []string) error {
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ type ERC20WithdrawAssetCmd struct {
 }
 
 func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ type ERC20ListAssetCmd struct {
 }
 
 func (opts *ERC20ListAssetCmd) Execute(_ []string) error {
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ type ERC20RemoveAssetCmd struct {
 }
 
 func (opts *ERC20RemoveAssetCmd) Execute(_ []string) error {
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}

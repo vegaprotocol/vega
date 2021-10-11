@@ -59,7 +59,6 @@ func (w *Wallet) Chain() string {
 }
 
 func (w *Wallet) Sign(data []byte) ([]byte, error) {
-	fmt.Printf("ACCOUNT: %s", w.acc)
 	return w.ks.SignHash(w.acc, data)
 }
 
