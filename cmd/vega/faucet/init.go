@@ -29,7 +29,7 @@ func (opts *faucetInit) Execute(_ []string) error {
 		return err
 	}
 
-	pass, err := opts.PassphraseFile.Get("faucet wallet")
+	pass, err := opts.PassphraseFile.Get("faucet wallet", true)
 	if err != nil {
 		return err
 	}

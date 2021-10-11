@@ -28,7 +28,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := opts.PassphraseFile.Get("faucet wallet")
+	pass, err := opts.PassphraseFile.Get("faucet wallet", false)
 	if err != nil {
 		return err
 	}

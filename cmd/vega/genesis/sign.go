@@ -25,7 +25,7 @@ func (opts *signCmd) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := opts.WalletPassphrase.Get("wallet")
+	pass, err := opts.WalletPassphrase.Get("wallet", false)
 	if err != nil {
 		return err
 	}
