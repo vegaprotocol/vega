@@ -1,7 +1,6 @@
 package bridge
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -78,14 +77,14 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 	}
 
 	multiSigControl := bridges.NewERC20MultiSigControl(w)
-	_, signature, err := multiSigControl.AddSigner(
+	bundle, err := multiSigControl.AddSigner(
 		opts.NewSigner, opts.Submitter, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
 	}
 
-	fmt.Printf("0x%v\n", hex.EncodeToString(signature))
+	fmt.Printf("0x%v\n", bundle.Signature.Hex())
 	return nil
 }
 
@@ -126,14 +125,14 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 	}
 
 	multiSigControl := bridges.NewERC20MultiSigControl(w)
-	_, signature, err := multiSigControl.RemoveSigner(
+	bundle, err := multiSigControl.RemoveSigner(
 		opts.OldSigner, opts.Submitter, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
 	}
 
-	fmt.Printf("0x%v\n", hex.EncodeToString(signature))
+	fmt.Printf("0x%v\n", bundle.Signature.Hex())
 	return nil
 }
 
@@ -178,13 +177,13 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 	}
 
 	multiSigControl := bridges.NewERC20MultiSigControl(w)
-	_, signature, err := multiSigControl.SetThreshold(
+	bundle, err := multiSigControl.SetThreshold(
 		opts.NewThreshold, opts.Submitter, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
 	}
 
-	fmt.Printf("0x%v\n", hex.EncodeToString(signature))
+	fmt.Printf("0x%v\n", bundle.Signature.Hex())
 	return nil
 }
