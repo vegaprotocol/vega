@@ -67,7 +67,7 @@ func fillTestPositions(e *positions.SnapshotEngine) {
 }
 
 func TestSnapshotSaveAndLoad(t *testing.T) {
-	engine := getTestSnapshotEngine(t)
+	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
 	keys := engine.Keys()

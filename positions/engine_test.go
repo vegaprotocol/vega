@@ -302,14 +302,6 @@ func getTestEngine(t *testing.T) *positions.SnapshotEngine {
 	)
 }
 
-func getTestSnapshotEngine(t *testing.T) *positions.SnapshotEngine {
-	t.Helper()
-	return positions.NewSnapshotEngine(
-		logging.NewTestLogger(), positions.NewDefaultConfig(),
-		"test_market",
-	)
-}
-
 func TestGetOpenInterestGivenTrades(t *testing.T) {
 	// A, B represents partys who already have positions
 	// C, D represents partys who don't have positions (but there are entries in "trades" array that contain their trades)
