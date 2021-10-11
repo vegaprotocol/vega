@@ -64,6 +64,7 @@ func newTestERC20(t *testing.T) *testERC20 {
 
 func TestERC20Signatures(t *testing.T) {
 	t.Run("withdraw_asset", testWithdrawAsset)
+	t.Run("list_asset", testListAsset)
 }
 
 func testWithdrawAsset(t *testing.T) {
@@ -81,6 +82,20 @@ func testWithdrawAsset(t *testing.T) {
 	assert.True(t, verifySignature(msg, sig))
 	assert.Equal(t,
 		"8185a0025d157b822e9a1077febc45038abef27fb2007855b75e3207536baba2d3ed69f9292f80c049c35a2ae7036bca884cdf4784f685f685af619d4326c70b",
+		hex.EncodeToString(sig),
+	)
+}
+
+func testListAsset(t *testing.T) {
+	token := newTestERC20(t)
+	msg, sig, err := token.SignBridgeListing()
+
+	assert.NoError(t, err)
+	assert.NotNil(t, msg)
+	assert.NotNil(t, sig)
+	assert.True(t, verifySignature(msg, sig))
+	assert.Equal(t,
+		"f754629dd9489307abf772831957f1da5f686e7c78ea55c71fb718062fd718fe09a217b1939c4f34ad32f214256d79c7c85dfa461efdd22d3a0a24c61e821e03",
 		hex.EncodeToString(sig),
 	)
 }
