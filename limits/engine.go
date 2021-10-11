@@ -23,18 +23,23 @@ type Engine struct {
 	bootstrapBlockCount                               uint16
 
 	genesisLoaded bool
+
+	// snapshot state
+	lss *limitsSnapshotState
 }
 
 func New(log *logging.Logger, cfg Config) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
+
 	return &Engine{
 		log: log,
 		cfg: cfg,
+		lss: &limitsSnapshotState{changed: true},
 	}
 }
 
-// UponGenesis load the limits from the genersis state
+// UponGenesis load the limits from the genesis state
 func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	e.log.Debug("Entering limits.Engine.UponGenesis")
 	defer func() {
@@ -44,6 +49,7 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 			e.log.Debug("Leaving limits.Engine.UponGenesis without error")
 		}
 		e.genesisLoaded = true
+		e.lss.changed = true
 	}()
 
 	state, err := LoadGenesisState(rawState)
@@ -88,15 +94,18 @@ func (e *Engine) OnTick(_ context.Context, t time.Time) {
 			e.log.Info("bootstraping period finished, transactions are now allowed")
 			e.bootstrapFinished = true
 		}
+		e.lss.changed = true
 	}
 
 	if !e.canProposeMarket && e.bootstrapFinished && e.proposeMarketEnabled && t.After(e.proposeMarketEnabledFrom) {
 		e.log.Info("all required conditions are met, proposing markets is now allowed")
 		e.canProposeMarket = true
+		e.lss.changed = true
 	}
 	if !e.canProposeAsset && e.bootstrapFinished && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
 		e.log.Info("all required conditions are met, proposing assets is now allowed")
 		e.canProposeAsset = true
+		e.lss.changed = true
 	}
 }
 
