@@ -35,7 +35,7 @@ func (opts *importCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (opts *importCmd) Execute(_ []string) error {
 
 	var walletPass, walletPath string
 	if opts.Chain == vegaChain || (opts.Chain == ethereumChain && !clefEnabled) {
-		walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
+		walletPass, err = opts.WalletPassphrase.Get("blockchain wallet", false)
 		if err != nil {
 			return err
 		}

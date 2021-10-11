@@ -92,7 +92,7 @@ func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, error)
 		return nil, err
 	}
 
-	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return nil, err
 	}
