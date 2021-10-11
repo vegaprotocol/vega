@@ -35,4 +35,5 @@ func (a *AuctionState) RestoreState(as *types.AuctionState) {
 	a.start = as.Start
 	a.stop = as.Stop
 	a.extension = &as.Extension
+
 }
