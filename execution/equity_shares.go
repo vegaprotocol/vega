@@ -2,6 +2,7 @@ package execution
 
 import (
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -51,6 +52,11 @@ func (es EquityShares) GetState() *types.EquityShare {
 		})
 	}
 
+	// Need to make sure the items are correctly sorted to make this deterministic
+	sort.Slice(lps, func(i, j int) bool {
+		return lps[i].ID < lps[j].ID
+	})
+
 	es.stateChanged = false
 
 	return &types.EquityShare{
@@ -60,7 +66,7 @@ func (es EquityShares) GetState() *types.EquityShare {
 	}
 }
 
-func (es EquityShares) RestoreState(state *types.EquityShare) {
+func (es *EquityShares) RestoreState(state *types.EquityShare) {
 	es.mvp = state.Mvp
 	es.openingAuctionEnded = state.OpeningAuctionEnded
 	for _, slp := range state.Lps {

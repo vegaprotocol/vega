@@ -2,14 +2,17 @@ package execution_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -296,4 +299,52 @@ func testWithinMarket(t *testing.T) {
 		exp.EQ(actual),
 		"party2 should get 2/3 of the fees (got %s expected %s)", actual.String(), exp.String(),
 	)
+}
+
+func getHash(es *execution.EquityShares) []byte {
+	state := es.GetState()
+	esproto := state.IntoProto()
+	bytes, _ := proto.Marshal(esproto)
+	return crypto.Hash(bytes)
+}
+
+func TestSnapshotEmpty(t *testing.T) {
+	es := execution.NewEquityShares(num.DecimalFromFloat(100))
+
+	// Get the hash of an empty object
+	hash1 := getHash(es)
+
+	// Create a new object and load the snapshot into it
+	es2 := execution.NewEquityShares(num.DecimalFromFloat(10))
+	es2.RestoreState(es.GetState())
+
+	// Check the hash matches
+	hash2 := getHash(es2)
+	assert.Equal(t, hash1, hash2)
+}
+
+func TestSnapshotWithChanges(t *testing.T) {
+	es := execution.NewEquityShares(num.DecimalFromFloat(100))
+
+	// Get the hash of an empty object
+	hash1 := getHash(es)
+
+	// Make changes to the original object
+	for i := 0; i < 10; i++ {
+		id := fmt.Sprintf("ID%05d", i)
+		es.SetPartyStake(id, num.NewUint(uint64(i*100)))
+	}
+
+	// Check the hash has changed
+	hash2 := getHash(es)
+	assert.NotEqual(t, hash1, hash2)
+
+	// Restore the state into a new object
+	es2 := execution.NewEquityShares(num.DecimalFromFloat(333))
+	es2.RestoreState(es.GetState())
+
+	// Check the hashes match
+	hash3 := getHash(es2)
+	assert.Equal(t, hash2, hash3)
+
 }
