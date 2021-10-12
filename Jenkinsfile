@@ -307,7 +307,8 @@ pipeline {
                                     --disable funlen \
                                     --disable gocyclo \
                                     --disable deadcode \
-                                    --disable makezero
+                                    --disable makezero \
+                                    --disable varcheck
                             '''
                         }
                     }
