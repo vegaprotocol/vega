@@ -633,7 +633,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	} else {
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		m.stateChanged = true
 
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
