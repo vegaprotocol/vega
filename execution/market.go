@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -175,7 +174,7 @@ type Market struct {
 	liquidity          *liquidity.SnapshotEngine
 
 	// deps engines
-	collateral *collateral.Engine
+	collateral Collateral
 
 	broker Broker
 	closed bool
@@ -292,7 +291,7 @@ func NewMarket(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	liquidityConfig liquidity.Config,
-	collateralEngine *collateral.Engine,
+	collateralEngine Collateral,
 	oracleEngine products.OracleEngine,
 	mkt *types.Market,
 	now time.Time,

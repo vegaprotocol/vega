@@ -7,14 +7,14 @@ import (
 	"time"
 
 	vproto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
-	"code.vegaprotocol.io/vega/products"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -35,7 +35,46 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
-// Broker  (no longer need to mock this, use the broker/mocks wrapper).
+// Collateral engine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
+type Collateral interface {
+	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	EnableAsset(ctx context.Context, asset types.Asset) error
+	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	AssetExists(assetID string) bool
+	GetPartyBondAccount(market, partyID, asset string) (*types.Account, error)
+	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.TransferResponse, error)
+	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error)
+	GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error)
+	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
+	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error)
+	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
+	CreateMarketAccounts(ctx context.Context, marketID, asset string) (insuranceID, settleID string, err error)
+	OnChainTimeUpdate(_ context.Context, t time.Time)
+	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
+	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
+	ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.TransferResponse, error)
+	HasGeneralAccount(party, asset string) bool
+	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.TransferResponse, error)
+	CanCoverBond(market, party, asset string, amount *num.Uint) bool
+	Hash() []byte
+	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
+	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
+	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error)
+	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error)
+	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error)
+	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
+}
+
+// OracleEngine ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/products OracleEngine
+type OracleEngine interface {
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
+	Unsubscribe(context.Context, oracles.SubscriptionID)
+}
+
+// Broker  (no longer need to mock this, use the broker/mocks wrapper)
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
@@ -48,13 +87,13 @@ type Engine struct {
 
 	markets    map[string]*Market
 	marketsCpy []*Market
-	collateral *collateral.Engine
+	collateral Collateral
 	idgen      *IDgenerator
 
 	broker Broker
 	time   TimeService
 
-	oracle products.OracleEngine
+	oracle OracleEngine
 
 	npv netParamsValues
 
@@ -107,8 +146,8 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	ts TimeService,
-	collateral *collateral.Engine,
-	oracle products.OracleEngine,
+	collateral Collateral,
+	oracle OracleEngine,
 	broker Broker,
 ) *Engine {
 	// setup logger
