@@ -1,15 +1,18 @@
 package spam_test
 
 import (
+	"bytes"
 	"errors"
 	"strconv"
 	"testing"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,6 +29,8 @@ func TestSimpleSpamProtection(t *testing.T) {
 	t.Run("Post reject command from party with too many proposals in total all from current block", testCommandPostRejectTooManyProposals)
 	t.Run("command counts from the block successfully applied on state", testCommandCountersUpdated)
 	t.Run("Start of epoch resets counters", testCommandReset)
+	t.Run("On end of block, block proposal counters are reset and take a snapshot roundtrip", testProposalEndBlockReset)
+
 }
 
 func getCommandSpamPolicy() *spam.SimpleSpamPolicy {
@@ -35,6 +40,51 @@ func getCommandSpamPolicy() *spam.SimpleSpamPolicy {
 	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
 	policy.UpdateIntParam(netparams.SpamProtectionMaxProposals, 3)
 	return policy
+}
+
+func testProposalEndBlockReset(t *testing.T) {
+	// set state
+	policy := getCommandSpamPolicy()
+
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientPropTokens
+
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+
+	// in each block we vote once
+	var i uint64 = 0
+	for ; i < 3; i++ {
+		tx := &testTx{party: "party1", proposal: "proposal1"}
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+
+		accept, err = policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+		policy.EndOfBlock(i)
+	}
+
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	accept, err := policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
+
+	bytes1, err := policy.Serialise()
+	require.Nil(t, err)
+	var proposalPayload snapshot.Payload
+	proto.Unmarshal(bytes1, &proposalPayload)
+	payload := types.PayloadFromProto(&proposalPayload)
+	policy.Deserialise(payload)
+	bytes2, err := policy.Serialise()
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(bytes1, bytes2))
+
+	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
+
+	bytes3, err := policy.Serialise()
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(bytes3, bytes2))
 }
 
 // reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch
