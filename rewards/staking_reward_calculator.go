@@ -10,8 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var minVal, _ = num.DecimalFromString("5.0")
-
 func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker Broker, epochSeq, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
 	delegatorShareStr := rewardScheme.Parameters["delegatorShare"].GetString()
 	delegatorShare, err := num.DecimalFromString(delegatorShareStr)
@@ -29,6 +27,12 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 	maxPayoutPerParticipant, ok := rewardScheme.MaxPayoutPerAssetPerParty[asset]
 	if !ok {
 		maxPayoutPerParticipant = num.Zero()
+	}
+
+	minValStr := rewardScheme.Parameters["minVal"].GetString()
+	minVal, err := num.DecimalFromString(minValStr)
+	if err != nil {
+		e.log.Panic("failed to read reward scheme param", logging.String("minVal", rewardScheme.Parameters["minVal"].Value))
 	}
 
 	// calculate the validator score for each validator and the total score for all
