@@ -2,6 +2,7 @@ package bridges
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcmn "github.com/ethereum/go-ethereum/common"
@@ -59,7 +60,7 @@ func sign(signer Signer, msg []byte) (*SignaturePayload, error) {
 	hash := crypto.Keccak256(msg)
 	sig, err := signer.Sign(hash)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not sign message with ethereum wallet: %w", err)
 	}
 	return &SignaturePayload{
 		Message:   msg,

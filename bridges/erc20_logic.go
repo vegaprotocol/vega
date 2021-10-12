@@ -2,6 +2,7 @@ package bridges
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -73,12 +74,12 @@ func (e ERC20Logic) ListAsset(
 	buf, err := args.Pack([]interface{}{
 		tokenAddressEth, vegaAssetIDArray, nonce.BigInt(), "list_asset"}...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	return sign(e.signer, msg)
@@ -120,12 +121,12 @@ func (e ERC20Logic) RemoveAsset(
 	buf, err := args.Pack([]interface{}{
 		tokenAddressEth, nonce.BigInt(), "remove_asset"}...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	return sign(e.signer, msg)
@@ -186,12 +187,12 @@ func (e ERC20Logic) WithdrawAsset(
 		ethTokenAddr, amount.BigInt(), big.NewInt(expiryUnix),
 		hexEthPartyAddress, nonce.BigInt(), "withdraw_asset"}...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	return sign(e.signer, msg)
@@ -240,12 +241,12 @@ func (e ERC20Logic) SetDepositMaximum(
 		ethTokenAddr, maximumAmount.BigInt(),
 		nonce.BigInt(), "set_deposit_maximum"}...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	return sign(e.signer, msg)
@@ -294,12 +295,12 @@ func (e ERC20Logic) SetDepositMinimum(
 		ethTokenAddr, minimumAmount.BigInt(),
 		nonce.BigInt(), "set_deposit_minimum"}...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	msg, err := packBufAndSubmitter(buf, e.bridgeAddr)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
 
 	return sign(e.signer, msg)
