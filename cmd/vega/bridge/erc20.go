@@ -49,7 +49,7 @@ type ERC20AddSignerCmd struct {
 }
 
 func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ type ERC20RemoveSignerCmd struct {
 }
 
 func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 		return fmt.Errorf("invalid new threshold, required to be > 0 and <= 1000, got %d", opts.NewThreshold)
 	}
 
-	pass, err := erc20Cmd.PassphraseFile.Get("node wallet")
+	pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}

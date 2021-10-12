@@ -25,7 +25,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := cmd.Passphrase.Get("node wallet")
+	pass, err := cmd.Passphrase.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
