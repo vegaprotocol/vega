@@ -305,7 +305,9 @@ pipeline {
                                     --disable dupl \
                                     --disable dogsled \
                                     --disable funlen \
-                                    --disable gocyclo
+                                    --disable gocyclo \
+                                    --disable deadcode \
+                                    --disable makezero
                             '''
                         }
                     }
