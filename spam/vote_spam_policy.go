@@ -2,6 +2,8 @@ package spam
 
 import (
 	"errors"
+	"sort"
+	"strings"
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -9,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
 )
 
 type blockRejectInfo struct {
@@ -50,7 +53,7 @@ type VoteSpamPolicy struct {
 	recentBlocksRejectStats [numberOfBlocksForIncreaseCheck]*blockRejectInfo // recent blocks post rejection stats
 	blockPostRejects        *blockRejectInfo                                 // this blocks post reject stats
 	partyBlockRejects       map[string]*blockRejectInfo                      // total vs rejection in the current block
-	currentBlockIndex       int                                              // the index of the current block in the circular buffer <recentBlocksRejectStats>
+	currentBlockIndex       uint64                                           // the index of the current block in the circular buffer <recentBlocksRejectStats>
 	lastIncreaseBlock       uint64                                           // the last block we've increased the number of <minVotingTokens>
 	currentEpochSeq         uint64                                           // the sequence id of the current epoch
 	lock                    sync.RWMutex                                     // global lock to sync calls from multiple tendermint threads
@@ -74,6 +77,115 @@ func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, lo
 		minTokensParamName:  minTokensParamName,
 		maxAllowedParamName: maxAllowedParamName,
 	}
+}
+
+func (vsp *VoteSpamPolicy) Serialise() ([]byte, error) {
+	partyProposalVoteCount := []*types.PartyProposalVoteCount{}
+	for party, proposalToCount := range vsp.partyToVote {
+		for proposal, count := range proposalToCount {
+			partyProposalVoteCount = append(partyProposalVoteCount, &types.PartyProposalVoteCount{
+				Party:    party,
+				Proposal: proposal,
+				Count:    count,
+			})
+		}
+	}
+
+	sort.SliceStable(partyProposalVoteCount, func(i, j int) bool {
+		switch strings.Compare(partyProposalVoteCount[i].Party, partyProposalVoteCount[j].Party) {
+		case -1:
+			return true
+		case 1:
+			return false
+		}
+		return partyProposalVoteCount[i].Proposal < partyProposalVoteCount[j].Proposal
+	})
+
+	bannedParties := make([]*types.BannedParty, 0, len(vsp.bannedParties))
+	for party, epoch := range vsp.bannedParties {
+		bannedParties = append(bannedParties, &types.BannedParty{
+			Party:      party,
+			UntilEpoch: epoch,
+		})
+	}
+
+	sort.SliceStable(bannedParties, func(i, j int) bool { return bannedParties[i].Party < bannedParties[j].Party })
+
+	partyTokenBalance := make([]*types.PartyTokenBalance, 0, len(vsp.tokenBalance))
+	for party, balance := range vsp.tokenBalance {
+		partyTokenBalance = append(partyTokenBalance, &types.PartyTokenBalance{
+			Party:   party,
+			Balance: balance,
+		})
+	}
+	sort.SliceStable(partyTokenBalance, func(i, j int) bool { return partyTokenBalance[i].Party < partyTokenBalance[j].Party })
+
+	recentRejects := make([]*types.BlockRejectStats, 0, len(vsp.recentBlocksRejectStats))
+	for _, brs := range vsp.recentBlocksRejectStats {
+		if brs != nil {
+			recentRejects = append(recentRejects, &types.BlockRejectStats{
+				Total:    brs.total,
+				Rejected: brs.rejected,
+			})
+		}
+	}
+
+	payload := types.Payload{
+		Data: &types.PayloadVoteSpamPolicy{
+			VoteSpamPolicy: &types.VoteSpamPolicy{
+				PartyProposalVoteCount:  partyProposalVoteCount,
+				BannedParty:             bannedParties,
+				PartyTokenBalance:       partyTokenBalance,
+				RecentBlocksRejectStats: recentRejects,
+				CurrentBlockIndex:       vsp.currentBlockIndex,
+				LastIncreaseBlock:       vsp.lastIncreaseBlock,
+				CurrentEpochSeq:         vsp.currentEpochSeq,
+				MinVotingTokensFactor:   vsp.minVotingTokensFactor,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (vsp *VoteSpamPolicy) Deserialise(p *types.Payload) error {
+	pl := p.Data.(*types.PayloadVoteSpamPolicy).VoteSpamPolicy
+
+	var i uint64 = 0
+	for ; i < numberOfBlocksForIncreaseCheck; i++ {
+		vsp.recentBlocksRejectStats[i] = nil
+	}
+	for j, bl := range pl.RecentBlocksRejectStats {
+		vsp.recentBlocksRejectStats[j] = &blockRejectInfo{
+			total:    bl.Total,
+			rejected: bl.Rejected,
+		}
+	}
+
+	vsp.partyToVote = map[string]map[string]uint64{}
+	for _, ptv := range pl.PartyProposalVoteCount {
+		if _, ok := vsp.partyToVote[ptv.Party]; !ok {
+			vsp.partyToVote[ptv.Party] = map[string]uint64{}
+		}
+		vsp.partyToVote[ptv.Party][ptv.Proposal] = ptv.Count
+	}
+	vsp.bannedParties = make(map[string]uint64, len(pl.BannedParty))
+	for _, bp := range pl.BannedParty {
+		vsp.bannedParties[bp.Party] = bp.UntilEpoch
+	}
+
+	vsp.tokenBalance = make(map[string]*num.Uint, len(pl.PartyTokenBalance))
+	for _, tb := range pl.PartyTokenBalance {
+		vsp.tokenBalance[tb.Party] = tb.Balance
+	}
+
+	vsp.currentEpochSeq = pl.CurrentEpochSeq
+	vsp.lastIncreaseBlock = pl.LastIncreaseBlock
+	vsp.currentBlockIndex = pl.CurrentBlockIndex
+	vsp.minVotingTokensFactor = pl.MinVotingTokensFactor
+	vsp.effectiveMinTokens = num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor)
+
+	return nil
 }
 
 //UpdateUintParam is called to update Uint net params for the policy
@@ -121,7 +233,8 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*nu
 
 	// reset block stats
 	vsp.currentBlockIndex = 0
-	for i := 0; i < numberOfBlocksForIncreaseCheck; i++ {
+	var i uint64 = 0
+	for ; i < numberOfBlocksForIncreaseCheck; i++ {
 		vsp.recentBlocksRejectStats[i] = nil
 	}
 
@@ -137,6 +250,9 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*nu
 		vsp.tokenBalance[party] = balance.Clone()
 	}
 
+	// reset block rejects - this is not essential here as it's cleared at the end of every block anyways
+	// but just for consistency
+	vsp.partyBlockRejects = map[string]*blockRejectInfo{}
 	vsp.blockPostRejects = &blockRejectInfo{
 		total:    0,
 		rejected: 0,
@@ -169,11 +285,19 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 			vsp.bannedParties[p] = vsp.currentEpochSeq + numberOfEpochsBan
 		}
 	}
+	vsp.partyBlockRejects = map[string]*blockRejectInfo{}
 
 	// add the block rejects to the last 10 blocks
-	vsp.recentBlocksRejectStats[vsp.currentBlockIndex] = vsp.blockPostRejects
+	vsp.recentBlocksRejectStats[vsp.currentBlockIndex] = &blockRejectInfo{
+		rejected: vsp.blockPostRejects.rejected,
+		total:    vsp.blockPostRejects.total,
+	}
 	vsp.currentBlockIndex++
 	vsp.currentBlockIndex %= numberOfBlocksForIncreaseCheck
+	vsp.blockPostRejects = &blockRejectInfo{
+		rejected: 0,
+		total:    0,
+	}
 
 	// check if we need to increase the limits, i.e. if we're below the max and we've not increased in the last n blocks
 	if (vsp.lastIncreaseBlock == 0 || blockHeight > vsp.lastIncreaseBlock+uint64(numberOfBlocksForIncreaseCheck)) && num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor).LT(maxMinVotingTokens) {
@@ -190,7 +314,8 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
 	var total uint64 = 0
 	var rejected uint64 = 0
-	for i := 0; i < numberOfBlocksForIncreaseCheck; i++ {
+	var i uint64 = 0
+	for ; i < numberOfBlocksForIncreaseCheck; i++ {
 		if vsp.recentBlocksRejectStats[i] != nil {
 			total += vsp.recentBlocksRejectStats[i].total
 			rejected += vsp.recentBlocksRejectStats[i].rejected

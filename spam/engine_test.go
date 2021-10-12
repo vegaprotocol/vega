@@ -1,16 +1,19 @@
 package spam_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -91,6 +94,28 @@ func testEngineReset(t *testing.T) {
 	// move to next block, we've voted/proposed everything already so shouldn't be allowed to make more
 	engine.EndOfBlock(1)
 
+	proposalHash, err := engine.GetHash("proposal")
+	require.Nil(t, err)
+	voteHash, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
+	require.Nil(t, err)
+
+	snap, err := engine.Snapshot()
+	require.Nil(t, err)
+	for _, bytes := range snap {
+		var p snapshot.Payload
+		proto.Unmarshal(bytes, &p)
+		payload := types.PayloadFromProto(&p)
+		engine.LoadState(context.Background(), payload)
+	}
+
+	proposalHash2, err := engine.GetHash("proposal")
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(proposalHash, proposalHash2))
+
+	voteHash2, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(voteHash, voteHash2))
+
 	accept, err := engine.PreBlockAccept(tx1)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party has already proposed the maximum number of proposal requests per epoch"), err)
@@ -110,6 +135,15 @@ func testEngineReset(t *testing.T) {
 		accept, _ = engine.PreBlockAccept(tx2)
 		require.Equal(t, true, accept)
 	}
+
+	proposalHash3, err := engine.GetHash("proposal")
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(proposalHash3, proposalHash2))
+
+	voteHash3, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(voteHash3, voteHash2))
+
 }
 
 func testPreBlockAccept(t *testing.T) {
