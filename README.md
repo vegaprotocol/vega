@@ -137,7 +137,7 @@ vega nodewallet import --chain=ethereum --eth.clef-address=http://clef-address:p
 
 ## API
 
-Prior to verrsion 0.40.0, Vega Core hosted API endpoints for clients. The majority of this has since migrated to the [data-node](https://github.com/vegaprotocol/data-node).
+Prior to version 0.40.0, Vega Core hosted API endpoints for clients. The majority of this has since migrated to the [data-node](https://github.com/vegaprotocol/data-node).
 ## Provisioning
 
 The proposal and creation of new markets is handled by the [Governance engine](./governance/README.md).
