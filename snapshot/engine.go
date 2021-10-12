@@ -29,10 +29,15 @@ type StateProviderT interface {
 	// GetState returns the new state as a payload type
 	GetState(key string) *types.Payload
 	// PollChanges waits for an update on a channel - if nothing was updated, then nil can be sent
-	PollChanges(ctx context.Context, ch chan<- *types.Payload, ech chan<- error)
+	// we can call this at the end of a block, so the engines have time until commit to provide the data
+	// rather than a series of blocking calls
+	PollChanges(ctx context.Context, k string, ch chan<- *types.Payload)
 	// Sync is called when polling for changes, but we need the snapshot data now. Similar to wg.Wait()
 	// on all of the state providers
 	Sync() error
+	// Err is called if the provider sent nil on the poll channel. Return nil if all was well (just no changes)
+	// or the relevant error if something failed. The same error can be returned when calling Sync()
+	Err() error
 }
 
 type StateProvider interface {
@@ -80,7 +85,10 @@ type Engine struct {
 	hashes     map[string][]byte
 	versions   []int64
 
-	providers map[string]StateProvider
+	providers  map[string]StateProvider
+	providerTs map[string]StateProviderT
+	pollCtx    context.Context
+	pollCfunc  context.CancelFunc
 
 	last    *iavl.ImmutableTree
 	hash    []byte
