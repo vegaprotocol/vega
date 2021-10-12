@@ -242,7 +242,7 @@ Feature: Test settlement at expiry
     And the insurance pool balance should be "12271" for the market "ETH/DEC22"
 
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't covers all losses
-    Given the initial insurance pool balance is "500" for the markets:
+     Given the initial insurance pool balance is "500" for the markets:
      Given the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | party1   | ETH   | 10000     |
@@ -312,7 +312,7 @@ Feature: Test settlement at expiry
     And the insurance pool balance should be "500" for the market "ETH/DEC21"
     And the insurance pool balance should be "500" for the market "ETH/DEC22"
     
- Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - no insurance taken
+  Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - no insurance taken
 
     Given the initial insurance pool balance is "10000" for the markets:
 
@@ -322,7 +322,6 @@ Feature: Test settlement at expiry
       | aux2     | ETH   | 100000000 |
       | trader3a | ETH   | 10000     |
       | trader4  | ETH   | 10000     |
-      | trader5  | ETH   | 5000      |
       | party-lp | ETH   | 100000000 |
 
     Then the parties place the following orders:
@@ -388,9 +387,84 @@ Feature: Test settlement at expiry
     And the insurance pool balance should be "12500" for the market "ETH/DEC20"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "12500" for the market "ETH/DEC22"
-    
-  # Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - insurance covers losses
+
+  Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - insurance covers losses
+
+   Given the initial insurance pool balance is "10000" for the markets:
+
+    When the parties deposit on asset's general account the following amount:
+      | party    | asset | amount    |
+      | aux1     | ETH   | 100000000 |
+      | aux2     | ETH   | 100000000 |
+      | trader3a | ETH   | 10000     |
+      | trader4  | ETH   |  5000     |
+      | party-lp | ETH   | 100000000 |
+
+    Then the parties place the following orders:
+      | party   | market id | side  | volume | price | resulting trades | type       | tif     |
+      | aux1     | ETH/DEC21 | buy   | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2     | ETH/DEC21 | sell  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader3a | ETH/DEC21 | buy   | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21 | sell  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+ 
+    Given the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    |
+   
+    Then the opening auction period ends for market "ETH/DEC21"
+    And the mark price should be "1002" for the market "ETH/DEC21"
+  
+    Then the parties place the following orders:
+      | party    | market id  | side  | volume | price | resulting trades | type       | tif     |
+      | trader3a | ETH/DEC21  | buy   | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21  | sell  | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode                    | auction trigger       |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
+
+    Then the network moves ahead "301" blocks
+
+    Then the following trades should be executed:
+      | buyer    | price | size | seller  |
+      | trader3a | 900   | 2    | trader4 |
+
+    Then the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 2088   | 6009    |
+      | trader4  | ETH   | ETH/DEC21 | 3301   |    0    |
+
+    And the settlement account should have a balance of "0" for the market "ETH/DEC21"
+    And the cumulated balance for all accounts should be worth "300055000"
+
+    When the oracles broadcast data signed with "0xCAFECAFE1":
+      | name               | value |
+      | trading.terminated | true  |
+
+    And time is updated to "2022-01-01T01:01:01Z"
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
+    Then the oracles broadcast data signed with "0xCAFECAFE1":
+      | name             | value |
+      | prices.ETH.value | 42    |
+    Then time is updated to "2022-01-01T01:01:02Z"
+
+    Then the parties place the following orders:
+      | party    | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
+      | trader3a | ETH/DEC21 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
+    And the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 5523    |
+      | trader4  | ETH   | ETH/DEC21 | 0      | 2574    |
+
+    And the cumulated balance for all accounts should be worth "300051699"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "2500" for the asset "ETH"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC20"
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC22"
+  
   # Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - loss socialisation in action - insurance doesn't covers all losses
 
-  # Scenario: This mechanism does not incur fees to traders that have open positions that are settled at expiry
+  # Scenario: This mechanism does not incur fees to traders that have open positions that are settled at expiry - Add a step for this ?
 
