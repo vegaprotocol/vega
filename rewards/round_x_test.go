@@ -10,27 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testRoundXReward(t *testing.T) {
-	round := 1
-
-	initialReward, _ := num.UintFromString("133948860171808410010", 10)
-	fraction, _ := num.DecimalFromString("0.1")
-	delegatorShare, _ := num.DecimalFromString("0.883")
-
-	for ; round < 10; round++ {
-		rewardForEpoch, _ := num.UintFromDecimal(initialReward.ToDecimal().Mul(fraction))
-		println("reward for epoch", rewardForEpoch.String())
-
-		delegatorReward, _ := num.UintFromDecimal(initialReward.ToDecimal().Mul(fraction).Mul(delegatorShare))
-		println("delegator reward for epoch", round, delegatorReward.String())
-
-		validatorReward := num.Zero().Sub(rewardForEpoch, delegatorReward)
-		println("validator reward for epoch", round, validatorReward.String())
-
-		initialReward = initialReward.Sub(initialReward, num.Sum(delegatorReward, validatorReward))
-	}
-}
-
 // test a 100 rounds of reward distribution, make sure that the ratio the delegators get out of the reward balance for the epoch is always the same and doesn't drift
 func TestNoDriftdRounds(t *testing.T) {
 	testEngine := getEngine(t)
