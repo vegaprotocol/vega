@@ -89,7 +89,7 @@ type NodeCommand struct {
 
 	assets         *assets.Service
 	topology       *validators.Topology
-	notary         *notary.Notary
+	notary         *notary.SnapshotNotary
 	evtfwd         *evtforward.EvtForwarder
 	witness        *validators.Witness
 	banking        *banking.Engine
