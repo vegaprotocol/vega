@@ -10,13 +10,16 @@ func (a *AuctionState) GetState() *types.AuctionState {
 	as := &types.AuctionState{
 		Mode:        a.mode,
 		DefaultMode: a.defMode,
-		Begin:       *a.begin,
 		End:         a.end,
 		Start:       a.start,
 		Stop:        a.stop,
 	}
 	if a.extension != nil {
 		as.Extension = *a.extension
+	}
+
+	if a.begin != nil {
+		as.Begin = *a.begin
 	}
 
 	a.stateChanged = false

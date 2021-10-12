@@ -211,11 +211,11 @@ type Market struct {
 }
 
 func (m *Market) changed() bool {
-	return (m.stateChanged &&
-		m.pMonitor.Changed() &&
-		m.as.Changed() &&
-		m.peggedOrders.changed() &&
-		m.expiringOrders.changed() &&
+	return (m.stateChanged ||
+		m.pMonitor.Changed() ||
+		m.as.Changed() ||
+		m.peggedOrders.changed() ||
+		m.expiringOrders.changed() ||
 		m.equityShares.changed())
 }
 
@@ -405,6 +405,7 @@ func NewMarket(
 		lastMidSellPrice:   num.Zero(),
 		lastMidBuyPrice:    num.Zero(),
 		lastBestBidPrice:   num.Zero(),
+		stateChanged:       true,
 	}
 
 	return market, nil
@@ -631,7 +632,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	} else {
 		m.mkt.State = types.MarketStateTradingTerminated
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		m.stateChanged = true
 
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)

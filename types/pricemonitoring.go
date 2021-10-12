@@ -41,6 +41,13 @@ func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
 	}
 }
 
+func (p PriceMonitoringSettings) DeepClone() *PriceMonitoringSettings {
+	return &PriceMonitoringSettings{
+		Parameters:      p.Parameters.DeepClone(),
+		UpdateFrequency: p.UpdateFrequency,
+	}
+}
+
 func PriceMonitoringSettingsFromProto(pr *proto.PriceMonitoringSettings) *PriceMonitoringSettings {
 	if pr == nil {
 		return nil

@@ -1,12 +1,16 @@
 package execution_test
 
 import (
+	"context"
 	"testing"
 
+	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -16,10 +20,16 @@ func createEngine(t *testing.T) *execution.Engine {
 	log := logging.NewTestLogger()
 	executionConfig := execution.NewDefaultConfig()
 	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
 	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	timeService.EXPECT().GetTimeNow().AnyTimes()
+
 	collateralService := mocks.NewMockCollateral(ctrl)
+	collateralService.EXPECT().AssetExists(gomock.Any()).AnyTimes().Return(true)
+	collateralService.EXPECT().CreateMarketAccounts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	oracleService := mocks.NewMockOracleEngine(ctrl)
+	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker)
 }
@@ -34,7 +44,125 @@ func TestEmptyMarkets(t *testing.T) {
 	assert.Empty(t, bytes)
 }
 
+func getMarketConfig() *types.Market {
+	return &types.Market{
+		ID: "MarketID", // ID will be generated
+		PriceMonitoringSettings: &types.PriceMonitoringSettings{
+			Parameters: &types.PriceMonitoringParameters{
+				Triggers: []*types.PriceMonitoringTrigger{
+					&types.PriceMonitoringTrigger{
+						Horizon:          1000,
+						HDec:             num.DecimalFromFloat(1.0),
+						Probability:      num.DecimalFromFloat(0.3),
+						AuctionExtension: 10000,
+					},
+				},
+			},
+		},
+		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
+			TargetStakeParameters: &types.TargetStakeParameters{
+				TimeWindow:    100,
+				ScalingFactor: num.DecimalFromFloat(1.0),
+			},
+			TriggeringRatio:  num.DecimalFromFloat(0.9),
+			AuctionExtension: 10000,
+		},
+		Fees: &types.Fees{
+			Factors: &types.FeeFactors{
+				MakerFee:          num.DecimalFromFloat(0.1),
+				InfrastructureFee: num.DecimalFromFloat(0.1),
+				LiquidityFee:      num.DecimalFromFloat(0.1),
+			},
+		},
+		TradableInstrument: &types.TradableInstrument{
+			MarginCalculator: &types.MarginCalculator{
+				ScalingFactors: &types.ScalingFactors{
+					SearchLevel:       num.DecimalFromFloat(1.2),
+					InitialMargin:     num.DecimalFromFloat(1.3),
+					CollateralRelease: num.DecimalFromFloat(1.4),
+				},
+			},
+			Instrument: &types.Instrument{
+				ID:   "Crypto/ETHUSD/Futures/Dec19",
+				Code: "FX:ETHUSD/DEC19",
+				Name: "December 2019 ETH vs USD future",
+				Metadata: &types.InstrumentMetadata{
+					Tags: []string{
+						"asset_class:fx/crypto",
+						"product:futures",
+					},
+				},
+				Product: &types.Instrument_Future{
+					Future: &types.Future{
+						Maturity:        "2019-12-31T23:59:59Z",
+						SettlementAsset: "Ethereum/Ether",
+						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
+							Id:      "1",
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "prices.ETH.value",
+										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
+						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
+							Id:      "2",
+							PubKeys: []string{"0xDEADBEEF"},
+							Filters: []*oraclesv1.Filter{
+								{
+									Key: &oraclesv1.PropertyKey{
+										Name: "trading.terminated",
+										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
+									},
+									Conditions: []*oraclesv1.Condition{},
+								},
+							},
+						},
+						OracleSpecBinding: &types.OracleSpecToFutureBinding{
+							SettlementPriceProperty:    "prices.ETH.value",
+							TradingTerminationProperty: "trading.terminated",
+						},
+					},
+				},
+			},
+			RiskModel: &types.TradableInstrumentLogNormalRiskModel{
+				LogNormalRiskModel: &types.LogNormalRiskModel{
+					RiskAversionParameter: num.DecimalFromFloat(0.01),
+					Tau:                   num.DecimalFromFloat(1.0 / 365.25 / 24),
+					Params: &types.LogNormalModelParams{
+						Mu:    num.DecimalZero(),
+						R:     num.DecimalFromFloat(0.016),
+						Sigma: num.DecimalFromFloat(0.09),
+					},
+				},
+			},
+		},
+		TradingModeConfig: &types.MarketContinuous{
+			Continuous: &types.ContinuousTrading{},
+		},
+	}
+}
+
 func TestValidMarketSnapshot(t *testing.T) {
 	engine := createEngine(t)
 	assert.NotNil(t, engine)
+
+	// Create a new market
+	marketConfig := getMarketConfig()
+	err := engine.SubmitMarket(context.TODO(), marketConfig)
+	assert.NoError(t, err)
+
+	// Take the snapshot and hash
+	mapBytes, err := engine.Snapshot()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, mapBytes)
+	hash1, err := engine.GetHash("ALL")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash1)
+
+	// Create a new engine and restore
 }
