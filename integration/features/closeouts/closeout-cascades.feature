@@ -12,12 +12,12 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | name                           | value |
       | market.auction.minimumDuration | 1     |
 
-  Scenario: https://drive.google.com/file/d/1bYWbNJvG7E-tcqsK26JMu2uGwaqXqm0L/view
+  Scenario: Distressed position gets taken over by another party whose margin level is insufficient to support it 
    # setup accounts
     Given the parties deposit on asset's general account the following amount:
       | party        | asset | amount        |
       | trader1      | BTC   | 800           |
-      | trader2      | BTC   | 150        |
+      | trader2      | BTC   | 150           |
       | trader3      | BTC   | 100           |
       | auxiliary1   | BTC   | 1000000000000 |
       | auxiliary2   | BTC   | 1000000000000 |
@@ -49,7 +49,6 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | auxiliary1| ETH/DEC19 | sell | 50   | 100    | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
       | auxiliary2| ETH/DEC19 | buy  | 50   | 10    | 0               | TYPE_LIMIT | TIF_GTC | sell-provider-1|
 
-  #And debug trades
   And the following trades should be executed:
       | buyer  | price | size | seller  | 
       | network |  50  | 50   | trader3 | 
@@ -83,47 +82,14 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | party | market id   | maintenance | search | initial | release |
       | trader2 | ETH/DEC19 | 0       | 0  | 0 | 0 |
 
-     Then debug transfers
-     
-     Then the following transfers should happen:
-      | from      | to        | from account            | to account           | market id | amount  | asset |
-   
-      | auxiliary2| auxiliary2| ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 2170 | BTC  |
-      | market    | trader2   | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 100  | BTC  |
-      | market    | market    | ACCOUNT_TYPE_INSURANCE  | ACCOUNT_TYPE_SETTLEMENT| ETH/DEC19 | 100  | BTC  |
-      | trader3   | market    | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_INSURANCE | ETH/DEC19 | 100  | BTC  |
-      #| market    | trader2   | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL   | ETH/DEC19 | 0    | BTC  |
-      #| trader3   | market    | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY | ETH/DEC19| 0| BTC  |
-
-      #| trader3   | market    | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER| ETH/DEC19 | 0    | BTC  |
-      | auxiliary1| auxiliary1| ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 90360| BTC  |
-      | market    | auxiliary2| ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 900  | BTC  |
-      #| market    | trader3   | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL   | ETH/DEC19 | 0    | BTC  |
-
-      | auxiliary1| auxiliary1| ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 100  | BTC   |
-      | trader3   | trader3   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 100  | BTC   |
-      | trader2   | trader2   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 100  | BTC   |
-      | auxiliary1| auxiliary1| ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 15840| BTC  |
-      | auxiliary2| auxiliary2| ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL   | ETH/DEC19 | 876  | BTC  |
-      | auxiliary1| auxiliary1| ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 4000 | BTC  |
-      | auxiliary2| auxiliary2| ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 994  | BTC  |
-      | auxiliary2| auxiliary2| ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_MARGIN    | ETH/DEC19 | 12   | BTC  |
-
-   
-
-
-    
+  
 #setup new mark price to closeout trader2
     When the parties place the following orders: 
       | party     | market id | side | volume| price | resulting trades | type       | tif     | reference       |
       | auxiliary1| ETH/DEC19 | buy  | 60   | 50    | 0                  | TYPE_LIMIT | TIF_GTC | buy-position-3 |
       | auxiliary2| ETH/DEC19 | sell | 10   | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-position-3 |
 
-
     And the parties should have the following margin levels:
       | party | market id   | maintenance | search | initial | release |
       | trader3 | ETH/DEC19 | 0        | 0   | 0   | 0 |
       | trader2 | ETH/DEC19 | 0        | 0   | 0   | 0 |
-
-# ############################
-    
