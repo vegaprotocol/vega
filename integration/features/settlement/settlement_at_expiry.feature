@@ -300,7 +300,7 @@ Feature: Test settlement at expiry
       | name             | value |
       | prices.ETH.value | 42    |
     And time is updated to "2020-01-01T01:01:02Z"
-
+   And debug transfers
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 11399   |
@@ -329,8 +329,8 @@ Feature: Test settlement at expiry
       | party   | market id | side  | volume | price | resulting trades | type       | tif     |
       | aux1     | ETH/DEC21 | buy  | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2     | ETH/DEC21 | sell | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3a | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2     | ETH/DEC21 | sell | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
  
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
@@ -357,8 +357,8 @@ Feature: Test settlement at expiry
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 4284   | 4017    |
-      | trader4  | ETH   | ETH/DEC21 | 2088   | 6009    |
+      | trader3a | ETH   | ETH/DEC21 | 2856   | 5343    |
+      | trader4  | ETH   | ETH/DEC21 | 1392   | 6807    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC21"
     And the cumulated balance for all accounts should be worth "300060000"
@@ -373,17 +373,19 @@ Feature: Test settlement at expiry
       | name             | value |
       | prices.ETH.value | 42    |
     Then time is updated to "2022-01-01T01:01:02Z"
+    
+    And debug transfers
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 0      | 6591    |
-      | trader4  | ETH   | ETH/DEC21 | 0      | 5523    |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 7059    |
+      | trader4  | ETH   | ETH/DEC21 | 0      | 6483    |
 
-    And the cumulated balance for all accounts should be worth "300055716"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2500" for the asset "ETH"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC20"
+    And the cumulated balance for all accounts should be worth "300055604"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
+    And the insurance pool balance should be "2500" for the asset "ETH"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC19"
+    And the insurance pool balance should be "12500" for the market "ETH/DEC20"
     And the insurance pool balance should be "12500" for the market "ETH/DEC22"
 
   Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - insurance covers losses
@@ -399,11 +401,11 @@ Feature: Test settlement at expiry
       | party-lp | ETH   | 100000000 |
 
     Then the parties place the following orders:
-      | party   | market id | side  | volume | price | resulting trades | type       | tif     |
+      | party    | market id | side  | volume | price | resulting trades | type       | tif     |
       | aux1     | ETH/DEC21 | buy   | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2     | ETH/DEC21 | sell  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader3a | ETH/DEC21 | buy   | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/DEC21 | buy   | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2     | ETH/DEC21 | sell  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
  
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
@@ -430,8 +432,8 @@ Feature: Test settlement at expiry
 
     Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 1428   | 6669    |
-      | trader4  | ETH   | ETH/DEC21 |  701   |    0    |
+      | trader3a | ETH   | ETH/DEC21 | 2856   | 5343    |
+      | trader4  | ETH   | ETH/DEC21 |  599   |    0    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC21"
     And the cumulated balance for all accounts should be worth "300052400"
@@ -446,21 +448,98 @@ Feature: Test settlement at expiry
       | name             | value |
       | prices.ETH.value | 42    |
     Then time is updated to "2022-01-01T01:01:02Z"
-
+    And debug transfers
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 0      | 7527    |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 7059    |
       | trader4  | ETH   | ETH/DEC21 | 0      |    0    |
 
-    And the cumulated balance for all accounts should be worth "300050972"
+    And the cumulated balance for all accounts should be worth "300048004"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
- # 157 were taken from the insurance pool to cover the losses of trader4, the remaining is split between global and the other market
-    And the insurance pool balance should be "2463" for the asset "ETH"
-    And the insurance pool balance should be "12460" for the market "ETH/DEC19"
-    And the insurance pool balance should be "12460" for the market "ETH/DEC20"
-    And the insurance pool balance should be "12460" for the market "ETH/DEC22"
+   # 1117 were taken from the insurance pool to cover the losses of trader4, the remaining is split between global and the other market
+    And the insurance pool balance should be "2223" for the asset "ETH"
+    And the insurance pool balance should be "12220" for the market "ETH/DEC19"
+    And the insurance pool balance should be "12220" for the market "ETH/DEC20"
+    And the insurance pool balance should be "12220" for the market "ETH/DEC22"
   
-  # Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - loss socialisation in action - insurance doesn't covers all losses
+  Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - loss socialisation in action - insurance doesn't covers all losses
+
+   Given the initial insurance pool balance is "1000" for the markets:
+
+    When the parties deposit on asset's general account the following amount:
+      | party    | asset | amount    |
+      | aux1     | ETH   | 100000000 |
+      | aux2     | ETH   | 100000000 |
+      | trader3a | ETH   | 10000     |
+      | trader4  | ETH   |  2400     |
+      | party-lp | ETH   | 100000000 |
+
+    Then the parties place the following orders:
+      | party    | market id | side  | volume | price | resulting trades | type       | tif     |
+      | aux1     | ETH/DEC21 | buy   | 1      | 500   | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2     | ETH/DEC21 | sell  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux1     | ETH/DEC21 | buy   | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+      | aux2     | ETH/DEC21 | sell  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
+ 
+    Given the parties submit the following liquidity provision:
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    |
+   
+    Then the opening auction period ends for market "ETH/DEC21"
+    And the mark price should be "1002" for the market "ETH/DEC21"
+  
+    Then the parties place the following orders:
+      | party    | market id  | side | volume | price | resulting trades | type       | tif     |
+      | trader3a | ETH/DEC21  | sell | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+      | trader4  | ETH/DEC21  | buy  | 2      | 900   | 0                | TYPE_LIMIT | TIF_GTC |
+
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode                    | auction trigger       |
+      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_PRICE |
+
+    Then the network moves ahead "301" blocks
+
+    Then the following trades should be executed:
+      | buyer   | price | size | seller   |
+      | trader4 | 900   | 2    | trader3a |
+
+    Then the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 2856   | 5343    |
+      | trader4  | ETH   | ETH/DEC21 |  599   |    0    |
+
+    And the settlement account should have a balance of "0" for the market "ETH/DEC21"
+    And the cumulated balance for all accounts should be worth "300016400"
+
+    When the oracles broadcast data signed with "0xCAFECAFE1":
+      | name               | value |
+      | trading.terminated | true  |
+
+    And time is updated to "2022-01-01T01:01:01Z"
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
+    Then the oracles broadcast data signed with "0xCAFECAFE1":
+      | name             | value |
+      | prices.ETH.value | 42    |
+    Then time is updated to "2022-01-01T01:01:02Z"
+   And debug transfers
+    And the parties should have the following account balances:
+      | party    | asset | market id | margin | general |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 6982    |
+      | trader4  | ETH   | ETH/DEC21 | 0      |    0    |
+
+    And the cumulated balance for all accounts should be worth "300012004"
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
+   # 500 were taken from the insurance pool to cover the losses of trader4, still not enough to cover losses of 2 for trader4
+   
+    And the insurance pool balance should be "0" for the asset "ETH"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC19"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
+    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
+  
+  
+
+
 
   # Scenario: This mechanism does not incur fees to traders that have open positions that are settled at expiry - Add a step for this ?
 
