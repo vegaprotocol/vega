@@ -249,7 +249,63 @@ pipeline {
                                     --config .golangci.toml \
                                     --enable-all \
                                     --color always \
-                                    --disable promlinter
+                                    --disable typecheck \
+                                    --disable promlinter \
+                                    --disable wrapcheck \
+                                    --disable tagliatelle \
+                                    --disable wastedassign \
+                                    --disable thelper \
+                                    --disable predeclared \
+                                    --disable paralleltest \
+                                    --disable noctx \
+                                    --disable nlreturn \
+                                    --disable nilerr \
+                                    --disable ineffassign \
+                                    --disable ifshort \
+                                    --disable gomnd \
+                                    --disable goerr113 \
+                                    --disable tparallel \
+                                    --disable testpackage \
+                                    --disable gochecknoglobals \
+                                    --disable forcetypeassert \
+                                    --disable exportloopref \
+                                    --disable exhaustivestruct \
+                                    --disable exhaustive \
+                                    --disable errorlint \
+                                    --disable cyclop \
+                                    --disable bodyclose \
+                                    --disable wsl \
+                                    --disable whitespace \
+                                    --disable unparam \
+                                    --disable unconvert \
+                                    --disable scopelint \
+                                    --disable revive \
+                                    --disable prealloc \
+                                    --disable nestif \
+                                    --disable nakedret \
+                                    --disable maligned \
+                                    --disable lll \
+                                    --disable interfacer \
+                                    --disable gosec \
+                                    --disable gomoddirectives \
+                                    --disable golint \
+                                    --disable goimports \
+                                    --disable gofumpt \
+                                    --disable godox \
+                                    --disable godot \
+                                    --disable gocritic \
+                                    --disable goconst \
+                                    --disable gocognit \
+                                    --disable gochecknoinits \
+                                    --disable stylecheck \
+                                    --disable staticcheck \
+                                    --disable gci \
+                                    --disable forbidigo \
+                                    --disable errcheck \
+                                    --disable dupl \
+                                    --disable dogsled \
+                                    --disable funlen \
+                                    --disable gocyclo
                             '''
                         }
                     }
