@@ -182,6 +182,73 @@ pipeline {
                         }
                     }
                 }
+                stage('70+ linters') {
+                    steps {
+                        dir('data-node') {
+                            sh '''#!/bin/bash -e
+                                golangci-lint run -v \
+                                    --allow-parallel-runners \
+                                    --config .golangci.toml \
+                                    --enable-all \
+                                    --color always \
+                                    --disable promlinter \
+                                    --max-issues-per-linter 1 \
+                                    --disable wrapcheck \
+                                    --disable wastedassign \
+                                    --disable thelper \
+                                    --disable testpackage \
+                                    --disable tagliatelle \
+                                    --disable stylecheck \
+                                    --disable staticcheck \
+                                    --disable predeclared \
+                                    --disable paralleltest \
+                                    --disable noctx \
+                                    --disable nlreturn \
+                                    --disable nilerr \
+                                    --disable gomnd \
+                                    --disable ifshort \
+                                    --disable goerr113 \
+                                    --disable gochecknoglobals \
+                                    --disable forcetypeassert \
+                                    --disable exportloopref \
+                                    --disable exhaustivestruct \
+                                    --disable exhaustive \
+                                    --disable errorlint \
+                                    --disable cyclop \
+                                    --disable bodyclose \
+                                    --disable wsl \
+                                    --disable whitespace \
+                                    --disable unparam \
+                                    --disable unconvert \
+                                    --disable scopelint \
+                                    --disable revive \
+                                    --disable prealloc \
+                                    --disable nestif \
+                                    --disable nakedret \
+                                    --disable maligned \
+                                    --disable makezero \
+                                    --disable lll \
+                                    --disable gosec \
+                                    --disable gomoddirectives \
+                                    --disable golint \
+                                    --disable gofumpt \
+                                    --disable godox \
+                                    --disable godot \
+                                    --disable gocritic \
+                                    --disable goconst \
+                                    --disable gocognit \
+                                    --disable gochecknoinits \
+                                    --disable funlen \
+                                    --disable forbidigo \
+                                    --disable errcheck \
+                                    --disable dupl \
+                                    --disable interfacer \
+                                    --disable gocyclo \
+                                    --disable gci
+                            '''
+                        }
+                    }
+                }
                 stage('yamllint') {
                     options { retry(3) }
                     steps {
@@ -233,10 +300,10 @@ pipeline {
                     }
                 }
                 stage('unit tests with race') {
-		    environment {
+                    environment {
                         CGO_ENABLED = 1
                     }
-		    options { retry(3) }
+                    options { retry(3) }
                     steps {
                         dir('data-node') {
                             sh 'go test -v -race $(go list ./...) 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
