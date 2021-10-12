@@ -13,7 +13,7 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | market.auction.minimumDuration | 1     |
 
   Scenario: Distressed position gets taken over by another party whose margin level is insufficient to support it 
-   # setup accounts
+   # setup accounts, we are trying to closeout trader3 first and then trader2
     Given the parties deposit on asset's general account the following amount:
       | party        | asset | amount        |
       | trader1      | BTC   | 800           |
@@ -23,6 +23,7 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | auxiliary2   | BTC   | 1000000000000 |
 
   # place auxiliary orders so we always have best bid and best offer as to not trigger the liquidity auction
+  # trading happens at the end of the open auction period 
     Then the parties place the following orders:
       | party     | market id | side | volume | price  | resulting trades| type       | tif     | reference |
       | auxiliary2| ETH/DEC19 | buy  | 5      | 5      | 0               | TYPE_LIMIT | TIF_GTC | t2-b-1    |
@@ -34,62 +35,68 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
     Then the auction ends with a traded volume of "10" at a price of "10"
     And the mark price should be "10" for the market "ETH/DEC19"
 
-# setup trader3 position and close it out
+    # setup trader2 position to be ready to takevoer trader3's position once trader3 is closed out
     When the parties place the following orders: 
-      | party     | market id | side | volume| price | resulting trades | type       | tif     | reference       |
-      | trader2   | ETH/DEC19 | buy  | 50   | 50    | 0                  | TYPE_LIMIT | TIF_GTC | buy-position-3 |
+      | party     | market id | side | volume| price | resulting trades | type       | tif     | reference      |
+      | trader2   | ETH/DEC19 | buy  | 50    | 50    | 0                | TYPE_LIMIT | TIF_GTC | buy-position-3 |
      
     And the parties should have the following margin levels:
-      | party | market id   | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 50       | 75  | 100 | 150 |
+      | party     | market id  | maintenance | search | initial | release |
+      | trader2   | ETH/DEC19  | 50          | 75     | 100     | 150     |
+
+    Then the parties should have the following account balances:
+      | party  | asset | market id | margin   | general |
+      | trader2| BTC   | ETH/DEC19 | 100      | 50      |
      
+     # setup trader3 position and close it out
      When the parties place the following orders: 
-      | party     | market id | side | volume| price | resulting trades | type       | tif     | reference       |
-      | trader3   | ETH/DEC19 | buy  | 50   | 100    | 0                | TYPE_LIMIT | TIF_GTC | buy-position-3 |
-      | auxiliary1| ETH/DEC19 | sell | 50   | 100    | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
-      | auxiliary2| ETH/DEC19 | buy  | 50   | 10    | 0               | TYPE_LIMIT | TIF_GTC | sell-provider-1|
+      | party     | market id | side | volume| price | resulting trades | type       | tif     | reference      |
+      | trader3   | ETH/DEC19 | buy  | 50    | 100   | 0                | TYPE_LIMIT | TIF_GTC | buy-position-3 |
+      | auxiliary1| ETH/DEC19 | sell | 50    | 100   | 1                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
+      | auxiliary2| ETH/DEC19 | buy  | 50    | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
 
-  And the following trades should be executed:
-      | buyer  | price | size | seller  | 
-      | network |  50  | 50   | trader3 | 
-      | trader2 | 50   | 50   | network | 
-      #| network |  10  | 50   | trader2 | 
-      #| auxiliary2 | 10   | 50   | network | 
+     And the mark price should be "100" for the market "ETH/DEC19"
 
-    And the parties should have the following margin levels:
-      | party | market id   | maintenance | search | initial | release |
-      | trader3 | ETH/DEC19 | 0        | 0   | 0   | 0 |
-      | trader2 | ETH/DEC19 | 50       | 75  | 100 | 150 |
+     # trader3 got close-out, trader3's order has been sold to network, and then trader2 bought the order from the network 
+     # as it had the highest buy price 
+     And the following trades should be executed:
+      | buyer   | price | size | seller  | 
+      | network |  50   | 50   | trader3 | 
+      | trader2 |  50   | 50   | network | 
+
+     And the mark price should be "100" for the market "ETH/DEC19"
+
+     # check that trader3 is close-out but trader2 is not 
+     And the parties should have the following margin levels:
+      | party   | market id | maintenance | search | initial | release |
+      | trader3 | ETH/DEC19 | 0           | 0      | 0       | 0       |
+      | trader2 | ETH/DEC19 | 50          | 75     | 100     | 150     |
      Then the parties should have the following profit and loss:
-      | party | volume | unrealised pnl | realised pnl |
-      | trader2   | 50 | 2500        | -2400         |
-      | trader3   | 0  | 0           | -100          |
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader2 | 50     | 2500           | -2400        |
+      | trader3 | 0      | 0              | -100         |
 
-      Then the parties should have the following account balances:
-      | party | asset | market id | margin | general |
+      Then debug transfers
+
+    # check trader2 margin level, trader2 is not close-out yet, but trader2 does not have enough margin 
+     Then the parties should have the following account balances:
+      | party  | asset | market id | margin   | general |
       | trader2| BTC   | ETH/DEC19 | 200      | 50      |
      
+    # setup new markprice, which is the same as when trader2 traded with network
       Then the parties place the following orders:
       | party     | market id | side | volume | price  | resulting trades| type       | tif     | reference |
-      | auxiliary2| ETH/DEC19 | buy  | 10     | 10     | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
-      | auxiliary1| ETH/DEC19 | sell | 10     | 10     | 0               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
+      | auxiliary2| ETH/DEC19 | buy  | 10     | 50     | 0               | TYPE_LIMIT | TIF_GTC | aux-b-1   |
+      | auxiliary1| ETH/DEC19 | sell | 10     | 50     | 1               | TYPE_LIMIT | TIF_GTC | aux-s-1   |
   
+     #trader2 got closed-out 
       Then the parties should have the following profit and loss:
-      | party | volume | unrealised pnl | realised pnl |
-      | trader2   | 0 | 0        | -150         |
+      | party   | volume | unrealised pnl | realised pnl |
+      | trader2 | 0      | 0              | -150         |
 
       And the parties should have the following margin levels:
-      | party | market id   | maintenance | search | initial | release |
-      | trader2 | ETH/DEC19 | 0       | 0  | 0 | 0 |
+      | party   | market id | maintenance | search | initial | release |
+      | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
 
   
-#setup new mark price to closeout trader2
-    When the parties place the following orders: 
-      | party     | market id | side | volume| price | resulting trades | type       | tif     | reference       |
-      | auxiliary1| ETH/DEC19 | buy  | 60   | 50    | 0                  | TYPE_LIMIT | TIF_GTC | buy-position-3 |
-      | auxiliary2| ETH/DEC19 | sell | 10   | 50    | 1                | TYPE_LIMIT | TIF_GTC | buy-position-3 |
 
-    And the parties should have the following margin levels:
-      | party | market id   | maintenance | search | initial | release |
-      | trader3 | ETH/DEC19 | 0        | 0   | 0   | 0 |
-      | trader2 | ETH/DEC19 | 0        | 0   | 0   | 0 |
