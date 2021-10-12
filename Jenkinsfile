@@ -242,14 +242,16 @@ pipeline {
                 }
                 stage('70+ linters') {
                     steps {
-                        sh '''#!/bin/bash -e
-                            golangci-lint run -v \
-                                --allow-parallel-runners \
-                                --config .golangci.toml \
-                                --enable-all \
-                                --color always \
-                                --disable promlinter
-                        '''
+                        dir('vega') {
+                            sh '''#!/bin/bash -e
+                                golangci-lint run -v \
+                                    --allow-parallel-runners \
+                                    --config .golangci.toml \
+                                    --enable-all \
+                                    --color always \
+                                    --disable promlinter
+                            '''
+                        }
                     }
                 }
                 stage('shellcheck') {
