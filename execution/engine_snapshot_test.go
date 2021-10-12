@@ -14,16 +14,15 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
+
 	"github.com/stretchr/testify/assert"
 )
 
-func createEngine(t *testing.T) *execution.Engine {
+func createEngine(t *testing.T) {
 	t.Helper()
-	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	executionConfig := execution.NewDefaultConfig()
 	broker := bmock.NewMockBroker(ctrl)
-	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	timeService := mocks.NewMockTimeService(ctrl)
 	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	timeService.EXPECT().GetTimeNow().AnyTimes()
@@ -40,18 +39,7 @@ func createEngine(t *testing.T) *execution.Engine {
 func TestEmptyMarkets(t *testing.T) {
 	engine := createEngine(t)
 	assert.NotNil(t, engine)
-
-	// Check that the starting state is empty
-	bytes, providers, err := engine.GetState("")
-	assert.NoError(t, err)
-	assert.Empty(t, bytes)
 	assert.Empty(t, providers)
-}
-
-func getMarketConfig() *types.Market {
-	return &types.Market{
-		ID: "MarketID", // ID will be generated
-		PriceMonitoringSettings: &types.PriceMonitoringSettings{
 			Parameters: &types.PriceMonitoringParameters{
 				Triggers: []*types.PriceMonitoringTrigger{
 					{
@@ -150,13 +138,15 @@ func getMarketConfig() *types.Market {
 		},
 		State: types.MarketStateActive,
 	}
+	bytes, err := engine.GetState("")
+	assert.NoError(t, err)
+	assert.Empty(t, bytes)
 }
 
 func TestValidMarketSnapshot(t *testing.T) {
 	engine := createEngine(t)
 	assert.NotNil(t, engine)
 
-	// Create a new market
 	marketConfig := getMarketConfig()
 	err := engine.SubmitMarket(context.TODO(), marketConfig)
 	assert.NoError(t, err)
