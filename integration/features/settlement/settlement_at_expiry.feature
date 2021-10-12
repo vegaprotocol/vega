@@ -31,12 +31,6 @@ Feature: Test settlement at expiry
     And the following network parameters are set:
       | name                                                | value |
       | market.auction.minimumDuration                      | 1     |
-
-      # | market.stake.target.timeWindow                      | 24h   | 
-      # | market.stake.target.scalingFactor                   | 1     |
-      # | market.liquidity.targetstake.triggering.ratio       | 1     |
-      # | market.liquidity.providers.fee.distributionTimeStep | 10s   |
-    # And the average block duration is "1"
     
     And the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -87,6 +81,7 @@ Feature: Test settlement at expiry
       | name             | value |
       | prices.ETH.value | 42    |
     Then time is updated to "2020-01-01T01:01:02Z"
+
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
@@ -161,6 +156,7 @@ Feature: Test settlement at expiry
       | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
       | party2 | ETH   | ETH/DEC19 | 0      | 42      |
       | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
+
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     And the insurance pool balance should be "2500" for the asset "ETH"
@@ -204,7 +200,9 @@ Feature: Test settlement at expiry
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH/DEC19 | sell | 2      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
       | party2 | ETH/DEC19 | buy  | 2      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | ref-2     |
+    
     And debug transfers
+    
     Then the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 240    | 9760    |
@@ -300,7 +298,9 @@ Feature: Test settlement at expiry
       | name             | value |
       | prices.ETH.value | 42    |
     And time is updated to "2020-01-01T01:01:02Z"
-   And debug transfers
+
+    And debug transfers
+    
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 11399   |
@@ -316,7 +316,6 @@ Feature: Test settlement at expiry
   Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - no insurance taken
 
     Given the initial insurance pool balance is "10000" for the markets:
-
     When the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | aux1     | ETH   | 100000000 |
@@ -391,7 +390,6 @@ Feature: Test settlement at expiry
   Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - insurance covers losses
 
    Given the initial insurance pool balance is "10000" for the markets:
-
     When the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | aux1     | ETH   | 100000000 |
@@ -448,7 +446,9 @@ Feature: Test settlement at expiry
       | name             | value |
       | prices.ETH.value | 42    |
     Then time is updated to "2022-01-01T01:01:02Z"
+
     And debug transfers
+    
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 7059    |
@@ -456,7 +456,7 @@ Feature: Test settlement at expiry
 
     And the cumulated balance for all accounts should be worth "300048004"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-   # 1117 were taken from the insurance pool to cover the losses of trader4, the remaining is split between global and the other market
+    # 1117 were taken from the insurance pool to cover the losses of trader4, the remaining is split between global and the other market
     And the insurance pool balance should be "2223" for the asset "ETH"
     And the insurance pool balance should be "12220" for the market "ETH/DEC19"
     And the insurance pool balance should be "12220" for the market "ETH/DEC20"
@@ -465,7 +465,6 @@ Feature: Test settlement at expiry
   Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - loss socialisation in action - insurance doesn't covers all losses
 
    Given the initial insurance pool balance is "1000" for the markets:
-
     When the parties deposit on asset's general account the following amount:
       | party    | asset | amount    |
       | aux1     | ETH   | 100000000 |
@@ -522,7 +521,9 @@ Feature: Test settlement at expiry
       | name             | value |
       | prices.ETH.value | 42    |
     Then time is updated to "2022-01-01T01:01:02Z"
-   And debug transfers
+
+    And debug transfers
+    
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 6982    |
@@ -530,15 +531,11 @@ Feature: Test settlement at expiry
 
     And the cumulated balance for all accounts should be worth "300012004"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-   # 500 were taken from the insurance pool to cover the losses of trader4, still not enough to cover losses of 2 for trader4
-   
+    # 500 were taken from the insurance pool to cover the losses of trader4, still not enough to cover losses of for trader4
     And the insurance pool balance should be "0" for the asset "ETH"
     And the insurance pool balance should be "1000" for the market "ETH/DEC19"
     And the insurance pool balance should be "1000" for the market "ETH/DEC20"
     And the insurance pool balance should be "1000" for the market "ETH/DEC22"
-  
-  
-
 
 
   # Scenario: This mechanism does not incur fees to traders that have open positions that are settled at expiry - Add a step for this ?
