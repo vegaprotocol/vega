@@ -1,15 +1,18 @@
 package spam_test
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,6 +39,7 @@ func TestVotingSpamProtection(t *testing.T) {
 	t.Run("Post reject vote from party with too many votes in total all from current block", testPostRejectTooManyVotes)
 	t.Run("Vote counts from the block carried over to next block", testCountersUpdated)
 	t.Run("On epoch start voting counters are reset", testReset)
+	t.Run("On end of block, block voting counters are reset and take a snapshot roundtrip", testVoteEndBlockReset)
 }
 
 func getVotingSpamPolicy() *spam.VoteSpamPolicy {
@@ -508,4 +512,48 @@ func testReset(t *testing.T) {
 	accept, err = policy.PostBlockAccept(tx)
 	require.Equal(t, true, accept)
 	require.Nil(t, err)
+}
+
+func testVoteEndBlockReset(t *testing.T) {
+	// set state
+	policy := getVotingSpamPolicy()
+
+	tokenMap := make(map[string]*num.Uint, 1)
+	tokenMap["party1"] = sufficientTokensForVoting
+
+	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+
+	// in each block we vote once
+	var i uint64 = 0
+	for ; i < 3; i++ {
+		tx := &testTx{party: "party1", proposal: "proposal1"}
+		accept, err := policy.PreBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+
+		accept, err = policy.PostBlockAccept(tx)
+		require.Equal(t, true, accept)
+		require.Nil(t, err)
+		policy.EndOfBlock(i)
+	}
+
+	tx := &testTx{party: "party1", proposal: "proposal1"}
+	accept, err := policy.PreBlockAccept(tx)
+	require.Equal(t, false, accept)
+	require.Equal(t, spam.ErrTooManyVotes, err)
+
+	bytes1, err := policy.Serialise()
+	require.Nil(t, err)
+	var votePayload snapshot.Payload
+	proto.Unmarshal(bytes1, &votePayload)
+	payload := types.PayloadFromProto(&votePayload)
+	policy.Deserialise(payload)
+	bytes2, err := policy.Serialise()
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(bytes1, bytes2))
+	policy.EndOfBlock(3)
+
+	bytes3, err := policy.Serialise()
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(bytes3, bytes2))
 }

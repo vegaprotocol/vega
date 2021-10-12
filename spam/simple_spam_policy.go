@@ -2,12 +2,14 @@ package spam
 
 import (
 	"errors"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
 )
 
 // Simple spam policy supports encforcing of max allowed commands and min required tokens + banning of parties when their reject rate in the block
@@ -50,6 +52,74 @@ func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowe
 		insufficientTokensErr: errors.New("party has insufficient tokens to submit " + policyName + " request in this epoch"),
 		tooManyCommands:       errors.New("party has already proposed the maximum number of " + policyName + " requests per epoch"),
 	}
+}
+
+func (ssp *SimpleSpamPolicy) Serialise() ([]byte, error) {
+	partyToCount := []*types.PartyCount{}
+	for party, count := range ssp.partyToCount {
+		partyToCount = append(partyToCount, &types.PartyCount{
+			Party: party,
+			Count: count,
+		})
+
+	}
+
+	sort.SliceStable(partyToCount, func(i, j int) bool { return partyToCount[i].Party < partyToCount[j].Party })
+
+	bannedParties := make([]*types.BannedParty, 0, len(ssp.bannedParties))
+	for party, epoch := range ssp.bannedParties {
+		bannedParties = append(bannedParties, &types.BannedParty{
+			Party:      party,
+			UntilEpoch: epoch,
+		})
+	}
+
+	sort.SliceStable(bannedParties, func(i, j int) bool { return bannedParties[i].Party < bannedParties[j].Party })
+
+	partyTokenBalance := make([]*types.PartyTokenBalance, 0, len(ssp.tokenBalance))
+	for party, balance := range ssp.tokenBalance {
+		partyTokenBalance = append(partyTokenBalance, &types.PartyTokenBalance{
+			Party:   party,
+			Balance: balance,
+		})
+	}
+	sort.SliceStable(partyTokenBalance, func(i, j int) bool { return partyTokenBalance[i].Party < partyTokenBalance[j].Party })
+
+	payload := types.Payload{
+		Data: &types.PayloadSimpleSpamPolicy{
+			SimpleSpamPolicy: &types.SimpleSpamPolicy{
+				PolicyName:        ssp.policyName,
+				PartyToCount:      partyToCount,
+				BannedParty:       bannedParties,
+				PartyTokenBalance: partyTokenBalance,
+				CurrentEpochSeq:   ssp.currentEpochSeq,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (ssp *SimpleSpamPolicy) Deserialise(p *types.Payload) error {
+	pl := p.Data.(*types.PayloadSimpleSpamPolicy).SimpleSpamPolicy
+
+	ssp.partyToCount = map[string]uint64{}
+	for _, ptc := range pl.PartyToCount {
+		ssp.partyToCount[ptc.Party] = ptc.Count
+	}
+	ssp.bannedParties = make(map[string]uint64, len(pl.BannedParty))
+	for _, bp := range pl.BannedParty {
+		ssp.bannedParties[bp.Party] = bp.UntilEpoch
+	}
+
+	ssp.tokenBalance = make(map[string]*num.Uint, len(pl.PartyTokenBalance))
+	for _, tb := range pl.PartyTokenBalance {
+		ssp.tokenBalance[tb.Party] = tb.Balance
+	}
+
+	ssp.currentEpochSeq = pl.CurrentEpochSeq
+
+	return nil
 }
 
 //UpdateUintParam is called to update Uint net params for the policy
@@ -95,6 +165,9 @@ func (ssp *SimpleSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*
 			delete(ssp.bannedParties, party)
 		}
 	}
+
+	ssp.blockPartyToCount = map[string]uint64{}
+	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
 }
 
 //EndOfBlock is called at the end of the processing of the block to carry over state and trigger bans if necessary
@@ -117,6 +190,7 @@ func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64) {
 			ssp.bannedParties[p] = ssp.currentEpochSeq + numberOfEpochsBan
 		}
 	}
+	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
 }
 
 //PostBlockAccept is called to verify a transaction from the block before passed to the application layer
