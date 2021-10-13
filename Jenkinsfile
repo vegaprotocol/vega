@@ -258,7 +258,6 @@ pipeline {
                                     --disable noctx \
                                     --disable nlreturn \
                                     --disable nilerr \
-                                    --disable ifshort \
                                     --disable gomnd \
                                     --disable goerr113 \
                                     --disable tparallel \

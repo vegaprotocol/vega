@@ -182,8 +182,7 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	defer e.evtsmu.Unlock()
 
 	key := string(crypto.Hash([]byte(evt.String())))
-	_, ok, _ := e.getEvt(key)
-	if ok {
+	if _, ok, _ := e.getEvt(key); ok {
 		res = "dupevt"
 		return ErrEvtAlreadyExist
 	}

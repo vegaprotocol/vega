@@ -145,7 +145,6 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	s.mu.Lock()
 	// update channel is eligible for closing if no events are in buffer, or the nr of changes are less than the buffer size
 	// closeUpdate := (s.changeCount == 0 || s.changeCount >= s.bufSize)
-	closeUpdate := true
 	save := make([]StreamEvent, 0, len(evts))
 	for _, e := range evts {
 		var se StreamEvent
@@ -174,7 +173,7 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.changeCount += len(save)
 	s.data = append(s.data, save...)
-	if closeUpdate && ((s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0)) {
+	if /*closeUpdate &&*/ (s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0) {
 		select {
 		case <-s.updated:
 		default:

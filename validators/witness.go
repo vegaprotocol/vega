@@ -87,8 +87,7 @@ type res struct {
 func (r *res) addVote(key string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	_, ok := r.votes[key]
-	if ok {
+	if _, ok := r.votes[key]; ok {
 		return ErrDuplicateVoteFromNode
 	}
 

@@ -135,9 +135,8 @@ func (p PromptString) Get(prompt, name string) (string, error) {
 func (p PromptString) getFromUser(prompt string) (string, error) {
 	var s string
 	fmt.Printf("Enter %s:", prompt)
-	_, err := fmt.Scanf("%s", &s)
-	fmt.Printf("\n")
-	if err != nil {
+	defer func() { fmt.Printf("\n") }()
+	if _, err := fmt.Scanf("%s", &s); err != nil {
 		return "", fmt.Errorf("failed read the input: %w", err)
 	}
 

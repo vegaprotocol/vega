@@ -216,8 +216,7 @@ func Start(conf Config) {
 	if !conf.Enabled {
 		return
 	}
-	err := setupMetrics()
-	if err != nil {
+	if err := setupMetrics(); err != nil {
 		panic("could not set up metrics")
 	}
 	http.Handle(conf.Path, promhttp.Handler())

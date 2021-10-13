@@ -403,8 +403,7 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 /*****************************************************************************/
 
 func (mdb *MarketDepthBuilder) GetAllOrders(market string) map[string]*types.Order {
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		return md.liveOrders
 	}
 	return nil
@@ -412,10 +411,11 @@ func (mdb *MarketDepthBuilder) GetAllOrders(market string) map[string]*types.Ord
 
 // GetOrderCount returns the number of live orders for the given market
 func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
-	var liveOrders int64
-	var bookOrders uint64
-	md := mdb.marketDepths[market]
-	if md != nil {
+	var (
+		liveOrders int64
+		bookOrders uint64
+	)
+	if md := mdb.marketDepths[market]; md != nil {
 		liveOrders = int64(len(md.liveOrders))
 
 		for _, pl := range md.buySide {
@@ -436,8 +436,7 @@ func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
 
 // GetVolumeAtPrice returns the order volume at the given price level
 func (mdb *MarketDepthBuilder) GetVolumeAtPrice(market string, side types.Side, price uint64) uint64 {
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		pl := md.getPriceLevel(side, num.NewUint(price))
 		if pl == nil {
 			return 0
@@ -450,8 +449,7 @@ func (mdb *MarketDepthBuilder) GetVolumeAtPrice(market string, side types.Side, 
 // GetTotalVolume returns the total volume in the order book
 func (mdb *MarketDepthBuilder) GetTotalVolume(market string) int64 {
 	var volume int64
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		for _, pl := range md.buySide {
 			volume += int64(pl.totalVolume)
 		}
@@ -466,8 +464,7 @@ func (mdb *MarketDepthBuilder) GetTotalVolume(market string) int64 {
 
 // GetOrderCountAtPrice returns the number of orders at the given price level
 func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(market string, side types.Side, price uint64) uint64 {
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		pl := md.getPriceLevel(side, num.NewUint(price))
 		if pl == nil {
 			return 0
@@ -484,8 +481,7 @@ func (mdb *MarketDepthBuilder) GetPriceLevels(market string) int {
 
 // GetBestBidPrice returns the highest bid price in the book
 func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		if len(md.buySide) > 0 {
 			return md.buySide[0].price.Uint64()
 		}
@@ -495,8 +491,7 @@ func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
 
 // GetBestAskPrice returns the highest bid price in the book
 func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		if len(md.sellSide) > 0 {
 			return md.sellSide[0].price.Uint64()
 		}
@@ -506,8 +501,7 @@ func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
 
 // GetBuyPriceLevels returns the number of non empty buy price levels
 func (mdb *MarketDepthBuilder) GetBuyPriceLevels(market string) int {
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		return len(md.buySide)
 	}
 	return 0
@@ -515,8 +509,7 @@ func (mdb *MarketDepthBuilder) GetBuyPriceLevels(market string) int {
 
 // GetSellPriceLevels returns the number of non empty sell price levels
 func (mdb *MarketDepthBuilder) GetSellPriceLevels(market string) int {
-	md := mdb.marketDepths[market]
-	if md != nil {
+	if md := mdb.marketDepths[market]; md != nil {
 		return len(md.sellSide)
 	}
 	return 0

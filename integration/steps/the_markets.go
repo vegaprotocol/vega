@@ -251,8 +251,7 @@ func (r marketRow) maturityDate() string {
 	}
 
 	time := r.row.MustTime("maturity date")
-	timeNano := time.UnixNano()
-	if timeNano == 0 {
+	if timeNano := time.UnixNano(); timeNano == 0 {
 		panic(fmt.Errorf("maturity date is required"))
 	}
 

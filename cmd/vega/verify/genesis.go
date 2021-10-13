@@ -36,8 +36,7 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		} `json:"app_state"`
 	}{}
 
-	err := json.Unmarshal(bs, g)
-	if err != nil {
+	if err := json.Unmarshal(bs, g); err != nil {
 		r.Err("unable to unmarshal genesis file, %v", err)
 		return ""
 	}

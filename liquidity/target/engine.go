@@ -98,8 +98,7 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 // GetTargetStake returns target stake based current time, risk factors
 // and the open interest time series constructed by calls to RecordOpenInterest
 func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
-	minTime := e.minTime(now)
-	if minTime.After(e.max.Time) {
+	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxOI(minTime)
 	}
 
@@ -123,8 +122,7 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 //and the supplied trades without modifying the internal state
 func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
-	minTime := e.minTime(now)
-	if minTime.After(e.max.Time) {
+	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxOI(minTime)
 	}
 	maxOI := e.max.OI

@@ -174,8 +174,7 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		return ErrNoNodeValidationRequired
 	}
 
-	_, ok := n.getProposal(p.ID)
-	if ok {
+	if _, ok := n.getProposal(p.ID); ok {
 		return ErrProposalReferenceDuplicate
 	}
 

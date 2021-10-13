@@ -238,8 +238,7 @@ func validateAsset(assetID string, assets Assets, deepCheck bool) (types.Proposa
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	}
 
-	_, err := assets.Get(assetID)
-	if err != nil {
+	if _, err := assets.Get(assetID); err != nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, err
 	}
 	if !assets.IsEnabled(assetID) {
