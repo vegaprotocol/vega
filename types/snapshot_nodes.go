@@ -151,6 +151,10 @@ type PayloadLimitState struct {
 	LimitState *LimitState
 }
 
+type PayloadNotary struct {
+	Notary *Notary
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -392,6 +396,16 @@ type StakingAccount struct {
 	Events  []*StakeLinking
 }
 
+type NotarySigs struct {
+	ID   string
+	Kind int32
+	Node string
+	Sig  string
+}
+type Notary struct {
+	Sigs []*NotarySigs
+}
+
 func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
 	meta := &snapshot.Metadata{}
 	if err := proto.Unmarshal(s.Metadata, meta); err != nil {
@@ -564,6 +578,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadVoteSpamPolicyFromProto(dt)
 	case *snapshot.Payload_SimpleSpamPolicy:
 		ret.Data = PayloadSimpleSpamPolicyFromProto(dt)
+	case *snapshot.Payload_Notary:
+		ret.Data = PayloadNotaryFromProto(dt)
 	}
 	return ret
 }
@@ -640,6 +656,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_VoteSpamPolicy:
 		ret.Data = dt
 	case *snapshot.Payload_SimpleSpamPolicy:
+		ret.Data = dt
+	case *snapshot.Payload_Notary:
 		ret.Data = dt
 	}
 	return &ret
@@ -2680,4 +2698,72 @@ func (*PayloadRewardsPayout) Key() string {
 
 func (*PayloadRewardsPayout) Namespace() SnapshotNamespace {
 	return RewardSnapshot
+}
+
+func PayloadNotaryFromProto(n *snapshot.Payload_Notary) *PayloadNotary {
+	return &PayloadNotary{
+		Notary: NotaryFromProto(n.Notary),
+	}
+}
+
+func NotaryFromProto(n *snapshot.Notary) *Notary {
+	sigKinds := make([]*NotarySigs, 0, len(n.NotarySigs))
+
+	for _, sk := range n.NotarySigs {
+		sigKinds = append(sigKinds, NotarySigFromProto(sk))
+	}
+
+	return &Notary{
+		Sigs: sigKinds,
+	}
+}
+
+func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
+
+	return &NotarySigs{
+		ID:   sk.Id,
+		Kind: sk.Kind,
+		Node: sk.Node,
+		Sig:  sk.Sig,
+	}
+}
+
+func (p PayloadNotary) IntoProto() *snapshot.Payload_Notary {
+	return &snapshot.Payload_Notary{
+		Notary: p.Notary.IntoProto(),
+	}
+}
+
+func (n Notary) IntoProto() *snapshot.Notary {
+	sigKinds := make([]*snapshot.NotarySigs, 0, len(n.Sigs))
+	for _, sk := range n.Sigs {
+		sigKinds = append(sigKinds, sk.IntoProto())
+	}
+	return &snapshot.Notary{
+		NotarySigs: sigKinds,
+	}
+}
+
+func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
+
+	return &snapshot.NotarySigs{
+		Id:   sk.ID,
+		Kind: sk.Kind,
+		Node: sk.Node,
+		Sig:  sk.Sig,
+	}
+}
+
+func (*PayloadNotary) isPayload() {}
+
+func (p *PayloadNotary) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadNotary) Key() string {
+	return "all"
+}
+
+func (*PayloadNotary) Namespace() SnapshotNamespace {
+	return NotarySnapshot
 }
