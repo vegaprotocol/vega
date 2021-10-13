@@ -191,8 +191,9 @@ pipeline {
                                     --config .golangci.toml \
                                     --enable-all \
                                     --color always \
+                                    --max-issues-per-linter 0 \
+                                    --max-same-issues 0 \
                                     --disable promlinter \
-                                    --max-issues-per-linter 1 \
                                     --disable wrapcheck \
                                     --disable wastedassign \
                                     --disable thelper \
