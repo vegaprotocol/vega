@@ -705,6 +705,14 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	return &ret
 }
 
+func (p Payload) GetAppState() *PayloadAppState {
+	if p.Namespace() == AppSnapshot {
+		pas := p.Data.(*PayloadAppState)
+		return pas
+	}
+	return nil
+}
+
 func PayloadActiveAssetsFromProto(paa *snapshot.Payload_ActiveAssets) *PayloadActiveAssets {
 	return &PayloadActiveAssets{
 		ActiveAssets: ActiveAssetsFromProto(paa.ActiveAssets),

@@ -42,34 +42,7 @@ type StateProviderT interface {
 
 	// LoadState is called to set the state once again, has to return state providers
 	// in case a new engine is created in the process (e.g. execution engine creating markets, with positions and matching engines)
-	LoadState(ctx context.Context, pl *types.Payload) ([]StateProvider, error)
-}
-
-type StateProvider interface {
-	// Namespace this provider operates in, basically a prefix for the keys
-	Namespace() types.SnapshotNamespace
-	// Keys gets all the nodes this provider populates
-	Keys() []string
-	// GetHash returns the hash for the state for a given key
-	// this can be used to check for changes
-	GetHash(key string) ([]byte, error)
-	// Snapshot is a sync call to get the state for all keys
-	Snapshot() (map[string][]byte, error)
-	// GetState is a sync call to fetch the current state for a current key
-	// the same as Snapshot, basically, but for specific keys
-	// e.g. foo.Snapshot(bar) returns the current state of foo for key bar
-	GetState(key string) ([]byte, error)
-	// Watch sets up the channels that contain new state, it's the providers' job to write to them
-	// each time the state is updated
-	// Watch(ctx context.Context, key string) (<-chan []byte, <-chan error)
-
-	// Sync is a blocking call that returns once there are no changes to the provider state
-	// that haven't been sent on the channels
-	// Sync() error
-
-	// LoadState is called to set the state once again, has to return state providers
-	// in case a new engine is created in the process (e.g. execution engine creating markets, with positions and matching engines)
-	LoadState(ctx context.Context, pl *types.Payload) ([]StateProvider, error)
+	LoadState(ctx context.Context, pl *types.Payload) ([]types.StateProvider, error)
 }
 
 type TimeService interface {
@@ -95,8 +68,8 @@ type Engine struct {
 	hashes     map[string][]byte
 	versions   []int64
 
-	providers   map[string]StateProvider
-	providersNS map[types.SnapshotNamespace][]StateProvider
+	providers   map[string]types.StateProvider
+	providersNS map[types.SnapshotNamespace][]types.StateProvider
 	providerTs  map[string]StateProviderT
 	pollCtx     context.Context
 	pollCfunc   context.CancelFunc
@@ -169,8 +142,8 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		},
 		keyNoNS:     map[string]string{},
 		hashes:      map[string][]byte{},
-		providers:   map[string]StateProvider{},
-		providersNS: map[types.SnapshotNamespace][]StateProvider{},
+		providers:   map[string]types.StateProvider{},
+		providersNS: map[types.SnapshotNamespace][]types.StateProvider{},
 		versions:    make([]int64, 0, conf.Versions), // cap determines how many versions we keep
 		wrap:        appPL,
 		app:         appPL.AppState,
@@ -256,7 +229,13 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	for i, pl := range e.snapshot.Nodes {
 		ns := pl.Namespace()
 		if ns == types.AppSnapshot {
-			// @TODO implement this as a specific call
+			if pas := pl.GetAppState(); pas != nil {
+				e.wrap = pas
+				e.app = e.wrap.AppState
+				if err := e.nodeCAS(i, pl); err != nil {
+					return err
+				}
+			}
 			continue
 		}
 		if _, ok := ordered[ns]; !ok {
@@ -267,13 +246,8 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 				ordered[ns] = []*types.Payload{}
 			}
 		}
-		h, err := e.setTreeNode(pl)
-		if err != nil {
+		if err := e.nodeCAS(i, pl); err != nil {
 			return err
-		}
-		exp := e.snapshot.Meta.NodeHashes[i].Hash
-		if exp != hex.EncodeToString(h) {
-			return types.ErrNodeHashMismatch
 		}
 		// node was verified and set on tree
 		ordered[ns] = append(ordered[ns], pl)
@@ -298,6 +272,24 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
 	if _, err := e.saveCurrentTree(); err != nil {
 		return err
+	}
+	// we're done, we can clear the snapshot state
+	e.snapshot = nil
+	return nil
+}
+
+func (e *Engine) nodeCAS(i int, p *types.Payload) error {
+	h, err := e.setTreeNode(p)
+	if err != nil {
+		return err
+	}
+	if exp := e.snapshot.Meta.NodeHashes[i].Hash; exp != hex.EncodeToString(h) {
+		key := p.GetTreeKey()
+		e.log.Error("Snapshot node not restored - hash mismatch",
+			logging.String("node-key", key),
+		)
+		_, _ = e.avl.Remove([]byte(key))
+		return types.ErrNodeHashMismatch
 	}
 	return nil
 }
@@ -462,6 +454,10 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		if err != nil {
 			return update, err
 		}
+		e.log.Debug("State updated",
+			logging.String("node-key", k),
+			logging.String("state-hash", hex.EncodeToString(h)),
+		)
 		e.hashes[k] = h
 		_ = e.avl.Set(tk, v)
 		update = true
@@ -497,14 +493,14 @@ func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
 	return e.Snapshot(ctx)
 }
 
-func (e *Engine) AddProviderss(provs ...StateProvider) {
+func (e *Engine) AddProviders(provs ...types.StateProvider) {
 	for _, p := range provs {
 		ks := p.Keys()
 		ns := p.Namespace()
 		tKeys := make([]string, 0, len(ks))
 		haveKeys, ok := e.nsKeys[ns]
 		if !ok {
-			e.providersNS[ns] = []StateProvider{
+			e.providersNS[ns] = []types.StateProvider{
 				p,
 			}
 			e.nsTreeKeys[ns] = make([][]byte, 0, len(tKeys))
@@ -533,44 +529,6 @@ func (e *Engine) AddProviderss(provs ...StateProvider) {
 			e.providers[fullKey] = p
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 		}
-	}
-}
-
-func (e *Engine) AddProviders(provs ...StateProvider) {
-	for _, p := range provs {
-		ns := p.Namespace()
-		keys := p.Keys()
-		haveKeys, ok := e.nsKeys[ns]
-		if !ok {
-			// just add
-			e.nsKeys[ns] = keys
-			nsTreeKeys := make([][]byte, 0, len(keys))
-			for _, k := range keys {
-				key := types.GetNodeKey(ns, k)
-				e.keyNoNS[key] = k
-				e.keys = append(e.keys, key)
-				nsTreeKeys = append(nsTreeKeys, []byte(key))
-			}
-			e.nsTreeKeys[ns] = nsTreeKeys
-			e.namespaces = append(e.namespaces, p.Namespace())
-			continue
-		}
-		dedup := uniqueSubset(haveKeys, keys)
-		if len(dedup) == 0 {
-			continue
-		}
-		if len(dedup) != len(keys) {
-			e.log.Debug("Skipping keys we already have")
-		}
-		e.nsKeys[ns] = append(haveKeys, dedup...)
-		nsTreeKeys := e.nsTreeKeys[ns]
-		for _, k := range dedup {
-			key := types.GetNodeKey(ns, k)
-			e.keyNoNS[key] = k
-			e.keys = append(e.keys, key)
-			nsTreeKeys = append(nsTreeKeys, []byte(key))
-		}
-		e.nsTreeKeys[ns] = nsTreeKeys
 	}
 }
 

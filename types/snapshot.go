@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 
@@ -11,6 +12,16 @@ import (
 	"github.com/golang/protobuf/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
+
+// StateProvider - not a huge fan of this interface being here, but it ensures that the state providers
+// don't have to import the snapshot package
+type StateProvider interface {
+	Namespace() SnapshotNamespace
+	Keys() []string
+	GetHash(key string) ([]byte, error)
+	GetState(key string) ([]byte, error)
+	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)
+}
 
 type SnapshotNamespace string
 
