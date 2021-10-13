@@ -50,7 +50,7 @@ func getPrintNetworkParameters(nodeAddress string, req *apipb.ListNetworkParamet
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

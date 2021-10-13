@@ -329,7 +329,7 @@ func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.Delega
 				s = append(s, et)
 			}
 		case *events.DelegationBalance:
-			if (*et).EpochSeq == string(epochSeq) {
+			if (*et).EpochSeq == epochSeq {
 				s = append(s, *et)
 			}
 		}
@@ -345,7 +345,7 @@ func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
 		balances = append(balances, types.Delegation{
 			Party:    e.Party,
 			NodeId:   e.NodeID,
-			EpochSeq: string(e.EpochSeq),
+			EpochSeq: e.EpochSeq,
 			Amount:   e.Amount.String(),
 		})
 	}
@@ -367,7 +367,7 @@ func (b *BrokerStub) GetRewards(epochSeq string) map[string]events.RewardPayout 
 				rewards[et.Party] = et
 			}
 		case *events.RewardPayout:
-			if (*et).EpochSeq == string(epochSeq) {
+			if (*et).EpochSeq == epochSeq {
 				rewards[et.Party] = *et
 			}
 		}
@@ -390,7 +390,7 @@ func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.Valid
 				scores[et.NodeID] = et
 			}
 		case *events.ValidatorScore:
-			if (*et).EpochSeq == string(epochSeq) {
+			if (*et).EpochSeq == epochSeq {
 				scores[et.NodeID] = *et
 			}
 		}

@@ -300,7 +300,7 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 	}
 
 	// check if we need to increase the limits, i.e. if we're below the max and we've not increased in the last n blocks
-	if (vsp.lastIncreaseBlock == 0 || blockHeight > vsp.lastIncreaseBlock+uint64(numberOfBlocksForIncreaseCheck)) && num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor).LT(maxMinVotingTokens) {
+	if (vsp.lastIncreaseBlock == 0 || blockHeight > vsp.lastIncreaseBlock+numberOfBlocksForIncreaseCheck) && num.Zero().Mul(vsp.minVotingTokens, vsp.minVotingTokensFactor).LT(maxMinVotingTokens) {
 		average := vsp.calcRejectAverage()
 		if average > rejectRatioForIncrease {
 			vsp.lastIncreaseBlock = blockHeight

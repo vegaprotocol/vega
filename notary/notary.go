@@ -127,7 +127,7 @@ func (n *Notary) AddSig(
 		return nil, false, ErrNotAValidatorSignature
 	}
 
-	sigs[nodeSig{string(pubKey), string(ns.Sig)}] = struct{}{}
+	sigs[nodeSig{pubKey, string(ns.Sig)}] = struct{}{}
 
 	sigsout, ok := n.IsSigned(ctx, ns.Id, ns.Kind)
 	if ok {

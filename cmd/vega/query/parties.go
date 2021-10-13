@@ -38,7 +38,7 @@ func getPrintParties(nodeAddress string, req *apipb.ListPartiesRequest) error {
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

@@ -72,7 +72,7 @@ func (e *EthereumConfirmations) Check(block uint64) error {
 	}
 
 	if curBlock < block ||
-		(curBlock-block) < uint64(e.required) {
+		(curBlock-block) < e.required {
 		return ErrMissingConfirmations
 	}
 

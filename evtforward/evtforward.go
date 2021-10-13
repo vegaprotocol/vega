@@ -85,7 +85,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		log:              log,
 		cmd:              cmd,
 		nodes:            []nodeHash{},
-		self:             string(top.SelfNodeID()),
+		self:             top.SelfNodeID(),
 		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},

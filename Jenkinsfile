@@ -268,7 +268,6 @@ pipeline {
                                     --disable cyclop \
                                     --disable wsl \
                                     --disable unparam \
-                                    --disable unconvert \
                                     --disable scopelint \
                                     --disable revive \
                                     --disable prealloc \
