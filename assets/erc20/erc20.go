@@ -2,7 +2,6 @@ package erc20
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -10,19 +9,19 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	typespb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
+	"code.vegaprotocol.io/vega/bridges"
 	"code.vegaprotocol.io/vega/metrics"
 	ethnw "code.vegaprotocol.io/vega/nodewallets/eth"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
@@ -148,80 +147,19 @@ func maybeError(err error, format string, a ...interface{}) error {
 // be sent to the bridge to whitelist the asset
 // return the generated message and the signature for this message
 func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
-	typAddr, err := abi.NewType("address", "", nil)
+	bridgeAddress := b.ethClient.BridgeAddress().Hex()
+	// use the asset ID converted into a uint256
+	nonce, err := num.UintFromHex("0x" + b.asset.ID)
 	if err != nil {
 		return nil, nil, err
 	}
-	typString, err := abi.NewType("string", "", nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	typU256, err := abi.NewType("uint256", "", nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	typBytes, err := abi.NewType("bytes", "", nil)
+	bundle, err := bridges.NewERC20Logic(b.wallet, bridgeAddress).
+		ListAsset(b.address, b.asset.ID, nonce)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	args := abi.Arguments([]abi.Argument{
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-		{
-			Name: "vega_asset_id",
-			Type: typAddr,
-		},
-		{
-			Name: "nonce",
-			Type: typU256,
-		},
-		{
-			Name: "func_name",
-			Type: typString,
-		},
-	})
-
-	nonce, err := rand.Int(rand.Reader, big.NewInt(MaxNonce))
-	if err != nil {
-		return nil, nil, err
-	}
-	addr := ethcommon.HexToAddress(b.address)
-	vegaAssetIDBytes, _ := hex.DecodeString(b.asset.ID)
-	buf, err := args.Pack([]interface{}{addr, vegaAssetIDBytes, nonce, listAssetContractName}...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	bridgeAddr := b.ethClient.BridgeAddress()
-	args2 := abi.Arguments([]abi.Argument{
-		{
-			Name: "bytes",
-			Type: typBytes,
-		},
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-	})
-
-	msg, err = args2.Pack(buf, bridgeAddr)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// hash our message before signing it
-	hash := crypto.Keccak256(msg)
-
-	// now sign the message using our wallet private key
-	sig, err = b.wallet.Sign(hash)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return msg, sig, nil
+	return bundle.Message, bundle.Signature, nil
 }
 
 func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
@@ -277,88 +215,16 @@ func (b *ERC20) SignWithdrawal(
 	ethPartyAddress string,
 	withdrawRef *big.Int,
 ) (msg []byte, sig []byte, err error) {
-	typAddr, err := abi.NewType("address", "", nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	typString, err := abi.NewType("string", "", nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	typU256, err := abi.NewType("uint256", "", nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	typBytes, err := abi.NewType("bytes", "", nil)
+	nonce, _ := num.UintFromBig(withdrawRef)
+	bridgeAddress := b.ethClient.BridgeAddress().Hex()
+	bundle, err := bridges.NewERC20Logic(b.wallet, bridgeAddress).
+		WithdrawAsset(b.address, amount, ethPartyAddress,
+			time.Unix(expiry, 0), nonce)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	args := abi.Arguments([]abi.Argument{
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-		{
-			Name: "nonce",
-			Type: typU256,
-		},
-		{
-			Name: "func_name",
-			Type: typString,
-		},
-	})
-
-	addr := ethcommon.HexToAddress(b.address)
-	hexEthPartyAddress := ethcommon.HexToAddress(ethPartyAddress)
-
-	// we use the withdrawRef as a nonce
-	// they are unique as generated as an increment from the banking
-	// layer
-	buf, err := args.Pack([]interface{}{addr, amount.BigInt(), big.NewInt(expiry), hexEthPartyAddress, withdrawRef, withdrawContractName}...)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	bridgeAddr := b.ethClient.BridgeAddress()
-	args2 := abi.Arguments([]abi.Argument{
-		{
-			Name: "bytes",
-			Type: typBytes,
-		},
-		{
-			Name: "address",
-			Type: typAddr,
-		},
-	})
-
-	msg, err = args2.Pack(buf, bridgeAddr)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// hash our message before signing it
-	hash := crypto.Keccak256(msg)
-
-	// now sign the message using our wallet private key
-	sig, err = b.wallet.Sign(hash)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return msg, sig, nil
+	return bundle.Message, bundle.Signature, nil
 }
 
 func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {

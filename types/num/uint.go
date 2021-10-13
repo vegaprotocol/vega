@@ -59,6 +59,15 @@ func Max(a, b *Uint) *Uint {
 	return b.Clone()
 }
 
+// UintFromHex instantiate a uint from and hex string
+func UintFromHex(hex string) (*Uint, error) {
+	u, err := uint256.FromHex(hex)
+	if err != nil {
+		return nil, err
+	}
+	return &Uint{*u}, nil
+}
+
 // UintFromBig construct a new Uint with a big.Int
 // returns true if overflow happened
 func UintFromBig(b *big.Int) (*Uint, bool) {
