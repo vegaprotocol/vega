@@ -98,15 +98,13 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 	}
 
 	// register for epoch end notifications
-	epochEngine.NotifyOnEpoch(e.OnEpochEnd)
+	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
 
 	// register for time tick updates
 	ts.NotifyOnTick(e.onChainTimeUpdate)
 
 	// hack for sweetwater - hardcode reward scheme for staking and delegation
 	e.registerStakingAndDelegationRewardScheme()
-
-	rand.Seed(time.Now().Unix())
 
 	return e
 }
@@ -375,11 +373,14 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 	}
 }
 
-// OnEpochEnd calculates the reward amounts parties get for available reward schemes
-func (e *Engine) OnEpochEnd(ctx context.Context, epoch types.Epoch) {
-	e.log.Debug("OnEpochEnd")
+// OnEpochEvent calculates the reward amounts parties get for available reward schemes
+func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
+	e.log.Debug("OnEpochEvent")
 
 	if (epoch.EndTime == time.Time{}) {
+		// resetting the seed every epoch, to both get some more unpredictability and still deterministic
+		// and play nicely with snapshot
+		rand.Seed(epoch.StartTime.Unix())
 		return
 	}
 
