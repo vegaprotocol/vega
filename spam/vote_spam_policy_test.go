@@ -222,7 +222,6 @@ func testFactoringOfMinTokens(t *testing.T) {
 			policy.EndOfBlock(uint64(i*10+j) + 1)
 		}
 	}
-
 }
 
 // reject vote requests from banned parties for as long as they are banned
@@ -323,7 +322,6 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
-
 }
 
 func testPreAccept(t *testing.T) {
@@ -450,9 +448,7 @@ func testCountersUpdated(t *testing.T) {
 		accept, err = policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
 		require.Equal(t, spam.ErrTooManyVotes, err)
-
 	}
-
 }
 
 func testReset(t *testing.T) {

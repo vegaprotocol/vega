@@ -462,7 +462,6 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 		// submit the auctions orders
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
-
 }
 
 func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
@@ -552,7 +551,6 @@ func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, set
 		// submit the auctions orders
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
-
 }
 
 func mustOrderFromProto(o *vegapb.Order) *types.Order {

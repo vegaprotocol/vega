@@ -269,7 +269,6 @@ func (t *Trade) SetIDs(aggressive, passive *Order, idx int) {
 	}
 	t.SellOrder = aggressive.ID
 	t.BuyOrder = passive.ID
-
 }
 
 func (t *Trade) IntoProto() *proto.Trade {

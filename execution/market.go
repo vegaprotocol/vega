@@ -238,7 +238,6 @@ func NewMarket(
 	idgen *IDgenerator,
 	as *monitor.AuctionState,
 ) (*Market, error) {
-
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
 	}
@@ -591,7 +590,6 @@ func (m *Market) updateMarketValueProxy() {
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
-
 	// market is closed, final settlement
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t)
@@ -830,7 +828,6 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
 			updatedOrders, uncrossedOrder.PassiveOrdersAffected...)
-
 	}
 
 	// Send an event bus update
@@ -1335,7 +1332,6 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 func (m *Market) handleConfirmationPassiveOrders(
 	ctx context.Context,
 	conf *types.OrderConfirmation) {
-
 	if conf.PassiveOrdersAffected != nil {
 		var (
 			evts        = make([]events.Event, 0, len(conf.PassiveOrdersAffected))
@@ -1363,7 +1359,6 @@ func (m *Market) handleConfirmationPassiveOrders(
 		}
 
 		m.broker.SendBatch(evts)
-
 	}
 }
 
@@ -1387,7 +1382,6 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 	end := m.as.CanLeave()
 
 	if len(conf.Trades) > 0 {
-
 		// Calculate and set current mark price
 		m.setMarkPrice(conf.Trades[len(conf.Trades)-1])
 
@@ -1507,7 +1501,6 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 				}
 			}
 		}
-
 	}()
 
 	distressedPos := make([]events.MarketPosition, 0, len(distressedMarginEvts))
@@ -2054,7 +2047,6 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 
 // CancelOrder cancels the given order
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
-
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
 
@@ -2331,7 +2323,6 @@ func (m *Market) amendOrder(
 	// - amending the order in the peggedList first
 	// - applying the changed based on auction / repricing
 	if existingOrder.PeggedOrder != nil {
-
 		// Amend in place during an auction
 		if m.as.InAuction() {
 			ret := m.orderAmendWhenParked(existingOrder, amendedOrder)
@@ -2673,7 +2664,6 @@ func (m *Market) RemoveExpiredOrders(
 		order.Status = types.OrderStatusExpired
 		expired = append(expired, order)
 		evts = append(evts, events.NewOrderEvent(ctx, order))
-
 	}
 	m.broker.SendBatch(evts)
 

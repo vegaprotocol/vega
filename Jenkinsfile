@@ -270,7 +270,6 @@ pipeline {
                                     --disable cyclop \
                                     --disable bodyclose \
                                     --disable wsl \
-                                    --disable whitespace \
                                     --disable unparam \
                                     --disable unconvert \
                                     --disable scopelint \

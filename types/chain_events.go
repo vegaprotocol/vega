@@ -344,7 +344,6 @@ func (b BuiltinAssetEventDeposit) IntoProto() *proto.BuiltinAssetEvent_Deposit {
 		Deposit: b.Deposit.IntoProto(),
 	}
 	return p
-
 }
 
 func (b BuiltinAssetEventDeposit) isBuiltinAssetEvent() {}
@@ -371,7 +370,6 @@ func (b BuiltinAssetEventWithdrawal) IntoProto() *proto.BuiltinAssetEvent_Withdr
 		Withdrawal: b.Withdrawal.IntoProto(),
 	}
 	return p
-
 }
 
 func (b BuiltinAssetEventWithdrawal) isBuiltinAssetEvent() {}

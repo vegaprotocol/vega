@@ -29,10 +29,8 @@ type governanceSnapshotState struct {
 
 // serialiseActiveProposals returns the engine's active proposals as marshalled bytes
 func (e *Engine) serialiseActiveProposals() ([]byte, error) {
-
 	pending := make([]*types.PendingProposal, 0, len(e.activeProposals))
 	for _, p := range e.activeProposals {
-
 		pp := &types.PendingProposal{
 			Proposal: p.Proposal,
 			Yes:      votesAsSlice(p.yes),
@@ -51,12 +49,10 @@ func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 	}
 
 	return proto.Marshal(pl.IntoProto())
-
 }
 
 // serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes
 func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
-
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceEnacted{
 			GovernanceEnacted: &types.GovernanceEnacted{
@@ -69,7 +65,6 @@ func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 
 // serialiseNodeProposals returns the engine's proposals waiting for node validation
 func (e *Engine) serialiseNodeProposals() ([]byte, error) {
-
 	nodeProposals := e.nodeProposalValidation.getProposals()
 	proposals := make([]*types.Proposal, 0, len(nodeProposals))
 
@@ -146,7 +141,6 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 }
 
 func (e *Engine) LoadState(payload *types.Payload) error {
-
 	if e.Namespace() != payload.Data.Namespace() {
 		return types.ErrInvalidSnapshotNamespace
 	}
@@ -164,10 +158,8 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 }
 
 func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {
-
 	e.activeProposals = make([]*proposal, 0, len(active.Proposals))
 	for _, p := range active.Proposals {
-
 		pp := &proposal{
 			Proposal:     p.Proposal,
 			yes:          votesAsMap(p.Yes),
@@ -189,7 +181,6 @@ func (e *Engine) restoreEnactedProposals(enacted *types.GovernanceEnacted) error
 }
 
 func (e *Engine) restoreNodeProposals(node *types.GovernanceNode) error {
-
 	for _, p := range node.Proposals {
 		e.nodeProposalValidation.Start(p)
 	}

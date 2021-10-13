@@ -33,7 +33,6 @@ var (
 type tmCmd struct{}
 
 func (opts *tmCmd) Execute(_ []string) error {
-
 	os.Args = os.Args[1:]
 	rootCmd := tmcmd.RootCmd
 	rootCmd.AddCommand(

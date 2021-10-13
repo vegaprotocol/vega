@@ -71,7 +71,6 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		statePostReload, _ := as.GetState(activeKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
-
 }
 
 // test round trip of active snapshot hash and serialisation

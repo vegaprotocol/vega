@@ -105,7 +105,6 @@ func testCalcValidatorsScore(t *testing.T) {
 	}
 	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel)
 	require.Equal(t, "0.020", valScores["node13"].StringFixed(3))
-
 }
 
 func testCalcRewardNoBalance(t *testing.T) {

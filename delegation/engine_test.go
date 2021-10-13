@@ -112,7 +112,6 @@ func Test(t *testing.T) {
 	t.Run("test roundtrip snapshot for active delegations", testActiveSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for pending delegations", testPendingSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for auto delegations", testAutoSnapshotRoundTrip)
-
 }
 
 // test round trip of active snapshot hash and serialisation
@@ -437,7 +436,6 @@ func defaultSimpleDelegationState(testEngine *testEngine, party1Balance, party2B
 		nodeToAmount:   make(map[string]*num.Uint),
 	}
 	engine.partyDelegationState["party2"].nodeToAmount["node2"] = num.NewUint(3)
-
 }
 
 // party has committed delegations and is trying to exceed their stake account balance delegations i.e. the balance of their pending delegation + requested delegation exceeds stake account balance
@@ -529,7 +527,6 @@ func testDelegateInsufficientBalanceIncludingPendingUndelegations(t *testing.T) 
 
 	err = testEngine.engine.Delegate(context.Background(), "party2", "node2", num.NewUint(2))
 	require.Nil(t, err)
-
 }
 
 // balance available for delegation is greater than delegation amount, delegation succeeds
@@ -850,7 +847,6 @@ func testUndelegateSuccessWithPreviousPendingDelegatePartiallyCovered(t *testing
 	require.Equal(t, 2, len(pendingStateForEpoch))
 	require.Equal(t, 0, len(testEngine.engine.nodeDelegationState))
 	require.Equal(t, 0, len(testEngine.engine.partyDelegationState))
-
 }
 
 // undelegate incrementally to get all pending delegates countered
@@ -884,7 +880,6 @@ func testUndelegateSuccessWithPreviousPendingDelegateExactlyCovered(t *testing.T
 
 	pendingStateForEpoch := testEngine.engine.pendingState[1]
 	require.Equal(t, 0, len(pendingStateForEpoch))
-
 }
 
 // undelegate such that delegation for some party and node goes from delegate to undelegate
@@ -1185,7 +1180,6 @@ func testPendingUndelegationEmpty(t *testing.T) {
 	require.Equal(t, num.NewUint(5), testEngine.engine.partyDelegationState["party2"].totalDelegated)
 	require.Equal(t, num.NewUint(2), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(3), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"])
-
 }
 
 // undelegate a party with no delegation, no impact on state
@@ -1213,7 +1207,6 @@ func testPendingUndelegationNothingToUndelegate(t *testing.T) {
 	require.Equal(t, num.NewUint(5), testEngine.engine.partyDelegationState["party2"].totalDelegated)
 	require.Equal(t, num.NewUint(2), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(3), testEngine.engine.partyDelegationState["party2"].nodeToAmount["node2"])
-
 }
 
 // undelegate an more than the delegated balance of party - the whole balance for the party for the node is cleared
@@ -1421,7 +1414,6 @@ func testPendingDelegationAmountAdjusted(t *testing.T) {
 	require.Equal(t, num.NewUint(11), testEngine.engine.partyDelegationState["party1"].totalDelegated)
 	require.Equal(t, num.NewUint(7), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(4), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node2"])
-
 }
 
 // process pending delegation successfully
@@ -1525,7 +1517,6 @@ func testGetValidatorsSuccess(t *testing.T) {
 	require.Equal(t, num.NewUint(54), validators[2].StakeByDelegators)
 	require.Equal(t, num.NewUint(40), validators[2].Delegators["party1"])
 	require.Equal(t, num.NewUint(14), validators[2].Delegators["party2"])
-
 }
 
 func testGetValidatorsSuccessWithSelfDelegation(t *testing.T) {
@@ -1675,7 +1666,6 @@ func testUndelegateNowAll(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 0, len(pendingStateForEpoch))
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
-
 }
 
 func testUndelegateNowWithPendingOnly(t *testing.T) {

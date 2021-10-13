@@ -146,7 +146,6 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 
 			m.checkLiquidity(ctx, nil)
 			m.commandLiquidityAuction(ctx)
-
 		}
 	}()
 
@@ -218,7 +217,6 @@ func (m *Market) updateAndCreateLPOrders(
 	cancels []*liquidity.ToCancel,
 	distressed []*types.Order,
 ) ([]*types.Order, error) {
-
 	market := m.GetID()
 
 	for _, cancel := range cancels {
@@ -734,7 +732,6 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 
 func (m *Market) cancelLiquidityProvision(
 	ctx context.Context, party string, isDistressed bool) error {
-
 	// cancel the liquidity provision
 	cancelOrders, err := m.liquidity.CancelLiquidityProvision(ctx, party)
 	if err != nil {

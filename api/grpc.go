@@ -132,7 +132,6 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-
 		// first check if the request is forwarded from our restproxy
 		// get the metadata
 		var ip string
@@ -175,7 +174,6 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 
 // Start start the grpc server
 func (g *GRPC) Start() {
-
 	ip := g.IP
 	port := strconv.Itoa(g.Port)
 

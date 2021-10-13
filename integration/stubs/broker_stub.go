@@ -338,7 +338,6 @@ func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.Delega
 }
 
 func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
-
 	evts := b.GetDelegationBalanceEvents(epochSeq)
 	balances := make([]types.Delegation, 0, len(evts))
 

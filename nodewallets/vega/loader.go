@@ -153,5 +153,4 @@ func getID(w wallet.Wallet) (crypto.PublicKey, error) {
 	}
 
 	return crypto.NewPublicKey(w.ID(), decodedID), nil
-
 }

@@ -390,7 +390,6 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 			Type:      types.TransferTypeRewardPayout,
 			MinAmount: amt.Clone(),
 		})
-
 	}
 
 	_, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)

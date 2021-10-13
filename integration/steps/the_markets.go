@@ -175,7 +175,6 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	}
 
 	return m
-
 }
 
 func openingAuction(row marketRow) *types.AuctionDuration {

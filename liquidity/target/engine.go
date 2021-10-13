@@ -175,7 +175,6 @@ func (e *Engine) computeMaxOI(minTime time.Time) {
 
 	// remove entries less than max as these won't ever be needed anyway
 	e.previous = e.previous[j:]
-
 }
 
 //minTime returns the lower bound of the sliding time window
@@ -189,7 +188,6 @@ func (e *Engine) truncateHistory(minTime time.Time) {
 		if !e.previous[i].Time.Before(minTime) {
 			break
 		}
-
 	}
 	e.previous = e.previous[i:]
 	//Truncate at least every 2 time windows in case not called before to prevent excessive memory usage

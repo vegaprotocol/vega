@@ -2363,7 +2363,6 @@ func SimpleSpamPolicyFromProto(ssp *snapshot.SimpleSpamPolicy) *SimpleSpamPolicy
 		PartyTokenBalance: partyBalance,
 		CurrentEpochSeq:   ssp.CurrentEpochSeq,
 	}
-
 }
 
 func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
@@ -2493,7 +2492,6 @@ func (ssp *SimpleSpamPolicy) IntoProto() *snapshot.SimpleSpamPolicy {
 }
 
 func (vsp *VoteSpamPolicy) IntoProto() *snapshot.VoteSpamPolicy {
-
 	partyProposalVoteCount := make([]*snapshot.PartyProposalVoteCount, 0, len(vsp.PartyProposalVoteCount))
 	for _, ptv := range vsp.PartyProposalVoteCount {
 		partyProposalVoteCount = append(partyProposalVoteCount, ptv.IntoProto())

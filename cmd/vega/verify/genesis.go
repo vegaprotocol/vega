@@ -116,7 +116,6 @@ func verifyGenesis(r *reporter, bs []byte) string {
 			} else if !isValidEthereumAddress(v.ContractAddress) {
 				r.Err("app_state.assets contains an non valid ethereum contract address `%v`", v.ContractAddress)
 			}
-
 		}
 	}
 

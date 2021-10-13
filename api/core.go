@@ -243,7 +243,6 @@ func (s *coreService) getTendermintStats(
 	chainID string,
 	err error,
 ) {
-
 	if s.stats == nil || s.stats.Blockchain == nil {
 		return 0, 0, nil, "", apiError(codes.Internal, ErrChainNotConnected)
 	}
@@ -376,7 +375,6 @@ func (s *coreService) ObserveEventBus(
 	if req.BatchSize > 0 {
 		err := s.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
 		return err
-
 	}
 	err = s.observeEvents(ctx, stream, ch)
 	return err

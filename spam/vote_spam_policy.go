@@ -387,7 +387,6 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	}
 	vsp.blockPostRejects.add(false)
 	return true, nil
-
 }
 
 //PreBlockAccept checks if the vote should be rejected as spam or not based on the number of votes in current epoch's preceding blocks and the number of tokens

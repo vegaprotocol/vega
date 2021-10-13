@@ -329,7 +329,6 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 	e.priceRangeCacheTime = time.Time{}
 	e.resetBounds()
 	e.updateBounds()
-
 }
 
 func (e *Engine) resetBounds() {

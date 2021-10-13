@@ -316,7 +316,6 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 		tm.market.SubmitLiquidityProvision(
 			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
 	)
-
 }
 
 // Check that we are unable to directly cancel or amend a pegged order that was
@@ -571,9 +570,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 		}
 
 		assert.Len(t, found, 1)
-
 	})
-
 }
 
 func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
@@ -1322,7 +1319,6 @@ func TestCloseOutLPPartyContIssue3086(t *testing.T) {
 			assert.Equal(t, v.String(), found[k].Status.String())
 		}
 	})
-
 }
 
 func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
@@ -1465,7 +1461,6 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 		// no update to the liquidity fee
 		assert.Equal(t, found.Fees.Factors.LiquidityFee, "0.1")
 	})
-
 }
 
 func TestLiquidityOrderGeneratedSizes(t *testing.T) {
@@ -1614,7 +1609,6 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 				if ord := evt.Order(); ord.PartyId == lpparty {
 					found[ord.Id] = ord
 				}
-
 			}
 		}
 
@@ -1657,7 +1651,6 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	// submit the auctions orders
 	tm.events = nil
 	tm.WithSubmittedOrders(t, newOrders...)
-
 }
 
 func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
@@ -1749,7 +1742,6 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvisionStatusStopped.String())
 	})
-
 }
 
 func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
@@ -2047,7 +2039,6 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 
 	t.Run("party submit volume in both side of the book", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
-
 			t.Run("buy side", func(t *testing.T) {
 				peggedO := getMarketOrder(tm, curt, types.OrderTypeLimit, types.OrderTimeInForceGTC,
 					fmt.Sprintf("order-pegged-buy-%v", i), types.SideBuy, party2, 1, 0)
@@ -2063,7 +2054,6 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 
 			t.Run("sell side", func(t *testing.T) {
@@ -2081,7 +2071,6 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 
 			tm.market.OnChainTimeUpdate(ctx, curt)
@@ -2091,14 +2080,12 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 
 	t.Run("party submit 10 buy", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-
 			t.Run("submit buy", func(t *testing.T) {
 				o := getMarketOrder(tm, curt, types.OrderTypeLimit, types.OrderTimeInForceGTC,
 					fmt.Sprintf("order-buy-%v", i), types.SideBuy, party2, 1, uint64(550+(i*10)))
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 			tm.market.OnChainTimeUpdate(ctx, curt)
 			curt = curt.Add(1 * time.Second)
@@ -2107,20 +2094,17 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 
 	t.Run("party submit 20 sell", func(t *testing.T) {
 		for i := 0; i < 20; i++ {
-
 			t.Run("submit buy", func(t *testing.T) {
 				o := getMarketOrder(tm, curt, types.OrderTypeLimit, types.OrderTimeInForceGTC,
 					fmt.Sprintf("order-buy-%v", i), types.SideSell, party2, 1, uint64(450+(i*10)))
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 			tm.market.OnChainTimeUpdate(ctx, curt)
 			curt = curt.Add(1 * time.Second)
 		}
 	})
-
 }
 
 func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
@@ -2562,5 +2546,4 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 			assert.Equal(t, expected[k].size, v.Size, k)
 		}
 	})
-
 }

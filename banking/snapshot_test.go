@@ -28,7 +28,6 @@ func deposit(eng *testEngine, asset, party string, amount *num.Uint) *types.Buil
 		PartyID:     party,
 		Amount:      amount,
 	}
-
 }
 
 func TestAssetActionsSnapshotRoundTrip(t *testing.T) {

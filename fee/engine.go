@@ -249,7 +249,6 @@ func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 			v.SellerFee, v.BuyerFee = fee, fee.Clone()
 			totalFee := num.Sum(fee.InfrastructureFee, fee.LiquidityFee)
 			sellerTotalFee, buyerTotalFee = totalFee, totalFee.Clone()
-
 		} else {
 			// set the aggressor to be the side of the party
 			// entering the later auction
@@ -355,7 +354,6 @@ func (e *Engine) CalculateFeeForPositionResolution(
 			pf.InfrastructureFee.AddSum(fees.InfrastructureFee)
 			pf.LiquidityFee.AddSum(fees.LiquidityFee)
 			partiesFees[v.Party()] = pf
-
 		}
 
 		// then 1 receive transfer for the good party
@@ -367,7 +365,6 @@ func (e *Engine) CalculateFeeForPositionResolution(
 			},
 			Type: types.TransferTypeMakerFeeReceive,
 		})
-
 	}
 
 	// calculate the

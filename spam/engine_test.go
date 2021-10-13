@@ -143,7 +143,6 @@ func testEngineReset(t *testing.T) {
 	voteHash3, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(voteHash3, voteHash2))
-
 }
 
 func testPreBlockAccept(t *testing.T) {

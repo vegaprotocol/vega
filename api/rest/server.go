@@ -113,7 +113,6 @@ func (s *ProxyServer) Start() {
 	if err != nil && err != http.ErrServerClosed {
 		logger.Panic("Failure serving REST proxy API", logging.Error(err))
 	}
-
 }
 
 // Stop stops the server

@@ -169,7 +169,6 @@ func testExistsSuccess(t *testing.T) {
 
 	ok := netp.Exists(netparams.GovernanceProposalMarketMinClose)
 	assert.True(t, ok)
-
 }
 
 func testExistsFailure(t *testing.T) {

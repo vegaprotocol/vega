@@ -410,7 +410,6 @@ func (e *Engine) removeMarket(mktID string) {
 			return
 		}
 	}
-
 }
 
 // SubmitOrder checks the incoming order and submits it to a Vega market.
@@ -489,7 +488,6 @@ func (e *Engine) decrementOrderGaugeMetrics(
 	if passiveCount > 0 {
 		metrics.OrderGaugeAdd(-passiveCount, market)
 	}
-
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.

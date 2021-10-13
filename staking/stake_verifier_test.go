@@ -330,7 +330,6 @@ func testProcessStakeEventMultiOK(t *testing.T) {
 	balance, err = stakev.accs.GetAvailableBalance("somepubkey")
 	assert.NoError(t, err)
 	assert.Equal(t, 500, int(balance.Uint64()))
-
 }
 
 func testDuplicates(t *testing.T) {
@@ -366,5 +365,4 @@ func testDuplicates(t *testing.T) {
 	// stake removed now
 	err = stakev.ProcessStakeRemoved(context.Background(), event2)
 	assert.EqualError(t, err, staking.ErrDuplicatedStakeRemovedEvent.Error())
-
 }

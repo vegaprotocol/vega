@@ -473,7 +473,6 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(140000*2), node1Acc.Balance)
 	require.Equal(t, num.NewUint(400000*2), node2Acc.Balance)
 	require.Equal(t, num.NewUint(331428*2), node3Acc.Balance)
-
 }
 
 // test payout distribution on epoch end with no delay

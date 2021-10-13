@@ -30,7 +30,6 @@ func TestSimpleSpamProtection(t *testing.T) {
 	t.Run("command counts from the block successfully applied on state", testCommandCountersUpdated)
 	t.Run("Start of epoch resets counters", testCommandReset)
 	t.Run("On end of block, block proposal counters are reset and take a snapshot roundtrip", testProposalEndBlockReset)
-
 }
 
 func getCommandSpamPolicy() *spam.SimpleSpamPolicy {
@@ -183,7 +182,6 @@ func testCommandPreRejectTooManyProposals(t *testing.T) {
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
-
 }
 
 func testCommandPreAccept(t *testing.T) {
@@ -279,7 +277,6 @@ func testCommandCountersUpdated(t *testing.T) {
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
-
 }
 
 func testCommandReset(t *testing.T) {

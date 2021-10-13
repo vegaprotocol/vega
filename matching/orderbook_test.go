@@ -1130,7 +1130,6 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 
 	assert.Equal(t, types.OrderErrorInvalidMarketID, err)
 	assert.Equal(t, getErr, err)
-
 }
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {

@@ -61,7 +61,6 @@ func (ssp *SimpleSpamPolicy) Serialise() ([]byte, error) {
 			Party: party,
 			Count: count,
 		})
-
 	}
 
 	sort.SliceStable(partyToCount, func(i, j int) bool { return partyToCount[i].Party < partyToCount[j].Party })
@@ -237,7 +236,6 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 		ssp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 0}
 	}
 	return true, nil
-
 }
 
 //PreBlockAccept checks if the commands violates spam rules based on the information we had about the number of existing commands preceding the current block

@@ -76,7 +76,6 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	for _, o := range orders {
 		_, err := mkt.market.SubmitOrder(context.Background(), o)
 		require.NoError(t, err)
-
 	}
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
@@ -219,7 +218,6 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.Equal(t, genAcc.Balance, exp)
-
 }
 
 func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {

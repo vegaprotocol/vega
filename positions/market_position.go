@@ -42,7 +42,6 @@ func (p MarketPosition) Clone() *MarketPosition {
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
-
 	if order.Side == types.SideBuy {
 		// calculate vwBuyPrice: total worth of orders divided by total size
 		if buyVol := uint64(p.buy) + order.Remaining; buyVol != 0 {

@@ -121,7 +121,6 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 		for !remainingRewardForDelegators.IsZero() {
 			totalAwardedThisRound := num.Zero()
 			for party, delegatorAmt := range vd.Delegators {
-
 				// check if the party has already rewards from other validators or previous rounds (this epoch)
 				rewardForParty, ok := rewards[party]
 				if !ok {

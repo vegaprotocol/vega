@@ -149,7 +149,6 @@ func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDeta
 		}
 	}
 	return &AssetDetailsBuiltinAsset{}
-
 }
 
 func (a AssetDetailsBuiltinAsset) adIntoProto() interface{} {

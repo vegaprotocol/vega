@@ -549,7 +549,6 @@ func TestMarketClosing(t *testing.T) {
 	closed = tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(3*time.Second))
 	assert.True(t, closed)
 	assert.Equal(t, types.MarketStateSettled, tm.market.State())
-
 }
 
 func TestMarketNotActive(t *testing.T) {
@@ -590,7 +589,6 @@ func TestMarketNotActive(t *testing.T) {
 	_, err := tm.market.SubmitOrder(context.Background(), order)
 	require.Error(t, err)
 	tm.EventHasBeenEmitted(t, expectedEvent)
-
 }
 
 func TestMarketWithTradeClosing(t *testing.T) {
@@ -673,7 +671,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	tm.collateralEngine.OnChainTimeUpdate(context.Background(), futureTime)
 	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
 	assert.True(t, closed)
-
 }
 
 func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
@@ -716,7 +713,6 @@ func TestMarketGetMarginOnNewOrderEmptyBook(t *testing.T) {
 		t.Fail()
 	}
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
-
 }
 
 func TestMarketGetMarginOnFailNoFund(t *testing.T) {
@@ -1380,7 +1376,6 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	require.NotNil(t, confirmationBuy)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(confirmationBuy.Trades))
-
 }
 
 func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
@@ -3503,7 +3498,6 @@ func TestOrderBook_Crash2733(t *testing.T) {
 		o3conf, err := tm.market.SubmitOrder(ctx, o3)
 		require.NotNil(t, o3conf)
 		require.NoError(t, err)
-
 	}
 
 	// now move time to after auction
@@ -3515,7 +3509,6 @@ func TestOrderBook_Crash2733(t *testing.T) {
 		o1conf, err := tm.market.SubmitOrder(ctx, o1)
 		require.NotNil(t, o1conf)
 		require.NoError(t, err)
-
 	}
 
 	for i := 1; i <= 20; i += 1 {
@@ -3523,7 +3516,6 @@ func TestOrderBook_Crash2733(t *testing.T) {
 		o1conf, err := tm.market.SubmitOrder(ctx, o1)
 		require.NotNil(t, o1conf)
 		require.NoError(t, err)
-
 	}
 }
 
@@ -4805,7 +4797,6 @@ func TestLPOrdersRollback(t *testing.T) {
 		assert.True(t, balanceBeforeLP.EQ(newBalance),
 			"Balance should == value before LiquidityProvision",
 		)
-
 	})
 
 	t.Run("BondAccountShouldBeZero", func(t *testing.T) {
@@ -5335,7 +5326,6 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		require.Len(t, found[0].Balances, 1)
 		require.Equal(t, found[0].Balances[0].Account.Owner, "party-2")
 	})
-
 }
 
 func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T) {
@@ -5771,7 +5761,6 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		// require.Len(t, found[0].Balances, 1)
 		// require.Equal(t, found[0].Balances[0].Account.Owner, "party-2")
 	})
-
 }
 
 func TestAverageEntryValuation(t *testing.T) {

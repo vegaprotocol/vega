@@ -571,7 +571,6 @@ func TestPartialFilledWashTrade(t *testing.T) {
 }
 
 func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.OrderTimeInForce, expiresAt int64) *types.OrderAmendment {
-
 	amend := &types.OrderAmendment{
 		OrderID:     orderID,
 		MarketID:    market,
@@ -692,7 +691,6 @@ func TestAmendToLosePriorityThenCancel(t *testing.T) {
 	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order1)
 	assert.NotNil(t, cancelconf)
 	assert.Equal(t, types.OrderStatusCancelled, cancelconf.Order.Status)
-
 }
 
 func TestUnableToAmendGFAGFN(t *testing.T) {
@@ -1571,7 +1569,6 @@ func testPeggedOrderParkCancelAll(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cancelConf)
 	assert.Equal(t, 3, len(cancelConf))
-
 }
 
 func testPeggedOrderExpiring2(t *testing.T) {
@@ -2862,5 +2859,4 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 			}
 		}
 	})
-
 }

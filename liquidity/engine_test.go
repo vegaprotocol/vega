@@ -353,7 +353,6 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	require.Error(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
-
 }
 
 func TestUpdate(t *testing.T) {

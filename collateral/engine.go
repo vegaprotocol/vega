@@ -266,7 +266,6 @@ func (e *Engine) AssetExists(assetID string) bool {
 
 // this func uses named returns because it makes body of the func look clearer
 func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *types.Account, err error) {
-
 	insID := e.accountID(marketID, systemOwner, asset, types.AccountTypeInsurance)
 	setID := e.accountID(marketID, systemOwner, asset, types.AccountTypeSettlement)
 
@@ -1125,7 +1124,6 @@ func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.
 	}
 
 	return res, nil
-
 }
 
 // MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
@@ -1488,7 +1486,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 			req.ToAccount = []*types.Account{
 				rewardAcct,
 			}
-
 		} else {
 			req.ToAccount = []*types.Account{
 				mEvt.general,
@@ -1666,7 +1663,6 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	resps := make([]*types.TransferResponse, 0, len(parties))
 
 	for _, v := range parties {
-
 		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountTypeGeneral))
 		if err != nil {
 			e.log.Debug(
@@ -2026,7 +2022,6 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 		e.removeAccount(marginAcc.ID)
 		// remove account from balances tracking
 		e.rmPartyAccount(party.Party(), marginAcc.ID)
-
 	}
 	return &resp, nil
 }
@@ -2084,7 +2079,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		e.accs[insuranceID] = insAcc
 		e.addAccountToHashableSlice(insAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
-
 	}
 	settleID = e.accountID(marketID, "", asset, types.AccountTypeSettlement)
 	_, ok = e.accs[settleID]

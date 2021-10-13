@@ -365,7 +365,6 @@ func (e *Engine) SubmitProposal(
 	psub types.ProposalSubmission,
 	id, party string,
 ) (ts *ToSubmit, err error) {
-
 	if _, ok := e.getProposal(id); ok {
 		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}

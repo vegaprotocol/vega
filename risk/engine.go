@@ -352,7 +352,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		minAmount := num.Zero()
 		// case 2 -> not enough margin
 		if curMargin.LT(margins.SearchLevel) {
-
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			if curMargin.LT(margins.MaintenanceMargin) {
@@ -370,7 +369,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				},
 				MinAmount: minAmount,
 			}
-
 		} else { // case 3 -> release some collateral
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),

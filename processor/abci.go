@@ -591,7 +591,6 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 			resp.Data = []byte(err.Error())
 			return ctx, resp
 		}
-
 	}
 
 	if err := app.canSubmitTx(tx); err != nil {
@@ -921,7 +920,6 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		}
 		app.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
-
 }
 
 func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {

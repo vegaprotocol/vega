@@ -139,7 +139,6 @@ func (e *Engine) OnMaximumLiquidityFeeFactorLevelUpdate(f num.Decimal) {
 func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	if v < 0 {
 		return errors.New("shapes max size cannot be < 0")
-
 	}
 	e.maxShapesSize = v
 	return nil

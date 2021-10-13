@@ -106,7 +106,6 @@ type Engine struct {
 
 //New instantiate a new delegation engine
 func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, epochEngine EpochEngine) *Engine {
-
 	e := &Engine{
 		config:               config,
 		log:                  log.Named(namedLogger),
@@ -227,7 +226,6 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 		for _, node := range nodesSlice {
 			e.sendNextEpochBalanceEvent(ctx, party, node, epoch.Seq)
 		}
-
 	}
 
 	for p, state := range e.partyDelegationState {
@@ -238,7 +236,6 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 					e.dss.changed[autoKey] = true
 				}
 			}
-
 		}
 	}
 
@@ -356,7 +353,6 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 			updatedUndelegateAmout := num.Zero().Sub(partyPendingUndelegationForNode, remainingBalanceForDelegate)
 			currentPendingPartyDelegation.nodeToUndelegateAmount[nodeID] = updatedUndelegateAmout
 			currentPendingPartyDelegation.totalUndelegation = num.Zero().Sub(currentPendingPartyDelegation.totalUndelegation, remainingBalanceForDelegate)
-
 		}
 	} else {
 		// there are no pending undelegations we can just update the pending delegation
@@ -576,7 +572,6 @@ func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string,
 		if nodeDelegation.totalDelegated.IsZero() {
 			delete(e.nodeDelegationState, nodeID)
 		}
-
 	}
 	e.sendDelegatedBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
 	e.sendNextEpochBalanceEvent(ctx, party, nodeID, e.currentEpoch.Seq)
@@ -664,7 +659,6 @@ func (e *Engine) decreaseDelegationAmountBy(party, nodeID string, amt *num.Uint)
 	if nodeDelegation.totalDelegated.IsZero() {
 		delete(e.nodeDelegationState, nodeID)
 	}
-
 }
 
 // sort node IDs for deterministic processing
@@ -1072,7 +1066,6 @@ func (e *Engine) processAutoDelegation(partyToAvailableBalance map[string]*num.U
 			}
 		}
 	}
-
 }
 
 //returns the current state of the delegation per node
@@ -1114,5 +1107,4 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 	}
 
 	return validators
-
 }

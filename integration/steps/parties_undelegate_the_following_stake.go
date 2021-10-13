@@ -28,9 +28,7 @@ func PartiesUndelegateTheFollowingStake(
 			if err := checkExpectedError(row, err); err != nil {
 				return err
 			}
-
 		}
-
 	}
 	return nil
 }

@@ -264,7 +264,6 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			erc20AL:     v.Erc20AL,
 			erc20D:      v.Erc20D,
 		}
-
 	}
 	e.bss.changed[assetActionsKey] = true
 	return nil

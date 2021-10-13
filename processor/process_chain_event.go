@@ -21,7 +21,6 @@ var (
 func (app *App) processChainEvent(
 	ctx context.Context, ce *commandspb.ChainEvent, pubkey string, id string,
 ) error {
-
 	if app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("received chain event",
 			logging.String("event", ce.String()),

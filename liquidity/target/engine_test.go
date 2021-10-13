@@ -218,5 +218,4 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
-
 }

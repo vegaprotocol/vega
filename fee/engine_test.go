@@ -161,7 +161,6 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	assert.Equal(t, infra, 1)
 	assert.Equal(t, recv, len(trades))
 	assert.Equal(t, pay, len(trades))
-
 }
 func testCalcContinuousTrading(t *testing.T) {
 	eng := getTestFee(t)
