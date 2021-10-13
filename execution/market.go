@@ -1136,7 +1136,7 @@ func (m *Market) submitValidatedOrder(ctx context.Context, order *types.Order) (
 			err := m.repricePeggedOrder(order)
 			if err != nil {
 				m.broker.Send(events.NewOrderEvent(ctx, order))
-				return &types.OrderConfirmation{Order: order}, nil, nil
+				return &types.OrderConfirmation{Order: order}, nil, nil //nolint
 			}
 		}
 	}

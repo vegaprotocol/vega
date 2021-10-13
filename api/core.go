@@ -268,7 +268,7 @@ func (s *coreService) getTendermintStats(
 	// Net info provides peer stats etc (block chain network info) == number of peers
 	netInfo, err := s.getTMNetInfo(ctx)
 	if err != nil {
-		return backlogLength, 0, &s.genesisTime, s.chainID, nil
+		return backlogLength, 0, &s.genesisTime, s.chainID, nil //nolint
 	}
 
 	return backlogLength, netInfo.NPeers, &s.genesisTime, s.chainID, nil
@@ -345,7 +345,7 @@ func (s *coreService) ObserveEventBus(
 	req, err := s.recvEventRequest(stream)
 	if err != nil {
 		// client exited, nothing to do
-		return nil
+		return nil //nolint
 	}
 
 	if err := req.Validate(); err != nil {

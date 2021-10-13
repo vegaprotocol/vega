@@ -57,7 +57,7 @@ func (rw *RegisteredEthereumWallet) UnmarshalJSON(data []byte) error {
 	}{}
 
 	if err := json.Unmarshal(data, &input); err != nil {
-		return nil
+		return err
 	}
 
 	rw.Type = ethereumWalletType(input.Type)

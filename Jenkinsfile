@@ -257,7 +257,6 @@ pipeline {
                                     --disable paralleltest \
                                     --disable noctx \
                                     --disable nlreturn \
-                                    --disable nilerr \
                                     --disable gomnd \
                                     --disable goerr113 \
                                     --disable tparallel \
