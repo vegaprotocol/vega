@@ -55,6 +55,7 @@ func (s *simpleDistributor) Run(ctx context.Context) []events.Event {
 		loss, _ := num.Zero().Delta(v.amt, v.request.Amount.Amount)
 		v.request.Amount.Amount = v.amt.Clone()
 		if v.request.Owner == types.NetworkParty {
+			v := v
 			netReq = &v
 			continue // network events are to be ignored
 		}

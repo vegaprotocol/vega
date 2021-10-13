@@ -189,6 +189,7 @@ func (p *Positions) GetAllPositions() ([]*types.Position, error) {
 	}
 	for _, parties := range p.data {
 		for _, tp := range parties {
+			tp := tp
 			pos = append(pos, &tp.Position)
 		}
 	}
@@ -205,6 +206,7 @@ func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, erro
 	}
 	s := make([]*types.Position, 0, len(mp))
 	for _, tp := range mp {
+		tp := tp
 		s = append(s, &tp.Position)
 	}
 	return s, nil

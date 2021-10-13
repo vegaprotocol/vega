@@ -262,7 +262,6 @@ pipeline {
                                     --disable testpackage \
                                     --disable gochecknoglobals \
                                     --disable forcetypeassert \
-                                    --disable exportloopref \
                                     --disable exhaustivestruct \
                                     --disable exhaustive \
                                     --disable errorlint \
