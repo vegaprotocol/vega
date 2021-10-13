@@ -117,6 +117,7 @@ func TestNoDriftdRounds(t *testing.T) {
 
 //the bug this is reproducing is that sometimes the weights of the delegations of each delegator in a validator come to slightly more than 1 (in this case 1.0000000000000001)
 func TestReproBug4220(t *testing.T) {
+
 	for ct := 0; ct < 100; ct++ {
 		testEngine := getEngine(t)
 		engine := testEngine.engine
@@ -128,6 +129,8 @@ func TestReproBug4220(t *testing.T) {
 		engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 		engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
 		engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+		engine.OnEpochEvent(context.Background(), types.Epoch{})
+
 		rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 		delegatorForVal11 := map[string]*num.Uint{}

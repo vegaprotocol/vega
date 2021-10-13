@@ -68,6 +68,7 @@ type Engine struct {
 	pendingPayouts                     map[time.Time][]*payout
 	assetForStakingAndDelegationReward string
 	rss                                *rewardsSnapshotState
+	rng                                *rand.Rand
 }
 type payout struct {
 	fromAccount   string
@@ -380,7 +381,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if (epoch.EndTime == time.Time{}) {
 		// resetting the seed every epoch, to both get some more unpredictability and still deterministic
 		// and play nicely with snapshot
-		rand.Seed(epoch.StartTime.Unix())
+		e.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 		return
 	}
 
