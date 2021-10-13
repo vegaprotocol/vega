@@ -28,11 +28,11 @@ func (b *blockRejectInfo) add(rejected bool) {
 
 var maxMinVotingTokens, _ = num.UintFromString("1600000000000000000000", 10)
 var (
-	// ErrPartyIsBannedFromVoting is returned when the party is banned from voting
+	// ErrPartyIsBannedFromVoting is returned when the party is banned from voting.
 	ErrPartyIsBannedFromVoting = errors.New("party is banned from submitting votes in the current epoch")
-	// ErrInsufficientTokensForVoting is returned when the party has insufficient tokens for voting
+	// ErrInsufficientTokensForVoting is returned when the party has insufficient tokens for voting.
 	ErrInsufficientTokensForVoting = errors.New("party has insufficient tokens to submit votes in this epoch")
-	// ErrTooManyVotes is returned when the party has voted already the maximum allowed votes per proposal per epoch
+	// ErrTooManyVotes is returned when the party has voted already the maximum allowed votes per proposal per epoch.
 	ErrTooManyVotes = errors.New("party has already voted the maximum number of times per proposal per epoch")
 )
 
@@ -59,7 +59,7 @@ type VoteSpamPolicy struct {
 	lock                    sync.RWMutex                                     // global lock to sync calls from multiple tendermint threads
 }
 
-// NewVoteSpamPolicy instantiates vote spam policy
+// NewVoteSpamPolicy instantiates vote spam policy.
 func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *VoteSpamPolicy {
 	return &VoteSpamPolicy{
 		log:                   log,
@@ -189,7 +189,7 @@ func (vsp *VoteSpamPolicy) Deserialise(p *types.Payload) error {
 }
 
 // UpdateUintParam is called to update Uint net params for the policy
-// Specifically the min tokens required for voting
+// Specifically the min tokens required for voting.
 func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
 	if name == vsp.minTokensParamName {
 		vsp.minVotingTokens = value.Clone()
@@ -203,7 +203,7 @@ func (vsp *VoteSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
 }
 
 // UpdateIntParam is called to update iint net params for the policy
-// Specifically the number of votes to a proposal a party can submit in an epoch
+// Specifically the number of votes to a proposal a party can submit in an epoch.
 func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int64) error {
 	if name == vsp.maxAllowedParamName {
 		vsp.numVotes = uint64(value)
@@ -213,7 +213,7 @@ func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int64) error {
 	return nil
 }
 
-// Reset is called at the beginning of an epoch to reset the settings for the epoch
+// Reset is called at the beginning of an epoch to reset the settings for the epoch.
 func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint) {
 	vsp.lock.Lock()
 	defer vsp.lock.Unlock()
@@ -259,7 +259,7 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*nu
 	}
 }
 
-// EndOfBlock is called at the end of the block to allow updating of the state for the next block
+// EndOfBlock is called at the end of the block to allow updating of the state for the next block.
 func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 	vsp.lock.Lock()
 	defer vsp.lock.Unlock()
@@ -310,7 +310,7 @@ func (vsp *VoteSpamPolicy) EndOfBlock(blockHeight uint64) {
 	}
 }
 
-// calculate the mean rejection rate in the last <numberOfBlocksForIncreaseCheck>
+// calculate the mean rejection rate in the last <numberOfBlocksForIncreaseCheck>.
 func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
 	var total uint64 = 0
 	var rejected uint64 = 0
@@ -325,7 +325,7 @@ func (vsp *VoteSpamPolicy) calcRejectAverage() float64 {
 }
 
 // PostBlockAccept checks if votes that made it to the block should be rejected based on the number of votes preceding the block + votes seen in the block
-// NB: this is called as part of the processing of the block
+// NB: this is called as part of the processing of the block.
 func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 
@@ -391,7 +391,7 @@ func (vsp *VoteSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 
 // PreBlockAccept checks if the vote should be rejected as spam or not based on the number of votes in current epoch's preceding blocks and the number of tokens
 // held by the party.
-// NB: this is done at mempool before adding to block
+// NB: this is done at mempool before adding to block.
 func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 

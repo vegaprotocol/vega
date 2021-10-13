@@ -76,7 +76,7 @@ func New(log *logging.Logger, conf Config, clt BlockchainClient) *Status {
 	return s
 }
 
-// ReloadConf update the internal configuration of the status
+// ReloadConf update the internal configuration of the status.
 func (s *Status) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -93,30 +93,30 @@ func (s *Status) ReloadConf(cfg Config) {
 	s.blockchain.cfgMu.Unlock()
 }
 
-// OnChainDisconnect register a function to call back once the chain is disconnected
+// OnChainDisconnect register a function to call back once the chain is disconnected.
 func (s *Status) OnChainDisconnect(f func()) {
 	s.blockchain.onChainDisconnect = f
 }
 
 // OnChainVersionObtained register a function to call back once the chain version
-// vega connected too is acquired
+// vega connected too is acquired.
 func (s *Status) OnChainVersionObtained(f func(string)) {
 	s.blockchain.OnChainVersionObtained(f)
 }
 
 // Stop the internal checker(s) from periodically calling their underlying providers
-// Note: currently the only way to start checking externally is to New up a new Status checker
+// Note: currently the only way to start checking externally is to New up a new Status checker.
 func (s *Status) Stop() {
 	s.blockchain.Stop()
 }
 
-// ChainStatus will return the current chain status
+// ChainStatus will return the current chain status.
 func (s *Status) ChainStatus() types.ChainStatus {
 	return s.blockchain.Status()
 }
 
 // OnChainVersionObtained will register a list of function to call back once
-// the chain version is acquired
+// the chain version is acquired.
 func (cs *ChainStatus) OnChainVersionObtained(f func(string)) {
 	cs.mu.Lock()
 	cs.callbacks = append(cs.callbacks, f)
@@ -234,7 +234,7 @@ func (cs *ChainStatus) start(ctx context.Context) {
 }
 
 // Stop the internal checker from periodically calling the underlying blockchain provider
-// Note: currently the only way to start checking externally is to New up a new Status checker
+// Note: currently the only way to start checking externally is to New up a new Status checker.
 func (cs *ChainStatus) Stop() {
 	cs.cancel()
 }

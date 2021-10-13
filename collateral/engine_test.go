@@ -1296,7 +1296,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure
-// but the flow should remain the same regardless
+// but the flow should remain the same regardless.
 func testMTMSuccess(t *testing.T) {
 	party := "test-party"
 	moneyParty := "money-party"

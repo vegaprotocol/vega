@@ -157,7 +157,7 @@ func getSignatureFromRemote(genesisFilesRootPath string) (string, error) {
 	return strings.Trim(string(sig), "\n"), nil
 }
 
-// this is taken from tendermint
+// this is taken from tendermint.
 func newRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
 	logger := tmlog.NewTMLogger(tmlog.NewSyncWriter(os.Stdout))
 	cobraCmd := &cobra.Command{

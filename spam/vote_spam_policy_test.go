@@ -53,7 +53,7 @@ func getVotingSpamPolicy() *spam.VoteSpamPolicy {
 	return policy
 }
 
-// reject vote requests when the voter doesn't have sufficient balance at the beginning of the epoch
+// reject vote requests when the voter doesn't have sufficient balance at the beginning of the epoch.
 func testPreRejectInsufficientBalance(t *testing.T) {
 	policy := getVotingSpamPolicy()
 	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": num.NewUint(50)})
@@ -63,7 +63,7 @@ func testPreRejectInsufficientBalance(t *testing.T) {
 	require.Equal(t, spam.ErrInsufficientTokensForVoting, err)
 }
 
-// reject votes requests when the voter doesn't have sufficient balance with a factored min tokens
+// reject votes requests when the voter doesn't have sufficient balance with a factored min tokens.
 func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 	policy := getVotingSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
@@ -126,7 +126,7 @@ func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 	require.Equal(t, spam.ErrTooManyVotes, err)
 }
 
-// attack for a number of blocks until the min tokens reach 1600
+// attack for a number of blocks until the min tokens reach 1600.
 func testFactoringOfMinTokens(t *testing.T) {
 	policy := getVotingSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
@@ -226,7 +226,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 	}
 }
 
-// reject vote requests from banned parties for as long as they are banned
+// reject vote requests from banned parties for as long as they are banned.
 func testPreRejectBannedParty(t *testing.T) {
 	policy := getVotingSpamPolicy()
 

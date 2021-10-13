@@ -20,14 +20,14 @@ const (
 	namedLogger = "api.restproxy"
 )
 
-// ProxyServer implement a rest server acting as a proxy to the grpc api
+// ProxyServer implement a rest server acting as a proxy to the grpc api.
 type ProxyServer struct {
 	log *logging.Logger
 	cfg api.Config
 	srv *http.Server
 }
 
-// NewProxyServer returns a new instance of the rest proxy server
+// NewProxyServer returns a new instance of the rest proxy server.
 func NewProxyServer(log *logging.Logger, config api.Config) *ProxyServer {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -40,7 +40,7 @@ func NewProxyServer(log *logging.Logger, config api.Config) *ProxyServer {
 	}
 }
 
-// ReloadConf update the internal configuration of the server
+// ReloadConf update the internal configuration of the server.
 func (s *ProxyServer) ReloadConf(cfg api.Config) {
 	s.log.Info("reloading confioguration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -56,7 +56,7 @@ func (s *ProxyServer) ReloadConf(cfg api.Config) {
 	s.cfg = cfg
 }
 
-// Start start the server
+// Start start the server.
 func (s *ProxyServer) Start() {
 	logger := s.log
 
@@ -115,7 +115,7 @@ func (s *ProxyServer) Start() {
 	}
 }
 
-// Stop stops the server
+// Stop stops the server.
 func (s *ProxyServer) Stop() {
 	if s.srv != nil {
 		s.log.Info("Stopping REST<>GRPC based API")

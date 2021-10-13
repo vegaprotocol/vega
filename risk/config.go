@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "risk"
 
-// Config represent the configuration of the Risk engine
+// Config represent the configuration of the Risk engine.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 

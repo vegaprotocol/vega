@@ -34,59 +34,59 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// InitialOrderVersion is set on `Version` field for every new order submission read from the network
+// InitialOrderVersion is set on `Version` field for every new order submission read from the network.
 const InitialOrderVersion = 1
 
 var (
-	// ErrMarketClosed signals that an action have been tried to be applied on a closed market
+	// ErrMarketClosed signals that an action have been tried to be applied on a closed market.
 	ErrMarketClosed = errors.New("market closed")
-	// ErrPartyDoNotExists signals that the party used does not exists
+	// ErrPartyDoNotExists signals that the party used does not exists.
 	ErrPartyDoNotExists = errors.New("party does not exist")
-	// ErrMarginCheckFailed signals that a margin check for a position failed
+	// ErrMarginCheckFailed signals that a margin check for a position failed.
 	ErrMarginCheckFailed = errors.New("margin check failed")
-	// ErrMarginCheckInsufficient signals that a margin had not enough funds
+	// ErrMarginCheckInsufficient signals that a margin had not enough funds.
 	ErrMarginCheckInsufficient = errors.New("insufficient margin")
 	// ErrMissingGeneralAccountForParty ...
 	ErrMissingGeneralAccountForParty = errors.New("missing general account for party")
 	// ErrNotEnoughVolumeToZeroOutNetworkOrder ...
 	ErrNotEnoughVolumeToZeroOutNetworkOrder = errors.New("not enough volume to zero out network order")
-	// ErrInvalidAmendRemainQuantity signals incorrect remaining qty for a reduce by amend
+	// ErrInvalidAmendRemainQuantity signals incorrect remaining qty for a reduce by amend.
 	ErrInvalidAmendRemainQuantity = errors.New("incorrect remaining qty for a reduce by amend")
-	// ErrEmptyMarketID is returned if processed market has an empty id
+	// ErrEmptyMarketID is returned if processed market has an empty id.
 	ErrEmptyMarketID = errors.New("invalid market id (empty)")
-	// ErrInvalidOrderType is returned if processed order has an invalid order type
+	// ErrInvalidOrderType is returned if processed order has an invalid order type.
 	ErrInvalidOrderType = errors.New("invalid order type")
-	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time
+	// ErrInvalidExpiresAtTime is returned if the expire time is before the createdAt time.
 	ErrInvalidExpiresAtTime = errors.New("invalid expiresAt time")
-	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continuous trading state
+	// ErrGFAOrderReceivedDuringContinuousTrading is returned is a gfa order hits the market when the market is in continuous trading state.
 	ErrGFAOrderReceivedDuringContinuousTrading = errors.New("gfa order received during continuous trading")
-	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state
+	// ErrGFNOrderReceivedAuctionTrading is returned if a gfn order hits the market when in auction state.
 	ErrGFNOrderReceivedAuctionTrading = errors.New("gfn order received during auction trading")
-	// ErrIOCOrderReceivedAuctionTrading is returned if a ioc order hits the market when in auction state
+	// ErrIOCOrderReceivedAuctionTrading is returned if a ioc order hits the market when in auction state.
 	ErrIOCOrderReceivedAuctionTrading = errors.New("ioc order received during auction trading")
-	// ErrFOKOrderReceivedAuctionTrading is returned if a fok order hits the market when in auction state
+	// ErrFOKOrderReceivedAuctionTrading is returned if a fok order hits the market when in auction state.
 	ErrFOKOrderReceivedAuctionTrading = errors.New("fok order received during auction trading")
-	// ErrUnableToReprice we are unable to get a price required to reprice
+	// ErrUnableToReprice we are unable to get a price required to reprice.
 	ErrUnableToReprice = errors.New("unable to reprice")
-	// ErrOrderNotFound we cannot find the order in the market
+	// ErrOrderNotFound we cannot find the order in the market.
 	ErrOrderNotFound = errors.New("unable to find the order in the market")
-	// ErrTradingNotAllowed no trading related functionalities are allowed in the current state
+	// ErrTradingNotAllowed no trading related functionalities are allowed in the current state.
 	ErrTradingNotAllowed = errors.New("trading not allowed")
-	// ErrCommitmentSubmissionNotAllowed no commitment submission are permitted in the current state
+	// ErrCommitmentSubmissionNotAllowed no commitment submission are permitted in the current state.
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
-	// ErrNotEnoughStake is returned when a LP update results in not enough commitment
+	// ErrNotEnoughStake is returned when a LP update results in not enough commitment.
 	ErrNotEnoughStake = errors.New("commitment submission rejected, not enough stake")
 
-	// ErrCannotRejectMarketNotInProposedState
+	// ErrCannotRejectMarketNotInProposedState.
 	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
-	// ErrCannotStateOpeningAuctionForMarketNotInProposedState
+	// ErrCannotStateOpeningAuctionForMarketNotInProposedState.
 	ErrCannotStartOpeningAuctionForMarketNotInProposedState = errors.New("cannot start the opening auction for a market not in proposed state")
-	// ErrCannotRepriceDuringAuction
+	// ErrCannotRepriceDuringAuction.
 	ErrCannotRepriceDuringAuction = errors.New("cannot reprice during auction")
 )
 
 // PriceMonitor interface to handle price monitoring/auction triggers
-// @TODO the interface shouldn't be imported here
+// @TODO the interface shouldn't be imported here.
 type PriceMonitor interface {
 	CheckPrice(ctx context.Context, as price.AuctionState, p *num.Uint, v uint64, now time.Time, persistent bool) error
 	GetCurrentBounds() []*types.PriceMonitoringBounds
@@ -94,14 +94,14 @@ type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
 
-// LiquidityMonitor
+// LiquidityMonitor.
 type LiquidityMonitor interface {
 	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64)
 	SetMinDuration(d time.Duration)
 	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
 }
 
-// TargetStakeCalculator interface
+// TargetStakeCalculator interface.
 type TargetStakeCalculator interface {
 	RecordOpenInterest(oi uint64, now time.Time) error
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint
@@ -112,7 +112,7 @@ type TargetStakeCalculator interface {
 
 // AuctionState ...
 // We can't use the interface yet. AuctionState is passed to the engines, which access different methods
-// keep the interface for documentation purposes
+// keep the interface for documentation purposes.
 type AuctionState interface {
 	// are we in auction, and what auction are we in?
 	InAuction() bool
@@ -139,7 +139,7 @@ type AuctionState interface {
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
-// the engines in order to process all transactions
+// the engines in order to process all transactions.
 type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
@@ -196,7 +196,7 @@ type Market struct {
 	equityShares               *EquityShares
 }
 
-// SetMarketID assigns a deterministic pseudo-random ID to a Market
+// SetMarketID assigns a deterministic pseudo-random ID to a Market.
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	marketcfg.ID = ""
 	marketbytes, err := proto.Marshal(marketcfg.IntoProto())
@@ -495,7 +495,7 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 	return nil
 }
 
-// GetID returns the id of the given market
+// GetID returns the id of the given market.
 func (m *Market) GetID() string {
 	return m.mkt.ID
 }
@@ -692,7 +692,7 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 	return num.Zero().Sub(price, offset), nil
 }
 
-// Reprice a pegged order. This only updates the price on the order
+// Reprice a pegged order. This only updates the price on the order.
 func (m *Market) repricePeggedOrder(order *types.Order) error {
 	// Work out the new price of the order
 	price, err := m.getNewPeggedPrice(order)
@@ -711,7 +711,7 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 	return toPark
 }
 
-// EnterAuction : Prepare the order book to be run as an auction
+// EnterAuction : Prepare the order book to be run as an auction.
 func (m *Market) EnterAuction(ctx context.Context) {
 	// Change market type to auction
 	ordersToCancel := m.matching.EnterAuction()
@@ -746,7 +746,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	}
 }
 
-// LeaveAuction : Return the orderbook and market to continuous trading
+// LeaveAuction : Return the orderbook and market to continuous trading.
 func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
@@ -1036,7 +1036,7 @@ func (m *Market) releaseMarginExcess(ctx context.Context, partyID string) {
 	m.broker.Send(evt)
 }
 
-// SubmitOrder submits the given order
+// SubmitOrder submits the given order.
 func (m *Market) SubmitOrder(
 	ctx context.Context,
 	orderSubmission *types.OrderSubmission,
@@ -1478,7 +1478,7 @@ func (m *Market) getLiquidityFee() num.Decimal {
 // resolveClosedOutParties - the parties with the given market position who haven't got sufficient collateral
 // need to be closed out -> the network buys/sells the open volume, and trades with the rest of the network
 // this flow is similar to the SubmitOrder bit where trades are made, with fewer checks (e.g. no MTM settlement, no risk checks)
-// pass in the order which caused parties to be distressed
+// pass in the order which caused parties to be distressed.
 func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEvts []events.Margin, o *types.Order) ([]*types.Order, error) {
 	if len(distressedMarginEvts) == 0 {
 		return nil, nil
@@ -1932,7 +1932,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 }
 
 // this function handles moving money after settle MTM + risk margin updates
-// but does not move the money between party accounts (ie not to/from margin accounts after risk)
+// but does not move the money between party accounts (ie not to/from margin accounts after risk).
 func (m *Market) collateralAndRisk(ctx context.Context, settle []events.Transfer) []events.Risk {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "collateralAndRisk")
 	defer timer.EngineTimeCounterAdd()
@@ -2048,7 +2048,7 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*typ
 	return conf, nil
 }
 
-// CancelOrder cancels the given order
+// CancelOrder cancels the given order.
 func (m *Market) cancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "CancelOrder")
 	defer timer.EngineTimeCounterAdd()
@@ -2124,7 +2124,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 	_ = m.position.UnregisterOrder(order)
 }
 
-// AmendOrder amend an existing order from the order book
+// AmendOrder amend an existing order from the order book.
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error) {
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
@@ -2491,7 +2491,7 @@ func (m *Market) validateOrderAmendment(
 	return nil
 }
 
-// this function assume the amendment have been validated before
+// this function assume the amendment have been validated before.
 func (m *Market) applyOrderAmendment(
 	existingOrder *types.Order,
 	amendment *types.OrderAmendment,
@@ -2623,7 +2623,7 @@ func (m *Market) orderAmendWhenParked(originalOrder, amendOrder *types.Order) *t
 }
 
 // RemoveExpiredOrders remove all expired orders from the order book
-// and also any pegged orders that are parked
+// and also any pegged orders that are parked.
 func (m *Market) RemoveExpiredOrders(
 	ctx context.Context, timestamp int64) ([]*types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "RemoveExpiredOrders")
@@ -2734,7 +2734,7 @@ func (m *Market) getStaticMidPrice(side types.Side) (*num.Uint, error) {
 }
 
 // removePeggedOrder looks through the pegged and parked list
-// and removes the matching order if found
+// and removes the matching order if found.
 func (m *Market) removePeggedOrder(order *types.Order) {
 	// remove if order was expiring
 	m.expiringOrders.RemoveOrder(order.ExpiresAt, order.ID)
@@ -2743,7 +2743,7 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 
 // getOrderBy looks for the order in the order book and in the list
 // of pegged orders in the market. Returns the order if found, a bool
-// representing if the order was found on the order book and any error code
+// representing if the order was found on the order book and any error code.
 func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 	order, err := m.matching.GetOrderByID(orderID)
 	if err == nil {
@@ -2823,7 +2823,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 	}
 }
 
-// command liquidity auction checks if liquidity auction should be entered and if it can end
+// command liquidity auction checks if liquidity auction should be entered and if it can end.
 func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	// start the liquidity monitoring auction if required
 	if !m.as.InAuction() && m.as.AuctionStart() {

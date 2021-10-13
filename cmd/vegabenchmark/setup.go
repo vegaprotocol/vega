@@ -237,7 +237,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	return app, bstats, nil
 }
 
-// UponGenesis loads all asset from genesis state
+// UponGenesis loads all asset from genesis state.
 func uponGenesis(
 	ctx context.Context,
 	rawstate []byte,

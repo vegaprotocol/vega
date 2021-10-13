@@ -464,7 +464,7 @@ func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.
 	return r
 }
 
-// WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors
+// WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors.
 func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string,
 	buys, sells []*types.LiquidityOrder) *testMarket {
 	t.Helper()
@@ -3382,7 +3382,7 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 //  D - Pegged 3@BA +1
 // Party E - Deposit 100000
 //  E - Sell GTC 3@1002
-// C amends order price=1002
+// C amends order price=1002.
 func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList2734(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
@@ -5961,7 +5961,7 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 	})
 }
 
-// @TODO foieiforweuhfweuihfi
+// @TODO foieiforweuhfweuihfi.
 func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)

@@ -38,12 +38,12 @@ func (b *Base) cleanup() {
 	b.Halt()
 }
 
-// Ack returns whether or not this is a synchronous/async subscriber
+// Ack returns whether or not this is a synchronous/async subscriber.
 func (b *Base) Ack() bool {
 	return b.ack
 }
 
-// Pause the current subscriber will not receive events from the channel
+// Pause the current subscriber will not receive events from the channel.
 func (b *Base) Pause() {
 	if b.running {
 		b.running = false
@@ -51,7 +51,7 @@ func (b *Base) Pause() {
 	}
 }
 
-// Resume unpauzes the subscriber
+// Resume unpauzes the subscriber.
 func (b *Base) Resume() {
 	if !b.running {
 		b.sCh = make(chan struct{})
@@ -63,22 +63,22 @@ func (b Base) isRunning() bool {
 	return b.running
 }
 
-// C returns the event channel for optional subscribers
+// C returns the event channel for optional subscribers.
 func (b *Base) C() chan<- []events.Event {
 	return b.ch
 }
 
-// Closed indicates to the broker that the subscriber is closed for business
+// Closed indicates to the broker that the subscriber is closed for business.
 func (b *Base) Closed() <-chan struct{} {
 	return b.ctx.Done()
 }
 
-// Skip lets the broker know that the subscriber is not receiving events
+// Skip lets the broker know that the subscriber is not receiving events.
 func (b *Base) Skip() <-chan struct{} {
 	return b.sCh
 }
 
-// Halt is called by the broker on shutdown, this closes the open channels
+// Halt is called by the broker on shutdown, this closes the open channels.
 func (b *Base) Halt() {
 	// This is a hacky fix, but the fact remains: closing this channel occasionally causes a data race
 	// we're using select, hoist the channel assignment, but the fact is: select is not atomic
@@ -93,12 +93,12 @@ func (b *Base) Halt() {
 	b.Pause() // close the skip channel
 }
 
-// SetID set the ID (exposed only to broker)
+// SetID set the ID (exposed only to broker).
 func (b *Base) SetID(id int) {
 	b.id = id
 }
 
-// ID returns the subscriber ID
+// ID returns the subscriber ID.
 func (b *Base) ID() int {
 	return b.id
 }

@@ -11,7 +11,7 @@ import (
 
 // ErrInvalidLogLevel signal that the log level used is not valid
 // as cannot be unmarshal from a string, or not one of the level
-// provided in this package
+// provided in this package.
 var ErrInvalidLogLevel = errors.New("invalid log level")
 
 // A Level is a logging priority. Higher levels are more important.
@@ -36,7 +36,7 @@ const (
 	FatalLevel Level = 5
 )
 
-// ParseLevel parse a log level from a string
+// ParseLevel parse a log level from a string.
 func ParseLevel(l string) (Level, error) {
 	l = strings.ToLower(l)
 	switch l {
@@ -57,7 +57,7 @@ func ParseLevel(l string) (Level, error) {
 	}
 }
 
-// String marshal a log level to a string representation
+// String marshal a log level to a string representation.
 func (l Level) String() string {
 	switch l {
 	case DebugLevel:
@@ -77,12 +77,12 @@ func (l Level) String() string {
 	}
 }
 
-// ZapLevel return the log level of internal zap level
+// ZapLevel return the log level of internal zap level.
 func (l *Level) ZapLevel() zapcore.Level {
 	return zapcore.Level(*l)
 }
 
-// Logger is an abstraction on to of the zap logger
+// Logger is an abstraction on to of the zap logger.
 type Logger struct {
 	*zap.Logger
 	config      *zap.Config
@@ -90,7 +90,7 @@ type Logger struct {
 	name        string
 }
 
-// Clone will clone the internal logger
+// Clone will clone the internal logger.
 func (log *Logger) Clone() *Logger {
 	newConfig := cloneConfig(log.config)
 	newLogger, err := newConfig.Build()
@@ -100,7 +100,7 @@ func (log *Logger) Clone() *Logger {
 	return New(newLogger, newConfig, log.environment, log.name)
 }
 
-// GetLevel returns the log level
+// GetLevel returns the log level.
 func (log *Logger) GetLevel() Level {
 	return (Level)(log.config.Level.Level())
 }
@@ -111,23 +111,23 @@ func (log *Logger) IsDebug() bool {
 }
 
 // GetLevelString return a string representation of the current
-// log level
+// log level.
 func (log *Logger) GetLevelString() string {
 	return log.config.Level.String()
 }
 
-// GetEnvironment returns the current environment name
+// GetEnvironment returns the current environment name.
 func (log *Logger) GetEnvironment() string {
 	return log.environment
 }
 
-// GetName return the name of this logger
+// GetName return the name of this logger.
 func (log *Logger) GetName() string {
 	return log.name
 }
 
 // Named instantiate a new logger by cloning it first
-// and name it with the string specified
+// and name it with the string specified.
 func (log *Logger) Named(name string) *Logger {
 	var (
 		c       = log.Clone()
@@ -143,7 +143,7 @@ func (log *Logger) Named(name string) *Logger {
 	return c
 }
 
-// New instantiate a new logger
+// New instantiate a new logger.
 func New(zaplogger *zap.Logger, zapconfig *zap.Config, environment, name string) *Logger {
 	return &Logger{
 		Logger:      zaplogger,
@@ -153,7 +153,7 @@ func New(zaplogger *zap.Logger, zapconfig *zap.Config, environment, name string)
 	}
 }
 
-// SetLevel change the level of this logger
+// SetLevel change the level of this logger.
 func (log *Logger) SetLevel(level Level) {
 	lvl := (zapcore.Level)(level)
 	if log.config.Level.Level() == lvl {
@@ -162,7 +162,7 @@ func (log *Logger) SetLevel(level Level) {
 	log.config.Level.SetLevel(lvl)
 }
 
-// With will add default field to each logs
+// With will add default field to each logs.
 func (log *Logger) With(fields ...zap.Field) *Logger {
 	c := log.Clone()
 	c.Logger = c.Logger.With(fields...)
@@ -171,7 +171,7 @@ func (log *Logger) With(fields ...zap.Field) *Logger {
 
 // AtExit flushes the logs before exiting the process. Useful when an
 // app shuts down so we store all logging possible. This is meant to be used
-// with defer when initializing your logger
+// with defer when initializing your logger.
 func (log *Logger) AtExit() {
 	if log.Logger != nil {
 		log.Logger.Sync()
@@ -267,7 +267,7 @@ func NewDevLogger() *Logger {
 }
 
 // NewTestLogger creates a new logger suitable for golang unit test
-// environments, ie when running "go test ./..."
+// environments, ie when running "go test ./...".
 func NewTestLogger() *Logger {
 	config := Config{
 		Environment: "test",
@@ -350,28 +350,28 @@ func (log *Logger) Check(l Level) bool {
 	return log.Logger.Check(l.ZapLevel(), "") != nil
 }
 
-// Errorf implement badger interface
+// Errorf implement badger interface.
 func (log *Logger) Errorf(s string, args ...interface{}) {
 	if ce := log.Logger.Check(zap.ErrorLevel, ""); ce != nil {
 		log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Errorf(strings.TrimSpace(s), args...)
 	}
 }
 
-// Warningf implement badger interface
+// Warningf implement badger interface.
 func (log *Logger) Warningf(s string, args ...interface{}) {
 	if ce := log.Logger.Check(zap.WarnLevel, ""); ce != nil {
 		log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Warnf(strings.TrimSpace(s), args...)
 	}
 }
 
-// Infof implement badger interface
+// Infof implement badger interface.
 func (log *Logger) Infof(s string, args ...interface{}) {
 	if ce := log.Logger.Check(zap.InfoLevel, ""); ce != nil {
 		log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Infof(strings.TrimSpace(s), args...)
 	}
 }
 
-// Debugf implement badger interface
+// Debugf implement badger interface.
 func (log *Logger) Debugf(s string, args ...interface{}) {
 	if ce := log.Logger.Check(zap.DebugLevel, ""); ce != nil {
 		log.Logger.WithOptions(zap.AddCallerSkip(2)).Sugar().Debugf(strings.TrimSpace(s), args...)

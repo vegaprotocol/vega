@@ -120,7 +120,7 @@ func (p Passphrase) getFromFile(path string) (string, error) {
 
 type PromptString string
 
-// Get returns a string if set or prompts user otherwise
+// Get returns a string if set or prompts user otherwise.
 func (p PromptString) Get(prompt, name string) (string, error) {
 	if len(p) == 0 {
 		if vgos.HasNoTTY() {

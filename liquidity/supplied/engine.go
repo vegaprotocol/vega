@@ -19,7 +19,7 @@ var (
 	defaultMinimumProbabilityOfTrading = num.DecimalFromFloat(1e-8)
 )
 
-// LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book
+// LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book.
 type LiquidityOrder struct {
 	OrderID string
 
@@ -43,7 +43,7 @@ type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
 
-// Engine provides functionality related to supplied liquidity
+// Engine provides functionality related to supplied liquidity.
 type Engine struct {
 	rm RiskModel
 	pm PriceMonitor
@@ -60,7 +60,7 @@ type Engine struct {
 	aCache map[num.Uint]num.Decimal
 }
 
-// NewEngine returns a reference to a new supplied liquidity calculation engine
+// NewEngine returns a reference to a new supplied liquidity calculation engine.
 func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 	return &Engine{
 		rm: riskModel,
@@ -84,7 +84,7 @@ func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 	e.probabilityOfTradingTauScaling = v
 }
 
-// CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set
+// CalculateSuppliedLiquidity returns the current supplied liquidity per specified current mark price and order set.
 func (e *Engine) CalculateSuppliedLiquidity(
 	bestBidPrice, bestAskPrice *num.Uint,
 	orders []*types.Order,
@@ -126,7 +126,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	return nil
 }
 
-// CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor
+// CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor.
 func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	bestBidPrice, bestAskPrice *num.Uint,
 	orders []*types.Order,

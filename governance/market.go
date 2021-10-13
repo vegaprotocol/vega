@@ -13,26 +13,26 @@ import (
 )
 
 var (
-	// ErrNoProduct is returned if selected product is nil
+	// ErrNoProduct is returned if selected product is nil.
 	ErrNoProduct = errors.New("no product has been specified")
-	// ErrProductInvalid is returned if selected product is not supported
+	// ErrProductInvalid is returned if selected product is not supported.
 	ErrProductInvalid = errors.New("specified product is not supported")
-	// ErrProductMaturityIsPast is returned if product maturity is not in future
+	// ErrProductMaturityIsPast is returned if product maturity is not in future.
 	ErrProductMaturityIsPast = errors.New("product maturity date is in the past")
 
-	// ErrNoTradingMode is returned if trading mode is nil
+	// ErrNoTradingMode is returned if trading mode is nil.
 	ErrNoTradingMode = errors.New("no trading mode has been selected")
-	// ErrTradingModeInvalid is returned if selected trading mode is not supported
+	// ErrTradingModeInvalid is returned if selected trading mode is not supported.
 	ErrTradingModeInvalid = errors.New("selected trading mode is not supported")
 
-	// ErrInvalidTradingMode is returned if supplied trading is not valid (has to be either continuous or descrete)
+	// ErrInvalidTradingMode is returned if supplied trading is not valid (has to be either continuous or descrete).
 	ErrInvalidTradingMode = errors.New("trading mode is invalid")
 
 	// ErrProductTypeNotSupported is returned if product type supplied via governance is not yet supported
-	// (this error should really never occur)
+	// (this error should really never occur).
 	ErrProductTypeNotSupported = errors.New("product type is not supported")
 
-	// ErrRiskParametersNotSupported is returned if risk parameters supplied via governance are not yet supported
+	// ErrRiskParametersNotSupported is returned if risk parameters supplied via governance are not yet supported.
 	ErrRiskParametersNotSupported = errors.New("risk model parameters are not supported")
 	// ErrMissingRiskParameters ...
 	ErrMissingRiskParameters = errors.New("missing risk parameters")
@@ -425,7 +425,7 @@ func validateShape(
 	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-// ValidateNewMarket checks new market proposal terms
+// ValidateNewMarket checks new market proposal terms.
 func validateNewMarket(
 	currentTime time.Time,
 	terms *types.NewMarket,

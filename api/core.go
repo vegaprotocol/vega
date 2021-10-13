@@ -54,7 +54,7 @@ type coreService struct {
 	netInfoMu sync.RWMutex
 }
 
-// no need for a mutext - we only access the config through a value receiver
+// no need for a mutext - we only access the config through a value receiver.
 func (s *coreService) updateConfig(conf Config) {
 	s.conf = conf
 }
@@ -179,7 +179,7 @@ func verifySignature(
 
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
-// Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
+// Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version.
 func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Statistics")()
 	// Call tendermint and related services to get information for statistics

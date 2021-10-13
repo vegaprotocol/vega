@@ -36,7 +36,7 @@ type checkpointRestore struct {
 
 var checkpointCmd CheckpointCmd
 
-// Checkpoint - This function is invoked from `Register` in main.go
+// Checkpoint - This function is invoked from `Register` in main.go.
 func Checkpoint(ctx context.Context, parser *flags.Parser) error {
 	// here we initialize the global exampleCmd with needed default values.
 	checkpointCmd = CheckpointCmd{

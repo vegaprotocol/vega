@@ -21,7 +21,7 @@ type limitsSnapshotState struct {
 	changed    bool
 }
 
-// serialiseLimits returns the engine's limit data as marshalled bytes
+// serialiseLimits returns the engine's limit data as marshalled bytes.
 func (e *Engine) serialiseLimits() ([]byte, error) {
 	pl := types.Payload{
 		Data: &types.PayloadLimitState{
@@ -40,7 +40,7 @@ func (e *Engine) serialiseLimits() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if k != allKey {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist

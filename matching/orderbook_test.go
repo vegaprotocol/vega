@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// launch aggressiveOrder orders from both sides to fully clear the order book
+// launch aggressiveOrder orders from both sides to fully clear the order book.
 type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
 	expectedPassiveOrdersAffected []types.Order
@@ -994,7 +994,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, len(trades), len(confirm.Trades))
 }
 
-// test for order validation
+// test for order validation.
 func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -1671,7 +1671,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	assert.Equal(t, types.OrderErrorAmendFailure, err)
 }
 
-// ProRata mode OFF which is a default config for vega ME
+// ProRata mode OFF which is a default config for vega ME.
 func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2238,7 +2238,7 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 
 /*****************************************************************************/
 /*                             AUCTION TESTING                               */
-/*****************************************************************************/
+/**************************************************************************.***/
 func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2668,7 +2668,7 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	assert.Equal(t, 0, len(cancels))
 }
 
-// Set up an auction so that the sell side is processed when we uncross
+// Set up an auction so that the sell side is processed when we uncross.
 func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2707,7 +2707,7 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	assert.Equal(t, len(cancels), 0)
 }
 
-// Check that multiple orders per price level work
+// Check that multiple orders per price level work.
 func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2873,7 +2873,7 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 	assert.Equal(t, len(cancels), 2)
 }
 
-// this is a test for issue 2060 to ensure we process FOK orders properly
+// this is a test for issue 2060 to ensure we process FOK orders properly.
 func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -3113,7 +3113,7 @@ func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
 	//	assert.Equal(t, len(cancels), 0)
 }
 
-// Add some pegged orders to the order book and check they are parked when going into auction
+// Add some pegged orders to the order book and check they are parked when going into auction.
 func TestOrderBook_PeggedOrders(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)

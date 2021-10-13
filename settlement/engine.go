@@ -34,12 +34,12 @@ type Product interface {
 	SettlementPrice() (*num.Uint, error)
 }
 
-// Broker - the event bus broker, send events here
+// Broker - the event bus broker, send events here.
 type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-// Engine - the main type (of course)
+// Engine - the main type (of course).
 type Engine struct {
 	Config
 	log *logging.Logger
@@ -57,7 +57,7 @@ func (e *Engine) OnTick(t time.Time) {
 	e.currentTime = t
 }
 
-// New instantiates a new instance of the settlement engine
+// New instantiates a new instance of the settlement engine.
 func New(log *logging.Logger, conf Config, product Product, market string, broker Broker) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -75,7 +75,7 @@ func New(log *logging.Logger, conf Config, product Product, market string, broke
 	}
 }
 
-// ReloadConf update the internal configuration of the settlement engined
+// ReloadConf update the internal configuration of the settlement engined.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -91,7 +91,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // Update merely adds positions to the settlement engine, and won't be useful for a MTM settlement
 // this function is mainly used for testing, and should be used with extreme caution as a result
-// perhaps the tests should be refactored to use the Settle call to create positions first
+// perhaps the tests should be refactored to use the Settle call to create positions first.
 func (e *Engine) Update(positions []events.MarketPosition) {
 	e.mu.Lock()
 	for _, p := range positions {
@@ -106,7 +106,7 @@ func (e *Engine) Update(positions []events.MarketPosition) {
 	e.mu.Unlock()
 }
 
-// Settle run settlement over all the positions
+// Settle run settlement over all the positions.
 func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 	e.log.Debugf("Settling market, closed at %s", t.Format(time.RFC3339))
 	positions, err := e.settleAll()
@@ -121,7 +121,7 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 }
 
 // AddTrade - this call is required to get the correct MTM settlement values
-// each change in position has to be calculated using the exact price of the trade
+// each change in position has to be calculated using the exact price of the trade.
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
 	var buyerSize, sellerSize int64
@@ -268,7 +268,7 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 }
 
 // RemoveDistressed - remove whatever settlement data we have for distressed parties
-// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement
+// they are being closed out, and shouldn't be part of any MTM settlement or closing settlement.
 func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	devts := make([]events.Event, 0, len(evts))
 	e.mu.Lock()
@@ -283,7 +283,7 @@ func (e *Engine) RemoveDistressed(ctx context.Context, evts []events.Margin) {
 	e.broker.SendBatch(devts)
 }
 
-// simplified settle call
+// simplified settle call.
 func (e *Engine) settleAll() ([]*types.Transfer, error) {
 	e.mu.Lock()
 
@@ -347,7 +347,7 @@ func (e *Engine) settleAll() ([]*types.Transfer, error) {
 }
 
 // this doesn't need the mutex wrap because it's an internal call and the function that is being
-// called already locks the positions map
+// called already locks the positions map.
 func (e *Engine) getCurrentPosition(party string, evt events.MarketPosition) *pos {
 	p, ok := e.pos[party]
 	if !ok {
@@ -361,7 +361,7 @@ func (e *Engine) rmPosition(party string) {
 	delete(e.pos, party)
 }
 
-// just get the max len as cap
+// just get the max len as cap.
 func (e *Engine) transferCap(evts []events.MarketPosition) int {
 	curLen, evtLen := len(e.pos), len(evts)
 	if curLen >= evtLen {

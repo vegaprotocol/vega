@@ -52,7 +52,7 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 }
 
 // StartLiquidityAuction - set the state to start a liquidity triggered auction
-// @TODO these functions will be removed once the types are in proto
+// @TODO these functions will be removed once the types are in proto.
 func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDuration) {
 	a.mode = types.MarketTradingModeMonitoringAuction
 	a.trigger = types.AuctionTriggerLiquidity
@@ -63,7 +63,7 @@ func (a *AuctionState) StartLiquidityAuction(t time.Time, d *types.AuctionDurati
 }
 
 // StartPriceAuction - set the state to start a price triggered auction
-// @TODO these functions will be removed once the types are in proto
+// @TODO these functions will be removed once the types are in proto.
 func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) {
 	a.mode = types.MarketTradingModeMonitoringAuction
 	a.trigger = types.AuctionTriggerPrice
@@ -74,7 +74,7 @@ func (a *AuctionState) StartPriceAuction(t time.Time, d *types.AuctionDuration) 
 }
 
 // StartOpeningAuction - set the state to start an opening auction (used for testing)
-// @TODO these functions will be removed once the types are in proto
+// @TODO these functions will be removed once the types are in proto.
 func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration) {
 	a.mode = types.MarketTradingModeOpeningAuction
 	a.trigger = types.AuctionTriggerOpening
@@ -85,7 +85,7 @@ func (a *AuctionState) StartOpeningAuction(t time.Time, d *types.AuctionDuration
 }
 
 // ExtendAuctionPrice - call from price monitoring to extend the auction
-// sets the extension trigger field accordingly
+// sets the extension trigger field accordingly.
 func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 	t := types.AuctionTriggerPrice
 	a.extension = &t
@@ -93,7 +93,7 @@ func (a *AuctionState) ExtendAuctionPrice(delta types.AuctionDuration) {
 }
 
 // ExtendAuctionLiquidity - call from liquidity monitoring to extend the auction
-// sets the extension trigger field accordingly
+// sets the extension trigger field accordingly.
 func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
 	t := types.AuctionTriggerLiquidity
 	a.extension = &t
@@ -101,7 +101,7 @@ func (a *AuctionState) ExtendAuctionLiquidity(delta types.AuctionDuration) {
 }
 
 // ExtendAuction extends the current auction, leaving trigger etc... in tact
-// this assumes whatever extended the auction is the same thing that triggered the auction
+// this assumes whatever extended the auction is the same thing that triggered the auction.
 func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	t := a.trigger
 	a.extension = &t
@@ -110,12 +110,12 @@ func (a *AuctionState) ExtendAuction(delta types.AuctionDuration) {
 	a.stop = false // the auction was supposed to stop, but we've extended it
 }
 
-// SetReadyToLeave is called by monitoring engines to mark if an auction period has expired
+// SetReadyToLeave is called by monitoring engines to mark if an auction period has expired.
 func (a *AuctionState) SetReadyToLeave() {
 	a.stop = true
 }
 
-// Duration returns a copy of the current auction duration object
+// Duration returns a copy of the current auction duration object.
 func (a AuctionState) Duration() types.AuctionDuration {
 	if a.end == nil {
 		return types.AuctionDuration{}
@@ -123,7 +123,7 @@ func (a AuctionState) Duration() types.AuctionDuration {
 	return *a.end
 }
 
-// Start - returns time pointer of the start of the auction (nil if not in auction)
+// Start - returns time pointer of the start of the auction (nil if not in auction).
 func (a AuctionState) Start() time.Time {
 	if a.begin == nil {
 		return time.Time{} // zero time
@@ -132,7 +132,7 @@ func (a AuctionState) Start() time.Time {
 }
 
 // ExpiresAt returns end as time -> if nil, the auction duration either isn't determined by time
-// or we're simply not in an auction
+// or we're simply not in an auction.
 func (a AuctionState) ExpiresAt() *time.Time {
 	if a.begin == nil { // no start time == no end time
 		return nil
@@ -145,17 +145,17 @@ func (a AuctionState) ExpiresAt() *time.Time {
 	return &t
 }
 
-// Mode returns current trading mode
+// Mode returns current trading mode.
 func (a AuctionState) Mode() types.MarketTradingMode {
 	return a.mode
 }
 
-// Trigger returns what triggered an auction
+// Trigger returns what triggered an auction.
 func (a AuctionState) Trigger() types.AuctionTrigger {
 	return a.trigger
 }
 
-// ExtensionTrigger returns what extended an auction
+// ExtensionTrigger returns what extended an auction.
 func (a AuctionState) ExtensionTrigger() types.AuctionTrigger {
 	if a.extension == nil {
 		return types.AuctionTriggerUnspecified
@@ -164,7 +164,7 @@ func (a AuctionState) ExtensionTrigger() types.AuctionTrigger {
 }
 
 // InAuction returns bool if the market is in auction for any reason
-// Returns false if auction is triggered, but not yet started by market (execution)
+// Returns false if auction is triggered, but not yet started by market (execution).
 func (a AuctionState) InAuction() bool {
 	return !a.start && a.trigger != types.AuctionTriggerUnspecified
 }
@@ -185,25 +185,25 @@ func (a AuctionState) IsFBA() bool {
 	return a.trigger == types.AuctionTriggerBatch
 }
 
-// IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine
+// IsMonitorAuction - quick way to determine whether or not we're in an auction triggered by a monitoring engine.
 func (a AuctionState) IsMonitorAuction() bool {
 	return a.trigger == types.AuctionTriggerPrice || a.trigger == types.AuctionTriggerLiquidity
 }
 
 // CanLeave bool indicating whether auction should be closed or not, if true, we can still extend the auction
-// but when the market takes over (after monitoring engines), the auction will be closed
+// but when the market takes over (after monitoring engines), the auction will be closed.
 func (a AuctionState) CanLeave() bool {
 	return a.stop
 }
 
 // AuctionStart bool indicates something has already triggered an auction to start, we can skip other monitoring potentially
-// and we know to create an auction event
+// and we know to create an auction event.
 func (a AuctionState) AuctionStart() bool {
 	return a.start
 }
 
 // AuctionExtended - called to confirm we will not leave auction, returns the event to be sent
-// or nil if the auction wasn't extended
+// or nil if the auction wasn't extended.
 func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 	if a.extension == nil {
 		return nil
@@ -223,7 +223,7 @@ func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger, ext)
 }
 
-// AuctionStarted is called by the execution package to set flags indicating the market has started the auction
+// AuctionStarted is called by the execution package to set flags indicating the market has started the auction.
 func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 	a.timer = metrics.NewTimeCounter(a.m.ID, "Auction duration", a.trigger.String())
 	a.start = false
@@ -238,7 +238,7 @@ func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
 	return events.NewAuctionEvent(ctx, a.m.ID, false, a.begin.UnixNano(), end, a.trigger)
 }
 
-// Left is called by execution to update internal state indicating this auction was closed
+// Left is called by execution to update internal state indicating this auction was closed.
 func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction {
 	a.timer.EngineTimeCounterAdd()
 
@@ -261,7 +261,7 @@ func (a *AuctionState) Left(ctx context.Context, now time.Time) *events.Auction 
 }
 
 // UpdateMinDuration - see if we need to update the end value for current auction duration (if any)
-// if the auction duration increases, an auction event will be returned
+// if the auction duration increases, an auction event will be returned.
 func (a *AuctionState) UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction {
 	// oldExp is nil if we're not in auction
 	if oldExp := a.ExpiresAt(); oldExp != nil {

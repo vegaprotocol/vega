@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
+	// ErrTimeSequence signals that time sequence is not in a non-decreasing order.
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
-	// ErrNegativeScalingFactor indicates that a negative scaling factor was supplied to the engine
+	// ErrNegativeScalingFactor indicates that a negative scaling factor was supplied to the engine.
 	ErrNegativeScalingFactor = errors.New("scaling factor can't be negative")
 )
 
@@ -44,7 +44,7 @@ type OpenInterestCalculator interface {
 	GetOpenInterestGivenTrades(trades []*types.Trade) uint64
 }
 
-// NewEngine returns a new instance of target stake calculation Engine
+// NewEngine returns a new instance of target stake calculation Engine.
 func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
 	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
 
@@ -55,13 +55,13 @@ func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalcul
 	}
 }
 
-// UpdateTimeWindow updates the time windows used in target stake calculation
+// UpdateTimeWindow updates the time windows used in target stake calculation.
 func (e *Engine) UpdateTimeWindow(tWindow time.Duration) {
 	e.tWindow = tWindow
 }
 
 // UpdateScalingFactor updates the scaling factor used in target stake calculation
-// if it's non-negative and returns an error otherwise
+// if it's non-negative and returns an error otherwise.
 func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
 	if sFactor.IsNegative() {
 		return ErrNegativeScalingFactor
@@ -72,7 +72,7 @@ func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
 	return nil
 }
 
-// RecordOpenInterest records open interset history so that target stake can be calculated
+// RecordOpenInterest records open interset history so that target stake can be calculated.
 func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if now.Before(e.now) {
 		return ErrTimeSequence
@@ -98,7 +98,7 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 }
 
 // GetTargetStake returns target stake based current time, risk factors
-// and the open interest time series constructed by calls to RecordOpenInterest
+// and the open interest time series constructed by calls to RecordOpenInterest.
 func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
 	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxOI(minTime)
@@ -121,7 +121,7 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 }
 
 // GetTheoreticalTargetStake returns target stake based current time, risk factors
-// and the supplied trades without modifying the internal state
+// and the supplied trades without modifying the internal state.
 func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
 	if minTime := e.minTime(now); minTime.After(e.max.Time) {
@@ -177,7 +177,7 @@ func (e *Engine) computeMaxOI(minTime time.Time) {
 	e.previous = e.previous[j:]
 }
 
-// minTime returns the lower bound of the sliding time window
+// minTime returns the lower bound of the sliding time window.
 func (e *Engine) minTime(now time.Time) time.Time {
 	return now.Add(-e.tWindow)
 }

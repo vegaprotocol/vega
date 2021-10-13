@@ -154,7 +154,7 @@ func (r RowWrapper) MustStr(name string) string {
 }
 
 // StrB does the same as Str, but returns a bool indicating whether or not the
-// column was set
+// column was set.
 func (r RowWrapper) StrB(name string) (string, bool) {
 	return r.Str(name), r.HasColumn(name)
 }
@@ -221,7 +221,7 @@ func Uint(value string) (*num.Uint, error) {
 }
 
 // U64B does the same as U64, but returns a bool indicating whether or not the
-// column was set
+// column was set.
 func (r RowWrapper) U64B(name string) (uint64, bool) {
 	if !r.HasColumn(name) {
 		return 0, false
@@ -287,7 +287,7 @@ func (r RowWrapper) MustI64(name string) int64 {
 }
 
 // I64B does the same as U64B, but returns a bool indicating whether or not the
-// column was set
+// column was set.
 func (r RowWrapper) I64B(name string) (int64, bool) {
 	if !r.HasColumn(name) {
 		return 0, false

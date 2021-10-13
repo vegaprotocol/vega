@@ -18,13 +18,13 @@ import (
 )
 
 var (
-	// ErrMarketDoesNotExist is returned when the market does not exist
+	// ErrMarketDoesNotExist is returned when the market does not exist.
 	ErrMarketDoesNotExist = errors.New("market does not exist")
 
-	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation
+	// ErrNoMarketID is returned when invalid (empty) market id was supplied during market creation.
 	ErrNoMarketID = errors.New("no valid market id was supplied")
 
-	// ErrInvalidOrderCancellation is returned when an incomplete order cancellation request is used
+	// ErrInvalidOrderCancellation is returned when an incomplete order cancellation request is used.
 	ErrInvalidOrderCancellation = errors.New("invalid order cancellation")
 )
 
@@ -35,13 +35,13 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
-// Broker  (no longer need to mock this, use the broker/mocks wrapper)
+// Broker  (no longer need to mock this, use the broker/mocks wrapper).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
-// Engine is the execution engine
+// Engine is the execution engine.
 type Engine struct {
 	Config
 	log *logging.Logger
@@ -129,7 +129,7 @@ func NewEngine(
 }
 
 // ReloadConf updates the internal configuration of the execution
-// engine and its dependencies
+// engine and its dependencies.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Debug("reloading configuration")
 
@@ -178,7 +178,7 @@ func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
 
 // RejectMarket will stop the execution of the market
 // and refund into the general account any funds in margins accounts from any parties
-// This works only if the market is in a PROPOSED STATE
+// This works only if the market is in a PROPOSED STATE.
 func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("reject market", logging.MarketID(marketID))
@@ -198,7 +198,7 @@ func (e *Engine) RejectMarket(ctx context.Context, marketID string) error {
 }
 
 // StartOpeningAuction will start the opening auction of the given market.
-// This will work only if the market is currently in a PROPOSED state
+// This will work only if the market is currently in a PROPOSED state.
 func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("start opening auction", logging.MarketID(marketID))
@@ -213,7 +213,7 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 }
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
-// the usual governance process
+// the usual governance process.
 func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",
@@ -241,7 +241,7 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	return nil
 }
 
-// SubmitMarket will submit a new market configuration to the network
+// SubmitMarket will submit a new market configuration to the network.
 func (e *Engine) SubmitMarket(ctx context.Context, marketConfig *types.Market) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market", logging.Market(*marketConfig))
@@ -266,7 +266,7 @@ func (e *Engine) publishMarketInfos(ctx context.Context, mkt *Market) {
 	e.broker.Send(events.NewMarketUpdatedEvent(ctx, *mkt.mkt))
 }
 
-// SubmitMarket will submit a new market configuration to the network
+// SubmitMarket will submit a new market configuration to the network.
 func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) error {
 	if len(marketConfig.ID) == 0 {
 		return ErrNoMarketID

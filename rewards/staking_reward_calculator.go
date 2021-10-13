@@ -53,7 +53,7 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator)
 }
 
-// distribute rewards for a given asset account with the given settings of delegation and reward constraints
+// distribute rewards for a given asset account with the given settings of delegation and reward constraints.
 func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint) *payout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
@@ -165,7 +165,7 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 	}
 }
 
-// calculate the score for each validator and normalise by the total score
+// calculate the score for each validator and normalise by the total score.
 func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal) map[string]num.Decimal {
 	// calculate the total amount of tokens delegated across all validators
 	totalDelegated := calcTotalDelegated(validatorsData)
@@ -199,14 +199,14 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	return valScores
 }
 
-// score_val(stake_val): min(1/a, validatorStake/totalStake)
+// score_val(stake_val): min(1/a, validatorStake/totalStake).
 func calcValidatorScore(normalisedValStake, minVal, compLevel, numVal num.Decimal) num.Decimal {
 	a := num.MaxD(minVal, numVal.Div(compLevel))
 
 	return num.MinD(normalisedValStake, num.DecimalFromInt64(1).Div(a))
 }
 
-// calculate the total amount of tokens delegated to the validators including self and party delegation
+// calculate the total amount of tokens delegated to the validators including self and party delegation.
 func calcTotalDelegated(validatorsData []*types.ValidatorData) *num.Uint {
 	total := num.Zero()
 	for _, d := range validatorsData {

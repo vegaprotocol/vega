@@ -95,7 +95,7 @@ func (u Undelegate) String() string {
 	return u.IntoProto().String()
 }
 
-// ValidatorData is delegation data for validator
+// ValidatorData is delegation data for validator.
 type ValidatorData struct {
 	NodeID            string
 	StakeByDelegators *num.Uint

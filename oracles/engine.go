@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Broker no need to mock (use broker package mock)
+// Broker no need to mock (use broker package mock).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)

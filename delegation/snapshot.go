@@ -91,7 +91,7 @@ func (e *Engine) serialiseAuto() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.keyToSerialiser[k]; !ok {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist

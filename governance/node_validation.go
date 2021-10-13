@@ -125,7 +125,7 @@ func (n *NodeValidation) removeProposal(id string) {
 	}
 }
 
-// OnChainTimeUpdate returns validated proposal by all nodes
+// OnChainTimeUpdate returns validated proposal by all nodes.
 func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
@@ -167,7 +167,7 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	}
 }
 
-// Start the node validation of a proposal
+// Start the node validation of a proposal.
 func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
 		n.log.Error("no node validation required", logging.String("ref", p.ID))

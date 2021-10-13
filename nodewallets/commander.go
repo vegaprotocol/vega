@@ -39,7 +39,7 @@ type Commander struct {
 
 // NewCommander - used to sign and send transaction from core
 // e.g. NodeRegistration, NodeVote
-// chain argument can't be passed in cmd package, but is used for tests
+// chain argument can't be passed in cmd package, but is used for tests.
 func NewCommander(log *logging.Logger, bc Chain, w *vega.Wallet, bstats BlockchainStats) (*Commander, error) {
 	log = log.Named(commanderNamedLogger)
 	return &Commander{
@@ -50,12 +50,12 @@ func NewCommander(log *logging.Logger, bc Chain, w *vega.Wallet, bstats Blockcha
 	}, nil
 }
 
-// SetChain - currently need to hack around the chicken/egg problem
+// SetChain - currently need to hack around the chicken/egg problem.
 func (c *Commander) SetChain(bc *blockchain.Client) {
 	c.bc = bc
 }
 
-// Command - send command to chain
+// Command - send command to chain.
 func (c *Commander) Command(_ context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
 	if c.bc == nil {
 		panic("commander was instantiating without chain")

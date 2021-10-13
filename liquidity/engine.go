@@ -23,7 +23,7 @@ var (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/mocks.go -package mocks code.vegaprotocol.io/vega/liquidity RiskModel,PriceMonitor,IDGen
 
-// Broker - event bus (no mocks needed)
+// Broker - event bus (no mocks needed).
 type Broker interface {
 	Send(e events.Event)
 	SendBatch(evts []events.Event)
@@ -37,7 +37,7 @@ type RiskModel interface {
 }
 
 // PriceMonitor provides the range of valid prices, that is prices that
-// wouldn't trade the current trading mode
+// wouldn't trade the current trading mode.
 type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
@@ -53,7 +53,7 @@ type RepricePeggedOrder func(
 	order *types.PeggedOrder, side types.Side,
 ) (*num.Uint, *types.PeggedOrder, error)
 
-// Engine handles Liquidity provision
+// Engine handles Liquidity provision.
 type Engine struct {
 	marketID       string
 	log            *logging.Logger
@@ -114,7 +114,7 @@ func NewEngine(config Config,
 	}
 }
 
-// OnChainTimeUpdate updates the internal engine current time
+// OnChainTimeUpdate updates the internal engine current time.
 func (e *Engine) OnChainTimeUpdate(_ context.Context, now time.Time) {
 	e.currentTime = now
 }
@@ -127,7 +127,7 @@ func (e *Engine) OnProbabilityOfTradingTauScalingUpdate(v num.Decimal) {
 	e.suppliedEngine.OnProbabilityOfTradingTauScalingUpdate(v)
 }
 
-// OnSuppliedStakeToObligationFactorUpdate updates the stake factor
+// OnSuppliedStakeToObligationFactorUpdate updates the stake factor.
 func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(v num.Decimal) {
 	e.stakeToObligationFactor = v
 }
@@ -179,7 +179,7 @@ func (e *Engine) GetLiquidityOrders(party string) []*types.Order {
 }
 
 // GetInactiveParties returns a set of all the parties
-// with inactive commitment
+// with inactive commitment.
 func (e *Engine) GetInactiveParties() map[string]struct{} {
 	ret := map[string]struct{}{}
 	for _, p := range e.provisions {
@@ -223,13 +223,13 @@ func (e *Engine) stopLiquidityProvision(
 	return orders, nil
 }
 
-// IsLiquidityProvider returns true if the party hold any liquidity commitmement
+// IsLiquidityProvider returns true if the party hold any liquidity commitmement.
 func (e *Engine) IsLiquidityProvider(party string) bool {
 	_, ok := e.provisions[party]
 	return ok
 }
 
-// RejectLiquidityProvision removes a parties commitment of liquidity
+// RejectLiquidityProvision removes a parties commitment of liquidity.
 func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) error {
 	_, err := e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusRejected)
@@ -237,14 +237,14 @@ func (e *Engine) RejectLiquidityProvision(ctx context.Context, party string) err
 }
 
 // CancelLiquidityProvision removes a parties commitment of liquidity
-// Returns the liquidityOrders if any
+// Returns the liquidityOrders if any.
 func (e *Engine) CancelLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
 	return e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusCancelled)
 }
 
 // StopLiquidityProvision removes a parties commitment of liquidity
-// Returns the liquidityOrders if any
+// Returns the liquidityOrders if any.
 func (e *Engine) StopLiquidityProvision(ctx context.Context, party string) ([]*types.Order, error) {
 	return e.stopLiquidityProvision(
 		ctx, party, types.LiquidityProvisionStatusStopped)
@@ -419,7 +419,7 @@ func (e *Engine) updatePartyOrders(partyID string, orders []*types.Order) {
 	}
 }
 
-// IsLiquidityOrder checks to see if a given order is part of the LP orders for a given party
+// IsLiquidityOrder checks to see if a given order is part of the LP orders for a given party.
 func (e *Engine) IsLiquidityOrder(party, order string) bool {
 	pos, ok := e.liquidityOrders[party]
 	if !ok {
@@ -483,7 +483,7 @@ func (e *Engine) Update(
 	return newOrders, toCancel, nil
 }
 
-// CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers
+// CalculateSuppliedStake returns the sum of commitment amounts from all the liquidity providers.
 func (e *Engine) CalculateSuppliedStake() *num.Uint {
 	ss := num.Zero()
 	for _, v := range e.provisions {

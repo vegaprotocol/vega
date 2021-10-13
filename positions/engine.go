@@ -13,13 +13,13 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-// Errors
+// Errors.
 var (
 	// ErrPositionNotFound signal that a position was not found for a given party.
 	ErrPositionNotFound = errors.New("position not found")
 )
 
-// Engine represents the positions engine
+// Engine represents the positions engine.
 type Engine struct {
 	marketID string
 	log      *logging.Logger
@@ -40,7 +40,7 @@ type Engine struct {
 	pss *positionsSnapshotState
 }
 
-// New instantiates a new positions engine
+// New instantiates a new positions engine.
 func New(log *logging.Logger, config Config, marketID string) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -88,7 +88,7 @@ func (e *Engine) Hash() []byte {
 	return crypto.Hash(output)
 }
 
-// ReloadConf update the internal configuration of the positions engine
+// ReloadConf update the internal configuration of the positions engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -140,7 +140,7 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
-// this method is a quicker way of handling separate unregister+register pairs
+// this method is a quicker way of handling separate unregister+register pairs.
 func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPosition {
 	pos, found := e.positions[originalOrder.Party]
 	if !found {
@@ -157,7 +157,7 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPositio
 // UpdateNetwork - functionally the same as the Update func, except for ignoring the network
 // party in the trade (whether it be buyer or seller). This could be incorporated into the Update
 // function, but we know when we're adding network trades, and having this check every time is
-// wasteful, and would only serve to add complexity to the Update func, and slow it down
+// wasteful, and would only serve to add complexity to the Update func, and slow it down.
 func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	// there's only 1 position
 	var (
@@ -207,7 +207,7 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	return []events.MarketPosition{*cpy}
 }
 
-// Update pushes the previous positions on the channel + the updated open volumes of buyer/seller
+// Update pushes the previous positions on the channel + the updated open volumes of buyer/seller.
 func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	buyer, ok := e.positions[trade.Buyer]
 	if !ok {
@@ -262,7 +262,7 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 	return ret
 }
 
-// RemoveDistressed Removes positions for distressed parties, and returns the most up to date positions we have
+// RemoveDistressed Removes positions for distressed parties, and returns the most up to date positions we have.
 func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.MarketPosition {
 	ret := make([]events.MarketPosition, 0, len(parties))
 	for _, party := range parties {
@@ -292,7 +292,7 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 }
 
 // UpdateMarkPrice update the mark price on all positions and return a slice
-// of the updated positions
+// of the updated positions.
 func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	for _, pos := range e.positions {
 		pos.price.Set(markPrice)
@@ -343,13 +343,13 @@ func max(a int64, b int64) int64 {
 	return b
 }
 
-// Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push
+// Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push.
 func (e *Engine) Positions() []events.MarketPosition {
 	return e.positionsCpy
 }
 
 // GetPositionByPartyID - return current position for a given party, it's used in margin checks during auctions
-// we're not specifying an interface of the return type, and we return a pointer to a copy for the nil
+// we're not specifying an interface of the return type, and we return a pointer to a copy for the nil.
 func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
 	pos, ok := e.positions[partyID]
 	if !ok {
@@ -360,7 +360,7 @@ func (e *Engine) GetPositionByPartyID(partyID string) (*MarketPosition, bool) {
 	return cpy, true
 }
 
-// Parties returns a list of all the parties in the position engine
+// Parties returns a list of all the parties in the position engine.
 func (e *Engine) Parties() []string {
 	parties := make([]string, 0, len(e.positions))
 	for _, v := range e.positions {

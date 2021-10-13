@@ -1933,7 +1933,7 @@ func TestPeggedOrdersAmends(t *testing.T) {
 }
 
 // We had a case where things crashed when the orders on the same price level were not sorted
-// in createdAt order. Test this by creating a pegged order and repricing to make it lose it's time order
+// in createdAt order. Test this by creating a pegged order and repricing to make it lose it's time order.
 func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
@@ -2026,7 +2026,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
-// Amend a parked order but the order remains parked
+// Amend a parked order but the order remains parked.
 func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
@@ -2063,7 +2063,7 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
-// Take a valid live order and force it to be parked by amending it
+// Take a valid live order and force it to be parked by amending it.
 func testPeggedOrderAmendForcesPark(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
@@ -2458,7 +2458,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 }
 
 // test for issue 787,
-// segv when an GTT order is cancelled, then expires
+// segv when an GTT order is cancelled, then expires.
 func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	now := time.Unix(5, 0)
 	closingAt := time.Unix(10000000000, 0)

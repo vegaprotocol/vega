@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	// by default all validators needs to sign
+	// by default all validators needs to sign.
 	defaultValidatorsVoteRequired = 1.0
 )
 
@@ -32,7 +32,7 @@ type ValidatorTopology interface {
 	Len() int
 }
 
-// Broker needs no mocks
+// Broker needs no mocks.
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
@@ -45,7 +45,7 @@ type Commander interface {
 
 // Notary will aggregate all signatures of a node for
 // a specific Command
-// e.g: asset withdrawal, asset allowlisting, etc
+// e.g: asset withdrawal, asset allowlisting, etc.
 type Notary struct {
 	cfg Config
 	log *logging.Logger
@@ -64,7 +64,7 @@ type idKind struct {
 	kind commandspb.NodeSignatureKind
 }
 
-// / nodeSig is a pair of a node and it signature
+// / nodeSig is a pair of a node and it signature.
 type nodeSig struct {
 	node string
 	sig  string
@@ -88,7 +88,7 @@ func (n *Notary) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f fl
 	return nil
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (n *Notary) ReloadConf(cfg Config) {
 	n.log.Info("reloading configuration")
 	if n.log.GetLevel() != cfg.Level.Get() {

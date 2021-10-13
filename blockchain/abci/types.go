@@ -24,7 +24,7 @@ type Codec interface {
 	Decode(in []byte) (Tx, error)
 }
 
-// ABCI hooks
+// ABCI hooks.
 type (
 	OnInitChainHandler  func(types.RequestInitChain) types.ResponseInitChain
 	OnBeginBlockHandler func(types.RequestBeginBlock) (context.Context, types.ResponseBeginBlock)

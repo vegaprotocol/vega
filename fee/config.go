@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'fee'.
 const namedLogger = "fee"
 
-// Config represent the configuration of the fee engine
+// Config represent the configuration of the fee engine.
 type Config struct {
 	Level encoding.LogLevel
 }

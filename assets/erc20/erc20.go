@@ -145,7 +145,7 @@ func maybeError(err error, format string, a ...interface{}) error {
 
 // SignBridgeListing create and sign the message to
 // be sent to the bridge to whitelist the asset
-// return the generated message and the signature for this message
+// return the generated message and the signature for this message.
 func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	bridgeAddress := b.ethClient.BridgeAddress().Hex()
 	// use the asset ID converted into a uint256

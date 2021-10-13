@@ -35,7 +35,7 @@ type testEngine struct {
 	as        *mocks.MockAuctionState
 }
 
-// implements the events.Margin interface
+// implements the events.Margin interface.
 type testMargin struct {
 	party           string
 	size            int64

@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-// ProposalParameters stores proposal specific parameters
+// ProposalParameters stores proposal specific parameters.
 type ProposalParameters struct {
 	MinClose              time.Duration
 	MaxClose              time.Duration
@@ -20,7 +20,7 @@ type ProposalParameters struct {
 }
 
 // ToEnact wraps the proposal in a type that has a convenient interface
-// to quickly work out what change we're dealing with, and get the data
+// to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
 	p  *types.Proposal
 	m  *ToEnactMarket
@@ -33,7 +33,7 @@ type ToEnact struct {
 // ToEnactMarket is just a empty struct, to signal
 // an enacted market. nothing to be done with it
 // for now (later maybe add information to check
-// end of opening auction or so)
+// end of opening auction or so).
 type ToEnactMarket struct{}
 
 func (t ToEnact) IsNewMarket() bool {
@@ -84,7 +84,7 @@ func (t *ToEnact) Proposal() *types.Proposal {
 // ToSubmit wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data
 // This cover every kind of proposal which requires action after a
-// a proposal is submitted
+// a proposal is submitted.
 type ToSubmit struct {
 	p *types.Proposal
 	m *ToSubmitNewMarket

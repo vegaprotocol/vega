@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// eq implements a gomock.Matcher with a better diff output
+// eq implements a gomock.Matcher with a better diff output.
 type eqMatcher struct {
 	t        *testing.T
 	expected interface{}

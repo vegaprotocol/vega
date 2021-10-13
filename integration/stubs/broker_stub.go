@@ -510,7 +510,7 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, e
 	return types.Account{}, errors.New("account does not exist")
 }
 
-// GetPartyGeneralAccount returns the latest event WRT the party's general account
+// GetPartyGeneralAccount returns the latest event WRT the party's general account.
 func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")

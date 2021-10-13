@@ -921,7 +921,7 @@ func (m *Market) amendLiquidityProvisionAuction(
 // this amendment, this is all happening during auction, so no LP order
 // from the party should be in the book, we will just get a list of order
 // from the liquidity engine, and try to calculate the potential position
-// from there, then move the funds in the party margin account
+// from there, then move the funds in the party margin account.
 func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	ctx context.Context,
 	sub *types.LiquidityProvisionSubmission,
@@ -1109,7 +1109,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 	return nil
 }
 
-// returns the rollback transfer in case of error
+// returns the rollback transfer in case of error.
 func (m *Market) ensureLiquidityProvisionBond(
 	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
 ) (*types.Transfer, error) {

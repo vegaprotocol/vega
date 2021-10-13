@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	// ErrEvtAlreadyExist we have already handled this event
+	// ErrEvtAlreadyExist we have already handled this event.
 	ErrEvtAlreadyExist = errors.New("event already exist")
-	// ErrPubKeyNotAllowlisted this pubkey is not part of the allowlist
+	// ErrPubKeyNotAllowlisted this pubkey is not part of the allowlist.
 	ErrPubKeyNotAllowlisted = errors.New("pubkey not allowlisted")
 )
 
@@ -45,7 +45,7 @@ type ValidatorTopology interface {
 
 // EvtForwarder receive events from the blockchain queue
 // and will try to send them to the vega chain.
-// this will select a node in the network to forward the event
+// this will select a node in the network to forward the event.
 type EvtForwarder struct {
 	log  *logging.Logger
 	cfg  Config
@@ -74,7 +74,7 @@ type nodeHash struct {
 	hash uint64
 }
 
-// New creates a new instance of the event forwarder
+// New creates a new instance of the event forwarder.
 func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) *EvtForwarder {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -105,7 +105,7 @@ func buildAllowlist(cfg Config) map[string]struct{} {
 	return allowlist
 }
 
-// ReloadConf updates the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration of the collateral engine.
 func (e *EvtForwarder) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -124,7 +124,7 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 }
 
 // Ack will return true if the event is newly acknowledge
-// if the event already exist and was already acknowledge this will return false
+// if the event already exist and was already acknowledge this will return false.
 func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 	res := "ok"
 	defer func() {
@@ -159,7 +159,7 @@ func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
 }
 
 // Forward will forward an ChainEvent to the tendermint network
-// we expect the pubkey to be an ed25519 pubkey hex encoded
+// we expect the pubkey to be an ed25519 pubkey hex encoded.
 func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, pubkey string) error {
 	res := "ok"
 	defer func() {

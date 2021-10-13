@@ -101,7 +101,7 @@ func clearEvents(tm *testMarket) {
 	tm.orderEvents = nil
 }
 
-// Check that the orders in the matching engine are the same as the orders in the market depth
+// Check that the orders in the matching engine are the same as the orders in the market depth.
 func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) bool {
 	t.Helper()
 	correct := true

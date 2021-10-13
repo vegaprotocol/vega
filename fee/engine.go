@@ -44,7 +44,7 @@ func New(log *logging.Logger, cfg Config, feeCfg types.Fees, asset string) (*Eng
 }
 
 // ReloadConf is used in order to reload the internal configuration of
-// the of the fee engine
+// the of the fee engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -81,7 +81,7 @@ func (e *Engine) SetLiquidityFee(v num.Decimal) {
 // trades which were produced from a market running in
 // in continuous trading mode.
 // A single FeesTransfer is produced here as all fees
-// are paid by the aggressive order
+// are paid by the aggressive order.
 func (e *Engine) CalculateForContinuousMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
@@ -168,7 +168,7 @@ func (e *Engine) CalculateForContinuousMode(
 // trades which were produced from a market running in
 // in auction trading mode.
 // A list FeesTransfer is produced each containing fees transfer from a
-// single party
+// single party.
 func (e *Engine) CalculateForAuctionMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
@@ -216,7 +216,7 @@ func (e *Engine) CalculateForAuctionMode(
 // trades which were produced from a market running in
 // in auction trading mode.
 // A list FeesTransfer is produced each containing fees transfer from a
-// single party
+// single party.
 func (e *Engine) CalculateForFrequentBatchesAuctionMode(
 	trades []*types.Trade,
 ) (events.FeesTransfer, error) {
@@ -428,7 +428,7 @@ func (e *Engine) BuildLiquidityFeeDistributionTransfer(shares map[string]num.Dec
 }
 
 // this will calculate the transfer the distressed party needs
-// to do
+// to do.
 func (e *Engine) getPositionResolutionFeesTransfers(
 	party string, share num.Decimal, fees *types.Fee,
 ) ([]*types.Transfer, *types.Fee, *num.Uint) {

@@ -17,7 +17,7 @@ var (
 	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
 )
 
-// Broker needs no mocks
+// Broker needs no mocks.
 type Broker interface {
 	Send(event events.Event)
 }
@@ -41,7 +41,7 @@ func (v ValidatorData) IsValid() bool {
 	return true
 }
 
-// ValidatorMapping maps a tendermint pubkey with a vega pubkey
+// ValidatorMapping maps a tendermint pubkey with a vega pubkey.
 type ValidatorMapping map[string]ValidatorData
 
 type Topology struct {
@@ -76,7 +76,7 @@ func NewTopology(log *logging.Logger, cfg Config, wallet *vgnw.Wallet, broker Br
 	return t
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (t *Topology) ReloadConf(cfg Config) {
 	t.log.Info("reloading configuration")
 	if t.log.GetLevel() != cfg.Level.Get() {
@@ -98,7 +98,7 @@ func (t *Topology) Len() int {
 	return len(t.validators)
 }
 
-// Get returns validator data based on validator public key
+// Get returns validator data based on validator public key.
 func (t *Topology) Get(key string) *ValidatorData {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -110,7 +110,7 @@ func (t *Topology) Get(key string) *ValidatorData {
 	return nil
 }
 
-// AllVegaPubKeys returns all the validators vega public keys
+// AllVegaPubKeys returns all the validators vega public keys.
 func (t *Topology) AllVegaPubKeys() []string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -121,7 +121,7 @@ func (t *Topology) AllVegaPubKeys() []string {
 	return keys
 }
 
-// AllNodeIDs returns all the validators vega public keys
+// AllNodeIDs returns all the validators vega public keys.
 func (t *Topology) AllNodeIDs() []string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -149,13 +149,13 @@ func (t *Topology) UpdateValidatorSet(keys []string) {
 	t.chainValidators = keys
 }
 
-// IsValidatorNode takes a nodeID and returns true if the node is a validator node
+// IsValidatorNode takes a nodeID and returns true if the node is a validator node.
 func (t *Topology) IsValidatorNode(nodeID string) bool {
 	_, ok := t.validators[nodeID]
 	return ok
 }
 
-// IsValidatorVegaPubKey takes a nodeID and returns true if the node is a validator node
+// IsValidatorVegaPubKey takes a nodeID and returns true if the node is a validator node.
 func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	defer func() {
 		if t.log.GetLevel() <= logging.DebugLevel {

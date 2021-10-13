@@ -13,10 +13,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ErrPriceNotFound signals that a price was not found on the book side
+// ErrPriceNotFound signals that a price was not found on the book side.
 var ErrPriceNotFound = errors.New("price-volume pair not found")
 
-// OrderBookSide represent a side of the book, either Sell or Buy
+// OrderBookSide represent a side of the book, either Sell or Buy.
 type OrderBookSide struct {
 	side types.Side
 	log  *logging.Logger
@@ -40,7 +40,7 @@ func (s *OrderBookSide) Hash() []byte {
 	return crypto.Hash(output)
 }
 
-// When we leave an auction we need to remove any orders marked as GFA
+// When we leave an auction we need to remove any orders marked as GFA.
 func (s *OrderBookSide) getOrdersToCancel(auction bool) []*types.Order {
 	ordersToCancel := make([]*types.Order, 0)
 	for _, pricelevel := range s.levels {
@@ -62,7 +62,7 @@ func (s *OrderBookSide) addOrder(o *types.Order) {
 }
 
 // BestPriceAndVolume returns the top of book price and volume
-// returns an error if the book is empty
+// returns an error if the book is empty.
 func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
 		return num.Zero(), 0, errors.New("no orders on the book")
@@ -73,7 +73,7 @@ func (s *OrderBookSide) BestPriceAndVolume() (*num.Uint, uint64, error) {
 
 // BestStaticPrice returns the top of book price for non pegged orders
 // We do not keep count of the volume which makes this slightly quicker
-// returns an error if the book is empty
+// returns an error if the book is empty.
 func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 	if len(s.levels) <= 0 {
 		return num.Zero(), errors.New("no orders on the book")
@@ -91,7 +91,7 @@ func (s *OrderBookSide) BestStaticPrice() (*num.Uint, error) {
 }
 
 // BestStaticPriceAndVolume returns the top of book price for non pegged orders
-// returns an error if the book is empty
+// returns an error if the book is empty.
 func (s *OrderBookSide) BestStaticPriceAndVolume() (*num.Uint, uint64, error) {
 	if len(s.levels) <= 0 {
 		return num.Zero(), 0, errors.New("no orders on the book")
@@ -158,7 +158,7 @@ func (s *OrderBookSide) amendOrder(orderAmend *types.Order) (uint64, error) {
 	return reduceBy, nil
 }
 
-// ExtractOrders removes the orders from the top of the book until the volume amount is hit
+// ExtractOrders removes the orders from the top of the book until the volume amount is hit.
 func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.Order {
 	extractedOrders := []*types.Order{}
 
@@ -220,7 +220,7 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.O
 	return extractedOrders
 }
 
-// RemoveOrder will remove an order from the book
+// RemoveOrder will remove an order from the book.
 func (s *OrderBookSide) RemoveOrder(o *types.Order) (*types.Order, error) {
 	// first  we try to find the pricelevel of the order
 	var i int
@@ -306,7 +306,7 @@ func (s *OrderBookSide) getPriceLevel(price *num.Uint) *PriceLevel {
 	return level
 }
 
-// GetVolume returns the volume at the given pricelevel
+// GetVolume returns the volume at the given pricelevel.
 func (s *OrderBookSide) GetVolume(price *num.Uint) (uint64, error) {
 	priceLevel := s.getPriceLevelIfExists(price)
 

@@ -45,7 +45,7 @@ type VegaTime interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
-// NewService instantiates a new epochtime service
+// NewService instantiates a new epochtime service.
 func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc {
 	s := &Svc{
 		config:               conf,
@@ -68,12 +68,12 @@ func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc
 	return s
 }
 
-// ReloadConf reload the configuration for the epochtime service
+// ReloadConf reload the configuration for the epochtime service.
 func (s *Svc) ReloadConf(conf Config) {
 	// do nothing here, conf is not used for now
 }
 
-// OnBlockEnd handles a callback from the abci when the block ends
+// OnBlockEnd handles a callback from the abci when the block ends.
 func (s *Svc) OnBlockEnd(ctx context.Context) {
 	if s.readyToEndEpoch {
 		s.readyToStartNewEpoch = true
@@ -161,7 +161,7 @@ func (s *Svc) Load(_ context.Context, data []byte) error {
 }
 
 // NotifyOnEpoch allows other services to register a callback function
-// which will be called once we enter a new epoch
+// which will be called once we enter a new epoch.
 func (s *Svc) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
 	s.listeners = append(s.listeners, f)
 }

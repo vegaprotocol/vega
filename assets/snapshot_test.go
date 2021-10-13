@@ -26,7 +26,7 @@ func testAssets(t *testing.T) *assets.Service {
 	return as
 }
 
-// test round trip of active snapshot hash and serialisation
+// test round trip of active snapshot hash and serialisation.
 func TestActiveSnapshotRoundTrip(t *testing.T) {
 	activeKey := (&types.PayloadActiveAssets{}).Key()
 	for i := 0; i < 10; i++ {
@@ -73,7 +73,7 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 	}
 }
 
-// test round trip of active snapshot hash and serialisation
+// test round trip of active snapshot hash and serialisation.
 func TestPendingSnapshotRoundTrip(t *testing.T) {
 	pendingKey := (&types.PayloadPendingAssets{}).Key()
 

@@ -279,7 +279,6 @@ pipeline {
                                     --disable golint \
                                     --disable goimports \
                                     --disable godox \
-                                    --disable godot \
                                     --disable gocritic \
                                     --disable goconst \
                                     --disable gocognit \

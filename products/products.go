@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	// ErrNilProduct signals the product passed in the constructor was nil
+	// ErrNilProduct signals the product passed in the constructor was nil.
 	ErrNilProduct = errors.New("nil product")
 	// ErrUnimplementedProduct signal that the product passed to the
 	// constructor was not nil, but the code as no knowledge of it.
@@ -25,7 +25,7 @@ type OracleEngine interface {
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
-// Product is the interface provided by all product in vega
+// Product is the interface provided by all product in vega.
 type Product interface {
 	Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error)
 	Value(markPrice *num.Uint) (*num.Uint, error)
@@ -34,7 +34,7 @@ type Product interface {
 	SettlementPrice() (*num.Uint, error)
 }
 
-// New instance a new product from a Market framework product configuration
+// New instance a new product from a Market framework product configuration.
 func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngine) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct

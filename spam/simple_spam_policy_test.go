@@ -86,7 +86,7 @@ func testProposalEndBlockReset(t *testing.T) {
 	require.False(t, bytes.Equal(bytes3, bytes2))
 }
 
-// reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch
+// reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch.
 func testCommandPreRejectInsufficientBalance(t *testing.T) {
 	policy := getCommandSpamPolicy()
 
@@ -97,7 +97,7 @@ func testCommandPreRejectInsufficientBalance(t *testing.T) {
 	require.Equal(t, errors.New("party has insufficient tokens to submit simple request in this epoch"), err)
 }
 
-// reject proposal requests from banned parties for as long as they are banned
+// reject proposal requests from banned parties for as long as they are banned.
 func testCommandPreRejectBannedParty(t *testing.T) {
 	policy := getCommandSpamPolicy()
 

@@ -34,7 +34,7 @@ func NewMockBroker(ctrl *gomock.Controller) *MockBroker {
 	}
 }
 
-// Send - first call Send on the underlying mock, then add the argument to the various maps
+// Send - first call Send on the underlying mock, then add the argument to the various maps.
 func (b *MockBroker) Send(event events.Event) {
 	// first call the regular mock
 	b.MockBrokerI.Send(event)
@@ -58,7 +58,7 @@ func (b *MockBroker) Send(event events.Event) {
 	b.mu.Unlock()
 }
 
-// SendBatch - same as Send: call mock first, then add arguments to the maps
+// SendBatch - same as Send: call mock first, then add arguments to the maps.
 func (b *MockBroker) SendBatch(evts []events.Event) {
 	b.MockBrokerI.SendBatch(evts)
 	if len(evts) == 0 {
@@ -87,7 +87,7 @@ func (b *MockBroker) SendBatch(evts []events.Event) {
 	b.mu.Unlock()
 }
 
-// GetAllByType returns all events of a given type the mock has received
+// GetAllByType returns all events of a given type the mock has received.
 func (b *MockBroker) GetAllByType(t events.Type) []events.Event {
 	b.mu.Lock()
 	allEvts := b.allEvts
@@ -98,7 +98,7 @@ func (b *MockBroker) GetAllByType(t events.Type) []events.Event {
 	return nil
 }
 
-// GetLastByType returns the most recent event for a given type. If SendBatch was called, this is the last event of the batch
+// GetLastByType returns the most recent event for a given type. If SendBatch was called, this is the last event of the batch.
 func (b *MockBroker) GetLastByType(t events.Type) events.Event {
 	b.mu.Lock()
 	defer b.mu.Unlock()

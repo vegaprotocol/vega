@@ -14,7 +14,7 @@ import (
 
 var ErrMissingLogNormalParameter = errors.New("missing log normal parameters")
 
-// LogNormal represent a future risk model
+// LogNormal represent a future risk model.
 type LogNormal struct {
 	riskAversionParameter, tau num.Decimal
 	params                     riskmodelbs.ModelParamsBS
@@ -25,7 +25,7 @@ type LogNormal struct {
 	cacheHorizon num.Decimal
 }
 
-// NewBuiltinFutures instantiate a new builtin future
+// NewBuiltinFutures instantiate a new builtin future.
 func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, error) {
 	if pf.Params == nil {
 		return nil, ErrMissingLogNormalParameter
@@ -48,13 +48,13 @@ func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, 
 }
 
 // CalculationInterval return the calculation interval for
-// the Forward risk model
+// the Forward risk model.
 func (f *LogNormal) CalculationInterval() time.Duration {
 	return time.Duration(0)
 }
 
 // CalculateRiskFactors calls the risk model in order to get
-// the new risk models
+// the new risk models.
 func (f *LogNormal) CalculateRiskFactors(
 	current *types.RiskResult) (bool, *types.RiskResult) {
 	rav, _ := f.riskAversionParameter.Float64()
@@ -106,7 +106,7 @@ func (f *LogNormal) getDistribution(currentP *num.Uint, yFrac num.Decimal) inter
 	return f.distCache
 }
 
-// GetProjectionHorizon returns the projection horizon used by the model for margin calculation pruposes
+// GetProjectionHorizon returns the projection horizon used by the model for margin calculation pruposes.
 func (f *LogNormal) GetProjectionHorizon() num.Decimal {
 	return f.tau
 }

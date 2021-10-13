@@ -184,19 +184,19 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	require.False(t, bytes.Equal(state, emptyState))
 }
 
-// test that registering reward scheme is unsupported
+// test that registering reward scheme is unsupported.
 func testRegisterRewardSchemeErr(t *testing.T) {
 	testEngine := getEngine(t)
 	require.Error(t, ErrUnsupported, testEngine.engine.RegisterRewardScheme(&types.RewardScheme{}))
 }
 
-// test that updating reward scheme is unsupported
+// test that updating reward scheme is unsupported.
 func testUpdateRewardSchemeErr(t *testing.T) {
 	testEngine := getEngine(t)
 	require.Error(t, ErrUnsupported, testEngine.engine.RegisterRewardScheme(&types.RewardScheme{}))
 }
 
-// test registration of hardcoded staking and delegation reward scheme
+// test registration of hardcoded staking and delegation reward scheme.
 func testRegisterStakingAndDelegationRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -214,7 +214,7 @@ func testRegisterStakingAndDelegationRewardScheme(t *testing.T) {
 	require.Equal(t, 0, len(rs.RewardPoolAccountIDs))
 }
 
-// test updating of asset for staking and delegation reward which triggers the creation or get of the reward account for the asset
+// test updating of asset for staking and delegation reward which triggers the creation or get of the reward account for the asset.
 func testUpdateAssetForStakingAndDelegationRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -227,7 +227,7 @@ func testUpdateAssetForStakingAndDelegationRewardScheme(t *testing.T) {
 	require.Equal(t, "!*ETH<", rs.RewardPoolAccountIDs[0])
 }
 
-// test updating of asset for staking and delegation reward which happens after max payout for asset has been updated
+// test updating of asset for staking and delegation reward which happens after max payout for asset has been updated.
 func testUpdateAssetForStakingAndDelegationRewardSchemeWithMaxPayoutSetup(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -242,7 +242,7 @@ func testUpdateAssetForStakingAndDelegationRewardSchemeWithMaxPayoutSetup(t *tes
 	require.Equal(t, num.NewUint(10000), rs.MaxPayoutPerAssetPerParty["ETH"])
 }
 
-// test updating of max payout per participant for staking and delegation reward scheme
+// test updating of max payout per participant for staking and delegation reward scheme.
 func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -255,7 +255,7 @@ func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, num.NewUint(10000), rs.MaxPayoutPerAssetPerParty[""])
 }
 
-// test updading of payout fraction for staking and delegation reward scheme
+// test updading of payout fraction for staking and delegation reward scheme.
 func testUpdatePayoutFractionForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -267,7 +267,7 @@ func testUpdatePayoutFractionForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, 0.1, rs.PayoutFraction)
 }
 
-// test updating of payout delay for staking and delegation reward scheme
+// test updating of payout delay for staking and delegation reward scheme.
 func testUpdatePayoutDelayForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -279,7 +279,7 @@ func testUpdatePayoutDelayForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, 1234*time.Second, rs.PayoutDelay)
 }
 
-// test updating of payout delay for staking and delegation reward scheme
+// test updating of payout delay for staking and delegation reward scheme.
 func testUpdateDelegatorShareForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -294,7 +294,7 @@ func testUpdateDelegatorShareForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, "0.123456", rs.Parameters["delegatorShare"].Value)
 }
 
-// test calculation of reward payout
+// test calculation of reward payout.
 func testCalculateRewards(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -323,7 +323,7 @@ func testCalculateRewards(t *testing.T) {
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
-// test calculation of reward payout where the amount for epoch is capped by the max net param
+// test calculation of reward payout where the amount for epoch is capped by the max net param.
 func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -352,7 +352,7 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
-// test payout distribution
+// test payout distribution.
 func testDistributePayout(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -392,7 +392,7 @@ func testDistributePayout(t *testing.T) {
 	require.Equal(t, num.NewUint(995000), rewardAccount.Balance)
 }
 
-// test on epoch end such that the full reward account balance can be reward with delay
+// test on epoch end such that the full reward account balance can be reward with delay.
 func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -475,7 +475,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(331428*2), node3Acc.Balance)
 }
 
-// test payout distribution on epoch end with no delay
+// test payout distribution on epoch end with no delay.
 func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -528,7 +528,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(331428), node3Acc.Balance)
 }
 
-// test on time update - there are pending payouts but they are not yet due so nothing is paid or changed
+// test on time update - there are pending payouts but they are not yet due so nothing is paid or changed.
 func testOnChainTimeUpdateNoPayoutsToSend(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine

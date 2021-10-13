@@ -14,7 +14,7 @@ import (
 
 var ErrUnknownKey = errors.New("unknown key")
 
-// Broker - event bus
+// Broker - event bus.
 type Broker interface {
 	Send(e events.Event)
 	SendBatch(evts []events.Event)
@@ -78,7 +78,7 @@ func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 }
 
 // UponGenesis load the initial network parameters
-// from the genesis state
+// from the genesis state.
 func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	s.log.Debug("Entering netparams.Store.UponGenesis")
 	defer func() {
@@ -136,7 +136,7 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	return nil
 }
 
-// Watch a list of parameters updates
+// Watch a list of parameters updates.
 func (s *Store) Watch(wp ...WatchParam) error {
 	for _, v := range wp {
 		// type check the function to dispatch updates to
@@ -152,7 +152,7 @@ func (s *Store) Watch(wp ...WatchParam) error {
 	return nil
 }
 
-// dispatch the update of a network parameters to all the listeners
+// dispatch the update of a network parameters to all the listeners.
 func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 	val := s.store[p]
 	fn := val.GetDispatch()
@@ -171,7 +171,7 @@ func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 }
 
 // OnChainTimeUpdate is trigger once per blocks
-// we will send parameters update to watchers
+// we will send parameters update to watchers.
 func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
@@ -212,7 +212,7 @@ func (s *Store) Validate(key, value string) error {
 }
 
 // Update will update the stored value for a given key
-// will return an error if the value do not pass validation
+// will return an error if the value do not pass validation.
 func (s *Store) Update(ctx context.Context, key, value string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -254,7 +254,7 @@ func (s *Store) updateBatch(ctx context.Context, params map[string]string) error
 	return nil
 }
 
-// Exists check if a value exist for the given key
+// Exists check if a value exist for the given key.
 func (s *Store) Exists(key string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -262,7 +262,7 @@ func (s *Store) Exists(key string) bool {
 	return ok
 }
 
-// Get a value associated to the given key
+// Get a value associated to the given key.
 func (s *Store) Get(key string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -273,7 +273,7 @@ func (s *Store) Get(key string) (string, error) {
 	return svalue.String(), nil
 }
 
-// GetFloat a value associated to the given key
+// GetFloat a value associated to the given key.
 func (s *Store) GetFloat(key string) (float64, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -284,7 +284,7 @@ func (s *Store) GetFloat(key string) (float64, error) {
 	return svalue.ToFloat()
 }
 
-// GetInt a value associated to the given key
+// GetInt a value associated to the given key.
 func (s *Store) GetInt(key string) (int64, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -295,7 +295,7 @@ func (s *Store) GetInt(key string) (int64, error) {
 	return svalue.ToInt()
 }
 
-// GetUint a value associated to the given key
+// GetUint a value associated to the given key.
 func (s *Store) GetUint(key string) (*num.Uint, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -310,7 +310,7 @@ func (s *Store) GetUint(key string) (*num.Uint, error) {
 	return num.NewUint(asUint64), nil
 }
 
-// GetBool a value associated to the given key
+// GetBool a value associated to the given key.
 func (s *Store) GetBool(key string) (bool, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -321,7 +321,7 @@ func (s *Store) GetBool(key string) (bool, error) {
 	return svalue.ToBool()
 }
 
-// GetDuration a value associated to the given key
+// GetDuration a value associated to the given key.
 func (s *Store) GetDuration(key string) (time.Duration, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -332,7 +332,7 @@ func (s *Store) GetDuration(key string) (time.Duration, error) {
 	return svalue.ToDuration()
 }
 
-// GetString a value associated to the given key
+// GetString a value associated to the given key.
 func (s *Store) GetString(key string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -343,7 +343,7 @@ func (s *Store) GetString(key string) (string, error) {
 	return svalue.ToString()
 }
 
-// GetJSONStruct a value associated to the given key
+// GetJSONStruct a value associated to the given key.
 func (s *Store) GetJSONStruct(key string, v Reset) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

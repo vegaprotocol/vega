@@ -11,17 +11,17 @@ import (
 type LiquidityProvisionStatus = proto.LiquidityProvision_Status
 
 const (
-	// The default value
+	// The default value.
 	LiquidityProvisionUnspecified LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_UNSPECIFIED
-	// The liquidity provision is active
+	// The liquidity provision is active.
 	LiquidityProvisionStatusActive LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_ACTIVE
-	// The liquidity provision was stopped by the network
+	// The liquidity provision was stopped by the network.
 	LiquidityProvisionStatusStopped LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_STOPPED
-	// The liquidity provision was cancelled by the liquidity provider
+	// The liquidity provision was cancelled by the liquidity provider.
 	LiquidityProvisionStatusCancelled LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_CANCELLED
-	// The liquidity provision was invalid and got rejected
+	// The liquidity provision was invalid and got rejected.
 	LiquidityProvisionStatusRejected LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_REJECTED
-	// The liquidity provision is valid and accepted by network, but orders aren't deployed
+	// The liquidity provision is valid and accepted by network, but orders aren't deployed.
 	LiquidityProvisionStatusUndeployed LiquidityProvisionStatus = proto.LiquidityProvision_STATUS_UNDEPLOYED
 	// The liquidity provision is valid and accepted by network
 	// but have never been deployed. I when it's possible to deploy them for the first time

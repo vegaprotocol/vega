@@ -51,7 +51,7 @@ type AssetDetailsErc20 struct {
 	Erc20 *ERC20
 }
 
-// An ERC20 token based asset, living on the ethereum network
+// An ERC20 token based asset, living on the ethereum network.
 type ERC20 struct {
 	ContractAddress string
 }

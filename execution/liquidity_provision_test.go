@@ -319,7 +319,7 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 }
 
 // Check that we are unable to directly cancel or amend a pegged order that was
-// created by the LP system
+// created by the LP system.
 func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -403,7 +403,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 }
 
 // When a liquidity provider submits an order and runs out of margin from both their general
-// and margin account, the system should take the required amount from the bond account
+// and margin account, the system should take the required amount from the bond account.
 func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -474,7 +474,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 }
 
 // When a liquidity provider has a position that requires more margin after a MTM settlement,
-// they should use the assets in the bond account after the general and margin account are empty
+// they should use the assets in the bond account after the general and margin account are empty.
 func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -669,7 +669,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 }
 
 // If we submit a valid LP submission but then try ot alter it to something non valid
-// the amendment should be rejected and the original submission is still valid
+// the amendment should be rejected and the original submission is still valid.
 func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -720,7 +720,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 }
 
 // Liquidity fee must be updated when new LP submissions are added or existing ones
-// removed
+// removed.
 func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -935,7 +935,7 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 }
 
 // When a price monitoring auction is started, make sure we cancel all the pegged orders and
-// that no fees are charged to the liquidity providers
+// that no fees are charged to the liquidity providers.
 func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)

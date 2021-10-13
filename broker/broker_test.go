@@ -548,7 +548,7 @@ func testSubscriberSkip(t *testing.T) {
 	close(closeCh)
 }
 
-// test making sure that events are sent only to subs that are interested in it
+// test making sure that events are sent only to subs that are interested in it.
 func testEventTypeSubscription(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)

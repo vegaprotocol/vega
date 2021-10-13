@@ -24,14 +24,14 @@ type (
 type WithdrawalStatus = proto.Withdrawal_Status
 
 const (
-	// WithdrawalStatusUnspecified Default value, always invalid
+	// WithdrawalStatusUnspecified Default value, always invalid.
 	WithdrawalStatusUnspecified WithdrawalStatus = 0
-	// WithdrawalStatusOpen The withdrawal is open and being processed by the network
+	// WithdrawalStatusOpen The withdrawal is open and being processed by the network.
 	WithdrawalStatusOpen WithdrawalStatus = 1
-	// WithdrawalStatusCancelled The withdrawal have been cancelled
+	// WithdrawalStatusCancelled The withdrawal have been cancelled.
 	WithdrawalStatusCancelled WithdrawalStatus = 2
 	// WithdrawalStatusFinalized The withdrawal went through and is fully finalised, the funds are removed from the
-	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network
+	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network.
 	WithdrawalStatusFinalized WithdrawalStatus = 3
 )
 
@@ -97,17 +97,17 @@ func WithdrawalFromProto(w *proto.Withdrawal) *Withdrawal {
 type DepositStatus = proto.Deposit_Status
 
 const (
-	// DepositStatusUnspecified Default value, always invalid
+	// DepositStatusUnspecified Default value, always invalid.
 	DepositStatusUnspecified DepositStatus = 0
-	// DepositStatusOpen The deposit is being processed by the network
+	// DepositStatusOpen The deposit is being processed by the network.
 	DepositStatusOpen DepositStatus = 1
-	// DepositStatusCancelled The deposit has been cancelled by the network
+	// DepositStatusCancelled The deposit has been cancelled by the network.
 	DepositStatusCancelled DepositStatus = 2
-	// DepositStatusFinalized The deposit has been finalised and accounts have been updated
+	// DepositStatusFinalized The deposit has been finalised and accounts have been updated.
 	DepositStatusFinalized DepositStatus = 3
 )
 
-// Deposit represent a deposit on to the Vega network
+// Deposit represent a deposit on to the Vega network.
 type Deposit struct {
 	// ID Unique identifier for the deposit
 	ID string

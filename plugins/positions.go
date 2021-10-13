@@ -14,7 +14,7 @@ import (
 
 var ErrMarketNotFound = errors.New("could not find market")
 
-// SE SettleEvent - common denominator between SPE & SDE
+// SE SettleEvent - common denominator between SPE & SDE.
 type SE interface {
 	events.Event
 	PartyID() string
@@ -23,21 +23,21 @@ type SE interface {
 	Timestamp() int64
 }
 
-// SPE SettlePositionEvent
+// SPE SettlePositionEvent.
 type SPE interface {
 	SE
 	Trades() []events.TradeSettlement
 	Timestamp() int64
 }
 
-// SDE SettleDistressedEvent
+// SDE SettleDistressedEvent.
 type SDE interface {
 	SE
 	Margin() *num.Uint
 	Timestamp() int64
 }
 
-// LSE LossSocializationEvent
+// LSE LossSocializationEvent.
 type LSE interface {
 	events.Event
 	PartyID() string
@@ -47,7 +47,7 @@ type LSE interface {
 	Timestamp() int64
 }
 
-// Positions plugin taking settlement data to build positions API data
+// Positions plugin taking settlement data to build positions API data.
 type Positions struct {
 	*subscribers.Base
 	mu   *sync.RWMutex
@@ -142,7 +142,7 @@ func (p *Positions) updateSettleDestressed(e SDE) {
 	p.data[mID][tID] = calc
 }
 
-// GetPositionsByMarketAndParty get the position of a single party in a given market
+// GetPositionsByMarketAndParty get the position of a single party in a given market.
 func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -157,7 +157,7 @@ func (p *Positions) GetPositionsByMarketAndParty(market, party string) (*types.P
 	return &pos.Position, nil
 }
 
-// GetPositionsByParty get all positions for a given party
+// GetPositionsByParty get all positions for a given party.
 func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -175,7 +175,7 @@ func (p *Positions) GetPositionsByParty(party string) ([]*types.Position, error)
 	return positions, nil
 }
 
-// GetAllPositions returns all positions, across markets
+// GetAllPositions returns all positions, across markets.
 func (p *Positions) GetAllPositions() ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()
@@ -194,7 +194,7 @@ func (p *Positions) GetAllPositions() ([]*types.Position, error) {
 	return pos, nil
 }
 
-// GetPositionsByMarket get all party positions in a given market
+// GetPositionsByMarket get all party positions in a given market.
 func (p *Positions) GetPositionsByMarket(market string) ([]*types.Position, error) {
 	p.mu.RLock()
 	defer p.mu.RUnlock()

@@ -13,10 +13,10 @@ import (
 )
 
 // ErrNoMarketClosingTime signal that the instrument is invalid as missing
-// a market closing time
+// a market closing time.
 var ErrNoMarketClosingTime = errors.New("no market closing time")
 
-// Instrument represent an instrument used in a market
+// Instrument represent an instrument used in a market.
 type Instrument struct {
 	ID       string
 	Code     string
@@ -27,7 +27,7 @@ type Instrument struct {
 	Quote string
 }
 
-// TradableInstrument represent an instrument to be trade in a market
+// TradableInstrument represent an instrument to be trade in a market.
 type TradableInstrument struct {
 	Instrument       *Instrument
 	MarginCalculator *types.MarginCalculator
@@ -35,7 +35,7 @@ type TradableInstrument struct {
 }
 
 // NewTradableInstrument will instantiate a new tradable instrument
-// using a market framework configuration for a tradable instrument
+// using a market framework configuration for a tradable instrument.
 func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, oe products.OracleEngine) (*TradableInstrument, error) {
 	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe)
 	if err != nil {
@@ -54,7 +54,7 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 }
 
 // NewInstrument will instantiate a new instrument
-// using a market framework configuration for a instrument
+// using a market framework configuration for a instrument.
 func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine) (*Instrument, error) {
 	product, err := products.New(ctx, log, pi.Product, oe)
 	if err != nil {
@@ -69,7 +69,7 @@ func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrumen
 	}, err
 }
 
-// GetMarketClosingTime return the maturity of the product
+// GetMarketClosingTime return the maturity of the product.
 func (i *Instrument) GetMarketClosingTime() (time.Time, error) {
 	switch p := i.Product.(type) {
 	case *products.Future:

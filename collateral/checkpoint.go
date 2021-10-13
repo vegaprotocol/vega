@@ -53,7 +53,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
-// get all balances for snapshot
+// get all balances for snapshot.
 func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 	// party -> asset -> balance
 	balances := make(map[string]map[string]*num.Uint, len(e.accs))

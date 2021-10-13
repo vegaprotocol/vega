@@ -25,10 +25,10 @@ import (
 )
 
 var (
-	// ErrNotABuiltinAsset is raised when a party try to top up for a non builtin asset
+	// ErrNotABuiltinAsset is raised when a party try to top up for a non builtin asset.
 	ErrNotABuiltinAsset = errors.New("asset is not a builtin asset")
 
-	// ErrAssetNotFound is raised when an asset id is not found
+	// ErrAssetNotFound is raised when an asset id is not found.
 	ErrAssetNotFound = errors.New("asset was not found")
 )
 

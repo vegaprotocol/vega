@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	// use default address of faucet
+	// use default address of faucet.
 	defaultAddress = "http://0.0.0.0:1790"
 )
 

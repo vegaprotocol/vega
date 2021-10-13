@@ -10,7 +10,7 @@ const (
 	namedLogger = "processor"
 )
 
-// Config represent the configuration of the processor package
+// Config represent the configuration of the processor package.
 type Config struct {
 	Level               encoding.LogLevel `long:"log-level"`
 	LogOrderSubmitDebug encoding.Bool     `long:"log-order-submit-debug"`

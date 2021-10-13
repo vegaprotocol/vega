@@ -12,13 +12,13 @@ import (
 )
 
 var (
-	// ErrNilRangeProvider signals that nil was supplied in place of RangeProvider
+	// ErrNilRangeProvider signals that nil was supplied in place of RangeProvider.
 	ErrNilRangeProvider = errors.New("nil RangeProvider")
-	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
+	// ErrTimeSequence signals that time sequence is not in a non-decreasing order.
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
-	// ErrExpiresAtNotSet indicates price monitoring auction is endless somehow
+	// ErrExpiresAtNotSet indicates price monitoring auction is endless somehow.
 	ErrExpiresAtNotSet = errors.New("price monitoring auction with no end time")
-	// ErrNilPriceMonitoringSettings signals that nil was supplied in place of PriceMonitoringSettings
+	// ErrNilPriceMonitoringSettings signals that nil was supplied in place of PriceMonitoringSettings.
 	ErrNilPriceMonitoringSettings = errors.New("nil PriceMonitoringSettings")
 )
 
@@ -50,7 +50,7 @@ type AuctionState interface {
 	ExpiresAt() *time.Time
 }
 
-// bound holds the limits for the valid price movement
+// bound holds the limits for the valid price movement.
 type bound struct {
 	Active     bool
 	UpFactor   num.Decimal
@@ -165,7 +165,7 @@ func (e *Engine) GetHorizonYearFractions() []num.Decimal {
 	return h
 }
 
-// GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction
+// GetValidPriceRange returns the range of prices that won't trigger the price monitoring auction.
 func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 	min := num.NewWrappedDecimal(num.Zero(), num.DecimalZero())
 	m := num.MaxUint()
@@ -205,7 +205,7 @@ func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
 	return ret
 }
 
-// CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction
+// CheckPrice checks how current price, volume and time should impact the auction state and modifies it accordingly: start auction, end auction, extend ongoing auction.
 func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v uint64, now time.Time, persistent bool) error {
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
@@ -339,7 +339,7 @@ func (e *Engine) resetBounds() {
 	}
 }
 
-// recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime
+// recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime.
 func (e *Engine) recordPriceChange(price *num.Uint, volume uint64) {
 	if volume > 0 {
 		e.pricesNow = append(e.pricesNow, currentPrice{Price: price.Clone(), Volume: volume})

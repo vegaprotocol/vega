@@ -15,7 +15,7 @@ type positionsSnapshotState struct {
 }
 
 // serialise marshal the snapshot state, populating the data and hash fields
-// with updated values
+// with updated values.
 func (e *Engine) serialise() ([]byte, []byte, error) {
 	if !e.pss.changed {
 		return e.pss.data, e.pss.hash, nil // we already have what we need

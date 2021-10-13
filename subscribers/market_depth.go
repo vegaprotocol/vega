@@ -30,7 +30,7 @@ type priceLevel struct {
 	side types.Side
 }
 
-// MarketDepth holds all the details about a single markets MarketDepth
+// MarketDepth holds all the details about a single markets MarketDepth.
 type MarketDepth struct {
 	// Which market is this for
 	marketID string
@@ -49,7 +49,7 @@ type MarketDepth struct {
 }
 
 // MarketDepthBuilder is a subscriber of order events
-// used to build the live market depth structure
+// used to build the live market depth structure.
 type MarketDepthBuilder struct {
 	*Base
 	mu sync.RWMutex
@@ -63,7 +63,7 @@ type MarketDepthBuilder struct {
 	log *logging.Logger
 }
 
-// NewMarketDepthBuilder constructor to create a market depth subscriber
+// NewMarketDepthBuilder constructor to create a market depth subscriber.
 func NewMarketDepthBuilder(ctx context.Context, log *logging.Logger, ack bool) *MarketDepthBuilder {
 	mdb := MarketDepthBuilder{
 		Base:         NewBase(ctx, 10, ack),
@@ -92,7 +92,7 @@ func (mdb *MarketDepthBuilder) loop(ctx context.Context) {
 	}
 }
 
-// Push takes order messages and applied them to the makret depth structure
+// Push takes order messages and applied them to the makret depth structure.
 func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	for _, e := range evts {
 		switch et := e.(type) {
@@ -105,7 +105,7 @@ func (mdb *MarketDepthBuilder) Push(evts ...events.Event) {
 	}
 }
 
-// Types returns all the message types this subscriber wants to receive
+// Types returns all the message types this subscriber wants to receive.
 func (mdb *MarketDepthBuilder) Types() []events.Type {
 	return []events.Type{
 		events.OrderEvent,
@@ -344,7 +344,7 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	md.changes = make([]*priceLevel, 0, len(md.changes))
 }
 
-// Returns the min of 2 uint64s
+// Returns the min of 2 uint64s.
 func min(x, y uint64) uint64 {
 	if y < x {
 		return y
@@ -352,7 +352,7 @@ func min(x, y uint64) uint64 {
 	return x
 }
 
-// GetMarketDepth builds up the structure to be sent out to any market depth listeners
+// GetMarketDepth builds up the structure to be sent out to any market depth listeners.
 func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
 	mdb.mu.RLock()
 	defer mdb.mu.RUnlock()
@@ -413,7 +413,7 @@ func (mdb *MarketDepthBuilder) GetAllOrders(market string) map[string]*types.Ord
 	return nil
 }
 
-// GetOrderCount returns the number of live orders for the given market
+// GetOrderCount returns the number of live orders for the given market.
 func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
 	var (
 		liveOrders int64
@@ -438,7 +438,7 @@ func (mdb *MarketDepthBuilder) GetOrderCount(market string) int64 {
 	return 0
 }
 
-// GetVolumeAtPrice returns the order volume at the given price level
+// GetVolumeAtPrice returns the order volume at the given price level.
 func (mdb *MarketDepthBuilder) GetVolumeAtPrice(market string, side types.Side, price uint64) uint64 {
 	if md := mdb.marketDepths[market]; md != nil {
 		pl := md.getPriceLevel(side, num.NewUint(price))
@@ -450,7 +450,7 @@ func (mdb *MarketDepthBuilder) GetVolumeAtPrice(market string, side types.Side, 
 	return 0
 }
 
-// GetTotalVolume returns the total volume in the order book
+// GetTotalVolume returns the total volume in the order book.
 func (mdb *MarketDepthBuilder) GetTotalVolume(market string) int64 {
 	var volume int64
 	if md := mdb.marketDepths[market]; md != nil {
@@ -466,7 +466,7 @@ func (mdb *MarketDepthBuilder) GetTotalVolume(market string) int64 {
 	return 0
 }
 
-// GetOrderCountAtPrice returns the number of orders at the given price level
+// GetOrderCountAtPrice returns the number of orders at the given price level.
 func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(market string, side types.Side, price uint64) uint64 {
 	if md := mdb.marketDepths[market]; md != nil {
 		pl := md.getPriceLevel(side, num.NewUint(price))
@@ -478,12 +478,12 @@ func (mdb *MarketDepthBuilder) GetOrderCountAtPrice(market string, side types.Si
 	return 0
 }
 
-// GetPriceLevels returns the number of non empty price levels
+// GetPriceLevels returns the number of non empty price levels.
 func (mdb *MarketDepthBuilder) GetPriceLevels(market string) int {
 	return mdb.GetBuyPriceLevels(market) + mdb.GetSellPriceLevels(market)
 }
 
-// GetBestBidPrice returns the highest bid price in the book
+// GetBestBidPrice returns the highest bid price in the book.
 func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
 	if md := mdb.marketDepths[market]; md != nil {
 		if len(md.buySide) > 0 {
@@ -493,7 +493,7 @@ func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
 	return 0
 }
 
-// GetBestAskPrice returns the highest bid price in the book
+// GetBestAskPrice returns the highest bid price in the book.
 func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
 	if md := mdb.marketDepths[market]; md != nil {
 		if len(md.sellSide) > 0 {
@@ -503,7 +503,7 @@ func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
 	return 0
 }
 
-// GetBuyPriceLevels returns the number of non empty buy price levels
+// GetBuyPriceLevels returns the number of non empty buy price levels.
 func (mdb *MarketDepthBuilder) GetBuyPriceLevels(market string) int {
 	if md := mdb.marketDepths[market]; md != nil {
 		return len(md.buySide)
@@ -511,7 +511,7 @@ func (mdb *MarketDepthBuilder) GetBuyPriceLevels(market string) int {
 	return 0
 }
 
-// GetSellPriceLevels returns the number of non empty sell price levels
+// GetSellPriceLevels returns the number of non empty sell price levels.
 func (mdb *MarketDepthBuilder) GetSellPriceLevels(market string) int {
 	if md := mdb.marketDepths[market]; md != nil {
 		return len(md.sellSide)
@@ -519,7 +519,7 @@ func (mdb *MarketDepthBuilder) GetSellPriceLevels(market string) int {
 	return 0
 }
 
-// Subscribe allows a client to register for updates of the market depth book
+// Subscribe allows a client to register for updates of the market depth book.
 func (mdb *MarketDepthBuilder) Subscribe(updates chan<- *types.MarketDepthUpdate) uint64 {
 	mdb.mu.Lock()
 	defer mdb.mu.Unlock()
@@ -530,7 +530,7 @@ func (mdb *MarketDepthBuilder) Subscribe(updates chan<- *types.MarketDepthUpdate
 	return mdb.subscriberID
 }
 
-// Unsubscribe allows the client to unregister interest in market depth updates
+// Unsubscribe allows the client to unregister interest in market depth updates.
 func (mdb *MarketDepthBuilder) Unsubscribe(id uint64) error {
 	mdb.mu.Lock()
 	defer mdb.mu.Unlock()
