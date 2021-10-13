@@ -15,6 +15,7 @@ import (
 
 // StateProvider - not a huge fan of this interface being here, but it ensures that the state providers
 // don't have to import the snapshot package
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_provider_mock.go -package mocks code.vegaprotocol.io/vega/types StateProvider
 type StateProvider interface {
 	Namespace() SnapshotNamespace
 	Keys() []string
