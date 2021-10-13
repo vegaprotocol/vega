@@ -58,7 +58,6 @@ func TestGovernanceSnapshotProposalReject(t *testing.T) {
 
 	// Check the hash is the same before we submitted the proposal
 	require.True(t, bytes.Equal(emptyHash, h2))
-
 }
 
 func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
@@ -120,7 +119,6 @@ func TestGovernanceSnapshotProposalEnacted(t *testing.T) {
 	enactedHash, err := eng.GetHash(enactedKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(emptyEnacted, enactedHash))
-
 }
 
 func TestGovernanceSnapshotNodeProposal(t *testing.T) {
@@ -172,7 +170,6 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	h2, err := snapEng.GetHash(nodeValidationKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h1, h2))
-
 }
 
 func TestGovernanceSnapshotRoundTrip(t *testing.T) {
@@ -214,7 +211,6 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	h2, err := snapEng.GetHash(activeKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h1, h2))
-
 }
 
 func TestGovernanceSnapshotEmpty(t *testing.T) {
@@ -233,5 +229,4 @@ func TestGovernanceSnapshotEmpty(t *testing.T) {
 	h, err = eng.GetHash(nodeValidationKey)
 	require.Nil(t, err)
 	require.NotNil(t, h)
-
 }

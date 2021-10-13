@@ -106,5 +106,4 @@ func testStartErrorCheckProposalFailed(t *testing.T) {
 	p.Terms.ClosingTimestamp = 3
 	err = nv.Start(p)
 	assert.EqualError(t, err, governance.ErrProposalValidationTimestampInvalid.Error())
-
 }

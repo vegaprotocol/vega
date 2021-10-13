@@ -275,7 +275,6 @@ func testReleasePartyMarginAccount(t *testing.T) {
 	assert.Equal(t, num.NewUint(600), generalAcc.Balance)
 	marginAcc, _ := eng.GetAccountByID(mar)
 	assert.True(t, marginAcc.Balance.IsZero())
-
 }
 
 func testFeeTransferContinuousNoFunds(t *testing.T) {
@@ -309,7 +308,6 @@ func testFeeTransferContinuousNoFunds(t *testing.T) {
 		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
 	assert.Nil(t, transfers)
 	assert.EqualError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
-
 }
 
 func testFeeTransferContinuousNotEnoughFunds(t *testing.T) {
@@ -599,7 +597,6 @@ func testEnableAssetSuccess(t *testing.T) {
 
 	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
 	assert.True(t, assetInsuranceAcc.Balance.IsZero())
-
 }
 
 func testEnableAssetFailureDuplicate(t *testing.T) {
@@ -661,7 +658,6 @@ func testAddMarginAccountFail(t *testing.T) {
 	// create party
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Error(t, err, collateral.ErrNoGeneralAccountWhenCreateMarginAccount)
-
 }
 
 func testAddParty(t *testing.T) {
@@ -690,7 +686,6 @@ func testAddParty(t *testing.T) {
 	acc, err = eng.Engine.GetAccountByID(general)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedGeneralBalance, acc.Balance)
-
 }
 
 func testTransferLoss(t *testing.T) {
@@ -2071,7 +2066,6 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 	resp, err = eng.Engine.RollbackMarginUpdateOnOrder(context.Background(), testMarketID, testMarketAsset, rollback)
 	assert.Nil(t, err)
 	assert.NotNil(t, resp)
-
 }
 
 func testMarginUpdateOnOrderFail(t *testing.T) {
@@ -2305,7 +2299,6 @@ func TestWithdrawalNotEnough(t *testing.T) {
 
 	_, err = eng.Engine.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(600))
 	assert.EqualError(t, err, collateral.ErrNotEnoughFundsToWithdraw.Error())
-
 }
 
 func TestWithdrawalInvalidAccount(t *testing.T) {
@@ -2602,7 +2595,6 @@ func TestHash(t *testing.T) {
 		got := eng.Hash()
 		require.Equal(t, hash, got)
 	}
-
 }
 
 func stringToInt(s string) int {

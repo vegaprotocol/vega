@@ -66,7 +66,6 @@ func testCheckpointSuccess(t *testing.T) {
 		assert.Equal(t, proposal.ID, p.Id)
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
@@ -125,5 +124,4 @@ func testCheckpointSuccess(t *testing.T) {
 
 	data = append(data, []byte("foo")...)
 	require.Error(t, eng2.Load(ctx, data))
-
 }

@@ -491,8 +491,8 @@ func (b *OrderBook) uncrossBookSide(
 		uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
 		allOrders = append(allOrders, uncrossedOrder)
 	}
-	return allOrders, nil
 
+	return allOrders, nil
 }
 
 func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
@@ -876,7 +876,6 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
-
 	return &types.OrderConfirmation{
 		Order:                 order,
 		PassiveOrdersAffected: impactedOrders,

@@ -185,7 +185,6 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.O
 				totalVolume += order.Remaining
 				// Remove the order from the price level
 				toRemove++
-
 			} else {
 				// We should never get to here unless the passed in price
 				// and volume are not correct
@@ -197,7 +196,6 @@ func (s *OrderBookSide) ExtractOrders(price *num.Uint, volume uint64) []*types.O
 			if totalVolume == volume {
 				break
 			}
-
 		}
 		for toRemove > 0 {
 			toRemove--
@@ -497,7 +495,6 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 				totalPrice,
 				num.Zero().Mul(t.Price, num.NewUint(t.Size)),
 			)
-
 		}
 		// now we are done with uncrossing,
 		// we can set back the price of the netorder to the average

@@ -147,7 +147,6 @@ func testValidateProposalCommitment(t *testing.T) {
 	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "order in sell side shape with best bid price reference")
-
 }
 
 func testCanRejectProposal(t *testing.T) {
@@ -606,7 +605,6 @@ func testSubmittingMajorityOfYesVoteMakesProposalPassed(t *testing.T) {
 		assert.Equal(t, proposal.ID, p.Id)
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
@@ -1219,7 +1217,6 @@ func testGovernanceHash(t *testing.T) {
 		assert.Equal(t, proposal.ID, p.Id)
 	})
 	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
-
 		v, ok := evts[0].(*events.Vote)
 		assert.True(t, ok)
 		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
