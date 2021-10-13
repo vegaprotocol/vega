@@ -270,7 +270,6 @@ pipeline {
                                     --disable unparam \
                                     --disable scopelint \
                                     --disable revive \
-                                    --disable prealloc \
                                     --disable nestif \
                                     --disable nakedret \
                                     --disable maligned \

@@ -72,7 +72,7 @@ func verifyTableIntegrity(required, optional []string, header *messages.PickleSt
 		return err
 	}
 
-	var headerNames []string
+	headerNames := make([]string, 0, len(header.Cells))
 	for _, cell := range header.Cells {
 		headerNames = append(headerNames, cell.Value)
 	}

@@ -11,11 +11,11 @@ import (
 
 func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {
 	pubKeys := StrSlice(rawPubKeys, ",")
-
 	binding := &types.OracleSpecToFutureBinding{}
 
-	var filters []*oraclesv1.Filter
-	for _, r := range parseOracleSpecTable(table) {
+	rows := parseOracleSpecTable(table)
+	filters := make([]*oraclesv1.Filter, 0, len(rows))
+	for _, r := range rows {
 		row := oracleSpecRow{row: r}
 		filter := &oraclesv1.Filter{
 			Key: &oraclesv1.PropertyKey{

@@ -74,7 +74,8 @@ func (a *Accounts) getPartyAccounts(party, market string) []*coreapipb.Account {
 		return nil
 	}
 
-	var out []*coreapipb.Account
+	// at least one
+	out := make([]*coreapipb.Account, 0, 1)
 	for _, v := range accs {
 		if len(market) > 0 && v.MarketId != market {
 			continue
@@ -91,7 +92,7 @@ func (a *Accounts) getMarketAccounts(market string) []*coreapipb.Account {
 		return nil
 	}
 
-	var out []*coreapipb.Account
+	out := make([]*coreapipb.Account, 0, len(accs))
 	for _, v := range accs {
 		out = append(out, toAccount(v))
 	}

@@ -19,8 +19,9 @@ func TheMarkets(
 	collateralEngine *collateral.Engine,
 	table *godog.Table,
 ) ([]types.Market, error) {
-	var markets []types.Market
-	for _, row := range parseMarketsTable(table) {
+	rows := parseMarketsTable(table)
+	markets := make([]types.Market, 0, len(rows))
+	for _, row := range rows {
 		mkt := newMarket(config, marketRow{row: row})
 		markets = append(markets, mkt)
 	}

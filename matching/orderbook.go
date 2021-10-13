@@ -469,7 +469,7 @@ func (b *OrderBook) uncrossBookSide(
 ) ([]*types.OrderConfirmation, error) {
 	var (
 		uncrossedOrder *types.OrderConfirmation
-		allOrders      []*types.OrderConfirmation
+		allOrders      = make([]*types.OrderConfirmation, 0, len(uncrossOrders))
 	)
 	// Uncross each one
 	for _, order := range uncrossOrders {

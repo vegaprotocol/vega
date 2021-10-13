@@ -673,7 +673,7 @@ func (e *Engine) createOrdersFromShape(
 	lp := e.LiquidityProvisionByPartyID(party)
 
 	var (
-		newOrders []*types.Order
+		newOrders = make([]*types.Order, 0, len(supplied))
 		toCancel  = &ToCancel{
 			Party: party,
 		}

@@ -129,7 +129,7 @@ func (n *NodeValidation) removeProposal(id string) {
 func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
-	var toRemove []string // id of proposals to remove
+	toRemove := []string{} // id of proposals to remove
 
 	// check that any proposal is ready
 	for _, prop := range n.nodeProposals {
