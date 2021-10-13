@@ -26,19 +26,19 @@ func TestERC20MultiSigControl(t *testing.T) {
 func testSetThreshold(t *testing.T) {
 	signer := testSigner{}
 	bridge := bridges.NewERC20MultiSigControl(signer)
-	msg, sig, err := bridge.SetThreshold(
+	sig, err := bridge.SetThreshold(
 		1000,
 		"0x1FaA74E181092A97Fecc923015293ce57eE1208A",
 		num.NewUint(42),
 	)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, msg)
-	assert.NotNil(t, sig)
-	assert.True(t, signer.Verify(msg, sig))
+	assert.NotNil(t, sig.Message)
+	assert.NotNil(t, sig.Signature)
+	assert.True(t, signer.Verify(sig.Message, sig.Signature))
 	assert.Equal(t,
 		"a2c61b473f15a1729e8593d65748e7a9813102e0d7304598af556525206db599fb79b9750349c6cb564a2f3ecdf233dd19b1598302e0cb91218adff1c609ac09",
-		hex.EncodeToString(sig),
+		sig.Signature.Hex(),
 	)
 
 }
@@ -46,39 +46,39 @@ func testSetThreshold(t *testing.T) {
 func testAddSigner(t *testing.T) {
 	signer := testSigner{}
 	bridge := bridges.NewERC20MultiSigControl(signer)
-	msg, sig, err := bridge.AddSigner(
+	sig, err := bridge.AddSigner(
 		"0xE20c747a7389B7De2c595658277132f188A074EE",
 		"0x1FaA74E181092A97Fecc923015293ce57eE1208A",
 		num.NewUint(42),
 	)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, msg)
+	assert.NotNil(t, sig.Message)
 	assert.NotNil(t, sig)
-	assert.True(t, signer.Verify(msg, sig))
+	assert.True(t, signer.Verify(sig.Message, sig.Signature))
 
 	assert.Equal(t,
 		"7bdc018935610f23667b31d4eee248160ab39caa1e70ad20da49bf8971d5a16b30f71a09d9aaf5b532defdb7710d85c226e98cb90a49bc4b4401b33f3c5a1601",
-		hex.EncodeToString(sig),
+		sig.Signature.Hex(),
 	)
 }
 
 func testRemoveSigner(t *testing.T) {
 	signer := testSigner{}
 	bridge := bridges.NewERC20MultiSigControl(signer)
-	msg, sig, err := bridge.RemoveSigner(
+	sig, err := bridge.RemoveSigner(
 		"0xE20c747a7389B7De2c595658277132f188A074EE",
 		"0x1FaA74E181092A97Fecc923015293ce57eE1208A",
 		num.NewUint(42),
 	)
 
 	assert.NoError(t, err)
-	assert.NotNil(t, msg)
+	assert.NotNil(t, sig.Message)
 	assert.NotNil(t, sig)
-	assert.True(t, signer.Verify(msg, sig))
+	assert.True(t, signer.Verify(sig.Message, sig.Signature))
 	assert.Equal(t,
 		"98ea2303c68dbb0a88bdb7dad8c6e2db9698cd992667399a378e682dbdf16e74a9d304a32e36b48de81c0e99449a7a37c1a7ef94af1e85aa88a808f8d7126c0c",
-		hex.EncodeToString(sig),
+		sig.Signature.Hex(),
 	)
 }
 
