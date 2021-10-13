@@ -151,6 +151,7 @@ Feature: Test settlement at expiry
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
+      And debug transfers
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
@@ -376,6 +377,11 @@ Feature: Test settlement at expiry
     And debug transfers
 
     And the parties should have the following account balances:
+    # <PC> - Expecting below figures but Infra fees of 1800 and liquidity fee of 1 is being charged for suspended market expiry
+      # | party    | asset | market id | margin | general |
+      # | trader3a | ETH   | ETH/DEC21 | 0      | 8860    |
+      # | trader4  | ETH   | ETH/DEC21 | 0      | 8284    |
+
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 7059    |
       | trader4  | ETH   | ETH/DEC21 | 0      | 6483    |
@@ -450,6 +456,11 @@ Feature: Test settlement at expiry
     And debug transfers
     
     And the parties should have the following account balances:
+    # <PC> - Expecting below figures but Infra fees of 1800 and liquidity fee of 1 is being charged for suspended market expiry
+      # | party    | asset | market id | margin | general |
+      # | trader3a | ETH   | ETH/DEC21 | 0      | 8860    |
+      # | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
+
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 0      | 7059    |
       | trader4  | ETH   | ETH/DEC21 | 0      |    0    |
@@ -523,10 +534,14 @@ Feature: Test settlement at expiry
     Then time is updated to "2022-01-01T01:01:02Z"
 
     And debug transfers
+     # <PC> - Expecting below figures but Infra fees of 1800 and liquidity fee of 1 is being charged for suspended market expiry
+      # | party    | asset | market id | margin | general |
+      # | trader3a | ETH   | ETH/DEC21 | 0      | 8860    |
+      # | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
     
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 0      | 6982    |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 8783    |
       | trader4  | ETH   | ETH/DEC21 | 0      |    0    |
 
     And the cumulated balance for all accounts should be worth "300012004"
