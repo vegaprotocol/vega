@@ -245,6 +245,8 @@ pipeline {
                         dir('vega') {
                             sh '''#!/bin/bash -e
                                 golangci-lint run -v \
+                                    --max-issues-per-linter 0 \
+                                    --max-same-issues 0 \
                                     --allow-parallel-runners \
                                     --config .golangci.toml \
                                     --enable-all \

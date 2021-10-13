@@ -2688,8 +2688,6 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	require.Greater(t, lpOrderVolumeOffer, lpOrderVolumeOfferPrev)
 
 	lpOrderVolumeBidPrev = lpOrderVolumeBid
-	lpOrderVolumeOfferPrev = lpOrderVolumeOffer
-	mktDataPrev = mktData
 	// Submit another limit order that fills partially on submission
 	// Modify LP order so it's not on the best offer
 	lp1.Sells[0].Offset = +1

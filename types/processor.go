@@ -84,7 +84,7 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmission, error) {
 	var price = num.Zero()
 	if len(p.Price) > 0 {
-		var overflowed = false
+		var overflowed bool
 		price, overflowed = num.UintFromString(p.Price, 10)
 		if overflowed {
 			return nil, errors.New("invalid price")
@@ -137,7 +137,7 @@ type WithdrawSubmission struct {
 func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {
 	var amount = num.Zero()
 	if len(p.Amount) > 0 {
-		var overflowed = false
+		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)
 		if overflowed {
 			return nil, errors.New("invalid amount")

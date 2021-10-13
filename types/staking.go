@@ -82,7 +82,7 @@ func StakeDepositedFromProto(
 ) (*StakeDeposited, error) {
 	var amount = num.Zero()
 	if len(s.Amount) > 0 {
-		var overflowed = false
+		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)
 		if overflowed {
 			return nil, errors.New("invalid amount (not a base 10 uint)")
@@ -134,7 +134,7 @@ func StakeRemovedFromProto(
 ) (*StakeRemoved, error) {
 	var amount = num.Zero()
 	if len(s.Amount) > 0 {
-		var overflowed = false
+		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)
 		if overflowed {
 			return nil, errors.New("invalid amount (not a base 10 uint)")

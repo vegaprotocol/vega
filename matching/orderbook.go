@@ -687,11 +687,12 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		b.PrintState("Entry state:")
 	}
 
-	var trades []*types.Trade
-	var impactedOrders []*types.Order
-	var lastTradedPrice = num.Zero()
-	var err error
-
+	var (
+		trades          []*types.Trade
+		impactedOrders  []*types.Order
+		lastTradedPrice *num.Uint
+		err             error
+	)
 	order.BatchID = b.batchID
 
 	if !b.auction {

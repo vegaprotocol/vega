@@ -246,7 +246,10 @@ func (m *MappedMD) parseU64(data *godog.Table) []string {
 func (m *MappedMD) parseTimes(data *godog.Table) []string {
 	// already set start based off of the value in the map
 	// does some trickery WRT auction end time, so we can check if the auction duration is N seconds
-	end, start := int64(0), *m.tMap["auction start"]
+	var (
+		end   int64
+		start = *m.tMap["auction start"]
+	)
 	set := make([]string, 0, len(m.tMap))
 	for _, r := range ParseTable(data) {
 		for k, ptr := range m.tMap {

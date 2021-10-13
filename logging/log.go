@@ -131,8 +131,10 @@ func (log *Logger) GetName() string {
 // Named instantiate a new logger by cloning it first
 // and name it with the string specified
 func (log *Logger) Named(name string) *Logger {
-	c := log.Clone()
-	newName := ""
+	var (
+		c       = log.Clone()
+		newName string
+	)
 	if log.name == "" {
 		newName = name
 	} else {

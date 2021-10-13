@@ -117,7 +117,7 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 	}
 	var price = num.Zero()
 	if len(o.Price) > 0 {
-		var overflowed = false
+		var overflowed bool
 		price, overflowed = num.UintFromString(o.Price, 10)
 		if overflowed {
 			return nil, errors.New("invalid price")

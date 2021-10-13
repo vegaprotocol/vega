@@ -65,7 +65,7 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 	)
 	if p.Price != nil {
 		if len(p.Price.Value) > 0 {
-			overflowed := false
+			var overflowed bool
 			price, overflowed = num.UintFromString(p.Price.Value, 10)
 			if overflowed {
 				return nil, errors.New("invalid amount")
