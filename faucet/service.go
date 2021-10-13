@@ -295,9 +295,7 @@ func writeSuccess(w http.ResponseWriter, data interface{}, status int) {
 	w.Write(buf)
 }
 
-var (
-	ErrInvalidRequest = newError("invalid request")
-)
+var ErrInvalidRequest = newError("invalid request")
 
 type HTTPError struct {
 	ErrorStr string `json:"error"`

@@ -1891,9 +1891,7 @@ func (e EquityShare) IntoProto() *snapshot.EquityShare {
 }
 
 func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
-	var (
-		stake, share, avg num.Decimal
-	)
+	var stake, share, avg num.Decimal
 	if len(esl.Stake) > 0 {
 		stake, _ = num.DecimalFromString(esl.Stake)
 	}
@@ -1994,9 +1992,7 @@ func (d DecMap) IntoProto() *snapshot.DecimalMap {
 }
 
 func PriceBoundFromProto(pb *snapshot.PriceBound) *PriceBound {
-	var (
-		up, down num.Decimal
-	)
+	var up, down num.Decimal
 	if len(pb.UpFactor) > 0 {
 		up, _ = num.DecimalFromString(pb.UpFactor)
 	}
@@ -2021,9 +2017,7 @@ func (p PriceBound) IntoProto() *snapshot.PriceBound {
 }
 
 func PriceRangeFromProto(pr *snapshot.PriceRange) *PriceRange {
-	var (
-		min, max, ref num.Decimal
-	)
+	var min, max, ref num.Decimal
 	if len(pr.Min) > 0 {
 		min, _ = num.DecimalFromString(pr.Min)
 	}

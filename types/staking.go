@@ -80,7 +80,7 @@ func StakeDepositedFromProto(
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeDeposited, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(s.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)
@@ -132,7 +132,7 @@ func StakeRemovedFromProto(
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeRemoved, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(s.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)

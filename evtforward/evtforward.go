@@ -126,7 +126,7 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 // Ack will return true if the event is newly acknowledge
 // if the event already exist and was already acknowledge this will return false
 func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
-	var res = "ok"
+	res := "ok"
 	defer func() {
 		metrics.EvtForwardInc("ack", res)
 	}()
@@ -161,7 +161,7 @@ func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
 // Forward will forward an ChainEvent to the tendermint network
 // we expect the pubkey to be an ed25519 pubkey hex encoded
 func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, pubkey string) error {
-	var res = "ok"
+	res := "ok"
 	defer func() {
 		metrics.EvtForwardInc("forward", res)
 	}()

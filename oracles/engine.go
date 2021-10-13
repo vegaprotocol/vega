@@ -77,7 +77,6 @@ func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
 	result, err := e.subscriptions.filterSubscribers(func(spec OracleSpec) (bool, error) {
 		return spec.MatchData(data)
 	})
-
 	if err != nil {
 		e.log.Debug("error in filtering subscribers",
 			logging.Error(err),

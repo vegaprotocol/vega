@@ -101,7 +101,7 @@ func (a *Accounts) getMarketAccounts(market string) []*coreapipb.Account {
 }
 
 func (a *Accounts) getGlobalAccounts() []*coreapipb.Account {
-	var out = make([]*coreapipb.Account, 0, len(a.globals))
+	out := make([]*coreapipb.Account, 0, len(a.globals))
 	for _, v := range a.globals {
 		out = append(out, toAccount(v))
 	}

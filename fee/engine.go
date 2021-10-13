@@ -302,7 +302,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 
 	// first calculate the share of all distressedParties
 	for _, v := range closedMPs {
-		var size = v.Size()
+		size := v.Size()
 		if size < 0 {
 			size = -size
 		}
@@ -327,7 +327,7 @@ func (e *Engine) CalculateFeeForPositionResolution(
 		fees := e.calculateContinuousModeFees(t)
 
 		// lets fine which side is the good party
-		var goodParty = t.Buyer
+		goodParty := t.Buyer
 		t.SellerFee = fees
 		if goodParty == "network" {
 			goodParty = t.Seller

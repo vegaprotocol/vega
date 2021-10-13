@@ -41,7 +41,8 @@ func parseUndelegationTable(table *godog.Table) []RowWrapper {
 		"when",
 	}, []string{
 		"reference",
-		"error"})
+		"error",
+	})
 }
 
 type undelegationRow struct {

@@ -8,9 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrPartyDoesNotMatch = errors.New("event party and position party do not match")
-)
+var ErrPartyDoesNotMatch = errors.New("event party and position party do not match")
 
 // MarketPosition stub event for network position (used in MTM stuff)
 type npos struct {

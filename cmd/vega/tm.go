@@ -27,9 +27,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var (
-	networkSelect string
-)
+var networkSelect string
 
 type tmCmd struct{}
 

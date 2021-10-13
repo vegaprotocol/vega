@@ -15,9 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	allKey = (&types.PayloadLimitState{}).Key()
-)
+var allKey = (&types.PayloadLimitState{}).Key()
 
 func TestLimitSnapshotEmpty(t *testing.T) {
 	l := getLimitsTest()

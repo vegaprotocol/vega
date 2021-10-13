@@ -257,7 +257,7 @@ func (e *Engine) calcProbabilityOfTradingBid(bestBidPrice, orderPrice *num.Uint,
 	return prob
 }
 
-//Rescale probability so that it's at most the value returned between bid and ask.
+// Rescale probability so that it's at most the value returned between bid and ask.
 func rescaleProbability(prob num.Decimal) num.Decimal {
 	return prob.Mul(defaultInRangeProbabilityOfTrading)
 }

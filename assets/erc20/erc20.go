@@ -168,7 +168,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		return err
 	}
 
-	var resp = "ok"
+	resp := "ok"
 	defer func() {
 		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
 	}()
@@ -180,7 +180,6 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		[]ethcommon.Address{ethcommon.HexToAddress(b.address)},
 		[][32]byte{},
 	)
-
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
 		return err
@@ -234,7 +233,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		return nil, "", 0, err
 	}
 
-	var resp = "ok"
+	resp := "ok"
 	defer func() {
 		metrics.EthCallInc("validate_withdrawal", b.asset.ID, resp)
 	}()
@@ -247,7 +246,6 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		[]ethcommon.Address{ethcommon.HexToAddress(w.TargetEthereumAddress)},
 		// asset_source
 		[]ethcommon.Address{ethcommon.HexToAddress(b.address)})
-
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
 		return nil, "", 0, err
@@ -288,7 +286,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return err
 	}
 
-	var resp = "ok"
+	resp := "ok"
 	defer func() {
 		metrics.EthCallInc("validate_deposit", b.asset.ID, resp)
 	}()
@@ -301,7 +299,6 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		[]ethcommon.Address{ethcommon.HexToAddress(d.SourceEthereumAddress)},
 		// asset_source
 		[]ethcommon.Address{ethcommon.HexToAddress(b.address)})
-
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
 		return err

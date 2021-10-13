@@ -10,10 +10,12 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type OracleDataSubmission = commandspb.OracleDataSubmission
-type NodeRegistration = commandspb.NodeRegistration
-type NodeVote = commandspb.NodeVote
-type ChainEvent = commandspb.ChainEvent
+type (
+	OracleDataSubmission = commandspb.OracleDataSubmission
+	NodeRegistration     = commandspb.NodeRegistration
+	NodeVote             = commandspb.NodeVote
+	ChainEvent           = commandspb.ChainEvent
+)
 
 type OrderCancellation struct {
 	OrderId  string
@@ -82,7 +84,7 @@ func (o OrderSubmission) IntoProto() *commandspb.OrderSubmission {
 }
 
 func NewOrderSubmissionFromProto(p *commandspb.OrderSubmission) (*OrderSubmission, error) {
-	var price = num.Zero()
+	price := num.Zero()
 	if len(p.Price) > 0 {
 		var overflowed bool
 		price, overflowed = num.UintFromString(p.Price, 10)
@@ -135,7 +137,7 @@ type WithdrawSubmission struct {
 }
 
 func NewWithdrawSubmissionFromProto(p *commandspb.WithdrawSubmission) (*WithdrawSubmission, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)

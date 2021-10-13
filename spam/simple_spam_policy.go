@@ -35,7 +35,7 @@ type SimpleSpamPolicy struct {
 	tooManyCommands       error
 }
 
-//NewSimpleSpamPolicy instantiates the simple spam policy
+// NewSimpleSpamPolicy instantiates the simple spam policy
 func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *SimpleSpamPolicy {
 	return &SimpleSpamPolicy{
 		log:                   log,
@@ -121,8 +121,8 @@ func (ssp *SimpleSpamPolicy) Deserialise(p *types.Payload) error {
 	return nil
 }
 
-//UpdateUintParam is called to update Uint net params for the policy
-//Specifically the min tokens required for executing the command for which the policy is attached
+// UpdateUintParam is called to update Uint net params for the policy
+// Specifically the min tokens required for executing the command for which the policy is attached
 func (ssp *SimpleSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
 	if name == ssp.minTokensParamName {
 		ssp.minTokensRequired = value.Clone()
@@ -132,8 +132,8 @@ func (ssp *SimpleSpamPolicy) UpdateUintParam(name string, value *num.Uint) error
 	return nil
 }
 
-//UpdateIntParam is called to update int net params for the policy
-//Specifically the number of commands a party can submit in an epoch
+// UpdateIntParam is called to update int net params for the policy
+// Specifically the number of commands a party can submit in an epoch
 func (ssp *SimpleSpamPolicy) UpdateIntParam(name string, value int64) error {
 	if name == ssp.maxAllowedParamName {
 		ssp.maxAllowedCommands = uint64(value)
@@ -143,7 +143,7 @@ func (ssp *SimpleSpamPolicy) UpdateIntParam(name string, value int64) error {
 	return nil
 }
 
-//Reset is called when the epoch begins to reset policy state
+// Reset is called when the epoch begins to reset policy state
 func (ssp *SimpleSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint) {
 	ssp.lock.Lock()
 	defer ssp.lock.Unlock()
@@ -169,7 +169,7 @@ func (ssp *SimpleSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*
 	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
 }
 
-//EndOfBlock is called at the end of the processing of the block to carry over state and trigger bans if necessary
+// EndOfBlock is called at the end of the processing of the block to carry over state and trigger bans if necessary
 func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64) {
 	ssp.lock.Lock()
 	defer ssp.lock.Unlock()
@@ -192,7 +192,7 @@ func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64) {
 	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
 }
 
-//PostBlockAccept is called to verify a transaction from the block before passed to the application layer
+// PostBlockAccept is called to verify a transaction from the block before passed to the application layer
 func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 
@@ -238,7 +238,7 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	return true, nil
 }
 
-//PreBlockAccept checks if the commands violates spam rules based on the information we had about the number of existing commands preceding the current block
+// PreBlockAccept checks if the commands violates spam rules based on the information we had about the number of existing commands preceding the current block
 func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 

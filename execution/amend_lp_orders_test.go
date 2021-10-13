@@ -619,7 +619,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// only 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -645,7 +645,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		require.Len(t, found, 4)
 
 		for _, o := range found {
-			var expectedStatus = types.OrderStatusActive
+			expectedStatus := types.OrderStatusActive
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -756,7 +756,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		// 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),

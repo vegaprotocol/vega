@@ -6,8 +6,10 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-const minOrderIDLen = 22
-const maxOrderIDLen = 22
+const (
+	minOrderIDLen = 22
+	maxOrderIDLen = 22
+)
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	if orderMessage.Price == nil {

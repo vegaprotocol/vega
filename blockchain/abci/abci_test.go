@@ -72,9 +72,7 @@ const (
 
 type testCtxKey int
 
-var (
-	testKey testCtxKey
-)
+var testKey testCtxKey
 
 func TestABCICheckTx(t *testing.T) {
 	cdc := newTestCodec()
@@ -154,7 +152,6 @@ func setGenesisState(app *abci.App, state *abci.GenesisState) {
 	bz, err := json.Marshal(struct {
 		Network abci.GenesisState
 	}{Network: *state})
-
 	if err != nil {
 		panic(err)
 	}

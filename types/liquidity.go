@@ -111,7 +111,7 @@ func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmi
 		return nil, err
 	}
 
-	var commitmentAmount = num.Zero()
+	commitmentAmount := num.Zero()
 	if len(p.CommitmentAmount) > 0 {
 		var overflowed bool
 		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)
@@ -230,7 +230,7 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 
 func LiquidityProvisionFromProto(p *proto.LiquidityProvision) (*LiquidityProvision, error) {
 	fee, _ := num.DecimalFromString(p.Fee)
-	var commitmentAmount = num.Zero()
+	commitmentAmount := num.Zero()
 	if len(p.CommitmentAmount) > 0 {
 		var overflowed bool
 		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)

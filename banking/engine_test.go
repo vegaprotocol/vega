@@ -20,12 +20,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
-		Name:   "VEGA TOKEN",
-		Symbol: "VGT",
-	}))
-)
+var testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
+	Name:   "VEGA TOKEN",
+	Symbol: "VGT",
+}))
 
 type testEngine struct {
 	*banking.Engine

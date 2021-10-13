@@ -86,9 +86,7 @@ const (
 	rejectedState
 )
 
-var (
-	defaultValidationDuration = 2 * time.Hour
-)
+var defaultValidationDuration = 2 * time.Hour
 
 type Engine struct {
 	cfg     Config
@@ -231,7 +229,7 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 		return
 	}
 
-	var newState = rejectedState
+	newState := rejectedState
 	if valid {
 		newState = okState
 	}

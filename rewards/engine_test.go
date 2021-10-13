@@ -52,11 +52,11 @@ func testMultipleEpochsWithPendingPayouts(t *testing.T) {
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	//setup delay
+	// setup delay
 	rs.PayoutDelay = 120 * time.Second
 	rs.PayoutFraction = 0.5
 
-	//setup reward account balance
+	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
 	require.Nil(t, err)
 
@@ -104,11 +104,11 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	//setup delay
+	// setup delay
 	rs.PayoutDelay = 120 * time.Second
 	rs.PayoutFraction = 0.1
 
-	//setup reward account balance
+	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
 	require.Nil(t, err)
 
@@ -184,19 +184,19 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	require.False(t, bytes.Equal(state, emptyState))
 }
 
-//test that registering reward scheme is unsupported
+// test that registering reward scheme is unsupported
 func testRegisterRewardSchemeErr(t *testing.T) {
 	testEngine := getEngine(t)
 	require.Error(t, ErrUnsupported, testEngine.engine.RegisterRewardScheme(&types.RewardScheme{}))
 }
 
-//test that updating reward scheme is unsupported
+// test that updating reward scheme is unsupported
 func testUpdateRewardSchemeErr(t *testing.T) {
 	testEngine := getEngine(t)
 	require.Error(t, ErrUnsupported, testEngine.engine.RegisterRewardScheme(&types.RewardScheme{}))
 }
 
-//test registration of hardcoded staking and delegation reward scheme
+// test registration of hardcoded staking and delegation reward scheme
 func testRegisterStakingAndDelegationRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -214,7 +214,7 @@ func testRegisterStakingAndDelegationRewardScheme(t *testing.T) {
 	require.Equal(t, 0, len(rs.RewardPoolAccountIDs))
 }
 
-//test updating of asset for staking and delegation reward which triggers the creation or get of the reward account for the asset
+// test updating of asset for staking and delegation reward which triggers the creation or get of the reward account for the asset
 func testUpdateAssetForStakingAndDelegationRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -227,7 +227,7 @@ func testUpdateAssetForStakingAndDelegationRewardScheme(t *testing.T) {
 	require.Equal(t, "!*ETH<", rs.RewardPoolAccountIDs[0])
 }
 
-//test updating of asset for staking and delegation reward which happens after max payout for asset has been updated
+// test updating of asset for staking and delegation reward which happens after max payout for asset has been updated
 func testUpdateAssetForStakingAndDelegationRewardSchemeWithMaxPayoutSetup(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -242,7 +242,7 @@ func testUpdateAssetForStakingAndDelegationRewardSchemeWithMaxPayoutSetup(t *tes
 	require.Equal(t, num.NewUint(10000), rs.MaxPayoutPerAssetPerParty["ETH"])
 }
 
-//test updating of max payout per participant for staking and delegation reward scheme
+// test updating of max payout per participant for staking and delegation reward scheme
 func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -255,7 +255,7 @@ func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, num.NewUint(10000), rs.MaxPayoutPerAssetPerParty[""])
 }
 
-//test updading of payout fraction for staking and delegation reward scheme
+// test updading of payout fraction for staking and delegation reward scheme
 func testUpdatePayoutFractionForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -406,10 +406,10 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	//setup delay
+	// setup delay
 	rs.PayoutDelay = 120 * time.Second
 
-	//setup reward account balance
+	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
 	require.Nil(t, err)
 
@@ -496,10 +496,10 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	//setup delay
+	// setup delay
 	rs.PayoutDelay = 0 * time.Second
 
-	//setup reward account balance
+	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
 	require.Nil(t, err)
 

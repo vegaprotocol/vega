@@ -162,6 +162,7 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 
 	return agg.Remaining == 0, trades, impactedOrders, err
 }
+
 func (l *PriceLevel) getVolumeAllocation(agg, pass *types.Order) uint64 {
 	return min(agg.Remaining, pass.Remaining)
 }

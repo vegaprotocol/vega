@@ -22,11 +22,13 @@ type testTx struct {
 	command  txn.Command
 }
 
-var sufficientTokensForVoting, _ = num.UintFromString("100000000000000000000", 10)
-var sufficientTokens2ForVoting, _ = num.UintFromString("200000000000000000000", 10)
-var sufficientTokens4ForVoting, _ = num.UintFromString("400000000000000000000", 10)
-var sufficientTokens8ForVoting, _ = num.UintFromString("800000000000000000000", 10)
-var maxSufficientTokensForVoting, _ = num.UintFromString("1600000000000000000000", 10)
+var (
+	sufficientTokensForVoting, _    = num.UintFromString("100000000000000000000", 10)
+	sufficientTokens2ForVoting, _   = num.UintFromString("200000000000000000000", 10)
+	sufficientTokens4ForVoting, _   = num.UintFromString("400000000000000000000", 10)
+	sufficientTokens8ForVoting, _   = num.UintFromString("800000000000000000000", 10)
+	maxSufficientTokensForVoting, _ = num.UintFromString("1600000000000000000000", 10)
+)
 
 func TestVotingSpamProtection(t *testing.T) {
 	t.Run("Pre reject vote from party with insufficient balance at the beginning of the epoch", testPreRejectInsufficientBalance)
@@ -139,7 +141,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 	// party x submits 5 votes for proposal 1 (with nothing earlier in the epoch)
 	for i := 0; i < 4; i++ {
 		tx := &testTx{party: "party" + strconv.Itoa(i+1), proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -167,7 +169,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 	// at this point we expect the min tokens to be the max so all but party5 shall be pre rejected
 	for i := 1; i < 5; i++ {
 		tx := &testTx{party: "party" + strconv.Itoa(i), proposal: "proposal" + strconv.Itoa(i)}
-		//pre rejected
+		// pre rejected
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, false, accept)
@@ -198,7 +200,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 
 	for i := 0; i < 4; i++ {
 		tx := &testTx{party: "party" + strconv.Itoa(i+1), proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -280,7 +282,7 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 	// vote 5 times for each proposal all pre accepted, 3 for each post accepted
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -301,14 +303,14 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 	// try to submit
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre rejected
+		// pre rejected
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
 		require.Equal(t, spam.ErrTooManyVotes, err)
 	}
 
 	tx := &testTx{party: "party1", proposal: "proposal3"}
-	//pre accepted
+	// pre accepted
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, true, accept)
 	require.Nil(t, err)
@@ -317,7 +319,7 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	for i := 0; i < 3; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre rejected
+		// pre rejected
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
@@ -334,7 +336,7 @@ func testPreAccept(t *testing.T) {
 	// vote 5 times for each proposal all pre accepted, 3 for each post accepted
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -350,7 +352,7 @@ func testPostAccept(t *testing.T) {
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 3; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -360,7 +362,7 @@ func testPostAccept(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//post accepted
+		// post accepted
 		for i := 0; i < 3; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -376,7 +378,7 @@ func testPostRejectTooManyVotes(t *testing.T) {
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -386,14 +388,14 @@ func testPostRejectTooManyVotes(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//post accepted
+		// post accepted
 		for i := 0; i < 3; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, true, accept)
 			require.Nil(t, err)
 		}
 
-		//post rejected
+		// post rejected
 		for i := 0; i < 2; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, false, accept)
@@ -409,7 +411,7 @@ func testCountersUpdated(t *testing.T) {
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 2; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -419,7 +421,7 @@ func testCountersUpdated(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//post accepted
+		// post accepted
 		for i := 0; i < 2; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -430,7 +432,7 @@ func testCountersUpdated(t *testing.T) {
 	policy.EndOfBlock(1)
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 2; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -439,12 +441,12 @@ func testCountersUpdated(t *testing.T) {
 	}
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//post accepted
+		// post accepted
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 
-		//post rejected
+		// post rejected
 		accept, err = policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
 		require.Equal(t, spam.ErrTooManyVotes, err)
@@ -461,7 +463,7 @@ func testReset(t *testing.T) {
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 6; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -471,7 +473,7 @@ func testReset(t *testing.T) {
 
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//post accepted
+		// post accepted
 		for i := 0; i < 3; i++ {
 			accept, err := policy.PostBlockAccept(tx)
 			require.Equal(t, true, accept)

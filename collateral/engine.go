@@ -333,7 +333,7 @@ func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID 
 	return rewardTRs, nil
 }
 
-//TransferRewards takes a slice of transfers and serves them to transfer rewards from the reward account to parties general account
+// TransferRewards takes a slice of transfers and serves them to transfer rewards from the reward account to parties general account
 func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
 	responses := make([]*types.TransferResponse, 0, len(transfers))
 

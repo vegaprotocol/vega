@@ -9,9 +9,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var (
-	ErrUnknownAssetAction = errors.New("unknown asset action")
-)
+var ErrUnknownAssetAction = errors.New("unknown asset action")
 
 type txRef struct {
 	asset       common.AssetClass

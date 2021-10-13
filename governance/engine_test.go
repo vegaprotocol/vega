@@ -27,9 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	errNoBalanceForParty = errors.New("no balance for party")
-)
+var errNoBalanceForParty = errors.New("no balance for party")
 
 type tstEngine struct {
 	*governance.Engine

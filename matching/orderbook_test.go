@@ -994,7 +994,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, len(trades), len(confirm.Trades))
 }
 
-//test for order validation
+// test for order validation
 func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2029,10 +2029,10 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		assert.NoError(t, getErr)
 		confirmationtypes, err := book.ob.SubmitOrder(s.aggressiveOrder)
 
-		//this should not return any errors
+		// this should not return any errors
 		assert.Equal(t, nil, err)
 
-		//this should not generate any trades
+		// this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
 		assert.Equal(t, len(confirmationtypes.Trades), len(trades))
 
@@ -2100,7 +2100,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
-	iocOrderID := "1000000000000000000000" //Must be 22 characters
+	iocOrderID := "1000000000000000000000" // Must be 22 characters
 	iocOrder := &types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        types.OrderTypeLimit,
@@ -2944,8 +2944,8 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 
 	orders := book.ob.EnterAuction()
 	assert.Equal(t, 0, len(orders))
-	order1Id := "1000000000000000000000" //Must be 22 characters
-	order2Id := "1000000000000000000001" //Must be 22 characters
+	order1Id := "1000000000000000000000" // Must be 22 characters
+	order2Id := "1000000000000000000001" // Must be 22 characters
 
 	order1 := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -3134,13 +3134,17 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	assert.Equal(t, bestbid.Uint64(), uint64(100))
 
 	bp1 := getOrder(t, book, market, "BuyPeg1", types.SideBuy, 100, "party01", 5)
-	bp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid,
-		Offset: -3}
+	bp1.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReferenceMid,
+		Offset:    -3,
+	}
 	book.ob.SubmitOrder(bp1)
 
 	sp1 := getOrder(t, book, market, "SellPeg1", types.SideSell, 100, "party01", 5)
-	sp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid,
-		Offset: +3}
+	sp1.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReferenceMid,
+		Offset:    +3,
+	}
 	book.ob.SubmitOrder(sp1)
 
 	// Leave auction and uncross the book

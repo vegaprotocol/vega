@@ -55,6 +55,7 @@ func newPopulatedRP(nBlocks, nKeys int) *abci.ReplayProtector {
 	}
 	return rp
 }
+
 func benchmarkReplayProtector(b *testing.B, size int) {
 	b.Helper()
 	rp := newPopulatedRP(size, b.N)

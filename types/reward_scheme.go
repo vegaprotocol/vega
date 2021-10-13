@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-//RewardSchemeScope defines the scope of the reward scheme
+// RewardSchemeScope defines the scope of the reward scheme
 type RewardSchemeScope int
 
 const (
@@ -17,7 +17,7 @@ const (
 	RewardSchemeScopeMarket
 )
 
-//RewardSchemeType defines the type of the reward scheme - currently only staking and delegation is supported
+// RewardSchemeType defines the type of the reward scheme - currently only staking and delegation is supported
 type RewardSchemeType int
 
 const (
@@ -25,7 +25,7 @@ const (
 	RewardSchemeStakingAndDelegation
 )
 
-//PayoutType - fractional or balanced
+// PayoutType - fractional or balanced
 type PayoutType int
 
 const (
@@ -34,14 +34,14 @@ const (
 	PayoutBalanced
 )
 
-//RewardSchemeParam defines parameters for the reward scheme
+// RewardSchemeParam defines parameters for the reward scheme
 type RewardSchemeParam struct {
 	Name  string
 	Type  string
 	Value string
 }
 
-//RewardScheme defines an instance of a reward strategy and its parameters and scope
+// RewardScheme defines an instance of a reward strategy and its parameters and scope
 type RewardScheme struct {
 	SchemeID                  string
 	Type                      RewardSchemeType
@@ -84,18 +84,16 @@ func (rsp RewardSchemeParam) GetUint() (*num.Uint, error) {
 	return nil, errors.New("mismatch between requested type and configured type " + rsp.Name)
 }
 
-var (
-	//ErrRewardSchemeMisconfiguration is returned when trying to calculate the reward for a given account balance and the scheme has incompatible end time and payout type
-	//this should never happen as the reward scheme needs to be validated prior to being added but just to be safe
-	ErrRewardSchemeMisconfiguration = errors.New("payout type balanced is incompatible with having no end time")
-)
+// ErrRewardSchemeMisconfiguration is returned when trying to calculate the reward for a given account balance and the scheme has incompatible end time and payout type
+// this should never happen as the reward scheme needs to be validated prior to being added but just to be safe
+var ErrRewardSchemeMisconfiguration = errors.New("payout type balanced is incompatible with having no end time")
 
-//IsActive returns true if the current time is after the scheme start time and not after the scheme end time
+// IsActive returns true if the current time is after the scheme start time and not after the scheme end time
 func (rs *RewardScheme) IsActive(now time.Time) bool {
 	return !now.Before(rs.StartTime) && (rs.EndTime == nil || !now.After(*rs.EndTime))
 }
 
-//GetReward calculates the reward given the pool balance and the reward scheme parameters
+// GetReward calculates the reward given the pool balance and the reward scheme parameters
 func (rs *RewardScheme) GetReward(rewardPoolBalance *num.Uint, epoch Epoch) (*num.Uint, error) {
 	if rewardPoolBalance.IsZero() {
 		return num.Zero(), nil

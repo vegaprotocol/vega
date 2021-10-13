@@ -120,8 +120,8 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 	)
 }
 
-//GetTheoreticalTargetStake returns target stake based current time, risk factors
-//and the supplied trades without modifying the internal state
+// GetTheoreticalTargetStake returns target stake based current time, risk factors
+// and the supplied trades without modifying the internal state
 func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
 	if minTime := e.minTime(now); minTime.After(e.max.Time) {
@@ -177,7 +177,7 @@ func (e *Engine) computeMaxOI(minTime time.Time) {
 	e.previous = e.previous[j:]
 }
 
-//minTime returns the lower bound of the sliding time window
+// minTime returns the lower bound of the sliding time window
 func (e *Engine) minTime(now time.Time) time.Time {
 	return now.Add(-e.tWindow)
 }
@@ -190,6 +190,6 @@ func (e *Engine) truncateHistory(minTime time.Time) {
 		}
 	}
 	e.previous = e.previous[i:]
-	//Truncate at least every 2 time windows in case not called before to prevent excessive memory usage
+	// Truncate at least every 2 time windows in case not called before to prevent excessive memory usage
 	e.scheduledTruncate = e.now.Add(2 * e.tWindow)
 }

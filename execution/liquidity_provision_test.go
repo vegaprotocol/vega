@@ -352,10 +352,14 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	buys := []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
-		{Reference: types.PeggedReferenceBestBid, Offset: -2, Proportion: 50}}
-	sells := []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
-		{Reference: types.PeggedReferenceBestAsk, Offset: 2, Proportion: 50}}
+	buys := []*types.LiquidityOrder{
+		{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
+		{Reference: types.PeggedReferenceBestBid, Offset: -2, Proportion: 50},
+	}
+	sells := []*types.LiquidityOrder{
+		{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
+		{Reference: types.PeggedReferenceBestAsk, Offset: 2, Proportion: 50},
+	}
 
 	// Submitting a correct entry
 	lps := &types.LiquidityProvisionSubmission{
@@ -898,10 +902,12 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 
 	buys := []*types.LiquidityOrder{
 		{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
-		{Reference: types.PeggedReferenceMid, Offset: -6, Proportion: 50}}
+		{Reference: types.PeggedReferenceMid, Offset: -6, Proportion: 50},
+	}
 	sells := []*types.LiquidityOrder{
 		{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
-		{Reference: types.PeggedReferenceMid, Offset: 6, Proportion: 50}}
+		{Reference: types.PeggedReferenceMid, Offset: 6, Proportion: 50},
+	}
 
 	// Submitting a correct entry
 	lps := &types.LiquidityProvisionSubmission{
@@ -1546,7 +1552,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	// then submit some orders, some for the lp party,
 	// end some for the other parrties
 
-	var lpOrders = []*types.Order{
+	lpOrders := []*types.Order{
 		// Limit Orders
 		{
 			Type:        types.OrderTypeLimit,
@@ -1572,7 +1578,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	tm.WithSubmittedOrders(t, lpOrders...)
 
 	// set the mark price and end auction
-	var auctionOrders = []*types.Order{
+	auctionOrders := []*types.Order{
 		{
 			Type:        types.OrderTypeLimit,
 			Size:        1,
@@ -1627,7 +1633,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		}
 	})
 
-	var newOrders = []*types.Order{
+	newOrders := []*types.Order{
 		{
 			Type:        types.OrderTypeLimit,
 			Size:        1000,

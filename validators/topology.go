@@ -159,7 +159,7 @@ func (t *Topology) IsValidatorNode(nodeID string) bool {
 func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	defer func() {
 		if t.log.GetLevel() <= logging.DebugLevel {
-			var s = "requested non-existing validator"
+			s := "requested non-existing validator"
 			if ok {
 				s = "requested existing validator"
 			}

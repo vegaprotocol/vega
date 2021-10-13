@@ -15,9 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	epochs []types.Epoch
-)
+var epochs []types.Epoch
 
 type tstSvc struct {
 	*epochtime.Svc

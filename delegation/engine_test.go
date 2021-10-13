@@ -550,8 +550,8 @@ func testDelegateSuccesNoCommitted(t *testing.T) {
 	require.Nil(t, err)
 
 	// summary:
-	//party1 delegated 10 in total, 7 to node1 and 3 to node2
-	//party2 delegated 6 in total, all to node1
+	// party1 delegated 10 in total, 7 to node1 and 3 to node2
+	// party2 delegated 6 in total, all to node1
 	// verify the state
 
 	pendingStateForEpoch := testEngine.engine.pendingState[1]
@@ -1907,7 +1907,7 @@ func TestPartyInAutoDelegateModeWithManualInterention(t *testing.T) {
 
 	// // start epoch 1
 	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
-	//increase association of party1 and party2
+	// increase association of party1 and party2
 	testEngine.stakingAccounts.partyToStake["party1"].AddSum(num.NewUint(1000))
 	testEngine.stakingAccounts.partyToStake["party2"].AddSum(num.NewUint(1500))
 	testEngine.engine.Delegate(context.Background(), "party1", "node1", num.NewUint(100))

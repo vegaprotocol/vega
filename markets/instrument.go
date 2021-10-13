@@ -12,11 +12,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	// ErrNoMarketClosingTime signal that the instrument is invalid as missing
-	// a market closing time
-	ErrNoMarketClosingTime = errors.New("no market closing time")
-)
+// ErrNoMarketClosingTime signal that the instrument is invalid as missing
+// a market closing time
+var ErrNoMarketClosingTime = errors.New("no market closing time")
 
 // Instrument represent an instrument used in a market
 type Instrument struct {

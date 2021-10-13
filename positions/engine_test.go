@@ -303,22 +303,22 @@ func getTestEngine(t *testing.T) *positions.Engine {
 }
 
 func TestGetOpenInterestGivenTrades(t *testing.T) {
-	//A, B represents partys who already have positions
-	//C, D represents partys who don't have positions (but there are entries in "trades" array that contain their trades)
+	// A, B represents partys who already have positions
+	// C, D represents partys who don't have positions (but there are entries in "trades" array that contain their trades)
 
 	cases := []struct {
 		ExistingPositions []*types.Trade
 		Trades            []*types.Trade
 		ExpectedOI        uint64
 	}{
-		//Both parties already have positions
-		{ //A: + 100, B: -100 => OI: 100
+		// Both parties already have positions
+		{ // A: + 100, B: -100 => OI: 100
 			ExistingPositions: []*types.Trade{
 				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
 			},
 			ExpectedOI: 100,
 		},
-		{ //A: + 100 - 10, B: -100 + 10=> OI: 90
+		{ // A: + 100 - 10, B: -100 + 10=> OI: 90
 			ExistingPositions: []*types.Trade{
 				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
 			},
@@ -327,7 +327,7 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 			},
 			ExpectedOI: 90,
 		},
-		{ //A: + 100 + 10, B: -100 - 10 => OI: 110
+		{ // A: + 100 + 10, B: -100 - 10 => OI: 110
 			ExistingPositions: []*types.Trade{
 				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
 			},
@@ -338,7 +338,7 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 		},
 
 		// There at least 1 new party
-		{ //A: + 100 + 10, B: -100, C: -10 => OI: 110
+		{ // A: + 100 + 10, B: -100, C: -10 => OI: 110
 			ExistingPositions: []*types.Trade{
 				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
 			},
@@ -347,7 +347,7 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 			},
 			ExpectedOI: 110,
 		},
-		{ //A: + 100 - 10, B: -100, C: +10 => OI: 100
+		{ // A: + 100 - 10, B: -100, C: +10 => OI: 100
 			ExistingPositions: []*types.Trade{
 				{Seller: "B", Buyer: "A", Size: 100, Price: num.Zero()},
 			},
@@ -357,8 +357,8 @@ func TestGetOpenInterestGivenTrades(t *testing.T) {
 			ExpectedOI: 100,
 		},
 
-		//None of the parties have positions yet
-		{ //C: +10, D:-10 => OI: 10
+		// None of the parties have positions yet
+		{ // C: +10, D:-10 => OI: 10
 			Trades: []*types.Trade{
 				{Seller: "D", Buyer: "C", Size: 10, Price: num.Zero()},
 			},

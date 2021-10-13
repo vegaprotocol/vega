@@ -18,8 +18,7 @@ var (
 	out []byte
 )
 
-type CommandSuite struct {
-}
+type CommandSuite struct{}
 
 // RunMain simulates a CLI execution. It formats a cmd invocation given a format and its args and overwrites os.Args.
 // The output of the command is captured and returned.

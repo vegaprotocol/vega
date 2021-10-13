@@ -42,8 +42,10 @@ func (i *Int) FlipSign() {
 
 // Clone creates a copy of the object so nothing is shared
 func (i Int) Clone() *Int {
-	return &Int{U: i.U.Clone(),
-		s: i.s}
+	return &Int{
+		U: i.U.Clone(),
+		s: i.s,
+	}
 }
 
 // GT returns if i > o
@@ -190,17 +192,23 @@ func (i *Int) SubSum(vals ...*Int) *Int {
 // int64 passed as a parameter.
 func NewInt(val int64) *Int {
 	if val < 0 {
-		return &Int{U: NewUint(uint64(-val)),
-			s: false}
+		return &Int{
+			U: NewUint(uint64(-val)),
+			s: false,
+		}
 	}
 
-	return &Int{U: NewUint(uint64(val)),
-		s: true}
+	return &Int{
+		U: NewUint(uint64(val)),
+		s: true,
+	}
 }
 
 // NewIntFromUint creates a new Int with the value of the
 // uint passed as a parameter.
 func NewIntFromUint(val *Uint) *Int {
-	return &Int{U: val,
-		s: true}
+	return &Int{
+		U: val,
+		s: true,
+	}
 }

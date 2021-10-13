@@ -13,10 +13,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	// ErrPriceNotFound signals that a price was not found on the book side
-	ErrPriceNotFound = errors.New("price-volume pair not found")
-)
+// ErrPriceNotFound signals that a price was not found on the book side
+var ErrPriceNotFound = errors.New("price-volume pair not found")
 
 // OrderBookSide represent a side of the book, either Sell or Buy
 type OrderBookSide struct {
@@ -488,7 +486,7 @@ func (s *OrderBookSide) uncross(agg *types.Order, checkWashTrades bool) ([]*type
 	}
 
 	if agg.Type == types.OrderTypeNetwork {
-		var totalPrice = num.Zero()
+		totalPrice := num.Zero()
 		for _, t := range trades {
 			// totalPrice += t.Price * t.Size
 			totalPrice.Add(

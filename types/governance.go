@@ -395,10 +395,12 @@ type ProposalTerms_NewMarket struct {
 	NewMarket *NewMarket
 }
 
-type UpdateMarket = proto.UpdateMarket
-type ProposalTerms_UpdateMarket struct {
-	UpdateMarket *UpdateMarket
-}
+type (
+	UpdateMarket               = proto.UpdateMarket
+	ProposalTerms_UpdateMarket struct {
+		UpdateMarket *UpdateMarket
+	}
+)
 
 type UpdateNetworkParameter struct {
 	Changes *NetworkParameter
@@ -724,6 +726,7 @@ func (a ProposalTerms_NewMarket) isPTerm() {}
 func (a ProposalTerms_NewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_NewMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEW_MARKET
 }
@@ -747,6 +750,7 @@ func (a ProposalTerms_UpdateMarket) isPTerm() {}
 func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_UpdateMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_UPDATE_MARKET
 }
@@ -770,6 +774,7 @@ func (a ProposalTerms_UpdateNetworkParameter) isPTerm() {}
 func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_UpdateNetworkParameter) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_UPDATE_NETWORK_PARAMETER
 }
@@ -816,6 +821,7 @@ func (a ProposalTerms_NewAsset) isPTerm() {}
 func (a ProposalTerms_NewAsset) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_NewAsset) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEW_ASSET
 }
@@ -934,6 +940,7 @@ func (n NewMarketConfiguration_Simple) DeepClone() riskParams {
 		Simple: n.Simple.DeepClone(),
 	}
 }
+
 func (n NewMarketConfiguration_Simple) rpIntoProto() interface{} {
 	return n.IntoProto()
 }

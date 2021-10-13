@@ -125,7 +125,7 @@ func (s *coreService) PropagateChainEvent(ctx context.Context, req *protoapi.Pro
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid chain event: %w", err))
 	}
 
-	var ok = true
+	ok := true
 	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
 	if err != nil && err != evtforward.ErrEvtAlreadyExist {
 		s.log.Error("unable to forward chain event",

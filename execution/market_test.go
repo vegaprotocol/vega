@@ -142,7 +142,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 
 func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket {
 	collateralEngine := collateral.New(tm.log, collateral.NewDefaultConfig(), tm.broker, tm.now)
-	var assets = tm.Assets
+	assets := tm.Assets
 	if len(assets) == 0 {
 		assets = defaultCollateralAssets
 	}
@@ -735,7 +735,7 @@ func TestMarketGetMarginOnFailNoFund(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -1008,7 +1008,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -1170,7 +1170,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	// set auction duration
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
@@ -1334,7 +1334,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 	auctionEnd = tm.market.GetMarketData().AuctionEnd
 	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
-	//TODO: Check that `party2-sell-order-3` & `party1-buy-order-3` get matched in auction and a trade is generated
+	// TODO: Check that `party2-sell-order-3` & `party1-buy-order-3` get matched in auction and a trade is generated
 
 	// Test that orders get matched as expected upon returning to continuous trading
 	now = afterAuction.Add(time.Second)
@@ -1412,7 +1412,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	// set auction duration
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
@@ -1630,7 +1630,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -1784,7 +1784,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 
 	md := tm.market.GetMarketData()
 	auctionEnd = md.AuctionEnd
-	require.Equal(t, int64(0), auctionEnd) //Not in auction
+	require.Equal(t, int64(0), auctionEnd) // Not in auction
 
 	require.True(t, md.MarkPrice.EQ(num.NewUint(initialPrice)))
 }
@@ -1852,7 +1852,7 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(extension)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -2043,7 +2043,7 @@ func TestTargetStakeReturnedAndCorrect(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -2140,7 +2140,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -2234,7 +2234,7 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	assert.NoError(t, err)
 	require.Equal(t, 1, len(confirmationSell.Trades))
 
-	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
+	// TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
 		Type:        types.OrderTypeLimit,
 		TimeInForce: types.OrderTimeInForceGTT,
@@ -2323,7 +2323,7 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 	addAccount(tm, party2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
+	// TODO (WG 07/01/21): Currently limit orders need to be present on order book for liquidity provision submission to work, remove once fixed.
 	orderSell1 := &types.Order{
 		Type:        types.OrderTypeLimit,
 		TimeInForce: types.OrderTimeInForceGTT,
@@ -2547,7 +2547,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -2906,7 +2906,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -3058,7 +3058,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Duration(auctionExtensionSeconds)*time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -3102,7 +3102,8 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 			Remaining:   1,
 			CreatedAt:   now.UnixNano(),
 			Reference:   "party4-sell-order-1",
-		}}
+		},
+	}
 	for _, o := range gtcOrders {
 		conf, err := tm.market.SubmitOrder(context.Background(), o)
 		assert.NotNil(t, conf)
@@ -3225,7 +3226,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -3401,7 +3402,7 @@ func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList27
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -3563,7 +3564,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -3641,7 +3642,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -3727,7 +3728,7 @@ func TestOrderBook_AmendFilledWithActiveStatus2736(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -3861,7 +3862,7 @@ func TestOrderBook_AmendGFNToGTCOrGTTNotAllowed2486(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -4055,7 +4056,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	addAccount(tm, auxParty2)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -4160,7 +4161,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	addAccount(tm, auxParty)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, 0)
 
 	// Start the opening auction
@@ -4320,7 +4321,7 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	auxParty := "auxParty"
 	addAccount(tm, auxParty)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -4400,7 +4401,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashIOC(t *testing.T) {
 	auxParty := "auxParty"
 	addAccount(tm, auxParty)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -4450,7 +4451,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKSell(t *testing.T) 
 	auxParty := "auxParty"
 	addAccount(tm, auxParty)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -4580,7 +4581,7 @@ func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
 	auxParty := "auxParty"
 	addAccount(tm, auxParty)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -4688,7 +4689,7 @@ func TestLPOrdersRollback(t *testing.T) {
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,
@@ -4907,7 +4908,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,
@@ -5074,7 +5075,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,
@@ -5384,7 +5385,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,
@@ -5571,7 +5572,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,
@@ -5993,7 +5994,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	lp2Commitment := num.NewUint(10000)
 
 	matchingPrice := uint64(100)
-	//Add orders that will stay on the book thus maintaining best_bid and best_ask
+	// Add orders that will stay on the book thus maintaining best_bid and best_ask
 	buyOrder1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder1", types.SideBuy, party1, 1, matchingPrice-10)
 	buyConf1, err := tm.market.SubmitOrder(ctx, buyOrder1)
 	require.NoError(t, err)
@@ -6079,7 +6080,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, supplied.GreaterThan(target.Mul(factor)))
 
-	//current = (target * c1) auction not triggered
+	// current = (target * c1) auction not triggered
 	riskParams := tm.mktCfg.TradableInstrument.GetSimpleRiskModel().Params
 	require.NotNil(t, riskParams)
 
@@ -6096,7 +6097,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	maxOSize, _ := num.UintFromDecimal(maxOrderSizeFp.Floor())
 	maxOrderSize := maxOSize.Uint64()
 
-	//Add orders that will trade (no auction triggered yet)
+	// Add orders that will trade (no auction triggered yet)
 	buyOrder3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder3", types.SideBuy, party1, maxOrderSize, matchingPrice)
 	buyConf3, err := tm.market.SubmitOrder(ctx, buyOrder3)
 	require.NoError(t, err)
@@ -6121,7 +6122,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, supplied.GreaterThan(target.Mul(factor)))
 
-	//Add orders that will trade and trigger liquidity auction
+	// Add orders that will trade and trigger liquidity auction
 	buyOrder4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder4", types.SideBuy, party1, 1, matchingPrice)
 	buyConf4, err := tm.market.SubmitOrder(ctx, buyOrder4)
 	require.NoError(t, err)
@@ -6165,7 +6166,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, types.OrderStatusFilled, sellConf4.Order.Status)
 
-	//Bringing commitment back to old level shouldn't be allowed
+	// Bringing commitment back to old level shouldn't be allowed
 	lp2sub.CommitmentAmount = lp2Commitment.Clone()
 	require.Error(t,
 		tm.market.SubmitLiquidityProvision(ctx, lp2sub, lp2, "id-lp-2"),
@@ -6181,7 +6182,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NotNil(t, conf)
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
-	//Submitting an order on buy side so that best_bid does exist should stop an auction
+	// Submitting an order on buy side so that best_bid does exist should stop an auction
 	md = tm.market.GetMarketData()
 	require.Equal(t, zero, md.BestStaticBidVolume)
 	require.Equal(t, types.MarketTradingModeMonitoringAuction, md.MarketTradingMode)
@@ -6203,7 +6204,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now)
 	require.Equal(t, types.MarketStateActive, tm.market.State()) // left auction
 
-	//Submitting an order on buy side so that best_bid does exist should stop an auction
+	// Submitting an order on buy side so that best_bid does exist should stop an auction
 	md = tm.market.GetMarketData()
 	require.Equal(t, buyOrder5.Size, md.BestStaticBidVolume)
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)
@@ -6214,7 +6215,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, supplied.GreaterThanOrEqual(target))
 
-	//Trading with best_ask so it disappears should start an auction
+	// Trading with best_ask so it disappears should start an auction
 	buyOrder6 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder6", types.SideBuy, party1, 1, sellOrder1.Price.Uint64())
 	buyConf6, err := tm.market.SubmitOrder(ctx, buyOrder6)
 	require.NoError(t, err)
@@ -6234,7 +6235,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.True(t, supplied.LessThan(target))
 	require.True(t, supplied.GreaterThan(target.Mul(factor)))
 
-	//Increasing total stake so that the new target stake is accommodated AND adding a sell so best_ask exists should stop the auction
+	// Increasing total stake so that the new target stake is accommodated AND adding a sell so best_ask exists should stop the auction
 	lp1sub.CommitmentAmount = num.Sum(lp1Commitment, num.NewUint(10000))
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(ctx, lp1sub, lp1, "id-lp-2"),

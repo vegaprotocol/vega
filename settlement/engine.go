@@ -124,9 +124,7 @@ func (e *Engine) Settle(t time.Time) ([]*types.Transfer, error) {
 // each change in position has to be calculated using the exact price of the trade
 func (e *Engine) AddTrade(trade *types.Trade) {
 	e.mu.Lock()
-	var (
-		buyerSize, sellerSize int64
-	)
+	var buyerSize, sellerSize int64
 	// checking the len of cd shouldn't be required here, but it is needed in the second if
 	// in case the buyer and seller are one and the same...
 	if cd, ok := e.trades[trade.Buyer]; !ok || len(cd) == 0 {
@@ -182,7 +180,8 @@ func (e *Engine) getMtmTransfer(mtmShare *num.Uint, neg bool, mpos events.Market
 			Owner: owner,
 			Amount: &types.FinancialAmount{
 				Amount: mtmShare,
-				Asset:  e.product.GetAsset()},
+				Asset:  e.product.GetAsset(),
+			},
 		},
 	}
 }
@@ -371,7 +370,7 @@ func (e *Engine) transferCap(evts []events.MarketPosition) int {
 	return evtLen
 }
 
-//party.PREV_OPEN_VOLUME * (product.value(current_price) - product.value(prev_mark_price)) + SUM(from i=1 to new_trades.length)( new_trade(i).volume(party) * (product.value(current_price) - new_trade(i).price ) )
+// party.PREV_OPEN_VOLUME * (product.value(current_price) - product.value(prev_mark_price)) + SUM(from i=1 to new_trades.length)( new_trade(i).volume(party) * (product.value(current_price) - new_trade(i).price ) )
 // the sum bit is a worry, we do not have all the trades available at this point...
 
 // calcMTM only handles futures ATM. The formula is simple:

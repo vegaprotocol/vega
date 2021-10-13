@@ -474,7 +474,6 @@ func (b *OrderBook) uncrossBookSide(
 	// Uncross each one
 	for _, order := range uncrossOrders {
 		trades, affectedOrders, _, err := opSide.uncross(order, false)
-
 		if err != nil {
 			return nil, err
 		}

@@ -12,9 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrUnknownKey = errors.New("unknown key")
-)
+var ErrUnknownKey = errors.New("unknown key")
 
 // Broker - event bus
 type Broker interface {

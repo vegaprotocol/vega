@@ -210,7 +210,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 	// initialise with the first price & time provided, otherwise there won't be any bounds
 	wasInitialised := e.initialised
 	if !wasInitialised {
-		//Volume of 0, do nothing
+		// Volume of 0, do nothing
 		if v == 0 {
 			return nil
 		}
@@ -375,9 +375,9 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 }
 
 func (e *Engine) checkBounds(ctx context.Context, p *num.Uint, v uint64) []*types.PriceMonitoringTrigger {
-	var ret = []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
+	ret := []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
 	if v == 0 {
-		return ret //volume 0 so no bounds violated
+		return ret // volume 0 so no bounds violated
 	}
 	priceRanges := e.getCurrentPriceRanges()
 	for _, b := range e.bounds {

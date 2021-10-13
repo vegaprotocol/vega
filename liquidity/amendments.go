@@ -11,9 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
-)
+var ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
 
 func (e *Engine) CanAmend(
 	lps *types.LiquidityProvisionSubmission,

@@ -40,7 +40,7 @@ type Delegate struct {
 }
 
 func NewDelegateFromProto(p *commandspb.DelegateSubmission) (*Delegate, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)

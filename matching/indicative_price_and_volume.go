@@ -52,7 +52,7 @@ func (ipv *IndicativePriceAndVolume) buildInitialCumulativeLevels(buy, sell *Ord
 	// to our list of pricelevel
 	// making sure we have no duplicates
 	for i := len(sell.levels) - 1; i >= 0; i-- {
-		var price = sell.levels[i].price.Clone()
+		price := sell.levels[i].price.Clone()
 		if mpl, ok := mplm[*price]; ok {
 			mpl.sellpl = &ipvVolume{sell.levels[i].volume}
 			mplm[*price] = mpl

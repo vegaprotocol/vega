@@ -38,9 +38,7 @@ func (app *App) updateStats() {
 	avg := app.stats.TotalOrders() / app.stats.TotalBatches()
 	app.stats.SetAverageOrdersPerBatch(avg)
 	duration := time.Duration(app.currentTimestamp.UnixNano() - app.previousTimestamp.UnixNano()).Seconds()
-	var (
-		currentOrders, currentTrades uint64
-	)
+	var currentOrders, currentTrades uint64
 	app.stats.SetBlockDuration(uint64(duration * float64(time.Second.Nanoseconds())))
 	if duration > 0 {
 		currentOrders, currentTrades = uint64(float64(app.stats.CurrentOrdersInBatch())/duration),

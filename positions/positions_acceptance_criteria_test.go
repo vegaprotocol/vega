@@ -26,7 +26,7 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	// Opening and closing positions for multiple partys, maintains position size for all open (non-zero) positions
 	t.Run("Does not change position size for a wash trade (buyer = seller)", testWashTradeDoNotChangePosition)
 
-	//No active buy orders, a new buy order is added to the order book
+	// No active buy orders, a new buy order is added to the order book
 	t.Run("Active buy orders, a new buy order is added to the order book", testNewOrderAddedToTheBook)
 	t.Run("Active sell orders, a new sell order is added to the order book", testNewOrderAddedToTheBook)
 	t.Run("Active buy order, an order initiated by another party causes a partial amount of the existing buy order to trade.", testNewTradePartialAmountOfExistingOrderTraded)

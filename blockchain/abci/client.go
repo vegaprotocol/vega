@@ -15,9 +15,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var (
-	ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
-)
+var ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
 
 type Client struct {
 	tmclt *tmclihttp.HTTP
@@ -229,9 +227,11 @@ func newUserInputError(code uint32, details string) userInputError {
 func (e userInputError) Code() uint32 {
 	return e.code
 }
+
 func (e userInputError) Details() string {
 	return e.details
 }
+
 func (e userInputError) Error() string {
 	return e.details
 }

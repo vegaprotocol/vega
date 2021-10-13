@@ -175,7 +175,7 @@ func createMarket(
 		// get target stake parameters
 		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
 		tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
-		//get triggering ratio
+		// get triggering ratio
 		triggeringRatio, _ := netp.GetFloat(netparams.MarketLiquidityTargetStakeTriggeringRatio)
 
 		params := &types.TargetStakeParameters{

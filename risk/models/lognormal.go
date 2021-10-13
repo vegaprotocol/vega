@@ -12,9 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrMissingLogNormalParameter = errors.New("missing log normal parameters")
-)
+var ErrMissingLogNormalParameter = errors.New("missing log normal parameters")
 
 // LogNormal represent a future risk model
 type LogNormal struct {

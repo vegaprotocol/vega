@@ -8,8 +8,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-type Command byte
-type TxHandler func(ctx context.Context, tx Tx) error
+type (
+	Command   byte
+	TxHandler func(ctx context.Context, tx Tx) error
+)
 
 type App struct {
 	abci.BaseApplication

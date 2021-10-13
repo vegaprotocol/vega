@@ -12,9 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrMarketNotFound = errors.New("could not find market")
-)
+var ErrMarketNotFound = errors.New("could not find market")
 
 // SE SettleEvent - common denominator between SPE & SDE
 type SE interface {

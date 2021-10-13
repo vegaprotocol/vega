@@ -577,7 +577,7 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 	data := b.GetOrderEvents()
 
 	var last types.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
-	var matched = false
+	matched := false
 	for _, o := range data {
 		v := o.Order()
 		if v.Reference == ref && v.PartyId == party {

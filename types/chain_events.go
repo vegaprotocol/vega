@@ -11,13 +11,15 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type WithdrawExt = proto.WithdrawExt
-type WithdrawExt_Erc20 = proto.WithdrawExt_Erc20
-type Erc20WithdrawExt = proto.Erc20WithdrawExt
-type ChainEvent_Btc = commandspb.ChainEvent_Btc
-type ChainEvent_Validator = commandspb.ChainEvent_Validator
-type BuiltinAssetEvent_Deposit = proto.BuiltinAssetEvent_Deposit
-type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
+type (
+	WithdrawExt                  = proto.WithdrawExt
+	WithdrawExt_Erc20            = proto.WithdrawExt_Erc20
+	Erc20WithdrawExt             = proto.Erc20WithdrawExt
+	ChainEvent_Btc               = commandspb.ChainEvent_Btc
+	ChainEvent_Validator         = commandspb.ChainEvent_Validator
+	BuiltinAssetEvent_Deposit    = proto.BuiltinAssetEvent_Deposit
+	BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
+)
 
 type WithdrawalStatus = proto.Withdrawal_Status
 
@@ -187,7 +189,7 @@ type BuiltinAssetDeposit struct {
 }
 
 func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)
@@ -228,7 +230,7 @@ type BuiltinAssetWithdrawal struct {
 }
 
 func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(p.Amount) > 0 {
 		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)

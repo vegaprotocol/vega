@@ -437,6 +437,7 @@ type nopeTestReporter struct{ log *logging.Logger }
 func (n *nopeTestReporter) Errorf(format string, args ...interface{}) {
 	n.log.Errorf(format, args...)
 }
+
 func (n *nopeTestReporter) Fatalf(format string, args ...interface{}) {
 	n.log.Errorf(format, args...)
 }

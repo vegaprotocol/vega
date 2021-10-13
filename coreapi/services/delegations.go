@@ -15,7 +15,7 @@ type delegationE interface {
 	Proto() eventspb.DelegationBalanceEvent
 }
 
-//Delegations is a storage for keeping track of delegation state from delegation balance update events
+// Delegations is a storage for keeping track of delegation state from delegation balance update events
 type Delegations struct {
 	*subscribers.Base
 	ctx context.Context
@@ -95,9 +95,9 @@ func (d *Delegations) List(party, node, epoch string) []*pb.Delegation {
 	return delegations
 }
 
-//AddDelegation is updated with new delegation update from the subscriber
+// AddDelegation is updated with new delegation update from the subscriber
 func (d *Delegations) addDelegation(de pb.Delegation) {
-	//update party delegations
+	// update party delegations
 	epoch, ok := d.epochToPartyDelegations[de.EpochSeq]
 	if !ok {
 		epoch = map[string]map[string]string{}
@@ -112,7 +112,7 @@ func (d *Delegations) addDelegation(de pb.Delegation) {
 	party[de.NodeId] = de.Amount
 }
 
-//GetAllDelegations returns all delegations across all epochs, all parties, all nodes
+// GetAllDelegations returns all delegations across all epochs, all parties, all nodes
 func (d *Delegations) getAllDelegations() []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 
@@ -131,7 +131,7 @@ func (d *Delegations) getAllDelegations() []*pb.Delegation {
 	return delegations
 }
 
-//GetAllDelegationsOnEpoch returns all delegation for the given epoch
+// GetAllDelegationsOnEpoch returns all delegation for the given epoch
 func (d *Delegations) getAllDelegationsOnEpoch(epochSeq string) []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 
@@ -152,7 +152,7 @@ func (d *Delegations) getAllDelegationsOnEpoch(epochSeq string) []*pb.Delegation
 	return delegations
 }
 
-//GetNodeDelegations returns all the delegations made to a node across all epochs
+// GetNodeDelegations returns all the delegations made to a node across all epochs
 func (d *Delegations) getNodeDelegations(nodeID string) []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 
@@ -174,7 +174,7 @@ func (d *Delegations) getNodeDelegations(nodeID string) []*pb.Delegation {
 	return delegations
 }
 
-//GetNodeDelegationsOnEpoch returns the delegations to a node by all parties at a given epoch
+// GetNodeDelegationsOnEpoch returns the delegations to a node by all parties at a given epoch
 func (d *Delegations) getNodeDelegationsOnEpoch(nodeID string, epochSeq string) []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 
@@ -199,7 +199,7 @@ func (d *Delegations) getNodeDelegationsOnEpoch(nodeID string, epochSeq string) 
 	return delegations
 }
 
-//GetPartyDelegations returns all the delegations by a party across all epochs
+// GetPartyDelegations returns all the delegations by a party across all epochs
 func (d *Delegations) getPartyDelegations(party string) []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 
@@ -221,7 +221,7 @@ func (d *Delegations) getPartyDelegations(party string) []*pb.Delegation {
 	return delegations
 }
 
-//GetPartyDelegationsOnEpoch returns all delegation by party on a given epoch
+// GetPartyDelegationsOnEpoch returns all delegation by party on a given epoch
 func (d *Delegations) getPartyDelegationsOnEpoch(party string, epochSeq string) []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 
@@ -247,7 +247,7 @@ func (d *Delegations) getPartyDelegationsOnEpoch(party string, epochSeq string) 
 	return delegations
 }
 
-//GetPartyNodeDelegations returns the delegations from party to node across all epochs
+// GetPartyNodeDelegations returns the delegations from party to node across all epochs
 func (d *Delegations) getPartyNodeDelegations(party string, node string) []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 
@@ -273,7 +273,7 @@ func (d *Delegations) getPartyNodeDelegations(party string, node string) []*pb.D
 	return delegations
 }
 
-//GetPartyNodeDelegationsOnEpoch returns the delegations from party to node at epoch
+// GetPartyNodeDelegationsOnEpoch returns the delegations from party to node at epoch
 func (d *Delegations) getPartyNodeDelegationsOnEpoch(party, node, epochSeq string) []*pb.Delegation {
 	delegations := []*pb.Delegation{}
 

@@ -218,7 +218,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -353,7 +353,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -486,7 +486,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
@@ -707,7 +707,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -2405,7 +2405,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	auxParty := "auxParty"
 	addAccount(tm, auxParty)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -2542,7 +2542,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	addAccount(tm, "bbb")
 
 	// We probably don't need these orders anymore, but they don't do any harm
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -2708,7 +2708,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,

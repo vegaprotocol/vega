@@ -94,7 +94,7 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 		return
 	}
 
-	var newState = rejectedProposal
+	newState := rejectedProposal
 	if valid {
 		newState = okProposal
 	}

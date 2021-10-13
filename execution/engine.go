@@ -167,7 +167,7 @@ func (e *Engine) Hash() []byte {
 }
 
 func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
-	var tickSize = "0."
+	tickSize := "0."
 	for decimalPlaces > 1 {
 		tickSize += "0"
 		decimalPlaces--
@@ -908,6 +908,7 @@ func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Contex
 
 	return nil
 }
+
 func (e *Engine) OnMarketMinProbabilityOfTradingForLPOrdersUpdate(ctx context.Context, v float64) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update min probability of trading tau scaling",

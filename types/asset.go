@@ -111,8 +111,8 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 	case *proto.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
-	var total = num.Zero()
-	var min = num.Zero()
+	total := num.Zero()
+	min := num.Zero()
 	if len(p.TotalSupply) > 0 {
 		total, _ = num.UintFromString(p.TotalSupply, 10)
 	}

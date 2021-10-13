@@ -207,7 +207,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.NotNil(t, insurancePool)
 	require.Equal(t, num.Zero(), insurancePool.Balance)
 
-	//TODO: JEREMY: funds are staying in margin ACCOUNT, let's
+	// TODO: JEREMY: funds are staying in margin ACCOUNT, let's
 	// fix that latert.
 	marginAcc, err := tm.collateralEngine.GetPartyMarginAccount(tm.mktCfg.ID, mainParty, asset)
 	require.NoError(t, err)
@@ -733,7 +733,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	insurancePoolDuringAuction := insurancePool.Balance.Clone()
 	require.True(t, insurancePool.Balance.IsZero())
 
-	//End auction
+	// End auction
 	setMarkPrice(t, tm, openingAuctionDuration, now, initialMarkPrice)
 
 	mktData = tm.market.GetMarketData()

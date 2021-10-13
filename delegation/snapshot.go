@@ -10,13 +10,11 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-var (
-	hashKeys = []string{
-		activeKey,
-		pendingKey,
-		autoKey,
-	}
-)
+var hashKeys = []string{
+	activeKey,
+	pendingKey,
+	autoKey,
+}
 
 type delegationSnapshotState struct {
 	changed    map[string]bool

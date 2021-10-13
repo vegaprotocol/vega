@@ -1470,6 +1470,7 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 func (m *Market) setLiquidityFee(fee num.Decimal) {
 	m.mkt.Fees.Factors.LiquidityFee = fee
 }
+
 func (m *Market) getLiquidityFee() num.Decimal {
 	return m.mkt.Fees.Factors.LiquidityFee
 }

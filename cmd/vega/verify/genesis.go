@@ -23,7 +23,7 @@ func (n noopBroker) Send(e events.Event) {}
 func (noopBroker) SendBatch(e []events.Event) {}
 
 func verifyGenesis(r *reporter, bs []byte) string {
-	var g = &struct {
+	g := &struct {
 		AppState *struct {
 			Network *struct {
 				ReplayAttackThreshold *int `json:"replay_attack_threshold"`

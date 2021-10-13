@@ -373,9 +373,7 @@ func (e *Engine) Parties() []string {
 // keep this function, perhaps we can reuse it in a numutil package
 // once we have to deal with decimals etc...
 func I64MaxAbs(vals ...int64) int64 {
-	var (
-		r, m int64
-	)
+	var r, m int64
 	for _, v := range vals {
 		av := v
 		if av < 0 {

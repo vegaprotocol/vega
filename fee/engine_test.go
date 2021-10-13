@@ -16,15 +16,13 @@ const (
 	testAsset = "ETH"
 )
 
-var (
-	testFees = types.Fees{
-		Factors: &types.FeeFactors{
-			LiquidityFee:      num.DecimalFromFloat(0.1),
-			InfrastructureFee: num.DecimalFromFloat(0.05),
-			MakerFee:          num.DecimalFromFloat(0.02),
-		},
-	}
-)
+var testFees = types.Fees{
+	Factors: &types.FeeFactors{
+		LiquidityFee:      num.DecimalFromFloat(0.1),
+		InfrastructureFee: num.DecimalFromFloat(0.05),
+		MakerFee:          num.DecimalFromFloat(0.02),
+	},
+}
 
 type testFee struct {
 	*fee.Engine
@@ -135,9 +133,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	assert.NotNil(t, ft)
 	assert.Nil(t, err)
 	transfers := ft.Transfers()
-	var (
-		pay, recv, infra, liquidity int
-	)
+	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
@@ -162,6 +158,7 @@ func testCalcContinuousTradingAndCheckAmounts(t *testing.T) {
 	assert.Equal(t, recv, len(trades))
 	assert.Equal(t, pay, len(trades))
 }
+
 func testCalcContinuousTrading(t *testing.T) {
 	eng := getTestFee(t)
 	trades := []*types.Trade{
@@ -214,9 +211,7 @@ func testCalcContinuousTrading(t *testing.T) {
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
-	var (
-		pay, recv, infra, liquidity int
-	)
+	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
@@ -275,9 +270,7 @@ func testCalcAuctionTrading(t *testing.T) {
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
-	var (
-		pay, recv, infra, liquidity int
-	)
+	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
@@ -338,9 +331,7 @@ func testCalcBatchAuctionTradingSameBatch(t *testing.T) {
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
-	var (
-		pay, recv, infra, liquidity int
-	)
+	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
@@ -392,9 +383,7 @@ func testCalcBatchAuctionTradingDifferentBatches(t *testing.T) {
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
-	var (
-		pay, recv, infra, liquidity int
-	)
+	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
@@ -469,9 +458,7 @@ func testCalcPositionResolution(t *testing.T) {
 
 	// get the transfer and check we have enough of each types
 	transfers := ft.Transfers()
-	var (
-		pay, recv, infra, liquidity int
-	)
+	var pay, recv, infra, liquidity int
 	for _, v := range transfers {
 		if v.Type == types.TransferTypeLiquidityFeePay {
 			liquidity += 1
