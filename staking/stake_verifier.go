@@ -3,6 +3,7 @@ package staking
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -65,7 +66,10 @@ type StakeVerifier struct {
 	pendingSDs      []*pendingSD
 	pendingSRs      []*pendingSR
 	finalizedEvents []*types.StakeLinking
-	ids             map[string]struct{}
+
+	mu     sync.Mutex
+	ids    map[string]struct{}
+	hashes map[string]struct{}
 }
 
 type pendingSD struct {
@@ -105,30 +109,39 @@ func NewStakeVerifier(
 		ocv:     onChainVerifier,
 		broker:  broker,
 		ids:     map[string]struct{}{},
+		hashes:  map[string]struct{}{},
 	}
 }
 
-func (s *StakeVerifier) addEventID(id string) {
+func (s *StakeVerifier) ensureNotDuplicate(id, h string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.ids[id]; ok {
+		return false
+	}
+	if _, ok := s.hashes[h]; ok {
+		return false
+	}
+
 	s.ids[id] = struct{}{}
+	s.hashes[h] = struct{}{}
+
+	return true
 }
 
-func (s *StakeVerifier) removeEventID(id string) {
-	delete(s.ids, id)
-}
-
-func (s *StakeVerifier) eventIDExists(id string) bool {
-	_, ok := s.ids[id]
-	return ok
-}
+// TODO: address this as the ID/hash map will grow forever now
+// func (s *StakeVerifier) removeEvent(id string) {
+// 	delete(s.ids, id)
+// }
 
 func (s *StakeVerifier) ProcessStakeRemoved(
 	ctx context.Context, event *types.StakeRemoved) error {
-	if s.eventIDExists(event.ID) {
+	if ok := s.ensureNotDuplicate(event.ID, event.Hash()); !ok {
 		s.log.Error("stake removed event already exists",
 			logging.String("event", event.String()))
 		return ErrDuplicatedStakeRemovedEvent
 	}
-	s.addEventID(event.ID)
 
 	pending := &pendingSR{
 		StakeRemoved: event,
@@ -140,18 +153,20 @@ func (s *StakeVerifier) ProcessStakeRemoved(
 	evt.Status = types.StakeLinkingStatusPending
 	s.broker.Send(events.NewStakeLinking(ctx, *evt))
 
+	s.log.Info("stake removed event received, starting validation",
+		logging.String("event", event.String()))
+
 	return s.witness.StartCheck(
 		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
 }
 
 func (s *StakeVerifier) ProcessStakeDeposited(
 	ctx context.Context, event *types.StakeDeposited) error {
-	if s.eventIDExists(event.ID) {
+	if ok := s.ensureNotDuplicate(event.ID, event.Hash()); !ok {
 		s.log.Error("stake deposited event already exists",
 			logging.String("event", event.String()))
 		return ErrDuplicatedStakeDepositedEvent
 	}
-	s.addEventID(event.ID)
 
 	pending := &pendingSD{
 		StakeDeposited: event,
@@ -163,6 +178,9 @@ func (s *StakeVerifier) ProcessStakeDeposited(
 	evt := pending.IntoStakeLinking()
 	evt.Status = types.StakeLinkingStatusPending
 	s.broker.Send(events.NewStakeLinking(ctx, *evt))
+
+	s.log.Info("stake deposited event received, starting validation",
+		logging.String("event", event.String()))
 
 	return s.witness.StartCheck(
 		pending, s.onEventVerified, s.currentTime.Add(timeTilCancel))
@@ -217,10 +235,13 @@ func (s *StakeVerifier) onEventVerified(event interface{}, ok bool) {
 func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
 	s.currentTime = t
 	for _, evt := range s.finalizedEvents {
-		s.removeEventID(evt.ID)
+		// s.removeEvent(evt.ID)
 		if evt.Status == types.StakeLinkingStatusAccepted {
 			s.accs.AddEvent(ctx, evt)
 		}
+		s.log.Info("stake linking finalized",
+			logging.String("status", evt.Status.String()),
+			logging.String("event", evt.String()))
 		s.broker.Send(events.NewStakeLinking(ctx, *evt))
 	}
 

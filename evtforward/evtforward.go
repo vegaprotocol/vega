@@ -60,7 +60,7 @@ type EvtForwarder struct {
 	mu               sync.RWMutex
 	bcQueueAllowlist atomic.Value // this is actually an map[string]struct{}
 	currentTime      time.Time
-	nodes            []nodeHash
+	nodes            []string
 
 	top ValidatorTopology
 }
@@ -68,11 +68,6 @@ type EvtForwarder struct {
 type tsEvt struct {
 	ts  time.Time // timestamp of the block when the event has been added
 	evt *commandspb.ChainEvent
-}
-
-type nodeHash struct {
-	node string
-	hash uint64
 }
 
 // New creates a new instance of the event forwarder.
@@ -85,7 +80,7 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		cfg:              cfg,
 		log:              log,
 		cmd:              cmd,
-		nodes:            []nodeHash{},
+		nodes:            []string{},
 		self:             top.SelfNodeID(),
 		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
@@ -135,15 +130,14 @@ func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	mevt, err := e.marshalEvt(evt)
+	key, err := e.getEvtKey(evt)
 	if err != nil {
-		e.log.Error("could not marshal event", logging.Error(err))
+		e.log.Error("could not get event key", logging.Error(err))
 		return false
 	}
-	key := string(crypto.Hash(mevt))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
-		e.log.Error("event already acknowledge",
+		e.log.Error("event already acknowledged",
 			logging.String("evt", evt.String()),
 		)
 		res = "alreadyacked"
@@ -158,6 +152,7 @@ func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 
 	// now add it to the acknowledged evts
 	e.ackedEvts[key] = evt
+	e.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true
 }
 
@@ -190,11 +185,10 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	mevt, err := e.marshalEvt(evt)
+	key, err := e.getEvtKey(evt)
 	if err != nil {
-		return fmt.Errorf("invalid event: %w", err)
+		return err
 	}
-	key := string(crypto.Hash(mevt))
 	_, ok, ack := e.getEvt(key)
 	if ok {
 		e.log.Error("event already processed",
@@ -218,18 +212,13 @@ func (e *EvtForwarder) updateValidatorsList() {
 	defer e.mu.Unlock()
 
 	e.self = e.top.SelfNodeID()
-	// reset slice
-	// preemptive alloc, we can expect to have most likely
-	// as much validator
-	e.nodes = make([]nodeHash, 0, len(e.nodes))
-	// get all keys
-	for _, key := range e.top.AllNodeIDs() {
-		h := e.hash([]byte(key))
-		e.nodes = append(e.nodes, nodeHash{key, h})
-	}
-	sort.SliceStable(e.nodes, func(i, j int) bool { return e.nodes[i].hash < e.nodes[j].hash })
+	e.nodes = e.top.AllNodeIDs()
+	sort.SliceStable(e.nodes, func(i, j int) bool {
+		return e.nodes[i] < e.nodes[j]
+	})
 }
 
+// getEvt assumes the lock is acquired before being called.
 func (e *EvtForwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, acked bool) {
 	if evt, ok = e.ackedEvts[key]; ok {
 		return evt, true, true
@@ -269,7 +258,7 @@ func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
 	node := e.nodes[h%uint64(len(e.nodes))]
 	e.mu.RUnlock()
 
-	return node.node == e.self
+	return node == e.self
 }
 
 func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
@@ -299,12 +288,20 @@ func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 	}
 }
 
+func (e *EvtForwarder) getEvtKey(evt *commandspb.ChainEvent) (string, error) {
+	mevt, err := e.marshalEvt(evt)
+	if err != nil {
+		return "", fmt.Errorf("invalid event: %w", err)
+	}
+
+	return string(crypto.Hash(mevt)), nil
+}
+
 func (e *EvtForwarder) marshalEvt(evt *commandspb.ChainEvent) ([]byte, error) {
 	pbuf := proto.Buffer{}
 	pbuf.Reset()
 	pbuf.SetDeterministic(true)
-	err := pbuf.Marshal(evt)
-	if err != nil {
+	if err := pbuf.Marshal(evt); err != nil {
 		return nil, err
 	}
 	return pbuf.Bytes(), nil
@@ -318,10 +315,10 @@ func (e *EvtForwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error
 	}
 
 	// encode time to binary
-	buf := make([]byte, binary.MaxVarintLen64)
-	_ = binary.PutVarint(buf, e.currentTime.Unix())
+	var buf [8]byte
+	_ = binary.PutVarint(buf[:], e.currentTime.Unix())
 
-	return append(pbuf, buf...), nil
+	return append(pbuf, buf[:]...), nil
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {
