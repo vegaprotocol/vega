@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -110,7 +111,7 @@ func testCalcValidatorsScore(t *testing.T) {
 
 func testCalcRewardNoBalance(t *testing.T) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, nil, num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, nil, num.Zero(), logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -123,7 +124,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	scores["node3"] = num.DecimalZero()
 	scores["node4"] = num.DecimalZero()
 
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, nil, num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, nil, num.Zero(), logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -170,7 +171,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero(), logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -255,7 +256,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero(), logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -331,7 +332,7 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero(), logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2

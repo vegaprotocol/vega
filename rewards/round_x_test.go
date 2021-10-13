@@ -114,3 +114,124 @@ func TestNoDriftdRounds(t *testing.T) {
 	}
 
 }
+
+//the bug this is reproducing is that sometimes the weights of the delegations of each delegator in a validator come to slightly more than 1 (in this case 1.0000000000000001)
+func TestReproBug4220(t *testing.T) {
+	for ct := 0; ct < 100; ct++ {
+		testEngine := getEngine(t)
+		engine := testEngine.engine
+		engine.registerStakingAndDelegationRewardScheme()
+		engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.883)
+		engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+		engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+		engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(100000000000000000000))
+		engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+		engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
+		engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+		rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
+
+		delegatorForVal11 := map[string]*num.Uint{}
+		delegatorForVal11["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"] = num.NewUint(4000000000000000000)
+		validator11 := &types.ValidatorData{
+			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			SelfStake:         num.Zero(),
+			StakeByDelegators: num.NewUint(4000000000000000000),
+			Delegators:        delegatorForVal11,
+		}
+
+		validatorData1 := []*types.ValidatorData{validator11}
+
+		delegatorForVal12 := map[string]*num.Uint{}
+		delegatorForVal12["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"] = num.NewUint(4000000000000000000)
+		delegatorForVal12["8af6254cc39f67ec1564e8a179fd5ab2c0e7cd94bc5d0c1a6a14d4f154ae1996"] = num.NewUint(800000000000000000)
+		validator12 := &types.ValidatorData{
+			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			SelfStake:         num.Zero(),
+			StakeByDelegators: num.NewUint(4800000000000000000),
+			Delegators:        delegatorForVal12,
+		}
+
+		validatorData2 := []*types.ValidatorData{validator12}
+
+		delegatorForVal13 := map[string]*num.Uint{}
+		delegatorForVal13["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"] = num.NewUint(4000000000000000000)
+		delegatorForVal13["8af6254cc39f67ec1564e8a179fd5ab2c0e7cd94bc5d0c1a6a14d4f154ae1996"] = num.NewUint(800000000000000000)
+		delegatorForVal13["e77492db04301678115c19086caf3982e9b8045be5be2d9bd09f85fb601bcb7c"] = num.NewUint(160000000000000000)
+
+		validator13 := &types.ValidatorData{
+			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			SelfStake:         num.Zero(),
+			StakeByDelegators: num.NewUint(4960000000000000000),
+			Delegators:        delegatorForVal13,
+		}
+
+		validatorData3 := []*types.ValidatorData{validator13}
+
+		delegatorForVal14 := map[string]*num.Uint{}
+		delegatorForVal14["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"] = num.NewUint(4000000000000000000)
+		delegatorForVal14["8af6254cc39f67ec1564e8a179fd5ab2c0e7cd94bc5d0c1a6a14d4f154ae1996"] = num.NewUint(800000000000000000)
+		delegatorForVal14["e77492db04301678115c19086caf3982e9b8045be5be2d9bd09f85fb601bcb7c"] = num.NewUint(160000000000000000)
+		delegatorForVal14["7f5897164da5bc6db8f05bc04a7b0d0b6eb689d3c80526e95cd2023bfd619ad9"] = num.NewUint(32000000000000000)
+
+		validator14 := &types.ValidatorData{
+			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			SelfStake:         num.Zero(),
+			StakeByDelegators: num.NewUint(4992000000000000000),
+			Delegators:        delegatorForVal14,
+		}
+
+		validatorData4 := []*types.ValidatorData{validator14}
+
+		baseRewardIncrement, _ := num.UintFromString("100000000000000000000", 10)
+		rewardBalance := baseRewardIncrement.Clone()
+		var res *payout
+		for round := uint64(187); round < 370; round++ {
+			if round == 319 || round == 350 || round == 365 {
+				rewardBalance.AddSum(baseRewardIncrement)
+			}
+			println("rewardBalance for epoch", round, rewardBalance.String())
+
+			epoch := types.Epoch{Seq: round}
+			rewardForEpoch, _ := rs.GetReward(rewardBalance, epoch)
+			println(round, rewardForEpoch.String())
+
+			validatorDataToReturn := validatorData1
+			if round > 368 {
+				validatorDataToReturn = validatorData4
+			} else if round > 353 {
+				validatorDataToReturn = validatorData3
+			} else if round > 322 {
+				validatorDataToReturn = validatorData2
+			}
+			testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(validatorDataToReturn)
+
+			res = engine.calculateRewards(context.Background(), "ETH", rs.RewardPoolAccountIDs[0], rs, rewardForEpoch, epoch)
+
+			rewardBalance.Sub(rewardBalance, res.totalReward)
+
+			println("reward amount for validator 7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f for round", round, res.partyToAmount["7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f"].String())
+			println("reward amount for party 8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2 for round", round, res.partyToAmount["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"].String())
+			if round > 322 {
+				println("reward amount for party 8af6254cc39f67ec1564e8a179fd5ab2c0e7cd94bc5d0c1a6a14d4f154ae1996 for round", round, res.partyToAmount["8af6254cc39f67ec1564e8a179fd5ab2c0e7cd94bc5d0c1a6a14d4f154ae1996"].String())
+			}
+			if round > 353 {
+				println("reward amount for party e77492db04301678115c19086caf3982e9b8045be5be2d9bd09f85fb601bcb7c for round", round, res.partyToAmount["e77492db04301678115c19086caf3982e9b8045be5be2d9bd09f85fb601bcb7c"].String())
+			}
+			println("reward balance after round", round, "is", rewardBalance.String())
+		}
+
+		expectedTotalRewardDistributed, _ := num.UintFromString("7963389516750398902", 10)
+
+		actualTotalRewardDistributed := num.Zero().AddSum(
+			res.partyToAmount["7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f"],
+			res.partyToAmount["7f5897164da5bc6db8f05bc04a7b0d0b6eb689d3c80526e95cd2023bfd619ad9"],
+			res.partyToAmount["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"],
+			res.partyToAmount["8af6254cc39f67ec1564e8a179fd5ab2c0e7cd94bc5d0c1a6a14d4f154ae1996"],
+			res.partyToAmount["e77492db04301678115c19086caf3982e9b8045be5be2d9bd09f85fb601bcb7c"])
+
+		println("actualTotalRewardDistributed", actualTotalRewardDistributed.String())
+
+		require.True(t, expectedTotalRewardDistributed.Sub(expectedTotalRewardDistributed, actualTotalRewardDistributed).LTE(num.NewUint(2)))
+	}
+
+}
