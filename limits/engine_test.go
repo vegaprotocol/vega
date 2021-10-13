@@ -26,6 +26,7 @@ func getLimitsTest() *limitsTest {
 }
 
 func (l *limitsTest) loadGenesisState(t *testing.T, lstate *limits.GenesisState) {
+	t.Helper()
 	state := struct {
 		Limits *limits.GenesisState `json:"network_limits"`
 	}{

@@ -592,6 +592,7 @@ func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif 
 
 func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
 	tif types.OrderTimeInForce, expiresAt int64, pass bool) {
+	t.Helper()
 	amend := getAmend(tm.market.GetID(), orderID, sizeDelta, price, tif, expiresAt)
 
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party)
@@ -601,8 +602,9 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	}
 }
 
-func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce,
+func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce,
 	expiresAt int64, side types.Side, party string, size uint64, price uint64) types.Order {
+	t.Helper()
 	order := types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        orderType,
@@ -625,6 +627,7 @@ func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.Orde
 
 func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce, expiresAt int64, side types.Side, party string,
 	size uint64, price uint64) string {
+	t.Helper()
 	order := &types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        orderType,

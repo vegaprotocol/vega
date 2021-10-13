@@ -37,6 +37,7 @@ func getCurrentUtcTimestampNano() int64 {
 }
 
 func getTestOrderBook(t *testing.T, market string) *tstOB {
+	t.Helper()
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
@@ -1341,6 +1342,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
+	t.Helper()
 	// run asserts for protocol trade data
 	assert.Equal(t, expectedTrade.Type, trade.Type, "invalid trade type")
 	assert.Equal(t, int(expectedTrade.Price.Uint64()), int(trade.Price.Uint64()), "invalid trade price")
@@ -1351,6 +1353,7 @@ func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
 }
 
 func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
+	t.Helper()
 	// run asserts for order
 	assert.Equal(t, expectedOrder.MarketID, order.MarketID, "invalid order market id")
 	assert.Equal(t, expectedOrder.Party, order.Party, "invalid order party id")
@@ -2129,12 +2132,14 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 }
 
 func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
+	t.Helper()
 	order := getOrder(t, orderbook, market, id, side, price, partyid, size)
 	_, err := orderbook.ob.SubmitOrder(order)
 	assert.Equal(t, err, nil)
 }
 
 func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
+	t.Helper()
 	order := &types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        types.OrderTypeLimit,

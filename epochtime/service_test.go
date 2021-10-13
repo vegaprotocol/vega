@@ -28,6 +28,7 @@ type tstSvc struct {
 }
 
 func getEpochServiceMT(t *testing.T) *tstSvc {
+	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	tm := mocks.NewMockVegaTime(ctrl)

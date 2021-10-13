@@ -14,6 +14,7 @@ import (
 )
 
 func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration, now time.Time, price uint64) {
+	t.Helper()
 	// all parties
 	parties := []string{"oo-p1", "oo-p4", "oo-p2", "oo-p3"}
 	// create accounts for the parties

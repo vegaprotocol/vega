@@ -2391,6 +2391,7 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 }
 
 func getTestEngine(t *testing.T, market string) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()

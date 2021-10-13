@@ -563,6 +563,7 @@ type testEngine struct {
 }
 
 func getEngine(t *testing.T) *testEngine {
+	t.Helper()
 	conf := NewDefaultConfig()
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)

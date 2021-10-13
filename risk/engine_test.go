@@ -501,6 +501,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
+	t.Helper()
 	if initialRisk == nil {
 		cpy := riskResult
 		initialRisk = &cpy // this is just a shallow copy, so might be worth creating a deep copy depending on the test

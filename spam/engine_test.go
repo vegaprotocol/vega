@@ -237,6 +237,7 @@ func (t testAccounts) GetAllAvailableBalances() map[string]*num.Uint {
 }
 
 func getEngine(t *testing.T) *testEngine {
+	t.Helper()
 	conf := spam.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}

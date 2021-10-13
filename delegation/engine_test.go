@@ -2168,6 +2168,7 @@ func testCheckpointRoundtripOnlyPending(t *testing.T) {
 }
 
 func getEngine(t *testing.T) *testEngine {
+	t.Helper()
 	conf := NewDefaultConfig()
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)

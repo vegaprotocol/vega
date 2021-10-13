@@ -36,6 +36,7 @@ type testEvtFwd struct {
 }
 
 func getTestEvtFwd(t *testing.T) *testEvtFwd {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	tim := mocks.NewMockTimeService(ctrl)
 	top := mocks.NewMockValidatorTopology(ctrl)

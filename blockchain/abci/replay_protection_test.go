@@ -55,15 +55,16 @@ func newPopulatedRP(nBlocks, nKeys int) *abci.ReplayProtector {
 	}
 	return rp
 }
-func benchmarkReplayProtector(size int, b *testing.B) {
+func benchmarkReplayProtector(b *testing.B, size int) {
+	b.Helper()
 	rp := newPopulatedRP(size, b.N)
 	for i := 0; i < b.N; i++ {
 		rp.Has("xxx")
 	}
 }
 
-func BenchmarkReplayProtectorLookup10(b *testing.B)   { benchmarkReplayProtector(10, b) }
-func BenchmarkReplayProtectorLookup50(b *testing.B)   { benchmarkReplayProtector(50, b) }
-func BenchmarkReplayProtectorLookup100(b *testing.B)  { benchmarkReplayProtector(100, b) }
-func BenchmarkReplayProtectorLookup500(b *testing.B)  { benchmarkReplayProtector(500, b) }
-func BenchmarkReplayProtectorLookup1000(b *testing.B) { benchmarkReplayProtector(1000, b) }
+func BenchmarkReplayProtectorLookup10(b *testing.B)   { benchmarkReplayProtector(b, 10) }
+func BenchmarkReplayProtectorLookup50(b *testing.B)   { benchmarkReplayProtector(b, 50) }
+func BenchmarkReplayProtectorLookup100(b *testing.B)  { benchmarkReplayProtector(b, 100) }
+func BenchmarkReplayProtectorLookup500(b *testing.B)  { benchmarkReplayProtector(b, 500) }
+func BenchmarkReplayProtectorLookup1000(b *testing.B) { benchmarkReplayProtector(b, 1000) }

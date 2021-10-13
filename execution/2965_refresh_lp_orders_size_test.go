@@ -376,6 +376,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 }
 
 func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
+	t.Helper()
 	var (
 		party0 = "clearing-auction-party0"
 		party1 = "clearing-auction-party1"
@@ -465,6 +466,7 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 }
 
 func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
+	t.Helper()
 	var (
 		party0 = "clearing-auction-party0"
 		party1 = "clearing-auction-party1"

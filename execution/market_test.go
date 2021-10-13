@@ -104,6 +104,7 @@ type testMarket struct {
 }
 
 func newTestMarket(t *testing.T, now time.Time) *testMarket {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	tm := &testMarket{
 		t:    t,
@@ -212,6 +213,7 @@ func (tm *testMarket) WithAccountAndAmount(id string, amount uint64) *testMarket
 }
 
 func (tm *testMarket) PartyGeneralAccount(t *testing.T, party string) *types.Account {
+	t.Helper()
 	acc, err := tm.collateralEngine.GetPartyGeneralAccount(party, tm.asset)
 	require.NoError(t, err)
 	require.NotNil(t, acc)
@@ -219,6 +221,7 @@ func (tm *testMarket) PartyGeneralAccount(t *testing.T, party string) *types.Acc
 }
 
 func (tm *testMarket) PartyMarginAccount(t *testing.T, party string) *types.Account {
+	t.Helper()
 	acc, err := tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), party, tm.asset)
 	require.NoError(t, err)
 	require.NotNil(t, acc)
@@ -226,6 +229,7 @@ func (tm *testMarket) PartyMarginAccount(t *testing.T, party string) *types.Acco
 }
 
 func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) *testMarket {
+	t.Helper()
 	return getTestMarket2(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true)
 }
 
@@ -237,6 +241,7 @@ func getTestMarket2(
 	openingAuctionDuration *types.AuctionDuration,
 	startOpeningAuction bool,
 ) *testMarket {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	riskConfig := risk.NewDefaultConfig()
@@ -462,6 +467,7 @@ func addAccountWithAmount(market *testMarket, party string, amnt uint64) *types.
 // WithSubmittedLiquidityProvision Submits a Liquidity Provision and asserts that it was created without errors
 func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id string, amount uint64, fee string,
 	buys, sells []*types.LiquidityOrder) *testMarket {
+	t.Helper()
 	ctx := context.Background()
 
 	f, _ := num.DecimalFromString(fee)
@@ -483,6 +489,7 @@ func (tm *testMarket) WithSubmittedLiquidityProvision(t *testing.T, party, id st
 // WithSubmittedOrder returns a market with Submitted orders defined in `orders`.
 // If one submission fails, it will make the test fail and stop.
 func (tm *testMarket) WithSubmittedOrders(t *testing.T, orders ...*types.Order) *testMarket {
+	t.Helper()
 	ctx := context.Background()
 	for i, order := range orders {
 		order.MarketID = tm.market.GetID()
@@ -493,6 +500,7 @@ func (tm *testMarket) WithSubmittedOrders(t *testing.T, orders ...*types.Order) 
 }
 
 func (tm *testMarket) EventHasBeenEmitted(t *testing.T, e events.Event) {
+	t.Helper()
 	for _, event := range tm.events {
 		if reflect.DeepEqual(e, event) {
 			return

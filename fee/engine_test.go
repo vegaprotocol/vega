@@ -31,6 +31,7 @@ type testFee struct {
 }
 
 func getTestFee(t *testing.T) *testFee {
+	t.Helper()
 	eng, err := fee.New(
 		logging.NewTestLogger(),
 		fee.NewDefaultConfig(),

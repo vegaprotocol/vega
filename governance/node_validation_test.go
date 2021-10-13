@@ -21,6 +21,7 @@ type testNodeValidation struct {
 }
 
 func getTestNodeValidation(t *testing.T) *testNodeValidation {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	assets := mocks.NewMockAssets(ctrl)
 	witness := mocks.NewMockWitness(ctrl)

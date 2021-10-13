@@ -593,6 +593,7 @@ func (t testPos) VWSell() *num.Uint {
 func (t testPos) ClearPotentials() {}
 
 func getTestEngine(t *testing.T) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)

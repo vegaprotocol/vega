@@ -21,6 +21,7 @@ type testNetParams struct {
 }
 
 func getTestNetParams(t *testing.T) *testNetParams {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)
 	store := netparams.New(

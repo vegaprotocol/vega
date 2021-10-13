@@ -40,6 +40,7 @@ type evt struct {
 }
 
 func getBroker(t *testing.T) *brokerTst {
+	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())

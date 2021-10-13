@@ -39,6 +39,7 @@ type testEngine struct {
 }
 
 func getTestEngine(t *testing.T) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	erc := &fakeERC{}
 	col := mocks.NewMockCollateral(ctrl)

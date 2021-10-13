@@ -128,6 +128,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	require.Equal(t, 0, len(res.partyToAmount))
 }
 
+//nolint
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")

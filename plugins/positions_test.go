@@ -159,6 +159,7 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 }
 
 func getPosPlugin(t *testing.T) *posPluginTst {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	p := plugins.NewPositions(ctx)

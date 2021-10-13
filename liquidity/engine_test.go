@@ -34,7 +34,10 @@ func (eqMatcher) String() string {
 	return "assert.Equal(expected, got)"
 }
 
-func eq(t *testing.T, x interface{}) eqMatcher { return eqMatcher{t, x} }
+func eq(t *testing.T, x interface{}) eqMatcher {
+	t.Helper()
+	return eqMatcher{t, x}
+}
 
 type testEngine struct {
 	ctrl     *gomock.Controller
@@ -47,6 +50,7 @@ type testEngine struct {
 }
 
 func newTestEngine(t *testing.T, now time.Time) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	log := logging.NewTestLogger()

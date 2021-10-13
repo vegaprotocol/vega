@@ -30,6 +30,7 @@ type stakeVerifierTest struct {
 }
 
 func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := bmocks.NewMockBrokerI(ctrl)
 	log := logging.NewTestLogger()

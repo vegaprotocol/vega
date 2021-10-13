@@ -16,6 +16,7 @@ import (
 )
 
 func testAssets(t *testing.T) *assets.Service {
+	t.Helper()
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)

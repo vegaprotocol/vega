@@ -1247,6 +1247,7 @@ func testGovernanceHash(t *testing.T) {
 }
 
 func getTestEngine(t *testing.T) *tstEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	cfg := governance.NewDefaultConfig()
 	accounts := mocks.NewMockStakingAccounts(ctrl)
@@ -1436,6 +1437,7 @@ func (e *tstEngine) expectAnyAssetTimes(times int) {
 }
 
 func (e *tstEngine) expectSendOpenProposalEvent(t *testing.T, party *proto.Party, proposal types.Proposal) {
+	t.Helper()
 	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(ev events.Event) {
 		pe, ok := ev.(*events.Proposal)
 		assert.True(t, ok)
@@ -1447,6 +1449,7 @@ func (e *tstEngine) expectSendOpenProposalEvent(t *testing.T, party *proto.Party
 }
 
 func (e *tstEngine) expectSendWaitingForNodeVoteProposalEvent(t *testing.T, party *proto.Party, proposal types.Proposal) {
+	t.Helper()
 	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(ev events.Event) {
 		pe, ok := ev.(*events.Proposal)
 		assert.True(t, ok)
@@ -1459,6 +1462,7 @@ func (e *tstEngine) expectSendWaitingForNodeVoteProposalEvent(t *testing.T, part
 }
 
 func (e *tstEngine) expectSendRejectedProposalEvent(t *testing.T, partyID string) {
+	t.Helper()
 	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		pe, ok := e.(*events.Proposal)
 		assert.True(t, ok)
@@ -1484,6 +1488,7 @@ func (e *tstEngine) setMinProposerBalance(balance string) {
 }
 
 func (e *tstEngine) expectSendVoteEvent(t *testing.T, party *proto.Party, proposal types.Proposal) {
+	t.Helper()
 	e.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(e events.Event) {
 		ve, ok := e.(*events.Vote)
 		assert.True(t, ok)
