@@ -47,6 +47,7 @@ type OpenInterestCalculator interface {
 // NewEngine returns a new instance of target stake calculation Engine
 func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
 	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
+
 	return &Engine{
 		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
 		sFactor: factor,
@@ -67,6 +68,7 @@ func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
 	}
 	factor, _ := num.UintFromDecimal(sFactor.Mul(expDec))
 	e.sFactor = factor
+
 	return nil
 }
 
@@ -136,6 +138,7 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	}
 
 	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
+
 	return num.Zero().Div(
 		num.Zero().Mul(
 			num.Zero().Mul(markPrice, num.NewUint(maxOI)),

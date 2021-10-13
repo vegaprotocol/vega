@@ -64,6 +64,7 @@ func (s *coreService) LastBlockHeight(
 	req *protoapi.LastBlockHeightRequest,
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
+
 	return &protoapi.LastBlockHeightResponse{
 		Height: s.stats.Blockchain.Height(),
 	}, nil
@@ -73,6 +74,7 @@ func (s *coreService) LastBlockHeight(
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
 func (s *coreService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime")()
+
 	return &protoapi.GetVegaTimeResponse{
 		Timestamp: s.timesvc.GetTimeNow().UnixNano(),
 	}, nil
@@ -97,6 +99,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 			return nil, apiError(codes.InvalidArgument, err)
 		}
 		s.log.Debug("unable to submit transaction", logging.Error(err))
+
 		return nil, apiError(codes.Internal, err)
 	}
 

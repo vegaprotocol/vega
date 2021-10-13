@@ -46,6 +46,7 @@ func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, st
 	if len(triggers) == 2 {
 		e.extension = triggers[1]
 	}
+
 	return e
 }
 
@@ -74,16 +75,19 @@ func (a Auction) MarketEvent() string {
 		if a.openingAuction {
 			return fmt.Sprintf("Market %s left opening auction started at %s at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 		}
+
 		return fmt.Sprintf("Market %s left auction started at %s at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 	}
 	if a.openingAuction {
 		// an opening auction will always have a STOP time
 		stop := stopT.Format(time.RFC3339Nano)
+
 		return fmt.Sprintf("Market %s entered opening auction at %s, will close at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 	}
 	if a.auctionStop == 0 {
 		return fmt.Sprintf("Market %s entered auction mode at %s (trigger: %s)", a.marketID, start, a.trigger)
 	}
+
 	return fmt.Sprintf("Market %s entered auction mode at %s, auction closes at %s (trigger: %s)", a.marketID, start, stopT.Format(time.RFC3339Nano), a.trigger)
 }
 
@@ -103,6 +107,7 @@ func (a Auction) Proto() eventspb.AuctionEvent {
 // StreamMessage returns the BusEvent message for the event stream API
 func (a Auction) StreamMessage() *eventspb.BusEvent {
 	p := a.Proto()
+
 	return &eventspb.BusEvent{
 		Version: eventspb.Version,
 		Id:      a.eventID(),
@@ -142,5 +147,6 @@ func AuctionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Auction
 		trigger:        be.GetAuction().Trigger,
 		extension:      be.GetAuction().ExtensionTrigger,
 	}
+
 	return e
 }

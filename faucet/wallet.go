@@ -30,6 +30,7 @@ func (w *faucetWallet) Sign(message []byte) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+
 	return sig, w.publicKey, nil
 }
 

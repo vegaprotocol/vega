@@ -52,14 +52,17 @@ func (i Int) GT(o *Int) bool {
 		if o.IsPositive() || o.IsZero() {
 			return false
 		}
+
 		return i.U.LT(o.U)
 	}
 	if i.IsPositive() {
 		if o.IsZero() || o.IsNegative() {
 			return true
 		}
+
 		return i.U.GT(o.U)
 	}
+
 	return o.IsNegative()
 }
 
@@ -69,14 +72,17 @@ func (i Int) LT(o *Int) bool {
 		if o.IsPositive() || o.IsZero() {
 			return true
 		}
+
 		return i.U.GT(o.U)
 	}
 	if i.IsPositive() {
 		if o.IsZero() || o.IsNegative() {
 			return false
 		}
+
 		return i.U.LT(o.U)
 	}
+
 	return o.IsPositive()
 }
 
@@ -85,6 +91,7 @@ func (i Int) Int64() int64 {
 	if i.IsNegative() {
 		return -val
 	}
+
 	return val
 }
 
@@ -94,6 +101,7 @@ func (i Int) String() string {
 	if i.IsNegative() {
 		return "-" + val
 	}
+
 	return val
 }
 
@@ -107,12 +115,14 @@ func (i *Int) Add(a *Int) *Int {
 	if i.IsZero() {
 		i.U.Set(a.U)
 		i.s = a.s
+
 		return i
 	}
 
 	// Handle the easy cases were both are the same sign
 	if i.IsPositive() && a.IsPositive() {
 		i.U.Add(i.U, a.U)
+
 		return i
 	}
 
@@ -131,6 +141,7 @@ func (i *Int) Add(a *Int) *Int {
 			i.U.Sub(a.U, i.U)
 			i.s = true
 		}
+
 		return i
 	}
 	if i.U.GTE(a.U) {
@@ -141,6 +152,7 @@ func (i *Int) Add(a *Int) *Int {
 		i.U.Sub(a.U, i.U)
 		i.s = false
 	}
+
 	return i
 }
 
@@ -150,6 +162,7 @@ func (i *Int) Sub(a *Int) *Int {
 	a.FlipSign()
 	i.Add(a)
 	a.FlipSign()
+
 	return i
 }
 
@@ -159,6 +172,7 @@ func (i *Int) AddSum(vals ...*Int) *Int {
 	for _, x := range vals {
 		i.Add(x)
 	}
+
 	return i
 }
 
@@ -168,6 +182,7 @@ func (i *Int) SubSum(vals ...*Int) *Int {
 	for _, x := range vals {
 		i.Sub(x)
 	}
+
 	return i
 }
 
@@ -178,6 +193,7 @@ func NewInt(val int64) *Int {
 		return &Int{U: NewUint(uint64(-val)),
 			s: false}
 	}
+
 	return &Int{U: NewUint(uint64(val)),
 		s: true}
 }

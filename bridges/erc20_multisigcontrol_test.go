@@ -86,11 +86,13 @@ type testSigner struct{}
 
 func (s testSigner) Sign(msg []byte) ([]byte, error) {
 	priv, _ := hex.DecodeString(privKey)
+
 	return ed25519.Sign(ed25519.PrivateKey(priv), msg), nil
 }
 
 func (s testSigner) Verify(msg, sig []byte) bool {
 	pub, _ := hex.DecodeString(pubKey)
 	hash := crypto.Keccak256(msg)
+
 	return ed25519.Verify(ed25519.PublicKey(pub), hash, sig)
 }

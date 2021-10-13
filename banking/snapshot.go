@@ -251,6 +251,7 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 		asset, err := e.assets.Get(v.Asset)
 		if err != nil {
 			e.log.Error("error restoring asset actions for asset", logging.String("asset", v.Asset))
+
 			continue
 		}
 		e.assetActs[v.ID] = &assetAction{

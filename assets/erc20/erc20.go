@@ -193,6 +193,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	for iter.Next() {
 		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID {
 			event = iter.Event
+
 			break
 		}
 	}
@@ -264,6 +265,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 			iter.Event.Raw.BlockNumber == blockNumber &&
 			uint64(iter.Event.Raw.Index) == txIndex {
 			event = iter.Event
+
 			break
 		}
 	}
