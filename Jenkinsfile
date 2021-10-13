@@ -10,6 +10,7 @@
 def scmVars = null
 def version = 'UNKNOWN'
 def versionHash = 'UNKNOWN'
+def commitHash = 'UNKNOWN'
 
 
 pipeline {
@@ -60,7 +61,10 @@ pipeline {
                     scmVars = checkout(scm)
                     versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
                     version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
+                    commitHash = getCommitHash()
                 }
+                echo "scmVars=${scmVars}"
+                echo "commitHash=${commitHash}"
             }
         }
 
@@ -285,9 +289,6 @@ pipeline {
         }
 
         stage('Run tests') {
-            environment {
-                DATA_NODE_COMMIT_HASH = "${sh(script:'git rev-parse HEAD', returnStdout: true).trim()}"
-            }
             parallel {
                 stage('unit tests') {
                     options { retry(3) }
@@ -311,7 +312,7 @@ pipeline {
                         script {
                             systemTests ignoreFailure: true,
                                 vegaCore: params.VEGA_CORE_BRANCH,
-                                dataNode: env.DATA_NODE_COMMIT_HASH,
+                                dataNode: commitHash,
                                 goWallet: params.GO_WALLET_BRANCH,
                                 ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
@@ -326,7 +327,7 @@ pipeline {
                         script {
                             systemTestsLNL ignoreFailure: true,
                                 vegaCore: params.VEGA_CORE_BRANCH,
-                                dataNode: env.DATA_NODE_COMMIT_HASH,
+                                dataNode: commitHash,
                                 goWallet: params.GO_WALLET_BRANCH,
                                 ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
