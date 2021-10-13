@@ -9,9 +9,10 @@ type Int struct {
 }
 
 func IntFromUint(u *Uint, s bool) *Int {
-	copy := &Int{s: s,
-		U: u.Clone()}
-	return copy
+	return &Int{
+		s: s,
+		U: u.Clone(),
+	}
 }
 
 // IsNegative tests if the stored value is negative

@@ -254,8 +254,6 @@ pipeline {
                                     --disable promlinter \
                                     --disable wrapcheck \
                                     --disable tagliatelle \
-                                    --disable thelper \
-                                    --disable predeclared \
                                     --disable paralleltest \
                                     --disable noctx \
                                     --disable nlreturn \
