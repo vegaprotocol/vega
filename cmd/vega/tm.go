@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"code.vegaprotocol.io/vega/genesis"
 	"github.com/jessevdk/go-flags"
@@ -115,7 +116,13 @@ func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
 
 func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
 	genesisFilePath := fmt.Sprintf("%s/genesis.json", genesisFilesRootPath)
-	resp, err := http.Get(genesisFilePath)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", genesisFilePath, nil)
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
 	}
@@ -134,7 +141,13 @@ func getGenesisFromRemote(genesisFilesRootPath string) (*tmtypes.GenesisDoc, *ge
 
 func getSignatureFromRemote(genesisFilesRootPath string) (string, error) {
 	signatureFilePath := fmt.Sprintf("%s/signature.txt", genesisFilesRootPath)
-	sigResp, err := http.Get(signatureFilePath)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", signatureFilePath, nil)
+	if err != nil {
+		return "", fmt.Errorf("couldn't load signature file from %s: %w", signatureFilePath, err)
+	}
+	sigResp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("couldn't load signature file from %s: %w", signatureFilePath, err)
 	}

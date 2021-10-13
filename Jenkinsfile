@@ -255,7 +255,6 @@ pipeline {
                                     --disable wrapcheck \
                                     --disable tagliatelle \
                                     --disable paralleltest \
-                                    --disable noctx \
                                     --disable nlreturn \
                                     --disable gomnd \
                                     --disable goerr113 \

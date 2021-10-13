@@ -2,6 +2,7 @@ package rest
 
 import (
 	"compress/gzip"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -38,7 +39,8 @@ func headerPresent(t *testing.T, x *httptest.ResponseRecorder, key string, expec
 }
 
 func TestNoGzip(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(), "GET", "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +70,8 @@ func TestNoGzip(t *testing.T) {
 }
 
 func TestGzip(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(), "GET", "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +116,8 @@ func TestGzip(t *testing.T) {
 }
 
 func TestNoBody(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(), "GET", "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
