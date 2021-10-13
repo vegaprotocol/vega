@@ -45,6 +45,7 @@ type StateProviderT interface {
 	LoadState(ctx context.Context, pl *types.Payload) ([]types.StateProvider, error)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/snapshot TimeService
 type TimeService interface {
 	GetTimeNow() time.Time
 	SetTimeNow(context.Context, time.Time)
@@ -89,7 +90,7 @@ type Engine struct {
 var (
 	// order in which snapshots are to be restored
 	nodeOrder = []types.SnapshotNamespace{
-		// types.AppSnapshot,
+		types.AppSnapshot,
 		types.AssetsSnapshot,
 		types.BankingSnapshot,
 		types.CollateralSnapshot,
@@ -228,16 +229,6 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	mbPos := (len(e.snapshot.Nodes) - len(nodeOrder) + 2) / 2
 	for i, pl := range e.snapshot.Nodes {
 		ns := pl.Namespace()
-		if ns == types.AppSnapshot {
-			if pas := pl.GetAppState(); pas != nil {
-				e.wrap = pas
-				e.app = e.wrap.AppState
-				if err := e.nodeCAS(i, pl); err != nil {
-					return err
-				}
-			}
-			continue
-		}
 		if _, ok := ordered[ns]; !ok {
 			if ns == types.MatchingSnapshot || ns == types.PositionsSnapshot {
 				ordered[ns] = make([]*types.Payload, 0, mbPos)
@@ -253,8 +244,14 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 		ordered[ns] = append(ordered[ns], pl)
 	}
 
-	// now let's load the data in the correct order
-	for _, ns := range nodeOrder {
+	// start with app state
+	e.wrap = ordered[types.AppSnapshot][0].GetAppState()
+	e.app = e.wrap.AppState
+	// set the context with the height + block
+	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
+
+	// now let's load the data in the correct order, skip app state, we've already handled that
+	for _, ns := range nodeOrder[1:] {
 		for _, n := range ordered[ns] {
 			p, ok := e.providers[n.GetTreeKey()]
 			if !ok {
@@ -273,6 +270,9 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	if _, err := e.saveCurrentTree(); err != nil {
 		return err
 	}
+	now := time.Unix(e.app.Time, 0)
+	// restore app state
+	e.time.SetTimeNow(ctx, now)
 	// we're done, we can clear the snapshot state
 	e.snapshot = nil
 	return nil
