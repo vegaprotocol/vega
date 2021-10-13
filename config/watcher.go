@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	configFileName = "config.toml"
-	namedLogger    = "cfgwatcher"
+	namedLogger = "cfgwatcher"
 )
 
 // Watcher is looking for updates in the configurations files.
