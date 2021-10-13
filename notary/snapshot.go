@@ -176,8 +176,7 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	pl := types.Payload{
 		Data: &types.PayloadNotary{
 			Notary: &types.Notary{
-				Sigs:                   sigs,
-				ValidatorVotesRequired: n.validatorVotesRequired,
+				Sigs: sigs,
 			},
 		},
 	}

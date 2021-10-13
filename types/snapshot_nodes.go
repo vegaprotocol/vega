@@ -403,8 +403,7 @@ type NotarySigs struct {
 	Sig  string
 }
 type Notary struct {
-	Sigs                   []*NotarySigs
-	ValidatorVotesRequired float64
+	Sigs []*NotarySigs
 }
 
 func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
