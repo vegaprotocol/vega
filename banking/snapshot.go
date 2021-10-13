@@ -90,7 +90,7 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 }
 
 func (e *Engine) serialiseSeen() ([]byte, error) {
-	seen := make([]*types.TxRef, len(e.seen))
+	seen := make([]*types.TxRef, 0, len(e.seen))
 	for v := range e.seen {
 		seen = append(seen, &types.TxRef{Asset: string(v.asset), BlockNr: v.blockNumber, Hash: v.hash, LogIndex: v.logIndex})
 	}
