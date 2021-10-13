@@ -152,6 +152,7 @@ Feature: Test settlement at expiry
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
       And debug transfers
+
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
       | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
@@ -386,6 +387,14 @@ Feature: Test settlement at expiry
       | trader3a | ETH   | ETH/DEC21 | 0      | 7059    |
       | trader4  | ETH   | ETH/DEC21 | 0      | 6483    |
 
+     # <PC> - Not expecting below fee transfers
+    And the following transfers should happen:
+      | from     | to     | from account         | to account                       | market id | amount | asset |
+      | trader3a |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
+      | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
+      | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
+      | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
+
     And the cumulated balance for all accounts should be worth "300055604"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     And the insurance pool balance should be "2500" for the asset "ETH"
@@ -465,6 +474,14 @@ Feature: Test settlement at expiry
       | trader3a | ETH   | ETH/DEC21 | 0      | 7059    |
       | trader4  | ETH   | ETH/DEC21 | 0      |    0    |
 
+     # <PC> - Not expecting below fee transfers
+     And the following transfers should happen:
+      | from     | to     | from account         | to account                       | market id | amount | asset |
+      | trader3a |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
+      | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
+      | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
+      | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
+
     And the cumulated balance for all accounts should be worth "300048004"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     # 1117 were taken from the insurance pool to cover the losses of trader4, the remaining is split between global and the other market
@@ -534,15 +551,23 @@ Feature: Test settlement at expiry
     Then time is updated to "2022-01-01T01:01:02Z"
 
     And debug transfers
-     # <PC> - Expecting below figures but Infra fees of 1800 and liquidity fee of 1 is being charged for suspended market expiry
+     # <PC> - Expecting below figures but Infra and liquidity fee are being charged for suspended market expiry
       # | party    | asset | market id | margin | general |
       # | trader3a | ETH   | ETH/DEC21 | 0      | 8860    |
       # | trader4  | ETH   | ETH/DEC21 | 0      | 0       |
     
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 0      | 8783    |
+      | trader3a | ETH   | ETH/DEC21 | 0      | 6982    |
       | trader4  | ETH   | ETH/DEC21 | 0      |    0    |
+
+     # <PC> - Not expecting below fee transfers
+    And the following transfers should happen:
+      | from     | to     | from account         | to account                       | market id | amount | asset |
+      | trader3a |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
+      | trader3a | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
+      | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
+      | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
 
     And the cumulated balance for all accounts should be worth "300012004"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
