@@ -2236,9 +2236,7 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 	assert.NotNil(t, sellOrderConf)
 }
 
-/*****************************************************************************/
-/*                             AUCTION TESTING                               */
-/**************************************************************************.***/
+// AUCTION TESTING.
 func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
