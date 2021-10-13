@@ -266,7 +266,6 @@ pipeline {
                                     --disable exhaustive \
                                     --disable errorlint \
                                     --disable cyclop \
-                                    --disable bodyclose \
                                     --disable wsl \
                                     --disable unparam \
                                     --disable unconvert \
