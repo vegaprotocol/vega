@@ -2,8 +2,8 @@ package evtforward
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
-	"fmt"
 	"hash/fnv"
 	"sort"
 	"sync"
@@ -236,8 +236,13 @@ func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {
 }
 
 func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
-	s := fmt.Sprintf("%v%v", evt.String(), e.currentTime.Unix())
-	h := e.hash([]byte(s))
+	key, err := e.makeEvtHashKey(evt)
+	if err != nil {
+		e.log.Error("could not marshal event", logging.Error(err))
+		return false
+	}
+	h := e.hash(key)
+
 	e.mu.RLock()
 	if len(e.nodes) <= 0 {
 		e.mu.RUnlock()
@@ -276,8 +281,26 @@ func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 	}
 }
 
+func (e *EvtForwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error) {
+	// deterministic marshal of the event
+	pbuf := proto.Buffer{}
+	pbuf.SetDeterministic(true)
+	pbuf.Reset()
+	err := pbuf.Marshal(evt)
+	if err != nil {
+		return nil, err
+	}
+
+	// encode time to binary
+	buf := make([]byte, binary.MaxVarintLen64)
+	_ = binary.PutVarint(buf, e.currentTime.Unix())
+
+	return append(pbuf.Bytes(), buf...), nil
+}
+
 func (e *EvtForwarder) hash(key []byte) uint64 {
 	h := fnv.New64a()
 	h.Write(key)
+
 	return h.Sum64()
 }
