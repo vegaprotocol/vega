@@ -292,7 +292,6 @@ pipeline {
                                     --disable dogsled \
                                     --disable funlen \
                                     --disable gocyclo \
-                                    --disable varcheck
                             '''
                         }
                     }
