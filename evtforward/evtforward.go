@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"hash/fnv"
 	"sort"
 	"sync"
@@ -134,9 +135,17 @@ func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	key := string(crypto.Hash([]byte(evt.String())))
+	mevt, err := e.marshalEvt(evt)
+	if err != nil {
+		e.log.Error("could not marshal event", logging.Error(err))
+		return false
+	}
+	key := string(crypto.Hash(mevt))
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
+		e.log.Error("event already acknowledge",
+			logging.String("evt", evt.String()),
+		)
 		res = "alreadyacked"
 		// this was already acknowledged, nothing to be done, return false
 		return false
@@ -181,8 +190,17 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	key := string(crypto.Hash([]byte(evt.String())))
-	if _, ok, _ := e.getEvt(key); ok {
+	mevt, err := e.marshalEvt(evt)
+	if err != nil {
+		return fmt.Errorf("invalid event: %w", err)
+	}
+	key := string(crypto.Hash(mevt))
+	_, ok, ack := e.getEvt(key)
+	if ok {
+		e.log.Error("event already processed",
+			logging.String("evt", evt.String()),
+			logging.Bool("acknowledged", ack),
+		)
 		res = "dupevt"
 		return ErrEvtAlreadyExist
 	}
@@ -281,12 +299,20 @@ func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 	}
 }
 
+func (e *EvtForwarder) marshalEvt(evt *commandspb.ChainEvent) ([]byte, error) {
+	pbuf := proto.Buffer{}
+	pbuf.Reset()
+	pbuf.SetDeterministic(true)
+	err := pbuf.Marshal(evt)
+	if err != nil {
+		return nil, err
+	}
+	return pbuf.Bytes(), nil
+}
+
 func (e *EvtForwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error) {
 	// deterministic marshal of the event
-	pbuf := proto.Buffer{}
-	pbuf.SetDeterministic(true)
-	pbuf.Reset()
-	err := pbuf.Marshal(evt)
+	pbuf, err := e.marshalEvt(evt)
 	if err != nil {
 		return nil, err
 	}
@@ -295,7 +321,7 @@ func (e *EvtForwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error
 	buf := make([]byte, binary.MaxVarintLen64)
 	_ = binary.PutVarint(buf, e.currentTime.Unix())
 
-	return append(pbuf.Bytes(), buf...), nil
+	return append(pbuf, buf...), nil
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {
