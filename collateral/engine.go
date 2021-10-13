@@ -481,7 +481,7 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 		err = ErrFeeAccountsMissing
 	}
 
-	return
+	return maker, infra, liqui, err
 }
 
 // FinalSettlement will process the list of transfer instructed by other engines
@@ -2128,7 +2128,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
 
-	return
+	return insuranceID, settleID, err
 }
 
 func (e *Engine) HasGeneralAccount(party, asset string) bool {

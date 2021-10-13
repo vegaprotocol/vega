@@ -94,7 +94,8 @@ func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*ty
 			break
 		}
 	}
-	return
+
+	return agg, trades, err
 }
 
 func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled bool, trades []*types.Trade, impactedOrders []*types.Order, err error) {

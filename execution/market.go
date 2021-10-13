@@ -1412,7 +1412,8 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 			orderUpdates = m.confirmMTM(ctx, conf.Order)
 		}
 	}
-	return
+
+	return orderUpdates
 }
 
 func (m *Market) confirmMTM(
@@ -1448,7 +1449,8 @@ func (m *Market) confirmMTM(
 		}
 		m.updateLiquidityFee(ctx)
 	}
-	return
+
+	return orderUpdates
 }
 
 // updateLiquidityFee computes the current LiquidityProvision fee and updates
@@ -2543,7 +2545,8 @@ func (m *Market) applyOrderAmendment(
 			err = verr
 		}
 	}
-	return
+
+	return order, err
 }
 
 func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder *types.Order) (conf *types.OrderConfirmation, err error) {
@@ -2586,7 +2589,8 @@ func (m *Market) orderCancelReplace(ctx context.Context, existingOrder, newOrder
 	}
 
 	timer.EngineTimeCounterAdd()
-	return
+
+	return conf, err
 }
 
 func (m *Market) orderAmendInPlace(originalOrder, amendOrder *types.Order) (*types.OrderConfirmation, error) {

@@ -46,7 +46,8 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	} else if orderMessage.ExpiresAt > 0 && orderMessage.Type == types.OrderTypeMarket {
 		err = types.ErrInvalidExpirationDatetime
 	}
-	return
+
+	return err
 }
 
 func validateOrderID(orderID string) error {

@@ -429,7 +429,7 @@ func (e *Engine) ExpectMargins(
 		}
 	}
 
-	return
+	return okMargins, distressedPositions
 }
 
 func (m marginChange) Amount() *num.Uint {

@@ -58,7 +58,8 @@ func (m *Market) repricePeggedOrders(
 	}
 
 	timer.EngineTimeCounterAdd()
-	return
+
+	return parked, toSubmit
 }
 
 func (m *Market) reSubmitPeggedOrders(

@@ -158,7 +158,7 @@ func New(
 	e.keyToSerialiser[depositsKey] = e.serialiseDeposits
 	e.keyToSerialiser[seenKey] = e.serialiseSeen
 	e.keyToSerialiser[assetActionsKey] = e.serialiseAssetActions
-	return
+	return e
 }
 
 // ReloadConf updates the internal configuration

@@ -271,7 +271,6 @@ pipeline {
                                     --disable scopelint \
                                     --disable revive \
                                     --disable nestif \
-                                    --disable nakedret \
                                     --disable maligned \
                                     --disable lll \
                                     --disable interfacer \

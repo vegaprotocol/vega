@@ -202,7 +202,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 		sell[v.Price] = sell[v.Price] + v.Remaining
 	}
 
-	return
+	return sell, buy
 }
 
 func (b *BrokerStub) GetMarket(marketID string) *types.Market {
