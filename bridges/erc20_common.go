@@ -66,5 +66,4 @@ func sign(signer Signer, msg []byte) (*SignaturePayload, error) {
 		Message:   msg,
 		Signature: sig,
 	}, nil
-
 }

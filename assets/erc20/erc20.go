@@ -26,11 +26,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const (
-	MaxNonce              = 100000000
-	listAssetContractName = "list_asset"
-	withdrawContractName  = "withdraw_asset"
-)
+const MaxNonce = 100000000
 
 var (
 	ErrUnableToFindDeposit        = errors.New("unable to find erc20 deposit event")
