@@ -2170,6 +2170,7 @@ func getEngine(t *testing.T) *testEngine {
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
 	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))
 	engine.OnCompLevelChanged(context.Background(), 1.1)
+	engine.OnMinValidatorsChanged(context.Background(), 5)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	return &testEngine{
