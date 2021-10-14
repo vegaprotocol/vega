@@ -519,24 +519,24 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 	for _, p := range provs {
 		ks := p.Keys()
 		ns := p.Namespace()
-		tKeys := make([]string, 0, len(ks))
 		haveKeys, ok := e.nsKeys[ns]
 		if !ok {
 			e.providersNS[ns] = []types.StateProvider{
 				p,
 			}
-			e.nsTreeKeys[ns] = make([][]byte, 0, len(tKeys))
+			e.nsTreeKeys[ns] = make([][]byte, 0, len(ks))
 			e.namespaces = append(e.namespaces, ns)
-			e.nsKeys[ns] = tKeys
-			for _, k := range tKeys {
+			for _, k := range ks {
 				fullKey := types.GetNodeKey(ns, k)
 				e.keyNoNS[fullKey] = k
 				e.providers[fullKey] = p
 				e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 			}
+			e.nsKeys[ns] = ks
 			continue
 		}
-		dedup := uniqueSubset(haveKeys, tKeys)
+		dedup := uniqueSubset(haveKeys, ks)
+		// @TODO log this - or panic?
 		if len(dedup) == 0 {
 			continue // no new keys were added
 		}
@@ -550,6 +550,10 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 		}
 	}
+}
+
+func (e *Engine) RegisteredNamespaces() []types.SnapshotNamespace {
+	return e.namespaces
 }
 
 func (e *Engine) Close() error {
