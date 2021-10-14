@@ -775,7 +775,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             hdec,
+					HorizonDec:       hdec,
 					Probability:      num.DecimalFromFloat(0.15),
 					AuctionExtension: 60,
 				},
@@ -945,7 +945,7 @@ func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: 60,
 				},

@@ -987,7 +987,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1145,7 +1145,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1393,7 +1393,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1609,7 +1609,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1799,13 +1799,13 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	extension := int64(45)
 	t1 := &types.PriceMonitoringTrigger{
 		Horizon:          60,
-		HDec:             num.DecimalFromFloat(60),
+		HorizonDec:       num.DecimalFromFloat(60),
 		Probability:      num.DecimalFromFloat(0.95),
 		AuctionExtension: extension,
 	}
 	t2 := &types.PriceMonitoringTrigger{
 		Horizon:          120,
-		HDec:             num.DecimalFromFloat(120),
+		HorizonDec:       num.DecimalFromFloat(120),
 		Probability:      num.DecimalFromFloat(0.99),
 		AuctionExtension: extension * 2,
 	}
@@ -3036,7 +3036,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},

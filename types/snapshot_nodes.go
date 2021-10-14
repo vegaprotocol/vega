@@ -2187,7 +2187,7 @@ func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
 	return &AuctionState{
 		Mode:        as.Mode,
 		DefaultMode: as.DefaultMode,
-		Begin:       time.Unix(as.Begin, 0),
+		Begin:       time.Unix(as.Begin, 0).UTC(),
 		End:         end,
 		Start:       as.Start,
 		Stop:        as.Stop,
@@ -2321,12 +2321,12 @@ func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 	ret := PriceMonitor{
 		Initialised:         pm.Initialised,
 		FPHorizons:          make([]*DecMap, 0, len(pm.FpHorizons)),
-		Now:                 time.Unix(pm.Now, 0),
-		Update:              time.Unix(pm.Update, 0),
+		Now:                 time.Unix(pm.Now, 0).UTC(),
+		Update:              time.Unix(pm.Update, 0).UTC(),
 		Bounds:              make([]*PriceBound, 0, len(pm.Bounds)),
-		PriceRangeCacheTime: time.Unix(pm.PriceRangeCacheTime, 0),
+		PriceRangeCacheTime: time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
 		PriceRangeCache:     make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
-		RefPriceCacheTime:   time.Unix(pm.RefPriceCacheTime, 0),
+		RefPriceCacheTime:   time.Unix(pm.RefPriceCacheTime, 0).UTC(),
 		RefPriceCache:       make([]*DecMap, 0, len(pm.RefPriceCache)),
 	}
 	for _, d := range pm.FpHorizons {

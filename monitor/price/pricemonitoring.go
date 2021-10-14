@@ -133,7 +133,7 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 			Trigger: p,
 		})
 		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = p.HDec.Div(secondsPerYear)
+			h[p.Horizon] = p.HorizonDec.Div(secondsPerYear)
 		}
 	}
 

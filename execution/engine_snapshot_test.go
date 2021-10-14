@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
@@ -12,6 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -52,7 +54,7 @@ func getMarketConfig() *types.Market {
 				Triggers: []*types.PriceMonitoringTrigger{
 					&types.PriceMonitoringTrigger{
 						Horizon:          1000,
-						HDec:             num.DecimalFromFloat(1.0),
+						HorizonDec:       num.DecimalFromFloat(1000.0),
 						Probability:      num.DecimalFromFloat(0.3),
 						AuctionExtension: 10000,
 					},
@@ -144,6 +146,7 @@ func getMarketConfig() *types.Market {
 		TradingModeConfig: &types.MarketContinuous{
 			Continuous: &types.ContinuousTrading{},
 		},
+		State: types.MarketStateActive,
 	}
 }
 
@@ -157,12 +160,23 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Take the snapshot and hash
-	mapBytes, err := engine.Snapshot()
+	bytes, err := engine.GetState("ALL")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, mapBytes)
+	assert.NotEmpty(t, bytes)
 	hash1, err := engine.GetHash("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash1)
 
-	// Create a new engine and restore
+	// Turn the bytes back into a payload and restore to a new engine
+	engine2 := createEngine(t)
+	assert.NotNil(t, engine2)
+	snap := &snapshot.Payload{}
+	err = proto.Unmarshal(bytes, snap)
+	assert.NoError(t, err)
+	err = engine2.LoadState(types.PayloadFromProto(snap))
+	assert.NoError(t, err)
+
+	// Check the hashes are the same
+	hash2, err := engine2.GetHash("ALL")
+	assert.Equal(t, hash1, hash2)
 }

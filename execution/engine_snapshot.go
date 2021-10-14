@@ -43,7 +43,7 @@ func (e *Engine) marketsStates() []*types.ExecMarket {
 func (e *Engine) restoreMarketsStates(ems []*types.ExecMarket) error {
 	for _, em := range ems {
 		if _, ok := e.markets[em.Market.ID]; !ok {
-			err := e.submitMarket(context.Background(), em.Market)
+			err := e.submitMarket(context.Background(), em.Market.DeepClone())
 			if err != nil {
 				return err
 			}

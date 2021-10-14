@@ -52,6 +52,7 @@ func wrappedDecimalFromDecimal(d num.Decimal) num.WrappedDecimal {
 }
 
 func (e *Engine) restoreBounds(pbs []*types.PriceBound) {
+	e.bounds = make([]*bound, 0, len(pbs))
 	for _, pb := range pbs {
 		e.bounds = append(e.bounds, priceBoundTypeToInternal(pb))
 	}

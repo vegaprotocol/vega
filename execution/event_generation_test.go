@@ -21,7 +21,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 
 	pmt := &types.PriceMonitoringTrigger{
 		Horizon:          60,
-		HDec:             num.DecimalFromFloat(60),
+		HorizonDec:       num.DecimalFromFloat(60),
 		Probability:      num.DecimalFromFloat(.95),
 		AuctionExtension: 60,
 	}
