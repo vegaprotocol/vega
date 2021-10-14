@@ -13,7 +13,7 @@ import (
 )
 
 // ERC20Logic yea that's a weird name but
-// it just matches the name of the contract
+// it just matches the name of the contract.
 type ERC20Logic struct {
 	signer     Signer
 	bridgeAddr string

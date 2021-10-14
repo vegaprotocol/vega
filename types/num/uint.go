@@ -59,7 +59,7 @@ func Max(a, b *Uint) *Uint {
 	return b.Clone()
 }
 
-// UintFromHex instantiate a uint from and hex string
+// UintFromHex instantiate a uint from and hex string.
 func UintFromHex(hex string) (*Uint, error) {
 	u, err := uint256.FromHex(hex)
 	if err != nil {

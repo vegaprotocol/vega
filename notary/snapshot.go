@@ -21,7 +21,7 @@ var (
 	}
 )
 
-// NewWithSnapshot returns an "extended" Notary type which contains the ability to take engine snapshots
+// NewWithSnapshot returns an "extended" Notary type which contains the ability to take engine snapshots.
 func NewWithSnapshot(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, cmd Commander) *SnapshotNotary {
 	log = log.Named(namedLogger)
 	return &SnapshotNotary{
@@ -39,15 +39,14 @@ type SnapshotNotary struct {
 	changed    bool
 }
 
-//StartAggregate is a wrapper to Notary's StartAggregate which also manages the snapshot state
+// StartAggregate is a wrapper to Notary's StartAggregate which also manages the snapshot state.
 func (n *SnapshotNotary) StartAggregate(resID string, kind v1.NodeSignatureKind) {
 	n.Notary.StartAggregate(resID, kind)
 	n.changed = true
 }
 
-//AddSig is a wrapper to Notary's AddSig which also manages the snapshot state
+// AddSig is a wrapper to Notary's AddSig which also manages the snapshot state.
 func (n *SnapshotNotary) AddSig(ctx context.Context, pubKey string, ns v1.NodeSignature) ([]v1.NodeSignature, bool, error) {
-
 	sigsout, ok, err := n.Notary.AddSig(ctx, pubKey, ns)
 	if err == nil {
 		n.changed = true
@@ -56,7 +55,7 @@ func (n *SnapshotNotary) AddSig(ctx context.Context, pubKey string, ns v1.NodeSi
 	return sigsout, ok, err
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (n *SnapshotNotary) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if k != allKey {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
@@ -109,7 +108,6 @@ func (n *SnapshotNotary) Snapshot() (map[string][]byte, error) {
 }
 
 func (n *SnapshotNotary) LoadState(payload *types.Payload) error {
-
 	if n.Namespace() != payload.Data.Namespace() {
 		return types.ErrInvalidSnapshotNamespace
 	}
@@ -122,9 +120,8 @@ func (n *SnapshotNotary) LoadState(payload *types.Payload) error {
 	}
 }
 
-// serialiseLimits returns the engine's limit data as marshalled bytes
+// serialiseLimits returns the engine's limit data as marshalled bytes.
 func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
-
 	sigs := make([]*types.NotarySigs, 0, len(n.sigs)) // it will likely be longer than this but we don't know yet
 	for ik, ns := range n.sigs {
 		for n := range ns {
@@ -181,11 +178,9 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 		},
 	}
 	return proto.Marshal(pl.IntoProto())
-
 }
 
 func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
-
 	sigs := map[idKind]map[nodeSig]struct{}{}
 
 	for _, s := range notary.Sigs {

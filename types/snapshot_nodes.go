@@ -402,6 +402,7 @@ type NotarySigs struct {
 	Node string
 	Sig  string
 }
+
 type Notary struct {
 	Sigs []*NotarySigs
 }
@@ -2711,7 +2712,6 @@ func NotaryFromProto(n *snapshot.Notary) *Notary {
 }
 
 func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
-
 	return &NotarySigs{
 		ID:   sk.Id,
 		Kind: sk.Kind,
@@ -2737,7 +2737,6 @@ func (n Notary) IntoProto() *snapshot.Notary {
 }
 
 func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
-
 	return &snapshot.NotarySigs{
 		Id:   sk.ID,
 		Kind: sk.Kind,
