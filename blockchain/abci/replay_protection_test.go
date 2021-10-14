@@ -60,11 +60,13 @@ func TestSnapshot(t *testing.T) {
 
 	require.True(t, rp.Add("k1"))
 	snap3, err := rp.Snapshot()
+	require.Nil(t, err)
 	require.False(t, bytes.Equal(snap3["all"], snap2["all"]))
 
 	rp.SetHeight(1)
 	require.False(t, rp.Add("k1"))
 	snap4, err := rp.Snapshot()
+	require.Nil(t, err)
 	require.True(t, bytes.Equal(snap4["all"], snap3["all"]))
 }
 

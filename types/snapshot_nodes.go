@@ -2775,9 +2775,7 @@ func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *Pa
 	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
 	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
 		transactions := make([]string, 0, len(block.Tx))
-		for _, tx := range block.Tx {
-			transactions = append(transactions, tx)
-		}
+		transactions = append(transactions, block.Tx...)
 		blocks = append(blocks, &ReplayBlockTransactions{Transactions: transactions})
 	}
 	return &PayloadReplayProtection{
@@ -2790,9 +2788,7 @@ func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection 
 
 	for _, block := range p.Blocks {
 		txs := make([]string, 0, len(block.Transactions))
-		for _, tx := range block.Transactions {
-			txs = append(txs, tx)
-		}
+		txs = append(txs, block.Transactions...)
 		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: txs})
 	}
 	return &snapshot.Payload_ReplayProtection{
