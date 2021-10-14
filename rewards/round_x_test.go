@@ -69,7 +69,7 @@ func TestRepeatedRounds(t *testing.T) {
 	}
 }
 
-// test a 10000 rounds of reward distribution, make sure that the ratio the delegators get out of the reward balance for the epoch is always the same and doesn't drift
+// test a 10000 rounds of reward distribution, make sure that the ratio the delegators get out of the reward balance for the epoch is always the same and doesn't drift.
 func TestNoDriftdRounds(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -115,7 +115,7 @@ func TestNoDriftdRounds(t *testing.T) {
 
 }
 
-//the bug this is reproducing is that sometimes the weights of the delegations of each delegator in a validator come to slightly more than 1 (in this case 1.0000000000000001)
+//the bug this is reproducing is that sometimes the weights of the delegations of each delegator in a validator come to slightly more than 1 (in this case 1.0000000000000001).
 func TestReproBug4220(t *testing.T) {
 
 	for ct := 0; ct < 100; ct++ {

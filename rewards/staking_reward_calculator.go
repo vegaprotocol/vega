@@ -62,7 +62,7 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator, e.rng, e.log)
 }
 
-// distribute rewards for a given asset account with the given settings of delegation and reward constraints
+// distribute rewards for a given asset account with the given settings of delegation and reward constraints.
 func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
@@ -145,19 +145,18 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 			delegatorWeights[party] = delegatorWeight
 		}
 
+		sortedParties := make([]string, 0, len(vd.Delegators))
+		for party := range vd.Delegators {
+			sortedParties = append(sortedParties, party)
+		}
+		sort.Strings(sortedParties)
+
 		// NB: due to rounding errors this sum can be greater than 1
 		// to avoid overflow, we choose at random a party adjust it by the error
 		if weightSums.GreaterThan(decimalOne) {
-			error := weightSums.Sub(decimalOne)
-			unluckyParty := rng.Intn(len(delegatorWeights))
-			i := 0
-			for party := range delegatorWeights {
-				if i == unluckyParty {
-					delegatorWeights[party] = num.MaxD(num.DecimalZero(), delegatorWeights[party].Sub(error))
-					break
-				}
-				i++
-			}
+			precisionError := weightSums.Sub(decimalOne)
+			unluckyParty := sortedParties[rng.Intn(len(delegatorWeights))]
+			delegatorWeights[unluckyParty] = num.MaxD(num.DecimalZero(), delegatorWeights[unluckyParty].Sub(precisionError))
 		}
 
 		// calculate delegator amounts
@@ -167,7 +166,7 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 			log.Info("Reward remaining to disrtibute to delegators", logging.String("epoch", epochSeq), logging.String("remainingRewardForDelegators", remainingRewardForDelegators.String()))
 
 			totalAwardedThisRound := num.Zero()
-			for party := range vd.Delegators {
+			for _, party := range sortedParties {
 				// check if the party has already rewards from other validators or previous rounds (this epoch)
 				rewardForParty, ok := rewards[party]
 				if !ok {
@@ -175,7 +174,6 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 				}
 
 				delegatorWeight := delegatorWeights[party]
-
 				rewardAsUint, _ := num.UintFromDecimal(delegatorWeight.Mul(remainingRewardForDelegators.ToDecimal()))
 				if maxPayout.IsZero() {
 					totalAwardedThisRound.AddSum(rewardAsUint)
@@ -213,7 +211,7 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 	}
 }
 
-// calculate the score for each validator and normalise by the total score
+// calculate the score for each validator and normalise by the total score.
 func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, rng *rand.Rand) map[string]num.Decimal {
 	// calculate the total amount of tokens delegated across all validators
 	totalDelegated := calcTotalDelegated(validatorsData)
@@ -248,9 +246,9 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 
 	// verify that the sum of scores is 1, if not adjust one score at random
 	if scoreSum.GreaterThan(num.DecimalFromInt64(1)) {
-		error := scoreSum.Sub(num.DecimalFromInt64(1))
+		precisionError := scoreSum.Sub(num.DecimalFromInt64(1))
 		unluckyValidator := rng.Intn(len(nodeIDSlice))
-		valScores[nodeIDSlice[unluckyValidator]] = num.MaxD(valScores[nodeIDSlice[unluckyValidator]].Sub(error), num.DecimalZero())
+		valScores[nodeIDSlice[unluckyValidator]] = num.MaxD(valScores[nodeIDSlice[unluckyValidator]].Sub(precisionError), num.DecimalZero())
 	}
 
 	for _, k := range nodeIDSlice {

@@ -396,7 +396,7 @@ func testDistributePayout(t *testing.T) {
 	require.Equal(t, num.NewUint(995000), rewardAccount.Balance)
 }
 
-// test on epoch end such that the full reward account balance can be reward with delay
+// test on epoch end such that the full reward account balance can be reward with delay.
 func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -479,7 +479,7 @@ func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(331428*2), node3Acc.Balance)
 }
 
-// test payout distribution on epoch end with no delay
+// test payout distribution on epoch end with no delay.
 func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine

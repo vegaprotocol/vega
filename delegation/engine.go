@@ -145,13 +145,13 @@ func (e *Engine) Hash() []byte {
 	return crypto.Hash(buf)
 }
 
-//OnMinValidatorsChanged updates the network parameter for minValidators
+//OnMinValidatorsChanged updates the network parameter for minValidators.
 func (e *Engine) OnMinValidatorsChanged(ctx context.Context, minValidators int64) error {
 	e.minVal = num.DecimalFromInt64(minValidators)
 	return nil
 }
 
-//OnCompLevelChanged updates the network parameter for competitionLevel
+//OnCompLevelChanged updates the network parameter for competitionLevel.
 func (e *Engine) OnCompLevelChanged(ctx context.Context, compLevel float64) error {
 	e.compLevel = num.DecimalFromFloat(compLevel)
 	return nil

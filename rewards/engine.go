@@ -173,7 +173,7 @@ func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Contex
 	return nil
 }
 
-// UpdateMinValidatorsStakingRewardScheme is called when the the network parameter for min validator has changed
+// UpdateMinValidatorsStakingRewardScheme is called when the the network parameter for min validator has changed.
 func (e *Engine) UpdateMinValidatorsStakingRewardScheme(ctx context.Context, minValidators int64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
@@ -187,7 +187,7 @@ func (e *Engine) UpdateMinValidatorsStakingRewardScheme(ctx context.Context, min
 	return nil
 }
 
-// UpdateAssetForStakingAndDelegationRewardScheme is called when the asset for staking and delegation is available, get the reward pool account and attach it to the scheme
+// UpdateAssetForStakingAndDelegationRewardScheme is called when the asset for staking and delegation is available, get the reward pool account and attach it to the scheme.
 func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Context, asset string) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {
@@ -376,7 +376,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 	}
 }
 
-// OnEpochEvent calculates the reward amounts parties get for available reward schemes
+// OnEpochEvent calculates the reward amounts parties get for available reward schemes.
 func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEvent")
 
