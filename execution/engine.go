@@ -7,10 +7,6 @@ import (
 	"time"
 
 	vproto "code.vegaprotocol.io/protos/vega"
-<<<<<<< HEAD
-
-=======
->>>>>>> Sorted out mocks for highest level testing of execution
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -78,11 +74,7 @@ type OracleEngine interface {
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
-<<<<<<< HEAD
 // Broker (no longer need to mock this, use the broker/mocks wrapper).
-=======
-// Broker  (no longer need to mock this, use the broker/mocks wrapper)
->>>>>>> Sorted out mocks for highest level testing of execution
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
