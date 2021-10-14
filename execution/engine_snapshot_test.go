@@ -16,7 +16,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
-
 	"github.com/stretchr/testify/assert"
 )
 
@@ -154,7 +153,7 @@ func getMarketConfig() *types.Market {
 				Triggers: []*types.PriceMonitoringTrigger{
 					&types.PriceMonitoringTrigger{
 						Horizon:          1000,
-						HDec:             num.DecimalFromFloat(1.0),
+						HorizonDec:       num.DecimalFromFloat(1000.0),
 						Probability:      num.DecimalFromFloat(0.3),
 						AuctionExtension: 10000,
 					},
@@ -246,6 +245,7 @@ func getMarketConfig() *types.Market {
 		TradingModeConfig: &types.MarketContinuous{
 			Continuous: &types.ContinuousTrading{},
 		},
+		State: types.MarketStateActive,
 	}
 }
 
@@ -253,31 +253,29 @@ func TestValidMarketSnapshot(t *testing.T) {
 	engine := createEngine(t)
 	assert.NotNil(t, engine)
 
-<<<<<<< HEAD
-=======
-	// Create a new market
->>>>>>> More fixes and work on the top level unit tests
 	marketConfig := getMarketConfig()
 	err := engine.SubmitMarket(context.TODO(), marketConfig)
 	assert.NoError(t, err)
 
 	// Take the snapshot and hash
-<<<<<<< HEAD
+
 	bytes, providers, err := engine.GetState("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 	assert.Len(t, providers, 2)
 
-=======
 	mapBytes, err := engine.Snapshot()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, mapBytes)
->>>>>>> More fixes and work on the top level unit tests
+
+	bytes, err := engine.GetState("ALL")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, bytes)
 	hash1, err := engine.GetHash("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash1)
 
-<<<<<<< HEAD
+
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2 := createEngine(t)
 	assert.NotNil(t, engine2)
@@ -293,7 +291,4 @@ func TestValidMarketSnapshot(t *testing.T) {
 	hash2, err := engine2.GetHash("ALL")
 	assert.NoError(t, err)
 	assert.Equal(t, hash1, hash2)
-=======
-	// Create a new engine and restore
->>>>>>> More fixes and work on the top level unit tests
 }
