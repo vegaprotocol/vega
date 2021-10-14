@@ -752,7 +752,7 @@ func (m Market) String() string {
 }
 
 func (m Market) DeepClone() *Market {
-	copy := &Market{
+	cpy := &Market{
 		ID:                m.ID,
 		DecimalPlaces:     m.DecimalPlaces,
 		TradingModeConfig: m.TradingModeConfig,
@@ -763,27 +763,27 @@ func (m Market) DeepClone() *Market {
 	}
 
 	if m.TradableInstrument != nil {
-		copy.TradableInstrument = m.TradableInstrument.DeepClone()
+		cpy.TradableInstrument = m.TradableInstrument.DeepClone()
 	}
 
 	if m.Fees != nil {
-		copy.Fees = m.Fees.DeepClone()
+		cpy.Fees = m.Fees.DeepClone()
 	}
 
 	if m.OpeningAuction != nil {
-		copy.OpeningAuction = m.OpeningAuction.DeepClone()
+		cpy.OpeningAuction = m.OpeningAuction.DeepClone()
 	}
 
 	if m.PriceMonitoringSettings != nil {
-		copy.PriceMonitoringSettings = m.PriceMonitoringSettings.DeepClone()
+		cpy.PriceMonitoringSettings = m.PriceMonitoringSettings.DeepClone()
 	}
 
 	if m.LiquidityMonitoringParameters != nil {
-		copy.LiquidityMonitoringParameters = m.LiquidityMonitoringParameters.DeepClone()
+		cpy.LiquidityMonitoringParameters = m.LiquidityMonitoringParameters.DeepClone()
 	}
 
 	if m.MarketTimestamps != nil {
-		copy.MarketTimestamps = m.MarketTimestamps.DeepClone()
+		cpy.MarketTimestamps = m.MarketTimestamps.DeepClone()
 	}
-	return copy
+	return cpy
 }

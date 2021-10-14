@@ -178,5 +178,6 @@ func TestValidMarketSnapshot(t *testing.T) {
 
 	// Check the hashes are the same
 	hash2, err := engine2.GetHash("ALL")
+	assert.NoError(t, err)
 	assert.Equal(t, hash1, hash2)
 }

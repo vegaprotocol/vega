@@ -74,7 +74,7 @@ type OracleEngine interface {
 	Unsubscribe(context.Context, oracles.SubscriptionID)
 }
 
-// Broker  (no longer need to mock this, use the broker/mocks wrapper)
+// Broker (no longer need to mock this, use the broker/mocks wrapper).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
