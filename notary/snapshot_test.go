@@ -41,6 +41,7 @@ func TestNotarySnapshotVotesKinds(t *testing.T) {
 }
 
 func populateNotary(t *testing.T, notr *testNotary) {
+	t.Helper()
 	// First ID/Kind
 	resID := "resid1"
 	notr.StartAggregate(resID, types.NodeSignatureKindAssetNew)
