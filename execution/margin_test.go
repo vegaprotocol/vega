@@ -143,7 +143,7 @@ func TestMargins(t *testing.T) {
 }
 
 /* Check that a failed new order margin check cannot be got around by amending
- * an existing order to the same values as the failed new order */
+ * an existing order to the same values as the failed new order. */
 func TestPartialFillMargins(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"

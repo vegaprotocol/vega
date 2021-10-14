@@ -79,7 +79,7 @@ func TestDecChain(t *testing.T) {
 	})
 }
 
-// same as the TestDecChain, only we're starting with a Uint
+// same as the TestDecChain, only we're starting with a Uint.
 func TestDecChainFromUint(t *testing.T) {
 	sInt := int64(100)
 	start := decimal.NewFromInt(sInt)

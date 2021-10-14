@@ -8,9 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-var (
-	ErrMissingWithdrawERC20Ext = errors.New("missing withdraw submission erc20 ext")
-)
+var ErrMissingWithdrawERC20Ext = errors.New("missing withdraw submission erc20 ext")
 
 func (app *App) processWithdraw(ctx context.Context, w *types.WithdrawSubmission, id string, party string) (err error) {
 	asset, err := app.assets.Get(w.Asset)

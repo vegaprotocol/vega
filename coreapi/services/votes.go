@@ -10,9 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 )
 
-var (
-	ErrMissingProposalOrPartyFilter = errors.New("missing proposal or party filter")
-)
+var ErrMissingProposalOrPartyFilter = errors.New("missing proposal or party filter")
 
 type voteE interface {
 	events.Event

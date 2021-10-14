@@ -218,7 +218,7 @@ func TestMarkPriceUpdateAfterPartialFill(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -353,7 +353,7 @@ func TestAmendPartialFillCancelReplace(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -486,7 +486,7 @@ func TestPartialFilledWashTrade(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
 
@@ -571,7 +571,6 @@ func TestPartialFilledWashTrade(t *testing.T) {
 }
 
 func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif types.OrderTimeInForce, expiresAt int64) *types.OrderAmendment {
-
 	amend := &types.OrderAmendment{
 		OrderID:     orderID,
 		MarketID:    market,
@@ -592,6 +591,7 @@ func getAmend(market string, orderID string, sizeDelta int64, price uint64, tif 
 
 func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, sizeDelta int64, price uint64,
 	tif types.OrderTimeInForce, expiresAt int64, pass bool) {
+	t.Helper()
 	amend := getAmend(tm.market.GetID(), orderID, sizeDelta, price, tif, expiresAt)
 
 	amended, err := tm.market.AmendOrder(context.Background(), amend, party)
@@ -601,8 +601,9 @@ func amendOrder(t *testing.T, tm *testMarket, party string, orderID string, size
 	}
 }
 
-func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce,
+func getOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce,
 	expiresAt int64, side types.Side, party string, size uint64, price uint64) types.Order {
+	t.Helper()
 	order := types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        orderType,
@@ -625,6 +626,7 @@ func getOrder(_ *testing.T, tm *testMarket, now *time.Time, orderType types.Orde
 
 func sendOrder(t *testing.T, tm *testMarket, now *time.Time, orderType types.OrderType, tif types.OrderTimeInForce, expiresAt int64, side types.Side, party string,
 	size uint64, price uint64) string {
+	t.Helper()
 	order := &types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        orderType,
@@ -689,7 +691,6 @@ func TestAmendToLosePriorityThenCancel(t *testing.T) {
 	cancelconf, _ := tm.market.CancelOrder(context.TODO(), "party1", order1)
 	assert.NotNil(t, cancelconf)
 	assert.Equal(t, types.OrderStatusCancelled, cancelconf.Order.Status)
-
 }
 
 func TestUnableToAmendGFAGFN(t *testing.T) {
@@ -706,7 +707,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	addAccount(tm, auxParty)
 	addAccount(tm, auxParty2)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), time.Second)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
@@ -1568,7 +1569,6 @@ func testPeggedOrderParkCancelAll(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, cancelConf)
 	assert.Equal(t, 3, len(cancelConf))
-
 }
 
 func testPeggedOrderExpiring2(t *testing.T) {
@@ -1933,7 +1933,7 @@ func TestPeggedOrdersAmends(t *testing.T) {
 }
 
 // We had a case where things crashed when the orders on the same price level were not sorted
-// in createdAt order. Test this by creating a pegged order and repricing to make it lose it's time order
+// in createdAt order. Test this by creating a pegged order and repricing to make it lose it's time order.
 func testPeggedOrderCanDeleteAfterLostPriority(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
@@ -2026,7 +2026,7 @@ func testPeggedOrderAmendParkedToLive(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
-// Amend a parked order but the order remains parked
+// Amend a parked order but the order remains parked.
 func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
@@ -2063,7 +2063,7 @@ func testPeggedOrderAmendParkedStayParked(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 }
 
-// Take a valid live order and force it to be parked by amending it
+// Take a valid live order and force it to be parked by amending it.
 func testPeggedOrderAmendForcesPark(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
@@ -2405,7 +2405,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	auxParty := "auxParty"
 	addAccount(tm, auxParty)
 
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -2458,7 +2458,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 }
 
 // test for issue 787,
-// segv when an GTT order is cancelled, then expires
+// segv when an GTT order is cancelled, then expires.
 func TestOrderBookSimple_CancelGTTOrderThenRunExpiration(t *testing.T) {
 	now := time.Unix(5, 0)
 	closingAt := time.Unix(10000000000, 0)
@@ -2542,7 +2542,7 @@ func TestGTTExpiredPartiallyFilled(t *testing.T) {
 	addAccount(tm, "bbb")
 
 	// We probably don't need these orders anymore, but they don't do any harm
-	//Assure liquidity auction won't be triggered
+	// Assure liquidity auction won't be triggered
 	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(context.Background(), 0)
 	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "alwaysOnBid", types.SideBuy, auxParty, 1, 1)
 	conf, err := tm.market.SubmitOrder(context.Background(), alwaysOnBid)
@@ -2708,7 +2708,7 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,
@@ -2859,5 +2859,4 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 			}
 		}
 	})
-
 }

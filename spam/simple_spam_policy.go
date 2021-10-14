@@ -2,12 +2,14 @@ package spam
 
 import (
 	"errors"
+	"sort"
 	"sync"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
 )
 
 // Simple spam policy supports encforcing of max allowed commands and min required tokens + banning of parties when their reject rate in the block
@@ -33,7 +35,7 @@ type SimpleSpamPolicy struct {
 	tooManyCommands       error
 }
 
-//NewSimpleSpamPolicy instantiates the simple spam policy
+// NewSimpleSpamPolicy instantiates the simple spam policy.
 func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *SimpleSpamPolicy {
 	return &SimpleSpamPolicy{
 		log:                   log,
@@ -52,8 +54,75 @@ func NewSimpleSpamPolicy(policyName string, minTokensParamName string, maxAllowe
 	}
 }
 
-//UpdateUintParam is called to update Uint net params for the policy
-//Specifically the min tokens required for executing the command for which the policy is attached
+func (ssp *SimpleSpamPolicy) Serialise() ([]byte, error) {
+	partyToCount := []*types.PartyCount{}
+	for party, count := range ssp.partyToCount {
+		partyToCount = append(partyToCount, &types.PartyCount{
+			Party: party,
+			Count: count,
+		})
+	}
+
+	sort.SliceStable(partyToCount, func(i, j int) bool { return partyToCount[i].Party < partyToCount[j].Party })
+
+	bannedParties := make([]*types.BannedParty, 0, len(ssp.bannedParties))
+	for party, epoch := range ssp.bannedParties {
+		bannedParties = append(bannedParties, &types.BannedParty{
+			Party:      party,
+			UntilEpoch: epoch,
+		})
+	}
+
+	sort.SliceStable(bannedParties, func(i, j int) bool { return bannedParties[i].Party < bannedParties[j].Party })
+
+	partyTokenBalance := make([]*types.PartyTokenBalance, 0, len(ssp.tokenBalance))
+	for party, balance := range ssp.tokenBalance {
+		partyTokenBalance = append(partyTokenBalance, &types.PartyTokenBalance{
+			Party:   party,
+			Balance: balance,
+		})
+	}
+	sort.SliceStable(partyTokenBalance, func(i, j int) bool { return partyTokenBalance[i].Party < partyTokenBalance[j].Party })
+
+	payload := types.Payload{
+		Data: &types.PayloadSimpleSpamPolicy{
+			SimpleSpamPolicy: &types.SimpleSpamPolicy{
+				PolicyName:        ssp.policyName,
+				PartyToCount:      partyToCount,
+				BannedParty:       bannedParties,
+				PartyTokenBalance: partyTokenBalance,
+				CurrentEpochSeq:   ssp.currentEpochSeq,
+			},
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (ssp *SimpleSpamPolicy) Deserialise(p *types.Payload) error {
+	pl := p.Data.(*types.PayloadSimpleSpamPolicy).SimpleSpamPolicy
+
+	ssp.partyToCount = map[string]uint64{}
+	for _, ptc := range pl.PartyToCount {
+		ssp.partyToCount[ptc.Party] = ptc.Count
+	}
+	ssp.bannedParties = make(map[string]uint64, len(pl.BannedParty))
+	for _, bp := range pl.BannedParty {
+		ssp.bannedParties[bp.Party] = bp.UntilEpoch
+	}
+
+	ssp.tokenBalance = make(map[string]*num.Uint, len(pl.PartyTokenBalance))
+	for _, tb := range pl.PartyTokenBalance {
+		ssp.tokenBalance[tb.Party] = tb.Balance
+	}
+
+	ssp.currentEpochSeq = pl.CurrentEpochSeq
+
+	return nil
+}
+
+// UpdateUintParam is called to update Uint net params for the policy
+// Specifically the min tokens required for executing the command for which the policy is attached.
 func (ssp *SimpleSpamPolicy) UpdateUintParam(name string, value *num.Uint) error {
 	if name == ssp.minTokensParamName {
 		ssp.minTokensRequired = value.Clone()
@@ -63,8 +132,8 @@ func (ssp *SimpleSpamPolicy) UpdateUintParam(name string, value *num.Uint) error
 	return nil
 }
 
-//UpdateIntParam is called to update int net params for the policy
-//Specifically the number of commands a party can submit in an epoch
+// UpdateIntParam is called to update int net params for the policy
+// Specifically the number of commands a party can submit in an epoch.
 func (ssp *SimpleSpamPolicy) UpdateIntParam(name string, value int64) error {
 	if name == ssp.maxAllowedParamName {
 		ssp.maxAllowedCommands = uint64(value)
@@ -74,7 +143,7 @@ func (ssp *SimpleSpamPolicy) UpdateIntParam(name string, value int64) error {
 	return nil
 }
 
-//Reset is called when the epoch begins to reset policy state
+// Reset is called when the epoch begins to reset policy state.
 func (ssp *SimpleSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint) {
 	ssp.lock.Lock()
 	defer ssp.lock.Unlock()
@@ -95,9 +164,12 @@ func (ssp *SimpleSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*
 			delete(ssp.bannedParties, party)
 		}
 	}
+
+	ssp.blockPartyToCount = map[string]uint64{}
+	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
 }
 
-//EndOfBlock is called at the end of the processing of the block to carry over state and trigger bans if necessary
+// EndOfBlock is called at the end of the processing of the block to carry over state and trigger bans if necessary.
 func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64) {
 	ssp.lock.Lock()
 	defer ssp.lock.Unlock()
@@ -117,9 +189,10 @@ func (ssp *SimpleSpamPolicy) EndOfBlock(blockHeight uint64) {
 			ssp.bannedParties[p] = ssp.currentEpochSeq + numberOfEpochsBan
 		}
 	}
+	ssp.partyBlockRejects = map[string]*blockRejectInfo{}
 }
 
-//PostBlockAccept is called to verify a transaction from the block before passed to the application layer
+// PostBlockAccept is called to verify a transaction from the block before passed to the application layer.
 func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 
@@ -163,10 +236,9 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 		ssp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 0}
 	}
 	return true, nil
-
 }
 
-//PreBlockAccept checks if the commands violates spam rules based on the information we had about the number of existing commands preceding the current block
+// PreBlockAccept checks if the commands violates spam rules based on the information we had about the number of existing commands preceding the current block.
 func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	party := tx.Party()
 

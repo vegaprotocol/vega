@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-// MarginLevels - the margin levels event
+// MarginLevels - the margin levels event.
 type MarginLevels struct {
 	*Base
 	l proto.MarginLevels

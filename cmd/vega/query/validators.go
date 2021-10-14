@@ -38,7 +38,7 @@ func getPrintValidators(nodeAddress string, req *apipb.ListValidatorsRequest) er
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

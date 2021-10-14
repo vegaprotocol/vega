@@ -27,12 +27,10 @@ type governanceSnapshotState struct {
 	changed    map[string]bool
 }
 
-// serialiseActiveProposals returns the engine's active proposals as marshalled bytes
+// serialiseActiveProposals returns the engine's active proposals as marshalled bytes.
 func (e *Engine) serialiseActiveProposals() ([]byte, error) {
-
 	pending := make([]*types.PendingProposal, 0, len(e.activeProposals))
 	for _, p := range e.activeProposals {
-
 		pp := &types.PendingProposal{
 			Proposal: p.Proposal,
 			Yes:      votesAsSlice(p.yes),
@@ -51,12 +49,10 @@ func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 	}
 
 	return proto.Marshal(pl.IntoProto())
-
 }
 
-// serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes
+// serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes.
 func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
-
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceEnacted{
 			GovernanceEnacted: &types.GovernanceEnacted{
@@ -67,9 +63,8 @@ func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// serialiseNodeProposals returns the engine's proposals waiting for node validation
+// serialiseNodeProposals returns the engine's proposals waiting for node validation.
 func (e *Engine) serialiseNodeProposals() ([]byte, error) {
-
 	nodeProposals := e.nodeProposalValidation.getProposals()
 	proposals := make([]*types.Proposal, 0, len(nodeProposals))
 
@@ -93,7 +88,7 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.keyToSerialiser[k]; !ok {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
@@ -146,7 +141,6 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 }
 
 func (e *Engine) LoadState(payload *types.Payload) error {
-
 	if e.Namespace() != payload.Data.Namespace() {
 		return types.ErrInvalidSnapshotNamespace
 	}
@@ -164,10 +158,8 @@ func (e *Engine) LoadState(payload *types.Payload) error {
 }
 
 func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {
-
 	e.activeProposals = make([]*proposal, 0, len(active.Proposals))
 	for _, p := range active.Proposals {
-
 		pp := &proposal{
 			Proposal:     p.Proposal,
 			yes:          votesAsMap(p.Yes),
@@ -189,7 +181,6 @@ func (e *Engine) restoreEnactedProposals(enacted *types.GovernanceEnacted) error
 }
 
 func (e *Engine) restoreNodeProposals(node *types.GovernanceNode) error {
-
 	for _, p := range node.Proposals {
 		e.nodeProposalValidation.Start(p)
 	}
@@ -197,7 +188,7 @@ func (e *Engine) restoreNodeProposals(node *types.GovernanceNode) error {
 	return nil
 }
 
-// votesAsSlice returns a sorted slice of votes from a given map of votes
+// votesAsSlice returns a sorted slice of votes from a given map of votes.
 func votesAsSlice(votes map[string]*types.Vote) []*types.Vote {
 	ret := make([]*types.Vote, 0, len(votes))
 	for _, v := range votes {
@@ -207,7 +198,7 @@ func votesAsSlice(votes map[string]*types.Vote) []*types.Vote {
 	return ret
 }
 
-// votesAsMap returns an partyID => Vote map from the given slice of votes
+// votesAsMap returns an partyID => Vote map from the given slice of votes.
 func votesAsMap(votes []*types.Vote) map[string]*types.Vote {
 	r := make(map[string]*types.Vote, len(votes))
 	for _, v := range votes {

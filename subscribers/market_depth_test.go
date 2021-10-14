@@ -12,6 +12,7 @@ import (
 )
 
 func getTestMDB(t *testing.T, ctx context.Context, ack bool) *subscribers.MarketDepthBuilder {
+	t.Helper()
 	return subscribers.NewMarketDepthBuilder(ctx, nil, true)
 }
 

@@ -44,48 +44,48 @@ func (t *Transfer) String() string {
 type TransferType = proto.TransferType
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	TransferTypeUnspecified TransferType = proto.TransferType_TRANSFER_TYPE_UNSPECIFIED
-	// Loss
+	// Loss.
 	TransferTypeLoss TransferType = proto.TransferType_TRANSFER_TYPE_LOSS
-	// Win
+	// Win.
 	TransferTypeWin TransferType = proto.TransferType_TRANSFER_TYPE_WIN
-	// Close
+	// Close.
 	TransferTypeClose TransferType = proto.TransferType_TRANSFER_TYPE_CLOSE
-	// Mark to market loss
+	// Mark to market loss.
 	TransferTypeMTMLoss TransferType = proto.TransferType_TRANSFER_TYPE_MTM_LOSS
-	// Mark to market win
+	// Mark to market win.
 	TransferTypeMTMWin TransferType = proto.TransferType_TRANSFER_TYPE_MTM_WIN
-	// Margin too low
+	// Margin too low.
 	TransferTypeMarginLow TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_LOW
-	// Margin too high
+	// Margin too high.
 	TransferTypeMarginHigh TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_HIGH
-	// Margin was confiscated
+	// Margin was confiscated.
 	TransferTypeMarginConfiscated TransferType = proto.TransferType_TRANSFER_TYPE_MARGIN_CONFISCATED
-	// Pay maker fee
+	// Pay maker fee.
 	TransferTypeMakerFeePay TransferType = proto.TransferType_TRANSFER_TYPE_MAKER_FEE_PAY
-	// Receive maker fee
+	// Receive maker fee.
 	TransferTypeMakerFeeReceive TransferType = proto.TransferType_TRANSFER_TYPE_MAKER_FEE_RECEIVE
-	// Pay infrastructure fee
+	// Pay infrastructure fee.
 	TransferTypeInfrastructureFeePay TransferType = proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_PAY
-	// Receive infrastructure fee
+	// Receive infrastructure fee.
 	TransferTypeInfrastructureFeeDistribute TransferType = proto.TransferType_TRANSFER_TYPE_INFRASTRUCTURE_FEE_DISTRIBUTE
-	// Pay liquidity fee
+	// Pay liquidity fee.
 	TransferTypeLiquidityFeePay TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_PAY
-	// Receive liquidity fee
+	// Receive liquidity fee.
 	TransferTypeLiquidityFeeDistribute TransferType = proto.TransferType_TRANSFER_TYPE_LIQUIDITY_FEE_DISTRIBUTE
-	// Bond too low
+	// Bond too low.
 	TransferTypeBondLow TransferType = proto.TransferType_TRANSFER_TYPE_BOND_LOW
-	// Bond too high
+	// Bond too high.
 	TransferTypeBondHigh TransferType = proto.TransferType_TRANSFER_TYPE_BOND_HIGH
-	// Lock amount for withdraw
+	// Lock amount for withdraw.
 	TransferTypeWithdrawLock TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW_LOCK
-	// Actual withdraw from system
+	// Actual withdraw from system.
 	TransferTypeWithdraw TransferType = proto.TransferType_TRANSFER_TYPE_WITHDRAW
-	// Deposit funds
+	// Deposit funds.
 	TransferTypeDeposit TransferType = proto.TransferType_TRANSFER_TYPE_DEPOSIT
-	// Bond slashing
+	// Bond slashing.
 	TransferTypeBondSlashing TransferType = proto.TransferType_TRANSFER_TYPE_BOND_SLASHING
-	// Stake reward
+	// Stake reward.
 	TransferTypeRewardPayout TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
 )

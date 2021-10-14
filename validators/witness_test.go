@@ -26,6 +26,7 @@ type testWitness struct {
 }
 
 func getTestWitness(t *testing.T) *testWitness {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)

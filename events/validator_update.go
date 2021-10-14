@@ -43,42 +43,42 @@ func NewValidatorUpdateEvent(
 	}
 }
 
-// NodeID returns nodes ID
+// NodeID returns nodes ID.
 func (vu ValidatorUpdate) NodeID() string {
 	return vu.nodeID
 }
 
-// VegaPublicKey returns validator's vega public key
+// VegaPublicKey returns validator's vega public key.
 func (vu ValidatorUpdate) VegaPublicKey() string {
 	return vu.vegaPubKey
 }
 
-// EthereumAddress returns validator's ethereum address
+// EthereumAddress returns validator's ethereum address.
 func (vu ValidatorUpdate) EthereumAddress() string {
 	return vu.ethAddress
 }
 
-// TendermintPublicKey returns Tendermint nodes public key
+// TendermintPublicKey returns Tendermint nodes public key.
 func (vu ValidatorUpdate) TendermintPublicKey() string {
 	return vu.tmPubKey
 }
 
-// InfoURL returns an url with information about validator node
+// InfoURL returns an url with information about validator node.
 func (vu ValidatorUpdate) InfoURL() string {
 	return vu.infoURL
 }
 
-// Country returns country code of node's location
+// Country returns country code of node's location.
 func (vu ValidatorUpdate) Country() string {
 	return vu.country
 }
 
-// Name return the name of the validator
+// Name return the name of the validator.
 func (vu ValidatorUpdate) Name() string {
 	return vu.name
 }
 
-// AvatarURL return an URL to the validator avatar for UI purpose
+// AvatarURL return an URL to the validator avatar for UI purpose.
 func (vu ValidatorUpdate) AvatarURL() string {
 	return vu.avatarURL
 }

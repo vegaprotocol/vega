@@ -11,9 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrNoWithdrawalForID = errors.New("no withdrawal for id")
-)
+var ErrNoWithdrawalForID = errors.New("no withdrawal for id")
 
 type WithdrawalEvent interface {
 	events.Event

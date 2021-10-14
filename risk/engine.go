@@ -32,7 +32,7 @@ type AuctionState interface {
 	CanLeave() bool
 }
 
-// Broker the event bus broker
+// Broker the event bus broker.
 type Broker interface {
 	Send(events.Event)
 	SendBatch([]events.Event)
@@ -44,7 +44,7 @@ type marginChange struct {
 	margins       *types.MarginLevels
 }
 
-// Engine is the risk engine
+// Engine is the risk engine.
 type Engine struct {
 	Config
 	marginCalculator   *types.MarginCalculator
@@ -63,7 +63,7 @@ type Engine struct {
 	asset    string
 }
 
-// NewEngine instantiate a new risk engine
+// NewEngine instantiate a new risk engine.
 func NewEngine(
 	log *logging.Logger,
 	config Config,
@@ -112,7 +112,7 @@ func (e *Engine) OnTimeUpdate(t time.Time) {
 	e.currTime = t.UnixNano()
 }
 
-// ReloadConf update the internal configuration of the risk engine
+// ReloadConf update the internal configuration of the risk engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -128,7 +128,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
-// CalculateFactors trigger the calculation of the risk factors
+// CalculateFactors trigger the calculation of the risk factors.
 func (e *Engine) CalculateFactors(ctx context.Context, now time.Time) {
 	// don't calculate risk factors if we are before or at the next update time (calcs are before
 	// processing and we calc factors after the time so we wait for time > nextUpdateTime) OR if we are
@@ -160,7 +160,7 @@ func (e *Engine) CalculateFactors(ctx context.Context, now time.Time) {
 	e.broker.Send(events.NewRiskFactorEvent(ctx, rf))
 }
 
-// GetRiskFactors returns risk factors per specified asset if available and an error otherwise
+// GetRiskFactors returns risk factors per specified asset if available and an error otherwise.
 func (e *Engine) GetRiskFactors(asset string) (*types.RiskFactor, error) {
 	rf, ok := e.factors.RiskFactors[asset]
 	if !ok {
@@ -352,7 +352,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		minAmount := num.Zero()
 		// case 2 -> not enough margin
 		if curMargin.LT(margins.SearchLevel) {
-
 			// first calculate minimal amount, which will be specified in the case we are under
 			// the maintenance level
 			if curMargin.LT(margins.MaintenanceMargin) {
@@ -370,7 +369,6 @@ func (e *Engine) UpdateMarginsOnSettlement(
 				},
 				MinAmount: minAmount,
 			}
-
 		} else { // case 3 -> release some collateral
 			trnsfr = &types.Transfer{
 				Owner: evt.Party(),
@@ -397,7 +395,7 @@ func (e *Engine) UpdateMarginsOnSettlement(
 }
 
 // ExpectMargins is used in the case some parties are in a distressed positions
-// in this situation we will only check if the party margin is > to the maintenance margin
+// in this situation we will only check if the party margin is > to the maintenance margin.
 func (e *Engine) ExpectMargins(
 	evts []events.Margin, markPrice *num.Uint,
 ) (okMargins []events.Margin, distressedPositions []events.Margin) {
@@ -431,7 +429,7 @@ func (e *Engine) ExpectMargins(
 		}
 	}
 
-	return
+	return okMargins, distressedPositions
 }
 
 func (m marginChange) Amount() *num.Uint {
@@ -441,7 +439,7 @@ func (m marginChange) Amount() *num.Uint {
 	return m.transfer.Amount.Amount.Clone()
 }
 
-// Transfer - it's actually part of the embedded interface already, but we have to mask it, because this type contains another transfer
+// Transfer - it's actually part of the embedded interface already, but we have to mask it, because this type contains another transfer.
 func (m marginChange) Transfer() *types.Transfer {
 	return m.transfer
 }

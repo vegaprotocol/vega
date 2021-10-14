@@ -1,3 +1,5 @@
+@Library('vega-shared-library') _
+
 /* properties of scmVars (example):
     - GIT_BRANCH:PR-40-head
     - GIT_COMMIT:05a1c6fbe7d1ff87cfc40a011a63db574edad7e6
@@ -8,60 +10,67 @@
 def scmVars = null
 def version = 'UNKNOWN'
 def versionHash = 'UNKNOWN'
+def commitHash = 'UNKNOWN'
 
 
 pipeline {
-    agent { label 'general' }
+    agent any
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 45, unit: 'MINUTES')
     }
     parameters {
-        string(name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/system-tests repository')
-        string(name: 'DATA_NODE_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/data-node repository')
-        string(name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/devops-infra repository')
+        string( name: 'DATA_NODE_BRANCH', defaultValue: '',
+                description: '''Git branch, tag or hash of the vegaprotocol/data-node repository.
+                    e.g. "develop", "v0.44.0" or commit hash. Default empty: use latests published version.''')
+        string( name: 'GO_WALLET_BRANCH', defaultValue: '',
+                description: '''Git branch, tag or hash of the vegaprotocol/go-wallet repository.
+                    e.g. "develop", "v0.9.0" or commit hash. Default empty: use latest published version.''')
+        string( name: 'ETHEREUM_EVENT_FORWARDER_BRANCH', defaultValue: '',
+                description: '''Git branch, tag or hash of the vegaprotocol/ethereum-event-forwarder repository.
+                    e.g. "main", "v0.44.0" or commit hash. Default empty: use latest published version.''')
+        string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
+                description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
+        string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
+                description: 'Git branch, tag or hash of the vegaprotocol/vegatools repository')
+        string( name: 'SYSTEM_TESTS_BRANCH', defaultValue: 'develop',
+                description: 'Git branch, tag or hash of the vegaprotocol/system-tests repository')
+        string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
+                description: 'Git branch, tag or hash of the vegaprotocol/protos repository')
         string(name: 'SPECS_INTERNAL_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/specs-internal repository')
-        string(name: 'PROTOS_BRANCH', defaultValue: 'develop', description: 'Git branch name of the vegaprotocol/protos repository')
-        string(name: 'SYSTEM_TESTS_VALIDATOR_NODE_COUNT', defaultValue: '2', description: 'Number of validator nodes when running system-tests')
-        string(name: 'SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT', defaultValue: '1', description: 'Number of non-validator nodes when running system-tests')
-        string(name: 'SYSTEM_TESTS_TEST_FUNCTION', defaultValue: '', description: 'Run only a tests with a specified function name. This is actually a "pytest -k $TEST_FUNCTION_NAME" command-line argument, see more: https://docs.pytest.org/en/stable/usage.html')
-        string(name: 'SYSTEM_TESTS_TEST_DIRECTORY', defaultValue: 'CoreTesting/bvt', description: 'Run tests from files in this directory and all sub-directories')
     }
     environment {
         CGO_ENABLED = 0
         GO111MODULE = 'on'
-        SLACK_MESSAGE = "Vega Core CI » <${RUN_DISPLAY_URL}|Jenkins ${BRANCH_NAME} Job>${ env.CHANGE_URL ? " » <${CHANGE_URL}|GitHub PR #${CHANGE_ID}>" : '' }"
-        // Note: make sure the tag name is not too long
-        // Reason: it is used by system-tests for hostnames in dockerised vega, and
-        //         there is a limit of 64 characters for hostname
         DOCKER_IMAGE_TAG_LOCAL = "v-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
         DOCKER_IMAGE_VEGA_CORE_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
-        DOCKER_IMAGE_DATA_NODE_LOCAL = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_LOCAL}"
     }
 
     stages {
+        stage('Config') {
+            steps {
+                cleanWs()
+                sh 'printenv'
+                echo "params=${params}"
+                echo "isPRBuild=${isPRBuild()}"
+            }
+        }
+
         stage('Git clone') {
             parallel {
                 stage('vega core') {
                     options { retry(3) }
                     steps {
-                        sh 'printenv'
-                        echo "${params}"
                         dir('vega') {
                             script {
                                 scmVars = checkout(scm)
                                 versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
                                 version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
+                                commitHash = getCommitHash()
                             }
-                        }
-                    }
-                }
-                stage('data-node') {
-                    options { retry(3) }
-                    steps {
-                        dir('data-node') {
-                            git branch: "${params.DATA_NODE_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/data-node.git'
+                            echo "scmVars=${scmVars}"
+                            echo "commitHash=${commitHash}"
                         }
                     }
                 }
@@ -70,30 +79,6 @@ pipeline {
                     steps {
                         dir('specs-internal') {
                             git branch: "${params.SPECS_INTERNAL_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
-                        }
-                    }
-                }
-                stage('protos') {
-                    options { retry(3) }
-                    steps {
-                        dir('protos') {
-                            git branch: "${params.PROTOS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/protos.git'
-                        }
-                    }
-                }
-                stage('system-tests') {
-                    options { retry(3) }
-                    steps {
-                        dir('system-tests') {
-                            git branch: "${params.SYSTEM_TESTS_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/system-tests.git'
-                        }
-                    }
-                }
-                stage('devops-infra') {
-                    options { retry(3) }
-                    steps {
-                        dir('devops-infra') {
-                            git branch: "${params.DEVOPS_INFRA_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/devops-infra.git'
                         }
                     }
                 }
@@ -173,35 +158,29 @@ pipeline {
             }
         }
 
-        stage(' ') {
-            failFast true
-            parallel {
-                // this task needs to run after builds
-                stage('Build docker image') {
-                    environment {
-                        LINUX_BINARY = './cmd/vega/vega-linux-amd64'
+        stage('Build docker image') {
+            environment {
+                LINUX_BINARY = './cmd/vega/vega-linux-amd64'
+            }
+            options { retry(3) }
+            steps {
+                dir('vega') {
+                    sh label: 'Copy binary', script: '''#!/bin/bash -e
+                        mkdir -p docker/bin
+                        cp -a "${LINUX_BINARY}" "docker/bin/vega"
+                    '''
+                    // Note: This docker image is used by publish stage
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                        sh label: 'Build docker image', script: '''
+                            docker build -t "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" docker/
+                        '''
                     }
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh label: 'Copy binary', script: '''#!/bin/bash -e
-                                mkdir -p docker/bin
-                                cp -a "${LINUX_BINARY}" "docker/bin/vega"
-                            '''
-                            // Note: This docker image is used by system-tests and publish stage
-                            withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
-                                sh label: 'Build docker image', script: '''
-                                    docker build -t "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" docker/
-                                '''
-                            }
-                            sh label: 'Cleanup', script: '''#!/bin/bash -e
-                                rm -rf docker/bin
-                            '''
-                            sh label: 'Sanity check', script: '''
-                                docker run --rm --entrypoint "" "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" vega version
-                            '''
-                        }
-                    }
+                    sh label: 'Cleanup', script: '''#!/bin/bash -e
+                        rm -rf docker/bin
+                    '''
+                    sh label: 'Sanity check', script: '''
+                        docker run --rm --entrypoint "" "${DOCKER_IMAGE_VEGA_CORE_LOCAL}" vega version
+                    '''
                 }
             }
         }
@@ -237,6 +216,62 @@ pipeline {
                     steps {
                         dir('vega') {
                             sh 'golangci-lint run --allow-parallel-runners --disable-all --enable misspell'
+                        }
+                    }
+                }
+                stage('70+ linters') {
+                    steps {
+                        dir('vega') {
+                            sh '''#!/bin/bash -e
+                                golangci-lint run -v \
+                                    --max-issues-per-linter 0 \
+                                    --max-same-issues 0 \
+                                    --allow-parallel-runners \
+                                    --config .golangci.toml \
+                                    --enable-all \
+                                    --color always \
+                                    --disable promlinter \
+                                    --disable wrapcheck \
+                                    --disable tagliatelle \
+                                    --disable paralleltest \
+                                    --disable nlreturn \
+                                    --disable gomnd \
+                                    --disable goerr113 \
+                                    --disable tparallel \
+                                    --disable testpackage \
+                                    --disable gochecknoglobals \
+                                    --disable forcetypeassert \
+                                    --disable exhaustivestruct \
+                                    --disable exhaustive \
+                                    --disable errorlint \
+                                    --disable cyclop \
+                                    --disable wsl \
+                                    --disable unparam \
+                                    --disable scopelint \
+                                    --disable revive \
+                                    --disable nestif \
+                                    --disable maligned \
+                                    --disable lll \
+                                    --disable interfacer \
+                                    --disable gosec \
+                                    --disable gomoddirectives \
+                                    --disable golint \
+                                    --disable goimports \
+                                    --disable godox \
+                                    --disable gocritic \
+                                    --disable goconst \
+                                    --disable gocognit \
+                                    --disable gochecknoinits \
+                                    --disable stylecheck \
+                                    --disable staticcheck \
+                                    --disable gci \
+                                    --disable forbidigo \
+                                    --disable errcheck \
+                                    --disable dupl \
+                                    --disable dogsled \
+                                    --disable funlen \
+                                    --disable gocyclo \
+                            '''
                         }
                     }
                 }
@@ -319,108 +354,33 @@ pipeline {
                         }
                     }
                 }
-                stage('system-tests') {
-                    environment {
-                        SYSTEM_TESTS_PORTBASE = "${ Integer.parseInt(env.EXECUTOR_NUMBER) * 1000 + 1000}"
-                        SYSTEM_TESTS_DOCKER_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
-                        VEGA_CORE_IMAGE_TAG = "${DOCKER_IMAGE_TAG_LOCAL}"
-                        DATA_NODE_IMAGE_TAG = "${ params.DATA_NODE_BRANCH == 'develop' ? 'develop' : env.DOCKER_IMAGE_TAG_LOCAL }"
-                        VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_VALIDATOR_NODE_COUNT}"
-                        NON_VALIDATOR_NODE_COUNT = "${params.SYSTEM_TESTS_NON_VALIDATOR_NODE_COUNT}"
-                        TEST_FUNCTION = "${params.SYSTEM_TESTS_TEST_FUNCTION}"
-                        TEST_DIRECTORY = "${params.SYSTEM_TESTS_TEST_DIRECTORY}"
-                        DOCKER_GOCACHE = "${env.GOCACHE}"
-                    }
-                    stages {
-                        stage('check') {
-                            steps {
-                                dir('system-tests/scripts') {
-                                    sh label: 'Check setup', script: '''
-                                        make check
-                                    '''
-                                }
-                            }
-                        }
-                        stage('docker pull') {
-                            options { retry(3) }
-                            steps {
-                                dir('system-tests/scripts') {
-                                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
-                                        sh 'make prepare-docker-pull'
-                                    }
-                                }
-                            }
-                        }
-                        stage('Build Data-Node') {
-                            when { expression { env.DATA_NODE_IMAGE_TAG != 'develop'} }
-                            options { retry(3) }
-                            steps {
-                                dir('system-tests/scripts') {
-                                    sh label: 'Build data-node app', script: '''
-                                        make build-data-node
-                                    '''
-                                    sh label: 'Build data-node container', script: '''
-                                        make build-data-node-docker-image
-                                    '''
-                                }
-                            }
-                        }
-                        stage('Prepare tests') {
-                            options { retry(3) }
-                            steps {
-                                dir('system-tests/scripts') {
-                                    sh label: 'build test container', script: '''
-                                        make prepare-test-docker-image
-                                    '''
-                                    sh label: 'make proto', script: '''
-                                        make build-test-proto
-                                    '''
-                                }
-                            }
-                        }
-                        stage('Start dockerised-vega') {
-                            options {
-                                retry(2)
-                                timeout(time: 10, unit: 'MINUTES')
-                            }
-                            steps {
-                                dir('system-tests/scripts') {
-                                    sh label: 'make sure dockerised-vega is not running', script: '''
-                                        make stop-dockerised-vega
-                                    '''
-                                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
-                                        sh label: 'start dockerised-vega', script: '''
-                                            make start-dockerised-vega
-                                        '''
-                                    }
-                                }
-                            }
-                        }
-                        stage('Run system-tests') {
-                            steps {
-                                dir('system-tests/scripts') {
-                                    sh label: 'run system-tests', script: '''
-                                        make run-tests || touch ../build/test-reports/system-test-results.xml
-                                    '''
-                                }
-                                junit checksName: 'System Tests', testResults: 'system-tests/build/test-reports/system-test-results.xml'
-                            }
+                stage('System Tests') {
+                    steps {
+                        script {
+                            systemTests ignoreFailure: !isPRBuild(),
+                                vegaCore: commitHash,
+                                dataNode: params.DATA_NODE_BRANCH,
+                                goWallet: params.GO_WALLET_BRANCH,
+                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                protos: params.PROTOS_BRANCH
                         }
                     }
-                    post {
-                        always  {
-                            retry(3) {
-                                script {
-                                    dir('system-tests/scripts') {
-                                        sh label: 'print logs from all the containers', script: '''
-                                            make logs
-                                        '''
-                                        sh label: 'stop dockerised-vega', script: '''
-                                            make stop-dockerised-vega
-                                        '''
-                                    }
-                                }
-                            }
+                }
+                stage('LNL System Tests') {
+                    steps {
+                        script {
+                            systemTestsLNL ignoreFailure: true,
+                                vegaCore: commitHash,
+                                dataNode: params.DATA_NODE_BRANCH,
+                                goWallet: params.GO_WALLET_BRANCH,
+                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
+                                devopsInfra: params.DEVOPS_INFRA_BRANCH,
+                                vegatools: params.VEGATOOLS_BRANCH,
+                                systemTests: params.SYSTEM_TESTS_BRANCH,
+                                protos: params.PROTOS_BRANCH
                         }
                     }
                 }
@@ -526,19 +486,22 @@ pipeline {
     post {
         success {
             retry(3) {
-                slackSend(channel: "#tradingcore-notify", color: "good", message: ":white_check_mark: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
+                script {
+                    slack.slackSendCISuccess name: 'Vega Core CI', channel: '#tradingcore-notify'
+                }
             }
         }
         unsuccessful {
             retry(3) {
-                slackSend(channel: "#tradingcore-notify", color: "danger", message: ":red_circle: ${SLACK_MESSAGE} (${currentBuild.durationString.minus(' and counting')})")
+                script {
+                    slack.slackSendCIFailure name: 'Vega Core CI', channel: '#tradingcore-notify'
+                }
             }
         }
-        always {
+        cleanup {
             retry(3) {
                 sh label: 'Clean docker images', script: '''#!/bin/bash -e
                     [ -z "$(docker images -q "${DOCKER_IMAGE_VEGA_CORE_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_VEGA_CORE_LOCAL}"
-                    [ -z "$(docker images -q "${DOCKER_IMAGE_DATA_NODE_LOCAL}")" ] || docker rmi "${DOCKER_IMAGE_DATA_NODE_LOCAL}"
                 '''
             }
         }

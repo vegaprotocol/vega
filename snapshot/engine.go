@@ -43,7 +43,7 @@ type TimeService interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
-// Engine the snapshot engine
+// Engine the snapshot engine.
 type Engine struct {
 	Config
 
@@ -70,7 +70,7 @@ type Engine struct {
 	snapRetry int
 }
 
-// New returns a new snapshot engine
+// New returns a new snapshot engine.
 func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
 	log = log.Named(namedLogger)
 	dbConn := db.NewMemDB()
@@ -107,7 +107,7 @@ func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) 
 	}, nil
 }
 
-// List returns all snapshots available
+// List returns all snapshots available.
 func (e *Engine) List() ([]*types.Snapshot, error) {
 	trees := make([]*types.Snapshot, 0, len(e.versions))
 	for _, v := range e.versions {

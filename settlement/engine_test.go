@@ -263,7 +263,7 @@ func testAddNewParty(t *testing.T) {
 }
 
 // This tests MTM results put losses first, trades tested are Long going longer, short going shorter
-// and long going short, short going long, and a third party who's not trading at all
+// and long going short, short going long, and a third party who's not trading at all.
 func testMarkToMarketOrdered(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
@@ -454,7 +454,7 @@ func testMTMNetworkZero(t *testing.T) {
 	require.True(t, hasNetwork)
 }
 
-// {{{
+// {{{.
 func (te *testEngine) getExpiryPositions(positions ...posValue) []events.MarketPosition {
 	te.positions = make([]*mocks.MockMarketPosition, 0, len(positions))
 	mpSlice := make([]events.MarketPosition, 0, len(positions))
@@ -545,13 +545,13 @@ func TestConcurrent(t *testing.T) {
 	wg.Wait()
 }
 
-// Finish - call finish on controller, remove test state (positions)
+// Finish - call finish on controller, remove test state (positions).
 func (te *testEngine) Finish() {
 	te.ctrl.Finish()
 	te.positions = nil
 }
 
-// Quick mock implementation of the events.MarketPosition interface
+// Quick mock implementation of the events.MarketPosition interface.
 type testPos struct {
 	party           string
 	size, buy, sell int64
@@ -593,6 +593,7 @@ func (t testPos) VWSell() *num.Uint {
 func (t testPos) ClearPotentials() {}
 
 func getTestEngine(t *testing.T) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	conf := settlement.NewDefaultConfig()
 	prod := mocks.NewMockProduct(ctrl)

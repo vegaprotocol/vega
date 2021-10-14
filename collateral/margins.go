@@ -42,7 +42,7 @@ func (n marginUpdate) MarginBalance() *num.Uint {
 // to worry about how much funds are available in both
 // if a bond account exists
 // TODO(): maybe rename this method into AvailableBalance
-// at some point if it makes senses overall the codebase
+// at some point if it makes senses overall the codebase.
 func (n marginUpdate) GeneralBalance() *num.Uint {
 	gen, bond := num.Zero(), num.Zero()
 	if n.general != nil && n.general.Balance != nil {
@@ -58,7 +58,7 @@ func (n marginUpdate) MarginShortFall() *num.Uint {
 	return n.marginShortFall.Clone()
 }
 
-// BondBalance - returns nil if no bond account is present, *num.Uint otherwise
+// BondBalance - returns nil if no bond account is present, *num.Uint otherwise.
 func (n marginUpdate) BondBalance() *num.Uint {
 	if n.bond == nil {
 		return num.Zero()

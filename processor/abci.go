@@ -224,7 +224,7 @@ func NewApp(
 // addDeterministicID will build the command id and .
 // the command id is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256
-// the hash is the hex string encoded
+// the hash is the hex string encoded.
 func addDeterministicID(
 	f func(context.Context, abci.Tx, string) error,
 ) func(context.Context, abci.Tx) error {
@@ -256,7 +256,7 @@ func (app *App) SendEventOnError(
 	}
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (app *App) ReloadConf(cfg Config) {
 	app.log.Info("reloading configuration")
 	if app.log.GetLevel() != cfg.Level.Get() {
@@ -405,7 +405,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	return
 }
 
-// OnBeginBlock updates the internal lastBlockTime value with each new block
+// OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
@@ -497,7 +497,7 @@ func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci
 	return ctx, resp
 }
 
-// limitPubkey returns whether a request should be rate limited or not
+// limitPubkey returns whether a request should be rate limited or not.
 func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	// Do not rate limit validators nodes.
 	if app.top.IsValidatorVegaPubKey(pk) {
@@ -591,7 +591,6 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 			resp.Data = []byte(err.Error())
 			return ctx, resp
 		}
-
 	}
 
 	if err := app.canSubmitTx(tx); err != nil {
@@ -921,7 +920,6 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 		}
 		app.broker.Send(events.NewProposalEvent(ctx, *prop))
 	}
-
 }
 
 func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.Asset) {

@@ -28,7 +28,7 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 
 	data, err := service.Snapshot()
 	require.Nil(t, err)
-	require.Equal(t, 1, len(data)) //should be one "chunk"
+	require.Equal(t, 1, len(data)) // should be one "chunk"
 
 	snapService := getEpochServiceMT(t)
 	defer snapService.ctrl.Finish()
@@ -77,7 +77,6 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	// epochs = {start, end, start, end}
 	require.Equal(t, epochs[0], epochs[2])
 	require.Equal(t, epochs[1], epochs[3])
-
 }
 
 func TestEpochSnapshotHash(t *testing.T) {
@@ -108,7 +107,6 @@ func TestEpochSnapshotHash(t *testing.T) {
 	h, err = service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e", hex.EncodeToString(h))
-
 }
 
 func TestEpochSnapshotCompare(t *testing.T) {
@@ -125,7 +123,7 @@ func TestEpochSnapshotCompare(t *testing.T) {
 
 	data, err := service.Snapshot()
 	require.Nil(t, err)
-	require.Equal(t, 1, len(data)) //should be one "chunk"
+	require.Equal(t, 1, len(data)) // should be one "chunk"
 
 	snapService := getEpochServiceMT(t)
 	defer snapService.ctrl.Finish()

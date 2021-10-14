@@ -150,8 +150,7 @@ func (f *Float) Mutable(b bool) *Float {
 }
 
 func (f *Float) MustUpdate(value string) *Float {
-	err := f.Update(value)
-	if err != nil {
+	if err := f.Update(value); err != nil {
 		panic(err)
 	}
 	return f
@@ -303,8 +302,7 @@ func (f *Decimal) Mutable(b bool) *Decimal {
 }
 
 func (f *Decimal) MustUpdate(value string) *Decimal {
-	err := f.Update(value)
-	if err != nil {
+	if err := f.Update(value); err != nil {
 		panic(err)
 	}
 	return f
@@ -455,8 +453,7 @@ func (i *Int) Mutable(b bool) *Int {
 }
 
 func (i *Int) MustUpdate(value string) *Int {
-	err := i.Update(value)
-	if err != nil {
+	if err := i.Update(value); err != nil {
 		panic(err)
 	}
 	return i
@@ -822,7 +819,6 @@ func NewJSON(val Reset, rules ...JSONRule) *JSON {
 		ty:        ty,
 		value:     val,
 	}
-
 }
 
 func (j *JSON) ToJSONStruct(v Reset) error {
@@ -931,8 +927,7 @@ func (j *JSON) Mutable(b bool) *JSON {
 }
 
 func (j *JSON) MustUpdate(value string) *JSON {
-	err := j.Update(value)
-	if err != nil {
+	if err := j.Update(value); err != nil {
 		panic(err)
 	}
 	return j
@@ -1045,8 +1040,7 @@ func (s *String) Mutable(b bool) *String {
 }
 
 func (s *String) MustUpdate(value string) *String {
-	err := s.Update(value)
-	if err != nil {
+	if err := s.Update(value); err != nil {
 		panic(err)
 	}
 	return s
