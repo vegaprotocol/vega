@@ -25,7 +25,7 @@ func TestRepeatedRounds(t *testing.T) {
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	//start with 10 VEGA
+	// start with 10 VEGA
 	rewardBalance, _ := num.UintFromString("10000000000000000000", 10)
 	expectedParty1Ratio := 0.104571
 	expectedParty2Ratio := 0.024
@@ -112,12 +112,10 @@ func TestNoDriftdRounds(t *testing.T) {
 		require.True(t, node1-0.117 < tolerance)
 		rewardBalance.Sub(rewardBalance, res.totalReward)
 	}
-
 }
 
-//the bug this is reproducing is that sometimes the weights of the delegations of each delegator in a validator come to slightly more than 1 (in this case 1.0000000000000001).
+// the bug this is reproducing is that sometimes the weights of the delegations of each delegator in a validator come to slightly more than 1 (in this case 1.0000000000000001).
 func TestReproBug4220(t *testing.T) {
-
 	for ct := 0; ct < 100; ct++ {
 		testEngine := getEngine(t)
 		engine := testEngine.engine
@@ -236,5 +234,4 @@ func TestReproBug4220(t *testing.T) {
 
 		require.True(t, expectedTotalRewardDistributed.Sub(expectedTotalRewardDistributed, actualTotalRewardDistributed).LTE(num.NewUint(2)))
 	}
-
 }
