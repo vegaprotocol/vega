@@ -12,42 +12,42 @@ import (
 // API Errors and descriptions.
 var (
 	// ErrChainNotConnected signals to the user that he cannot access a given endpoint
-	// which require the chain, but the chain is actually offline
+	// which require the chain, but the chain is actually offline.
 	ErrChainNotConnected = errors.New("chain not connected")
-	// ErrChannelClosed signals that the channel streaming data is closed
+	// ErrChannelClosed signals that the channel streaming data is closed.
 	ErrChannelClosed = errors.New("channel closed")
 	// ErrEmptyMissingMarketID signals to the caller that the request expected a
-	// market id but the field is missing or empty
+	// market id but the field is missing or empty.
 	ErrEmptyMissingMarketID = errors.New("empty or missing market ID")
 	// ErrEmptyMissingOrderID signals to the caller that the request expected an
-	// order id but the field is missing or empty
+	// order id but the field is missing or empty.
 	ErrEmptyMissingOrderID = errors.New("empty or missing order ID")
 	// ErrEmptyMissingOrderReference signals to the caller that the request expected an
-	// order reference but the field is missing or empty
+	// order reference but the field is missing or empty.
 	ErrEmptyMissingOrderReference = errors.New("empty or missing order reference")
 	// ErrEmptyMissingPartyID signals to the caller that the request expected a
-	// party id but the field is missing or empty
+	// party id but the field is missing or empty.
 	ErrEmptyMissingPartyID = errors.New("empty or missing party ID")
 	// ErrEmptyMissingSinceTimestamp signals to the caller that the request expected a
-	// timestamp but the field is missing or empty
+	// timestamp but the field is missing or empty.
 	ErrEmptyMissingSinceTimestamp = errors.New("empty or missing since-timestamp")
-	// ErrServerShutdown signals to the client that the server  is shutting down
+	// ErrServerShutdown signals to the client that the server  is shutting down.
 	ErrServerShutdown = errors.New("server shutdown")
-	// ErrStreamClosed signals to the users that the grpc stream is closing
+	// ErrStreamClosed signals to the users that the grpc stream is closing.
 	ErrStreamClosed = errors.New("stream closed")
-	// ErrStreamInternal signals to the users that the grpc stream has an internal problem
+	// ErrStreamInternal signals to the users that the grpc stream has an internal problem.
 	ErrStreamInternal = errors.New("internal stream failure")
-	// ErrNotMapped is when an error cannot be found in the current error map/lookup table
+	// ErrNotMapped is when an error cannot be found in the current error map/lookup table.
 	ErrNotMapped = errors.New("error not found in error lookup table")
-	// ErrInvalidMarketID signals that the market ID does not exists
+	// ErrInvalidMarketID signals that the market ID does not exists.
 	ErrInvalidMarketID = errors.New("invalid market ID")
-	// ErrMissingOrder signals that the actual payload is expected to contains an order
+	// ErrMissingOrder signals that the actual payload is expected to contains an order.
 	ErrMissingOrder = errors.New("missing order in request payload")
-	// ErrMissingPartyID signals that the payload is expected to contain a party id
+	// ErrMissingPartyID signals that the payload is expected to contain a party id.
 	ErrMissingPartyID = errors.New("missing party id")
-	// ErrMalformedRequest signals that the request was malformed
+	// ErrMalformedRequest signals that the request was malformed.
 	ErrMalformedRequest = errors.New("malformed request")
-	// ErrMissingAsset signals that an asset was required but not specified
+	// ErrMissingAsset signals that an asset was required but not specified.
 	ErrMissingAsset = errors.New("missing asset")
 	// ErrSubmitOrder is returned when submitting an order fails for some reason.
 	ErrSubmitOrder = errors.New("submit order failure")
@@ -91,15 +91,15 @@ var (
 	ErrBlockchainNetworkInfo   = errors.New("failed to get network info from blockchain")
 	ErrBlockchainGenesisTime   = errors.New("failed to get genesis time from blockchain")
 	ErrBlockchainChainID       = errors.New("failed to get chain ID from blockchain")
-	// ErrMissingProposalID returned if proposal with this id is missing
+	// ErrMissingProposalID returned if proposal with this id is missing.
 	ErrMissingProposalID = errors.New("missing proposal id")
-	// ErrMissingProposalReference returned if proposal with this reference is not found
+	// ErrMissingProposalReference returned if proposal with this reference is not found.
 	ErrMissingProposalReference = errors.New("failed to find proposal with the reference")
-	// ErrMissingWithdrawalID is returned when the ID is missing from the request
+	// ErrMissingWithdrawalID is returned when the ID is missing from the request.
 	ErrMissingWithdrawalID = errors.New("missing withdrawal ID")
-	// ErrMissingOracleSpecID is returned when the ID is missing from the request
+	// ErrMissingOracleSpecID is returned when the ID is missing from the request.
 	ErrMissingOracleSpecID = errors.New("missing oracle spec ID")
-	// ErrMissingDepositID is returned when the ID is missing from the request
+	// ErrMissingDepositID is returned when the ID is missing from the request.
 	ErrMissingDepositID = errors.New("missing deposit ID")
 )
 

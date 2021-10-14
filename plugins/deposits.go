@@ -11,9 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrNoDepositForID = errors.New("no deposit for id")
-)
+var ErrNoDepositForID = errors.New("no deposit for id")
 
 type DepositEvent interface {
 	events.Event

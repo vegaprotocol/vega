@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	// ErrTimeSequence signals that time sequence is not in a non-decreasing order
+	// ErrTimeSequence signals that time sequence is not in a non-decreasing order.
 	ErrTimeSequence = errors.New("received a time that's before the last received time")
-	// ErrNegativeScalingFactor indicates that a negative scaling factor was supplied to the engine
+	// ErrNegativeScalingFactor indicates that a negative scaling factor was supplied to the engine.
 	ErrNegativeScalingFactor = errors.New("scaling factor can't be negative")
 )
 
@@ -44,9 +44,10 @@ type OpenInterestCalculator interface {
 	GetOpenInterestGivenTrades(trades []*types.Trade) uint64
 }
 
-// NewEngine returns a new instance of target stake calculation Engine
+// NewEngine returns a new instance of target stake calculation Engine.
 func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
 	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
+
 	return &Engine{
 		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
 		sFactor: factor,
@@ -54,23 +55,24 @@ func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalcul
 	}
 }
 
-// UpdateTimeWindow updates the time windows used in target stake calculation
+// UpdateTimeWindow updates the time windows used in target stake calculation.
 func (e *Engine) UpdateTimeWindow(tWindow time.Duration) {
 	e.tWindow = tWindow
 }
 
 // UpdateScalingFactor updates the scaling factor used in target stake calculation
-// if it's non-negative and returns an error otherwise
+// if it's non-negative and returns an error otherwise.
 func (e *Engine) UpdateScalingFactor(sFactor num.Decimal) error {
 	if sFactor.IsNegative() {
 		return ErrNegativeScalingFactor
 	}
 	factor, _ := num.UintFromDecimal(sFactor.Mul(expDec))
 	e.sFactor = factor
+
 	return nil
 }
 
-// RecordOpenInterest records open interset history so that target stake can be calculated
+// RecordOpenInterest records open interset history so that target stake can be calculated.
 func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if now.Before(e.now) {
 		return ErrTimeSequence
@@ -96,10 +98,9 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 }
 
 // GetTargetStake returns target stake based current time, risk factors
-// and the open interest time series constructed by calls to RecordOpenInterest
+// and the open interest time series constructed by calls to RecordOpenInterest.
 func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
-	minTime := e.minTime(now)
-	if minTime.After(e.max.Time) {
+	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxOI(minTime)
 	}
 
@@ -119,12 +120,11 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 	)
 }
 
-//GetTheoreticalTargetStake returns target stake based current time, risk factors
-//and the supplied trades without modifying the internal state
+// GetTheoreticalTargetStake returns target stake based current time, risk factors
+// and the supplied trades without modifying the internal state.
 func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
-	minTime := e.minTime(now)
-	if minTime.After(e.max.Time) {
+	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxOI(minTime)
 	}
 	maxOI := e.max.OI
@@ -138,6 +138,7 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 	}
 
 	factorUint, _ := num.UintFromDecimal(factor.Mul(expDec))
+
 	return num.Zero().Div(
 		num.Zero().Mul(
 			num.Zero().Mul(markPrice, num.NewUint(maxOI)),
@@ -174,10 +175,9 @@ func (e *Engine) computeMaxOI(minTime time.Time) {
 
 	// remove entries less than max as these won't ever be needed anyway
 	e.previous = e.previous[j:]
-
 }
 
-//minTime returns the lower bound of the sliding time window
+// minTime returns the lower bound of the sliding time window.
 func (e *Engine) minTime(now time.Time) time.Time {
 	return now.Add(-e.tWindow)
 }
@@ -188,9 +188,8 @@ func (e *Engine) truncateHistory(minTime time.Time) {
 		if !e.previous[i].Time.Before(minTime) {
 			break
 		}
-
 	}
 	e.previous = e.previous[i:]
-	//Truncate at least every 2 time windows in case not called before to prevent excessive memory usage
+	// Truncate at least every 2 time windows in case not called before to prevent excessive memory usage
 	e.scheduledTruncate = e.now.Add(2 * e.tWindow)
 }

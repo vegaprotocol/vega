@@ -68,7 +68,7 @@ func (l LiquidityProvisions) sortByFee() LiquidityProvisions {
 	return LiquidityProvisions(byFee)
 }
 
-// Provisions is a map of parties to *types.LiquidityProvision
+// Provisions is a map of parties to *types.LiquidityProvision.
 type ProvisionsPerParty map[string]*types.LiquidityProvision
 
 // Slice returns the parties as a slice.
@@ -104,7 +104,7 @@ type PartyOrders struct {
 	Orders []*types.Order
 }
 
-// ByParty returns the orders grouped by it's PartyID
+// ByParty returns the orders grouped by it's PartyID.
 func (ords Orders) ByParty() []PartyOrders {
 	// first extract all orders, per party
 	parties := map[string][]*types.Order{}

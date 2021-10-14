@@ -15,7 +15,7 @@ func (e *Engine) Keys() []string {
 	return e.hashKeys
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.policyNameToPolicy[k]; !ok {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist

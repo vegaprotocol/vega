@@ -44,7 +44,6 @@ func PartiesShouldHaveTheFollowingAccountBalances(
 		if hasError {
 			return errMismatchedAccountBalances(row, marginAccount, generalAccount, bondAcc)
 		}
-
 	}
 	return nil
 }

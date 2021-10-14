@@ -15,9 +15,8 @@ type positionsSnapshotState struct {
 }
 
 // serialise marshal the snapshot state, populating the data and hash fields
-// with updated values
+// with updated values.
 func (e *Engine) serialise() ([]byte, []byte, error) {
-
 	if !e.pss.changed {
 		return e.pss.data, e.pss.hash, nil // we already have what we need
 	}
@@ -64,7 +63,6 @@ func (e *Engine) Keys() []string {
 }
 
 func (e *Engine) GetHash(k string) ([]byte, error) {
-
 	if k != e.marketID {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -74,7 +72,6 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 }
 
 func (e *Engine) GetState(k string) ([]byte, error) {
-
 	if k != e.marketID {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -84,13 +81,11 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 }
 
 func (e *Engine) Snapshot() (map[string][]byte, error) {
-
 	state, _, err := e.serialise()
 	return map[string][]byte{e.marketID: state}, err
 }
 
 func (e *Engine) LoadState(payload *types.Payload) error {
-
 	if e.Namespace() != payload.Data.Namespace() {
 		return types.ErrInvalidSnapshotNamespace
 	}

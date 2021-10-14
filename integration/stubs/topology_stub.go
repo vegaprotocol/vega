@@ -9,7 +9,6 @@ type TopologyStub struct {
 }
 
 func NewTopologyStub() *TopologyStub {
-
 	return &TopologyStub{
 		validators: map[string]string{},
 	}

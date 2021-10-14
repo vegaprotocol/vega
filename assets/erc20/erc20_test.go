@@ -28,20 +28,18 @@ const (
 	bridgeAddress = "0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e"
 )
 
-var (
-	token = &types.AssetDetails{
-		Name:        "VEGA",
-		Symbol:      "VEGA",
-		TotalSupply: num.NewUint(10000),
-		Decimals:    18,
-		MinLpStake:  num.NewUint(1),
-		Source: &types.AssetDetailsErc20{
-			Erc20: &types.ERC20{
-				ContractAddress: "0x1FaA74E181092A97Fecc923015293ce57eE1208A",
-			},
+var token = &types.AssetDetails{
+	Name:        "VEGA",
+	Symbol:      "VEGA",
+	TotalSupply: num.NewUint(10000),
+	Decimals:    18,
+	MinLpStake:  num.NewUint(1),
+	Source: &types.AssetDetailsErc20{
+		Erc20: &types.ERC20{
+			ContractAddress: "0x1FaA74E181092A97Fecc923015293ce57eE1208A",
 		},
-	}
-)
+	},
+}
 
 type testERC20 struct {
 	*erc20.ERC20
@@ -50,6 +48,7 @@ type testERC20 struct {
 }
 
 func newTestERC20(t *testing.T) *testERC20 {
+	t.Helper()
 	wallet := ethnw.NewWallet(testWallet{})
 	ethClient := testEthClient{}
 	erc20Token, err := erc20.New(tokenID, token, wallet, ethClient)

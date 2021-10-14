@@ -2,6 +2,7 @@ package rest
 
 import (
 	"compress/gzip"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,9 @@ import (
 )
 
 func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {
+	t.Helper()
 	res := x.Result()
+	defer res.Body.Close()
 	h, found := res.Header[key]
 	if found || len(h) > 0 {
 		t.Fatalf("Unexpected header: %s", key)
@@ -20,7 +23,9 @@ func headerNotPresent(t *testing.T, x *httptest.ResponseRecorder, key string) {
 }
 
 func headerPresent(t *testing.T, x *httptest.ResponseRecorder, key string, expected []string) {
+	t.Helper()
 	res := x.Result()
+	defer res.Body.Close()
 	h, found := res.Header[key]
 	if !found || len(h) == 0 {
 		t.Fatalf("Missing header: %s", key)
@@ -36,7 +41,8 @@ func headerPresent(t *testing.T, x *httptest.ResponseRecorder, key string, expec
 }
 
 func TestNoGzip(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(), "GET", "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,13 +66,16 @@ func TestNoGzip(t *testing.T) {
 	}
 
 	if testing.Verbose() {
-		b, _ := httputil.DumpResponse(rec.Result(), true)
+		res := rec.Result()
+		defer res.Body.Close()
+		b, _ := httputil.DumpResponse(res, true)
 		t.Log("\n" + string(b))
 	}
 }
 
 func TestGzip(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(), "GET", "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,13 +114,16 @@ func TestGzip(t *testing.T) {
 	}
 
 	if testing.Verbose() {
-		b, _ := httputil.DumpResponse(rec.Result(), true)
+		res := rec.Result()
+		defer res.Body.Close()
+		b, _ := httputil.DumpResponse(res, true)
 		t.Log("\n" + string(b))
 	}
 }
 
 func TestNoBody(t *testing.T) {
-	req, err := http.NewRequest("GET", "http://example.com/", nil)
+	req, err := http.NewRequestWithContext(
+		context.Background(), "GET", "http://example.com/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +149,9 @@ func TestNoBody(t *testing.T) {
 	}
 
 	if testing.Verbose() {
-		b, _ := httputil.DumpResponse(rec.Result(), true)
+		res := rec.Result()
+		defer res.Body.Close()
+		b, _ := httputil.DumpResponse(res, true)
 		t.Log("\n" + string(b))
 	}
 }

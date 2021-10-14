@@ -15,9 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	allKey = (&types.PayloadLimitState{}).Key()
-)
+var allKey = (&types.PayloadLimitState{}).Key()
 
 func TestLimitSnapshotEmpty(t *testing.T) {
 	l := getLimitsTest()
@@ -35,7 +33,6 @@ func TestLimitSnapshotWrongPayLoad(t *testing.T) {
 }
 
 func TestLimitSnapshotGenesisState(t *testing.T) {
-
 	gs := &limits.GenesisState{
 		BootstrapBlockCount: 1,
 	}
@@ -51,7 +48,6 @@ func TestLimitSnapshotGenesisState(t *testing.T) {
 }
 
 func TestLimitSnapshotBlockCount(t *testing.T) {
-
 	gs := &limits.GenesisState{
 		BootstrapBlockCount: 1,
 	}
@@ -86,11 +82,9 @@ func TestLimitSnapshotBlockCount(t *testing.T) {
 
 	snapLmt.OnTick(context.Background(), time.Unix(4000, 0))
 	require.True(t, snapLmt.BootstrapFinished())
-
 }
 
 func TestLimitSnapshotBootstrapFinished(t *testing.T) {
-
 	gs := &limits.GenesisState{
 		BootstrapBlockCount:  0,
 		ProposeMarketEnabled: true,
@@ -126,5 +120,4 @@ func TestLimitSnapshotBootstrapFinished(t *testing.T) {
 	h2, err := snapLmt.GetHash(allKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h1, h2))
-
 }

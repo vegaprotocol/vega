@@ -39,7 +39,7 @@ func New(log *logging.Logger, cfg Config) *Engine {
 	}
 }
 
-// UponGenesis load the limits from the genesis state
+// UponGenesis load the limits from the genesis state.
 func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	e.log.Debug("Entering limits.Engine.UponGenesis")
 	defer func() {

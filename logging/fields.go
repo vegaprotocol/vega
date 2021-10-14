@@ -170,7 +170,7 @@ func OrderID(id string) zap.Field {
 	return zap.String("order-id", id)
 }
 
-// Time display a time
+// Time display a time.
 func Time(key string, t time.Time) zap.Field {
 	return zap.Time(key, t)
 }
@@ -249,22 +249,22 @@ func ProtoAccount(a ptypes.Account) zap.Field {
 	return zap.String("account", a.String())
 }
 
-// OrderAmendmentProto constructs a single string field to contain all the object information
+// OrderAmendmentProto constructs a single string field to contain all the object information.
 func OrderAmendmentProto(oa *commandspb.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
-// OrderAmendment constructs a single string field to contain all the object information
+// OrderAmendment constructs a single string field to contain all the object information.
 func OrderAmendment(oa *types.OrderAmendment) zap.Field {
 	return zap.String("order-amendment", oa.String())
 }
 
-// OrderSubmissionProto constructs a single string field to contain all the object information
+// OrderSubmissionProto constructs a single string field to contain all the object information.
 func OrderSubmissionProto(os *commandspb.OrderSubmission) zap.Field {
 	return zap.String("order-submission", os.String())
 }
 
-// OrderSubmission constructs a single string field to contain all the object information
+// OrderSubmission constructs a single string field to contain all the object information.
 func OrderSubmission(os *types.OrderSubmission) zap.Field {
 	return zap.String("order-submission", os.String())
 }
@@ -277,17 +277,17 @@ func OrderCancellation(oc *types.OrderCancellation) zap.Field {
 // field of value passed as a parameter.
 // This should never be used we basic log level,
 // only in the case of Debug log level, and with guards on  top
-// of the actual log call for this level
+// of the actual log call for this level.
 func Reflect(key string, val interface{}) zap.Field {
 	return zap.Reflect(key, val)
 }
 
-// TraceID logs the event traceID
+// TraceID logs the event traceID.
 func TraceID(e events.Event) zap.Field {
 	return zap.String("trace-id", e.TraceID())
 }
 
-// EventType logs the event type as a string
+// EventType logs the event type as a string.
 func EventType(e events.Event) zap.Field {
 	return zap.String("event-type", e.Type().String())
 }

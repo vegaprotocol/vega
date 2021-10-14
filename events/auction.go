@@ -27,7 +27,7 @@ type Auction struct {
 	extension types.AuctionTrigger
 }
 
-// NewAuctionEvent creates a new auction event object
+// NewAuctionEvent creates a new auction event object.
 func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, stop int64, triggers ...types.AuctionTrigger) *Auction {
 	if len(triggers) == 0 {
 		return nil
@@ -46,6 +46,7 @@ func NewAuctionEvent(ctx context.Context, marketID string, leave bool, start, st
 	if len(triggers) == 2 {
 		e.extension = triggers[1]
 	}
+
 	return e
 }
 
@@ -53,12 +54,12 @@ func (a Auction) MarketID() string {
 	return a.marketID
 }
 
-// Auction returns the action performed (either true=leave auction, or false=entering auction)
+// Auction returns the action performed (either true=leave auction, or false=entering auction).
 func (a Auction) Auction() bool {
 	return a.leave
 }
 
-// MarketEvent - implement market event interface so we can log this event
+// MarketEvent - implement market event interface so we can log this event.
 func (a Auction) MarketEvent() string {
 	// is in auction
 	start := time.Unix(0, a.auctionStart).Format(time.RFC3339Nano)
@@ -74,20 +75,23 @@ func (a Auction) MarketEvent() string {
 		if a.openingAuction {
 			return fmt.Sprintf("Market %s left opening auction started at %s at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 		}
+
 		return fmt.Sprintf("Market %s left auction started at %s at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 	}
 	if a.openingAuction {
 		// an opening auction will always have a STOP time
 		stop := stopT.Format(time.RFC3339Nano)
+
 		return fmt.Sprintf("Market %s entered opening auction at %s, will close at %s (trigger: %s)", a.marketID, start, stop, a.trigger)
 	}
 	if a.auctionStop == 0 {
 		return fmt.Sprintf("Market %s entered auction mode at %s (trigger: %s)", a.marketID, start, a.trigger)
 	}
+
 	return fmt.Sprintf("Market %s entered auction mode at %s, auction closes at %s (trigger: %s)", a.marketID, start, stopT.Format(time.RFC3339Nano), a.trigger)
 }
 
-// Proto wrap event data in a proto message
+// Proto wrap event data in a proto message.
 func (a Auction) Proto() eventspb.AuctionEvent {
 	return eventspb.AuctionEvent{
 		MarketId:         a.marketID,
@@ -100,9 +104,10 @@ func (a Auction) Proto() eventspb.AuctionEvent {
 	}
 }
 
-// StreamMessage returns the BusEvent message for the event stream API
+// StreamMessage returns the BusEvent message for the event stream API.
 func (a Auction) StreamMessage() *eventspb.BusEvent {
 	p := a.Proto()
+
 	return &eventspb.BusEvent{
 		Version: eventspb.Version,
 		Id:      a.eventID(),
@@ -115,7 +120,7 @@ func (a Auction) StreamMessage() *eventspb.BusEvent {
 }
 
 // StreamMarketMessage - allows for this event to be streamed as just a market event
-// containing just market ID and a string akin to a log message
+// containing just market ID and a string akin to a log message.
 func (a Auction) StreamMarketMessage() *eventspb.BusEvent {
 	return &eventspb.BusEvent{
 		Version: eventspb.Version,
@@ -142,5 +147,6 @@ func AuctionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Auction
 		trigger:        be.GetAuction().Trigger,
 		extension:      be.GetAuction().ExtensionTrigger,
 	}
+
 	return e
 }

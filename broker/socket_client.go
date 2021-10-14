@@ -189,6 +189,7 @@ func (s *socketClient) stream(ctx context.Context) error {
 			msg, err := proto.Marshal(evt.StreamMessage())
 			if err != nil {
 				s.log.Error("Failed to marshal event", logging.Error(err))
+
 				continue
 			}
 
@@ -216,6 +217,7 @@ func (s *socketClient) stream(ctx context.Context) error {
 				default:
 					s.log.Error("Failed to send to socket", logging.Error(err))
 				}
+
 				continue
 			}
 

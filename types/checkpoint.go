@@ -118,7 +118,7 @@ func (s *CheckpointState) SetCheckpoint(cp *Checkpoint) error {
 	return nil
 }
 
-// Validate checks the hash, returns nil if valid
+// Validate checks the hash, returns nil if valid.
 func (s CheckpointState) Validate() error {
 	cp, err := s.GetCheckpoint()
 	if err != nil {
@@ -167,7 +167,7 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 }
 
 // HashBytes returns the data contained in the checkpoint as a []byte for hashing
-// the order in which the data is added to the slice matters
+// the order in which the data is added to the slice matters.
 func (c Checkpoint) HashBytes() []byte {
 	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block))
 	// the order in which we append is quite important
@@ -180,7 +180,7 @@ func (c Checkpoint) HashBytes() []byte {
 	return append(ret, c.Governance...)
 }
 
-// Set set a specific checkpoint value using the name the engine returns
+// Set set a specific checkpoint value using the name the engine returns.
 func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 	switch name {
 	case GovernanceCheckpoint:
@@ -200,7 +200,7 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 	}
 }
 
-// Get as the name suggests gets the data by checkpoint name
+// Get as the name suggests gets the data by checkpoint name.
 func (c Checkpoint) Get(name CheckpointName) []byte {
 	switch name {
 	case GovernanceCheckpoint:

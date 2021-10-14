@@ -11,7 +11,6 @@ func TheInsurancePoolBalanceShouldBeForTheMarket(
 	broker *stubs.BrokerStub,
 	rawAmount, market string,
 ) error {
-
 	amount := parseExpectedInsurancePoolBalance(rawAmount)
 
 	acc, err := broker.GetMarketInsurancePoolAccount(market)

@@ -11,17 +11,15 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var (
-	signedNetworkParameters = []string{
-		netparams.BlockchainsEthereumConfig,
-		netparams.GovernanceProposalAssetMinEnact,
-		netparams.GovernanceProposalMarketMinEnact,
-		netparams.GovernanceProposalUpdateMarketRequiredMajority,
-		netparams.GovernanceProposalUpdateMarketRequiredParticipation,
-		netparams.NetworkCheckpointNetworkEOLDate,
-		netparams.ValidatorsEpochLength,
-	}
-)
+var signedNetworkParameters = []string{
+	netparams.BlockchainsEthereumConfig,
+	netparams.GovernanceProposalAssetMinEnact,
+	netparams.GovernanceProposalMarketMinEnact,
+	netparams.GovernanceProposalUpdateMarketRequiredMajority,
+	netparams.GovernanceProposalUpdateMarketRequiredParticipation,
+	netparams.NetworkCheckpointNetworkEOLDate,
+	netparams.ValidatorsEpochLength,
+}
 
 func GetSignedParameters(genesisState *GenesisState) (*SignedParameters, error) {
 	sps := &SignedParameters{}

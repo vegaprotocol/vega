@@ -21,7 +21,7 @@ const (
 	// this is temporarily used until we remove expiry completely
 	// make the expiry 2 years, which will outlive anyway any
 	// vega network at first.
-	// 24 hours * 365 * days * 2 years
+	// 24 hours * 365 * days * 2 years.
 	withdrawalsDefaultExpiry = 24 * 365 * 2 * time.Hour
 )
 
@@ -75,7 +75,7 @@ type Topology interface {
 	IsValidator() bool
 }
 
-// Broker - the event bus
+// Broker - the event bus.
 type Broker interface {
 	Send(e events.Event)
 }
@@ -86,9 +86,7 @@ const (
 	rejectedState
 )
 
-var (
-	defaultValidationDuration = 2 * time.Hour
-)
+var defaultValidationDuration = 2 * time.Hour
 
 type Engine struct {
 	cfg     Config
@@ -158,10 +156,10 @@ func New(
 	e.keyToSerialiser[depositsKey] = e.serialiseDeposits
 	e.keyToSerialiser[seenKey] = e.serialiseSeen
 	e.keyToSerialiser[assetActionsKey] = e.serialiseAssetActions
-	return
+	return e
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -231,7 +229,7 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 		return
 	}
 
-	var newState = rejectedState
+	newState := rejectedState
 	if valid {
 		newState = okState
 	}

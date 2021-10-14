@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "liquidity"
 
-// Config represents the configuration of the Liquidity service
+// Config represents the configuration of the Liquidity service.
 type Config struct {
 	Level cfgencoding.LogLevel `long:"log-level"`
 }

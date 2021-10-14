@@ -105,7 +105,6 @@ func testCalcValidatorsScore(t *testing.T) {
 	}
 	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel)
 	require.Equal(t, "0.020", valScores["node13"].StringFixed(3))
-
 }
 
 func testCalcRewardNoBalance(t *testing.T) {
@@ -128,6 +127,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	require.Equal(t, 0, len(res.partyToAmount))
 }
 
+//nolint
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")

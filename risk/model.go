@@ -27,7 +27,7 @@ type Model interface {
 	GetProjectionHorizon() num.Decimal
 }
 
-// NewModel instantiate a new risk model from a market framework configuration
+// NewModel instantiate a new risk model from a market framework configuration.
 func NewModel(prm interface{}, asset string) (Model, error) {
 	if prm == nil {
 		return nil, ErrNilRiskModel

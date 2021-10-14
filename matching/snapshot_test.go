@@ -119,6 +119,7 @@ func TestSellOrdersChangeHash(t *testing.T) {
 }
 
 func addOrders(t *testing.T, ob *matching.CachedOrderBook, orders []orderdata) {
+	t.Helper()
 	baseorder := &types.Order{
 		MarketID:    market,
 		Party:       party,

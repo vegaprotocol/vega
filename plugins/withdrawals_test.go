@@ -22,6 +22,7 @@ type witPluginTest struct {
 }
 
 func getWitPlugin(t *testing.T) *witPluginTest {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	p := plugins.NewWithdrawal(ctx)

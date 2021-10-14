@@ -37,7 +37,6 @@ func verifier(params []string, f func(*reporter, []byte) string) error {
 		return errors.New("error: one or more file are ill formated or invalid")
 	}
 	return nil
-
 }
 
 func unmarshal(r *reporter, bs []byte, i proto.Message) bool {

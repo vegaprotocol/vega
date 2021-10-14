@@ -16,6 +16,7 @@ import (
 )
 
 func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *testMarket {
+	t.Helper()
 	closingAt := time.Unix(1000000000, 0)
 
 	pmt := &types.PriceMonitoringTrigger{
@@ -59,6 +60,7 @@ func leaveAuction(tm *testMarket, ctx context.Context, now *time.Time) {
 }
 
 func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder, i int) {
+	t.Helper()
 	for _, event := range tm.orderEvents {
 		mdb.Push(event)
 	}
@@ -87,6 +89,7 @@ func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.Mar
 }
 
 func processEvents(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) {
+	t.Helper()
 	processEventsWithCounter(t, tm, mdb, 0)
 }
 
@@ -98,8 +101,9 @@ func clearEvents(tm *testMarket) {
 	tm.orderEvents = nil
 }
 
-// Check that the orders in the matching engine are the same as the orders in the market depth
+// Check that the orders in the matching engine are the same as the orders in the market depth.
 func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder) bool {
+	t.Helper()
 	correct := true
 	// Do we have the same number of orders in each?
 	if !assert.Equal(t, tm.market.GetOrdersOnBookCount(), mdb.GetOrderCount(tm.market.GetID())) {

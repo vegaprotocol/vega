@@ -63,7 +63,7 @@ func (s *Service) serialisePending() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (s *Service) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := s.keyToSerialiser[k]; !ok {
 		return nil, nil, ErrSnapshotKeyDoesNotExist

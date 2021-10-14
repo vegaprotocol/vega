@@ -30,7 +30,6 @@ func TestSimpleSpamProtection(t *testing.T) {
 	t.Run("command counts from the block successfully applied on state", testCommandCountersUpdated)
 	t.Run("Start of epoch resets counters", testCommandReset)
 	t.Run("On end of block, block proposal counters are reset and take a snapshot roundtrip", testProposalEndBlockReset)
-
 }
 
 func getCommandSpamPolicy() *spam.SimpleSpamPolicy {
@@ -87,7 +86,7 @@ func testProposalEndBlockReset(t *testing.T) {
 	require.False(t, bytes.Equal(bytes3, bytes2))
 }
 
-// reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch
+// reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch.
 func testCommandPreRejectInsufficientBalance(t *testing.T) {
 	policy := getCommandSpamPolicy()
 
@@ -98,7 +97,7 @@ func testCommandPreRejectInsufficientBalance(t *testing.T) {
 	require.Equal(t, errors.New("party has insufficient tokens to submit simple request in this epoch"), err)
 }
 
-// reject proposal requests from banned parties for as long as they are banned
+// reject proposal requests from banned parties for as long as they are banned.
 func testCommandPreRejectBannedParty(t *testing.T) {
 	policy := getCommandSpamPolicy()
 
@@ -153,7 +152,7 @@ func testCommandPreRejectTooManyProposals(t *testing.T) {
 
 	// propose 4 proposals, all preaccepted 3 post accepted
 	tx := &testTx{party: "party1", proposal: "proposal1"}
-	//pre accepted
+	// pre accepted
 	for i := 0; i < 4; i++ {
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, true, accept)
@@ -183,7 +182,6 @@ func testCommandPreRejectTooManyProposals(t *testing.T) {
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
-
 }
 
 func testCommandPreAccept(t *testing.T) {
@@ -196,7 +194,7 @@ func testCommandPreAccept(t *testing.T) {
 	// propose 5 times all pre accepted, 3 for each post accepted
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
-		//pre accepted
+		// pre accepted
 		for i := 0; i < 5; i++ {
 			accept, err := policy.PreBlockAccept(tx)
 			require.Equal(t, true, accept)
@@ -211,14 +209,14 @@ func testCommandPostAccept(t *testing.T) {
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	tx := &testTx{party: "party1", proposal: "proposal1"}
-	//pre accepted
+	// pre accepted
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
 
-	//post accepted
+	// post accepted
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, true, accept)
@@ -232,21 +230,21 @@ func testCommandPostRejectTooManyProposals(t *testing.T) {
 	tokenMap["party1"] = sufficientPropTokens
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	tx := &testTx{party: "party1", proposal: "proposal1"}
-	//pre accepted
+	// pre accepted
 	for i := 0; i < 5; i++ {
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
 
-	//post accepted
+	// post accepted
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
 
-	//post rejected
+	// post rejected
 	for i := 0; i < 2; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, false, accept)
@@ -261,14 +259,14 @@ func testCommandCountersUpdated(t *testing.T) {
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 
 	tx := &testTx{party: "party1", proposal: "proposal"}
-	//pre accepted
+	// pre accepted
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
 
-	//post accepted
+	// post accepted
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, true, accept)
@@ -279,7 +277,6 @@ func testCommandCountersUpdated(t *testing.T) {
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
-
 }
 
 func testCommandReset(t *testing.T) {
@@ -291,13 +288,13 @@ func testCommandReset(t *testing.T) {
 
 	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
 	tx := &testTx{party: "party1", proposal: "proposal1"}
-	//pre accepted
+	// pre accepted
 	for i := 0; i < 6; i++ {
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, true, accept)
 		require.Nil(t, err)
 	}
-	//post accepted
+	// post accepted
 	for i := 0; i < 3; i++ {
 		accept, err := policy.PostBlockAccept(tx)
 		require.Equal(t, true, accept)

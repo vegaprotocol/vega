@@ -7,7 +7,7 @@ import (
 )
 
 // the interface for execution engine. The execution engine itself will be wrapped
-// so to use it in steps, we'll need to use an interface
+// so to use it in steps, we'll need to use an interface.
 type Execution interface {
 	GetMarketData(mktID string) (types.MarketData, error)
 	GetMarketState(mktID string) (types.MarketState, error)

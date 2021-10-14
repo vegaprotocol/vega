@@ -40,7 +40,6 @@ func testSetThreshold(t *testing.T) {
 		"a2c61b473f15a1729e8593d65748e7a9813102e0d7304598af556525206db599fb79b9750349c6cb564a2f3ecdf233dd19b1598302e0cb91218adff1c609ac09",
 		sig.Signature.Hex(),
 	)
-
 }
 
 func testAddSigner(t *testing.T) {
@@ -86,11 +85,13 @@ type testSigner struct{}
 
 func (s testSigner) Sign(msg []byte) ([]byte, error) {
 	priv, _ := hex.DecodeString(privKey)
+
 	return ed25519.Sign(ed25519.PrivateKey(priv), msg), nil
 }
 
 func (s testSigner) Verify(msg, sig []byte) bool {
 	pub, _ := hex.DecodeString(pubKey)
 	hash := crypto.Keccak256(msg)
+
 	return ed25519.Verify(ed25519.PublicKey(pub), hash, sig)
 }

@@ -8,8 +8,10 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-type Command byte
-type TxHandler func(ctx context.Context, tx Tx) error
+type (
+	Command   byte
+	TxHandler func(ctx context.Context, tx Tx) error
+)
 
 type App struct {
 	abci.BaseApplication
@@ -105,7 +107,7 @@ func (app *App) removeTxFromCache(in []byte) {
 // if no errors were found during decoding and validation, the resulting Tx
 // will be cached.
 // An error code different from 0 is returned if decoding or validation fails
-// with its the corresponding error
+// with its the corresponding error.
 func (app *App) getTx(bytes []byte) (Tx, uint32, error) {
 	if tx := app.txFromCache(bytes); tx != nil {
 		return tx, 0, nil

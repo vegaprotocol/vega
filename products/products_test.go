@@ -94,7 +94,7 @@ func TestFuture(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, given.String(), value.String())
 
-	var params = []struct {
+	params := []struct {
 		entryPrice      uint64
 		settlementPrice uint64
 		position        int64

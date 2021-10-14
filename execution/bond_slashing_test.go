@@ -14,6 +14,7 @@ import (
 )
 
 func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration, now time.Time, price uint64) {
+	t.Helper()
 	// all parties
 	parties := []string{"oo-p1", "oo-p4", "oo-p2", "oo-p3"}
 	// create accounts for the parties
@@ -75,7 +76,6 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	for _, o := range orders {
 		_, err := mkt.market.SubmitOrder(context.Background(), o)
 		require.NoError(t, err)
-
 	}
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
@@ -207,7 +207,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.NotNil(t, insurancePool)
 	require.Equal(t, num.Zero(), insurancePool.Balance)
 
-	//TODO: JEREMY: funds are staying in margin ACCOUNT, let's
+	// TODO: JEREMY: funds are staying in margin ACCOUNT, let's
 	// fix that latert.
 	marginAcc, err := tm.collateralEngine.GetPartyMarginAccount(tm.mktCfg.ID, mainParty, asset)
 	require.NoError(t, err)
@@ -218,7 +218,6 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 	require.NoError(t, err)
 	require.NotNil(t, genAcc)
 	require.Equal(t, genAcc.Balance, exp)
-
 }
 
 func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
@@ -734,7 +733,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	insurancePoolDuringAuction := insurancePool.Balance.Clone()
 	require.True(t, insurancePool.Balance.IsZero())
 
-	//End auction
+	// End auction
 	setMarkPrice(t, tm, openingAuctionDuration, now, initialMarkPrice)
 
 	mktData = tm.market.GetMarketData()

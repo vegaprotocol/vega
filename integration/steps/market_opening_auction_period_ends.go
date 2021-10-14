@@ -12,6 +12,7 @@ func MarketOpeningAuctionPeriodEnds(timeStub *stubs.TimeStub, markets []types.Ma
 	var mkt *types.Market
 	for _, m := range markets {
 		if m.ID == marketID {
+			m := m
 			mkt = &m
 			break
 		}

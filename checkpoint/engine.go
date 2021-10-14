@@ -109,7 +109,7 @@ func (e *Engine) UponGenesis(_ context.Context, data []byte) (err error) {
 }
 
 // Add used to add/register components after the engine has been instantiated already
-// this is mainly used to make testing easier
+// this is mainly used to make testing easier.
 func (e *Engine) Add(comps ...State) error {
 	for _, c := range comps {
 		if err := e.addComponent(c); err != nil {
@@ -119,7 +119,7 @@ func (e *Engine) Add(comps ...State) error {
 	return nil
 }
 
-// add component, but check for duplicate names
+// add component, but check for duplicate names.
 func (e *Engine) addComponent(comp State) error {
 	name := comp.Name()
 	c, ok := e.components[name]
@@ -134,7 +134,7 @@ func (e *Engine) addComponent(comp State) error {
 	return nil
 }
 
-// AwaitingRestore indicates that a checkpoint restore is pending, will return false once CP is restored
+// AwaitingRestore indicates that a checkpoint restore is pending, will return false once CP is restored.
 func (e *Engine) AwaitingRestore() bool {
 	return len(e.loadHash) > 0
 }
@@ -149,7 +149,7 @@ func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.CheckpointState,
 	return cp, nil
 }
 
-// Checkpoint returns the overall checkpoint
+// Checkpoint returns the overall checkpoint.
 func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.CheckpointState, error) {
 	// start time will be zero -> add delta to this time, and return
 	if e.nextCP.IsZero() {
@@ -192,7 +192,7 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 	return snap
 }
 
-// Load - loads checkpoint data for all components by name
+// Load - loads checkpoint data for all components by name.
 func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
 	if len(e.loadHash) != 0 {

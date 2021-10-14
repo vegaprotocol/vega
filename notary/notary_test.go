@@ -23,6 +23,7 @@ type testNotary struct {
 }
 
 func getTestNotary(t *testing.T) *testNotary {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	broker := bmock.NewMockBroker(ctrl)

@@ -13,7 +13,7 @@ import (
 )
 
 // ERC20Logic yea that's a weird name but
-// it just matches the name of the contract
+// it just matches the name of the contract.
 type ERC20Logic struct {
 	signer     Signer
 	bridgeAddr string
@@ -72,7 +72,8 @@ func (e ERC20Logic) ListAsset(
 	var vegaAssetIDArray [32]byte
 	copy(vegaAssetIDArray[:], vegaAssetIDBytes[:32])
 	buf, err := args.Pack([]interface{}{
-		tokenAddressEth, vegaAssetIDArray, nonce.BigInt(), "list_asset"}...)
+		tokenAddressEth, vegaAssetIDArray, nonce.BigInt(), "list_asset",
+	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -119,7 +120,8 @@ func (e ERC20Logic) RemoveAsset(
 
 	tokenAddressEth := ethcmn.HexToAddress(tokenAddress)
 	buf, err := args.Pack([]interface{}{
-		tokenAddressEth, nonce.BigInt(), "remove_asset"}...)
+		tokenAddressEth, nonce.BigInt(), "remove_asset",
+	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -185,7 +187,8 @@ func (e ERC20Logic) WithdrawAsset(
 
 	buf, err := args.Pack([]interface{}{
 		ethTokenAddr, amount.BigInt(), big.NewInt(expiryUnix),
-		hexEthPartyAddress, nonce.BigInt(), "withdraw_asset"}...)
+		hexEthPartyAddress, nonce.BigInt(), "withdraw_asset",
+	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -239,7 +242,8 @@ func (e ERC20Logic) SetDepositMaximum(
 
 	buf, err := args.Pack([]interface{}{
 		ethTokenAddr, maximumAmount.BigInt(),
-		nonce.BigInt(), "set_deposit_maximum"}...)
+		nonce.BigInt(), "set_deposit_maximum",
+	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
@@ -293,7 +297,8 @@ func (e ERC20Logic) SetDepositMinimum(
 
 	buf, err := args.Pack([]interface{}{
 		ethTokenAddr, minimumAmount.BigInt(),
-		nonce.BigInt(), "set_deposit_minimum"}...)
+		nonce.BigInt(), "set_deposit_minimum",
+	}...)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't pack abi message: %w", err)
 	}
