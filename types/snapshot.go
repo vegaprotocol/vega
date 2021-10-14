@@ -137,35 +137,40 @@ func (s Snapshot) ToTM() *tmtypes.Snapshot {
 	}
 }
 
-func SnapshotFromIAVL(tree *iavl.ImmutableTree, keys []string) (*Snapshot, error) {
+func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 	snap := Snapshot{
 		Hash: tree.Hash(),
 		Meta: &Metadata{
 			Version:     tree.Version(),
-			NodeHashes:  make([]*NodeHash, 0, len(keys)),
-			ChunkHashes: make([]string, 0, len(keys)), // this is probably premature
+			NodeHashes:  []*NodeHash{},
+			ChunkHashes: []string{},
 		},
-		Nodes: make([]*Payload, 0, len(keys)), // each node as a payload
+		Nodes: []*Payload{},
 	}
-	for _, k := range keys {
-		_, val := tree.Get([]byte(k))
+	var err error
+	stopped := tree.Iterate(func(key, val []byte) bool {
 		pl := &snapshot.Payload{}
-		if err := proto.Unmarshal(val, pl); err != nil {
-			return nil, err
+		if err = proto.Unmarshal(val, pl); err != nil {
+			return true // It appears that returning true stops the iterator
 		}
 		payload := PayloadFromProto(pl)
-		payload.raw = val
+		payload.raw = val[:]
 		hash := hex.EncodeToString(crypto.Hash(val))
 		nh := &NodeHash{
-			FullKey:   k,
+			FullKey:   payload.GetTreeKey(),
 			Namespace: payload.Namespace(),
 			Key:       payload.Key(),
 			Hash:      hash,
 		}
 		snap.Meta.NodeHashes = append(snap.Meta.NodeHashes, nh)
-		snap.Nodes = append(snap.Nodes, PayloadFromProto(pl))
+		snap.Nodes = append(snap.Nodes, payload)
+		return false
+	})
+	// we had to abort, there was an error
+	if stopped && err != nil {
+		return nil, err
 	}
-	// divide into chunks, and set the meta...
+	// set chunks, ready to send in case we need it
 	snap.nodesToChunks()
 	return &snap, nil
 }

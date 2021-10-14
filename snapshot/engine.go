@@ -62,7 +62,6 @@ type Engine struct {
 	log        *logging.Logger
 	avl        *iavl.MutableTree
 	namespaces []types.SnapshotNamespace
-	keys       []string
 	nsKeys     map[types.SnapshotNamespace][]string
 	nsTreeKeys map[types.SnapshotNamespace][][]byte
 	keyNoNS    map[string]string // full key => key used by provider
@@ -132,7 +131,6 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		log:        log,
 		avl:        tree,
 		namespaces: []types.SnapshotNamespace{},
-		keys:       []string{},
 		nsKeys: map[types.SnapshotNamespace][]string{
 			app: {appPL.Key()},
 		},
@@ -182,13 +180,29 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 		if err != nil {
 			return nil, err
 		}
-		snap, err := types.SnapshotFromIAVL(tree, e.keys)
+		snap, err := types.SnapshotFromTree(tree)
 		if err != nil {
 			return nil, err
 		}
 		trees = append(trees, snap)
 	}
 	return trees, nil
+}
+
+func (e *Engine) LoadFromStore(ctx context.Context) error {
+	version, err := e.avl.Load()
+	if err != nil {
+		return err
+	}
+	e.version = version
+	e.last = e.avl.ImmutableTree
+	snap, err := types.SnapshotFromTree(e.last)
+	if err != nil {
+		return err
+	}
+	e.snapshot = snap
+	// apply, no need to set the tree, it's coming from local store
+	return e.applySnap(ctx, false)
 }
 
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
@@ -217,6 +231,10 @@ func (e *Engine) RejectSnapshot() error {
 }
 
 func (e *Engine) ApplySnapshot(ctx context.Context) error {
+	return e.applySnap(ctx, true)
+}
+
+func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
@@ -237,8 +255,10 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 				ordered[ns] = []*types.Payload{}
 			}
 		}
-		if err := e.nodeCAS(i, pl); err != nil {
-			return err
+		if cas {
+			if err := e.nodeCAS(i, pl); err != nil {
+				return err
+			}
 		}
 		// node was verified and set on tree
 		ordered[ns] = append(ordered[ns], pl)
@@ -267,14 +287,18 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 		}
 	}
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
-	if _, err := e.saveCurrentTree(); err != nil {
-		return err
-	}
 	now := time.Unix(e.app.Time, 0)
 	// restore app state
 	e.time.SetTimeNow(ctx, now)
 	// we're done, we can clear the snapshot state
 	e.snapshot = nil
+	// no need to save, return here
+	if !cas {
+		return nil
+	}
+	if _, err := e.saveCurrentTree(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -509,7 +533,6 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			for _, k := range tKeys {
 				fullKey := types.GetNodeKey(ns, k)
 				e.keyNoNS[fullKey] = k
-				e.keys = append(e.keys, fullKey)
 				e.providers[fullKey] = p
 				e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 			}
@@ -525,7 +548,6 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 		for _, k := range dedup {
 			fullKey := types.GetNodeKey(ns, k)
 			e.keyNoNS[fullKey] = k
-			e.keys = append(e.keys, fullKey)
 			e.providers[fullKey] = p
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 		}
