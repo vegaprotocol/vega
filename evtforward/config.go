@@ -10,11 +10,11 @@ import (
 const (
 	namedLogger = "evtforward"
 	// how often the evtforward needs to select a node to
-	// send the event if nothing was received
+	// send the event if nothing was received.
 	defaultRetryRate = 10 * time.Second
 )
 
-// Config represents governance specific configuration
+// Config represents governance specific configuration.
 type Config struct {
 	// logging level
 	Level     encoding.LogLevel `long:"log-level"`

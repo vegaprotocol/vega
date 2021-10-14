@@ -51,7 +51,7 @@ type AssetDetailsErc20 struct {
 	Erc20 *ERC20
 }
 
-// An ERC20 token based asset, living on the ethereum network
+// An ERC20 token based asset, living on the ethereum network.
 type ERC20 struct {
 	ContractAddress string
 }
@@ -111,8 +111,8 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 	case *proto.AssetDetails_BuiltinAsset:
 		src = AssetDetailsBuiltinFromProto(st)
 	}
-	var total = num.Zero()
-	var min = num.Zero()
+	total := num.Zero()
+	min := num.Zero()
 	if len(p.TotalSupply) > 0 {
 		total, _ = num.UintFromString(p.TotalSupply, 10)
 	}
@@ -149,7 +149,6 @@ func AssetDetailsBuiltinFromProto(p *proto.AssetDetails_BuiltinAsset) *AssetDeta
 		}
 	}
 	return &AssetDetailsBuiltinAsset{}
-
 }
 
 func (a AssetDetailsBuiltinAsset) adIntoProto() interface{} {

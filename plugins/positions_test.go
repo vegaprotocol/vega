@@ -2,7 +2,7 @@ package plugins_test
 
 // No race condition checks on these tests, the channels are buffered to avoid actual issues
 // we are aware that the tests themselves can be written in an unsafe way, but that's the tests
-// not the code itsel. The behaviour of the tests is 100% reliable
+// not the code itsel. The behaviour of the tests is 100% reliable.
 import (
 	"context"
 	"testing"
@@ -159,6 +159,7 @@ func TestMultipleTradesAndLossSocializationPartyWithOpenVolume(t *testing.T) {
 }
 
 func getPosPlugin(t *testing.T) *posPluginTst {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	p := plugins.NewPositions(ctx)

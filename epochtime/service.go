@@ -45,10 +45,10 @@ type VegaTime interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
-// NewService instantiates a new epochtime service
+// NewService instantiates a new epochtime service.
 func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc {
-
-	s := &Svc{config: conf,
+	s := &Svc{
+		config:               conf,
 		log:                  l,
 		broker:               broker,
 		readyToStartNewEpoch: false,
@@ -68,12 +68,12 @@ func NewService(l *logging.Logger, conf Config, vt VegaTime, broker Broker) *Svc
 	return s
 }
 
-// ReloadConf reload the configuration for the epochtime service
+// ReloadConf reload the configuration for the epochtime service.
 func (s *Svc) ReloadConf(conf Config) {
 	// do nothing here, conf is not used for now
 }
 
-//OnBlockEnd handles a callback from the abci when the block ends
+// OnBlockEnd handles a callback from the abci when the block ends.
 func (s *Svc) OnBlockEnd(ctx context.Context) {
 	if s.readyToEndEpoch {
 		s.readyToStartNewEpoch = true
@@ -84,12 +84,11 @@ func (s *Svc) OnBlockEnd(ctx context.Context) {
 	}
 }
 
-//NB: An epoch is ended when the first block that exceeds the expiry of the current epoch ends. As onTick is called from onBlockStart - to make epoch continuous
-//and avoid no man's epoch - once we get the first block past expiry we mark get ready to end the epoch. Once we get the on block end callback we're setting
-//the flag to be ready to start a new block on the next onTick (i.e. preceding the beginning of the next block). Once we get the next block's on tick we close
-//the epoch and notify on its end and start a new epoch (with incremented sequence) and notify about it.
+// NB: An epoch is ended when the first block that exceeds the expiry of the current epoch ends. As onTick is called from onBlockStart - to make epoch continuous
+// and avoid no man's epoch - once we get the first block past expiry we mark get ready to end the epoch. Once we get the on block end callback we're setting
+// the flag to be ready to start a new block on the next onTick (i.e. preceding the beginning of the next block). Once we get the next block's on tick we close
+// the epoch and notify on its end and start a new epoch (with incremented sequence) and notify about it.
 func (s *Svc) onTick(ctx context.Context, t time.Time) {
-
 	if t.IsZero() {
 		// We haven't got a block time yet, ignore
 		return
@@ -162,7 +161,7 @@ func (s *Svc) Load(_ context.Context, data []byte) error {
 }
 
 // NotifyOnEpoch allows other services to register a callback function
-// which will be called once we enter a new epoch
+// which will be called once we enter a new epoch.
 func (s *Svc) NotifyOnEpoch(f func(context.Context, types.Epoch)) {
 	s.listeners = append(s.listeners, f)
 }

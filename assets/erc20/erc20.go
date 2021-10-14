@@ -26,11 +26,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const (
-	MaxNonce              = 100000000
-	listAssetContractName = "list_asset"
-	withdrawContractName  = "withdraw_asset"
-)
+const MaxNonce = 100000000
 
 var (
 	ErrUnableToFindDeposit        = errors.New("unable to find erc20 deposit event")
@@ -145,7 +141,7 @@ func maybeError(err error, format string, a ...interface{}) error {
 
 // SignBridgeListing create and sign the message to
 // be sent to the bridge to whitelist the asset
-// return the generated message and the signature for this message
+// return the generated message and the signature for this message.
 func (b *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 	bridgeAddress := b.ethClient.BridgeAddress().Hex()
 	// use the asset ID converted into a uint256
@@ -168,7 +164,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		return err
 	}
 
-	var resp = "ok"
+	resp := "ok"
 	defer func() {
 		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
 	}()
@@ -180,7 +176,6 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		[]ethcommon.Address{ethcommon.HexToAddress(b.address)},
 		[][32]byte{},
 	)
-
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
 		return err
@@ -193,6 +188,7 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 	for iter.Next() {
 		if hex.EncodeToString(iter.Event.VegaAssetId[:]) == assetID {
 			event = iter.Event
+
 			break
 		}
 	}
@@ -233,7 +229,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		return nil, "", 0, err
 	}
 
-	var resp = "ok"
+	resp := "ok"
 	defer func() {
 		metrics.EthCallInc("validate_withdrawal", b.asset.ID, resp)
 	}()
@@ -246,7 +242,6 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		[]ethcommon.Address{ethcommon.HexToAddress(w.TargetEthereumAddress)},
 		// asset_source
 		[]ethcommon.Address{ethcommon.HexToAddress(b.address)})
-
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
 		return nil, "", 0, err
@@ -264,6 +259,7 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 			iter.Event.Raw.BlockNumber == blockNumber &&
 			uint64(iter.Event.Raw.Index) == txIndex {
 			event = iter.Event
+
 			break
 		}
 	}
@@ -286,7 +282,7 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		return err
 	}
 
-	var resp = "ok"
+	resp := "ok"
 	defer func() {
 		metrics.EthCallInc("validate_deposit", b.asset.ID, resp)
 	}()
@@ -299,7 +295,6 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		[]ethcommon.Address{ethcommon.HexToAddress(d.SourceEthereumAddress)},
 		// asset_source
 		[]ethcommon.Address{ethcommon.HexToAddress(b.address)})
-
 	if err != nil {
 		resp = getMaybeHTTPStatus(err)
 		return err

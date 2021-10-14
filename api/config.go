@@ -11,7 +11,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "api.grpc"
 
-// Config represents the configuration of the api package
+// Config represents the configuration of the api package.
 type Config struct {
 	Level           encoding.LogLevel `long:"log-level"`
 	Timeout         encoding.Duration `long:"timeout"`
@@ -22,7 +22,7 @@ type Config struct {
 	REST            RESTServiceConfig `group:"REST" namespace:"rest"`
 }
 
-// RESTGatewayServiceConfig represent the configuration of the rest service
+// RESTGatewayServiceConfig represent the configuration of the rest service.
 type RESTServiceConfig struct {
 	Port       int           `long:"port" description:"Listen for connection on port <port>"`
 	IP         string        `long:"ip" description:"Bind to address <ip>"`

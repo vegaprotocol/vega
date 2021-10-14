@@ -168,7 +168,6 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 
 			totalAwardedThisRound := num.Zero()
 			for party := range vd.Delegators {
-
 				// check if the party has already rewards from other validators or previous rounds (this epoch)
 				rewardForParty, ok := rewards[party]
 				if !ok {
@@ -262,14 +261,14 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	return valScores
 }
 
-// score_val(stake_val): min(1/a, validatorStake/totalStake)
+// score_val(stake_val): min(1/a, validatorStake/totalStake).
 func calcValidatorScore(normalisedValStake, minVal, compLevel, numVal num.Decimal) num.Decimal {
 	a := num.MaxD(minVal, numVal.Div(compLevel))
 
 	return num.MinD(normalisedValStake, num.DecimalFromInt64(1).Div(a))
 }
 
-// calculate the total amount of tokens delegated to the validators including self and party delegation
+// calculate the total amount of tokens delegated to the validators including self and party delegation.
 func calcTotalDelegated(validatorsData []*types.ValidatorData) *num.Uint {
 	total := num.Zero()
 	for _, d := range validatorsData {

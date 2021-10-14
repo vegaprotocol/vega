@@ -17,7 +17,7 @@ const (
 	namedLogger = "execution"
 )
 
-// Config is the configuration of the execution package
+// Config is the configuration of the execution package.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 

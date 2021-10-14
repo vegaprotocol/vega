@@ -436,7 +436,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	require.True(t, totalSuppliedLiquidity.GTE(liquidityObligation))
 	require.True(t, totalSuppliedLiquidity.LT(liquidityObligation.Mul(liquidityObligation, num.NewUint(2))))
 
-	//Limit sell orders provide enough liquidity
+	// Limit sell orders provide enough liquidity
 	limitOrders = []*types.Order{
 		{
 			Price:     num.NewUint(95),

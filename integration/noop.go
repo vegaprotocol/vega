@@ -5,5 +5,5 @@ package core
 // actual go code (not only test files) and can
 // and lsp go does not fail with:
 // go build code.vegaprotocol.io/vega/integration: no non-test
-// Go files in .../vega/integration
+// Go files in .../vega/integration.
 func Noop() {}

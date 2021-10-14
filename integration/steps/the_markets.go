@@ -19,8 +19,9 @@ func TheMarkets(
 	collateralEngine *collateral.Engine,
 	table *godog.Table,
 ) ([]types.Market, error) {
-	var markets []types.Market
-	for _, row := range parseMarketsTable(table) {
+	rows := parseMarketsTable(table)
+	markets := make([]types.Market, 0, len(rows))
+	for _, row := range rows {
 		mkt := newMarket(config, marketRow{row: row})
 		markets = append(markets, mkt)
 	}
@@ -175,7 +176,6 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 	}
 
 	return m
-
 }
 
 func openingAuction(row marketRow) *types.AuctionDuration {
@@ -251,8 +251,7 @@ func (r marketRow) maturityDate() string {
 	}
 
 	time := r.row.MustTime("maturity date")
-	timeNano := time.UnixNano()
-	if timeNano == 0 {
+	if timeNano := time.UnixNano(); timeNano == 0 {
 		panic(fmt.Errorf("maturity date is required"))
 	}
 

@@ -143,7 +143,6 @@ func testEngineReset(t *testing.T) {
 	voteHash3, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(voteHash3, voteHash2))
-
 }
 
 func testPreBlockAccept(t *testing.T) {
@@ -237,6 +236,7 @@ func (t testAccounts) GetAllAvailableBalances() map[string]*num.Uint {
 }
 
 func getEngine(t *testing.T) *testEngine {
+	t.Helper()
 	conf := spam.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}

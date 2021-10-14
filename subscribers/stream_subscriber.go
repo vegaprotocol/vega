@@ -32,7 +32,7 @@ type StreamSub struct {
 	marketEvtsOnly bool
 }
 
-// pass in requested batch size + expanded event types
+// pass in requested batch size + expanded event types.
 func getBufSize(batch int, types []events.Type) int {
 	if batch < 0 {
 		batch = 0
@@ -145,7 +145,6 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	s.mu.Lock()
 	// update channel is eligible for closing if no events are in buffer, or the nr of changes are less than the buffer size
 	// closeUpdate := (s.changeCount == 0 || s.changeCount >= s.bufSize)
-	closeUpdate := true
 	save := make([]StreamEvent, 0, len(evts))
 	for _, e := range evts {
 		var se StreamEvent
@@ -174,19 +173,19 @@ func (s *StreamSub) Push(evts ...events.Event) {
 	}
 	s.changeCount += len(save)
 	s.data = append(s.data, save...)
-	if closeUpdate && ((s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0)) {
+	if /*closeUpdate &&*/ (s.bufSize > 0 && s.changeCount >= s.bufSize) || (s.bufSize == 0 && s.changeCount > 0) {
 		select {
 		case <-s.updated:
 		default:
 			close(s.updated)
 		}
-		//s.updated = make(chan struct{})
+		// s.updated = make(chan struct{})
 	}
 	s.mu.Unlock()
 }
 
 // UpdateBatchSize changes the batch size, and returns whatever the current buffer contains
-// it's effectively a poll of current events ignoring requested batch size
+// it's effectively a poll of current events ignoring requested batch size.
 func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*eventspb.BusEvent {
 	s.mu.Lock()
 	if size == s.bufSize {
@@ -228,7 +227,7 @@ func (s *StreamSub) UpdateBatchSize(ctx context.Context, size int) []*eventspb.B
 	return messages
 }
 
-// GetData returns events from buffer, all if bufSize == 0, or max buffer size (rest are kept in data slice)
+// GetData returns events from buffer, all if bufSize == 0, or max buffer size (rest are kept in data slice).
 func (s *StreamSub) GetData(ctx context.Context) []*eventspb.BusEvent {
 	select {
 	case <-ctx.Done():

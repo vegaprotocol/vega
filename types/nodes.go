@@ -11,10 +11,10 @@ type NodeSignature = commandspb.NodeSignature
 type NodeSignatureKind = commandspb.NodeSignatureKind
 
 const (
-	// Represents an unspecified or missing value from the input
+	// Represents an unspecified or missing value from the input.
 	NodeSignatureKindUnspecified NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_UNSPECIFIED
-	// Represents a signature for a new asset allow-listing
+	// Represents a signature for a new asset allow-listing.
 	NodeSignatureKindAssetNew NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW
-	// Represents a signature for an asset withdrawal
+	// Represents a signature for an asset withdrawal.
 	NodeSignatureKindAssetWithdrawal NodeSignatureKind = commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_WITHDRAWAL
 )

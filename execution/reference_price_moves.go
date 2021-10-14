@@ -7,16 +7,16 @@ import (
 )
 
 const (
-	// PriceMoveMid used to indicate that the mid price has moved
+	// PriceMoveMid used to indicate that the mid price has moved.
 	PriceMoveMid = 1
 
-	// PriceMoveBestBid used to indicate that the best bid price has moved
+	// PriceMoveBestBid used to indicate that the best bid price has moved.
 	PriceMoveBestBid = 2
 
-	// PriceMoveBestAsk used to indicate that the best ask price has moved
+	// PriceMoveBestAsk used to indicate that the best ask price has moved.
 	PriceMoveBestAsk = 4
 
-	// PriceMoveAll used to indicate everything has moved
+	// PriceMoveAll used to indicate everything has moved.
 	PriceMoveAll = PriceMoveMid + PriceMoveBestBid + PriceMoveBestAsk
 )
 

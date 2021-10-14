@@ -65,7 +65,7 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 	)
 	if p.Price != nil {
 		if len(p.Price.Value) > 0 {
-			overflowed := false
+			var overflowed bool
 			price, overflowed = num.UintFromString(p.Price.Value, 10)
 			if overflowed {
 				return nil, errors.New("invalid amount")
@@ -119,7 +119,7 @@ func (o OrderAmendment) IntoProto() *commandspb.OrderAmendment {
 }
 
 // Validate santiy-checks the order amendment as-is, the market will further validate the amendment
-// based on the order it's actually trying to amend
+// based on the order it's actually trying to amend.
 func (o OrderAmendment) Validate() error {
 	// check TIME_IN_FORCE and expiry
 	if o.TimeInForce == OrderTimeInForceGTT && o.ExpiresAt == nil {

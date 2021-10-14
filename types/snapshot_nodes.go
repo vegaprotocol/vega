@@ -402,6 +402,7 @@ type NotarySigs struct {
 	Node string
 	Sig  string
 }
+
 type Notary struct {
 	Sigs []*NotarySigs
 }
@@ -1891,9 +1892,7 @@ func (e EquityShare) IntoProto() *snapshot.EquityShare {
 }
 
 func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
-	var (
-		stake, share, avg num.Decimal
-	)
+	var stake, share, avg num.Decimal
 	if len(esl.Stake) > 0 {
 		stake, _ = num.DecimalFromString(esl.Stake)
 	}
@@ -1994,9 +1993,7 @@ func (d DecMap) IntoProto() *snapshot.DecimalMap {
 }
 
 func PriceBoundFromProto(pb *snapshot.PriceBound) *PriceBound {
-	var (
-		up, down num.Decimal
-	)
+	var up, down num.Decimal
 	if len(pb.UpFactor) > 0 {
 		up, _ = num.DecimalFromString(pb.UpFactor)
 	}
@@ -2021,9 +2018,7 @@ func (p PriceBound) IntoProto() *snapshot.PriceBound {
 }
 
 func PriceRangeFromProto(pr *snapshot.PriceRange) *PriceRange {
-	var (
-		min, max, ref num.Decimal
-	)
+	var min, max, ref num.Decimal
 	if len(pr.Min) > 0 {
 		min, _ = num.DecimalFromString(pr.Min)
 	}
@@ -2363,7 +2358,6 @@ func SimpleSpamPolicyFromProto(ssp *snapshot.SimpleSpamPolicy) *SimpleSpamPolicy
 		PartyTokenBalance: partyBalance,
 		CurrentEpochSeq:   ssp.CurrentEpochSeq,
 	}
-
 }
 
 func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
@@ -2493,7 +2487,6 @@ func (ssp *SimpleSpamPolicy) IntoProto() *snapshot.SimpleSpamPolicy {
 }
 
 func (vsp *VoteSpamPolicy) IntoProto() *snapshot.VoteSpamPolicy {
-
 	partyProposalVoteCount := make([]*snapshot.PartyProposalVoteCount, 0, len(vsp.PartyProposalVoteCount))
 	for _, ptv := range vsp.PartyProposalVoteCount {
 		partyProposalVoteCount = append(partyProposalVoteCount, ptv.IntoProto())
@@ -2719,7 +2712,6 @@ func NotaryFromProto(n *snapshot.Notary) *Notary {
 }
 
 func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
-
 	return &NotarySigs{
 		ID:   sk.Id,
 		Kind: sk.Kind,
@@ -2745,7 +2737,6 @@ func (n Notary) IntoProto() *snapshot.Notary {
 }
 
 func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
-
 	return &snapshot.NotarySigs{
 		Id:   sk.ID,
 		Kind: sk.Kind,

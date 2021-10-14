@@ -3,7 +3,7 @@ package txn
 // Command ...
 type Command byte
 
-// Custom blockchain command encoding, lighter-weight than proto
+// Custom blockchain command encoding, lighter-weight than proto.
 const (
 	// SubmitOrderCommand ...
 	SubmitOrderCommand Command = 0x40
@@ -64,7 +64,7 @@ func (cmd Command) IsValidatorCommand() bool {
 	}
 }
 
-// String return the
+// String return the.
 func (cmd Command) String() string {
 	s, ok := commandName[cmd]
 	if ok {

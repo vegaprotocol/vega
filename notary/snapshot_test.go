@@ -14,9 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	allKey = (&types.PayloadNotary{}).Key()
-)
+var allKey = (&types.PayloadNotary{}).Key()
 
 func TestNotarySnapshotEmpty(t *testing.T) {
 	notr := getTestNotary(t)
@@ -43,7 +41,7 @@ func TestNotarySnapshotVotesKinds(t *testing.T) {
 }
 
 func populateNotary(t *testing.T, notr *testNotary) {
-
+	t.Helper()
 	// First ID/Kind
 	resID := "resid1"
 	notr.StartAggregate(resID, types.NodeSignatureKindAssetNew)
@@ -92,7 +90,6 @@ func populateNotary(t *testing.T, notr *testNotary) {
 	_, ok, err = notr.AddSig(context.Background(), "56789", ns)
 	require.True(t, ok)
 	require.Nil(t, err)
-
 }
 
 func TestNotarySnapshotRoundTrip(t *testing.T) {
@@ -128,5 +125,4 @@ func TestNotarySnapshotRoundTrip(t *testing.T) {
 	_, ok2 := notr.IsSigned(context.Background(), "resid1", types.NodeSignatureKindAssetNew)
 	require.True(t, ok1)
 	require.True(t, ok2)
-
 }

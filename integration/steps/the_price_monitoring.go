@@ -13,8 +13,9 @@ func ThePriceMonitoring(config *market.Config, name string, rawUpdateFrequency s
 		panicW("update frequency", err)
 	}
 
-	var triggers []*types.PriceMonitoringTrigger
-	for _, r := range parsePriceMonitoringTable(table) {
+	rows := parsePriceMonitoringTable(table)
+	triggers := make([]*types.PriceMonitoringTrigger, 0, len(rows))
+	for _, r := range rows {
 		row := priceMonitoringRow{row: r}
 		p := &types.PriceMonitoringTrigger{
 			Horizon:          row.horizon(),

@@ -21,7 +21,7 @@ func newGen() *gen {
 
 // setSequence adds sequence ID to the event objects, returns the arguments because
 // the events might be passed by value (interface values)
-// returns the more restrictive event object - once seq ID is set, it should be treated as RO
+// returns the more restrictive event object - once seq ID is set, it should be treated as RO.
 func (g *gen) setSequence(evts ...events.Event) []events.Event {
 	ln := uint64(len(evts))
 	if ln == 0 {

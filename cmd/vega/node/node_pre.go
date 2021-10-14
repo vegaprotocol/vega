@@ -112,7 +112,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	return l.nodeWallets.Verify()
 }
 
-// UponGenesis loads all asset from genesis state
+// UponGenesis loads all asset from genesis state.
 func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err error) {
 	l.Log.Debug("Entering node.NodeCommand.UponGenesis")
 	defer func() {
@@ -271,7 +271,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 	return app, nil
 }
 
-// we've already set everything up WRT arguments etc... just bootstrap the node
+// we've already set everything up WRT arguments etc... just bootstrap the node.
 func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {

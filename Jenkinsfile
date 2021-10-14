@@ -245,44 +245,32 @@ pipeline {
                         dir('vega') {
                             sh '''#!/bin/bash -e
                                 golangci-lint run -v \
+                                    --max-issues-per-linter 0 \
+                                    --max-same-issues 0 \
                                     --allow-parallel-runners \
                                     --config .golangci.toml \
                                     --enable-all \
                                     --color always \
-                                    --disable typecheck \
                                     --disable promlinter \
                                     --disable wrapcheck \
                                     --disable tagliatelle \
-                                    --disable wastedassign \
-                                    --disable thelper \
-                                    --disable predeclared \
                                     --disable paralleltest \
-                                    --disable noctx \
                                     --disable nlreturn \
-                                    --disable nilerr \
-                                    --disable ineffassign \
-                                    --disable ifshort \
                                     --disable gomnd \
                                     --disable goerr113 \
                                     --disable tparallel \
                                     --disable testpackage \
                                     --disable gochecknoglobals \
                                     --disable forcetypeassert \
-                                    --disable exportloopref \
                                     --disable exhaustivestruct \
                                     --disable exhaustive \
                                     --disable errorlint \
                                     --disable cyclop \
-                                    --disable bodyclose \
                                     --disable wsl \
-                                    --disable whitespace \
                                     --disable unparam \
-                                    --disable unconvert \
                                     --disable scopelint \
                                     --disable revive \
-                                    --disable prealloc \
                                     --disable nestif \
-                                    --disable nakedret \
                                     --disable maligned \
                                     --disable lll \
                                     --disable interfacer \
@@ -290,9 +278,7 @@ pipeline {
                                     --disable gomoddirectives \
                                     --disable golint \
                                     --disable goimports \
-                                    --disable gofumpt \
                                     --disable godox \
-                                    --disable godot \
                                     --disable gocritic \
                                     --disable goconst \
                                     --disable gocognit \
@@ -306,9 +292,6 @@ pipeline {
                                     --disable dogsled \
                                     --disable funlen \
                                     --disable gocyclo \
-                                    --disable deadcode \
-                                    --disable makezero \
-                                    --disable varcheck
                             '''
                         }
                     }

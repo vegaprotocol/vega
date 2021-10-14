@@ -71,7 +71,7 @@ func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient
 	return s
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (s *Service) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -87,7 +87,7 @@ func (s *Service) ReloadConf(cfg Config) {
 
 func (*Service) onTick(_ context.Context, t time.Time) {}
 
-// Enable move the state of an from pending the list of valid and accepted assets
+// Enable move the state of an from pending the list of valid and accepted assets.
 func (s *Service) Enable(assetID string) error {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
@@ -133,7 +133,7 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
-// returns the assetID and an error
+// returns the assetID and an error.
 func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()

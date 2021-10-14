@@ -101,8 +101,7 @@ func dummyOraclePayload() []byte {
 	return payload
 }
 
-type dummyOracleAdaptor struct {
-}
+type dummyOracleAdaptor struct{}
 
 func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	data := &oracles.OracleData{}

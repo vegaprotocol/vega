@@ -30,6 +30,7 @@ type testTop struct {
 }
 
 func getTestTopWithDefaultValidator(t *testing.T) *testTop {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
 	defer cleanupFn()

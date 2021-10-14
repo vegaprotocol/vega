@@ -89,7 +89,7 @@ func testMinimumDeposit(t *testing.T) {
 	sig, err := bridge.SetDepositMinimum(
 		erc20AssetAddr,
 		num.NewUint(42),  // amount
-		num.NewUint(100), //nonce
+		num.NewUint(100), // nonce
 	)
 
 	assert.NoError(t, err)
@@ -108,7 +108,7 @@ func testMaximumDeposit(t *testing.T) {
 	sig, err := bridge.SetDepositMaximum(
 		erc20AssetAddr,
 		num.NewUint(42),
-		num.NewUint(100), //nonce
+		num.NewUint(100), // nonce
 	)
 
 	assert.NoError(t, err)

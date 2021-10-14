@@ -17,7 +17,7 @@ type Stats struct {
 	uptime       time.Time
 }
 
-// New instantiates a new Stats
+// New instantiates a new Stats.
 func New(log *logging.Logger, cfg Config, version string, versionHash string) *Stats {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -31,7 +31,7 @@ func New(log *logging.Logger, cfg Config, version string, versionHash string) *S
 	}
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (s *Stats) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -45,17 +45,17 @@ func (s *Stats) ReloadConf(cfg Config) {
 	s.cfg = cfg
 }
 
-// SetChainVersion sets the version of the chain in use by vega
+// SetChainVersion sets the version of the chain in use by vega.
 func (s *Stats) SetChainVersion(v string) {
 	s.chainVersion = v
 }
 
-// GetChainVersion returns the version of the chain in use by vega
+// GetChainVersion returns the version of the chain in use by vega.
 func (s *Stats) GetChainVersion() string {
 	return s.chainVersion
 }
 
-// GetVersion return the version of vega which is currently running
+// GetVersion return the version of vega which is currently running.
 func (s *Stats) GetVersion() string {
 	return s.version
 }

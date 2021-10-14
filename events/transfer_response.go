@@ -13,7 +13,7 @@ type TransferResponse struct {
 	responses []*ptypes.TransferResponse
 }
 
-// NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer
+// NewTransferResponse returns an event with transfer responses - this is the replacement of the transfer buffer.
 func NewTransferResponse(ctx context.Context, responses []*types.TransferResponse) *TransferResponse {
 	return &TransferResponse{
 		Base:      newBase(ctx, TransferResponses),
@@ -21,7 +21,7 @@ func NewTransferResponse(ctx context.Context, responses []*types.TransferRespons
 	}
 }
 
-// TransferResponses returns the actual event payload
+// TransferResponses returns the actual event payload.
 func (t *TransferResponse) TransferResponses() []*ptypes.TransferResponse {
 	return t.responses
 }
