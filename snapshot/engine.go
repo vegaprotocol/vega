@@ -16,8 +16,6 @@ import (
 	"github.com/cosmos/iavl"
 	"github.com/golang/protobuf/proto"
 	db "github.com/tendermint/tm-db"
-	"github.com/tendermint/tm-db/goleveldb"
-	"github.com/tendermint/tm-db/memdb"
 )
 
 type StateProviderT interface {
@@ -163,13 +161,13 @@ func (e *Engine) ReloadConfig(cfg Config) {
 
 func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 	if conf.Storage == memDB {
-		return memdb.NewDB(), nil
+		return db.NewMemDB(), nil
 	}
 	dbPath, err := vegapath.DataPathFor(paths.SnapshotStateHome)
 	if err != nil {
 		return nil, err
 	}
-	return goleveldb.NewDB("snapshot", dbPath)
+	return db.NewGoLevelDB("snapshot", dbPath)
 }
 
 // List returns all snapshots available
