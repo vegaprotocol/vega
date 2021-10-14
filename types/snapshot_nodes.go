@@ -155,6 +155,14 @@ type PayloadNotary struct {
 	Notary *Notary
 }
 
+type PayloadReplayProtection struct {
+	Blocks []*ReplayBlockTransactions
+}
+
+type ReplayBlockTransactions struct {
+	Transactions []string
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -581,6 +589,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadSimpleSpamPolicyFromProto(dt)
 	case *snapshot.Payload_Notary:
 		ret.Data = PayloadNotaryFromProto(dt)
+	case *snapshot.Payload_ReplayProtection:
+		ret.Data = PayloadReplayProtectionFromProto(dt)
 	}
 	return ret
 }
@@ -659,6 +669,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_SimpleSpamPolicy:
 		ret.Data = dt
 	case *snapshot.Payload_Notary:
+		ret.Data = dt
+	case *snapshot.Payload_ReplayProtection:
 		ret.Data = dt
 	}
 	return &ret
@@ -2757,4 +2769,49 @@ func (*PayloadNotary) Key() string {
 
 func (*PayloadNotary) Namespace() SnapshotNamespace {
 	return NotarySnapshot
+}
+
+func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
+	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
+	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
+		transactions := make([]string, 0, len(block.Tx))
+		for _, tx := range block.Tx {
+			transactions = append(transactions, tx)
+		}
+		blocks = append(blocks, &ReplayBlockTransactions{Transactions: transactions})
+	}
+	return &PayloadReplayProtection{
+		Blocks: blocks,
+	}
+}
+
+func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection {
+	recentBlocks := make([]*snapshot.RecentBlocksTransactions, 0, len(p.Blocks))
+
+	for _, block := range p.Blocks {
+		txs := make([]string, 0, len(block.Transactions))
+		for _, tx := range block.Transactions {
+			txs = append(txs, tx)
+		}
+		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: txs})
+	}
+	return &snapshot.Payload_ReplayProtection{
+		ReplayProtection: &snapshot.ReplayProtection{
+			RecentBlocksTransactions: recentBlocks,
+		},
+	}
+}
+
+func (*PayloadReplayProtection) isPayload() {}
+
+func (p *PayloadReplayProtection) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadReplayProtection) Key() string {
+	return "all"
+}
+
+func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
+	return ReplayProtectionSnapshot
 }
