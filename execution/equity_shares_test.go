@@ -346,5 +346,4 @@ func TestSnapshotWithChanges(t *testing.T) {
 	// Check the hashes match
 	hash3 := getHash(es2)
 	assert.Equal(t, hash2, hash3)
-
 }

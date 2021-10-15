@@ -18,6 +18,7 @@ import (
 )
 
 func createEngine(t *testing.T) *execution.Engine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	executionConfig := execution.NewDefaultConfig()

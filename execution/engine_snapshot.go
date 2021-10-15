@@ -111,7 +111,7 @@ func (e *Engine) GetHash(_ string) ([]byte, error) {
 	return hash, nil
 }
 
-// Snapshot is a sync call to get the state for all keys
+// Snapshot is a sync call to get the state for all keys.
 func (e *Engine) Snapshot() (map[string][]byte, error) {
 	serialised, _, err := e.getSerialiseSnapshotAndHash()
 	if err != nil {

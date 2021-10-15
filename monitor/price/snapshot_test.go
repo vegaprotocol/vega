@@ -17,6 +17,7 @@ import (
 )
 
 func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
+	t.Helper()
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
 
@@ -24,7 +25,8 @@ func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 1}
+		UpdateFrequency: 1,
+	}
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
@@ -104,5 +106,4 @@ func TestChangedState(t *testing.T) {
 	hash3 := getHash(pm2)
 
 	assert.Equal(t, hash2, hash3)
-
 }
