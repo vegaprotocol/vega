@@ -45,7 +45,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+	vegaPaths := paths.New(genesisCmd.VegaHome)
 
 	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err

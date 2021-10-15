@@ -10,8 +10,11 @@ cloud.google.com/go/datastore v1.0.0/go.mod h1:LXYbyblFSglQ5pkeyhO+Qmw7ukd3C+pD7
 cloud.google.com/go/firestore v1.1.0/go.mod h1:ulACoGHTpvq5r8rxGJ4ddJZBZqakUQqClKRT5SZwBmk=
 cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2kNxGRt3I=
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
-code.vegaprotocol.io/go-wallet v0.9.0-pre4.0.20211007082923-29e4a2c108a1 h1:Z15pDZS+HNKjfMeMhs81M64ih92KDCyb6LMjveUy5JU=
 code.vegaprotocol.io/go-wallet v0.9.0-pre4.0.20211007082923-29e4a2c108a1/go.mod h1:rtrVN1n0XTV33HSY593/HaCpXCRyfOew0IHS+N9UR68=
+code.vegaprotocol.io/go-wallet v0.9.0-pre4.0.20211015091622-c112363a7d4f h1:xVkIJHzBfssNW/TvgWhYXJf2IJsnXdHJfsGobAvxezs=
+code.vegaprotocol.io/go-wallet v0.9.0-pre4.0.20211015091622-c112363a7d4f/go.mod h1:Hia2pYUkqYjA0u0a7tpBTwa/+2TxF55v65hiKOz/CnE=
+code.vegaprotocol.io/go-wallet v0.9.0-pre4.0.20211015155859-687799acd28e h1:cap3Wrdr4vmMJnCZQsZiSF1jSpUtmKAkcdSIV4wRo8U=
+code.vegaprotocol.io/go-wallet v0.9.0-pre4.0.20211015155859-687799acd28e/go.mod h1:Hia2pYUkqYjA0u0a7tpBTwa/+2TxF55v65hiKOz/CnE=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3 h1:/A09Q3EEiJF+/WiJfKiqzp1zvcWphiYR8lf2N/JSJBU=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
 code.vegaprotocol.io/protos v0.43.1-0.20211004102311-d2ad34ada37b/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
@@ -19,9 +22,10 @@ code.vegaprotocol.io/protos v0.44.1-0.20211018115443-2ce558a03e71 h1:hkDZzUL7LOS
 code.vegaprotocol.io/protos v0.44.1-0.20211018115443-2ce558a03e71/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
-code.vegaprotocol.io/shared v0.0.0-20210907092733-405b656c2f5b/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=
-code.vegaprotocol.io/shared v0.0.0-20210920084547-4d2225c561d6 h1:EetjWJVqonprNkq5qJhIHhojhA+gejy2mNeL+DyYhZs=
-code.vegaprotocol.io/shared v0.0.0-20210920084547-4d2225c561d6/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=
+code.vegaprotocol.io/shared v0.0.0-20211011145318-554fafdfeb34 h1:jvLT/H+GkrMaDjcNy4nJe2gIXhS3G5UYbnj77qiWGPA=
+code.vegaprotocol.io/shared v0.0.0-20211011145318-554fafdfeb34/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=
+code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090 h1:SF7ZRvZ/JASJNEQigbuUwk1rQuugLy6gqbOFs8D8VXI=
+code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/Azure/azure-pipeline-go v0.2.1/go.mod h1:UGSo8XybXnIGZ3epmeBw7Jdz+HiUVpqIlpz/HKHylF4=
