@@ -7624,7 +7624,7 @@ type PositionResolution {
   "number of partys closed out"
   closed: Int!
   "the mark price at which partys were distressed/closed out"
-  markPrice: Int!
+  markPrice: String!
 }
 
 type LossSocialization {
@@ -7633,14 +7633,14 @@ type LossSocialization {
   "the party that was part of the loss socialization"
   partyId: ID!
   "the amount lost"
-  amount: Int!
+  amount: String!
 }
 
 type TradeSettlement {
   "the size of the trade"
   size: Int!
   "the price of the trade"
-  price: Int!
+  price: String!
 }
 
 type SettlePosition {
@@ -7649,7 +7649,7 @@ type SettlePosition {
   "the party who settled a position"
   partyId: ID!
   "the settle price"
-  price: Int!
+  price: String!
   "the trades that were settled to close the overall position"
   tradeSettlements: [TradeSettlement!]
 }
@@ -7660,9 +7660,9 @@ type SettleDistressed {
   "the party who closed out"
   partyId: ID!
   "the margin taken from distressed party"
-  margin: Int!
+  margin: String!
   "the price at which position was closed out"
-  price: Int!
+  price: String!
 }
 
 type MarketTick {
@@ -13905,9 +13905,9 @@ func (ec *executionContext) _LossSocialization_amount(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _MarginCalculator_scalingFactors(ctx context.Context, field graphql.CollectedField, obj *vega.MarginCalculator) (ret graphql.Marshaler) {
@@ -20290,9 +20290,9 @@ func (ec *executionContext) _PositionResolution_markPrice(ctx context.Context, f
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PriceLevel_price(ctx context.Context, field graphql.CollectedField, obj *vega.PriceLevel) (ret graphql.Marshaler) {
@@ -23369,9 +23369,9 @@ func (ec *executionContext) _SettleDistressed_margin(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SettleDistressed_price(ctx context.Context, field graphql.CollectedField, obj *SettleDistressed) (ret graphql.Marshaler) {
@@ -23404,9 +23404,9 @@ func (ec *executionContext) _SettleDistressed_price(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SettlePosition_marketId(ctx context.Context, field graphql.CollectedField, obj *SettlePosition) (ret graphql.Marshaler) {
@@ -23509,9 +23509,9 @@ func (ec *executionContext) _SettlePosition_price(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SettlePosition_tradeSettlements(ctx context.Context, field graphql.CollectedField, obj *SettlePosition) (ret graphql.Marshaler) {
@@ -26454,9 +26454,9 @@ func (ec *executionContext) _TradeSettlement_price(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, field graphql.CollectedField, obj *TransactionSubmitted) (ret graphql.Marshaler) {

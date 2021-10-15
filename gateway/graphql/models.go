@@ -186,7 +186,7 @@ type LossSocialization struct {
 	// the party that was part of the loss socialization
 	PartyID string `json:"partyId"`
 	// the amount lost
-	Amount int `json:"amount"`
+	Amount string `json:"amount"`
 }
 
 func (LossSocialization) IsEvent() {}
@@ -235,7 +235,7 @@ type PositionResolution struct {
 	// number of partys closed out
 	Closed int `json:"closed"`
 	// the mark price at which partys were distressed/closed out
-	MarkPrice int `json:"markPrice"`
+	MarkPrice string `json:"markPrice"`
 }
 
 func (PositionResolution) IsEvent() {}
@@ -325,9 +325,9 @@ type SettleDistressed struct {
 	// the party who closed out
 	PartyID string `json:"partyId"`
 	// the margin taken from distressed party
-	Margin int `json:"margin"`
+	Margin string `json:"margin"`
 	// the price at which position was closed out
-	Price int `json:"price"`
+	Price string `json:"price"`
 }
 
 func (SettleDistressed) IsEvent() {}
@@ -338,7 +338,7 @@ type SettlePosition struct {
 	// the party who settled a position
 	PartyID string `json:"partyId"`
 	// the settle price
-	Price int `json:"price"`
+	Price string `json:"price"`
 	// the trades that were settled to close the overall position
 	TradeSettlements []*TradeSettlement `json:"tradeSettlements"`
 }
@@ -446,7 +446,7 @@ type TradeSettlement struct {
 	// the size of the trade
 	Size int `json:"size"`
 	// the price of the trade
-	Price int `json:"price"`
+	Price string `json:"price"`
 }
 
 type TransactionSubmitted struct {

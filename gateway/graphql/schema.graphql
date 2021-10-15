@@ -2367,7 +2367,7 @@ type PositionResolution {
   "number of partys closed out"
   closed: Int!
   "the mark price at which partys were distressed/closed out"
-  markPrice: Int!
+  markPrice: String!
 }
 
 type LossSocialization {
@@ -2376,14 +2376,14 @@ type LossSocialization {
   "the party that was part of the loss socialization"
   partyId: ID!
   "the amount lost"
-  amount: Int!
+  amount: String!
 }
 
 type TradeSettlement {
   "the size of the trade"
   size: Int!
   "the price of the trade"
-  price: Int!
+  price: String!
 }
 
 type SettlePosition {
@@ -2392,7 +2392,7 @@ type SettlePosition {
   "the party who settled a position"
   partyId: ID!
   "the settle price"
-  price: Int!
+  price: String!
   "the trades that were settled to close the overall position"
   tradeSettlements: [TradeSettlement!]
 }
@@ -2403,9 +2403,9 @@ type SettleDistressed {
   "the party who closed out"
   partyId: ID!
   "the margin taken from distressed party"
-  margin: Int!
+  margin: String!
   "the price at which position was closed out"
-  price: Int!
+  price: String!
 }
 
 type MarketTick {
