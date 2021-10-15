@@ -41,7 +41,6 @@ import (
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
-	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 )
@@ -70,7 +69,6 @@ type Config struct {
 	Assets            assets.Config      `group:"Assets" namespace:"assets"`
 	Notary            notary.Config      `group:"Notary" namespace:"notary"`
 	EvtForward        evtforward.Config  `group:"EvtForward" namespace:"evtForward"`
-	Subscribers       subscribers.Config `group:"Subscribers" namespace:"subscribers"`
 	Genesis           genesis.Config     `group:"Genesis" namespace:"genesis"`
 	Validators        validators.Config  `group:"Validators" namespace:"validators"`
 	Banking           banking.Config     `group:"Banking" namespace:"banking"`
@@ -119,7 +117,6 @@ func NewDefaultConfig() Config {
 		Validators:        validators.NewDefaultConfig(),
 		Banking:           banking.NewDefaultConfig(),
 		Stats:             stats.NewDefaultConfig(),
-		Subscribers:       subscribers.NewDefaultConfig(),
 		NetworkParameters: netparams.NewDefaultConfig(),
 		Limits:            limits.NewDefaultConfig(),
 		Checkpoint:        checkpoint.NewDefaultConfig(),

@@ -57,7 +57,7 @@ func (opts *AccountsMarketCmd) Execute(params []string) error {
 	return nil
 }
 
-func (opts *AccountsNetworkCmd) Execute(params []string) error {
+func (opts *AccountsNetworkCmd) Execute(_ []string) error {
 	req := apipb.ListAccountsRequest{}
 	return getPrintAccounts(opts.NodeAddress, &req)
 }
@@ -83,7 +83,7 @@ func getPrintAccounts(nodeAddress string, req *apipb.ListAccountsRequest) error 
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

@@ -16,25 +16,26 @@ import (
 )
 
 type testNotary struct {
-	*notary.Notary
+	*notary.SnapshotNotary
 	ctrl *gomock.Controller
 	top  *mocks.MockValidatorTopology
 	cmd  *mocks.MockCommander
 }
 
 func getTestNotary(t *testing.T) *testNotary {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	top := mocks.NewMockValidatorTopology(ctrl)
 	broker := bmock.NewMockBroker(ctrl)
 	cmd := mocks.NewMockCommander(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
-	notr := notary.New(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd)
+	notr := notary.NewWithSnapshot(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd)
 	return &testNotary{
-		Notary: notr,
-		top:    top,
-		ctrl:   ctrl,
-		cmd:    cmd,
+		SnapshotNotary: notr,
+		top:            top,
+		ctrl:           ctrl,
+		cmd:            cmd,
 	}
 }
 

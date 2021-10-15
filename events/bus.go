@@ -19,26 +19,26 @@ var (
 
 type Type int
 
-// simple interface for event filtering on market ID
+// simple interface for event filtering on market ID.
 type marketFilterable interface {
 	Event
 	MarketID() string
 }
 
-// simple interface for event filtering on party ID
+// simple interface for event filtering on party ID.
 type partyFilterable interface {
 	Event
 	IsParty(id string) bool
 }
 
-// simple interface for event filtering by party and market ID
+// simple interface for event filtering by party and market ID.
 type marketPartyFilterable interface {
 	Event
 	MarketID() string
 	PartyID() string
 }
 
-// Base common denominator all event-bus events share
+// Base common denominator all event-bus events share.
 type Base struct {
 	ctx     context.Context
 	traceID string
@@ -48,7 +48,7 @@ type Base struct {
 }
 
 // Event - the base event interface type, add sequence ID setter here, because the type assertions in broker
-// seem to be a bottleneck. Change its behaviour so as to only set the sequence ID once
+// seem to be a bottleneck. Change its behaviour so as to only set the sequence ID once.
 type Event interface {
 	Type() Type
 	Context() context.Context
@@ -59,9 +59,9 @@ type Event interface {
 }
 
 const (
-	// All event type -> used by subscrubers to just receive all events, has no actual corresponding event payload
+	// All event type -> used by subscrubers to just receive all events, has no actual corresponding event payload.
 	All Type = iota
-	// other event types that DO have corresponding event types
+	// other event types that DO have corresponding event types.
 	TimeUpdate
 	TransferResponses
 	PositionResolution
@@ -229,7 +229,7 @@ var (
 	}
 )
 
-// A base event holds no data, so the constructor will not be called directly
+// A base event holds no data, so the constructor will not be called directly.
 func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := vgcontext.TraceIDFromContext(ctx)
 	h, _ := vgcontext.BlockHeightFromContext(ctx)
@@ -241,7 +241,7 @@ func newBase(ctx context.Context, t Type) *Base {
 	}
 }
 
-// TraceID returns the... traceID obviously
+// TraceID returns the... traceID obviously.
 func (b Base) TraceID() string {
 	return b.traceID
 }
@@ -254,17 +254,17 @@ func (b *Base) SetSequenceID(s uint64) {
 	b.seq = s
 }
 
-// Sequence returns event sequence number
+// Sequence returns event sequence number.
 func (b Base) Sequence() uint64 {
 	return b.seq
 }
 
-// Context returns context
+// Context returns context.
 func (b Base) Context() context.Context {
 	return b.ctx
 }
 
-// Type returns the event type
+// Type returns the event type.
 func (b Base) Type() Type {
 	return b.et
 }
@@ -273,12 +273,12 @@ func (b Base) eventID() string {
 	return fmt.Sprintf("%d-%d", b.blockNr, b.seq)
 }
 
-// MarketEvents return all the possible market events
+// MarketEvents return all the possible market events.
 func MarketEvents() []Type {
 	return marketEvents
 }
 
-// String get string representation of event type
+// String get string representation of event type.
 func (t Type) String() string {
 	s, ok := eventStrings[t]
 	if !ok {
@@ -289,7 +289,7 @@ func (t Type) String() string {
 
 // ProtoToInternal converts the proto message enum to our internal constants
 // we're not using a map to de-duplicate the event types here, so we can exploit
-// duplicating the same event to control the internal subscriber channel buffer
+// duplicating the same event to control the internal subscriber channel buffer.
 func ProtoToInternal(pTypes ...eventspb.BusEventType) ([]Type, error) {
 	ret := make([]Type, 0, len(pTypes))
 	for _, t := range pTypes {

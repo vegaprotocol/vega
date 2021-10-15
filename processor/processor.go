@@ -130,7 +130,7 @@ type ValidatorTopology interface {
 	IsValidator() bool
 }
 
-// Broker - the event bus
+// Broker - the event bus.
 type Broker interface {
 	Send(e events.Event)
 }

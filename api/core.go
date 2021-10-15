@@ -54,7 +54,7 @@ type coreService struct {
 	netInfoMu sync.RWMutex
 }
 
-// no need for a mutext - we only access the config through a value receiver
+// no need for a mutext - we only access the config through a value receiver.
 func (s *coreService) updateConfig(conf Config) {
 	s.conf = conf
 }
@@ -64,6 +64,7 @@ func (s *coreService) LastBlockHeight(
 	req *protoapi.LastBlockHeightRequest,
 ) (*protoapi.LastBlockHeightResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("LastBlockHeight")()
+
 	return &protoapi.LastBlockHeightResponse{
 		Height: s.stats.Blockchain.Height(),
 	}, nil
@@ -73,6 +74,7 @@ func (s *coreService) LastBlockHeight(
 // Example: "1568025900111222333" corresponds to 2019-09-09T10:45:00.111222333Z.
 func (s *coreService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRequest) (*protoapi.GetVegaTimeResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVegaTime")()
+
 	return &protoapi.GetVegaTimeResponse{
 		Timestamp: s.timesvc.GetTimeNow().UnixNano(),
 	}, nil
@@ -97,6 +99,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 			return nil, apiError(codes.InvalidArgument, err)
 		}
 		s.log.Debug("unable to submit transaction", logging.Error(err))
+
 		return nil, apiError(codes.Internal, err)
 	}
 
@@ -122,7 +125,7 @@ func (s *coreService) PropagateChainEvent(ctx context.Context, req *protoapi.Pro
 		return nil, apiError(codes.InvalidArgument, fmt.Errorf("not a valid chain event: %w", err))
 	}
 
-	var ok = true
+	ok := true
 	err = s.evtForwarder.Forward(ctx, &evt, req.PubKey)
 	if err != nil && err != evtforward.ErrEvtAlreadyExist {
 		s.log.Error("unable to forward chain event",
@@ -176,7 +179,7 @@ func verifySignature(
 
 // Statistics provides various blockchain and Vega statistics, including:
 // Blockchain height, backlog length, current time, orders and trades per block, tendermint version
-// Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version
+// Vega counts for parties, markets, order actions (amend, cancel, submit), Vega version.
 func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequest) (*protoapi.StatisticsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Statistics")()
 	// Call tendermint and related services to get information for statistics
@@ -240,7 +243,6 @@ func (s *coreService) getTendermintStats(
 	chainID string,
 	err error,
 ) {
-
 	if s.stats == nil || s.stats.Blockchain == nil {
 		return 0, 0, nil, "", apiError(codes.Internal, ErrChainNotConnected)
 	}
@@ -265,13 +267,13 @@ func (s *coreService) getTendermintStats(
 	// Net info provides peer stats etc (block chain network info) == number of peers
 	netInfo, err := s.getTMNetInfo(ctx)
 	if err != nil {
-		return backlogLength, 0, &s.genesisTime, s.chainID, nil
+		return backlogLength, 0, &s.genesisTime, s.chainID, nil //nolint
 	}
 
 	return backlogLength, netInfo.NPeers, &s.genesisTime, s.chainID, nil
 }
 
-func (s *coreService) getTMNetInfo(ctx context.Context) (tmctypes.ResultNetInfo, error) {
+func (s *coreService) getTMNetInfo(_ context.Context) (tmctypes.ResultNetInfo, error) {
 	s.netInfoMu.RLock()
 	defer s.netInfoMu.RUnlock()
 
@@ -342,7 +344,7 @@ func (s *coreService) ObserveEventBus(
 	req, err := s.recvEventRequest(stream)
 	if err != nil {
 		// client exited, nothing to do
-		return nil
+		return nil //nolint
 	}
 
 	if err := req.Validate(); err != nil {
@@ -373,7 +375,6 @@ func (s *coreService) ObserveEventBus(
 	if req.BatchSize > 0 {
 		err := s.observeEventsWithAck(ctx, stream, req.BatchSize, ch, bCh)
 		return err
-
 	}
 	err = s.observeEvents(ctx, stream, ch)
 	return err

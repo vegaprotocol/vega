@@ -139,6 +139,7 @@ func TestInstrument(t *testing.T) {
 }
 
 func newOracleEngine(t *testing.T) products.OracleEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()

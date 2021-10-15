@@ -13,13 +13,12 @@ import (
 )
 
 const (
-	configFileName = "config.toml"
-	namedLogger    = "cfgwatcher"
+	namedLogger = "cfgwatcher"
 )
 
-// Watcher is looking for updates in the configurations files
+// Watcher is looking for updates in the configurations files.
 type Watcher struct {
-	log  *logging.Logger
+	log            *logging.Logger
 	cfg            Config
 	configFilePath string
 
@@ -40,7 +39,7 @@ func Use(use func(*Config) error) Option {
 	return fn
 }
 
-// NewWatcher instantiate a new watcher from the vega config files
+// NewWatcher instantiate a new watcher from the vega config files.
 func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths, opts ...Option) (*Watcher, error) {
 	watcherLog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
@@ -100,7 +99,7 @@ func (w *Watcher) OnTimeUpdate(_ context.Context, _ time.Time) {
 	atomic.StoreInt32(&w.hasChanged, 0)
 }
 
-// Get return the last update of the configuration
+// Get return the last update of the configuration.
 func (w *Watcher) Get() Config {
 	w.mu.Lock()
 	conf := w.cfg
@@ -108,7 +107,7 @@ func (w *Watcher) Get() Config {
 	return conf
 }
 
-// OnConfigUpdate register a function to be called when the configuration is getting updated
+// OnConfigUpdate register a function to be called when the configuration is getting updated.
 func (w *Watcher) OnConfigUpdate(fns ...func(Config)) {
 	w.mu.Lock()
 	w.cfgUpdateListeners = append(w.cfgUpdateListeners, fns...)

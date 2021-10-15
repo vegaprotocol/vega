@@ -40,6 +40,7 @@ type evt struct {
 }
 
 func getBroker(t *testing.T) *brokerTst {
+	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())
@@ -547,7 +548,7 @@ func testSubscriberSkip(t *testing.T) {
 	close(closeCh)
 }
 
-// test making sure that events are sent only to subs that are interested in it
+// test making sure that events are sent only to subs that are interested in it.
 func testEventTypeSubscription(t *testing.T) {
 	t.Parallel()
 	broker := getBroker(t)

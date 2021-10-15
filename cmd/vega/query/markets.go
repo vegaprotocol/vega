@@ -12,7 +12,7 @@ type MarketsCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *MarketsCmd) Execute(params []string) error {
+func (opts *MarketsCmd) Execute(_ []string) error {
 	req := apipb.ListMarketsRequest{}
 	return getPrintMarkets(opts.NodeAddress, &req)
 }
@@ -38,7 +38,7 @@ func getPrintMarkets(nodeAddress string, req *apipb.ListMarketsRequest) error {
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

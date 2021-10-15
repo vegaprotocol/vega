@@ -75,6 +75,10 @@ type PayloadBankingSeen struct {
 	BankingSeen *BankingSeen
 }
 
+type PayloadBankingAssetActions struct {
+	BankingAssetActions *BankingAssetActions
+}
+
 type PayloadCheckpoint struct {
 	Checkpoint *CPState
 }
@@ -115,6 +119,10 @@ type PayloadGovernanceEnacted struct {
 	GovernanceEnacted *GovernanceEnacted
 }
 
+type PayloadGovernanceNode struct {
+	GovernanceNode *GovernanceNode
+}
+
 type PayloadMarketPositions struct {
 	MarketPositions *MarketPositions
 }
@@ -137,6 +145,22 @@ type PayloadStakingAccounts struct {
 
 type PayloadEpoch struct {
 	EpochState *EpochState
+}
+
+type PayloadLimitState struct {
+	LimitState *LimitState
+}
+
+type PayloadNotary struct {
+	Notary *Notary
+}
+
+type PayloadReplayProtection struct {
+	Blocks []*ReplayBlockTransactions
+}
+
+type ReplayBlockTransactions struct {
+	Transactions []string
 }
 
 type MatchingBook struct {
@@ -227,6 +251,17 @@ type EpochState struct {
 	ReadyToEndEpoch      bool
 }
 
+type LimitState struct {
+	BlockCount               uint32
+	CanProposeMarket         bool
+	CanProposeAsset          bool
+	GenesisLoaded            bool
+	ProposeMarketEnabled     bool
+	ProposeAssetEnabled      bool
+	ProposeMarketEnabledFrom time.Time
+	ProposeAssetEnabledFrom  time.Time
+}
+
 type EquityShare struct {
 	Mvp                 num.Decimal
 	OpeningAuctionEnded bool
@@ -277,6 +312,22 @@ type TxRef struct {
 	LogIndex uint64
 }
 
+type BankingAssetActions struct {
+	AssetAction []*AssetAction
+}
+
+type AssetAction struct {
+	ID          string
+	State       uint32
+	Asset       string
+	BlockNumber uint64
+	TxIndex     uint64
+	Hash        string
+	BuiltinD    *BuiltinAssetDeposit
+	Erc20D      *ERC20Deposit
+	Erc20AL     *ERC20AssetList
+}
+
 type CPState struct {
 	NextCp int64
 }
@@ -320,6 +371,10 @@ type GovernanceEnacted struct {
 	Proposals []*Proposal
 }
 
+type GovernanceNode struct {
+	Proposals []*Proposal
+}
+
 type PendingProposal struct {
 	Proposal *Proposal
 	Yes      []*Vote
@@ -347,6 +402,17 @@ type StakingAccount struct {
 	Party   string
 	Balance *num.Uint
 	Events  []*StakeLinking
+}
+
+type NotarySigs struct {
+	ID   string
+	Kind int32
+	Node string
+	Sig  string
+}
+
+type Notary struct {
+	Sigs []*NotarySigs
 }
 
 func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
@@ -479,6 +545,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadBankingDepositsFromProto(dt)
 	case *snapshot.Payload_BankingSeen:
 		ret.Data = PayloadBankingSeenFromProto(dt)
+	case *snapshot.Payload_BankingAssetActions:
+		ret.Data = PayloadBankingAssetActionsFromProto(dt)
 	case *snapshot.Payload_Checkpoint:
 		ret.Data = PayloadCheckpointFromProto(dt)
 	case *snapshot.Payload_CollateralAssets:
@@ -495,6 +563,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadGovernanceActiveFromProto(dt)
 	case *snapshot.Payload_GovernanceEnacted:
 		ret.Data = PayloadGovernanceEnactedFromProto(dt)
+	case *snapshot.Payload_GovernanceNode:
+		ret.Data = PayloadGovernanceNodeFromProto(dt)
 	case *snapshot.Payload_MarketPositions:
 		ret.Data = PayloadMarketPositionsFromProto(dt)
 	case *snapshot.Payload_MatchingBook:
@@ -509,6 +579,18 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakingAccountsFromProto(dt)
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = PayloadDelegationAutoFromProto(dt)
+	case *snapshot.Payload_LimitState:
+		ret.Data = PayloadLimitStateFromProto(dt)
+	case *snapshot.Payload_RewardsPendingPayouts:
+		ret.Data = PayloadRewardPayoutFromProto(dt)
+	case *snapshot.Payload_VoteSpamPolicy:
+		ret.Data = PayloadVoteSpamPolicyFromProto(dt)
+	case *snapshot.Payload_SimpleSpamPolicy:
+		ret.Data = PayloadSimpleSpamPolicyFromProto(dt)
+	case *snapshot.Payload_Notary:
+		ret.Data = PayloadNotaryFromProto(dt)
+	case *snapshot.Payload_ReplayProtection:
+		ret.Data = PayloadReplayProtectionFromProto(dt)
 	}
 	return ret
 }
@@ -546,6 +628,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_BankingWithdrawals:
 		ret.Data = dt
+	case *snapshot.Payload_BankingAssetActions:
+		ret.Data = dt
 	case *snapshot.Payload_CollateralAssets:
 		ret.Data = dt
 	case *snapshot.Payload_CollateralAccounts:
@@ -566,6 +650,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_GovernanceEnacted:
 		ret.Data = dt
+	case *snapshot.Payload_GovernanceNode:
+		ret.Data = dt
 	case *snapshot.Payload_Checkpoint:
 		ret.Data = dt
 	case *snapshot.Payload_Epoch:
@@ -573,6 +659,18 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = dt
 	case *snapshot.Payload_ExecutionIdGenerator:
+		ret.Data = dt
+	case *snapshot.Payload_LimitState:
+		ret.Data = dt
+	case *snapshot.Payload_RewardsPendingPayouts:
+		ret.Data = dt
+	case *snapshot.Payload_VoteSpamPolicy:
+		ret.Data = dt
+	case *snapshot.Payload_SimpleSpamPolicy:
+		ret.Data = dt
+	case *snapshot.Payload_Notary:
+		ret.Data = dt
+	case *snapshot.Payload_ReplayProtection:
 		ret.Data = dt
 	}
 	return &ret
@@ -705,6 +803,32 @@ func (*PayloadBankingSeen) Key() string {
 }
 
 func (*PayloadBankingSeen) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingAssetActionsFromProto(pbs *snapshot.Payload_BankingAssetActions) *PayloadBankingAssetActions {
+	return &PayloadBankingAssetActions{
+		BankingAssetActions: BankingAssetActionsFromProto(pbs.BankingAssetActions),
+	}
+}
+
+func (p PayloadBankingAssetActions) IntoProto() *snapshot.Payload_BankingAssetActions {
+	return &snapshot.Payload_BankingAssetActions{
+		BankingAssetActions: p.BankingAssetActions.IntoProto(),
+	}
+}
+
+func (*PayloadBankingAssetActions) isPayload() {}
+
+func (p *PayloadBankingAssetActions) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingAssetActions) Key() string {
+	return "assetActions"
+}
+
+func (*PayloadBankingAssetActions) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
@@ -942,6 +1066,32 @@ func (*PayloadGovernanceActive) Namespace() SnapshotNamespace {
 	return GovernanceSnapshot
 }
 
+func PayloadGovernanceNodeFromProto(gn *snapshot.Payload_GovernanceNode) *PayloadGovernanceNode {
+	return &PayloadGovernanceNode{
+		GovernanceNode: GovernanceNodeFromProto(gn.GovernanceNode),
+	}
+}
+
+func (p PayloadGovernanceNode) IntoProto() *snapshot.Payload_GovernanceNode {
+	return &snapshot.Payload_GovernanceNode{
+		GovernanceNode: p.GovernanceNode.IntoProto(),
+	}
+}
+
+func (*PayloadGovernanceNode) isPayload() {}
+
+func (p *PayloadGovernanceNode) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadGovernanceNode) Key() string {
+	return "node"
+}
+
+func (*PayloadGovernanceNode) Namespace() SnapshotNamespace {
+	return GovernanceSnapshot
+}
+
 func PayloadGovernanceEnactedFromProto(ga *snapshot.Payload_GovernanceEnacted) *PayloadGovernanceEnacted {
 	return &PayloadGovernanceEnacted{
 		GovernanceEnacted: GovernanceEnactedFromProto(ga.GovernanceEnacted),
@@ -1108,6 +1258,45 @@ func (*PayloadEpoch) Namespace() SnapshotNamespace {
 	return EpochSnapshot
 }
 
+func PayloadLimitStateFromProto(l *snapshot.Payload_LimitState) *PayloadLimitState {
+	return &PayloadLimitState{
+		LimitState: LimitFromProto(l.LimitState),
+	}
+}
+
+func (p PayloadLimitState) IntoProto() *snapshot.Payload_LimitState {
+	return &snapshot.Payload_LimitState{
+		LimitState: p.LimitState.IntoProto(),
+	}
+}
+
+func LimitFromProto(l *snapshot.LimitState) *LimitState {
+	return &LimitState{
+		BlockCount:               l.BlockCount,
+		CanProposeMarket:         l.CanProposeMarket,
+		CanProposeAsset:          l.CanProposeAsset,
+		GenesisLoaded:            l.GenesisLoaded,
+		ProposeMarketEnabled:     l.ProposeMarketEnabled,
+		ProposeAssetEnabled:      l.ProposeAssetEnabled,
+		ProposeMarketEnabledFrom: time.Unix(0, l.ProposeMarketEnabledFrom).UTC(),
+		ProposeAssetEnabledFrom:  time.Unix(0, l.ProposeAssetEnabledFrom).UTC(),
+	}
+}
+
+func (*PayloadLimitState) isPayload() {}
+
+func (p *PayloadLimitState) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadLimitState) Key() string {
+	return "all"
+}
+
+func (*PayloadLimitState) Namespace() SnapshotNamespace {
+	return LimitSnapshot
+}
+
 func PayloadStakingAccountsFromProto(sa *snapshot.Payload_StakingAccounts) *PayloadStakingAccounts {
 	return &PayloadStakingAccounts{
 		StakingAccounts: StakingAccountsFromProto(sa.StakingAccounts),
@@ -1260,6 +1449,76 @@ func (b BankingSeen) IntoProto() *snapshot.BankingSeen {
 		ret.Refs = append(ret.Refs, r.IntoProto())
 	}
 	return &ret
+}
+
+func (a *BankingAssetActions) IntoProto() *snapshot.BankingAssetActions {
+	ret := snapshot.BankingAssetActions{
+		AssetAction: make([]*snapshot.AssetAction, 0, len(a.AssetAction)),
+	}
+	for _, aa := range a.AssetAction {
+		ret.AssetAction = append(ret.AssetAction, aa.IntoProto())
+	}
+	return &ret
+}
+
+func (aa *AssetAction) IntoProto() *snapshot.AssetAction {
+	ret := &snapshot.AssetAction{
+		Id:          aa.ID,
+		State:       aa.State,
+		Asset:       aa.Asset,
+		BlockNumber: aa.BlockNumber,
+		TxIndex:     aa.TxIndex,
+		Hash:        aa.Hash,
+	}
+	if aa.BuiltinD != nil {
+		ret.BuiltinDeposit = aa.BuiltinD.IntoProto()
+	}
+	if aa.Erc20D != nil {
+		ret.Erc20Deposit = aa.Erc20D.IntoProto()
+	}
+	if aa.Erc20AL != nil {
+		ret.AssetList = aa.Erc20AL.IntoProto()
+	}
+	return ret
+}
+
+func BankingAssetActionsFromProto(aa *snapshot.BankingAssetActions) *BankingAssetActions {
+	ret := BankingAssetActions{
+		AssetAction: make([]*AssetAction, 0, len(aa.AssetAction)),
+	}
+
+	for _, a := range aa.AssetAction {
+		ret.AssetAction = append(ret.AssetAction, AssetActionFromProto(a))
+	}
+	return &ret
+}
+
+func AssetActionFromProto(a *snapshot.AssetAction) *AssetAction {
+	aa := &AssetAction{
+		ID:          a.Id,
+		State:       a.State,
+		Asset:       a.Asset,
+		BlockNumber: a.BlockNumber,
+		TxIndex:     a.TxIndex,
+		Hash:        a.Hash,
+	}
+	if a.Erc20Deposit != nil {
+		erc20d, err := NewERC20DepositFromProto(a.Erc20Deposit)
+		if err == nil {
+			aa.Erc20D = erc20d
+		}
+	} else {
+		builtind, err := NewBuiltinAssetDepositFromProto(a.BuiltinDeposit)
+		if err == nil {
+			aa.BuiltinD = builtind
+		}
+	}
+
+	if a.AssetList != nil {
+		aa.Erc20AL = NewERC20AssetListFromProto(a.AssetList)
+	}
+
+	return aa
 }
 
 func TxRefFromProto(t *snapshot.TxRef) *TxRef {
@@ -1437,6 +1696,26 @@ func GovernanceEnactedFromProto(ge *snapshot.GovernanceEnacted) *GovernanceEnact
 
 func (g GovernanceEnacted) IntoProto() *snapshot.GovernanceEnacted {
 	ret := snapshot.GovernanceEnacted{
+		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
+	}
+	for _, p := range g.Proposals {
+		ret.Proposals = append(ret.Proposals, p.IntoProto())
+	}
+	return &ret
+}
+
+func GovernanceNodeFromProto(ge *snapshot.GovernanceNode) *GovernanceNode {
+	ret := GovernanceNode{
+		Proposals: make([]*Proposal, 0, len(ge.Proposals)),
+	}
+	for _, p := range ge.Proposals {
+		ret.Proposals = append(ret.Proposals, ProposalFromProto(p))
+	}
+	return &ret
+}
+
+func (g GovernanceNode) IntoProto() *snapshot.GovernanceNode {
+	ret := snapshot.GovernanceNode{
 		Proposals: make([]*vega.Proposal, 0, len(g.Proposals)),
 	}
 	for _, p := range g.Proposals {
@@ -1625,9 +1904,7 @@ func (e EquityShare) IntoProto() *snapshot.EquityShare {
 }
 
 func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
-	var (
-		stake, share, avg num.Decimal
-	)
+	var stake, share, avg num.Decimal
 	if len(esl.Stake) > 0 {
 		stake, _ = num.DecimalFromString(esl.Stake)
 	}
@@ -1696,6 +1973,19 @@ func (e *EpochState) IntoProto() *snapshot.EpochState {
 	}
 }
 
+func (l *LimitState) IntoProto() *snapshot.LimitState {
+	return &snapshot.LimitState{
+		BlockCount:               l.BlockCount,
+		CanProposeMarket:         l.CanProposeMarket,
+		CanProposeAsset:          l.CanProposeAsset,
+		GenesisLoaded:            l.GenesisLoaded,
+		ProposeMarketEnabled:     l.ProposeMarketEnabled,
+		ProposeAssetEnabled:      l.ProposeAssetEnabled,
+		ProposeMarketEnabledFrom: l.ProposeMarketEnabledFrom.UnixNano(),
+		ProposeAssetEnabledFrom:  l.ProposeAssetEnabledFrom.UnixNano(),
+	}
+}
+
 func DecMapFromProto(dm *snapshot.DecimalMap) *DecMap {
 	var v num.Decimal
 	if len(dm.Val) > 0 {
@@ -1715,9 +2005,7 @@ func (d DecMap) IntoProto() *snapshot.DecimalMap {
 }
 
 func PriceBoundFromProto(pb *snapshot.PriceBound) *PriceBound {
-	var (
-		up, down num.Decimal
-	)
+	var up, down num.Decimal
 	if len(pb.UpFactor) > 0 {
 		up, _ = num.DecimalFromString(pb.UpFactor)
 	}
@@ -1742,9 +2030,7 @@ func (p PriceBound) IntoProto() *snapshot.PriceBound {
 }
 
 func PriceRangeFromProto(pr *snapshot.PriceRange) *PriceRange {
-	var (
-		min, max, ref num.Decimal
-	)
+	var min, max, ref num.Decimal
 	if len(pr.Min) > 0 {
 		min, _ = num.DecimalFromString(pr.Min)
 	}
@@ -1994,4 +2280,530 @@ func (*ExecutionIDGenerator) Namespace() SnapshotNamespace {
 
 func (*ExecutionIDGenerator) Key() string {
 	return "key"
+}
+
+type PartyTokenBalance struct {
+	Party   string
+	Balance *num.Uint
+}
+
+type PartyProposalVoteCount struct {
+	Party    string
+	Proposal string
+	Count    uint64
+}
+
+type PartyCount struct {
+	Party string
+	Count uint64
+}
+
+type BannedParty struct {
+	Party      string
+	UntilEpoch uint64
+}
+
+type BlockRejectStats struct {
+	Total    uint64
+	Rejected uint64
+}
+
+type PayloadVoteSpamPolicy struct {
+	VoteSpamPolicy *VoteSpamPolicy
+}
+
+type PayloadSimpleSpamPolicy struct {
+	SimpleSpamPolicy *SimpleSpamPolicy
+}
+
+type SimpleSpamPolicy struct {
+	PolicyName        string
+	PartyToCount      []*PartyCount
+	BannedParty       []*BannedParty
+	PartyTokenBalance []*PartyTokenBalance
+	CurrentEpochSeq   uint64
+}
+
+type VoteSpamPolicy struct {
+	PartyProposalVoteCount  []*PartyProposalVoteCount
+	BannedParty             []*BannedParty
+	PartyTokenBalance       []*PartyTokenBalance
+	RecentBlocksRejectStats []*BlockRejectStats
+	CurrentBlockIndex       uint64
+	LastIncreaseBlock       uint64
+	CurrentEpochSeq         uint64
+	MinVotingTokensFactor   *num.Uint
+}
+
+func PayloadSimpleSpamPolicyFromProto(ssp *snapshot.Payload_SimpleSpamPolicy) *PayloadSimpleSpamPolicy {
+	return &PayloadSimpleSpamPolicy{
+		SimpleSpamPolicy: SimpleSpamPolicyFromProto(ssp.SimpleSpamPolicy),
+	}
+}
+
+func PayloadVoteSpamPolicyFromProto(vsp *snapshot.Payload_VoteSpamPolicy) *PayloadVoteSpamPolicy {
+	return &PayloadVoteSpamPolicy{
+		VoteSpamPolicy: VoteSpamPolicyFromProto(vsp.VoteSpamPolicy),
+	}
+}
+
+func SimpleSpamPolicyFromProto(ssp *snapshot.SimpleSpamPolicy) *SimpleSpamPolicy {
+	partyCount := make([]*PartyCount, 0, len(ssp.PartyToCount))
+	for _, ptv := range ssp.PartyToCount {
+		partyCount = append(partyCount, PartyCountFromProto(ptv))
+	}
+
+	bannedParties := make([]*BannedParty, 0, len(ssp.BannedParties))
+	for _, ban := range ssp.BannedParties {
+		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
+	}
+
+	partyBalance := make([]*PartyTokenBalance, 0, len(ssp.TokenBalance))
+	for _, balance := range ssp.TokenBalance {
+		partyBalance = append(partyBalance, PartyTokenBalanceFromProto(balance))
+	}
+
+	return &SimpleSpamPolicy{
+		PolicyName:        ssp.PolicyName,
+		PartyToCount:      partyCount,
+		BannedParty:       bannedParties,
+		PartyTokenBalance: partyBalance,
+		CurrentEpochSeq:   ssp.CurrentEpochSeq,
+	}
+}
+
+func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
+	partyProposalVoteCount := make([]*PartyProposalVoteCount, 0, len(vsp.PartyToVote))
+	for _, ptv := range vsp.PartyToVote {
+		partyProposalVoteCount = append(partyProposalVoteCount, PartyProposalVoteCountFromProto(ptv))
+	}
+
+	bannedParties := make([]*BannedParty, 0, len(vsp.BannedParties))
+	for _, ban := range vsp.BannedParties {
+		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
+	}
+
+	partyBalance := make([]*PartyTokenBalance, 0, len(vsp.TokenBalance))
+	for _, balance := range vsp.TokenBalance {
+		partyBalance = append(partyBalance, PartyTokenBalanceFromProto(balance))
+	}
+
+	recentBlocksRejectStats := make([]*BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
+	for _, rejects := range vsp.RecentBlocksRejectStats {
+		recentBlocksRejectStats = append(recentBlocksRejectStats, BlockRejectStatsFromProto(rejects))
+	}
+
+	minTokensFactor, _ := num.UintFromString(vsp.MinVotingTokensFactor, 10)
+
+	return &VoteSpamPolicy{
+		PartyProposalVoteCount:  partyProposalVoteCount,
+		BannedParty:             bannedParties,
+		PartyTokenBalance:       partyBalance,
+		RecentBlocksRejectStats: recentBlocksRejectStats,
+		LastIncreaseBlock:       vsp.LastIncreaseBlock,
+		CurrentBlockIndex:       vsp.CurrentBlockIndex,
+		CurrentEpochSeq:         vsp.CurrentEpochSeq,
+		MinVotingTokensFactor:   minTokensFactor,
+	}
+}
+
+func BlockRejectStatsFromProto(rejects *snapshot.BlockRejectStats) *BlockRejectStats {
+	return &BlockRejectStats{
+		Total:    rejects.Total,
+		Rejected: rejects.Rejected,
+	}
+}
+
+func (brs *BlockRejectStats) IntoProto() *snapshot.BlockRejectStats {
+	return &snapshot.BlockRejectStats{
+		Total:    brs.Total,
+		Rejected: brs.Rejected,
+	}
+}
+
+func PartyTokenBalanceFromProto(balance *snapshot.PartyTokenBalance) *PartyTokenBalance {
+	b, _ := num.UintFromString(balance.Balance, 10)
+	return &PartyTokenBalance{
+		Party:   balance.Party,
+		Balance: b,
+	}
+}
+
+func BannedPartyFromProto(ban *snapshot.BannedParty) *BannedParty {
+	return &BannedParty{
+		Party:      ban.Party,
+		UntilEpoch: ban.UntilEpoch,
+	}
+}
+
+func PartyProposalVoteCountFromProto(ppvc *snapshot.PartyProposalVoteCount) *PartyProposalVoteCount {
+	return &PartyProposalVoteCount{
+		Party:    ppvc.Party,
+		Proposal: ppvc.Proposal,
+		Count:    ppvc.Count,
+	}
+}
+
+func PartyCountFromProto(pc *snapshot.SpamPartyTransactionCount) *PartyCount {
+	return &PartyCount{
+		Party: pc.Party,
+		Count: pc.Count,
+	}
+}
+
+func (p *PartyProposalVoteCount) IntoProto() *snapshot.PartyProposalVoteCount {
+	return &snapshot.PartyProposalVoteCount{
+		Party:    p.Party,
+		Proposal: p.Proposal,
+		Count:    p.Count,
+	}
+}
+
+func (b *BannedParty) IntoProto() *snapshot.BannedParty {
+	return &snapshot.BannedParty{
+		Party:      b.Party,
+		UntilEpoch: b.UntilEpoch,
+	}
+}
+
+func (ptc *PartyTokenBalance) IntoProto() *snapshot.PartyTokenBalance {
+	return &snapshot.PartyTokenBalance{
+		Party:   ptc.Party,
+		Balance: ptc.Balance.String(),
+	}
+}
+
+func (ssp *SimpleSpamPolicy) IntoProto() *snapshot.SimpleSpamPolicy {
+	partyToCount := make([]*snapshot.SpamPartyTransactionCount, 0, len(ssp.PartyToCount))
+	for _, pc := range ssp.PartyToCount {
+		partyToCount = append(partyToCount, &snapshot.SpamPartyTransactionCount{Party: pc.Party, Count: pc.Count})
+	}
+
+	bannedParties := make([]*snapshot.BannedParty, 0, len(ssp.BannedParty))
+	for _, ban := range ssp.BannedParty {
+		bannedParties = append(bannedParties, ban.IntoProto())
+	}
+
+	partyBalance := make([]*snapshot.PartyTokenBalance, 0, len(ssp.PartyTokenBalance))
+	for _, balance := range ssp.PartyTokenBalance {
+		partyBalance = append(partyBalance, balance.IntoProto())
+	}
+
+	return &snapshot.SimpleSpamPolicy{
+		PolicyName:      ssp.PolicyName,
+		PartyToCount:    partyToCount,
+		BannedParties:   bannedParties,
+		TokenBalance:    partyBalance,
+		CurrentEpochSeq: ssp.CurrentEpochSeq,
+	}
+}
+
+func (vsp *VoteSpamPolicy) IntoProto() *snapshot.VoteSpamPolicy {
+	partyProposalVoteCount := make([]*snapshot.PartyProposalVoteCount, 0, len(vsp.PartyProposalVoteCount))
+	for _, ptv := range vsp.PartyProposalVoteCount {
+		partyProposalVoteCount = append(partyProposalVoteCount, ptv.IntoProto())
+	}
+
+	bannedParties := make([]*snapshot.BannedParty, 0, len(vsp.BannedParty))
+	for _, ban := range vsp.BannedParty {
+		bannedParties = append(bannedParties, ban.IntoProto())
+	}
+
+	partyBalance := make([]*snapshot.PartyTokenBalance, 0, len(vsp.PartyTokenBalance))
+	for _, balance := range vsp.PartyTokenBalance {
+		partyBalance = append(partyBalance, balance.IntoProto())
+	}
+
+	recentBlocksRejectStats := make([]*snapshot.BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
+	for _, rejects := range vsp.RecentBlocksRejectStats {
+		recentBlocksRejectStats = append(recentBlocksRejectStats, rejects.IntoProto())
+	}
+	return &snapshot.VoteSpamPolicy{
+		PartyToVote:             partyProposalVoteCount,
+		BannedParties:           bannedParties,
+		TokenBalance:            partyBalance,
+		RecentBlocksRejectStats: recentBlocksRejectStats,
+		LastIncreaseBlock:       vsp.LastIncreaseBlock,
+		CurrentBlockIndex:       vsp.CurrentBlockIndex,
+		CurrentEpochSeq:         vsp.CurrentEpochSeq,
+		MinVotingTokensFactor:   vsp.MinVotingTokensFactor.String(),
+	}
+}
+
+func (p *PayloadVoteSpamPolicy) IntoProto() *snapshot.Payload_VoteSpamPolicy {
+	return &snapshot.Payload_VoteSpamPolicy{
+		VoteSpamPolicy: p.VoteSpamPolicy.IntoProto(),
+	}
+}
+
+func (*PayloadVoteSpamPolicy) isPayload() {}
+
+func (p *PayloadVoteSpamPolicy) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadVoteSpamPolicy) Key() string {
+	return "voteSpamPolicy"
+}
+
+func (*PayloadVoteSpamPolicy) Namespace() SnapshotNamespace {
+	return SpamSnapshot
+}
+
+func (p *PayloadSimpleSpamPolicy) IntoProto() *snapshot.Payload_SimpleSpamPolicy {
+	return &snapshot.Payload_SimpleSpamPolicy{
+		SimpleSpamPolicy: p.SimpleSpamPolicy.IntoProto(),
+	}
+}
+
+func (*PayloadSimpleSpamPolicy) isPayload() {}
+
+func (p *PayloadSimpleSpamPolicy) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadSimpleSpamPolicy) Key() string {
+	return p.SimpleSpamPolicy.PolicyName
+}
+
+func (*PayloadSimpleSpamPolicy) Namespace() SnapshotNamespace {
+	return SpamSnapshot
+}
+
+type PayloadRewardsPayout struct {
+	RewardsPendingPayouts *RewardsPendingPayouts
+}
+
+type RewardsPendingPayouts struct {
+	ScheduledRewardsPayout []*ScheduledRewardsPayout
+}
+
+type ScheduledRewardsPayout struct {
+	PayoutTime    int64
+	RewardsPayout []*RewardsPayout
+}
+
+type RewardsPayout struct {
+	FromAccount  string
+	Asset        string
+	PartyAmounts []*RewardsPartyAmount
+	TotalReward  *num.Uint
+	EpochSeq     string
+	Timestamp    int64
+}
+
+type RewardsPartyAmount struct {
+	Party  string
+	Amount *num.Uint
+}
+
+func PayloadRewardPayoutFromProto(rpp *snapshot.Payload_RewardsPendingPayouts) *PayloadRewardsPayout {
+	return &PayloadRewardsPayout{
+		RewardsPendingPayouts: RewardPendingPayoutsFromProto(rpp.RewardsPendingPayouts),
+	}
+}
+
+func RewardPendingPayoutsFromProto(rpps *snapshot.RewardsPendingPayouts) *RewardsPendingPayouts {
+	scheduledPayouts := make([]*ScheduledRewardsPayout, 0, len(rpps.ScheduledRewardsPayout))
+
+	for _, p := range rpps.ScheduledRewardsPayout {
+		scheduledPayouts = append(scheduledPayouts, ScheduledRewardsPayoutFromProto(p))
+	}
+
+	return &RewardsPendingPayouts{
+		ScheduledRewardsPayout: scheduledPayouts,
+	}
+}
+
+func ScheduledRewardsPayoutFromProto(srp *snapshot.ScheduledRewardsPayout) *ScheduledRewardsPayout {
+	payouts := make([]*RewardsPayout, 0, len(srp.RewardsPayout))
+	for _, p := range srp.RewardsPayout {
+		payouts = append(payouts, RewardsPayoutFromProto(p))
+	}
+
+	return &ScheduledRewardsPayout{
+		PayoutTime:    srp.PayoutTime,
+		RewardsPayout: payouts,
+	}
+}
+
+func RewardsPayoutFromProto(p *snapshot.RewardsPayout) *RewardsPayout {
+	totalReward, _ := num.UintFromString(p.TotalReward, 10)
+	partyAmounts := make([]*RewardsPartyAmount, 0, len(p.RewardPartyAmount))
+	for _, pa := range p.RewardPartyAmount {
+		amount, _ := num.UintFromString(pa.Amount, 10)
+		partyAmounts = append(partyAmounts, &RewardsPartyAmount{Party: pa.Party, Amount: amount})
+	}
+
+	return &RewardsPayout{
+		FromAccount:  p.FromAccount,
+		Asset:        p.Asset,
+		TotalReward:  totalReward,
+		EpochSeq:     p.EpochSeq,
+		Timestamp:    p.Timestamp,
+		PartyAmounts: partyAmounts,
+	}
+}
+
+func (p PayloadRewardsPayout) IntoProto() *snapshot.Payload_RewardsPendingPayouts {
+	return &snapshot.Payload_RewardsPendingPayouts{
+		RewardsPendingPayouts: p.RewardsPendingPayouts.IntoProto(),
+	}
+}
+
+func (rpp RewardsPendingPayouts) IntoProto() *snapshot.RewardsPendingPayouts {
+	scheduled := make([]*snapshot.ScheduledRewardsPayout, 0, len(rpp.ScheduledRewardsPayout))
+	for _, p := range rpp.ScheduledRewardsPayout {
+		scheduled = append(scheduled, p.IntoProto())
+	}
+	return &snapshot.RewardsPendingPayouts{
+		ScheduledRewardsPayout: scheduled,
+	}
+}
+
+func (srp ScheduledRewardsPayout) IntoProto() *snapshot.ScheduledRewardsPayout {
+	payouts := make([]*snapshot.RewardsPayout, 0, len(srp.RewardsPayout))
+	for _, p := range srp.RewardsPayout {
+		payouts = append(payouts, p.IntoProto())
+	}
+
+	return &snapshot.ScheduledRewardsPayout{
+		PayoutTime:    srp.PayoutTime,
+		RewardsPayout: payouts,
+	}
+}
+
+func (rp *RewardsPayout) IntoProto() *snapshot.RewardsPayout {
+	totalReward := rp.TotalReward.String()
+	partyAmounts := make([]*snapshot.RewardsPartyAmount, 0, len(rp.PartyAmounts))
+	for _, pa := range rp.PartyAmounts {
+		amount := pa.Amount.String()
+		partyAmounts = append(partyAmounts, &snapshot.RewardsPartyAmount{Party: pa.Party, Amount: amount})
+	}
+
+	return &snapshot.RewardsPayout{
+		FromAccount:       rp.FromAccount,
+		Asset:             rp.Asset,
+		TotalReward:       totalReward,
+		EpochSeq:          rp.EpochSeq,
+		Timestamp:         rp.Timestamp,
+		RewardPartyAmount: partyAmounts,
+	}
+}
+
+func (*PayloadRewardsPayout) isPayload() {}
+
+func (p *PayloadRewardsPayout) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadRewardsPayout) Key() string {
+	return "pendingPayout"
+}
+
+func (*PayloadRewardsPayout) Namespace() SnapshotNamespace {
+	return RewardSnapshot
+}
+
+func PayloadNotaryFromProto(n *snapshot.Payload_Notary) *PayloadNotary {
+	return &PayloadNotary{
+		Notary: NotaryFromProto(n.Notary),
+	}
+}
+
+func NotaryFromProto(n *snapshot.Notary) *Notary {
+	sigKinds := make([]*NotarySigs, 0, len(n.NotarySigs))
+
+	for _, sk := range n.NotarySigs {
+		sigKinds = append(sigKinds, NotarySigFromProto(sk))
+	}
+
+	return &Notary{
+		Sigs: sigKinds,
+	}
+}
+
+func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
+	return &NotarySigs{
+		ID:   sk.Id,
+		Kind: sk.Kind,
+		Node: sk.Node,
+		Sig:  sk.Sig,
+	}
+}
+
+func (p PayloadNotary) IntoProto() *snapshot.Payload_Notary {
+	return &snapshot.Payload_Notary{
+		Notary: p.Notary.IntoProto(),
+	}
+}
+
+func (n Notary) IntoProto() *snapshot.Notary {
+	sigKinds := make([]*snapshot.NotarySigs, 0, len(n.Sigs))
+	for _, sk := range n.Sigs {
+		sigKinds = append(sigKinds, sk.IntoProto())
+	}
+	return &snapshot.Notary{
+		NotarySigs: sigKinds,
+	}
+}
+
+func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
+	return &snapshot.NotarySigs{
+		Id:   sk.ID,
+		Kind: sk.Kind,
+		Node: sk.Node,
+		Sig:  sk.Sig,
+	}
+}
+
+func (*PayloadNotary) isPayload() {}
+
+func (p *PayloadNotary) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadNotary) Key() string {
+	return "all"
+}
+
+func (*PayloadNotary) Namespace() SnapshotNamespace {
+	return NotarySnapshot
+}
+
+func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
+	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
+	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
+		blocks = append(blocks, &ReplayBlockTransactions{Transactions: block.Tx[:]})
+	}
+	return &PayloadReplayProtection{
+		Blocks: blocks,
+	}
+}
+
+func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection {
+	recentBlocks := make([]*snapshot.RecentBlocksTransactions, 0, len(p.Blocks))
+
+	for _, block := range p.Blocks {
+		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: block.Transactions[:]})
+	}
+	return &snapshot.Payload_ReplayProtection{
+		ReplayProtection: &snapshot.ReplayProtection{
+			RecentBlocksTransactions: recentBlocks,
+		},
+	}
+}
+
+func (*PayloadReplayProtection) isPayload() {}
+
+func (p *PayloadReplayProtection) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadReplayProtection) Key() string {
+	return "all"
+}
+
+func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
+	return ReplayProtectionSnapshot
 }

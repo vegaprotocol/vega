@@ -171,7 +171,6 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 		assert.Equal(t, totalCancelled, 4)
 		assert.Equal(t, totalActive, 4)
-
 	})
 
 	// now we will reduce our commitment
@@ -262,7 +261,6 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 		assert.Equal(t, totalCancelled, 4)
 		assert.Equal(t, totalActive, 4)
-
 	})
 
 	// now we will reduce our commitment
@@ -355,7 +353,6 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 		assert.Equal(t, totalCancelled, 4)
 		assert.Equal(t, totalActive, 6)
-
 	})
 
 	// now we will reduce the commitment too much so it gets under
@@ -432,7 +429,6 @@ func TestAmendDeployedCommitment(t *testing.T) {
 			ctx, lpCancelCommitment, lpparty, "liquidity-submission-6"),
 		"commitment submission rejected, not enough stake",
 	)
-
 }
 
 func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
@@ -623,7 +619,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// only 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -649,7 +645,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		require.Len(t, found, 4)
 
 		for _, o := range found {
-			var expectedStatus = types.OrderStatusActive
+			expectedStatus := types.OrderStatusActive
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),
@@ -760,7 +756,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		// 4 cancellations
 		i := 0
 		for _, o := range found {
-			var expectedStatus = types.OrderStatusCancelled
+			expectedStatus := types.OrderStatusCancelled
 			assert.Equal(t,
 				expectedStatus.String(),
 				o.Status.String(),

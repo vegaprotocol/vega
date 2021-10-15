@@ -19,7 +19,7 @@ import (
 const (
 	initialAccountSize = 4096
 	// use weird character here, maybe non-displayable ones in the future
-	// if needed
+	// if needed.
 	systemOwner   = "*"
 	noMarket      = "!"
 	rewardPartyID = "0000000000000000000000000000000000000000000000000000000000000000"
@@ -27,40 +27,40 @@ const (
 
 var (
 	// ErrSystemAccountsMissing signals that a system account is missing, which may means that the
-	// collateral engine have not been initialised properly
+	// collateral engine have not been initialised properly.
 	ErrSystemAccountsMissing = errors.New("system accounts missing for collateral engine to work")
 	// ErrFeeAccountsMissing signals that a fee account is missing, which may means that the
-	// collateral engine have not been initialised properly
+	// collateral engine have not been initialised properly.
 	ErrFeeAccountsMissing = errors.New("fee accounts missing for collateral engine to work")
-	// ErrPartyAccountsMissing signals that the accounts for this party do not exists
+	// ErrPartyAccountsMissing signals that the accounts for this party do not exists.
 	ErrPartyAccountsMissing = errors.New("party accounts missing, cannot collect")
-	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists
+	// ErrAccountDoesNotExist signals that an account par of a transfer do not exists.
 	ErrAccountDoesNotExist                     = errors.New("account does not exists")
 	ErrNoGeneralAccountWhenCreateMarginAccount = errors.New("party general account missing when trying to create a margin account")
 	ErrNoGeneralAccountWhenCreateBondAccount   = errors.New("party general account missing when trying to create a bond account")
 	ErrMinAmountNotReached                     = errors.New("unable to reach minimum amount transfer")
 	ErrPartyHasNoTokenAccount                  = errors.New("no token account for party")
 	ErrSettlementBalanceNotZero                = errors.New("settlement balance should be zero") // E991 YOU HAVE TOO MUCH ROPE TO HANG YOURSELF
-	// ErrAssetAlreadyEnabled signals the given asset has already been enabled in this engine
+	// ErrAssetAlreadyEnabled signals the given asset has already been enabled in this engine.
 	ErrAssetAlreadyEnabled = errors.New("asset already enabled")
-	// ErrInvalidAssetID signals that an asset id does not exists
+	// ErrInvalidAssetID signals that an asset id does not exists.
 	ErrInvalidAssetID = errors.New("invalid asset ID")
-	// ErrInsufficientFundsToPayFees the party do not have enough funds to pay the feeds
+	// ErrInsufficientFundsToPayFees the party do not have enough funds to pay the feeds.
 	ErrInsufficientFundsToPayFees = errors.New("insufficient funds to pay fees")
-	// ErrInvalidTransferTypeForFeeRequest an invalid transfer type was send to build a fee transfer request
+	// ErrInvalidTransferTypeForFeeRequest an invalid transfer type was send to build a fee transfer request.
 	ErrInvalidTransferTypeForFeeRequest = errors.New("an invalid transfer type was send to build a fee transfer request")
-	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account
+	// ErrNotEnoughFundsToWithdraw a party requested to withdraw more than on its general account.
 	ErrNotEnoughFundsToWithdraw = errors.New("not enough funds to withdraw")
 )
 
 // Broker send events
-// we no longer need to generate this mock here, we can use the broker/mocks package instead
+// we no longer need to generate this mock here, we can use the broker/mocks package instead.
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
 }
 
-// Engine is handling the power of the collateral
+// Engine is handling the power of the collateral.
 type Engine struct {
 	Config
 	log   *logging.Logger
@@ -84,7 +84,7 @@ type Engine struct {
 	state *accState
 }
 
-// New instantiates a new collateral engine
+// New instantiates a new collateral engine.
 func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -104,7 +104,7 @@ func New(log *logging.Logger, conf Config, broker Broker, now time.Time) *Engine
 }
 
 // OnChainTimeUpdate is used to be specified as a callback in over services
-// in order to be called when the chain time is updated (basically EndBlock)
+// in order to be called when the chain time is updated (basically EndBlock).
 func (e *Engine) OnChainTimeUpdate(_ context.Context, t time.Time) {
 	e.currentTime = t.UnixNano()
 }
@@ -178,7 +178,7 @@ func (e *Engine) Hash() []byte {
 	return crypto.Hash(output)
 }
 
-// ReloadConf updates the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration of the collateral engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -196,7 +196,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 // EnableAsset adds a new asset in the collateral engine
 // this enable the asset to be used by new markets or
-// parties to deposit funds
+// parties to deposit funds.
 func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	if e.AssetExists(asset.ID) {
 		return ErrAssetAlreadyEnabled
@@ -258,15 +258,14 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	return nil
 }
 
-// AssetExists no errors if the asset exists
+// AssetExists no errors if the asset exists.
 func (e *Engine) AssetExists(assetID string) bool {
 	_, ok := e.enabledAssets[assetID]
 	return ok
 }
 
-// this func uses named returns because it makes body of the func look clearer
+// this func uses named returns because it makes body of the func look clearer.
 func (e *Engine) getSystemAccounts(marketID, asset string) (settle, insurance *types.Account, err error) {
-
 	insID := e.accountID(marketID, systemOwner, asset, types.AccountTypeInsurance)
 	setID := e.accountID(marketID, systemOwner, asset, types.AccountTypeSettlement)
 
@@ -304,7 +303,7 @@ func (e *Engine) TransferFees(ctx context.Context, marketID string, assetID stri
 
 // returns the corresponding transfer request for the slice of transfers
 // if the reward accound doesn't exist return error
-// if the party account doesn't exist log the error and continue
+// if the party account doesn't exist log the error and continue.
 func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferRequest, error) {
 	rewardAccount, err := e.GetAccountByID(rewardAccountID)
 	if err != nil {
@@ -334,7 +333,7 @@ func (e *Engine) getRewardTransferRequests(ctx context.Context, rewardAccountID 
 	return rewardTRs, nil
 }
 
-//TransferRewards takes a slice of transfers and serves them to transfer rewards from the reward account to parties general account
+// TransferRewards takes a slice of transfers and serves them to transfer rewards from the reward account to parties general account.
 func (e *Engine) TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
 	responses := make([]*types.TransferResponse, 0, len(transfers))
 
@@ -438,7 +437,7 @@ func (e *Engine) transferFees(ctx context.Context, marketID string, assetID stri
 	return responses, nil
 }
 
-// this func uses named returns because it makes body of the func look clearer
+// this func uses named returns because it makes body of the func look clearer.
 func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *types.Account, err error) {
 	makerID := e.accountID(marketID, systemOwner, asset, types.AccountTypeFeesMaker)
 	infraID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeFeesInfrastructure)
@@ -482,12 +481,12 @@ func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *t
 		err = ErrFeeAccountsMissing
 	}
 
-	return
+	return maker, infra, liqui, err
 }
 
 // FinalSettlement will process the list of transfer instructed by other engines
 // This func currently only expects TransferType_{LOSS,WIN} transfers
-// other transfer types have dedicated funcs (MartToMarket, MarginUpdate)
+// other transfer types have dedicated funcs (MartToMarket, MarginUpdate).
 func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
@@ -684,7 +683,7 @@ func (e *Engine) getMTMPartyAccounts(party, marketID, asset string) (gen, margin
 }
 
 // MarkToMarket will run the mark to market settlement over a given set of positions
-// return ledger move stuff here, too (separate return value, because we need to stream those)
+// return ledger move stuff here, too (separate return value, because we need to stream those).
 func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error) {
 	// stop immediately if there aren't any transfers, channels are closed
 	if len(transfers) == 0 {
@@ -933,7 +932,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 	return marginEvts, responses, nil
 }
 
-// GetPartyMargin will return the current margin for a given party
+// GetPartyMargin will return the current margin for a given party.
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
 	genID := e.accountID("", pos.Party(), asset, types.AccountTypeGeneral)
 	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeMargin)
@@ -969,7 +968,7 @@ func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID strin
 	}, nil
 }
 
-// MarginUpdate will run the margin updates over a set of risk events (margin updates)
+// MarginUpdate will run the margin updates over a set of risk events (margin updates).
 func (e *Engine) MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error) {
 	response := make([]*types.TransferResponse, 0, len(updates))
 	var (
@@ -1100,7 +1099,7 @@ func (e *Engine) RollbackMarginUpdateOnOrder(ctx context.Context, marketID strin
 }
 
 // BondUpdate is to be used for any bond account transfers.
-// Update on new orders, updates on commitment changes, or on slashing
+// Update on new orders, updates on commitment changes, or on slashing.
 func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.TransferResponse, error) {
 	req, err := e.getBondTransferRequest(transfer, market)
 	if err != nil {
@@ -1125,10 +1124,9 @@ func (e *Engine) BondUpdate(ctx context.Context, market string, transfer *types.
 	}
 
 	return res, nil
-
 }
 
-// MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates)
+// MarginUpdateOnOrder will run the margin updates over a set of risk events (margin updates).
 func (e *Engine) MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error) {
 	// create "fake" settle account for market ID
 	settle := &types.Account{
@@ -1342,7 +1340,7 @@ func (e *Engine) getBondTransferRequest(t *types.Transfer, market string) (*type
 	}
 }
 
-// getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument
+// getTransferRequest builds the request, and sets the required accounts based on the type of the Transfer argument.
 func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, settle, insurance *types.Account, mEvt *marginUpdate) (*types.TransferRequest, error) {
 	var (
 		asset = p.Amount.Asset
@@ -1488,7 +1486,6 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 			req.ToAccount = []*types.Account{
 				rewardAcct,
 			}
-
 		} else {
 			req.ToAccount = []*types.Account{
 				mEvt.general,
@@ -1525,7 +1522,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 	return &req, nil
 }
 
-// this builds a TransferResponse for a specific request, we collect all of them and aggregate
+// this builds a TransferResponse for a specific request, we collect all of them and aggregate.
 func (e *Engine) getLedgerEntries(ctx context.Context, req *types.TransferRequest) (*types.TransferResponse, error) {
 	ret := types.TransferResponse{
 		Transfers: []*types.LedgerEntry{},
@@ -1652,7 +1649,7 @@ func (e *Engine) clearAccount(
 }
 
 // ClearMarket will remove all monies or accounts for parties allocated for a market (margin accounts)
-// when the market reach end of life (maturity)
+// when the market reach end of life (maturity).
 func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.TransferResponse, error) {
 	// create a transfer request that we will reuse all the time in order to make allocations smaller
 	req := &types.TransferRequest{
@@ -1666,7 +1663,6 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	resps := make([]*types.TransferResponse, 0, len(parties))
 
 	for _, v := range parties {
-
 		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountTypeGeneral))
 		if err != nil {
 			e.log.Debug(
@@ -1809,7 +1805,7 @@ func (e *Engine) CanCoverBond(market, party, asset string, amount *num.Uint) boo
 }
 
 // GetOrCreatePartyBondAccount returns a bond account given a set of parameters.
-// crates it if not exists
+// crates it if not exists.
 func (e *Engine) GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
@@ -1823,7 +1819,7 @@ func (e *Engine) GetOrCreatePartyBondAccount(ctx context.Context, partyID, marke
 }
 
 // CreatePartyBondAccount creates a bond account if it does not exist, will return an error
-// if no general account exist for the party for the given asset
+// if no general account exist for the party for the given asset.
 func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (string, error) {
 	if !e.AssetExists(asset) {
 		return "", ErrInvalidAssetID
@@ -1860,7 +1856,7 @@ func (e *Engine) CreatePartyBondAccount(ctx context.Context, partyID, marketID, 
 }
 
 // CreatePartyMarginAccount creates a margin account if it does not exist, will return an error
-// if no general account exist for the party for the given asset
+// if no general account exist for the party for the given asset.
 func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error) {
 	if !e.AssetExists(asset) {
 		return "", ErrInvalidAssetID
@@ -1896,7 +1892,7 @@ func (e *Engine) CreatePartyMarginAccount(ctx context.Context, partyID, marketID
 	return marginID, nil
 }
 
-// GetPartyMarginAccount returns a margin account given the partyID and market
+// GetPartyMarginAccount returns a margin account given the partyID and market.
 func (e *Engine) GetPartyMarginAccount(market, party, asset string) (*types.Account, error) {
 	margin := e.accountID(market, party, asset, types.AccountTypeMargin)
 	return e.GetAccountByID(margin)
@@ -1915,7 +1911,7 @@ func (e *Engine) GetPartyBondAccount(market, partyID, asset string) (*types.Acco
 	return e.GetAccountByID(id)
 }
 
-// CreatePartyGeneralAccount create the general account for a party
+// CreatePartyGeneralAccount create the general account for a party.
 func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error) {
 	if !e.AssetExists(asset) {
 		return "", ErrInvalidAssetID
@@ -1942,7 +1938,7 @@ func (e *Engine) CreatePartyGeneralAccount(ctx context.Context, partyID, asset s
 }
 
 // RemoveDistressed will remove all distressed party in the event positions
-// for a given market and asset
+// for a given market and asset.
 func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error) {
 	tl := len(parties)
 	if tl == 0 {
@@ -2026,7 +2022,6 @@ func (e *Engine) RemoveDistressed(ctx context.Context, parties []events.MarketPo
 		e.removeAccount(marginAcc.ID)
 		// remove account from balances tracking
 		e.rmPartyAccount(party.Party(), marginAcc.ID)
-
 	}
 	return &resp, nil
 }
@@ -2065,7 +2060,7 @@ func (e *Engine) ClearPartyMarginAccount(ctx context.Context, party, market, ass
 }
 
 // CreateMarketAccounts will create all required accounts for a market once
-// a new market is accepted through the network
+// a new market is accepted through the network.
 func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset string) (insuranceID, settleID string, err error) {
 	if !e.AssetExists(asset) {
 		return "", "", ErrInvalidAssetID
@@ -2084,7 +2079,6 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		e.accs[insuranceID] = insAcc
 		e.addAccountToHashableSlice(insAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insAcc))
-
 	}
 	settleID = e.accountID(marketID, "", asset, types.AccountTypeSettlement)
 	_, ok = e.accs[settleID]
@@ -2134,7 +2128,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 		e.broker.Send(events.NewAccountEvent(ctx, *makerFeeAcc))
 	}
 
-	return
+	return insuranceID, settleID, err
 }
 
 func (e *Engine) HasGeneralAccount(party, asset string) bool {
@@ -2144,7 +2138,7 @@ func (e *Engine) HasGeneralAccount(party, asset string) bool {
 }
 
 // Withdraw will remove the specified amount from the party
-// general account
+// general account.
 func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
@@ -2188,7 +2182,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	return res, nil
 }
 
-// Deposit will deposit the given amount into the party account
+// Deposit will deposit the given amount into the party account.
 func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num.Uint) (*types.TransferResponse, error) {
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
@@ -2239,7 +2233,7 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	return res, nil
 }
 
-// UpdateBalance will update the balance of a given account
+// UpdateBalance will update the balance of a given account.
 func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint) error {
 	acc, ok := e.accs[id]
 	if !ok {
@@ -2255,7 +2249,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 }
 
 // IncrementBalance will increment the balance of a given account
-// using the given value
+// using the given value.
 func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint) error {
 	acc, ok := e.accs[id]
 	if !ok {
@@ -2270,7 +2264,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 }
 
 // DecrementBalance will decrement the balance of a given account
-// using the given value
+// using the given value.
 func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint) error {
 	acc, ok := e.accs[id]
 	if !ok {
@@ -2284,7 +2278,7 @@ func (e *Engine) DecrementBalance(ctx context.Context, id string, dec *num.Uint)
 	return nil
 }
 
-// GetAccountByID will return an account using the given id
+// GetAccountByID will return an account using the given id.
 func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	acc, ok := e.accs[id]
 	if !ok {
@@ -2311,7 +2305,7 @@ func (e *Engine) removeAccount(id string) {
 
 // @TODO this function uses a single slice for each call. This is fine now, as we're processing
 // everything sequentially, and so there's no possible data-races here. Once we start doing things
-// like cleaning up expired markets asynchronously, then this func is not safe for concurrent use
+// like cleaning up expired markets asynchronously, then this func is not safe for concurrent use.
 func (e *Engine) accountID(marketID, partyID, asset string, ty types.AccountType) string {
 	if len(marketID) <= 0 {
 		marketID = noMarket
@@ -2342,7 +2336,7 @@ func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Acc
 	return e.GetAccountByID(insuranceAccID)
 }
 
-// GetAssetInsurancePoolAccount returns the global insurance account for the asset
+// GetAssetInsurancePoolAccount returns the global insurance account for the asset.
 func (e *Engine) GetAssetInsurancePoolAccount(asset string) (*types.Account, error) {
 	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance)
 	return e.GetAccountByID(globalInsuranceID)
@@ -2360,12 +2354,11 @@ func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset st
 			Asset:    asset,
 			MarketID: noMarket,
 			Balance:  num.Zero(),
-			Owner:    "",
+			Owner:    systemOwner,
 			Type:     types.AccountTypeGlobalReward,
 		}
 		e.accs[accountID] = &acc
 		e.addAccountToHashableSlice(&acc)
-		e.broker.Send(events.NewAccountEvent(ctx, acc))
 		e.broker.Send(events.NewAccountEvent(ctx, acc))
 	}
 	return accountID, nil

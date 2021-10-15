@@ -12,8 +12,7 @@ import (
 // OpenOracleAdaptor is a specific oracle Adaptor for Open Oracle / Open Price Feed
 // standard.
 // Link: https://compound.finance/docs/prices
-type OpenOracleAdaptor struct {
-}
+type OpenOracleAdaptor struct{}
 
 // NewOpenOracleAdaptor creates a new OpenOracleAdaptor.
 func NewOpenOracleAdaptor() *OpenOracleAdaptor {

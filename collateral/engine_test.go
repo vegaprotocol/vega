@@ -124,7 +124,7 @@ func testTransferRewardsNoRewardsAccount(t *testing.T) {
 	defer eng.Finish()
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),
 				Asset:  "ETH",
@@ -144,7 +144,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(2)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
@@ -154,7 +154,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
 
 	transfers := []*types.Transfer{
-		&types.Transfer{
+		{
 			Owner: "party1",
 			Amount: &types.FinancialAmount{
 				Amount: num.NewUint(1000),
@@ -275,7 +275,6 @@ func testReleasePartyMarginAccount(t *testing.T) {
 	assert.Equal(t, num.NewUint(600), generalAcc.Balance)
 	marginAcc, _ := eng.GetAccountByID(mar)
 	assert.True(t, marginAcc.Balance.IsZero())
-
 }
 
 func testFeeTransferContinuousNoFunds(t *testing.T) {
@@ -309,7 +308,6 @@ func testFeeTransferContinuousNoFunds(t *testing.T) {
 		context.Background(), testMarketID, testMarketAsset, transferFeesReq)
 	assert.Nil(t, transfers)
 	assert.EqualError(t, err, collateral.ErrInsufficientFundsToPayFees.Error())
-
 }
 
 func testFeeTransferContinuousNotEnoughFunds(t *testing.T) {
@@ -599,7 +597,6 @@ func testEnableAssetSuccess(t *testing.T) {
 
 	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
 	assert.True(t, assetInsuranceAcc.Balance.IsZero())
-
 }
 
 func testEnableAssetFailureDuplicate(t *testing.T) {
@@ -661,7 +658,6 @@ func testAddMarginAccountFail(t *testing.T) {
 	// create party
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Error(t, err, collateral.ErrNoGeneralAccountWhenCreateMarginAccount)
-
 }
 
 func testAddParty(t *testing.T) {
@@ -690,7 +686,6 @@ func testAddParty(t *testing.T) {
 	acc, err = eng.Engine.GetAccountByID(general)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedGeneralBalance, acc.Balance)
-
 }
 
 func testTransferLoss(t *testing.T) {
@@ -1301,7 +1296,7 @@ func testRemoveDistressedNoBalance(t *testing.T) {
 }
 
 // most of this function is copied from the MarkToMarket test - we're using channels, sure
-// but the flow should remain the same regardless
+// but the flow should remain the same regardless.
 func testMTMSuccess(t *testing.T) {
 	party := "test-party"
 	moneyParty := "money-party"
@@ -2071,7 +2066,6 @@ func testMarginUpdateOnOrderOKThenRollback(t *testing.T) {
 	resp, err = eng.Engine.RollbackMarginUpdateOnOrder(context.Background(), testMarketID, testMarketAsset, rollback)
 	assert.Nil(t, err)
 	assert.NotNil(t, resp)
-
 }
 
 func testMarginUpdateOnOrderFail(t *testing.T) {
@@ -2305,7 +2299,6 @@ func TestWithdrawalNotEnough(t *testing.T) {
 
 	_, err = eng.Engine.Withdraw(context.Background(), party, testMarketAsset, num.NewUint(600))
 	assert.EqualError(t, err, collateral.ErrNotEnoughFundsToWithdraw.Error())
-
 }
 
 func TestWithdrawalInvalidAccount(t *testing.T) {
@@ -2320,7 +2313,6 @@ func TestWithdrawalInvalidAccount(t *testing.T) {
 	_, err := eng.Engine.CreatePartyMarginAccount(context.Background(), party, testMarketID, testMarketAsset)
 	assert.Nil(t, err)
 
-	err = nil
 	_, err = eng.Engine.Withdraw(context.Background(), "invalid", testMarketAsset, num.NewUint(600))
 	assert.Error(t, err)
 }
@@ -2392,6 +2384,7 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 }
 
 func getTestEngine(t *testing.T, market string) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBroker(ctrl)
 	conf := collateral.NewDefaultConfig()
@@ -2602,7 +2595,6 @@ func TestHash(t *testing.T) {
 		got := eng.Hash()
 		require.Equal(t, hash, got)
 	}
-
 }
 
 func stringToInt(s string) int {

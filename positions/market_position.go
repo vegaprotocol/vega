@@ -8,7 +8,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-// MarketPosition represents the position of a party inside a market
+// MarketPosition represents the position of a party inside a market.
 type MarketPosition struct {
 	// Actual volume
 	size int64
@@ -42,7 +42,6 @@ func (p MarketPosition) Clone() *MarketPosition {
 func (p *MarketPosition) SetParty(party string) { p.partyID = party }
 
 func (p *MarketPosition) RegisterOrder(order *types.Order) {
-
 	if order.Side == types.SideBuy {
 		// calculate vwBuyPrice: total worth of orders divided by total size
 		if buyVol := uint64(p.buy) + order.Remaining; buyVol != 0 {
@@ -114,7 +113,7 @@ func (p *MarketPosition) UnregisterOrder(log *logging.Logger, order *types.Order
 }
 
 // AmendOrder unregisters the original order and then registers the newly amended order
-// this method is a quicker way of handling separate unregister+register pairs
+// this method is a quicker way of handling separate unregister+register pairs.
 func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder *types.Order) {
 	if originalOrder.Side == types.SideBuy {
 		if uint64(p.buy) < originalOrder.Remaining {
@@ -158,33 +157,33 @@ func (p *MarketPosition) AmendOrder(log *logging.Logger, originalOrder, newOrder
 	p.sell += int64(newOrder.Remaining)
 }
 
-// String returns a string representation of a market
+// String returns a string representation of a market.
 func (p MarketPosition) String() string {
 	return fmt.Sprintf("size:%v, buy:%v, sell:%v, price:%v, partyID:%v",
 		p.size, p.buy, p.sell, p.price, p.partyID)
 }
 
-// Buy will returns the potential buys for a given position
+// Buy will returns the potential buys for a given position.
 func (p MarketPosition) Buy() int64 {
 	return p.buy
 }
 
-// Sell returns the potential sells for the position
+// Sell returns the potential sells for the position.
 func (p MarketPosition) Sell() int64 {
 	return p.sell
 }
 
-// Size returns the current size of the position
+// Size returns the current size of the position.
 func (p MarketPosition) Size() int64 {
 	return p.size
 }
 
-// Party returns the party to which this positions is associated
+// Party returns the party to which this positions is associated.
 func (p MarketPosition) Party() string {
 	return p.partyID
 }
 
-// Price returns the current price for this position
+// Price returns the current price for this position.
 func (p MarketPosition) Price() *num.Uint {
 	if p.price != nil {
 		return p.price.Clone()
@@ -192,7 +191,7 @@ func (p MarketPosition) Price() *num.Uint {
 	return num.Zero()
 }
 
-// VWBuy - get volume weighted buy price for unmatched buy orders
+// VWBuy - get volume weighted buy price for unmatched buy orders.
 func (p MarketPosition) VWBuy() *num.Uint {
 	if p.vwBuyPrice != nil {
 		return p.vwBuyPrice.Clone()
@@ -200,7 +199,7 @@ func (p MarketPosition) VWBuy() *num.Uint {
 	return num.Zero()
 }
 
-// VWSell - get volume weighted sell price for unmatched sell orders
+// VWSell - get volume weighted sell price for unmatched sell orders.
 func (p MarketPosition) VWSell() *num.Uint {
 	if p.vwSellPrice != nil {
 		return p.vwSellPrice.Clone()

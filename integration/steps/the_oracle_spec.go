@@ -5,16 +5,17 @@ import (
 
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/vega/integration/steps/market"
 )
 
 func TheOracleSpec(config *market.Config, name string, specType string, rawPubKeys string, table *godog.Table) error {
 	pubKeys := StrSlice(rawPubKeys, ",")
-
 	binding := &types.OracleSpecToFutureBinding{}
 
-	var filters []*oraclesv1.Filter
-	for _, r := range parseOracleSpecTable(table) {
+	rows := parseOracleSpecTable(table)
+	filters := make([]*oraclesv1.Filter, 0, len(rows))
+	for _, r := range rows {
 		row := oracleSpecRow{row: r}
 		filter := &oraclesv1.Filter{
 			Key: &oraclesv1.PropertyKey{
@@ -37,6 +38,7 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 		name,
 		specType,
 		&oraclesv1.OracleSpec{
+			Id:      vgrand.RandomStr(10),
 			PubKeys: pubKeys,
 			Filters: filters,
 		},

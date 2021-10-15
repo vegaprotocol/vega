@@ -36,9 +36,8 @@ type checkpointRestore struct {
 
 var checkpointCmd CheckpointCmd
 
-// Checkpoint - This function is invoked from `Register` in main.go
+// Checkpoint - This function is invoked from `Register` in main.go.
 func Checkpoint(ctx context.Context, parser *flags.Parser) error {
-
 	// here we initialize the global exampleCmd with needed default values.
 	checkpointCmd = CheckpointCmd{
 		Restore: checkpointRestore{},
@@ -47,7 +46,7 @@ func Checkpoint(ctx context.Context, parser *flags.Parser) error {
 	return err
 }
 
-func (c *checkpointRestore) Execute(args []string) error {
+func (c *checkpointRestore) Execute(_ []string) error {
 	if c.CPFile == "" {
 		return fmt.Errorf("no file specified")
 	}
@@ -92,7 +91,7 @@ func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, error)
 		return nil, err
 	}
 
-	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return nil, err
 	}

@@ -210,5 +210,4 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 	o1conf, err := tm.market.SubmitOrder(context.Background(), o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)
-
 }

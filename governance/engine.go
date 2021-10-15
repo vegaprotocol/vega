@@ -29,7 +29,7 @@ var (
 	ErrProposalDoesNotExists   = errors.New("proposal does not exists")
 )
 
-// Broker - event bus
+// Broker - event bus.
 type Broker interface {
 	Send(e events.Event)
 	SendBatch(es []events.Event)
@@ -87,6 +87,10 @@ type Engine struct {
 	broker                 Broker
 	assets                 Assets
 	netp                   NetParams
+
+	// snapshot state
+	gss             *governanceSnapshotState
+	keyToSerialiser map[string]func() ([]byte, error)
 }
 
 func NewEngine(
@@ -102,7 +106,7 @@ func NewEngine(
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Level)
 
-	return &Engine{
+	e := &Engine{
 		Config:                 cfg,
 		accs:                   accs,
 		log:                    log,
@@ -113,7 +117,18 @@ func NewEngine(
 		broker:                 broker,
 		assets:                 assets,
 		netp:                   netp,
+		gss: &governanceSnapshotState{
+			changed:    map[string]bool{activeKey: true, enactedKey: true, nodeValidationKey: true},
+			hash:       map[string][]byte{},
+			serialised: map[string][]byte{},
+		},
+		keyToSerialiser: map[string]func() ([]byte, error){},
 	}
+
+	e.keyToSerialiser[activeKey] = e.serialiseActiveProposals
+	e.keyToSerialiser[enactedKey] = e.serialiseEnactedProposals
+	e.keyToSerialiser[nodeValidationKey] = e.serialiseNodeProposals
+	return e
 }
 
 func (e *Engine) Hash() []byte {
@@ -155,7 +170,7 @@ func (e *Engine) Hash() []byte {
 	return vgcrypto.Hash(output)
 }
 
-// ReloadConf updates the internal configuration of the governance engine
+// ReloadConf updates the internal configuration of the governance engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -208,9 +223,11 @@ func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
 		if p.State != proto.Proposal_STATE_PASSED {
 			startAuction = false
 		} else {
-			// this proposal needs to be included in the snapshot but we don't need to copy
+			// this proposal needs to be included in the checkpoint but we don't need to copy
 			// the proposal here, as it may reach the enacted state shortly
 			e.enactedProposals = append(e.enactedProposals, p)
+
+			e.gss.changed[enactedKey] = true
 		}
 		vc.m = &NewMarketVoteClosed{
 			startAuction: startAuction,
@@ -225,6 +242,8 @@ func (e *Engine) removeProposal(id string) {
 			copy(e.activeProposals[i:], e.activeProposals[i+1:])
 			e.activeProposals[len(e.activeProposals)-1] = nil
 			e.activeProposals = e.activeProposals[:len(e.activeProposals)-1]
+
+			e.gss.changed[activeKey] = true
 			return
 		}
 	}
@@ -290,6 +309,10 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		e.broker.Send(events.NewProposalEvent(ctx, *p.Proposal))
 	}
 
+	if len(accepted) != 0 || len(rejected) != 0 {
+		e.gss.changed[nodeValidationKey] = true
+	}
+
 	for _, ep := range toBeEnacted {
 		// this is the new market proposal, and should already be in the slice
 		prop := *ep.Proposal()
@@ -310,6 +333,10 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 		}
 		// take a copy in the state just before the proposal was enacted
 		e.enactedProposals = append(e.enactedProposals, &prop)
+	}
+
+	if len(toBeEnacted) != 0 {
+		e.gss.changed[enactedKey] = true
 	}
 
 	// flush here for now
@@ -338,7 +365,6 @@ func (e *Engine) SubmitProposal(
 	psub types.ProposalSubmission,
 	id, party string,
 ) (ts *ToSubmit, err error) {
-
 	if _, ok := e.getProposal(id); ok {
 		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}
@@ -398,7 +424,7 @@ func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorD
 }
 
 // toSubmit build the return response for the SubmitProposal
-// method
+// method.
 func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
@@ -434,13 +460,17 @@ func (e *Engine) startProposal(p *types.Proposal) {
 		no:           map[string]*types.Vote{},
 		invalidVotes: map[string]*types.Vote{},
 	})
+
+	e.gss.changed[activeKey] = true
 }
 
 func (e *Engine) startValidatedProposal(p *proposal) {
 	e.activeProposals = append(e.activeProposals, p)
+	e.gss.changed[activeKey] = true
 }
 
 func (e *Engine) startTwoStepsProposal(p *types.Proposal) error {
+	e.gss.changed[nodeValidationKey] = true
 	return e.nodeProposalValidation.Start(p)
 }
 
@@ -461,7 +491,7 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 	}
 }
 
-// validates proposals read from the chain
+// validates proposals read from the chain.
 func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalError, error) {
 	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
@@ -553,7 +583,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 	return e.validateChange(proposal.Terms)
 }
 
-// validates proposed change
+// validates proposed change.
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch terms.Change.GetTermType() {
 	case types.ProposalTerms_NEW_MARKET:
@@ -573,7 +603,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-// AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
+// AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted.
 func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
 	proposal, err := e.validateVote(cmd, party)
 	if err != nil {

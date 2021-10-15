@@ -3,7 +3,7 @@ package txn
 // Command ...
 type Command byte
 
-// Custom blockchain command encoding, lighter-weight than proto
+// Custom blockchain command encoding, lighter-weight than proto.
 const (
 	// SubmitOrderCommand ...
 	SubmitOrderCommand Command = 0x40
@@ -26,15 +26,15 @@ const (
 	// LiquidityProvisionCommand ...
 	LiquidityProvisionCommand Command = 0x4A
 	// ChainEventCommand ...
-	ChainEventCommand Command = 0x50
+	ChainEventCommand Command = 0x4B
 	// SubmitOracleDataCommand ...
-	SubmitOracleDataCommand Command = 0x51
+	SubmitOracleDataCommand Command = 0x4C
 	// DelegateCommand ...
-	DelegateCommand Command = 0x52
+	DelegateCommand Command = 0x4D
 	// UndelegateCommand ...
-	UndelegateCommand Command = 0x53
+	UndelegateCommand Command = 0x4E
 	// CheckpointRestoreCommand ...
-	CheckpointRestoreCommand Command = 0x54
+	CheckpointRestoreCommand Command = 0x4F
 )
 
 var commandName = map[Command]string{
@@ -64,7 +64,7 @@ func (cmd Command) IsValidatorCommand() bool {
 	}
 }
 
-// String return the
+// String return the.
 func (cmd Command) String() string {
 	s, ok := commandName[cmd]
 	if ok {

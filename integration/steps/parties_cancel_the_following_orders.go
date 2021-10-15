@@ -34,7 +34,6 @@ func PartiesCancelTheFollowingOrders(
 		if err != nil {
 			return err
 		}
-
 	}
 
 	return nil

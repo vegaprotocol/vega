@@ -71,6 +71,7 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 }
 
 func (suite *CommandSuite) ListKeyPairs(t *testing.T, path, pass string) []wallet.HDKeyPair {
+	t.Helper()
 	ctx := context.Background()
 
 	out, err := suite.RunMain(ctx, "wallet key list --output json --no-version-check --home %s --passphrase-file %s --name test", path, pass)

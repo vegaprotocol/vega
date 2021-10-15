@@ -18,8 +18,7 @@ var (
 	out []byte
 )
 
-type CommandSuite struct {
-}
+type CommandSuite struct{}
 
 // RunMain simulates a CLI execution. It formats a cmd invocation given a format and its args and overwrites os.Args.
 // The output of the command is captured and returned.
@@ -47,6 +46,7 @@ func (suite *CommandSuite) RunMain(ctx context.Context, format string, args ...i
 // PrepareSandbox creates a sandbox directory where to run a command.
 // It returns the path of the new created directory and a closer function.
 func (suite *CommandSuite) PrepareSandbox(t *testing.T) (string, string, func()) {
+	t.Helper()
 	path := filepath.Join("/tmp", "vega-tests", "test-sandbox", vgrand.RandomStr(10))
 	err := os.MkdirAll(path, os.ModePerm)
 	if err != nil {

@@ -12,7 +12,7 @@ type ProposalsCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *ProposalsCmd) Execute(params []string) error {
+func (opts *ProposalsCmd) Execute(_ []string) error {
 	req := apipb.ListProposalsRequest{}
 	return getPrintProposals(opts.NodeAddress, &req)
 }
@@ -38,7 +38,7 @@ func getPrintProposals(nodeAddress string, req *apipb.ListProposalsRequest) erro
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

@@ -16,91 +16,91 @@ type GovernanceData = proto.GovernanceData
 type VoteValue = proto.Vote_Value
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	VoteValueUnspecified VoteValue = proto.Vote_VALUE_UNSPECIFIED
-	// A vote against the proposal
+	// A vote against the proposal.
 	VoteValueNo VoteValue = proto.Vote_VALUE_NO
-	// A vote in favour of the proposal
+	// A vote in favour of the proposal.
 	VoteValueYes VoteValue = proto.Vote_VALUE_YES
 )
 
 type ProposalError = proto.ProposalError
 
 const (
-	// Default value
+	// Default value.
 	ProposalError_PROPOSAL_ERROR_UNSPECIFIED ProposalError = 0
-	// The specified close time is too early base on network parameters
+	// The specified close time is too early base on network parameters.
 	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_SOON ProposalError = 1
-	// The specified close time is too late based on network parameters
+	// The specified close time is too late based on network parameters.
 	ProposalError_PROPOSAL_ERROR_CLOSE_TIME_TOO_LATE ProposalError = 2
-	// The specified enact time is too early based on network parameters
+	// The specified enact time is too early based on network parameters.
 	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_SOON ProposalError = 3
-	// The specified enact time is too late based on network parameters
+	// The specified enact time is too late based on network parameters.
 	ProposalError_PROPOSAL_ERROR_ENACT_TIME_TOO_LATE ProposalError = 4
-	// The proposer for this proposal as insufficient tokens
+	// The proposer for this proposal as insufficient tokens.
 	ProposalError_PROPOSAL_ERROR_INSUFFICIENT_TOKENS ProposalError = 5
-	// The instrument quote name and base name were the same
+	// The instrument quote name and base name were the same.
 	ProposalError_PROPOSAL_ERROR_INVALID_INSTRUMENT_SECURITY ProposalError = 6
-	// The proposal has no product
+	// The proposal has no product.
 	ProposalError_PROPOSAL_ERROR_NO_PRODUCT ProposalError = 7
-	// The specified product is not supported
+	// The specified product is not supported.
 	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT ProposalError = 8
-	// Invalid future maturity timestamp (expect RFC3339)
+	// Invalid future maturity timestamp (expect RFC3339).
 	ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP ProposalError = 9
-	// The product maturity is past
+	// The product maturity is past.
 	ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED ProposalError = 10
-	// The proposal has no trading mode
+	// The proposal has no trading mode.
 	ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE ProposalError = 11
-	// The proposal has an unsupported trading mode
+	// The proposal has an unsupported trading mode.
 	ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE ProposalError = 12
-	// The proposal failed node validation
+	// The proposal failed node validation.
 	ProposalError_PROPOSAL_ERROR_NODE_VALIDATION_FAILED ProposalError = 13
-	// A field is missing in a builtin asset source
+	// A field is missing in a builtin asset source.
 	ProposalError_PROPOSAL_ERROR_MISSING_BUILTIN_ASSET_FIELD ProposalError = 14
-	// The contract address is missing in the ERC20 asset source
+	// The contract address is missing in the ERC20 asset source.
 	ProposalError_PROPOSAL_ERROR_MISSING_ERC20_CONTRACT_ADDRESS ProposalError = 15
-	// The asset identifier is invalid or does not exist on the Vega network
+	// The asset identifier is invalid or does not exist on the Vega network.
 	ProposalError_PROPOSAL_ERROR_INVALID_ASSET ProposalError = 16
-	// Proposal terms timestamps are not compatible (Validation < Closing < Enactment)
+	// Proposal terms timestamps are not compatible (Validation < Closing < Enactment).
 	ProposalError_PROPOSAL_ERROR_INCOMPATIBLE_TIMESTAMPS ProposalError = 17
-	// No risk parameters were specified
+	// No risk parameters were specified.
 	ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS ProposalError = 18
-	// Invalid key in update network parameter proposal
+	// Invalid key in update network parameter proposal.
 	ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_KEY ProposalError = 19
-	// Invalid valid in update network parameter proposal
+	// Invalid valid in update network parameter proposal.
 	ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_INVALID_VALUE ProposalError = 20
-	// Validation failed for network parameter proposal
+	// Validation failed for network parameter proposal.
 	ProposalError_PROPOSAL_ERROR_NETWORK_PARAMETER_VALIDATION_FAILED ProposalError = 21
-	// Opening auction duration is less than the network minimum opening auction time
+	// Opening auction duration is less than the network minimum opening auction time.
 	ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_SMALL ProposalError = 22
-	// Opening auction duration is more than the network minimum opening auction time
+	// Opening auction duration is more than the network minimum opening auction time.
 	ProposalError_PROPOSAL_ERROR_OPENING_AUCTION_DURATION_TOO_LARGE ProposalError = 23
-	// Market proposal is missing a liquidity commitment
+	// Market proposal is missing a liquidity commitment.
 	ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT ProposalError = 24
-	// Market proposal market could not be instantiate in execution
+	// Market proposal market could not be instantiate in execution.
 	ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET ProposalError = 25
-	// Market proposal market contained invalid product definition
+	// Market proposal market contained invalid product definition.
 	ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT ProposalError = 26
 )
 
 type ProposalState = proto.Proposal_State
 
 const (
-	// Default value, always invalid
+	// Default value, always invalid.
 	ProposalStateUnspecified ProposalState = proto.Proposal_STATE_UNSPECIFIED
-	// Proposal enactment has failed - even though proposal has passed, its execution could not be performed
+	// Proposal enactment has failed - even though proposal has passed, its execution could not be performed.
 	ProposalStateFailed ProposalState = proto.Proposal_STATE_FAILED
-	// Proposal is open for voting
+	// Proposal is open for voting.
 	ProposalStateOpen ProposalState = proto.Proposal_STATE_OPEN
-	// Proposal has gained enough support to be executed
+	// Proposal has gained enough support to be executed.
 	ProposalStatePassed ProposalState = proto.Proposal_STATE_PASSED
-	// Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements)
+	// Proposal wasn't accepted (proposal terms failed validation due to wrong configuration or failing to meet network requirements).
 	ProposalStateRejected ProposalState = proto.Proposal_STATE_REJECTED
-	// Proposal didn't get enough votes (either failing to gain required participation or majority level)
+	// Proposal didn't get enough votes (either failing to gain required participation or majority level).
 	ProposalStateDeclined ProposalState = proto.Proposal_STATE_DECLINED
-	// Proposal enacted
+	// Proposal enacted.
 	ProposalStateEnacted ProposalState = proto.Proposal_STATE_ENACTED
-	// Waiting for node validation of the proposal
+	// Waiting for node validation of the proposal.
 	ProposalStateWaitingForNodeVote ProposalState = proto.Proposal_STATE_WAITING_FOR_NODE_VOTE
 )
 
@@ -395,10 +395,12 @@ type ProposalTerms_NewMarket struct {
 	NewMarket *NewMarket
 }
 
-type UpdateMarket = proto.UpdateMarket
-type ProposalTerms_UpdateMarket struct {
-	UpdateMarket *UpdateMarket
-}
+type (
+	UpdateMarket               = proto.UpdateMarket
+	ProposalTerms_UpdateMarket struct {
+		UpdateMarket *UpdateMarket
+	}
+)
 
 type UpdateNetworkParameter struct {
 	Changes *NetworkParameter
@@ -724,6 +726,7 @@ func (a ProposalTerms_NewMarket) isPTerm() {}
 func (a ProposalTerms_NewMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_NewMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEW_MARKET
 }
@@ -747,6 +750,7 @@ func (a ProposalTerms_UpdateMarket) isPTerm() {}
 func (a ProposalTerms_UpdateMarket) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_UpdateMarket) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_UPDATE_MARKET
 }
@@ -770,6 +774,7 @@ func (a ProposalTerms_UpdateNetworkParameter) isPTerm() {}
 func (a ProposalTerms_UpdateNetworkParameter) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_UpdateNetworkParameter) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_UPDATE_NETWORK_PARAMETER
 }
@@ -816,6 +821,7 @@ func (a ProposalTerms_NewAsset) isPTerm() {}
 func (a ProposalTerms_NewAsset) oneOfProto() interface{} {
 	return a.IntoProto()
 }
+
 func (a ProposalTerms_NewAsset) GetTermType() Proposal_Terms_TYPE {
 	return ProposalTerms_NEW_ASSET
 }
@@ -934,6 +940,7 @@ func (n NewMarketConfiguration_Simple) DeepClone() riskParams {
 		Simple: n.Simple.DeepClone(),
 	}
 }
+
 func (n NewMarketConfiguration_Simple) rpIntoProto() interface{} {
 	return n.IntoProto()
 }

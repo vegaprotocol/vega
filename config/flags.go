@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	vgos "code.vegaprotocol.io/vega/libs/os"
@@ -14,6 +15,8 @@ import (
 type Empty struct{}
 
 var (
+	ErrPassphraseDoNotMatch = errors.New("passphrase do not match")
+
 	supportedOutputs = []string{
 		"json",
 		"human",
@@ -64,24 +67,44 @@ type PassphraseFlag struct {
 
 type Passphrase string
 
-func (p Passphrase) Get(prompt string) (string, error) {
+func (p Passphrase) Get(prompt string, withConfirmation bool) (string, error) {
 	if len(p) == 0 {
 		if vgos.HasNoTTY() {
 			return "", errors.New("passphrase-file flag required without TTY")
 		}
-		return p.getFromUser(prompt)
+		return p.getFromUser(prompt, withConfirmation)
 	}
 
 	return p.getFromFile(string(p))
 }
 
-func (p Passphrase) getFromUser(prompt string) (string, error) {
-	fmt.Printf("Enter %s passphrase:", prompt)
-	password, err := terminal.ReadPassword(0)
-	fmt.Printf("\n")
+func (p Passphrase) getFromUser(prompt string, withConfirmation bool) (string, error) {
+	passphrase, err := promptForPassphrase(fmt.Sprintf("Enter %s passphrase:", prompt))
 	if err != nil {
 		return "", err
 	}
+
+	if withConfirmation {
+		passphraseConfirmation, err := promptForPassphrase(fmt.Sprintf("Confirm %s passphrase:", prompt))
+		if err != nil {
+			return "", err
+		}
+
+		if passphrase != passphraseConfirmation {
+			return "", ErrPassphraseDoNotMatch
+		}
+	}
+
+	return passphrase, nil
+}
+
+func promptForPassphrase(msg string) (string, error) {
+	fmt.Print(msg)
+	password, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		return "", fmt.Errorf("failed to read passphrase input: %w", err)
+	}
+	fmt.Println()
 
 	return string(password), nil
 }
@@ -97,7 +120,7 @@ func (p Passphrase) getFromFile(path string) (string, error) {
 
 type PromptString string
 
-// Get returns a string if set or prompts user otherwise
+// Get returns a string if set or prompts user otherwise.
 func (p PromptString) Get(prompt, name string) (string, error) {
 	if len(p) == 0 {
 		if vgos.HasNoTTY() {
@@ -112,9 +135,8 @@ func (p PromptString) Get(prompt, name string) (string, error) {
 func (p PromptString) getFromUser(prompt string) (string, error) {
 	var s string
 	fmt.Printf("Enter %s:", prompt)
-	_, err := fmt.Scanf("%s", &s)
-	fmt.Printf("\n")
-	if err != nil {
+	defer func() { fmt.Printf("\n") }()
+	if _, err := fmt.Scanf("%s", &s); err != nil {
 		return "", fmt.Errorf("failed read the input: %w", err)
 	}
 

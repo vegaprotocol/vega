@@ -83,10 +83,12 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	if exp != nil && as.IsLiquidityAuction() {
 		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
 			as.SetReadyToLeave()
+
 			return // all done
 		}
 		// we're still in trouble, extend the auction
 		as.ExtendAuctionLiquidity(ext)
+
 		return
 	}
 	// multiply target stake by triggering ratio
@@ -95,6 +97,7 @@ func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.
 	if currentStake.LT(scaledTargetStake) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
 		if exp != nil {
 			as.ExtendAuctionLiquidity(ext)
+
 			return
 		}
 		as.StartLiquidityAuction(t, &types.AuctionDuration{

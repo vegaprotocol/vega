@@ -9,19 +9,22 @@ import (
 
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/protobuf/proto"
 )
 
 var (
-	withdrawalsKey = (&types.PayloadBankingWithdrawals{}).Key()
-	depositsKey    = (&types.PayloadBankingDeposits{}).Key()
-	seenKey        = (&types.PayloadBankingSeen{}).Key()
+	withdrawalsKey  = (&types.PayloadBankingWithdrawals{}).Key()
+	depositsKey     = (&types.PayloadBankingDeposits{}).Key()
+	seenKey         = (&types.PayloadBankingSeen{}).Key()
+	assetActionsKey = (&types.PayloadBankingAssetActions{}).Key()
 
 	hashKeys = []string{
 		withdrawalsKey,
 		depositsKey,
 		seenKey,
+		assetActionsKey,
 	}
 
 	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for banking snapshot")
@@ -39,6 +42,33 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 
 func (e *Engine) Keys() []string {
 	return hashKeys
+}
+
+func (e *Engine) serialiseAssetActions() ([]byte, error) {
+	aa := make([]*types.AssetAction, 0, len(e.assetActs))
+	for _, v := range e.assetActs {
+		aa = append(aa, &types.AssetAction{
+			ID:          v.id,
+			State:       v.state,
+			BlockNumber: v.blockNumber,
+			Asset:       v.asset.ToAssetType().ID,
+			TxIndex:     v.txIndex,
+			BuiltinD:    v.builtinD,
+			Erc20AL:     v.erc20AL,
+			Erc20D:      v.erc20D,
+		})
+	}
+
+	sort.SliceStable(aa, func(i, j int) bool { return aa[i].ID < aa[j].ID })
+
+	payload := types.Payload{
+		Data: &types.PayloadBankingAssetActions{
+			BankingAssetActions: &types.BankingAssetActions{
+				AssetAction: aa,
+			},
+		},
+	}
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseWithdrawals() ([]byte, error) {
@@ -60,7 +90,7 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 }
 
 func (e *Engine) serialiseSeen() ([]byte, error) {
-	seen := make([]*types.TxRef, len(e.seen))
+	seen := make([]*types.TxRef, 0, len(e.seen))
 	for v := range e.seen {
 		seen = append(seen, &types.TxRef{Asset: string(v.asset), BlockNr: v.blockNumber, Hash: v.hash, LogIndex: v.logIndex})
 	}
@@ -116,7 +146,7 @@ func (e *Engine) serialiseDeposits() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.keyToSerialiser[k]; !ok {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
@@ -172,6 +202,8 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
 		return e.restoreWithdrawals(ctx, pl.BankingWithdrawals)
 	case *types.PayloadBankingSeen:
 		return e.restoreSeen(ctx, pl.BankingSeen)
+	case *types.PayloadBankingAssetActions:
+		return e.restoreAssetActions(ctx, pl.BankingAssetActions)
 	default:
 		return types.ErrUnknownSnapshotType
 	}
@@ -211,5 +243,28 @@ func (e *Engine) restoreSeen(ctx context.Context, seen *types.BankingSeen) error
 		}] = struct{}{}
 	}
 	e.bss.changed[seenKey] = true
+	return nil
+}
+
+func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAssetActions) error {
+	for _, v := range aa.AssetAction {
+		asset, err := e.assets.Get(v.Asset)
+		if err != nil {
+			e.log.Error("error restoring asset actions for asset", logging.String("asset", v.Asset))
+
+			continue
+		}
+		e.assetActs[v.ID] = &assetAction{
+			id:          v.ID,
+			state:       v.State,
+			blockNumber: v.BlockNumber,
+			asset:       asset,
+			txIndex:     v.TxIndex,
+			builtinD:    v.BuiltinD,
+			erc20AL:     v.Erc20AL,
+			erc20D:      v.Erc20D,
+		}
+	}
+	e.bss.changed[assetActionsKey] = true
 	return nil
 }

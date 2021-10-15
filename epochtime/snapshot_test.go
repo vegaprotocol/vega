@@ -28,7 +28,7 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 
 	data, err := service.Snapshot()
 	require.Nil(t, err)
-	require.Equal(t, 1, len(data)) //should be one "chunk"
+	require.Equal(t, 1, len(data)) // should be one "chunk"
 
 	snapService := getEpochServiceMT(t)
 	defer snapService.ctrl.Finish()
@@ -77,7 +77,6 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	// epochs = {start, end, start, end}
 	require.Equal(t, epochs[0], epochs[2])
 	require.Equal(t, epochs[1], epochs[3])
-
 }
 
 func TestEpochSnapshotHash(t *testing.T) {
@@ -92,7 +91,7 @@ func TestEpochSnapshotHash(t *testing.T) {
 	service.cb(ctx, now)
 	h, err := service.GetHash("all")
 	require.Nil(t, err)
-	require.Equal(t, "010bd3281c2cdc839fdd0a3bdf0877b174c47980e7c4790ba32befd802a9e1e1", hex.EncodeToString(h))
+	require.Equal(t, "41a9839f4dc60ac14461f58658c0e1bf7542bd54cbd635f3c0402bef2f07f60f", hex.EncodeToString(h))
 
 	// Shuffle time along
 	now = now.Add(25 * time.Hour)
@@ -100,15 +99,14 @@ func TestEpochSnapshotHash(t *testing.T) {
 	service.OnBlockEnd(ctx)
 	h, err = service.GetHash("all")
 	require.Nil(t, err)
-	require.Equal(t, "e4bbd70ef0aaf86065c14baeeda63d4a13d9cc95e75edb0197ba7bb619683611", hex.EncodeToString(h))
+	require.Equal(t, "074677210f20ebb3427064339ebbd46dbfd5d2381bcd3b3fd126bbdcb05b6697", hex.EncodeToString(h))
 
 	// Shuffle time a bit more
 	now = now.Add(25 * time.Hour)
 	service.cb(ctx, now)
 	h, err = service.GetHash("all")
 	require.Nil(t, err)
-	require.Equal(t, "9b1cddbbd648b44569a22551b1f1e82379b6d6c664b3e01c18d0ef3edb9a197d", hex.EncodeToString(h))
-
+	require.Equal(t, "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e", hex.EncodeToString(h))
 }
 
 func TestEpochSnapshotCompare(t *testing.T) {
@@ -125,7 +123,7 @@ func TestEpochSnapshotCompare(t *testing.T) {
 
 	data, err := service.Snapshot()
 	require.Nil(t, err)
-	require.Equal(t, 1, len(data)) //should be one "chunk"
+	require.Equal(t, 1, len(data)) // should be one "chunk"
 
 	snapService := getEpochServiceMT(t)
 	defer snapService.ctrl.Finish()

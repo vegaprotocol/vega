@@ -25,7 +25,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := cmd.Passphrase.Get("node wallet")
+	pass, err := cmd.Passphrase.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 
 func Node(ctx context.Context, parser *flags.Parser) error {
 	nodeCmd = NodeCmd{
-		Config:       config.NewDefaultConfig(),
+		Config: config.NewDefaultConfig(),
 	}
 	cmd, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
 	if err != nil {

@@ -142,7 +142,7 @@ func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMoni
 	}
 }
 
-// IntoProto return proto version of the PriceMonitoringTrigger
+// IntoProto return proto version of the PriceMonitoringTrigger.
 func (p PriceMonitoringTrigger) IntoProto() *proto.PriceMonitoringTrigger {
 	prob, _ := p.Probability.Float64()
 	return &proto.PriceMonitoringTrigger{

@@ -42,9 +42,7 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-var (
-	marketConfig = market.NewMarketConfig()
-)
+var marketConfig = market.NewMarketConfig()
 
 type executionTestSetup struct {
 	cfg              execution.Config
@@ -231,6 +229,14 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
 			Watcher: e.delegationEngine.OnCompLevelChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardsMinValidators,
+			Watcher: e.rewardsEngine.UpdateMinValidatorsStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardsMinValidators,
+			Watcher: e.delegationEngine.OnMinValidatorsChanged,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsEpochLength,

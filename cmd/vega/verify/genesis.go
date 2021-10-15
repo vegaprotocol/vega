@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 
 	types "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/events"
 	vgjson "code.vegaprotocol.io/shared/libs/json"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
 )
@@ -23,7 +23,7 @@ func (n noopBroker) Send(e events.Event) {}
 func (noopBroker) SendBatch(e []events.Event) {}
 
 func verifyGenesis(r *reporter, bs []byte) string {
-	var g = &struct {
+	g := &struct {
 		AppState *struct {
 			Network *struct {
 				ReplayAttackThreshold *int `json:"replay_attack_threshold"`
@@ -36,8 +36,7 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		} `json:"app_state"`
 	}{}
 
-	err := json.Unmarshal(bs, g)
-	if err != nil {
+	if err := json.Unmarshal(bs, g); err != nil {
 		r.Err("unable to unmarshal genesis file, %v", err)
 		return ""
 	}
@@ -117,7 +116,6 @@ func verifyGenesis(r *reporter, bs []byte) string {
 			} else if !isValidEthereumAddress(v.ContractAddress) {
 				r.Err("app_state.assets contains an non valid ethereum contract address `%v`", v.ContractAddress)
 			}
-
 		}
 	}
 

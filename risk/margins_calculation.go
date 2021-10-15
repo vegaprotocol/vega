@@ -53,9 +53,7 @@ func (e *Engine) calculateAuctionMargins(m events.Margin, markPrice *num.Uint, r
 	ml := e.calculateMargins(m, markPrice, rf, true, true)
 	// now add the margin levels for orders
 	long, short := num.DecimalFromInt64(m.Buy()), num.DecimalFromInt64(m.Sell())
-	var (
-		lMargin, sMargin num.Decimal
-	)
+	var lMargin, sMargin num.Decimal
 	if long.IsPositive() {
 		lMargin = long.Mul(rf.Long.Mul(m.VWBuy().ToDecimal()))
 	}

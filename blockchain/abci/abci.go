@@ -19,7 +19,7 @@ const (
 	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
 	AbciUnknownCommandError uint32 = 80
 
-	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests
+	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests.
 	AbciSpamError uint32 = 89
 )
 

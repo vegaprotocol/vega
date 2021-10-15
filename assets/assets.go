@@ -40,9 +40,9 @@ type Service struct {
 	pamu          sync.RWMutex
 	pendingAssets map[string]*Asset
 
-	nodeWallets *nodewallets.NodeWallets
-	ethClient   erc20.ETHClient
-  dss             *assetsSnapshotState
+	nodeWallets     *nodewallets.NodeWallets
+	ethClient       erc20.ETHClient
+	ass             *assetsSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
 }
 
@@ -57,7 +57,7 @@ func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient
 		pendingAssets: map[string]*Asset{},
 		nodeWallets:   nw,
 		ethClient:     ethClient,
-		dss: &assetsSnapshotState{
+		ass: &assetsSnapshotState{
 			changed:    map[string]bool{activeKey: true, pendingKey: true},
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
@@ -71,7 +71,7 @@ func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient
 	return s
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (s *Service) ReloadConf(cfg Config) {
 	s.log.Info("reloading configuration")
 	if s.log.GetLevel() != cfg.Level.Get() {
@@ -87,7 +87,7 @@ func (s *Service) ReloadConf(cfg Config) {
 
 func (*Service) onTick(_ context.Context, t time.Time) {}
 
-// Enable move the state of an from pending the list of valid and accepted assets
+// Enable move the state of an from pending the list of valid and accepted assets.
 func (s *Service) Enable(assetID string) error {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
@@ -100,8 +100,8 @@ func (s *Service) Enable(assetID string) error {
 		defer s.amu.Unlock()
 		s.assets[assetID] = asset
 		delete(s.pendingAssets, assetID)
-		s.dss.changed[activeKey] = true
-		s.dss.changed[pendingKey] = true
+		s.ass.changed[activeKey] = true
+		s.ass.changed[pendingKey] = true
 		return nil
 	}
 	return ErrAssetInvalid
@@ -133,7 +133,7 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 
 // NewAsset add a new asset to the pending list of assets
 // the ref is the reference of proposal which submitted the new asset
-// returns the assetID and an error
+// returns the assetID and an error.
 func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (string, error) {
 	s.pamu.Lock()
 	defer s.pamu.Unlock()
@@ -142,7 +142,7 @@ func (s *Service) NewAsset(assetID string, assetDetails *types.AssetDetails) (st
 		return "", err
 	}
 	s.pendingAssets[assetID] = asset
-	s.dss.changed[pendingKey] = true
+	s.ass.changed[pendingKey] = true
 	return assetID, err
 }
 

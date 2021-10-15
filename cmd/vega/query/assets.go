@@ -12,7 +12,7 @@ type AssetsCmd struct {
 	NodeAddress string `long:"node-address" description:"The address of the vega node to use" default:"0.0.0.0:3002"`
 }
 
-func (opts *AssetsCmd) Execute(params []string) error {
+func (opts *AssetsCmd) Execute(_ []string) error {
 	req := apipb.ListAssetsRequest{}
 	return getPrintAssets(opts.NodeAddress, &req)
 }
@@ -38,7 +38,7 @@ func getPrintAssets(nodeAddress string, req *apipb.ListAssetsRequest) error {
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

@@ -60,7 +60,7 @@ const (
 const (
 	minValidationPeriod = 1                   // sec minutes
 	maxValidationPeriod = 30 * 24 * time.Hour // 2 days
-	// by default all validators needs to sign
+	// by default all validators needs to sign.
 	defaultValidatorsVoteRequired = 1.0
 )
 
@@ -87,8 +87,7 @@ type res struct {
 func (r *res) addVote(key string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	_, ok := r.votes[key]
-	if ok {
+	if _, ok := r.votes[key]; ok {
 		return ErrDuplicateVoteFromNode
 	}
 
@@ -143,7 +142,7 @@ func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f f
 	return nil
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (w *Witness) ReloadConf(cfg Config) {
 	w.log.Info("reloading configuration")
 	if w.log.GetLevel() != cfg.Level.Get() {
@@ -164,7 +163,7 @@ func (w *Witness) Stop() {
 	}
 }
 
-// AddNodeCheck registers a vote from a validator node for a given resource
+// AddNodeCheck registers a vote from a validator node for a given resource.
 func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error {
 	hexPubKey := hex.EncodeToString(nv.PubKey)
 	// get the node proposal first
