@@ -19,8 +19,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createEngine(t *testing.T) {
+func createEngine(t *testing.T) *execution.Engine {
 	t.Helper()
+	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	executionConfig := execution.NewDefaultConfig()
 	broker := bmock.NewMockBroker(ctrl)
