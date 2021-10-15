@@ -15,12 +15,18 @@ var (
 type ReplayProtector struct {
 	height uint64
 	txs    []map[string]struct{}
+	rss    *replaySnapshotState
 }
 
 // NewReplayProtector returns a new ReplayProtector instance given a tolerance.
 func NewReplayProtector(tolerance uint) *ReplayProtector {
 	rp := &ReplayProtector{
 		txs: make([]map[string]struct{}, tolerance),
+		rss: &replaySnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 
 	for i := range rp.txs {
@@ -36,6 +42,7 @@ func (rp *ReplayProtector) SetHeight(h uint64) {
 
 	if l := uint64(len(rp.txs)); h >= l {
 		rp.txs[h%l] = make(map[string]struct{})
+		rp.rss.changed = true
 	}
 }
 
@@ -57,6 +64,7 @@ func (rp *ReplayProtector) Add(key string) bool {
 
 	target := rp.height % uint64(len(rp.txs))
 	rp.txs[target][key] = struct{}{}
+	rp.rss.changed = true
 	return true
 }
 
