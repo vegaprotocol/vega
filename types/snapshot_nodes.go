@@ -2774,9 +2774,7 @@ func (*PayloadNotary) Namespace() SnapshotNamespace {
 func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
 	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
 	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
-		transactions := make([]string, 0, len(block.Tx))
-		transactions = append(transactions, block.Tx...)
-		blocks = append(blocks, &ReplayBlockTransactions{Transactions: transactions})
+		blocks = append(blocks, &ReplayBlockTransactions{Transactions: block.Tx[:]})
 	}
 	return &PayloadReplayProtection{
 		Blocks: blocks,
@@ -2787,9 +2785,7 @@ func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection 
 	recentBlocks := make([]*snapshot.RecentBlocksTransactions, 0, len(p.Blocks))
 
 	for _, block := range p.Blocks {
-		txs := make([]string, 0, len(block.Transactions))
-		txs = append(txs, block.Transactions...)
-		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: txs})
+		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: block.Transactions[:]})
 	}
 	return &snapshot.Payload_ReplayProtection{
 		ReplayProtection: &snapshot.ReplayProtection{
