@@ -53,7 +53,7 @@ func getMarketConfig() *types.Market {
 		PriceMonitoringSettings: &types.PriceMonitoringSettings{
 			Parameters: &types.PriceMonitoringParameters{
 				Triggers: []*types.PriceMonitoringTrigger{
-					&types.PriceMonitoringTrigger{
+					{
 						Horizon:          1000,
 						HorizonDec:       num.DecimalFromFloat(1000.0),
 						Probability:      num.DecimalFromFloat(0.3),
