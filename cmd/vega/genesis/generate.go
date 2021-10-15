@@ -172,5 +172,9 @@ func loadNodeWalletPubKey(config nodewallets.Config, vegaPaths paths.Paths, regi
 		return "", "", "", fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
+	if err := nw.Verify(); err != nil {
+		return "", "", "", err
+	}
+
 	return nw.Vega.PubKey().Hex(), nw.Ethereum.PubKey().Hex(), nw.Vega.ID().Hex(), nil
 }
