@@ -228,6 +228,7 @@ pipeline {
                                     --max-same-issues 0 \
                                     --allow-parallel-runners \
                                     --config .golangci.toml \
+                                    --timeout '5m0s' \
                                     --enable-all \
                                     --color always \
                                     --disable promlinter \
