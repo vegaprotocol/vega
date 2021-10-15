@@ -2,6 +2,7 @@ package rewards
 
 import (
 	"context"
+	"math/rand"
 	"sort"
 
 	"code.vegaprotocol.io/vega/events"
@@ -9,8 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
-
-var minVal, _ = num.DecimalFromString("5.0")
 
 func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker Broker, epochSeq, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
 	delegatorShareStr := rewardScheme.Parameters["delegatorShare"].GetString()
@@ -31,8 +30,17 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 		maxPayoutPerParticipant = num.Zero()
 	}
 
+	minValStr := rewardScheme.Parameters["minVal"].GetString()
+	minVal, err := num.DecimalFromString(minValStr)
+	if err != nil {
+		e.log.Panic("failed to read reward scheme param", logging.String("minVal", rewardScheme.Parameters["minVal"].Value))
+	}
+
 	// calculate the validator score for each validator and the total score for all
-	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, broker, epochSeq, validatorData, minVal, compLevel)
+	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, broker, epochSeq, validatorData, minVal, compLevel, e.rng)
+	for node, score := range validatorNormalisedScores {
+		e.log.Info("Rewards: calculated normalised score", logging.String("validator", node), logging.String("normalisedScore", score.String()))
+	}
 
 	minStakePerValidator, err := rewardScheme.Parameters["minValStake"].GetUint()
 	if err != nil {
@@ -45,16 +53,17 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 	}
 
 	rewardBalance = num.Min(maxPayoutPerEpoch, rewardBalance)
+	e.log.Info("Rewards: reward pot for for epoch with max payout per epoch", logging.String("epoch", epochSeq), logging.String("rewardBalance", rewardBalance.String()))
 
 	// no point in doing anything after this point if the reward balance is 0
 	if rewardBalance.IsZero() {
 		return nil
 	}
-	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator)
+	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator, e.rng, e.log)
 }
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints.
-func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint) *payout {
+func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
 	// if there is no reward to give, return no payout
 	rewards := map[string]*num.Uint{}
 	totalRewardPayout := num.Zero()
@@ -93,6 +102,15 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 		// calculate the potential reward for delegators and the validator
 		amountToKeepByValidator, _ := num.UintFromDecimal(validatorFraction.Mul(epochPayoutForValidatorAndDelegators))
 
+		log.Info("Rewards: reward calculation for validator",
+			logging.String("epochSeq", epochSeq),
+			logging.String("epochPayoutForValidatorAndDelegators", epochPayoutForValidatorAndDelegators.String()),
+			logging.String("totalStakeForValidator", totalStakeForValidator.String()),
+			logging.String("delegatorFraction", delegatorFraction.String()),
+			logging.String("validatorFraction", validatorFraction.String()),
+			logging.String("amountToGiveToDelegators", amountToGiveToDelegators.String()),
+			logging.String("amountToKeepByValidator", amountToKeepByValidator.String()))
+
 		// check how much reward the validator can accept with the cap per participant
 		rewardForNode, ok := rewards[vd.NodeID]
 		if !ok {
@@ -113,22 +131,50 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 			}
 		}
 
+		log.Info("Rewards: reward kept by validator for epoch (post max payout cap)", logging.String("epoch", epochSeq), logging.String("validator", vd.NodeID), logging.String("amountToKeepByValidator", rewards[vd.NodeID].String()))
+
 		remainingRewardForDelegators := amountToGiveToDelegators
+
+		// calculate the weight of each delegator out of the delegated stake to the validator
+		delegatorWeights := make(map[string]num.Decimal, len(vd.Delegators))
+		weightSums := num.DecimalZero()
+		decimalOne := num.DecimalFromInt64(1)
+		for party, delegatorAmt := range vd.Delegators {
+			delegatorWeight := delegatorAmt.ToDecimal().Div(vd.StakeByDelegators.ToDecimal())
+			weightSums = weightSums.Add(delegatorWeight)
+			delegatorWeights[party] = delegatorWeight
+		}
+
+		sortedParties := make([]string, 0, len(vd.Delegators))
+		for party := range vd.Delegators {
+			sortedParties = append(sortedParties, party)
+		}
+		sort.Strings(sortedParties)
+
+		// NB: due to rounding errors this sum can be greater than 1
+		// to avoid overflow, we choose at random a party adjust it by the error
+		if weightSums.GreaterThan(decimalOne) {
+			precisionError := weightSums.Sub(decimalOne)
+			unluckyParty := sortedParties[rng.Intn(len(delegatorWeights))]
+			delegatorWeights[unluckyParty] = num.MaxD(num.DecimalZero(), delegatorWeights[unluckyParty].Sub(precisionError))
+		}
 
 		// calculate delegator amounts
 		// this may take a few rounds due to the cap on the reward a party can get
 		// if we still have parties that haven't maxed their reward, they are split the remaining balance
 		for !remainingRewardForDelegators.IsZero() {
+			log.Info("Reward remaining to disrtibute to delegators", logging.String("epoch", epochSeq), logging.String("remainingRewardForDelegators", remainingRewardForDelegators.String()))
+
 			totalAwardedThisRound := num.Zero()
-			for party, delegatorAmt := range vd.Delegators {
+			for _, party := range sortedParties {
 				// check if the party has already rewards from other validators or previous rounds (this epoch)
 				rewardForParty, ok := rewards[party]
 				if !ok {
 					rewardForParty = num.Zero()
 				}
 
-				delegatorPropotion := delegatorAmt.ToDecimal().Div(vd.StakeByDelegators.ToDecimal())
-				rewardAsUint, _ := num.UintFromDecimal(delegatorPropotion.Mul(remainingRewardForDelegators.ToDecimal()))
+				delegatorWeight := delegatorWeights[party]
+				rewardAsUint, _ := num.UintFromDecimal(delegatorWeight.Mul(remainingRewardForDelegators.ToDecimal()))
 				if maxPayout.IsZero() {
 					totalAwardedThisRound.AddSum(rewardAsUint)
 					totalRewardPayout.AddSum(rewardAsUint)
@@ -166,10 +212,11 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 }
 
 // calculate the score for each validator and normalise by the total score.
-func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal) map[string]num.Decimal {
+func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, rng *rand.Rand) map[string]num.Decimal {
 	// calculate the total amount of tokens delegated across all validators
 	totalDelegated := calcTotalDelegated(validatorsData)
 	totalScore := num.DecimalZero()
+	rawScores := make(map[string]num.Decimal, len(validatorsData))
 	valScores := make(map[string]num.Decimal, len(validatorsData))
 
 	if totalDelegated.IsZero() {
@@ -182,7 +229,7 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 		totalValStake := num.Zero().Add(vd.StakeByDelegators, vd.SelfStake)
 		normalisedValStake := totalValStake.ToDecimal().Div(totalDelegated.ToDecimal())
 		valScore := calcValidatorScore(normalisedValStake, minVal, compLevel, num.DecimalFromInt64(int64(len(validatorsData))))
-		valScores[vd.NodeID] = valScore
+		rawScores[vd.NodeID] = valScore
 		totalScore = totalScore.Add(valScore)
 		nodeIDSlice = append(nodeIDSlice, vd.NodeID)
 	}
@@ -190,11 +237,24 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	sort.Strings(nodeIDSlice)
 	validatorScoreEventSlice := make([]events.Event, 0, len(valScores))
 
+	scoreSum := num.DecimalZero()
 	for _, k := range nodeIDSlice {
-		score := valScores[k]
+		score := rawScores[k]
 		valScores[k] = score.Div(totalScore)
-		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, score, valScores[k]))
+		scoreSum = scoreSum.Add(valScores[k])
 	}
+
+	// verify that the sum of scores is 1, if not adjust one score at random
+	if scoreSum.GreaterThan(num.DecimalFromInt64(1)) {
+		precisionError := scoreSum.Sub(num.DecimalFromInt64(1))
+		unluckyValidator := rng.Intn(len(nodeIDSlice))
+		valScores[nodeIDSlice[unluckyValidator]] = num.MaxD(valScores[nodeIDSlice[unluckyValidator]].Sub(precisionError), num.DecimalZero())
+	}
+
+	for _, k := range nodeIDSlice {
+		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, rawScores[k], valScores[k]))
+	}
+
 	broker.SendBatch(validatorScoreEventSlice)
 	return valScores
 }

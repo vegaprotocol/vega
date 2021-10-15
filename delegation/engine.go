@@ -13,10 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	minVal, _                    = num.DecimalFromString("5.0")
-	minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
-)
+var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
 
 var (
 	activeKey  = (&types.PayloadDelegationActive{}).Key()
@@ -103,9 +100,11 @@ type Engine struct {
 	minDelegationAmount  *num.Uint                                     // min delegation amount per delegation request
 	currentEpoch         types.Epoch                                   // the current epoch for pending delegations
 	compLevel            num.Decimal                                   // competition level
-	autoDelegationMode   map[string]struct{}                           // parties entered auto-delegation mode
-	dss                  *delegationSnapshotState
-	keyToSerialiser      map[string]func() ([]byte, error)
+	minVal               num.Decimal                                   // minimum number of validators
+
+	autoDelegationMode map[string]struct{} // parties entered auto-delegation mode
+	dss                *delegationSnapshotState
+	keyToSerialiser    map[string]func() ([]byte, error)
 }
 
 // New instantiate a new delegation engine.
@@ -144,6 +143,12 @@ func (e *Engine) Hash() []byte {
 		e.log.Panic("could not create checkpoint", logging.Error(err))
 	}
 	return crypto.Hash(buf)
+}
+
+// OnMinValidatorsChanged updates the network parameter for minValidators.
+func (e *Engine) OnMinValidatorsChanged(ctx context.Context, minValidators int64) error {
+	e.minVal = num.DecimalFromInt64(minValidators)
+	return nil
 }
 
 // OnCompLevelChanged updates the network parameter for competitionLevel.
@@ -775,7 +780,7 @@ func (e *Engine) calcTotalDelegatedTokens(epochSeq uint64, availableForAutoDeleg
 }
 
 func (e *Engine) calcMaxDelegatableTokens(totalTokens *num.Uint, numVal num.Decimal) *num.Uint {
-	a := num.MaxD(minVal, numVal.Div(e.compLevel))
+	a := num.MaxD(e.minVal, numVal.Div(e.compLevel))
 
 	res, _ := num.UintFromDecimal(totalTokens.ToDecimal().Div(a))
 	return res
