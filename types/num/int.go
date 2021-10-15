@@ -6,7 +6,7 @@ import (
 	"github.com/holiman/uint256"
 )
 
-// Int a wrapper to a signed big int
+// Int a wrapper to a signed big int.
 type Int struct {
 	// The unsigned version of the integer
 	U *Uint
@@ -25,7 +25,7 @@ func IntFromUint(u *Uint, s bool) *Int {
 // interpreted using the give base.
 // A big.Int is used to read the string, so
 // all error related to big.Int parsing applied here.
-// will return true if an error/overflow happened
+// will return true if an error/overflow happened.
 func IntFromString(str string, base int) (*Int, bool) {
 	b, ok := big.NewInt(0).SetString(str, base)
 	if !ok {
@@ -35,7 +35,7 @@ func IntFromString(str string, base int) (*Int, bool) {
 }
 
 // IntFromBig construct a new Int with a big.Int
-// returns true if overflow happened
+// returns true if overflow happened.
 func IntFromBig(b *big.Int) (*Int, bool) {
 	positive := true
 	if b.Sign() < 0 {

@@ -483,7 +483,7 @@ func (mdb *MarketDepthBuilder) GetPriceLevels(market string) int {
 	return mdb.GetBuyPriceLevels(market) + mdb.GetSellPriceLevels(market)
 }
 
-// GetBestBidPrice returns the highest bid price in the book
+// GetBestBidPrice returns the highest bid price in the book.
 func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) *num.Uint {
 	md := mdb.marketDepths[market]
 	if md != nil {
@@ -494,7 +494,7 @@ func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) *num.Uint {
 	return num.Zero()
 }
 
-// GetBestAskPrice returns the highest bid price in the book
+// GetBestAskPrice returns the highest bid price in the book.
 func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) *num.Uint {
 	md := mdb.marketDepths[market]
 	if md != nil {
