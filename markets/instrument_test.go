@@ -20,10 +20,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const marketID = "mktID"
+
 func TestInstrument(t *testing.T) {
 	t.Run("Create a valid new instrument", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), marketID)
 		assert.NotNil(t, inst)
 		assert.Nil(t, err)
 	})
@@ -64,7 +66,7 @@ func TestInstrument(t *testing.T) {
 				},
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), marketID)
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
 	})
@@ -72,7 +74,7 @@ func TestInstrument(t *testing.T) {
 	t.Run("nil product", func(t *testing.T) {
 		pinst := getValidInstrumentProto()
 		pinst.Product = nil
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), marketID)
 		assert.Nil(t, inst)
 		assert.NotNil(t, err)
 		assert.Equal(t, err.Error(), "unable to instantiate product from instrument configuration: nil product")
@@ -92,7 +94,7 @@ func TestInstrument(t *testing.T) {
 				},
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), marketID)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: an oracle spec and an oracle spec binding are required", err.Error())
@@ -131,7 +133,7 @@ func TestInstrument(t *testing.T) {
 				OracleSpecBinding: nil,
 			},
 		}
-		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t))
+		inst, err := markets.NewInstrument(context.Background(), logging.NewTestLogger(), pinst, newOracleEngine(t), marketID)
 		require.NotNil(t, err)
 		assert.Nil(t, inst)
 		assert.Equal(t, "unable to instantiate product from instrument configuration: an oracle spec and an oracle spec binding are required", err.Error())

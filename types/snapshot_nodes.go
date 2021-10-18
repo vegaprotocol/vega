@@ -163,6 +163,10 @@ type ReplayBlockTransactions struct {
 	Transactions []string
 }
 
+type PayloadFutureState struct {
+	FutureState *FutureState
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -415,6 +419,12 @@ type Notary struct {
 	Sigs []*NotarySigs
 }
 
+type FutureState struct {
+	MarketID          string
+	SettlementPrice   string
+	TradingTerminated bool
+}
+
 func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
 	meta := &snapshot.Metadata{}
 	if err := proto.Unmarshal(s.Metadata, meta); err != nil {
@@ -591,6 +601,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadNotaryFromProto(dt)
 	case *snapshot.Payload_ReplayProtection:
 		ret.Data = PayloadReplayProtectionFromProto(dt)
+	case *snapshot.Payload_FutureState:
+		ret.Data = PayloadFutureStateFromProto(dt)
 	}
 	return ret
 }
@@ -671,6 +683,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Notary:
 		ret.Data = dt
 	case *snapshot.Payload_ReplayProtection:
+		ret.Data = dt
+	case *snapshot.Payload_FutureState:
 		ret.Data = dt
 	}
 	return &ret
@@ -2806,4 +2820,46 @@ func (*PayloadReplayProtection) Key() string {
 
 func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
 	return ReplayProtectionSnapshot
+}
+
+func FutureStateFromProto(f *snapshot.FutureState) *FutureState {
+	return &FutureState{
+		MarketID:          f.MarketId,
+		SettlementPrice:   f.SettlementPrice,
+		TradingTerminated: f.TradingTerminated,
+	}
+}
+
+func (f *FutureState) IntoProto() *snapshot.FutureState {
+	return &snapshot.FutureState{
+		MarketId:          f.MarketID,
+		SettlementPrice:   f.SettlementPrice,
+		TradingTerminated: f.TradingTerminated,
+	}
+}
+
+func PayloadFutureStateFromProto(f *snapshot.Payload_FutureState) *PayloadFutureState {
+	return &PayloadFutureState{
+		FutureState: FutureStateFromProto(f.FutureState),
+	}
+}
+
+func (p PayloadFutureState) IntoProto() *snapshot.Payload_FutureState {
+	return &snapshot.Payload_FutureState{
+		FutureState: p.FutureState.IntoProto(),
+	}
+}
+
+func (*PayloadFutureState) isPayload() {}
+
+func (p *PayloadFutureState) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadFutureState) Key() string {
+	return p.FutureState.MarketID
+}
+
+func (*PayloadFutureState) Namespace() SnapshotNamespace {
+	return FutureSnapshot
 }

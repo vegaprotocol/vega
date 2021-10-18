@@ -29,6 +29,9 @@ type Future struct {
 	QuoteName       string
 	Maturity        time.Time
 	oracle          oracle
+	marketID        string
+
+	fss futureSnapshotState
 }
 
 type oracle struct {
@@ -115,6 +118,7 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	}
 
 	f.oracle.data.tradingTerminated = tradingTerminated
+	f.fss.changed = true
 	return nil
 }
 
@@ -133,6 +137,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	}
 
 	f.oracle.data.settlementPrice = settlementPrice
+	f.fss.changed = true
 
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
@@ -144,7 +149,7 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	return nil
 }
 
-func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
+func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine, mktID string) (*Future, error) {
 	maturity, err := time.Parse(time.RFC3339, f.Maturity)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid maturity time format")
@@ -185,6 +190,8 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		oracle: oracle{
 			binding: oracleBinding,
 		},
+		marketID: mktID,
+		fss:      futureSnapshotState{changed: true},
 	}
 
 	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)

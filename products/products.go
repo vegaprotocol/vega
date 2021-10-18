@@ -35,13 +35,13 @@ type Product interface {
 }
 
 // New instance a new product from a Market framework product configuration.
-func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngine) (Product, error) {
+func New(ctx context.Context, log *logging.Logger, pp interface{}, oe OracleEngine, mktID string) (Product, error) {
 	if pp == nil {
 		return nil, ErrNilProduct
 	}
 	switch p := pp.(type) {
 	case *types.Instrument_Future:
-		return newFuture(ctx, log, p.Future, oe)
+		return newFuture(ctx, log, p.Future, oe, mktID)
 	default:
 		return nil, ErrUnimplementedProduct
 	}

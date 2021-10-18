@@ -36,8 +36,8 @@ type TradableInstrument struct {
 
 // NewTradableInstrument will instantiate a new tradable instrument
 // using a market framework configuration for a tradable instrument.
-func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, oe products.OracleEngine) (*TradableInstrument, error) {
-	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe)
+func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.TradableInstrument, oe products.OracleEngine, mktID string) (*TradableInstrument, error) {
+	instrument, err := NewInstrument(ctx, log, pti.Instrument, oe, mktID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +55,8 @@ func NewTradableInstrument(ctx context.Context, log *logging.Logger, pti *types.
 
 // NewInstrument will instantiate a new instrument
 // using a market framework configuration for a instrument.
-func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine) (*Instrument, error) {
-	product, err := products.New(ctx, log, pi.Product, oe)
+func NewInstrument(ctx context.Context, log *logging.Logger, pi *types.Instrument, oe products.OracleEngine, mktID string) (*Instrument, error) {
+	product, err := products.New(ctx, log, pi.Product, oe, mktID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to instantiate product from instrument configuration")
 	}

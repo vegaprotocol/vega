@@ -77,7 +77,7 @@ func TestFuture(t *testing.T) {
 
 	prodSpec := proto.Product
 	require.NotNil(t, prodSpec)
-	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe)
+	prod, err := products.New(ctx, logging.NewTestLogger(), prodSpec, oe, "mID")
 
 	// Cast back into a future so we can call future specific functions
 	f, ok := prod.(*products.Future)
@@ -108,7 +108,9 @@ func TestFuture(t *testing.T) {
 
 	for _, param := range params {
 		// Use debug function to update the settlement price as if from a Oracle
-		f.SetSettlementPrice(ctx, "prices.ETH.value", param.settlementPrice)
+		err := f.SetSettlementPrice(ctx, "prices.ETH.value", param.settlementPrice)
+		assert.NoError(t, err)
+
 		ep := num.NewUint(param.entryPrice)
 		fa, _, err := prod.Settle(ep, param.position)
 		assert.NoError(t, err)
