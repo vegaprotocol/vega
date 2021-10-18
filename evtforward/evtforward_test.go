@@ -1,17 +1,22 @@
 package evtforward_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
 
-	types "code.vegaprotocol.io/protos/vega"
+	prototypes "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/evtforward/mocks"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -80,7 +85,7 @@ func TestEvtForwarder(t *testing.T) {
 func testEventEmitterNotAllowlisted(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
-	evt := getTestChainEvent()
+	evt := getTestChainEvent("some")
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(11, 0))
@@ -91,8 +96,8 @@ func testEventEmitterNotAllowlisted(t *testing.T) {
 func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
-	evt := getTestChainEvent()
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	evt := getTestChainEvent("some")
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(9, 0))
@@ -103,8 +108,8 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
-	evt := getTestChainEvent()
-	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	evt := getTestChainEvent("some")
+	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
 	evtfwd.cb(context.Background(), time.Unix(10, 0))
@@ -126,15 +131,71 @@ func testUpdateValidatorList(t *testing.T) {
 func testAckSuccess(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
-	evt := getTestChainEvent()
+	evt := getTestChainEvent("some")
+
+	hash1, err := evtfwd.GetHash("all")
+	require.Nil(t, err)
+	state1, err := evtfwd.GetState("all")
+	require.Nil(t, err)
+
 	ok := evtfwd.Ack(evt)
 	assert.True(t, ok)
+	hash2, err := evtfwd.GetHash("all")
+	require.Nil(t, err)
+	state2, err := evtfwd.GetState("all")
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash1, hash2))
+	require.False(t, bytes.Equal(state1, state2))
+
+	// try to ack again the same event
+	ok = evtfwd.Ack(evt)
+	assert.False(t, ok)
+	hash3, err := evtfwd.GetHash("all")
+	require.Nil(t, err)
+	state3, err := evtfwd.GetState("all")
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash3, hash2))
+	require.True(t, bytes.Equal(state3, state2))
+
+	// restore the state
+	var pl snapshot.Payload
+	proto.Unmarshal(state3, &pl)
+	payload := types.PayloadFromProto(&pl)
+	err = evtfwd.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+
+	// the event exists after the reload so expect to fail
+	ok = evtfwd.Ack(evt)
+	assert.False(t, ok)
+
+	// expect the hash/state after the reload to equal what it was before
+	hash4, err := evtfwd.GetHash("all")
+	require.Nil(t, err)
+	state4, err := evtfwd.GetState("all")
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash4, hash3))
+	require.True(t, bytes.Equal(state4, state3))
+
+	// ack a new event for the hash/state to change
+	evt2 := getTestChainEvent("somenew")
+	ok = evtfwd.Ack(evt2)
+	assert.True(t, ok)
+	hash5, err := evtfwd.GetHash("all")
+	require.Nil(t, err)
+	state5, err := evtfwd.GetState("all")
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash5, hash4))
+	require.False(t, bytes.Equal(state5, state4))
 }
 
 func testAckFailureAlreadyAcked(t *testing.T) {
 	evtfwd := getTestEvtFwd(t)
 	defer evtfwd.ctrl.Finish()
-	evt := getTestChainEvent()
+	evt := getTestChainEvent("some")
 	ok := evtfwd.Ack(evt)
 	assert.True(t, ok)
 	// try to ack again
@@ -142,15 +203,15 @@ func testAckFailureAlreadyAcked(t *testing.T) {
 	assert.False(t, ko)
 }
 
-func getTestChainEvent() *commandspb.ChainEvent {
+func getTestChainEvent(txid string) *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
-		TxId: "somehash",
+		TxId: txid,
 		Event: &commandspb.ChainEvent_Erc20{
-			Erc20: &types.ERC20Event{
+			Erc20: &prototypes.ERC20Event{
 				Index: 1,
 				Block: 100,
-				Action: &types.ERC20Event_AssetList{
-					AssetList: &types.ERC20AssetList{
+				Action: &prototypes.ERC20Event_AssetList{
+					AssetList: &prototypes.ERC20AssetList{
 						VegaAssetId: "asset-id-1",
 					},
 				},
