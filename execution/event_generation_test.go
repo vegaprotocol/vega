@@ -114,11 +114,11 @@ func checkConsistency(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepth
 		correct = false
 	}
 	// Do we have the same best bid price?
-	if !assert.True(t, tm.market.GetMarketData().BestBidPrice.EQ(num.NewUint(mdb.GetBestBidPrice(tm.market.GetID())))) {
+	if !assert.True(t, tm.market.GetMarketData().BestBidPrice.EQ(mdb.GetBestBidPrice(tm.market.GetID()))) {
 		correct = false
 	}
 	// Do we have the same best ask price?
-	if !assert.True(t, tm.market.GetMarketData().BestOfferPrice.EQ(num.NewUint(mdb.GetBestAskPrice(tm.market.GetID())))) {
+	if !assert.True(t, tm.market.GetMarketData().BestOfferPrice.EQ(mdb.GetBestAskPrice(tm.market.GetID()))) {
 		correct = false
 	}
 

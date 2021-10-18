@@ -33,6 +33,14 @@ func DecimalFromUint(u *Uint) Decimal {
 	return decimal.NewFromUint(&u.u)
 }
 
+func DecimalFromInt(u *Int) Decimal {
+	d := decimal.NewFromUint(&u.U.u)
+	if u.IsNegative() {
+		return d.Neg()
+	}
+	return d
+}
+
 func DecimalFromInt64(i int64) Decimal {
 	return decimal.NewFromInt(i)
 }
