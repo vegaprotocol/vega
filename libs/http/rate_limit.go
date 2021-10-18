@@ -43,7 +43,7 @@ func NewRateLimit(ctx context.Context, cfg RateLimitConfig) (*RateLimit, error) 
 	return r, nil
 }
 
-// NewRequest returns nil if the rate has not been exceeded
+// NewRequest returns nil if the rate has not been exceeded.
 func (r *RateLimit) NewRequest(prefix, ip string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

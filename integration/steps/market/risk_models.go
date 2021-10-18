@@ -65,8 +65,7 @@ func newRiskModels(unmarshaler *defaults.Unmarshaler) *riskModels {
 }
 
 func (r *riskModels) AddSimple(name string, model *types.TradableInstrument_SimpleRiskModel) error {
-	_, okLogNormal := r.logNormal[name]
-	if okLogNormal {
+	if _, okLogNormal := r.logNormal[name]; okLogNormal {
 		return fmt.Errorf("risk model \"%s\" already registered as log normal risk model", name)
 	}
 	r.simple[name] = model
@@ -74,8 +73,7 @@ func (r *riskModels) AddSimple(name string, model *types.TradableInstrument_Simp
 }
 
 func (r *riskModels) AddLogNormal(name string, model *types.TradableInstrument_LogNormalRiskModel) error {
-	_, okSimple := r.simple[name]
-	if okSimple {
+	if _, okSimple := r.simple[name]; okSimple {
 		return fmt.Errorf("risk model \"%s\" already registered as simple risk model", name)
 	}
 	r.logNormal[name] = model

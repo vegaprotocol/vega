@@ -94,7 +94,7 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 		return
 	}
 
-	var newState = rejectedProposal
+	newState := rejectedProposal
 	if valid {
 		newState = okProposal
 	}
@@ -125,11 +125,11 @@ func (n *NodeValidation) removeProposal(id string) {
 	}
 }
 
-// OnChainTimeUpdate returns validated proposal by all nodes
+// OnChainTimeUpdate returns validated proposal by all nodes.
 func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
-	var toRemove []string // id of proposals to remove
+	toRemove := []string{} // id of proposals to remove
 
 	// check that any proposal is ready
 	for _, prop := range n.nodeProposals {
@@ -167,15 +167,14 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	}
 }
 
-// Start the node validation of a proposal
+// Start the node validation of a proposal.
 func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
 		n.log.Error("no node validation required", logging.String("ref", p.ID))
 		return ErrNoNodeValidationRequired
 	}
 
-	_, ok := n.getProposal(p.ID)
-	if ok {
+	if _, ok := n.getProposal(p.ID); ok {
 		return ErrProposalReferenceDuplicate
 	}
 

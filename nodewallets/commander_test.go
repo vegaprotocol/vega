@@ -31,6 +31,7 @@ type testCommander struct {
 }
 
 func getTestCommander(t *testing.T) *testCommander {
+	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)

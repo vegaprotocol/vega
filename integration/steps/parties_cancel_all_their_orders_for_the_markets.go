@@ -33,7 +33,6 @@ func PartiesCancelAllTheirOrdersForTheMarkets(
 				return err
 			}
 		}
-
 	}
 
 	return nil

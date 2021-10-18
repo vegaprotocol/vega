@@ -6,7 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 )
 
-// IDgenerator no mutex required, markets work deterministically, and sequentially
+// IDgenerator no mutex required, markets work deterministically, and sequentially.
 type IDgenerator struct {
 	batches   uint64
 	orders    uint64
@@ -23,13 +23,13 @@ func (i *IDgenerator) NewBatch() {
 	i.batches++
 }
 
-// SetID sets the ID on an order, and increments total order count
+// SetID sets the ID on an order, and increments total order count.
 func (i *IDgenerator) SetID(o *types.Order) {
 	i.orders++
 	o.ID = fmt.Sprintf("V%010d-%010d", i.batches, i.orders)
 }
 
-// SetProposalID sets proposal ID and increments total proposal count
+// SetProposalID sets proposal ID and increments total proposal count.
 func (i *IDgenerator) SetProposalID(p *types.Proposal) {
 	i.proposals++
 	p.ID = fmt.Sprintf("P%010d-%010d", i.batches, i.proposals)

@@ -18,17 +18,17 @@ type Svc struct {
 	mu        sync.Mutex
 }
 
-// New instantiates a new vegatime service
+// New instantiates a new vegatime service.
 func New(conf Config) *Svc {
 	return &Svc{config: conf}
 }
 
-// ReloadConf reload the configuration for the vegatime service
+// ReloadConf reload the configuration for the vegatime service.
 func (s *Svc) ReloadConf(conf Config) {
 	// do nothing here, conf is not used for now
 }
 
-// SetTimeNow update the current time
+// SetTimeNow update the current time.
 func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 	// ensure the t is using UTC
 	t = t.UTC()
@@ -48,20 +48,20 @@ func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 	s.notify(ctx, t)
 }
 
-// GetTimeNow returns the current time in vega
+// GetTimeNow returns the current time in vega.
 func (s *Svc) GetTimeNow() time.Time {
 	return s.currentTimestamp
 }
 
 // NotifyOnTick allows other services to register a callback function
-// which will be called once the vega time is updated (SetTimeNow is called)
+// which will be called once the vega time is updated (SetTimeNow is called).
 func (s *Svc) NotifyOnTick(f func(context.Context, time.Time)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.listeners = append(s.listeners, f)
 }
 
-// GetTimeLastBatch returns the previous vega time
+// GetTimeLastBatch returns the previous vega time.
 func (s *Svc) GetTimeLastBatch() time.Time {
 	return s.previousTimestamp
 }

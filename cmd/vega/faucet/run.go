@@ -75,7 +75,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 
 // waitSig will wait for a sigterm or sigint interrupt.
 func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
+	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 

@@ -5,7 +5,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Config represent the configuration of vegatime service
+// Config represent the configuration of vegatime service.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 }

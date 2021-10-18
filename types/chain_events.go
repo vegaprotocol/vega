@@ -11,25 +11,27 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-type WithdrawExt = proto.WithdrawExt
-type WithdrawExt_Erc20 = proto.WithdrawExt_Erc20
-type Erc20WithdrawExt = proto.Erc20WithdrawExt
-type ChainEvent_Btc = commandspb.ChainEvent_Btc
-type ChainEvent_Validator = commandspb.ChainEvent_Validator
-type BuiltinAssetEvent_Deposit = proto.BuiltinAssetEvent_Deposit
-type BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
+type (
+	WithdrawExt                  = proto.WithdrawExt
+	WithdrawExt_Erc20            = proto.WithdrawExt_Erc20
+	Erc20WithdrawExt             = proto.Erc20WithdrawExt
+	ChainEvent_Btc               = commandspb.ChainEvent_Btc
+	ChainEvent_Validator         = commandspb.ChainEvent_Validator
+	BuiltinAssetEvent_Deposit    = proto.BuiltinAssetEvent_Deposit
+	BuiltinAssetEvent_Withdrawal = proto.BuiltinAssetEvent_Withdrawal
+)
 
 type WithdrawalStatus = proto.Withdrawal_Status
 
 const (
-	// WithdrawalStatusUnspecified Default value, always invalid
+	// WithdrawalStatusUnspecified Default value, always invalid.
 	WithdrawalStatusUnspecified WithdrawalStatus = 0
-	// WithdrawalStatusOpen The withdrawal is open and being processed by the network
+	// WithdrawalStatusOpen The withdrawal is open and being processed by the network.
 	WithdrawalStatusOpen WithdrawalStatus = 1
-	// WithdrawalStatusCancelled The withdrawal have been cancelled
+	// WithdrawalStatusCancelled The withdrawal have been cancelled.
 	WithdrawalStatusCancelled WithdrawalStatus = 2
 	// WithdrawalStatusFinalized The withdrawal went through and is fully finalised, the funds are removed from the
-	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network
+	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network.
 	WithdrawalStatusFinalized WithdrawalStatus = 3
 )
 
@@ -95,17 +97,17 @@ func WithdrawalFromProto(w *proto.Withdrawal) *Withdrawal {
 type DepositStatus = proto.Deposit_Status
 
 const (
-	// DepositStatusUnspecified Default value, always invalid
+	// DepositStatusUnspecified Default value, always invalid.
 	DepositStatusUnspecified DepositStatus = 0
-	// DepositStatusOpen The deposit is being processed by the network
+	// DepositStatusOpen The deposit is being processed by the network.
 	DepositStatusOpen DepositStatus = 1
-	// DepositStatusCancelled The deposit has been cancelled by the network
+	// DepositStatusCancelled The deposit has been cancelled by the network.
 	DepositStatusCancelled DepositStatus = 2
-	// DepositStatusFinalized The deposit has been finalised and accounts have been updated
+	// DepositStatusFinalized The deposit has been finalised and accounts have been updated.
 	DepositStatusFinalized DepositStatus = 3
 )
 
-// Deposit represent a deposit on to the Vega network
+// Deposit represent a deposit on to the Vega network.
 type Deposit struct {
 	// ID Unique identifier for the deposit
 	ID string
@@ -187,9 +189,9 @@ type BuiltinAssetDeposit struct {
 }
 
 func NewBuiltinAssetDepositFromProto(p *proto.BuiltinAssetDeposit) (*BuiltinAssetDeposit, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(p.Amount) > 0 {
-		var overflowed = false
+		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)
 		if overflowed {
 			return nil, errors.New("invalid amount")
@@ -228,9 +230,9 @@ type BuiltinAssetWithdrawal struct {
 }
 
 func NewBuiltinAssetWithdrawalFromProto(p *proto.BuiltinAssetWithdrawal) (*BuiltinAssetWithdrawal, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(p.Amount) > 0 {
-		var overflowed = false
+		var overflowed bool
 		amount, overflowed = num.UintFromString(p.Amount, 10)
 		if overflowed {
 			return nil, errors.New("invalid amount")
@@ -344,7 +346,6 @@ func (b BuiltinAssetEventDeposit) IntoProto() *proto.BuiltinAssetEvent_Deposit {
 		Deposit: b.Deposit.IntoProto(),
 	}
 	return p
-
 }
 
 func (b BuiltinAssetEventDeposit) isBuiltinAssetEvent() {}
@@ -371,7 +372,6 @@ func (b BuiltinAssetEventWithdrawal) IntoProto() *proto.BuiltinAssetEvent_Withdr
 		Withdrawal: b.Withdrawal.IntoProto(),
 	}
 	return p
-
 }
 
 func (b BuiltinAssetEventWithdrawal) isBuiltinAssetEvent() {}

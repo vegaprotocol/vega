@@ -151,6 +151,18 @@ type PayloadLimitState struct {
 	LimitState *LimitState
 }
 
+type PayloadNotary struct {
+	Notary *Notary
+}
+
+type PayloadReplayProtection struct {
+	Blocks []*ReplayBlockTransactions
+}
+
+type ReplayBlockTransactions struct {
+	Transactions []string
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -392,6 +404,17 @@ type StakingAccount struct {
 	Events  []*StakeLinking
 }
 
+type NotarySigs struct {
+	ID   string
+	Kind int32
+	Node string
+	Sig  string
+}
+
+type Notary struct {
+	Sigs []*NotarySigs
+}
+
 func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
 	meta := &snapshot.Metadata{}
 	if err := proto.Unmarshal(s.Metadata, meta); err != nil {
@@ -564,6 +587,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadVoteSpamPolicyFromProto(dt)
 	case *snapshot.Payload_SimpleSpamPolicy:
 		ret.Data = PayloadSimpleSpamPolicyFromProto(dt)
+	case *snapshot.Payload_Notary:
+		ret.Data = PayloadNotaryFromProto(dt)
+	case *snapshot.Payload_ReplayProtection:
+		ret.Data = PayloadReplayProtectionFromProto(dt)
 	}
 	return ret
 }
@@ -640,6 +667,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_VoteSpamPolicy:
 		ret.Data = dt
 	case *snapshot.Payload_SimpleSpamPolicy:
+		ret.Data = dt
+	case *snapshot.Payload_Notary:
+		ret.Data = dt
+	case *snapshot.Payload_ReplayProtection:
 		ret.Data = dt
 	}
 	return &ret
@@ -1873,9 +1904,7 @@ func (e EquityShare) IntoProto() *snapshot.EquityShare {
 }
 
 func EquityShareLPFromProto(esl *snapshot.EquityShareLP) *EquityShareLP {
-	var (
-		stake, share, avg num.Decimal
-	)
+	var stake, share, avg num.Decimal
 	if len(esl.Stake) > 0 {
 		stake, _ = num.DecimalFromString(esl.Stake)
 	}
@@ -1976,9 +2005,7 @@ func (d DecMap) IntoProto() *snapshot.DecimalMap {
 }
 
 func PriceBoundFromProto(pb *snapshot.PriceBound) *PriceBound {
-	var (
-		up, down num.Decimal
-	)
+	var up, down num.Decimal
 	if len(pb.UpFactor) > 0 {
 		up, _ = num.DecimalFromString(pb.UpFactor)
 	}
@@ -2003,9 +2030,7 @@ func (p PriceBound) IntoProto() *snapshot.PriceBound {
 }
 
 func PriceRangeFromProto(pr *snapshot.PriceRange) *PriceRange {
-	var (
-		min, max, ref num.Decimal
-	)
+	var min, max, ref num.Decimal
 	if len(pr.Min) > 0 {
 		min, _ = num.DecimalFromString(pr.Min)
 	}
@@ -2345,7 +2370,6 @@ func SimpleSpamPolicyFromProto(ssp *snapshot.SimpleSpamPolicy) *SimpleSpamPolicy
 		PartyTokenBalance: partyBalance,
 		CurrentEpochSeq:   ssp.CurrentEpochSeq,
 	}
-
 }
 
 func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
@@ -2475,7 +2499,6 @@ func (ssp *SimpleSpamPolicy) IntoProto() *snapshot.SimpleSpamPolicy {
 }
 
 func (vsp *VoteSpamPolicy) IntoProto() *snapshot.VoteSpamPolicy {
-
 	partyProposalVoteCount := make([]*snapshot.PartyProposalVoteCount, 0, len(vsp.PartyProposalVoteCount))
 	for _, ptv := range vsp.PartyProposalVoteCount {
 		partyProposalVoteCount = append(partyProposalVoteCount, ptv.IntoProto())
@@ -2680,4 +2703,107 @@ func (*PayloadRewardsPayout) Key() string {
 
 func (*PayloadRewardsPayout) Namespace() SnapshotNamespace {
 	return RewardSnapshot
+}
+
+func PayloadNotaryFromProto(n *snapshot.Payload_Notary) *PayloadNotary {
+	return &PayloadNotary{
+		Notary: NotaryFromProto(n.Notary),
+	}
+}
+
+func NotaryFromProto(n *snapshot.Notary) *Notary {
+	sigKinds := make([]*NotarySigs, 0, len(n.NotarySigs))
+
+	for _, sk := range n.NotarySigs {
+		sigKinds = append(sigKinds, NotarySigFromProto(sk))
+	}
+
+	return &Notary{
+		Sigs: sigKinds,
+	}
+}
+
+func NotarySigFromProto(sk *snapshot.NotarySigs) *NotarySigs {
+	return &NotarySigs{
+		ID:   sk.Id,
+		Kind: sk.Kind,
+		Node: sk.Node,
+		Sig:  sk.Sig,
+	}
+}
+
+func (p PayloadNotary) IntoProto() *snapshot.Payload_Notary {
+	return &snapshot.Payload_Notary{
+		Notary: p.Notary.IntoProto(),
+	}
+}
+
+func (n Notary) IntoProto() *snapshot.Notary {
+	sigKinds := make([]*snapshot.NotarySigs, 0, len(n.Sigs))
+	for _, sk := range n.Sigs {
+		sigKinds = append(sigKinds, sk.IntoProto())
+	}
+	return &snapshot.Notary{
+		NotarySigs: sigKinds,
+	}
+}
+
+func (sk NotarySigs) IntoProto() *snapshot.NotarySigs {
+	return &snapshot.NotarySigs{
+		Id:   sk.ID,
+		Kind: sk.Kind,
+		Node: sk.Node,
+		Sig:  sk.Sig,
+	}
+}
+
+func (*PayloadNotary) isPayload() {}
+
+func (p *PayloadNotary) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadNotary) Key() string {
+	return "all"
+}
+
+func (*PayloadNotary) Namespace() SnapshotNamespace {
+	return NotarySnapshot
+}
+
+func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
+	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
+	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
+		blocks = append(blocks, &ReplayBlockTransactions{Transactions: block.Tx[:]})
+	}
+	return &PayloadReplayProtection{
+		Blocks: blocks,
+	}
+}
+
+func (p PayloadReplayProtection) IntoProto() *snapshot.Payload_ReplayProtection {
+	recentBlocks := make([]*snapshot.RecentBlocksTransactions, 0, len(p.Blocks))
+
+	for _, block := range p.Blocks {
+		recentBlocks = append(recentBlocks, &snapshot.RecentBlocksTransactions{Tx: block.Transactions[:]})
+	}
+	return &snapshot.Payload_ReplayProtection{
+		ReplayProtection: &snapshot.ReplayProtection{
+			RecentBlocksTransactions: recentBlocks,
+		},
+	}
+}
+
+func (*PayloadReplayProtection) isPayload() {}
+
+func (p *PayloadReplayProtection) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadReplayProtection) Key() string {
+	return "all"
+}
+
+func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
+	return ReplayProtectionSnapshot
 }

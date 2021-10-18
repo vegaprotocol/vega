@@ -199,7 +199,6 @@ func testEventSorting(t *testing.T) {
 func testGetZeroBalanceWithNoEvent(t *testing.T) {
 	acc := staking.NewStakingAccount(testParty)
 	assert.Equal(t, num.Zero(), acc.GetAvailableBalance())
-
 }
 
 func testEventErrorValidation(t *testing.T) {

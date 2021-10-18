@@ -44,13 +44,11 @@ func (e Checkpoint) StreamMessage() *eventspb.BusEvent {
 }
 
 func CheckpointEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Checkpoint {
-	event := be.GetCheckpoint()
-	if event == nil {
-		return nil
+	if event := be.GetCheckpoint(); event != nil {
+		return &Checkpoint{
+			Base: newBaseFromStream(ctx, CheckpointEvent, be),
+			data: *event,
+		}
 	}
-
-	return &Checkpoint{
-		Base: newBaseFromStream(ctx, CheckpointEvent, be),
-		data: *event,
-	}
+	return nil
 }

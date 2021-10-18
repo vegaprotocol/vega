@@ -26,7 +26,7 @@ func New(log *logging.Logger, cfg Config) *Handler {
 	}
 }
 
-// ReloadConf update the internal configuration of the positions engine
+// ReloadConf update the internal configuration of the positions engine.
 func (h *Handler) ReloadConf(cfg Config) {
 	h.log.Info("reloading configuration")
 	if h.log.GetLevel() != cfg.Level.Get() {

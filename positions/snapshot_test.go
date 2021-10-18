@@ -16,7 +16,6 @@ import (
 )
 
 func fillTestPositions(e *positions.Engine) {
-
 	orders := []types.Order{
 		{
 			Party:     "test_party_1",
@@ -65,11 +64,9 @@ func fillTestPositions(e *positions.Engine) {
 		Timestamp: time.Now().Unix(),
 	}
 	e.Update(&trade)
-
 }
 
 func TestSnapshotSaveAndLoad(t *testing.T) {
-
 	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
@@ -106,7 +103,6 @@ func TestSnapshotSaveAndLoad(t *testing.T) {
 }
 
 func TestSnapshotHashNoChanges(t *testing.T) {
-
 	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
@@ -121,7 +117,6 @@ func TestSnapshotHashNoChanges(t *testing.T) {
 }
 
 func TestSnapshotHashRegisterOrder(t *testing.T) {
-
 	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
@@ -144,7 +139,6 @@ func TestSnapshotHashRegisterOrder(t *testing.T) {
 }
 
 func TestSnapshotHashUnregisterOrder(t *testing.T) {
-
 	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
@@ -167,7 +161,6 @@ func TestSnapshotHashUnregisterOrder(t *testing.T) {
 }
 
 func TestSnapshotHashAmendOrder(t *testing.T) {
-
 	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
@@ -207,7 +200,6 @@ func TestSnapshotHashAmendOrder(t *testing.T) {
 }
 
 func TestSnapshotHashRemoveDistressed(t *testing.T) {
-
 	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
@@ -222,7 +214,6 @@ func TestSnapshotHashRemoveDistressed(t *testing.T) {
 }
 
 func TestSnapshotHashUpdateMarkPrice(t *testing.T) {
-
 	engine := getTestEngine(t)
 	fillTestPositions(engine)
 
@@ -237,12 +228,10 @@ func TestSnapshotHashUpdateMarkPrice(t *testing.T) {
 }
 
 func TestSnapshotHashNoPositions(t *testing.T) {
-
 	engine := getTestEngine(t)
 
 	keys := engine.Keys()
 	h1, err := engine.GetHash(keys[0])
 	require.Nil(t, err)
 	require.Equal(t, "278f2eff5adc1ea5b8365bd04c6e534ef64ca43df737c22ee61db46a8dac5870", hex.EncodeToString(h1))
-
 }

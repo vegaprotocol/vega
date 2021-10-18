@@ -5,9 +5,7 @@ import (
 	"errors"
 )
 
-var (
-	ErrNoNetworkGenesisState = errors.New("no network genesis state")
-)
+var ErrNoNetworkGenesisState = errors.New("no network genesis state")
 
 type GenesisState struct {
 	// ReplayAttackThreshold protects the network against replay attacks. It sets a

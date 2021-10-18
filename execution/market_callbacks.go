@@ -81,7 +81,7 @@ func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context,
 
 func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
 	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, num.DecimalFromFloat(v))
-	//TODO: Send an event containing updated parameter
+	// TODO: Send an event containing updated parameter
 }
 
 func (m *Market) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d time.Duration) {

@@ -51,7 +51,7 @@ func (f *Simple) CalculateRiskFactors(current *types.RiskResult) (bool, *types.R
 	return true, rf
 }
 
-// PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price
+// PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price.
 func (f *Simple) PriceRange(currentP, _, _ num.Decimal) (num.Decimal, num.Decimal) {
 	return currentP.Sub(f.minMoveDown), currentP.Add(f.maxMoveUp)
 }
@@ -68,7 +68,7 @@ func (f *Simple) ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP, yF
 	return f.prob
 }
 
-// GetProjectionHorizon returns 0 and the simple model doesn't rely on any proabilistic calculations
+// GetProjectionHorizon returns 0 and the simple model doesn't rely on any proabilistic calculations.
 func (f *Simple) GetProjectionHorizon() num.Decimal {
 	return num.DecimalZero()
 }

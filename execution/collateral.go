@@ -9,10 +9,8 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	// ErrBondSlashing - just indicates that we had to penalize the party due to insufficient funds, and as such, we have to cancel their LP
-	ErrBondSlashing = errors.New("bond slashing")
-)
+// ErrBondSlashing - just indicates that we had to penalize the party due to insufficient funds, and as such, we have to cancel their LP.
+var ErrBondSlashing = errors.New("bond slashing")
 
 // this will transfer funds calculated for a party amending a liquidity
 // provision during auction.

@@ -59,57 +59,57 @@ func (m MarketTimestamps) IntoProto() *proto.MarketTimestamps {
 type MarketTradingMode = proto.Market_TradingMode
 
 const (
-	// Default value, this is invalid
+	// Default value, this is invalid.
 	MarketTradingModeUnspecified MarketTradingMode = proto.Market_TRADING_MODE_UNSPECIFIED
-	// Normal trading
+	// Normal trading.
 	MarketTradingModeContinuous MarketTradingMode = proto.Market_TRADING_MODE_CONTINUOUS
-	// Auction trading (FBA)
+	// Auction trading (FBA).
 	MarketTradingModeBatchAuction MarketTradingMode = proto.Market_TRADING_MODE_BATCH_AUCTION
-	// Opening auction
+	// Opening auction.
 	MarketTradingModeOpeningAuction MarketTradingMode = proto.Market_TRADING_MODE_OPENING_AUCTION
-	// Auction triggered by monitoring
+	// Auction triggered by monitoring.
 	MarketTradingModeMonitoringAuction MarketTradingMode = proto.Market_TRADING_MODE_MONITORING_AUCTION
 )
 
 type MarketState = proto.Market_State
 
 const (
-	// Default value, invalid
+	// Default value, invalid.
 	MarketStateUnspecified MarketState = proto.Market_STATE_UNSPECIFIED
-	// The Governance proposal valid and accepted
+	// The Governance proposal valid and accepted.
 	MarketStateProposed MarketState = proto.Market_STATE_PROPOSED
-	// Outcome of governance votes is to reject the market
+	// Outcome of governance votes is to reject the market.
 	MarketStateRejected MarketState = proto.Market_STATE_REJECTED
-	// Governance vote passes/wins
+	// Governance vote passes/wins.
 	MarketStatePending MarketState = proto.Market_STATE_PENDING
 	// Market triggers cancellation condition or governance
-	// votes to close before market becomes Active
+	// votes to close before market becomes Active.
 	MarketStateCancelled MarketState = proto.Market_STATE_CANCELLED
-	// Enactment date reached and usual auction exit checks pass
+	// Enactment date reached and usual auction exit checks pass.
 	MarketStateActive MarketState = proto.Market_STATE_ACTIVE
-	// Price monitoring or liquidity monitoring trigger
+	// Price monitoring or liquidity monitoring trigger.
 	MarketStateSuspended MarketState = proto.Market_STATE_SUSPENDED
-	// Governance vote (to close)
+	// Governance vote (to close).
 	MarketStateClosed MarketState = proto.Market_STATE_CLOSED
 	// Defined by the product (i.e. from a product parameter,
-	// specified in market definition, giving close date/time)
+	// specified in market definition, giving close date/time).
 	MarketStateTradingTerminated MarketState = proto.Market_STATE_TRADING_TERMINATED
-	// Settlement triggered and completed as defined by product
+	// Settlement triggered and completed as defined by product.
 	MarketStateSettled MarketState = proto.Market_STATE_SETTLED
 )
 
 type AuctionTrigger = proto.AuctionTrigger
 
 const (
-	// Default value for AuctionTrigger, no auction triggered
+	// Default value for AuctionTrigger, no auction triggered.
 	AuctionTriggerUnspecified AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_UNSPECIFIED
-	// Batch auction
+	// Batch auction.
 	AuctionTriggerBatch AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_BATCH
-	// Opening auction
+	// Opening auction.
 	AuctionTriggerOpening AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_OPENING
-	// Price monitoring trigger
+	// Price monitoring trigger.
 	AuctionTriggerPrice AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_PRICE
-	// Liquidity monitoring trigger
+	// Liquidity monitoring trigger.
 	AuctionTriggerLiquidity AuctionTrigger = proto.AuctionTrigger_AUCTION_TRIGGER_LIQUIDITY
 )
 

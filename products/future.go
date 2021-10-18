@@ -18,11 +18,11 @@ var (
 	// oracle spec or its binding is missing from the future definition.
 	ErrOracleSpecAndBindingAreRequired = errors.New("an oracle spec and an oracle spec binding are required")
 
-	// ErrOracleSettlementPriceNotSet is returned when the oracle has not set the settlement price
+	// ErrOracleSettlementPriceNotSet is returned when the oracle has not set the settlement price.
 	ErrOracleSettlementPriceNotSet = errors.New("settlement price is not set")
 )
 
-// Future represent a Future as describe by the market framework
+// Future represent a Future as describe by the market framework.
 type Future struct {
 	log             *logging.Logger
 	SettlementAsset string
@@ -50,7 +50,7 @@ func (d *oracleData) SettlementPrice() (*num.Uint, error) {
 	return d.settlementPrice.Clone(), nil
 }
 
-// IsTradingTerminated returns true when oracle has signalled termination of trading
+// IsTradingTerminated returns true when oracle has signalled termination of trading.
 func (d *oracleData) IsTradingTerminated() bool {
 	return d.tradingTerminated
 }
@@ -64,7 +64,7 @@ func (f *Future) SettlementPrice() (*num.Uint, error) {
 	return f.oracle.data.SettlementPrice()
 }
 
-// Settle a position against the future
+// Settle a position against the future.
 func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (amt *types.FinancialAmount, neg bool, err error) {
 	settlementPrice, err := f.oracle.data.SettlementPrice()
 	if err != nil {
@@ -86,17 +86,17 @@ func (f *Future) Settle(entryPrice *num.Uint, netPosition int64) (amt *types.Fin
 	}, neg, nil
 }
 
-// Value - returns the nominal value of a unit given a current mark price
+// Value - returns the nominal value of a unit given a current mark price.
 func (f *Future) Value(markPrice *num.Uint) (*num.Uint, error) {
 	return markPrice.Clone(), nil
 }
 
-// IsTradingTerminated - returns true when the oracle has signalled terminated market
+// IsTradingTerminated - returns true when the oracle has signalled terminated market.
 func (f *Future) IsTradingTerminated() bool {
 	return f.oracle.data.IsTradingTerminated()
 }
 
-// GetAsset return the asset used by the future
+// GetAsset return the asset used by the future.
 func (f *Future) GetAsset() string {
 	return f.SettlementAsset
 }

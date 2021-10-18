@@ -9,7 +9,7 @@ const (
 	namedLogger = "validators"
 )
 
-// Config represents governance specific configuration
+// Config represents governance specific configuration.
 type Config struct {
 	// logging level
 	Level encoding.LogLevel `long:"log-level"`

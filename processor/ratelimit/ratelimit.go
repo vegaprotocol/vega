@@ -27,7 +27,7 @@ func New(requests, perNBlocks int) *Rates {
 }
 
 // Count returns the number of requests recorded for a given key
-// It returns -1 if the key has been not recorded or evicted
+// It returns -1 if the key has been not recorded or evicted.
 func (r *Rates) Count(key string) int {
 	entry, ok := r.entries[key]
 	if !ok {

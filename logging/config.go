@@ -1,18 +1,18 @@
 package logging
 
-// Config contains the configurable items for this package
+// Config contains the configurable items for this package.
 type Config struct {
 	Environment string  `long:"env" choice:"dev" choice:"custom"` //lint:ignore SA5008 go-flags allows to define many choices using the same struct tag.
 	Custom      *Custom `tomlcp:"This section takes effect only when Environment is set to \"custom\"."`
 }
 
-// Custom contains the custom log config
+// Custom contains the custom log config.
 type Custom struct {
 	Zap        *Zap
 	ZapEncoder *ZapEncoder
 }
 
-// Zap configures a ZapConfig
+// Zap configures a ZapConfig.
 type Zap struct {
 	Level            Level
 	Development      bool
@@ -21,7 +21,7 @@ type Zap struct {
 	ErrorOutputPaths []string
 }
 
-// ZapEncoder configures a ZapEncoderConfig
+// ZapEncoder configures a ZapEncoderConfig.
 type ZapEncoder struct {
 	CallerKey      string
 	EncodeCaller   string

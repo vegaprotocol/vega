@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	// ErrWashTrade signals an attempt to a wash trade from a party
+	// ErrWashTrade signals an attempt to a wash trade from a party.
 	ErrWashTrade    = errors.New("party attempted to submit wash trade")
 	ErrFOKNotFilled = errors.New("FOK order could not be fully filled")
 )
@@ -22,7 +22,7 @@ type PriceLevel struct {
 	volume uint64
 }
 
-// NewPriceLevel instantiate a new PriceLevel
+// NewPriceLevel instantiate a new PriceLevel.
 func NewPriceLevel(price *num.Uint) *PriceLevel {
 	return &PriceLevel{
 		price:  price,
@@ -58,7 +58,7 @@ func (l *PriceLevel) removeOrder(index int) {
 	l.orders = l.orders[:len(l.orders)-1]
 }
 
-// fakeUncross - this updates a copy of the order passed to it, the copied order is returned
+// fakeUncross - this updates a copy of the order passed to it, the copied order is returned.
 func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*types.Trade, err error) {
 	// work on a copy of the order, so we can submit it a second time
 	// after we've done the price monitoring and fees checks
@@ -94,7 +94,8 @@ func (l *PriceLevel) fakeUncross(o *types.Order) (agg *types.Order, trades []*ty
 			break
 		}
 	}
-	return
+
+	return agg, trades, err
 }
 
 func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled bool, trades []*types.Trade, impactedOrders []*types.Order, err error) {
@@ -122,7 +123,6 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 		// Get size and make newTrade
 		size := l.getVolumeAllocation(agg, order)
 		if size <= 0 {
-
 			panic("Trade.size > order.remaining")
 		}
 
@@ -162,11 +162,12 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 
 	return agg.Remaining == 0, trades, impactedOrders, err
 }
+
 func (l *PriceLevel) getVolumeAllocation(agg, pass *types.Order) uint64 {
 	return min(agg.Remaining, pass.Remaining)
 }
 
-// Returns the min of 2 uint64s
+// Returns the min of 2 uint64s.
 func min(x, y uint64) uint64 {
 	if y < x {
 		return y
@@ -174,7 +175,7 @@ func min(x, y uint64) uint64 {
 	return x
 }
 
-// Returns the max of 2 uint64s
+// Returns the max of 2 uint64s.
 func max(x, y uint64) uint64 {
 	if x > y {
 		return x
@@ -182,7 +183,7 @@ func max(x, y uint64) uint64 {
 	return y
 }
 
-// Creates a trade of a given size between two orders and updates the order details
+// Creates a trade of a given size between two orders and updates the order details.
 func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	var buyer, seller *types.Order
 	if agg.Side == types.SideBuy {

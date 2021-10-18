@@ -111,8 +111,7 @@ func newWallet(store *storev1.Store, walletName, passphrase string) (*Wallet, er
 
 	keyPairs := w.ListKeyPairs()
 
-	keyPairCount := len(keyPairs)
-	if keyPairCount == 0 {
+	if keyPairCount := len(keyPairs); keyPairCount == 0 {
 		return nil, fmt.Errorf("vega wallet for node requires to have 1 key pair, none found")
 	} else if keyPairCount != 1 {
 		return nil, fmt.Errorf("vega wallet for node requires to have max 1 key pair, found %v", keyPairCount)
@@ -154,5 +153,4 @@ func getID(w wallet.Wallet) (crypto.PublicKey, error) {
 	}
 
 	return crypto.NewPublicKey(w.ID(), decodedID), nil
-
 }

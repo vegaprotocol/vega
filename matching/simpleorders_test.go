@@ -133,7 +133,7 @@ func TestOrderBookSimple_simpleMarketSell(t *testing.T) {
 
 /*
  * NETWORK orders are the same as MARKET+FOK order so should not stay on the book
- * Make sure orders are cancelled and the book is left empty
+ * Make sure orders are cancelled and the book is left empty.
  */
 func TestOrderBookSimple_simpleNetworkBuy(t *testing.T) {
 	market := "testMarket"
@@ -196,7 +196,7 @@ func TestOrderBookSimple_simpleNetworkSell(t *testing.T) {
 }
 
 /*
- * Now we test simple orders against a book with orders in
+ * Now we test simple orders against a book with orders in.
  */
 func TestOrderBookSimple_simpleLimitBuyFill(t *testing.T) {
 	market := "testMarket"
