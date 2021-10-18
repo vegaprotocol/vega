@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
-	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -57,7 +56,7 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]snapshot.StateProvider, error) {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, ErrInvalidSnapshotNamespace
 	}
