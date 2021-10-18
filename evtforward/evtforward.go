@@ -225,6 +225,7 @@ func (e *EvtForwarder) updateValidatorsList() {
 	})
 }
 
+// getEvt assumes the lock is acquired before being called.
 func (e *EvtForwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, acked bool) {
 	if evt, ok = e.ackedEvts[key]; ok {
 		return evt, true, true

@@ -100,7 +100,7 @@ func testForwardSuccessNodeIsForwarder(t *testing.T) {
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
-	evtfwd.cb(context.Background(), time.Unix(9, 0))
+	evtfwd.cb(context.Background(), time.Unix(3, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
 	assert.NoError(t, err)
 }
@@ -112,7 +112,7 @@ func testForwardFailureDuplicateEvent(t *testing.T) {
 	evtfwd.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	evtfwd.top.EXPECT().AllNodeIDs().Times(1).Return(testAllPubKeys)
 	// set the time so the hash match our current node
-	evtfwd.cb(context.Background(), time.Unix(10, 0))
+	evtfwd.cb(context.Background(), time.Unix(12, 0))
 	err := evtfwd.Forward(context.Background(), evt, okEventEmitter)
 	assert.NoError(t, err)
 	// now the event should exist, let's try toforward againt
