@@ -30,11 +30,11 @@ func PartiesPlaceTheFollowingOrders(
 		}
 
 		resp, err := exec.SubmitOrder(context.Background(), &orderSubmission, row.Party())
-		if err := checkExpectedError(row, err); err != nil {
-			return err
+		if ceerr := checkExpectedError(row, err); ceerr != nil {
+			return ceerr
 		}
 
-		if !row.ExpectResultingTrades() {
+		if !row.ExpectResultingTrades() || err != nil {
 			continue
 		}
 
@@ -79,7 +79,7 @@ func newSubmitOrderRow(r RowWrapper) submitOrderRow {
 		row: r,
 	}
 
-	if row.ExpectResultingTrades() && row.ExpectError() {
+	if row.ExpectError() && row.ExpectResultingTrades() && row.ResultingTrades() > 0 {
 		panic("you can't expect trades and an error at the same time")
 	}
 
@@ -128,10 +128,7 @@ func (r submitOrderRow) ExpirationDate() int64 {
 }
 
 func (r submitOrderRow) ExpectResultingTrades() bool {
-	if !r.row.HasColumn("resulting trades") {
-		return false
-	}
-	return r.ResultingTrades() > 0
+	return r.row.HasColumn("resulting trades")
 }
 
 func (r submitOrderRow) ResultingTrades() int64 {
