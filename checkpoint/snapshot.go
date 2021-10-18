@@ -77,17 +77,17 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 	}, nil
 }
 
-func (e *Engine) Restore(_ context.Context, snap *types.Payload) error {
+func (e *Engine) LoadState(_ context.Context, snap *types.Payload) ([]types.StateProvider, error) {
 	if snap.Namespace() != e.state.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	if snap.Key() != e.state.Key() {
-		return types.ErrSnapshotKeyDoesNotExist
+		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 	state := snap.Data.(*types.PayloadCheckpoint)
 	e.state = state
 	e.setNextCP(time.Unix(state.Checkpoint.NextCp, 0))
-	return nil
+	return nil, nil
 }
 
 func (e *Engine) PollChanges(ctx context.Context, k string, ch chan<- *types.Payload) {

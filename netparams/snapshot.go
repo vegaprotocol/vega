@@ -1,6 +1,8 @@
 package netparams
 
 import (
+	"context"
+	"fmt"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -139,4 +141,43 @@ func (s *Store) Snapshot() (map[string][]byte, error) {
 
 func (s *Store) GetState(k string) ([]byte, error) {
 	return s.state.GetState(k)
+}
+
+func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.StateProvider, error) {
+	if pl.Namespace() != s.state.Namespace() {
+		return nil, types.ErrInvalidSnapshotNamespace
+	}
+	np, ok := pl.Data.(*types.PayloadNetParams)
+	if !ok {
+		return nil, types.ErrInconsistentNamespaceKeys // it's the only possible key/namespace combo here
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, kv := range np.NetParams.Params {
+		if err := s.reloadKey(ctx, kv.Key, kv.Value); err != nil {
+			return nil, err
+		}
+	}
+	return nil, nil
+}
+
+// does the same as the regular store.Update call, but doesn't send an event.
+func (s *Store) reloadKey(ctx context.Context, key, value string) error {
+	svalue, ok := s.store[key]
+	if !ok {
+		// perhaps we should create one here?
+		// s.store[key] = value{}
+		return ErrUnknownKey
+	}
+
+	if err := svalue.Update(value); err != nil {
+		return fmt.Errorf("unable to update %s: %w", key, err)
+	}
+
+	// update was successful we want to notify watchers
+	s.paramUpdates[key] = struct{}{}
+	// set up the snapshot state to contain new data
+	s.state.update(key, value)
+
+	return nil
 }

@@ -107,19 +107,21 @@ func (s *Service) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (s *Service) LoadState(ctx context.Context, p *types.Payload) error {
+func (s *Service) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if s.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
+	var err error
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadActiveAssets:
-		return s.restoreActive(ctx, pl.ActiveAssets)
+		err = s.restoreActive(ctx, pl.ActiveAssets)
 	case *types.PayloadPendingAssets:
-		return s.restorePending(ctx, pl.PendingAssets)
+		err = s.restorePending(ctx, pl.PendingAssets)
 	default:
-		return types.ErrUnknownSnapshotType
+		err = types.ErrUnknownSnapshotType
 	}
+	return nil, err
 }
 
 func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets) error {
