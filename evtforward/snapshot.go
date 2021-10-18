@@ -28,25 +28,25 @@ type efSnapshotState struct {
 	serialised []byte
 }
 
-func (ef *EvtForwarder) Namespace() types.SnapshotNamespace {
+func (e *EvtForwarder) Namespace() types.SnapshotNamespace {
 	return types.EventForwarderSnapshot
 }
 
-func (ef *EvtForwarder) Keys() []string {
+func (e *EvtForwarder) Keys() []string {
 	return hashKeys
 }
 
-func (ef *EvtForwarder) serialise() ([]byte, error) {
+func (e *EvtForwarder) serialise() ([]byte, error) {
 	// this is done without the lock because nothing can be acked during the commit phase which is when the snapshot is taken
-	keys := make([]string, 0, len(ef.ackedEvts))
-	events := make([]*commandspb.ChainEvent, 0, len(ef.ackedEvts))
-	for key := range ef.ackedEvts {
+	keys := make([]string, 0, len(e.ackedEvts))
+	events := make([]*commandspb.ChainEvent, 0, len(e.ackedEvts))
+	for key := range e.ackedEvts {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		events = append(events, ef.ackedEvts[key])
+		events = append(events, e.ackedEvts[key])
 	}
 
 	payload := types.Payload{
@@ -59,41 +59,41 @@ func (ef *EvtForwarder) serialise() ([]byte, error) {
 }
 
 // get the serialised form and hash of the given key.
-func (ef *EvtForwarder) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+func (e *EvtForwarder) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if k != key {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
 	}
 
-	if !ef.efss.changed {
-		return ef.efss.serialised, ef.efss.hash, nil
+	if !e.efss.changed {
+		return e.efss.serialised, e.efss.hash, nil
 	}
 
-	data, err := ef.serialise()
+	data, err := e.serialise()
 	if err != nil {
 		return nil, nil, err
 	}
 
 	hash := crypto.Hash(data)
-	ef.efss.serialised = data
-	ef.efss.hash = hash
-	ef.efss.changed = false
+	e.efss.serialised = data
+	e.efss.hash = hash
+	e.efss.changed = false
 	return data, hash, nil
 }
 
-func (ef *EvtForwarder) GetHash(k string) ([]byte, error) {
-	_, hash, err := ef.getSerialisedAndHash(k)
+func (e *EvtForwarder) GetHash(k string) ([]byte, error) {
+	_, hash, err := e.getSerialisedAndHash(k)
 	return hash, err
 }
 
-func (ef *EvtForwarder) GetState(k string) ([]byte, error) {
-	state, _, err := ef.getSerialisedAndHash(k)
+func (e *EvtForwarder) GetState(k string) ([]byte, error) {
+	state, _, err := e.getSerialisedAndHash(k)
 	return state, err
 }
 
-func (ef *EvtForwarder) Snapshot() (map[string][]byte, error) {
+func (e *EvtForwarder) Snapshot() (map[string][]byte, error) {
 	r := make(map[string][]byte, len(hashKeys))
 	for _, k := range hashKeys {
-		state, err := ef.GetState(k)
+		state, err := e.GetState(k)
 		if err != nil {
 			return nil, err
 		}
@@ -102,29 +102,29 @@ func (ef *EvtForwarder) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (ef *EvtForwarder) LoadState(ctx context.Context, p *types.Payload) error {
-	if ef.Namespace() != p.Data.Namespace() {
+func (e *EvtForwarder) LoadState(ctx context.Context, p *types.Payload) error {
+	if e.Namespace() != p.Data.Namespace() {
 		return types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadEventForwarder:
-		return ef.restore(ctx, pl.Events)
+		return e.restore(ctx, pl.Events)
 	default:
 		return types.ErrUnknownSnapshotType
 	}
 }
 
-func (ef *EvtForwarder) restore(ctx context.Context, events []*commandspb.ChainEvent) error {
-	ef.ackedEvts = map[string]*commandspb.ChainEvent{}
+func (e *EvtForwarder) restore(ctx context.Context, events []*commandspb.ChainEvent) error {
+	e.ackedEvts = map[string]*commandspb.ChainEvent{}
 	for _, event := range events {
-		key, err := ef.getEvtKey(event)
+		key, err := e.getEvtKey(event)
 		if err != nil {
 			return err
 		}
-		ef.ackedEvts[key] = event
+		e.ackedEvts[key] = event
 	}
 
-	ef.efss.changed = true
+	e.efss.changed = true
 	return nil
 }

@@ -2819,13 +2819,13 @@ func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
 
 func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
 	return &PayloadEventForwarder{
-		Events: ef.EventForwarder.Events,
+		Events: ef.EventForwarder.AckedEvents,
 	}
 }
 
 func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
 	return &snapshot.Payload_EventForwarder{
-		EventForwarder: &snapshot.EventForwarder{Events: p.Events},
+		EventForwarder: &snapshot.EventForwarder{AckedEvents: p.Events},
 	}
 }
 
