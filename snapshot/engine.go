@@ -84,28 +84,26 @@ type Engine struct {
 	app  *types.AppState
 }
 
-var (
-	// order in which snapshots are to be restored.
-	nodeOrder = []types.SnapshotNamespace{
-		types.AppSnapshot,
-		types.AssetsSnapshot,
-		types.BankingSnapshot,
-		types.CollateralSnapshot,
-		types.NotarySnapshot,
-		types.NetParamsSnapshot,
-		types.CheckpointSnapshot,
-		types.DelegationSnapshot,
-		types.ExecutionSnapshot, // creates the markets, returns matching and positions engines for state providers
-		types.MatchingSnapshot,  // this requires a market
-		types.PositionsSnapshot, // again, needs a market
-		types.EpochSnapshot,
-		types.StakingSnapshot,
-		types.SpamSnapshot,
-		types.LimitSnapshot,
-		types.ReplayProtectionSnapshot,
-		types.RewardSnapshot,
-	}
-)
+// order in which snapshots are to be restored.
+var nodeOrder = []types.SnapshotNamespace{
+	types.AppSnapshot,
+	types.AssetsSnapshot,
+	types.BankingSnapshot,
+	types.CollateralSnapshot,
+	types.NotarySnapshot,
+	types.NetParamsSnapshot,
+	types.CheckpointSnapshot,
+	types.DelegationSnapshot,
+	types.ExecutionSnapshot, // creates the markets, returns matching and positions engines for state providers
+	types.MatchingSnapshot,  // this requires a market
+	types.PositionsSnapshot, // again, needs a market
+	types.EpochSnapshot,
+	types.StakingSnapshot,
+	types.SpamSnapshot,
+	types.LimitSnapshot,
+	types.ReplayProtectionSnapshot,
+	types.RewardSnapshot,
+}
 
 // New returns a new snapshot engine.
 func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {

@@ -27,6 +27,7 @@ type tstEngine struct {
 }
 
 func getTestEngine(t *testing.T) *tstEngine {
+	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
