@@ -360,7 +360,14 @@ func testDuplicates(t *testing.T) {
 	assert.EqualError(t, err, staking.ErrDuplicatedStakeDepositedEvent.Error())
 
 	event2 := &types.StakeRemoved{
-		ID: "someid",
+		BlockNumber:     42,
+		LogIndex:        1789,
+		TxID:            "somehash",
+		ID:              "someid",
+		VegaPubKey:      "somepubkey",
+		EthereumAddress: "0xnothex",
+		Amount:          num.NewUint(1000),
+		BlockTime:       100000,
 	}
 	// stake removed now
 	err = stakev.ProcessStakeRemoved(context.Background(), event2)
