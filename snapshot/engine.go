@@ -361,7 +361,7 @@ func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.
 	if f != e.snapshot.Format {
 		return nil, types.ErrSnapshotFormatMismatch
 	}
-	return e.snapshot.GetRawChunk(uint32(height))
+	return e.snapshot.GetRawChunk(chunk)
 }
 
 func (e *Engine) setSnapshotForHeight(height uint64) error {

@@ -463,13 +463,13 @@ func (s Snapshot) IntoProto() (*snapshot.Snapshot, error) {
 	}, nil
 }
 
-func (s Snapshot) GetRawChunk(height uint32) (*RawChunk, error) {
-	if s.Height < uint64(height) {
+func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
+	if s.Chunks < idx {
 		return nil, ErrUnknownSnapshotChunkHeight
 	}
-	i := int(height)
+	i := int(idx)
 	return &RawChunk{
-		Nr:   height,
+		Nr:   idx,
 		Data: s.ByteChunks[i],
 	}, nil
 }
