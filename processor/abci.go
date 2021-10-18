@@ -64,6 +64,7 @@ type Snapshot interface {
 	GetMissingChunks() []uint32
 	ApplySnapshot(ctx context.Context) error
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
+	AddProviders(provs ...types.StateProvider)
 }
 
 type App struct {
@@ -177,6 +178,8 @@ func NewApp(
 		snapshot:        snapshot,
 	}
 
+	// register replay protection if needed:
+	app.abci.RegisterSnapshot(snapshot)
 	// setup handlers
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
@@ -386,6 +389,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
+	app.abci.RegisterSnapshot(app.snapshot)
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {

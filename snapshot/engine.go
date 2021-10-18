@@ -91,6 +91,7 @@ var (
 		types.AssetsSnapshot,
 		types.BankingSnapshot,
 		types.CollateralSnapshot,
+		types.NotarySnapshot,
 		types.NetParamsSnapshot,
 		types.CheckpointSnapshot,
 		types.DelegationSnapshot,
@@ -99,6 +100,10 @@ var (
 		types.PositionsSnapshot, // again, needs a market
 		types.EpochSnapshot,
 		types.StakingSnapshot,
+		types.SpamSnapshot,
+		types.LimitSnapshot,
+		types.ReplayProtectionSnapshot,
+		types.RewardSnapshot,
 	}
 )
 

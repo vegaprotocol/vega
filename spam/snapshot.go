@@ -52,14 +52,14 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	if _, ok := e.policyNameToPolicy[p.Key()]; !ok {
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 
-	return e.policyNameToPolicy[p.Key()].Deserialise(p)
+	return nil, e.policyNameToPolicy[p.Key()].Deserialise(p)
 }
