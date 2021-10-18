@@ -90,6 +90,8 @@ var (
 	ErrSnapshotFormatMismatch     = errors.New("snapshot formats do not match")
 	ErrUnexpectedKey              = errors.New("snapshot namespace has unknown/unexpected key(s)")
 	ErrNodeHashMismatch           = errors.New("hash of a node does not match the hash from the snapshot meta")
+	ErrNoSnapshot                 = errors.New("no snapshot found")
+	ErrMissingSnapshotVersion     = errors.New("unknown snapshot version")
 )
 
 type SnapshotFormat = snapshot.Format

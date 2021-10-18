@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"time"
 
 	"code.vegaprotocol.io/shared/paths"
@@ -72,9 +71,10 @@ type Engine struct {
 	pollCtx     context.Context
 	pollCfunc   context.CancelFunc
 
-	last    *iavl.ImmutableTree
-	hash    []byte
-	version int64
+	last          *iavl.ImmutableTree
+	hash          []byte
+	version       int64
+	versionHeight map[uint64]int64
 
 	snapshot  *types.Snapshot
 	snapRetry int
@@ -137,13 +137,14 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 				[]byte(types.KeyFromPayload(appPL)),
 			},
 		},
-		keyNoNS:     map[string]string{},
-		hashes:      map[string][]byte{},
-		providers:   map[string]types.StateProvider{},
-		providersNS: map[types.SnapshotNamespace][]types.StateProvider{},
-		versions:    make([]int64, 0, conf.Versions), // cap determines how many versions we keep
-		wrap:        appPL,
-		app:         appPL.AppState,
+		keyNoNS:       map[string]string{},
+		hashes:        map[string][]byte{},
+		providers:     map[string]types.StateProvider{},
+		providersNS:   map[types.SnapshotNamespace][]types.StateProvider{},
+		versions:      make([]int64, 0, conf.Versions), // cap determines how many versions we keep
+		versionHeight: map[uint64]int64{},
+		wrap:          appPL,
+		app:           appPL.AppState,
 	}, nil
 }
 
@@ -183,6 +184,7 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 			return nil, err
 		}
 		trees = append(trees, snap)
+		e.versionHeight[snap.Height] = snap.Meta.Version
 	}
 	return trees, nil
 }
@@ -340,8 +342,13 @@ func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
 
 func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error) {
 	if e.snapshot == nil {
-		// @TODO try and retrieve the chunk
-		return nil, types.ErrUnknownSnapshotChunkHeight
+		if err := e.setSnapshotForHeight(height); err != nil {
+			return nil, err
+		}
+		if e.snapshot == nil {
+			// @TODO try and retrieve the chunk
+			return nil, types.ErrUnknownSnapshotChunkHeight
+		}
 	}
 	// check format:
 	f, err := types.SnapshotFromatFromU32(format)
@@ -354,15 +361,28 @@ func (e *Engine) LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.
 	return e.snapshot.GetRawChunk(uint32(height))
 }
 
+func (e *Engine) setSnapshotForHeight(height uint64) error {
+	v, ok := e.versionHeight[height]
+	if !ok {
+		return types.ErrMissingSnapshotVersion
+	}
+	tree, err := e.avl.GetImmutable(v)
+	if err != nil {
+		return err
+	}
+	snap, err := types.SnapshotFromTree(tree)
+	if err != nil {
+		return err
+	}
+	e.snapshot = snap
+	return nil
+}
+
 func (e *Engine) GetMissingChunks() []uint32 {
 	if e.snapshot == nil {
 		return nil
 	}
 	return e.snapshot.GetMissing()
-}
-
-func (e *Engine) ReceiveChunk() error {
-	return nil
 }
 
 func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
@@ -404,10 +424,6 @@ func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
 	if !updated {
 		return e.hash, nil
 	}
-	// set height and all that jazz
-	if err := e.addAppSnap(ctx); err != nil {
-		return nil, err
-	}
 	return e.saveCurrentTree()
 }
 
@@ -430,26 +446,6 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 	// get ptr to current version
 	e.last = e.avl.ImmutableTree
 	return h, nil
-}
-
-func (e *Engine) addAppSnap(ctx context.Context) error {
-	height, err := vegactx.BlockHeightFromContext(ctx)
-	if err != nil {
-		return err
-	}
-	_, block := vegactx.TraceIDFromContext(ctx)
-	app := types.AppState{
-		Height: uint64(height),
-		Block:  block,
-		Time:   e.time.GetTimeNow().Unix(),
-	}
-	as, err := json.Marshal(app)
-	if err != nil {
-		return err
-	}
-	// we know the key:
-	_ = e.avl.Set(e.nsTreeKeys[types.AppSnapshot][0], as)
-	return nil
 }
 
 func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {

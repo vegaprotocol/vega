@@ -49,6 +49,10 @@ func TestEngine(t *testing.T) {
 	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
 }
 
+func TestRestore(t *testing.T) {
+	t.Run("Restoring a snapshot from chain works as expected", testReloadSnapshot)
+}
+
 func testAddProviders(t *testing.T) {
 	engine := getTestEngine(t)
 	defer engine.Finish()
@@ -94,7 +98,7 @@ func testAddProvidersDuplicateKeys(t *testing.T) {
 	prov2.EXPECT().GetHash(keys2[1]).Times(1).Return(hash2[0], nil)
 	prov2.EXPECT().GetState(keys2[1]).Times(1).Return(data2[0], nil)
 
-	engine.time.EXPECT().GetTimeNow().Times(2).Return(time.Now())
+	engine.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	_, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 }
@@ -112,7 +116,7 @@ func testTakeSnapshot(t *testing.T) {
 
 	// now take a snapshot
 	now := time.Now()
-	engine.time.EXPECT().GetTimeNow().Times(3).Return(now)
+	engine.time.EXPECT().GetTimeNow().Times(2).Return(now)
 	state := map[string]*types.Payload{
 		keys[0]: {
 			Data: &types.PayloadCheckpoint{
@@ -139,6 +143,79 @@ func testTakeSnapshot(t *testing.T) {
 	secondHash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, hash, secondHash)
+}
+
+func testReloadSnapshot(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+	keys := []string{
+		"all",
+	}
+	prov := engine.getNewProviderMock()
+	prov.EXPECT().Keys().Times(1).Return(keys)
+	prov.EXPECT().Namespace().Times(1).Return(types.CheckpointSnapshot)
+	engine.AddProviders(prov)
+
+	now := time.Now()
+	engine.time.EXPECT().GetTimeNow().Times(1).Return(now)
+	state := map[string]*types.Payload{
+		keys[0]: {
+			Data: &types.PayloadCheckpoint{
+				Checkpoint: &types.CPState{
+					NextCp: now.Add(time.Hour).Unix(),
+				},
+			},
+		},
+	}
+	for _, k := range keys {
+		pl := state[k]
+		data, err := proto.Marshal(pl.IntoProto())
+		require.NoError(t, err)
+		hash := crypto.Hash(data)
+		prov.EXPECT().GetHash(k).Times(1).Return(hash, nil)
+		prov.EXPECT().GetState(k).Times(1).Return(data, nil)
+	}
+	hash, err := engine.Snapshot(engine.ctx)
+	require.NoError(t, err)
+	require.NotEmpty(t, hash)
+
+	// get the snapshot list
+	snaps, err := engine.List()
+	require.NoError(t, err)
+	require.NotEmpty(t, snaps)
+	require.Equal(t, 1, len(snaps))
+
+	// create a new engine which will restore the snapshot
+	eng2 := getTestEngine(t)
+	defer eng2.Finish()
+	p2 := eng2.getNewProviderMock()
+	p2.EXPECT().Keys().Times(1).Return(keys)
+	p2.EXPECT().Namespace().Times(1).Return(types.CheckpointSnapshot)
+	eng2.AddProviders(p2)
+
+	// calls we expect to see when reloading
+	eng2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
+		require.Equal(t, newT.Unix(), now.Unix())
+	})
+	// ensure we're passing the right state
+	p2.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil).Do(func(_ context.Context, pl *types.Payload) {
+		require.EqualValues(t, pl.Data, state[keys[0]].Data)
+	})
+
+	// start receiving the snapshot
+	snap := snaps[0]
+	require.NoError(t, eng2.ReceiveSnapshot(snap))
+	ready := false
+	for i := uint32(0); i < snap.Chunks; i++ {
+		chunk, err := engine.LoadSnapshotChunk(snap.Height, uint32(snap.Format), i)
+		require.NoError(t, err)
+		ready, err = eng2.ApplySnapshotChunk(chunk)
+		require.NoError(t, err)
+	}
+	require.True(t, ready)
+
+	// OK, our snapshot is ready to load
+	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
 }
 
 func (t *tstEngine) getNewProviderMock() *tmocks.MockStateProvider {
