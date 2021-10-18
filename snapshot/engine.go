@@ -67,7 +67,7 @@ type Engine struct {
 
 	providers   map[string]types.StateProvider
 	providersNS map[types.SnapshotNamespace][]types.StateProvider
-	providerTs  map[string]StateProviderT
+	providerTS  map[string]StateProviderT
 	pollCtx     context.Context
 	pollCfunc   context.CancelFunc
 
@@ -560,7 +560,7 @@ func (e *Engine) Close() error {
 	if e.pollCfunc != nil {
 		e.pollCfunc()
 		<-e.pollCtx.Done()
-		for _, p := range e.providerTs {
+		for _, p := range e.providerTS {
 			p.Sync()
 		}
 	}
