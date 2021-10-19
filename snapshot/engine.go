@@ -556,6 +556,14 @@ func (e *Engine) RegisteredNamespaces() []types.SnapshotNamespace {
 }
 
 func (e *Engine) Close() error {
+	// keeps linters happy for now
+	if e.pollCfunc != nil {
+		e.pollCfunc()
+		<-e.pollCtx.Done()
+		for _, p := range e.providerTs {
+			p.Sync()
+		}
+	}
 	return e.db.Close()
 }
 

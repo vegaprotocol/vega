@@ -2871,7 +2871,7 @@ func (*PayloadEventForwarder) Namespace() SnapshotNamespace {
 	return EventForwarderSnapshot
 }
 
-// Useful in snapshot engine, used by the Payload type, too.
+// KeyFromPayload is useful in snapshot engine, used by the Payload type, too.
 func KeyFromPayload(p isPayload) string {
 	return GetNodeKey(p.Namespace(), p.Key())
 }
