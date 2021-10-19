@@ -161,7 +161,8 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	snapEng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
 	// Load snapshot into a new engine
-	err = snapEng.LoadState(
+	_, err = snapEng.LoadState(
+		context.Background(),
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)
@@ -204,7 +205,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
-	err = snapEng.LoadState(types.PayloadFromProto(snap))
+	_, err = snapEng.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
 	h2, err := snapEng.GetHash(activeKey)

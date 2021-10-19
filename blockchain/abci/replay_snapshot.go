@@ -98,17 +98,19 @@ func (rp *ReplayProtector) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (rp *ReplayProtector) LoadState(ctx context.Context, p *types.Payload) error {
+func (rp *ReplayProtector) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if rp.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
+	var err error
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadReplayProtection:
-		return rp.restoreReplayState(ctx, pl.Blocks)
+		err = rp.restoreReplayState(ctx, pl.Blocks)
 	default:
-		return types.ErrUnknownSnapshotType
+		err = types.ErrUnknownSnapshotType
 	}
+	return nil, err
 }
 
 func (rp *ReplayProtector) restoreReplayState(ctx context.Context, blockTransactions []*types.ReplayBlockTransactions) error {

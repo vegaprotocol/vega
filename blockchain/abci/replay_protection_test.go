@@ -89,7 +89,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 	var pl snapshot.Payload
 	proto.Unmarshal(state1, &pl)
 	payload := types.PayloadFromProto(&pl)
-	err = rp.LoadState(context.Background(), payload)
+	_, err = rp.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	state2, err := rp.GetState("all")
 	require.Nil(t, err)

@@ -144,7 +144,7 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 
 	payload := types.PayloadFromProto(&rewards)
 
-	err = engine.LoadState(context.Background(), payload)
+	_, err = engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := engine.GetHash(key)
 	require.True(t, bytes.Equal(hash, hashPostReload))
@@ -168,7 +168,7 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 
 	proto.Unmarshal(newState, &rewards)
 	payload = types.PayloadFromProto(&rewards)
-	err = engine.LoadState(context.Background(), payload)
+	_, err = engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	newHashPostReload, _ := engine.GetHash(key)
 	require.True(t, bytes.Equal(newHash, newHashPostReload))
