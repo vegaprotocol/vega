@@ -283,7 +283,7 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 			MarketID:   pr.MarketId,
 			Distressed: int(pr.Distressed),
 			Closed:     int(pr.Closed),
-			MarkPrice:  int(pr.MarkPrice),
+			MarkPrice:  pr.MarkPrice,
 		}
 	case eventspb.BusEventType_BUS_EVENT_TYPE_ORDER:
 		return e.GetOrder()
@@ -310,7 +310,7 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 		return &LossSocialization{
 			MarketID: ls.MarketId,
 			PartyID:  ls.PartyId,
-			Amount:   int(ls.Amount),
+			Amount:   ls.Amount,
 		}
 	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_POSITION:
 		dp := e.GetSettlePosition()
@@ -318,13 +318,13 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 		for _, ts := range dp.TradeSettlements {
 			settlements = append(settlements, &TradeSettlement{
 				Size:  int(ts.Size),
-				Price: int(ts.Price),
+				Price: ts.Price,
 			})
 		}
 		return &SettlePosition{
 			MarketID:         dp.MarketId,
 			PartyID:          dp.PartyId,
-			Price:            int(dp.Price),
+			Price:            dp.Price,
 			TradeSettlements: settlements,
 		}
 	case eventspb.BusEventType_BUS_EVENT_TYPE_SETTLE_DISTRESSED:
@@ -332,8 +332,8 @@ func eventFromProto(e *eventspb.BusEvent) Event {
 		return &SettleDistressed{
 			MarketID: de.MarketId,
 			PartyID:  de.PartyId,
-			Margin:   int(de.Margin),
-			Price:    int(de.Price),
+			Margin:   de.Margin,
+			Price:    de.Price,
 		}
 	case eventspb.BusEventType_BUS_EVENT_TYPE_MARKET_CREATED:
 		return e.GetMarketCreated()

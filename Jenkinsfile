@@ -199,6 +199,7 @@ pipeline {
                                 --config .golangci.toml \
                                 --enable-all \
                                 --color always \
+                                --timeout '5m0s' \
                                 --max-issues-per-linter 0 \
                                 --max-same-issues 0 \
                                 --disable promlinter \
