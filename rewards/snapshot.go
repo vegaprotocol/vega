@@ -131,29 +131,19 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 	return state, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
+	var err error
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadRewardsPayout:
-		return e.restorePayout(ctx, pl.RewardsPendingPayouts)
+		err = e.restorePayout(ctx, pl.RewardsPendingPayouts)
 	default:
-		return types.ErrUnknownSnapshotType
+		err = types.ErrUnknownSnapshotType
 	}
+	return nil, err
 }
 
 func (e *Engine) restorePayout(ctx context.Context, rpp *types.RewardsPendingPayouts) error {

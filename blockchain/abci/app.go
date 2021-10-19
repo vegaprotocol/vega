@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 	lru "github.com/hashicorp/golang-lru"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -12,6 +13,10 @@ type (
 	Command   byte
 	TxHandler func(ctx context.Context, tx Tx) error
 )
+
+type SnapshotEngine interface {
+	AddProviders(provs ...types.StateProvider)
+}
 
 type App struct {
 	abci.BaseApplication
@@ -31,6 +36,12 @@ type App struct {
 	OnCheckTx    OnCheckTxHandler
 	OnDeliverTx  OnDeliverTxHandler
 	OnCommit     OnCommitHandler
+	// snapshot stuff
+
+	OnListSnapshots      ListSnapshotsHandler
+	OnOfferSnapshot      OffserSnapshotHandler
+	OnLoadSnapshotChunk  LoadSnapshotChunkHandler
+	OnApplySnapshotChunk ApplySnapshotChunkHandler
 
 	// These are Tx handlers
 	checkTxs   map[txn.Command]TxHandler
@@ -48,12 +59,20 @@ func New(codec Codec) *App {
 	lruCache, _ := lru.New(1024)
 	return &App{
 		codec:           codec,
-		replayProtector: &replayProtectorNoop{},
+		replayProtector: &replayProtectorNoop{}, // this is going to be tricky for a restore
 		checkTxs:        map[txn.Command]TxHandler{},
 		deliverTxs:      map[txn.Command]TxHandler{},
 		checkedTxs:      lruCache,
 		ctx:             context.Background(),
 	}
+}
+
+func (app *App) RegisterSnapshot(eng SnapshotEngine) {
+	rpp, ok := app.replayProtector.(types.StateProvider)
+	if !ok {
+		return
+	}
+	eng.AddProviders(rpp)
 }
 
 func (app *App) HandleCheckTx(cmd txn.Command, fn TxHandler) *App {

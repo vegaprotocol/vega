@@ -123,33 +123,23 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 	return state, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
+	var err error
 	switch pl := p.Data.(type) {
 	case *types.PayloadDelegationActive:
-		return e.restoreActive(ctx, pl.DelegationActive)
+		err = e.restoreActive(ctx, pl.DelegationActive)
 	case *types.PayloadDelegationPending:
-		return e.restorePending(ctx, pl.DelegationPending)
+		err = e.restorePending(ctx, pl.DelegationPending)
 	case *types.PayloadDelegationAuto:
-		return e.restoreAuto(pl.DelegationAuto)
+		err = e.restoreAuto(pl.DelegationAuto)
 	default:
-		return types.ErrUnknownSnapshotType
+		err = types.ErrUnknownSnapshotType
 	}
+	return nil, err
 }
 
 func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive) error {

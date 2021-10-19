@@ -180,7 +180,7 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	proto.Unmarshal(state, &pending)
 	payload := types.PayloadFromProto(&pending)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	err = testEngine.engine.LoadState(context.Background(), payload)
+	_, err = testEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := testEngine.engine.GetHash(pendingKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))

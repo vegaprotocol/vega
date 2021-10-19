@@ -111,7 +111,7 @@ func TestNotarySnapshotRoundTrip(t *testing.T) {
 	snapNotr.top.EXPECT().Len().AnyTimes().Return(1)
 	snapNotr.top.EXPECT().IsValidatorVegaPubKey(gomock.Any()).AnyTimes().Return(true)
 
-	err = snapNotr.LoadState(types.PayloadFromProto(snap))
+	_, err = snapNotr.LoadState(context.Background(), types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
 	h1, err := notr.GetHash(allKey)

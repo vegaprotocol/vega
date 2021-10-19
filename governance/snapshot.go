@@ -1,6 +1,7 @@
 package governance
 
 import (
+	"context"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -115,7 +116,7 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 }
 
 func (e *Engine) Keys() []string {
-	return []string{activeKey, enactedKey}
+	return hashKeys
 }
 
 func (e *Engine) GetHash(k string) ([]byte, error) {
@@ -128,33 +129,23 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 	return data, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(payload *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
+	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadGovernanceActive:
-		return e.restoreActiveProposals(pl.GovernanceActive)
+		err = e.restoreActiveProposals(pl.GovernanceActive)
 	case *types.PayloadGovernanceEnacted:
-		return e.restoreEnactedProposals(pl.GovernanceEnacted)
+		err = e.restoreEnactedProposals(pl.GovernanceEnacted)
 	case *types.PayloadGovernanceNode:
-		return e.restoreNodeProposals(pl.GovernanceNode)
+		err = e.restoreNodeProposals(pl.GovernanceNode)
 	default:
-		return types.ErrUnknownSnapshotType
+		err = types.ErrUnknownSnapshotType
 	}
+	return nil, err
 }
 
 func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {
