@@ -79,6 +79,5 @@ func TestRateLimits(t *testing.T) {
 			r.NextBlock()
 		})
 		require.Equal(t, -1, r.Count("test"))
-
 	})
 }

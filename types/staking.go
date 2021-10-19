@@ -1,11 +1,14 @@
 package types
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -35,6 +38,10 @@ type StakeLinking struct {
 	Status      StakeLinkingStatus
 	FinalizedAt int64
 	TxHash      string
+}
+
+func (s *StakeLinking) String() string {
+	return s.IntoProto().String()
 }
 
 func (s *StakeLinking) IntoProto() *eventspb.StakeLinking {
@@ -75,14 +82,24 @@ type StakeDeposited struct {
 	BlockTime       int64
 }
 
+func (s StakeDeposited) Hash() string {
+	bn, li := strconv.FormatUint(s.BlockNumber, 10), strconv.FormatUint(s.LogIndex, 10)
+	bt := strconv.FormatInt(s.BlockTime, 10)
+	return hex.EncodeToString(
+		crypto.Hash(
+			[]byte(bn + li + bt + s.TxID + s.VegaPubKey + s.EthereumAddress + s.Amount.String() + "stake_deposited"),
+		),
+	)
+}
+
 func StakeDepositedFromProto(
 	s *vgproto.StakeDeposited,
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeDeposited, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(s.Amount) > 0 {
-		var overflowed = false
+		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)
 		if overflowed {
 			return nil, errors.New("invalid amount (not a base 10 uint)")
@@ -127,14 +144,24 @@ type StakeRemoved struct {
 	BlockTime       int64
 }
 
+func (s StakeRemoved) Hash() string {
+	bn, li := strconv.FormatUint(s.BlockNumber, 10), strconv.FormatUint(s.LogIndex, 10)
+	bt := strconv.FormatInt(s.BlockTime, 10)
+	return hex.EncodeToString(
+		crypto.Hash(
+			[]byte(bn + li + bt + s.TxID + s.VegaPubKey + s.EthereumAddress + s.Amount.String() + "stake_removed"),
+		),
+	)
+}
+
 func StakeRemovedFromProto(
 	s *vgproto.StakeRemoved,
 	blockNumber, logIndex uint64,
 	txID, id string,
 ) (*StakeRemoved, error) {
-	var amount = num.Zero()
+	amount := num.Zero()
 	if len(s.Amount) > 0 {
-		var overflowed = false
+		var overflowed bool
 		amount, overflowed = num.UintFromString(s.Amount, 10)
 		if overflowed {
 			return nil, errors.New("invalid amount (not a base 10 uint)")

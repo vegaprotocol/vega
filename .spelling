@@ -34,6 +34,7 @@ enum
 enums
 ERC20
 Ethereum
+evt
 faucet
 fix-a-thon
 geth
@@ -41,6 +42,7 @@ github
 GitLab
 godog
 Golang
+golangci-lint
 goroutine
 go-ethereum
 GraphQL

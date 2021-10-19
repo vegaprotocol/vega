@@ -23,9 +23,9 @@ const (
 )
 
 var (
-	// ErrInstrumentNotSupported signals the specified instrument is not yet supported
+	// ErrInstrumentNotSupported signals the specified instrument is not yet supported.
 	ErrInstrumentNotSupported = errors.New("instrument type unsupported")
-	// ErrInstrumentTypeMismatch signal the type of the instrument is not expected
+	// ErrInstrumentTypeMismatch signal the type of the instrument is not expected.
 	ErrInstrumentTypeMismatch = errors.New("instrument is not of the expected type")
 )
 
@@ -36,16 +36,16 @@ var (
 	ethCallCounter     *prometheus.CounterVec
 	evtForwardCounter  *prometheus.CounterVec
 	orderGauge         *prometheus.GaugeVec
-	// Call counters for each request type per API
+	// Call counters for each request type per API.
 	apiRequestCallCounter *prometheus.CounterVec
-	// Total time counters for each request type per API
+	// Total time counters for each request type per API.
 	apiRequestTimeCounter *prometheus.CounterVec
 )
 
-// abstract prometheus types
+// abstract prometheus types.
 type instrument int
 
-// combine all possible prometheus options + way to differentiate between regular or vector type
+// combine all possible prometheus options + way to differentiate between regular or vector type.
 type instrumentOpts struct {
 	opts               prometheus.Opts
 	buckets            []float64
@@ -66,7 +66,7 @@ type mi struct {
 	summary    prometheus.Summary
 }
 
-// MetricInstrument - template interface for mi type return value - only mock if needed, and only mock the funcs you use
+// MetricInstrument - template interface for mi type return value - only mock if needed, and only mock the funcs you use.
 type MetricInstrument interface {
 	Gauge() (prometheus.Gauge, error)
 	GaugeVec() (*prometheus.GaugeVec, error)
@@ -78,73 +78,73 @@ type MetricInstrument interface {
 	SummaryVec() (*prometheus.SummaryVec, error)
 }
 
-// InstrumentOption - vararg for instrument options setting
+// InstrumentOption - vararg for instrument options setting.
 type InstrumentOption func(o *instrumentOpts)
 
-// Vectors - configuration used to create a vector of a given interface, slice of label names
+// Vectors - configuration used to create a vector of a given interface, slice of label names.
 func Vectors(labels ...string) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.vectors = labels
 	}
 }
 
-// Help - set the help field on instrument
+// Help - set the help field on instrument.
 func Help(help string) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.opts.Help = help
 	}
 }
 
-// Namespace - set namespace
+// Namespace - set namespace.
 func Namespace(ns string) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.opts.Namespace = ns
 	}
 }
 
-// Subsystem - set subsystem... obviously
+// Subsystem - set subsystem... obviously.
 func Subsystem(s string) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.opts.Subsystem = s
 	}
 }
 
-// Labels set labels for instrument (similar to vector, but with given values)
+// Labels set labels for instrument (similar to vector, but with given values).
 func Labels(labels map[string]string) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.opts.ConstLabels = labels
 	}
 }
 
-// Buckets - specific to histogram type
+// Buckets - specific to histogram type.
 func Buckets(b []float64) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.buckets = b
 	}
 }
 
-// Objectives - specific to summary type
+// Objectives - specific to summary type.
 func Objectives(obj map[float64]float64) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.objectives = obj
 	}
 }
 
-// MaxAge - specific to summary type
+// MaxAge - specific to summary type.
 func MaxAge(m time.Duration) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.maxAge = m
 	}
 }
 
-// AgeBuckets - specific to summary type
+// AgeBuckets - specific to summary type.
 func AgeBuckets(ab uint32) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.ageBuckets = ab
 	}
 }
 
-// BufCap - specific to summary type
+// BufCap - specific to summary type.
 func BufCap(bc uint32) InstrumentOption {
 	return func(o *instrumentOpts) {
 		o.bufCap = bc
@@ -211,13 +211,12 @@ func AddInstrument(t instrument, name string, opts ...InstrumentOption) (*mi, er
 	return &ret, nil
 }
 
-// Start enable metrics (given config)
+// Start enable metrics (given config).
 func Start(conf Config) {
 	if !conf.Enabled {
 		return
 	}
-	err := setupMetrics()
-	if err != nil {
+	if err := setupMetrics(); err != nil {
 		panic("could not set up metrics")
 	}
 	http.Handle(conf.Path, promhttp.Handler())
@@ -259,7 +258,7 @@ func (i instrumentOpts) histogram() prometheus.HistogramOpts {
 	}
 }
 
-// Gauge returns a prometheus Gauge instrument
+// Gauge returns a prometheus Gauge instrument.
 func (m mi) Gauge() (prometheus.Gauge, error) {
 	if m.gauge == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -267,7 +266,7 @@ func (m mi) Gauge() (prometheus.Gauge, error) {
 	return m.gauge, nil
 }
 
-// GaugeVec returns a prometheus GaugeVec instrument
+// GaugeVec returns a prometheus GaugeVec instrument.
 func (m mi) GaugeVec() (*prometheus.GaugeVec, error) {
 	if m.gaugeV == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -275,7 +274,7 @@ func (m mi) GaugeVec() (*prometheus.GaugeVec, error) {
 	return m.gaugeV, nil
 }
 
-// Counter returns a prometheus Counter instrument
+// Counter returns a prometheus Counter instrument.
 func (m mi) Counter() (prometheus.Counter, error) {
 	if m.counter == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -283,7 +282,7 @@ func (m mi) Counter() (prometheus.Counter, error) {
 	return m.counter, nil
 }
 
-// CounterVec returns a prometheus CounterVec instrument
+// CounterVec returns a prometheus CounterVec instrument.
 func (m mi) CounterVec() (*prometheus.CounterVec, error) {
 	if m.counterV == nil {
 		return nil, ErrInstrumentTypeMismatch
@@ -460,7 +459,7 @@ func setupMetrics() error {
 	return nil
 }
 
-// OrderCounterInc increments the order counter
+// OrderCounterInc increments the order counter.
 func OrderCounterInc(labelValues ...string) {
 	if orderCounter == nil {
 		return
@@ -468,7 +467,7 @@ func OrderCounterInc(labelValues ...string) {
 	orderCounter.WithLabelValues(labelValues...).Inc()
 }
 
-// EthCallInc increments the eth call counter
+// EthCallInc increments the eth call counter.
 func EthCallInc(labelValues ...string) {
 	if ethCallCounter == nil {
 		return
@@ -476,7 +475,7 @@ func EthCallInc(labelValues ...string) {
 	ethCallCounter.WithLabelValues(labelValues...).Inc()
 }
 
-// EvtForwardInc increments the evt forward counter
+// EvtForwardInc increments the evt forward counter.
 func EvtForwardInc(labelValues ...string) {
 	if evtForwardCounter == nil {
 		return
@@ -484,7 +483,7 @@ func EvtForwardInc(labelValues ...string) {
 	evtForwardCounter.WithLabelValues(labelValues...).Inc()
 }
 
-// OrderGaugeAdd increment the order gauge
+// OrderGaugeAdd increment the order gauge.
 func OrderGaugeAdd(n int, labelValues ...string) {
 	if orderGauge == nil {
 		return
@@ -492,7 +491,7 @@ func OrderGaugeAdd(n int, labelValues ...string) {
 	orderGauge.WithLabelValues(labelValues...).Add(float64(n))
 }
 
-// UnconfirmedTxGaugeSet update the number of unconfirmed transactions
+// UnconfirmedTxGaugeSet update the number of unconfirmed transactions.
 func UnconfirmedTxGaugeSet(n int) {
 	if unconfirmedTxGauge == nil {
 		return
@@ -500,7 +499,7 @@ func UnconfirmedTxGaugeSet(n int) {
 	unconfirmedTxGauge.Set(float64(n))
 }
 
-// APIRequestAndTimeREST updates the metrics for REST API calls
+// APIRequestAndTimeREST updates the metrics for REST API calls.
 func APIRequestAndTimeREST(request string, time float64) {
 	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
 		return
@@ -509,7 +508,7 @@ func APIRequestAndTimeREST(request string, time float64) {
 	apiRequestTimeCounter.WithLabelValues("REST", request).Add(time)
 }
 
-// APIRequestAndTimeGRPC updates the metrics for GRPC API calls
+// APIRequestAndTimeGRPC updates the metrics for GRPC API calls.
 func APIRequestAndTimeGRPC(request string, startTime time.Time) {
 	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
 		return
@@ -519,7 +518,7 @@ func APIRequestAndTimeGRPC(request string, startTime time.Time) {
 	apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
 }
 
-// APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls
+// APIRequestAndTimeGraphQL updates the metrics for GraphQL API calls.
 func APIRequestAndTimeGraphQL(request string, time float64) {
 	if apiRequestCallCounter == nil || apiRequestTimeCounter == nil {
 		return
@@ -528,7 +527,7 @@ func APIRequestAndTimeGraphQL(request string, time float64) {
 	apiRequestTimeCounter.WithLabelValues("GraphQL", request).Add(time)
 }
 
-// StartAPIRequestAndTimeGRPC updates the metrics for GRPC API calls
+// StartAPIRequestAndTimeGRPC updates the metrics for GRPC API calls.
 func StartAPIRequestAndTimeGRPC(request string) func() {
 	startTime := time.Now()
 	return func() {

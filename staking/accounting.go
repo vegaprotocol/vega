@@ -18,7 +18,7 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
-// Broker - the event bus
+// Broker - the event bus.
 type Broker interface {
 	Send(events.Event)
 }
@@ -27,9 +27,7 @@ type EthereumClientCaller interface {
 	bind.ContractCaller
 }
 
-var (
-	ErrNoBalanceForParty = errors.New("no balance for party")
-)
+var ErrNoBalanceForParty = errors.New("no balance for party")
 
 type Accounting struct {
 	log              *logging.Logger
@@ -98,7 +96,7 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 	}
 }
 
-//GetAllAvailableBalances returns the staking balance for all parties
+// GetAllAvailableBalances returns the staking balance for all parties.
 func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
 	balances := map[string]*num.Uint{}
 	for party, acc := range a.accounts {

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// RemoteAddr collects possible remote addresses from a request
+// RemoteAddr collects possible remote addresses from a request.
 func RemoteAddr(r *http.Request) (string, error) {
 	// Only defined when site is accessed via non-anonymous proxy
 	// and takes precedence over RemoteAddr

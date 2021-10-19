@@ -28,7 +28,8 @@ func TestEmptyParametersList(t *testing.T) {
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 1}
+		UpdateFrequency: 1,
+	}
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(4)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(4)
@@ -535,7 +536,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 
 	delta := num.Sum().Sub(maxUp2, maxUp1)
 	cPrice := num.Sum(price1, delta)
-	err = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, 1, now, true) //t1 violated only
+	err = pm.CheckPrice(context.TODO(), auctionStateMock, cPrice, 1, now, true) // t1 violated only
 	require.NoError(t, err)
 
 	initialAuctionEnd := now.Add(time.Duration(t1.AuctionExtension) * time.Second)
@@ -556,7 +557,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	riskModel.EXPECT().PriceRange(cPriceDec, h2, prob2).Times(1).Return(cMin2, cMax2)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
-	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterInitialAuction, true) //price should be accepted now
+	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterInitialAuction, true) // price should be accepted now
 	require.NoError(t, err)
 }
 
@@ -605,7 +606,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	decPrice, pMin1, pMax1, _, _ = getPriceBounds(cPrice, 1, 2)
 	_, pMin2, pMax2, _, _ = getPriceBounds(cPrice, 1*4, 2*4)
 
-	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true) //t1 violated only
+	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true) // t1 violated only
 	require.NoError(t, err)
 
 	initialAuctionEnd := now.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
@@ -621,7 +622,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	riskModel.EXPECT().PriceRange(decPrice, h2, prob2).Times(1).Return(pMin2, pMax2)
 
 	afterInitialAuction := initialAuctionEnd.Add(time.Nanosecond)
-	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterInitialAuction, true) //price should be accepted now
+	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterInitialAuction, true) // price should be accepted now
 	require.NoError(t, err)
 }
 
@@ -690,7 +691,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 
 	cPrice := num.Sum(price1, maxUp2)
 	cPrice.Sub(cPrice, maxUp1)
-	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true) //t1 violated only
+	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, now, true) // t1 violated only
 	require.NoError(t, err)
 
 	initialAuctionEnd := now.Add(time.Duration(t1.AuctionExtension) * time.Second)
@@ -714,7 +715,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	cPrice = num.Sum(price1, maxUp2, maxUp1)
 	end2 := types.AuctionDuration{Duration: t2.AuctionExtension}
 	auctionStateMock.EXPECT().ExtendAuctionPrice(end2).Times(1)
-	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterInitialAuction, true) //price should violated 2nd trigger and result in auction extension
+	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterInitialAuction, true) // price should violated 2nd trigger and result in auction extension
 	require.NoError(t, err)
 
 	bounds = pm.GetCurrentBounds()
@@ -744,7 +745,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	riskModel.EXPECT().PriceRange(decPrice, h2, prob2).Times(1).Return(pMin2, pMax2)
 
 	afterExtendedAuction := extendedAuctionEnd.Add(time.Nanosecond)
-	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterExtendedAuction, true) //price should be accepted now
+	err = pm.CheckPrice(ctx, auctionStateMock, cPrice, 1, afterExtendedAuction, true) // price should be accepted now
 	require.NoError(t, err)
 
 	bounds = pm.GetCurrentBounds()
@@ -865,7 +866,8 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 		Parameters: &types.PriceMonitoringParameters{
 			Triggers: []*types.PriceMonitoringTrigger{},
 		},
-		UpdateFrequency: 1}
+		UpdateFrequency: 1,
+	}
 
 	auctionStateMock.EXPECT().IsFBA().Return(false).Times(1)
 	auctionStateMock.EXPECT().InAuction().Return(false).Times(1)
@@ -1058,9 +1060,7 @@ func testPricesValidAfterAuctionEnds(t *testing.T) {
 }
 */
 
-var (
-	secondsPerYear = num.DecimalFromFloat(365.25 * 24 * 60 * 60)
-)
+var secondsPerYear = num.DecimalFromFloat(365.25 * 24 * 60 * 60)
 
 func getPriceBounds(price *num.Uint, min, max uint64) (decPr, minPr, maxPr num.Decimal, mn, mx *num.Uint) {
 	decPr = price.ToDecimal()

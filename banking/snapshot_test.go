@@ -28,7 +28,6 @@ func deposit(eng *testEngine, asset, party string, amount *num.Uint) *types.Buil
 		PartyID:     party,
 		Amount:      amount,
 	}
-
 }
 
 func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
@@ -114,12 +113,10 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 }
 
 func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
-	var (
-		testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
-			Name:   "VEGA TOKEN",
-			Symbol: "VGT",
-		}))
-	)
+	testAsset := assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
+		Name:   "VEGA TOKEN",
+		Symbol: "VGT",
+	}))
 
 	withdrawalsKey := (&types.PayloadBankingWithdrawals{}).Key()
 	eng := getTestEngine(t)

@@ -22,6 +22,7 @@ type depPluginTest struct {
 }
 
 func getDepPlugin(t *testing.T) *depPluginTest {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	ctx, cfunc := context.WithCancel(context.Background())
 	p := plugins.NewDeposit(ctx)

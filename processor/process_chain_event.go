@@ -21,7 +21,6 @@ var (
 func (app *App) processChainEvent(
 	ctx context.Context, ce *commandspb.ChainEvent, pubkey string, id string,
 ) error {
-
 	if app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("received chain event",
 			logging.String("event", ce.String()),
@@ -93,7 +92,7 @@ func (app *App) processChainEvent(
 }
 
 func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.ChainEvent_Builtin, id string, nonce uint64) error {
-	evt := ce.Builtin
+	evt := ce.Builtin //nolint
 	if evt == nil {
 		return ErrNotABuiltinAssetEvent
 	}
@@ -117,7 +116,7 @@ func (app *App) processChainEventBuiltinAsset(ctx context.Context, ce *types.Cha
 func (app *App) processChainEventERC20(
 	ctx context.Context, ce *types.ChainEventERC20, id, txID string,
 ) error {
-	evt := ce.ERC20
+	evt := ce.ERC20 //nolint
 	if evt == nil {
 		return ErrNotAnERC20Event
 	}
@@ -163,8 +162,7 @@ type HasVegaAssetID interface {
 
 func (app *App) checkVegaAssetID(a HasVegaAssetID, action string) error {
 	id := a.GetVegaAssetID()
-	_, err := app.assets.Get(id)
-	if err != nil {
+	if _, err := app.assets.Get(id); err != nil {
 		app.log.Error("invalid vega asset ID",
 			logging.String("action", action),
 			logging.Error(err),

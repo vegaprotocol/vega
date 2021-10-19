@@ -72,7 +72,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
 	}
-	var orders = []*types.Order{
+	orders := []*types.Order{
 		// Limit Orders
 		tpl.New(types.Order{
 			Size:        20,
@@ -376,6 +376,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 }
 
 func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
+	t.Helper()
 	var (
 		party0 = "clearing-auction-party0"
 		party1 = "clearing-auction-party1"
@@ -385,7 +386,7 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	tm.WithAccountAndAmount(party0, 1000000).
 		WithAccountAndAmount(party1, 1000000)
 
-	var auctionOrders = []*types.Order{
+	auctionOrders := []*types.Order{
 		// Limit Orders
 		{
 			Type:        types.OrderTypeLimit,
@@ -461,10 +462,10 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 		// submit the auctions orders
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
-
 }
 
 func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, setMarkPrice bool) {
+	t.Helper()
 	var (
 		party0 = "clearing-auction-party0"
 		party1 = "clearing-auction-party1"
@@ -474,7 +475,7 @@ func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, set
 	tm.WithAccountAndAmount(party0, 1000000).
 		WithAccountAndAmount(party1, 1000000)
 
-	var auctionOrders = []*types.Order{
+	auctionOrders := []*types.Order{
 		// Limit Orders
 		{
 			Type:        types.OrderTypeLimit,
@@ -550,7 +551,6 @@ func (tm *testMarket) EndOpeningAuction2(t *testing.T, auctionEnd time.Time, set
 		// submit the auctions orders
 		tm.WithSubmittedOrders(t, mpOrders...)
 	}
-
 }
 
 func mustOrderFromProto(o *vegapb.Order) *types.Order {

@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "matching"
 
-// Config represents the configuration of the Matching engine
+// Config represents the configuration of the Matching engine.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 

@@ -2,6 +2,7 @@ package evtforward
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -20,9 +21,9 @@ import (
 )
 
 var (
-	// ErrEvtAlreadyExist we have already handled this event
+	// ErrEvtAlreadyExist we have already handled this event.
 	ErrEvtAlreadyExist = errors.New("event already exist")
-	// ErrPubKeyNotAllowlisted this pubkey is not part of the allowlist
+	// ErrPubKeyNotAllowlisted this pubkey is not part of the allowlist.
 	ErrPubKeyNotAllowlisted = errors.New("pubkey not allowlisted")
 )
 
@@ -45,7 +46,7 @@ type ValidatorTopology interface {
 
 // EvtForwarder receive events from the blockchain queue
 // and will try to send them to the vega chain.
-// this will select a node in the network to forward the event
+// this will select a node in the network to forward the event.
 type EvtForwarder struct {
 	log  *logging.Logger
 	cfg  Config
@@ -59,7 +60,7 @@ type EvtForwarder struct {
 	mu               sync.RWMutex
 	bcQueueAllowlist atomic.Value // this is actually an map[string]struct{}
 	currentTime      time.Time
-	nodes            []nodeHash
+	nodes            []string
 
 	top ValidatorTopology
 }
@@ -69,12 +70,7 @@ type tsEvt struct {
 	evt *commandspb.ChainEvent
 }
 
-type nodeHash struct {
-	node string
-	hash uint64
-}
-
-// New creates a new instance of the event forwarder
+// New creates a new instance of the event forwarder.
 func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top ValidatorTopology) *EvtForwarder {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -84,8 +80,8 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		cfg:              cfg,
 		log:              log,
 		cmd:              cmd,
-		nodes:            []nodeHash{},
-		self:             string(top.SelfNodeID()),
+		nodes:            []string{},
+		self:             top.SelfNodeID(),
 		currentTime:      time.GetTimeNow(),
 		ackedEvts:        map[string]*commandspb.ChainEvent{},
 		evts:             map[string]tsEvt{},
@@ -105,7 +101,7 @@ func buildAllowlist(cfg Config) map[string]struct{} {
 	return allowlist
 }
 
-// ReloadConf updates the internal configuration of the collateral engine
+// ReloadConf updates the internal configuration of the collateral engine.
 func (e *EvtForwarder) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -124,9 +120,9 @@ func (e *EvtForwarder) ReloadConf(cfg Config) {
 }
 
 // Ack will return true if the event is newly acknowledge
-// if the event already exist and was already acknowledge this will return false
+// if the event already exist and was already acknowledge this will return false.
 func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
-	var res = "ok"
+	res := "ok"
 	defer func() {
 		metrics.EvtForwardInc("ack", res)
 	}()
@@ -134,9 +130,16 @@ func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	key := string(crypto.Hash([]byte(evt.String())))
+	key, err := e.getEvtKey(evt)
+	if err != nil {
+		e.log.Error("could not get event key", logging.Error(err))
+		return false
+	}
 	_, ok, acked := e.getEvt(key)
 	if ok && acked {
+		e.log.Error("event already acknowledged",
+			logging.String("evt", evt.String()),
+		)
 		res = "alreadyacked"
 		// this was already acknowledged, nothing to be done, return false
 		return false
@@ -149,6 +152,7 @@ func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 
 	// now add it to the acknowledged evts
 	e.ackedEvts[key] = evt
+	e.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true
 }
 
@@ -159,9 +163,9 @@ func (e *EvtForwarder) isAllowlisted(pubkey string) bool {
 }
 
 // Forward will forward an ChainEvent to the tendermint network
-// we expect the pubkey to be an ed25519 pubkey hex encoded
+// we expect the pubkey to be an ed25519 pubkey hex encoded.
 func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, pubkey string) error {
-	var res = "ok"
+	res := "ok"
 	defer func() {
 		metrics.EvtForwardInc("forward", res)
 	}()
@@ -181,9 +185,16 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	e.evtsmu.Lock()
 	defer e.evtsmu.Unlock()
 
-	key := string(crypto.Hash([]byte(evt.String())))
-	_, ok, _ := e.getEvt(key)
+	key, err := e.getEvtKey(evt)
+	if err != nil {
+		return err
+	}
+	_, ok, ack := e.getEvt(key)
 	if ok {
+		e.log.Error("event already processed",
+			logging.String("evt", evt.String()),
+			logging.Bool("acknowledged", ack),
+		)
 		res = "dupevt"
 		return ErrEvtAlreadyExist
 	}
@@ -201,18 +212,13 @@ func (e *EvtForwarder) updateValidatorsList() {
 	defer e.mu.Unlock()
 
 	e.self = e.top.SelfNodeID()
-	// reset slice
-	// preemptive alloc, we can expect to have most likely
-	// as much validator
-	e.nodes = make([]nodeHash, 0, len(e.nodes))
-	// get all keys
-	for _, key := range e.top.AllNodeIDs() {
-		h := e.hash([]byte(key))
-		e.nodes = append(e.nodes, nodeHash{key, h})
-	}
-	sort.SliceStable(e.nodes, func(i, j int) bool { return e.nodes[i].hash < e.nodes[j].hash })
+	e.nodes = e.top.AllNodeIDs()
+	sort.SliceStable(e.nodes, func(i, j int) bool {
+		return e.nodes[i] < e.nodes[j]
+	})
 }
 
+// getEvt assumes the lock is acquired before being called.
 func (e *EvtForwarder) getEvt(key string) (evt *commandspb.ChainEvent, ok bool, acked bool) {
 	if evt, ok = e.ackedEvts[key]; ok {
 		return evt, true, true
@@ -237,8 +243,13 @@ func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {
 }
 
 func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
-	s := fmt.Sprintf("%v%v", evt.String(), e.currentTime.Unix())
-	h := e.hash([]byte(s))
+	key, err := e.makeEvtHashKey(evt)
+	if err != nil {
+		e.log.Error("could not marshal event", logging.Error(err))
+		return false
+	}
+	h := e.hash(key)
+
 	e.mu.RLock()
 	if len(e.nodes) <= 0 {
 		e.mu.RUnlock()
@@ -247,7 +258,7 @@ func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
 	node := e.nodes[h%uint64(len(e.nodes))]
 	e.mu.RUnlock()
 
-	return node.node == e.self
+	return node == e.self
 }
 
 func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
@@ -277,8 +288,42 @@ func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 	}
 }
 
+func (e *EvtForwarder) getEvtKey(evt *commandspb.ChainEvent) (string, error) {
+	mevt, err := e.marshalEvt(evt)
+	if err != nil {
+		return "", fmt.Errorf("invalid event: %w", err)
+	}
+
+	return string(crypto.Hash(mevt)), nil
+}
+
+func (e *EvtForwarder) marshalEvt(evt *commandspb.ChainEvent) ([]byte, error) {
+	pbuf := proto.Buffer{}
+	pbuf.Reset()
+	pbuf.SetDeterministic(true)
+	if err := pbuf.Marshal(evt); err != nil {
+		return nil, err
+	}
+	return pbuf.Bytes(), nil
+}
+
+func (e *EvtForwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error) {
+	// deterministic marshal of the event
+	pbuf, err := e.marshalEvt(evt)
+	if err != nil {
+		return nil, err
+	}
+
+	// encode time to binary
+	var buf [8]byte
+	_ = binary.PutVarint(buf[:], e.currentTime.Unix())
+
+	return append(pbuf, buf[:]...), nil
+}
+
 func (e *EvtForwarder) hash(key []byte) uint64 {
 	h := fnv.New64a()
 	h.Write(key)
+
 	return h.Sum64()
 }

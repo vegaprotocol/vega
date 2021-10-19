@@ -54,12 +54,12 @@ func (m *Market) repricePeggedOrders(
 				order.Status = types.OrderStatusParked
 				toSubmit = append(toSubmit, order)
 			}
-
 		}
 	}
 
 	timer.EngineTimeCounterAdd()
-	return
+
+	return parked, toSubmit
 }
 
 func (m *Market) reSubmitPeggedOrders(
@@ -178,7 +178,6 @@ func (m *Market) enterAuctionSpecialOrders(
 	ctx context.Context,
 	updatedOrders []*types.Order,
 ) []*types.Order {
-
 	// Park all pegged orders
 	updatedOrders = append(
 		updatedOrders,

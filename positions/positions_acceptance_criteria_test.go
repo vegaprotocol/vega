@@ -26,7 +26,7 @@ func TestPositionsEngineAcceptanceCriteria(t *testing.T) {
 	// Opening and closing positions for multiple partys, maintains position size for all open (non-zero) positions
 	t.Run("Does not change position size for a wash trade (buyer = seller)", testWashTradeDoNotChangePosition)
 
-	//No active buy orders, a new buy order is added to the order book
+	// No active buy orders, a new buy order is added to the order book
 	t.Run("Active buy orders, a new buy order is added to the order book", testNewOrderAddedToTheBook)
 	t.Run("Active sell orders, a new sell order is added to the order book", testNewOrderAddedToTheBook)
 	t.Run("Active buy order, an order initiated by another party causes a partial amount of the existing buy order to trade.", testNewTradePartialAmountOfExistingOrderTraded)
@@ -346,7 +346,6 @@ func testNoOpenPositionsTradeOccurOpenLongAndShortPosition(t *testing.T) {
 			assert.Equal(t, c.expectedSizePartyB, p.Size())
 		}
 	}
-
 }
 
 func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
@@ -441,7 +440,6 @@ func testOpenPosTradeOccurCloseThanOpenPositioAgain(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func testWashTradeDoNotChangePosition(t *testing.T) {
@@ -639,7 +637,6 @@ func testNewTradePartialAmountOfExistingOrderTraded(t *testing.T) {
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
 		for _, v := range pos {
-
 			assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
 			assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
 			assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
@@ -734,7 +731,6 @@ func testTradeCauseTheFullAmountOfOrderToTrade(t *testing.T) {
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
 		for _, v := range pos {
-
 			assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
 			assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
 			assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())
@@ -830,7 +826,6 @@ func testOrderCancelled(t *testing.T) {
 		pos := engine.Positions()
 		assert.Len(t, pos, i+1)
 		for _, v := range pos {
-
 			assert.Equal(t, cases.expects[v.Party()].expectedBuy, v.Buy())
 			assert.Equal(t, cases.expects[v.Party()].expectedSell, v.Sell())
 			assert.Equal(t, cases.expects[v.Party()].expectedSize, v.Size())

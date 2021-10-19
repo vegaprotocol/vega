@@ -63,14 +63,14 @@ func (s *Service) serialisePending() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (s *Service) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := s.keyToSerialiser[k]; !ok {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
 	}
 
-	if !s.dss.changed[k] {
-		return s.dss.serialised[k], s.dss.hash[k], nil
+	if !s.ass.changed[k] {
+		return s.ass.serialised[k], s.ass.hash[k], nil
 	}
 
 	data, err := s.keyToSerialiser[k]()
@@ -79,9 +79,9 @@ func (s *Service) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	}
 
 	hash := crypto.Hash(data)
-	s.dss.serialised[k] = data
-	s.dss.hash[k] = hash
-	s.dss.changed[k] = false
+	s.ass.serialised[k] = data
+	s.ass.hash[k] = hash
+	s.ass.changed[k] = false
 	return data, hash, nil
 }
 
@@ -132,7 +132,7 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets)
 			return err
 		}
 	}
-	s.dss.changed[activeKey] = true
+	s.ass.changed[activeKey] = true
 	return nil
 }
 
@@ -145,6 +145,6 @@ func (s *Service) restorePending(ctx context.Context, pending *types.PendingAsse
 	}
 
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
-	s.dss.changed[pendingKey] = true
+	s.ass.changed[pendingKey] = true
 	return nil
 }

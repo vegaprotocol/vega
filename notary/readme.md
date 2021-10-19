@@ -11,9 +11,9 @@ The notary also exposes a service and API which allows a user to retrieve the ag
 
 ## Network events that require notarisation
 - Approval of a [new asset](../assets/)
+- Approval of a withdrawal
 
 ### Extra events coming soon
-- Approval of a withdrawal
 - Adding a [new validator](../validators/)
 
 ## Example use case.

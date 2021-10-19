@@ -6,9 +6,7 @@ import (
 	"time"
 )
 
-var (
-	ErrNoLimitsGenesisState = errors.New("no limits genesis state")
-)
+var ErrNoLimitsGenesisState = errors.New("no limits genesis state")
 
 type GenesisState struct {
 	ProposeMarketEnabled     bool       `json:"propose_market_enabled"`

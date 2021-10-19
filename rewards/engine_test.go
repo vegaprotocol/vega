@@ -1,10 +1,12 @@
 package rewards
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
 
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
@@ -13,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/rewards/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,24 +32,173 @@ func Test(t *testing.T) {
 	t.Run("Calculation of reward payout succeeds", testCalculateRewards)
 	t.Run("Calculation of reward payout succeeds, epoch reward amount is capped by the max", testCalculateRewardsCappedByMaxPerEpoch)
 	t.Run("Payout distribution succeeds", testDistributePayout)
-	t.Run("Process epoch end to calculate payout with payout delay - all balance left on reward account is paid out", testOnEpochEndFullPayoutWithPayoutDelay)
-	t.Run("Process epoch end to calculate payout with no delay - rewards are distributed successfully", testOnEpochEndNoPayoutDelay)
+	t.Run("Process epoch end to calculate payout with payout delay - all balance left on reward account is paid out", testOnEpochEventFullPayoutWithPayoutDelay)
+	t.Run("Process epoch end to calculate payout with no delay - rewards are distributed successfully", testOnEpochEventNoPayoutDelay)
 	t.Run("Process pending payouts on time update - time for payout hasn't come yet so no payouts sent", testOnChainTimeUpdateNoPayoutsToSend)
+	t.Run("Reward snapshot round trip with delayed payout", testRewardSnapshotRoundTrip)
+	t.Run("Calculate rewards with delays such that pending payouts pile and are accounted for reward amount available for next round next rounds before being distributed", testMultipleEpochsWithPendingPayouts)
 }
 
-//test that registering reward scheme is unsupported
+func testMultipleEpochsWithPendingPayouts(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	engine.registerStakingAndDelegationRewardScheme()
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+
+	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
+
+	// setup delay
+	rs.PayoutDelay = 120 * time.Second
+	rs.PayoutFraction = 0.5
+
+	// setup reward account balance
+	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
+	require.Nil(t, err)
+
+	// there is remaining 1000000 to distribute as payout
+	now := time.Now()
+	epoch1 := types.Epoch{StartTime: now, EndTime: now, Seq: 1}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEvent(context.Background(), epoch1)
+
+	// at this point there should be a payout pending
+	require.Equal(t, 1, len(engine.pendingPayouts))
+	require.Equal(t, num.NewUint(499999), engine.pendingPayouts[now.Add(rs.PayoutDelay)][0].totalReward)
+	require.Equal(t, num.NewUint(499999), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
+
+	// now add reward for epoch 2
+	now2 := now.Add(10 * time.Second)
+	epoch2 := types.Epoch{StartTime: now2, EndTime: now2, Seq: 2}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEvent(context.Background(), epoch2)
+
+	// at this point there should be a payout pending
+	require.Equal(t, 2, len(engine.pendingPayouts))
+	require.Equal(t, num.NewUint(249999), engine.pendingPayouts[now2.Add(rs.PayoutDelay)][0].totalReward)
+	require.Equal(t, num.NewUint(749998), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
+
+	// run to the end of delay to have payouts distributed
+
+	now3 := now2.Add(121 * time.Second)
+	engine.onChainTimeUpdate(context.Background(), now3)
+	require.Equal(t, num.Zero(), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
+}
+
+func testRewardSnapshotRoundTrip(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	engine.registerStakingAndDelegationRewardScheme()
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+
+	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
+
+	// setup delay
+	rs.PayoutDelay = 120 * time.Second
+	rs.PayoutFraction = 0.1
+
+	// setup reward account balance
+	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
+	require.Nil(t, err)
+
+	// there is remaining 1000000 to distribute as payout
+	now := time.Now()
+	epoch := types.Epoch{StartTime: now, EndTime: now, Seq: 1}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEvent(context.Background(), epoch)
+
+	// now we have a pending payout to be paid 2 minutes later
+	// verify hash is consistent in the absence of change
+	key = "pendingPayout"
+
+	hash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	state, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	hashNoChange, err := engine.GetHash(key)
+	require.Nil(t, err)
+	stateNoChange, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// reload the state
+	var rewards snapshot.Payload
+	proto.Unmarshal(state, &rewards)
+
+	payload := types.PayloadFromProto(&rewards)
+
+	err = engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	hashPostReload, _ := engine.GetHash(key)
+	require.True(t, bytes.Equal(hash, hashPostReload))
+	statePostReload, _ := engine.GetState(key)
+	require.True(t, bytes.Equal(state, statePostReload))
+
+	// add another pending payout
+	epoch = types.Epoch{StartTime: now.Add(10 * time.Second), EndTime: now.Add(10 * time.Second), Seq: 2}
+	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
+	engine.OnEpochEvent(context.Background(), epoch)
+
+	// expect hash and state to have changed
+	newHash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	newState, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, newHash))
+	require.False(t, bytes.Equal(state, newState))
+
+	proto.Unmarshal(newState, &rewards)
+	payload = types.PayloadFromProto(&rewards)
+	err = engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+	newHashPostReload, _ := engine.GetHash(key)
+	require.True(t, bytes.Equal(newHash, newHashPostReload))
+	newStatePostReload, _ := engine.GetState(key)
+	require.True(t, bytes.Equal(newState, newStatePostReload))
+
+	// advance to after payouts have been paid and cleared
+	engine.onChainTimeUpdate(context.Background(), now.Add(300*time.Second))
+	emptyStateHash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	emptyState, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, emptyStateHash))
+	require.False(t, bytes.Equal(state, emptyState))
+}
+
+// test that registering reward scheme is unsupported.
 func testRegisterRewardSchemeErr(t *testing.T) {
 	testEngine := getEngine(t)
 	require.Error(t, ErrUnsupported, testEngine.engine.RegisterRewardScheme(&types.RewardScheme{}))
 }
 
-//test that updating reward scheme is unsupported
+// test that updating reward scheme is unsupported.
 func testUpdateRewardSchemeErr(t *testing.T) {
 	testEngine := getEngine(t)
 	require.Error(t, ErrUnsupported, testEngine.engine.RegisterRewardScheme(&types.RewardScheme{}))
 }
 
-//test registration of hardcoded staking and delegation reward scheme
+// test registration of hardcoded staking and delegation reward scheme.
 func testRegisterStakingAndDelegationRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -64,7 +216,7 @@ func testRegisterStakingAndDelegationRewardScheme(t *testing.T) {
 	require.Equal(t, 0, len(rs.RewardPoolAccountIDs))
 }
 
-//test updating of asset for staking and delegation reward which triggers the creation or get of the reward account for the asset
+// test updating of asset for staking and delegation reward which triggers the creation or get of the reward account for the asset.
 func testUpdateAssetForStakingAndDelegationRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -77,7 +229,7 @@ func testUpdateAssetForStakingAndDelegationRewardScheme(t *testing.T) {
 	require.Equal(t, "!*ETH<", rs.RewardPoolAccountIDs[0])
 }
 
-//test updating of asset for staking and delegation reward which happens after max payout for asset has been updated
+// test updating of asset for staking and delegation reward which happens after max payout for asset has been updated.
 func testUpdateAssetForStakingAndDelegationRewardSchemeWithMaxPayoutSetup(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -92,7 +244,7 @@ func testUpdateAssetForStakingAndDelegationRewardSchemeWithMaxPayoutSetup(t *tes
 	require.Equal(t, num.NewUint(10000), rs.MaxPayoutPerAssetPerParty["ETH"])
 }
 
-//test updating of max payout per participant for staking and delegation reward scheme
+// test updating of max payout per participant for staking and delegation reward scheme.
 func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -105,7 +257,7 @@ func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, num.NewUint(10000), rs.MaxPayoutPerAssetPerParty[""])
 }
 
-//test updading of payout fraction for staking and delegation reward scheme
+// test updading of payout fraction for staking and delegation reward scheme.
 func testUpdatePayoutFractionForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -117,7 +269,7 @@ func testUpdatePayoutFractionForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, 0.1, rs.PayoutFraction)
 }
 
-// test updating of payout delay for staking and delegation reward scheme
+// test updating of payout delay for staking and delegation reward scheme.
 func testUpdatePayoutDelayForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -129,7 +281,7 @@ func testUpdatePayoutDelayForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, 1234*time.Second, rs.PayoutDelay)
 }
 
-// test updating of payout delay for staking and delegation reward scheme
+// test updating of payout delay for staking and delegation reward scheme.
 func testUpdateDelegatorShareForStakingRewardScheme(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -144,7 +296,7 @@ func testUpdateDelegatorShareForStakingRewardScheme(t *testing.T) {
 	require.Equal(t, "0.123456", rs.Parameters["delegatorShare"].Value)
 }
 
-// test calculation of reward payout
+// test calculation of reward payout.
 func testCalculateRewards(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -154,6 +306,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	epoch := types.Epoch{}
@@ -173,7 +326,7 @@ func testCalculateRewards(t *testing.T) {
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
-// test calculation of reward payout where the amount for epoch is capped by the max net param
+// test calculation of reward payout where the amount for epoch is capped by the max net param.
 func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -183,6 +336,7 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	epoch := types.Epoch{}
@@ -202,7 +356,7 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
-// test payout distribution
+// test payout distribution.
 func testDistributePayout(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -242,8 +396,8 @@ func testDistributePayout(t *testing.T) {
 	require.Equal(t, num.NewUint(995000), rewardAccount.Balance)
 }
 
-// test on epoch end such that the full reward account balance can be reward with delay
-func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
+// test on epoch end such that the full reward account balance can be reward with delay.
+func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
 	engine.registerStakingAndDelegationRewardScheme()
@@ -253,13 +407,13 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
-
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	//setup delay
+	// setup delay
 	rs.PayoutDelay = 120 * time.Second
 
-	//setup reward account balance
+	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
 	require.Nil(t, err)
 
@@ -267,7 +421,11 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now(), Seq: 1}
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
-	engine.OnEpochEnd(context.Background(), epoch)
+	engine.OnEpochEvent(context.Background(), epoch)
+
+	// advance to the end of the delay for the second reward + topup the balance of the reward account to be 1M again
+	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(999999))
+	require.Nil(t, err)
 
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
@@ -281,7 +439,7 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 
 	// setup another pending reward at a later time to observe that it remains pending after the current payout is made
 	epoch2 := types.Epoch{StartTime: time.Now().Add(60 * time.Second), EndTime: time.Now().Add(60 * time.Second), Seq: 2}
-	engine.OnEpochEnd(context.Background(), epoch2)
+	engine.OnEpochEvent(context.Background(), epoch2)
 
 	// let time advance by 2 minutes
 	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(rs.PayoutDelay))
@@ -302,10 +460,6 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(400000), node2Acc.Balance)
 	require.Equal(t, num.NewUint(331428), node3Acc.Balance)
 
-	// advance to the end of the delay for the second reward + topup the balance of the reward account to be 1M again
-	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(999999))
-	require.Nil(t, err)
-
 	engine.onChainTimeUpdate(context.Background(), epoch2.EndTime.Add(rs.PayoutDelay))
 
 	// nothing is left pending
@@ -323,11 +477,10 @@ func testOnEpochEndFullPayoutWithPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(140000*2), node1Acc.Balance)
 	require.Equal(t, num.NewUint(400000*2), node2Acc.Balance)
 	require.Equal(t, num.NewUint(331428*2), node3Acc.Balance)
-
 }
 
-// test payout distribution on epoch end with no delay
-func testOnEpochEndNoPayoutDelay(t *testing.T) {
+// test payout distribution on epoch end with no delay.
+func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
 	engine.registerStakingAndDelegationRewardScheme()
@@ -337,6 +490,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
@@ -347,10 +501,10 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	//setup delay
+	// setup delay
 	rs.PayoutDelay = 0 * time.Second
 
-	//setup reward account balance
+	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
 	require.Nil(t, err)
 
@@ -359,7 +513,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	engine.OnEpochEnd(context.Background(), epoch)
+	engine.OnEpochEvent(context.Background(), epoch)
 	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(rs.PayoutDelay))
 
 	// total distributed is 999999
@@ -379,7 +533,7 @@ func testOnEpochEndNoPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(331428), node3Acc.Balance)
 }
 
-// test on time update - there are pending payouts but they are not yet due so nothing is paid or changed
+// test on time update - there are pending payouts but they are not yet due so nothing is paid or changed.
 func testOnChainTimeUpdateNoPayoutsToSend(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
@@ -413,6 +567,7 @@ type testEngine struct {
 }
 
 func getEngine(t *testing.T) *testEngine {
+	t.Helper()
 	conf := NewDefaultConfig()
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)

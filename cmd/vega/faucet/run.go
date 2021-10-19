@@ -28,12 +28,12 @@ func (opts *faucetRun) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := opts.PassphraseFile.Get("faucet wallet")
+	pass, err := opts.PassphraseFile.Get("faucet wallet", false)
 	if err != nil {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(opts.VegaHome)
+	vegaPaths := paths.New(opts.VegaHome)
 
 	faucetCfgLoader, err := faucet.InitialiseConfigLoader(vegaPaths)
 	if err != nil {
@@ -75,7 +75,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 
 // waitSig will wait for a sigterm or sigint interrupt.
 func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
+	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM)
 	signal.Notify(gracefulStop, syscall.SIGINT)
 

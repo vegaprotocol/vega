@@ -90,7 +90,7 @@ func (e *Engine) serialiseWithdrawals() ([]byte, error) {
 }
 
 func (e *Engine) serialiseSeen() ([]byte, error) {
-	seen := make([]*types.TxRef, len(e.seen))
+	seen := make([]*types.TxRef, 0, len(e.seen))
 	for v := range e.seen {
 		seen = append(seen, &types.TxRef{Asset: string(v.asset), BlockNr: v.blockNumber, Hash: v.hash, LogIndex: v.logIndex})
 	}
@@ -146,7 +146,7 @@ func (e *Engine) serialiseDeposits() ([]byte, error) {
 	return proto.Marshal(payload.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.keyToSerialiser[k]; !ok {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
@@ -251,6 +251,7 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 		asset, err := e.assets.Get(v.Asset)
 		if err != nil {
 			e.log.Error("error restoring asset actions for asset", logging.String("asset", v.Asset))
+
 			continue
 		}
 		e.assetActs[v.ID] = &assetAction{
@@ -263,7 +264,6 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			erc20AL:     v.Erc20AL,
 			erc20D:      v.Erc20D,
 		}
-
 	}
 	e.bss.changed[assetActionsKey] = true
 	return nil

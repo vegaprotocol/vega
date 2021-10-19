@@ -8,11 +8,9 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 )
 
-var (
-	// ErrUnknownOracleSource is used when the input data is originated from an
-	// unknown, unsupported or unspecified oracle source.
-	ErrUnknownOracleSource = errors.New("unknown oracle source")
-)
+// ErrUnknownOracleSource is used when the input data is originated from an
+// unknown, unsupported or unspecified oracle source.
+var ErrUnknownOracleSource = errors.New("unknown oracle source")
 
 // Adaptor represents an oracle adaptor that consumes and normalises data from
 // a specific type of oracle.

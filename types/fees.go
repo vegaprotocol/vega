@@ -80,7 +80,7 @@ func (f Fee) Clone() *Fee {
 	}
 }
 
-// NewFee returns a new fee object, with all fields initialised
+// NewFee returns a new fee object, with all fields initialised.
 func NewFee() *Fee {
 	return &Fee{
 		MakerFee:          num.Zero(),

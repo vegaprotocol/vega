@@ -15,12 +15,18 @@ var (
 type ReplayProtector struct {
 	height uint64
 	txs    []map[string]struct{}
+	rss    *replaySnapshotState
 }
 
 // NewReplayProtector returns a new ReplayProtector instance given a tolerance.
 func NewReplayProtector(tolerance uint) *ReplayProtector {
 	rp := &ReplayProtector{
 		txs: make([]map[string]struct{}, tolerance),
+		rss: &replaySnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 
 	for i := range rp.txs {
@@ -34,12 +40,10 @@ func NewReplayProtector(tolerance uint) *ReplayProtector {
 func (rp *ReplayProtector) SetHeight(h uint64) {
 	rp.height = h
 
-	l := uint64(len(rp.txs))
-	if h < l {
-		return
+	if l := uint64(len(rp.txs)); h >= l {
+		rp.txs[h%l] = make(map[string]struct{})
+		rp.rss.changed = true
 	}
-
-	rp.txs[h%l] = make(map[string]struct{})
 }
 
 // Has checks if a given key is present in the cache.
@@ -60,6 +64,7 @@ func (rp *ReplayProtector) Add(key string) bool {
 
 	target := rp.height % uint64(len(rp.txs))
 	rp.txs[target][key] = struct{}{}
+	rp.rss.changed = true
 	return true
 }
 
@@ -92,8 +97,7 @@ func (rp *ReplayProtector) DeliverTx(tx Tx) error {
 func (rp *ReplayProtector) CheckTx(tx Tx) error {
 	// We perform 2 verifications:
 	// First we make sure that the Tx is not on the ring buffer.
-	key := string(tx.Hash())
-	if rp.Has(key) {
+	if rp.Has(string(tx.Hash())) {
 		return ErrTxAlreadyInCache
 	}
 

@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-// Broker no need to mock (use broker package mock)
+// Broker no need to mock (use broker package mock).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
@@ -77,7 +77,6 @@ func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
 	result, err := e.subscriptions.filterSubscribers(func(spec OracleSpec) (bool, error) {
 		return spec.MatchData(data)
 	})
-
 	if err != nil {
 		e.log.Debug("error in filtering subscribers",
 			logging.Error(err),

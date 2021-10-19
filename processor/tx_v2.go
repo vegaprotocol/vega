@@ -14,9 +14,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-var (
-	ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
-)
+var ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
 
 type TxV2 struct {
 	originalTx []byte

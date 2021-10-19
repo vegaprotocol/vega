@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// eq implements a gomock.Matcher with a better diff output
+// eq implements a gomock.Matcher with a better diff output.
 type eqMatcher struct {
 	t        *testing.T
 	expected interface{}
@@ -34,19 +34,23 @@ func (eqMatcher) String() string {
 	return "assert.Equal(expected, got)"
 }
 
-func eq(t *testing.T, x interface{}) eqMatcher { return eqMatcher{t, x} }
+func eq(t *testing.T, x interface{}) eqMatcher {
+	t.Helper()
+	return eqMatcher{t, x}
+}
 
 type testEngine struct {
 	ctrl     *gomock.Controller
 	marketID string
 	broker   *bmock.MockBroker
-	//idGen        *mocks.MockIDGen
+	// idGen        *mocks.MockIDGen
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
 	engine       *liquidity.Engine
 }
 
 func newTestEngine(t *testing.T, now time.Time) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	log := logging.NewTestLogger()
@@ -195,7 +199,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 
 	require.True(t, tng.engine.IsLiquidityProvider(party))
 
-	var markPrice = num.NewUint(10)
+	markPrice := num.NewUint(10)
 
 	// Now repriceFn works as expected, so initial orders should get created now
 	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
@@ -349,7 +353,6 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	require.Error(t,
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
 	)
-
 }
 
 func TestUpdate(t *testing.T) {
@@ -383,7 +386,7 @@ func TestUpdate(t *testing.T) {
 		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
 	)
 
-	var markPrice = num.NewUint(10)
+	markPrice := num.NewUint(10)
 
 	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
 		retPrice := markPrice.Clone()
@@ -425,6 +428,7 @@ func TestUpdate(t *testing.T) {
 	require.Len(t, newOrders, 0)
 	require.Len(t, toCancels, 0)
 }
+
 func TestCalculateSuppliedStake(t *testing.T) {
 	var (
 		party1 = "party-1"

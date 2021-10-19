@@ -35,5 +35,4 @@ func TestNodeSignatureDeepClone(t *testing.T) {
 	for i := 0; i < len(ns.Sig); i++ {
 		assert.NotEqual(t, ns.Sig[i], ns2.Sig[i])
 	}
-
 }

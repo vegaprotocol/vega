@@ -16,6 +16,7 @@ import (
 )
 
 func testAssets(t *testing.T) *assets.Service {
+	t.Helper()
 	conf := assets.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
@@ -25,7 +26,7 @@ func testAssets(t *testing.T) *assets.Service {
 	return as
 }
 
-// test round trip of active snapshot hash and serialisation
+// test round trip of active snapshot hash and serialisation.
 func TestActiveSnapshotRoundTrip(t *testing.T) {
 	activeKey := (&types.PayloadActiveAssets{}).Key()
 	for i := 0; i < 10; i++ {
@@ -70,10 +71,9 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		statePostReload, _ := as.GetState(activeKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
-
 }
 
-// test round trip of active snapshot hash and serialisation
+// test round trip of active snapshot hash and serialisation.
 func TestPendingSnapshotRoundTrip(t *testing.T) {
 	pendingKey := (&types.PayloadPendingAssets{}).Key()
 

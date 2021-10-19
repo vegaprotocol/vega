@@ -24,6 +24,7 @@ type testEngine struct {
 }
 
 func getTestEngine(t *testing.T) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
 	eng, _ := checkpoint.New(log, checkpoint.NewDefaultConfig())
@@ -471,7 +472,7 @@ func testCheckpointBalanceInterval(t *testing.T) {
 }
 
 // same test as above, but the interval is upadted to trigger a second checkpoint
-// to be created anyway
+// to be created anyway.
 func testCheckpointUpdatedInterval(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)

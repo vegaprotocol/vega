@@ -13,9 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
-)
+var ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
 
 func (e *Engine) EnableERC20(
 	ctx context.Context,

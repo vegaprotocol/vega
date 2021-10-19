@@ -36,9 +36,8 @@ type checkpointRestore struct {
 
 var checkpointCmd CheckpointCmd
 
-// Checkpoint - This function is invoked from `Register` in main.go
+// Checkpoint - This function is invoked from `Register` in main.go.
 func Checkpoint(ctx context.Context, parser *flags.Parser) error {
-
 	// here we initialize the global exampleCmd with needed default values.
 	checkpointCmd = CheckpointCmd{
 		Restore: checkpointRestore{},
@@ -85,14 +84,14 @@ func (c *checkpointRestore) Execute(_ []string) error {
 }
 
 func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, error) {
-	vegaPaths := paths.NewPaths(checkpointCmd.VegaHome)
+	vegaPaths := paths.New(checkpointCmd.VegaHome)
 
 	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
 		return nil, err
 	}
 
-	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return nil, err
 	}

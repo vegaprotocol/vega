@@ -9,7 +9,6 @@ import (
 )
 
 func (s *Svc) serialise() error {
-
 	s.state.Seq = s.epoch.Seq
 	s.state.StartTime = s.epoch.StartTime
 	s.state.ExpireTime = s.epoch.ExpireTime
@@ -24,7 +23,6 @@ func (s *Svc) serialise() error {
 	s.data = data
 	s.hash = crypto.Hash(data)
 	return nil
-
 }
 
 func (s *Svc) Namespace() types.SnapshotNamespace {
@@ -36,10 +34,10 @@ func (s *Svc) Keys() []string {
 }
 
 func (s *Svc) GetHash(k string) ([]byte, error) {
-
 	if k != s.pl.Key() {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
+
 	return s.hash, nil
 }
 
@@ -51,18 +49,17 @@ func (s *Svc) GetState(k string) ([]byte, error) {
 	if k != s.pl.Key() {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
+
 	return s.data, nil
 }
 
 func (s *Svc) LoadState(payload *types.Payload) error {
-
 	if s.Namespace() != payload.Data.Namespace() {
 		return types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEpoch:
-
 		snap := pl.EpochState
 		s.epoch = types.Epoch{
 			Seq:        snap.Seq,
@@ -76,9 +73,7 @@ func (s *Svc) LoadState(payload *types.Payload) error {
 		s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
 
 		return s.serialise()
-
 	default:
 		return types.ErrUnknownSnapshotType
 	}
-
 }

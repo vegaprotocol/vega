@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jessevdk/go-flags"
+
 	"code.vegaprotocol.io/vega/cmd/vega/faucet"
 	"code.vegaprotocol.io/vega/cmd/vega/genesis"
 	"code.vegaprotocol.io/vega/cmd/vega/nodewallet"
+	"code.vegaprotocol.io/vega/cmd/vega/paths"
 	"code.vegaprotocol.io/vega/config"
-	"github.com/jessevdk/go-flags"
 )
 
 var (
@@ -67,6 +69,7 @@ func Main(ctx context.Context) error {
 		Checkpoint,
 		Query,
 		Bridge,
+		paths.Paths,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err
