@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -56,18 +57,20 @@ func (e *Engine) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]snapshot.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return ErrInvalidSnapshotNamespace
+		return nil, ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadCollateralAssets:
-		return e.restoreAssets(ctx, pl.CollateralAssets)
+		err := e.restoreAssets(ctx, pl.CollateralAssets)
+		return nil, err
 	case *types.PayloadCollateralAccounts:
-		return e.restoreAccounts(ctx, pl.CollateralAccounts)
+		err := e.restoreAccounts(ctx, pl.CollateralAccounts)
+		return nil, err
 	default:
-		return ErrUnknownSnapshotType
+		return nil, ErrUnknownSnapshotType
 	}
 }
 

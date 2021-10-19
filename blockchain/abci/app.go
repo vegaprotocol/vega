@@ -31,6 +31,12 @@ type App struct {
 	OnCheckTx    OnCheckTxHandler
 	OnDeliverTx  OnDeliverTxHandler
 	OnCommit     OnCommitHandler
+	// snapshot stuff
+
+	OnListSnapshots      ListSnapshotsHandler
+	OnOfferSnapshot      OffserSnapshotHandler
+	OnLoadSnapshotChunk  LoadSnapshotChunkHandler
+	OnApplySnapshotChunk ApplySnapshotChunkHandler
 
 	// These are Tx handlers
 	checkTxs   map[txn.Command]TxHandler

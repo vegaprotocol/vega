@@ -77,6 +77,7 @@ var (
 	ErrInvalidSnapshotFormat      = errors.New("invalid snapshot format")
 	ErrSnapshotFormatMismatch     = errors.New("snapshot formats do not match")
 	ErrUnexpectedKey              = errors.New("snapshot namespace has unknown/unexpected key(s)")
+	ErrNodeHashMismatch           = errors.New("hash of a node does not match the hash from the snapshot meta")
 )
 
 type SnapshotFormat = snapshot.Format
@@ -274,6 +275,10 @@ func (s *Snapshot) unmarshalChunks() error {
 	}
 	s.DataChunks = []*Chunk{
 		ChunkFromProto(sChunk),
+	}
+	s.Nodes = make([]*Payload, 0, len(sChunk.Data))
+	for _, pl := range sChunk.Data {
+		s.Nodes = append(s.Nodes, PayloadFromProto(pl))
 	}
 	return nil
 }

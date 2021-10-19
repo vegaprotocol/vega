@@ -3,12 +3,13 @@ package snapshot
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"code.vegaprotocol.io/shared/paths"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -38,6 +39,10 @@ type StateProviderT interface {
 	// Err is called if the provider sent nil on the poll channel. Return nil if all was well (just no changes)
 	// or the relevant error if something failed. The same error can be returned when calling Sync()
 	Err() error
+
+	// LoadState is called to set the state once again, has to return state providers
+	// in case a new engine is created in the process (e.g. execution engine creating markets, with positions and matching engines)
+	LoadState(ctx context.Context, pl *types.Payload) ([]StateProvider, error)
 }
 
 type StateProvider interface {
@@ -61,6 +66,10 @@ type StateProvider interface {
 	// Sync is a blocking call that returns once there are no changes to the provider state
 	// that haven't been sent on the channels
 	// Sync() error
+
+	// LoadState is called to set the state once again, has to return state providers
+	// in case a new engine is created in the process (e.g. execution engine creating markets, with positions and matching engines)
+	LoadState(ctx context.Context, pl *types.Payload) ([]StateProvider, error)
 }
 
 type TimeService interface {
@@ -78,17 +87,19 @@ type Engine struct {
 	db         db.DB
 	log        *logging.Logger
 	avl        *iavl.MutableTree
-	namespaces []string
+	namespaces []types.SnapshotNamespace
 	keys       []string
-	nsKeys     map[string][]string
-	nsTreeKeys map[string][][]byte
+	nsKeys     map[types.SnapshotNamespace][]string
+	nsTreeKeys map[types.SnapshotNamespace][][]byte
+	keyNoNS    map[string]string // full key => key used by provider
 	hashes     map[string][]byte
 	versions   []int64
 
-	providers  map[string]StateProvider
-	providerTs map[string]StateProviderT
-	pollCtx    context.Context
-	pollCfunc  context.CancelFunc
+	providers   map[string]StateProvider
+	providersNS map[types.SnapshotNamespace][]StateProvider
+	providerTs  map[string]StateProviderT
+	pollCtx     context.Context
+	pollCfunc   context.CancelFunc
 
 	last    *iavl.ImmutableTree
 	hash    []byte
@@ -101,6 +112,24 @@ type Engine struct {
 	wrap *types.PayloadAppState
 	app  *types.AppState
 }
+
+var (
+	// order in which snapshots are to be restored
+	nodeOrder = []types.SnapshotNamespace{
+		// types.AppSnapshot,
+		types.AssetsSnapshot,
+		types.BankingSnapshot,
+		types.CollateralSnapshot,
+		types.NetParamsSnapshot,
+		types.CheckpointSnapshot,
+		types.DelegationSnapshot,
+		types.ExecutionSnapshot, // creates the markets, returns matching and positions engines for state providers
+		types.MatchingSnapshot,  // this requires a market
+		types.PositionsSnapshot, // again, needs a market
+		types.EpochSnapshot,
+		types.StakingSnapshot,
+	}
+)
 
 // New returns a new snapshot engine
 func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
@@ -119,7 +148,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 	appPL := &types.PayloadAppState{
 		AppState: &types.AppState{},
 	}
-	app := appPL.Namespace().String()
+	app := appPL.Namespace()
 	return &Engine{
 		Config:     conf,
 		ctx:        sctx,
@@ -128,21 +157,23 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		db:         dbConn,
 		log:        log,
 		avl:        tree,
-		namespaces: []string{},
+		namespaces: []types.SnapshotNamespace{},
 		keys:       []string{},
-		nsKeys: map[string][]string{
+		nsKeys: map[types.SnapshotNamespace][]string{
 			app: {appPL.Key()},
 		},
-		nsTreeKeys: map[string][][]byte{
+		nsTreeKeys: map[types.SnapshotNamespace][][]byte{
 			app: {
-				[]byte(strings.Join([]string{app, appPL.Key()}, ".")),
+				[]byte(types.KeyFromPayload(appPL)),
 			},
 		},
-		hashes:    map[string][]byte{},
-		providers: map[string]StateProvider{},
-		versions:  make([]int64, 0, conf.Versions), // cap determines how many versions we keep
-		wrap:      appPL,
-		app:       appPL.AppState,
+		keyNoNS:     map[string]string{},
+		hashes:      map[string][]byte{},
+		providers:   map[string]StateProvider{},
+		providersNS: map[types.SnapshotNamespace][]StateProvider{},
+		versions:    make([]int64, 0, conf.Versions), // cap determines how many versions we keep
+		wrap:        appPL,
+		app:         appPL.AppState,
 	}, nil
 }
 
@@ -211,12 +242,76 @@ func (e *Engine) RejectSnapshot() error {
 	return nil
 }
 
-func (e *Engine) ApplySnapshot() error {
+func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
-	// @TODO we have all the data we need
+	// iterate over all payloads, add them to the tree
+	ordered := make(map[types.SnapshotNamespace][]*types.Payload, len(nodeOrder))
+	// positions and matching are linked to the market, work out how many payloads those will be:
+	// total nodes - all nodes that aren't position or matching, divide by 2
+	// not accounting for engines that have 2 or more nodes, this is a rough approximation of how many
+	// nodes are matching/position engines, should not require reallocation
+	mbPos := (len(e.snapshot.Nodes) - len(nodeOrder) + 2) / 2
+	for i, pl := range e.snapshot.Nodes {
+		ns := pl.Namespace()
+		if ns == types.AppSnapshot {
+			// @TODO implement this as a specific call
+			continue
+		}
+		if _, ok := ordered[ns]; !ok {
+			if ns == types.MatchingSnapshot || ns == types.PositionsSnapshot {
+				ordered[ns] = make([]*types.Payload, 0, mbPos)
+			} else {
+				// some engines have 2, others 1
+				ordered[ns] = []*types.Payload{}
+			}
+		}
+		h, err := e.setTreeNode(pl)
+		if err != nil {
+			return err
+		}
+		exp := e.snapshot.Meta.NodeHashes[i].Hash
+		if exp != hex.EncodeToString(h) {
+			return types.ErrNodeHashMismatch
+		}
+		// node was verified and set on tree
+		ordered[ns] = append(ordered[ns], pl)
+	}
+
+	// now let's load the data in the correct order
+	for _, ns := range nodeOrder {
+		for _, n := range ordered[ns] {
+			p, ok := e.providers[n.GetTreeKey()]
+			if !ok {
+				return types.ErrUnknownSnapshotNamespace
+			}
+			nps, err := p.LoadState(ctx, n)
+			if err != nil {
+				return err
+			}
+			if len(nps) != 0 {
+				e.AddProviders(nps...)
+			}
+		}
+	}
+	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
+	if _, err := e.saveCurrentTree(); err != nil {
+		return err
+	}
 	return nil
+}
+
+func (e *Engine) setTreeNode(p *types.Payload) ([]byte, error) {
+	data, err := proto.Marshal(p.IntoProto())
+	if err != nil {
+		return nil, err
+	}
+	hash := crypto.Hash(data)
+	key := p.GetTreeKey()
+	e.hashes[key] = hash
+	_ = e.avl.Set([]byte(key), data)
+	return hash, nil
 }
 
 func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
@@ -299,6 +394,10 @@ func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
 	if err := e.addAppSnap(ctx); err != nil {
 		return nil, err
 	}
+	return e.saveCurrentTree()
+}
+
+func (e *Engine) saveCurrentTree() ([]byte, error) {
 	h, v, err := e.avl.SaveVersion()
 	if err != nil {
 		return nil, err
@@ -335,40 +434,43 @@ func (e *Engine) addAppSnap(ctx context.Context) error {
 		return err
 	}
 	// we know the key:
-	_ = e.avl.Set(e.nsTreeKeys[string(types.AppSnapshot)][0], as)
+	_ = e.avl.Set(e.nsTreeKeys[types.AppSnapshot][0], as)
 	return nil
 }
 
-func (e *Engine) update(ns string) (bool, error) {
-	p := e.providers[ns]
+func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
+	treeKeys, ok := e.nsTreeKeys[ns]
+	if !ok || len(treeKeys) == 0 {
+		return false, nil
+	}
 	update := false
-	for _, nsKey := range e.nsTreeKeys[ns] {
-		sKey := string(nsKey)
-		ch := e.hashes[sKey]
-		pKey := string(nsKey[len([]byte(ns))+1:]) // truncate namespace + . gets key
-		h, err := p.GetHash(pKey)
+	for _, tk := range treeKeys {
+		k := string(tk)
+		p := e.providers[k] // get the specific provider for this key
+		ch := e.hashes[k]
+		kNNS := e.keyNoNS[k]
+		h, err := p.GetHash(kNNS)
 		if err != nil {
 			return update, err
 		}
+		// nothing has changed
 		if bytes.Equal(ch, h) {
-			// no update, we're done with this key
 			continue
 		}
-		// hashes don't match
-		v, err := p.GetState(pKey)
+		// hashes were different, we need to update
+		v, err := p.GetState(kNNS)
 		if err != nil {
 			return update, err
 		}
-		// we have new state, and new hash
-		e.hashes[sKey] = h
-		_ = e.avl.Set(nsKey, v)
+		e.hashes[k] = h
+		_ = e.avl.Set(tk, v)
 		update = true
 	}
 	return update, nil
 }
 
 func (e *Engine) updateAppState() (bool, error) {
-	keys, ok := e.nsTreeKeys[e.wrap.Namespace().String()]
+	keys, ok := e.nsTreeKeys[e.wrap.Namespace()]
 	if !ok {
 		return false, types.ErrNoPrefixFound
 	}
@@ -395,9 +497,48 @@ func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
 	return e.Snapshot(ctx)
 }
 
+func (e *Engine) AddProviderss(provs ...StateProvider) {
+	for _, p := range provs {
+		ks := p.Keys()
+		ns := p.Namespace()
+		tKeys := make([]string, 0, len(ks))
+		haveKeys, ok := e.nsKeys[ns]
+		if !ok {
+			e.providersNS[ns] = []StateProvider{
+				p,
+			}
+			e.nsTreeKeys[ns] = make([][]byte, 0, len(tKeys))
+			e.namespaces = append(e.namespaces, ns)
+			e.nsKeys[ns] = tKeys
+			for _, k := range tKeys {
+				fullKey := types.GetNodeKey(ns, k)
+				e.keyNoNS[fullKey] = k
+				e.keys = append(e.keys, fullKey)
+				e.providers[fullKey] = p
+				e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
+			}
+			continue
+		}
+		dedup := uniqueSubset(haveKeys, tKeys)
+		if len(dedup) == 0 {
+			continue // no new keys were added
+		}
+		e.nsKeys[ns] = append(e.nsKeys[ns], dedup...)
+		// new provider in the same namespace
+		e.providersNS[ns] = append(e.providersNS[ns], p)
+		for _, k := range dedup {
+			fullKey := types.GetNodeKey(ns, k)
+			e.keyNoNS[fullKey] = k
+			e.keys = append(e.keys, fullKey)
+			e.providers[fullKey] = p
+			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
+		}
+	}
+}
+
 func (e *Engine) AddProviders(provs ...StateProvider) {
 	for _, p := range provs {
-		ns := p.Namespace().String()
+		ns := p.Namespace()
 		keys := p.Keys()
 		haveKeys, ok := e.nsKeys[ns]
 		if !ok {
@@ -405,12 +546,13 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 			e.nsKeys[ns] = keys
 			nsTreeKeys := make([][]byte, 0, len(keys))
 			for _, k := range keys {
-				key := strings.Join([]string{ns, k}, ".")
+				key := types.GetNodeKey(ns, k)
+				e.keyNoNS[key] = k
 				e.keys = append(e.keys, key)
 				nsTreeKeys = append(nsTreeKeys, []byte(key))
 			}
 			e.nsTreeKeys[ns] = nsTreeKeys
-			e.namespaces = append(e.namespaces, ns)
+			e.namespaces = append(e.namespaces, p.Namespace())
 			continue
 		}
 		dedup := uniqueSubset(haveKeys, keys)
@@ -423,7 +565,8 @@ func (e *Engine) AddProviders(provs ...StateProvider) {
 		e.nsKeys[ns] = append(haveKeys, dedup...)
 		nsTreeKeys := e.nsTreeKeys[ns]
 		for _, k := range dedup {
-			key := strings.Join([]string{ns, k}, ".")
+			key := types.GetNodeKey(ns, k)
+			e.keyNoNS[key] = k
 			e.keys = append(e.keys, key)
 			nsTreeKeys = append(nsTreeKeys, []byte(key))
 		}

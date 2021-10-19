@@ -48,7 +48,7 @@ type Chunk struct {
 type Payload struct {
 	Data    isPayload
 	raw     []byte // access to the raw data for chunking
-	treeKey []byte
+	treeKey string
 }
 
 type isPayload interface {
@@ -629,13 +629,9 @@ func (p Payload) Key() string {
 	return p.Data.Key()
 }
 
-func (p *Payload) GetTreeKey() []byte {
+func (p *Payload) GetTreeKey() string {
 	if len(p.treeKey) == 0 {
-		k := strings.Join([]string{
-			p.Namespace().String(),
-			p.Key(),
-		}, ".")
-		p.treeKey = []byte(k)
+		p.treeKey = KeyFromPayload(p.Data)
 	}
 	return p.treeKey
 }
@@ -2865,4 +2861,17 @@ func (*PayloadEventForwarder) Key() string {
 
 func (*PayloadEventForwarder) Namespace() SnapshotNamespace {
 	return EventForwarderSnapshot
+}
+
+// Useful in snapshot engine, used by the Payload type, too
+func KeyFromPayload(p isPayload) string {
+	return GetNodeKey(p.Namespace(), p.Key())
+}
+
+// GetNodeKey is a utility function, we don't want this mess scattered throughout the code
+func GetNodeKey(ns SnapshotNamespace, k string) string {
+	return strings.Join([]string{
+		ns.String(),
+		k,
+	}, ".")
 }
