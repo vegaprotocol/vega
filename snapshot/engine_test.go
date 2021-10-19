@@ -42,7 +42,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	}
 }
 
-// basic engine functionality tests
+// basic engine functionality tests.
 func TestEngine(t *testing.T) {
 	t.Run("Adding a provider calls what we expect on the state provider", testAddProviders)
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)

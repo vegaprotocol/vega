@@ -79,13 +79,13 @@ type Engine struct {
 	snapshot  *types.Snapshot
 	snapRetry int
 
-	// the general snapshot info this engine is responsable for
+	// the general snapshot info this engine is responsible for
 	wrap *types.PayloadAppState
 	app  *types.AppState
 }
 
 var (
-	// order in which snapshots are to be restored
+	// order in which snapshots are to be restored.
 	nodeOrder = []types.SnapshotNamespace{
 		types.AppSnapshot,
 		types.AssetsSnapshot,
@@ -102,7 +102,7 @@ var (
 	}
 )
 
-// New returns a new snapshot engine
+// New returns a new snapshot engine.
 func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
 	log = log.Named(namedLogger)
 	dbConn, err := getDB(conf, vegapath)
@@ -171,7 +171,7 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 	return db.NewGoLevelDB("snapshot", dbPath)
 }
 
-// List returns all snapshots available
+// List returns all snapshots available.
 func (e *Engine) List() ([]*types.Snapshot, error) {
 	trees := make([]*types.Snapshot, 0, len(e.versions))
 	for _, v := range e.versions {

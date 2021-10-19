@@ -2871,12 +2871,12 @@ func (*PayloadEventForwarder) Namespace() SnapshotNamespace {
 	return EventForwarderSnapshot
 }
 
-// Useful in snapshot engine, used by the Payload type, too
+// Useful in snapshot engine, used by the Payload type, too.
 func KeyFromPayload(p isPayload) string {
 	return GetNodeKey(p.Namespace(), p.Key())
 }
 
-// GetNodeKey is a utility function, we don't want this mess scattered throughout the code
+// GetNodeKey is a utility function, we don't want this mess scattered throughout the code.
 func GetNodeKey(ns SnapshotNamespace, k string) string {
 	return strings.Join([]string{
 		ns.String(),
