@@ -34,7 +34,7 @@ func (opts *faucetInit) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(opts.VegaHome)
+	vegaPaths := paths.New(opts.VegaHome)
 
 	initResult, err := faucet.Initialise(vegaPaths, pass, opts.Force)
 	if err != nil {
