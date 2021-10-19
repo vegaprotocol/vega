@@ -125,18 +125,32 @@ Feature: Staking & Delegation
   Scenario: Party dissociation gets reconciled during the epoch incrementally
     Description: A party with delegation dissociates some tokens in multiple withdrawals which causes their whole delegation to be undone within 30 seconds and reflected before the epoch ends
    
+    #epoch 1 withdraw 100 
     Given the parties withdraw from staking account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   |  100   | 
 
     When the network moves ahead "2" blocks
 
+    #epoch 1 withdraw another 300 - in total 400 meaning only 300 remain associated
     Given the parties withdraw from staking account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   |  300   | 
 
     When the network moves ahead "14" blocks
 
+    # within 30 seconds we expect to have seen events of the nomination corrected accordingly
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | party1 |  node1   | 50     | 
+    | party1 |  node2   | 100    |       
+    | party1 |  node3   | 150    |   
+    | party2 |  node2   | 400    |   
+    | party2 |  node3   | 500    |   
+    | party2 |  node4   | 600    | 
+
+    #no changes in these 30 seconds so expect balances to not change 
+    When the network moves ahead "15" blocks
     Then the parties should have the following delegation balances for epoch 1:
     | party  | node id  | amount |
     | party1 |  node1   | 50     | 
@@ -146,4 +160,44 @@ Feature: Staking & Delegation
     | party2 |  node3   | 500    |   
     | party2 |  node4   | 600    |  
 
-  
+    #still in epoch 1 withdraw the remaining 300 tokens
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   |  300   | 
+
+    When the network moves ahead "16" blocks
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node2   | 0      |       
+    | party1 |  node3   | 0      |   
+    | party2 |  node2   | 400    |   
+    | party2 |  node3   | 500    |   
+    | party2 |  node4   | 600    |  
+
+    # the adjustment should be published for the next epoch as well 
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node2   | 0      |       
+    | party1 |  node3   | 0      |   
+    
+    #epoch 1 is ending
+    When the network moves ahead "15" blocks
+    Then the parties should have the following delegation balances for epoch 1:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node2   | 0      |       
+    | party1 |  node3   | 0      |   
+    | party2 |  node2   | 400    |   
+    | party2 |  node3   | 500    |   
+    | party2 |  node4   | 600    |  
+
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node2   | 0      |       
+    | party1 |  node3   | 0      |   
+    | party2 |  node2   | 400    |   
+    | party2 |  node3   | 500    |   
+    | party2 |  node4   | 600    |  

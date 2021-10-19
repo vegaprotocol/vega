@@ -154,7 +154,8 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	// if we've already done reconciliation (i.e. not first epoch) and it's been over <reconciliationIntervalSeconds> since, then reconcile.
 	if (e.lastReconciliation != time.Time{}) && t.Sub(e.lastReconciliation).Seconds() >= reconciliationIntervalSeconds {
-		e.reconcileAssociationWithNomination(ctx, e.lastReconciliation, t, e.currentEpoch.Seq)
+		// always reconcile the balance from the start of the epoch to the current time for simplicity
+		e.reconcileAssociationWithNomination(ctx, e.currentEpoch.StartTime, t, e.currentEpoch.Seq)
 	}
 }
 
@@ -792,7 +793,7 @@ func (e *Engine) reconcileAssociationWithNomination(ctx context.Context, from, t
 // check balance for the epoch duration and undelegate if delegations don't have sufficient cover
 // the state of the engine by the end of this method reflects the state to be used for reward engine.
 func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Epoch) {
-	e.reconcileAssociationWithNomination(ctx, e.lastReconciliation, epoch.EndTime, epoch.Seq)
+	e.reconcileAssociationWithNomination(ctx, epoch.StartTime, epoch.EndTime, epoch.Seq)
 }
 
 // calculate the total number of tokens (a rough estimate) and the number of nodes.
