@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/shared/paths"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/snapshot/ldb"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cosmos/iavl"
@@ -70,10 +72,14 @@ type Engine struct {
 	snapRetry int
 }
 
-// New returns a new snapshot engine.
-func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
+// New returns a new snapshot engine
+func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
 	log = log.Named(namedLogger)
-	dbConn := db.NewMemDB()
+	dbConn, err := getDB(conf, vegapath)
+	if err != nil {
+		log.Error("Failed to open DB connection", logging.Error(err))
+		return nil, err
+	}
 	tree, err := iavl.NewMutableTree(dbConn, 0)
 	if err != nil {
 		log.Error("Could not create AVL tree", logging.Error(err))
@@ -107,7 +113,14 @@ func New(ctx context.Context, conf Config, log *logging.Logger, tm TimeService) 
 	}, nil
 }
 
-// List returns all snapshots available.
+func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
+	if conf.Storage == memdb {
+		return db.NewMemDB(), nil
+	}
+	return ldb.OpenDB(vegapath, nil)
+}
+
+// List returns all snapshots available
 func (e *Engine) List() ([]*types.Snapshot, error) {
 	trees := make([]*types.Snapshot, 0, len(e.versions))
 	for _, v := range e.versions {
