@@ -18,7 +18,7 @@ pipeline {
     options {
         skipDefaultCheckout true
         timestamps()
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 45, unit: 'MINUTES')
     }
     parameters {
         string( name: 'VEGA_CORE_BRANCH', defaultValue: '',
@@ -312,7 +312,8 @@ pipeline {
                 stage('System Tests') {
                     steps {
                         script {
-                            systemTests ignoreFailure: true,
+                            systemTests ignoreFailure: !isPRBuild(),
+                                timeout: 30,
                                 vegaCore: params.VEGA_CORE_BRANCH,
                                 dataNode: commitHash,
                                 vegawallet: params.VEGAWALLET_BRANCH,
@@ -328,6 +329,7 @@ pipeline {
                     steps {
                         script {
                             systemTestsLNL ignoreFailure: true,
+                                timeout: 30,
                                 vegaCore: params.VEGA_CORE_BRANCH,
                                 dataNode: commitHash,
                                 vegawallet: params.VEGAWALLET_BRANCH,
