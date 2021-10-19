@@ -164,7 +164,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams,
 	)
 
-	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService)
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService, timeService)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.DelegationMinAmount,
 		Watcher: delegationEngine.OnMinAmountChanged,
