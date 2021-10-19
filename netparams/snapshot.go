@@ -58,17 +58,6 @@ func (s *snapState) Keys() []string {
 	}
 }
 
-func (s *snapState) Snapshot() (map[string][]byte, error) {
-	k := s.t.Key()
-	v, err := s.GetState(k)
-	if err != nil {
-		return nil, err
-	}
-	return map[string][]byte{
-		k: v,
-	}, nil
-}
-
 func (s snapState) Namespace() types.SnapshotNamespace {
 	return s.t.Namespace()
 }
@@ -133,10 +122,6 @@ func (s *Store) Keys() []string {
 
 func (s *Store) GetHash(k string) ([]byte, error) {
 	return s.state.GetHash(k)
-}
-
-func (s *Store) Snapshot() (map[string][]byte, error) {
-	return s.state.Snapshot()
 }
 
 func (s *Store) GetState(k string) ([]byte, error) {

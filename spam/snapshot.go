@@ -40,18 +40,6 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 	return state, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(e.hashKeys))
-	for _, k := range e.hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
 func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace

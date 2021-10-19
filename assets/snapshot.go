@@ -95,18 +95,6 @@ func (s *Service) GetState(k string) ([]byte, error) {
 	return state, err
 }
 
-func (s *Service) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := s.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
 func (s *Service) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if s.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace

@@ -66,17 +66,6 @@ func (e *Engine) serialiseState() error {
 	return nil
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	if len(e.data) == 0 {
-		if err := e.serialiseState(); err != nil {
-			return nil, err
-		}
-	}
-	return map[string][]byte{
-		e.state.Key(): e.data,
-	}, nil
-}
-
 func (e *Engine) LoadState(_ context.Context, snap *types.Payload) ([]types.StateProvider, error) {
 	if snap.Namespace() != e.state.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
