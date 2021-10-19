@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -161,6 +162,10 @@ type PayloadReplayProtection struct {
 
 type ReplayBlockTransactions struct {
 	Transactions []string
+}
+
+type PayloadEventForwarder struct {
+	Events []*commandspb.ChainEvent
 }
 
 type MatchingBook struct {
@@ -591,6 +596,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadNotaryFromProto(dt)
 	case *snapshot.Payload_ReplayProtection:
 		ret.Data = PayloadReplayProtectionFromProto(dt)
+	case *snapshot.Payload_EventForwarder:
+		ret.Data = PayloadEventForwarderFromProto(dt)
 	}
 	return ret
 }
@@ -671,6 +678,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Notary:
 		ret.Data = dt
 	case *snapshot.Payload_ReplayProtection:
+		ret.Data = dt
+	case *snapshot.Payload_EventForwarder:
 		ret.Data = dt
 	}
 	return &ret
@@ -2806,4 +2815,30 @@ func (*PayloadReplayProtection) Key() string {
 
 func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
 	return ReplayProtectionSnapshot
+}
+
+func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
+	return &PayloadEventForwarder{
+		Events: ef.EventForwarder.AckedEvents,
+	}
+}
+
+func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
+	return &snapshot.Payload_EventForwarder{
+		EventForwarder: &snapshot.EventForwarder{AckedEvents: p.Events},
+	}
+}
+
+func (*PayloadEventForwarder) isPayload() {}
+
+func (p *PayloadEventForwarder) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadEventForwarder) Key() string {
+	return "all"
+}
+
+func (*PayloadEventForwarder) Namespace() SnapshotNamespace {
+	return EventForwarderSnapshot
 }

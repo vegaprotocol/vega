@@ -62,7 +62,8 @@ type EvtForwarder struct {
 	currentTime      time.Time
 	nodes            []string
 
-	top ValidatorTopology
+	top  ValidatorTopology
+	efss *efSnapshotState
 }
 
 type tsEvt struct {
@@ -87,6 +88,11 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
+		efss: &efSnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
@@ -152,6 +158,7 @@ func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 
 	// now add it to the acknowledged evts
 	e.ackedEvts[key] = evt
+	e.efss.changed = true
 	e.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true
 }
