@@ -1,6 +1,8 @@
 package products
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -75,25 +77,16 @@ func (f *Future) GetState(k string) ([]byte, error) {
 	return data, err
 }
 
-func (f *Future) Snapshot() (map[string][]byte, error) {
-	k := f.marketID
-	state, err := f.GetState(k)
-	if err != nil {
-		return nil, err
-	}
-	return map[string][]byte{k: state}, nil
-}
-
-func (f *Future) LoadState(payload *types.Payload) error {
+func (f *Future) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if f.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadFutureState:
-		return f.restoreFuture(pl.FutureState)
+		return nil, f.restoreFuture(pl.FutureState)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 

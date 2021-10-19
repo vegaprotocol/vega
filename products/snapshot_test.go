@@ -63,7 +63,7 @@ func TestSnapshotFutures(t *testing.T) {
 	fSnap, _ := snapProd.(*products.Future)
 
 	// Load into a fresh future and check the values have returned
-	fSnap.LoadState(types.PayloadFromProto(snap))
+	fSnap.LoadState(context.Background(), types.PayloadFromProto(snap))
 
 	p1, _ := f.SettlementPrice()
 	p2, _ := fSnap.SettlementPrice()
