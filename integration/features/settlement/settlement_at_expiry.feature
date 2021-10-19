@@ -20,14 +20,6 @@ Feature: Test settlement at expiry
       | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
 
 
-    And the oracle spec for settlement price filtering data from "0xCAFECAFE2" named "ethDec22Oracle":
-      | property         | type           | binding            |
-      | prices.ETH.value | TYPE_INTEGER   | settlement price   |
-
-    And the oracle spec for trading termination filtering data from "0xCAFECAFE2" named "ethDec22Oracle":
-      | property           | type           | binding              |
-      | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
-
     And the following network parameters are set:
       | name                                                | value |
       | market.auction.minimumDuration                      | 1     |
@@ -45,9 +37,7 @@ Feature: Test settlement at expiry
     And the markets:
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees          | price monitoring   | oracle config          |
       | ETH/DEC19 | ETH        | ETH   | 2019-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | default-eth-for-future |
-      | ETH/DEC20 | ETH        | ETH   | 2020-12-31T23:59:59Z | default-simple-risk-model-3 | default-margin-calculator | 1                | default-none  | default-none       | ethDec20Oracle         |
       | ETH/DEC21 | ETH        | ETH   | 2021-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec21Oracle         |
-      | ETH/DEC22 | ETH        | ETH   | 2022-12-31T23:59:59Z | simple-risk-model-1         | default-margin-calculator | 1                | fees-config-1 | price-monitoring-1 | ethDec22Oracle         |
      
   Scenario: Order cannot be placed once the market is expired
     Given the parties deposit on asset's general account the following amount:
@@ -130,7 +120,7 @@ Feature: Test settlement at expiry
       | party2 | ETH   | ETH/DEC19 | 132    | 868     |
       | party3 | ETH   | ETH/DEC19 | 132    | 4868    |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the cumulated balance for all accounts should be worth "100256000"
+    And the cumulated balance for all accounts should be worth "100236000"
 
     # Close positions by aux parties
     When the parties place the following orders:
@@ -161,10 +151,8 @@ Feature: Test settlement at expiry
 
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "2500" for the asset "ETH"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC20"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC21"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC22"
+    And the insurance pool balance should be "5000" for the asset "ETH"
+    And the insurance pool balance should be "15000" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed - no loss socialisation needed - insurance covers losses
     Given the initial insurance pool balance is "10000" for the markets:
@@ -211,7 +199,7 @@ Feature: Test settlement at expiry
       | party2 | ETH   | ETH/DEC19 | 264    | 736     |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the cumulated balance for all accounts should be worth "100251000"
+    And the cumulated balance for all accounts should be worth "100231000"
 
     # Close positions by aux parties
     When the parties place the following orders:
@@ -237,10 +225,8 @@ Feature: Test settlement at expiry
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
-    And the insurance pool balance should be "2271" for the asset "ETH"
-    And the insurance pool balance should be "12271" for the market "ETH/DEC20"
-    And the insurance pool balance should be "12271" for the market "ETH/DEC21"
-    And the insurance pool balance should be "12271" for the market "ETH/DEC22"
+    And the insurance pool balance should be "4542" for the asset "ETH"
+    And the insurance pool balance should be "14542" for the market "ETH/DEC21"
 
   Scenario: Settlement happened when market is being closed - loss socialisation in action - insurance doesn't covers all losses
      Given the initial insurance pool balance is "500" for the markets:
@@ -283,7 +269,7 @@ Feature: Test settlement at expiry
       | party1 | ETH   | ETH/DEC19 | 240    | 9760    |
       | party2 | ETH   | ETH/DEC19 | 264    | 736     |
     And the settlement account should have a balance of "0" for the market "ETH/DEC19"
-    And the cumulated balance for all accounts should be worth "100213000"
+    And the cumulated balance for all accounts should be worth "100212000"
 
     # Close positions by aux parties
     When the parties place the following orders:
@@ -311,9 +297,7 @@ Feature: Test settlement at expiry
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 500 were taken from the insurance pool to cover the losses of party 2, still not enough to cover losses of (1000-42)*2 for party2
     And the insurance pool balance should be "0" for the asset "ETH"
-    And the insurance pool balance should be "500" for the market "ETH/DEC20"
     And the insurance pool balance should be "500" for the market "ETH/DEC21"
-    And the insurance pool balance should be "500" for the market "ETH/DEC22"
     
   Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - no insurance taken
 
@@ -362,7 +346,7 @@ Feature: Test settlement at expiry
       | trader4  | ETH   | ETH/DEC21 | 1392   | 6807    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC21"
-    And the cumulated balance for all accounts should be worth "300060000"
+    And the cumulated balance for all accounts should be worth "300040000"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -395,12 +379,10 @@ Feature: Test settlement at expiry
       | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
       | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
 
-    And the cumulated balance for all accounts should be worth "300055604"
+    And the cumulated balance for all accounts should be worth "300035604"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
-    And the insurance pool balance should be "2500" for the asset "ETH"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC19"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC20"
-    And the insurance pool balance should be "12500" for the market "ETH/DEC22"
+    And the insurance pool balance should be "5000" for the asset "ETH"
+    And the insurance pool balance should be "15000" for the market "ETH/DEC19"
 
   Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - no loss socialisation needed - insurance covers losses
 
@@ -449,7 +431,7 @@ Feature: Test settlement at expiry
       | trader4  | ETH   | ETH/DEC21 |  599   |    0    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC21"
-    And the cumulated balance for all accounts should be worth "300052400"
+    And the cumulated balance for all accounts should be worth "300032400"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -482,13 +464,11 @@ Feature: Test settlement at expiry
       | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
       | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
 
-    And the cumulated balance for all accounts should be worth "300048004"
+    And the cumulated balance for all accounts should be worth "300028004"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     # 1117 were taken from the insurance pool to cover the losses of trader4, the remaining is split between global and the other market
-    And the insurance pool balance should be "2223" for the asset "ETH"
-    And the insurance pool balance should be "12220" for the market "ETH/DEC19"
-    And the insurance pool balance should be "12220" for the market "ETH/DEC20"
-    And the insurance pool balance should be "12220" for the market "ETH/DEC22"
+    And the insurance pool balance should be "4442" for the asset "ETH"
+    And the insurance pool balance should be "14441" for the market "ETH/DEC19"
   
   Scenario: Settlement happened when market is being closed after being in Suspended status and in a protective auction - loss socialisation in action - insurance doesn't covers all losses
 
@@ -537,7 +517,7 @@ Feature: Test settlement at expiry
       | trader4  | ETH   | ETH/DEC21 |  599   |    0    |
 
     And the settlement account should have a balance of "0" for the market "ETH/DEC21"
-    And the cumulated balance for all accounts should be worth "300016400"
+    And the cumulated balance for all accounts should be worth "300014400"
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
@@ -569,13 +549,11 @@ Feature: Test settlement at expiry
       | trader4  |        | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_INFRASTRUCTURE | ETH/DEC21 | 1800   | ETH   |
       | trader4  | market | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 |   1    | ETH   |
 
-    And the cumulated balance for all accounts should be worth "300012004"
+    And the cumulated balance for all accounts should be worth "300010004"
     And the insurance pool balance should be "0" for the market "ETH/DEC21"
     # 500 were taken from the insurance pool to cover the losses of trader4, still not enough to cover losses of for trader4
     And the insurance pool balance should be "0" for the asset "ETH"
     And the insurance pool balance should be "1000" for the market "ETH/DEC19"
-    And the insurance pool balance should be "1000" for the market "ETH/DEC20"
-    And the insurance pool balance should be "1000" for the market "ETH/DEC22"
 
 
   # Scenario: This mechanism does not incur fees to traders that have open positions that are settled at expiry - Add a step for this ?
