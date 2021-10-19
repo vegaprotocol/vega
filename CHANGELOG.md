@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.45.0
+*2021-10-18*
+
+### Improvements
+- [190](https://github.com/vegaprotocol/data-node/pull/190) - Run golangci-lint as part of CI
+- [186](https://github.com/vegaprotocol/data-node/pull/186) - Add system-tests
+
 ## 0.44.0
 *2021-10-07*
 

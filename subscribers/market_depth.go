@@ -481,25 +481,25 @@ func (mdb *MarketDepthBuilder) GetPriceLevels(market string) int {
 }
 
 // GetBestBidPrice returns the highest bid price in the book
-func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) uint64 {
+func (mdb *MarketDepthBuilder) GetBestBidPrice(market string) *num.Uint {
 	md := mdb.marketDepths[market]
 	if md != nil {
 		if len(md.buySide) > 0 {
-			return md.buySide[0].price.Uint64()
+			return md.buySide[0].price.Clone()
 		}
 	}
-	return 0
+	return num.Zero()
 }
 
 // GetBestAskPrice returns the highest bid price in the book
-func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) uint64 {
+func (mdb *MarketDepthBuilder) GetBestAskPrice(market string) *num.Uint {
 	md := mdb.marketDepths[market]
 	if md != nil {
 		if len(md.sellSide) > 0 {
-			return md.sellSide[0].price.Uint64()
+			return md.sellSide[0].price.Clone()
 		}
 	}
-	return 0
+	return num.Zero()
 }
 
 // GetBuyPriceLevels returns the number of non empty buy price levels
