@@ -1,5 +1,41 @@
 # Changelog
 
+
+## 0.45.0
+*2021-10-19*
+
+### Improvements
+- [4188](https://github.com/vegaprotocol/vega/pull/4188) - Add rewards snapshot
+- [4191](https://github.com/vegaprotocol/vega/pull/4191) - Add limit snapshot
+- [4192](https://github.com/vegaprotocol/vega/pull/4192) - Ask for passphrase confirmation on init and generate commands when applicable
+- [4201](https://github.com/vegaprotocol/vega/pull/4201) - Implement spam snapshot
+- [4214](https://github.com/vegaprotocol/vega/pull/4214) - Add golangci-lint to CI
+- [4199](https://github.com/vegaprotocol/vega/pull/4199) - Add ERC20 logic signing
+- [4211](https://github.com/vegaprotocol/vega/pull/4211) - Implement snapshot for notary
+- [4219](https://github.com/vegaprotocol/vega/pull/4219) - Enable linters
+- [4218](https://github.com/vegaprotocol/vega/pull/4218) - Run system-tests in separate build
+- [4227](https://github.com/vegaprotocol/vega/pull/4227) - Ignore system-tests failures for non PR builds
+- [4232](https://github.com/vegaprotocol/vega/pull/4232) - golangci-lint increase timeout
+- [4229](https://github.com/vegaprotocol/vega/pull/4229) - Ensure the vega and Ethereum wallet are not nil before accessing
+- [4230](https://github.com/vegaprotocol/vega/pull/4230) - Replay protection snapshot
+- [4242](https://github.com/vegaprotocol/vega/pull/4242) - Set timeout for system-tests steps
+- [4215](https://github.com/vegaprotocol/vega/pull/4215) - Improve handling of expected trades
+- [4224](https://github.com/vegaprotocol/vega/pull/4224) - Make evt forward mode deterministic
+- [4168](https://github.com/vegaprotocol/vega/pull/4168) - Update code still using uint64
+- [4240](https://github.com/vegaprotocol/vega/pull/4240) - Add command to list and describe Vega paths
+
+### Fixes
+- [4228](https://github.com/vegaprotocol/vega/pull/4228) - Fix readme updates
+- [4210](https://github.com/vegaprotocol/vega/pull/4210) - Add min validators network parameter and bug fix for overflow reward
+
+
+## 0.44.2
+*2021-10-11*
+
+### Fixes
+- [4195](https://github.com/vegaprotocol/vega/pull/4195) - Fix rewards payout with delay
+
+
 ## 0.44.1
 *2021-10-08*
 

@@ -62,7 +62,7 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	var assetActions snapshot.Payload
 	proto.Unmarshal(state, &assetActions)
 	payload := types.PayloadFromProto(&assetActions)
-	err = eng.LoadState(context.Background(), payload)
+	_, err = eng.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := eng.GetHash(aaKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
@@ -104,7 +104,7 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 
 	payload := types.PayloadFromProto(&seen)
 
-	err = eng.LoadState(context.Background(), payload)
+	_, err = eng.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := eng.GetHash(seenKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
@@ -154,7 +154,7 @@ func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
 
 		payload := types.PayloadFromProto(&withdrawals)
 
-		err = eng.LoadState(context.Background(), payload)
+		_, err = eng.LoadState(context.Background(), payload)
 		require.Nil(t, err)
 		hashPostReload, _ := eng.GetHash(withdrawalsKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
@@ -194,7 +194,7 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 		var deposits snapshot.Payload
 		proto.Unmarshal(state, &deposits)
 		payload := types.PayloadFromProto(&deposits)
-		err = eng.LoadState(context.Background(), payload)
+		_, err = eng.LoadState(context.Background(), payload)
 		require.Nil(t, err)
 		hashPostReload, _ := eng.GetHash(depositsKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))

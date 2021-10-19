@@ -64,7 +64,7 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		proto.Unmarshal(state, &active)
 		payload := types.PayloadFromProto(&active)
 
-		err = as.LoadState(context.Background(), payload)
+		_, err = as.LoadState(context.Background(), payload)
 		require.Nil(t, err)
 		hashPostReload, _ := as.GetHash(activeKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
@@ -108,7 +108,7 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 		proto.Unmarshal(state, &pending)
 		payload := types.PayloadFromProto(&pending)
 
-		err = as.LoadState(context.Background(), payload)
+		_, err = as.LoadState(context.Background(), payload)
 		require.Nil(t, err)
 		hashPostReload, _ := as.GetHash(pendingKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))

@@ -59,6 +59,14 @@ type Engine struct {
 	loadHash   []byte
 	nextCP     time.Time
 	delta      time.Duration
+
+	// snapshot fields
+	state   *types.PayloadCheckpoint
+	hash    []byte
+	data    []byte
+	updated bool
+	snapErr error
+	poll    chan struct{}
 }
 
 func New(log *logging.Logger, cfg Config, components ...State) (*Engine, error) {
@@ -69,6 +77,9 @@ func New(log *logging.Logger, cfg Config, components ...State) (*Engine, error) 
 		log:        log,
 		components: make(map[types.CheckpointName]State, len(components)),
 		nextCP:     time.Time{},
+		state: &types.PayloadCheckpoint{
+			Checkpoint: &types.CPState{},
+		},
 	}
 	for _, c := range components {
 		if err := e.addComponent(c); err != nil {
@@ -153,13 +164,13 @@ func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.CheckpointState,
 func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.CheckpointState, error) {
 	// start time will be zero -> add delta to this time, and return
 	if e.nextCP.IsZero() {
-		e.nextCP = t.Add(e.delta)
+		e.setNextCP(t.Add(e.delta))
 		return nil, nil
 	}
 	if e.nextCP.After(t) {
 		return nil, nil
 	}
-	e.nextCP = t.Add(e.delta)
+	e.setNextCP(t.Add(e.delta))
 	cp := e.makeCheckpoint(ctx)
 	return cp, nil
 }
@@ -272,7 +283,7 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 func (e *Engine) OnTimeElapsedUpdate(ctx context.Context, d time.Duration) error {
 	if !e.nextCP.IsZero() {
 		// update the time for the next cp
-		e.nextCP = e.nextCP.Add(-e.delta).Add(d)
+		e.setNextCP(e.nextCP.Add(-e.delta).Add(d))
 	}
 	// update delta
 	e.delta = d

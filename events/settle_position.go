@@ -56,13 +56,13 @@ func (s SettlePos) Proto() eventspb.SettlePosition {
 	for _, t := range s.trades {
 		ts = append(ts, &eventspb.TradeSettlement{
 			Size:  t.Size(),
-			Price: t.Price().Uint64(),
+			Price: t.Price().String(),
 		})
 	}
 	return eventspb.SettlePosition{
 		MarketId:         s.marketID,
 		PartyId:          s.partyID,
-		Price:            s.price.Uint64(),
+		Price:            s.price.String(),
 		TradeSettlements: ts,
 	}
 }
@@ -82,7 +82,7 @@ func (s SettlePos) StreamMessage() *eventspb.BusEvent {
 
 type settlement struct {
 	SettlementSize  int64
-	SettlementPrice uint64
+	SettlementPrice *num.Uint
 }
 
 func (s settlement) Size() int64 {
@@ -90,23 +90,25 @@ func (s settlement) Size() int64 {
 }
 
 func (s settlement) Price() *num.Uint {
-	return num.NewUint(s.SettlementPrice)
+	return s.SettlementPrice
 }
 
 func SettlePositionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *SettlePos {
 	sp := be.GetSettlePosition()
 	settlements := make([]TradeSettlement, 0, len(sp.TradeSettlements))
 	for _, ts := range sp.TradeSettlements {
+		price, _ := num.UintFromString(ts.Price, 10)
 		settlements = append(settlements, settlement{
 			SettlementSize:  ts.Size,
-			SettlementPrice: ts.Price,
+			SettlementPrice: price,
 		})
 	}
+	spPrice, _ := num.UintFromString(sp.Price, 10)
 	return &SettlePos{
 		Base:     newBaseFromStream(ctx, SettlePositionEvent, be),
 		partyID:  sp.PartyId,
 		marketID: sp.MarketId,
-		price:    num.NewUint(sp.Price),
+		price:    spPrice,
 		trades:   settlements,
 	}
 }

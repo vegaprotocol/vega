@@ -33,7 +33,7 @@ func (opts *faucetRun) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(opts.VegaHome)
+	vegaPaths := paths.New(opts.VegaHome)
 
 	faucetCfgLoader, err := faucet.InitialiseConfigLoader(vegaPaths)
 	if err != nil {

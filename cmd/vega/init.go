@@ -36,7 +36,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(opts.VegaHome)
+	vegaPaths := paths.New(opts.VegaHome)
 
 	nwRegistry, err := nodewallets.NewRegistryLoader(vegaPaths, pass)
 	if err != nil {
