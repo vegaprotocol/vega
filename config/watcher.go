@@ -45,7 +45,7 @@ func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths,
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
 	watcherLog.SetLevel(logging.DebugLevel)
 
-	configFilePath, err := vegaPaths.ConfigPathFor(paths.NodeDefaultConfigFile)
+	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.NodeDefaultConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get path for %s: %w", paths.NodeDefaultConfigFile, err)
 	}

@@ -54,7 +54,7 @@ type ConfigLoader struct {
 }
 
 func InitialiseConfigLoader(vegaPaths paths.Paths) (*ConfigLoader, error) {
-	configFilePath, err := vegaPaths.ConfigPathFor(paths.FaucetDefaultConfigFile)
+	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.FaucetDefaultConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get path for %s: %w", paths.FaucetDefaultConfigFile, err)
 	}

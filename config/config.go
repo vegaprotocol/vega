@@ -131,7 +131,7 @@ type Loader struct {
 }
 
 func InitialiseLoader(vegaPaths paths.Paths) (*Loader, error) {
-	configFilePath, err := vegaPaths.ConfigPathFor(paths.NodeDefaultConfigFile)
+	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.NodeDefaultConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get path for %s: %w", paths.NodeDefaultConfigFile, err)
 	}
