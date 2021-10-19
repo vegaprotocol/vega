@@ -111,15 +111,6 @@ func (e *Engine) GetHash(_ string) ([]byte, error) {
 	return hash, nil
 }
 
-// Snapshot is a sync call to get the state for all keys.
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	serialised, _, err := e.getSerialiseSnapshotAndHash()
-	if err != nil {
-		return nil, err
-	}
-	return map[string][]byte{marketsKey: serialised}, nil
-}
-
 func (e *Engine) GetState(_ string) ([]byte, error) {
 	serialised, _, err := e.getSerialiseSnapshotAndHash()
 	if err != nil {
@@ -129,14 +120,14 @@ func (e *Engine) GetState(_ string) ([]byte, error) {
 	return serialised, nil
 }
 
-func (e *Engine) LoadState(payload *types.Payload) error {
+func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	switch pl := payload.Data.(type) {
 	case *types.PayloadExecutionMarkets:
 		if err := e.restoreMarketsStates(pl.ExecutionMarkets.Markets); err != nil {
-			return fmt.Errorf("failed to restore markets states: %w", err)
+			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}
-		return nil
+		return nil, nil
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
