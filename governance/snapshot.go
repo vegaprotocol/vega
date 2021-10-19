@@ -116,7 +116,7 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 }
 
 func (e *Engine) Keys() []string {
-	return []string{activeKey, enactedKey}
+	return hashKeys
 }
 
 func (e *Engine) GetHash(k string) ([]byte, error) {

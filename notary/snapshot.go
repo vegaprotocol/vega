@@ -82,7 +82,7 @@ func (n *SnapshotNotary) Namespace() types.SnapshotNamespace {
 }
 
 func (n *SnapshotNotary) Keys() []string {
-	return []string{allKey}
+	return hashKeys
 }
 
 func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
