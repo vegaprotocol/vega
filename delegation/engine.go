@@ -152,7 +152,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 }
 
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
-	// if we've already done reconcilliation (i.e. not first epoch) and it's been over <reconciliationIntervalSeconds> since, then reconcile.
+	// if we've already done reconciliation (i.e. not first epoch) and it's been over <reconciliationIntervalSeconds> since, then reconcile.
 	if (e.lastReconciliation != time.Time{}) && t.Sub(e.lastReconciliation).Seconds() >= reconciliationIntervalSeconds {
 		e.reconcileAssociationWithNomination(ctx, e.lastReconciliation, t, e.currentEpoch.Seq)
 	}
