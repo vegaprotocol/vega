@@ -167,10 +167,7 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 	if conf.Storage == memDB {
 		return db.NewMemDB(), nil
 	}
-	dbPath, err := vegapath.DataPathFor(paths.SnapshotStateHome)
-	if err != nil {
-		return nil, err
-	}
+	dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
 	return db.NewGoLevelDB("snapshot", dbPath)
 }
 
@@ -549,10 +546,6 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 		}
 	}
-}
-
-func (e *Engine) RegisteredNamespaces() []types.SnapshotNamespace {
-	return e.namespaces
 }
 
 func (e *Engine) Close() error {
