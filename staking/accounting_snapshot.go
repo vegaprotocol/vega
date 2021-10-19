@@ -77,16 +77,16 @@ func (a *Accounting) GetState(k string) ([]byte, error) {
 	return data, err
 }
 
-func (a *Accounting) LoadState(_ context.Context, payload *types.Payload) error {
+func (a *Accounting) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if a.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadStakingAccounts:
-		return a.restoreStakingAccounts(pl.StakingAccounts)
+		return nil, a.restoreStakingAccounts(pl.StakingAccounts)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
