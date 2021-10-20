@@ -15,7 +15,7 @@ import (
 
 var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
 
-const reconciliationIntervalSeconds = 30
+const reconciliationInterval = 30 * time.Second
 
 var (
 	activeKey  = (&types.PayloadDelegationActive{}).Key()
@@ -153,7 +153,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	// if we've already done reconciliation (i.e. not first epoch) and it's been over <reconciliationIntervalSeconds> since, then reconcile.
-	if (e.lastReconciliation != time.Time{}) && t.Sub(e.lastReconciliation).Seconds() >= reconciliationIntervalSeconds {
+	if (e.lastReconciliation != time.Time{}) && t.Sub(e.lastReconciliation) >= reconciliationInterval {
 		// always reconcile the balance from the start of the epoch to the current time for simplicity
 		e.reconcileAssociationWithNomination(ctx, e.currentEpoch.StartTime, t, e.currentEpoch.Seq)
 	}
@@ -191,7 +191,28 @@ func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if (e.lastReconciliation == time.Time{}) {
 		e.lastReconciliation = epoch.StartTime
 	}
+	// if new epoch is starting we want to emit event for the next epoch for all delegations - this is because unless there is some action during the epoch
+	// we will not emit an event for the next epoch until it starts - this will be more UI friendly
+	if e.currentEpoch.Seq != epoch.Seq {
+		// new epoch started - emit event for the next epoch
+		parties := make([]string, 0, len(e.partyDelegationState))
+		for p := range e.partyDelegationState {
+			parties = append(parties, p)
+		}
+		sort.Strings(parties)
+		for _, p := range parties {
+			nodesSlice := make([]string, 0, len(e.partyDelegationState[p].nodeToAmount))
+			for n := range e.partyDelegationState[p].nodeToAmount {
+				nodesSlice = append(nodesSlice, n)
+			}
+			sort.Strings(nodesSlice)
+			for _, n := range nodesSlice {
+				e.sendNextEpochBalanceEvent(ctx, p, n, epoch.Seq)
+			}
+		}
+	}
 	e.currentEpoch = epoch
+
 }
 
 // ProcessEpochDelegations updates the delegation engine state at the end of a given epoch and returns the validation-delegation data for rewarding for that epoch
@@ -781,6 +802,7 @@ func (e *Engine) reconcileAssociationWithNomination(ctx context.Context, from, t
 
 		for _, nodeID := range nodeIDs {
 			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epochSeq)
+			e.sendNextEpochBalanceEvent(ctx, party, nodeID, epochSeq)
 		}
 
 		// get out of auto delegation mode

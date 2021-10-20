@@ -103,6 +103,15 @@ Feature: Staking & Delegation
     | party2 |  node3   | 500    |   
     | party2 |  node4   | 600    |  
 
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party1 |  node1   | 0      | 
+    | party1 |  node2   | 0      |       
+    | party1 |  node3   | 0      |  
+    | party2 |  node2   | 400    |   
+    | party2 |  node3   | 500    |   
+    | party2 |  node4   | 600    |   
+
     When the network moves ahead "47" blocks
     Then the parties should have the following delegation balances for epoch 1:
     | party  | node id  | amount |
