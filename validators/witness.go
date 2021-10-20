@@ -67,7 +67,7 @@ const (
 func init() {
 	// we seed the random generator just in case
 	// as the backoff library use random internally
-	//TODO this probably needs to change to something that can be agreed across all nodes
+	// TODO this probably needs to change to something that can be agreed across all nodes.
 	rand.Seed(time.Now().UnixNano())
 }
 
