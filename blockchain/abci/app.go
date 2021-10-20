@@ -71,25 +71,36 @@ func New(codec Codec) *App {
 }
 
 func (app *App) ReplaceReplayProtector(tolerance uint) {
-	if rpl := app.replayProtector.GetReplacement(); rpl != nil {
-		// ensure the tolerance isn't too small
-		// and if needed grow the txs slice
-		if j := len(rpl.txs); int(tolerance) > j {
-			txs := make([]map[string]struct{}, int(tolerance))
-			for i := range txs {
-				if i < j {
-					txs[i] = rpl.txs[i]
-				} else {
-					txs[i] = map[string]struct{}{}
-				}
-			}
-			rpl.txs = txs
-		}
+	rpl := app.replayProtector.GetReplacement()
+	if rpl == nil {
+		// no replacement to consider
+		app.replayProtector = NewReplayProtector(tolerance)
+		return
+	}
+	rplLen, ti := len(rpl.txs), int(tolerance)
+	if rplLen == ti {
+		// perfect fit, nothign to do
 		app.replayProtector = rpl
 		return
 	}
-	// nothing was restored, so just create the new one
-	app.replayProtector = NewReplayProtector(tolerance)
+	if rplLen > ti {
+		// snapshot contains too much data for the given tolerance
+		// only get N last elements
+		rpl.txs = rpl.txs[rplLen-ti:]
+		app.replayProtector = rpl
+		return
+	}
+	// restored transactions slice is too small for the given tolerance
+	// create a larger slice, and copy the data, then initialise the rest
+	// of the indexes to an empty map
+	txs := make([]map[string]struct{}, ti)
+	for i := copy(txs, rpl.txs); i < ti; i++ {
+		txs[i] = map[string]struct{}{}
+	}
+	// update the replacement replay protector
+	rpl.txs = txs
+	// assign to app
+	app.replayProtector = rpl
 }
 
 func (app *App) RegisterSnapshot(eng SnapshotEngine) {

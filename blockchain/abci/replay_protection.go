@@ -153,6 +153,9 @@ func (rp *replayProtectorNoop) LoadState(ctx context.Context, p *types.Payload) 
 	switch pl := p.Data.(type) {
 	case *types.PayloadReplayProtection:
 		// create new replay protector that will replace the noop one
+		// if len(pl.Blocks) is zero, we should still assume a full-blown replay protector is required
+		// the snapshot engine shouldn't store nil-state/nil-hashes and as such there will be no LoadState
+		// call when the Noop protector was used as state provider
 		rp.replacement = NewReplayProtector(uint(len(pl.Blocks))) // this tolerance may or may not be sufficient
 		err = rp.replacement.restoreReplayState(ctx, pl.Blocks)
 	default:

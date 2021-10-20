@@ -469,7 +469,7 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		if err != nil {
 			return update, err
 		}
-		// nothing has changed
+		// nothing has changed (or both values were nil)
 		if bytes.Equal(ch, h) {
 			continue
 		}
@@ -483,6 +483,17 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 			logging.String("state-hash", hex.EncodeToString(h)),
 		)
 		e.hashes[k] = h
+		if len(v) == 0 && len(h) == 0 {
+			// empty state -> remove data from snapshot
+			if e.avl.Has(tk) {
+				_, _ = e.avl.Remove(tk)
+				update = true
+				continue
+			}
+			// no value to set, but there was no node in the tree -> no update here
+			continue
+		}
+		// new value needs to be set
 		_ = e.avl.Set(tk, v)
 		update = true
 	}
