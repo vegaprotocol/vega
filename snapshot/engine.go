@@ -88,6 +88,7 @@ type Engine struct {
 var nodeOrder = []types.SnapshotNamespace{
 	types.AppSnapshot,
 	types.AssetsSnapshot,
+	types.WitnessSnapshot, // needs to happen before banking
 	types.BankingSnapshot,
 	types.CollateralSnapshot,
 	types.NotarySnapshot,

@@ -244,7 +244,8 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 
 			continue
 		}
-		e.assetActs[v.ID] = &assetAction{
+
+		aa := &assetAction{
 			id:          v.ID,
 			state:       v.State,
 			blockNumber: v.BlockNumber,
@@ -254,7 +255,10 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			erc20AL:     v.Erc20AL,
 			erc20D:      v.Erc20D,
 		}
+		e.assetActs[v.ID] = aa
+		e.witness.RestoreResource(aa, e.onCheckDone)
 	}
+
 	e.bss.changed[assetActionsKey] = true
 	return nil
 }

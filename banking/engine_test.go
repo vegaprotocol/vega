@@ -226,3 +226,9 @@ func (f *fakeERC) StartCheck(r validators.Resource, fn func(interface{}, bool), 
 	f.t = t
 	return f.err
 }
+
+func (f *fakeERC) RestoreResource(r validators.Resource, fn func(interface{}, bool)) error {
+	f.r = r
+	f.f = fn
+	return nil
+}

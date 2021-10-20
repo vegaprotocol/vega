@@ -102,16 +102,16 @@ func (e *EvtForwarder) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (e *EvtForwarder) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *EvtForwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadEventForwarder:
-		return e.restore(ctx, pl.Events)
+		return nil, e.restore(ctx, pl.Events)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
