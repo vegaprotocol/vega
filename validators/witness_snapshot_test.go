@@ -101,5 +101,4 @@ func TestSnapshot(t *testing.T) {
 	state5, err := erc3.GetState(key)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(state5, state4))
-
 }

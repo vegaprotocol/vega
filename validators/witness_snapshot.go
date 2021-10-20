@@ -152,5 +152,4 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 	}
 	w.wss.changed = true
 	return nil
-
 }
