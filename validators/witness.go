@@ -67,6 +67,7 @@ const (
 func init() {
 	// we seed the random generator just in case
 	// as the backoff library use random internally
+	//TODO this probably needs to change to something that can be agreed across all nodes
 	rand.Seed(time.Now().UnixNano())
 }
 
@@ -188,7 +189,9 @@ func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) err
 			logging.String("node-id", hexPubKey))
 		return ErrVoteFromNonValidator
 	}
+	w.wss.mu.Lock()
 	w.wss.changed = true
+	w.wss.mu.Unlock()
 	return r.addVote(string(nv.PubKey))
 }
 
@@ -218,7 +221,7 @@ func (w *Witness) StartCheck(
 
 	w.resources[id] = rs
 
-	// if we are a validator, we just start the routinw.
+	// if we are a validator, we just start the routine.
 	// so we can ensure the resources exists
 	if w.top.IsValidator() {
 		go w.start(ctx, rs)
@@ -228,7 +231,9 @@ func (w *Witness) StartCheck(
 		// check succeeded
 		atomic.StoreUint32(&rs.state, voteSent)
 	}
+	w.wss.mu.Lock()
 	w.wss.changed = true
+	w.wss.mu.Unlock()
 	return nil
 }
 
@@ -278,7 +283,9 @@ func (w *Witness) start(ctx context.Context, r *res) {
 
 	// check succeeded
 	atomic.StoreUint32(&r.state, validated)
+	w.wss.mu.Lock()
 	w.wss.changed = true
+	w.wss.mu.Unlock()
 }
 
 func (w *Witness) votePassed(votesCount, topLen int) bool {
@@ -334,7 +341,9 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			v.cb(v.res, checkPass)
 			// we delete the resource from our map.
 			delete(w.resources, k)
+			w.wss.mu.Lock()
 			w.wss.changed = true
+			w.wss.mu.Unlock()
 			continue
 		}
 
@@ -349,7 +358,9 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
+			w.wss.mu.Lock()
 			w.wss.changed = true
+			w.wss.mu.Unlock()
 		}
 	}
 }

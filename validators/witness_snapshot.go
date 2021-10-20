@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"sync"
+	"sync/atomic"
 
 	"github.com/golang/protobuf/proto"
 
@@ -25,6 +27,7 @@ type witnessSnapshotState struct {
 	changed    bool
 	hash       []byte
 	serialised []byte
+	mu         sync.Mutex
 }
 
 func (w *Witness) Namespace() types.SnapshotNamespace {
@@ -44,17 +47,20 @@ func (w *Witness) serialise() ([]byte, error) {
 
 	resources := make([]*types.Resource, 0, len(w.resources))
 	for id, r := range w.resources {
+		r.mu.Lock()
 		votes := make([]string, 0, len(r.votes))
 		for v := range r.votes {
 			votes = append(votes, v)
 		}
 		sort.Strings(votes)
+
 		resources = append(resources, &types.Resource{
 			ID:         id,
 			CheckUntil: r.checkUntil,
 			Votes:      votes,
-			State:      r.state,
+			State:      atomic.LoadUint32(&r.state),
 		})
+		r.mu.Unlock()
 	}
 
 	payload := types.Payload{
@@ -75,6 +81,8 @@ func (w *Witness) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
 	}
 
+	w.wss.mu.Lock()
+	defer w.wss.mu.Unlock()
 	if !w.wss.changed {
 		return w.wss.serialised, w.wss.hash, nil
 	}
@@ -125,15 +133,17 @@ func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
 	for _, r := range witness.Resources {
 		w.resources[r.ID] = &res{
 			checkUntil: r.CheckUntil,
-			state:      r.State,
 			votes:      map[string]struct{}{},
 		}
 		for _, v := range r.Votes {
 			w.resources[r.ID].votes[v] = struct{}{}
 		}
+		atomic.StoreUint32(&w.resources[r.ID].state, r.State)
 	}
 
+	w.wss.mu.Lock()
 	w.wss.changed = true
+	w.wss.mu.Unlock()
 	return nil
 }
 
@@ -150,6 +160,8 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 	if w.top.IsValidator() {
 		go w.start(ctx, res)
 	}
+	w.wss.mu.Lock()
 	w.wss.changed = true
+	w.wss.mu.Unlock()
 	return nil
 }
