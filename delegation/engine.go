@@ -212,7 +212,6 @@ func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 		}
 	}
 	e.currentEpoch = epoch
-
 }
 
 // ProcessEpochDelegations updates the delegation engine state at the end of a given epoch and returns the validation-delegation data for rewarding for that epoch
