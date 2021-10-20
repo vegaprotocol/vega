@@ -29,8 +29,8 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 		panic(err)
 	}
 
-	if t := state.ReplayAttackThreshold; t != 0 {
-		app.replayProtector = NewReplayProtector(t)
+	if state.ReplayAttackThreshold != 0 {
+		app.ReplaceReplayProtector(state.ReplayAttackThreshold)
 	}
 
 	if fn := app.OnInitChain; fn != nil {

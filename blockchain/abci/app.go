@@ -18,16 +18,19 @@ type SnapshotEngine interface {
 	AddProviders(provs ...types.StateProvider)
 }
 
+type replayProtector interface {
+	SetHeight(uint64)
+	DeliverTx(Tx) error
+	CheckTx(Tx) error
+	GetReplacement() *ReplayProtector
+}
+
 type App struct {
 	abci.BaseApplication
 	codec Codec
 
 	// options
-	replayProtector interface {
-		SetHeight(uint64)
-		DeliverTx(Tx) error
-		CheckTx(Tx) error
-	}
+	replayProtector replayProtector
 
 	// handlers
 	OnInitChain  OnInitChainHandler
@@ -65,6 +68,28 @@ func New(codec Codec) *App {
 		checkedTxs:      lruCache,
 		ctx:             context.Background(),
 	}
+}
+
+func (app *App) ReplaceReplayProtector(tolerance uint) {
+	if rpl := app.replayProtector.GetReplacement(); rpl != nil {
+		// ensure the tolerance isn't too small
+		// and if needed grow the txs slice
+		if j := len(rpl.txs); int(tolerance) > j {
+			txs := make([]map[string]struct{}, int(tolerance))
+			for i := range txs {
+				if i < j {
+					txs[i] = rpl.txs[i]
+				} else {
+					txs[i] = map[string]struct{}{}
+				}
+			}
+			rpl.txs = txs
+		}
+		app.replayProtector = rpl
+		return
+	}
+	// nothing was restored, so just create the new one
+	app.replayProtector = NewReplayProtector(tolerance)
 }
 
 func (app *App) RegisterSnapshot(eng SnapshotEngine) {

@@ -50,8 +50,7 @@ func (rp *ReplayProtector) serialiseReplayProtection() ([]byte, error) {
 			Blocks: blocks,
 		},
 	}
-	x := payload.IntoProto()
-	return proto.Marshal(x)
+	return proto.Marshal(payload.IntoProto())
 }
 
 // get the serialised form and hash of the given key.
@@ -114,11 +113,8 @@ func (rp *ReplayProtector) LoadState(ctx context.Context, p *types.Payload) ([]t
 }
 
 func (rp *ReplayProtector) restoreReplayState(ctx context.Context, blockTransactions []*types.ReplayBlockTransactions) error {
-	for i := range rp.txs {
-		rp.txs[i] = make(map[string]struct{})
-	}
-
 	for i, block := range blockTransactions {
+		rp.txs[i] = make(map[string]struct{}, len(block.Transactions))
 		for _, tx := range block.Transactions {
 			rp.txs[i][tx] = struct{}{}
 		}

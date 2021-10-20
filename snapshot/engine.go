@@ -14,6 +14,7 @@ import (
 
 	"github.com/cosmos/iavl"
 	"github.com/golang/protobuf/proto"
+	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
 )
 
@@ -241,6 +242,8 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
+	// we need the versions of the snapshot to match
+	e.avl.SetInitialVersion(uint64(e.snapshot.Meta.Version))
 	// iterate over all payloads, add them to the tree
 	ordered := make(map[types.SnapshotNamespace][]*types.Payload, len(nodeOrder))
 	// positions and matching are linked to the market, work out how many payloads those will be:
@@ -534,9 +537,32 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			e.nsKeys[ns] = ks
 			continue
 		}
+		// in this case, we are replacing the provider
+		if ns == types.ReplayProtectionSnapshot {
+			for _, k := range ks {
+				fullKey := types.GetNodeKey(ns, k)
+				// replace the old provider with the replacement
+				e.providers[fullKey] = p
+			}
+			rpl := false
+			// replace provider reference in the NS map, too
+			for i, oldP := range e.providersNS[ns] {
+				// both in same namespace, have same keys -> replace
+				if strings.StringSliceEqual(ks, oldP.Keys()) {
+					e.providersNS[ns][i] = p
+					rpl = true
+					break
+				}
+			}
+			// we found an exact match, and replaced the provider
+			if rpl {
+				continue
+			}
+			// no exact match was found, so we'll have to de-duplicate
+		}
 		dedup := uniqueSubset(haveKeys, ks)
-		// @TODO log this - or panic?
-		if len(dedup) == 0 {
+		// note that the replay protection provider can replace itself (Noop -> actual protector)
+		if len(dedup) == 0 && ns != types.ReplayProtectionSnapshot {
 			continue // no new keys were added
 		}
 		e.nsKeys[ns] = append(e.nsKeys[ns], dedup...)
