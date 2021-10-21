@@ -219,9 +219,13 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 			logging.Int("hash-diff", hashDiff),
 		)
 	}
-	if e.loadHash == nil || !bytes.Equal(e.loadHash, cpt.Hash) {
-		return nil
+	if e.loadHash == nil {
+		return errors.New("no checkpoint expected to be restored")
 	}
+	if !bytes.Equal(e.loadHash, cpt.Hash) {
+		return fmt.Errorf("incompatible hashes, received(%v), expected(%v)", hex.EncodeToString(cpt.Hash), hex.EncodeToString(e.loadHash))
+	}
+
 	// we found the checkpoint we need to load, set value to nil
 	// either the checkpoint was loaded successfully, or it wasn't
 	// if this fails, the node goes down

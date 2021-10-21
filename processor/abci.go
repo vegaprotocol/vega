@@ -38,7 +38,7 @@ var (
 	ErrMarketProposalDisabled                         = errors.New("market proposal disabled")
 	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
-	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disaled during bootstrap")
+	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disabled during bootstrap")
 	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
 )
 
@@ -1068,12 +1068,12 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	}
 }
 
-func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (rerr error) {
+func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err error) {
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
-		if rerr != nil {
+		if err != nil {
 			app.log.Error("Restoring checkpoint failed",
-				logging.Error(rerr),
+				logging.Error(err),
 			)
 			return
 		}
@@ -1085,18 +1085,18 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (rerr e
 	}
 
 	// convert to snapshot type:
-	snap := &types.CheckpointState{}
-	if err := snap.SetState(cmd.Data); err != nil {
+	cpt := &types.CheckpointState{}
+	if err := cpt.SetState(cmd.Data); err != nil {
 		return err
 	}
-	bh, err := snap.GetBlockHeight()
+	bh, err := cpt.GetBlockHeight()
 	if err != nil {
 		app.log.Panic("Failed to get blockheight from checkpoint", logging.Error(err))
 	}
 	// ensure block height is set
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
 	app.blockCtx = ctx
-	err = app.checkpoint.Load(ctx, snap)
+	err = app.checkpoint.Load(ctx, cpt)
 	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}

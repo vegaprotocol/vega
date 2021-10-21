@@ -73,10 +73,11 @@ func (c *checkpointRestore) Execute(_ []string) error {
 	cmd := &commandspb.RestoreSnapshot{
 		Data: cpData,
 	}
+
 	ch := make(chan error)
-	commander.Command(context.Background(), txn.CheckpointRestoreCommand, cmd, func(ok bool) {
-		if !ok {
-			ch <- fmt.Errorf("failed to send restore command")
+	commander.CommandSync(context.Background(), txn.CheckpointRestoreCommand, cmd, func(err error) {
+		if err != nil {
+			ch <- fmt.Errorf("failed to send restore command: %v", err)
 		}
 		close(ch)
 	})
@@ -107,7 +108,7 @@ func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, error)
 		return nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}
 
-	commander, err := nodewallets.NewCommander(log, nil, vegaWallet, statistics)
+	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, statistics)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}

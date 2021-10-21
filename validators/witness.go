@@ -34,7 +34,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -371,13 +371,12 @@ func (w *Witness) needResend(res string) bool {
 	return false
 }
 
-func (w *Witness) onCommandSent(res string) func(bool) {
-	return func(success bool) {
-		if success {
-			return
+func (w *Witness) onCommandSent(res string) func(error) {
+	return func(err error) {
+		if err != nil {
+			w.needResendMu.Lock()
+			defer w.needResendMu.Unlock()
+			w.needResendRes[res] = struct{}{}
 		}
-		w.needResendMu.Lock()
-		defer w.needResendMu.Unlock()
-		w.needResendRes[res] = struct{}{}
 	}
 }
