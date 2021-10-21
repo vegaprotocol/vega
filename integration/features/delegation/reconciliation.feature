@@ -134,6 +134,10 @@ Feature: Staking & Delegation
   Scenario: Party dissociation gets reconciled during the epoch incrementally
     Description: A party with delegation dissociates some tokens in multiple withdrawals which causes their whole delegation to be undone within 30 seconds and reflected before the epoch ends
    
+    Given the parties submit the following undelegations:
+    | party  | node id  | amount |  when         |
+    | party1 |  node1   |  100   |  end of epoch |      
+
     #epoch 1 withdraw 100 
     Given the parties withdraw from staking account the following amount:  
     | party  | asset  | amount |
