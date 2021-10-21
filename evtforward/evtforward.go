@@ -2,7 +2,6 @@ package evtforward
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -255,7 +254,7 @@ func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
 		e.log.Error("could not marshal event", logging.Error(err))
 		return false
 	}
-	h := e.hash(key)
+	h := e.hash(key) + uint64(e.currentTime.Unix())
 
 	e.mu.RLock()
 	if len(e.nodes) <= 0 {
@@ -320,12 +319,7 @@ func (e *EvtForwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-
-	// encode time to binary
-	var buf [8]byte
-	_ = binary.PutVarint(buf[:], e.currentTime.Unix())
-
-	return append(pbuf, buf[:]...), nil
+	return pbuf, nil
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {
