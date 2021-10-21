@@ -46,7 +46,7 @@ var (
 type Checkpoint interface {
 	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
 	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
-	Load(ctx context.Context, snap *types.CheckpointState) error
+	Load(ctx context.Context, cpt *types.CheckpointState) error
 	AwaitingRestore() bool
 }
 
@@ -455,10 +455,10 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = append(resp.Data, app.gov.Hash()...)
 	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
 
-	// Snapshot can be nil if it wasn't time to create a snapshot
-	if snap, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); snap != nil {
-		resp.Data = append(resp.Data, snap.Hash...)
-		_ = app.handleCheckpoint(snap)
+	// Checkpoint can be nil if it wasn't time to create a checkpoint
+	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
+		resp.Data = append(resp.Data, cpt.Hash...)
+		_ = app.handleCheckpoint(cpt)
 	}
 	// Compute the AppHash and update the response
 
@@ -1084,7 +1084,7 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err er
 		return err
 	}
 
-	// convert to snapshot type:
+	// convert to checkpoint type:
 	cpt := &types.CheckpointState{}
 	if err := cpt.SetState(cmd.Data); err != nil {
 		return err
