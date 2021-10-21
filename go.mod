@@ -3,11 +3,11 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.45.0
+	code.vegaprotocol.io/protos v0.45.1-0.20211019111742-f1e05e5bcd0b
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/vega v0.45.0
+	code.vegaprotocol.io/vega v0.45.1-0.20211021161637-753981c96698
 	github.com/99designs/gqlgen v0.13.0
-	github.com/dgraph-io/badger/v2 v2.2007.2
+	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.5.2
@@ -27,9 +27,8 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.13.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	google.golang.org/grpc v1.38.0
+	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
