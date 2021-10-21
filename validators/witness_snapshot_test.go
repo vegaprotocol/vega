@@ -36,6 +36,8 @@ func TestSnapshot(t *testing.T) {
 		err = erc.StartCheck(res, cb, checkUntil)
 		assert.NoError(t, err)
 
+		time.Sleep(10 * time.Millisecond)
+
 		// take a snapshot after the resource has been added
 		state2, err := erc.Witness.GetState(key)
 		require.Nil(t, err)
