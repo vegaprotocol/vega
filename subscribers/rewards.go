@@ -131,7 +131,7 @@ func (rc *RewardCounters) addNewReward(rpe types.RewardPayoutEvent) {
 		epoch:            epoch,
 		amount:           amount,
 		percentageAmount: percent,
-		receivedAt:       0,
+		receivedAt:       rpe.Timestamp,
 	}
 
 	perAsset.rewards = append(perAsset.rewards, rd)

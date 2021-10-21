@@ -19,7 +19,8 @@ func TestFirstRewardMessage(t *testing.T) {
 	partyID := "party1"
 	re := subscribers.NewRewards(ctx, logging.NewTestLogger(), true)
 
-	evt := events.NewRewardPayout(ctx, time.Now().UnixNano(), partyID, "1", "BTC", num.NewUint(100), 0.1)
+	now := time.Now().UnixNano()
+	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), 0.1)
 	re.Push(evt)
 
 	// Now query for the reward details for that party
@@ -38,7 +39,7 @@ func TestFirstRewardMessage(t *testing.T) {
 	assert.EqualValues(t, 1, details.RewardDetails[0].Details[0].Epoch)
 	assert.Equal(t, "party1", details.RewardDetails[0].Details[0].PartyId)
 	assert.Equal(t, "0.10000", details.RewardDetails[0].Details[0].PercentageOfTotal)
-	assert.EqualValues(t, 0, details.RewardDetails[0].Details[0].ReceivedAt)
+	assert.EqualValues(t, now, details.RewardDetails[0].Details[0].ReceivedAt)
 }
 
 func TestTwoRewardsSamePartyAndAsset(t *testing.T) {
@@ -47,9 +48,10 @@ func TestTwoRewardsSamePartyAndAsset(t *testing.T) {
 	re := subscribers.NewRewards(ctx, logging.NewTestLogger(), true)
 
 	// Create a reward event and push it to the subscriber
-	evt := events.NewRewardPayout(ctx, time.Now().UnixNano(), partyID, "1", "BTC", num.NewUint(100), 0.1)
+	now := time.Now().UnixNano()
+	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), 0.1)
 	re.Push(evt)
-	evt2 := events.NewRewardPayout(ctx, time.Now().UnixNano(), partyID, "2", "BTC", num.NewUint(50), 0.2)
+	evt2 := events.NewRewardPayout(ctx, now, partyID, "2", "BTC", num.NewUint(50), 0.2)
 	re.Push(evt2)
 
 	// Now query for the reward details for that party
@@ -71,14 +73,14 @@ func TestTwoRewardsSamePartyAndAsset(t *testing.T) {
 	assert.EqualValues(t, 1, details.RewardDetails[0].Details[0].Epoch)
 	assert.Equal(t, "party1", details.RewardDetails[0].Details[0].PartyId)
 	assert.Equal(t, "0.10000", details.RewardDetails[0].Details[0].PercentageOfTotal)
-	assert.EqualValues(t, 0, details.RewardDetails[0].Details[0].ReceivedAt)
+	assert.EqualValues(t, now, details.RewardDetails[0].Details[0].ReceivedAt)
 
 	assert.Equal(t, "50", details.RewardDetails[0].Details[1].Amount)
 	assert.Equal(t, "BTC", details.RewardDetails[0].Details[1].AssetId)
 	assert.EqualValues(t, 2, details.RewardDetails[0].Details[1].Epoch)
 	assert.Equal(t, "party1", details.RewardDetails[0].Details[1].PartyId)
 	assert.Equal(t, "0.20000", details.RewardDetails[0].Details[1].PercentageOfTotal)
-	assert.EqualValues(t, 0, details.RewardDetails[0].Details[1].ReceivedAt)
+	assert.EqualValues(t, now, details.RewardDetails[0].Details[1].ReceivedAt)
 }
 
 func TestTwoDifferentAssetsSameParty(t *testing.T) {
@@ -87,9 +89,10 @@ func TestTwoDifferentAssetsSameParty(t *testing.T) {
 	re := subscribers.NewRewards(ctx, logging.NewTestLogger(), true)
 
 	// Create a reward event and push it to the subscriber
-	evt := events.NewRewardPayout(ctx, time.Now().UnixNano(), partyID, "1", "BTC", num.NewUint(100), 0.1)
+	now := time.Now().UnixNano()
+	evt := events.NewRewardPayout(ctx, now, partyID, "1", "BTC", num.NewUint(100), 0.1)
 	re.Push(evt)
-	evt2 := events.NewRewardPayout(ctx, time.Now().UnixNano(), partyID, "2", "ETH", num.NewUint(50), 0.2)
+	evt2 := events.NewRewardPayout(ctx, now, partyID, "2", "ETH", num.NewUint(50), 0.2)
 	re.Push(evt2)
 
 	// Now query for the reward details for that party
@@ -120,7 +123,7 @@ func TestTwoDifferentAssetsSameParty(t *testing.T) {
 	assert.EqualValues(t, 1, details.RewardDetails[0].Details[0].Epoch)
 	assert.Equal(t, "party1", details.RewardDetails[0].Details[0].PartyId)
 	assert.Equal(t, "0.10000", details.RewardDetails[0].Details[0].PercentageOfTotal)
-	assert.EqualValues(t, 0, details.RewardDetails[0].Details[0].ReceivedAt)
+	assert.EqualValues(t, now, details.RewardDetails[0].Details[0].ReceivedAt)
 
 	assert.Equal(t, 1, len(details.RewardDetails[1].Details))
 	assert.Equal(t, "50", details.RewardDetails[1].Details[0].Amount)
@@ -128,7 +131,7 @@ func TestTwoDifferentAssetsSameParty(t *testing.T) {
 	assert.EqualValues(t, 2, details.RewardDetails[1].Details[0].Epoch)
 	assert.Equal(t, "party1", details.RewardDetails[1].Details[0].PartyId)
 	assert.Equal(t, "0.20000", details.RewardDetails[1].Details[0].PercentageOfTotal)
-	assert.EqualValues(t, 0, details.RewardDetails[1].Details[0].ReceivedAt)
+	assert.EqualValues(t, now, details.RewardDetails[1].Details[0].ReceivedAt)
 }
 
 func TestPartyWithNoRewards(t *testing.T) {
