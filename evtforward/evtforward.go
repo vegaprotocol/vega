@@ -68,6 +68,7 @@ type EvtForwarder struct {
 
 type tsEvt struct {
 	ts  time.Time // timestamp of the block when the event has been added
+	cap time.Time // longest time we can wait before attempting to send
 	evt *commandspb.ChainEvent
 }
 
@@ -206,7 +207,12 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 		return ErrEvtAlreadyExist
 	}
 
-	e.evts[key] = tsEvt{ts: e.currentTime, evt: evt}
+	// Set the maximum wait until we send to the retrytime + the number of nodes in seconds
+	e.mu.RLock()
+	retryRate := e.cfg.RetryRate.Duration
+	e.mu.RUnlock()
+	capTime := e.currentTime.Add(retryRate).Add(time.Duration(len(e.nodes)) * time.Second)
+	e.evts[key] = tsEvt{ts: e.currentTime, cap: capTime, evt: evt}
 	if e.isSender(evt) {
 		// we are selected to send the event, let's do it.
 		e.send(ctx, evt)
@@ -285,11 +291,15 @@ func (e *EvtForwarder) onTick(ctx context.Context, t time.Time) {
 	for k, evt := range e.evts {
 		// do we need to try to forward the event again?
 		if evt.ts.Add(retryRate).Before(t) {
-			// set next retry
-			e.evts[k] = tsEvt{ts: t, evt: evt.evt}
-			if e.isSender(evt.evt) {
-				// we are selected to send the event, let's do it.
+			if evt.cap.Before(t) {
 				e.send(ctx, evt.evt)
+			} else {
+				// set next retry
+				e.evts[k] = tsEvt{ts: t, cap: evt.cap, evt: evt.evt}
+				if e.isSender(evt.evt) {
+					// we are selected to send the event, let's do it.
+					e.send(ctx, evt.evt)
+				}
 			}
 		}
 	}
