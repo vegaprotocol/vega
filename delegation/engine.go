@@ -1062,9 +1062,21 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 
 		// if we don't have enough to satisfy the delegation amounts - prorate them with respect to how much is available
 		if totalExpectedDelegation.GT(availableForDelegation) {
+			totalActual := num.Zero()
 			for i, amt := range nodeIDToExpectedAmount {
 				factor := amt.ToDecimal().Div(totalExpectedDelegation.ToDecimal())
 				nodeIDToExpectedAmount[i], _ = num.UintFromDecimal(availableForDelegation.ToDecimal().Mul(factor))
+				totalActual.AddSum(nodeIDToExpectedAmount[i])
+			}
+			// account for precision error by adjusting the first non zero balance by the error
+			if totalActual.GT(availableForDelegation) {
+				precisionError := num.Zero().Sub(totalActual, availableForDelegation)
+				for i := range nodeIDToExpectedAmount {
+					if nodeIDToExpectedAmount[i].GT(precisionError) {
+						nodeIDToExpectedAmount[i] = num.Zero().Sub(nodeIDToExpectedAmount[i], precisionError)
+						break
+					}
+				}
 			}
 		}
 
