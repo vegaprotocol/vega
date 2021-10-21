@@ -662,7 +662,11 @@ func (e *Engine) getNextEpochBalanceEvent(ctx context.Context, party, nodeID str
 		}
 	}
 
-	amt := num.Zero().Sub(num.Sum(delegatedToNode, pendingDelegated), pendingUndelegated)
+	potentialDelegationForNextEpoch := num.Sum(delegatedToNode, pendingDelegated)
+	amt := num.Zero()
+	if potentialDelegationForNextEpoch.GT(pendingUndelegated) {
+		amt = num.Zero().Sub(potentialDelegationForNextEpoch, pendingUndelegated)
+	}
 	return events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(seq+1).String())
 }
 
