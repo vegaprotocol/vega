@@ -52,6 +52,7 @@ const (
 	WitnessSnapshot          SnapshotNamespace = "witness"
 	TopologySnapshot         SnapshotNamespace = "topology"
 	OracleDataSnapshot       SnapshotNamespace = "oracle"
+	LiquiditySnapshot        SnapshotNamespace = "liquidity"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB
@@ -83,6 +84,7 @@ var (
 		"oracleData":     OracleDataSnapshot,
 		"idgenerator":    IDGenSnapshot,
 		"stakeverifier":  StakeVerifierSnapshot,
+		"liquidity":      LiquiditySnapshot,
 	}
 
 	ErrSnapshotHashMismatch       = errors.New("snapshot hashes do not match")

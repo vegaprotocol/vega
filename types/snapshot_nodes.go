@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -200,6 +201,26 @@ type ReplayBlockTransactions struct {
 
 type PayloadEventForwarder struct {
 	Events []*commandspb.ChainEvent
+}
+
+type PayloadLiquidityParameters struct {
+	Parameters *snapshot.LiquidityParameters
+}
+
+type PayloadLiquidityPendingProvisions struct {
+	PendingProvisions *snapshot.LiquidityPendingProvisions
+}
+
+type PayloadLiquidityPartiesLiquidityOrders struct {
+	PartiesLiquidityOrders *snapshot.LiquidityPartiesLiquidityOrders
+}
+
+type PayloadLiquidityPartiesOrders struct {
+	PartiesOrders *snapshot.LiquidityPartiesOrders
+}
+
+type PayloadLiquidityProvisions struct {
+	Provisions *snapshot.LiquidityProvisions
 }
 
 type MatchingBook struct {
@@ -650,6 +671,16 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadTopologyFromProto(dt)
 	case *snapshot.Payload_OracleData:
 		ret.Data = PayloadOracleDataFromProto(dt)
+	case *snapshot.Payload_LiquidityParameters:
+		ret.Data = PayloadLiquidityParametersFromProto(dt)
+	case *snapshot.Payload_LiquidityPendingProvisions:
+		ret.Data = PayloadLiquidityPendingProvisionsFromProto(dt)
+	case *snapshot.Payload_LiquidityPartiesLiquidityOrders:
+		ret.Data = PayloadLiquidityPartiesLiquidityOrdersFromProto(dt)
+	case *snapshot.Payload_LiquidityPartiesOrders:
+		ret.Data = PayloadLiquidityPartiesOrdersFromProto(dt)
+	case *snapshot.Payload_LiquidityProvisions:
+		ret.Data = PayloadLiquidityProvisionsFromProto(dt)
 	}
 
 	return ret
@@ -751,6 +782,16 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_OracleData:
 		ret.Data = dt
+	case *snapshot.Payload_LiquidityParameters:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityPendingProvisions:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityPartiesLiquidityOrders:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityPartiesOrders:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityProvisions:
+		ret.Data = dt
 	}
 	return &ret
 }
@@ -761,6 +802,116 @@ func (p Payload) GetAppState() *PayloadAppState {
 		return pas
 	}
 	return nil
+}
+
+func PayloadLiquidityParametersFromProto(s *snapshot.Payload_LiquidityParameters) *PayloadLiquidityParameters {
+	return &PayloadLiquidityParameters{
+		Parameters: s.LiquidityParameters,
+	}
+}
+
+func (*PayloadLiquidityParameters) isPayload() {}
+
+func (p *PayloadLiquidityParameters) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityParameters{
+		LiquidityParameters: p.Parameters,
+	}
+}
+
+func (*PayloadLiquidityParameters) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (p *PayloadLiquidityParameters) Key() string {
+	return fmt.Sprintf("parameters:%v", p.Parameters.MarketId)
+}
+
+func PayloadLiquidityPendingProvisionsFromProto(s *snapshot.Payload_LiquidityPendingProvisions) *PayloadLiquidityPendingProvisions {
+	return &PayloadLiquidityPendingProvisions{
+		PendingProvisions: s.LiquidityPendingProvisions,
+	}
+}
+
+func (*PayloadLiquidityPendingProvisions) isPayload() {}
+
+func (p *PayloadLiquidityPendingProvisions) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityPendingProvisions{
+		LiquidityPendingProvisions: p.PendingProvisions,
+	}
+}
+
+func (*PayloadLiquidityPendingProvisions) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (p *PayloadLiquidityPendingProvisions) Key() string {
+	return fmt.Sprintf("pendingProvisions:%v", p.PendingProvisions.MarketId)
+}
+
+func PayloadLiquidityPartiesLiquidityOrdersFromProto(s *snapshot.Payload_LiquidityPartiesLiquidityOrders) *PayloadLiquidityPartiesLiquidityOrders {
+	return &PayloadLiquidityPartiesLiquidityOrders{
+		PartiesLiquidityOrders: s.LiquidityPartiesLiquidityOrders,
+	}
+}
+
+func (*PayloadLiquidityPartiesLiquidityOrders) isPayload() {}
+
+func (p *PayloadLiquidityPartiesLiquidityOrders) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityPartiesLiquidityOrders{
+		LiquidityPartiesLiquidityOrders: p.PartiesLiquidityOrders,
+	}
+}
+
+func (*PayloadLiquidityPartiesLiquidityOrders) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (p *PayloadLiquidityPartiesLiquidityOrders) Key() string {
+	return fmt.Sprintf("partiesLiquidityOrders:", p.PartiesLiquidityOrders.MarketId)
+}
+
+func PayloadLiquidityPartiesOrdersFromProto(s *snapshot.Payload_LiquidityPartiesOrders) *PayloadLiquidityPartiesOrders {
+	return &PayloadLiquidityPartiesOrders{
+		PartiesOrders: s.LiquidityPartiesOrders,
+	}
+}
+
+func (*PayloadLiquidityPartiesOrders) isPayload() {}
+
+func (p *PayloadLiquidityPartiesOrders) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityPartiesOrders{
+		LiquidityPartiesOrders: p.PartiesOrders,
+	}
+}
+
+func (*PayloadLiquidityPartiesOrders) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (p *PayloadLiquidityPartiesOrders) Key() string {
+	return fmt.Sprintf("partiesOrders:%v", p.PartiesOrders.MarketId)
+}
+
+func PayloadLiquidityProvisionsFromProto(s *snapshot.Payload_LiquidityProvisions) *PayloadLiquidityProvisions {
+	return &PayloadLiquidityProvisions{
+		Provisions: s.LiquidityProvisions,
+	}
+}
+
+func (*PayloadLiquidityProvisions) isPayload() {}
+
+func (p *PayloadLiquidityProvisions) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityProvisions{
+		LiquidityProvisions: p.Provisions,
+	}
+}
+
+func (*PayloadLiquidityProvisions) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (p *PayloadLiquidityProvisions) Key() string {
+	return fmt.Sprintf("provisions:%v", p.Provisions.MarketId)
 }
 
 func PayloadActiveAssetsFromProto(paa *snapshot.Payload_ActiveAssets) *PayloadActiveAssets {
