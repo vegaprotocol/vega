@@ -163,7 +163,7 @@ func testAckSuccess(t *testing.T) {
 	var pl snapshot.Payload
 	proto.Unmarshal(state3, &pl)
 	payload := types.PayloadFromProto(&pl)
-	err = evtfwd.LoadState(context.Background(), payload)
+	_, err = evtfwd.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 
 	// the event exists after the reload so expect to fail
