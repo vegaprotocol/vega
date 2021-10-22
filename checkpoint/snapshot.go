@@ -41,16 +41,16 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return e.hash, nil
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != e.state.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 	if len(e.data) == 0 {
 		if err := e.serialiseState(); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
-	return e.data, nil
+	return e.data, nil, nil
 }
 
 func (e *Engine) serialiseState() error {

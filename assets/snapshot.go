@@ -90,26 +90,24 @@ func (s *Service) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (s *Service) GetState(k string) ([]byte, error) {
+func (s *Service) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := s.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
 func (s *Service) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if s.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
-	var err error
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadActiveAssets:
-		err = s.restoreActive(ctx, pl.ActiveAssets)
+		return nil, s.restoreActive(ctx, pl.ActiveAssets)
 	case *types.PayloadPendingAssets:
-		err = s.restorePending(ctx, pl.PendingAssets)
+		return nil, s.restorePending(ctx, pl.PendingAssets)
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
 
 func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets) error {

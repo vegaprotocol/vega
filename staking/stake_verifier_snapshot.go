@@ -90,9 +90,9 @@ func (s *StakeVerifier) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (s *StakeVerifier) GetState(k string) ([]byte, error) {
+func (s *StakeVerifier) GetState(k string) ([]byte, []types.StateProvider, error) {
 	data, _, err := s.getSerialisedAndHash(k)
-	return data, err
+	return data, nil, err
 }
 
 func (s *StakeVerifier) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {

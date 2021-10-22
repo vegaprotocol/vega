@@ -124,8 +124,9 @@ func (s *Store) GetHash(k string) ([]byte, error) {
 	return s.state.GetHash(k)
 }
 
-func (s *Store) GetState(k string) ([]byte, error) {
-	return s.state.GetState(k)
+func (s *Store) GetState(k string) ([]byte, []types.StateProvider, error) {
+	state, err := s.state.GetState(k)
+	return state, nil, err
 }
 
 func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.StateProvider, error) {

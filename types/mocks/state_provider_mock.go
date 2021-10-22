@@ -50,12 +50,13 @@ func (mr *MockStateProviderMockRecorder) GetHash(arg0 interface{}) *gomock.Call 
 }
 
 // GetState mocks base method
-func (m *MockStateProvider) GetState(arg0 string) ([]byte, error) {
+func (m *MockStateProvider) GetState(arg0 string) ([]byte, []types.StateProvider, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetState", arg0)
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].([]types.StateProvider)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // GetState indicates an expected call of GetState

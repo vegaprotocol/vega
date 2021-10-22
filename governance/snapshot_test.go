@@ -147,7 +147,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	require.False(t, bytes.Equal(emptyHash, h1))
 
 	// Get snapshot payload
-	state, err := eng.GetState(nodeValidationKey)
+	state, _, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
@@ -198,7 +198,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	snapEng := getTestEngine(t)
 	defer snapEng.ctrl.Finish()
 
-	state, err := eng.GetState(activeKey)
+	state, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}

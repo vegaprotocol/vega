@@ -72,9 +72,9 @@ func (a *Accounting) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (a *Accounting) GetState(k string) ([]byte, error) {
+func (a *Accounting) GetState(k string) ([]byte, []types.StateProvider, error) {
 	data, _, err := a.getSerialisedAndHash(k)
-	return data, err
+	return data, nil, err
 }
 
 func (a *Accounting) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {

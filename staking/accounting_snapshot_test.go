@@ -49,7 +49,7 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 	require.False(t, bytes.Equal(h1, h2))
 
 	// Get state ready to load in a new instance of the engine
-	state, err := acc.GetState(allKey)
+	state, _, err := acc.GetState(allKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}

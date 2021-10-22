@@ -129,9 +129,9 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := e.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
 func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
@@ -139,20 +139,18 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
-	var err error
 	switch pl := p.Data.(type) {
 	case *types.PayloadDelegationActive:
-		err = e.restoreActive(ctx, pl.DelegationActive)
+		return nil, e.restoreActive(ctx, pl.DelegationActive)
 	case *types.PayloadDelegationPending:
-		err = e.restorePending(ctx, pl.DelegationPending)
+		return nil, e.restorePending(ctx, pl.DelegationPending)
 	case *types.PayloadDelegationAuto:
-		err = e.restoreAuto(pl.DelegationAuto)
+		return nil, e.restoreAuto(pl.DelegationAuto)
 	case *types.PayloadDelegationLastReconTime:
-		err = e.restoreLastReconTime(ctx, pl.LastReconcilicationTime)
+		return nil, e.restoreLastReconTime(ctx, pl.LastReconcilicationTime)
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
 
 func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time) error {

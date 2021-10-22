@@ -40,8 +40,9 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return e.state.getHash(k)
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
-	return e.state.getState(k)
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
+	state, err := e.state.getState(k)
+	return state, nil, err
 }
 
 func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {

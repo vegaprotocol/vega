@@ -77,9 +77,9 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	data, _, err := e.getSerialisedAndHash(k)
-	return data, err
+	return data, nil, err
 }
 
 func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {

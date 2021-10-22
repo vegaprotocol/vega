@@ -47,13 +47,13 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		// get the has and serialised state
 		hash, err := as.GetHash(activeKey)
 		require.Nil(t, err)
-		state, err := as.GetState(activeKey)
+		state, _, err := as.GetState(activeKey)
 		require.Nil(t, err)
 
 		// verify hash is consistent in the absence of change
 		hashNoChange, err := as.GetHash(activeKey)
 		require.Nil(t, err)
-		stateNoChange, err := as.GetState(activeKey)
+		stateNoChange, _, err := as.GetState(activeKey)
 		require.Nil(t, err)
 
 		require.True(t, bytes.Equal(hash, hashNoChange))
@@ -68,7 +68,7 @@ func TestActiveSnapshotRoundTrip(t *testing.T) {
 		require.Nil(t, err)
 		hashPostReload, _ := as.GetHash(activeKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
-		statePostReload, _ := as.GetState(activeKey)
+		statePostReload, _, _ := as.GetState(activeKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
 }
@@ -91,13 +91,13 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 		// get the has and serialised state
 		hash, err := as.GetHash(pendingKey)
 		require.Nil(t, err)
-		state, err := as.GetState(pendingKey)
+		state, _, err := as.GetState(pendingKey)
 		require.Nil(t, err)
 
 		// verify hash is consistent in the absence of change
 		hashNoChange, err := as.GetHash(pendingKey)
 		require.Nil(t, err)
-		stateNoChange, err := as.GetState(pendingKey)
+		stateNoChange, _, err := as.GetState(pendingKey)
 		require.Nil(t, err)
 
 		require.True(t, bytes.Equal(hash, hashNoChange))
@@ -112,7 +112,7 @@ func TestPendingSnapshotRoundTrip(t *testing.T) {
 		require.Nil(t, err)
 		hashPostReload, _ := as.GetHash(pendingKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
-		statePostReload, _ := as.GetState(pendingKey)
+		statePostReload, _, _ := as.GetState(pendingKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
 }
