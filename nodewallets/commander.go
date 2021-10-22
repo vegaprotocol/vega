@@ -43,6 +43,7 @@ type Commander struct {
 func NewCommander(cfg Config, log *logging.Logger, bc Chain, w *vega.Wallet, bstats BlockchainStats) (*Commander, error) {
 	log = log.Named(commanderNamedLogger)
 	log.SetLevel(cfg.Level.Get())
+
 	return &Commander{
 		log:    log,
 		bc:     bc,
