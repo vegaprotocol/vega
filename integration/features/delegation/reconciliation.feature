@@ -54,9 +54,9 @@ Feature: Staking & Delegation
 
     And the parties deposit on staking account the following amount:  
       | party  | asset  | amount |
-      | party1 | VEGA   | 700  |
+      | party1 | VEGA   |  700   |
       | party2 | VEGA   | 20000  |
-
+      | party3 | VEGA   |  500   |
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
@@ -70,16 +70,41 @@ Feature: Staking & Delegation
     #complete the first epoch for the self delegation to take effect
     Then the network moves ahead "63" blocks
 
+  Scenario: Party submits delegations which by the time they are processed are uncovered
+    Description: when the party submits the delegation request they have cover for all but by the time the epoch ends they only leave enough to cover some of the delegations
+
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party3 |  node1   |  100   | 
+    | party3 |  node2   |  100   |       
+    | party3 |  node3   |  100   |    
+    | party3 |  node4   |  100   |    
+    | party3 |  node5   |  100   |  
+
+    Then the parties should have the following delegation balances for epoch 2:  
+    | party  | node id  | amount |
+    | party3 |  node1   | 100    | 
+    | party3 |  node2   | 100    |       
+    | party3 |  node3   | 100    |   
+    | party3 |  node4   | 100    |   
+    | party3 |  node5   | 100    |   
+
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount |
+    | party3 | VEGA   |  350   | 
+
+    When the network moves ahead "63" blocks    
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party3 |  node1   | 30     | 
+    | party3 |  node2   | 30     |       
+    | party3 |  node3   | 30     |   
+    | party3 |  node4   | 30     |   
+    | party3 |  node5   | 30     |   
+
   Scenario: Party dissociation gets reconciled during the epoch
     Description: A party with delegation dissociates all of their tokens which causes their whole delegation to be undone within 30 seconds and reflected before the epoch ends
-    | party  | node id  | amount |
-    | party1 |  node1   | 100    | 
-    | party1 |  node2   | 200    |       
-    | party1 |  node3   | 300    |   
-    | party2 |  node2   | 400    |   
-    | party2 |  node3   | 500    |   
-    | party2 |  node4   | 600    |   
-
+   
     Given the parties withdraw from staking account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   |  700   | 
