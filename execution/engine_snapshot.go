@@ -38,7 +38,7 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 		mks = append(mks, m.getState())
 
 		if _, ok := e.previouslySnapshottedMarkets[m.GetID()]; !ok {
-			e.marketsStateProviders = append(e.marketsStateProviders, []types.StateProvider{m.position, m.matching}...)
+			e.marketsStateProviders = append(e.marketsStateProviders, m.position, m.matching)
 			e.previouslySnapshottedMarkets[m.GetID()] = struct{}{}
 		}
 	}
@@ -62,7 +62,7 @@ func (e *Engine) restoreMarketsStates(ems []*types.ExecMarket) ([]types.StatePro
 			return nil, err
 		}
 
-		pvds = append(pvds, []types.StateProvider{m.position, m.matching}...)
+		pvds = append(pvds, m.position, m.matching)
 	}
 
 	return pvds, nil

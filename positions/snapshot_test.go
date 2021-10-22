@@ -83,7 +83,7 @@ func TestSnapshotSaveAndLoad(t *testing.T) {
 	// With no change the hashes are equal
 	require.True(t, bytes.Equal(h1, h2))
 
-	data, err := engine.GetState(keys[0])
+	data, _, err := engine.GetState(keys[0])
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}

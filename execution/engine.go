@@ -165,7 +165,7 @@ func NewEngine(
 		broker:                       broker,
 		oracle:                       oracle,
 		npv:                          defaultNetParamsValues(),
-		previouslySnapshottedMarkets: make(map[string]struct{}),
+		previouslySnapshottedMarkets: map[string]struct{}{},
 	}
 
 	// Add time change event handler

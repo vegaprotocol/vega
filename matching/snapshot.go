@@ -14,7 +14,7 @@ func (b *OrderBook) Keys() []string {
 }
 
 func (b *OrderBook) Snapshot() (map[string][]byte, error) {
-	payload, err := b.GetState(b.snapshot.Key())
+	payload, _, err := b.GetState(b.snapshot.Key())
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (b *OrderBook) GetHash(key string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	payload, e := b.GetState(key)
+	payload, _, e := b.GetState(key)
 	if e != nil {
 		return nil, e
 	}
@@ -38,18 +38,16 @@ func (b *OrderBook) GetHash(key string) ([]byte, error) {
 	return crypto.Hash(payload), nil
 }
 
-func (b *OrderBook) GetState(key string) ([]byte, error) {
+func (b *OrderBook) GetState(key string) ([]byte, []types.StateProvider, error) {
 	if key != b.snapshot.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	// Copy all the state into a domain object
 	payload := b.buildPayload()
 
-	// Convert the domain object into a protobuf payload message
-	p := payload.IntoProto()
-
-	return proto.Marshal(p)
+	s, err := proto.Marshal(payload.IntoProto())
+	return s, nil, err
 }
 
 func (b *OrderBook) buildPayload() *types.Payload {

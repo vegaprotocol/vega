@@ -86,13 +86,13 @@ func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *SnapshotEngine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != e.marketID {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	state, _, err := e.serialise()
-	return state, err
+	return state, nil, err
 }
 
 func (e *SnapshotEngine) Snapshot() (map[string][]byte, error) {
