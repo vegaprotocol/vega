@@ -142,6 +142,14 @@ type PayloadStakingAccounts struct {
 	StakingAccounts *StakingAccounts
 }
 
+type PayloadStakeVerifierDeposited struct {
+	StakeVerifierDeposited []*StakeDeposited
+}
+
+type PayloadStakeVerifierRemoved struct {
+	StakeVerifierRemoved []*StakeRemoved
+}
+
 type PayloadEpoch struct {
 	EpochState *EpochState
 }
@@ -620,6 +628,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadEventForwarderFromProto(dt)
 	case *snapshot.Payload_Witness:
 		ret.Data = PayloadWitnessFromProto(dt)
+	case *snapshot.Payload_StakeVerifierDeposited:
+		ret.Data = PayloadStakeVerifierDepositedFromProto(dt)
+	case *snapshot.Payload_StakeVerifierRemoved:
+		ret.Data = PayloadStakeVerifierRemovedFromProto(dt)
 	}
 
 	return ret
@@ -710,6 +722,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_EventForwarder:
 		ret.Data = dt
 	case *snapshot.Payload_Witness:
+		ret.Data = dt
+	case *snapshot.Payload_StakeVerifierDeposited:
+		ret.Data = dt
+	case *snapshot.Payload_StakeVerifierRemoved:
 		ret.Data = dt
 	}
 	return &ret
@@ -2766,6 +2782,134 @@ func (*PayloadNotary) Key() string {
 
 func (*PayloadNotary) Namespace() SnapshotNamespace {
 	return NotarySnapshot
+}
+
+func PayloadStakeVerifierDepositedFromProto(svd *snapshot.Payload_StakeVerifierDeposited) *PayloadStakeVerifierDeposited {
+	pending := make([]*StakeDeposited, 0, len(svd.StakeVerifierDeposited.PendingDeposited))
+
+	for _, pd := range svd.StakeVerifierDeposited.PendingDeposited {
+		deposit := &StakeDeposited{
+			EthereumAddress: pd.EthereumAddress,
+			TxID:            pd.TxId,
+			LogIndex:        pd.LogIndex,
+			BlockNumber:     pd.BlockNumber,
+			ID:              pd.Id,
+			VegaPubKey:      pd.VegaPublicKey,
+			BlockTime:       pd.BlockTime,
+			Amount:          num.Zero(),
+		}
+
+		if len(pd.Amount) > 0 {
+			deposit.Amount, _ = num.UintFromString(pd.Amount, 10)
+		}
+		pending = append(pending, deposit)
+	}
+
+	return &PayloadStakeVerifierDeposited{
+		StakeVerifierDeposited: pending,
+	}
+}
+
+func (p *PayloadStakeVerifierDeposited) IntoProto() *snapshot.Payload_StakeVerifierDeposited {
+	pending := make([]*snapshot.StakeVerifierPending, 0, len(p.StakeVerifierDeposited))
+
+	for _, p := range p.StakeVerifierDeposited {
+		pending = append(pending,
+			&snapshot.StakeVerifierPending{
+				EthereumAddress: p.EthereumAddress,
+				VegaPublicKey:   p.VegaPubKey,
+				Amount:          p.Amount.String(),
+				BlockTime:       p.BlockTime,
+				BlockNumber:     p.BlockNumber,
+				LogIndex:        p.LogIndex,
+				TxId:            p.TxID,
+				Id:              p.ID,
+			})
+	}
+
+	return &snapshot.Payload_StakeVerifierDeposited{
+		StakeVerifierDeposited: &snapshot.StakeVerifierDeposited{
+			PendingDeposited: pending,
+		},
+	}
+}
+
+func (*PayloadStakeVerifierDeposited) isPayload() {}
+
+func (p *PayloadStakeVerifierDeposited) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadStakeVerifierDeposited) Key() string {
+	return "deposited"
+}
+
+func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
+	return StakeVerifierSnapshot
+}
+
+func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRemoved) *PayloadStakeVerifierRemoved {
+	pending := make([]*StakeRemoved, 0, len(svd.StakeVerifierRemoved.PendingRemoved))
+
+	for _, pr := range svd.StakeVerifierRemoved.PendingRemoved {
+		removed := &StakeRemoved{
+			EthereumAddress: pr.EthereumAddress,
+			TxID:            pr.TxId,
+			LogIndex:        pr.LogIndex,
+			BlockNumber:     pr.BlockNumber,
+			ID:              pr.Id,
+			VegaPubKey:      pr.VegaPublicKey,
+			BlockTime:       pr.BlockTime,
+			Amount:          num.Zero(),
+		}
+
+		if len(pr.Amount) > 0 {
+			removed.Amount, _ = num.UintFromString(pr.Amount, 10)
+		}
+		pending = append(pending, removed)
+	}
+
+	return &PayloadStakeVerifierRemoved{
+		StakeVerifierRemoved: pending,
+	}
+}
+
+func (p *PayloadStakeVerifierRemoved) IntoProto() *snapshot.Payload_StakeVerifierRemoved {
+	pending := make([]*snapshot.StakeVerifierPending, 0, len(p.StakeVerifierRemoved))
+
+	for _, p := range p.StakeVerifierRemoved {
+		pending = append(pending,
+			&snapshot.StakeVerifierPending{
+				EthereumAddress: p.EthereumAddress,
+				VegaPublicKey:   p.VegaPubKey,
+				Amount:          p.Amount.String(),
+				BlockTime:       p.BlockTime,
+				BlockNumber:     p.BlockNumber,
+				LogIndex:        p.LogIndex,
+				TxId:            p.TxID,
+				Id:              p.ID,
+			})
+	}
+
+	return &snapshot.Payload_StakeVerifierRemoved{
+		StakeVerifierRemoved: &snapshot.StakeVerifierRemoved{
+			PendingRemoved: pending,
+		},
+	}
+}
+
+func (*PayloadStakeVerifierRemoved) isPayload() {}
+
+func (p *PayloadStakeVerifierRemoved) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadStakeVerifierRemoved) Key() string {
+	return "removed"
+}
+
+func (*PayloadStakeVerifierRemoved) Namespace() SnapshotNamespace {
+	return StakeVerifierSnapshot
 }
 
 func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {

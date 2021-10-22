@@ -46,6 +46,7 @@ const (
 	SpamSnapshot             SnapshotNamespace = "spam"
 	LimitSnapshot            SnapshotNamespace = "limits"
 	NotarySnapshot           SnapshotNamespace = "notary"
+	StakeVerifierSnapshot    SnapshotNamespace = "stakeverifier"
 	ReplayProtectionSnapshot SnapshotNamespace = "replay"
 	EventForwarderSnapshot   SnapshotNamespace = "eventforwarder"
 	WitnessSnapshot          SnapshotNamespace = "witness"
