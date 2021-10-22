@@ -117,6 +117,7 @@ type PayloadDelegationAuto struct {
 type PayloadDelegationLastReconTime struct {
 	LastReconcilicationTime time.Time
 }
+
 type PayloadGovernanceActive struct {
 	GovernanceActive *GovernanceActive
 }
