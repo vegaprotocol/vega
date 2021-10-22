@@ -207,7 +207,6 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 
 // Load - loads checkpoint data for all components by name.
 func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
-	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
 	if len(e.loadHash) != 0 {
 		hashDiff := bytes.Compare(e.loadHash, cpt.Hash)
 
@@ -221,13 +220,10 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 			logging.Int("hash-diff", hashDiff),
 		)
 	}
-	if e.loadHash == nil {
-		return ErrNoCheckpointExpectedToBeRestored
-	}
-	if !bytes.Equal(e.loadHash, cpt.Hash) {
-		return fmt.Errorf("received(%v), expected(%v): %w", hex.EncodeToString(cpt.Hash), hex.EncodeToString(e.loadHash), ErrIncompatibleHashes)
-	}
 
+	if err := e.ValidateCheckpoint(cpt); err != nil {
+		return err
+	}
 	// we found the checkpoint we need to load, set value to nil
 	// either the checkpoint was loaded successfully, or it wasn't
 	// if this fails, the node goes down
@@ -282,6 +278,17 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 		if err := c.Load(ctx, cpData); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (e *Engine) ValidateCheckpoint(cpt *types.CheckpointState) error {
+	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
+	if e.loadHash == nil {
+		return ErrNoCheckpointExpectedToBeRestored
+	}
+	if !bytes.Equal(e.loadHash, cpt.Hash) {
+		return fmt.Errorf("received(%v), expected(%v): %w", hex.EncodeToString(cpt.Hash), hex.EncodeToString(e.loadHash), ErrIncompatibleHashes)
 	}
 	return nil
 }

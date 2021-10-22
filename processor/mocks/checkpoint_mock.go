@@ -92,3 +92,17 @@ func (mr *MockCheckpointMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCheckpoint)(nil).Load), arg0, arg1)
 }
+
+// ValidateCheckpoint mocks base method
+func (m *MockCheckpoint) ValidateCheckpoint(arg0 *types.CheckpointState) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateCheckpoint", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateCheckpoint indicates an expected call of ValidateCheckpoint
+func (mr *MockCheckpointMockRecorder) ValidateCheckpoint(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateCheckpoint", reflect.TypeOf((*MockCheckpoint)(nil).ValidateCheckpoint), arg0)
+}

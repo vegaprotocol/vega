@@ -49,6 +49,7 @@ type Checkpoint interface {
 	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
 	Load(ctx context.Context, cpt *types.CheckpointState) error
 	AwaitingRestore() bool
+	ValidateCheckpoint(cpt *types.CheckpointState) error
 }
 
 type SpamEngine interface {
@@ -108,6 +109,8 @@ type App struct {
 	spam            SpamEngine
 	epoch           EpochService
 	snapshot        Snapshot
+
+	cpt abci.Tx
 }
 
 func NewApp(
@@ -444,7 +447,18 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
-	return
+
+	// will be true only the first time we get out of the bootstrap period
+	if app.cpt != nil && app.limits.BootstrapFinished() {
+		app.log.Info("restoring a scheduled checkpoint")
+		if err := app.DeliverReloadCheckpoint(ctx, app.cpt); err != nil {
+			app.log.Error("could not restore scheduled checkpoint",
+				logging.Error(err))
+		}
+		app.cpt = nil
+	}
+
+	return ctx, resp
 }
 
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
@@ -533,6 +547,51 @@ func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	return false, false
 }
 
+func (app *App) validateScheduleCheckpointRestore(tx abci.Tx) (cpt *types.CheckpointState, err error) {
+	defer func() {
+		if err != nil {
+			app.log.Error("could not schedule checkpoint to be loaded at network bootstraping end", logging.Error(err))
+		}
+	}()
+
+	if app.cpt != nil {
+		// an valid checkpoint is already schedule to be loaded
+		// at end of bootstrap, skip
+		return nil, errors.New("a valid checkpoint is already scheduled to be loaded at the end of the boostraping period")
+	}
+
+	cmd := &commandspb.RestoreSnapshot{}
+	if err := tx.Unmarshal(cmd); err != nil {
+		return nil, fmt.Errorf("invalid restore checkpoint command: %w", err)
+	}
+
+	// convert to checkpoint type:
+	cpt = &types.CheckpointState{}
+	if err := cpt.SetState(cmd.Data); err != nil {
+		return nil, fmt.Errorf("invalid restore checkpoint command: %w", err)
+	}
+
+	// now we have a valid checkpoint.
+	if err := app.checkpoint.ValidateCheckpoint(cpt); err != nil {
+		return nil, err
+	}
+
+	return cpt, nil
+}
+
+func (app *App) scheduleCheckpointRestore(tx abci.Tx) (err error) {
+	cpt, err := app.validateScheduleCheckpointRestore(tx)
+	if err != nil {
+		return err
+	}
+
+	app.cpt = tx
+	app.log.Info("new checkpoint scheduled to be loaded after boostraping ends",
+		logging.String("hash", hex.EncodeToString(cpt.Hash)))
+
+	return nil
+}
+
 func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	defer func() {
 		if err != nil {
@@ -554,11 +613,17 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			return ErrNonValidatorTransactionDisabledDuringBootstrap
 		}
 		if cmd == txn.CheckpointRestoreCommand {
-			return ErrCheckpointRestoreDisabledDuringBootstrap
+			_, err := app.validateScheduleCheckpointRestore(tx)
+			return err
 		}
 	}
 
 	switch tx.Command() {
+	case txn.CheckpointRestoreCommand:
+		// do not get the transaction in the chain if we are not expecting a reload
+		if !app.checkpoint.AwaitingRestore() {
+			return errors.New("no checkpoint expected to be restored")
+		}
 	case txn.WithdrawCommand:
 		if app.reloadCP {
 			// we haven't reloaded the collateral data, withdrawals are going to fail
@@ -1070,6 +1135,12 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 }
 
 func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err error) {
+	if !app.limits.BootstrapFinished() {
+		// bootstrap is not finished, we eventually schedule a reload of the
+		// checkpoint, if valid
+		return app.scheduleCheckpointRestore(tx)
+	}
+
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
 		if err != nil {
