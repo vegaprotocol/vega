@@ -1,6 +1,8 @@
 package positions
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/vega/events"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -98,7 +100,7 @@ func (e *SnapshotEngine) Snapshot() (map[string][]byte, error) {
 	return map[string][]byte{e.marketID: state}, err
 }
 
-func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
+func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}

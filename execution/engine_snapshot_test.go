@@ -42,108 +42,12 @@ func createEngine(t *testing.T) *execution.Engine {
 func TestEmptyMarkets(t *testing.T) {
 	engine := createEngine(t)
 	assert.NotNil(t, engine)
-	assert.Empty(t, providers)
-			Parameters: &types.PriceMonitoringParameters{
-				Triggers: []*types.PriceMonitoringTrigger{
-					{
-						Horizon:          1000,
-						HorizonDec:       num.DecimalFromFloat(1000.0),
-						Probability:      num.DecimalFromFloat(0.3),
-						AuctionExtension: 10000,
-					},
-				},
-			},
-		},
-		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
-			TargetStakeParameters: &types.TargetStakeParameters{
-				TimeWindow:    100,
-				ScalingFactor: num.DecimalFromFloat(1.0),
-			},
-			TriggeringRatio:  num.DecimalFromFloat(0.9),
-			AuctionExtension: 10000,
-		},
-		Fees: &types.Fees{
-			Factors: &types.FeeFactors{
-				MakerFee:          num.DecimalFromFloat(0.1),
-				InfrastructureFee: num.DecimalFromFloat(0.1),
-				LiquidityFee:      num.DecimalFromFloat(0.1),
-			},
-		},
-		TradableInstrument: &types.TradableInstrument{
-			MarginCalculator: &types.MarginCalculator{
-				ScalingFactors: &types.ScalingFactors{
-					SearchLevel:       num.DecimalFromFloat(1.2),
-					InitialMargin:     num.DecimalFromFloat(1.3),
-					CollateralRelease: num.DecimalFromFloat(1.4),
-				},
-			},
-			Instrument: &types.Instrument{
-				ID:   "Crypto/ETHUSD/Futures/Dec19",
-				Code: "FX:ETHUSD/DEC19",
-				Name: "December 2019 ETH vs USD future",
-				Metadata: &types.InstrumentMetadata{
-					Tags: []string{
-						"asset_class:fx/crypto",
-						"product:futures",
-					},
-				},
-				Product: &types.Instrument_Future{
-					Future: &types.Future{
-						Maturity:        "2019-12-31T23:59:59Z",
-						SettlementAsset: "Ethereum/Ether",
-						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
-							Id:      "1",
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
-								{
-									Key: &oraclesv1.PropertyKey{
-										Name: "prices.ETH.value",
-										Type: oraclesv1.PropertyKey_TYPE_INTEGER,
-									},
-									Conditions: []*oraclesv1.Condition{},
-								},
-							},
-						},
-						OracleSpecForTradingTermination: &oraclesv1.OracleSpec{
-							Id:      "2",
-							PubKeys: []string{"0xDEADBEEF"},
-							Filters: []*oraclesv1.Filter{
-								{
-									Key: &oraclesv1.PropertyKey{
-										Name: "trading.terminated",
-										Type: oraclesv1.PropertyKey_TYPE_BOOLEAN,
-									},
-									Conditions: []*oraclesv1.Condition{},
-								},
-							},
-						},
-						OracleSpecBinding: &types.OracleSpecToFutureBinding{
-							SettlementPriceProperty:    "prices.ETH.value",
-							TradingTerminationProperty: "trading.terminated",
-						},
-					},
-				},
-			},
-			RiskModel: &types.TradableInstrumentLogNormalRiskModel{
-				LogNormalRiskModel: &types.LogNormalRiskModel{
-					RiskAversionParameter: num.DecimalFromFloat(0.01),
-					Tau:                   num.DecimalFromFloat(1.0 / 365.25 / 24),
-					Params: &types.LogNormalModelParams{
-						Mu:    num.DecimalZero(),
-						R:     num.DecimalFromFloat(0.016),
-						Sigma: num.DecimalFromFloat(0.09),
-					},
-				},
-			},
-		},
-		TradingModeConfig: &types.MarketContinuous{
-			Continuous: &types.ContinuousTrading{},
-		},
-		State: types.MarketStateActive,
-	}
-	bytes, err := engine.GetState("")
+
+	// Check that the starting state is empty
+	bytes, providers, err := engine.GetState("")
 	assert.NoError(t, err)
 	assert.Empty(t, bytes)
+	assert.Empty(t, providers)
 }
 
 func getMarketConfig() *types.Market {
@@ -259,7 +163,6 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Take the snapshot and hash
-
 	bytes, providers, err := engine.GetState("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
@@ -272,13 +175,14 @@ func TestValidMarketSnapshot(t *testing.T) {
 	bytes, err := engine.GetState("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
+	assert.Len(t, providers, 2)
+
 	hash1, err := engine.GetHash("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash1)
 
-
 	// Turn the bytes back into a payload and restore to a new engine
-	
+
 	engine2 := createEngine(t)
 	assert.NotNil(t, engine2)
 	snap := &snapshot.Payload{}
