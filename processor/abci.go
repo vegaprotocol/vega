@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
@@ -1097,7 +1098,7 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err er
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
 	app.blockCtx = ctx
 	err = app.checkpoint.Load(ctx, cpt)
-	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect {
+	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect && !errors.Is(err, checkpoint.ErrNoCheckpointExpectedToBeRestored) && !errors.Is(err, checkpoint.ErrIncompatibleHashes) {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}
 	// set flag in case the CP has been reloaded
