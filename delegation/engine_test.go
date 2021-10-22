@@ -123,13 +123,13 @@ func testLastReconTimeRoundTrip(t *testing.T) {
 	// get the has and serialised state
 	hash, err := testEngine.engine.GetHash(lastReconKey)
 	require.Nil(t, err)
-	state, err := testEngine.engine.GetState(lastReconKey)
+	state, _, err := testEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
 	hashNoChange, err := testEngine.engine.GetHash(lastReconKey)
 	require.Nil(t, err)
-	stateNoChange, err := testEngine.engine.GetState(lastReconKey)
+	stateNoChange, _, err := testEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -140,7 +140,7 @@ func testLastReconTimeRoundTrip(t *testing.T) {
 	hashChanged, err := testEngine.engine.GetHash(lastReconKey)
 	require.Nil(t, err)
 
-	stateChanged, err := testEngine.engine.GetState(lastReconKey)
+	stateChanged, _, err := testEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
 
 	require.False(t, bytes.Equal(hash, hashChanged))
@@ -156,7 +156,7 @@ func testLastReconTimeRoundTrip(t *testing.T) {
 
 	reloadedHash, err := newEngine.engine.GetHash(lastReconKey)
 	require.Nil(t, err)
-	reloadedState, err := newEngine.engine.GetState(lastReconKey)
+	reloadedState, _, err := newEngine.engine.GetState(lastReconKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(reloadedHash, hashChanged))
