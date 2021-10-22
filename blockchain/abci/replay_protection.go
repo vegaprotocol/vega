@@ -140,8 +140,8 @@ func (rp *replayProtectorNoop) GetHash(_ string) ([]byte, error) {
 	return nil, nil
 }
 
-func (rp *replayProtectorNoop) GetState(_ string) ([]byte, error) {
-	return nil, nil
+func (rp *replayProtectorNoop) GetState(_ string) ([]byte, []types.StateProvider, error) {
+	return nil, nil, nil
 }
 
 func (rp *replayProtectorNoop) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {

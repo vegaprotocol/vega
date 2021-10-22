@@ -90,9 +90,9 @@ func (s *Service) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (s *Service) GetState(k string) ([]byte, error) {
+func (s *Service) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := s.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
 func (s *Service) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {

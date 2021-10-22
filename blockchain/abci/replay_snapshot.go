@@ -80,15 +80,15 @@ func (rp *ReplayProtector) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (rp *ReplayProtector) GetState(k string) ([]byte, error) {
+func (rp *ReplayProtector) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := rp.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
 func (rp *ReplayProtector) Snapshot() (map[string][]byte, error) {
 	r := make(map[string][]byte, len(hashKeys))
 	for _, k := range hashKeys {
-		state, err := rp.GetState(k)
+		state, _, err := rp.GetState(k)
 		if err != nil {
 			return nil, err
 		}

@@ -474,9 +474,12 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 			continue
 		}
 		// hashes were different, we need to update
-		v, err := p.GetState(kNNS)
+		v, nsps, err := p.GetState(kNNS)
 		if err != nil {
 			return update, err
+		}
+		if len(nsps) > 0 {
+			e.AddProviders(nsps...)
 		}
 		e.log.Debug("State updated",
 			logging.String("node-key", k),

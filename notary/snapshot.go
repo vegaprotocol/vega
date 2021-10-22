@@ -90,9 +90,9 @@ func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (n *SnapshotNotary) GetState(k string) ([]byte, error) {
+func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
 	data, _, err := n.getSerialisedAndHash(k)
-	return data, err
+	return data, nil, err
 }
 
 func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {

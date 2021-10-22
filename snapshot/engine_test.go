@@ -94,11 +94,11 @@ func testAddProvidersDuplicateKeys(t *testing.T) {
 	data2 := hash2
 	for i, k := range keys1 {
 		prov1.EXPECT().GetHash(k).Times(1).Return(hash1[i], nil)
-		prov1.EXPECT().GetState(k).Times(1).Return(data1[i], nil)
+		prov1.EXPECT().GetState(k).Times(1).Return(data1[i], nil, nil)
 	}
 	// duplicate key is skipped
 	prov2.EXPECT().GetHash(keys2[1]).Times(1).Return(hash2[0], nil)
-	prov2.EXPECT().GetState(keys2[1]).Times(1).Return(data2[0], nil)
+	prov2.EXPECT().GetState(keys2[1]).Times(1).Return(data2[0], nil, nil)
 
 	engine.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	_, err := engine.Snapshot(engine.ctx)
@@ -135,7 +135,7 @@ func testTakeSnapshot(t *testing.T) {
 		require.NoError(t, err)
 		hash := crypto.Hash(data)
 		prov.EXPECT().GetHash(k).Times(2).Return(hash, nil)
-		prov.EXPECT().GetState(k).Times(1).Return(data, nil)
+		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
 	}
 
 	// take the snapshot knowing state has changed:
@@ -175,7 +175,7 @@ func testReloadSnapshot(t *testing.T) {
 		require.NoError(t, err)
 		hash := crypto.Hash(data)
 		prov.EXPECT().GetHash(k).Times(1).Return(hash, nil)
-		prov.EXPECT().GetState(k).Times(1).Return(data, nil)
+		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
 	}
 	hash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
@@ -244,7 +244,7 @@ func testReloadReplayProtectors(t *testing.T) {
 	old.EXPECT().Namespace().Times(2).Return(payload.Namespace())
 	old.EXPECT().Keys().Times(3).Return([]string{payload.Key()}) // this gets called a second time when replacing
 	old.EXPECT().GetHash(payload.Key()).Times(1).Return(hash, nil)
-	old.EXPECT().GetState(payload.Key()).Times(1).Return(data, nil)
+	old.EXPECT().GetState(payload.Key()).Times(1).Return(data, nil, nil)
 	old.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, pl *types.Payload) ([]types.StateProvider, error) {
 		switch dt := pl.Data.(type) {
 		case *types.PayloadReplayProtection:

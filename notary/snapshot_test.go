@@ -100,7 +100,7 @@ func TestNotarySnapshotRoundTrip(t *testing.T) {
 
 	populateNotary(t, notr)
 
-	state, err := notr.GetState(allKey)
+	state, _, err := notr.GetState(allKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}

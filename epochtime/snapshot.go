@@ -47,12 +47,12 @@ func (s *Svc) Snapshot() (map[string][]byte, error) {
 	return map[string][]byte{s.pl.Key(): s.data}, nil
 }
 
-func (s *Svc) GetState(k string) ([]byte, error) {
+func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != s.pl.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	return s.data, nil
+	return s.data, nil, nil
 }
 
 func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
