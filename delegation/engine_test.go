@@ -113,6 +113,54 @@ func Test(t *testing.T) {
 	t.Run("test roundtrip snapshot for active delegations", testActiveSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for pending delegations", testPendingSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for auto delegations", testAutoSnapshotRoundTrip)
+	t.Run("test roundtrip snapshot for last reconciliation time delegations", testLastReconTimeRoundTrip)
+}
+
+func testLastReconTimeRoundTrip(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 14, 7)
+
+	// get the has and serialised state
+	hash, err := testEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+	state, err := testEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	// verify hash is consistent in the absence of change
+	hashNoChange, err := testEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+	stateNoChange, err := testEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// advance 30 seconds
+	testEngine.engine.onChainTimeUpdate(context.Background(), testEngine.engine.lastReconciliation.Add(30*time.Second))
+	hashChanged, err := testEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+
+	stateChanged, err := testEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, hashChanged))
+	require.False(t, bytes.Equal(state, stateChanged))
+
+	newEngine := getEngine(t)
+	var lastRecon snapshot.Payload
+	proto.Unmarshal(stateChanged, &lastRecon)
+	payload := types.PayloadFromProto(&lastRecon)
+
+	_, err = newEngine.engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+
+	reloadedHash, err := newEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+	reloadedState, err := newEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(reloadedHash, hashChanged))
+	require.True(t, bytes.Equal(reloadedState, stateChanged))
 }
 
 // test round trip of active snapshot hash and serialisation.
@@ -2172,7 +2220,7 @@ func getEngine(t *testing.T) *testEngine {
 
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{}, ts)
-	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
+	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1, StartTime: time.Now()})
 	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))
 	engine.OnCompLevelChanged(context.Background(), 1.1)
 	engine.OnMinValidatorsChanged(context.Background(), 5)
