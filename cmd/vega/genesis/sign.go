@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/vegawallet/wallets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vegawallet/wallets"
 )
 
 type signCmd struct {

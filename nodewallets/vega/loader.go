@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vegawallet/wallet"
 	storev1 "code.vegaprotocol.io/vegawallet/wallet/store/v1"
 	"code.vegaprotocol.io/vegawallet/wallets"
-	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/crypto"
 )
 
 type WalletLoader struct {

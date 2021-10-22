@@ -268,6 +268,7 @@ pipeline {
                                     --disable gci \
                                     --disable forbidigo \
                                     --disable errcheck \
+                                    --disable errname \
                                     --disable dupl \
                                     --disable dogsled \
                                     --disable funlen \

@@ -46,7 +46,7 @@ func main() {
 		reportError("times flag have to be > 0")
 	}
 
-	f, err := os.OpenFile(opts.out, os.O_RDWR|os.O_CREATE, 0644)
+	f, err := os.OpenFile(opts.out, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		reportError("could not open the output file")
 	}

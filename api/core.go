@@ -9,7 +9,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/vegawallet/crypto"
 	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
@@ -21,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/vegawallet/crypto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"

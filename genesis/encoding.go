@@ -56,5 +56,5 @@ func UpdateInPlace(gs *GenesisState, tmCfgPath string) error {
 		return err
 	}
 
-	return ioutil.WriteFile(tmCfgPath, tmCfgBytes, 0644)
+	return ioutil.WriteFile(tmCfgPath, tmCfgBytes, 0o644)
 }
