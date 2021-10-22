@@ -730,6 +730,7 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_Witness:
 		ret.Data = dt
 	case *snapshot.Payload_DelegationLastReconciliationTime:
+		ret.Data = dt
 	case *snapshot.Payload_StakeVerifierDeposited:
 		ret.Data = dt
 	case *snapshot.Payload_StakeVerifierRemoved:
