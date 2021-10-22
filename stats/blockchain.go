@@ -76,6 +76,10 @@ func (b *Blockchain) IncHeight() {
 	b.height++
 }
 
+func (b *Blockchain) SetHeight(height uint64) {
+	b.height = height
+}
+
 // AverageTxSizeBytes return the average size in bytes of the
 // transaction sent to vega.
 func (b *Blockchain) AverageTxSizeBytes() uint64 {
