@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"code.vegaprotocol.io/go-wallet/crypto"
+	"code.vegaprotocol.io/vegawallet/crypto"
 	protoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"

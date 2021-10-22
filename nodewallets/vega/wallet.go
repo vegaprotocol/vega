@@ -1,7 +1,7 @@
 package vega
 
 import (
-	"code.vegaprotocol.io/go-wallet/wallet"
+	"code.vegaprotocol.io/vegawallet/wallet"
 	"code.vegaprotocol.io/vega/crypto"
 )
 

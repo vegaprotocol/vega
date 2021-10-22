@@ -177,7 +177,7 @@
 - [4012](https://github.com/vegaprotocol/vega/pull/4012) - Fix panic with vega watch
 - [3937](https://github.com/vegaprotocol/vega/pull/3937) - Include `TX_ERROR` events for type ALL subscribers
 - [3930](https://github.com/vegaprotocol/vega/pull/3930) - Added missing function and updated readme with details
-- [3918](https://github.com/vegaprotocol/vega/pull/3918) - Fix the build by updating the module version for the go-wallet
+- [3918](https://github.com/vegaprotocol/vega/pull/3918) - Fix the build by updating the module version for the vegawallet
 - [3901](https://github.com/vegaprotocol/vega/pull/3901) - Emit a `TxErrEvent` if withdraw submission is invalid
 - [3874](https://github.com/vegaprotocol/vega/pull/3874) - Fix binary version
 - [3884](https://github.com/vegaprotocol/vega/pull/3884) - Always async transaction
@@ -198,7 +198,7 @@
 - [#3805](https://github.com/vegaprotocol/vega/pull/3805) - Checkpoint engine hash and checkpoint creation
 - [#3785](https://github.com/vegaprotocol/vega/pull/3785) - Implement delegation commands
 - [#3714](https://github.com/vegaprotocol/vega/pull/3714) - Move protobufs into an external repository
-- [#3719](https://github.com/vegaprotocol/vega/pull/3719) - Replace vega wallet with call to the go-wallet
+- [#3719](https://github.com/vegaprotocol/vega/pull/3719) - Replace vega wallet with call to the vegawallet
 - [#3762](https://github.com/vegaprotocol/vega/pull/3762) - Refactor: Cleanup markets in domains types
 - [#3822](https://github.com/vegaprotocol/vega/pull/3822) - Testing: vega integration add subfolders for features
 - [#3794](https://github.com/vegaprotocol/vega/pull/3794) - Implement rewards transfer
