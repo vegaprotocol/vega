@@ -67,7 +67,7 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(h1, h2))
 
-	state, err := sv.GetState(key)
+	state, _, err := sv.GetState(key)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
@@ -116,7 +116,7 @@ func TestSVSnapshotRemoved(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(h1, h2))
 
-	state, err := sv.GetState(key)
+	state, _, err := sv.GetState(key)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}

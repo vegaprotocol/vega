@@ -66,7 +66,7 @@ func TestLimitSnapshotBlockCount(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(h1, h2))
 
-	state, err := lmt.GetState(allKey)
+	state, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
@@ -101,7 +101,7 @@ func TestLimitSnapshotBootstrapFinished(t *testing.T) {
 	require.True(t, lmt.CanProposeMarket())
 	require.True(t, lmt.BootstrapFinished())
 
-	state, err := lmt.GetState(allKey)
+	state, _, err := lmt.GetState(allKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
