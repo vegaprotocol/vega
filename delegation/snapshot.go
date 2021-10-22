@@ -3,6 +3,7 @@ package delegation
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
@@ -14,6 +15,7 @@ var hashKeys = []string{
 	activeKey,
 	pendingKey,
 	autoKey,
+	lastReconKey,
 }
 
 type delegationSnapshotState struct {
@@ -28,6 +30,15 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 
 func (e *Engine) Keys() []string {
 	return hashKeys
+}
+
+func (e *Engine) serialiseLastReconTime() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadDelegationLastReconTime{
+			LastReconcilicationTime: e.lastReconciliation,
+		},
+	}
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseActive() ([]byte, error) {
@@ -136,10 +147,17 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		err = e.restorePending(ctx, pl.DelegationPending)
 	case *types.PayloadDelegationAuto:
 		err = e.restoreAuto(pl.DelegationAuto)
+	case *types.PayloadDelegationLastReconTime:
+		err = e.restoreLastReconTime(ctx, pl.LastReconcilicationTime)
 	default:
 		err = types.ErrUnknownSnapshotType
 	}
 	return nil, err
+}
+
+func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time) error {
+	e.lastReconciliation = t
+	return nil
 }
 
 func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive) error {

@@ -114,6 +114,9 @@ type PayloadDelegationAuto struct {
 	DelegationAuto *DelegationAuto
 }
 
+type PayloadDelegationLastReconTime struct {
+	LastReconcilicationTime time.Time
+}
 type PayloadGovernanceActive struct {
 	GovernanceActive *GovernanceActive
 }
@@ -620,6 +623,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadEventForwarderFromProto(dt)
 	case *snapshot.Payload_Witness:
 		ret.Data = PayloadWitnessFromProto(dt)
+	case *snapshot.Payload_DelegationLastReconciliationTime:
+		ret.Data = PayloadDelegationLastReconTimeFromProto(dt)
 	}
 
 	return ret
@@ -710,6 +715,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_EventForwarder:
 		ret.Data = dt
 	case *snapshot.Payload_Witness:
+		ret.Data = dt
+	case *snapshot.Payload_DelegationLastReconciliationTime:
 		ret.Data = dt
 	}
 	return &ret
@@ -1007,6 +1014,34 @@ func (*PayloadNetParams) Key() string {
 
 func (*PayloadNetParams) Namespace() SnapshotNamespace {
 	return NetParamsSnapshot
+}
+
+func PayloadDelegationLastReconTimeFromProto(dl *snapshot.Payload_DelegationLastReconciliationTime) *PayloadDelegationLastReconTime {
+	return &PayloadDelegationLastReconTime{
+		LastReconcilicationTime: time.Unix(0, dl.DelegationLastReconciliationTime.LastReconciliationTime).UTC(),
+	}
+}
+
+func (p PayloadDelegationLastReconTime) IntoProto() *snapshot.Payload_DelegationLastReconciliationTime {
+	return &snapshot.Payload_DelegationLastReconciliationTime{
+		DelegationLastReconciliationTime: &snapshot.DelegationLastReconciliationTime{
+			LastReconciliationTime: p.LastReconcilicationTime.UnixNano(),
+		},
+	}
+}
+
+func (*PayloadDelegationLastReconTime) isPayload() {}
+
+func (p *PayloadDelegationLastReconTime) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadDelegationLastReconTime) Key() string {
+	return "lastReconTime"
+}
+
+func (*PayloadDelegationLastReconTime) Namespace() SnapshotNamespace {
+	return DelegationSnapshot
 }
 
 func PayloadDelegationAutoFromProto(da *snapshot.Payload_DelegationAuto) *PayloadDelegationAuto {
