@@ -278,6 +278,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 
 
 	// Turn the bytes back into a payload and restore to a new engine
+	
 	engine2 := createEngine(t)
 	assert.NotNil(t, engine2)
 	snap := &snapshot.Payload{}
