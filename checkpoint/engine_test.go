@@ -547,7 +547,7 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 	raw, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	// calling load with this checkpoint now is a noop
-	require.NoError(t, eng.Load(ctx, raw))
+	require.Error(t, eng.Load(ctx, raw))
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
@@ -563,7 +563,7 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 	// set up the engine to accept that hash
 	require.NoError(t, eng.UponGenesis(ctx, different))
 	// this doesn´t  call "load" on the components
-	require.NoError(t, eng.Load(ctx, raw))
+	require.Error(t, eng.Load(ctx, raw))
 	// now set the engine to accept the hash of the data we want to load
 	require.NoError(t, eng.UponGenesis(ctx, gen))
 	// now we do expect the calls to be made, but only once
@@ -572,7 +572,7 @@ func testLoadGenesisHashOnlyOnce(t *testing.T) {
 	}
 	require.NoError(t, eng.Load(ctx, raw))
 	// subsequent calls to load this checkpoint do nothing
-	require.NoError(t, eng.Load(ctx, raw))
+	require.Error(t, eng.Load(ctx, raw))
 }
 
 func testLoadAssets(t *testing.T) {
@@ -603,7 +603,7 @@ func testLoadAssets(t *testing.T) {
 	raw, err := eng.Checkpoint(ctx, time.Now())
 	require.NoError(t, err)
 	// calling load with this checkpoint now is a noop
-	require.NoError(t, eng.Load(ctx, raw))
+	require.Error(t, eng.Load(ctx, raw))
 	// pretend like the genesis block specified this hash to restore
 	set := genesis{
 		CP: &checkpoint.GenesisState{
@@ -629,7 +629,7 @@ func testLoadAssets(t *testing.T) {
 	collateral.EXPECT().EnableAsset(ctx, enabled).Times(1).Return(nil)
 	require.NoError(t, eng.Load(ctx, raw))
 	// subsequent calls to load this checkpoint do nothing
-	require.NoError(t, eng.Load(ctx, raw))
+	require.Error(t, eng.Load(ctx, raw))
 }
 
 type wrappedMock struct {

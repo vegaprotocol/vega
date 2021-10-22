@@ -14,8 +14,10 @@ import (
 )
 
 var (
-	ErrUnknownCheckpointName      = errors.New("component for checkpoint not registered")
-	ErrComponentWithDuplicateName = errors.New("multiple components with the same name")
+	ErrUnknownCheckpointName            = errors.New("component for checkpoint not registered")
+	ErrComponentWithDuplicateName       = errors.New("multiple components with the same name")
+	ErrNoCheckpointExpectedToBeRestored = errors.New("no checkpoint expected to be restored")
+	ErrIncompatibleHashes               = errors.New("incompatible hashes")
 
 	cpOrder = []types.CheckpointName{
 		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
@@ -220,10 +222,10 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 		)
 	}
 	if e.loadHash == nil {
-		return errors.New("no checkpoint expected to be restored")
+		return ErrNoCheckpointExpectedToBeRestored
 	}
 	if !bytes.Equal(e.loadHash, cpt.Hash) {
-		return fmt.Errorf("incompatible hashes, received(%v), expected(%v)", hex.EncodeToString(cpt.Hash), hex.EncodeToString(e.loadHash))
+		return fmt.Errorf("received(%v), expected(%v): %w", hex.EncodeToString(cpt.Hash), hex.EncodeToString(e.loadHash), ErrIncompatibleHashes)
 	}
 
 	// we found the checkpoint we need to load, set value to nil
