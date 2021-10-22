@@ -174,7 +174,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(bytes, snap)
 	assert.NoError(t, err)
-	err = engine2.LoadState(types.PayloadFromProto(snap))
+	_, err = engine2.LoadState(context.Background(), types.PayloadFromProto(snap))
 	assert.NoError(t, err)
 
 	// Check the hashes are the same
