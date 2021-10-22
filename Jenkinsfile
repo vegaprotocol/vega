@@ -160,28 +160,10 @@ pipeline {
 
         stage('Run linters') {
             parallel {
-                stage('static check') {
-                    options { retry(3) }
-                    steps {
-                        sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
-                    }
-                }
-                stage('go vet') {
-                    options { retry(3) }
-                    steps {
-                        sh 'go vet ./...'
-                    }
-                }
                 stage('check print') {
                     options { retry(3) }
                     steps {
                         sh 'make print_check'
-                    }
-                }
-                stage('misspell') {
-                    options { retry(3) }
-                    steps {
-                        sh 'golangci-lint run --disable-all --enable misspell'
                     }
                 }
                 stage('shellcheck') {
@@ -194,68 +176,7 @@ pipeline {
                 stage('70+ linters') {
                     steps {
                         sh '''#!/bin/bash -e
-                            golangci-lint run -v \
-                                --allow-parallel-runners \
-                                --config .golangci.toml \
-                                --enable-all \
-                                --color always \
-                                --timeout '5m0s' \
-                                --max-issues-per-linter 0 \
-                                --max-same-issues 0 \
-                                --disable promlinter \
-                                --disable wrapcheck \
-                                --disable wastedassign \
-                                --disable thelper \
-                                --disable testpackage \
-                                --disable tagliatelle \
-                                --disable stylecheck \
-                                --disable staticcheck \
-                                --disable predeclared \
-                                --disable paralleltest \
-                                --disable noctx \
-                                --disable nlreturn \
-                                --disable nilerr \
-                                --disable gomnd \
-                                --disable ifshort \
-                                --disable goerr113 \
-                                --disable gochecknoglobals \
-                                --disable forcetypeassert \
-                                --disable exportloopref \
-                                --disable exhaustivestruct \
-                                --disable exhaustive \
-                                --disable errorlint \
-                                --disable cyclop \
-                                --disable bodyclose \
-                                --disable wsl \
-                                --disable whitespace \
-                                --disable unparam \
-                                --disable unconvert \
-                                --disable scopelint \
-                                --disable revive \
-                                --disable prealloc \
-                                --disable nestif \
-                                --disable nakedret \
-                                --disable maligned \
-                                --disable makezero \
-                                --disable lll \
-                                --disable gosec \
-                                --disable gomoddirectives \
-                                --disable golint \
-                                --disable gofumpt \
-                                --disable godox \
-                                --disable godot \
-                                --disable gocritic \
-                                --disable goconst \
-                                --disable gocognit \
-                                --disable gochecknoinits \
-                                --disable funlen \
-                                --disable forbidigo \
-                                --disable errcheck \
-                                --disable errname \
-                                --disable dupl \
-                                --disable interfacer \
-                                --disable gocyclo \
-                                --disable gci
+                            golangci-lint run -v --config .golangci.toml
                         '''
                     }
                 }

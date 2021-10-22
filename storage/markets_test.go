@@ -26,8 +26,8 @@ func TestMarkets(t *testing.T) {
 	require.NoError(t, err)
 
 	config := storage.Config{
-		Level:          encoding.LogLevel{Level: logging.DebugLevel},
-		Markets:        storage.DefaultMarketStoreOptions(),
+		Level:   encoding.LogLevel{Level: logging.DebugLevel},
+		Markets: storage.DefaultMarketStoreOptions(),
 	}
 	marketStore, err := storage.NewMarkets(logging.NewTestLogger(), st.MarketsHome, config, func() {})
 	assert.NoError(t, err)
