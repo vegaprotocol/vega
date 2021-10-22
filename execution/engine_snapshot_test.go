@@ -42,9 +42,10 @@ func TestEmptyMarkets(t *testing.T) {
 	assert.NotNil(t, engine)
 
 	// Check that the starting state is empty
-	bytes, err := engine.GetState("")
+	bytes, providers, err := engine.GetState("")
 	assert.NoError(t, err)
 	assert.Empty(t, bytes)
+	assert.Empty(t, providers)
 }
 
 func getMarketConfig() *types.Market {
@@ -161,9 +162,11 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Take the snapshot and hash
-	bytes, err := engine.GetState("ALL")
+	bytes, providers, err := engine.GetState("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
+	assert.Len(t, providers, 2)
+
 	hash1, err := engine.GetHash("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash1)
@@ -174,7 +177,9 @@ func TestValidMarketSnapshot(t *testing.T) {
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(bytes, snap)
 	assert.NoError(t, err)
-	_, err = engine2.LoadState(context.Background(), types.PayloadFromProto(snap))
+	loadStateProviders, err := engine2.LoadState(context.Background(), types.PayloadFromProto(snap))
+	assert.Len(t, loadStateProviders, 2)
+
 	assert.NoError(t, err)
 
 	// Check the hashes are the same

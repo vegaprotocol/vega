@@ -2,6 +2,8 @@ package positions
 
 import (
 	"code.vegaprotocol.io/vega/events"
+	"context"
+
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -97,9 +99,13 @@ func (e *SnapshotEngine) Snapshot() (map[string][]byte, error) {
 	return map[string][]byte{e.marketID: state}, err
 }
 
+<<<<<<< HEAD
 func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
+=======
+func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+>>>>>>> implement state providers for markets
 	if e.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
@@ -107,7 +113,7 @@ func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 
 		// Check the payload is for this market
 		if e.marketID != pl.MarketPositions.MarketID {
-			return types.ErrUnknownSnapshotType
+			return nil, types.ErrUnknownSnapshotType
 		}
 
 		for _, p := range pl.MarketPositions.Positions {
@@ -123,10 +129,10 @@ func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 
 			e.changed = true
 		}
-		return nil
+		return nil, nil
 
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 

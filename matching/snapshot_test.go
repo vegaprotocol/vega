@@ -1,6 +1,7 @@
 package matching_test
 
 import (
+	"context"
 	"testing"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -177,7 +178,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(payloadMap[market], snap)
 	assert.NoError(t, err)
-	ob2.ob.LoadState(types.PayloadFromProto(snap))
+	ob2.ob.LoadState(context.TODO(), types.PayloadFromProto(snap))
 
 	// Get the hash and check it's the same as before
 	afterHash, err := ob2.ob.GetHash(key)

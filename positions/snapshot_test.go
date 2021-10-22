@@ -2,6 +2,7 @@ package positions_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"testing"
 	"time"
@@ -90,7 +91,8 @@ func TestSnapshotSaveAndLoad(t *testing.T) {
 	require.Nil(t, err)
 
 	snapEngine := getTestEngine(t)
-	err = snapEngine.LoadState(
+	_, err = snapEngine.LoadState(
+		context.TODO(),
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)

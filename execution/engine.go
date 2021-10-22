@@ -98,8 +98,10 @@ type Engine struct {
 	npv netParamsValues
 
 	// Snapshot
-	snapshotSerialised []byte
-	snapshotHash       []byte
+	snapshotSerialised           []byte
+	snapshotHash                 []byte
+	marketsStateProviders        []types.StateProvider
+	previouslySnapshottedMarkets map[string]struct{} // Map of previously snapshotted market IDs
 }
 
 type netParamsValues struct {
@@ -154,15 +156,16 @@ func NewEngine(
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:        log,
-		Config:     executionConfig,
-		markets:    map[string]*Market{},
-		time:       ts,
-		collateral: collateral,
-		idgen:      NewIDGen(),
-		broker:     broker,
-		oracle:     oracle,
-		npv:        defaultNetParamsValues(),
+		log:                          log,
+		Config:                       executionConfig,
+		markets:                      map[string]*Market{},
+		time:                         ts,
+		collateral:                   collateral,
+		idgen:                        NewIDGen(),
+		broker:                       broker,
+		oracle:                       oracle,
+		npv:                          defaultNetParamsValues(),
+		previouslySnapshottedMarkets: make(map[string]struct{}),
 	}
 
 	// Add time change event handler

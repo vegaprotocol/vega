@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"context"
 	"log"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -77,9 +78,9 @@ func (b *OrderBook) copyOrders(obs *OrderBookSide) []*types.Order {
 	return orders
 }
 
-func (b *OrderBook) LoadState(payload *types.Payload) error {
+func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if b.Namespace() != payload.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	var mb *types.MatchingBook
@@ -88,7 +89,7 @@ func (b *OrderBook) LoadState(payload *types.Payload) error {
 	case *types.PayloadMatchingBook:
 		mb = pl.MatchingBook
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 
 	// Check we have an empty book here or else we should panic
@@ -115,7 +116,7 @@ func (b *OrderBook) LoadState(payload *types.Payload) error {
 	if b.auction {
 		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
 	}
-	return nil
+	return nil, nil
 }
 
 func (b *OrderBook) addOrderToMaps(o *types.Order) {
