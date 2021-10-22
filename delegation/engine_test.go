@@ -11,6 +11,7 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/broker/mocks"
+	dmocks "code.vegaprotocol.io/vega/delegation/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -180,7 +181,7 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	proto.Unmarshal(state, &pending)
 	payload := types.PayloadFromProto(&pending)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
-	err = testEngine.engine.LoadState(context.Background(), payload)
+	_, err = testEngine.engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := testEngine.engine.GetHash(pendingKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
@@ -956,6 +957,7 @@ func testPreprocessForRewardingWithForceUndelegateSingleValidator(t *testing.T) 
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(2)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(0)
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{StartTime: epochStart, Seq: 1})
 
 	// call preprocess to update the state based on the changes in staking account
 	testEngine.engine.preprocessEpochForRewarding(context.Background(), types.Epoch{StartTime: epochStart, EndTime: epochEnd, Seq: 1})
@@ -986,7 +988,7 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorNoRemainder(t *t
 	testEngine.topology.nodeToIsValidator["node3"] = true
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart] = make(map[string]*num.Uint)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(15)
-
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{StartTime: epochStart, Seq: 1})
 	// setup delegation
 	// node1 -> 10
 	// 		    party1 -> 10
@@ -1059,6 +1061,7 @@ func testPreprocessForRewardingWithForceUndelegateMultiValidatorWithRemainder(t 
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party1"] = num.NewUint(240)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party2"] = num.NewUint(50)
 	testEngine.stakingAccounts.partyToStakeForEpoch[epochStart]["party3"] = num.NewUint(3)
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{StartTime: epochStart, Seq: 1})
 
 	// setup delegation
 	// node1 -> 120
@@ -2165,8 +2168,10 @@ func getEngine(t *testing.T) *testEngine {
 	logger := logging.NewTestLogger()
 	stakingAccounts := newTestStakingAccount()
 	topology := newTestTopology()
+	ts := dmocks.NewMockTimeService(ctrl)
 
-	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{})
+	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{}, ts)
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
 	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))
 	engine.OnCompLevelChanged(context.Background(), 1.1)

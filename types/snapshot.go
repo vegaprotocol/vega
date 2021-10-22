@@ -1,6 +1,7 @@
 package types
 
 import (
+	"context"
 	"encoding/hex"
 	"errors"
 
@@ -12,28 +13,41 @@ import (
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
+// StateProvider - not a huge fan of this interface being here, but it ensures that the state providers
+// don't have to import the snapshot package
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_provider_mock.go -package mocks code.vegaprotocol.io/vega/types StateProvider
+type StateProvider interface {
+	Namespace() SnapshotNamespace
+	Keys() []string
+	GetHash(key string) ([]byte, error)
+	GetState(key string) ([]byte, error)
+	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)
+}
+
 type SnapshotNamespace string
 
 const (
-	undefinedSnapshot  SnapshotNamespace = ""
-	AppSnapshot        SnapshotNamespace = "app"
-	AssetsSnapshot     SnapshotNamespace = "assets"
-	BankingSnapshot    SnapshotNamespace = "banking"
-	CheckpointSnapshot SnapshotNamespace = "checkpoint"
-	CollateralSnapshot SnapshotNamespace = "collateral"
-	NetParamsSnapshot  SnapshotNamespace = "netparams"
-	DelegationSnapshot SnapshotNamespace = "delegation"
-	GovernanceSnapshot SnapshotNamespace = "governance"
-	PositionsSnapshot  SnapshotNamespace = "positions"
-	MatchingSnapshot   SnapshotNamespace = "matching"
-	ExecutionSnapshot  SnapshotNamespace = "execution"
-	EpochSnapshot      SnapshotNamespace = "epoch"
-	StakingSnapshot    SnapshotNamespace = "staking"
-	IDGenSnapshot      SnapshotNamespace = "idgenerator"
-	RewardSnapshot     SnapshotNamespace = "rewards"
-	SpamSnapshot       SnapshotNamespace = "spam"
-	LimitSnapshot      SnapshotNamespace = "limits"
-	NotarySnapshot     SnapshotNamespace = "notary"
+	undefinedSnapshot        SnapshotNamespace = ""
+	AppSnapshot              SnapshotNamespace = "app"
+	AssetsSnapshot           SnapshotNamespace = "assets"
+	BankingSnapshot          SnapshotNamespace = "banking"
+	CheckpointSnapshot       SnapshotNamespace = "checkpoint"
+	CollateralSnapshot       SnapshotNamespace = "collateral"
+	NetParamsSnapshot        SnapshotNamespace = "netparams"
+	DelegationSnapshot       SnapshotNamespace = "delegation"
+	GovernanceSnapshot       SnapshotNamespace = "governance"
+	PositionsSnapshot        SnapshotNamespace = "positions"
+	MatchingSnapshot         SnapshotNamespace = "matching"
+	ExecutionSnapshot        SnapshotNamespace = "execution"
+	EpochSnapshot            SnapshotNamespace = "epoch"
+	StakingSnapshot          SnapshotNamespace = "staking"
+	IDGenSnapshot            SnapshotNamespace = "idgenerator"
+	RewardSnapshot           SnapshotNamespace = "rewards"
+	SpamSnapshot             SnapshotNamespace = "spam"
+	LimitSnapshot            SnapshotNamespace = "limits"
+	NotarySnapshot           SnapshotNamespace = "notary"
+	ReplayProtectionSnapshot SnapshotNamespace = "replay"
+	EventForwarderSnapshot   SnapshotNamespace = "eventforwarder"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB
@@ -58,19 +72,26 @@ var (
 		"spam":       SpamSnapshot,
 	}
 
-	ErrSnapshotHashMismatch      = errors.New("snapshot hashes do not match")
-	ErrSnapshotMetaMismatch      = errors.New("snapshot metadata does not match")
-	ErrUnknownSnapshotNamespace  = errors.New("unknown snapshot namespace")
-	ErrNoPrefixFound             = errors.New("no prefix in chunk keys")
-	ErrInconsistentNamespaceKeys = errors.New("chunk contains several namespace keys")
-	ErrChunkHashMismatch         = errors.New("loaded chunk hash does not match metadata")
-	ErrChunkOutOfRange           = errors.New("chunk number out of range")
-	ErrUnknownSnapshot           = errors.New("no shapshot to reject")
-	ErrMissingChunks             = errors.New("missing previous chunks")
-	ErrSnapshotRetryLimit        = errors.New("could not load snapshot, retry limit reached")
-	ErrSnapshotKeyDoesNotExist   = errors.New("unknown key for snapshot")
-	ErrInvalidSnapshotNamespace  = errors.New("invalid snapshot namespace")
-	ErrUnknownSnapshotType       = errors.New("snapshot data type not known")
+	ErrSnapshotHashMismatch       = errors.New("snapshot hashes do not match")
+	ErrSnapshotMetaMismatch       = errors.New("snapshot metadata does not match")
+	ErrUnknownSnapshotNamespace   = errors.New("unknown snapshot namespace")
+	ErrNoPrefixFound              = errors.New("no prefix in chunk keys")
+	ErrInconsistentNamespaceKeys  = errors.New("chunk contains several namespace keys")
+	ErrChunkHashMismatch          = errors.New("loaded chunk hash does not match metadata")
+	ErrChunkOutOfRange            = errors.New("chunk number out of range")
+	ErrUnknownSnapshot            = errors.New("no shapshot to reject")
+	ErrMissingChunks              = errors.New("missing previous chunks")
+	ErrSnapshotRetryLimit         = errors.New("could not load snapshot, retry limit reached")
+	ErrSnapshotKeyDoesNotExist    = errors.New("unknown key for snapshot")
+	ErrInvalidSnapshotNamespace   = errors.New("invalid snapshot namespace")
+	ErrUnknownSnapshotType        = errors.New("snapshot data type not known")
+	ErrUnknownSnapshotChunkHeight = errors.New("no snapshot or chunk found for given height")
+	ErrInvalidSnapshotFormat      = errors.New("invalid snapshot format")
+	ErrSnapshotFormatMismatch     = errors.New("snapshot formats do not match")
+	ErrUnexpectedKey              = errors.New("snapshot namespace has unknown/unexpected key(s)")
+	ErrNodeHashMismatch           = errors.New("hash of a node does not match the hash from the snapshot meta")
+	ErrNoSnapshot                 = errors.New("no snapshot found")
+	ErrMissingSnapshotVersion     = errors.New("unknown snapshot version")
 )
 
 type SnapshotFormat = snapshot.Format
@@ -118,35 +139,40 @@ func (s Snapshot) ToTM() *tmtypes.Snapshot {
 	}
 }
 
-func SnapshotFromIAVL(tree *iavl.ImmutableTree, keys []string) (*Snapshot, error) {
+func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 	snap := Snapshot{
 		Hash: tree.Hash(),
 		Meta: &Metadata{
 			Version:     tree.Version(),
-			NodeHashes:  make([]*NodeHash, 0, len(keys)),
-			ChunkHashes: make([]string, 0, len(keys)), // this is probably premature
+			NodeHashes:  []*NodeHash{},
+			ChunkHashes: []string{},
 		},
-		Nodes: make([]*Payload, 0, len(keys)), // each node as a payload
+		Nodes: []*Payload{},
 	}
-	for _, k := range keys {
-		_, val := tree.Get([]byte(k))
+	var err error
+	stopped := tree.Iterate(func(key, val []byte) bool {
 		pl := &snapshot.Payload{}
-		if err := proto.Unmarshal(val, pl); err != nil {
-			return nil, err
+		if err = proto.Unmarshal(val, pl); err != nil {
+			return true // It appears that returning true stops the iterator
 		}
 		payload := PayloadFromProto(pl)
-		payload.raw = val
+		payload.raw = val[:]
 		hash := hex.EncodeToString(crypto.Hash(val))
 		nh := &NodeHash{
-			FullKey:   k,
+			FullKey:   payload.GetTreeKey(),
 			Namespace: payload.Namespace(),
 			Key:       payload.Key(),
 			Hash:      hash,
 		}
 		snap.Meta.NodeHashes = append(snap.Meta.NodeHashes, nh)
-		snap.Nodes = append(snap.Nodes, PayloadFromProto(pl))
+		snap.Nodes = append(snap.Nodes, payload)
+		return false
+	})
+	// we had to abort, there was an error
+	if stopped && err != nil {
+		return nil, err
 	}
-	// divide into chunks, and set the meta...
+	// set chunks, ready to send in case we need it
 	snap.nodesToChunks()
 	return &snap, nil
 }
@@ -269,6 +295,10 @@ func (s *Snapshot) unmarshalChunks() error {
 	s.DataChunks = []*Chunk{
 		ChunkFromProto(sChunk),
 	}
+	s.Nodes = make([]*Payload, 0, len(sChunk.Data))
+	for _, pl := range sChunk.Data {
+		s.Nodes = append(s.Nodes, PayloadFromProto(pl))
+	}
 	return nil
 }
 
@@ -286,4 +316,12 @@ func namespaceFromString(s string) (SnapshotNamespace, error) {
 
 func (n SnapshotNamespace) String() string {
 	return string(n)
+}
+
+func SnapshotFromatFromU32(f uint32) (SnapshotFormat, error) {
+	i32 := int32(f)
+	if _, ok := snapshot.Format_name[i32]; !ok {
+		return SnapshotFormatUnspecified, ErrInvalidSnapshotFormat
+	}
+	return SnapshotFormat(i32), nil
 }

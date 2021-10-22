@@ -13,6 +13,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
+
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
@@ -61,7 +62,9 @@ type Snapshot interface {
 	RejectSnapshot() error
 	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
 	GetMissingChunks() []uint32
-	ApplySnapshot() error
+	ApplySnapshot(ctx context.Context) error
+	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
+	AddProviders(provs ...types.StateProvider)
 }
 
 type App struct {
@@ -133,6 +136,7 @@ func NewApp(
 	checkpoint Checkpoint,
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
+	snapshot Snapshot,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -171,8 +175,11 @@ func NewApp(
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
+		snapshot:        snapshot,
 	}
 
+	// register replay protection if needed:
+	app.abci.RegisterSnapshot(snapshot)
 	// setup handlers
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
@@ -326,7 +333,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 	}
 }
 
-func (app *App) ApplySnapshotChunk(req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
 	chunk := types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
@@ -360,9 +367,19 @@ func (app *App) ApplySnapshotChunk(req tmtypes.RequestApplySnapshotChunk) tmtype
 	}
 	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
 	if ready {
-		_ = app.snapshot.ApplySnapshot()
+		_ = app.snapshot.ApplySnapshot(ctx)
 	}
 	return resp
+}
+
+func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
+	if err != nil {
+		return tmtypes.ResponseLoadSnapshotChunk{}
+	}
+	return tmtypes.ResponseLoadSnapshotChunk{
+		Chunk: raw.Data,
+	}
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
@@ -372,6 +389,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
+	app.abci.RegisterSnapshot(app.snapshot)
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -454,7 +472,7 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 	now := app.currentTimestamp
 	height, _ := vgcontext.BlockHeightFromContext(app.blockCtx)
 	cpFileName := fmt.Sprintf("%s-%d-%s.cp", now.Format("20060102150405"), height, hex.EncodeToString(cpt.Hash))
-	cpFilePath, err := app.vegaPaths.StatePathFor(filepath.Join(paths.CheckpointStateHome, cpFileName))
+	cpFilePath, err := app.vegaPaths.CreateStatePathFor(paths.StatePath(filepath.Join(paths.CheckpointStateHome.String(), cpFileName)))
 	if err != nil {
 		return fmt.Errorf("couldn't get path for checkpoint file: %w", err)
 	}

@@ -44,30 +44,20 @@ func (e *Engine) GetState(k string) ([]byte, error) {
 	return e.state.getState(k)
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(e.state.hashKeys))
-	for _, k := range e.state.hashKeys {
-		state, err := e.state.getState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return ErrInvalidSnapshotNamespace
+		return nil, ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadCollateralAssets:
-		return e.restoreAssets(ctx, pl.CollateralAssets)
+		err := e.restoreAssets(ctx, pl.CollateralAssets)
+		return nil, err
 	case *types.PayloadCollateralAccounts:
-		return e.restoreAccounts(ctx, pl.CollateralAccounts)
+		err := e.restoreAccounts(ctx, pl.CollateralAccounts)
+		return nil, err
 	default:
-		return ErrUnknownSnapshotType
+		return nil, ErrUnknownSnapshotType
 	}
 }
 
@@ -122,8 +112,8 @@ func newAccState() *accState {
 		serialised: map[string][]byte{},
 	}
 	state.hashKeys = []string{
-		state.accPL.Key(),
 		state.assPL.Key(),
+		state.accPL.Key(),
 	}
 	for _, k := range state.hashKeys {
 		state.hashes[k] = nil

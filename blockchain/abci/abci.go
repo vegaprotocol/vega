@@ -130,3 +130,31 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 
 	return NewResponseDeliverTx(types.CodeTypeOK, "")
 }
+
+func (app *App) ListSnapshots(req types.RequestListSnapshots) (resp types.ResponseListSnapshots) {
+	if app.OnListSnapshots != nil {
+		resp = app.OnListSnapshots(req)
+	}
+	return
+}
+
+func (app *App) OfferSnapshot(req types.RequestOfferSnapshot) (resp types.ResponseOfferSnapshot) {
+	if app.OnOfferSnapshot != nil {
+		resp = app.OnOfferSnapshot(req)
+	}
+	return
+}
+
+func (app *App) LoadSnapshotChunk(req types.RequestLoadSnapshotChunk) (resp types.ResponseLoadSnapshotChunk) {
+	if app.OnLoadSnapshotChunk != nil {
+		resp = app.OnLoadSnapshotChunk(req)
+	}
+	return
+}
+
+func (app *App) ApplySnapshotChunk(req types.RequestApplySnapshotChunk) (resp types.ResponseApplySnapshotChunk) {
+	if app.OnApplySnapshotChunk != nil {
+		resp = app.OnApplySnapshotChunk(app.ctx, req)
+	}
+	return
+}

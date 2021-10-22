@@ -45,7 +45,7 @@ type WalletLoader struct {
 }
 
 func InitialiseWalletLoader(vegaPaths paths.Paths) (*WalletLoader, error) {
-	walletsHome, err := vegaPaths.DataDirFor(paths.FaucetWalletsDataHome)
+	walletsHome, err := vegaPaths.CreateDataDirFor(paths.FaucetWalletsDataHome)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get directory for %s: %w", paths.FaucetWalletsDataHome, err)
 	}

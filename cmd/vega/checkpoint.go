@@ -84,7 +84,7 @@ func (c *checkpointRestore) Execute(_ []string) error {
 }
 
 func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, error) {
-	vegaPaths := paths.NewPaths(checkpointCmd.VegaHome)
+	vegaPaths := paths.New(checkpointCmd.VegaHome)
 
 	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {

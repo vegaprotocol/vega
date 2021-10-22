@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
@@ -163,7 +164,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams,
 	)
 
-	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService)
+	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService, timeService)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.DelegationMinAmount,
 		Watcher: delegationEngine.OnMinAmountChanged,
@@ -178,6 +179,11 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
+	snapshot, err := snapshot.New(ctx, vegaPaths, snapshot.NewDefaultConfig(), log, timeService)
+	if err != nil {
+		panic(err)
+	}
+
 	app := processor.NewApp(
 		log,
 		&paths.DefaultPaths{},
@@ -208,6 +214,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		cp,
 		spamEngine,
 		nil,
+		snapshot,
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {

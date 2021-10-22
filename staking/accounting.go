@@ -39,6 +39,9 @@ type Accounting struct {
 
 	stakingAssetTotalSupply *num.Uint
 	ethCfg                  vgproto.EthereumConfig
+
+	// snapshot bits
+	accState accountingSnapshotState
 }
 
 func NewAccounting(
@@ -57,6 +60,7 @@ func NewAccounting(
 		ethClient:               ethClient,
 		accounts:                map[string]*StakingAccount{},
 		stakingAssetTotalSupply: num.Zero(),
+		accState:                accountingSnapshotState{changed: true},
 	}
 }
 
@@ -79,6 +83,7 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 		acc = NewStakingAccount(evt.Party)
 		a.accounts[evt.Party] = acc
 		a.hashableAccounts = append(a.hashableAccounts, acc)
+		a.accState.changed = true
 	}
 
 	// errors here do not really matter I'd say
@@ -94,6 +99,7 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 			logging.Error(err))
 		return
 	}
+	a.accState.changed = true
 }
 
 // GetAllAvailableBalances returns the staking balance for all parties.

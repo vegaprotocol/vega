@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/shared/paths"
+	"github.com/jessevdk/go-flags"
+
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	"github.com/jessevdk/go-flags"
 )
 
 type NodeCmd struct {
@@ -37,7 +38,7 @@ func (cmd *NodeCmd) Execute(args []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(cmd.VegaHome)
+	vegaPaths := paths.New(cmd.VegaHome)
 
 	confWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {

@@ -346,12 +346,13 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		}
 
 		// emit events
+		timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
 		payoutEvents := map[string]*events.RewardPayout{}
 		parties := []string{}
 		for party, amount := range po.partyToAmount {
 			proportion := amount.ToDecimal().Div(po.totalReward.ToDecimal())
 			pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
-			payoutEvents[party] = events.NewRewardPayout(ctx, po.timestamp, party, po.epochSeq, po.asset, amount, pct)
+			payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct)
 			parties = append(parties, party)
 		}
 		sort.Strings(parties)
@@ -365,7 +366,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			e.distributePayout(ctx, po)
 			return
 		}
-		timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
+
 		_, ok := e.pendingPayouts[timeToSend]
 		if !ok {
 			e.pendingPayouts[timeToSend] = []*payout{po}

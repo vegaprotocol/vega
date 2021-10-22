@@ -5,6 +5,7 @@ import (
 
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
+
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
@@ -40,7 +41,7 @@ func (opts *importCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
+	vegaPaths := paths.New(rootCmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {

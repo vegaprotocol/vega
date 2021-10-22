@@ -38,6 +38,7 @@ import (
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
@@ -81,6 +82,7 @@ type Config struct {
 	Rewards           rewards.Config     `group:"Rewards" namespace:"rewards"`
 	Delegation        delegation.Config  `group:"Delegation" namespace:"delegation"`
 	Spam              spam.Config        `group:"Spam" namespace:"spam"`
+	Snapshot          snapshot.Config    `group:"Snapshot" namespace:"snapshot"`
 
 	Pprof        pprof.Config `group:"Pprof" namespace:"pprof"`
 	UlimitNOFile uint64       `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
@@ -123,6 +125,7 @@ func NewDefaultConfig() Config {
 		Staking:           staking.NewDefaultConfig(),
 		Broker:            broker.NewDefaultConfig(),
 		UlimitNOFile:      8192,
+		Snapshot:          snapshot.NewDefaultConfig(),
 	}
 }
 
@@ -131,7 +134,7 @@ type Loader struct {
 }
 
 func InitialiseLoader(vegaPaths paths.Paths) (*Loader, error) {
-	configFilePath, err := vegaPaths.ConfigPathFor(paths.NodeDefaultConfigFile)
+	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.NodeDefaultConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get path for %s: %w", paths.NodeDefaultConfigFile, err)
 	}

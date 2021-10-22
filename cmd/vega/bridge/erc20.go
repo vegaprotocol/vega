@@ -75,7 +75,7 @@ func (opts *ERC20SetDepositMinimumCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -130,7 +130,7 @@ func (opts *ERC20SetDepositMaximumCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -187,7 +187,7 @@ func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -243,7 +243,7 @@ func (opts *ERC20ListAssetCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -292,7 +292,7 @@ func (opts *ERC20RemoveAssetCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -341,7 +341,7 @@ func (opts *ERC20AddSignerCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -389,7 +389,7 @@ func (opts *ERC20RemoveSignerCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -441,7 +441,7 @@ func (opts *ERC20SetThresholdCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(erc20Cmd.VegaHome)
+	vegaPaths := paths.New(erc20Cmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {

@@ -3,6 +3,7 @@ package nodewallet
 import (
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
+
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
@@ -23,7 +24,7 @@ func (opts *showCmd) Execute(_ []string) error {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
+	vegaPaths := paths.New(rootCmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {

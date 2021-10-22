@@ -228,6 +228,7 @@ pipeline {
                                     --max-same-issues 0 \
                                     --allow-parallel-runners \
                                     --config .golangci.toml \
+                                    --timeout '5m0s' \
                                     --enable-all \
                                     --color always \
                                     --disable promlinter \
@@ -358,6 +359,7 @@ pipeline {
                     steps {
                         script {
                             systemTests ignoreFailure: !isPRBuild(),
+                                timeout: 30,
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 goWallet: params.GO_WALLET_BRANCH,
@@ -373,6 +375,7 @@ pipeline {
                     steps {
                         script {
                             systemTestsLNL ignoreFailure: true,
+                                timeout: 30,
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 goWallet: params.GO_WALLET_BRANCH,

@@ -20,3 +20,5 @@ proto/**.orig
 *.pb.go-re
 gomock_reflect_*
 integration.test
+*.patch
+
