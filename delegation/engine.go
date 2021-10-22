@@ -731,9 +731,8 @@ func (e *Engine) sortNodes(nodes map[string]*num.Uint) []string {
 	return nodeIDs
 }
 
-// preprocessEpoch is called at the end of an epoch and updates the state to be returned for rewarding calculation
-// check balance for the epoch duration and undelegate if delegations don't have sufficient cover
-// the state of the engine by the end of this method reflects the state to be used for reward engine.
+// reconcileAssociationWithNomination makes sure that current epoch's nomination has sufficient cover in association and if not
+// adjusts the nomination accordingly.
 func (e *Engine) reconcileAssociationWithNomination(ctx context.Context, from, to time.Time, epochSeq uint64) {
 	parties := make([]string, 0, len(e.partyDelegationState))
 	for party := range e.partyDelegationState {
@@ -1003,10 +1002,32 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 				nodeToAmount:   map[string]*num.Uint{},
 			}
 		}
+
+		// partyBalance must be >= totalDelegated as we've already adjusted the balance before this is called, if not just log and carry on
+		if partyBalance.LT(committedDelegations.totalDelegated) {
+			e.log.Warn("Party balance is less than delegated balance when processing pending delegations",
+				logging.Uint64("epoch", epoch.Seq),
+				logging.String("party", party),
+				logging.String("associationBalance", partyBalance.String()),
+				logging.String("delegationBalance", committedDelegations.totalDelegated.String()),
+			)
+			continue
+		}
+
+		// this is how much is left associated unnominated
 		availableForDelegation := num.Zero().Sub(partyBalance, committedDelegations.totalDelegated)
+
+		// if there's no balance left, nothing to do here
+		if availableForDelegation.IsZero() {
+			continue
+		}
 
 		// apply delegation deterministically
 		nodeIDs := e.sortNodes(pending.nodeToDelegateAmount)
+		nodeIDToExpectedAmount := make([]*num.Uint, 0, len(nodeIDs))
+		totalExpectedDelegation := num.Zero()
+
+		// first calculate how much we're expecting to delegate to each node and the total delegation amount
 		for _, nodeID := range nodeIDs {
 			_, ok := pending.nodeToDelegateAmount[nodeID]
 			if !ok {
@@ -1027,14 +1048,44 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 				}
 			}
 
-			// check that the amount is not greater than the available for delegation
-			if amount.GT(availableForDelegation) || amount.IsZero() {
+			// record the relevant amount and add it to the total
+			nodeIDToExpectedAmount = append(nodeIDToExpectedAmount, amount)
+			totalExpectedDelegation.AddSum(amount)
+
+			if amount.IsZero() {
 				if e.log.GetLevel() <= logging.DebugLevel {
 					e.log.Debug("the amount requested for delegation is greater than available for delegation at end of epoch", logging.String("party", party), logging.String("nodeID", nodeID), logging.BigUint("amt", amount))
 				}
 				continue
 			}
+		}
 
+		// if we don't have enough to satisfy the delegation amounts - prorate them with respect to how much is available
+		if totalExpectedDelegation.GT(availableForDelegation) {
+			totalActual := num.Zero()
+			for i, amt := range nodeIDToExpectedAmount {
+				factor := amt.ToDecimal().Div(totalExpectedDelegation.ToDecimal())
+				nodeIDToExpectedAmount[i], _ = num.UintFromDecimal(availableForDelegation.ToDecimal().Mul(factor))
+				totalActual.AddSum(nodeIDToExpectedAmount[i])
+			}
+			// account for precision error by adjusting the first non zero balance by the error
+			if totalActual.GT(availableForDelegation) {
+				precisionError := num.Zero().Sub(totalActual, availableForDelegation)
+				for i := range nodeIDToExpectedAmount {
+					if nodeIDToExpectedAmount[i].GT(precisionError) {
+						nodeIDToExpectedAmount[i] = num.Zero().Sub(nodeIDToExpectedAmount[i], precisionError)
+						break
+					}
+				}
+			}
+		}
+
+		// no apply the delegations with the prorated amount
+		for i, nodeID := range nodeIDs {
+			amount := nodeIDToExpectedAmount[i]
+			if amount.IsZero() {
+				continue
+			}
 			// update the validator delegation balance
 			currentValidatorDelegation, ok := e.nodeDelegationState[nodeID]
 			if !ok {
