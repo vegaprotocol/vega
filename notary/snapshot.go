@@ -100,14 +100,12 @@ func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) 
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
-	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadNotary:
-		err = n.restoreNotary(pl.Notary)
+		return nil, n.restoreNotary(pl.Notary)
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
 
 // serialiseLimits returns the engine's limit data as marshalled bytes.

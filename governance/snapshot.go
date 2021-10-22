@@ -134,18 +134,16 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
-	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadGovernanceActive:
-		err = e.restoreActiveProposals(pl.GovernanceActive)
+		return nil, e.restoreActiveProposals(pl.GovernanceActive)
 	case *types.PayloadGovernanceEnacted:
-		err = e.restoreEnactedProposals(pl.GovernanceEnacted)
+		return nil, e.restoreEnactedProposals(pl.GovernanceEnacted)
 	case *types.PayloadGovernanceNode:
-		err = e.restoreNodeProposals(pl.GovernanceNode)
+		return nil, e.restoreNodeProposals(pl.GovernanceNode)
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
 
 func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {

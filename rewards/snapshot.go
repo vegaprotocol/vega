@@ -135,15 +135,12 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
-	var err error
-	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadRewardsPayout:
-		err = e.restorePayout(ctx, pl.RewardsPendingPayouts)
+		return nil, e.restorePayout(ctx, pl.RewardsPendingPayouts)
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
 
 func (e *Engine) restorePayout(ctx context.Context, rpp *types.RewardsPendingPayouts) error {

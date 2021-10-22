@@ -60,7 +60,6 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
-	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEpoch:
 		snap := pl.EpochState
@@ -75,9 +74,8 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 		s.readyToEndEpoch = snap.ReadyToEndEpoch
 		s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
 
-		err = s.serialise()
+		return nil, s.serialise()
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
