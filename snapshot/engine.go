@@ -101,6 +101,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.PositionsSnapshot, // again, needs a market
 	types.EpochSnapshot,
 	types.StakingSnapshot,
+	types.StakeVerifierSnapshot,
 	types.SpamSnapshot,
 	types.LimitSnapshot,
 	types.ReplayProtectionSnapshot,
