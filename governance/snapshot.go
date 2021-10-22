@@ -173,7 +173,7 @@ func (e *Engine) restoreEnactedProposals(enacted *types.GovernanceEnacted) error
 
 func (e *Engine) restoreNodeProposals(node *types.GovernanceNode) error {
 	for _, p := range node.Proposals {
-		e.nodeProposalValidation.Start(p)
+		e.nodeProposalValidation.restore(p)
 	}
 	e.gss.changed[nodeValidationKey] = true
 	return nil

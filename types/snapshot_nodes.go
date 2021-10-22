@@ -154,6 +154,22 @@ type PayloadNotary struct {
 	Notary *Notary
 }
 
+type PayloadWitness struct {
+	Witness *Witness
+}
+
+type Witness struct {
+	NeedResendResources []string
+	Resources           []*Resource
+}
+
+type Resource struct {
+	ID         string
+	CheckUntil time.Time
+	Votes      []string
+	State      uint32
+}
+
 type PayloadReplayProtection struct {
 	Blocks []*ReplayBlockTransactions
 }
@@ -602,7 +618,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadReplayProtectionFromProto(dt)
 	case *snapshot.Payload_EventForwarder:
 		ret.Data = PayloadEventForwarderFromProto(dt)
+	case *snapshot.Payload_Witness:
+		ret.Data = PayloadWitnessFromProto(dt)
 	}
+
 	return ret
 }
 
@@ -689,6 +708,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_ReplayProtection:
 		ret.Data = dt
 	case *snapshot.Payload_EventForwarder:
+		ret.Data = dt
+	case *snapshot.Payload_Witness:
 		ret.Data = dt
 	}
 	return &ret
@@ -2808,6 +2829,64 @@ func (*PayloadEventForwarder) Key() string {
 
 func (*PayloadEventForwarder) Namespace() SnapshotNamespace {
 	return EventForwarderSnapshot
+}
+
+func PayloadWitnessFromProto(w *snapshot.Payload_Witness) *PayloadWitness {
+	resources := make([]*Resource, 0, len(w.Witness.Resources))
+	for _, r := range w.Witness.Resources {
+		resources = append(resources, ResourceFromProto(r))
+	}
+	return &PayloadWitness{
+		Witness: &Witness{
+			NeedResendResources: w.Witness.NeedResendResources,
+			Resources:           resources,
+		},
+	}
+}
+
+func ResourceFromProto(r *snapshot.Resource) *Resource {
+	return &Resource{
+		ID:         r.Id,
+		CheckUntil: time.Unix(0, r.CheckUntil).UTC(),
+		Votes:      r.Votes,
+		State:      r.State,
+	}
+}
+
+func (p *PayloadWitness) IntoProto() *snapshot.Payload_Witness {
+	resources := make([]*snapshot.Resource, 0, len(p.Witness.Resources))
+	for _, r := range p.Witness.Resources {
+		resources = append(resources, r.IntoProto())
+	}
+	return &snapshot.Payload_Witness{
+		Witness: &snapshot.Witness{
+			NeedResendResources: p.Witness.NeedResendResources,
+			Resources:           resources,
+		},
+	}
+}
+
+func (r *Resource) IntoProto() *snapshot.Resource {
+	return &snapshot.Resource{
+		Id:         r.ID,
+		CheckUntil: r.CheckUntil.UnixNano(),
+		Votes:      r.Votes,
+		State:      r.State,
+	}
+}
+
+func (*PayloadWitness) isPayload() {}
+
+func (p *PayloadWitness) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadWitness) Key() string {
+	return "all"
+}
+
+func (*PayloadWitness) Namespace() SnapshotNamespace {
+	return WitnessSnapshot
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.

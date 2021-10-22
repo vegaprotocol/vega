@@ -61,6 +61,7 @@ type Collateral interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/banking Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
+	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
 // TimeService provide the time of the vega node using the tm time

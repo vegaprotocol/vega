@@ -158,7 +158,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	defer snapEng.ctrl.Finish()
 
 	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
-	snapEng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	snapEng.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
 	// Load snapshot into a new engine
 	_, err = snapEng.LoadState(

@@ -48,6 +48,7 @@ const (
 	NotarySnapshot           SnapshotNamespace = "notary"
 	ReplayProtectionSnapshot SnapshotNamespace = "replay"
 	EventForwarderSnapshot   SnapshotNamespace = "eventforwarder"
+	WitnessSnapshot          SnapshotNamespace = "witness"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB
@@ -55,21 +56,26 @@ const (
 
 var (
 	nsMap = map[string]SnapshotNamespace{
-		"collateral": CollateralSnapshot,
-		"assets":     AssetsSnapshot,
-		"banking":    BankingSnapshot,
-		"checkpoint": CheckpointSnapshot,
-		"app":        AppSnapshot,
-		"netparams":  NetParamsSnapshot,
-		"delegation": DelegationSnapshot,
-		"governance": GovernanceSnapshot,
-		"positions":  PositionsSnapshot,
-		"matching":   MatchingSnapshot,
-		"execution":  ExecutionSnapshot,
-		"epoch":      EpochSnapshot,
-		"staking":    StakingSnapshot,
-		"rewards":    RewardSnapshot,
-		"spam":       SpamSnapshot,
+		"collateral":     CollateralSnapshot,
+		"assets":         AssetsSnapshot,
+		"banking":        BankingSnapshot,
+		"checkpoint":     CheckpointSnapshot,
+		"app":            AppSnapshot,
+		"netparams":      NetParamsSnapshot,
+		"delegation":     DelegationSnapshot,
+		"governance":     GovernanceSnapshot,
+		"positions":      PositionsSnapshot,
+		"matching":       MatchingSnapshot,
+		"execution":      ExecutionSnapshot,
+		"epoch":          EpochSnapshot,
+		"staking":        StakingSnapshot,
+		"rewards":        RewardSnapshot,
+		"spam":           SpamSnapshot,
+		"eventforwarder": EventForwarderSnapshot,
+		"replay":         ReplayProtectionSnapshot,
+		"notary":         NotarySnapshot,
+		"limits":         LimitSnapshot,
+		"witness":        WitnessSnapshot,
 	}
 
 	ErrSnapshotHashMismatch       = errors.New("snapshot hashes do not match")
