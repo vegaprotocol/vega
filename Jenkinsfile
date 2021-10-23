@@ -24,8 +24,8 @@ pipeline {
         string( name: 'VEGA_CORE_BRANCH', defaultValue: '',
                 description: '''Git branch, tag or hash of the vegaprotocol/vega repository.
                     e.g. "develop", "v0.44.0 or commit hash. Default empty: use latests published version.''')
-        string( name: 'GO_WALLET_BRANCH', defaultValue: '',
-                description: '''Git branch, tag or hash of the vegaprotocol/go-wallet repository.
+        string( name: 'VEGAWALLET_BRANCH', defaultValue: '',
+                description: '''Git branch, tag or hash of the vegaprotocol/vegawallet repository.
                     e.g. "develop", "v0.9.0" or commit hash. Default empty: use latest published version.''')
         string( name: 'ETHEREUM_EVENT_FORWARDER_BRANCH', defaultValue: '',
                 description: '''Git branch, tag or hash of the vegaprotocol/ethereum-event-forwarder repository.
@@ -251,6 +251,7 @@ pipeline {
                                 --disable funlen \
                                 --disable forbidigo \
                                 --disable errcheck \
+                                --disable errname \
                                 --disable dupl \
                                 --disable interfacer \
                                 --disable gocyclo \
@@ -314,7 +315,7 @@ pipeline {
                             systemTests ignoreFailure: true,
                                 vegaCore: params.VEGA_CORE_BRANCH,
                                 dataNode: commitHash,
-                                goWallet: params.GO_WALLET_BRANCH,
+                                vegawallet: params.VEGAWALLET_BRANCH,
                                 ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
@@ -329,7 +330,7 @@ pipeline {
                             systemTestsLNL ignoreFailure: true,
                                 vegaCore: params.VEGA_CORE_BRANCH,
                                 dataNode: commitHash,
-                                goWallet: params.GO_WALLET_BRANCH,
+                                vegawallet: params.VEGAWALLET_BRANCH,
                                 ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,

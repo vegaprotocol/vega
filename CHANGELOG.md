@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.45.1
+
+### Fixes
+- [198](https://github.com/vegaprotocol/data-node/pull/190) - Add timestamp to reward payload
+
 ## 0.45.0
 *2021-10-18*
 
@@ -16,7 +21,7 @@
 - [181](https://github.com/vegaprotocol/data-node/pull/181) - add gRPC endpoint for GlobalRewardPool
 - [175](https://github.com/vegaprotocol/data-node/pull/175) - Add fields to validators genesis
 - [169](https://github.com/vegaprotocol/data-node/pull/169) - Port code to use last version of proto (layout change)
-- [163](https://github.com/vegaprotocol/data-node/pull/163) - Release 0.43.0 
+- [163](https://github.com/vegaprotocol/data-node/pull/163) - Release 0.43.0
 
 ### Fixes
 - [180](https://github.com/vegaprotocol/data-node/pull/180) - Update GraphQL schema (rewards)
@@ -84,7 +89,7 @@
 - [40](https://github.com/vegaprotocol/data-node/pull/40) - CI: Checkout repo and compile
 - [8](https://github.com/vegaprotocol/data-node/pull/8) - Merge api update
 - [6](https://github.com/vegaprotocol/data-node/pull/6) - Remove core functionality
-- [5](https://github.com/vegaprotocol/data-node/pull/5) - Add api tests 
+- [5](https://github.com/vegaprotocol/data-node/pull/5) - Add api tests
 - [2](https://github.com/vegaprotocol/data-node/pull/2) - Remove tendermint integration
 - [1](https://github.com/vegaprotocol/data-node/pull/1) - Rename module from vega to data-node
 
@@ -108,5 +113,3 @@
 - [49](https://github.com/vegaprotocol/data-node/pull/49) - Fix Jenkins tag issue
 - [9](https://github.com/vegaprotocol/data-node/pull/9) - Fix mock paths
 - [7](https://github.com/vegaprotocol/data-node/pull/7) - Fix api tests
-
-
