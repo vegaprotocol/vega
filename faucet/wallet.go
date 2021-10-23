@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/go-wallet/wallet"
-	storev1 "code.vegaprotocol.io/go-wallet/wallet/store/v1"
-	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vegawallet/wallet"
+	storev1 "code.vegaprotocol.io/vegawallet/wallet/store/v1"
+	"code.vegaprotocol.io/vegawallet/wallets"
 )
 
 // ErrFaucetHasNoKeyInItsWallet is returned when trying to get the wallet

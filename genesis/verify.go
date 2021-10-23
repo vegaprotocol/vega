@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	wcrypto "code.vegaprotocol.io/go-wallet/crypto"
+	wcrypto "code.vegaprotocol.io/vegawallet/crypto"
 )
 
 const (
