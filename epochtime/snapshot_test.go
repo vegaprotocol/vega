@@ -39,7 +39,8 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	err = proto.Unmarshal(data["all"], snap)
 	require.Nil(t, err)
 
-	err = snapService.LoadState(
+	_, err = snapService.LoadState(
+		ctx,
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)
@@ -133,7 +134,8 @@ func TestEpochSnapshotCompare(t *testing.T) {
 	err = proto.Unmarshal(data["all"], snap)
 	require.Nil(t, err)
 
-	err = snapService.LoadState(
+	_, err = snapService.LoadState(
+		ctx,
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)

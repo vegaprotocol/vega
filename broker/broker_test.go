@@ -634,7 +634,7 @@ func testStreamsOverSocket(t *testing.T) {
 		sock.Close()
 	}()
 
-	sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 00, 01, 01, 0, time.UTC))
+	sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 0o0, 0o1, 0o1, 0, time.UTC))
 
 	broker.Send(sentEvent)
 
@@ -678,7 +678,7 @@ func testStopsProcessOnStreamError(t *testing.T) {
 			sock.Close()
 		}()
 
-		sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 00, 01, 01, 0, time.UTC))
+		sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 0o0, 0o1, 0o1, 0, time.UTC))
 
 		broker.Send(sentEvent)
 		// One of the next call should terminate the process

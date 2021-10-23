@@ -149,7 +149,7 @@ func testSnapshotConsistentHash(t *testing.T) {
 		hash, err := eng.GetHash(k)
 		require.NoError(t, err)
 		hashes[k] = hash
-		state, err := eng.GetState(k)
+		state, _, err := eng.GetState(k)
 		require.NoError(t, err)
 		data[k] = state
 	}
@@ -158,7 +158,7 @@ func testSnapshotConsistentHash(t *testing.T) {
 		got, err := eng.GetHash(k)
 		require.NoError(t, err)
 		require.EqualValues(t, exp, got)
-		state, err := eng.GetState(k)
+		state, _, err := eng.GetState(k)
 		require.NoError(t, err)
 		require.EqualValues(t, data[k], state)
 	}
@@ -170,7 +170,7 @@ func testSnapshotConsistentHash(t *testing.T) {
 		require.NoError(t, err)
 		if !bytes.Equal(hash, got) {
 			// compare data
-			state, err := eng.GetState(k)
+			state, _, err := eng.GetState(k)
 			require.NoError(t, err)
 			require.NotEqualValues(t, data[k], state)
 			changes++
@@ -258,7 +258,7 @@ func testSnapshotRestore(t *testing.T) {
 		h, err := eng.GetHash(k)
 		require.NoError(t, err)
 		hashes[k] = h
-		s, err := eng.GetState(k)
+		s, _, err := eng.GetState(k)
 		require.NoError(t, err)
 		data[k] = s
 	}
@@ -270,7 +270,8 @@ func testSnapshotRestore(t *testing.T) {
 		ptype := pl.IntoProto()
 		require.NoError(t, proto.Unmarshal(state, ptype))
 		payloads[k] = types.PayloadFromProto(ptype)
-		require.NoError(t, newEng.LoadState(ctx, payloads[k]))
+		_, err := newEng.LoadState(ctx, payloads[k])
+		require.NoError(t, err)
 	}
 	for k, exp := range hashes {
 		got, err := newEng.GetHash(k)

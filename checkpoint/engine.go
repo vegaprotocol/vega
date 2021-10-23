@@ -14,8 +14,10 @@ import (
 )
 
 var (
-	ErrUnknownCheckpointName      = errors.New("component for checkpoint not registered")
-	ErrComponentWithDuplicateName = errors.New("multiple components with the same name")
+	ErrUnknownCheckpointName            = errors.New("component for checkpoint not registered")
+	ErrComponentWithDuplicateName       = errors.New("multiple components with the same name")
+	ErrNoCheckpointExpectedToBeRestored = errors.New("no checkpoint expected to be restored")
+	ErrIncompatibleHashes               = errors.New("incompatible hashes")
 
 	cpOrder = []types.CheckpointName{
 		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
@@ -59,6 +61,14 @@ type Engine struct {
 	loadHash   []byte
 	nextCP     time.Time
 	delta      time.Duration
+
+	// snapshot fields
+	state   *types.PayloadCheckpoint
+	hash    []byte
+	data    []byte
+	updated bool
+	snapErr error
+	poll    chan struct{}
 }
 
 func New(log *logging.Logger, cfg Config, components ...State) (*Engine, error) {
@@ -69,6 +79,9 @@ func New(log *logging.Logger, cfg Config, components ...State) (*Engine, error) 
 		log:        log,
 		components: make(map[types.CheckpointName]State, len(components)),
 		nextCP:     time.Time{},
+		state: &types.PayloadCheckpoint{
+			Checkpoint: &types.CPState{},
+		},
 	}
 	for _, c := range components {
 		if err := e.addComponent(c); err != nil {
@@ -153,13 +166,13 @@ func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.CheckpointState,
 func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.CheckpointState, error) {
 	// start time will be zero -> add delta to this time, and return
 	if e.nextCP.IsZero() {
-		e.nextCP = t.Add(e.delta)
+		e.setNextCP(t.Add(e.delta))
 		return nil, nil
 	}
 	if e.nextCP.After(t) {
 		return nil, nil
 	}
-	e.nextCP = t.Add(e.delta)
+	e.setNextCP(t.Add(e.delta))
 	cp := e.makeCheckpoint(ctx)
 	return cp, nil
 }
@@ -194,7 +207,6 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 
 // Load - loads checkpoint data for all components by name.
 func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
-	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
 	if len(e.loadHash) != 0 {
 		hashDiff := bytes.Compare(e.loadHash, cpt.Hash)
 
@@ -208,8 +220,9 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 			logging.Int("hash-diff", hashDiff),
 		)
 	}
-	if e.loadHash == nil || !bytes.Equal(e.loadHash, cpt.Hash) {
-		return nil
+
+	if err := e.ValidateCheckpoint(cpt); err != nil {
+		return err
 	}
 	// we found the checkpoint we need to load, set value to nil
 	// either the checkpoint was loaded successfully, or it wasn't
@@ -269,10 +282,21 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 	return nil
 }
 
+func (e *Engine) ValidateCheckpoint(cpt *types.CheckpointState) error {
+	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
+	if e.loadHash == nil {
+		return ErrNoCheckpointExpectedToBeRestored
+	}
+	if !bytes.Equal(e.loadHash, cpt.Hash) {
+		return fmt.Errorf("received(%v), expected(%v): %w", hex.EncodeToString(cpt.Hash), hex.EncodeToString(e.loadHash), ErrIncompatibleHashes)
+	}
+	return nil
+}
+
 func (e *Engine) OnTimeElapsedUpdate(ctx context.Context, d time.Duration) error {
 	if !e.nextCP.IsZero() {
 		// update the time for the next cp
-		e.nextCP = e.nextCP.Add(-e.delta).Add(d)
+		e.setNextCP(e.nextCP.Add(-e.delta).Add(d))
 	}
 	// update delta
 	e.delta = d

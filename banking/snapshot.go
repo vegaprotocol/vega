@@ -173,39 +173,27 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := e.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadBankingDeposits:
-		return e.restoreDeposits(ctx, pl.BankingDeposits)
+		return nil, e.restoreDeposits(ctx, pl.BankingDeposits)
 	case *types.PayloadBankingWithdrawals:
-		return e.restoreWithdrawals(ctx, pl.BankingWithdrawals)
+		return nil, e.restoreWithdrawals(ctx, pl.BankingWithdrawals)
 	case *types.PayloadBankingSeen:
-		return e.restoreSeen(ctx, pl.BankingSeen)
+		return nil, e.restoreSeen(ctx, pl.BankingSeen)
 	case *types.PayloadBankingAssetActions:
-		return e.restoreAssetActions(ctx, pl.BankingAssetActions)
+		return nil, e.restoreAssetActions(ctx, pl.BankingAssetActions)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
@@ -254,7 +242,8 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 
 			continue
 		}
-		e.assetActs[v.ID] = &assetAction{
+
+		aa := &assetAction{
 			id:          v.ID,
 			state:       v.State,
 			blockNumber: v.BlockNumber,
@@ -264,7 +253,10 @@ func (e *Engine) restoreAssetActions(ctx context.Context, aa *types.BankingAsset
 			erc20AL:     v.Erc20AL,
 			erc20D:      v.Erc20D,
 		}
+		e.assetActs[v.ID] = aa
+		e.witness.RestoreResource(aa, e.onCheckDone)
 	}
+
 	e.bss.changed[assetActionsKey] = true
 	return nil
 }

@@ -2,7 +2,6 @@ package evtforward
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash/fnv"
@@ -35,7 +34,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
@@ -62,7 +61,8 @@ type EvtForwarder struct {
 	currentTime      time.Time
 	nodes            []string
 
-	top ValidatorTopology
+	top  ValidatorTopology
+	efss *efSnapshotState
 }
 
 type tsEvt struct {
@@ -87,6 +87,11 @@ func New(log *logging.Logger, cfg Config, cmd Commander, time TimeService, top V
 		evts:             map[string]tsEvt{},
 		top:              top,
 		bcQueueAllowlist: allowlist,
+		efss: &efSnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 	evtf.updateValidatorsList()
 	time.NotifyOnTick(evtf.onTick)
@@ -152,6 +157,7 @@ func (e *EvtForwarder) Ack(evt *commandspb.ChainEvent) bool {
 
 	// now add it to the acknowledged evts
 	e.ackedEvts[key] = evt
+	e.efss.changed = true
 	e.log.Info("new event acknowledged", logging.String("event", evt.String()))
 	return true
 }
@@ -248,7 +254,7 @@ func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {
 		e.log.Error("could not marshal event", logging.Error(err))
 		return false
 	}
-	h := e.hash(key)
+	h := e.hash(key) + uint64(e.currentTime.Unix())
 
 	e.mu.RLock()
 	if len(e.nodes) <= 0 {
@@ -313,12 +319,7 @@ func (e *EvtForwarder) makeEvtHashKey(evt *commandspb.ChainEvent) ([]byte, error
 	if err != nil {
 		return nil, err
 	}
-
-	// encode time to binary
-	var buf [8]byte
-	_ = binary.PutVarint(buf[:], e.currentTime.Unix())
-
-	return append(pbuf, buf[:]...), nil
+	return pbuf, nil
 }
 
 func (e *EvtForwarder) hash(key []byte) uint64 {

@@ -1,6 +1,8 @@
 package epochtime
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
@@ -45,17 +47,17 @@ func (s *Svc) Snapshot() (map[string][]byte, error) {
 	return map[string][]byte{s.pl.Key(): s.data}, nil
 }
 
-func (s *Svc) GetState(k string) ([]byte, error) {
+func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != s.pl.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	return s.data, nil
+	return s.data, nil, nil
 }
 
-func (s *Svc) LoadState(payload *types.Payload) error {
+func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if s.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
@@ -72,8 +74,8 @@ func (s *Svc) LoadState(payload *types.Payload) error {
 		s.readyToEndEpoch = snap.ReadyToEndEpoch
 		s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
 
-		return s.serialise()
+		return nil, s.serialise()
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }

@@ -127,12 +127,12 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 
 	hash, err := engine.GetHash(key)
 	require.Nil(t, err)
-	state, err := engine.GetState(key)
+	state, _, err := engine.GetState(key)
 	require.Nil(t, err)
 
 	hashNoChange, err := engine.GetHash(key)
 	require.Nil(t, err)
-	stateNoChange, err := engine.GetState(key)
+	stateNoChange, _, err := engine.GetState(key)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -144,11 +144,11 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 
 	payload := types.PayloadFromProto(&rewards)
 
-	err = engine.LoadState(context.Background(), payload)
+	_, err = engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := engine.GetHash(key)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _ := engine.GetState(key)
+	statePostReload, _, _ := engine.GetState(key)
 	require.True(t, bytes.Equal(state, statePostReload))
 
 	// add another pending payout
@@ -160,7 +160,7 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	// expect hash and state to have changed
 	newHash, err := engine.GetHash(key)
 	require.Nil(t, err)
-	newState, err := engine.GetState(key)
+	newState, _, err := engine.GetState(key)
 	require.Nil(t, err)
 
 	require.False(t, bytes.Equal(hash, newHash))
@@ -168,18 +168,18 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 
 	proto.Unmarshal(newState, &rewards)
 	payload = types.PayloadFromProto(&rewards)
-	err = engine.LoadState(context.Background(), payload)
+	_, err = engine.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	newHashPostReload, _ := engine.GetHash(key)
 	require.True(t, bytes.Equal(newHash, newHashPostReload))
-	newStatePostReload, _ := engine.GetState(key)
+	newStatePostReload, _, _ := engine.GetState(key)
 	require.True(t, bytes.Equal(newState, newStatePostReload))
 
 	// advance to after payouts have been paid and cleared
 	engine.onChainTimeUpdate(context.Background(), now.Add(300*time.Second))
 	emptyStateHash, err := engine.GetHash(key)
 	require.Nil(t, err)
-	emptyState, err := engine.GetState(key)
+	emptyState, _, err := engine.GetState(key)
 	require.Nil(t, err)
 
 	require.False(t, bytes.Equal(hash, emptyStateHash))

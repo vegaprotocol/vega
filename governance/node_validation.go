@@ -202,6 +202,26 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 		np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
 }
 
+func (n *NodeValidation) restore(p *types.Proposal) error {
+	checker, err := n.getChecker(p)
+	if err != nil {
+		return err
+	}
+	np := &nodeProposal{
+		proposal: &proposal{
+			Proposal:     p,
+			yes:          map[string]*types.Vote{},
+			no:           map[string]*types.Vote{},
+			invalidVotes: map[string]*types.Vote{},
+		},
+		state:   pendingValidationProposal,
+		checker: checker,
+	}
+	n.nodeProposals = append(n.nodeProposals, np)
+	n.witness.RestoreResource(np, n.onResChecked)
+	return nil
+}
+
 func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {
 	switch change := p.Terms.Change.(type) {
 	case *types.ProposalTerms_NewAsset:

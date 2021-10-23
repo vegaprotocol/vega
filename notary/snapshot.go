@@ -82,7 +82,7 @@ func (n *SnapshotNotary) Namespace() types.SnapshotNamespace {
 }
 
 func (n *SnapshotNotary) Keys() []string {
-	return []string{allKey}
+	return hashKeys
 }
 
 func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
@@ -90,33 +90,21 @@ func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (n *SnapshotNotary) GetState(k string) ([]byte, error) {
+func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
 	data, _, err := n.getSerialisedAndHash(k)
-	return data, err
+	return data, nil, err
 }
 
-func (n *SnapshotNotary) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := n.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (n *SnapshotNotary) LoadState(payload *types.Payload) error {
+func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if n.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadNotary:
-		return n.restoreNotary(pl.Notary)
+		return nil, n.restoreNotary(pl.Notary)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 

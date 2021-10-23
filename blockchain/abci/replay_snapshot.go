@@ -50,8 +50,7 @@ func (rp *ReplayProtector) serialiseReplayProtection() ([]byte, error) {
 			Blocks: blocks,
 		},
 	}
-	x := payload.IntoProto()
-	return proto.Marshal(x)
+	return proto.Marshal(payload.IntoProto())
 }
 
 // get the serialised form and hash of the given key.
@@ -81,15 +80,15 @@ func (rp *ReplayProtector) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (rp *ReplayProtector) GetState(k string) ([]byte, error) {
+func (rp *ReplayProtector) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := rp.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
 func (rp *ReplayProtector) Snapshot() (map[string][]byte, error) {
 	r := make(map[string][]byte, len(hashKeys))
 	for _, k := range hashKeys {
-		state, err := rp.GetState(k)
+		state, _, err := rp.GetState(k)
 		if err != nil {
 			return nil, err
 		}
@@ -98,25 +97,22 @@ func (rp *ReplayProtector) Snapshot() (map[string][]byte, error) {
 	return r, nil
 }
 
-func (rp *ReplayProtector) LoadState(ctx context.Context, p *types.Payload) error {
+func (rp *ReplayProtector) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if rp.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadReplayProtection:
-		return rp.restoreReplayState(ctx, pl.Blocks)
+		return nil, rp.restoreReplayState(ctx, pl.Blocks)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
 func (rp *ReplayProtector) restoreReplayState(ctx context.Context, blockTransactions []*types.ReplayBlockTransactions) error {
-	for i := range rp.txs {
-		rp.txs[i] = make(map[string]struct{})
-	}
-
 	for i, block := range blockTransactions {
+		rp.txs[i] = make(map[string]struct{}, len(block.Transactions))
 		for _, tx := range block.Transactions {
 			rp.txs[i][tx] = struct{}{}
 		}

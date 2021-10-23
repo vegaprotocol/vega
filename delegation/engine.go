@@ -15,10 +15,13 @@ import (
 
 var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
 
+const reconciliationInterval = 30 * time.Second
+
 var (
-	activeKey  = (&types.PayloadDelegationActive{}).Key()
-	pendingKey = (&types.PayloadDelegationPending{}).Key()
-	autoKey    = (&types.PayloadDelegationAuto{}).Key()
+	activeKey    = (&types.PayloadDelegationActive{}).Key()
+	pendingKey   = (&types.PayloadDelegationPending{}).Key()
+	autoKey      = (&types.PayloadDelegationAuto{}).Key()
+	lastReconKey = (&types.PayloadDelegationLastReconTime{}).Key()
 )
 
 var (
@@ -33,6 +36,13 @@ var (
 	// ErrAmountLTMinAmountForDelegation is returned when the amount to delegate to a node is lower than the minimum allowed amount from network params.
 	ErrAmountLTMinAmountForDelegation = errors.New("delegation amount is lower than the minimum amount for delegation for a validator")
 )
+
+//TimeService notifies the reward engine on time updates
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/rewards TimeService
+type TimeService interface {
+	NotifyOnTick(func(context.Context, time.Time))
+	GetTimeNow() time.Time
+}
 
 // ValidatorTopology represents the topology of validators and can check if a given node is a validator.
 type ValidatorTopology interface {
@@ -105,10 +115,11 @@ type Engine struct {
 	autoDelegationMode map[string]struct{} // parties entered auto-delegation mode
 	dss                *delegationSnapshotState
 	keyToSerialiser    map[string]func() ([]byte, error)
+	lastReconciliation time.Time
 }
 
 // New instantiate a new delegation engine.
-func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, epochEngine EpochEngine) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, epochEngine EpochEngine, ts TimeService) *Engine {
 	e := &Engine{
 		config:               config,
 		log:                  log.Named(namedLogger),
@@ -120,21 +131,34 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		pendingState:         map[uint64]map[string]*pendingPartyDelegation{},
 		autoDelegationMode:   map[string]struct{}{},
 		dss: &delegationSnapshotState{
-			changed:    map[string]bool{activeKey: true, pendingKey: true, autoKey: true},
+			changed:    map[string]bool{activeKey: true, pendingKey: true, autoKey: true, lastReconKey: true},
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
+		keyToSerialiser:    map[string]func() ([]byte, error){},
+		lastReconciliation: time.Time{},
 	}
 
 	e.keyToSerialiser[activeKey] = e.serialiseActive
 	e.keyToSerialiser[pendingKey] = e.serialisePending
 	e.keyToSerialiser[autoKey] = e.serialiseAuto
+	e.keyToSerialiser[lastReconKey] = e.serialiseLastReconTime
 
 	// register for epoch notifications
 	epochEngine.NotifyOnEpoch(e.onEpochEvent)
 
+	// register for time tick updates
+	ts.NotifyOnTick(e.onChainTimeUpdate)
+
 	return e
+}
+
+func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
+	// if we've already done reconciliation (i.e. not first epoch) and it's been over <reconciliationIntervalSeconds> since, then reconcile.
+	if (e.lastReconciliation != time.Time{}) && t.Sub(e.lastReconciliation) >= reconciliationInterval {
+		// always reconcile the balance from the start of the epoch to the current time for simplicity
+		e.reconcileAssociationWithNomination(ctx, e.currentEpoch.StartTime, t, e.currentEpoch.Seq)
+	}
 }
 
 func (e *Engine) Hash() []byte {
@@ -166,6 +190,30 @@ func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount num.Decimal) 
 // update the current epoch at which current pending delegations are recorded
 // regardless if the event is start or stop of the epoch. the sequence is what identifies the epoch.
 func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
+	if (e.lastReconciliation == time.Time{}) {
+		e.lastReconciliation = epoch.StartTime
+		e.dss.changed[lastReconKey] = true
+	}
+	// if new epoch is starting we want to emit event for the next epoch for all delegations - this is because unless there is some action during the epoch
+	// we will not emit an event for the next epoch until it starts - this will be more UI friendly
+	if e.currentEpoch.Seq != epoch.Seq {
+		// new epoch started - emit event for the next epoch
+		parties := make([]string, 0, len(e.partyDelegationState))
+		for p := range e.partyDelegationState {
+			parties = append(parties, p)
+		}
+		sort.Strings(parties)
+		for _, p := range parties {
+			nodesSlice := make([]string, 0, len(e.partyDelegationState[p].nodeToAmount))
+			for n := range e.partyDelegationState[p].nodeToAmount {
+				nodesSlice = append(nodesSlice, n)
+			}
+			sort.Strings(nodesSlice)
+			for _, n := range nodesSlice {
+				e.sendNextEpochBalanceEvent(ctx, p, n, epoch.Seq)
+			}
+		}
+	}
 	e.currentEpoch = epoch
 }
 
@@ -617,7 +665,11 @@ func (e *Engine) getNextEpochBalanceEvent(ctx context.Context, party, nodeID str
 		}
 	}
 
-	amt := num.Zero().Sub(num.Sum(delegatedToNode, pendingDelegated), pendingUndelegated)
+	potentialDelegationForNextEpoch := num.Sum(delegatedToNode, pendingDelegated)
+	amt := num.Zero()
+	if potentialDelegationForNextEpoch.GT(pendingUndelegated) {
+		amt = num.Zero().Sub(potentialDelegationForNextEpoch, pendingUndelegated)
+	}
 	return events.NewDelegationBalance(ctx, party, nodeID, amt, num.NewUint(seq+1).String())
 }
 
@@ -682,10 +734,9 @@ func (e *Engine) sortNodes(nodes map[string]*num.Uint) []string {
 	return nodeIDs
 }
 
-// preprocessEpoch is called at the end of an epoch and updates the state to be returned for rewarding calculation
-// check balance for the epoch duration and undelegate if delegations don't have sufficient cover
-// the state of the engine by the end of this method reflects the state to be used for reward engine.
-func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Epoch) {
+// reconcileAssociationWithNomination makes sure that current epoch's nomination has sufficient cover in association and if not
+// adjusts the nomination accordingly.
+func (e *Engine) reconcileAssociationWithNomination(ctx context.Context, from, to time.Time, epochSeq uint64) {
 	parties := make([]string, 0, len(e.partyDelegationState))
 	for party := range e.partyDelegationState {
 		parties = append(parties, party)
@@ -699,7 +750,7 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Ep
 		partyDelegation := e.partyDelegationState[party]
 
 		// get the party stake balance for the epoch
-		stakeBalance, err := e.stakingAccounts.GetAvailableBalanceInRange(party, epoch.StartTime, epoch.EndTime)
+		stakeBalance, err := e.stakingAccounts.GetAvailableBalanceInRange(party, from, to)
 		if err != nil {
 			e.log.Error("Failed to get available balance in range", logging.Error(err))
 			continue
@@ -755,12 +806,22 @@ func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Ep
 		}
 
 		for _, nodeID := range nodeIDs {
-			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epoch.Seq)
+			e.sendDelegatedBalanceEvent(ctx, party, nodeID, epochSeq)
+			e.sendNextEpochBalanceEvent(ctx, party, nodeID, epochSeq)
 		}
 
 		// get out of auto delegation mode
 		delete(e.autoDelegationMode, party)
 	}
+	e.lastReconciliation = to
+	e.dss.changed[lastReconKey] = true
+}
+
+// preprocessEpoch is called at the end of an epoch and updates the state to be returned for rewarding calculation
+// check balance for the epoch duration and undelegate if delegations don't have sufficient cover
+// the state of the engine by the end of this method reflects the state to be used for reward engine.
+func (e *Engine) preprocessEpochForRewarding(ctx context.Context, epoch types.Epoch) {
+	e.reconcileAssociationWithNomination(ctx, epoch.StartTime, epoch.EndTime, epoch.Seq)
 }
 
 // calculate the total number of tokens (a rough estimate) and the number of nodes.
@@ -945,10 +1006,32 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 				nodeToAmount:   map[string]*num.Uint{},
 			}
 		}
+
+		// partyBalance must be >= totalDelegated as we've already adjusted the balance before this is called, if not just log and carry on
+		if partyBalance.LT(committedDelegations.totalDelegated) {
+			e.log.Warn("Party balance is less than delegated balance when processing pending delegations",
+				logging.Uint64("epoch", epoch.Seq),
+				logging.String("party", party),
+				logging.String("associationBalance", partyBalance.String()),
+				logging.String("delegationBalance", committedDelegations.totalDelegated.String()),
+			)
+			continue
+		}
+
+		// this is how much is left associated unnominated
 		availableForDelegation := num.Zero().Sub(partyBalance, committedDelegations.totalDelegated)
+
+		// if there's no balance left, nothing to do here
+		if availableForDelegation.IsZero() {
+			continue
+		}
 
 		// apply delegation deterministically
 		nodeIDs := e.sortNodes(pending.nodeToDelegateAmount)
+		nodeIDToExpectedAmount := make([]*num.Uint, 0, len(nodeIDs))
+		totalExpectedDelegation := num.Zero()
+
+		// first calculate how much we're expecting to delegate to each node and the total delegation amount
 		for _, nodeID := range nodeIDs {
 			_, ok := pending.nodeToDelegateAmount[nodeID]
 			if !ok {
@@ -969,14 +1052,44 @@ func (e *Engine) processPendingDelegations(parties []string, maxStakePerValidato
 				}
 			}
 
-			// check that the amount is not greater than the available for delegation
-			if amount.GT(availableForDelegation) || amount.IsZero() {
+			// record the relevant amount and add it to the total
+			nodeIDToExpectedAmount = append(nodeIDToExpectedAmount, amount)
+			totalExpectedDelegation.AddSum(amount)
+
+			if amount.IsZero() {
 				if e.log.GetLevel() <= logging.DebugLevel {
 					e.log.Debug("the amount requested for delegation is greater than available for delegation at end of epoch", logging.String("party", party), logging.String("nodeID", nodeID), logging.BigUint("amt", amount))
 				}
 				continue
 			}
+		}
 
+		// if we don't have enough to satisfy the delegation amounts - prorate them with respect to how much is available
+		if totalExpectedDelegation.GT(availableForDelegation) {
+			totalActual := num.Zero()
+			for i, amt := range nodeIDToExpectedAmount {
+				factor := amt.ToDecimal().Div(totalExpectedDelegation.ToDecimal())
+				nodeIDToExpectedAmount[i], _ = num.UintFromDecimal(availableForDelegation.ToDecimal().Mul(factor))
+				totalActual.AddSum(nodeIDToExpectedAmount[i])
+			}
+			// account for precision error by adjusting the first non zero balance by the error
+			if totalActual.GT(availableForDelegation) {
+				precisionError := num.Zero().Sub(totalActual, availableForDelegation)
+				for i := range nodeIDToExpectedAmount {
+					if nodeIDToExpectedAmount[i].GT(precisionError) {
+						nodeIDToExpectedAmount[i] = num.Zero().Sub(nodeIDToExpectedAmount[i], precisionError)
+						break
+					}
+				}
+			}
+		}
+
+		// no apply the delegations with the prorated amount
+		for i, nodeID := range nodeIDs {
+			amount := nodeIDToExpectedAmount[i]
+			if amount.IsZero() {
+				continue
+			}
 			// update the validator delegation balance
 			currentValidatorDelegation, ok := e.nodeDelegationState[nodeID]
 			if !ok {

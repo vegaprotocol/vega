@@ -35,31 +35,19 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := e.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(e.hashKeys))
-	for _, k := range e.hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	if _, ok := e.policyNameToPolicy[p.Key()]; !ok {
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 
-	return e.policyNameToPolicy[p.Key()].Deserialise(p)
+	return nil, e.policyNameToPolicy[p.Key()].Deserialise(p)
 }

@@ -36,7 +36,7 @@ func (m *MockCommander) EXPECT() *MockCommanderMockRecorder {
 }
 
 // Command mocks base method
-func (m *MockCommander) Command(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(bool)) {
+func (m *MockCommander) Command(arg0 context.Context, arg1 txn.Command, arg2 protoiface.MessageV1, arg3 func(error)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Command", arg0, arg1, arg2, arg3)
 }

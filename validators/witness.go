@@ -34,7 +34,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -67,6 +67,7 @@ const (
 func init() {
 	// we seed the random generator just in case
 	// as the backoff library use random internally
+	// TODO this probably needs to change to something that can be agreed across all nodes.
 	rand.Seed(time.Now().UnixNano())
 }
 
@@ -115,6 +116,7 @@ type Witness struct {
 	needResendRes map[string]struct{}
 
 	validatorVotesRequired float64
+	wss                    *witnessSnapshotState
 }
 
 func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
@@ -134,6 +136,11 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 		resources:              map[string]*res{},
 		needResendRes:          map[string]struct{}{},
 		validatorVotesRequired: defaultValidatorsVoteRequired,
+		wss: &witnessSnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 }
 
@@ -182,8 +189,14 @@ func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) err
 			logging.String("node-id", hexPubKey))
 		return ErrVoteFromNonValidator
 	}
-
+	w.setChangedLocked(true)
 	return r.addVote(string(nv.PubKey))
+}
+
+func (w *Witness) setChangedLocked(changed bool) {
+	w.wss.mu.Lock()
+	w.wss.changed = changed
+	w.wss.mu.Unlock()
 }
 
 func (w *Witness) StartCheck(
@@ -212,7 +225,7 @@ func (w *Witness) StartCheck(
 
 	w.resources[id] = rs
 
-	// if we are a validator, we just start the routinw.
+	// if we are a validator, we just start the routine.
 	// so we can ensure the resources exists
 	if w.top.IsValidator() {
 		go w.start(ctx, rs)
@@ -222,6 +235,7 @@ func (w *Witness) StartCheck(
 		// check succeeded
 		atomic.StoreUint32(&rs.state, voteSent)
 	}
+	w.setChangedLocked(true)
 	return nil
 }
 
@@ -271,6 +285,7 @@ func (w *Witness) start(ctx context.Context, r *res) {
 
 	// check succeeded
 	atomic.StoreUint32(&r.state, validated)
+	w.setChangedLocked(true)
 }
 
 func (w *Witness) votePassed(votesCount, topLen int) bool {
@@ -326,6 +341,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			v.cb(v.res, checkPass)
 			// we delete the resource from our map.
 			delete(w.resources, k)
+			w.setChangedLocked(true)
 			continue
 		}
 
@@ -340,6 +356,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
+			w.setChangedLocked(true)
 		}
 	}
 }
@@ -354,13 +371,12 @@ func (w *Witness) needResend(res string) bool {
 	return false
 }
 
-func (w *Witness) onCommandSent(res string) func(bool) {
-	return func(success bool) {
-		if success {
-			return
+func (w *Witness) onCommandSent(res string) func(error) {
+	return func(err error) {
+		if err != nil {
+			w.needResendMu.Lock()
+			defer w.needResendMu.Unlock()
+			w.needResendRes[res] = struct{}{}
 		}
-		w.needResendMu.Lock()
-		defer w.needResendMu.Unlock()
-		w.needResendRes[res] = struct{}{}
 	}
 }

@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
@@ -73,6 +74,7 @@ type NodeCommand struct {
 	conf        config.Config
 	confWatcher *config.Watcher
 
+	snapshot             *snapshot.Engine
 	executionEngine      *execution.Engine
 	governance           *governance.Engine
 	collateral           *collateral.Engine

@@ -1,9 +1,11 @@
 package types
 
 import (
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -44,8 +46,9 @@ type Chunk struct {
 }
 
 type Payload struct {
-	Data isPayload
-	raw  []byte // access to the raw data for chunking
+	Data    isPayload
+	raw     []byte // access to the raw data for chunking
+	treeKey string
 }
 
 type isPayload interface {
@@ -111,6 +114,10 @@ type PayloadDelegationAuto struct {
 	DelegationAuto *DelegationAuto
 }
 
+type PayloadDelegationLastReconTime struct {
+	LastReconcilicationTime time.Time
+}
+
 type PayloadGovernanceActive struct {
 	GovernanceActive *GovernanceActive
 }
@@ -135,12 +142,16 @@ type PayloadExecutionMarkets struct {
 	ExecutionMarkets *ExecutionMarkets
 }
 
-type PayloadExecutionIDGenerator struct {
-	ExecutionIDGenerator *ExecutionIDGenerator
-}
-
 type PayloadStakingAccounts struct {
 	StakingAccounts *StakingAccounts
+}
+
+type PayloadStakeVerifierDeposited struct {
+	StakeVerifierDeposited []*StakeDeposited
+}
+
+type PayloadStakeVerifierRemoved struct {
+	StakeVerifierRemoved []*StakeRemoved
 }
 
 type PayloadEpoch struct {
@@ -155,12 +166,32 @@ type PayloadNotary struct {
 	Notary *Notary
 }
 
+type PayloadWitness struct {
+	Witness *Witness
+}
+
+type Witness struct {
+	NeedResendResources []string
+	Resources           []*Resource
+}
+
+type Resource struct {
+	ID         string
+	CheckUntil time.Time
+	Votes      []string
+	State      uint32
+}
+
 type PayloadReplayProtection struct {
 	Blocks []*ReplayBlockTransactions
 }
 
 type ReplayBlockTransactions struct {
 	Transactions []string
+}
+
+type PayloadEventForwarder struct {
+	Events []*commandspb.ChainEvent
 }
 
 type MatchingBook struct {
@@ -173,10 +204,7 @@ type MatchingBook struct {
 }
 
 type ExecutionMarkets struct {
-	Markets []*ExecMarket
-}
-
-type ExecutionIDGenerator struct {
+	Markets   []*ExecMarket
 	Batches   uint64
 	Orders    uint64
 	Proposals uint64
@@ -456,6 +484,17 @@ func (s Snapshot) IntoProto() (*snapshot.Snapshot, error) {
 	}, nil
 }
 
+func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
+	if s.Chunks < idx {
+		return nil, ErrUnknownSnapshotChunkHeight
+	}
+	i := int(idx)
+	return &RawChunk{
+		Nr:   idx,
+		Data: s.ByteChunks[i],
+	}, nil
+}
+
 func MetadataFromProto(m *snapshot.Metadata) (*Metadata, error) {
 	nh := make([]*NodeHash, 0, len(m.NodeHashes))
 	for _, h := range m.NodeHashes {
@@ -571,8 +610,6 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadMatchingBookFromProto(dt)
 	case *snapshot.Payload_ExecutionMarkets:
 		ret.Data = PayloadExecutionMarketsFromProto(dt)
-	case *snapshot.Payload_ExecutionIdGenerator:
-		ret.Data = PayloadExecutionIDGeneratorFromProto(dt)
 	case *snapshot.Payload_Epoch:
 		ret.Data = PayloadEpochFromProto(dt)
 	case *snapshot.Payload_StakingAccounts:
@@ -591,7 +628,18 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadNotaryFromProto(dt)
 	case *snapshot.Payload_ReplayProtection:
 		ret.Data = PayloadReplayProtectionFromProto(dt)
+	case *snapshot.Payload_EventForwarder:
+		ret.Data = PayloadEventForwarderFromProto(dt)
+	case *snapshot.Payload_Witness:
+		ret.Data = PayloadWitnessFromProto(dt)
+	case *snapshot.Payload_DelegationLastReconciliationTime:
+		ret.Data = PayloadDelegationLastReconTimeFromProto(dt)
+	case *snapshot.Payload_StakeVerifierDeposited:
+		ret.Data = PayloadStakeVerifierDepositedFromProto(dt)
+	case *snapshot.Payload_StakeVerifierRemoved:
+		ret.Data = PayloadStakeVerifierRemovedFromProto(dt)
 	}
+
 	return ret
 }
 
@@ -607,6 +655,13 @@ func (p Payload) Key() string {
 		return ""
 	}
 	return p.Data.Key()
+}
+
+func (p *Payload) GetTreeKey() string {
+	if len(p.treeKey) == 0 {
+		p.treeKey = KeyFromPayload(p.Data)
+	}
+	return p.treeKey
 }
 
 func (p Payload) IntoProto() *snapshot.Payload {
@@ -658,8 +713,6 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_DelegationAuto:
 		ret.Data = dt
-	case *snapshot.Payload_ExecutionIdGenerator:
-		ret.Data = dt
 	case *snapshot.Payload_LimitState:
 		ret.Data = dt
 	case *snapshot.Payload_RewardsPendingPayouts:
@@ -672,8 +725,26 @@ func (p Payload) IntoProto() *snapshot.Payload {
 		ret.Data = dt
 	case *snapshot.Payload_ReplayProtection:
 		ret.Data = dt
+	case *snapshot.Payload_EventForwarder:
+		ret.Data = dt
+	case *snapshot.Payload_Witness:
+		ret.Data = dt
+	case *snapshot.Payload_DelegationLastReconciliationTime:
+		ret.Data = dt
+	case *snapshot.Payload_StakeVerifierDeposited:
+		ret.Data = dt
+	case *snapshot.Payload_StakeVerifierRemoved:
+		ret.Data = dt
 	}
 	return &ret
+}
+
+func (p Payload) GetAppState() *PayloadAppState {
+	if p.Namespace() == AppSnapshot {
+		pas := p.Data.(*PayloadAppState)
+		return pas
+	}
+	return nil
 }
 
 func PayloadActiveAssetsFromProto(paa *snapshot.Payload_ActiveAssets) *PayloadActiveAssets {
@@ -962,6 +1033,34 @@ func (*PayloadNetParams) Namespace() SnapshotNamespace {
 	return NetParamsSnapshot
 }
 
+func PayloadDelegationLastReconTimeFromProto(dl *snapshot.Payload_DelegationLastReconciliationTime) *PayloadDelegationLastReconTime {
+	return &PayloadDelegationLastReconTime{
+		LastReconcilicationTime: time.Unix(0, dl.DelegationLastReconciliationTime.LastReconciliationTime).UTC(),
+	}
+}
+
+func (p PayloadDelegationLastReconTime) IntoProto() *snapshot.Payload_DelegationLastReconciliationTime {
+	return &snapshot.Payload_DelegationLastReconciliationTime{
+		DelegationLastReconciliationTime: &snapshot.DelegationLastReconciliationTime{
+			LastReconciliationTime: p.LastReconcilicationTime.UnixNano(),
+		},
+	}
+}
+
+func (*PayloadDelegationLastReconTime) isPayload() {}
+
+func (p *PayloadDelegationLastReconTime) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadDelegationLastReconTime) Key() string {
+	return "lastReconTime"
+}
+
+func (*PayloadDelegationLastReconTime) Namespace() SnapshotNamespace {
+	return DelegationSnapshot
+}
+
 func PayloadDelegationAutoFromProto(da *snapshot.Payload_DelegationAuto) *PayloadDelegationAuto {
 	return &PayloadDelegationAuto{
 		DelegationAuto: DelegationAutoFromProto(da.DelegationAuto),
@@ -1168,32 +1267,6 @@ func (p *PayloadMatchingBook) Key() string {
 
 func (*PayloadMatchingBook) Namespace() SnapshotNamespace {
 	return MatchingSnapshot
-}
-
-func PayloadExecutionIDGeneratorFromProto(pidg *snapshot.Payload_ExecutionIdGenerator) *PayloadExecutionIDGenerator {
-	return &PayloadExecutionIDGenerator{
-		ExecutionIDGenerator: ExecutionIDGeneratorFromProto(pidg.ExecutionIdGenerator),
-	}
-}
-
-func (p PayloadExecutionIDGenerator) IntoProto() *snapshot.Payload_ExecutionIdGenerator {
-	return &snapshot.Payload_ExecutionIdGenerator{
-		ExecutionIdGenerator: p.ExecutionIDGenerator.IntoProto(),
-	}
-}
-
-func (*PayloadExecutionIDGenerator) isPayload() {}
-
-func (p *PayloadExecutionIDGenerator) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*PayloadExecutionIDGenerator) Key() string {
-	return "all"
-}
-
-func (*PayloadExecutionIDGenerator) Namespace() SnapshotNamespace {
-	return ExecutionSnapshot
 }
 
 func PayloadExecutionMarketsFromProto(pem *snapshot.Payload_ExecutionMarkets) *PayloadExecutionMarkets {
@@ -2193,7 +2266,10 @@ func ExecutionMarketsFromProto(em *snapshot.ExecutionMarkets) *ExecutionMarkets 
 		mkts = append(mkts, ExecMarketFromProto(m))
 	}
 	return &ExecutionMarkets{
-		Markets: mkts,
+		Markets:   mkts,
+		Batches:   em.Batches,
+		Orders:    em.Orders,
+		Proposals: em.Proposals,
 	}
 }
 
@@ -2203,7 +2279,10 @@ func (e ExecutionMarkets) IntoProto() *snapshot.ExecutionMarkets {
 		mkts = append(mkts, m.IntoProto())
 	}
 	return &snapshot.ExecutionMarkets{
-		Markets: mkts,
+		Markets:   mkts,
+		Batches:   e.Batches,
+		Orders:    e.Orders,
+		Proposals: e.Proposals,
 	}
 }
 
@@ -2250,36 +2329,6 @@ func (s StakingAccount) IntoProto() *snapshot.StakingAccount {
 		Balance: s.Balance.String(),
 		Events:  evts,
 	}
-}
-
-func ExecutionIDGeneratorFromProto(eidg *snapshot.ExecutionIDGenerator) *ExecutionIDGenerator {
-	return &ExecutionIDGenerator{
-		Batches:   eidg.Batches,
-		Orders:    eidg.Orders,
-		Proposals: eidg.Proposals,
-	}
-}
-
-func (p ExecutionIDGenerator) IntoProto() *snapshot.ExecutionIDGenerator {
-	return &snapshot.ExecutionIDGenerator{
-		Batches:   p.Batches,
-		Orders:    p.Orders,
-		Proposals: p.Orders,
-	}
-}
-
-func (*ExecutionIDGenerator) isPayload() {}
-
-func (p *ExecutionIDGenerator) plToProto() interface{} {
-	return p.IntoProto()
-}
-
-func (*ExecutionIDGenerator) Namespace() SnapshotNamespace {
-	return IDGenSnapshot
-}
-
-func (*ExecutionIDGenerator) Key() string {
-	return "key"
 }
 
 type PartyTokenBalance struct {
@@ -2771,6 +2820,134 @@ func (*PayloadNotary) Namespace() SnapshotNamespace {
 	return NotarySnapshot
 }
 
+func PayloadStakeVerifierDepositedFromProto(svd *snapshot.Payload_StakeVerifierDeposited) *PayloadStakeVerifierDeposited {
+	pending := make([]*StakeDeposited, 0, len(svd.StakeVerifierDeposited.PendingDeposited))
+
+	for _, pd := range svd.StakeVerifierDeposited.PendingDeposited {
+		deposit := &StakeDeposited{
+			EthereumAddress: pd.EthereumAddress,
+			TxID:            pd.TxId,
+			LogIndex:        pd.LogIndex,
+			BlockNumber:     pd.BlockNumber,
+			ID:              pd.Id,
+			VegaPubKey:      pd.VegaPublicKey,
+			BlockTime:       pd.BlockTime,
+			Amount:          num.Zero(),
+		}
+
+		if len(pd.Amount) > 0 {
+			deposit.Amount, _ = num.UintFromString(pd.Amount, 10)
+		}
+		pending = append(pending, deposit)
+	}
+
+	return &PayloadStakeVerifierDeposited{
+		StakeVerifierDeposited: pending,
+	}
+}
+
+func (p *PayloadStakeVerifierDeposited) IntoProto() *snapshot.Payload_StakeVerifierDeposited {
+	pending := make([]*snapshot.StakeVerifierPending, 0, len(p.StakeVerifierDeposited))
+
+	for _, p := range p.StakeVerifierDeposited {
+		pending = append(pending,
+			&snapshot.StakeVerifierPending{
+				EthereumAddress: p.EthereumAddress,
+				VegaPublicKey:   p.VegaPubKey,
+				Amount:          p.Amount.String(),
+				BlockTime:       p.BlockTime,
+				BlockNumber:     p.BlockNumber,
+				LogIndex:        p.LogIndex,
+				TxId:            p.TxID,
+				Id:              p.ID,
+			})
+	}
+
+	return &snapshot.Payload_StakeVerifierDeposited{
+		StakeVerifierDeposited: &snapshot.StakeVerifierDeposited{
+			PendingDeposited: pending,
+		},
+	}
+}
+
+func (*PayloadStakeVerifierDeposited) isPayload() {}
+
+func (p *PayloadStakeVerifierDeposited) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadStakeVerifierDeposited) Key() string {
+	return "deposited"
+}
+
+func (*PayloadStakeVerifierDeposited) Namespace() SnapshotNamespace {
+	return StakeVerifierSnapshot
+}
+
+func PayloadStakeVerifierRemovedFromProto(svd *snapshot.Payload_StakeVerifierRemoved) *PayloadStakeVerifierRemoved {
+	pending := make([]*StakeRemoved, 0, len(svd.StakeVerifierRemoved.PendingRemoved))
+
+	for _, pr := range svd.StakeVerifierRemoved.PendingRemoved {
+		removed := &StakeRemoved{
+			EthereumAddress: pr.EthereumAddress,
+			TxID:            pr.TxId,
+			LogIndex:        pr.LogIndex,
+			BlockNumber:     pr.BlockNumber,
+			ID:              pr.Id,
+			VegaPubKey:      pr.VegaPublicKey,
+			BlockTime:       pr.BlockTime,
+			Amount:          num.Zero(),
+		}
+
+		if len(pr.Amount) > 0 {
+			removed.Amount, _ = num.UintFromString(pr.Amount, 10)
+		}
+		pending = append(pending, removed)
+	}
+
+	return &PayloadStakeVerifierRemoved{
+		StakeVerifierRemoved: pending,
+	}
+}
+
+func (p *PayloadStakeVerifierRemoved) IntoProto() *snapshot.Payload_StakeVerifierRemoved {
+	pending := make([]*snapshot.StakeVerifierPending, 0, len(p.StakeVerifierRemoved))
+
+	for _, p := range p.StakeVerifierRemoved {
+		pending = append(pending,
+			&snapshot.StakeVerifierPending{
+				EthereumAddress: p.EthereumAddress,
+				VegaPublicKey:   p.VegaPubKey,
+				Amount:          p.Amount.String(),
+				BlockTime:       p.BlockTime,
+				BlockNumber:     p.BlockNumber,
+				LogIndex:        p.LogIndex,
+				TxId:            p.TxID,
+				Id:              p.ID,
+			})
+	}
+
+	return &snapshot.Payload_StakeVerifierRemoved{
+		StakeVerifierRemoved: &snapshot.StakeVerifierRemoved{
+			PendingRemoved: pending,
+		},
+	}
+}
+
+func (*PayloadStakeVerifierRemoved) isPayload() {}
+
+func (p *PayloadStakeVerifierRemoved) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadStakeVerifierRemoved) Key() string {
+	return "removed"
+}
+
+func (*PayloadStakeVerifierRemoved) Namespace() SnapshotNamespace {
+	return StakeVerifierSnapshot
+}
+
 func PayloadReplayProtectionFromProto(rp *snapshot.Payload_ReplayProtection) *PayloadReplayProtection {
 	blocks := make([]*ReplayBlockTransactions, 0, len(rp.ReplayProtection.RecentBlocksTransactions))
 	for _, block := range rp.ReplayProtection.RecentBlocksTransactions {
@@ -2806,4 +2983,101 @@ func (*PayloadReplayProtection) Key() string {
 
 func (*PayloadReplayProtection) Namespace() SnapshotNamespace {
 	return ReplayProtectionSnapshot
+}
+
+func PayloadEventForwarderFromProto(ef *snapshot.Payload_EventForwarder) *PayloadEventForwarder {
+	return &PayloadEventForwarder{
+		Events: ef.EventForwarder.AckedEvents,
+	}
+}
+
+func (p *PayloadEventForwarder) IntoProto() *snapshot.Payload_EventForwarder {
+	return &snapshot.Payload_EventForwarder{
+		EventForwarder: &snapshot.EventForwarder{AckedEvents: p.Events},
+	}
+}
+
+func (*PayloadEventForwarder) isPayload() {}
+
+func (p *PayloadEventForwarder) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadEventForwarder) Key() string {
+	return "all"
+}
+
+func (*PayloadEventForwarder) Namespace() SnapshotNamespace {
+	return EventForwarderSnapshot
+}
+
+func PayloadWitnessFromProto(w *snapshot.Payload_Witness) *PayloadWitness {
+	resources := make([]*Resource, 0, len(w.Witness.Resources))
+	for _, r := range w.Witness.Resources {
+		resources = append(resources, ResourceFromProto(r))
+	}
+	return &PayloadWitness{
+		Witness: &Witness{
+			NeedResendResources: w.Witness.NeedResendResources,
+			Resources:           resources,
+		},
+	}
+}
+
+func ResourceFromProto(r *snapshot.Resource) *Resource {
+	return &Resource{
+		ID:         r.Id,
+		CheckUntil: time.Unix(0, r.CheckUntil).UTC(),
+		Votes:      r.Votes,
+		State:      r.State,
+	}
+}
+
+func (p *PayloadWitness) IntoProto() *snapshot.Payload_Witness {
+	resources := make([]*snapshot.Resource, 0, len(p.Witness.Resources))
+	for _, r := range p.Witness.Resources {
+		resources = append(resources, r.IntoProto())
+	}
+	return &snapshot.Payload_Witness{
+		Witness: &snapshot.Witness{
+			NeedResendResources: p.Witness.NeedResendResources,
+			Resources:           resources,
+		},
+	}
+}
+
+func (r *Resource) IntoProto() *snapshot.Resource {
+	return &snapshot.Resource{
+		Id:         r.ID,
+		CheckUntil: r.CheckUntil.UnixNano(),
+		Votes:      r.Votes,
+		State:      r.State,
+	}
+}
+
+func (*PayloadWitness) isPayload() {}
+
+func (p *PayloadWitness) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadWitness) Key() string {
+	return "all"
+}
+
+func (*PayloadWitness) Namespace() SnapshotNamespace {
+	return WitnessSnapshot
+}
+
+// KeyFromPayload is useful in snapshot engine, used by the Payload type, too.
+func KeyFromPayload(p isPayload) string {
+	return GetNodeKey(p.Namespace(), p.Key())
+}
+
+// GetNodeKey is a utility function, we don't want this mess scattered throughout the code.
+func GetNodeKey(ns SnapshotNamespace, k string) string {
+	return strings.Join([]string{
+		ns.String(),
+		k,
+	}, ".")
 }

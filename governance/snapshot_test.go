@@ -147,7 +147,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	require.False(t, bytes.Equal(emptyHash, h1))
 
 	// Get snapshot payload
-	state, err := eng.GetState(nodeValidationKey)
+	state, _, err := eng.GetState(nodeValidationKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
@@ -158,10 +158,11 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	defer snapEng.ctrl.Finish()
 
 	snapEng.assets.EXPECT().NewAsset(gomock.Any(), gomock.Any()).Times(1)
-	snapEng.witness.EXPECT().StartCheck(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	snapEng.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
 	// Load snapshot into a new engine
-	err = snapEng.LoadState(
+	_, err = snapEng.LoadState(
+		context.Background(),
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)
@@ -197,14 +198,14 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	snapEng := getTestEngine(t)
 	defer snapEng.ctrl.Finish()
 
-	state, err := eng.GetState(activeKey)
+	state, _, err := eng.GetState(activeKey)
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
-	err = snapEng.LoadState(types.PayloadFromProto(snap))
+	_, err = snapEng.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 
 	h2, err := snapEng.GetHash(activeKey)

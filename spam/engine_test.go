@@ -99,8 +99,13 @@ func testEngineReset(t *testing.T) {
 	voteHash, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
 	require.Nil(t, err)
 
-	snap, err := engine.Snapshot()
-	require.Nil(t, err)
+	keys := engine.Keys()
+	snap := make(map[string][]byte, len(keys))
+	for _, k := range keys {
+		data, _, err := engine.GetState(k)
+		require.NoError(t, err)
+		snap[k] = data
+	}
 	for _, bytes := range snap {
 		var p snapshot.Payload
 		proto.Unmarshal(bytes, &p)

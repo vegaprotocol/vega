@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/genesis"
@@ -38,7 +39,7 @@ var (
 	ErrMarketProposalDisabled                         = errors.New("market proposal disabled")
 	ErrAssetProposalDisabled                          = errors.New("asset proposal disabled")
 	ErrNonValidatorTransactionDisabledDuringBootstrap = errors.New("non validator transaction disabled during bootstrap")
-	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disaled during bootstrap")
+	ErrCheckpointRestoreDisabledDuringBootstrap       = errors.New("checkpoint restore disabled during bootstrap")
 	ErrAwaitingCheckpointRestore                      = errors.New("transactions not allowed while waiting for checkpoint restore")
 )
 
@@ -46,8 +47,9 @@ var (
 type Checkpoint interface {
 	BalanceCheckpoint(ctx context.Context) (*types.CheckpointState, error)
 	Checkpoint(ctx context.Context, now time.Time) (*types.CheckpointState, error)
-	Load(ctx context.Context, snap *types.CheckpointState) error
+	Load(ctx context.Context, cpt *types.CheckpointState) error
 	AwaitingRestore() bool
+	ValidateCheckpoint(cpt *types.CheckpointState) error
 }
 
 type SpamEngine interface {
@@ -62,7 +64,9 @@ type Snapshot interface {
 	RejectSnapshot() error
 	ApplySnapshotChunk(chunk *types.RawChunk) (bool, error)
 	GetMissingChunks() []uint32
-	ApplySnapshot() error
+	ApplySnapshot(ctx context.Context) error
+	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
+	AddProviders(provs ...types.StateProvider)
 }
 
 type App struct {
@@ -105,6 +109,8 @@ type App struct {
 	spam            SpamEngine
 	epoch           EpochService
 	snapshot        Snapshot
+
+	cpt abci.Tx
 }
 
 func NewApp(
@@ -134,6 +140,7 @@ func NewApp(
 	checkpoint Checkpoint,
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
+	snapshot Snapshot,
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -172,8 +179,11 @@ func NewApp(
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
+		snapshot:        snapshot,
 	}
 
+	// register replay protection if needed:
+	app.abci.RegisterSnapshot(snapshot)
 	// setup handlers
 	app.abci.OnInitChain = app.OnInitChain
 	app.abci.OnBeginBlock = app.OnBeginBlock
@@ -327,7 +337,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 	}
 }
 
-func (app *App) ApplySnapshotChunk(req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
 	chunk := types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
@@ -361,9 +371,19 @@ func (app *App) ApplySnapshotChunk(req tmtypes.RequestApplySnapshotChunk) tmtype
 	}
 	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
 	if ready {
-		_ = app.snapshot.ApplySnapshot()
+		_ = app.snapshot.ApplySnapshot(ctx)
 	}
 	return resp
+}
+
+func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
+	if err != nil {
+		return tmtypes.ResponseLoadSnapshotChunk{}
+	}
+	return tmtypes.ResponseLoadSnapshotChunk{
+		Chunk: raw.Data,
+	}
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
@@ -373,6 +393,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
+	app.abci.RegisterSnapshot(app.snapshot)
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -426,7 +447,18 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
 	)
-	return
+
+	// will be true only the first time we get out of the bootstrap period
+	if app.cpt != nil && app.limits.BootstrapFinished() {
+		app.log.Info("restoring a scheduled checkpoint")
+		if err := app.DeliverReloadCheckpoint(ctx, app.cpt); err != nil {
+			app.log.Error("could not restore scheduled checkpoint",
+				logging.Error(err))
+		}
+		app.cpt = nil
+	}
+
+	return ctx, resp
 }
 
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
@@ -438,10 +470,10 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = append(resp.Data, app.gov.Hash()...)
 	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
 
-	// Snapshot can be nil if it wasn't time to create a snapshot
-	if snap, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); snap != nil {
-		resp.Data = append(resp.Data, snap.Hash...)
-		_ = app.handleCheckpoint(snap)
+	// Checkpoint can be nil if it wasn't time to create a checkpoint
+	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
+		resp.Data = append(resp.Data, cpt.Hash...)
+		_ = app.handleCheckpoint(cpt)
 	}
 	// Compute the AppHash and update the response
 
@@ -515,6 +547,51 @@ func (app *App) limitPubkey(pk string) (limit bool, isValidator bool) {
 	return false, false
 }
 
+func (app *App) validateScheduleCheckpointRestore(tx abci.Tx) (cpt *types.CheckpointState, err error) {
+	defer func() {
+		if err != nil {
+			app.log.Error("could not schedule checkpoint to be loaded at network bootstraping end", logging.Error(err))
+		}
+	}()
+
+	if app.cpt != nil {
+		// an valid checkpoint is already schedule to be loaded
+		// at end of bootstrap, skip
+		return nil, errors.New("a valid checkpoint is already scheduled to be loaded at the end of the boostraping period")
+	}
+
+	cmd := &commandspb.RestoreSnapshot{}
+	if err := tx.Unmarshal(cmd); err != nil {
+		return nil, fmt.Errorf("invalid restore checkpoint command: %w", err)
+	}
+
+	// convert to checkpoint type:
+	cpt = &types.CheckpointState{}
+	if err := cpt.SetState(cmd.Data); err != nil {
+		return nil, fmt.Errorf("invalid restore checkpoint command: %w", err)
+	}
+
+	// now we have a valid checkpoint.
+	if err := app.checkpoint.ValidateCheckpoint(cpt); err != nil {
+		return nil, err
+	}
+
+	return cpt, nil
+}
+
+func (app *App) scheduleCheckpointRestore(tx abci.Tx) (err error) {
+	cpt, err := app.validateScheduleCheckpointRestore(tx)
+	if err != nil {
+		return err
+	}
+
+	app.cpt = tx
+	app.log.Info("new checkpoint scheduled to be loaded after boostraping ends",
+		logging.String("hash", hex.EncodeToString(cpt.Hash)))
+
+	return nil
+}
+
 func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	defer func() {
 		if err != nil {
@@ -536,11 +613,17 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			return ErrNonValidatorTransactionDisabledDuringBootstrap
 		}
 		if cmd == txn.CheckpointRestoreCommand {
-			return ErrCheckpointRestoreDisabledDuringBootstrap
+			_, err := app.validateScheduleCheckpointRestore(tx)
+			return err
 		}
 	}
 
 	switch tx.Command() {
+	case txn.CheckpointRestoreCommand:
+		// do not get the transaction in the chain if we are not expecting a reload
+		if !app.checkpoint.AwaitingRestore() {
+			return errors.New("no checkpoint expected to be restored")
+		}
 	case txn.WithdrawCommand:
 		if app.reloadCP {
 			// we haven't reloaded the collateral data, withdrawals are going to fail
@@ -1051,12 +1134,18 @@ func (app *App) DeliverUndelegate(ctx context.Context, tx abci.Tx) (err error) {
 	}
 }
 
-func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (rerr error) {
+func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err error) {
+	if !app.limits.BootstrapFinished() {
+		// bootstrap is not finished, we eventually schedule a reload of the
+		// checkpoint, if valid
+		return app.scheduleCheckpointRestore(tx)
+	}
+
 	cmd := &commandspb.RestoreSnapshot{}
 	defer func() {
-		if rerr != nil {
+		if err != nil {
 			app.log.Error("Restoring checkpoint failed",
-				logging.Error(rerr),
+				logging.Error(err),
 			)
 			return
 		}
@@ -1067,20 +1156,20 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (rerr e
 		return err
 	}
 
-	// convert to snapshot type:
-	snap := &types.CheckpointState{}
-	if err := snap.SetState(cmd.Data); err != nil {
+	// convert to checkpoint type:
+	cpt := &types.CheckpointState{}
+	if err := cpt.SetState(cmd.Data); err != nil {
 		return err
 	}
-	bh, err := snap.GetBlockHeight()
+	bh, err := cpt.GetBlockHeight()
 	if err != nil {
 		app.log.Panic("Failed to get blockheight from checkpoint", logging.Error(err))
 	}
 	// ensure block height is set
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
 	app.blockCtx = ctx
-	err = app.checkpoint.Load(ctx, snap)
-	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect {
+	err = app.checkpoint.Load(ctx, cpt)
+	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect && !errors.Is(err, checkpoint.ErrNoCheckpointExpectedToBeRestored) && !errors.Is(err, checkpoint.ErrIncompatibleHashes) {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
 	}
 	// set flag in case the CP has been reloaded

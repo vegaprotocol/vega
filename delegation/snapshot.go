@@ -3,6 +3,7 @@ package delegation
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
@@ -14,6 +15,7 @@ var hashKeys = []string{
 	activeKey,
 	pendingKey,
 	autoKey,
+	lastReconKey,
 }
 
 type delegationSnapshotState struct {
@@ -28,6 +30,15 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 
 func (e *Engine) Keys() []string {
 	return hashKeys
+}
+
+func (e *Engine) serialiseLastReconTime() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadDelegationLastReconTime{
+			LastReconcilicationTime: e.lastReconciliation,
+		},
+	}
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseActive() ([]byte, error) {
@@ -118,38 +129,33 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := e.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(ctx context.Context, p *types.Payload) error {
+func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadDelegationActive:
-		return e.restoreActive(ctx, pl.DelegationActive)
+		return nil, e.restoreActive(ctx, pl.DelegationActive)
 	case *types.PayloadDelegationPending:
-		return e.restorePending(ctx, pl.DelegationPending)
+		return nil, e.restorePending(ctx, pl.DelegationPending)
 	case *types.PayloadDelegationAuto:
-		return e.restoreAuto(pl.DelegationAuto)
+		return nil, e.restoreAuto(pl.DelegationAuto)
+	case *types.PayloadDelegationLastReconTime:
+		return nil, e.restoreLastReconTime(ctx, pl.LastReconcilicationTime)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
+}
+
+func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time) error {
+	e.lastReconciliation = t
+	return nil
 }
 
 func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive) error {
