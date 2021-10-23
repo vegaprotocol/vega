@@ -251,6 +251,7 @@ pipeline {
                                 --disable funlen \
                                 --disable forbidigo \
                                 --disable errcheck \
+                                --disable errname \
                                 --disable dupl \
                                 --disable interfacer \
                                 --disable gocyclo \
