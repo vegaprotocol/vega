@@ -224,7 +224,7 @@ func (o *PartiesOrders) Get(party, orderID string) (*types.Order, bool) {
 	return order, ok
 }
 
-// GetForParty expects to read through them, not do any write operation
+// GetForParty expects to read through them, not do any write operation.
 func (o *PartiesOrders) GetForParty(
 	party string) (map[string]*types.Order, bool) {
 	orders, ok := o.m[party]

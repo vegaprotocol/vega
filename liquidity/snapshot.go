@@ -26,7 +26,6 @@ type SnapshotEngine struct {
 	hashes            map[string][]byte
 	serialised        map[string][]byte
 	serialisers       map[string]*proto.Buffer
-	serialisersFuncs  map[string]func() ([]byte, bool, error)
 
 	// keys, need to be computed when the engine is
 	// instantiated as they are dynamic
@@ -53,21 +52,13 @@ func NewSnapshotEngine(config Config,
 
 		parametersChanged: true,
 		// empty so default to nil to force update
-		hashes:           map[string][]byte{},
-		serialised:       map[string][]byte{},
-		serialisers:      map[string]*proto.Buffer{},
-		serialisersFuncs: map[string]func() ([]byte, bool, error){},
+		hashes:      map[string][]byte{},
+		serialised:  map[string][]byte{},
+		serialisers: map[string]*proto.Buffer{},
 	}
 
 	// build the keys
 	se.buildHashKeys(market)
-
-	// map the serialisations functions
-	se.serialisersFuncs[se.parametersKey] = se.serialiseParameters
-	se.serialisersFuncs[se.partiesLiquidityOrdersKey] = se.serialisePartiesLiquidityOrders
-	se.serialisersFuncs[se.partiesOrdersKey] = se.serialisePartiesOrders
-	se.serialisersFuncs[se.pendingProvisionsKey] = se.serialisePendingProvisions
-	se.serialisersFuncs[se.provisionsKey] = se.serialiseProvisions
 
 	// inialised some stuff
 	for _, v := range se.hashKeys {
@@ -222,12 +213,26 @@ func (e *SnapshotEngine) loadProvisions(
 }
 
 func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
-	f, ok := e.serialisersFuncs[k]
-	if !ok {
+	var (
+		buf     []byte
+		changed bool
+		err     error
+	)
+	switch k {
+	case e.parametersKey:
+		buf, changed, err = e.serialiseParameters()
+	case e.partiesLiquidityOrdersKey:
+		buf, changed, err = e.serialisePartiesLiquidityOrders()
+	case e.partiesOrdersKey:
+		buf, changed, err = e.serialisePartiesOrders()
+	case e.pendingProvisionsKey:
+		buf, changed, err = e.serialisePendingProvisions()
+	case e.provisionsKey:
+		buf, changed, err = e.serialiseProvisions()
+	default:
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	buf, changed, err := f()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -244,7 +249,7 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
 }
 
 func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
-	var key = e.parametersKey
+	key := e.parametersKey
 	if !e.parametersChanged {
 		return e.serialised[key], false, nil
 	}
@@ -263,18 +268,11 @@ func (e *SnapshotEngine) serialiseParameters() ([]byte, bool, error) {
 		},
 	}
 
-	buf := e.serialisers[key]
-	buf.Reset()
-	err := buf.Marshal(payload)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return buf.Bytes(), true, nil
+	return e.marshalPayload(key, payload)
 }
 
 func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error) {
-	var key = e.partiesLiquidityOrdersKey
+	key := e.partiesLiquidityOrdersKey
 	if !e.Engine.liquidityOrders.HasUpdates() {
 		return e.serialised[key], false, nil
 	}
@@ -298,18 +296,11 @@ func (e *SnapshotEngine) serialisePartiesLiquidityOrders() ([]byte, bool, error)
 		},
 	}
 
-	buf := e.serialisers[key]
-	buf.Reset()
-	err := buf.Marshal(payload)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return buf.Bytes(), true, nil
+	return e.marshalPayload(key, payload)
 }
 
 func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
-	var key = e.partiesOrdersKey
+	key := e.partiesOrdersKey
 	if !e.Engine.orders.HasUpdates() {
 		return e.serialised[key], false, nil
 	}
@@ -333,18 +324,11 @@ func (e *SnapshotEngine) serialisePartiesOrders() ([]byte, bool, error) {
 		},
 	}
 
-	buf := e.serialisers[key]
-	buf.Reset()
-	err := buf.Marshal(payload)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return buf.Bytes(), true, nil
+	return e.marshalPayload(key, payload)
 }
 
 func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
-	var key = e.pendingProvisionsKey
+	key := e.pendingProvisionsKey
 	if !e.Engine.pendings.HasUpdates() {
 		return e.serialised[key], false, nil
 	}
@@ -366,25 +350,18 @@ func (e *SnapshotEngine) serialisePendingProvisions() ([]byte, bool, error) {
 		},
 	}
 
-	buf := e.serialisers[key]
-	buf.Reset()
-	err := buf.Marshal(payload)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return buf.Bytes(), true, nil
+	return e.marshalPayload(key, payload)
 }
 
 func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
-	var key = e.provisionsKey
+	key := e.provisionsKey
 	if !e.Engine.provisions.HasUpdates() {
 		return e.serialised[key], false, nil
 	}
 
 	e.Engine.provisions.ResetUpdated()
 
-	// these are sorted already, only a convertion to proto is needed
+	// these are sorted already, only a conversion to proto is needed
 	lps := e.Engine.provisions.Slice()
 	pblps := make([]*typespb.LiquidityProvision, 0, len(lps))
 	for _, v := range lps {
@@ -400,10 +377,13 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 		},
 	}
 
+	return e.marshalPayload(key, payload)
+}
+
+func (e *SnapshotEngine) marshalPayload(key string, payload *snapshotpb.Payload) ([]byte, bool, error) {
 	buf := e.serialisers[key]
 	buf.Reset()
-	err := buf.Marshal(payload)
-	if err != nil {
+	if err := buf.Marshal(payload); err != nil {
 		return nil, false, err
 	}
 
