@@ -87,7 +87,7 @@ func testSignedCommandSuccess(t *testing.T) {
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
 	commander.chain.EXPECT().SubmitTransactionV2(
-		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", nil)
 
 	ok := make(chan error)
 	commander.Command(ctx, cmd, payload, func(err error) {
@@ -109,7 +109,7 @@ func testSignedCommandFailure(t *testing.T) {
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
 	commander.chain.EXPECT().SubmitTransactionV2(
-		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(errors.New("bad bad"))
+		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", errors.New("bad bad"))
 
 	ok := make(chan error)
 	commander.Command(ctx, cmd, payload, func(err error) {
