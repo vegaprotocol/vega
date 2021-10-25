@@ -220,6 +220,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		}
 		e.reset(p, v, now)
 		e.initialised = true
+		e.stateChanged = true
 	}
 
 	last := currentPrice{
@@ -327,6 +328,7 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 			e.pricesPast = e.pricesPast[len(e.pricesPast)-1:]
 		} else { // Otherwise can't initialise
 			e.initialised = false
+			e.stateChanged = true
 			return
 		}
 	}
@@ -477,6 +479,7 @@ func (e *Engine) updateBounds() {
 func (e *Engine) getRefPrice(horizon int64) num.Decimal {
 	if e.refPriceCacheTime != e.now {
 		e.refPriceCache = make(map[int64]num.Decimal, len(e.refPriceCache))
+		e.stateChanged = true
 	}
 
 	if _, ok := e.refPriceCache[horizon]; !ok {

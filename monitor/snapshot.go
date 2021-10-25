@@ -30,9 +30,19 @@ func (a *AuctionState) GetState() *types.AuctionState {
 func (a *AuctionState) RestoreState(as *types.AuctionState) {
 	a.mode = as.Mode
 	a.defMode = as.DefaultMode
-	a.begin = &as.Begin
 	a.end = as.End
 	a.start = as.Start
 	a.stop = as.Stop
-	a.extension = &as.Extension
+
+	if as.Begin.IsZero() {
+		a.begin = nil
+	} else {
+		a.begin = &as.Begin
+	}
+
+	if as.Extension == types.AuctionTriggerUnspecified {
+		a.extension = nil
+	} else {
+		a.extension = &as.Extension
+	}
 }

@@ -23,11 +23,11 @@ func priceBoundTypeToInternal(pb *types.PriceBound) *bound {
 	}
 }
 
-func mapToDecMap(m map[int64]num.Decimal) []*types.DecMap {
-	dm := make([]*types.DecMap, 0, len(m))
+func mapToKeyDecimalPair(m map[int64]num.Decimal) []*types.KeyDecimalPair {
+	dm := make([]*types.KeyDecimalPair, 0, len(m))
 
 	for k, v := range m {
-		dm = append(dm, &types.DecMap{
+		dm = append(dm, &types.KeyDecimalPair{
 			Key: k,
 			Val: v,
 		})
@@ -36,7 +36,7 @@ func mapToDecMap(m map[int64]num.Decimal) []*types.DecMap {
 	return dm
 }
 
-func decMapToMap(dms []*types.DecMap) map[int64]num.Decimal {
+func keyDecimalPairToMap(dms []*types.KeyDecimalPair) map[int64]num.Decimal {
 	m := map[int64]num.Decimal{}
 
 	for _, dm := range dms {
@@ -99,13 +99,13 @@ func (e Engine) Changed() bool {
 func (e *Engine) GetState() *types.PriceMonitor {
 	pm := &types.PriceMonitor{
 		Initialised:         e.initialised,
-		FPHorizons:          mapToDecMap(e.fpHorizons),
+		FPHorizons:          mapToKeyDecimalPair(e.fpHorizons),
 		Now:                 e.now,
 		Update:              e.update,
 		Bounds:              e.serialiseBounds(),
 		PriceRangeCache:     e.serialisePriceRanges(),
 		PriceRangeCacheTime: e.priceRangeCacheTime,
-		RefPriceCache:       mapToDecMap(e.refPriceCache),
+		RefPriceCache:       mapToKeyDecimalPair(e.refPriceCache),
 		RefPriceCacheTime:   e.refPriceCacheTime,
 	}
 
@@ -116,11 +116,11 @@ func (e *Engine) GetState() *types.PriceMonitor {
 
 func (e *Engine) RestoreState(pm *types.PriceMonitor) {
 	e.initialised = pm.Initialised
-	e.fpHorizons = decMapToMap(pm.FPHorizons)
+	e.fpHorizons = keyDecimalPairToMap(pm.FPHorizons)
 	e.now = pm.Now
 	e.update = pm.Update
 	e.priceRangeCacheTime = pm.PriceRangeCacheTime
-	e.refPriceCache = decMapToMap(pm.RefPriceCache)
+	e.refPriceCache = keyDecimalPairToMap(pm.RefPriceCache)
 	e.refPriceCacheTime = pm.RefPriceCacheTime
 	e.restoreBounds(pm.Bounds)
 	e.restorePriceRanges(pm.PriceRangeCache)

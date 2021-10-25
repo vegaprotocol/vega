@@ -257,13 +257,13 @@ type ExecMarket struct {
 
 type PriceMonitor struct {
 	Initialised         bool
-	FPHorizons          []*DecMap
+	FPHorizons          []*KeyDecimalPair
 	Now                 time.Time
 	Update              time.Time
 	Bounds              []*PriceBound
 	PriceRangeCache     []*PriceRangeCache
 	PriceRangeCacheTime time.Time
-	RefPriceCache       []*DecMap
+	RefPriceCache       []*KeyDecimalPair
 	RefPriceCacheTime   time.Time
 }
 
@@ -285,7 +285,7 @@ type PriceRange struct {
 	Ref num.Decimal
 }
 
-type DecMap struct {
+type KeyDecimalPair struct {
 	Key int64
 	Val num.Decimal
 }
@@ -2234,18 +2234,18 @@ func (l *LimitState) IntoProto() *snapshot.LimitState {
 	}
 }
 
-func DecMapFromProto(dm *snapshot.DecimalMap) *DecMap {
+func KeyDecimalPairFromProto(dm *snapshot.DecimalMap) *KeyDecimalPair {
 	var v num.Decimal
 	if len(dm.Val) > 0 {
 		v, _ = num.DecimalFromString(dm.Val)
 	}
-	return &DecMap{
+	return &KeyDecimalPair{
 		Key: dm.Key,
 		Val: v,
 	}
 }
 
-func (d DecMap) IntoProto() *snapshot.DecimalMap {
+func (d KeyDecimalPair) IntoProto() *snapshot.DecimalMap {
 	return &snapshot.DecimalMap{
 		Key: d.Key,
 		Val: d.Val.String(),
@@ -2320,20 +2320,20 @@ func (p PriceRangeCache) IntoProto() *snapshot.PriceRangeCache {
 func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 	ret := PriceMonitor{
 		Initialised:         pm.Initialised,
-		FPHorizons:          make([]*DecMap, 0, len(pm.FpHorizons)),
+		FPHorizons:          make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
 		Now:                 time.Unix(pm.Now, 0).UTC(),
 		Update:              time.Unix(pm.Update, 0).UTC(),
 		Bounds:              make([]*PriceBound, 0, len(pm.Bounds)),
 		PriceRangeCacheTime: time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
 		PriceRangeCache:     make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
 		RefPriceCacheTime:   time.Unix(pm.RefPriceCacheTime, 0).UTC(),
-		RefPriceCache:       make([]*DecMap, 0, len(pm.RefPriceCache)),
+		RefPriceCache:       make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
 	}
 	for _, d := range pm.FpHorizons {
-		ret.FPHorizons = append(ret.FPHorizons, DecMapFromProto(d))
+		ret.FPHorizons = append(ret.FPHorizons, KeyDecimalPairFromProto(d))
 	}
 	for _, d := range pm.RefPriceCache {
-		ret.RefPriceCache = append(ret.RefPriceCache, DecMapFromProto(d))
+		ret.RefPriceCache = append(ret.RefPriceCache, KeyDecimalPairFromProto(d))
 	}
 	for _, b := range pm.Bounds {
 		ret.Bounds = append(ret.Bounds, PriceBoundFromProto(b))

@@ -258,7 +258,7 @@ func (m *Market) restoreState(em *types.ExecMarket) error {
 	return nil
 }
 
-// SetMarketID assigns a deterministic pseudo-random ID to a Market
+// SetMarketID assigns a deterministic pseudo-random ID to a Market.
 func SetMarketID(marketcfg *types.Market, seq uint64) error {
 	marketcfg.ID = ""
 	marketbytes, err := proto.Marshal(marketcfg.IntoProto())
