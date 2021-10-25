@@ -76,7 +76,9 @@ func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg inter
 }
 
 func (o *OnChainVerifier) CheckStakeDeposited(
-	event *types.StakeDeposited) error {
+	event *types.StakeDeposited) (rret error) {
+	fmt.Printf("\n\nENTERING DEPOSIT FOR TX: %v\n\n", event.TxID)
+	defer func() { fmt.Printf("\n\nLEAVING DEPOSIT FOR TX: %v -> %v\n\n", event.TxID, rret) }()
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
@@ -153,7 +155,9 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 	return ErrNoStakeDepositedEventFound
 }
 
-func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
+func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) (rret error) {
+	fmt.Printf("\n\nENTERING REMOVE FOR TX: %v\n\n", event.TxID)
+	defer func() { fmt.Printf("\n\nLEAVING REMOVE FOR TX: %v -> %v\n\n", event.TxID, rret) }()
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
