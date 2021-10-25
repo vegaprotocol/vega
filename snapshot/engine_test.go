@@ -52,6 +52,7 @@ func TestEngine(t *testing.T) {
 
 func TestRestore(t *testing.T) {
 	t.Run("Restoring a snapshot from chain works as expected", testReloadSnapshot)
+	t.Run("Restoring replay protectors replaces the provider as expected", testReloadReplayProtectors)
 }
 
 func testAddProviders(t *testing.T) {
@@ -93,11 +94,11 @@ func testAddProvidersDuplicateKeys(t *testing.T) {
 	data2 := hash2
 	for i, k := range keys1 {
 		prov1.EXPECT().GetHash(k).Times(1).Return(hash1[i], nil)
-		prov1.EXPECT().GetState(k).Times(1).Return(data1[i], nil)
+		prov1.EXPECT().GetState(k).Times(1).Return(data1[i], nil, nil)
 	}
 	// duplicate key is skipped
 	prov2.EXPECT().GetHash(keys2[1]).Times(1).Return(hash2[0], nil)
-	prov2.EXPECT().GetState(keys2[1]).Times(1).Return(data2[0], nil)
+	prov2.EXPECT().GetState(keys2[1]).Times(1).Return(data2[0], nil, nil)
 
 	engine.time.EXPECT().GetTimeNow().Times(1).Return(time.Now())
 	_, err := engine.Snapshot(engine.ctx)
@@ -134,7 +135,7 @@ func testTakeSnapshot(t *testing.T) {
 		require.NoError(t, err)
 		hash := crypto.Hash(data)
 		prov.EXPECT().GetHash(k).Times(2).Return(hash, nil)
-		prov.EXPECT().GetState(k).Times(1).Return(data, nil)
+		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
 	}
 
 	// take the snapshot knowing state has changed:
@@ -174,7 +175,7 @@ func testReloadSnapshot(t *testing.T) {
 		require.NoError(t, err)
 		hash := crypto.Hash(data)
 		prov.EXPECT().GetHash(k).Times(1).Return(hash, nil)
-		prov.EXPECT().GetState(k).Times(1).Return(data, nil)
+		prov.EXPECT().GetState(k).Times(1).Return(data, nil, nil)
 	}
 	hash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
@@ -217,6 +218,88 @@ func testReloadSnapshot(t *testing.T) {
 
 	// OK, our snapshot is ready to load
 	require.NoError(t, eng2.ApplySnapshot(eng2.ctx))
+}
+
+func testReloadReplayProtectors(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.Finish()
+	rpPl := types.PayloadReplayProtection{
+		Blocks: []*types.ReplayBlockTransactions{
+			{
+				Transactions: []string{"foo", "bar"},
+			},
+		},
+	}
+	payload := types.Payload{
+		Data: &rpPl,
+	}
+	data, err := proto.Marshal(payload.IntoProto())
+	require.NoError(t, err)
+	hash := crypto.Hash(data)
+	rpl := e.getNewProviderMock()
+	rpl.EXPECT().Namespace().Times(1).Return(payload.Namespace())
+	rpl.EXPECT().Keys().Times(1).Return([]string{payload.Key()})
+
+	old := e.getNewProviderMock()
+	old.EXPECT().Namespace().Times(2).Return(payload.Namespace())
+	old.EXPECT().Keys().Times(3).Return([]string{payload.Key()}) // this gets called a second time when replacing
+	old.EXPECT().GetHash(payload.Key()).Times(1).Return(hash, nil)
+	old.EXPECT().GetState(payload.Key()).Times(1).Return(data, nil, nil)
+	old.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).DoAndReturn(func(_ context.Context, pl *types.Payload) ([]types.StateProvider, error) {
+		switch dt := pl.Data.(type) {
+		case *types.PayloadReplayProtection:
+			require.Equal(t, len(dt.Blocks), len(rpPl.Blocks))
+			require.EqualValues(t, dt.Blocks[0], rpPl.Blocks[0])
+		default:
+			t.Fatal("Incorrect payload type passed")
+		}
+		return []types.StateProvider{rpl}, nil
+	})
+	// call is made when creating the snapshot
+	now := time.Now()
+	e.time.EXPECT().GetTimeNow().Times(1).Return(now)
+
+	// add old provider
+	e.AddProviders(old)
+	// take a snapshot
+	snapHash, err := e.Snapshot(e.ctx)
+	require.NoError(t, err)
+	require.NotNil(t, snapHash)
+	// now get the snapshot we've just created
+	snaps, err := e.List()
+	require.NoError(t, err)
+	require.NotEmpty(t, snaps)
+	require.Equal(t, 1, len(snaps))
+
+	snap := snaps[0]
+
+	// now reload the snapshot on a new engine
+	e2 := getTestEngine(t)
+	defer e2.Finish()
+	e2.time.EXPECT().GetTimeNow().Times(1).Return(now)
+	// calls we expect to see when reloading
+	e2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
+		require.Equal(t, newT.Unix(), now.Unix())
+	})
+	e2.AddProviders(old)
+	require.NoError(t, e2.ReceiveSnapshot(snap))
+	ready := false
+	for i := uint32(0); i < snap.Chunks; i++ {
+		chunk, err := e.LoadSnapshotChunk(snap.Height, uint32(snap.Format), i)
+		require.NoError(t, err)
+		ready, err = e2.ApplySnapshotChunk(chunk)
+		require.NoError(t, err)
+	}
+	require.True(t, ready)
+	// OK, snapshot is ready to be applied
+	require.NoError(t, e2.ApplySnapshot(e.ctx))
+	// so now we can check if taking a snapshot calls the methods on the replacement provider
+
+	rpl.EXPECT().GetHash(payload.Key()).Times(1).Return(hash, nil)
+	snapHash2, err := e2.Snapshot(e.ctx)
+	require.NoError(t, err)
+	require.NotNil(t, snapHash2)
+	require.EqualValues(t, snapHash, snapHash2)
 }
 
 func (t *tstEngine) getNewProviderMock() *tmocks.MockStateProvider {

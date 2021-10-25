@@ -313,7 +313,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	commander, err := nodewallets.NewCommander(l.Log, nil, l.nodeWallets.Vega, l.stats)
+	commander, err := nodewallets.NewCommander(l.conf.NodeWallet, l.Log, nil, l.nodeWallets.Vega, l.stats)
 	if err != nil {
 		return err
 	}
@@ -369,7 +369,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		panic(err)
 	}
 	// @TODO register StateProviders with snapshot engine:
-	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking, l.notary, l.spam, l.rewards, l.stakingAccounts)
+	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
+		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits)
 	// these haven't been implemented yet. Replay protection will require some trickery.
 	// l.snapshot.AddProviders(l.executionEngine)
 

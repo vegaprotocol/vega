@@ -113,6 +113,54 @@ func Test(t *testing.T) {
 	t.Run("test roundtrip snapshot for active delegations", testActiveSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for pending delegations", testPendingSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for auto delegations", testAutoSnapshotRoundTrip)
+	t.Run("test roundtrip snapshot for last reconciliation time delegations", testLastReconTimeRoundTrip)
+}
+
+func testLastReconTimeRoundTrip(t *testing.T) {
+	testEngine := getEngine(t)
+	setupDefaultDelegationState(testEngine, 14, 7)
+
+	// get the has and serialised state
+	hash, err := testEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+	state, _, err := testEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	// verify hash is consistent in the absence of change
+	hashNoChange, err := testEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+	stateNoChange, _, err := testEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hashNoChange))
+	require.True(t, bytes.Equal(state, stateNoChange))
+
+	// advance 30 seconds
+	testEngine.engine.onChainTimeUpdate(context.Background(), testEngine.engine.lastReconciliation.Add(30*time.Second))
+	hashChanged, err := testEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+
+	stateChanged, _, err := testEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	require.False(t, bytes.Equal(hash, hashChanged))
+	require.False(t, bytes.Equal(state, stateChanged))
+
+	newEngine := getEngine(t)
+	var lastRecon snapshot.Payload
+	proto.Unmarshal(stateChanged, &lastRecon)
+	payload := types.PayloadFromProto(&lastRecon)
+
+	_, err = newEngine.engine.LoadState(context.Background(), payload)
+	require.Nil(t, err)
+
+	reloadedHash, err := newEngine.engine.GetHash(lastReconKey)
+	require.Nil(t, err)
+	reloadedState, _, err := newEngine.engine.GetState(lastReconKey)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(reloadedHash, hashChanged))
+	require.True(t, bytes.Equal(reloadedState, stateChanged))
 }
 
 // test round trip of active snapshot hash and serialisation.
@@ -125,13 +173,13 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	// get the has and serialised state
 	hash, err := testEngine.engine.GetHash(activeKey)
 	require.Nil(t, err)
-	state, err := testEngine.engine.GetState(activeKey)
+	state, _, err := testEngine.engine.GetState(activeKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
 	hashNoChange, err := testEngine.engine.GetHash(activeKey)
 	require.Nil(t, err)
-	stateNoChange, err := testEngine.engine.GetState(activeKey)
+	stateNoChange, _, err := testEngine.engine.GetState(activeKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -147,7 +195,7 @@ func testActiveSnapshotRoundTrip(t *testing.T) {
 	// verify hash and state match
 	hashPostReload, _ := testEngine.engine.GetHash(activeKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _ := testEngine.engine.GetState(activeKey)
+	statePostReload, _, _ := testEngine.engine.GetState(activeKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -164,13 +212,13 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	// get the has and serialised state
 	hash, err := testEngine.engine.GetHash(pendingKey)
 	require.Nil(t, err)
-	state, err := testEngine.engine.GetState(pendingKey)
+	state, _, err := testEngine.engine.GetState(pendingKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
 	hashNoChange, err := testEngine.engine.GetHash(pendingKey)
 	require.Nil(t, err)
-	stateNoChange, err := testEngine.engine.GetState(pendingKey)
+	stateNoChange, _, err := testEngine.engine.GetState(pendingKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -185,7 +233,7 @@ func testPendingSnapshotRoundTrip(t *testing.T) {
 	require.Nil(t, err)
 	hashPostReload, _ := testEngine.engine.GetHash(pendingKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _ := testEngine.engine.GetState(pendingKey)
+	statePostReload, _, _ := testEngine.engine.GetState(pendingKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -199,13 +247,13 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	// by now, auto delegation should be set for both party1 and party2 as all of their association is nominated
 	hash, err := testEngine.engine.GetHash(autoKey)
 	require.Nil(t, err)
-	state, err := testEngine.engine.GetState(autoKey)
+	state, _, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
 	hashNoChange, err := testEngine.engine.GetHash(autoKey)
 	require.Nil(t, err)
-	stateNoChange, err := testEngine.engine.GetState(autoKey)
+	stateNoChange, _, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(hash, hashNoChange))
 	require.True(t, bytes.Equal(state, stateNoChange))
@@ -214,7 +262,7 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	testEngine.engine.UndelegateNow(context.Background(), "party1", "node1", num.NewUint(3))
 	hashPostUndelegate, err := testEngine.engine.GetHash(autoKey)
 	require.Nil(t, err)
-	statePostUndelegate, err := testEngine.engine.GetState(autoKey)
+	statePostUndelegate, _, err := testEngine.engine.GetState(autoKey)
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(hash, hashPostUndelegate))
 	require.False(t, bytes.Equal(state, statePostUndelegate))
@@ -228,7 +276,7 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	testEngine.engine.LoadState(context.Background(), payload)
 	hashPostReload, _ := testEngine.engine.GetHash(autoKey)
 	require.True(t, bytes.Equal(hashPostUndelegate, hashPostReload))
-	statePostReload, _ := testEngine.engine.GetState(autoKey)
+	statePostReload, _, _ := testEngine.engine.GetState(autoKey)
 	require.True(t, bytes.Equal(statePostUndelegate, statePostReload))
 }
 
@@ -2172,7 +2220,7 @@ func getEngine(t *testing.T) *testEngine {
 
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	engine := New(logger, conf, broker, topology, stakingAccounts, &TestEpochEngine{}, ts)
-	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1})
+	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 1, StartTime: time.Now()})
 	engine.OnMinAmountChanged(context.Background(), num.NewDecimalFromFloat(2))
 	engine.OnCompLevelChanged(context.Background(), 1.1)
 	engine.OnMinValidatorsChanged(context.Background(), 5)

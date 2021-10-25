@@ -18,9 +18,10 @@ var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
 const reconciliationInterval = 30 * time.Second
 
 var (
-	activeKey  = (&types.PayloadDelegationActive{}).Key()
-	pendingKey = (&types.PayloadDelegationPending{}).Key()
-	autoKey    = (&types.PayloadDelegationAuto{}).Key()
+	activeKey    = (&types.PayloadDelegationActive{}).Key()
+	pendingKey   = (&types.PayloadDelegationPending{}).Key()
+	autoKey      = (&types.PayloadDelegationAuto{}).Key()
+	lastReconKey = (&types.PayloadDelegationLastReconTime{}).Key()
 )
 
 var (
@@ -130,7 +131,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		pendingState:         map[uint64]map[string]*pendingPartyDelegation{},
 		autoDelegationMode:   map[string]struct{}{},
 		dss: &delegationSnapshotState{
-			changed:    map[string]bool{activeKey: true, pendingKey: true, autoKey: true},
+			changed:    map[string]bool{activeKey: true, pendingKey: true, autoKey: true, lastReconKey: true},
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
@@ -141,6 +142,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 	e.keyToSerialiser[activeKey] = e.serialiseActive
 	e.keyToSerialiser[pendingKey] = e.serialisePending
 	e.keyToSerialiser[autoKey] = e.serialiseAuto
+	e.keyToSerialiser[lastReconKey] = e.serialiseLastReconTime
 
 	// register for epoch notifications
 	epochEngine.NotifyOnEpoch(e.onEpochEvent)
@@ -190,6 +192,7 @@ func (e *Engine) OnMinAmountChanged(ctx context.Context, minAmount num.Decimal) 
 func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if (e.lastReconciliation == time.Time{}) {
 		e.lastReconciliation = epoch.StartTime
+		e.dss.changed[lastReconKey] = true
 	}
 	// if new epoch is starting we want to emit event for the next epoch for all delegations - this is because unless there is some action during the epoch
 	// we will not emit an event for the next epoch until it starts - this will be more UI friendly
@@ -811,6 +814,7 @@ func (e *Engine) reconcileAssociationWithNomination(ctx context.Context, from, t
 		delete(e.autoDelegationMode, party)
 	}
 	e.lastReconciliation = to
+	e.dss.changed[lastReconKey] = true
 }
 
 // preprocessEpoch is called at the end of an epoch and updates the state to be returned for rewarding calculation

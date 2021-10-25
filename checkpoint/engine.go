@@ -14,8 +14,10 @@ import (
 )
 
 var (
-	ErrUnknownCheckpointName      = errors.New("component for checkpoint not registered")
-	ErrComponentWithDuplicateName = errors.New("multiple components with the same name")
+	ErrUnknownCheckpointName            = errors.New("component for checkpoint not registered")
+	ErrComponentWithDuplicateName       = errors.New("multiple components with the same name")
+	ErrNoCheckpointExpectedToBeRestored = errors.New("no checkpoint expected to be restored")
+	ErrIncompatibleHashes               = errors.New("incompatible hashes")
 
 	cpOrder = []types.CheckpointName{
 		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
@@ -205,7 +207,6 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 
 // Load - loads checkpoint data for all components by name.
 func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
-	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
 	if len(e.loadHash) != 0 {
 		hashDiff := bytes.Compare(e.loadHash, cpt.Hash)
 
@@ -219,8 +220,9 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 			logging.Int("hash-diff", hashDiff),
 		)
 	}
-	if e.loadHash == nil || !bytes.Equal(e.loadHash, cpt.Hash) {
-		return nil
+
+	if err := e.ValidateCheckpoint(cpt); err != nil {
+		return err
 	}
 	// we found the checkpoint we need to load, set value to nil
 	// either the checkpoint was loaded successfully, or it wasn't
@@ -276,6 +278,17 @@ func (e *Engine) Load(ctx context.Context, cpt *types.CheckpointState) error {
 		if err := c.Load(ctx, cpData); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (e *Engine) ValidateCheckpoint(cpt *types.CheckpointState) error {
+	// if no hash was specified, or the hash doesn't match, then don't even attempt to load the checkpoint
+	if e.loadHash == nil {
+		return ErrNoCheckpointExpectedToBeRestored
+	}
+	if !bytes.Equal(e.loadHash, cpt.Hash) {
+		return fmt.Errorf("received(%v), expected(%v): %w", hex.EncodeToString(cpt.Hash), hex.EncodeToString(e.loadHash), ErrIncompatibleHashes)
 	}
 	return nil
 }

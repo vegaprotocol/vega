@@ -102,7 +102,7 @@ func testEngineReset(t *testing.T) {
 	keys := engine.Keys()
 	snap := make(map[string][]byte, len(keys))
 	for _, k := range keys {
-		data, err := engine.GetState(k)
+		data, _, err := engine.GetState(k)
 		require.NoError(t, err)
 		snap[k] = data
 	}

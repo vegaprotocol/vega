@@ -20,7 +20,7 @@ type StateProvider interface {
 	Namespace() SnapshotNamespace
 	Keys() []string
 	GetHash(key string) ([]byte, error)
-	GetState(key string) ([]byte, error)
+	GetState(key string) ([]byte, []StateProvider, error)
 	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)
 }
 
@@ -46,6 +46,7 @@ const (
 	SpamSnapshot             SnapshotNamespace = "spam"
 	LimitSnapshot            SnapshotNamespace = "limits"
 	NotarySnapshot           SnapshotNamespace = "notary"
+	StakeVerifierSnapshot    SnapshotNamespace = "stakeverifier"
 	ReplayProtectionSnapshot SnapshotNamespace = "replay"
 	EventForwarderSnapshot   SnapshotNamespace = "eventforwarder"
 	WitnessSnapshot          SnapshotNamespace = "witness"

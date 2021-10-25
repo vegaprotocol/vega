@@ -173,30 +173,28 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := e.getSerialisedAndHash(k)
-	return state, err
+	return state, nil, err
 }
 
 func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != p.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
-	var err error
 	// see what we're reloading
 	switch pl := p.Data.(type) {
 	case *types.PayloadBankingDeposits:
-		err = e.restoreDeposits(ctx, pl.BankingDeposits)
+		return nil, e.restoreDeposits(ctx, pl.BankingDeposits)
 	case *types.PayloadBankingWithdrawals:
-		err = e.restoreWithdrawals(ctx, pl.BankingWithdrawals)
+		return nil, e.restoreWithdrawals(ctx, pl.BankingWithdrawals)
 	case *types.PayloadBankingSeen:
-		err = e.restoreSeen(ctx, pl.BankingSeen)
+		return nil, e.restoreSeen(ctx, pl.BankingSeen)
 	case *types.PayloadBankingAssetActions:
-		err = e.restoreAssetActions(ctx, pl.BankingAssetActions)
+		return nil, e.restoreAssetActions(ctx, pl.BankingAssetActions)
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
 
 func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDeposits) error {

@@ -47,12 +47,12 @@ func (s *Svc) Snapshot() (map[string][]byte, error) {
 	return map[string][]byte{s.pl.Key(): s.data}, nil
 }
 
-func (s *Svc) GetState(k string) ([]byte, error) {
+func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != s.pl.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	return s.data, nil
+	return s.data, nil, nil
 }
 
 func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
@@ -60,7 +60,6 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
-	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadEpoch:
 		snap := pl.EpochState
@@ -75,9 +74,8 @@ func (s *Svc) LoadState(ctx context.Context, payload *types.Payload) ([]types.St
 		s.readyToEndEpoch = snap.ReadyToEndEpoch
 		s.length = s.epoch.ExpireTime.Sub(s.epoch.StartTime)
 
-		err = s.serialise()
+		return nil, s.serialise()
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }

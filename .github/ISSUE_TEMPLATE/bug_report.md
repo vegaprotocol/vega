@@ -24,7 +24,7 @@ Describe what the system response was, include the output from the command, auto
 - [ ] [Tendermint](https://github.com/tendermint/tendermint)
 - [ ] [Console](https://github.com/vegaprotocol/console/)
 - [ ] [Ethereum Bridge](https://github.com/vegaprotocol/Event_Queue)
-- [ ] [Vega Wallet](https://github.com/vegaprotocol/go-wallet/)
+- [ ] [Vega Wallet](https://github.com/vegaprotocol/vegawallet/)
 
 # Steps to reproduce
 

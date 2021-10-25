@@ -90,9 +90,9 @@ func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (n *SnapshotNotary) GetState(k string) ([]byte, error) {
+func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
 	data, _, err := n.getSerialisedAndHash(k)
-	return data, err
+	return data, nil, err
 }
 
 func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
@@ -100,14 +100,12 @@ func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) 
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
-	var err error
 	switch pl := payload.Data.(type) {
 	case *types.PayloadNotary:
-		err = n.restoreNotary(pl.Notary)
+		return nil, n.restoreNotary(pl.Notary)
 	default:
-		err = types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
-	return nil, err
 }
 
 // serialiseLimits returns the engine's limit data as marshalled bytes.
