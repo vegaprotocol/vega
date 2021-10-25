@@ -336,7 +336,10 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 }
 
 func (b *ERC20) checkConfirmations(txBlock uint64) error {
-	curBlock, err := b.ethClient.CurrentHeight(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	curBlock, err := b.ethClient.CurrentHeight(ctx)
 	if err != nil {
 		return err
 	}
