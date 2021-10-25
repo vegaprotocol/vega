@@ -867,7 +867,7 @@ func (*PayloadLiquidityPartiesLiquidityOrders) Namespace() SnapshotNamespace {
 }
 
 func (p *PayloadLiquidityPartiesLiquidityOrders) Key() string {
-	return fmt.Sprintf("partiesLiquidityOrders:", p.PartiesLiquidityOrders.MarketId)
+	return fmt.Sprintf("partiesLiquidityOrders:%v", p.PartiesLiquidityOrders.MarketId)
 }
 
 func PayloadLiquidityPartiesOrdersFromProto(s *snapshot.Payload_LiquidityPartiesOrders) *PayloadLiquidityPartiesOrders {

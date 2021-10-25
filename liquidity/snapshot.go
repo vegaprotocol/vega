@@ -1,11 +1,13 @@
 package liquidity
 
 import (
+	"context"
 	"sort"
 	"strconv"
 
 	typespb "code.vegaprotocol.io/protos/vega"
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -76,17 +78,6 @@ func NewSnapshotEngine(config Config,
 	return se
 }
 
-func (e *SnapshotEngine) buildHashKeys(market string) {
-	e.parametersKey = (&types.PayloadLiquidityParameters{Parameters: &snapshotpb.LiquidityParameters{MarketId: market}}).Key()
-	e.partiesLiquidityOrdersKey = (&types.PayloadLiquidityPartiesLiquidityOrders{}).Key()
-	e.partiesOrdersKey = (&types.PayloadLiquidityPartiesOrders{}).Key()
-	e.pendingProvisionsKey = (&types.PayloadLiquidityPendingProvisions{}).Key()
-	e.provisionsKey = (&types.PayloadLiquidityProvisions{}).Key()
-
-	e.hashKeys = append([]string{}, e.parametersKey, e.partiesLiquidityOrdersKey,
-		e.partiesOrdersKey, e.pendingProvisionsKey, e.provisionsKey)
-}
-
 func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
 	return types.LiquiditySnapshot
 }
@@ -110,11 +101,6 @@ func (e *SnapshotEngine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) 
 	return e.Engine.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
 
-// func (e *SnapshotEngine) Snapshot() (map[string][]byte, error) {
-// 	state, _, err := e.serialise()
-// 	return map[string][]byte{e.marketID: state}, err
-// }
-
 func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	_, hash, err := e.serialise(k)
 	return hash, err
@@ -123,6 +109,116 @@ func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := e.serialise(k)
 	return state, nil, err
+}
+
+func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+	if e.Namespace() != p.Data.Namespace() {
+		return nil, types.ErrInvalidSnapshotNamespace
+	}
+	// see what we're reloading
+	switch pl := p.Data.(type) {
+	case *types.PayloadLiquidityPendingProvisions:
+		return nil, e.loadPendingProvisions(
+			ctx, pl.PendingProvisions.GetPendingProvisions())
+	case *types.PayloadLiquidityProvisions:
+		return nil, e.loadProvisions(
+			ctx, pl.Provisions.GetLiquidityProvisions())
+	case *types.PayloadLiquidityParameters:
+		return nil, e.loadParameters(ctx, pl.Parameters)
+	case *types.PayloadLiquidityPartiesOrders:
+		return nil, e.loadPartiesOrders(ctx, pl.PartiesOrders.GetOrders())
+	case *types.PayloadLiquidityPartiesLiquidityOrders:
+		return nil, e.loadPartiesLiquidityOrders(
+			ctx, pl.PartiesLiquidityOrders.GetOrders())
+	default:
+		return nil, types.ErrUnknownSnapshotType
+	}
+}
+
+func (e *SnapshotEngine) loadPartiesOrders(
+	_ context.Context, orders []*typespb.Order,
+) error {
+	e.Engine.orders = NewPartiesOrders()
+	for _, v := range orders {
+		order, err := types.OrderFromProto(v)
+		if err != nil {
+			return err
+		}
+		e.Engine.orders.Add(order.Party, order)
+	}
+
+	return nil
+}
+
+func (e *SnapshotEngine) loadPartiesLiquidityOrders(
+	_ context.Context, orders []*typespb.Order,
+) error {
+	e.Engine.liquidityOrders = NewPartiesOrders()
+	for _, v := range orders {
+		order, err := types.OrderFromProto(v)
+		if err != nil {
+			return err
+		}
+		e.Engine.liquidityOrders.Add(order.Party, order)
+	}
+
+	return nil
+}
+
+func (e *SnapshotEngine) loadParameters(
+	_ context.Context, parameters *snapshotpb.LiquidityParameters,
+) error {
+	maxShapesSize, err := strconv.ParseInt(parameters.MaxShapeSize, 10, 64)
+	if err != nil {
+		return err
+	}
+	if err := e.OnMarketLiquidityProvisionShapesMaxSizeUpdate(maxShapesSize); err != nil {
+		return err
+	}
+
+	maxFee, err := num.DecimalFromString(parameters.MaxFee)
+	if err != nil {
+		return err
+	}
+	e.OnMaximumLiquidityFeeFactorLevelUpdate(maxFee)
+
+	stof, err := num.DecimalFromString(parameters.StakeToObligationFactor)
+	if err != nil {
+		return err
+	}
+	e.OnSuppliedStakeToObligationFactorUpdate(stof)
+
+	return nil
+}
+
+func (e *SnapshotEngine) loadPendingProvisions(
+	_ context.Context, pendingProvisions []string,
+) error {
+	e.Engine.pendings = NewSnapshotablePendingProvisions()
+	for _, v := range pendingProvisions {
+		e.Engine.pendings.Add(v)
+	}
+
+	return nil
+}
+
+func (e *SnapshotEngine) loadProvisions(
+	ctx context.Context, provisions []*typespb.LiquidityProvision,
+) error {
+	e.Engine.provisions = NewSnapshotableProvisionsPerParty()
+	evts := make([]events.Event, 0, len(provisions))
+	for _, v := range provisions {
+		provision, err := types.LiquidityProvisionFromProto(v)
+		if err != nil {
+			return err
+		}
+		e.Engine.provisions.Set(v.PartyId, provision)
+		evts = append(evts, events.NewLiquidityProvisionEvent(ctx, provision))
+	}
+
+	e.broker.SendBatch(evts)
+
+	return nil
 }
 
 func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
@@ -312,4 +408,15 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 	}
 
 	return buf.Bytes(), true, nil
+}
+
+func (e *SnapshotEngine) buildHashKeys(market string) {
+	e.parametersKey = (&types.PayloadLiquidityParameters{Parameters: &snapshotpb.LiquidityParameters{MarketId: market}}).Key()
+	e.partiesLiquidityOrdersKey = (&types.PayloadLiquidityPartiesLiquidityOrders{}).Key()
+	e.partiesOrdersKey = (&types.PayloadLiquidityPartiesOrders{}).Key()
+	e.pendingProvisionsKey = (&types.PayloadLiquidityPendingProvisions{}).Key()
+	e.provisionsKey = (&types.PayloadLiquidityProvisions{}).Key()
+
+	e.hashKeys = append([]string{}, e.parametersKey, e.partiesLiquidityOrdersKey,
+		e.partiesOrdersKey, e.pendingProvisionsKey, e.provisionsKey)
 }

@@ -73,6 +73,13 @@ type SnapshotablePendingProvisions struct {
 	updated bool
 }
 
+func NewSnapshotablePendingProvisions() *SnapshotablePendingProvisions {
+	return &SnapshotablePendingProvisions{
+		m:       map[string]struct{}{},
+		updated: true,
+	}
+}
+
 func (s *SnapshotablePendingProvisions) HasUpdates() bool {
 	return s.updated
 }
@@ -102,6 +109,13 @@ type ProvisionsPerParty map[string]*types.LiquidityProvision
 type SnapshotableProvisionsPerParty struct {
 	ProvisionsPerParty
 	updated bool
+}
+
+func NewSnapshotableProvisionsPerParty() *SnapshotableProvisionsPerParty {
+	return &SnapshotableProvisionsPerParty{
+		ProvisionsPerParty: map[string]*types.LiquidityProvision{},
+		updated:            true,
+	}
 }
 
 func (s *SnapshotableProvisionsPerParty) HasUpdates() bool {
@@ -184,6 +198,13 @@ func (ords Orders) ByParty() []PartyOrders {
 type PartiesOrders struct {
 	m       map[string]map[string]*types.Order
 	updated bool
+}
+
+func NewPartiesOrders() *PartiesOrders {
+	return &PartiesOrders{
+		m:       map[string]map[string]*types.Order{},
+		updated: true,
+	}
 }
 
 func (o *PartiesOrders) HasUpdates() bool {

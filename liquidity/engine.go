@@ -65,19 +65,19 @@ type Engine struct {
 	stakeToObligationFactor num.Decimal
 
 	// state
-	provisions SnapshotableProvisionsPerParty
+	provisions *SnapshotableProvisionsPerParty
 
 	// orders stores all the market orders (except the liquidity orders) explicitly submitted by a given party.
 	// indexed as: map of PartyID -> OrderId -> order to easy access
-	orders PartiesOrders
+	orders *PartiesOrders
 
 	// liquidityOrder stores the orders generated to satisfy the liquidity commitment of a given party.
 	// indexed as: map of PartyID -> OrdersID -> order
-	liquidityOrders PartiesOrders
+	liquidityOrders *PartiesOrders
 
 	// The list of parties which submitted liquidity submission
 	// which still haven't been deployed even once.
-	pendings SnapshotablePendingProvisions
+	pendings *SnapshotablePendingProvisions
 
 	// the maximum number of liquidity orders to be created on
 	// each shape
@@ -110,23 +110,11 @@ func NewEngine(config Config,
 		maxShapesSize:           100, // set it to the same default than the netparams
 		maxFee:                  num.DecimalFromInt64(1),
 		// provisions related state
-		provisions: SnapshotableProvisionsPerParty{
-			ProvisionsPerParty: map[string]*types.LiquidityProvision{},
-			updated:            true,
-		},
-		pendings: SnapshotablePendingProvisions{
-			m:       map[string]struct{}{},
-			updated: true,
-		},
+		provisions: NewSnapshotableProvisionsPerParty(),
+		pendings:   NewSnapshotablePendingProvisions(),
 		// orders related state
-		orders: PartiesOrders{
-			m:       map[string]map[string]*types.Order{},
-			updated: true,
-		},
-		liquidityOrders: PartiesOrders{
-			m:       map[string]map[string]*types.Order{},
-			updated: true,
-		},
+		orders:          NewPartiesOrders(),
+		liquidityOrders: NewPartiesOrders(),
 	}
 }
 
