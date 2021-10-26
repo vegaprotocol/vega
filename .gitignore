@@ -15,7 +15,8 @@ proto/*-re
 tmp/
 *.log
 vendor/
-.vscode/
+.vscode/**/*
+!.vscode/launch.json
 proto/**.orig
 *.pb.go-re
 gomock_reflect_*
