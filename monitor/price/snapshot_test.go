@@ -17,6 +17,8 @@ import (
 )
 
 func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
+	t.Helper()
+
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
 
 	pm, err := price.NewMonitor(riskModel, settings)

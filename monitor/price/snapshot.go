@@ -96,13 +96,6 @@ func priceBoundsToBounds(pbs []*types.PriceBound) []*bound {
 	return bounds
 }
 
-func (e *Engine) restoreBounds(pbs []*types.PriceBound) {
-	e.bounds = make([]*bound, 0, len(pbs))
-	for _, pb := range pbs {
-		e.bounds = append(e.bounds, priceBoundTypeToInternal(pb))
-	}
-}
-
 func (e *Engine) serialiseBounds() []*types.PriceBound {
 	bounds := make([]*types.PriceBound, 0, len(e.bounds))
 	for _, b := range e.bounds {
