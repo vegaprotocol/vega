@@ -66,12 +66,8 @@ func testExpireOrdersSnapshot(t *testing.T) {
 	a.False(eo.changed())
 	a.Equal(testIDs, s)
 
-	newEo := NewExpiringOrders()
-	// Test empty
+	newEo := NewExpiringOrdersFromState(testOrders)
 	a.True(newEo.changed())
-	a.Equal([]string{}, newEo.GetState())
-
-	newEo.RestoreState(testOrders)
 	a.Equal(testIDs, newEo.GetState())
 	a.False(newEo.changed())
 }

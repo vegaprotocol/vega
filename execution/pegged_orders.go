@@ -22,6 +22,12 @@ func NewPeggedOrders() *PeggedOrders {
 	}
 }
 
+func NewPeggedOrdersFromSnapshot(orders []*types.Order) *PeggedOrders {
+	return &PeggedOrders{
+		orders: orders,
+	}
+}
+
 func (p *PeggedOrders) changed() bool {
 	return p.ordersChanged
 }
@@ -35,10 +41,6 @@ func (p *PeggedOrders) GetState() []*types.Order {
 	p.ordersChanged = false
 
 	return ordersCopy
-}
-
-func (p *PeggedOrders) RestoreState(orders []*types.Order) {
-	p.orders = orders
 }
 
 func (p *PeggedOrders) OnTimeUpdate(t time.Time) {

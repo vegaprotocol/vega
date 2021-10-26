@@ -17,6 +17,16 @@ import (
 )
 
 func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
+	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+
+	pm, err := price.NewMonitor(riskModel, settings)
+	require.NoError(t, err)
+	require.NotNil(t, pm)
+
+	return pm
+}
+
+func createPriceMonitorDeps(t *testing.T, ctrl *gomock.Controller) (*mocks.MockRangeProvider, *types.PriceMonitoringSettings) {
 	t.Helper()
 	riskModel := mocks.NewMockRangeProvider(ctrl)
 	auctionStateMock := mocks.NewMockAuctionState(ctrl)
@@ -31,11 +41,7 @@ func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
 	auctionStateMock.EXPECT().IsFBA().Return(false).AnyTimes()
 	auctionStateMock.EXPECT().InAuction().Return(false).AnyTimes()
 
-	pm, err := price.NewMonitor(riskModel, settings)
-	require.NoError(t, err)
-	require.NotNil(t, pm)
-
-	return pm
+	return riskModel, settings
 }
 
 func getHash(pe *price.Engine) []byte {
@@ -57,9 +63,10 @@ func TestEmpty(t *testing.T) {
 	state1 := pm1.GetState()
 
 	// Create a new market and restore into it
-	pm2 := createPriceMonitor(t, ctrl)
-	assert.NotNil(t, pm1)
-	pm2.RestoreState(state1)
+	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+	pm2, err := price.NewMonitorFromSnapshot(state1, settings, riskModel)
+	require.NoError(t, err)
+	require.NotNil(t, pm2)
 
 	// Now get the state again and check it against the original
 	hash2 := getHash(pm2)
@@ -100,8 +107,10 @@ func TestChangedState(t *testing.T) {
 	// Now try reloading the state
 	state := pm1.GetState()
 
-	pm2 := createPriceMonitor(t, ctrl)
-	pm2.RestoreState(state)
+	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+	pm2, err := price.NewMonitorFromSnapshot(state, settings, riskModel)
+	require.NoError(t, err)
+	require.NotNil(t, pm2)
 
 	hash3 := getHash(pm2)
 

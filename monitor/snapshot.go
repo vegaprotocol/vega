@@ -2,6 +2,35 @@ package monitor
 
 import "code.vegaprotocol.io/vega/types"
 
+func NewAuctionStateFromSnapshot(mkt *types.Market, as *types.AuctionState) *AuctionState {
+	s := AuctionState{
+		mode:         as.Mode,
+		defMode:      as.DefaultMode,
+		trigger:      types.AuctionTriggerOpening,
+		end:          as.End,
+		start:        as.Start,
+		stop:         as.Stop,
+		m:            mkt,
+		stateChanged: true,
+	}
+
+	if as.Begin.IsZero() {
+		s.begin = nil
+	} else {
+		s.begin = &as.Begin
+	}
+
+	if as.Extension == types.AuctionTriggerUnspecified {
+		s.extension = nil
+		s.trigger = types.AuctionTriggerUnspecified
+	} else {
+		s.extension = &as.Extension
+		s.trigger = as.Extension
+	}
+
+	return &s
+}
+
 func (a AuctionState) Changed() bool {
 	return a.stateChanged
 }
@@ -25,24 +54,4 @@ func (a *AuctionState) GetState() *types.AuctionState {
 	a.stateChanged = false
 
 	return as
-}
-
-func (a *AuctionState) RestoreState(as *types.AuctionState) {
-	a.mode = as.Mode
-	a.defMode = as.DefaultMode
-	a.end = as.End
-	a.start = as.Start
-	a.stop = as.Stop
-
-	if as.Begin.IsZero() {
-		a.begin = nil
-	} else {
-		a.begin = &as.Begin
-	}
-
-	if as.Extension == types.AuctionTriggerUnspecified {
-		a.extension = nil
-	} else {
-		a.extension = &as.Extension
-	}
 }

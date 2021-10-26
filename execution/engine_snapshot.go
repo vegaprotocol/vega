@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/protobuf/proto"
 )
@@ -46,20 +47,72 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 	return mks, e.marketsStateProviders
 }
 
-func (e *Engine) restoreMarketsStates(ems []*types.ExecMarket) ([]types.StateProvider, error) {
+func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Market, error) {
+	marketConfig := em.Market
+
+	if len(marketConfig.ID) == 0 {
+		return nil, ErrNoMarketID
+	}
+	now := e.time.GetTimeNow()
+
+	// ensure the asset for this new market exists
+	asset, err := marketConfig.GetAsset()
+	if err != nil {
+		return nil, err
+	}
+	if !e.collateral.AssetExists(asset) {
+		e.log.Error("unable to create a market with an invalid asset",
+			logging.MarketID(marketConfig.ID),
+			logging.AssetID(asset))
+	}
+
+	// create market auction state
+	mkt, err := NewMarketFromSnapshot(
+		ctx,
+		e.log,
+		em,
+		e.Config.Risk,
+		e.Config.Position,
+		e.Config.Settlement,
+		e.Config.Matching,
+		e.Config.Fee,
+		e.Config.Liquidity,
+		e.collateral,
+		e.oracle,
+		now,
+		e.broker,
+		e.idgen,
+	)
+	if err != nil {
+		e.log.Error("failed to instantiate market",
+			logging.MarketID(marketConfig.ID),
+			logging.Error(err),
+		)
+		return nil, err
+	}
+
+	e.markets[marketConfig.ID] = mkt
+	e.marketsCpy = append(e.marketsCpy, mkt)
+
+	// we ignore the response, this cannot fail as the asset
+	// is already proven to exists a few line before
+	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.ID, asset)
+
+	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
+		return nil, err
+	}
+
+	return mkt, nil
+}
+
+func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMarket) ([]types.StateProvider, error) {
+	e.markets = map[string]*Market{}
+
 	pvds := make([]types.StateProvider, 0, len(ems)*2)
-
 	for _, em := range ems {
-		if _, ok := e.markets[em.Market.ID]; !ok {
-			err := e.submitMarket(context.Background(), em.Market.DeepClone())
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		m := e.markets[em.Market.ID]
-		if err := m.restoreState(em); err != nil {
-			return nil, err
+		m, err := e.restoreMarket(ctx, em)
+		if err != nil {
+			return nil, fmt.Errorf("failed to restore market: %w", err)
 		}
 
 		pvds = append(pvds, m.position, m.matching)
@@ -132,10 +185,10 @@ func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {
 	return serialised, providers, nil
 }
 
-func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	switch pl := payload.Data.(type) {
 	case *types.PayloadExecutionMarkets:
-		providers, err := e.restoreMarketsStates(pl.ExecutionMarkets.Markets)
+		providers, err := e.restoreMarketsStates(ctx, pl.ExecutionMarkets.Markets)
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}

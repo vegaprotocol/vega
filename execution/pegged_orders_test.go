@@ -90,8 +90,6 @@ func testPeggedOrdersSnapshot(t *testing.T) {
 	// Test restore state
 	s = p.GetState()
 
-	newP := NewPeggedOrders()
-	a.Equal([]*types.Order{}, newP.GetState())
-	newP.RestoreState(s)
+	newP := NewPeggedOrdersFromSnapshot(s)
 	a.Equal(s, newP.GetState())
 }

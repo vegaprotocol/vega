@@ -37,6 +37,25 @@ func NewEquityShares(mvp num.Decimal) *EquityShares {
 	}
 }
 
+func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
+	lps := map[string]*lp{}
+
+	for _, slp := range state.Lps {
+		lps[slp.ID] = &lp{
+			stake: slp.Stake,
+			share: slp.Share,
+			avg:   slp.Avg,
+		}
+	}
+
+	return &EquityShares{
+		mvp:                 state.Mvp,
+		openingAuctionEnded: state.OpeningAuctionEnded,
+		lps:                 lps,
+		stateChanged:        true,
+	}
+}
+
 func (es EquityShares) changed() bool {
 	return es.stateChanged
 }
@@ -63,18 +82,6 @@ func (es EquityShares) GetState() *types.EquityShare {
 		Mvp:                 es.mvp,
 		OpeningAuctionEnded: es.openingAuctionEnded,
 		Lps:                 lps,
-	}
-}
-
-func (es *EquityShares) RestoreState(state *types.EquityShare) {
-	es.mvp = state.Mvp
-	es.openingAuctionEnded = state.OpeningAuctionEnded
-	for _, slp := range state.Lps {
-		es.lps[slp.ID] = &lp{
-			stake: slp.Stake,
-			share: slp.Share,
-			avg:   slp.Avg,
-		}
 	}
 }
 

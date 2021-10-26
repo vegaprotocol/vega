@@ -1,9 +1,46 @@
 package price
 
 import (
+	"time"
+
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+func NewMonitorFromSnapshot(
+	pm *types.PriceMonitor,
+	settings *types.PriceMonitoringSettings,
+	riskModel RangeProvider,
+) (*Engine, error) {
+	if riskModel == nil {
+		return nil, ErrNilRangeProvider
+	}
+	if settings == nil {
+		return nil, ErrNilPriceMonitoringSettings
+	}
+
+	e := &Engine{
+		riskModel:           riskModel,
+		updateFrequency:     time.Duration(settings.UpdateFrequency) * time.Second,
+		initialised:         pm.Initialised,
+		fpHorizons:          keyDecimalPairToMap(pm.FPHorizons),
+		now:                 pm.Now,
+		update:              pm.Update,
+		priceRangeCacheTime: pm.PriceRangeCacheTime,
+		refPriceCache:       keyDecimalPairToMap(pm.RefPriceCache),
+		refPriceCacheTime:   pm.RefPriceCacheTime,
+		bounds:              priceBoundsToBounds(pm.Bounds),
+		priceRangesCache:    newPriceRangeCacheFromSlice(pm.PriceRangeCache),
+		stateChanged:        true,
+	}
+	// hack to work around the update frequency being 0 causing an infinite loop
+	// for now, this will do
+	// @TODO go through integration and system tests once we validate this properly
+	if settings.UpdateFrequency == 0 {
+		e.updateFrequency = time.Second
+	}
+	return e, nil
+}
 
 func internalBoundToPriceBoundType(b *bound) *types.PriceBound {
 	return &types.PriceBound{
@@ -51,6 +88,14 @@ func wrappedDecimalFromDecimal(d num.Decimal) num.WrappedDecimal {
 	return num.NewWrappedDecimal(uit, d)
 }
 
+func priceBoundsToBounds(pbs []*types.PriceBound) []*bound {
+	bounds := make([]*bound, 0, len(pbs))
+	for _, pb := range pbs {
+		bounds = append(bounds, priceBoundTypeToInternal(pb))
+	}
+	return bounds
+}
+
 func (e *Engine) restoreBounds(pbs []*types.PriceBound) {
 	e.bounds = make([]*bound, 0, len(pbs))
 	for _, pb := range pbs {
@@ -67,14 +112,16 @@ func (e *Engine) serialiseBounds() []*types.PriceBound {
 	return bounds
 }
 
-func (e *Engine) restorePriceRanges(prs []*types.PriceRangeCache) {
+func newPriceRangeCacheFromSlice(prs []*types.PriceRangeCache) map[*bound]priceRange {
+	priceRangesCache := map[*bound]priceRange{}
 	for _, pr := range prs {
-		e.priceRangesCache[priceBoundTypeToInternal(pr.Bound)] = priceRange{
+		priceRangesCache[priceBoundTypeToInternal(pr.Bound)] = priceRange{
 			MinPrice:       wrappedDecimalFromDecimal(pr.Range.Min),
 			MaxPrice:       wrappedDecimalFromDecimal(pr.Range.Max),
 			ReferencePrice: pr.Range.Ref,
 		}
 	}
+	return priceRangesCache
 }
 
 func (e Engine) serialisePriceRanges() []*types.PriceRangeCache {
@@ -112,16 +159,4 @@ func (e *Engine) GetState() *types.PriceMonitor {
 	e.stateChanged = false
 
 	return pm
-}
-
-func (e *Engine) RestoreState(pm *types.PriceMonitor) {
-	e.initialised = pm.Initialised
-	e.fpHorizons = keyDecimalPairToMap(pm.FPHorizons)
-	e.now = pm.Now
-	e.update = pm.Update
-	e.priceRangeCacheTime = pm.PriceRangeCacheTime
-	e.refPriceCache = keyDecimalPairToMap(pm.RefPriceCache)
-	e.refPriceCacheTime = pm.RefPriceCacheTime
-	e.restoreBounds(pm.Bounds)
-	e.restorePriceRanges(pm.PriceRangeCache)
 }

@@ -102,8 +102,12 @@ func TestEmpty(t *testing.T) {
 	state1 := as.GetState()
 
 	// Create a new object and restore into it
-	as2 := createAuctionState()
-	as2.RestoreState(state1)
+	ad := &types.AuctionDuration{
+		Duration: 100,
+		Volume:   100,
+	}
+	mktCfg := getMarket(time.Now(), ad)
+	as2 := monitor.NewAuctionStateFromSnapshot(&mktCfg, state1)
 
 	// Check the new hash matches the old hash
 	hash2 := getHash(as2)

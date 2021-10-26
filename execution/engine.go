@@ -330,6 +330,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 			logging.AssetID(asset))
 	}
 
+	// @todo no need to set it
 	// set a fake tick size to the continuous trading if it's continuous
 	switch tmod := marketConfig.TradingModeConfig.(type) {
 	case *types.MarketContinuous:

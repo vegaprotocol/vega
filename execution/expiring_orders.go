@@ -27,6 +27,19 @@ func NewExpiringOrders() *ExpiringOrders {
 	}
 }
 
+func NewExpiringOrdersFromState(orders []*types.Order) *ExpiringOrders {
+	eo := &ExpiringOrders{
+		orders:        btree.New(2),
+		ordersChanged: true,
+	}
+
+	for _, o := range orders {
+		eo.Insert(o.ID, o.ExpiresAt)
+	}
+
+	return eo
+}
+
 func (a ExpiringOrders) changed() bool {
 	return a.ordersChanged
 }

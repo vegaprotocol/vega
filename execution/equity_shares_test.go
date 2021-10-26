@@ -315,8 +315,7 @@ func TestSnapshotEmpty(t *testing.T) {
 	hash1 := getHash(es)
 
 	// Create a new object and load the snapshot into it
-	es2 := execution.NewEquityShares(num.DecimalFromFloat(10))
-	es2.RestoreState(es.GetState())
+	es2 := execution.NewEquitySharesFromSnapshot(es.GetState())
 
 	// Check the hash matches
 	hash2 := getHash(es2)
@@ -340,8 +339,7 @@ func TestSnapshotWithChanges(t *testing.T) {
 	assert.NotEqual(t, hash1, hash2)
 
 	// Restore the state into a new object
-	es2 := execution.NewEquityShares(num.DecimalFromFloat(333))
-	es2.RestoreState(es.GetState())
+	es2 := execution.NewEquitySharesFromSnapshot(es.GetState())
 
 	// Check the hashes match
 	hash3 := getHash(es2)
