@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
 )
 
 var (
@@ -20,6 +20,12 @@ var (
 // Broker needs no mocks.
 type Broker interface {
 	Send(event events.Event)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
+type Wallet interface {
+	PubKey() crypto.PublicKey
+	ID() crypto.PublicKey
 }
 
 type ValidatorData struct {
@@ -47,7 +53,7 @@ type ValidatorMapping map[string]ValidatorData
 type Topology struct {
 	log    *logging.Logger
 	cfg    Config
-	wallet *vgnw.Wallet
+	wallet Wallet
 	broker Broker
 
 	// vega pubkey to validator data
@@ -58,9 +64,11 @@ type Topology struct {
 	isValidator bool
 
 	mu sync.RWMutex
+
+	tss *topologySnapshotState
 }
 
-func NewTopology(log *logging.Logger, cfg Config, wallet *vgnw.Wallet, broker Broker) *Topology {
+func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -71,6 +79,7 @@ func NewTopology(log *logging.Logger, cfg Config, wallet *vgnw.Wallet, broker Br
 		broker:          broker,
 		validators:      ValidatorMapping{},
 		chainValidators: []string{},
+		tss:             &topologySnapshotState{changed: true},
 	}
 
 	return t
@@ -147,6 +156,7 @@ func (t *Topology) UpdateValidatorSet(keys []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.chainValidators = keys
+	t.tss.setChanged(true)
 }
 
 // IsValidatorNode takes a nodeID and returns true if the node is a validator node.
@@ -217,6 +227,8 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 		Name:            nr.Name,
 		AvatarURL:       nr.AvatarUrl,
 	}
+
+	t.tss.setChanged(true)
 
 	// Send event to notify core about new validator
 	t.sendValidatorUpdateEvent(ctx, nr)

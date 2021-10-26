@@ -135,14 +135,14 @@ func testAckSuccess(t *testing.T) {
 
 	hash1, err := evtfwd.GetHash("all")
 	require.Nil(t, err)
-	state1, err := evtfwd.GetState("all")
+	state1, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
 
 	ok := evtfwd.Ack(evt)
 	assert.True(t, ok)
 	hash2, err := evtfwd.GetHash("all")
 	require.Nil(t, err)
-	state2, err := evtfwd.GetState("all")
+	state2, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
 
 	require.False(t, bytes.Equal(hash1, hash2))
@@ -153,7 +153,7 @@ func testAckSuccess(t *testing.T) {
 	assert.False(t, ok)
 	hash3, err := evtfwd.GetHash("all")
 	require.Nil(t, err)
-	state3, err := evtfwd.GetState("all")
+	state3, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash3, hash2))
@@ -173,7 +173,7 @@ func testAckSuccess(t *testing.T) {
 	// expect the hash/state after the reload to equal what it was before
 	hash4, err := evtfwd.GetHash("all")
 	require.Nil(t, err)
-	state4, err := evtfwd.GetState("all")
+	state4, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash4, hash3))
@@ -185,7 +185,7 @@ func testAckSuccess(t *testing.T) {
 	assert.True(t, ok)
 	hash5, err := evtfwd.GetHash("all")
 	require.Nil(t, err)
-	state5, err := evtfwd.GetState("all")
+	state5, _, err := evtfwd.GetState("all")
 	require.Nil(t, err)
 
 	require.False(t, bytes.Equal(hash5, hash4))

@@ -8,16 +8,17 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
+	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	vgtesting "code.vegaprotocol.io/vega/libs/testing"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
-	vgnw "code.vegaprotocol.io/vega/nodewallets/vega"
 	"code.vegaprotocol.io/vega/validators"
-	"github.com/stretchr/testify/require"
+	"code.vegaprotocol.io/vega/validators/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var tmPubKey = "tm-pub-key"
@@ -25,29 +26,42 @@ var tmPubKey = "tm-pub-key"
 type testTop struct {
 	*validators.Topology
 	ctrl   *gomock.Controller
-	wallet *vgnw.Wallet
+	wallet *mocks.MockWallet
 	broker *brokerMocks.MockBroker
+}
+
+func getTestTopology(t *testing.T) *testTop {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+
+	broker := brokerMocks.NewMockBroker(ctrl)
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	dummyPubKey := "iamapubkey"
+	pubKey := crypto.NewPublicKey(dummyPubKey, []byte(dummyPubKey))
+
+	wallet := mocks.NewMockWallet(ctrl)
+	wallet.EXPECT().PubKey().Return(pubKey).AnyTimes()
+	wallet.EXPECT().ID().Return(pubKey).AnyTimes()
+
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker)
+	return &testTop{
+		Topology: top,
+		ctrl:     ctrl,
+		wallet:   wallet,
+		broker:   broker,
+	}
 }
 
 func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	t.Helper()
-	ctrl := gomock.NewController(t)
-	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
-	defer cleanupFn()
-	_, err := nodewallets.GenerateVegaWallet(vegaPaths, "pass", "pass", false)
-	require.NoError(t, err)
-	wallet, err := nodewallets.GetVegaWallet(vegaPaths, "pass")
-	require.NoError(t, err)
 
-	broker := brokerMocks.NewMockBroker(ctrl)
+	top := getTestTopology(t)
 
-	broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	// Add Tendermint public key to validator set
 
 	defaultTmPubKey := "default-tm-public-key"
 	defaultTmPubKeyBase64 := base64.StdEncoding.EncodeToString([]byte(defaultTmPubKey))
-
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker)
-	// Add Tendermint public key to validator set
 	top.UpdateValidatorSet([]string{defaultTmPubKeyBase64})
 
 	state := struct {
@@ -55,8 +69,8 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 	}{
 		Validators: map[string]validators.ValidatorData{
 			defaultTmPubKeyBase64: {
-				ID:              wallet.PubKey().Hex(),
-				VegaPubKey:      wallet.PubKey().Hex(),
+				ID:              top.wallet.PubKey().Hex(),
+				VegaPubKey:      top.wallet.PubKey().Hex(),
 				TmPubKey:        "asdasd",
 				EthereumAddress: "0x123456",
 				InfoURL:         "n0.xyz.vega/node/123",
@@ -74,12 +88,7 @@ func getTestTopWithDefaultValidator(t *testing.T) *testTop {
 		t.Fatalf("error loading validators on genesis: %v", err)
 	}
 
-	return &testTop{
-		Topology: top,
-		ctrl:     ctrl,
-		wallet:   wallet,
-		broker:   broker,
-	}
+	return top
 }
 
 func TestValidatorTopology(t *testing.T) {
