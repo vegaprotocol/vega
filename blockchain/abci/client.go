@@ -68,32 +68,35 @@ func NewClientCustom(addr string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) error {
+func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
-	_, err := c.tmclt.BroadcastTxAsync(ctx, bytes)
-	return err
+	res, err := c.tmclt.BroadcastTxAsync(ctx, bytes)
+	if err != nil {
+		return "", err
+	}
+	return res.Hash.String(), nil
 }
 
-func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) error {
+func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
 	r, err := c.tmclt.BroadcastTxSync(ctx, bytes)
 	if err != nil {
-		return err
+		return "", err
 	} else if r.Code != 0 {
-		return newUserInputError(r.Code, string(r.Data))
+		return "", newUserInputError(r.Code, string(r.Data))
 	}
-	return nil
+	return r.Hash.String(), nil
 }
 
-func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) error {
+func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
 	r, err := c.tmclt.BroadcastTxCommit(ctx, bytes)
 	if err != nil {
-		return err
+		return "", err
 	} else if r.CheckTx.Code != 0 {
-		return newUserInputError(r.CheckTx.Code, string(r.CheckTx.Data))
+		return "", newUserInputError(r.CheckTx.Code, string(r.CheckTx.Data))
 	}
-	return nil
+	return r.Hash.String(), nil
 }
 
 // GetGenesisTime retrieves the genesis time from the blockchain.

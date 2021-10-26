@@ -169,9 +169,12 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 		metrics.EthCallInc("validate_allowlist", b.asset.ID, resp)
 	}()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	iter, err := bf.FilterAssetListed(
 		&bind.FilterOpts{
-			Start: blockNumber - 1,
+			Start:   blockNumber - 1,
+			Context: ctx,
 		},
 		[]ethcommon.Address{ethcommon.HexToAddress(b.address)},
 		[][32]byte{},
@@ -234,9 +237,12 @@ func (b *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 		metrics.EthCallInc("validate_withdrawal", b.asset.ID, resp)
 	}()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	iter, err := bf.FilterAssetWithdrawn(
 		&bind.FilterOpts{
-			Start: blockNumber - 1,
+			Start:   blockNumber - 1,
+			Context: ctx,
 		},
 		// user_address
 		[]ethcommon.Address{ethcommon.HexToAddress(w.TargetEthereumAddress)},
@@ -287,9 +293,12 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 		metrics.EthCallInc("validate_deposit", b.asset.ID, resp)
 	}()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	iter, err := bf.FilterAssetDeposited(
 		&bind.FilterOpts{
-			Start: blockNumber - 1,
+			Start:   blockNumber - 1,
+			Context: ctx,
 		},
 		// user_address
 		[]ethcommon.Address{ethcommon.HexToAddress(d.SourceEthereumAddress)},
@@ -327,7 +336,10 @@ func (b *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint
 }
 
 func (b *ERC20) checkConfirmations(txBlock uint64) error {
-	curBlock, err := b.ethClient.CurrentHeight(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	curBlock, err := b.ethClient.CurrentHeight(ctx)
 	if err != nil {
 		return err
 	}
