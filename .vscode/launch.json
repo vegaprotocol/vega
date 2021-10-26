@@ -1,7 +1,4 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -10,11 +7,11 @@
             "request": "launch",
             "mode": "test",
             "program": "${workspaceFolder}/integration/main_test.go",
+            "_comment": "  * * *  change to your .feature file  * * *  ",
             "args": [
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                // change to your .feature file
                 "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature"
             ]
         },
@@ -24,11 +21,11 @@
             "request": "launch",
             "mode": "test",
             "program": "${workspaceFolder}/integration/main_test.go",
+            "_comment": "  * * *  change to your .feature file and specify line at which Scenario starts  * * *  ",
             "args": [
                 "--godog.format",
                 "pretty",
                 "-test.run",
-                // change to your .feature file and specify line at which Scenario starts
                 "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature:23"
             ]
         }
