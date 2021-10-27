@@ -28,7 +28,7 @@ func NewPeggedOrdersFromSnapshot(orders []*types.Order) *PeggedOrders {
 	}
 }
 
-func (p *PeggedOrders) changed() bool {
+func (p *PeggedOrders) Changed() bool {
 	return p.ordersChanged
 }
 
@@ -142,6 +142,10 @@ func (p *PeggedOrders) GetAllActiveOrders() (orders []*types.Order) {
 		}
 	}
 	return
+}
+
+func (p PeggedOrders) GetAll() []*types.Order {
+	return p.orders
 }
 
 func (p *PeggedOrders) GetAllParkedForParty(party string) (orders []*types.Order) {

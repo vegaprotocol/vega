@@ -24,17 +24,17 @@ func (e *Engine) sortedMarketIDs() []string {
 	return ids
 }
 
-func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
+func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, error) {
 	// snapshots should be deterministic
 	mktIDs := e.sortedMarketIDs()
 
 	mks := make([]*types.ExecMarket, 0, len(mktIDs))
-	e.marketsStateProviders = make([]types.StateProvider, 0, (len(mktIDs)-len(e.previouslySnapshottedMarkets))*2)
+	e.marketsStateProviders = make([]types.StateProvider, 0, (len(mktIDs)-len(e.previouslySnapshottedMarkets))*3)
 	for _, id := range mktIDs {
 		m, ok := e.markets[id]
 		// this should not happen but just in case...
 		if !ok {
-			continue
+			return nil, nil, fmt.Errorf("market %q not found in execution engine", id)
 		}
 		mks = append(mks, m.getState())
 
@@ -44,7 +44,7 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider) {
 		}
 	}
 
-	return mks, e.marketsStateProviders
+	return mks, e.marketsStateProviders, nil
 }
 
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Market, error) {
@@ -94,10 +94,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 	e.markets[marketConfig.ID] = mkt
 	e.marketsCpy = append(e.marketsCpy, mkt)
 
-	// we ignore the response, this cannot fail as the asset
-	// is already proven to exists a few line before
-	_, _, _ = e.collateral.CreateMarketAccounts(ctx, marketConfig.ID, asset)
-
 	if err := e.propagateInitialNetParams(ctx, mkt); err != nil {
 		return nil, err
 	}
@@ -126,7 +122,10 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 		return e.snapshotSerialised, e.snapshotHash, nil, nil
 	}
 
-	mkts, pvds := e.marketsStates()
+	mkts, pvds, err := e.marketsStates()
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to get market states: %w", err)
+	}
 
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{

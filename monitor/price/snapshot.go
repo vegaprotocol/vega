@@ -74,7 +74,7 @@ func mapToKeyDecimalPair(m map[int64]num.Decimal) []*types.KeyDecimalPair {
 }
 
 func keyDecimalPairToMap(dms []*types.KeyDecimalPair) map[int64]num.Decimal {
-	m := map[int64]num.Decimal{}
+	m := make(map[int64]num.Decimal, len(dms))
 
 	for _, dm := range dms {
 		m[dm.Key] = dm.Val

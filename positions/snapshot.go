@@ -95,11 +95,6 @@ func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return state, nil, err
 }
 
-func (e *SnapshotEngine) Snapshot() (map[string][]byte, error) {
-	state, _, err := e.serialise()
-	return map[string][]byte{e.marketID: state}, err
-}
-
 func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace

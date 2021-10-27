@@ -56,7 +56,7 @@ func NewEquitySharesFromSnapshot(state *types.EquityShare) *EquityShares {
 	}
 }
 
-func (es EquityShares) changed() bool {
+func (es EquityShares) Changed() bool {
 	return es.stateChanged
 }
 

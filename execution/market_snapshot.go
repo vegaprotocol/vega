@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
-	liquiditytarget "code.vegaprotocol.io/vega/liquidity/target"
+	"code.vegaprotocol.io/vega/liquidity/target"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
 	"code.vegaprotocol.io/vega/matching"
@@ -31,7 +32,7 @@ func NewMarketFromSnapshot(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	liquidityConfig liquidity.Config,
-	collateralEngine Collateral,
+	collateralEngine *collateral.Engine,
 	oracleEngine products.OracleEngine,
 	now time.Time,
 	broker Broker,
@@ -84,7 +85,7 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
+	tsCalc := target.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
 
 	pMonitor, err := price.NewMonitorFromSnapshot(em.PriceMonitor, mkt.PriceMonitoringSettings, tradableInstrument.RiskModel)
 	if err != nil {
@@ -113,7 +114,7 @@ func NewMarketFromSnapshot(
 		broker:             broker,
 		fee:                feeEngine,
 		liquidity:          liqEngine,
-		parties:            map[string]struct{}{},
+		parties:            map[string]struct{}{}, // parties will be restored on chain time update
 		lMonitor:           lMonitor,
 		tsCalc:             tsCalc,
 		feeSplitter:        NewFeeSplitter(),
@@ -122,11 +123,11 @@ func NewMarketFromSnapshot(
 		peggedOrders:       NewPeggedOrdersFromSnapshot(em.PeggedOrders),
 		expiringOrders:     NewExpiringOrdersFromState(em.ExpiringOrders),
 		equityShares:       NewEquitySharesFromSnapshot(em.EquityShare),
-		lastBestBidPrice:   em.LastBestBid,
-		lastBestAskPrice:   em.LastBestAsk,
-		lastMidBuyPrice:    em.LastMidBid,
-		lastMidSellPrice:   em.LastMidAsk,
-		markPrice:          em.CurrentMarkPrice,
+		lastBestBidPrice:   em.LastBestBid.Clone(),
+		lastBestAskPrice:   em.LastBestAsk.Clone(),
+		lastMidBuyPrice:    em.LastMidBid.Clone(),
+		lastMidSellPrice:   em.LastMidAsk.Clone(),
+		markPrice:          em.CurrentMarkPrice.Clone(),
 		stateChanged:       true,
 		restorePositions:   true,
 	}
@@ -138,9 +139,9 @@ func (m *Market) changed() bool {
 	return (m.stateChanged ||
 		m.pMonitor.Changed() ||
 		m.as.Changed() ||
-		m.peggedOrders.changed() ||
-		m.expiringOrders.changed() ||
-		m.equityShares.changed())
+		m.peggedOrders.Changed() ||
+		m.expiringOrders.Changed() ||
+		m.equityShares.Changed())
 }
 
 func (m *Market) getState() *types.ExecMarket {

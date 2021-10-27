@@ -2,6 +2,7 @@ package execution
 
 import (
 	"code.vegaprotocol.io/vega/types"
+
 	"github.com/google/btree"
 )
 
@@ -40,7 +41,7 @@ func NewExpiringOrdersFromState(orders []*types.Order) *ExpiringOrders {
 	return eo
 }
 
-func (a ExpiringOrders) changed() bool {
+func (a ExpiringOrders) Changed() bool {
 	return a.ordersChanged
 }
 
@@ -54,12 +55,6 @@ func (a *ExpiringOrders) GetState() []string {
 	a.ordersChanged = false
 
 	return orders
-}
-
-func (a *ExpiringOrders) RestoreState(orders []*types.Order) {
-	for _, o := range orders {
-		a.Insert(o.ID, o.ExpiresAt)
-	}
 }
 
 func (a *ExpiringOrders) GetExpiryingOrderCount() int {

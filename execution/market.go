@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -113,8 +114,6 @@ type TargetStakeCalculator interface {
 }
 
 // AuctionState ...
-// We can't use the interface yet. AuctionState is passed to the engines, which access different methods
-// keep the interface for documentation purposes.
 type AuctionState interface {
 	price.AuctionState
 	lmon.AuctionState
@@ -173,7 +172,7 @@ type Market struct {
 	liquidity          *liquidity.SnapshotEngine
 
 	// deps engines
-	collateral Collateral
+	collateral *collateral.Engine
 
 	broker Broker
 	closed bool
@@ -185,7 +184,7 @@ type Market struct {
 
 	tsCalc TargetStakeCalculator
 
-	as AuctionState // @TODO this should be an interface
+	as AuctionState
 
 	peggedOrders   *PeggedOrders
 	expiringOrders *ExpiringOrders
@@ -244,7 +243,7 @@ func NewMarket(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	liquidityConfig liquidity.Config,
-	collateralEngine Collateral,
+	collateralEngine *collateral.Engine,
 	oracleEngine products.OracleEngine,
 	mkt *types.Market,
 	now time.Time,
@@ -538,6 +537,19 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// Restore all positions
 	if m.restorePositions {
 		m.settlement.Update(m.position.Positions())
+
+		pps := m.position.Parties()
+		peggedOrder := m.peggedOrders.GetAll()
+		parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
+
+		for _, p := range pps {
+			parties[p] = struct{}{}
+		}
+
+		for _, o := range m.peggedOrders.GetAll() {
+			parties[o.Party] = struct{}{}
+		}
+
 		m.restorePositions = false
 	}
 
@@ -599,8 +611,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	}
 
 	m.closed = m.mkt.State == types.MarketStateSettled
-
-	// @TODO update positions in settlements engine
 
 	return m.closed
 }
