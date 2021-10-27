@@ -159,7 +159,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 	if conf.StartHeight == 0 {
 		return eng, nil
 	}
-	if err := eng.findHeight(ctx, conf.StartHeight); err != nil {
+	if err := eng.loadHeight(ctx, conf.StartHeight); err != nil {
 		return nil, err
 	}
 	eng.log.Debug("Loaded snapshot",
@@ -206,7 +206,7 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return trees, nil
 }
 
-func (e *Engine) findHeight(ctx context.Context, h int64) error {
+func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 	if h < 0 {
 		return e.LoadFromStore(ctx)
 	}
