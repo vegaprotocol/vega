@@ -214,7 +214,7 @@ func (e *Engine) findHeight(ctx context.Context, h int64) error {
 	versions := e.avl.AvailableVersions()
 	// descending order, because that makes most sense
 	var last uint64
-	for i := len(versions) - 1; i < -1; i-- {
+	for i := len(versions) - 1; i > -1; i-- {
 		version := int64(versions[i])
 		if _, err := e.avl.LoadVersion(version); err != nil {
 			return err
