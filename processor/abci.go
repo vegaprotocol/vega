@@ -887,8 +887,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	if err := tx.Unmarshal(ns); err != nil {
 		return err
 	}
-	_, _, err := app.notary.AddSig(ctx, tx.PubKeyHex(), *ns)
-	return err
+	return app.notary.RegisterSignature(ctx, tx.PubKeyHex(), *ns)
 }
 
 func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
@@ -1032,37 +1031,25 @@ func (app *App) enactAsset(ctx context.Context, prop *types.Proposal, _ *types.A
 		return
 	}
 
+	var signature []byte
+	// only build a signature if we are a validator
+	if app.top.IsValidator() {
+		switch {
+		case asset.IsERC20():
+			asset, _ := asset.ERC20()
+			_, signature, err = asset.SignBridgeListing()
+		}
+		if err != nil {
+			// this cannot happen, if we have an issue, this means
+			// the node is not configured properly as a validator
+			app.log.Panic("unable to sign allowlisting transaction",
+				logging.String("asset-id", prop.ID),
+				logging.Error(err))
+		}
+	}
+
 	// then instruct the notary to start getting signature from validators
-	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew)
-
-	// if we are not a validator the job is done here
-	if !app.top.IsValidator() {
-		// nothing to do
-		return
-	}
-
-	var sig []byte
-	switch {
-	case asset.IsERC20():
-		asset, _ := asset.ERC20()
-		_, sig, err = asset.SignBridgeListing()
-	}
-	if err != nil {
-		app.log.Error("unable to sign allowlisting transaction",
-			logging.String("asset-id", prop.ID),
-			logging.Error(err))
-		prop.State = types.ProposalStateFailed
-		return
-	}
-	payload := &commandspb.NodeSignature{
-		Id:   prop.ID,
-		Sig:  sig,
-		Kind: commandspb.NodeSignatureKind_NODE_SIGNATURE_KIND_ASSET_NEW,
-	}
-
-	// no callbacks needed there, core should retry if nothging
-	// is received back at some point
-	app.cmd.Command(ctx, txn.NodeSignatureCommand, payload, nil)
+	app.notary.StartAggregate(prop.ID, types.NodeSignatureKindAssetNew, signature)
 }
 
 func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {

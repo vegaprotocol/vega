@@ -43,8 +43,7 @@ type Assets interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/banking Notary
 type Notary interface {
-	StartAggregate(resID string, kind types.NodeSignatureKind)
-	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
+	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
 }
 
