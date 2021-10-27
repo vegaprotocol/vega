@@ -43,10 +43,6 @@ func (s *Svc) GetHash(k string) ([]byte, error) {
 	return s.hash, nil
 }
 
-func (s *Svc) Snapshot() (map[string][]byte, error) {
-	return map[string][]byte{s.pl.Key(): s.data}, nil
-}
-
 func (s *Svc) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != s.pl.Key() {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist

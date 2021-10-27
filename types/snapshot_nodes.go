@@ -170,6 +170,15 @@ type PayloadWitness struct {
 	Witness *Witness
 }
 
+type PayloadTopology struct {
+	Topology *Topology
+}
+
+type Topology struct {
+	ValidatorData   []*eventspb.ValidatorUpdate
+	ChainValidators []string
+}
+
 type Witness struct {
 	NeedResendResources []string
 	Resources           []*Resource
@@ -638,6 +647,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakeVerifierDepositedFromProto(dt)
 	case *snapshot.Payload_StakeVerifierRemoved:
 		ret.Data = PayloadStakeVerifierRemovedFromProto(dt)
+	case *snapshot.Payload_Topology:
+		ret.Data = PayloadTopologyFromProto(dt)
 	}
 
 	return ret
@@ -734,6 +745,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_StakeVerifierDeposited:
 		ret.Data = dt
 	case *snapshot.Payload_StakeVerifierRemoved:
+		ret.Data = dt
+	case *snapshot.Payload_Topology:
 		ret.Data = dt
 	}
 	return &ret
@@ -3067,6 +3080,38 @@ func (*PayloadWitness) Key() string {
 
 func (*PayloadWitness) Namespace() SnapshotNamespace {
 	return WitnessSnapshot
+}
+
+func (*PayloadTopology) isPayload() {}
+
+func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
+	return &PayloadTopology{
+		Topology: &Topology{
+			ChainValidators: t.Topology.ChainKeys,
+			ValidatorData:   t.Topology.ValidatorData,
+		},
+	}
+}
+
+func (p *PayloadTopology) IntoProto() *snapshot.Payload_Topology {
+	return &snapshot.Payload_Topology{
+		Topology: &snapshot.Topology{
+			ChainKeys:     p.Topology.ChainValidators,
+			ValidatorData: p.Topology.ValidatorData,
+		},
+	}
+}
+
+func (p *PayloadTopology) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadTopology) Key() string {
+	return "all"
+}
+
+func (*PayloadTopology) Namespace() SnapshotNamespace {
+	return TopologySnapshot
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.
