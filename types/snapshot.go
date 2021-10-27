@@ -152,6 +152,23 @@ func (s Snapshot) ToTM() *tmtypes.Snapshot {
 	}
 }
 
+func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
+	appState := &Payload{
+		Data: &PayloadAppState{},
+	}
+	key := appState.GetTreeKey()
+	_, data := tree.Get([]byte(key))
+	if data == nil {
+		return nil, ErrSnapshotKeyDoesNotExist
+	}
+	prp := appState.IntoProto()
+	if err := proto.Unmarshal(data, prp); err != nil {
+		return nil, err
+	}
+	appState = PayloadFromProto(prp)
+	return appState.GetAppState(), nil
+}
+
 func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 	snap := Snapshot{
 		Hash: tree.Hash(),

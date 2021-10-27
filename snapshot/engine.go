@@ -130,7 +130,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		AppState: &types.AppState{},
 	}
 	app := appPL.Namespace()
-	return &Engine{
+	eng := &Engine{
 		Config:     conf,
 		ctx:        sctx,
 		cfunc:      cfunc,
@@ -155,7 +155,17 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		versionHeight: map[uint64]int64{},
 		wrap:          appPL,
 		app:           appPL.AppState,
-	}, nil
+	}
+	if conf.StartHeight == 0 {
+		return eng, nil
+	}
+	if err := eng.findHeight(ctx, conf.StartHeight); err != nil {
+		return nil, err
+	}
+	eng.log.Debug("Loaded snapshot",
+		logging.Int64("loaded height", conf.StartHeight),
+	)
+	return eng, nil
 }
 
 func (e *Engine) ReloadConfig(cfg Config) {
@@ -196,6 +206,49 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return trees, nil
 }
 
+func (e *Engine) findHeight(ctx context.Context, h int64) error {
+	if h == -1 {
+		return e.LoadFromStore(ctx)
+	}
+	height := uint64(h)
+	versions := e.avl.AvailableVersions()
+	// descending order, because that makes most sense
+	var last uint64
+	for i := len(versions) - 1; i < -1; i-- {
+		version := int64(versions[i])
+		if _, err := e.avl.LoadVersion(version); err != nil {
+			return err
+		}
+		app, err := types.AppStateFromTree(e.avl.ImmutableTree)
+		if err != nil {
+			e.log.Error("Failed to get app state data from snapshot",
+				logging.Error(err),
+				logging.Int64("snapshot-version", version),
+			)
+			continue
+		}
+		if app.AppState.Height == height {
+			e.version = version
+			e.last = e.avl.ImmutableTree
+			return e.loadLast(ctx)
+		}
+		// we've gone past the specified height, we're not going to find the snapshot
+		// log and error
+		if app.AppState.Height < height {
+			e.log.Error("Unable to find a snapshot for the specified height",
+				logging.Uint64("snapshot-height", height),
+			)
+			return types.ErrNoSnapshot
+		}
+		last = app.AppState.Height
+	}
+	e.log.Error("Specified height too low",
+		logging.Uint64("specified-height", height),
+		logging.Uint64("minumum-height", last),
+	)
+	return types.ErrNoSnapshot
+}
+
 func (e *Engine) LoadFromStore(ctx context.Context) error {
 	version, err := e.avl.Load()
 	if err != nil {
@@ -203,6 +256,10 @@ func (e *Engine) LoadFromStore(ctx context.Context) error {
 	}
 	e.version = version
 	e.last = e.avl.ImmutableTree
+	return e.loadLast(ctx)
+}
+
+func (e *Engine) loadLast(ctx context.Context) error {
 	snap, err := types.SnapshotFromTree(e.last)
 	if err != nil {
 		return err
