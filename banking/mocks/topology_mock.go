@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockTopology is a mock of Topology interface
+// MockTopology is a mock of Topology interface.
 type MockTopology struct {
 	ctrl     *gomock.Controller
 	recorder *MockTopologyMockRecorder
 }
 
-// MockTopologyMockRecorder is the mock recorder for MockTopology
+// MockTopologyMockRecorder is the mock recorder for MockTopology.
 type MockTopologyMockRecorder struct {
 	mock *MockTopology
 }
 
-// NewMockTopology creates a new mock instance
+// NewMockTopology creates a new mock instance.
 func NewMockTopology(ctrl *gomock.Controller) *MockTopology {
 	mock := &MockTopology{ctrl: ctrl}
 	mock.recorder = &MockTopologyMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTopology) EXPECT() *MockTopologyMockRecorder {
 	return m.recorder
 }
 
-// IsValidator mocks base method
+// IsValidator mocks base method.
 func (m *MockTopology) IsValidator() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsValidator")
@@ -40,7 +41,7 @@ func (m *MockTopology) IsValidator() bool {
 	return ret0
 }
 
-// IsValidator indicates an expected call of IsValidator
+// IsValidator indicates an expected call of IsValidator.
 func (mr *MockTopologyMockRecorder) IsValidator() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsValidator", reflect.TypeOf((*MockTopology)(nil).IsValidator))

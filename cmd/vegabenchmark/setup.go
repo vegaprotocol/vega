@@ -40,7 +40,6 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/prometheus/common/log"
 )
 
 func setupVega() (*processor.App, processor.Stats, error) {
@@ -245,14 +244,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	// load markets and assets
 	uponGenesisW := func(ctx context.Context, rawstate []byte) error {
-		return uponGenesis(
-			ctx,
-			rawstate,
-			log,
-			assets,
-			collateral,
-			exec,
-		)
+		return uponGenesis(ctx, rawstate, log, assets, collateral, exec)
 	}
 
 	setupGenesis(
@@ -284,11 +276,7 @@ func uponGenesis(
 	}
 
 	for k, v := range state {
-		err := loadAsset(
-			k, types.AssetDetailsFromProto(v),
-			assetSvc, collateral,
-		)
-		if err != nil {
+		if err := loadAsset(log, k, types.AssetDetailsFromProto(v), assetSvc, collateral); err != nil {
 			return err
 		}
 	}
@@ -321,6 +309,7 @@ func uponGenesis(
 }
 
 func loadAsset(
+	log *logging.Logger,
 	id string,
 	v *types.AssetDetails,
 	assets *assets.Service,

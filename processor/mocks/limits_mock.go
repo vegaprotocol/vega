@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockLimits is a mock of Limits interface
+// MockLimits is a mock of Limits interface.
 type MockLimits struct {
 	ctrl     *gomock.Controller
 	recorder *MockLimitsMockRecorder
 }
 
-// MockLimitsMockRecorder is the mock recorder for MockLimits
+// MockLimitsMockRecorder is the mock recorder for MockLimits.
 type MockLimitsMockRecorder struct {
 	mock *MockLimits
 }
 
-// NewMockLimits creates a new mock instance
+// NewMockLimits creates a new mock instance.
 func NewMockLimits(ctrl *gomock.Controller) *MockLimits {
 	mock := &MockLimits{ctrl: ctrl}
 	mock.recorder = &MockLimitsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockLimits) EXPECT() *MockLimitsMockRecorder {
 	return m.recorder
 }
 
-// BootstrapFinished mocks base method
+// BootstrapFinished mocks base method.
 func (m *MockLimits) BootstrapFinished() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BootstrapFinished")
@@ -40,13 +41,13 @@ func (m *MockLimits) BootstrapFinished() bool {
 	return ret0
 }
 
-// BootstrapFinished indicates an expected call of BootstrapFinished
+// BootstrapFinished indicates an expected call of BootstrapFinished.
 func (mr *MockLimitsMockRecorder) BootstrapFinished() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BootstrapFinished", reflect.TypeOf((*MockLimits)(nil).BootstrapFinished))
 }
 
-// CanProposeAsset mocks base method
+// CanProposeAsset mocks base method.
 func (m *MockLimits) CanProposeAsset() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanProposeAsset")
@@ -54,13 +55,13 @@ func (m *MockLimits) CanProposeAsset() bool {
 	return ret0
 }
 
-// CanProposeAsset indicates an expected call of CanProposeAsset
+// CanProposeAsset indicates an expected call of CanProposeAsset.
 func (mr *MockLimitsMockRecorder) CanProposeAsset() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposeAsset", reflect.TypeOf((*MockLimits)(nil).CanProposeAsset))
 }
 
-// CanProposeMarket mocks base method
+// CanProposeMarket mocks base method.
 func (m *MockLimits) CanProposeMarket() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanProposeMarket")
@@ -68,13 +69,13 @@ func (m *MockLimits) CanProposeMarket() bool {
 	return ret0
 }
 
-// CanProposeMarket indicates an expected call of CanProposeMarket
+// CanProposeMarket indicates an expected call of CanProposeMarket.
 func (mr *MockLimitsMockRecorder) CanProposeMarket() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanProposeMarket", reflect.TypeOf((*MockLimits)(nil).CanProposeMarket))
 }
 
-// CanTrade mocks base method
+// CanTrade mocks base method.
 func (m *MockLimits) CanTrade() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanTrade")
@@ -82,7 +83,7 @@ func (m *MockLimits) CanTrade() bool {
 	return ret0
 }
 
-// CanTrade indicates an expected call of CanTrade
+// CanTrade indicates an expected call of CanTrade.
 func (mr *MockLimitsMockRecorder) CanTrade() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanTrade", reflect.TypeOf((*MockLimits)(nil).CanTrade))
