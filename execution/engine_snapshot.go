@@ -119,7 +119,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 
 func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers []types.StateProvider, err error) {
 	if !e.changed() {
-		return e.snapshotSerialised, e.snapshotHash, nil, nil
+		return e.snapshotSerialised, e.snapshotHash, e.marketsStateProviders, nil
 	}
 
 	mkts, pvds, err := e.marketsStates()
