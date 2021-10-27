@@ -207,7 +207,7 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 }
 
 func (e *Engine) findHeight(ctx context.Context, h int64) error {
-	if h == -1 {
+	if h < 0 {
 		return e.LoadFromStore(ctx)
 	}
 	height := uint64(h)
