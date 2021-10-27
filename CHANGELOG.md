@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.45.2
+*2021-10-27*
+
+### Fixes
+- [4320](https://github.com/vegaprotocol/vega/pull/4320) - Implement retries for notary transactions
+- [4312](https://github.com/vegaprotocol/vega/pull/4312) - Implement retries for witness transactions
+
 
 ## 0.45.1
 *2021-10-23*
