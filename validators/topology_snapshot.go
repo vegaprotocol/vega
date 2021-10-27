@@ -3,7 +3,6 @@ package validators
 import (
 	"context"
 	"sort"
-	"sync"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -24,13 +23,6 @@ type topologySnapshotState struct {
 	changed    bool
 	hash       []byte
 	serialised []byte
-	mu         sync.Mutex
-}
-
-func (tss *topologySnapshotState) setChanged(value bool) {
-	tss.mu.Lock()
-	tss.changed = value
-	tss.mu.Unlock()
 }
 
 func (t *Topology) Namespace() types.SnapshotNamespace {
@@ -79,8 +71,8 @@ func (t *Topology) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 		return nil, nil, ErrSnapshotKeyDoesNotExist
 	}
 
-	t.tss.mu.Lock()
-	defer t.tss.mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	if !t.tss.changed {
 		return t.tss.serialised, t.tss.hash, nil
@@ -122,8 +114,8 @@ func (t *Topology) LoadState(ctx context.Context, p *types.Payload) ([]types.Sta
 }
 
 func (t *Topology) restore(ctx context.Context, topology *types.Topology) error {
-	t.tss.mu.Lock()
-	defer t.tss.mu.Unlock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
 
 	walletID := t.wallet.ID().Hex()
 

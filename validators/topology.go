@@ -156,7 +156,7 @@ func (t *Topology) UpdateValidatorSet(keys []string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.chainValidators = keys
-	t.tss.setChanged(true)
+	t.tss.changed = true
 }
 
 // IsValidatorNode takes a nodeID and returns true if the node is a validator node.
@@ -228,7 +228,7 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 		AvatarURL:       nr.AvatarUrl,
 	}
 
-	t.tss.setChanged(true)
+	t.tss.changed = true
 
 	// Send event to notify core about new validator
 	t.sendValidatorUpdateEvent(ctx, nr)
