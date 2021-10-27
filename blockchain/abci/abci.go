@@ -95,6 +95,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	if resp.IsOK() {
 		app.cacheTx(req.Tx, tx)
 	}
+
 	return resp
 }
 

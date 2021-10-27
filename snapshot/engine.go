@@ -107,6 +107,8 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.LimitSnapshot,
 	types.ReplayProtectionSnapshot,
 	types.RewardSnapshot,
+	types.TopologySnapshot,
+	types.EventForwarderSnapshot,
 }
 
 // New returns a new snapshot engine.

@@ -21,9 +21,9 @@ type chainClientImpl interface {
 	GetNetworkInfo(context.Context) (*tmctypes.ResultNetInfo, error)
 	GetUnconfirmedTxCount(context.Context) (int, error)
 	Health(context.Context) (*tmctypes.ResultHealth, error)
-	SendTransactionAsync(context.Context, []byte) error
-	SendTransactionSync(context.Context, []byte) error
-	SendTransactionCommit(context.Context, []byte) error
+	SendTransactionAsync(context.Context, []byte) (string, error)
+	SendTransactionSync(context.Context, []byte) (string, error)
+	SendTransactionCommit(context.Context, []byte) (string, error)
 	GenesisValidators(context.Context) ([]*tmtypes.Validator, error)
 	Validators(context.Context) ([]*tmtypes.Validator, error)
 	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
@@ -42,15 +42,15 @@ func NewClient(clt chainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) error {
+func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error) {
 	_, err := commands.CheckTransaction(tx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	marshalledTx, err := proto.Marshal(tx)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -59,7 +59,7 @@ func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transac
 	return c.sendTxV2(ctx, marshalledTx, ty)
 }
 
-func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) error {
+func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) (string, error) {
 	switch ty {
 	case api.SubmitTransactionRequest_TYPE_ASYNC:
 		return c.clt.SendTransactionAsync(ctx, msg)
@@ -68,7 +68,7 @@ func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransact
 	case api.SubmitTransactionRequest_TYPE_COMMIT:
 		return c.clt.SendTransactionCommit(ctx, msg)
 	default:
-		return errors.New("invalid submit transaction request type")
+		return "", errors.New("invalid submit transaction request type")
 	}
 }
 

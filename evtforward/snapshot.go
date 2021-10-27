@@ -85,21 +85,9 @@ func (e *EvtForwarder) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *EvtForwarder) GetState(k string) ([]byte, error) {
+func (e *EvtForwarder) GetState(k string) ([]byte, []types.StateProvider, error) {
 	state, _, err := e.getSerialisedAndHash(k)
-	return state, err
-}
-
-func (e *EvtForwarder) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
+	return state, nil, err
 }
 
 func (e *EvtForwarder) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {

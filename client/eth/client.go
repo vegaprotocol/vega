@@ -88,7 +88,7 @@ func (c *Client) CurrentHeight(ctx context.Context) (uint64, error) {
 	// ~15 seconds
 	if now := time.Now(); c.curHeightLastUpdate.Add(15).Before(now) {
 		// get the last block header
-		h, err := c.HeaderByNumber(context.Background(), nil)
+		h, err := c.HeaderByNumber(ctx, nil)
 		if err != nil {
 			return c.curHeight, err
 		}

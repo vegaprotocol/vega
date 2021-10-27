@@ -87,6 +87,20 @@ Feature: A feature that reproduces some system test
       | ETH/DEC20 | ETH        | ETH   | default-simple-risk-model | default-margin-calculator | 1                | default-none     | default-for-future |
 ```
 
+### Debug problems with VSCode
+
+You might have a situation where you need to closely investigate the state of a tested application or the tests script itself. You might want to set some breakpoints, at which test execution stops, and you can view that state.
+
+This process is called debugging, and we have an initial/template configuration for you. Please follow these steps:
+1. Open and edit [.vscode/launch.json](.vscode/launch.json) config file (do not commit changes to this file):
+  - to run one `.feature` file, then edit `Debug .feature test` section and point to your `.feature` file,
+  - to run single Scenario in a `.feature` file, then change `.feature` file path and specify the line of a Scenario in that file. All in section `Debug single Scenario in .feature test`,
+2. Set breakpoints in tests code or application code (note: it has to be in `.go` files, no `.feature`),
+3. In VSCode switch to `Run and Debug` view (an icon with a bug from left side-bar),
+4. From top drop-down select which option you want to run, e.g. `Debug .feature test`,
+5. Click green Play button,
+6. Observe results in `Debug Console` tab at bottom.
+
 ## Life cycle
 
 To get a market up and running, here is the process:

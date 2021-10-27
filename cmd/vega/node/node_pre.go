@@ -360,7 +360,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.checkpoint.UponGenesis,
 	)
 
-	l.notary = notary.NewWithSnapshot(l.Log, l.conf.Notary, l.topology, l.broker, commander)
+	// l.notary = notary.NewWithSnapshot(l.Log, l.conf.Notary, l.topology, l.broker, commander)
+	l.notary = notary.New(
+		l.Log, l.conf.Notary, l.topology, l.broker, commander, l.timeService)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker, l.topology)
 	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
@@ -370,7 +372,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	}
 	// @TODO register StateProviders with snapshot engine:
 	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
-		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits)
+		/*l.notary, */ l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd)
 	// these haven't been implemented yet. Replay protection will require some trickery.
 	// l.snapshot.AddProviders(l.executionEngine)
 
