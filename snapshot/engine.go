@@ -244,7 +244,7 @@ func (e *Engine) findHeight(ctx context.Context, h int64) error {
 	}
 	e.log.Error("Specified height too low",
 		logging.Uint64("specified-height", height),
-		logging.Uint64("minumum-height", last),
+		logging.Uint64("minimum-height", last),
 	)
 	return types.ErrNoSnapshot
 }
