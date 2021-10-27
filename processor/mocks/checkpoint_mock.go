@@ -5,37 +5,38 @@
 package mocks
 
 import (
-	types "code.vegaprotocol.io/vega/types"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	types "code.vegaprotocol.io/vega/types"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockCheckpoint is a mock of Checkpoint interface
+// MockCheckpoint is a mock of Checkpoint interface.
 type MockCheckpoint struct {
 	ctrl     *gomock.Controller
 	recorder *MockCheckpointMockRecorder
 }
 
-// MockCheckpointMockRecorder is the mock recorder for MockCheckpoint
+// MockCheckpointMockRecorder is the mock recorder for MockCheckpoint.
 type MockCheckpointMockRecorder struct {
 	mock *MockCheckpoint
 }
 
-// NewMockCheckpoint creates a new mock instance
+// NewMockCheckpoint creates a new mock instance.
 func NewMockCheckpoint(ctrl *gomock.Controller) *MockCheckpoint {
 	mock := &MockCheckpoint{ctrl: ctrl}
 	mock.recorder = &MockCheckpointMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCheckpoint) EXPECT() *MockCheckpointMockRecorder {
 	return m.recorder
 }
 
-// AwaitingRestore mocks base method
+// AwaitingRestore mocks base method.
 func (m *MockCheckpoint) AwaitingRestore() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AwaitingRestore")
@@ -43,13 +44,13 @@ func (m *MockCheckpoint) AwaitingRestore() bool {
 	return ret0
 }
 
-// AwaitingRestore indicates an expected call of AwaitingRestore
+// AwaitingRestore indicates an expected call of AwaitingRestore.
 func (mr *MockCheckpointMockRecorder) AwaitingRestore() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AwaitingRestore", reflect.TypeOf((*MockCheckpoint)(nil).AwaitingRestore))
 }
 
-// BalanceCheckpoint mocks base method
+// BalanceCheckpoint mocks base method.
 func (m *MockCheckpoint) BalanceCheckpoint(arg0 context.Context) (*types.CheckpointState, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BalanceCheckpoint", arg0)
@@ -58,13 +59,13 @@ func (m *MockCheckpoint) BalanceCheckpoint(arg0 context.Context) (*types.Checkpo
 	return ret0, ret1
 }
 
-// BalanceCheckpoint indicates an expected call of BalanceCheckpoint
+// BalanceCheckpoint indicates an expected call of BalanceCheckpoint.
 func (mr *MockCheckpointMockRecorder) BalanceCheckpoint(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalanceCheckpoint", reflect.TypeOf((*MockCheckpoint)(nil).BalanceCheckpoint), arg0)
 }
 
-// Checkpoint mocks base method
+// Checkpoint mocks base method.
 func (m *MockCheckpoint) Checkpoint(arg0 context.Context, arg1 time.Time) (*types.CheckpointState, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Checkpoint", arg0, arg1)
@@ -73,13 +74,13 @@ func (m *MockCheckpoint) Checkpoint(arg0 context.Context, arg1 time.Time) (*type
 	return ret0, ret1
 }
 
-// Checkpoint indicates an expected call of Checkpoint
+// Checkpoint indicates an expected call of Checkpoint.
 func (mr *MockCheckpointMockRecorder) Checkpoint(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockCheckpoint)(nil).Checkpoint), arg0, arg1)
 }
 
-// Load mocks base method
+// Load mocks base method.
 func (m *MockCheckpoint) Load(arg0 context.Context, arg1 *types.CheckpointState) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Load", arg0, arg1)
@@ -87,13 +88,13 @@ func (m *MockCheckpoint) Load(arg0 context.Context, arg1 *types.CheckpointState)
 	return ret0
 }
 
-// Load indicates an expected call of Load
+// Load indicates an expected call of Load.
 func (mr *MockCheckpointMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockCheckpoint)(nil).Load), arg0, arg1)
 }
 
-// ValidateCheckpoint mocks base method
+// ValidateCheckpoint mocks base method.
 func (m *MockCheckpoint) ValidateCheckpoint(arg0 *types.CheckpointState) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidateCheckpoint", arg0)
@@ -101,7 +102,7 @@ func (m *MockCheckpoint) ValidateCheckpoint(arg0 *types.CheckpointState) error {
 	return ret0
 }
 
-// ValidateCheckpoint indicates an expected call of ValidateCheckpoint
+// ValidateCheckpoint indicates an expected call of ValidateCheckpoint.
 func (mr *MockCheckpointMockRecorder) ValidateCheckpoint(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateCheckpoint", reflect.TypeOf((*MockCheckpoint)(nil).ValidateCheckpoint), arg0)

@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockStakingAccounts is a mock of StakingAccounts interface
+// MockStakingAccounts is a mock of StakingAccounts interface.
 type MockStakingAccounts struct {
 	ctrl     *gomock.Controller
 	recorder *MockStakingAccountsMockRecorder
 }
 
-// MockStakingAccountsMockRecorder is the mock recorder for MockStakingAccounts
+// MockStakingAccountsMockRecorder is the mock recorder for MockStakingAccounts.
 type MockStakingAccountsMockRecorder struct {
 	mock *MockStakingAccounts
 }
 
-// NewMockStakingAccounts creates a new mock instance
+// NewMockStakingAccounts creates a new mock instance.
 func NewMockStakingAccounts(ctrl *gomock.Controller) *MockStakingAccounts {
 	mock := &MockStakingAccounts{ctrl: ctrl}
 	mock.recorder = &MockStakingAccountsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStakingAccounts) EXPECT() *MockStakingAccountsMockRecorder {
 	return m.recorder
 }
 
-// Hash mocks base method
+// Hash mocks base method.
 func (m *MockStakingAccounts) Hash() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Hash")
@@ -40,7 +41,7 @@ func (m *MockStakingAccounts) Hash() []byte {
 	return ret0
 }
 
-// Hash indicates an expected call of Hash
+// Hash indicates an expected call of Hash.
 func (mr *MockStakingAccountsMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockStakingAccounts)(nil).Hash))

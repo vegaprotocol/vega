@@ -8,7 +8,7 @@ import (
 )
 
 type isAsset interface {
-	// ProtoAsset get information about the asset itself
+	// Type get information about the asset itself
 	Type() *types.Asset
 	// GetAssetClass get the internal asset class
 	GetAssetClass() common.AssetClass

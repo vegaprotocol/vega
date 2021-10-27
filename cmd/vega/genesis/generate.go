@@ -1,10 +1,12 @@
 package genesis
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
@@ -21,9 +23,9 @@ import (
 	tmcrypto "github.com/tendermint/tendermint/crypto"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmos "github.com/tendermint/tendermint/libs/os"
+	tmtime "github.com/tendermint/tendermint/libs/time"
 	"github.com/tendermint/tendermint/privval"
 	tmtypes "github.com/tendermint/tendermint/types"
-	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 type generateCmd struct {
@@ -151,15 +153,20 @@ func (opts *generateCmd) Execute(_ []string) error {
 }
 
 func loadTendermintPrivateValidatorKey(tmConfig *tmconfig.Config) (tmcrypto.PubKey, error) {
-	privValKeyFile := tmConfig.PrivValidatorKeyFile()
-	privValStateFile := tmConfig.PrivValidatorStateFile()
+	privValKeyFile := tmConfig.PrivValidator.KeyFile()
+	privValStateFile := tmConfig.PrivValidator.StateFile()
 	if !tmos.FileExists(privValKeyFile) {
 		return nil, fmt.Errorf("file \"%s\" not found", privValKeyFile)
 	}
 
-	pv := privval.LoadFilePV(privValKeyFile, privValStateFile)
+	pv, err := privval.LoadFilePV(privValKeyFile, privValStateFile)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load validator file: %w", err)
+	}
 
-	pubKey, err := pv.GetPubKey()
+	ctx, cancelFn := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelFn()
+	pubKey, err := pv.GetPubKey(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("can't get pubkey: %w", err)
 	}

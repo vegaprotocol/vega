@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4465](https://github.com/vegaprotocol/vega/pull/4465) - Update to tendermint `v0.35.0`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/pull/) -
@@ -48,7 +48,7 @@
 - [4484](https://github.com/vegaprotocol/vega/pull/4484) - Add checkpoint validator key rotation
 - [4459](https://github.com/vegaprotocol/vega/pull/4459) - Add network parameters overwrite from checkpoints
 - [4070](https://github.com/vegaprotocol/vega/pull/4070) - Add calls to enable state-sync via tendermint
-
+- [4465](https://github.com/vegaprotocol/vega/pull/4465) - Add events tags to the `ResponseDeliverTx`
 
 ### 🐛 Fixes
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot

@@ -45,9 +45,7 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-
 	"github.com/cenkalti/backoff"
-	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
@@ -234,7 +232,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.
 
 		go func() {
 			if err := rec.Replay(abciApp); err != nil {
-				log.Fatalf("replay: %v", err)
+				l.Log.Fatal("couldn't replay events: %v", logging.Error(err))
 			}
 		}()
 	}
@@ -328,7 +326,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
-		log.Error("unable to initialise broker", logging.Error(err))
+		l.Log.Error("unable to initialise broker", logging.Error(err))
 		return err
 	}
 
