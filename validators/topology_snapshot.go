@@ -142,7 +142,6 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		if walletID == node.NodeId {
 			t.isValidator = true
 		}
-
 	}
 	t.chainValidators = topology.ChainValidators[:]
 	t.tss.changed = true
