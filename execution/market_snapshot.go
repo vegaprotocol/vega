@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/liquidity/target"
@@ -32,7 +31,7 @@ func NewMarketFromSnapshot(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	liquidityConfig liquidity.Config,
-	collateralEngine *collateral.Engine,
+	collateralEngine Collateral,
 	oracleEngine products.OracleEngine,
 	now time.Time,
 	broker Broker,

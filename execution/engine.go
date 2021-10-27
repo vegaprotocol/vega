@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -48,6 +47,15 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
+// Collateral engine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
+type Collateral interface {
+	MarketCollateral
+	AssetExists(assetID string) bool
+	OnChainTimeUpdate(_ context.Context, t time.Time)
+	CreateMarketAccounts(ctx context.Context, marketID, asset string) (insuranceID, settleID string, err error)
+}
+
 // Engine is the execution engine.
 type Engine struct {
 	Config
@@ -55,7 +63,7 @@ type Engine struct {
 
 	markets    map[string]*Market
 	marketsCpy []*Market
-	collateral *collateral.Engine
+	collateral Collateral
 	idgen      *IDgenerator
 
 	broker Broker
@@ -116,7 +124,7 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	ts TimeService,
-	collateral *collateral.Engine,
+	collateral Collateral,
 	oracle OracleEngine,
 	broker Broker,
 ) *Engine {
