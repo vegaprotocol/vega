@@ -1,6 +1,7 @@
 package price
 
 import (
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/types"
@@ -70,6 +71,10 @@ func mapToKeyDecimalPair(m map[int64]num.Decimal) []*types.KeyDecimalPair {
 		})
 	}
 
+	sort.Slice(dm, func(i, j int) bool {
+		return dm[i].Key < dm[j].Key
+	})
+
 	return dm
 }
 
@@ -129,6 +134,15 @@ func (e Engine) serialisePriceRanges() []*types.PriceRangeCache {
 			},
 		})
 	}
+
+	sort.Slice(prc, func(i, j int) bool {
+		if prc[i].Bound.UpFactor.Equal(prc[j].Bound.UpFactor) {
+			return prc[j].Bound.DownFactor.GreaterThan(prc[i].Bound.DownFactor)
+		}
+
+		return prc[j].Bound.UpFactor.GreaterThan(prc[i].Bound.UpFactor)
+	})
+
 	return prc
 }
 
