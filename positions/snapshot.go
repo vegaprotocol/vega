@@ -118,6 +118,7 @@ func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.S
 			pos.vwSellPrice = p.VwSell
 
 			e.positionsCpy = append(e.positionsCpy, pos)
+			e.positions[p.PartyID] = pos
 
 			e.changed = true
 		}
