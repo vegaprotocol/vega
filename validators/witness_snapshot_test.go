@@ -54,6 +54,7 @@ func TestSnapshot(t *testing.T) {
 		defer erc2.ctrl.Finish()
 		defer erc2.Stop()
 		erc2.top.EXPECT().IsValidator().AnyTimes().Return(true)
+		erc2.top.EXPECT().SelfNodeID().AnyTimes().Return("1234")
 
 		_, err = erc2.LoadState(context.Background(), payload)
 		require.Nil(t, err)
@@ -66,7 +67,8 @@ func TestSnapshot(t *testing.T) {
 
 		// add a vote
 		erc2.top.EXPECT().IsValidatorNode(gomock.Any()).Times(1).Return(true)
-		err = erc2.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id})
+		err = erc2.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("1234")})
+
 		assert.NoError(t, err)
 
 		// expect the hash/state to have changed
@@ -82,6 +84,7 @@ func TestSnapshot(t *testing.T) {
 		defer erc3.ctrl.Finish()
 		defer erc3.Stop()
 		erc3.top.EXPECT().IsValidator().AnyTimes().Return(true)
+		erc3.top.EXPECT().SelfNodeID().AnyTimes().Return("1234")
 
 		_, err = erc3.LoadState(context.Background(), payload)
 		require.Nil(t, err)
@@ -90,5 +93,6 @@ func TestSnapshot(t *testing.T) {
 		state5, err := erc3.GetState(key)
 		require.Nil(t, err)
 		require.True(t, bytes.Equal(state5, state4))
+
 	}
 }
