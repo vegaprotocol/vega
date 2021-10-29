@@ -42,7 +42,7 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
     #check margin/general account 
     Then the parties should have the following account balances:
       | party      | asset | market id | margin   | general |
-      | auxiliary1 | BTC   | ETH/DEC19 | 19840    | 999999980160     |
+      | auxiliary1 | BTC   | ETH/DEC19 | 19840   | 999999980160     |
       | auxiliary2 | BTC   | ETH/DEC19 | 130      | 999999999870     |
       
     And the cumulated balance for all accounts should be worth "2000000000250"
@@ -59,6 +59,8 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general |
       | trader2| BTC   | ETH/DEC19 | 100      | 50      |
+      | auxiliary1 | BTC   | ETH/DEC19 | 19840    | 999999980160     |
+      | auxiliary2 | BTC   | ETH/DEC19 | 130      | 999999999870     |
      
     And the cumulated balance for all accounts should be worth "2000000000250"
 
@@ -70,7 +72,6 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | auxiliary2| ETH/DEC19 | buy  | 50    | 10    | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1|
 
     And the mark price should be "100" for the market "ETH/DEC19"
-
     # trader3 got close-out, trader3's order has been sold to network, and then trader2 bought the order from the network 
     # as it had the highest buy price 
     And the following trades should be executed:
@@ -93,9 +94,13 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
       | trader3 | 0      | 0              | -100         |
 
     # check trader2 margin level, trader2 is not close-out yet, but trader2 does not have enough margin 
+
     Then the parties should have the following account balances:
       | party  | asset | market id | margin   | general |
       | trader2| BTC   | ETH/DEC19 | 200      | 50      |
+      | trader3| BTC   | ETH/DEC19 | 0        | 0      |
+      | auxiliary1 | BTC   | ETH/DEC19 | 109400    | 999999889700     |
+      | auxiliary2 | BTC   | ETH/DEC19 | 3200      | 999999997700     |
      
     # setup new markprice, which is the same as when trader2 traded with network
     Then the parties place the following orders:
@@ -113,14 +118,6 @@ Feature: closeout-cascases & https://github.com/vegaprotocol/vega/pull/4138/file
     And the parties should have the following margin levels:
       | party   | market id | maintenance | search | initial | release |
       | trader2 | ETH/DEC19 | 0           | 0      | 0       | 0       |
-
-    #check general account 
-    Then the parties should have the following account balances:
-      | party  | asset | market id | margin   | general |
-      | auxiliary1| BTC   | ETH/DEC19 | 110350      | 999999889500      |
-      | auxiliary2| BTC   | ETH/DEC19 | 2800      | 999999997600      |
-      | trader2| BTC   | ETH/DEC19 | 0      | 0      |
-      | trader3| BTC   | ETH/DEC19 | 0      | 0      |
 
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
 
