@@ -73,5 +73,6 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		Asset:                   rp.Asset,
 		PercentageOfTotalReward: rp.PercentOfTotalReward,
 		Amount:                  amount,
+		Timestamp:               rp.Timestamp,
 	}
 }
