@@ -59,6 +59,7 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
+	Info() ([]byte, int64)
 	List() ([]*types.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
 	RejectSnapshot() error
@@ -78,6 +79,7 @@ type App struct {
 	cBlock            string
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
+	version           string
 
 	vegaPaths paths.Paths
 	cfg       Config
@@ -141,6 +143,7 @@ func NewApp(
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
 	snapshot Snapshot,
+	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -180,6 +183,7 @@ func NewApp(
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
 		snapshot:        snapshot,
+		version:         version,
 	}
 
 	// register replay protection if needed:
@@ -288,6 +292,17 @@ func (app *App) Abci() *abci.App {
 func (app *App) cancel() {
 	if fn := app.cancelFn; fn != nil {
 		fn()
+	}
+}
+
+func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
+	hash, height := app.snapshot.Info()
+	return tmtypes.ResponseInfo{
+		// Data:             "", // Not sure if we need to set anything here
+		// AppVersion:       0,  // application protocol version?
+		Version:          app.version,
+		LastBlockHeight:  height,
+		LastBlockAppHash: hash,
 	}
 }
 

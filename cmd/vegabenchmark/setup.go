@@ -215,6 +215,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		spamEngine,
 		nil,
 		snapshot,
+		"benchmark",
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
 	if err != nil {

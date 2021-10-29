@@ -217,6 +217,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		l.spam,
 		l.stakingAccounts,
 		l.snapshot,
+		l.Version,
 	)
 
 	var abciApp tmtypes.Application
