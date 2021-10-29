@@ -283,6 +283,10 @@ func (r *VegaResolverRoot) PartyStake() PartyStakeResolver {
 	return (*partyStakeResolver)(r)
 }
 
+func (r *VegaResolverRoot) Reward() RewardResolver {
+	return (*rewardResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot

@@ -303,22 +303,6 @@ type ProposalVotes struct {
 	No *ProposalVoteSide `json:"no"`
 }
 
-// Reward information for a single party
-type Reward struct {
-	// The asset for which this reward is associated
-	AssetID string `json:"assetId"`
-	// Party receiving the reward
-	PartyID string `json:"partyId"`
-	// Epoch for which this reward was distributed
-	Epoch int `json:"epoch"`
-	// Amount received for this reward
-	Amount string `json:"amount"`
-	// Percentage out of the total distributed reward
-	PercentageOfTotal string `json:"percentageOfTotal"`
-	// Time at which the rewards was received
-	ReceivedAt string `json:"receivedAt"`
-}
-
 type SettleDistressed struct {
 	// the market in which a position was closed out
 	MarketID string `json:"marketId"`
