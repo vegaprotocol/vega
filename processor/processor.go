@@ -117,7 +117,7 @@ type Assets interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
@@ -130,7 +130,7 @@ type ValidatorTopology interface {
 	IsValidator() bool
 }
 
-// Broker - the event bus
+// Broker - the event bus.
 type Broker interface {
 	Send(e events.Event)
 }
@@ -138,8 +138,8 @@ type Broker interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/processor Notary
 type Notary interface {
-	StartAggregate(resID string, kind commandspb.NodeSignatureKind)
-	AddSig(ctx context.Context, pubKey string, ns commandspb.NodeSignature) ([]commandspb.NodeSignature, bool, error)
+	StartAggregate(resID string, kind commandspb.NodeSignatureKind, signature []byte)
+	RegisterSignature(ctx context.Context, pubKey string, ns commandspb.NodeSignature) error
 	IsSigned(context.Context, string, commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool)
 }
 

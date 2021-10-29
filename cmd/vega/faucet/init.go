@@ -29,12 +29,12 @@ func (opts *faucetInit) Execute(_ []string) error {
 		return err
 	}
 
-	pass, err := opts.PassphraseFile.Get("faucet wallet")
+	pass, err := opts.PassphraseFile.Get("faucet wallet", true)
 	if err != nil {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(opts.VegaHome)
+	vegaPaths := paths.New(opts.VegaHome)
 
 	initResult, err := faucet.Initialise(vegaPaths, pass, opts.Force)
 	if err != nil {

@@ -202,7 +202,7 @@ func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy ma
 		sell[v.Price] = sell[v.Price] + v.Remaining
 	}
 
-	return
+	return sell, buy
 }
 
 func (b *BrokerStub) GetMarket(marketID string) *types.Market {
@@ -329,7 +329,7 @@ func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.Delega
 				s = append(s, et)
 			}
 		case *events.DelegationBalance:
-			if (*et).EpochSeq == string(epochSeq) {
+			if (*et).EpochSeq == epochSeq {
 				s = append(s, *et)
 			}
 		}
@@ -338,7 +338,6 @@ func (b *BrokerStub) GetDelegationBalanceEvents(epochSeq string) []events.Delega
 }
 
 func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
-
 	evts := b.GetDelegationBalanceEvents(epochSeq)
 	balances := make([]types.Delegation, 0, len(evts))
 
@@ -346,7 +345,7 @@ func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
 		balances = append(balances, types.Delegation{
 			Party:    e.Party,
 			NodeId:   e.NodeID,
-			EpochSeq: string(e.EpochSeq),
+			EpochSeq: e.EpochSeq,
 			Amount:   e.Amount.String(),
 		})
 	}
@@ -368,7 +367,7 @@ func (b *BrokerStub) GetRewards(epochSeq string) map[string]events.RewardPayout 
 				rewards[et.Party] = et
 			}
 		case *events.RewardPayout:
-			if (*et).EpochSeq == string(epochSeq) {
+			if (*et).EpochSeq == epochSeq {
 				rewards[et.Party] = *et
 			}
 		}
@@ -391,7 +390,7 @@ func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.Valid
 				scores[et.NodeID] = et
 			}
 		case *events.ValidatorScore:
-			if (*et).EpochSeq == string(epochSeq) {
+			if (*et).EpochSeq == epochSeq {
 				scores[et.NodeID] = *et
 			}
 		}
@@ -511,7 +510,7 @@ func (b *BrokerStub) GetMarketSettlementAccount(market string) (types.Account, e
 	return types.Account{}, errors.New("account does not exist")
 }
 
-// GetPartyGeneralAccount returns the latest event WRT the party's general account
+// GetPartyGeneralAccount returns the latest event WRT the party's general account.
 func (b *BrokerStub) GetPartyGeneralAccount(party, asset string) (ga types.Account, err error) {
 	batch := b.GetAccountEvents()
 	err = errors.New("account does not exist")
@@ -578,7 +577,7 @@ func (b *BrokerStub) GetByReference(party, ref string) (types.Order, error) {
 	data := b.GetOrderEvents()
 
 	var last types.Order // we need the most recent event, the order object is not updated (copy v pointer, issue 2353)
-	var matched = false
+	matched := false
 	for _, o := range data {
 		v := o.Order()
 		if v.Reference == ref && v.PartyId == party {

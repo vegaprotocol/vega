@@ -3,6 +3,9 @@ package notary
 import (
 	"context"
 	"math"
+	"strings"
+	"sync"
+	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -14,7 +17,7 @@ import (
 )
 
 const (
-	// by default all validators needs to sign
+	// by default all validators needs to sign.
 	defaultValidatorsVoteRequired = 1.0
 )
 
@@ -29,10 +32,11 @@ var (
 type ValidatorTopology interface {
 	IsValidator() bool
 	IsValidatorVegaPubKey(string) bool
+	SelfVegaPubKey() string
 	Len() int
 }
 
-// Broker needs no mocks
+// Broker needs no mocks.
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
@@ -40,21 +44,27 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/time_ticker_mock.go -package mocks code.vegaprotocol.io/vega/notary TimeTicker
+type TimeTicker interface {
+	NotifyOnTick(func(context.Context, time.Time))
 }
 
 // Notary will aggregate all signatures of a node for
 // a specific Command
-// e.g: asset withdrawal, asset allowlisting, etc
+// e.g: asset withdrawal, asset allowlisting, etc.
 type Notary struct {
 	cfg Config
 	log *logging.Logger
 
 	// resource to be signed -> signatures
-	sigs   map[idKind]map[nodeSig]struct{}
-	top    ValidatorTopology
-	cmd    Commander
-	broker Broker
+	sigs    map[idKind]map[nodeSig]struct{}
+	retries *txTracker
+	top     ValidatorTopology
+	cmd     Commander
+	broker  Broker
 
 	validatorVotesRequired float64
 }
@@ -64,13 +74,22 @@ type idKind struct {
 	kind commandspb.NodeSignatureKind
 }
 
-// / nodeSig is a pair of a node and it signature
+// nodeSig is a pair of a node and it signature.
 type nodeSig struct {
 	node string
 	sig  string
 }
 
-func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, cmd Commander) *Notary {
+func New(
+	log *logging.Logger,
+	cfg Config,
+	top ValidatorTopology,
+	broker Broker,
+	cmd Commander,
+	tt TimeTicker,
+) (n *Notary) {
+	defer func() { tt.NotifyOnTick(n.onTick) }()
+	log.SetLevel(cfg.Level.Get())
 	log = log.Named(namedLogger)
 	return &Notary{
 		cfg:                    cfg,
@@ -80,6 +99,9 @@ func New(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, 
 		broker:                 broker,
 		cmd:                    cmd,
 		validatorVotesRequired: defaultValidatorsVoteRequired,
+		retries: &txTracker{
+			txs: map[idKind]*signatureTime{},
+		},
 	}
 }
 
@@ -88,7 +110,7 @@ func (n *Notary) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f fl
 	return nil
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (n *Notary) ReloadConf(cfg Config) {
 	n.log.Info("reloading configuration")
 	if n.log.GetLevel() != cfg.Level.Get() {
@@ -102,56 +124,84 @@ func (n *Notary) ReloadConf(cfg Config) {
 	n.cfg = cfg
 }
 
-func (n *Notary) StartAggregate(resID string, kind commandspb.NodeSignatureKind) {
-	if _, ok := n.sigs[idKind{resID, kind}]; ok {
+// StartAggregate will register a new signature to be
+// sent for a validator, or just ignore the signature and
+// start aggregating signature for now validators,
+// nil for the signature is OK for non-validators.
+func (n *Notary) StartAggregate(
+	resource string,
+	kind commandspb.NodeSignatureKind,
+	signature []byte,
+) {
+	// start aggregating for the resource
+	idkind := idKind{resource, kind}
+	if _, ok := n.sigs[idkind]; ok {
 		n.log.Panic("aggregate already started for a resource",
-			logging.String("resource", resID),
+			logging.String("resource", resource),
 			logging.String("signature-kind", kind.String()),
 		)
 	}
-	n.sigs[idKind{resID, kind}] = map[nodeSig]struct{}{}
+	n.sigs[idkind] = map[nodeSig]struct{}{}
+
+	// we are not a validator, then just return, job
+	// done from here
+	if !n.top.IsValidator() {
+		return
+	}
+
+	// now let's just add the transaction to the retry list
+	// no need to send the signature, it will be done on next onTick
+	n.retries.Add(idkind, signature)
 }
 
-func (n *Notary) AddSig(
+func (n *Notary) RegisterSignature(
 	ctx context.Context,
 	pubKey string,
 	ns commandspb.NodeSignature,
-) ([]commandspb.NodeSignature, bool, error) {
-	sigs, ok := n.sigs[idKind{ns.Id, ns.Kind}]
+) error {
+	idkind := idKind{ns.Id, ns.Kind}
+	sigs, ok := n.sigs[idkind]
 	if !ok {
-		return nil, false, ErrUnknownResourceID
+		return ErrUnknownResourceID
 	}
 
 	// not a validator signature
 	if !n.top.IsValidatorVegaPubKey(pubKey) {
-		return nil, false, ErrNotAValidatorSignature
+		return ErrNotAValidatorSignature
 	}
 
-	sigs[nodeSig{string(pubKey), string(ns.Sig)}] = struct{}{}
+	// if this is our own signature, remove it from the retries thing
+	if strings.EqualFold(pubKey, n.top.SelfVegaPubKey()) {
+		n.retries.Ack(idkind)
+	}
 
-	sigsout, ok := n.IsSigned(ctx, ns.Id, ns.Kind)
+	sigs[nodeSig{pubKey, string(ns.Sig)}] = struct{}{}
+
+	signatures, ok := n.IsSigned(ctx, ns.Id, ns.Kind)
 	if ok {
 		// enough signature to reach the threshold have been received, let's send them to the
 		// the api
-		evts := make([]events.Event, 0, len(sigsout))
-		for _, ns := range sigsout {
-			evts = append(evts, events.NewNodeSignatureEvent(ctx, ns))
-		}
-		n.broker.SendBatch(evts)
+		n.sendSignatureEvents(ctx, signatures)
 	}
-	return sigsout, ok, nil
+	return nil
 }
 
-func (n *Notary) IsSigned(ctx context.Context, resID string, kind commandspb.NodeSignatureKind) ([]commandspb.NodeSignature, bool) {
+func (n *Notary) IsSigned(
+	ctx context.Context,
+	resource string,
+	kind commandspb.NodeSignatureKind,
+) ([]commandspb.NodeSignature, bool) {
+	idkind := idKind{resource, kind}
+
 	// early exit if we don't have enough sig anyway
-	if !n.votePassed(len(n.sigs[idKind{resID, kind}]), n.top.Len()) {
+	if !n.votePassed(len(n.sigs[idkind]), n.top.Len()) {
 		return nil, false
 	}
 
 	// aggregate node sig
 	sig := map[string]struct{}{}
 	out := []commandspb.NodeSignature{}
-	for k := range n.sigs[idKind{resID, kind}] {
+	for k := range n.sigs[idkind] {
 		// is node sig is part of the registered nodes,
 		// add it to the map
 		// we may have a node which have been unregistered there, hence
@@ -159,7 +209,7 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind commandspb.Nod
 		if n.top.IsValidatorVegaPubKey(k.node) {
 			sig[k.node] = struct{}{}
 			out = append(out, commandspb.NodeSignature{
-				Id:   resID,
+				Id:   resource,
 				Kind: kind,
 				Sig:  []byte(k.sig),
 			})
@@ -174,22 +224,78 @@ func (n *Notary) IsSigned(ctx context.Context, resID string, kind commandspb.Nod
 	return nil, false
 }
 
+// onTick is only use to trigger resending transaction.
+func (n *Notary) onTick(_ context.Context, t time.Time) {
+	toRetry := n.retries.getRetries(t)
+	for k, v := range toRetry {
+		n.send(k.id, k.kind, v.signature)
+	}
+}
+
+func (n *Notary) send(id string, kind commandspb.NodeSignatureKind, signature []byte) {
+	nsig := &commandspb.NodeSignature{Id: id, Sig: signature, Kind: kind}
+	// we send a background context here because the actual context is ignore by the commander
+	// which use a timeout of 5 seconds, this API may need to be addressed another day
+	n.cmd.Command(context.Background(), txn.NodeSignatureCommand, nsig, func(err error) {
+		// just a log is enough here, the transaction will be retried
+		// later
+		n.log.Error("could not send the transaction to tendermint", logging.Error(err))
+	})
+}
+
 func (n *Notary) votePassed(votesCount, topLen int) bool {
 	return math.Min((float64(topLen)*n.validatorVotesRequired)+1, float64(topLen)) <= float64(votesCount)
 }
 
-func (n *Notary) SendSignature(ctx context.Context, id string, sig []byte, kind commandspb.NodeSignatureKind) error {
-	if !n.top.IsValidator() {
-		return nil
+func (n *Notary) sendSignatureEvents(ctx context.Context, signatures []commandspb.NodeSignature) {
+	evts := make([]events.Event, 0, len(signatures))
+	for _, ns := range signatures {
+		evts = append(evts, events.NewNodeSignatureEvent(ctx, ns))
 	}
-	nsig := &commandspb.NodeSignature{
-		Id:   id,
-		Sig:  sig,
-		Kind: kind,
+	n.broker.SendBatch(evts)
+}
+
+// txTracker is a simple data structure
+// to keep track of what transactions have been
+// sent by this notary, and if a retry is necessary.
+type txTracker struct {
+	mu sync.Mutex
+	// idKind -> time the tx was sent
+	txs map[idKind]*signatureTime
+}
+
+type signatureTime struct {
+	signature []byte
+	time      time.Time
+}
+
+func (t *txTracker) getRetries(tm time.Time) map[idKind]signatureTime {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	retries := map[idKind]signatureTime{}
+	for k, v := range t.txs {
+		if tm.After(v.time.Add(10 * time.Second)) {
+			// add this signature to the retries list
+			retries[k] = *v
+			// update the entry with the current time of the retry
+			v.time = tm
+		}
 	}
 
-	//  may need to figure out retries with this one.
-	n.cmd.Command(ctx, txn.NodeSignatureCommand, nsig, nil)
+	return retries
+}
 
-	return nil
+func (t *txTracker) Ack(key idKind) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	delete(t.txs, key)
+}
+
+func (t *txTracker) Add(key idKind, signature []byte) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	// we use the zero value here for the time, meaning it will need a retry
+	// straight away
+	t.txs[key] = &signatureTime{signature: signature, time: time.Time{}}
 }

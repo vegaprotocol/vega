@@ -28,9 +28,7 @@ func PartiesUndelegateTheFollowingStake(
 			if err := checkExpectedError(row, err); err != nil {
 				return err
 			}
-
 		}
-
 	}
 	return nil
 }
@@ -43,7 +41,8 @@ func parseUndelegationTable(table *godog.Table) []RowWrapper {
 		"when",
 	}, []string{
 		"reference",
-		"error"})
+		"error",
+	})
 }
 
 type undelegationRow struct {

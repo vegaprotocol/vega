@@ -31,6 +31,7 @@ type testCommander struct {
 }
 
 func getTestCommander(t *testing.T) *testCommander {
+	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	chain := mocks.NewMockChain(ctrl)
@@ -46,7 +47,8 @@ func getTestCommander(t *testing.T) *testCommander {
 	require.NoError(t, err)
 	require.NotNil(t, wallet)
 
-	cmd, err := nodewallets.NewCommander(logging.NewTestLogger(), chain, wallet, bstats)
+	cmd, err := nodewallets.NewCommander(
+		nodewallets.NewDefaultConfig(), logging.NewTestLogger(), chain, wallet, bstats)
 	require.NoError(t, err)
 
 	return &testCommander{
@@ -85,13 +87,13 @@ func testSignedCommandSuccess(t *testing.T) {
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
 	commander.chain.EXPECT().SubmitTransactionV2(
-		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(nil)
+		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", nil)
 
-	ok := make(chan bool)
-	commander.Command(ctx, cmd, payload, func(b bool) {
-		ok <- b
+	ok := make(chan error)
+	commander.Command(ctx, cmd, payload, func(err error) {
+		ok <- err
 	})
-	assert.True(t, <-ok)
+	assert.NoError(t, <-ok)
 }
 
 func testSignedCommandFailure(t *testing.T) {
@@ -107,13 +109,13 @@ func testSignedCommandFailure(t *testing.T) {
 
 	commander.bstats.EXPECT().Height().Times(1).Return(uint64(42))
 	commander.chain.EXPECT().SubmitTransactionV2(
-		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(errors.New("bad bad"))
+		gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return("", errors.New("bad bad"))
 
-	ok := make(chan bool)
-	commander.Command(ctx, cmd, payload, func(b bool) {
-		ok <- b
+	ok := make(chan error)
+	commander.Command(ctx, cmd, payload, func(err error) {
+		ok <- err
 	})
-	assert.False(t, <-ok)
+	assert.Error(t, <-ok)
 }
 
 func (t *testCommander) Finish() {

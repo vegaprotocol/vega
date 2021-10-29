@@ -48,7 +48,7 @@ type subscription struct {
 }
 
 // Broker - the base broker type
-// perhaps we can extend this to embed into type-specific brokers
+// perhaps we can extend this to embed into type-specific brokers.
 type Broker struct {
 	ctx context.Context
 
@@ -69,7 +69,7 @@ type Broker struct {
 	socketClient SocketClient
 }
 
-// New creates a new base broker
+// New creates a new base broker.
 func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -208,7 +208,7 @@ func (b *Broker) startSending(t events.Type, evts []events.Event) {
 
 // SendBatch sends a slice of events to subscribers that can handle the events in the slice
 // the events don't have to be of the same type, and most subscribers will ignore unknown events
-// but this will slow down those subscribers, so avoid doing silly things
+// but this will slow down those subscribers, so avoid doing silly things.
 func (b *Broker) SendBatch(events []events.Event) {
 	if len(events) == 0 {
 		return
@@ -217,12 +217,12 @@ func (b *Broker) SendBatch(events []events.Event) {
 	b.startSending(events[0].Type(), evts)
 }
 
-// Send sends an event to all subscribers
+// Send sends an event to all subscribers.
 func (b *Broker) Send(event events.Event) {
 	b.startSending(event.Type(), b.seqGen.setSequence(event))
 }
 
-// simplified version for better performance - unfortunately, we'll still need to copy the map
+// simplified version for better performance - unfortunately, we'll still need to copy the map.
 func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 	// we add the entire ALL map to type-specific maps, so if set, we can return this map directly
 
@@ -241,7 +241,7 @@ func (b *Broker) getSubsByType(t events.Type) map[int]*subscription {
 	return cpy
 }
 
-// Subscribe registers a new subscriber, returning the key
+// Subscribe registers a new subscriber, returning the key.
 func (b *Broker) Subscribe(s Subscriber) int {
 	b.mu.Lock()
 	k := b.subscribe(s)
@@ -307,7 +307,7 @@ func (b *Broker) subscribe(s Subscriber) int {
 }
 
 // Unsubscribe removes subscriber from broker
-// this does not change the state of the subscriber
+// this does not change the state of the subscriber.
 func (b *Broker) Unsubscribe(k int) {
 	b.mu.Lock()
 	b.rmSubs(k)

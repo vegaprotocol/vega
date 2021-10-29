@@ -8,7 +8,7 @@ import (
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
-// OnMatchedOracleData describes the callback function used to received
+// OnMatchedOracleData describes the callback function used to received.
 type OnMatchedOracleData func(ctx context.Context, data OracleData) error
 
 // OracleSpecPredicate describes the predicate used to filter the subscribers.

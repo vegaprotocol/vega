@@ -14,5 +14,5 @@ func NewVegaPaths() (paths.Paths, func()) {
 	if err != nil {
 		panic(err)
 	}
-	return paths.NewPaths(path), func() { _ = os.RemoveAll(path) }
+	return paths.New(path), func() { _ = os.RemoveAll(path) }
 }

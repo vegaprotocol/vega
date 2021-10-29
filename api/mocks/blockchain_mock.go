@@ -128,11 +128,12 @@ func (mr *MockBlockchainMockRecorder) Health() *gomock.Call {
 }
 
 // SubmitTransactionV2 mocks base method
-func (m *MockBlockchain) SubmitTransactionV2(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) error {
+func (m *MockBlockchain) SubmitTransactionV2(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransactionV2", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // SubmitTransactionV2 indicates an expected call of SubmitTransactionV2

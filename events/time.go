@@ -7,13 +7,13 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
-// Time event indicating a change in block time (ie time update)
+// Time event indicating a change in block time (ie time update).
 type Time struct {
 	*Base
 	blockTime time.Time
 }
 
-// NewTime returns a new time Update event
+// NewTime returns a new time Update event.
 func NewTime(ctx context.Context, t time.Time) *Time {
 	return &Time{
 		Base:      newBase(ctx, TimeUpdate),
@@ -21,7 +21,7 @@ func NewTime(ctx context.Context, t time.Time) *Time {
 	}
 }
 
-// Time returns the new blocktime
+// Time returns the new blocktime.
 func (t Time) Time() time.Time {
 	return t.blockTime
 }

@@ -30,7 +30,8 @@ func parseDelegationTable(table *godog.Table) []RowWrapper {
 		"amount",
 	}, []string{
 		"reference",
-		"error"})
+		"error",
+	})
 }
 
 type delegationRow struct {

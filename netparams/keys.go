@@ -1,7 +1,7 @@
 package netparams
 
 const (
-	// market related parameters
+	// market related parameters.
 	MarketMarginScalingFactors                      = "market.margin.scalingFactors"
 	MarketFeeFactorsMakerFee                        = "market.fee.factors.makerFee"
 	MarketFeeFactorsInfrastructureFee               = "market.fee.factors.infrastructureFee"
@@ -23,7 +23,7 @@ const (
 
 	RewardAsset = "reward.asset"
 
-	// market proposal parameters
+	// market proposal parameters.
 	GovernanceProposalMarketMinClose              = "governance.proposal.market.minClose"
 	GovernanceProposalMarketMaxClose              = "governance.proposal.market.maxClose"
 	GovernanceProposalMarketMinEnact              = "governance.proposal.market.minEnact"
@@ -33,7 +33,7 @@ const (
 	GovernanceProposalMarketMinProposerBalance    = "governance.proposal.market.minProposerBalance"
 	GovernanceProposalMarketMinVoterBalance       = "governance.proposal.market.minVoterBalance"
 
-	// asset proposal parameters
+	// asset proposal parameters.
 	GovernanceProposalAssetMinClose              = "governance.proposal.asset.minClose"
 	GovernanceProposalAssetMaxClose              = "governance.proposal.asset.maxClose"
 	GovernanceProposalAssetMinEnact              = "governance.proposal.asset.minEnact"
@@ -43,7 +43,7 @@ const (
 	GovernanceProposalAssetMinProposerBalance    = "governance.proposal.asset.minProposerBalance"
 	GovernanceProposalAssetMinVoterBalance       = "governance.proposal.asset.minVoterBalance"
 
-	// updateMarket proposal parameters
+	// updateMarket proposal parameters.
 	GovernanceProposalUpdateMarketMinClose              = "governance.proposal.updateMarket.minClose"
 	GovernanceProposalUpdateMarketMaxClose              = "governance.proposal.updateMarket.maxClose"
 	GovernanceProposalUpdateMarketMinEnact              = "governance.proposal.updateMarket.minEnact"
@@ -53,7 +53,7 @@ const (
 	GovernanceProposalUpdateMarketMinProposerBalance    = "governance.proposal.updateMarket.minProposerBalance"
 	GovernanceProposalUpdateMarketMinVoterBalance       = "governance.proposal.updateMarket.minVoterBalance"
 
-	// updateNetParam proposal parameters
+	// updateNetParam proposal parameters.
 	GovernanceProposalUpdateNetParamMinClose              = "governance.proposal.updateNetParam.minClose"
 	GovernanceProposalUpdateNetParamMaxClose              = "governance.proposal.updateNetParam.maxClose"
 	GovernanceProposalUpdateNetParamMinEnact              = "governance.proposal.updateNetParam.minEnact"
@@ -63,7 +63,7 @@ const (
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
 
-	// staking and delegation reward network params
+	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
 	StakingAndDelegationRewardPayoutDelay             = "reward.staking.delegation.payoutDelay"
@@ -71,8 +71,9 @@ const (
 	StakingAndDelegationRewardMinimumValidatorStake   = "reward.staking.delegation.minimumValidatorStake"
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
 	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
+	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
 
-	// spam policies params
+	// spam policies params.
 	SpamProtectionMaxVotes               = "spam.protection.max.votes"
 	SpamProtectionMinTokensForVoting     = "spam.protection.voting.min.tokens"
 	SpamProtectionMaxProposals           = "spam.protection.max.proposals"
@@ -83,14 +84,14 @@ const (
 	// blockchain specifics?
 	BlockchainsEthereumConfig = "blockchains.ethereumConfig"
 
-	// length of epoch in seconds
+	// length of epoch in seconds.
 	ValidatorsEpochLength = "validators.epoch.length"
-	// delegation params
+	// delegation params.
 	DelegationMinAmount = "validators.delegation.minAmount"
 
 	ValidatorsVoteRequired = "validators.vote.required"
 
-	// network related parameters
+	// network related parameters.
 	NetworkCheckpointMarketFreezeDate              = "network.checkpoint.marketFreezeDate"
 	NetworkCheckpointNetworkEOLDate                = "network.checkpoint.networkEndOfLifeDate"
 	NetworkCheckpointTimeElapsedBetweenCheckpoints = "network.checkpoint.timeElapsedBetweenCheckpoints"
@@ -168,4 +169,5 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMaxDelegations:                          {},
 	SpamProtectionMinTokensForDelegation:                  {},
 	StakingAndDelegationRewardCompetitionLevel:            {},
+	StakingAndDelegationRewardsMinValidators:              {},
 }

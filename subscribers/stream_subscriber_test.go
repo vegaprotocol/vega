@@ -259,7 +259,7 @@ func testBatchedStreamSubscriber(t *testing.T) {
 	assert.Equal(t, 3, len(data))
 }
 
-// this test aims to replicate the crash when trying to write to a closed channel
+// this test aims to replicate the crash when trying to write to a closed channel.
 func testCloseChannelWrite(t *testing.T) {
 	mID := "tstMarket"
 	sub := getTestStreamSub([]events.Type{events.AccountEvent}, 0, accMarketIDFilter(mID))

@@ -43,7 +43,7 @@ type EvtForwarder interface {
 // Blockchain ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_mock.go -package mocks code.vegaprotocol.io/vega/api  Blockchain
 type Blockchain interface {
-	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionRequest_Type) error
+	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty protoapi.SubmitTransactionRequest_Type) (string, error)
 	GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error)
 	GetChainID(ctx context.Context) (chainID string, err error)
 	GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error)
@@ -52,7 +52,7 @@ type Blockchain interface {
 	Health() (*tmctypes.ResultHealth, error)
 }
 
-// GRPCServer represent the grpc api provided by the vega node
+// GRPCServer represent the grpc api provided by the vega node.
 type GRPC struct {
 	Config
 
@@ -74,7 +74,7 @@ type GRPC struct {
 	services []func(*grpc.Server)
 }
 
-// NewGRPC create a new instance of the GPRC api for the vega node
+// NewGRPC create a new instance of the GPRC api for the vega node.
 func NewGRPC(
 	log *logging.Logger,
 	config Config,
@@ -108,7 +108,7 @@ func (g *GRPC) RegisterService(f func(*grpc.Server)) {
 	g.services = append(g.services, f)
 }
 
-// ReloadConf update the internal configuration of the GRPC server
+// ReloadConf update the internal configuration of the GRPC server.
 func (g *GRPC) ReloadConf(cfg Config) {
 	g.log.Info("reloading configuration")
 	if g.log.GetLevel() != cfg.Level.Get() {
@@ -132,7 +132,6 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-
 		// first check if the request is forwarded from our restproxy
 		// get the metadata
 		var ip string
@@ -173,9 +172,8 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 	}
 }
 
-// Start start the grpc server
+// Start start the grpc server.
 func (g *GRPC) Start() {
-
 	ip := g.IP
 	port := strconv.Itoa(g.Port)
 
@@ -214,7 +212,7 @@ func (g *GRPC) Start() {
 	}
 }
 
-// Stop stops the GRPC server
+// Stop stops the GRPC server.
 func (g *GRPC) Stop() {
 	if g.srv == nil {
 		return

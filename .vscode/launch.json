@@ -1,0 +1,33 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug .feature test",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/integration/main_test.go",
+            "_comment": "  * * *  change to your .feature file  * * *  ",
+            "args": [
+                "--godog.format",
+                "pretty",
+                "-test.run",
+                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature"
+            ]
+        },
+        {
+            "name": "Debug single Scenario in .feature test",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/integration/main_test.go",
+            "_comment": "  * * *  change to your .feature file and specify line at which Scenario starts  * * *  ",
+            "args": [
+                "--godog.format",
+                "pretty",
+                "-test.run",
+                "${workspaceFolder}/integration/features/settlement/settlement_at_expiry.feature:23"
+            ]
+        }
+    ]
+}

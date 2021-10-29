@@ -26,6 +26,7 @@ func getLimitsTest() *limitsTest {
 }
 
 func (l *limitsTest) loadGenesisState(t *testing.T, lstate *limits.GenesisState) {
+	t.Helper()
 	state := struct {
 		Limits *limits.GenesisState `json:"network_limits"`
 	}{
@@ -127,7 +128,6 @@ func testMarketdisabledAssetenabled(t *testing.T) {
 	assert.False(t, lmts.CanProposeMarket())
 	assert.True(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanTrade())
-
 }
 
 func testDisabledUntilTimeIsReach(t *testing.T) {
@@ -152,7 +152,6 @@ func testDisabledUntilTimeIsReach(t *testing.T) {
 	assert.True(t, lmts.CanProposeMarket())
 	assert.True(t, lmts.CanProposeAsset())
 	assert.True(t, lmts.CanTrade())
-
 }
 
 func testStayDisabledIfTimeIsReachedButEnabledIsFalse(t *testing.T) {

@@ -37,7 +37,6 @@ func errMismatchedStakingAccountBalances(party string, expectedBalance, actualBa
 			"staking account balance": u64ToS(actualBalance.Uint64()),
 		},
 	)
-
 }
 
 func parseStakingAccountBalancesTable(table *godog.Table) []RowWrapper {

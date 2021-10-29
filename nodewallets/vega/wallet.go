@@ -1,8 +1,8 @@
 package vega
 
 import (
-	"code.vegaprotocol.io/go-wallet/wallet"
 	"code.vegaprotocol.io/vega/crypto"
+	"code.vegaprotocol.io/vegawallet/wallet"
 )
 
 type Wallet struct {

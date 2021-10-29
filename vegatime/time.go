@@ -17,7 +17,7 @@ func init() {
 //   vegatime.SetNowFunc(func() time.T { vegatime.Unix(123423, 0) })
 // reset the vegatime.Now function
 //   vegatime.SetNowFunc(nil)
-// this will reset the vegatime.Now function to use time.Now() again
+// this will reset the vegatime.Now function to use time.Now() again.
 func SetNowFunc(f func() time.Time) {
 	if f == nil {
 		now = time.Now
@@ -26,33 +26,33 @@ func SetNowFunc(f func() time.Time) {
 	}
 }
 
-// Now return the current time in UTC timezone
+// Now return the current time in UTC timezone.
 func Now() time.Time {
 	return now().UTC()
 }
 
-// Unix create a new time from sec and nsec in UTC timezone
+// Unix create a new time from sec and nsec in UTC timezone.
 func Unix(sec int64, nsec int64) time.Time {
 	return time.Unix(sec, nsec).UTC()
 }
 
 // UnixNano equivalent to time.Unix(sec, nsec) but to be used with the
-// result of time.Time{}.UnixNano() in UTC timezone
+// result of time.Time{}.UnixNano() in UTC timezone.
 func UnixNano(nsec int64) time.Time {
 	return time.Unix(nsec/int64(time.Second), nsec%int64(time.Second)).UTC()
 }
 
-// Parse parse a string expected to be a time in the time.RFC3339Nano format
+// Parse parse a string expected to be a time in the time.RFC3339Nano format.
 func Parse(t string) (time.Time, error) {
 	return time.ParseInLocation(time.RFC3339Nano, t, time.UTC)
 }
 
-// Format format the time using the time.RFC3339Nano formatting
+// Format format the time using the time.RFC3339Nano formatting.
 func Format(t time.Time) string {
 	return t.In(time.UTC).Format(time.RFC3339Nano)
 }
 
-// RoundToNearest round an actual time to the nearest interval
+// RoundToNearest round an actual time to the nearest interval.
 func RoundToNearest(t time.Time, interval types.Interval) time.Time {
 	switch interval {
 	case types.Interval_INTERVAL_I1M:

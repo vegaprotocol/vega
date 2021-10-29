@@ -8,16 +8,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrPartyDoesNotMatch = errors.New("event party and position party do not match")
-)
+var ErrPartyDoesNotMatch = errors.New("event party and position party do not match")
 
-// MarketPosition stub event for network position (used in MTM stuff)
+// MarketPosition stub event for network position (used in MTM stuff).
 type npos struct {
 	price *num.Uint
 }
 
-// See positions.MarketPosition
+// See positions.MarketPosition.
 type pos struct {
 	// embed the type, we will copy the three main fields because those should be immutable
 	// which we can't guarantee through an embedded interface
@@ -42,7 +40,7 @@ func newPos(evt events.MarketPosition) *pos {
 	}
 }
 
-// update - set the size/price of an event accordingly
+// update - set the size/price of an event accordingly.
 func (p *pos) update(evt events.MarketPosition) error {
 	// this check, in theory, should not be needed...
 	if p.party != evt.Party() {
@@ -55,22 +53,22 @@ func (p *pos) update(evt events.MarketPosition) error {
 	return nil
 }
 
-// Party - part of the MarketPosition interface, used to update position after SettlePreTrade
+// Party - part of the MarketPosition interface, used to update position after SettlePreTrade.
 func (p pos) Party() string {
 	return p.party
 }
 
-// Size - part of the MarketPosition interface, used to update position after SettlePreTrade
+// Size - part of the MarketPosition interface, used to update position after SettlePreTrade.
 func (p pos) Size() int64 {
 	return p.size
 }
 
-// Price - part of the MarketPosition interface, used to update position after SettlePreTrade
+// Price - part of the MarketPosition interface, used to update position after SettlePreTrade.
 func (p pos) Price() *num.Uint {
 	return p.price.Clone()
 }
 
-// Transfer - part of the Transfer interface
+// Transfer - part of the Transfer interface.
 func (m mtmTransfer) Transfer() *types.Transfer {
 	if m.transfer == nil {
 		return nil

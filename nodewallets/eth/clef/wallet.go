@@ -84,7 +84,7 @@ func (w *wallet) generateAccount() (*accounts.Account, error) {
 	return newAccount(ethcommon.HexToAddress(res), w.endpoint), nil
 }
 
-// contains returns nil if account is found, otherwise returns an error
+// contains returns nil if account is found, otherwise returns an error.
 func (w *wallet) contains(testAddr ethcommon.Address) error {
 	addresses, err := w.listAccounts()
 	if err != nil {

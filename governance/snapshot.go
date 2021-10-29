@@ -1,6 +1,7 @@
 package governance
 
 import (
+	"context"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -27,12 +28,10 @@ type governanceSnapshotState struct {
 	changed    map[string]bool
 }
 
-// serialiseActiveProposals returns the engine's active proposals as marshalled bytes
+// serialiseActiveProposals returns the engine's active proposals as marshalled bytes.
 func (e *Engine) serialiseActiveProposals() ([]byte, error) {
-
 	pending := make([]*types.PendingProposal, 0, len(e.activeProposals))
 	for _, p := range e.activeProposals {
-
 		pp := &types.PendingProposal{
 			Proposal: p.Proposal,
 			Yes:      votesAsSlice(p.yes),
@@ -51,12 +50,10 @@ func (e *Engine) serialiseActiveProposals() ([]byte, error) {
 	}
 
 	return proto.Marshal(pl.IntoProto())
-
 }
 
-// serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes
+// serialiseEnactedProposals returns the engine's enacted proposals as marshalled bytes.
 func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
-
 	pl := types.Payload{
 		Data: &types.PayloadGovernanceEnacted{
 			GovernanceEnacted: &types.GovernanceEnacted{
@@ -67,9 +64,8 @@ func (e *Engine) serialiseEnactedProposals() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// serialiseNodeProposals returns the engine's proposals waiting for node validation
+// serialiseNodeProposals returns the engine's proposals waiting for node validation.
 func (e *Engine) serialiseNodeProposals() ([]byte, error) {
-
 	nodeProposals := e.nodeProposalValidation.getProposals()
 	proposals := make([]*types.Proposal, 0, len(nodeProposals))
 
@@ -93,7 +89,7 @@ func (e *Engine) serialiseNodeProposals() ([]byte, error) {
 	return proto.Marshal(pl.IntoProto())
 }
 
-// get the serialised form and hash of the given key
+// get the serialised form and hash of the given key.
 func (e *Engine) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	if _, ok := e.keyToSerialiser[k]; !ok {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
@@ -120,7 +116,7 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 }
 
 func (e *Engine) Keys() []string {
-	return []string{activeKey, enactedKey}
+	return hashKeys
 }
 
 func (e *Engine) GetHash(k string) ([]byte, error) {
@@ -128,46 +124,31 @@ func (e *Engine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, error) {
+func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	data, _, err := e.getSerialisedAndHash(k)
-	return data, err
+	return data, nil, err
 }
 
-func (e *Engine) Snapshot() (map[string][]byte, error) {
-	r := make(map[string][]byte, len(hashKeys))
-	for _, k := range hashKeys {
-		state, err := e.GetState(k)
-		if err != nil {
-			return nil, err
-		}
-		r[k] = state
-	}
-	return r, nil
-}
-
-func (e *Engine) LoadState(payload *types.Payload) error {
-
+func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadGovernanceActive:
-		return e.restoreActiveProposals(pl.GovernanceActive)
+		return nil, e.restoreActiveProposals(pl.GovernanceActive)
 	case *types.PayloadGovernanceEnacted:
-		return e.restoreEnactedProposals(pl.GovernanceEnacted)
+		return nil, e.restoreEnactedProposals(pl.GovernanceEnacted)
 	case *types.PayloadGovernanceNode:
-		return e.restoreNodeProposals(pl.GovernanceNode)
+		return nil, e.restoreNodeProposals(pl.GovernanceNode)
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
 func (e *Engine) restoreActiveProposals(active *types.GovernanceActive) error {
-
 	e.activeProposals = make([]*proposal, 0, len(active.Proposals))
 	for _, p := range active.Proposals {
-
 		pp := &proposal{
 			Proposal:     p.Proposal,
 			yes:          votesAsMap(p.Yes),
@@ -189,15 +170,14 @@ func (e *Engine) restoreEnactedProposals(enacted *types.GovernanceEnacted) error
 }
 
 func (e *Engine) restoreNodeProposals(node *types.GovernanceNode) error {
-
 	for _, p := range node.Proposals {
-		e.nodeProposalValidation.Start(p)
+		e.nodeProposalValidation.restore(p)
 	}
 	e.gss.changed[nodeValidationKey] = true
 	return nil
 }
 
-// votesAsSlice returns a sorted slice of votes from a given map of votes
+// votesAsSlice returns a sorted slice of votes from a given map of votes.
 func votesAsSlice(votes map[string]*types.Vote) []*types.Vote {
 	ret := make([]*types.Vote, 0, len(votes))
 	for _, v := range votes {
@@ -207,7 +187,7 @@ func votesAsSlice(votes map[string]*types.Vote) []*types.Vote {
 	return ret
 }
 
-// votesAsMap returns an partyID => Vote map from the given slice of votes
+// votesAsMap returns an partyID => Vote map from the given slice of votes.
 func votesAsMap(votes []*types.Vote) map[string]*types.Vote {
 	r := make(map[string]*types.Vote, len(votes))
 	for _, v := range votes {

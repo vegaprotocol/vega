@@ -83,7 +83,7 @@ func getPrintAccounts(nodeAddress string, req *apipb.ListAccountsRequest) error 
 		return fmt.Errorf("invalid response from vega node: %w", err)
 	}
 
-	fmt.Printf("%v", string(buf))
+	fmt.Printf("%v", buf)
 
 	return nil
 }

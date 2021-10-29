@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"time"
 
-	"code.vegaprotocol.io/go-wallet/wallet"
-	storev1 "code.vegaprotocol.io/go-wallet/wallet/store/v1"
-	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/shared/paths"
+	"code.vegaprotocol.io/vegawallet/wallet"
+	storev1 "code.vegaprotocol.io/vegawallet/wallet/store/v1"
+	"code.vegaprotocol.io/vegawallet/wallets"
 )
 
-var (
-	// ErrFaucetHasNoKeyInItsWallet is returned when trying to get the wallet
-	// key of the faucet whereas no key has been generated or added to the
-	// faucet's wallet.
-	ErrFaucetHasNoKeyInItsWallet = errors.New("faucet has no key in its wallet")
-)
+// ErrFaucetHasNoKeyInItsWallet is returned when trying to get the wallet
+// key of the faucet whereas no key has been generated or added to the
+// faucet's wallet.
+var ErrFaucetHasNoKeyInItsWallet = errors.New("faucet has no key in its wallet")
 
 type faucetWallet struct {
 	handler *wallets.Handler
@@ -30,6 +28,7 @@ func (w *faucetWallet) Sign(message []byte) ([]byte, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+
 	return sig, w.publicKey, nil
 }
 
@@ -46,7 +45,7 @@ type WalletLoader struct {
 }
 
 func InitialiseWalletLoader(vegaPaths paths.Paths) (*WalletLoader, error) {
-	walletsHome, err := vegaPaths.DataDirFor(paths.FaucetWalletsDataHome)
+	walletsHome, err := vegaPaths.CreateDataDirFor(paths.FaucetWalletsDataHome)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get directory for %s: %w", paths.FaucetWalletsDataHome, err)
 	}

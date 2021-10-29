@@ -51,5 +51,4 @@ func TestCachingValues(t *testing.T) {
 	assert.False(t, volOK)
 	_, sideOK = cache.GetIndicativeUncrossingSide()
 	assert.False(t, sideOK)
-
 }

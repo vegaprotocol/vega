@@ -87,7 +87,7 @@ func (d OracleData) Debug() []zap.Field {
 	return fields
 }
 
-// errPropertyNotFound is returned when the property is not present in the Data
+// errPropertyNotFound is returned when the property is not present in the Data.
 func errPropertyNotFound(propertyName string) error {
 	return fmt.Errorf("property \"%s\" not found", propertyName)
 }

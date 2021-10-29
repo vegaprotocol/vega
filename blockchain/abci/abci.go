@@ -19,7 +19,7 @@ const (
 	// AbciUnknownCommandError code is returned when the app doesn't know how to handle a given command.
 	AbciUnknownCommandError uint32 = 80
 
-	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests
+	// AbciSpamError code is returned when CheckTx or DeliverTx fail spam protection tests.
 	AbciSpamError uint32 = 89
 )
 
@@ -29,8 +29,8 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 		panic(err)
 	}
 
-	if t := state.ReplayAttackThreshold; t != 0 {
-		app.replayProtector = NewReplayProtector(t)
+	if state.ReplayAttackThreshold != 0 {
+		app.ReplaceReplayProtector(state.ReplayAttackThreshold)
 	}
 
 	if fn := app.OnInitChain; fn != nil {
@@ -95,6 +95,7 @@ func (app *App) CheckTx(req types.RequestCheckTx) (resp types.ResponseCheckTx) {
 	if resp.IsOK() {
 		app.cacheTx(req.Tx, tx)
 	}
+
 	return resp
 }
 
@@ -129,4 +130,32 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 	}
 
 	return NewResponseDeliverTx(types.CodeTypeOK, "")
+}
+
+func (app *App) ListSnapshots(req types.RequestListSnapshots) (resp types.ResponseListSnapshots) {
+	if app.OnListSnapshots != nil {
+		resp = app.OnListSnapshots(req)
+	}
+	return
+}
+
+func (app *App) OfferSnapshot(req types.RequestOfferSnapshot) (resp types.ResponseOfferSnapshot) {
+	if app.OnOfferSnapshot != nil {
+		resp = app.OnOfferSnapshot(req)
+	}
+	return
+}
+
+func (app *App) LoadSnapshotChunk(req types.RequestLoadSnapshotChunk) (resp types.ResponseLoadSnapshotChunk) {
+	if app.OnLoadSnapshotChunk != nil {
+		resp = app.OnLoadSnapshotChunk(req)
+	}
+	return
+}
+
+func (app *App) ApplySnapshotChunk(req types.RequestApplySnapshotChunk) (resp types.ResponseApplySnapshotChunk) {
+	if app.OnApplySnapshotChunk != nil {
+		resp = app.OnApplySnapshotChunk(app.ctx, req)
+	}
+	return
 }

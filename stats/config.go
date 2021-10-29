@@ -9,7 +9,7 @@ const (
 	namedLogger = "stats"
 )
 
-// Config represent the configuration
+// Config represent the configuration.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 }

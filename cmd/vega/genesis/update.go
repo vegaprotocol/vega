@@ -35,12 +35,12 @@ func (opts *updateCmd) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := genesisCmd.PassphraseFile.Get("node wallet")
+	pass, err := genesisCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+	vegaPaths := paths.New(genesisCmd.VegaHome)
 
 	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err

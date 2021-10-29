@@ -6,8 +6,10 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-const minOrderIDLen = 22
-const maxOrderIDLen = 22
+const (
+	minOrderIDLen = 22
+	maxOrderIDLen = 22
+)
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	if orderMessage.Price == nil {
@@ -46,7 +48,8 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 	} else if orderMessage.ExpiresAt > 0 && orderMessage.Type == types.OrderTypeMarket {
 		err = types.ErrInvalidExpirationDatetime
 	}
-	return
+
+	return err
 }
 
 func validateOrderID(orderID string) error {

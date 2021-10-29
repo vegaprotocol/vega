@@ -18,7 +18,7 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
-// Broker - the event bus
+// Broker - the event bus.
 type Broker interface {
 	Send(events.Event)
 }
@@ -27,9 +27,7 @@ type EthereumClientCaller interface {
 	bind.ContractCaller
 }
 
-var (
-	ErrNoBalanceForParty = errors.New("no balance for party")
-)
+var ErrNoBalanceForParty = errors.New("no balance for party")
 
 type Accounting struct {
 	log              *logging.Logger
@@ -41,6 +39,9 @@ type Accounting struct {
 
 	stakingAssetTotalSupply *num.Uint
 	ethCfg                  vgproto.EthereumConfig
+
+	// snapshot bits
+	accState accountingSnapshotState
 }
 
 func NewAccounting(
@@ -59,6 +60,7 @@ func NewAccounting(
 		ethClient:               ethClient,
 		accounts:                map[string]*StakingAccount{},
 		stakingAssetTotalSupply: num.Zero(),
+		accState:                accountingSnapshotState{changed: true},
 	}
 }
 
@@ -81,6 +83,7 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 		acc = NewStakingAccount(evt.Party)
 		a.accounts[evt.Party] = acc
 		a.hashableAccounts = append(a.hashableAccounts, acc)
+		a.accState.changed = true
 	}
 
 	// errors here do not really matter I'd say
@@ -96,9 +99,10 @@ func (a *Accounting) AddEvent(ctx context.Context, evt *types.StakeLinking) {
 			logging.Error(err))
 		return
 	}
+	a.accState.changed = true
 }
 
-//GetAllAvailableBalances returns the staking balance for all parties
+// GetAllAvailableBalances returns the staking balance for all parties.
 func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
 	balances := map[string]*num.Uint{}
 	for party, acc := range a.accounts {

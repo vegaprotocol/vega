@@ -15,9 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	epochs []types.Epoch
-)
+var epochs []types.Epoch
 
 type tstSvc struct {
 	*epochtime.Svc
@@ -28,6 +26,7 @@ type tstSvc struct {
 }
 
 func getEpochServiceMT(t *testing.T) *tstSvc {
+	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	tm := mocks.NewMockVegaTime(ctrl)

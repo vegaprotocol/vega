@@ -1,6 +1,6 @@
 # Vega
 
-Version 0.44.1.
+Version 0.45.2
 
 A decentralised trading platform that allows pseudo-anonymous trading of derivatives on a blockchain.
 
@@ -13,10 +13,6 @@ A decentralised trading platform that allows pseudo-anonymous trading of derivat
 - Manage authentication with a network
 - [Run scenario tests](./integration/README.md)
 - Support settlement in cryptocurrency (coming soon)
-
-Additional services that are in this repo, but run separately:
-- [Wallet](./wallet/README.md) can be used provide key management for users.
-
 ## Links
 
 - For **new developers**, see [Getting Started](GETTING_STARTED.md).
@@ -29,12 +25,18 @@ Additional services that are in this repo, but run separately:
 
 <!-- toc -->
 
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [APIs](#apis)
-- [Provisioning](#provisioning)
-- [Benchmarks](#benchmarks)
-- [Troubleshooting & debugging](#troubleshooting--debugging)
+- [Vega](#vega)
+  - [Links](#links)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+    - [Files location](#files-location)
+  - [Vega node wallets](#vega-node-wallets)
+    - [Using Ethereum Clef wallet](#using-ethereum-clef-wallet)
+      - [Automatic approvals](#automatic-approvals)
+      - [Importing and generation account](#importing-and-generation-account)
+  - [API](#api)
+  - [Provisioning](#provisioning)
+  - [Troubleshooting & debugging](#troubleshooting--debugging)
 
 <!-- tocstop -->
 
@@ -133,32 +135,9 @@ Example of import:
 vega nodewallet import --chain=ethereum --eth.clef-address=http://clef-address:port
 ```
 
-## APIs
+## API
 
-In order for clients to communicate with Vega nodes, we expose a set of APIs and methods for reading and writing data. Note: Most writes will typically require interaction with the blockchain and require consensus.
-
-There are currently three protocols to communicate with the Vega APIs:
-
-### gRPC
-
-gRPC is an open source remote procedure call (RPC) system initially developed at Google. In Vega the gRPC API features streaming of events in addition to standard procedure calls.
-
-The default port (configurable) for the gRPC API is 3002 and matches the [gRPC protobuf definition](proto/api/trading.proto).
-
-### GraphQL
-
-[GraphQL](https://graphql.org/) is an open-source data query and manipulation language for APIs, and a runtime for fulfilling queries with existing data, originally developed at Facebook. The [Console](https://github.com/vegaprotocol/console) uses the GraphQL API to retrieve data including streaming of events.
-
-The GraphQL API is defined by a [schema](gateway/graphql/schema.graphql). External clients will use this schema to communicate with Vega.
-
-Queries can be tested using the GraphQL playground app which is bundled with a node. The default port (configurable) for the playground app is `3004` accessing this in a web browser will show a web app for testing custom queries, mutations and subscriptions.
-
-### REST
-
-REST provides a standard between computer systems on the web, making it easier for systems to communicate with each other. It is arguably simpler to work with than gRPC and GraphQL. In Vega the REST API is a reverse proxy to the gRPC API, however it does not support streaming.
-
-The default port (configurable) for the REST API is `3003` and we use a reverse proxy to the gRPC API to deliver the REST API implementation.
-
+Prior to version 0.40.0, Vega Core hosted API endpoints for clients. The majority of this has since migrated to the [data-node](https://github.com/vegaprotocol/data-node).
 ## Provisioning
 
 The proposal and creation of new markets is handled by the [Governance engine](./governance/README.md).

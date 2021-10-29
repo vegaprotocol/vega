@@ -17,6 +17,7 @@ type testHarness struct {
 }
 
 func newTestHarness(t *testing.T) *testHarness {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	return &testHarness{
 		AuctionState:          mocks.NewMockAuctionState(ctrl),

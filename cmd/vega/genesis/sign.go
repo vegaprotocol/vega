@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	"code.vegaprotocol.io/go-wallet/wallets"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vegawallet/wallets"
 )
 
 type signCmd struct {
@@ -25,7 +25,7 @@ func (opts *signCmd) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := opts.WalletPassphrase.Get("wallet")
+	pass, err := opts.WalletPassphrase.Get("wallet", false)
 	if err != nil {
 		return err
 	}

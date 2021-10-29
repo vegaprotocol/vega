@@ -92,5 +92,4 @@ func TestEthereumConfirmations(t *testing.T) {
 
 	// block 10, request 50, we are in the past, return err
 	assert.NoError(t, ethCfns.Check(50))
-
 }

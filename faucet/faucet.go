@@ -7,9 +7,7 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 )
 
-var (
-	ErrFaucetConfigAlreadyExists = errors.New("faucet configuration already exists")
-)
+var ErrFaucetConfigAlreadyExists = errors.New("faucet configuration already exists")
 
 type InitialisationResult struct {
 	Wallet         *WalletGenerationResult

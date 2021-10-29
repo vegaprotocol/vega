@@ -120,5 +120,4 @@ func TestPanicInLeaveAuction(t *testing.T) {
 	assert.NoError(t, err)
 	_ = cnf
 	_ = porders
-
 }

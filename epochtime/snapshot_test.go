@@ -26,9 +26,8 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	service.cb(ctx, now)
 	// Force creation of first epoch to trigger a snapshot of the first epoch
 
-	data, err := service.Snapshot()
+	data, _, err := service.GetState("all")
 	require.Nil(t, err)
-	require.Equal(t, 1, len(data)) //should be one "chunk"
 
 	snapService := getEpochServiceMT(t)
 	defer snapService.ctrl.Finish()
@@ -36,10 +35,11 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	snapService.broker.EXPECT().Send(gomock.Any()).Times(2)
 	// Fiddle it into a payload by hand
 	snap := &snapshot.Payload{}
-	err = proto.Unmarshal(data["all"], snap)
+	err = proto.Unmarshal(data, snap)
 	require.Nil(t, err)
 
-	err = snapService.LoadState(
+	_, err = snapService.LoadState(
+		ctx,
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)
@@ -77,7 +77,6 @@ func TestEpochSnapshotFunctionallyAfterReload(t *testing.T) {
 	// epochs = {start, end, start, end}
 	require.Equal(t, epochs[0], epochs[2])
 	require.Equal(t, epochs[1], epochs[3])
-
 }
 
 func TestEpochSnapshotHash(t *testing.T) {
@@ -108,7 +107,6 @@ func TestEpochSnapshotHash(t *testing.T) {
 	h, err = service.GetHash("all")
 	require.Nil(t, err)
 	require.Equal(t, "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e", hex.EncodeToString(h))
-
 }
 
 func TestEpochSnapshotCompare(t *testing.T) {
@@ -123,27 +121,27 @@ func TestEpochSnapshotCompare(t *testing.T) {
 	// Force creation of first epoch to trigger a snapshot of the first epoch
 	service.cb(ctx, now)
 
-	data, err := service.Snapshot()
+	data, _, err := service.GetState("all")
 	require.Nil(t, err)
-	require.Equal(t, 1, len(data)) //should be one "chunk"
 
 	snapService := getEpochServiceMT(t)
 	defer snapService.ctrl.Finish()
 
 	// Fiddle it into a payload by hand
 	snap := &snapshot.Payload{}
-	err = proto.Unmarshal(data["all"], snap)
+	err = proto.Unmarshal(data, snap)
 	require.Nil(t, err)
 
-	err = snapService.LoadState(
+	_, err = snapService.LoadState(
+		ctx,
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)
 
 	// Check that the snapshot of the snapshot is the same as the original snapshot
-	newSnapshot, err := snapService.Snapshot()
+	newData, _, err := service.GetState("all")
 	require.Nil(t, err)
-	require.Equal(t, data, newSnapshot)
+	require.Equal(t, data, newData)
 
 	h1, err := service.GetHash("all")
 	require.Nil(t, err)

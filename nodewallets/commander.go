@@ -22,7 +22,7 @@ const (
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/chain_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets Chain
 type Chain interface {
-	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) error
+	SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/blockchain_stats_mock.go -package mocks code.vegaprotocol.io/vega/nodewallets BlockchainStats
@@ -39,9 +39,11 @@ type Commander struct {
 
 // NewCommander - used to sign and send transaction from core
 // e.g. NodeRegistration, NodeVote
-// chain argument can't be passed in cmd package, but is used for tests
-func NewCommander(log *logging.Logger, bc Chain, w *vega.Wallet, bstats BlockchainStats) (*Commander, error) {
+// chain argument can't be passed in cmd package, but is used for tests.
+func NewCommander(cfg Config, log *logging.Logger, bc Chain, w *vega.Wallet, bstats BlockchainStats) (*Commander, error) {
 	log = log.Named(commanderNamedLogger)
+	log.SetLevel(cfg.Level.Get())
+
 	return &Commander{
 		log:    log,
 		bc:     bc,
@@ -50,13 +52,21 @@ func NewCommander(log *logging.Logger, bc Chain, w *vega.Wallet, bstats Blockcha
 	}, nil
 }
 
-// SetChain - currently need to hack around the chicken/egg problem
+// SetChain - currently need to hack around the chicken/egg problem.
 func (c *Commander) SetChain(bc *blockchain.Client) {
 	c.bc = bc
 }
 
-// Command - send command to chain
-func (c *Commander) Command(_ context.Context, cmd txn.Command, payload proto.Message, done func(bool)) {
+// Command - send command to chain.
+func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error)) {
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_ASYNC)
+}
+
+func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error)) {
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC)
+}
+
+func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type) {
 	if c.bc == nil {
 		panic("commander was instantiating without chain")
 	}
@@ -78,16 +88,16 @@ func (c *Commander) Command(_ context.Context, cmd txn.Command, payload proto.Me
 		}
 
 		tx := commands.NewTransaction(c.wallet.PubKey().Hex(), marshalledData, signature)
-		err = c.bc.SubmitTransactionV2(ctx, tx, api.SubmitTransactionRequest_TYPE_ASYNC)
+		_, err = c.bc.SubmitTransactionV2(ctx, tx, ty)
 		if err != nil {
 			// this can happen as network dependent
-			c.log.Error("could not send transaction to tendermint",
+			c.log.Debug("could not send transaction to tendermint",
 				logging.Error(err),
 				logging.String("tx", payload.String()))
 		}
 
 		if done != nil {
-			done(err == nil)
+			done(err)
 		}
 	}()
 }

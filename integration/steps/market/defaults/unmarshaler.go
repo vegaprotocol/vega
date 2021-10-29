@@ -36,7 +36,7 @@ func (u *Unmarshaler) UnmarshalPriceMonitoring(r io.Reader) (*types.PriceMonitor
 	return proto, nil
 }
 
-// UnmarshalOracleConfig unmarshal a future as this is a common parent
+// UnmarshalOracleConfig unmarshal a future as this is a common parent.
 func (u *Unmarshaler) UnmarshalOracleConfig(r io.Reader) (*types.Future, error) {
 	proto := &types.Future{}
 	err := u.unmarshaler.Unmarshal(r, proto)

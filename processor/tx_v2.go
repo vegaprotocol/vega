@@ -5,18 +5,16 @@ import (
 	"errors"
 	"fmt"
 
-	wcrypto "code.vegaprotocol.io/go-wallet/crypto"
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/txn"
+	wcrypto "code.vegaprotocol.io/vegawallet/crypto"
 
 	"github.com/golang/protobuf/proto"
 )
 
-var (
-	ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
-)
+var ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
 
 type TxV2 struct {
 	originalTx []byte

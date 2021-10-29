@@ -2,18 +2,20 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	"code.vegaprotocol.io/vega/faucet"
 )
 
 const (
-	// use default address of faucet
+	// use default address of faucet.
 	defaultAddress = "http://0.0.0.0:1790"
 )
 
@@ -50,7 +52,10 @@ func (c *Client) Mint(party, asset, amount string) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPost, c.mintURL, bytes.NewReader(jbytes))
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(
+		ctx, http.MethodPost, c.mintURL, bytes.NewReader(jbytes))
 	if err != nil {
 		return err
 	}

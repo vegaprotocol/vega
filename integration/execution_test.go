@@ -10,7 +10,7 @@ import (
 )
 
 // embeds the execution engine. Just forwards the calls and creates the TxErr events
-// if any of the ingress methods returns an error (as the processor would)
+// if any of the ingress methods returns an error (as the processor would).
 type exEng struct {
 	*execution.Engine
 	broker *stubs.BrokerStub
