@@ -263,8 +263,20 @@ type PriceMonitor struct {
 	Bounds              []*PriceBound
 	PriceRangeCache     []*PriceRangeCache
 	PriceRangeCacheTime time.Time
+	PricesNow           []*CurrentPrice
+	PricesPast          []*PastPrice
 	RefPriceCache       []*KeyDecimalPair
 	RefPriceCacheTime   time.Time
+}
+
+type CurrentPrice struct {
+	Price  *num.Uint
+	Volume uint64
+}
+
+type PastPrice struct {
+	Time                time.Time
+	VolumeWeightedPrice num.Decimal
 }
 
 type PriceBound struct {

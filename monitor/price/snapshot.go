@@ -150,6 +150,46 @@ func (e Engine) Changed() bool {
 	return e.stateChanged
 }
 
+func (e Engine) serialisePricesNow() []*types.CurrentPrice {
+	psn := make([]*types.CurrentPrice, 0, len(e.pricesNow))
+	for _, pn := range e.pricesNow {
+		psn = append(psn, &types.CurrentPrice{
+			Price:  pn.Price.Clone(),
+			Volume: pn.Volume,
+		})
+	}
+
+	sort.Slice(psn, func(i, j int) bool {
+		if psn[i].Price.EQ(psn[j].Price) {
+			return psn[i].Volume < psn[j].Volume
+		}
+
+		return psn[i].Price.LT(psn[j].Price)
+	})
+
+	return psn
+}
+
+func (e Engine) serialisePricesPast() []*types.PastPrice {
+	pps := make([]*types.PastPrice, 0, len(e.pricesPast))
+	for _, pp := range pps {
+		pps = append(pps, &types.PastPrice{
+			Time:                pp.Time,
+			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+		})
+	}
+
+	sort.Slice(pps, func(i, j int) bool {
+		if pps[i].Time.Equal(pps[j].Time) {
+			return pps[j].VolumeWeightedPrice.GreaterThan(pps[i].VolumeWeightedPrice)
+		}
+
+		return pps[i].Time.Before(pps[j].Time)
+	})
+
+	return pps
+}
+
 func (e *Engine) GetState() *types.PriceMonitor {
 	pm := &types.PriceMonitor{
 		Initialised:         e.initialised,
@@ -158,6 +198,8 @@ func (e *Engine) GetState() *types.PriceMonitor {
 		Update:              e.update,
 		Bounds:              e.serialiseBounds(),
 		PriceRangeCache:     e.serialisePriceRanges(),
+		PricesNow:           e.serialisePricesNow(),
+		PricesPast:          e.serialisePricesPast(),
 		PriceRangeCacheTime: e.priceRangeCacheTime,
 		RefPriceCache:       mapToKeyDecimalPair(e.refPriceCache),
 		RefPriceCacheTime:   e.refPriceCacheTime,
