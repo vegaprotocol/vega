@@ -208,7 +208,7 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 
 func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 	if h < 0 {
-		return e.LoadFromStore(ctx)
+		return e.LoadLast(ctx)
 	}
 	height := uint64(h)
 	versions := e.avl.AvailableVersions()
@@ -230,7 +230,7 @@ func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 		if app.AppState.Height == height {
 			e.version = version
 			e.last = e.avl.ImmutableTree
-			return e.loadLast(ctx)
+			return e.load(ctx)
 		}
 		// we've gone past the specified height, we're not going to find the snapshot
 		// log and error
@@ -249,17 +249,17 @@ func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 	return types.ErrNoSnapshot
 }
 
-func (e *Engine) LoadFromStore(ctx context.Context) error {
+func (e *Engine) LoadLast(ctx context.Context) error {
 	version, err := e.avl.Load()
 	if err != nil {
 		return err
 	}
 	e.version = version
 	e.last = e.avl.ImmutableTree
-	return e.loadLast(ctx)
+	return e.load(ctx)
 }
 
-func (e *Engine) loadLast(ctx context.Context) error {
+func (e *Engine) load(ctx context.Context) error {
 	snap, err := types.SnapshotFromTree(e.last)
 	if err != nil {
 		return err
