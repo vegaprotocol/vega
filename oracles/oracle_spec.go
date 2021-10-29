@@ -385,10 +385,10 @@ func equalsString(dataValue, condValue string) bool {
 
 // errMismatchPropertyType is returned when a property is redeclared in
 // conditions but with a different type.
-func errMismatchPropertyType(prop string, first, new oraclespb.PropertyKey_Type) error {
+func errMismatchPropertyType(prop string, first, newP oraclespb.PropertyKey_Type) error {
 	return fmt.Errorf(
 		"cannot redeclared property %s with different type, first %s then %s",
-		prop, first, new,
+		prop, first, newP,
 	)
 }
 

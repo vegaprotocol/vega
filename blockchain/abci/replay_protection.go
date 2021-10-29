@@ -1,7 +1,10 @@
 package abci
 
 import (
+	"context"
 	"errors"
+
+	"code.vegaprotocol.io/vega/types"
 )
 
 var (
@@ -15,31 +18,39 @@ var (
 type ReplayProtector struct {
 	height uint64
 	txs    []map[string]struct{}
+	rss    *replaySnapshotState
 }
 
 // NewReplayProtector returns a new ReplayProtector instance given a tolerance.
 func NewReplayProtector(tolerance uint) *ReplayProtector {
 	rp := &ReplayProtector{
 		txs: make([]map[string]struct{}, tolerance),
+		rss: &replaySnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 
 	for i := range rp.txs {
-		rp.txs[i] = make(map[string]struct{})
+		rp.txs[i] = map[string]struct{}{}
 	}
 
 	return rp
+}
+
+func (*ReplayProtector) GetReplacement() *ReplayProtector {
+	return nil
 }
 
 // SetHeight tells the ReplayProtector to clear the oldest cached Tx in the internal ring buffer.
 func (rp *ReplayProtector) SetHeight(h uint64) {
 	rp.height = h
 
-	l := uint64(len(rp.txs))
-	if h < l {
-		return
+	if l := uint64(len(rp.txs)); h >= l {
+		rp.txs[h%l] = map[string]struct{}{}
+		rp.rss.changed = true
 	}
-
-	rp.txs[h%l] = make(map[string]struct{})
 }
 
 // Has checks if a given key is present in the cache.
@@ -60,6 +71,7 @@ func (rp *ReplayProtector) Add(key string) bool {
 
 	target := rp.height % uint64(len(rp.txs))
 	rp.txs[target][key] = struct{}{}
+	rp.rss.changed = true
 	return true
 }
 
@@ -92,8 +104,7 @@ func (rp *ReplayProtector) DeliverTx(tx Tx) error {
 func (rp *ReplayProtector) CheckTx(tx Tx) error {
 	// We perform 2 verifications:
 	// First we make sure that the Tx is not on the ring buffer.
-	key := string(tx.Hash())
-	if rp.Has(key) {
+	if rp.Has(string(tx.Hash())) {
 		return ErrTxAlreadyInCache
 	}
 
@@ -113,7 +124,52 @@ func (rp *ReplayProtector) CheckTx(tx Tx) error {
 	return nil
 }
 
-type replayProtectorNoop struct{}
+type replayProtectorNoop struct {
+	replacement *ReplayProtector
+}
+
+func (rp *replayProtectorNoop) Namespace() types.SnapshotNamespace {
+	return types.ReplayProtectionSnapshot
+}
+
+func (rp *replayProtectorNoop) Keys() []string {
+	return hashKeys
+}
+
+func (rp *replayProtectorNoop) GetHash(_ string) ([]byte, error) {
+	return nil, nil
+}
+
+func (rp *replayProtectorNoop) GetState(_ string) ([]byte, []types.StateProvider, error) {
+	return nil, nil, nil
+}
+
+func (rp *replayProtectorNoop) LoadState(ctx context.Context, p *types.Payload) ([]types.StateProvider, error) {
+	if rp.Namespace() != p.Data.Namespace() {
+		return nil, types.ErrInvalidSnapshotNamespace
+	}
+	var err error
+	// see what we're reloading
+	switch pl := p.Data.(type) {
+	case *types.PayloadReplayProtection:
+		// create new replay protector that will replace the noop one
+		// if len(pl.Blocks) is zero, we should still assume a full-blown replay protector is required
+		// the snapshot engine shouldn't store nil-state/nil-hashes and as such there will be no LoadState
+		// call when the Noop protector was used as state provider
+		rp.replacement = NewReplayProtector(uint(len(pl.Blocks))) // this tolerance may or may not be sufficient
+		err = rp.replacement.restoreReplayState(ctx, pl.Blocks)
+	default:
+		err = types.ErrUnknownSnapshotType
+	}
+	if err != nil {
+		return nil, err
+	}
+	return []types.StateProvider{rp.replacement}, err
+}
+
+func (rp *replayProtectorNoop) GetReplacement() *ReplayProtector {
+	return rp.replacement
+}
 
 func (*replayProtectorNoop) SetHeight(uint64)   {}
 func (*replayProtectorNoop) DeliverTx(Tx) error { return nil }

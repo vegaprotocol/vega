@@ -35,7 +35,7 @@ type testEngine struct {
 	as        *mocks.MockAuctionState
 }
 
-// implements the events.Margin interface
+// implements the events.Margin interface.
 type testMargin struct {
 	party           string
 	size            int64
@@ -501,6 +501,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 }
 
 func getTestEngine(t *testing.T, initialRisk *types.RiskResult) *testEngine {
+	t.Helper()
 	if initialRisk == nil {
 		cpy := riskResult
 		initialRisk = &cpy // this is just a shallow copy, so might be worth creating a deep copy depending on the test

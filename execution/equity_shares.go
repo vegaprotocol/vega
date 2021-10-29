@@ -6,7 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-// lp holds LiquidityProvider stake and avg values
+// lp holds LiquidityProvider stake and avg values.
 type lp struct {
 	stake num.Decimal
 	share num.Decimal
@@ -128,7 +128,7 @@ func (es *EquityShares) equity(id string) (num.Decimal, error) {
 	return num.DecimalZero(), fmt.Errorf("party %s has no stake", id)
 }
 
-// Shares returns the ratio of equity for a given party
+// Shares returns the ratio of equity for a given party.
 func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]num.Decimal {
 	// Calculate the equity for each party and the totalEquity (the sum of all
 	// the equities)

@@ -13,9 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
-)
+var ErrInvalidWithdrawalReferenceNonce = errors.New("invalid withdrawal reference nonce")
 
 func (e *Engine) EnableERC20(
 	ctx context.Context,
@@ -160,43 +158,29 @@ func (e *Engine) startERC20Signatures(
 	asset *erc20.ERC20,
 	ref *big.Int,
 ) error {
+	var (
+		signature []byte
+		err       error
+	)
+
+	// if we are a validator, we want to build a signature
+	if e.top.IsValidator() {
+		_, signature, err = asset.SignWithdrawal(
+			w.Amount, w.ExpirationDate, w.Ext.GetErc20().GetReceiverAddress(), ref)
+		if err != nil {
+			// there's not reason we cannot build the signature here
+			// apart if the node isn't configure properly
+			e.log.Panic("unable to sign withdrawal",
+				logging.WithdrawalID(w.ID),
+				logging.PartyID(w.PartyID),
+				logging.AssetID(w.Asset),
+				logging.BigUint("amount", w.Amount),
+				logging.Error(err))
+		}
+	}
+
 	// we were able to lock the funds, then we can send the vote through the network
-	e.notary.StartAggregate(w.ID, types.NodeSignatureKindAssetWithdrawal)
-
-	// if not a validator, we're good to go.
-	if !e.top.IsValidator() {
-		return nil
-	}
-
-	_, sig, err := asset.SignWithdrawal(
-		w.Amount, w.ExpirationDate, w.Ext.GetErc20().GetReceiverAddress(), ref)
-	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to sign withdrawal",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(w.PartyID),
-			logging.AssetID(w.Asset),
-			logging.BigUint("amount", w.Amount),
-			logging.Error(err))
-		return err
-	}
-
-	err = e.notary.SendSignature(
-		ctx, w.ID, sig, types.NodeSignatureKindAssetWithdrawal)
-	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to send node signature",
-			logging.WithdrawalID(w.ID),
-			logging.PartyID(w.PartyID),
-			logging.AssetID(w.Asset),
-			logging.BigUint("amount", w.Amount),
-			logging.Error(err))
-		return err
-	}
+	e.notary.StartAggregate(w.ID, types.NodeSignatureKindAssetWithdrawal, signature)
 
 	return nil
 }

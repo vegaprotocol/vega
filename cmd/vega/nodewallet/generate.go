@@ -5,6 +5,7 @@ import (
 
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
+
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
@@ -38,12 +39,12 @@ func (opts *generateCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
+	vegaPaths := paths.New(rootCmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
@@ -61,7 +62,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 	case ethereumChain:
 		var walletPass string
 		if opts.Config.ETH.ClefAddress == "" {
-			walletPass, err = opts.WalletPassphrase.Get("blockchain wallet")
+			walletPass, err = opts.WalletPassphrase.Get("blockchain wallet", true)
 			if err != nil {
 				return err
 			}
@@ -80,7 +81,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 			return fmt.Errorf("couldn't generate Ethereum node wallet: %w", err)
 		}
 	case vegaChain:
-		walletPass, err := opts.WalletPassphrase.Get("blockchain wallet")
+		walletPass, err := opts.WalletPassphrase.Get("blockchain wallet", true)
 		if err != nil {
 			return err
 		}

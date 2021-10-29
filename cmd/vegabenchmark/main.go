@@ -46,7 +46,7 @@ func main() {
 		reportError("times flag have to be > 0")
 	}
 
-	f, err := os.OpenFile(opts.out, os.O_RDWR|os.O_CREATE, 0644)
+	f, err := os.OpenFile(opts.out, os.O_RDWR|os.O_CREATE, 0o644)
 	if err != nil {
 		reportError("could not open the output file")
 	}
@@ -62,6 +62,7 @@ func runBenchmark(recording string) string {
 	var stats processor.Stats
 	var totalOrders uint64
 	benchResults := testing.Benchmark(func(b *testing.B) {
+		b.Helper()
 		b.N = opts.times //lint:ignore SA3001 it's OK to use b.N in this kind of usage.
 		for n := 0; n < b.N; n++ {
 			// setup a new vega

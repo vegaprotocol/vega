@@ -10,8 +10,7 @@ import (
 
 // JSONAdaptor is an oracle Adaptor for simple oracle data broadcasting.
 // Link: https://compound.finance/docs/prices
-type JSONAdaptor struct {
-}
+type JSONAdaptor struct{}
 
 // NewJSONAdaptor creates a new JSONAdaptor.
 func NewJSONAdaptor() *JSONAdaptor {

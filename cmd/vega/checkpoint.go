@@ -4,7 +4,11 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"strconv"
+	"time"
 
+	api "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
@@ -13,10 +17,10 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
-	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/jessevdk/go-flags"
+	"google.golang.org/grpc"
 )
 
 type CheckpointCmd struct {
@@ -36,9 +40,8 @@ type checkpointRestore struct {
 
 var checkpointCmd CheckpointCmd
 
-// Checkpoint - This function is invoked from `Register` in main.go
+// Checkpoint - This function is invoked from `Register` in main.go.
 func Checkpoint(ctx context.Context, parser *flags.Parser) error {
-
 	// here we initialize the global exampleCmd with needed default values.
 	checkpointCmd = CheckpointCmd{
 		Restore: checkpointRestore{},
@@ -66,53 +69,84 @@ func (c *checkpointRestore) Execute(_ []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read checkpoint file: %w", err)
 	}
-	commander, err := getNodeWalletCommander(log)
+	commander, cfunc, err := getNodeWalletCommander(log)
 	if err != nil {
 		return fmt.Errorf("failed to get commander: %w", err)
 	}
+	defer cfunc()
 
 	cmd := &commandspb.RestoreSnapshot{
 		Data: cpData,
 	}
+
 	ch := make(chan error)
-	commander.Command(context.Background(), txn.CheckpointRestoreCommand, cmd, func(ok bool) {
-		if !ok {
-			ch <- fmt.Errorf("failed to send restore command")
+	commander.CommandSync(context.Background(), txn.CheckpointRestoreCommand, cmd, func(err error) {
+		if err != nil {
+			ch <- fmt.Errorf("failed to send restore command: %v", err)
 		}
 		close(ch)
 	})
 	return <-ch
 }
 
-func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, error) {
-	vegaPaths := paths.NewPaths(checkpointCmd.VegaHome)
+func getNodeWalletCommander(log *logging.Logger) (*nodewallets.Commander, context.CancelFunc, error) {
+	vegaPaths := paths.New(checkpointCmd.VegaHome)
 
 	_, cfg, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := checkpointCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	vegaWallet, err := nodewallets.GetVegaWallet(vegaPaths, registryPass)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
+		return nil, nil, fmt.Errorf("couldn't get Vega node wallet: %w", err)
 	}
 
-	statistics := stats.New(log, cfg.Stats, CLIVersion, CLIVersionHash)
 	abciClient, err := abci.NewClient(cfg.Blockchain.Tendermint.ClientAddr)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
+		return nil, nil, fmt.Errorf("couldn't initialise ABCI client: %w", err)
 	}
 
-	commander, err := nodewallets.NewCommander(log, nil, vegaWallet, statistics)
+	coreClient, err := getCoreClient(
+		net.JoinHostPort(cfg.API.IP, strconv.Itoa(cfg.API.Port)))
 	if err != nil {
-		return nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
+		return nil, nil, fmt.Errorf("couldn't connect to node: %w", err)
+	}
+
+	ctx, cancel := timeoutContext()
+	resp, err := coreClient.LastBlockHeight(ctx, &api.LastBlockHeightRequest{})
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't get last block height: %w", err)
+	}
+
+	commander, err := nodewallets.NewCommander(cfg.NodeWallet, log, nil, vegaWallet, heightProvider(resp.Height))
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't initialise node wallet commander: %w", err)
 	}
 
 	commander.SetChain(blockchain.NewClient(abciClient))
-	return commander, nil
+	return commander, cancel, nil
+}
+
+type heightProvider uint64
+
+func (h heightProvider) Height() uint64 {
+	return uint64(h)
+}
+
+func getCoreClient(address string) (api.CoreServiceClient, error) {
+	tdconn, err := grpc.Dial(address, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+	return api.NewCoreServiceClient(tdconn), nil
+}
+
+func timeoutContext() (context.Context, func()) {
+	return context.WithTimeout(context.Background(), 5*time.Second)
 }

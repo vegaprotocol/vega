@@ -20,12 +20,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
-		Name:   "VEGA TOKEN",
-		Symbol: "VGT",
-	}))
-)
+var testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
+	Name:   "VEGA TOKEN",
+	Symbol: "VGT",
+}))
 
 type testEngine struct {
 	*banking.Engine
@@ -39,6 +37,7 @@ type testEngine struct {
 }
 
 func getTestEngine(t *testing.T) *testEngine {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	erc := &fakeERC{}
 	col := mocks.NewMockCollateral(ctrl)
@@ -226,4 +225,10 @@ func (f *fakeERC) StartCheck(r validators.Resource, fn func(interface{}, bool), 
 	f.f = fn
 	f.t = t
 	return f.err
+}
+
+func (f *fakeERC) RestoreResource(r validators.Resource, fn func(interface{}, bool)) error {
+	f.r = r
+	f.f = fn
+	return nil
 }

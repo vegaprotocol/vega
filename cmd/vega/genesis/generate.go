@@ -40,12 +40,12 @@ func (opts *generateCmd) Execute(_ []string) error {
 	)
 	defer log.AtExit()
 
-	pass, err := genesisCmd.PassphraseFile.Get("node wallet")
+	pass, err := genesisCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(genesisCmd.VegaHome)
+	vegaPaths := paths.New(genesisCmd.VegaHome)
 
 	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
@@ -170,6 +170,10 @@ func loadNodeWalletPubKey(config nodewallets.Config, vegaPaths paths.Paths, regi
 	nw, err := nodewallets.GetNodeWallets(config, vegaPaths, registryPass)
 	if err != nil {
 		return "", "", "", fmt.Errorf("couldn't get node wallets: %w", err)
+	}
+
+	if err := nw.Verify(); err != nil {
+		return "", "", "", err
 	}
 
 	return nw.Vega.PubKey().Hex(), nw.Ethereum.PubKey().Hex(), nw.Vega.ID().Hex(), nil

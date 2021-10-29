@@ -72,7 +72,7 @@ func (e *EthereumConfirmations) Check(block uint64) error {
 	}
 
 	if curBlock < block ||
-		(curBlock-block) < uint64(e.required) {
+		(curBlock-block) < e.required {
 		return ErrMissingConfirmations
 	}
 
@@ -87,10 +87,11 @@ func (e *EthereumConfirmations) currentHeight(
 	// if last update of the heigh was more that 15 seconds
 	// ago, we try to update, we assume an eth block takes
 	// ~15 seconds
-	now := e.time.Now()
-	if e.curHeightLastUpdate.Add(15 * time.Second).Before(now) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if now := e.time.Now(); e.curHeightLastUpdate.Add(15 * time.Second).Before(now) {
 		// get the last block header
-		h, err := e.ethClient.HeaderByNumber(context.Background(), nil)
+		h, err := e.ethClient.HeaderByNumber(ctx, nil)
 		if err != nil {
 			return e.curHeight, err
 		}

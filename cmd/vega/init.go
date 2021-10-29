@@ -31,12 +31,12 @@ func (opts *InitCmd) Execute(_ []string) error {
 		return err
 	}
 
-	pass, err := opts.Passphrase.Get("node wallet")
+	pass, err := opts.Passphrase.Get("node wallet", true)
 	if err != nil {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(opts.VegaHome)
+	vegaPaths := paths.New(opts.VegaHome)
 
 	nwRegistry, err := nodewallets.NewRegistryLoader(vegaPaths, pass)
 	if err != nil {

@@ -9,7 +9,7 @@ import (
 // this is simply emitted as a hierarchical label e.g. 'api.grpc'.
 const namedLogger = "rewards"
 
-// Config represent the configuration of the collateral engine
+// Config represent the configuration of the collateral engine.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// launch aggressiveOrder orders from both sides to fully clear the order book
+// launch aggressiveOrder orders from both sides to fully clear the order book.
 type aggressiveOrderScenario struct {
 	aggressiveOrder               *types.Order
 	expectedPassiveOrdersAffected []types.Order
@@ -37,6 +37,7 @@ func getCurrentUtcTimestampNano() int64 {
 }
 
 func getTestOrderBook(t *testing.T, market string) *tstOB {
+	t.Helper()
 	tob := tstOB{
 		log: logging.NewTestLogger(),
 	}
@@ -993,7 +994,7 @@ func TestOrderBook_RemoveExpiredOrders(t *testing.T) {
 	assert.Equal(t, len(trades), len(confirm.Trades))
 }
 
-//test for order validation
+// test for order validation.
 func TestOrderBook_SubmitOrder2WithValidation(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -1129,7 +1130,6 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 
 	assert.Equal(t, types.OrderErrorInvalidMarketID, err)
 	assert.Equal(t, getErr, err)
-
 }
 
 func TestOrderBook_CancelSellOrder(t *testing.T) {
@@ -1341,6 +1341,7 @@ func TestOrderBook_CancelOrderInvalidID(t *testing.T) {
 }
 
 func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
+	t.Helper()
 	// run asserts for protocol trade data
 	assert.Equal(t, expectedTrade.Type, trade.Type, "invalid trade type")
 	assert.Equal(t, int(expectedTrade.Price.Uint64()), int(trade.Price.Uint64()), "invalid trade price")
@@ -1351,6 +1352,7 @@ func expectTrade(t *testing.T, expectedTrade, trade *types.Trade) {
 }
 
 func expectOrder(t *testing.T, expectedOrder, order *types.Order) {
+	t.Helper()
 	// run asserts for order
 	assert.Equal(t, expectedOrder.MarketID, order.MarketID, "invalid order market id")
 	assert.Equal(t, expectedOrder.Party, order.Party, "invalid order party id")
@@ -1669,7 +1671,7 @@ func TestOrderBook_AmendOrderInvalidAmendSize(t *testing.T) {
 	assert.Equal(t, types.OrderErrorAmendFailure, err)
 }
 
-// ProRata mode OFF which is a default config for vega ME
+// ProRata mode OFF which is a default config for vega ME.
 func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2027,10 +2029,10 @@ func TestOrderBook_SubmitOrderProRataModeOff(t *testing.T) {
 		assert.NoError(t, getErr)
 		confirmationtypes, err := book.ob.SubmitOrder(s.aggressiveOrder)
 
-		//this should not return any errors
+		// this should not return any errors
 		assert.Equal(t, nil, err)
 
-		//this should not generate any trades
+		// this should not generate any trades
 		assert.Equal(t, len(s.expectedTrades), len(confirmationtypes.Trades))
 		assert.Equal(t, len(confirmationtypes.Trades), len(trades))
 
@@ -2098,7 +2100,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
-	iocOrderID := "1000000000000000000000" //Must be 22 characters
+	iocOrderID := "1000000000000000000000" // Must be 22 characters
 	iocOrder := &types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        types.OrderTypeLimit,
@@ -2129,12 +2131,14 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 }
 
 func makeOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) {
+	t.Helper()
 	order := getOrder(t, orderbook, market, id, side, price, partyid, size)
 	_, err := orderbook.ob.SubmitOrder(order)
 	assert.Equal(t, err, nil)
 }
 
 func getOrder(t *testing.T, orderbook *tstOB, market string, id string, side types.Side, price uint64, partyid string, size uint64) *types.Order {
+	t.Helper()
 	order := &types.Order{
 		Status:      types.OrderStatusActive,
 		Type:        types.OrderTypeLimit,
@@ -2232,9 +2236,7 @@ func TestOrderBook_GFNLimitInstantMatch(t *testing.T) {
 	assert.NotNil(t, sellOrderConf)
 }
 
-/*****************************************************************************/
-/*                             AUCTION TESTING                               */
-/*****************************************************************************/
+// AUCTION TESTING.
 func TestOrderBook_AuctionGFNAreRejected(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2664,7 +2666,7 @@ func TestOrderBook_IndicativePriceAndVolume5(t *testing.T) {
 	assert.Equal(t, 0, len(cancels))
 }
 
-// Set up an auction so that the sell side is processed when we uncross
+// Set up an auction so that the sell side is processed when we uncross.
 func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2703,7 +2705,7 @@ func TestOrderBook_IndicativePriceAndVolume6(t *testing.T) {
 	assert.Equal(t, len(cancels), 0)
 }
 
-// Check that multiple orders per price level work
+// Check that multiple orders per price level work.
 func TestOrderBook_IndicativePriceAndVolume7(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2869,7 +2871,7 @@ func TestOrderBook_UncrossTest1(t *testing.T) {
 	assert.Equal(t, len(cancels), 2)
 }
 
-// this is a test for issue 2060 to ensure we process FOK orders properly
+// this is a test for issue 2060 to ensure we process FOK orders properly.
 func TestOrderBook_NetworkOrderSuccess(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -2940,8 +2942,8 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 
 	orders := book.ob.EnterAuction()
 	assert.Equal(t, 0, len(orders))
-	order1Id := "1000000000000000000000" //Must be 22 characters
-	order2Id := "1000000000000000000001" //Must be 22 characters
+	order1Id := "1000000000000000000000" // Must be 22 characters
+	order2Id := "1000000000000000000001" // Must be 22 characters
 
 	order1 := &types.Order{
 		Status:      types.OrderStatusActive,
@@ -3109,7 +3111,7 @@ func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
 	//	assert.Equal(t, len(cancels), 0)
 }
 
-// Add some pegged orders to the order book and check they are parked when going into auction
+// Add some pegged orders to the order book and check they are parked when going into auction.
 func TestOrderBook_PeggedOrders(t *testing.T) {
 	market := "testOrderbook"
 	book := getTestOrderBook(t, market)
@@ -3130,13 +3132,17 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	assert.Equal(t, bestbid.Uint64(), uint64(100))
 
 	bp1 := getOrder(t, book, market, "BuyPeg1", types.SideBuy, 100, "party01", 5)
-	bp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid,
-		Offset: -3}
+	bp1.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReferenceMid,
+		Offset:    -3,
+	}
 	book.ob.SubmitOrder(bp1)
 
 	sp1 := getOrder(t, book, market, "SellPeg1", types.SideSell, 100, "party01", 5)
-	sp1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid,
-		Offset: +3}
+	sp1.PeggedOrder = &types.PeggedOrder{
+		Reference: types.PeggedReferenceMid,
+		Offset:    +3,
+	}
 	book.ob.SubmitOrder(sp1)
 
 	// Leave auction and uncross the book

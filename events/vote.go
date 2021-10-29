@@ -20,39 +20,39 @@ func NewVoteEvent(ctx context.Context, v types.Vote) *Vote {
 	}
 }
 
-// Vote get the vote object
+// Vote get the vote object.
 func (v *Vote) Vote() proto.Vote {
 	return v.v
 }
 
-// ProposalID get the proposal ID, part of the interface for event subscribers
+// ProposalID get the proposal ID, part of the interface for event subscribers.
 func (v *Vote) ProposalID() string {
 	return v.v.ProposalId
 }
 
-// IsParty - used in event stream API filter
+// IsParty - used in event stream API filter.
 func (v Vote) IsParty(id string) bool {
 	return v.v.PartyId == id
 }
 
-// PartyID - return the PartyID for subscribers' convenience
+// PartyID - return the PartyID for subscribers' convenience.
 func (v *Vote) PartyID() string {
 	return v.v.PartyId
 }
 
-// Value - return a Y/N value, makes subscribers easier to implement
+// Value - return a Y/N value, makes subscribers easier to implement.
 func (v *Vote) Value() proto.Vote_Value {
 	return v.v.Value
 }
 
 // TotalGovernanceTokenBalance returns the total balance of token used for this
-// vote
+// vote.
 func (v *Vote) TotalGovernanceTokenBalance() string {
 	return v.v.TotalGovernanceTokenBalance
 }
 
 // TotalGovernanceTokenWeight returns the total weight of token used for this
-// vote
+// vote.
 func (v *Vote) TotalGovernanceTokenWeight() string {
 	return v.v.TotalGovernanceTokenWeight
 }

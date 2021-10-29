@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
@@ -73,6 +74,7 @@ type NodeCommand struct {
 	conf        config.Config
 	confWatcher *config.Watcher
 
+	snapshot             *snapshot.Engine
 	executionEngine      *execution.Engine
 	governance           *governance.Engine
 	collateral           *collateral.Engine
@@ -87,8 +89,9 @@ type NodeCommand struct {
 	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
 
-	assets         *assets.Service
-	topology       *validators.Topology
+	assets   *assets.Service
+	topology *validators.Topology
+	// notary         *notary.SnapshotNotary
 	notary         *notary.Notary
 	evtfwd         *evtforward.EvtForwarder
 	witness        *validators.Witness
@@ -199,7 +202,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 // waitSig will wait for a sigterm or sigint interrupt.
 func waitSig(ctx context.Context, log *logging.Logger) {
-	var gracefulStop = make(chan os.Signal, 1)
+	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 	select {

@@ -59,7 +59,7 @@ func (s *StakingAccount) validateEvent(evt *types.StakeLinking) error {
 	return nil
 }
 
-// AddEvent will add a new event to the account
+// AddEvent will add a new event to the account.
 func (s *StakingAccount) AddEvent(evt *types.StakeLinking) error {
 	if err := s.validateEvent(evt); err != nil {
 		return err
@@ -84,7 +84,7 @@ func (s *StakingAccount) GetAvailableBalanceAt(at time.Time) (*num.Uint, error) 
 }
 
 // GetAvailableBalanceInRange could return a negative balance
-// if some event are still expected to be received from the bridge
+// if some event are still expected to be received from the bridge.
 func (s *StakingAccount) GetAvailableBalanceInRange(from, to time.Time) (*num.Uint, error) {
 	// first compute the balance before the from time.
 	balance, err := s.GetAvailableBalanceAt(from)

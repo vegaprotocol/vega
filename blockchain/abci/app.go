@@ -4,23 +4,33 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types"
 	lru "github.com/hashicorp/golang-lru"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-type Command byte
-type TxHandler func(ctx context.Context, tx Tx) error
+type (
+	Command   byte
+	TxHandler func(ctx context.Context, tx Tx) error
+)
+
+type SnapshotEngine interface {
+	AddProviders(provs ...types.StateProvider)
+}
+
+type replayProtector interface {
+	SetHeight(uint64)
+	DeliverTx(Tx) error
+	CheckTx(Tx) error
+	GetReplacement() *ReplayProtector
+}
 
 type App struct {
 	abci.BaseApplication
 	codec Codec
 
 	// options
-	replayProtector interface {
-		SetHeight(uint64)
-		DeliverTx(Tx) error
-		CheckTx(Tx) error
-	}
+	replayProtector replayProtector
 
 	// handlers
 	OnInitChain  OnInitChainHandler
@@ -29,6 +39,12 @@ type App struct {
 	OnCheckTx    OnCheckTxHandler
 	OnDeliverTx  OnDeliverTxHandler
 	OnCommit     OnCommitHandler
+	// snapshot stuff
+
+	OnListSnapshots      ListSnapshotsHandler
+	OnOfferSnapshot      OffserSnapshotHandler
+	OnLoadSnapshotChunk  LoadSnapshotChunkHandler
+	OnApplySnapshotChunk ApplySnapshotChunkHandler
 
 	// These are Tx handlers
 	checkTxs   map[txn.Command]TxHandler
@@ -46,12 +62,53 @@ func New(codec Codec) *App {
 	lruCache, _ := lru.New(1024)
 	return &App{
 		codec:           codec,
-		replayProtector: &replayProtectorNoop{},
+		replayProtector: &replayProtectorNoop{}, // this is going to be tricky for a restore
 		checkTxs:        map[txn.Command]TxHandler{},
 		deliverTxs:      map[txn.Command]TxHandler{},
 		checkedTxs:      lruCache,
 		ctx:             context.Background(),
 	}
+}
+
+func (app *App) ReplaceReplayProtector(tolerance uint) {
+	rpl := app.replayProtector.GetReplacement()
+	if rpl == nil {
+		// no replacement to consider
+		app.replayProtector = NewReplayProtector(tolerance)
+		return
+	}
+	rplLen, ti := len(rpl.txs), int(tolerance)
+	if rplLen == ti {
+		// perfect fit, nothign to do
+		app.replayProtector = rpl
+		return
+	}
+	if rplLen > ti {
+		// snapshot contains too much data for the given tolerance
+		// only get N last elements
+		rpl.txs = rpl.txs[rplLen-ti:]
+		app.replayProtector = rpl
+		return
+	}
+	// restored transactions slice is too small for the given tolerance
+	// create a larger slice, and copy the data, then initialise the rest
+	// of the indexes to an empty map
+	txs := make([]map[string]struct{}, ti)
+	for i := copy(txs, rpl.txs); i < ti; i++ {
+		txs[i] = map[string]struct{}{}
+	}
+	// update the replacement replay protector
+	rpl.txs = txs
+	// assign to app
+	app.replayProtector = rpl
+}
+
+func (app *App) RegisterSnapshot(eng SnapshotEngine) {
+	rpp, ok := app.replayProtector.(types.StateProvider)
+	if !ok {
+		return
+	}
+	eng.AddProviders(rpp)
 }
 
 func (app *App) HandleCheckTx(cmd txn.Command, fn TxHandler) *App {
@@ -105,7 +162,7 @@ func (app *App) removeTxFromCache(in []byte) {
 // if no errors were found during decoding and validation, the resulting Tx
 // will be cached.
 // An error code different from 0 is returned if decoding or validation fails
-// with its the corresponding error
+// with its the corresponding error.
 func (app *App) getTx(bytes []byte) (Tx, uint32, error) {
 	if tx := app.txFromCache(bytes); tx != nil {
 		return tx, 0, nil

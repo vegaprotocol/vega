@@ -25,6 +25,7 @@ type accountingTest struct {
 }
 
 func getAccountingTest(t *testing.T) *accountingTest {
+	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBrokerI(ctrl)

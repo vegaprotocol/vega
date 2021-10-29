@@ -13,6 +13,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.maxPayoutPerParticipant | 100000 |
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
+      | reward.staking.delegation.minValidators           |  5     |
 
 
     Given time is updated to "2021-08-26T00:00:00Z"
@@ -708,7 +709,7 @@ Feature: Staking & Delegation
     | party1 |  node2    |    200   | end of epoch |           |                                          |    
     | party1 |  node3    |    300   | end of epoch |           |                                          |  
 
-Scenario: A node can self delegate to itself and undelegate at the end of an epoch
+  Scenario: A node can self delegate to itself and undelegate at the end of an epoch
     Description: A node with a balance in the staking account can delegate to itself
 
     When the parties submit the following delegations:
@@ -783,7 +784,7 @@ Scenario: A node can self delegate to itself and undelegate at the end of an epo
     | party1 |  node1   |   0    | 
     | party1 |  node2   |   123  |    
 
-Scenario: A party can request to undelegate their stake or part of it right now
+  Scenario: A party can request to undelegate their stake or part of it right now
     Description: A party with delegated stake and/or pending delegation can request to undelegate all or part of it immediately as opposed to at the end of the epoch
 
     When the parties submit the following delegations:
@@ -885,7 +886,7 @@ Scenario: A party can request to undelegate their stake or part of it right now
     | party  | node id  | amount |
     | party1 |  node1   |  400   |     
 
-Scenario: Withdrawal followed by undelegate now (same epoch) - same behaviour as either underlegate now or withdraw
+  Scenario: Withdrawal followed by undelegate now (same epoch) - same behaviour as either underlegate now or withdraw
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
@@ -1159,14 +1160,14 @@ Scenario: Withdrawal followed by undelegate now (same epoch) - same behaviour as
     When the network moves ahead "7" blocks   
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
-    | party1 |  node1   | 0      | 
+    | party1 |  node1   | 500    | 
 
     # advance to the end of epoch2
     When the network moves ahead "7" blocks   
     # we expect the actual balance of epoch 2 for party1 has changed retrospectively to 0 to reflect that the party has insufficient balance in their staking account to cover 1000 delegated tokens    
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
-    | party1 |  node1   |  0     |   
+    | party1 |  node1   |  500   |   
 
      And the parties should have the following staking account balances:
     | party  | asset | amount |
@@ -1174,9 +1175,9 @@ Scenario: Withdrawal followed by undelegate now (same epoch) - same behaviour as
 
     And the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
-    | party1 |  node1   |  0     |    
+    | party1 |  node1   |  500   |    
 
-  Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
+Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
     Description: A party with delegated stake withdraws from their staking account during an epoch - at the end of the epoch when delegations are processed the party will be forced to undelegate the difference between the stake they have delegated and their staking account balance. 
 
     When the parties submit the following delegations:

@@ -7,7 +7,7 @@ import (
 
 const namedLogger = "staking"
 
-// Config represents the configuration of the position engine
+// Config represents the configuration of the position engine.
 type Config struct {
 	Level encoding.LogLevel `long:"log-level"`
 }

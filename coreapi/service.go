@@ -10,9 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-var (
-	ErrServiceDisabled = errors.New("service disabled")
-)
+var ErrServiceDisabled = errors.New("service disabled")
 
 type Service struct {
 	ctx    context.Context

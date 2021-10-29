@@ -15,7 +15,7 @@ import (
 
 var (
 	// ErrNotEnoughOrders signals that not enough orders were
-	// in the book to achieve a given operation
+	// in the book to achieve a given operation.
 	ErrNotEnoughOrders   = errors.New("insufficient orders")
 	ErrOrderDoesNotExist = errors.New("order does not exist")
 	ErrInvalidVolume     = errors.New("invalid volume")
@@ -43,7 +43,7 @@ type OrderBook struct {
 	snapshot                 *types.PayloadMatchingBook
 }
 
-// CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask
+// CumulativeVolumeLevel represents the cumulative volume at a price level for both bid and ask.
 type CumulativeVolumeLevel struct {
 	price               *num.Uint
 	bidVolume           uint64
@@ -84,7 +84,7 @@ func NewOrderBook(log *logging.Logger, config Config, marketID string, auction b
 }
 
 // ReloadConf is used in order to reload the internal configuration of
-// the OrderBook
+// the OrderBook.
 func (b *OrderBook) ReloadConf(cfg Config) {
 	b.log.Info("reloading configuration")
 	if b.log.GetLevel() != cfg.Level.Get() {
@@ -101,7 +101,7 @@ func (b *OrderBook) ReloadConf(cfg Config) {
 }
 
 // GetCloseoutPrice returns the exit price which would be achieved for a given
-// volume and give side of the book
+// volume and give side of the book.
 func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint, error) {
 	if b.auction {
 		p := b.GetIndicativePrice()
@@ -146,7 +146,7 @@ func (b *OrderBook) GetCloseoutPrice(volume uint64, side types.Side) (*num.Uint,
 	return price, nil
 }
 
-// EnterAuction Moves the order book into an auction state
+// EnterAuction Moves the order book into an auction state.
 func (b *OrderBook) EnterAuction() []*types.Order {
 	// Scan existing orders to see which ones can be kept or cancelled
 	ordersToCancel := append(
@@ -162,7 +162,7 @@ func (b *OrderBook) EnterAuction() []*types.Order {
 	return ordersToCancel
 }
 
-// LeaveAuction Moves the order book back into continuous trading state
+// LeaveAuction Moves the order book back into continuous trading state.
 func (b *OrderBook) LeaveAuction(at time.Time) ([]*types.OrderConfirmation, []*types.Order, error) {
 	// Update batchID
 	b.batchID++
@@ -224,7 +224,7 @@ func (b OrderBook) InAuction() bool {
 
 // CanLeaveAuction calls canUncross with required trades and, if that returns false
 // without required trades (which still permits leaving liquidity auction
-// if canUncross with required trades returs true, both returns are true
+// if canUncross with required trades returs true, both returns are true.
 func (b *OrderBook) CanLeaveAuction() (withTrades, withoutTrades bool) {
 	withTrades = b.canUncross(true)
 	withoutTrades = withTrades
@@ -236,7 +236,7 @@ func (b *OrderBook) CanLeaveAuction() (withTrades, withoutTrades bool) {
 }
 
 // CanUncross - a clunky name for a somewhat clunky function: this checks if there will be LIMIT orders
-// on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended
+// on the book after we uncross the book (at the end of an auction). If this returns false, the opening auction should be extended.
 func (b *OrderBook) CanUncross() bool {
 	return b.canUncross(true)
 }
@@ -334,7 +334,7 @@ func (b *OrderBook) canUncross(requireTrades bool) bool {
 	return sellMatch
 }
 
-// GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state
+// GetIndicativePriceAndVolume Calculates the indicative price and volume of the order book without modifying the order book state.
 func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol uint64, retside types.Side) {
 	// Generate a set of price level pairs with their maximum tradable volumes
 	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
@@ -383,7 +383,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 	return uncrossPrice, maxTradableAmount, uncrossSide
 }
 
-// GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state
+// GetIndicativePrice Calculates the indicative price of the order book without modifying the order book state.
 func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 	// Generate a set of price level pairs with their maximum tradable volumes
 	cumulativeVolumes, maxTradableAmount, err := b.buildCumulativePriceLevels()
@@ -414,7 +414,7 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 }
 
 // buildCumulativePriceLevels this returns a slice of all the price levels with the
-// cumulative volume for each level. Also returns the max tradable size
+// cumulative volume for each level. Also returns the max tradable size.
 func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint64, error) {
 	bestBid, err := b.GetBestBidPrice()
 	if err != nil {
@@ -434,7 +434,7 @@ func (b *OrderBook) buildCumulativePriceLevels() ([]CumulativeVolumeLevel, uint6
 	return volume, maxTradableAmount, nil
 }
 
-// Uncrosses the book to generate the maximum volume set of trades
+// Uncrosses the book to generate the maximum volume set of trades.
 func (b *OrderBook) uncrossBook() ([]*types.OrderConfirmation, error) {
 	// Get the uncrossing price and which side has the most volume at that price
 	price, volume, uncrossSide := b.GetIndicativePriceAndVolume()
@@ -469,12 +469,11 @@ func (b *OrderBook) uncrossBookSide(
 ) ([]*types.OrderConfirmation, error) {
 	var (
 		uncrossedOrder *types.OrderConfirmation
-		allOrders      []*types.OrderConfirmation
+		allOrders      = make([]*types.OrderConfirmation, 0, len(uncrossOrders))
 	)
 	// Uncross each one
 	for _, order := range uncrossOrders {
 		trades, affectedOrders, _, err := opSide.uncross(order, false)
-
 		if err != nil {
 			return nil, err
 		}
@@ -491,8 +490,8 @@ func (b *OrderBook) uncrossBookSide(
 		uncrossedOrder = &types.OrderConfirmation{Order: order, PassiveOrdersAffected: affectedOrders, Trades: trades}
 		allOrders = append(allOrders, uncrossedOrder)
 	}
-	return allOrders, nil
 
+	return allOrders, nil
 }
 
 func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
@@ -508,12 +507,12 @@ func (b *OrderBook) GetOrdersPerParty(party string) []*types.Order {
 	return orders
 }
 
-// BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book
+// BestBidPriceAndVolume : Return the best bid and volume for the buy side of the book.
 func (b *OrderBook) BestBidPriceAndVolume() (*num.Uint, uint64, error) {
 	return b.buy.BestPriceAndVolume()
 }
 
-// BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book
+// BestOfferPriceAndVolume : Return the best bid and volume for the sell side of the book.
 func (b *OrderBook) BestOfferPriceAndVolume() (*num.Uint, uint64, error) {
 	return b.sell.BestPriceAndVolume()
 }
@@ -575,7 +574,7 @@ func (b *OrderBook) CancelOrder(order *types.Order) (*types.OrderCancellationCon
 	return result, nil
 }
 
-// RemoveOrder takes the order off the order book
+// RemoveOrder takes the order off the order book.
 func (b *OrderBook) RemoveOrder(order *types.Order) error {
 	order, err := b.DeleteOrder(order)
 	if err != nil {
@@ -588,7 +587,7 @@ func (b *OrderBook) RemoveOrder(order *types.Order) error {
 	return nil
 }
 
-// AmendOrder amends an order which is an active order on the book
+// AmendOrder amends an order which is an active order on the book.
 func (b *OrderBook) AmendOrder(originalOrder, amendedOrder *types.Order) error {
 	if originalOrder == nil {
 		return types.ErrOrderNotFound
@@ -670,7 +669,7 @@ func (b *OrderBook) GetTrades(order *types.Order) ([]*types.Trade, error) {
 	return trades, nil
 }
 
-// SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object
+// SubmitOrder Add an order and attempt to uncross the book, returns a TradeSet protobuf message object.
 func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, error) {
 	if err := b.validateOrder(order); err != nil {
 		return nil, err
@@ -687,11 +686,12 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 		b.PrintState("Entry state:")
 	}
 
-	var trades []*types.Trade
-	var impactedOrders []*types.Order
-	var lastTradedPrice = num.Zero()
-	var err error
-
+	var (
+		trades          []*types.Trade
+		impactedOrders  []*types.Order
+		lastTradedPrice *num.Uint
+		err             error
+	)
 	order.BatchID = b.batchID
 
 	if !b.auction {
@@ -783,7 +783,7 @@ func (b *OrderBook) SubmitOrder(order *types.Order) (*types.OrderConfirmation, e
 	return orderConfirmation, nil
 }
 
-// DeleteOrder remove a given order on a given side from the book
+// DeleteOrder remove a given order on a given side from the book.
 func (b *OrderBook) DeleteOrder(
 	order *types.Order) (*types.Order, error) {
 	dorder, err := b.getSide(order.Side).RemoveOrder(order)
@@ -806,7 +806,7 @@ func (b *OrderBook) DeleteOrder(
 	return dorder, err
 }
 
-// GetOrderByID returns order by its ID (IDs are not expected to collide within same market)
+// GetOrderByID returns order by its ID (IDs are not expected to collide within same market).
 func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 	if err := validateOrderID(orderID); err != nil {
 		if b.log.GetLevel() == logging.DebugLevel {
@@ -823,7 +823,7 @@ func (b *OrderBook) GetOrderByID(orderID string) (*types.Order, error) {
 	return order, nil
 }
 
-// RemoveDistressedOrders remove from the book all order holding distressed positions
+// RemoveDistressedOrders remove from the book all order holding distressed positions.
 func (b *OrderBook) RemoveDistressedOrders(
 	parties []events.MarketPosition,
 ) ([]*types.Order, error) {
@@ -875,7 +875,6 @@ func (b *OrderBook) getOppositeSide(orderSide types.Side) *OrderBookSide {
 }
 
 func makeResponse(order *types.Order, trades []*types.Trade, impactedOrders []*types.Order) *types.OrderConfirmation {
-
 	return &types.OrderConfirmation{
 		Order:                 order,
 		PassiveOrdersAffected: impactedOrders,
@@ -911,7 +910,7 @@ func (b *OrderBook) GetBestStaticAskPriceAndVolume() (*num.Uint, uint64, error) 
 
 // PrintState prints the actual state of the book.
 // this should be use only in debug / non production environment as it
-// rely a lot on logging
+// rely a lot on logging.
 func (b *OrderBook) PrintState(types string) {
 	b.log.Debug("PrintState",
 		logging.String("types", types))
@@ -932,12 +931,12 @@ func (b *OrderBook) PrintState(types string) {
 	b.log.Debug("------------------------------------------------------------")
 }
 
-// GetTotalNumberOfOrders is a debug/testing function to return the total number of orders in the book
+// GetTotalNumberOfOrders is a debug/testing function to return the total number of orders in the book.
 func (b *OrderBook) GetTotalNumberOfOrders() int64 {
 	return b.buy.getOrderCount() + b.sell.getOrderCount()
 }
 
-// GetTotalVolume is a debug/testing function to return the total volume in the order book
+// GetTotalVolume is a debug/testing function to return the total volume in the order book.
 func (b *OrderBook) GetTotalVolume() int64 {
 	return b.buy.getTotalVolume() + b.sell.getTotalVolume()
 }

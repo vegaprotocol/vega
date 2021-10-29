@@ -115,6 +115,7 @@ type equityShareMarket struct {
 }
 
 func newEquityShareMarket(t *testing.T) *equityShareMarket {
+	t.Helper()
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 

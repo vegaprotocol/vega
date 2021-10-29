@@ -1,5 +1,69 @@
 # Changelog
 
+## 0.45.2
+*2021-10-27*
+
+### Fixes
+- [4320](https://github.com/vegaprotocol/vega/pull/4320) - Implement retries for notary transactions
+- [4312](https://github.com/vegaprotocol/vega/pull/4312) - Implement retries for witness transactions
+
+
+## 0.45.1
+*2021-10-23*
+
+### Improvements
+- [4246](https://github.com/vegaprotocol/vega/pull/4246) - Add replay protection snapshot
+- [4245](https://github.com/vegaprotocol/vega/pull/4245) - Add ABCI snapshot
+- [4260](https://github.com/vegaprotocol/vega/pull/4260) - Reconcile delegation more frequently
+- [4255](https://github.com/vegaprotocol/vega/pull/4255) - Add staking snapshot
+- [4278](https://github.com/vegaprotocol/vega/pull/4278) - Add timestamps to rewards
+- [4265](https://github.com/vegaprotocol/vega/pull/4265) - Add witness snapshot
+- [4287](https://github.com/vegaprotocol/vega/pull/4287) - Add stake verifier snapshot
+- [4292](https://github.com/vegaprotocol/vega/pull/4292) - Update the vega wallet version
+
+
+### Fixes
+- [4280](https://github.com/vegaprotocol/vega/pull/4280) - Make event forwarder hashing result more random
+- [4270](https://github.com/vegaprotocol/vega/pull/4270) - Prevent overflow with pending delegation
+- [4274](https://github.com/vegaprotocol/vega/pull/4274) - Ensure sufficient balances when nominating multiple nodes
+- [4286](https://github.com/vegaprotocol/vega/pull/4286) - Checkpoints fixes
+
+
+## 0.45.0
+*2021-10-19*
+
+### Improvements
+- [4188](https://github.com/vegaprotocol/vega/pull/4188) - Add rewards snapshot
+- [4191](https://github.com/vegaprotocol/vega/pull/4191) - Add limit snapshot
+- [4192](https://github.com/vegaprotocol/vega/pull/4192) - Ask for passphrase confirmation on init and generate commands when applicable
+- [4201](https://github.com/vegaprotocol/vega/pull/4201) - Implement spam snapshot
+- [4214](https://github.com/vegaprotocol/vega/pull/4214) - Add golangci-lint to CI
+- [4199](https://github.com/vegaprotocol/vega/pull/4199) - Add ERC20 logic signing
+- [4211](https://github.com/vegaprotocol/vega/pull/4211) - Implement snapshot for notary
+- [4219](https://github.com/vegaprotocol/vega/pull/4219) - Enable linters
+- [4218](https://github.com/vegaprotocol/vega/pull/4218) - Run system-tests in separate build
+- [4227](https://github.com/vegaprotocol/vega/pull/4227) - Ignore system-tests failures for non PR builds
+- [4232](https://github.com/vegaprotocol/vega/pull/4232) - golangci-lint increase timeout
+- [4229](https://github.com/vegaprotocol/vega/pull/4229) - Ensure the vega and Ethereum wallet are not nil before accessing
+- [4230](https://github.com/vegaprotocol/vega/pull/4230) - Replay protection snapshot
+- [4242](https://github.com/vegaprotocol/vega/pull/4242) - Set timeout for system-tests steps
+- [4215](https://github.com/vegaprotocol/vega/pull/4215) - Improve handling of expected trades
+- [4224](https://github.com/vegaprotocol/vega/pull/4224) - Make evt forward mode deterministic
+- [4168](https://github.com/vegaprotocol/vega/pull/4168) - Update code still using uint64
+- [4240](https://github.com/vegaprotocol/vega/pull/4240) - Add command to list and describe Vega paths
+
+### Fixes
+- [4228](https://github.com/vegaprotocol/vega/pull/4228) - Fix readme updates
+- [4210](https://github.com/vegaprotocol/vega/pull/4210) - Add min validators network parameter and bug fix for overflow reward
+
+
+## 0.44.2
+*2021-10-11*
+
+### Fixes
+- [4195](https://github.com/vegaprotocol/vega/pull/4195) - Fix rewards payout with delay
+
+
 ## 0.44.1
 *2021-10-08*
 
@@ -141,7 +205,7 @@
 - [4012](https://github.com/vegaprotocol/vega/pull/4012) - Fix panic with vega watch
 - [3937](https://github.com/vegaprotocol/vega/pull/3937) - Include `TX_ERROR` events for type ALL subscribers
 - [3930](https://github.com/vegaprotocol/vega/pull/3930) - Added missing function and updated readme with details
-- [3918](https://github.com/vegaprotocol/vega/pull/3918) - Fix the build by updating the module version for the go-wallet
+- [3918](https://github.com/vegaprotocol/vega/pull/3918) - Fix the build by updating the module version for the vegawallet
 - [3901](https://github.com/vegaprotocol/vega/pull/3901) - Emit a `TxErrEvent` if withdraw submission is invalid
 - [3874](https://github.com/vegaprotocol/vega/pull/3874) - Fix binary version
 - [3884](https://github.com/vegaprotocol/vega/pull/3884) - Always async transaction
@@ -162,7 +226,7 @@
 - [#3805](https://github.com/vegaprotocol/vega/pull/3805) - Checkpoint engine hash and checkpoint creation
 - [#3785](https://github.com/vegaprotocol/vega/pull/3785) - Implement delegation commands
 - [#3714](https://github.com/vegaprotocol/vega/pull/3714) - Move protobufs into an external repository
-- [#3719](https://github.com/vegaprotocol/vega/pull/3719) - Replace vega wallet with call to the go-wallet
+- [#3719](https://github.com/vegaprotocol/vega/pull/3719) - Replace vega wallet with call to the vegawallet
 - [#3762](https://github.com/vegaprotocol/vega/pull/3762) - Refactor: Cleanup markets in domains types
 - [#3822](https://github.com/vegaprotocol/vega/pull/3822) - Testing: vega integration add subfolders for features
 - [#3794](https://github.com/vegaprotocol/vega/pull/3794) - Implement rewards transfer

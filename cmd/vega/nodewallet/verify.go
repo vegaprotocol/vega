@@ -19,12 +19,12 @@ func (opts *verifyCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	registryPass, err := rootCmd.PassphraseFile.Get("node wallet")
+	registryPass, err := rootCmd.PassphraseFile.Get("node wallet", false)
 	if err != nil {
 		return err
 	}
 
-	vegaPaths := paths.NewPaths(rootCmd.VegaHome)
+	vegaPaths := paths.New(rootCmd.VegaHome)
 
 	_, conf, err := config.EnsureNodeConfig(vegaPaths)
 	if err != nil {

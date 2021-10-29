@@ -49,28 +49,14 @@ func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1, arg2 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSigned", reflect.TypeOf((*MockNotary)(nil).IsSigned), arg0, arg1, arg2)
 }
 
-// SendSignature mocks base method
-func (m *MockNotary) SendSignature(arg0 context.Context, arg1 string, arg2 []byte, arg3 v1.NodeSignatureKind) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendSignature", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SendSignature indicates an expected call of SendSignature
-func (mr *MockNotaryMockRecorder) SendSignature(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSignature", reflect.TypeOf((*MockNotary)(nil).SendSignature), arg0, arg1, arg2, arg3)
-}
-
 // StartAggregate mocks base method
-func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind) {
+func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind, arg2 []byte) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartAggregate", arg0, arg1)
+	m.ctrl.Call(m, "StartAggregate", arg0, arg1, arg2)
 }
 
 // StartAggregate indicates an expected call of StartAggregate
-func (mr *MockNotaryMockRecorder) StartAggregate(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockNotaryMockRecorder) StartAggregate(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartAggregate", reflect.TypeOf((*MockNotary)(nil).StartAggregate), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartAggregate", reflect.TypeOf((*MockNotary)(nil).StartAggregate), arg0, arg1, arg2)
 }

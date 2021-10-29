@@ -28,7 +28,6 @@ func deposit(eng *testEngine, asset, party string, amount *num.Uint) *types.Buil
 		PartyID:     party,
 		Amount:      amount,
 	}
-
 }
 
 func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
@@ -47,13 +46,13 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	// 	eng.OnTick(context.Background(), time.Now())
 	hash, err := eng.GetHash(aaKey)
 	require.Nil(t, err)
-	state, err := eng.GetState(aaKey)
+	state, _, err := eng.GetState(aaKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
 	hashNoChange, err := eng.GetHash(aaKey)
 	require.Nil(t, err)
-	stateNoChange, err := eng.GetState(aaKey)
+	stateNoChange, _, err := eng.GetState(aaKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -63,11 +62,11 @@ func TestAssetActionsSnapshotRoundTrip(t *testing.T) {
 	var assetActions snapshot.Payload
 	proto.Unmarshal(state, &assetActions)
 	payload := types.PayloadFromProto(&assetActions)
-	err = eng.LoadState(context.Background(), payload)
+	_, err = eng.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := eng.GetHash(aaKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _ := eng.GetState(aaKey)
+	statePostReload, _, _ := eng.GetState(aaKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
@@ -87,13 +86,13 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 	eng.OnTick(context.Background(), time.Now())
 	hash, err := eng.GetHash(seenKey)
 	require.Nil(t, err)
-	state, err := eng.GetState(seenKey)
+	state, _, err := eng.GetState(seenKey)
 	require.Nil(t, err)
 
 	// verify hash is consistent in the absence of change
 	hashNoChange, err := eng.GetHash(seenKey)
 	require.Nil(t, err)
-	stateNoChange, err := eng.GetState(seenKey)
+	stateNoChange, _, err := eng.GetState(seenKey)
 	require.Nil(t, err)
 
 	require.True(t, bytes.Equal(hash, hashNoChange))
@@ -105,21 +104,19 @@ func TestSeenSnapshotRoundTrip(t *testing.T) {
 
 	payload := types.PayloadFromProto(&seen)
 
-	err = eng.LoadState(context.Background(), payload)
+	_, err = eng.LoadState(context.Background(), payload)
 	require.Nil(t, err)
 	hashPostReload, _ := eng.GetHash(seenKey)
 	require.True(t, bytes.Equal(hash, hashPostReload))
-	statePostReload, _ := eng.GetState(seenKey)
+	statePostReload, _, _ := eng.GetState(seenKey)
 	require.True(t, bytes.Equal(state, statePostReload))
 }
 
 func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
-	var (
-		testAsset = assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
-			Name:   "VEGA TOKEN",
-			Symbol: "VGT",
-		}))
-	)
+	testAsset := assets.NewAsset(builtin.New("VGT", &types.AssetDetails{
+		Name:   "VEGA TOKEN",
+		Symbol: "VGT",
+	}))
 
 	withdrawalsKey := (&types.PayloadBankingWithdrawals{}).Key()
 	eng := getTestEngine(t)
@@ -139,13 +136,13 @@ func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
 
 		hash, err := eng.GetHash(withdrawalsKey)
 		require.Nil(t, err)
-		state, err := eng.GetState(withdrawalsKey)
+		state, _, err := eng.GetState(withdrawalsKey)
 		require.Nil(t, err)
 
 		// verify hash is consistent in the absence of change
 		hashNoChange, err := eng.GetHash(withdrawalsKey)
 		require.Nil(t, err)
-		stateNoChange, err := eng.GetState(withdrawalsKey)
+		stateNoChange, _, err := eng.GetState(withdrawalsKey)
 		require.Nil(t, err)
 
 		require.True(t, bytes.Equal(hash, hashNoChange))
@@ -157,11 +154,11 @@ func TestWithdrawlsSnapshotRoundTrip(t *testing.T) {
 
 		payload := types.PayloadFromProto(&withdrawals)
 
-		err = eng.LoadState(context.Background(), payload)
+		_, err = eng.LoadState(context.Background(), payload)
 		require.Nil(t, err)
 		hashPostReload, _ := eng.GetHash(withdrawalsKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
-		statePostReload, _ := eng.GetState(withdrawalsKey)
+		statePostReload, _, _ := eng.GetState(withdrawalsKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
 }
@@ -181,13 +178,13 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 
 		hash, err := eng.GetHash(depositsKey)
 		require.Nil(t, err)
-		state, err := eng.GetState(depositsKey)
+		state, _, err := eng.GetState(depositsKey)
 		require.Nil(t, err)
 
 		// verify hash is consistent in the absence of change
 		hashNoChange, err := eng.GetHash(depositsKey)
 		require.Nil(t, err)
-		stateNoChange, err := eng.GetState(depositsKey)
+		stateNoChange, _, err := eng.GetState(depositsKey)
 		require.Nil(t, err)
 
 		require.True(t, bytes.Equal(hash, hashNoChange))
@@ -197,11 +194,11 @@ func TestDepositSnapshotRoundTrip(t *testing.T) {
 		var deposits snapshot.Payload
 		proto.Unmarshal(state, &deposits)
 		payload := types.PayloadFromProto(&deposits)
-		err = eng.LoadState(context.Background(), payload)
+		_, err = eng.LoadState(context.Background(), payload)
 		require.Nil(t, err)
 		hashPostReload, _ := eng.GetHash(depositsKey)
 		require.True(t, bytes.Equal(hash, hashPostReload))
-		statePostReload, _ := eng.GetState(depositsKey)
+		statePostReload, _, _ := eng.GetState(depositsKey)
 		require.True(t, bytes.Equal(state, statePostReload))
 	}
 }

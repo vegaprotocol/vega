@@ -34,6 +34,20 @@ func (m *MockWitness) EXPECT() *MockWitnessMockRecorder {
 	return m.recorder
 }
 
+// RestoreResource mocks base method
+func (m *MockWitness) RestoreResource(arg0 validators.Resource, arg1 func(interface{}, bool)) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RestoreResource", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RestoreResource indicates an expected call of RestoreResource
+func (mr *MockWitnessMockRecorder) RestoreResource(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RestoreResource", reflect.TypeOf((*MockWitness)(nil).RestoreResource), arg0, arg1)
+}
+
 // StartCheck mocks base method
 func (m *MockWitness) StartCheck(arg0 validators.Resource, arg1 func(interface{}, bool), arg2 time.Time) error {
 	m.ctrl.T.Helper()

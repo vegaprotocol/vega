@@ -94,7 +94,7 @@ func (n *NodeValidation) onResChecked(i interface{}, valid bool) {
 		return
 	}
 
-	var newState = rejectedProposal
+	newState := rejectedProposal
 	if valid {
 		newState = okProposal
 	}
@@ -125,11 +125,11 @@ func (n *NodeValidation) removeProposal(id string) {
 	}
 }
 
-// OnChainTimeUpdate returns validated proposal by all nodes
+// OnChainTimeUpdate returns validated proposal by all nodes.
 func (n *NodeValidation) OnChainTimeUpdate(t time.Time) (accepted []*proposal, rejected []*proposal) {
 	n.currentTimestamp = t
 
-	var toRemove []string // id of proposals to remove
+	toRemove := []string{} // id of proposals to remove
 
 	// check that any proposal is ready
 	for _, prop := range n.nodeProposals {
@@ -167,15 +167,14 @@ func (n *NodeValidation) IsNodeValidationRequired(p *types.Proposal) bool {
 	}
 }
 
-// Start the node validation of a proposal
+// Start the node validation of a proposal.
 func (n *NodeValidation) Start(p *types.Proposal) error {
 	if !n.IsNodeValidationRequired(p) {
 		n.log.Error("no node validation required", logging.String("ref", p.ID))
 		return ErrNoNodeValidationRequired
 	}
 
-	_, ok := n.getProposal(p.ID)
-	if ok {
+	if _, ok := n.getProposal(p.ID); ok {
 		return ErrProposalReferenceDuplicate
 	}
 
@@ -201,6 +200,26 @@ func (n *NodeValidation) Start(p *types.Proposal) error {
 
 	return n.witness.StartCheck(
 		np, n.onResChecked, time.Unix(p.Terms.ValidationTimestamp, 0))
+}
+
+func (n *NodeValidation) restore(p *types.Proposal) error {
+	checker, err := n.getChecker(p)
+	if err != nil {
+		return err
+	}
+	np := &nodeProposal{
+		proposal: &proposal{
+			Proposal:     p,
+			yes:          map[string]*types.Vote{},
+			no:           map[string]*types.Vote{},
+			invalidVotes: map[string]*types.Vote{},
+		},
+		state:   pendingValidationProposal,
+		checker: checker,
+	}
+	n.nodeProposals = append(n.nodeProposals, np)
+	n.witness.RestoreResource(np, n.onResChecked)
+	return nil
 }
 
 func (n *NodeValidation) getChecker(p *types.Proposal) (func() error, error) {

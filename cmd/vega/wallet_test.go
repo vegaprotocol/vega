@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"code.vegaprotocol.io/go-wallet/wallet"
+	"code.vegaprotocol.io/vegawallet/wallet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,17 +20,18 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 	require.NoError(t, err)
 
 	// Generate a Key pair
-	_, err = suite.RunMain(ctx, "wallet key generate --output json --no-version-check --home %s --passphrase-file %s --name test", path, pass)
+	_, err = suite.RunMain(ctx, "wallet key generate --output json --no-version-check --home %s --passphrase-file %s --wallet test", path, pass)
 	require.NoError(t, err)
 
 	// List the wallet and keep it
 	keyPairs := suite.ListKeyPairs(t, path, pass)
 	require.NotEmpty(t, keyPairs)
+
 	pub := keyPairs[0].PublicKey()
 
 	t.Run("Sign/Verify", func(t *testing.T) {
 		// Sign and retrieve the signature (base64 encoded)
-		out, err = suite.RunMain(ctx, "wallet sign --output json --no-version-check --home %s --passphrase-file %s  --name test -m aG9sYQo= -k %s", path, pass, pub)
+		out, err = suite.RunMain(ctx, "wallet sign --output json --no-version-check --home %s --passphrase-file %s --wallet test -m aG9sYQo= -k %s", path, pass, pub)
 		require.NoError(t, err)
 		sig := struct {
 			Signature string `json:"signature"`
@@ -54,7 +55,7 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 
 	// Meta
 	t.Run("Meta", func(t *testing.T) {
-		_, err = suite.RunMain(ctx, "wallet key annotate --output json --no-version-check --home %s --passphrase-file %s --name test -k %s -m primary:true;asset:BTC", path, pass, pub)
+		_, err = suite.RunMain(ctx, "wallet key annotate --output json --no-version-check --home %s --passphrase-file %s --wallet test -k %s -m primary:true;asset:BTC", path, pass, pub)
 		require.NoError(t, err)
 		keyPairs := suite.ListKeyPairs(t, path, pass)
 		require.NotEmpty(t, keyPairs)
@@ -71,9 +72,10 @@ func (suite *CommandSuite) TestWallet(t *testing.T) {
 }
 
 func (suite *CommandSuite) ListKeyPairs(t *testing.T, path, pass string) []wallet.HDKeyPair {
+	t.Helper()
 	ctx := context.Background()
 
-	out, err := suite.RunMain(ctx, "wallet key list --output json --no-version-check --home %s --passphrase-file %s --name test", path, pass)
+	out, err := suite.RunMain(ctx, "wallet key list --output json --no-version-check --home %s --passphrase-file %s --wallet test", path, pass)
 	require.NoError(t, err)
 
 	w := []wallet.HDKeyPair{}

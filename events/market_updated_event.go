@@ -25,7 +25,7 @@ func NewMarketUpdatedEvent(ctx context.Context, m types.Market) *MarketUpdated {
 	}
 }
 
-// MarketEvent -> is needs to be logged as a market event
+// MarketEvent -> is needs to be logged as a market event.
 func (m MarketUpdated) MarketEvent() string {
 	return fmt.Sprintf("Market ID %s updated (%s)", m.m.ID, m.pm.String())
 }

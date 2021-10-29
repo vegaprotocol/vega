@@ -29,7 +29,7 @@ var (
 	ErrProposalDoesNotExists   = errors.New("proposal does not exists")
 )
 
-// Broker - event bus
+// Broker - event bus.
 type Broker interface {
 	Send(e events.Event)
 	SendBatch(es []events.Event)
@@ -59,6 +59,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/witness_mock.go -package mocks code.vegaprotocol.io/vega/governance Witness
 type Witness interface {
 	StartCheck(validators.Resource, func(interface{}, bool), time.Time) error
+	RestoreResource(validators.Resource, func(interface{}, bool)) error
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/netparams_mock.go -package mocks code.vegaprotocol.io/vega/governance NetParams
@@ -170,7 +171,7 @@ func (e *Engine) Hash() []byte {
 	return vgcrypto.Hash(output)
 }
 
-// ReloadConf updates the internal configuration of the governance engine
+// ReloadConf updates the internal configuration of the governance engine.
 func (e *Engine) ReloadConf(cfg Config) {
 	e.log.Info("reloading configuration")
 	if e.log.GetLevel() != cfg.Level.Get() {
@@ -365,7 +366,6 @@ func (e *Engine) SubmitProposal(
 	psub types.ProposalSubmission,
 	id, party string,
 ) (ts *ToSubmit, err error) {
-
 	if _, ok := e.getProposal(id); ok {
 		return nil, ErrProposalIsDuplicate // state is not allowed to change externally
 	}
@@ -425,7 +425,7 @@ func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorD
 }
 
 // toSubmit build the return response for the SubmitProposal
-// method
+// method.
 func (e *Engine) intoToSubmit(p *types.Proposal) (*ToSubmit, error) {
 	tsb := &ToSubmit{p: p}
 
@@ -492,7 +492,7 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 	}
 }
 
-// validates proposals read from the chain
+// validates proposals read from the chain.
 func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalError, error) {
 	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
@@ -584,7 +584,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 	return e.validateChange(proposal.Terms)
 }
 
-// validates proposed change
+// validates proposed change.
 func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError, error) {
 	switch terms.Change.GetTermType() {
 	case types.ProposalTerms_NEW_MARKET:
@@ -604,7 +604,7 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-// AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted
+// AddVote adds vote onto an existing active proposal (if found) so the proposal could pass and be enacted.
 func (e *Engine) AddVote(ctx context.Context, cmd types.VoteSubmission, party string) error {
 	proposal, err := e.validateVote(cmd, party)
 	if err != nil {

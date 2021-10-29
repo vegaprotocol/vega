@@ -30,6 +30,7 @@ type stakeVerifierTest struct {
 }
 
 func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	broker := bmocks.NewMockBrokerI(ctrl)
 	log := logging.NewTestLogger()
@@ -329,7 +330,6 @@ func testProcessStakeEventMultiOK(t *testing.T) {
 	balance, err = stakev.accs.GetAvailableBalance("somepubkey")
 	assert.NoError(t, err)
 	assert.Equal(t, 500, int(balance.Uint64()))
-
 }
 
 func testDuplicates(t *testing.T) {
@@ -360,10 +360,16 @@ func testDuplicates(t *testing.T) {
 	assert.EqualError(t, err, staking.ErrDuplicatedStakeDepositedEvent.Error())
 
 	event2 := &types.StakeRemoved{
-		ID: "someid",
+		BlockNumber:     42,
+		LogIndex:        1789,
+		TxID:            "somehash",
+		ID:              "someid",
+		VegaPubKey:      "somepubkey",
+		EthereumAddress: "0xnothex",
+		Amount:          num.NewUint(1000),
+		BlockTime:       100000,
 	}
 	// stake removed now
 	err = stakev.ProcessStakeRemoved(context.Background(), event2)
 	assert.EqualError(t, err, staking.ErrDuplicatedStakeRemovedEvent.Error())
-
 }

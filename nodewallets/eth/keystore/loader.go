@@ -16,7 +16,7 @@ type WalletLoader struct {
 }
 
 func InitialiseWalletLoader(vegaPaths paths.Paths) (*WalletLoader, error) {
-	walletHome, err := vegaPaths.DataDirFor(paths.EthereumNodeWalletsDataHome)
+	walletHome, err := vegaPaths.CreateDataDirFor(paths.EthereumNodeWalletsDataHome)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get the directory path for %s: %w", paths.EthereumNodeWalletsDataHome, err)
 	}

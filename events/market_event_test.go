@@ -25,6 +25,7 @@ func changeOracleSpec(spec *v1.OracleSpec) {
 }
 
 func assertSpecsNotEqual(t *testing.T, spec1 *v1.OracleSpec, spec2 *v1.OracleSpec) {
+	t.Helper()
 	assert.NotEqual(t, spec1.Id, spec2.Id)
 	assert.NotEqual(t, spec1.CreatedAt, spec2.CreatedAt)
 	assert.NotEqual(t, spec1.UpdatedAt, spec2.UpdatedAt)

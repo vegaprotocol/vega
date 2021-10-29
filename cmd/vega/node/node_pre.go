@@ -34,6 +34,7 @@ import (
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/stats"
@@ -112,7 +113,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	return l.nodeWallets.Verify()
 }
 
-// UponGenesis loads all asset from genesis state
+// UponGenesis loads all asset from genesis state.
 func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err error) {
 	l.Log.Debug("Entering node.NodeCommand.UponGenesis")
 	defer func() {
@@ -215,6 +216,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		l.checkpoint,
 		l.spam,
 		l.stakingAccounts,
+		l.snapshot,
 	)
 
 	var abciApp tmtypes.Application
@@ -271,7 +273,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 	return app, nil
 }
 
-// we've already set everything up WRT arguments etc... just bootstrap the node
+// we've already set everything up WRT arguments etc... just bootstrap the node.
 func (l *NodeCommand) preRun(_ []string) (err error) {
 	// ensure that context is cancelled if we return an error here
 	defer func() {
@@ -311,7 +313,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
-	commander, err := nodewallets.NewCommander(l.Log, nil, l.nodeWallets.Vega, l.stats)
+	commander, err := nodewallets.NewCommander(l.conf.NodeWallet, l.Log, nil, l.nodeWallets.Vega, l.stats)
 	if err != nil {
 		return err
 	}
@@ -329,7 +331,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
 
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService)
+	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
 	l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
@@ -358,10 +360,21 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.checkpoint.UponGenesis,
 	)
 
-	l.notary = notary.New(l.Log, l.conf.Notary, l.topology, l.broker, commander)
+	// l.notary = notary.NewWithSnapshot(l.Log, l.conf.Notary, l.topology, l.broker, commander)
+	l.notary = notary.New(
+		l.Log, l.conf.Notary, l.topology, l.broker, commander, l.timeService)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker, l.topology)
 	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
+	l.snapshot, err = snapshot.New(l.ctx, l.vegaPaths, l.conf.Snapshot, l.Log, l.timeService)
+	if err != nil {
+		panic(err)
+	}
+	// @TODO register StateProviders with snapshot engine:
+	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
+		/*l.notary, */ l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd)
+	// these haven't been implemented yet. Replay protection will require some trickery.
+	// l.snapshot.AddProviders(l.executionEngine)
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
@@ -502,6 +515,14 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
 			Watcher: l.delegation.OnCompLevelChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardsMinValidators,
+			Watcher: l.rewards.UpdateMinValidatorsStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardsMinValidators,
+			Watcher: l.delegation.OnMinValidatorsChanged,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,

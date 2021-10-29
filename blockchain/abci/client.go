@@ -15,9 +15,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var (
-	ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
-)
+var ErrEmptyClientAddr = errors.New("abci client addr is empty in config")
 
 type Client struct {
 	tmclt *tmclihttp.HTTP
@@ -70,35 +68,38 @@ func NewClientCustom(addr string) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) error {
+func (c *Client) SendTransactionAsync(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
-	_, err := c.tmclt.BroadcastTxAsync(ctx, bytes)
-	return err
+	res, err := c.tmclt.BroadcastTxAsync(ctx, bytes)
+	if err != nil {
+		return "", err
+	}
+	return res.Hash.String(), nil
 }
 
-func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) error {
+func (c *Client) SendTransactionSync(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
 	r, err := c.tmclt.BroadcastTxSync(ctx, bytes)
 	if err != nil {
-		return err
+		return "", err
 	} else if r.Code != 0 {
-		return newUserInputError(r.Code, string(r.Data))
+		return "", newUserInputError(r.Code, string(r.Data))
 	}
-	return nil
+	return r.Hash.String(), nil
 }
 
-func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) error {
+func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) (string, error) {
 	// Fire off the transaction for consensus
 	r, err := c.tmclt.BroadcastTxCommit(ctx, bytes)
 	if err != nil {
-		return err
+		return "", err
 	} else if r.CheckTx.Code != 0 {
-		return newUserInputError(r.CheckTx.Code, string(r.CheckTx.Data))
+		return "", newUserInputError(r.CheckTx.Code, string(r.CheckTx.Data))
 	}
-	return nil
+	return r.Hash.String(), nil
 }
 
-// GetGenesisTime retrieves the genesis time from the blockchain
+// GetGenesisTime retrieves the genesis time from the blockchain.
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
@@ -107,7 +108,7 @@ func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err
 	return res.Genesis.GenesisTime.UTC(), nil
 }
 
-// GetChainID retrieves the chainID from the blockchain
+// GetChainID retrieves the chainID from the blockchain.
 func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
 	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
@@ -116,17 +117,17 @@ func (c *Client) GetChainID(ctx context.Context) (chainID string, err error) {
 	return res.Genesis.ChainID, nil
 }
 
-// GetStatus returns the current status of the chain
+// GetStatus returns the current status of the chain.
 func (c *Client) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
 	return c.tmclt.Status(ctx)
 }
 
-// GetNetworkInfo return information of the current network
+// GetNetworkInfo return information of the current network.
 func (c *Client) GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error) {
 	return c.tmclt.NetInfo(ctx)
 }
 
-// GetUnconfirmedTxCount return the current count of unconfirmed transactions
+// GetUnconfirmedTxCount return the current count of unconfirmed transactions.
 func (c *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
 	res, err := c.tmclt.NumUnconfirmedTxs(ctx)
 	if err != nil {
@@ -135,7 +136,7 @@ func (c *Client) GetUnconfirmedTxCount(ctx context.Context) (count int, err erro
 	return res.Count, err
 }
 
-// Health returns the result of the health endpoint of the chain
+// Health returns the result of the health endpoint of the chain.
 func (c *Client) Health(ctx context.Context) (*tmctypes.ResultHealth, error) {
 	return c.tmclt.Health(ctx)
 }
@@ -229,9 +230,11 @@ func newUserInputError(code uint32, details string) userInputError {
 func (e userInputError) Code() uint32 {
 	return e.code
 }
+
 func (e userInputError) Details() string {
 	return e.details
 }
+
 func (e userInputError) Error() string {
 	return e.details
 }

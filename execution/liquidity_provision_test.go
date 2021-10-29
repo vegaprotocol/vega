@@ -316,11 +316,10 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 		tm.market.SubmitLiquidityProvision(
 			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
 	)
-
 }
 
 // Check that we are unable to directly cancel or amend a pegged order that was
-// created by the LP system
+// created by the LP system.
 func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -353,10 +352,14 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
 
-	buys := []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
-		{Reference: types.PeggedReferenceBestBid, Offset: -2, Proportion: 50}}
-	sells := []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
-		{Reference: types.PeggedReferenceBestAsk, Offset: 2, Proportion: 50}}
+	buys := []*types.LiquidityOrder{
+		{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
+		{Reference: types.PeggedReferenceBestBid, Offset: -2, Proportion: 50},
+	}
+	sells := []*types.LiquidityOrder{
+		{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
+		{Reference: types.PeggedReferenceBestAsk, Offset: 2, Proportion: 50},
+	}
 
 	// Submitting a correct entry
 	lps := &types.LiquidityProvisionSubmission{
@@ -400,7 +403,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 }
 
 // When a liquidity provider submits an order and runs out of margin from both their general
-// and margin account, the system should take the required amount from the bond account
+// and margin account, the system should take the required amount from the bond account.
 func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -471,7 +474,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 }
 
 // When a liquidity provider has a position that requires more margin after a MTM settlement,
-// they should use the assets in the bond account after the general and margin account are empty
+// they should use the assets in the bond account after the general and margin account are empty.
 func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -571,9 +574,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 		}
 
 		assert.Len(t, found, 1)
-
 	})
-
 }
 
 func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
@@ -668,7 +669,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 }
 
 // If we submit a valid LP submission but then try ot alter it to something non valid
-// the amendment should be rejected and the original submission is still valid
+// the amendment should be rejected and the original submission is still valid.
 func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -719,7 +720,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 }
 
 // Liquidity fee must be updated when new LP submissions are added or existing ones
-// removed
+// removed.
 func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -901,10 +902,12 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 
 	buys := []*types.LiquidityOrder{
 		{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
-		{Reference: types.PeggedReferenceMid, Offset: -6, Proportion: 50}}
+		{Reference: types.PeggedReferenceMid, Offset: -6, Proportion: 50},
+	}
 	sells := []*types.LiquidityOrder{
 		{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
-		{Reference: types.PeggedReferenceMid, Offset: 6, Proportion: 50}}
+		{Reference: types.PeggedReferenceMid, Offset: 6, Proportion: 50},
+	}
 
 	// Submitting a correct entry
 	lps := &types.LiquidityProvisionSubmission{
@@ -932,7 +935,7 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 }
 
 // When a price monitoring auction is started, make sure we cancel all the pegged orders and
-// that no fees are charged to the liquidity providers
+// that no fees are charged to the liquidity providers.
 func TestLiquidity_CheckNoPenalityWhenGoingIntoPriceAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
@@ -1322,7 +1325,6 @@ func TestCloseOutLPPartyContIssue3086(t *testing.T) {
 			assert.Equal(t, v.String(), found[k].Status.String())
 		}
 	})
-
 }
 
 func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
@@ -1465,7 +1467,6 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 		// no update to the liquidity fee
 		assert.Equal(t, found.Fees.Factors.LiquidityFee, "0.1")
 	})
-
 }
 
 func TestLiquidityOrderGeneratedSizes(t *testing.T) {
@@ -1551,7 +1552,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	// then submit some orders, some for the lp party,
 	// end some for the other parrties
 
-	var lpOrders = []*types.Order{
+	lpOrders := []*types.Order{
 		// Limit Orders
 		{
 			Type:        types.OrderTypeLimit,
@@ -1577,7 +1578,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	tm.WithSubmittedOrders(t, lpOrders...)
 
 	// set the mark price and end auction
-	var auctionOrders = []*types.Order{
+	auctionOrders := []*types.Order{
 		{
 			Type:        types.OrderTypeLimit,
 			Size:        1,
@@ -1614,7 +1615,6 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 				if ord := evt.Order(); ord.PartyId == lpparty {
 					found[ord.Id] = ord
 				}
-
 			}
 		}
 
@@ -1633,7 +1633,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		}
 	})
 
-	var newOrders = []*types.Order{
+	newOrders := []*types.Order{
 		{
 			Type:        types.OrderTypeLimit,
 			Size:        1000,
@@ -1657,7 +1657,6 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	// submit the auctions orders
 	tm.events = nil
 	tm.WithSubmittedOrders(t, newOrders...)
-
 }
 
 func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
@@ -1749,7 +1748,6 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 		// no update to the liquidity fee
 		assert.Equal(t, found.Status.String(), types.LiquidityProvisionStatusStopped.String())
 	})
-
 }
 
 func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
@@ -2047,7 +2045,6 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 
 	t.Run("party submit volume in both side of the book", func(t *testing.T) {
 		for i := 0; i < 50; i++ {
-
 			t.Run("buy side", func(t *testing.T) {
 				peggedO := getMarketOrder(tm, curt, types.OrderTypeLimit, types.OrderTimeInForceGTC,
 					fmt.Sprintf("order-pegged-buy-%v", i), types.SideBuy, party2, 1, 0)
@@ -2063,7 +2060,6 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 
 			t.Run("sell side", func(t *testing.T) {
@@ -2081,7 +2077,6 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 
 			tm.market.OnChainTimeUpdate(ctx, curt)
@@ -2091,14 +2086,12 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 
 	t.Run("party submit 10 buy", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
-
 			t.Run("submit buy", func(t *testing.T) {
 				o := getMarketOrder(tm, curt, types.OrderTypeLimit, types.OrderTimeInForceGTC,
 					fmt.Sprintf("order-buy-%v", i), types.SideBuy, party2, 1, uint64(550+(i*10)))
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 			tm.market.OnChainTimeUpdate(ctx, curt)
 			curt = curt.Add(1 * time.Second)
@@ -2107,20 +2100,17 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 
 	t.Run("party submit 20 sell", func(t *testing.T) {
 		for i := 0; i < 20; i++ {
-
 			t.Run("submit buy", func(t *testing.T) {
 				o := getMarketOrder(tm, curt, types.OrderTypeLimit, types.OrderTimeInForceGTC,
 					fmt.Sprintf("order-buy-%v", i), types.SideSell, party2, 1, uint64(450+(i*10)))
 				conf, err := tm.market.SubmitOrder(ctx, o)
 				assert.NoError(t, err)
 				assert.NotNil(t, conf)
-
 			})
 			tm.market.OnChainTimeUpdate(ctx, curt)
 			curt = curt.Add(1 * time.Second)
 		}
 	})
-
 }
 
 func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
@@ -2562,5 +2552,4 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 			assert.Equal(t, expected[k].size, v.Size, k)
 		}
 	})
-
 }

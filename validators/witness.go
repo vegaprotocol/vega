@@ -34,7 +34,7 @@ type TimeService interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(bool))
+	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -60,13 +60,14 @@ const (
 const (
 	minValidationPeriod = 1                   // sec minutes
 	maxValidationPeriod = 30 * 24 * time.Hour // 2 days
-	// by default all validators needs to sign
+	// by default all validators needs to sign.
 	defaultValidatorsVoteRequired = 1.0
 )
 
 func init() {
 	// we seed the random generator just in case
 	// as the backoff library use random internally
+	// TODO this probably needs to change to something that can be agreed across all nodes.
 	rand.Seed(time.Now().UnixNano())
 }
 
@@ -81,20 +82,29 @@ type res struct {
 	// the context used to notify the routine to exit
 	cfunc context.CancelFunc
 	// the function to call one validation is done
-	cb func(interface{}, bool)
+	cb           func(interface{}, bool)
+	lastSentVote time.Time
 }
 
 func (r *res) addVote(key string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	_, ok := r.votes[key]
-	if ok {
+
+	if _, ok := r.votes[key]; ok {
 		return ErrDuplicateVoteFromNode
 	}
 
 	// add the vote
 	r.votes[key] = struct{}{}
 	return nil
+}
+
+func (r *res) selfVoteReceived(self string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	_, ok := r.votes[self]
+	return ok
 }
 
 func (r *res) voteCount() int {
@@ -116,6 +126,7 @@ type Witness struct {
 	needResendRes map[string]struct{}
 
 	validatorVotesRequired float64
+	wss                    *witnessSnapshotState
 }
 
 func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Commander, tsvc TimeService) (w *Witness) {
@@ -135,6 +146,11 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 		resources:              map[string]*res{},
 		needResendRes:          map[string]struct{}{},
 		validatorVotesRequired: defaultValidatorsVoteRequired,
+		wss: &witnessSnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 }
 
@@ -143,7 +159,7 @@ func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f f
 	return nil
 }
 
-// ReloadConf updates the internal configuration
+// ReloadConf updates the internal configuration.
 func (w *Witness) ReloadConf(cfg Config) {
 	w.log.Info("reloading configuration")
 	if w.log.GetLevel() != cfg.Level.Get() {
@@ -164,7 +180,7 @@ func (w *Witness) Stop() {
 	}
 }
 
-// AddNodeCheck registers a vote from a validator node for a given resource
+// AddNodeCheck registers a vote from a validator node for a given resource.
 func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) error {
 	hexPubKey := hex.EncodeToString(nv.PubKey)
 	// get the node proposal first
@@ -183,8 +199,14 @@ func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) err
 			logging.String("node-id", hexPubKey))
 		return ErrVoteFromNonValidator
 	}
+	w.setChangedLocked(true)
+	return r.addVote(hexPubKey)
+}
 
-	return r.addVote(string(nv.PubKey))
+func (w *Witness) setChangedLocked(changed bool) {
+	w.wss.mu.Lock()
+	w.wss.changed = changed
+	w.wss.mu.Unlock()
 }
 
 func (w *Witness) StartCheck(
@@ -213,7 +235,7 @@ func (w *Witness) StartCheck(
 
 	w.resources[id] = rs
 
-	// if we are a validator, we just start the routinw.
+	// if we are a validator, we just start the routine.
 	// so we can ensure the resources exists
 	if w.top.IsValidator() {
 		go w.start(ctx, rs)
@@ -223,6 +245,7 @@ func (w *Witness) StartCheck(
 		// check succeeded
 		atomic.StoreUint32(&rs.state, voteSent)
 	}
+	w.setChangedLocked(true)
 	return nil
 }
 
@@ -272,6 +295,7 @@ func (w *Witness) start(ctx context.Context, r *res) {
 
 	// check succeeded
 	atomic.StoreUint32(&r.state, validated)
+	w.setChangedLocked(true)
 }
 
 func (w *Witness) votePassed(votesCount, topLen int) bool {
@@ -296,7 +320,6 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 
 		state := atomic.LoadUint32(&v.state)
 		votesLen := v.voteCount()
-
 		checkPass := w.votePassed(votesLen, topLen)
 
 		// if the time is expired, or we received enough votes
@@ -327,12 +350,14 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			v.cb(v.res, checkPass)
 			// we delete the resource from our map.
 			delete(w.resources, k)
+			w.setChangedLocked(true)
 			continue
 		}
 
 		// if we are a validator, and the resource was validated
 		// then we try to send our vote.
 		if isValidator && state == validated || w.needResend(k) {
+			v.lastSentVote = t
 			pubKey, _ := hex.DecodeString(w.top.SelfNodeID())
 			nv := &commandspb.NodeVote{
 				PubKey:    pubKey,
@@ -341,6 +366,12 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
+			w.setChangedLocked(true)
+		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
+			if v.selfVoteReceived(w.top.SelfNodeID()) {
+				continue
+			}
+			w.onCommandSent(v.res.GetID())(errors.New("no self votes received after 10 seconds"))
 		}
 	}
 }
@@ -355,13 +386,13 @@ func (w *Witness) needResend(res string) bool {
 	return false
 }
 
-func (w *Witness) onCommandSent(res string) func(bool) {
-	return func(success bool) {
-		if success {
-			return
+func (w *Witness) onCommandSent(res string) func(error) {
+	return func(err error) {
+		if err != nil {
+			w.log.Error("could not send command", logging.String("res-id", res), logging.Error(err))
+			w.needResendMu.Lock()
+			defer w.needResendMu.Unlock()
+			w.needResendRes[res] = struct{}{}
 		}
-		w.needResendMu.Lock()
-		defer w.needResendMu.Unlock()
-		w.needResendRes[res] = struct{}{}
 	}
 }

@@ -42,9 +42,7 @@ func (t tstReporter) Fatalf(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-var (
-	marketConfig = market.NewMarketConfig()
-)
+var marketConfig = market.NewMarketConfig()
 
 type executionTestSetup struct {
 	cfg              execution.Config
@@ -103,7 +101,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
 
-	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine)
+	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService)
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
@@ -231,6 +229,14 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
 			Watcher: e.delegationEngine.OnCompLevelChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardsMinValidators,
+			Watcher: e.rewardsEngine.UpdateMinValidatorsStakingRewardScheme,
+		},
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardsMinValidators,
+			Watcher: e.delegationEngine.OnMinValidatorsChanged,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsEpochLength,

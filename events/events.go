@@ -16,7 +16,7 @@ type MarketPosition interface {
 	VWSell() *num.Uint
 }
 
-// TradeSettlement Part of the SettlePosition interface -> traces trades as they happened
+// TradeSettlement Part of the SettlePosition interface -> traces trades as they happened.
 type TradeSettlement interface {
 	Size() int64
 	Price() *num.Uint
@@ -30,7 +30,7 @@ type LossSocialization interface {
 }
 
 // SettlePosition is an event that the settlement buffer will propagate through the system
-// used by the plugins (currently only the positions API)
+// used by the plugins (currently only the positions API).
 type SettlePosition interface {
 	MarketID() string
 	Trades() []TradeSettlement
@@ -39,7 +39,7 @@ type SettlePosition interface {
 	Price() uint64
 }
 
-// FeeTransfer is a transfer initiated after trade occurs
+// FeeTransfer is a transfer initiated after trade occurs.
 type FeesTransfer interface {
 	// The list of transfers to be made by the collateral
 	Transfers() []*types.Transfer
