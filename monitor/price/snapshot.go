@@ -32,6 +32,8 @@ func NewMonitorFromSnapshot(
 		refPriceCacheTime:   pm.RefPriceCacheTime,
 		bounds:              priceBoundsToBounds(pm.Bounds),
 		priceRangesCache:    newPriceRangeCacheFromSlice(pm.PriceRangeCache),
+		pricesNow:           pricesNowToInternal(pm.PricesNow),
+		pricesPast:          pricesPastToInternal(pm.PricesPast),
 		stateChanged:        true,
 	}
 	// hack to work around the update frequency being 0 causing an infinite loop
@@ -41,6 +43,28 @@ func NewMonitorFromSnapshot(
 		e.updateFrequency = time.Second
 	}
 	return e, nil
+}
+
+func pricesNowToInternal(cps []*types.CurrentPrice) []currentPrice {
+	cpsi := make([]currentPrice, 0, len(cps))
+	for _, cp := range cps {
+		cpsi = append(cpsi, currentPrice{
+			Price:  cp.Price.Clone(),
+			Volume: cp.Volume,
+		})
+	}
+	return cpsi
+}
+
+func pricesPastToInternal(pps []*types.PastPrice) []pastPrice {
+	ppsi := make([]pastPrice, 0, len(pps))
+	for _, pp := range pps {
+		ppsi = append(ppsi, pastPrice{
+			Time:                pp.Time,
+			VolumeWeightedPrice: pp.VolumeWeightedPrice,
+		})
+	}
+	return ppsi
 }
 
 func internalBoundToPriceBoundType(b *bound) *types.PriceBound {
