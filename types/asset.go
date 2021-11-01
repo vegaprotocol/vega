@@ -11,6 +11,12 @@ var (
 	ErrMissingERC20ContractAddress = errors.New("missing erc20 contract address")
 	ErrMissingBuiltinAssetField    = errors.New("missing builtin asset field")
 	ErrInvalidAssetDetails         = errors.New("invalid asset details")
+
+	ErrInvalidAssetNameEmpty         = errors.New("invalid asset, name must not be empty")
+	ErrInvalidAssetSymbolEmpty       = errors.New("invalid asset, symbol must not be empty")
+	ErrInvalidAssetDecimalPlacesZero = errors.New("invalid asset, decimal places must not be zero")
+	ErrInvalidAssetTotalSupplyZero   = errors.New("invalid asset, total supply must not be zero")
+	ErrInvalidAssetMinLPStakeZero    = errors.New("invalid asset, min lp stake must not be zero")
 )
 
 type Asset struct {
