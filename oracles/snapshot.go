@@ -123,7 +123,6 @@ func (e *Engine) restore(ctx context.Context, oracleData []*types.OracleData) er
 			PubKeys: od.PubKeys,
 			Data:    e.sliceToMap(od.Data),
 		})
-
 	}
 
 	e.odss.changed = true

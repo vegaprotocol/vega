@@ -137,7 +137,6 @@ func testSnapshot(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(hash, hash3))
 	require.False(t, bytes.Equal(state, state3))
-
 }
 
 func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
