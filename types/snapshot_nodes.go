@@ -188,7 +188,6 @@ type Resource struct {
 	ID         string
 	CheckUntil time.Time
 	Votes      []string
-	State      uint32
 }
 
 type PayloadReplayProtection struct {
@@ -3042,7 +3041,6 @@ func ResourceFromProto(r *snapshot.Resource) *Resource {
 		ID:         r.Id,
 		CheckUntil: time.Unix(0, r.CheckUntil).UTC(),
 		Votes:      r.Votes,
-		State:      r.State,
 	}
 }
 
@@ -3064,7 +3062,6 @@ func (r *Resource) IntoProto() *snapshot.Resource {
 		Id:         r.ID,
 		CheckUntil: r.CheckUntil.UnixNano(),
 		Votes:      r.Votes,
-		State:      r.State,
 	}
 }
 
