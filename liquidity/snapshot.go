@@ -129,7 +129,7 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 func (e *SnapshotEngine) loadPartiesOrders(
 	_ context.Context, orders []*typespb.Order,
 ) error {
-	e.Engine.orders = NewPartiesOrders()
+	e.Engine.orders = newSnapshotablePartiesOrders()
 	for _, v := range orders {
 		order, err := types.OrderFromProto(v)
 		if err != nil {
@@ -144,7 +144,7 @@ func (e *SnapshotEngine) loadPartiesOrders(
 func (e *SnapshotEngine) loadPartiesLiquidityOrders(
 	_ context.Context, orders []*typespb.Order,
 ) error {
-	e.Engine.liquidityOrders = NewPartiesOrders()
+	e.Engine.liquidityOrders = newSnapshotablePartiesOrders()
 	for _, v := range orders {
 		order, err := types.OrderFromProto(v)
 		if err != nil {
@@ -185,7 +185,7 @@ func (e *SnapshotEngine) loadParameters(
 func (e *SnapshotEngine) loadPendingProvisions(
 	_ context.Context, pendingProvisions []string,
 ) error {
-	e.Engine.pendings = NewSnapshotablePendingProvisions()
+	e.Engine.pendings = newSnapshotablePendingProvisions()
 	for _, v := range pendingProvisions {
 		e.Engine.pendings.Add(v)
 	}
@@ -196,7 +196,7 @@ func (e *SnapshotEngine) loadPendingProvisions(
 func (e *SnapshotEngine) loadProvisions(
 	ctx context.Context, provisions []*typespb.LiquidityProvision,
 ) error {
-	e.Engine.provisions = NewSnapshotableProvisionsPerParty()
+	e.Engine.provisions = newSnapshotableProvisionsPerParty()
 	evts := make([]events.Event, 0, len(provisions))
 	for _, v := range provisions {
 		provision, err := types.LiquidityProvisionFromProto(v)

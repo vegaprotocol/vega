@@ -69,11 +69,11 @@ type Engine struct {
 
 	// orders stores all the market orders (except the liquidity orders) explicitly submitted by a given party.
 	// indexed as: map of PartyID -> OrderId -> order to easy access
-	orders *PartiesOrders
+	orders *SnapshotablePartiesOrders
 
 	// liquidityOrder stores the orders generated to satisfy the liquidity commitment of a given party.
 	// indexed as: map of PartyID -> OrdersID -> order
-	liquidityOrders *PartiesOrders
+	liquidityOrders *SnapshotablePartiesOrders
 
 	// The list of parties which submitted liquidity submission
 	// which still haven't been deployed even once.
@@ -110,11 +110,11 @@ func NewEngine(config Config,
 		maxShapesSize:           100, // set it to the same default than the netparams
 		maxFee:                  num.DecimalFromInt64(1),
 		// provisions related state
-		provisions: NewSnapshotableProvisionsPerParty(),
-		pendings:   NewSnapshotablePendingProvisions(),
+		provisions: newSnapshotableProvisionsPerParty(),
+		pendings:   newSnapshotablePendingProvisions(),
 		// orders related state
-		orders:          NewPartiesOrders(),
-		liquidityOrders: NewPartiesOrders(),
+		orders:          newSnapshotablePartiesOrders(),
+		liquidityOrders: newSnapshotablePartiesOrders(),
 	}
 }
 

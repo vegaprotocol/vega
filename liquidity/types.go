@@ -73,7 +73,7 @@ type SnapshotablePendingProvisions struct {
 	updated bool
 }
 
-func NewSnapshotablePendingProvisions() *SnapshotablePendingProvisions {
+func newSnapshotablePendingProvisions() *SnapshotablePendingProvisions {
 	return &SnapshotablePendingProvisions{
 		m:       map[string]struct{}{},
 		updated: true,
@@ -111,7 +111,7 @@ type SnapshotableProvisionsPerParty struct {
 	updated bool
 }
 
-func NewSnapshotableProvisionsPerParty() *SnapshotableProvisionsPerParty {
+func newSnapshotableProvisionsPerParty() *SnapshotableProvisionsPerParty {
 	return &SnapshotableProvisionsPerParty{
 		ProvisionsPerParty: map[string]*types.LiquidityProvision{},
 		updated:            true,
@@ -195,27 +195,27 @@ func (ords Orders) ByParty() []PartyOrders {
 	return partyOrders
 }
 
-type PartiesOrders struct {
+type SnapshotablePartiesOrders struct {
 	m       map[string]map[string]*types.Order
 	updated bool
 }
 
-func NewPartiesOrders() *PartiesOrders {
-	return &PartiesOrders{
+func newSnapshotablePartiesOrders() *SnapshotablePartiesOrders {
+	return &SnapshotablePartiesOrders{
 		m:       map[string]map[string]*types.Order{},
 		updated: true,
 	}
 }
 
-func (o *PartiesOrders) HasUpdates() bool {
+func (o *SnapshotablePartiesOrders) HasUpdates() bool {
 	return o.updated
 }
 
-func (o *PartiesOrders) ResetUpdated() {
+func (o *SnapshotablePartiesOrders) ResetUpdated() {
 	o.updated = false
 }
 
-func (o *PartiesOrders) Get(party, orderID string) (*types.Order, bool) {
+func (o *SnapshotablePartiesOrders) Get(party, orderID string) (*types.Order, bool) {
 	orders, ok := o.m[party]
 	if !ok {
 		return nil, false
@@ -225,13 +225,13 @@ func (o *PartiesOrders) Get(party, orderID string) (*types.Order, bool) {
 }
 
 // GetForParty expects to read through them, not do any write operation.
-func (o *PartiesOrders) GetForParty(
+func (o *SnapshotablePartiesOrders) GetForParty(
 	party string) (map[string]*types.Order, bool) {
 	orders, ok := o.m[party]
 	return orders, ok
 }
 
-func (o *PartiesOrders) Add(party string, order *types.Order) {
+func (o *SnapshotablePartiesOrders) Add(party string, order *types.Order) {
 	o.updated = true
 	orders, ok := o.m[party]
 	if !ok {
@@ -241,7 +241,7 @@ func (o *PartiesOrders) Add(party string, order *types.Order) {
 	orders[order.ID] = order
 }
 
-func (o *PartiesOrders) Delete(party, order string) {
+func (o *SnapshotablePartiesOrders) Delete(party, order string) {
 	o.updated = true
 	delete(o.m[party], order)
 	if len(o.m[party]) <= 0 {
@@ -249,12 +249,12 @@ func (o *PartiesOrders) Delete(party, order string) {
 	}
 }
 
-func (o *PartiesOrders) DeleteParty(party string) {
+func (o *SnapshotablePartiesOrders) DeleteParty(party string) {
 	o.updated = true
 	delete(o.m, party)
 }
 
-func (o *PartiesOrders) ResetForParty(party string) {
+func (o *SnapshotablePartiesOrders) ResetForParty(party string) {
 	o.updated = true
 	o.m[party] = map[string]*types.Order{}
 }
