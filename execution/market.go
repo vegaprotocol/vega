@@ -159,7 +159,7 @@ type Market struct {
 	position           *positions.Engine
 	settlement         *settlement.Engine
 	fee                *fee.Engine
-	liquidity          *liquidity.Engine
+	liquidity          *liquidity.SnapshotEngine
 
 	// deps engines
 	collateral *collateral.Engine
@@ -292,7 +292,8 @@ func NewMarket(
 
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
+	liqEngine := liquidity.NewSnapshotEngine(
+		liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)

@@ -46,7 +46,7 @@ type testEngine struct {
 	// idGen        *mocks.MockIDGen
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
-	engine       *liquidity.Engine
+	engine       *liquidity.SnapshotEngine
 }
 
 func newTestEngine(t *testing.T, now time.Time) *testEngine {
@@ -64,7 +64,7 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
-	engine := liquidity.NewEngine(liquidityConfig,
+	engine := liquidity.NewSnapshotEngine(liquidityConfig,
 		log, broker, idGen, risk, monitor, market,
 	)
 	engine.OnChainTimeUpdate(context.Background(), now)
