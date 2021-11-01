@@ -79,7 +79,10 @@ var (
 		"notary":         NotarySnapshot,
 		"limits":         LimitSnapshot,
 		"witness":        WitnessSnapshot,
+		"topology":       TopologySnapshot,
 		"oracleData":     OracleDataSnapshot,
+		"idgenerator":    IDGenSnapshot,
+		"stakeverifier":  StakeVerifierSnapshot,
 	}
 
 	ErrSnapshotHashMismatch       = errors.New("snapshot hashes do not match")
