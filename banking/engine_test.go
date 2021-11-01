@@ -47,6 +47,7 @@ func getTestEngine(t *testing.T) *testEngine {
 	broker := bmock.NewMockBroker(ctrl)
 	top := mocks.NewMockTopology(ctrl)
 
+	notary.EXPECT().OfferSignatures(gomock.Any(), gomock.Any()).AnyTimes()
 	tsvc.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	eng := banking.New(logging.NewTestLogger(), banking.NewDefaultConfig(), col, erc, tsvc, assets, notary, broker, top)
 
