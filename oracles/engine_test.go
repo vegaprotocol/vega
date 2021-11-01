@@ -1,19 +1,22 @@
 package oracles_test
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	bmok "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
-
+	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,6 +28,7 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
+	t.Run("Test Snapshot", testSnapshot)
 }
 
 func testOracleEngineSubscribingSucceeds(t *testing.T) {
@@ -65,6 +69,74 @@ func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 
 	// then
 	assert.Panics(t, subscribe)
+}
+
+func testSnapshot(t *testing.T) {
+	// given
+	btcEquals42 := spec("BTC", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	btcGreater21 := spec("BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "21")
+	ethEquals42 := spec("ETH", oraclespb.Condition_OPERATOR_EQUALS, "42")
+	ethLess84 := spec("ETH", oraclespb.Condition_OPERATOR_LESS_THAN, "84")
+	btcGreater100 := spec("BTC", oraclespb.Condition_OPERATOR_GREATER_THAN, "100")
+	dataBTC42 := dataWithPrice("BTC", "42")
+
+	// setup
+	ctx := context.Background()
+	currentTime := time.Now()
+	engine := newEngine(ctx, t, currentTime)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcEquals42.spec.Proto)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcGreater21.spec.Proto)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, ethEquals42.spec.Proto)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, ethLess84.spec.Proto)
+	engine.broker.mockNewOracleSpecSubscription(currentTime, btcGreater100.spec.Proto)
+	engine.broker.mockOracleDataBroadcast(currentTime, dataBTC42.proto, []string{
+		btcEquals42.spec.Proto.Id,
+		btcGreater21.spec.Proto.Id,
+	})
+
+	// when
+	engine.Subscribe(ctx, btcEquals42.spec, btcEquals42.subscriber.Cb)
+	engine.Subscribe(ctx, ethEquals42.spec, ethEquals42.subscriber.Cb)
+	engine.Subscribe(ctx, btcGreater21.spec, btcGreater21.subscriber.Cb)
+	engine.Subscribe(ctx, ethLess84.spec, ethLess84.subscriber.Cb)
+	engine.Subscribe(ctx, btcGreater100.spec, btcGreater100.subscriber.Cb)
+	errB := engine.BroadcastData(context.Background(), dataBTC42.data)
+
+	// then
+	require.NoError(t, errB)
+
+	// now we have an oracle message in the buffer - take a snapshot
+	key := (&types.PayloadOracleData{}).Key()
+	hash, err := engine.GetHash(key)
+	require.Nil(t, err)
+	state, _, err := engine.GetState(key)
+	require.Nil(t, err)
+
+	var od snapshot.Payload
+	proto.Unmarshal(state, &od)
+	payload := types.PayloadFromProto(&od)
+
+	// restore and verify no change
+	ctx2 := context.Background()
+	engine2 := newEngine(ctx2, t, currentTime)
+	engine2.LoadState(context.Background(), payload)
+
+	hash2, err := engine2.GetHash(key)
+	require.Nil(t, err)
+	state2, _, err := engine2.GetState(key)
+	require.Nil(t, err)
+
+	require.True(t, bytes.Equal(hash, hash2))
+	require.True(t, bytes.Equal(state, state2))
+
+	// start a new block so that buffer is emptied
+	engine.UpdateCurrentTime(context.Background(), currentTime)
+	hash3, err := engine.GetHash(key)
+	require.Nil(t, err)
+	state3, _, err := engine.GetState(key)
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(hash, hash3))
+	require.False(t, bytes.Equal(state, state3))
 }
 
 func testOracleEngineBroadcastingCorrectDataSucceeds(t *testing.T) {
