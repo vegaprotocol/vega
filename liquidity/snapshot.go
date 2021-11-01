@@ -391,11 +391,31 @@ func (e *SnapshotEngine) marshalPayload(key string, payload *snapshotpb.Payload)
 }
 
 func (e *SnapshotEngine) buildHashKeys(market string) {
-	e.parametersKey = (&types.PayloadLiquidityParameters{Parameters: &snapshotpb.LiquidityParameters{MarketId: market}}).Key()
-	e.partiesLiquidityOrdersKey = (&types.PayloadLiquidityPartiesLiquidityOrders{}).Key()
-	e.partiesOrdersKey = (&types.PayloadLiquidityPartiesOrders{}).Key()
-	e.pendingProvisionsKey = (&types.PayloadLiquidityPendingProvisions{}).Key()
-	e.provisionsKey = (&types.PayloadLiquidityProvisions{}).Key()
+	e.parametersKey = (&types.PayloadLiquidityParameters{
+		Parameters: &snapshotpb.LiquidityParameters{
+			MarketId: market,
+		},
+	}).Key()
+	e.partiesLiquidityOrdersKey = (&types.PayloadLiquidityPartiesLiquidityOrders{
+		PartiesLiquidityOrders: &snapshotpb.LiquidityPartiesLiquidityOrders{
+			MarketId: market,
+		},
+	}).Key()
+	e.partiesOrdersKey = (&types.PayloadLiquidityPartiesOrders{
+		PartiesOrders: &snapshotpb.LiquidityPartiesOrders{
+			MarketId: market,
+		},
+	}).Key()
+	e.pendingProvisionsKey = (&types.PayloadLiquidityPendingProvisions{
+		PendingProvisions: &snapshotpb.LiquidityPendingProvisions{
+			MarketId: market,
+		},
+	}).Key()
+	e.provisionsKey = (&types.PayloadLiquidityProvisions{
+		Provisions: &snapshotpb.LiquidityProvisions{
+			MarketId: market,
+		},
+	}).Key()
 
 	e.hashKeys = append([]string{}, e.parametersKey, e.partiesLiquidityOrdersKey,
 		e.partiesOrdersKey, e.pendingProvisionsKey, e.provisionsKey)
