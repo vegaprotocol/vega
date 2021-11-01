@@ -1,189 +1,217 @@
 package notary
 
-// import (
-// 	"context"
-// 	"sort"
-// 	"strings"
+import (
+	"context"
+	"sort"
+	"strings"
 
-// 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
-// 	"code.vegaprotocol.io/vega/libs/crypto"
-// 	"code.vegaprotocol.io/vega/logging"
-// 	"code.vegaprotocol.io/vega/types"
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
+	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 
-// 	"github.com/golang/protobuf/proto"
-// )
+	"github.com/golang/protobuf/proto"
+)
 
-// var (
-// 	allKey = (&types.PayloadNotary{}).Key()
+var (
+	allKey = (&types.PayloadNotary{}).Key()
 
-// 	hashKeys = []string{
-// 		allKey,
-// 	}
-// )
+	hashKeys = []string{
+		allKey,
+	}
+)
 
-// // NewWithSnapshot returns an "extended" Notary type which contains the ability to take engine snapshots.
-// func NewWithSnapshot(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, cmd Commander) *SnapshotNotary {
-// 	log = log.Named(namedLogger)
-// 	return &SnapshotNotary{
-// 		Notary:  New(log, cfg, top, broker, cmd),
-// 		changed: true,
-// 	}
-// }
+// NewWithSnapshot returns an "extended" Notary type which contains the ability to take engine snapshots.
+func NewWithSnapshot(
+	log *logging.Logger,
+	cfg Config,
+	top ValidatorTopology,
+	broker Broker,
+	cmd Commander,
+	tt TimeTicker,
+) *SnapshotNotary {
+	log = log.Named(namedLogger)
+	return &SnapshotNotary{
+		Notary:  New(log, cfg, top, broker, cmd, tt),
+		changed: true,
+	}
+}
 
-// type SnapshotNotary struct {
-// 	*Notary
+type SnapshotNotary struct {
+	*Notary
 
-// 	// snapshot bits
-// 	hash       []byte
-// 	serialised []byte
-// 	changed    bool
-// }
+	// snapshot bits
+	hash       []byte
+	serialised []byte
+	changed    bool
+}
 
-// // StartAggregate is a wrapper to Notary's StartAggregate which also manages the snapshot state.
-// func (n *SnapshotNotary) StartAggregate(resID string, kind v1.NodeSignatureKind) {
-// 	n.Notary.StartAggregate(resID, kind)
-// 	n.changed = true
-// }
+// StartAggregate is a wrapper to Notary's StartAggregate which also manages the snapshot state.
+func (n *SnapshotNotary) StartAggregate(
+	resource string,
+	kind v1.NodeSignatureKind,
+	signature []byte,
+) {
+	n.Notary.StartAggregate(resource, kind, signature)
+	n.changed = true
+}
 
-// // AddSig is a wrapper to Notary's AddSig which also manages the snapshot state.
-// func (n *SnapshotNotary) AddSig(ctx context.Context, pubKey string, ns v1.NodeSignature) ([]v1.NodeSignature, bool, error) {
-// 	sigsout, ok, err := n.Notary.AddSig(ctx, pubKey, ns)
-// 	if err == nil {
-// 		n.changed = true
-// 	}
+// RegisterSignature is a wrapper to Notary's RegisterSignature which also manages the snapshot state.
+func (n *SnapshotNotary) RegisterSignature(
+	ctx context.Context,
+	pubKey string,
+	ns v1.NodeSignature,
+) error {
+	err := n.Notary.RegisterSignature(ctx, pubKey, ns)
+	if err == nil {
+		n.changed = true
+	}
 
-// 	return sigsout, ok, err
-// }
+	return err
+}
 
-// // get the serialised form and hash of the given key.
-// func (n *SnapshotNotary) getSerialisedAndHash(k string) ([]byte, []byte, error) {
-// 	if k != allKey {
-// 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
-// 	}
+// get the serialised form and hash of the given key.
+func (n *SnapshotNotary) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+	if k != allKey {
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
+	}
 
-// 	if !n.changed {
-// 		return n.serialised, n.hash, nil
-// 	}
+	if !n.changed {
+		return n.serialised, n.hash, nil
+	}
 
-// 	data, err := n.serialiseNotary()
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
+	data, err := n.serialiseNotary()
+	if err != nil {
+		return nil, nil, err
+	}
 
-// 	hash := crypto.Hash(data)
-// 	n.serialised = data
-// 	n.hash = hash
-// 	n.changed = false
-// 	return data, hash, nil
-// }
+	hash := crypto.Hash(data)
+	n.serialised = data
+	n.hash = hash
+	n.changed = false
+	return data, hash, nil
+}
 
-// func (n *SnapshotNotary) Namespace() types.SnapshotNamespace {
-// 	return types.NotarySnapshot
-// }
+func (n *SnapshotNotary) Namespace() types.SnapshotNamespace {
+	return types.NotarySnapshot
+}
 
-// func (n *SnapshotNotary) Keys() []string {
-// 	return hashKeys
-// }
+func (n *SnapshotNotary) Keys() []string {
+	return hashKeys
+}
 
-// func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
-// 	_, hash, err := n.getSerialisedAndHash(k)
-// 	return hash, err
-// }
+func (n *SnapshotNotary) GetHash(k string) ([]byte, error) {
+	_, hash, err := n.getSerialisedAndHash(k)
+	return hash, err
+}
 
-// func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
-// 	data, _, err := n.getSerialisedAndHash(k)
-// 	return data, nil, err
-// }
+func (n *SnapshotNotary) GetState(k string) ([]byte, []types.StateProvider, error) {
+	data, _, err := n.getSerialisedAndHash(k)
+	return data, nil, err
+}
 
-// func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
-// 	if n.Namespace() != payload.Data.Namespace() {
-// 		return nil, types.ErrInvalidSnapshotNamespace
-// 	}
+func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+	if n.Namespace() != payload.Data.Namespace() {
+		return nil, types.ErrInvalidSnapshotNamespace
+	}
 
-// 	switch pl := payload.Data.(type) {
-// 	case *types.PayloadNotary:
-// 		return nil, n.restoreNotary(pl.Notary)
-// 	default:
-// 		return nil, types.ErrUnknownSnapshotType
-// 	}
-// }
+	switch pl := payload.Data.(type) {
+	case *types.PayloadNotary:
+		return nil, n.restoreNotary(pl.Notary)
+	default:
+		return nil, types.ErrUnknownSnapshotType
+	}
+}
 
-// // serialiseLimits returns the engine's limit data as marshalled bytes.
-// func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
-// 	sigs := make([]*types.NotarySigs, 0, len(n.sigs)) // it will likely be longer than this but we don't know yet
-// 	for ik, ns := range n.sigs {
-// 		for n := range ns {
-// 			sigs = append(sigs,
-// 				&types.NotarySigs{
-// 					ID:   ik.id,
-// 					Kind: int32(ik.kind),
-// 					Node: n.node,
-// 					Sig:  n.sig,
-// 				},
-// 			)
-// 		}
+func (n *SnapshotNotary) OfferSignatures(
+	kind types.NodeSignatureKind,
+	// a callback taking a list of resource that a signature is required
+	// for, returning a map of signature for given resources
+	f func(resource string) []byte,
+) {
+	for k, v := range n.retries.txs {
+		if k.kind != kind {
+			continue
+		}
+		if signature := f(k.id); signature != nil {
+			v.signature = signature
+		}
+	}
+}
 
-// 		// the case where aggregate has started but we have no node sigs
-// 		if len(ns) == 0 {
-// 			sigs = append(sigs, &types.NotarySigs{ID: ik.id, Kind: int32(ik.kind)})
-// 		}
-// 	}
+// serialiseLimits returns the engine's limit data as marshalled bytes.
+func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
+	sigs := make([]*types.NotarySigs, 0, len(n.sigs)) // it will likely be longer than this but we don't know yet
+	for ik, ns := range n.sigs {
+		for n := range ns {
+			sigs = append(sigs,
+				&types.NotarySigs{
+					ID:   ik.id,
+					Kind: int32(ik.kind),
+					Node: n.node,
+					Sig:  n.sig,
+				},
+			)
+		}
 
-// 	sort.SliceStable(sigs, func(i, j int) bool {
-// 		switch strings.Compare(sigs[i].ID, sigs[j].ID) {
-// 		case -1:
-// 			return true
-// 		case 1:
-// 			return false
-// 		}
+		// the case where aggregate has started but we have no node sigs
+		if len(ns) == 0 {
+			sigs = append(sigs, &types.NotarySigs{ID: ik.id, Kind: int32(ik.kind)})
+		}
+	}
 
-// 		switch strings.Compare(sigs[i].Node, sigs[j].Node) {
-// 		case -1:
-// 			return true
-// 		case 1:
-// 			return false
-// 		}
+	sort.SliceStable(sigs, func(i, j int) bool {
+		return sigs[i].Sig < sigs[j].Sig
+	})
 
-// 		switch strings.Compare(sigs[i].Sig, sigs[j].Sig) {
-// 		case -1:
-// 			return true
-// 		case 1:
-// 			return false
-// 		}
+	pl := types.Payload{
+		Data: &types.PayloadNotary{
+			Notary: &types.Notary{
+				Sigs: sigs,
+			},
+		},
+	}
+	return proto.Marshal(pl.IntoProto())
+}
 
-// 		if sigs[i].Kind == sigs[j].Kind {
-// 			n.log.Panic("could not deterministically order notary sigs for snapshot")
-// 		}
+func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
+	var (
+		sigs    = map[idKind]map[nodeSig]struct{}{}
+		retries = &txTracker{
+			txs: map[idKind]*signatureTime{},
+		}
+		isValidator = n.Notary.top.IsValidator()
+		selfSigned  = map[idKind]bool{}
+		self        = n.Notary.top.SelfVegaPubKey()
+	)
+	for _, s := range notary.Sigs {
+		idK := idKind{id: s.ID, kind: v1.NodeSignatureKind(s.Kind)}
+		ns := nodeSig{node: s.Node, sig: s.Sig}
 
-// 		return sigs[i].Kind < sigs[j].Kind
-// 	})
+		if isValidator {
+			signed := selfSigned[idK]
+			if !signed {
+				selfSigned[idK] = strings.EqualFold(s.Node, self)
+			}
+		}
 
-// 	pl := types.Payload{
-// 		Data: &types.PayloadNotary{
-// 			Notary: &types.Notary{
-// 				Sigs: sigs,
-// 			},
-// 		},
-// 	}
-// 	return proto.Marshal(pl.IntoProto())
-// }
+		if _, ok := sigs[idK]; !ok {
+			sigs[idK] = map[nodeSig]struct{}{}
+		}
 
-// func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
-// 	sigs := map[idKind]map[nodeSig]struct{}{}
+		if len(ns.node) != 0 && len(ns.sig) != 0 {
+			sigs[idK][ns] = struct{}{}
+		}
+	}
 
-// 	for _, s := range notary.Sigs {
-// 		idK := idKind{id: s.ID, kind: v1.NodeSignatureKind(s.Kind)}
-// 		ns := nodeSig{node: s.Node, sig: s.Sig}
+	for resource, ok := range selfSigned {
+		if !ok {
+			// this is not signed, just add it to the retries list
+			retries.Add(resource, nil)
+		}
+	}
 
-// 		if _, ok := sigs[idK]; !ok {
-// 			sigs[idK] = map[nodeSig]struct{}{}
-// 		}
-
-// 		if len(ns.node) != 0 && len(ns.sig) != 0 {
-// 			sigs[idK][ns] = struct{}{}
-// 		}
-// 	}
-
-// 	n.sigs = sigs
-// 	return nil
-// }
+	n.sigs = sigs
+	n.retries = retries
+	return nil
+}

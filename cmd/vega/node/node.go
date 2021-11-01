@@ -89,10 +89,9 @@ type NodeCommand struct {
 	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
 
-	assets   *assets.Service
-	topology *validators.Topology
-	// notary         *notary.SnapshotNotary
-	notary         *notary.Notary
+	assets         *assets.Service
+	topology       *validators.Topology
+	notary         *notary.SnapshotNotary
 	evtfwd         *evtforward.EvtForwarder
 	witness        *validators.Witness
 	banking        *banking.Engine
