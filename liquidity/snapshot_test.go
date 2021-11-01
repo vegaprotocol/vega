@@ -27,8 +27,8 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		market = "market-id"
 		ctx    = context.Background()
 		e1     = newTestEngine(t, initialTime)
-		e2     = newTestEngine(t, initialTime)
-		e3     = newTestEngine(t, initialTime)
+		e2     = newTestEngineWithIDGen(t, initialTime, e1.idGen)
+		e3     = newTestEngineWithIDGen(t, initialTime, e1.idGen)
 	)
 
 	e1.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -126,10 +126,10 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 	expectedHashes2 := map[string]string{
 		"parameters:market-id":             "b5eec91c297baf1f06830350dbcb37d79937561ae605d2304eb12680e443775c",
-		"partiesLiquidityOrders:market-id": "4f70bcae9080f9c4879db76c814cb1d1e538501a565a459114bbf7f6db8ccd9b",
+		"partiesLiquidityOrders:market-id": "c76075385924d7207d9002d2f9855c089f1c409c7e6e235d5b0ddc4a84bc7fc4",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
-		"provisions:market-id":             "89bcde9a9715401764cf27403e3585126c9321a477e54c28d84b74f95fb78189",
+		"provisions:market-id":             "56319a9f75b8f0a5eb53afb0a6cfd2286e6a8168fd28cbbbd0855b47cdde94b9",
 	}
 
 	lp3 := &types.LiquidityProvisionSubmission{

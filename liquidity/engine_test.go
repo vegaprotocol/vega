@@ -40,23 +40,21 @@ func eq(t *testing.T, x interface{}) eqMatcher {
 }
 
 type testEngine struct {
-	ctrl     *gomock.Controller
-	marketID string
-	broker   *bmock.MockBroker
-	// idGen        *mocks.MockIDGen
+	ctrl         *gomock.Controller
+	marketID     string
+	broker       *bmock.MockBroker
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
 	engine       *liquidity.SnapshotEngine
+	idGen        *idGenStub
 }
 
-func newTestEngine(t *testing.T, now time.Time) *testEngine {
+func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
 	log := logging.NewTestLogger()
 	broker := bmock.NewMockBroker(ctrl)
-	// idGen := mocks.NewMockIDGen(ctrl)
-	idGen := &idGenStub{}
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
 	market := "market-id"
@@ -70,14 +68,20 @@ func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	engine.OnChainTimeUpdate(context.Background(), now)
 
 	return &testEngine{
-		ctrl:     ctrl,
-		marketID: market,
-		broker:   broker,
-		// idGen:        idGen,
+		ctrl:         ctrl,
+		marketID:     market,
+		broker:       broker,
+		idGen:        idGen,
 		riskModel:    risk,
 		priceMonitor: monitor,
 		engine:       engine,
 	}
+}
+
+func newTestEngine(t *testing.T, now time.Time) *testEngine {
+	t.Helper()
+	idGen := &idGenStub{}
+	return newTestEngineWithIDGen(t, now, idGen)
 }
 
 func TestSubmissions(t *testing.T) {
