@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func fillTestPositions(e *positions.Engine) {
+func fillTestPositions(e *positions.SnapshotEngine) {
 	orders := []types.Order{
 		{
 			Party:     "test_party_1",

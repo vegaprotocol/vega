@@ -156,7 +156,7 @@ type Market struct {
 	matching           *matching.CachedOrderBook
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
-	position           *positions.Engine
+	position           *positions.SnapshotEngine
 	settlement         *settlement.Engine
 	fee                *fee.Engine
 	liquidity          *liquidity.SnapshotEngine
@@ -276,7 +276,7 @@ func NewMarket(
 		mkt.ID,
 		broker,
 	)
-	positionEngine := positions.New(log, positionConfig, mkt.ID)
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID)
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {
