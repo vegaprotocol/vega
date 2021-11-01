@@ -648,6 +648,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadStakeVerifierRemovedFromProto(dt)
 	case *snapshot.Payload_Topology:
 		ret.Data = PayloadTopologyFromProto(dt)
+	case *snapshot.Payload_OracleData:
+		ret.Data = PayloadOracleDataFromProto(dt)
 	}
 
 	return ret
@@ -746,6 +748,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_StakeVerifierRemoved:
 		ret.Data = dt
 	case *snapshot.Payload_Topology:
+		ret.Data = dt
+	case *snapshot.Payload_OracleData:
 		ret.Data = dt
 	}
 	return &ret
@@ -3109,6 +3113,77 @@ func (*PayloadTopology) Key() string {
 
 func (*PayloadTopology) Namespace() SnapshotNamespace {
 	return TopologySnapshot
+}
+
+type PayloadOracleData struct {
+	OracleData []*OracleData
+}
+
+type OracleData struct {
+	PubKeys []string
+	Data    []*OracleDataPair
+}
+
+type OracleDataPair struct {
+	Key   string
+	Value string
+}
+
+func OracleDataFromProto(od *snapshot.OracleData) *OracleData {
+	odPairs := make([]*OracleDataPair, 0, len(od.Data))
+	for _, odp := range od.Data {
+		odPairs = append(odPairs, &OracleDataPair{Key: odp.Key, Value: odp.Value})
+	}
+	return &OracleData{
+		PubKeys: od.PubKeys,
+		Data:    odPairs,
+	}
+}
+
+func (od *OracleData) IntoProto() *snapshot.OracleData {
+	odPairs := make([]*snapshot.OracleDataPair, 0, len(od.Data))
+	for _, odp := range od.Data {
+		odPairs = append(odPairs, &snapshot.OracleDataPair{Key: odp.Key, Value: odp.Value})
+	}
+	return &snapshot.OracleData{
+		PubKeys: od.PubKeys,
+		Data:    odPairs,
+	}
+}
+
+func (*PayloadOracleData) isPayload() {}
+
+func PayloadOracleDataFromProto(od *snapshot.Payload_OracleData) *PayloadOracleData {
+	ods := make([]*OracleData, 0, len(od.OracleData.OracleData))
+	for _, o := range od.OracleData.OracleData {
+		ods = append(ods, OracleDataFromProto(o))
+	}
+	return &PayloadOracleData{
+		OracleData: ods,
+	}
+}
+
+func (p *PayloadOracleData) IntoProto() *snapshot.Payload_OracleData {
+	pods := make([]*snapshot.OracleData, 0, len(p.OracleData))
+	for _, od := range p.OracleData {
+		pods = append(pods, od.IntoProto())
+	}
+
+	return &snapshot.Payload_OracleData{
+		OracleData: &snapshot.OracleDataBatch{OracleData: pods},
+	}
+}
+
+func (p *PayloadOracleData) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadOracleData) Key() string {
+	return "all"
+}
+
+func (*PayloadOracleData) Namespace() SnapshotNamespace {
+	return OracleDataSnapshot
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.

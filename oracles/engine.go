@@ -32,6 +32,7 @@ type Engine struct {
 	buffer        []OracleData
 	subscriptions specSubscriptions
 	lock          sync.Mutex
+	odss          *odSnapshotState
 }
 
 // NewEngine creates a new oracle Engine.
@@ -50,6 +51,11 @@ func NewEngine(
 		broker:        broker,
 		CurrentTime:   currentTime,
 		subscriptions: newSpecSubscriptions(),
+		odss: &odSnapshotState{
+			changed:    true,
+			hash:       []byte{},
+			serialised: []byte{},
+		},
 	}
 
 	ts.NotifyOnTick(e.UpdateCurrentTime)
@@ -70,6 +76,7 @@ func (e *Engine) UpdateCurrentTime(ctx context.Context, ts time.Time) {
 		}
 	}
 	e.buffer = nil
+	e.odss.changed = true
 	e.lock.Unlock()
 }
 
@@ -103,6 +110,7 @@ func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
 func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 	e.lock.Lock()
 	e.buffer = append(e.buffer, data)
+	e.odss.changed = true
 	e.lock.Unlock()
 	return nil
 }
