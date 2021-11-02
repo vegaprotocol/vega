@@ -86,7 +86,7 @@ func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
+func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != e.marketID {
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -95,7 +95,7 @@ func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return state, nil, err
 }
 
-func (e *Engine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}

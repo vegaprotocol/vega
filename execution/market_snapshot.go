@@ -77,7 +77,7 @@ func NewMarketFromSnapshot(
 		mkt.ID,
 		broker,
 	)
-	positionEngine := positions.New(log, positionConfig, mkt.ID)
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID)
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {
@@ -93,7 +93,7 @@ func NewMarketFromSnapshot(
 
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
+	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
