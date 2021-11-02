@@ -92,7 +92,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
 	})
 	s.Step(`^the global reward account gets the following deposits:$`, func(table *godog.Table) error {
-		return steps.DepositToRewardAccount(execsetup.collateralEngine, table)
+		return steps.DepositToRewardAccount(execsetup.collateralEngine, table, execsetup.netDeposits)
 	})
 
 	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
@@ -140,6 +140,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
+			// add to the net deposits
+			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
 		return nil
 	})

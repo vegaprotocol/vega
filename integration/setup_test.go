@@ -68,7 +68,7 @@ type executionTestSetup struct {
 
 	netParams *netparams.Store
 
-	//keep track of net deposits/withdrawals (ignores asset type)
+	// keep track of net deposits/withdrawals (ignores asset type)
 	netDeposits *num.Uint
 }
 
