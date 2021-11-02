@@ -295,7 +295,7 @@ pipeline {
                 stage('unit tests') {
                     options { retry(3) }
                     steps {
-                        sh 'go test -v $(go list ./...) 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
+                        sh 'go test -v $(go list ./... | grep -v api_test) 2>&1 | tee unit-test-results.txt && cat unit-test-results.txt | go-junit-report > vega-unit-test-report.xml'
                         junit checksName: 'Unit Tests', testResults: 'vega-unit-test-report.xml'
                     }
                 }
@@ -305,7 +305,7 @@ pipeline {
                     }
                     options { retry(3) }
                     steps {
-                        sh 'go test -v -race $(go list ./...) 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
+                        sh 'go test -v -race $(go list ./... | grep -v api_test) 2>&1 | tee unit-test-race-results.txt && cat unit-test-race-results.txt | go-junit-report > vega-unit-test-race-report.xml'
                         junit checksName: 'Unit Tests with Race', testResults: 'vega-unit-test-race-report.xml'
                     }
                 }

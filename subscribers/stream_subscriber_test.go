@@ -1,3 +1,5 @@
+// +build !race
+
 package subscribers_test
 
 import (
