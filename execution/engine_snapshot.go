@@ -3,7 +3,6 @@ package execution
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -13,29 +12,10 @@ import (
 
 var marketsKey = (&types.PayloadExecutionMarkets{}).Key()
 
-func (e *Engine) sortedMarketIDs() []string {
-	ids := make([]string, 0, len(e.markets))
-	for id := range e.markets {
-		ids = append(ids, id)
-	}
-
-	sort.Strings(ids)
-
-	return ids
-}
-
 func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, error) {
-	// snapshots should be deterministic
-	mktIDs := e.sortedMarketIDs()
-
-	mks := make([]*types.ExecMarket, 0, len(mktIDs))
-	e.marketsStateProviders = make([]types.StateProvider, 0, (len(mktIDs)-len(e.previouslySnapshottedMarkets))*3)
-	for _, id := range mktIDs {
-		m, ok := e.markets[id]
-		// this should not happen but just in case...
-		if !ok {
-			return nil, nil, fmt.Errorf("market %q not found in execution engine", id)
-		}
+	mks := make([]*types.ExecMarket, 0, len(e.marketsCpy))
+	e.marketsStateProviders = make([]types.StateProvider, 0, (len(e.marketsCpy)-len(e.previouslySnapshottedMarkets))*3)
+	for _, m := range e.marketsCpy {
 		mks = append(mks, m.getState())
 
 		if _, ok := e.previouslySnapshottedMarkets[m.GetID()]; !ok {
@@ -61,9 +41,11 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		return nil, err
 	}
 	if !e.collateral.AssetExists(asset) {
-		e.log.Error("unable to create a market with an invalid asset",
-			logging.MarketID(marketConfig.ID),
-			logging.AssetID(asset))
+		return nil, fmt.Errorf(
+			"unable to create a market %q with an invalid %q asset",
+			marketConfig.ID,
+			asset,
+		)
 	}
 
 	// create market auction state
@@ -196,12 +178,13 @@ func (e *Engine) restoreIDGenerator(em *types.ExecutionMarkets) {
 func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	switch pl := payload.Data.(type) {
 	case *types.PayloadExecutionMarkets:
+
+		e.restoreIDGenerator(pl.ExecutionMarkets)
+
 		providers, err := e.restoreMarketsStates(ctx, pl.ExecutionMarkets.Markets)
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)
 		}
-
-		e.restoreIDGenerator(pl.ExecutionMarkets)
 
 		return providers, nil
 	default:
