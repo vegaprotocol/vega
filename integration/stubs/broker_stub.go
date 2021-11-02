@@ -490,10 +490,8 @@ func (b *BrokerStub) GetMarketLiquidityFeePoolAccount(market string) (types.Acco
 
 func (b *BrokerStub) GetMarketInfrastructureFeePoolAccount(asset string) (types.Account, error) {
 	batch := b.GetAccountEvents()
-	fmt.Printf("Dumping accounts:\n")
 	for _, e := range batch {
 		v := e.Account()
-		fmt.Printf("%v\n", v)
 		if v.Owner == "*" && v.Asset == asset && v.Type == types.AccountType_ACCOUNT_TYPE_FEES_INFRASTRUCTURE {
 			return v, nil
 		}
