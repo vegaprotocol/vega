@@ -6,6 +6,7 @@ import (
 
 	"github.com/cucumber/godog"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/stubs"
 )
 
@@ -14,26 +15,51 @@ func TheFollowingTradesShouldBeExecuted(
 	table *godog.Table,
 ) error {
 	var err error
+
 	for _, row := range parseExecutedTradesTable(table) {
 		buyer := row.MustStr("buyer")
 		seller := row.MustStr("seller")
 		price := row.MustU64("price")
 		size := row.MustU64("size")
+		aggressorRaw := row.Str("aggressor side")
+		aggressor, aerr := Side(aggressorRaw)
+		if aggressorRaw != "" && aerr != nil {
+			return aerr
+		}
+		buyerFee, hasBuyeFee := row.U64B("buyer fee")
+		sellerFee, hasSellerFee := row.U64B("seller fee")
+		infraFee, hasInfraFee := row.U64B("infrastructure fee")
+		makerFee, hasMakerFee := row.U64B("maker fee")
+		liqFee, hasLiqFee := row.U64B("liquidity fee")
 
 		data := broker.GetTrades()
 		var found bool
 		for _, v := range data {
-			if v.Buyer == buyer && v.Seller == seller && stringToU64(v.Price) == price && v.Size == size {
+			if v.Buyer == buyer &&
+				v.Seller == seller &&
+				stringToU64(v.Price) == price &&
+				v.Size == size &&
+				(aggressorRaw == "" || aggressor == v.GetAggressor()) &&
+				(!hasBuyeFee || buyerFee == feeToU64(v.BuyerFee)) &&
+				(!hasSellerFee || sellerFee == feeToU64(v.SellerFee)) &&
+				(!hasInfraFee || infraFee == stringToU64(v.BuyerFee.InfrastructureFee)+stringToU64(v.SellerFee.InfrastructureFee)) &&
+				(!hasMakerFee || makerFee == stringToU64(v.BuyerFee.MakerFee)+stringToU64(v.SellerFee.MakerFee)) &&
+				(!hasLiqFee || liqFee == stringToU64(v.BuyerFee.LiquidityFee)+stringToU64(v.SellerFee.LiquidityFee)) {
 				found = true
 			}
 		}
-
 		if !found {
 			return errMissingTrade(buyer, seller, price, size)
 		}
 	}
-
 	return err
+}
+
+func feeToU64(fee *vega.Fee) uint64 {
+	if fee == nil {
+		return uint64(0)
+	}
+	return stringToU64(fee.InfrastructureFee) + stringToU64(fee.LiquidityFee) + stringToU64(fee.MakerFee)
 }
 
 func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
@@ -42,7 +68,14 @@ func parseExecutedTradesTable(table *godog.Table) []RowWrapper {
 		"seller",
 		"price",
 		"size",
-	}, []string{})
+	}, []string{
+		"aggressor side",
+		"buyer fee",
+		"seller fee",
+		"infrastructure fee",
+		"liquidity fee",
+		"maker fee",
+	})
 }
 
 // TheAuctionTradedVolumeAndPriceShouldBe pass in time at which the trades should happen in case there are previous trades in the broker stub.
