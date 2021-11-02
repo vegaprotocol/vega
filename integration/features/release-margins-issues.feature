@@ -211,9 +211,6 @@ Feature: Test margin release on order cancel
       | partyGuyGood | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party2-2 |
       | party1       | ETH/DEC19 | sell | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC | party1-2 |
 
-    And debug orders
-    Then debug trades
-
     Then the parties should have the following profit and loss:
       | party        | volume | unrealised pnl | realised pnl |
       | partyGuyGood | 1      | 0              | 0            |
@@ -237,8 +234,12 @@ Feature: Test margin release on order cancel
       | party        | asset | market id | margin | general |
       | partyGuy     | ETH   | ETH/DEC19 |   0    | 0       |
       | partyGuyGood | ETH   | ETH/DEC19 | 13307  | 995693  |
+      # TODO: SHOULD BE THIS
+      # | partyGuyGood | ETH   | ETH/DEC19 | 0      | 1009000 |
+
 
     # TODO: FIX THIS
+    # partyGuyGood should have a margin of 0 here.
     # Position is actuall 0, and the party have no potential position
     # so we just have collateral stuck in the margin account
     Then the parties should have the following profit and loss:
