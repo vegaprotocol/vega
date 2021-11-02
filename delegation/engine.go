@@ -120,9 +120,11 @@ type Engine struct {
 
 // New instantiate a new delegation engine.
 func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, epochEngine EpochEngine, ts TimeService) *Engine {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
 	e := &Engine{
 		config:               config,
-		log:                  log.Named(namedLogger),
+		log:                  log,
 		broker:               broker,
 		topology:             topology,
 		stakingAccounts:      stakingAccounts,

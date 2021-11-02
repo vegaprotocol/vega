@@ -9,7 +9,7 @@ Feature: Test settlement at expiry
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE" named "ethDec20Oracle":
       | property           | type           | binding              |
-      | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
+      | trading.terminated | TYPE_BOOLEAN   | trading termination  |
 
     And the markets:
       | id        | quote name | asset | maturity date        | risk model                  | margin calculator         | auction duration | fees         | price monitoring | oracle config          |
@@ -124,7 +124,7 @@ Feature: Test settlement at expiry
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-1     | OrderError: Invalid Market ID |
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
+      | party1 | ETH   | ETH/DEC19 | 0      | 11916   |
       | party2 | ETH   | ETH/DEC19 | 0      | 42      |
       | party3 | ETH   | ETH/DEC19 | 0      | 4042    |
     # And the cumulated balance for all accounts should be worth "100214513"
@@ -194,8 +194,8 @@ Scenario: Settlement happened when market is being closed - no loss socialisatio
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 0      | 11676   |
-      | party2 | ETH   | ETH/DEC19 | 0      | 0      |
+      | party1 | ETH   | ETH/DEC19 | 0      | 11916   |
+      | party2 | ETH   | ETH/DEC19 | 0      | 0       |
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
     # 916 were taken from the insurance pool to cover the losses of party 2, the remaining is split between global and the other market
@@ -263,7 +263,7 @@ Scenario: Settlement happened when market is being closed - loss socialisation i
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin | general |
-      | party1 | ETH   | ETH/DEC19 | 0      | 11399   |
+      | party1 | ETH   | ETH/DEC19 | 0      | 11639   |
       | party2 | ETH   | ETH/DEC19 | 0      | 0       |
     # And the cumulated balance for all accounts should be worth "100214513"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"

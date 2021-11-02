@@ -69,6 +69,17 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		}
 	})
 
+	s.AfterScenario(func(s *godog.Scenario, err error) {
+		if err != nil {
+			return
+		}
+
+		berr := steps.TheCumulatedBalanceForAllAccountsShouldBeWorth(execsetup.broker, execsetup.netDeposits.String())
+		if berr != nil {
+			reporter.Fatalf("\n\nError at scenario end (testing net deposits/withdrawals against cumulated balance for all accounts): %v\n\n", berr)
+		}
+	})
+
 	// delegation/validator steps
 	s.Step(`the validators:$`, func(table *godog.Table) error {
 		return steps.TheValidators(execsetup.topology, execsetup.stakingAccount, execsetup.delegationEngine, table)
@@ -81,7 +92,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
 	})
 	s.Step(`^the global reward account gets the following deposits:$`, func(table *godog.Table) error {
-		return steps.DepositToRewardAccount(execsetup.collateralEngine, table)
+		return steps.DepositToRewardAccount(execsetup.collateralEngine, table, execsetup.netDeposits)
 	})
 
 	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
@@ -129,6 +140,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
+			// add to the net deposits
+			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
 		return nil
 	})
@@ -167,7 +180,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesPlaceTheFollowingPeggedOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the parties deposit on asset's general account the following amount:$`, func(table *godog.Table) error {
-		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
+		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, execsetup.netDeposits, table)
 	})
 	s.Step(`^the parties deposit on staking account the following amount:$`, func(table *godog.Table) error {
 		return steps.PartiesTransferToStakingAccount(execsetup.stakingAccount, execsetup.broker, table, "")
@@ -177,7 +190,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {
-		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
+		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, execsetup.netDeposits, table)
 	})
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, table)
