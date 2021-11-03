@@ -91,8 +91,8 @@ Feature: Test settlement at expiry
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
-      | aux1  | ETH/DEC19 | buy  | 1      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
-      | aux2  | ETH/DEC19 | sell | 1      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
+      | aux1  | ETH/DEC19 | buy  | 2      | 999   | 0                | TYPE_LIMIT | TIF_GTC | ref-1     |
+      | aux2  | ETH/DEC19 | sell | 2      | 1001  | 0                | TYPE_LIMIT | TIF_GTC | ref-2     |
       | aux1  | ETH/DEC19 | buy  | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-3     |
       | aux2  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-4     |
     Then the opening auction period ends for market "ETH/DEC19"
@@ -149,9 +149,19 @@ Feature: Test settlement at expiry
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name               | value |
       | trading.terminated | true  |
+
+    When the parties place the following orders:
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | 
+      | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC | 
   
     And time is updated to "2020-01-01T01:01:01Z"
-  
+
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | -2     | 0              | 0            |
+      | party2 | 1      | 0              | 0            |
+      | party3 | 1      | 0              | 0            |
+
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     Then the oracles broadcast data signed with "0xCAFECAFE":
       | name             | value |
@@ -168,7 +178,7 @@ Feature: Test settlement at expiry
       | aux1     | ETH   | ETH/DEC19 | 0      | 100000    |
       | aux2     | ETH   | ETH/DEC19 | 0      | 100000    |
       | party-lp | ETH   | ETH/DEC19 | 0      | 100000000 |
-      | party1   | ETH   | ETH/DEC19 | 0      | 11916    |
+      | party1   | ETH   | ETH/DEC19 | 0      | 11916     |
       | party2   | ETH   | ETH/DEC19 | 0      | 42        |
       | party3   | ETH   | ETH/DEC19 | 0      | 4042      |
 
@@ -506,8 +516,8 @@ Feature: Test settlement at expiry
     # Check that party positions and overall account balances are the same as before auction start (accounting for a settlement transfer of 200 from party2 to party1)
     Then the parties should have the following profit and loss:
       | party  | volume | unrealised pnl | realised pnl |
-      | party1 | -1     | 0              | 0          |
-      | party2 | 1      | 0              | 0         |
+      | party1 | -1     | 0              | 0            |
+      | party2 | 1      | 0              | 0            |
 
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
