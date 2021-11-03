@@ -57,14 +57,25 @@ var logger = logging.NewTestLogger()
 
 const (
 	connBufSize   = 1024 * 1024
-	defaultTimout = 30 * time.Second
+	defaultTimout = 5 * time.Second
 )
+
+type TestServer struct {
+	ctrl       *gomock.Controller
+	clientConn *grpc.ClientConn
+	broker     *broker.Broker
+	trStorage  *storage.TransferResponse
+}
 
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
 // Any error will fail and terminate the test.
-func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc.ClientConn, eventBroker *broker.Broker) {
+func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer {
 	t.Helper()
 
+	var (
+		eventBroker *broker.Broker
+		conn        *grpc.ClientConn
+	)
 	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
 	defer cleanupFn()
 
@@ -78,14 +89,13 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	mockCoreServiceClient := apimocks.NewMockCoreServiceClient(mockCtrl)
 	mockCoreServiceClient.EXPECT().
 		SubmitTransaction(gomock.Any(), gomock.Any()).
-		Return(&vegaprotoapi.SubmitTransactionResponse{}, nil)
+		Return(&vegaprotoapi.SubmitTransactionResponse{}, nil).AnyTimes()
 
 	ctx, cancel := context.WithCancel(ctx)
 
 	accountStore, err := storage.NewAccounts(logger, st.AccountsHome, conf.Storage, cancel)
 	if err != nil {
 		t.Fatalf("failed to create account store: %v", err)
-		return
 	}
 	accountService := accounts.NewService(logger, conf.Accounts, accountStore)
 	accountSub := subscribers.NewAccountSub(ctx, accountStore, logger, true)
@@ -116,9 +126,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	delegationStore := storage.NewDelegations(logger, conf.Storage)
 
 	marketDepth := subscribers.NewMarketDepthBuilder(ctx, logger, true)
-	if marketDepth == nil {
-		return
-	}
 
 	marketService := markets.NewService(logger, conf.Markets, marketStore, orderStore, marketDataStore, marketDepth)
 	newMarketSub := subscribers.NewMarketSub(ctx, marketStore, logger, true)
@@ -250,6 +257,16 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 	go srv.Start(ctx, lis)
 
 	t.Cleanup(func() {
+		// Close stores after test so files are properly closed
+		accountStore.Close()
+		candleStore.Close()
+		orderStore.Close()
+		marketStore.Close()
+		checkpointStore.Close()
+		riskStore.Close()
+		tradeStore.Close()
+		transferResponseStore.Close()
+
 		cancel()
 		st.Purge()
 		cleanupFn()
@@ -263,7 +280,12 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) (conn *grpc
 		}
 	}
 
-	return
+	return &TestServer{
+		ctrl:       mockCtrl,
+		broker:     eventBroker,
+		clientConn: conn,
+		trStorage:  transferResponseStore,
+	}
 }
 
 // PublishEvents reads JSON encoded BusEvents from golden file testdata/<type>-events.golden and publishes the
@@ -322,7 +344,7 @@ func PublishEvents(
 		}
 	}
 
-	t.Logf("%d events sent", len(evts))
+	logger.Debugf("%d events sent", len(evts))
 
 	// whatever time it is now + 1 second
 	now := time.Now()
@@ -334,7 +356,7 @@ func PublishEvents(
 		t.Fatalf("Did not receive the expected event within reasonable time: %+v", tue)
 	}
 
-	t.Log("time event received")
+	logger.Debugf("time event received")
 
 	// cancel the subscriber ctx
 	cancel()

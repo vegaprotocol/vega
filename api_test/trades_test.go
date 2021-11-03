@@ -17,16 +17,17 @@ func TestGetByMarket(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
-	conn, broker := NewTestServer(t, ctx, true)
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
 
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
+	PublishEvents(t, ctx, server.broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		trade := be.GetTrade()
 		require.NotNil(t, trade)
 		e := events.NewTradeEvent(ctx, *TradeFromProto(trade))
 		return e, nil
 	}, "trades-events.golden")
 
-	client := apipb.NewTradingDataServiceClient(conn)
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
 	require.NotNil(t, client)
 
 	tradeID := "V0000030271-0001798304-0000000000"

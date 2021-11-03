@@ -18,9 +18,10 @@ func TestGetByOrderID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
-	conn, broker := NewTestServer(t, ctx, true)
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
 
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
+	PublishEvents(t, ctx, server.broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		order, err := types.OrderFromProto(be.GetOrder())
 		require.NotNil(t, order)
 		require.NoError(t, err)
@@ -28,7 +29,7 @@ func TestGetByOrderID(t *testing.T) {
 		return e, nil
 	}, "orders-events.golden")
 
-	client := apipb.NewTradingDataServiceClient(conn)
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
 	require.NotNil(t, client)
 
 	orderID := "V0000000567-0000005166"
