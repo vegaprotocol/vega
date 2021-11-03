@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// waits untill the tranferStorage server has at least on subscriber
+// waits until the tranferStorage server has at least on subscriber
 func waitForSubsription(ctx context.Context, ts *TestServer) error {
 	nonExistentID := ^uint64(0) // really big
 	for {

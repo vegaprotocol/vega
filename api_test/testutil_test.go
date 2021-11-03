@@ -57,7 +57,7 @@ var logger = logging.NewTestLogger()
 
 const (
 	connBufSize   = 1024 * 1024
-	defaultTimout = 5 * time.Second
+	defaultTimout = 30 * time.Second
 )
 
 type TestServer struct {
@@ -327,56 +327,27 @@ func PublishEvents(
 		evts[e.Type()] = s
 	}
 
-	// add time event subscriber so we can verify the time event was received at the end
-	sCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	sub := NewEventSubscriber(sCtx)
-	id := b.Subscribe(sub)
-
 	// we've grouped events per type, now send them all in batches
 	for _, batch := range evts {
 		for _, e := range batch {
 			b.Send(e)
-
-			if err := waitForEvent(sCtx, sub, e); err != nil {
-				t.Fatalf("Did not receive the expected event within reasonable time: %+v", e)
-			}
 		}
 	}
 
-	logger.Debugf("%d events sent", len(evts))
+	// There used to be code here that would create a dummy-subscriber that also received events and could be used to wait
+	// for the first event to be processed before sending the below time-event. Unfortunately, it didn't really work.
+	// If the dummy-sub was the first sub to receive the first event, we would spot that it was received and move on to sending
+	// the time-event. This *could* happen before the real subs had a chance to look at the first event, and so they would
+	// *sometimes* end up receiving the time-event first meaning the real event was never flushed.
+	// I think all we can really do here to always be sure the events are received in necessary order is to introduce a small
+	// sleep. Its not ideal but it is what it is.
+	time.Sleep(20 * time.Millisecond)
 
 	// whatever time it is now + 1 second
 	now := time.Now()
 	// the broker reacts to Time events to trigger writes the data stores
 	tue := events.NewTime(ctx, now)
 	b.Send(tue)
-	// await confirmation that we've actually received the time update event
-	if err := waitForEvent(sCtx, sub, tue); err != nil {
-		t.Fatalf("Did not receive the expected event within reasonable time: %+v", tue)
-	}
-
-	logger.Debugf("time event received")
-
-	// cancel the subscriber ctx
-	cancel()
-
-	sub.Halt()
-	// unsubscribe the ad-hoc subscriber
-	b.Unsubscribe(id)
-}
-
-func waitForEvent(ctx context.Context, sub *EventSubscriber, event events.Event) error {
-	for {
-		receivedEvent, err := sub.ReceivedEvent(ctx)
-		if err != nil {
-			return err
-		}
-
-		if receivedEvent == event {
-			return nil
-		}
-	}
 }
 
 type govStub struct{}
