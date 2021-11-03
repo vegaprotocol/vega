@@ -23,6 +23,8 @@ var (
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
+	marketID string
+
 	tWindow time.Duration
 	sFactor *num.Uint
 	oiCalc  OpenInterestCalculator
@@ -45,13 +47,14 @@ type OpenInterestCalculator interface {
 }
 
 // NewEngine returns a new instance of target stake calculation Engine.
-func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
+func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator, marketID string) *Engine {
 	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
 
 	return &Engine{
-		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
-		sFactor: factor,
-		oiCalc:  oiCalc,
+		marketID: marketID,
+		tWindow:  time.Duration(parameters.TimeWindow) * time.Second,
+		sFactor:  factor,
+		oiCalc:   oiCalc,
 	}
 }
 

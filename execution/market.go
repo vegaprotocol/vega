@@ -283,7 +283,7 @@ func NewMarket(
 		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
+	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
 	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, mkt.PriceMonitoringSettings)
 	if err != nil {
