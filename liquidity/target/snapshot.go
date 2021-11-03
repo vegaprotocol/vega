@@ -6,6 +6,7 @@ import (
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -61,6 +62,22 @@ func (e *SnapshotEngine) RecordOpenInterest(oi uint64, now time.Time) error {
 
 	e.changed = true
 	return nil
+}
+
+func (e *SnapshotEngine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
+	ts, changed := e.Engine.GetTargetStake(rf, now, markPrice)
+	if changed {
+		e.changed = true
+	}
+	return ts
+}
+
+func (e *SnapshotEngine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
+	tts, changed := e.Engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+	if changed {
+		e.changed = true
+	}
+	return tts
 }
 
 func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
