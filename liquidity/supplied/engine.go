@@ -45,9 +45,9 @@ type PriceMonitor interface {
 
 // Engine provides functionality related to supplied liquidity.
 type Engine struct {
-	rm RiskModel
-	pm PriceMonitor
-
+	rm                             RiskModel
+	pm                             PriceMonitor
+	marketID                       string
 	horizon                        num.Decimal // projection horizon used in probability calculations
 	probabilityOfTradingTauScaling num.Decimal
 	minProbabilityOfTrading        num.Decimal
@@ -57,15 +57,16 @@ type Engine struct {
 	// Bid cache
 	bCache map[num.Uint]num.Decimal
 	// Ask cache
-	aCache map[num.Uint]num.Decimal
+	aCache  map[num.Uint]num.Decimal
+	changed bool
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine.
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, marketID string) *Engine {
 	return &Engine{
-		rm: riskModel,
-		pm: priceMonitor,
-
+		rm:                             riskModel,
+		pm:                             priceMonitor,
+		marketID:                       marketID,
 		cachedMin:                      num.Zero(),
 		cachedMax:                      num.Zero(),
 		horizon:                        riskModel.GetProjectionHorizon(),
@@ -73,6 +74,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor) *Engine {
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
 		bCache:                         map[num.Uint]num.Decimal{},
 		aCache:                         map[num.Uint]num.Decimal{},
+		changed:                        true,
 	}
 }
 
@@ -126,7 +128,7 @@ func (e *Engine) CalculateLiquidityImpliedVolumes(
 	return nil
 }
 
-// CalculateSuppliedLiquidity returns the current supplied liquidity per market specified in the constructor.
+// calculateBuySellLiquidityWithMinMax returns the current supplied liquidity per market specified in the constructor.
 func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	bestBidPrice, bestAskPrice *num.Uint,
 	orders []*types.Order,
@@ -207,6 +209,7 @@ func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice 
 		e.bCache = make(map[num.Uint]num.Decimal, len(e.bCache))
 		e.aCache = make(map[num.Uint]num.Decimal, len(e.aCache))
 		e.cachedMin, e.cachedMax = minPrice.Representation(), maxPrice.Representation()
+		e.changed = true
 	}
 
 	// Any part of shape that's pegged between or equal to
@@ -243,6 +246,7 @@ func (e *Engine) calcProbabilityOfTradingAsk(bestAskPrice, orderPrice *num.Uint,
 		prob = e.rm.ProbabilityOfTrading(bestAskPrice, orderPrice, bestAskPrice.ToDecimal(), maxPrice.Original(), tauScaled, false, true)
 		prob = rescaleProbability(prob)
 		e.aCache[*orderPrice] = prob
+		e.changed = true
 	}
 	return prob
 }
@@ -253,6 +257,7 @@ func (e *Engine) calcProbabilityOfTradingBid(bestBidPrice, orderPrice *num.Uint,
 		prob = e.rm.ProbabilityOfTrading(bestBidPrice, orderPrice, minPrice.Original(), bestBidPrice.ToDecimal(), tauScaled, true, true)
 		prob = rescaleProbability(prob)
 		e.bCache[*orderPrice] = prob
+		e.changed = true
 	}
 	return prob
 }

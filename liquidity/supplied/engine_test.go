@@ -32,7 +32,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	// No orders
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).Times(1)
 
-	engine := supplied.NewEngine(riskModel, priceMonitor)
+	engine := supplied.NewEngine(riskModel, priceMonitor, "market1")
 	require.NotNil(t, engine)
 
 	liquidity := engine.CalculateSuppliedLiquidity(MarkPrice.Clone(), MarkPrice.Clone(), []*types.Order{})
@@ -153,7 +153,7 @@ func Test_InteralConsistency(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, buy.Price, minPrice.Original(), num.DecimalFromUint(MarkPrice), Horizon, true, true).Return(validBuy1Prob).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, sell.Price, num.DecimalFromUint(MarkPrice), maxPrice.Original(), Horizon, false, true).Return(validSell1Prob).Times(1)
 
-	engine := supplied.NewEngine(riskModel, priceMonitor)
+	engine := supplied.NewEngine(riskModel, priceMonitor, "market1")
 	require.NotNil(t, engine)
 
 	// Negative liquidity obligation -> 0 sizes on all orders
@@ -239,7 +239,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 		return num.DecimalFromFloat(0)
 	})
 
-	engine := supplied.NewEngine(riskModel, priceMonitor)
+	engine := supplied.NewEngine(riskModel, priceMonitor, "market1")
 	require.NotNil(t, engine)
 
 	// No liquidity obligation -> 0 sizes on all orders
@@ -344,7 +344,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		validSell2,
 	}
 
-	engine := supplied.NewEngine(riskModel, priceMonitor)
+	engine := supplied.NewEngine(riskModel, priceMonitor, "market1")
 	require.NotNil(t, engine)
 
 	liquidityObligation := num.NewUint(123) // Was 123.45
@@ -545,7 +545,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, invalidBuy.Price, minPrice.Original(), MarkPrice.ToDecimal(), Horizon, true, true).Return(num.DecimalFromFloat(0.0)).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, invalidSell.Price, MarkPrice.ToDecimal(), maxPrice.Original(), Horizon, false, true).Return(num.DecimalFromFloat(0.0)).Times(1)
 
-	engine := supplied.NewEngine(riskModel, priceMonitor)
+	engine := supplied.NewEngine(riskModel, priceMonitor, "market1")
 	require.NotNil(t, engine)
 
 	liquidityObligation := num.NewUint(20)
@@ -589,7 +589,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order1.Price, minPrice.Original(), MarkPrice.ToDecimal(), Horizon, true, true).Return(num.DecimalFromFloat(0.123)).Times(1)
 	riskModel.EXPECT().ProbabilityOfTrading(MarkPrice, order2.Price, MarkPrice.ToDecimal(), maxPrice.Original(), Horizon, false, true).Return(num.DecimalFromFloat(0.234)).Times(1)
 
-	engine := supplied.NewEngine(riskModel, priceMonitor)
+	engine := supplied.NewEngine(riskModel, priceMonitor, "market1")
 	require.NotNil(t, engine)
 
 	liquidity1 := engine.CalculateSuppliedLiquidity(MarkPrice.Clone(), MarkPrice.Clone(), orders)
