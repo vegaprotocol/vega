@@ -20,7 +20,6 @@ Feature: Test settlement at expiry
       | property           | type           | binding              |
       | trading.terminated | TYPE_BOOLEAN   | trading termination  |  
 
-
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
@@ -402,6 +401,7 @@ Feature: Test settlement at expiry
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name               | value |
       | trading.terminated | true  |
+
     And time is updated to "2020-01-01T01:01:01Z"
     Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
     When the oracles broadcast data signed with "0xCAFECAFE":
@@ -474,13 +474,17 @@ Feature: Test settlement at expiry
       | party2 | ETH/DEC21 | buy  | 1      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
-    # And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
+    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
 
-  And then the network moves ahead "10" blocks
+    And then the network moves ahead "10" blocks
 
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name               | value |
       | trading.terminated | true  |
+
+    And then the network moves ahead "1" blocks
+
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
 
     And then the network moves ahead "400" blocks
     
@@ -491,15 +495,13 @@ Feature: Test settlement at expiry
 
     And then the network moves ahead "10" blocks
 
-    # Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
-
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
       | prices.ETH.value | 800   |
 
     And then the network moves ahead "10" blocks
 
-    Then the market state should be "STATE_PENDING" for the market "ETH/DEC19"
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
 
     # Check that party positions and overall account balances are the same as before auction start (accounting for a settlement transfer of 200 from party2 to party1)
     Then the parties should have the following profit and loss:
