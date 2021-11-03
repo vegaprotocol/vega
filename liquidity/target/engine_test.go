@@ -13,18 +13,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var now = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
+var (
+	now      = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
+	marketID = "market-1"
+)
 
 func TestConstructor(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 
 	require.NotNil(t, engine)
 }
 
 func TestRecordOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	err := engine.RecordOpenInterest(9, now)
 	require.NoError(t, err)
 	err = engine.RecordOpenInterest(0, now)
@@ -39,7 +42,7 @@ func TestRecordOpenInterest(t *testing.T) {
 
 func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	rf := types.RiskFactor{
 		Long:  num.DecimalFromFloat(0.3),
 		Short: num.DecimalFromFloat(0.1),
@@ -68,7 +71,7 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	}
 	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
 
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -108,7 +111,7 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 		return ump
 	}
 
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -176,7 +179,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
-	engine := target.NewEngine(params, oiCalc)
+	engine := target.NewEngine(params, oiCalc, marketID)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,

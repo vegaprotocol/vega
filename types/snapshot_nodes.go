@@ -223,6 +223,10 @@ type PayloadLiquidityProvisions struct {
 	Provisions *snapshot.LiquidityProvisions
 }
 
+type PayloadLiquidityTarget struct {
+	Target *snapshot.LiquidityTarget
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -681,6 +685,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityPartiesOrdersFromProto(dt)
 	case *snapshot.Payload_LiquidityProvisions:
 		ret.Data = PayloadLiquidityProvisionsFromProto(dt)
+	case *snapshot.Payload_LiquidityTarget:
+		ret.Data = PayloadLiquidityTargetFromProto(dt)
 	}
 
 	return ret
@@ -912,6 +918,28 @@ func (*PayloadLiquidityProvisions) Namespace() SnapshotNamespace {
 
 func (p *PayloadLiquidityProvisions) Key() string {
 	return fmt.Sprintf("provisions:%v", p.Provisions.MarketId)
+}
+
+func PayloadLiquidityTargetFromProto(s *snapshot.Payload_LiquidityTarget) *PayloadLiquidityTarget {
+	return &PayloadLiquidityTarget{
+		Target: s.LiquidityTarget,
+	}
+}
+
+func (*PayloadLiquidityTarget) isPayload() {}
+
+func (p *PayloadLiquidityTarget) plToProto() interface{} {
+	return &snapshot.Payload_LiquidityTarget{
+		LiquidityTarget: p.Target,
+	}
+}
+
+func (*PayloadLiquidityTarget) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
+}
+
+func (p *PayloadLiquidityTarget) Key() string {
+	return fmt.Sprintf("target:%v", p.Target.MarketId)
 }
 
 func PayloadActiveAssetsFromProto(paa *snapshot.Payload_ActiveAssets) *PayloadActiveAssets {
