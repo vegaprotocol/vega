@@ -12,7 +12,7 @@ import (
 
 func newTimestampedOISnapshotFromProto(s *snapshot.TimestampedOpenInterest) timestampedOI {
 	return timestampedOI{
-		Time: time.Unix(0, s.Time),
+		Time: time.Unix(0, s.Time).UTC(),
 		OI:   s.OpenInterest,
 	}
 }
