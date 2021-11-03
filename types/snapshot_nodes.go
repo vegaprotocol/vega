@@ -472,6 +472,10 @@ type Notary struct {
 	Sigs []*NotarySigs
 }
 
+type PayloadLiquiditySupplied struct {
+	LiquiditySupplied *snapshot.LiquiditySupplied
+}
+
 func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
 	meta := &snapshot.Metadata{}
 	if err := proto.Unmarshal(s.Metadata, meta); err != nil {
@@ -681,6 +685,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityPartiesOrdersFromProto(dt)
 	case *snapshot.Payload_LiquidityProvisions:
 		ret.Data = PayloadLiquidityProvisionsFromProto(dt)
+	case *snapshot.Payload_LiquiditySupplied:
+		ret.Data = PayloadLiquiditySuppliedFromProto(dt)
 	}
 
 	return ret
@@ -791,6 +797,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityPartiesOrders:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityProvisions:
+		ret.Data = dt
+	case *snapshot.Payload_LiquiditySupplied:
 		ret.Data = dt
 	}
 	return &ret
@@ -3335,6 +3343,32 @@ func (*PayloadOracleData) Key() string {
 
 func (*PayloadOracleData) Namespace() SnapshotNamespace {
 	return OracleDataSnapshot
+}
+
+func (*PayloadLiquiditySupplied) isPayload() {}
+
+func PayloadLiquiditySuppliedFromProto(ls *snapshot.Payload_LiquiditySupplied) *PayloadLiquiditySupplied {
+	return &PayloadLiquiditySupplied{
+		LiquiditySupplied: ls.LiquiditySupplied,
+	}
+}
+
+func (p *PayloadLiquiditySupplied) IntoProto() *snapshot.Payload_LiquiditySupplied {
+	return &snapshot.Payload_LiquiditySupplied{
+		LiquiditySupplied: p.LiquiditySupplied,
+	}
+}
+
+func (p *PayloadLiquiditySupplied) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadLiquiditySupplied) Key() string {
+	return fmt.Sprintf("liquiditySupplied:%v", p.LiquiditySupplied.MarketId)
+}
+
+func (*PayloadLiquiditySupplied) Namespace() SnapshotNamespace {
+	return LiquiditySnapshot
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.

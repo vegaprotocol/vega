@@ -35,6 +35,7 @@ type SnapshotEngine struct {
 	partiesOrdersKey          string
 	pendingProvisionsKey      string
 	provisionsKey             string
+	suppliedKey               string
 }
 
 func NewSnapshotEngine(config Config,
@@ -121,9 +122,15 @@ func (e *SnapshotEngine) LoadState(ctx context.Context, p *types.Payload) ([]typ
 	case *types.PayloadLiquidityPartiesLiquidityOrders:
 		return nil, e.loadPartiesLiquidityOrders(
 			ctx, pl.PartiesLiquidityOrders.GetOrders())
+	case *types.PayloadLiquiditySupplied:
+		return nil, e.loadSupplied(pl.LiquiditySupplied)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
+}
+
+func (e *SnapshotEngine) loadSupplied(ls *snapshotpb.LiquiditySupplied) error {
+	return e.suppliedEngine.Reload(ls)
 }
 
 func (e *SnapshotEngine) loadPartiesOrders(
@@ -229,6 +236,8 @@ func (e *SnapshotEngine) serialise(k string) ([]byte, []byte, error) {
 		buf, changed, err = e.serialisePendingProvisions()
 	case e.provisionsKey:
 		buf, changed, err = e.serialiseProvisions()
+	case e.suppliedKey:
+		buf, changed, err = e.serialiseSupplied()
 	default:
 		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
@@ -380,6 +389,18 @@ func (e *SnapshotEngine) serialiseProvisions() ([]byte, bool, error) {
 	return e.marshalPayload(key, payload)
 }
 
+func (e *SnapshotEngine) serialiseSupplied() ([]byte, bool, error) {
+	key := e.suppliedKey
+	if !e.Engine.suppliedEngine.HasUpdates() {
+		return e.serialised[key], false, nil
+	}
+
+	e.Engine.suppliedEngine.ResetUpdated()
+
+	payload := e.Engine.suppliedEngine.Payload()
+	return e.marshalPayload(key, payload)
+}
+
 func (e *SnapshotEngine) marshalPayload(key string, payload *snapshotpb.Payload) ([]byte, bool, error) {
 	buf := e.serialisers[key]
 	buf.Reset()
@@ -417,6 +438,12 @@ func (e *SnapshotEngine) buildHashKeys(market string) {
 		},
 	}).Key()
 
+	e.suppliedKey = (&types.PayloadLiquiditySupplied{
+		LiquiditySupplied: &snapshotpb.LiquiditySupplied{
+			MarketId: market,
+		},
+	}).Key()
+
 	e.hashKeys = append([]string{}, e.parametersKey, e.partiesLiquidityOrdersKey,
-		e.partiesOrdersKey, e.pendingProvisionsKey, e.provisionsKey)
+		e.partiesOrdersKey, e.pendingProvisionsKey, e.provisionsKey, e.suppliedKey)
 }

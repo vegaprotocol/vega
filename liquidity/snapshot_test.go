@@ -93,6 +93,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
 		"provisions:market-id":             "236cf44c1a419b99955aa7662dacfed9bba4d5f391e4606bb00f50676f99b40a",
+		"liquiditySupplied:market-id":      "79236135f389cc75b9c1a43b6acce8fecb7d56a2c14c3fc4b043523b9933828b",
 	}
 
 	for _, key := range keys {
@@ -130,6 +131,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
 		"provisions:market-id":             "56319a9f75b8f0a5eb53afb0a6cfd2286e6a8168fd28cbbbd0855b47cdde94b9",
+		"liquiditySupplied:market-id":      "9af43ab189f6eb27c5ec88f31498ac65901ed9f7da5de344a0f017509d83fda5",
 	}
 
 	lp3 := &types.LiquidityProvisionSubmission{
