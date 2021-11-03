@@ -146,10 +146,18 @@ Feature: Test settlement at expiry
       | aux1  | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC |
       | aux2  | ETH/DEC19 | buy  | 1      | 1000  | 1                | TYPE_LIMIT | TIF_GTC |
 
+
+    Then the parties should have the following profit and loss:
+      | party  | volume | unrealised pnl | realised pnl |
+      | party1 | -2     | 0              | 0            |
+      | party2 | 1      | 0              | 0            |
+      | party3 | 1      | 0              | 0            |
+
     When the oracles broadcast data signed with "0xCAFECAFE":
       | name               | value |
       | trading.terminated | true  |
 
+    # Order placed after oracle data is received should not be processed (expecting party positions to remain unchanged)
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | 
       | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC | 
