@@ -312,7 +312,7 @@ func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalErr
 	case *types.NewMarketConfiguration_Continuous, *types.NewMarketConfiguration_Discrete:
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	default:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrTradingModeInvalid
+		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE, ErrTradingModeInvalid
 	}
 }
 
@@ -328,7 +328,7 @@ func validateRiskParameters(rp interface{}) (types.ProposalError, error) {
 	case nil:
 		return types.ProposalError_PROPOSAL_ERROR_NO_RISK_PARAMETERS, ErrMissingRiskParameters
 	default:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, ErrRiskParametersNotSupported
+		return types.ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE, ErrRiskParametersNotSupported
 	}
 }
 
