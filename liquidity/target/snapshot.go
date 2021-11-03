@@ -19,7 +19,7 @@ func newTimestampedOISnapshotFromProto(s *snapshot.TimestampedOpenInterest) time
 func (toi timestampedOI) toSnapshotProto() *snapshot.TimestampedOpenInterest {
 	return &snapshot.TimestampedOpenInterest{
 		OpenInterest: toi.OI,
-		Time:         time.Now().Unix(),
+		Time:         toi.Time.UnixNano(),
 	}
 }
 
@@ -30,6 +30,7 @@ type SnapshotEngine struct {
 	changed bool
 	buf     *proto.Buffer
 	key     string
+	keys    []string
 }
 
 func NewSnapshotEngine(
@@ -40,13 +41,16 @@ func NewSnapshotEngine(
 	buf := proto.NewBuffer(nil)
 	buf.SetDeterministic(true)
 
+	key := (&types.PayloadLiquidityTarget{
+		Target: &snapshot.LiquidityTarget{MarketId: marketID},
+	}).Key()
+
 	return &SnapshotEngine{
 		Engine:  NewEngine(parameters, oiCalc, marketID),
 		changed: true,
 		buf:     buf,
-		key: (&types.PayloadLiquidityTarget{
-			Target: &snapshot.LiquidityTarget{MarketId: marketID},
-		}).Key(),
+		key:     key,
+		keys:    []string{key},
 	}
 }
 
@@ -64,7 +68,7 @@ func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
 }
 
 func (e *SnapshotEngine) Keys() []string {
-	return []string{e.key}
+	return e.keys
 }
 
 func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
