@@ -145,7 +145,8 @@ func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 	}
 
 	e.buf.Reset()
-	if err := e.buf.Marshal(p); err != nil {
+	err := e.buf.Marshal(p)
+	if err != nil {
 		return nil, nil, err
 	}
 
