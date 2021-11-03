@@ -14,6 +14,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// waits untill the tranferStorage server has at least on subscriber
+func waitForSubsription(ctx context.Context, ts *TestServer) error {
+	nonExistentID := ^uint64(0) // really big
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			// This will return nil if there are no subscribers, even if the given ID doesn't
+			// exists. So we can use this to know when at least one subscriber exists. Its
+			// not great to rely on an implementation detail like this, but its better than adding
+			// an arbitrary sleep
+			if ts.trStorage.Unsubscribe(nonExistentID) != nil {
+				return nil
+			}
+		}
+	}
+}
+
 func TestObserveTransferResponses(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
@@ -27,6 +46,10 @@ func TestObserveTransferResponses(t *testing.T) {
 	// we need to subscribe to the stream prior to publishing the events
 	stream, err := client.TransferResponsesSubscribe(ctx, &apipb.TransferResponsesSubscribeRequest{})
 	assert.NoError(t, err)
+
+	// wait until the transfer response has subscribed before sending events
+	err = waitForSubsription(ctx, server)
+	require.NoError(t, err)
 
 	PublishEvents(t, ctx, server.broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		tr := be.GetTransferResponses()
