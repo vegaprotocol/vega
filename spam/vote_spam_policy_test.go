@@ -44,9 +44,10 @@ func TestVotingSpamProtection(t *testing.T) {
 	t.Run("On end of block, block voting counters are reset and take a snapshot roundtrip", testVoteEndBlockReset)
 }
 
-func getVotingSpamPolicy() *spam.VoteSpamPolicy {
+func getVotingSpamPolicy(accounts map[string]*num.Uint) *spam.VoteSpamPolicy {
 	logger := logging.NewTestLogger()
-	policy := spam.NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, logger)
+	testAccounts := testAccounts{balances: accounts}
+	policy := spam.NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, logger, testAccounts)
 	minTokensForVoting, _ := num.UintFromString("100000000000000000000", 10)
 	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForVoting, minTokensForVoting)
 	policy.UpdateIntParam(netparams.SpamProtectionMaxVotes, 3)
@@ -55,8 +56,8 @@ func getVotingSpamPolicy() *spam.VoteSpamPolicy {
 
 // reject vote requests when the voter doesn't have sufficient balance at the beginning of the epoch.
 func testPreRejectInsufficientBalance(t *testing.T) {
-	policy := getVotingSpamPolicy()
-	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": num.NewUint(50)})
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": num.NewUint(50)})
+	policy.Reset(types.Epoch{Seq: 0})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
@@ -65,12 +66,13 @@ func testPreRejectInsufficientBalance(t *testing.T) {
 
 // reject votes requests when the voter doesn't have sufficient balance with a factored min tokens.
 func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
-	policy := getVotingSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
 	tokenMap := make(map[string]*num.Uint, 2)
 	tokenMap["party1"] = sufficientTokensForVoting
 	tokenMap["party2"] = sufficientTokens2ForVoting
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getVotingSpamPolicy(tokenMap)
+
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// make 30% of transactions post fail
 	tx1 := &testTx{party: "party1", proposal: "proposal1"}
@@ -128,7 +130,6 @@ func testPreRejectInsufficientBalanceWithFactor(t *testing.T) {
 
 // attack for a number of blocks until the min tokens reach 1600.
 func testFactoringOfMinTokens(t *testing.T) {
-	policy := getVotingSpamPolicy()
 	// epoch 0 started party1 has enough balance without doubling, party2 has enough balance with doubling
 	tokenMap := make(map[string]*num.Uint, 2)
 	tokenMap["party1"] = sufficientTokensForVoting
@@ -136,7 +137,9 @@ func testFactoringOfMinTokens(t *testing.T) {
 	tokenMap["party3"] = sufficientTokens4ForVoting
 	tokenMap["party4"] = sufficientTokens8ForVoting
 	tokenMap["party5"] = maxSufficientTokensForVoting
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getVotingSpamPolicy(tokenMap)
+
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// party x submits 5 votes for proposal 1 (with nothing earlier in the epoch)
 	for i := 0; i < 4; i++ {
@@ -196,7 +199,7 @@ func testFactoringOfMinTokens(t *testing.T) {
 	}
 
 	// advance to the next epoch so we reset the balances and all should be able to succeed with their token balances
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 0})
 
 	for i := 0; i < 4; i++ {
 		tx := &testTx{party: "party" + strconv.Itoa(i+1), proposal: "proposal" + strconv.Itoa(i+1)}
@@ -228,10 +231,10 @@ func testFactoringOfMinTokens(t *testing.T) {
 
 // reject vote requests from banned parties for as long as they are banned.
 func testPreRejectBannedParty(t *testing.T) {
-	policy := getVotingSpamPolicy()
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
 
 	// epoch 0 started party1 has enough balance
-	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// trigger banning of party1 by causing it to post reject 3/6 of the requests to vote
 	tx := &testTx{party: "party1", proposal: "proposal1"}
@@ -260,24 +263,22 @@ func testPreRejectBannedParty(t *testing.T) {
 
 	// advance epochs - verify still banned until epoch 4 (including)
 	for i := 0; i < 4; i++ {
-		policy.Reset(types.Epoch{Seq: uint64(i + 1)}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
+		policy.Reset(types.Epoch{Seq: uint64(i + 1)})
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
 		require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 	}
 	// should be released from ban on epoch 5
-	policy.Reset(types.Epoch{Seq: 5}, map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy.Reset(types.Epoch{Seq: 5})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, true, accept)
 	require.Nil(t, err)
 }
 
 func testPreRejectTooManyVotesPerProposal(t *testing.T) {
-	policy := getVotingSpamPolicy()
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
 	// epoch 0 block 0
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// vote 5 times for each proposal all pre accepted, 3 for each post accepted
 	for i := 0; i < 2; i++ {
@@ -316,7 +317,7 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 	require.Nil(t, err)
 
 	// advance to next epoch to reset limits
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 0})
 	for i := 0; i < 3; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		// pre rejected
@@ -327,11 +328,9 @@ func testPreRejectTooManyVotesPerProposal(t *testing.T) {
 }
 
 func testPreAccept(t *testing.T) {
-	policy := getVotingSpamPolicy()
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
 	// epoch 0 block 0
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// vote 5 times for each proposal all pre accepted, 3 for each post accepted
 	for i := 0; i < 2; i++ {
@@ -346,10 +345,8 @@ func testPreAccept(t *testing.T) {
 }
 
 func testPostAccept(t *testing.T) {
-	policy := getVotingSpamPolicy()
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy.Reset(types.Epoch{Seq: 0})
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		// pre accepted
@@ -372,10 +369,8 @@ func testPostAccept(t *testing.T) {
 }
 
 func testPostRejectTooManyVotes(t *testing.T) {
-	policy := getVotingSpamPolicy()
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy.Reset(types.Epoch{Seq: 0})
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		// pre accepted
@@ -405,10 +400,8 @@ func testPostRejectTooManyVotes(t *testing.T) {
 }
 
 func testCountersUpdated(t *testing.T) {
-	policy := getVotingSpamPolicy()
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy.Reset(types.Epoch{Seq: 0})
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		// pre accepted
@@ -455,12 +448,8 @@ func testCountersUpdated(t *testing.T) {
 
 func testReset(t *testing.T) {
 	// set state
-	policy := getVotingSpamPolicy()
-
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy.Reset(types.Epoch{Seq: 0})
 	for i := 0; i < 2; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal" + strconv.Itoa(i+1)}
 		// pre accepted
@@ -490,23 +479,23 @@ func testReset(t *testing.T) {
 	// trigger ban of party1 until epoch 4
 	policy.EndOfBlock(1)
 	// verify reset at the start of new epoch, party1 should still be banned for the epoch until epoch 4
-	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 1})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 
-	policy.Reset(types.Epoch{Seq: 2}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 2})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 
-	policy.Reset(types.Epoch{Seq: 3}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 3})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, spam.ErrPartyIsBannedFromVoting, err)
 
-	policy.Reset(types.Epoch{Seq: 4}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 4})
 	accept, err = policy.PostBlockAccept(tx)
 	require.Equal(t, true, accept)
 	require.Nil(t, err)
@@ -514,12 +503,8 @@ func testReset(t *testing.T) {
 
 func testVoteEndBlockReset(t *testing.T) {
 	// set state
-	policy := getVotingSpamPolicy()
-
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientTokensForVoting
-
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getVotingSpamPolicy(map[string]*num.Uint{"party1": sufficientTokensForVoting})
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// in each block we vote once
 	var i uint64 = 0
