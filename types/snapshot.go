@@ -51,7 +51,6 @@ const (
 	EventForwarderSnapshot   SnapshotNamespace = "eventforwarder"
 	WitnessSnapshot          SnapshotNamespace = "witness"
 	TopologySnapshot         SnapshotNamespace = "topology"
-	OracleDataSnapshot       SnapshotNamespace = "oracle"
 	LiquiditySnapshot        SnapshotNamespace = "liquidity"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
@@ -81,7 +80,6 @@ var (
 		"limits":         LimitSnapshot,
 		"witness":        WitnessSnapshot,
 		"topology":       TopologySnapshot,
-		"oracleData":     OracleDataSnapshot,
 		"idgenerator":    IDGenSnapshot,
 		"stakeverifier":  StakeVerifierSnapshot,
 		"liquidity":      LiquiditySnapshot,

@@ -346,6 +346,8 @@ func NewMarket(
 		lastBestBidPrice:   num.Zero(),
 	}
 
+	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
+	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	return market, nil
 }
 
@@ -505,9 +507,12 @@ func (m *Market) GetID() string {
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnChainTimeUpdate")
-
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if m.closed {
+		return true
+	}
 
 	// some engines still needs to get updates:
 	m.currentTime = t
@@ -525,20 +530,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// we will just skip everything there as nothing apply.
 	if m.mkt.State == types.MarketStateProposed {
 		return false
-	}
-
-	// if we're already in trading terminated state and the market is closed it means
-	// we didn't complete final settlement as oracle price was not available
-	// retry here
-	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
-
-	if m.mkt.State == types.MarketStateTradingTerminated {
-		// if we now have settlement price - try to settle and close the market
-		if settlementPrice != nil {
-			m.closeMarket(ctx, t)
-		}
-		m.closed = m.mkt.State == types.MarketStateSettled
-		return m.closed
 	}
 
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
@@ -559,19 +550,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
-
-	closed := m.tradableInstrument.Instrument.Product.IsTradingTerminated()
-	if !closed {
-		m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
-	} else {
-		m.mkt.State = types.MarketStateTradingTerminated
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		if settlementPrice != nil {
-			m.closeMarket(ctx, t)
-		}
-	}
-
-	m.closed = m.mkt.State == types.MarketStateSettled
+	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
 
@@ -2845,6 +2824,32 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		if evt := m.as.AuctionExtended(ctx); evt != nil {
 			m.broker.Send(evt)
 		}
+	}
+}
+
+func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
+	m.mu.Lock()
+	m.mkt.State = types.MarketStateTradingTerminated
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+	sp, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
+	if sp != nil {
+		m.mu.Unlock()
+		m.settlementPrice(ctx, sp)
+	} else {
+		m.mu.Unlock()
+	}
+}
+
+func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.closed {
+		return
+	}
+	if m.mkt.State == types.MarketStateTradingTerminated && settlementPrice != nil {
+		m.closeMarket(ctx, m.currentTime)
+		m.closed = m.mkt.State == types.MarketStateSettled
 	}
 }
 
