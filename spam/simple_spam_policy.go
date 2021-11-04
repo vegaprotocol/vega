@@ -198,7 +198,9 @@ func (ssp *SimpleSpamPolicy) PostBlockAccept(tx abci.Tx) (bool, error) {
 		} else {
 			ssp.partyBlockRejects[party] = &blockRejectInfo{total: 1, rejected: 1}
 		}
-		ssp.log.Error("Spam post: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party))
+		if ssp.log.GetLevel() <= logging.DebugLevel {
+			ssp.log.Debug("Spam post: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party))
+		}
 		return false, ssp.tooManyCommands
 	}
 
@@ -227,20 +229,26 @@ func (ssp *SimpleSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	// check if the party is banned
 	_, ok := ssp.bannedParties[party]
 	if ok {
-		ssp.log.Error("Spam pre: party is banned from "+ssp.policyName, logging.String("party", party))
+		if ssp.log.GetLevel() <= logging.DebugLevel {
+			ssp.log.Debug("Spam pre: party is banned from "+ssp.policyName, logging.String("party", party))
+		}
 		return false, ssp.banErr
 	}
 
 	// check if the party has enough balance to submit commands
 	balance, err := ssp.accounts.GetAvailableBalance(party)
 	if err != nil || balance.LT(ssp.minTokensRequired) {
-		ssp.log.Error("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("party", party), logging.String("balance", num.UintToString(balance)))
+		if ssp.log.GetLevel() <= logging.DebugLevel {
+			ssp.log.Debug("Spam pre: party has insufficient balance for "+ssp.policyName, logging.String("party", party), logging.String("balance", num.UintToString(balance)))
+		}
 		return false, ssp.insufficientTokensErr
 	}
 
 	// Check we have not exceeded our command limit for this given party in this epoch
 	if commandCount, ok := ssp.partyToCount[party]; ok && commandCount >= ssp.maxAllowedCommands {
-		ssp.log.Error("Spam pre: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party), logging.Uint64("count", commandCount), logging.Uint64("maxAllowed", ssp.maxAllowedCommands))
+		if ssp.log.GetLevel() <= logging.DebugLevel {
+			ssp.log.Debug("Spam pre: party has already submitted the max amount of commands for "+ssp.policyName, logging.String("party", party), logging.Uint64("count", commandCount), logging.Uint64("maxAllowed", ssp.maxAllowedCommands))
+		}
 		return false, ssp.tooManyCommands
 	}
 

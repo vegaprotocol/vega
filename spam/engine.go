@@ -2,6 +2,7 @@ package spam
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/netparams"
 
@@ -33,6 +34,7 @@ type Engine struct {
 	log        *logging.Logger
 	config     Config
 	accounting StakingAccounts
+	cfgMu      sync.Mutex
 
 	transactionTypeToPolicy map[txn.Command]SpamPolicy
 	currentEpoch            *types.Epoch
@@ -49,6 +51,22 @@ type SpamPolicy interface {
 	UpdateIntParam(name string, value int64) error
 	Serialise() ([]byte, error)
 	Deserialise(payload *types.Payload) error
+}
+
+// ReloadConf updates the internal configuration of the spam engine.
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfgMu.Lock()
+	e.config = cfg
+	e.cfgMu.Unlock()
 }
 
 // New instantiates a new spam engine.
