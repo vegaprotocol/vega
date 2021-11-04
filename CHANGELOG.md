@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.45.3
+*2021-10-27*
+
+### Improvement
+- [4362](https://github.com/vegaprotocol/vega/pull/4362) - Check current balance instead of caching at start of epoch in spam
+
+
 ## 0.45.2
 *2021-10-27*
 
