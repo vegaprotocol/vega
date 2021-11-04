@@ -19,6 +19,7 @@ import (
 	"code.vegaprotocol.io/data-node/epochs"
 	"code.vegaprotocol.io/data-node/fee"
 	"code.vegaprotocol.io/data-node/governance"
+	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
 	"code.vegaprotocol.io/data-node/liquidity"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/markets"
@@ -36,6 +37,7 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	"github.com/stretchr/testify/require"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
@@ -102,14 +104,12 @@ func getTestGRPCServer(
 	mockCoreServiceClient *mocks.MockCoreServiceClient,
 	err error,
 ) {
-	path := fmt.Sprintf("vegatest-%d-", port)
-	tempDir, tidyTempDir, err := storage.TempDir(path)
-	if err != nil {
-		err = fmt.Errorf("failed to create tmp dir: %s", err.Error())
-		return
-	}
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
 
-	conf := config.NewDefaultConfig(tempDir)
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	conf := config.NewDefaultConfig()
 	conf.API.IP = "127.0.0.1"
 	conf.API.Port = port
 
@@ -123,28 +123,28 @@ func getTestGRPCServer(
 	ctx, cancel := context.WithCancel(ctx)
 
 	// Account Store
-	accountStore, err := storage.NewAccounts(logger, conf.Storage, cancel)
+	accountStore, err := storage.NewAccounts(logger, st.AccountsHome, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create account store")
 		return
 	}
 
 	// Candle Store
-	candleStore, err := storage.NewCandles(logger, conf.Storage, cancel)
+	candleStore, err := storage.NewCandles(logger, st.CandlesHome, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create candle store")
 		return
 	}
 
 	// Market Store
-	marketStore, err := storage.NewMarkets(logger, conf.Storage, cancel)
+	marketStore, err := storage.NewMarkets(logger, st.MarketsHome, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create market store")
 		return
 	}
 
 	// Order Store
-	orderStore, err := storage.NewOrders(logger, conf.Storage, cancel)
+	orderStore, err := storage.NewOrders(logger, st.OrdersHome, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create order store")
 		return
@@ -167,7 +167,7 @@ func getTestGRPCServer(
 	}
 
 	// Trade Store
-	tradeStore, err := storage.NewTrades(logger, conf.Storage, cancel)
+	tradeStore, err := storage.NewTrades(logger, st.TradesHome, conf.Storage, cancel)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create trade store")
 		return
@@ -177,7 +177,7 @@ func getTestGRPCServer(
 	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
 
 	// checkpoint storage
-	checkpointStore, err := storage.NewCheckpoints(logger, conf.Storage, cancel)
+	checkpointStore, err := storage.NewCheckpoints(logger, st.CheckpointsHome, conf.Storage, cancel)
 	if err != nil {
 		err = fmt.Errorf("failed to create checkpoint store: %w", err)
 		return
@@ -294,9 +294,10 @@ func getTestGRPCServer(
 	}
 
 	tidy = func() {
-		tidyTempDir()
 		mockCtrl.Finish()
 		cancel()
+		st.Purge()
+		cleanupFn()
 	}
 
 	lis := bufconn.Listen(connBufSize)

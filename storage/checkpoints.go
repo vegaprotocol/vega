@@ -1,12 +1,13 @@
 package storage
 
 import (
+	"fmt"
+
 	"code.vegaprotocol.io/data-node/logging"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
 )
 
 type Checkpoints struct {
@@ -16,16 +17,13 @@ type Checkpoints struct {
 	onCriticalError func()
 }
 
-func NewCheckpoints(log *logging.Logger, c Config, onCriticalError func()) (*Checkpoints, error) {
+func NewCheckpoints(log *logging.Logger, home string, c Config, onCriticalError func()) (*Checkpoints, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	if err := InitStoreDirectory(c.CheckpointsDirPath); err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for checkpoints storage")
-	}
-	db, err := newBadgerStore(getOptionsFromConfig(c.Checkpoints, c.CheckpointsDirPath, log))
+	db, err := newBadgerStore(getOptionsFromConfig(c.Checkpoints, home, log))
 	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for checkpoints storage")
+		return nil, fmt.Errorf("couldn't open Badger checkpoints database: %w", err)
 	}
 	return &Checkpoints{
 		Config:          c,

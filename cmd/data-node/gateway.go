@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/data-node/gateway"
 	"code.vegaprotocol.io/data-node/gateway/server"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/shared/paths"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jessevdk/go-flags"
@@ -20,7 +21,7 @@ import (
 type gatewayCmd struct {
 	ctx context.Context
 	gateway.Config
-	config.RootPathFlag
+	config.VegaHomeFlag
 }
 
 func (opts *gatewayCmd) Execute(_ []string) error {
@@ -31,7 +32,9 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 	log := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer log.AtExit()
 
-	cfgwatchr, err := config.NewFromFile(ctx, log, opts.RootPath, opts.RootPath)
+	vegaPaths := paths.New(opts.VegaHome)
+
+	cfgwatchr, err := config.NewWatcher(ctx, log, vegaPaths)
 	if err != nil {
 		log.Error("unable to start config watcher", logging.Error(err))
 		return errors.New("unable to start config watcher")
@@ -76,9 +79,8 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 
 func Gateway(ctx context.Context, parser *flags.Parser) error {
 	opts := &gatewayCmd{
-		ctx:          ctx,
-		Config:       gateway.NewDefaultConfig(),
-		RootPathFlag: config.NewRootPathFlag(),
+		ctx:    ctx,
+		Config: gateway.NewDefaultConfig(),
 	}
 
 	_, err := parser.AddCommand("gateway", "The API gateway", "The gateway for all the vega APIs", opts)

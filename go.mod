@@ -5,6 +5,7 @@ go 1.16
 require (
 	code.vegaprotocol.io/protos v0.45.2-0.20211026143814-fd1dc62fd4e8
 	code.vegaprotocol.io/quant v0.2.5
+	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
 	code.vegaprotocol.io/vega v0.45.3-0.20211029150423-746d5f89ca51
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
@@ -21,7 +22,6 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vektah/gqlparser/v2 v2.1.0
-	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/multierr v1.6.0 // indirect

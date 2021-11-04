@@ -1,14 +1,16 @@
 package storage
 
 import (
+	"fmt"
+
 	cfgencoding "code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
+	"github.com/pkg/errors"
 
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
 	"github.com/golang/protobuf/proto"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -25,18 +27,14 @@ type Market struct {
 }
 
 // NewMarkets returns a concrete implementation of MarketStore.
-func NewMarkets(log *logging.Logger, c Config, onCriticalError func()) (*Market, error) {
+func NewMarkets(log *logging.Logger, home string, c Config, onCriticalError func()) (*Market, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.MarketsDirPath)
+	db, err := badger.Open(getOptionsFromConfig(c.Markets, home, log))
 	if err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for market storage")
-	}
-	db, err := badger.Open(getOptionsFromConfig(c.Markets, c.MarketsDirPath, log))
-	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for market storage")
+		return nil, fmt.Errorf("couldn't open Badger markets database: %w", err)
 	}
 	bs := badgerStore{db: db}
 	return &Market{
