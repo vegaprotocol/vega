@@ -2627,11 +2627,6 @@ func VoteSpamPolicyFromProto(vsp *snapshot.VoteSpamPolicy) *VoteSpamPolicy {
 		bannedParties = append(bannedParties, BannedPartyFromProto(ban))
 	}
 
-	partyBalance := make([]*PartyTokenBalance, 0, len(vsp.TokenBalance))
-	for _, balance := range vsp.TokenBalance {
-		partyBalance = append(partyBalance, PartyTokenBalanceFromProto(balance))
-	}
-
 	recentBlocksRejectStats := make([]*BlockRejectStats, 0, len(vsp.RecentBlocksRejectStats))
 	for _, rejects := range vsp.RecentBlocksRejectStats {
 		recentBlocksRejectStats = append(recentBlocksRejectStats, BlockRejectStatsFromProto(rejects))
