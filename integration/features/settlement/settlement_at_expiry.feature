@@ -492,7 +492,7 @@ Feature: Test settlement at expiry
       | party2 | ETH/DEC21 | buy  | 1      | 1101  | 0                | TYPE_LIMIT | TIF_GTC | ref-8     |
 
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
-    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
+    And the market state should be "STATE_SUSPENDED" for the market "ETH/DEC21"
 
     And then the network moves ahead "10" blocks
 
@@ -502,7 +502,7 @@ Feature: Test settlement at expiry
 
     And then the network moves ahead "1" blocks
 
-    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
 
     And then the network moves ahead "400" blocks
     
@@ -518,8 +518,6 @@ Feature: Test settlement at expiry
       | prices.ETH.value | 800   |
 
     And then the network moves ahead "10" blocks
-
-    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC19"
 
     # Check that party positions and overall account balances are the same as before auction start (accounting for a settlement transfer of 200 from party2 to party1)
     Then the parties should have the following profit and loss:
