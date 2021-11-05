@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
-
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -103,7 +101,7 @@ func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) (strin
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
-		return vegatime.Now(), err
+		return time.Time{}, err
 	}
 	return res.Genesis.GenesisTime.UTC(), nil
 }
