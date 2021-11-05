@@ -532,6 +532,19 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 		return false
 	}
 
+	// if in somce case we're still in trading terminated state and tried to settle but failed,
+	// as long as there's settlement price we can retry
+	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
+
+	if m.mkt.State == types.MarketStateTradingTerminated {
+		// if we now have settlement price - try to settle and close the market
+		if settlementPrice != nil {
+			m.closeMarket(ctx, t)
+		}
+		m.closed = m.mkt.State == types.MarketStateSettled
+		return m.closed
+	}
+
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
 	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
 		m.lastEquityShareDistributed = t
@@ -2829,21 +2842,24 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 
 func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	m.mu.Lock()
+	defer m.mu.Unlock()
 	m.mkt.State = types.MarketStateTradingTerminated
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	sp, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
 	if sp != nil {
-		m.mu.Unlock()
-		m.settlementPrice(ctx, sp)
-	} else {
-		m.mu.Unlock()
+		m.settlementPriceWithLock(ctx, sp)
 	}
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	m.settlementPriceWithLock(ctx, settlementPrice)
+}
+
+//NB this musy be called with the lock already acquired
+func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Uint) {
 	if m.closed {
 		return
 	}

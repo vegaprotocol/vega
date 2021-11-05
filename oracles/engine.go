@@ -83,8 +83,7 @@ func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
 	return nil
 }
 
-// BroadcastData appends the OracleData to the buffer and is broadcast on chain time event
-// to products and risk models that are interested in it. If no one is listening to this OracleData, it is discarded.
+// BroadcastData broadcasts data to products and risk models that are interested in it. If no one is listening to this OracleData, it is discarded.
 func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
 	err := e.sendOracleUpdate(ctx, data)
 	if err != nil {
