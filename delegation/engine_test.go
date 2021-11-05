@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/validators"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
@@ -2289,4 +2290,11 @@ func (tt *TestTopology) IsValidatorNode(nodeID string) bool {
 
 func (tt *TestTopology) AllNodeIDs() []string {
 	return []string{"1", "2", "3", "4", "5"}
+}
+
+func (tt *TestTopology) Get(key string) *validators.ValidatorData {
+	return &validators.ValidatorData{
+		ID:         key,
+		VegaPubKey: key,
+	}
 }

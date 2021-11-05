@@ -98,6 +98,7 @@ func (u Undelegate) String() string {
 // ValidatorData is delegation data for validator.
 type ValidatorData struct {
 	NodeID            string
+	PubKey            string
 	StakeByDelegators *num.Uint
 	SelfStake         *num.Uint
 	Delegators        map[string]*num.Uint

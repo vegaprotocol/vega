@@ -53,16 +53,19 @@ func testValidatorScore(t *testing.T) {
 func testTotalDelegated(t *testing.T) {
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
+		PubKey:            "node1",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.NewUint(10000),
 	}
 	validator2 := &types.ValidatorData{
 		NodeID:            "node2",
+		PubKey:            "node2",
 		SelfStake:         num.NewUint(20000),
 		StakeByDelegators: num.Zero(),
 	}
 	validator3 := &types.ValidatorData{
 		NodeID:            "node3",
+		PubKey:            "node3",
 		SelfStake:         num.NewUint(30000),
 		StakeByDelegators: num.NewUint(40000),
 	}
@@ -78,6 +81,7 @@ func testCalcValidatorsScore(t *testing.T) {
 	for i := 0; i < 12; i++ {
 		validators = append(validators, &types.ValidatorData{
 			NodeID:            "node" + strconv.Itoa(i),
+			PubKey:            "node" + strconv.Itoa(i),
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.NewUint(3700000),
 		})
@@ -85,6 +89,7 @@ func testCalcValidatorsScore(t *testing.T) {
 
 	validators = append(validators, &types.ValidatorData{
 		NodeID:            "node13",
+		PubKey:            "node13",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.Zero(),
 	})
@@ -101,6 +106,7 @@ func testCalcValidatorsScore(t *testing.T) {
 
 	validators[12] = &types.ValidatorData{
 		NodeID:            "node13",
+		PubKey:            "node13",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(19900),
 	}
@@ -109,6 +115,7 @@ func testCalcValidatorsScore(t *testing.T) {
 
 	validators[12] = &types.ValidatorData{
 		NodeID:            "node13",
+		PubKey:            "node13",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(919900),
 	}
@@ -150,12 +157,14 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	delegatorForVal1["party2"] = num.NewUint(4000)
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
+		PubKey:            "node1",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.NewUint(10000),
 		Delegators:        delegatorForVal1,
 	}
 	validator2 := &types.ValidatorData{
 		NodeID:            "node2",
+		PubKey:            "node2",
 		SelfStake:         num.NewUint(20000),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},
@@ -165,6 +174,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	delegatorForVal3["party1"] = num.NewUint(40000)
 	validator3 := &types.ValidatorData{
 		NodeID:            "node3",
+		PubKey:            "node3",
 		SelfStake:         num.NewUint(30000),
 		StakeByDelegators: num.NewUint(40000),
 		Delegators:        delegatorForVal3,
@@ -172,6 +182,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 
 	validator4 := &types.ValidatorData{
 		NodeID:            "node4",
+		PubKey:            "node4",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},
@@ -231,12 +242,14 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	delegatorForVal1["party2"] = num.NewUint(4000)
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
+		PubKey:            "node1",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.NewUint(10000),
 		Delegators:        delegatorForVal1,
 	}
 	validator2 := &types.ValidatorData{
 		NodeID:            "node2",
+		PubKey:            "node2",
 		SelfStake:         num.NewUint(20000),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},
@@ -246,6 +259,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	delegatorForVal3["party1"] = num.NewUint(40000)
 	validator3 := &types.ValidatorData{
 		NodeID:            "node3",
+		PubKey:            "node3",
 		SelfStake:         num.NewUint(30000),
 		StakeByDelegators: num.NewUint(40000),
 		Delegators:        delegatorForVal3,
@@ -253,6 +267,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 
 	validator4 := &types.ValidatorData{
 		NodeID:            "node4",
+		PubKey:            "node4",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},
@@ -307,12 +322,14 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	delegatorForVal1["party2"] = num.NewUint(4000)
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
+		PubKey:            "node1",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.NewUint(10000),
 		Delegators:        delegatorForVal1,
 	}
 	validator2 := &types.ValidatorData{
 		NodeID:            "node2",
+		PubKey:            "node2",
 		SelfStake:         num.NewUint(20000),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},
@@ -322,6 +339,7 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	delegatorForVal3["party1"] = num.NewUint(40000)
 	validator3 := &types.ValidatorData{
 		NodeID:            "node3",
+		PubKey:            "node3",
 		SelfStake:         num.NewUint(30000),
 		StakeByDelegators: num.NewUint(40000),
 		Delegators:        delegatorForVal3,
@@ -329,6 +347,7 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 
 	validator4 := &types.ValidatorData{
 		NodeID:            "node4",
+		PubKey:            "node4",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},

@@ -118,20 +118,20 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 		}
 		// if there is no cap just add the total payout for the validator
 		if maxPayout.IsZero() {
-			rewards[vd.NodeID] = num.Zero().Add(rewardForNode, amountToKeepByValidator)
+			rewards[vd.PubKey] = num.Zero().Add(rewardForNode, amountToKeepByValidator)
 			totalRewardPayout.AddSum(amountToKeepByValidator)
 		} else {
 			balanceWithPayout := num.Zero().Add(rewardForNode, amountToKeepByValidator)
 			if balanceWithPayout.LTE(maxPayout) {
-				rewards[vd.NodeID] = balanceWithPayout
+				rewards[vd.PubKey] = balanceWithPayout
 				totalRewardPayout.AddSum(amountToKeepByValidator)
 			} else {
-				rewards[vd.NodeID] = maxPayout
+				rewards[vd.PubKey] = maxPayout
 				totalRewardPayout.AddSum(num.Zero().Sub(maxPayout, rewardForNode))
 			}
 		}
 
-		log.Info("Rewards: reward kept by validator for epoch (post max payout cap)", logging.String("epoch", epochSeq), logging.String("validator", vd.NodeID), logging.String("amountToKeepByValidator", rewards[vd.NodeID].String()))
+		log.Info("Rewards: reward kept by validator for epoch (post max payout cap)", logging.String("epoch", epochSeq), logging.String("validator", vd.NodeID), logging.String("amountToKeepByValidator", rewards[vd.PubKey].String()))
 
 		remainingRewardForDelegators := amountToGiveToDelegators
 
