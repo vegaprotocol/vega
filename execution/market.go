@@ -2858,7 +2858,7 @@ func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint)
 	m.settlementPriceWithLock(ctx, settlementPrice)
 }
 
-//NB this musy be called with the lock already acquired.
+// NB this musy be called with the lock already acquired.
 func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Uint) {
 	if m.closed {
 		return
