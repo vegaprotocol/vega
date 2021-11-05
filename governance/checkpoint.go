@@ -6,7 +6,6 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -29,10 +28,6 @@ func (e *Engine) Load(_ context.Context, data []byte) error {
 	snap := &checkpoint.Proposals{}
 	if err := proto.Unmarshal(data, snap); err != nil {
 		return err
-	}
-	// just make sure the time is set
-	if e.currentTime.IsZero() {
-		e.currentTime = vegatime.Now()
 	}
 
 	e.activeProposals = make([]*proposal, 0, len(snap.Proposals))

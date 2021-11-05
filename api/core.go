@@ -210,7 +210,7 @@ func (s *coreService) Statistics(ctx context.Context, _ *protoapi.StatisticsRequ
 		BacklogLength:         uint64(backlogLength),
 		TotalPeers:            uint64(numPeers),
 		GenesisTime:           genesisTime,
-		CurrentTime:           vegatime.Format(vegatime.Now()),
+		CurrentTime:           vegatime.Format(time.Now()),
 		VegaTime:              vegatime.Format(epochTime),
 		Uptime:                vegatime.Format(s.stats.GetUptime()),
 		TxPerBlock:            s.stats.Blockchain.TotalTxLastBatch(),

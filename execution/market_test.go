@@ -2798,7 +2798,7 @@ func TestOrderBook_Crash2651(t *testing.T) {
 
 	// Switch to auction mode
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "Order01", types.SideBuy, "613f", 5, 9000)
@@ -3284,7 +3284,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 
 	// Flip to auction so the pegged order will be parked
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 	o2Update = tm.lastOrderUpdate(o2.ID)
 	assert.Equal(t, types.OrderStatusParked, o2Update.Status)
@@ -4120,7 +4120,7 @@ func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	buys := []*types.LiquidityOrder{
@@ -4163,7 +4163,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Add orders that will outlive the auction to set the reference prices
