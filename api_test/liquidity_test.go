@@ -19,9 +19,10 @@ func TestLiquidity_Get(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
-	conn, broker := NewTestServer(t, ctx, true)
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
 
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
+	PublishEvents(t, ctx, server.broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		lp := be.GetLiquidityProvision()
 		require.NotNil(t, lp)
 		fee, _ := num.DecimalFromString(lp.Fee)
@@ -55,7 +56,7 @@ func TestLiquidity_Get(t *testing.T) {
 		return e, nil
 	}, "liquidity-events.golden")
 
-	client := apipb.NewTradingDataServiceClient(conn)
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
 	require.NotNil(t, client)
 
 	lpMmarketID := "076BB86A5AA41E3E"
