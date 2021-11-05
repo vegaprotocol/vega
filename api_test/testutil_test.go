@@ -77,7 +77,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		conn        *grpc.ClientConn
 	)
 	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
-	defer cleanupFn()
 
 	st, err := storage.InitialiseStorage(vegaPaths)
 	require.NoError(t, err)
