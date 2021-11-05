@@ -718,7 +718,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	ordersToCancel := m.matching.EnterAuction()
 
 	// Move into auction mode to prevent pegged order repricing
-	event := m.as.AuctionStarted(ctx)
+	event := m.as.AuctionStarted(ctx, m.currentTime)
 
 	// this is at least the size of the orders to be cancelled
 	updatedOrders := make([]*types.Order, 0, len(ordersToCancel))
@@ -1252,7 +1252,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		}
 	}
 
-	if evt := m.as.AuctionExtended(ctx); evt != nil {
+	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 		m.broker.Send(evt)
 	}
 	m.checkLiquidity(ctx, trades)
@@ -2819,7 +2819,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		*rf,
 		m.getCurrentMarkPrice(),
 		vBid, vAsk)
-	if evt := m.as.AuctionExtended(ctx); evt != nil {
+	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 		m.broker.Send(evt)
 	}
 }
@@ -2842,7 +2842,7 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
-		if evt := m.as.AuctionExtended(ctx); evt != nil {
+		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 			m.broker.Send(evt)
 		}
 	}

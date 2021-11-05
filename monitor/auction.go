@@ -7,7 +7,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 type AuctionState struct {
@@ -204,15 +203,14 @@ func (a AuctionState) AuctionStart() bool {
 
 // AuctionExtended - called to confirm we will not leave auction, returns the event to be sent
 // or nil if the auction wasn't extended.
-func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
+func (a *AuctionState) AuctionExtended(ctx context.Context, now time.Time) *events.Auction {
 	if a.extension == nil {
 		return nil
 	}
 	a.start = false
 	end := int64(0)
 	if a.begin == nil {
-		b := vegatime.Now()
-		a.begin = &b
+		a.begin = &now
 	}
 	if a.end != nil && a.end.Duration > 0 {
 		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
@@ -224,13 +222,12 @@ func (a *AuctionState) AuctionExtended(ctx context.Context) *events.Auction {
 }
 
 // AuctionStarted is called by the execution package to set flags indicating the market has started the auction.
-func (a *AuctionState) AuctionStarted(ctx context.Context) *events.Auction {
+func (a *AuctionState) AuctionStarted(ctx context.Context, now time.Time) *events.Auction {
 	a.timer = metrics.NewTimeCounter(a.m.ID, "Auction duration", a.trigger.String())
 	a.start = false
 	end := int64(0)
 	if a.begin == nil {
-		b := vegatime.Now()
-		a.begin = &b
+		a.begin = &now
 	}
 	if a.end != nil && a.end.Duration > 0 {
 		end = a.begin.Add(time.Duration(a.end.Duration) * time.Second).UnixNano()
