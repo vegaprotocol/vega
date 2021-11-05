@@ -40,6 +40,7 @@ type VoteSpamPolicy struct {
 	log             *logging.Logger
 	numVotes        uint64
 	minVotingTokens *num.Uint
+	accounts        StakingAccounts
 
 	minTokensParamName  string
 	maxAllowedParamName string
@@ -49,7 +50,6 @@ type VoteSpamPolicy struct {
 	partyToVote             map[string]map[string]uint64                     // those are votes that are already on blockchain
 	blockPartyToVote        map[string]map[string]uint64                     // votes in the current block
 	bannedParties           map[string]uint64                                // parties banned until epoch seq
-	tokenBalance            map[string]*num.Uint                             // the balance of the party in governance tokens at the beginning of the epoch
 	recentBlocksRejectStats [numberOfBlocksForIncreaseCheck]*blockRejectInfo // recent blocks post rejection stats
 	blockPostRejects        *blockRejectInfo                                 // this blocks post reject stats
 	partyBlockRejects       map[string]*blockRejectInfo                      // total vs rejection in the current block
@@ -60,15 +60,15 @@ type VoteSpamPolicy struct {
 }
 
 // NewVoteSpamPolicy instantiates vote spam policy.
-func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, log *logging.Logger) *VoteSpamPolicy {
+func NewVoteSpamPolicy(minTokensParamName string, maxAllowedParamName string, log *logging.Logger, accounts StakingAccounts) *VoteSpamPolicy {
 	return &VoteSpamPolicy{
 		log:                   log,
+		accounts:              accounts,
 		minVotingTokensFactor: num.NewUint(1),
 
 		partyToVote:         map[string]map[string]uint64{},
 		blockPartyToVote:    map[string]map[string]uint64{},
 		bannedParties:       map[string]uint64{},
-		tokenBalance:        map[string]*num.Uint{},
 		blockPostRejects:    &blockRejectInfo{total: 0, rejected: 0},
 		partyBlockRejects:   map[string]*blockRejectInfo{},
 		currentBlockIndex:   0,
@@ -111,15 +111,6 @@ func (vsp *VoteSpamPolicy) Serialise() ([]byte, error) {
 
 	sort.SliceStable(bannedParties, func(i, j int) bool { return bannedParties[i].Party < bannedParties[j].Party })
 
-	partyTokenBalance := make([]*types.PartyTokenBalance, 0, len(vsp.tokenBalance))
-	for party, balance := range vsp.tokenBalance {
-		partyTokenBalance = append(partyTokenBalance, &types.PartyTokenBalance{
-			Party:   party,
-			Balance: balance,
-		})
-	}
-	sort.SliceStable(partyTokenBalance, func(i, j int) bool { return partyTokenBalance[i].Party < partyTokenBalance[j].Party })
-
 	recentRejects := make([]*types.BlockRejectStats, 0, len(vsp.recentBlocksRejectStats))
 	for _, brs := range vsp.recentBlocksRejectStats {
 		if brs != nil {
@@ -135,7 +126,6 @@ func (vsp *VoteSpamPolicy) Serialise() ([]byte, error) {
 			VoteSpamPolicy: &types.VoteSpamPolicy{
 				PartyProposalVoteCount:  partyProposalVoteCount,
 				BannedParty:             bannedParties,
-				PartyTokenBalance:       partyTokenBalance,
 				RecentBlocksRejectStats: recentRejects,
 				CurrentBlockIndex:       vsp.currentBlockIndex,
 				LastIncreaseBlock:       vsp.lastIncreaseBlock,
@@ -174,11 +164,6 @@ func (vsp *VoteSpamPolicy) Deserialise(p *types.Payload) error {
 		vsp.bannedParties[bp.Party] = bp.UntilEpoch
 	}
 
-	vsp.tokenBalance = make(map[string]*num.Uint, len(pl.PartyTokenBalance))
-	for _, tb := range pl.PartyTokenBalance {
-		vsp.tokenBalance[tb.Party] = tb.Balance
-	}
-
 	vsp.currentEpochSeq = pl.CurrentEpochSeq
 	vsp.lastIncreaseBlock = pl.LastIncreaseBlock
 	vsp.currentBlockIndex = pl.CurrentBlockIndex
@@ -214,7 +199,7 @@ func (vsp *VoteSpamPolicy) UpdateIntParam(name string, value int64) error {
 }
 
 // Reset is called at the beginning of an epoch to reset the settings for the epoch.
-func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint) {
+func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch) {
 	vsp.lock.Lock()
 	defer vsp.lock.Unlock()
 	// reset the token count factor to 1
@@ -243,11 +228,6 @@ func (vsp *VoteSpamPolicy) Reset(epoch types.Epoch, tokenBalances map[string]*nu
 		if epochSeq < epoch.Seq {
 			delete(vsp.bannedParties, party)
 		}
-	}
-	// update token balances
-	vsp.tokenBalance = make(map[string]*num.Uint, len(tokenBalances))
-	for party, balance := range tokenBalances {
-		vsp.tokenBalance[party] = balance.Clone()
 	}
 
 	// reset block rejects - this is not essential here as it's cleared at the end of every block anyways
@@ -405,7 +385,8 @@ func (vsp *VoteSpamPolicy) PreBlockAccept(tx abci.Tx) (bool, error) {
 	}
 
 	// check if the party has enough balance to submit votes
-	if balance, ok := vsp.tokenBalance[party]; !ok || balance.LT(vsp.effectiveMinTokens) {
+	balance, err := vsp.accounts.GetAvailableBalance(party)
+	if err != nil || balance.LT(vsp.effectiveMinTokens) {
 		vsp.log.Error("Spam pre: party has insufficient balance for voting", logging.String("party", party), logging.String("balance", num.UintToString(balance)))
 		return false, ErrInsufficientTokensForVoting
 	}

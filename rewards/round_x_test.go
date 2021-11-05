@@ -87,6 +87,7 @@ func TestNoDriftdRounds(t *testing.T) {
 	delegatorForVal1["party1"] = num.NewUint(6000)
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
+		PubKey:            "node1",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.NewUint(6000),
 		Delegators:        delegatorForVal1,
@@ -135,6 +136,7 @@ func TestReproBug4220(t *testing.T) {
 		delegatorForVal11["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"] = num.NewUint(4000000000000000000)
 		validator11 := &types.ValidatorData{
 			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			PubKey:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.NewUint(4000000000000000000),
 			Delegators:        delegatorForVal11,
@@ -147,6 +149,7 @@ func TestReproBug4220(t *testing.T) {
 		delegatorForVal12["8af6254cc39f67ec1564e8a179fd5ab2c0e7cd94bc5d0c1a6a14d4f154ae1996"] = num.NewUint(800000000000000000)
 		validator12 := &types.ValidatorData{
 			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			PubKey:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.NewUint(4800000000000000000),
 			Delegators:        delegatorForVal12,
@@ -161,6 +164,7 @@ func TestReproBug4220(t *testing.T) {
 
 		validator13 := &types.ValidatorData{
 			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			PubKey:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.NewUint(4960000000000000000),
 			Delegators:        delegatorForVal13,
@@ -176,6 +180,7 @@ func TestReproBug4220(t *testing.T) {
 
 		validator14 := &types.ValidatorData{
 			NodeID:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
+			PubKey:            "7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f",
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.NewUint(4992000000000000000),
 			Delegators:        delegatorForVal14,
