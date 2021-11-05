@@ -2,6 +2,8 @@ package stubs
 
 import (
 	"sort"
+
+	"code.vegaprotocol.io/vega/validators"
 )
 
 type TopologyStub struct {
@@ -35,6 +37,17 @@ func (ts *TopologyStub) AllVegaPubKeys() []string {
 	}
 	sort.Strings(nodes)
 	return nodes
+}
+
+func (ts *TopologyStub) Get(key string) *validators.ValidatorData {
+	if data, ok := ts.validators[key]; ok {
+		return &validators.ValidatorData{
+			ID:         key,
+			VegaPubKey: data,
+		}
+	}
+
+	return nil
 }
 
 func (ts *TopologyStub) AddValidator(node string, pubkey string) {
