@@ -17,10 +17,10 @@ func TheValidators(
 ) error {
 	for _, r := range parseTable(table) {
 		row := newValidatorRow(r)
-		topology.AddValidator(row.id(), row.id())
+		topology.AddValidator(row.id(), row.pubKey())
 
 		amt, _ := num.UintFromString(row.stakingAccountBalance(), 10)
-		stakingAcountStub.IncrementBalance(row.id(), amt)
+		stakingAcountStub.IncrementBalance(row.pubKey(), amt)
 	}
 
 	return nil
@@ -37,11 +37,21 @@ func parseTable(table *godog.Table) []RowWrapper {
 	return StrictParseTable(table, []string{
 		"id",
 		"staking account balance",
-	}, nil)
+	}, []string{
+		"pub_key",
+	})
 }
 
 type validatorRow struct {
 	row RowWrapper
+}
+
+func (r validatorRow) pubKey() string {
+	pk, ok := r.row.StrB("pub_key")
+	if !ok {
+		return r.id()
+	}
+	return pk
 }
 
 func (r validatorRow) id() string {

@@ -600,12 +600,14 @@ func getEngine(t *testing.T) *testEngine {
 	delegatorForVal1["party2"] = num.NewUint(4000)
 	validator1 := &types.ValidatorData{
 		NodeID:            "node1",
+		PubKey:            "node1",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.NewUint(10000),
 		Delegators:        delegatorForVal1,
 	}
 	validator2 := &types.ValidatorData{
 		NodeID:            "node2",
+		PubKey:            "node2",
 		SelfStake:         num.NewUint(20000),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},
@@ -615,6 +617,7 @@ func getEngine(t *testing.T) *testEngine {
 	delegatorForVal3["party1"] = num.NewUint(40000)
 	validator3 := &types.ValidatorData{
 		NodeID:            "node3",
+		PubKey:            "node3",
 		SelfStake:         num.NewUint(30000),
 		StakeByDelegators: num.NewUint(40000),
 		Delegators:        delegatorForVal3,
@@ -622,6 +625,7 @@ func getEngine(t *testing.T) *testEngine {
 
 	validator4 := &types.ValidatorData{
 		NodeID:            "node4",
+		PubKey:            "node4",
 		SelfStake:         num.Zero(),
 		StakeByDelegators: num.Zero(),
 		Delegators:        map[string]*num.Uint{},
