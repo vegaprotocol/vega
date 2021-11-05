@@ -112,13 +112,15 @@ Feature: Test settlement at expiry
     And the network moves ahead "2" blocks
 
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
-
+    Then the market state should be "STATE_TRADING_TERMINATED" for the market "ETH/DEC21"
+    
     When the oracles broadcast data signed with "0xCAFECAFE1":
       | name             | value |
       | prices.ETH.value | 2000  |
     
     And the network moves ahead "2" blocks
 
+    
     Then the market state should be "STATE_ACTIVE" for the market "ETH/DEC19"
 
     When the parties place the following orders:
@@ -183,17 +185,14 @@ Feature: Test settlement at expiry
 
     And the parties should have the following account balances:
       | party    | asset | market id | margin | general   |
-      | aux1     | ETH   | ETH/DEC19 | 0      | 100000    |
-      | aux2     | ETH   | ETH/DEC19 | 0      | 100000    |
-      | party-lp | ETH   | ETH/DEC19 | 0      | 100000000 |
       | party1   | ETH   | ETH/DEC19 | 0      | 11916     |
       | party2   | ETH   | ETH/DEC19 | 0      | 42        |
       | party3   | ETH   | ETH/DEC19 | 0      | 4042      |
 
     And the cumulated balance for all accounts should be worth "100236000"
     And the insurance pool balance should be "0" for the market "ETH/DEC19"
-    And the insurance pool balance should be "12500" for the asset "ETH"
-    And the insurance pool balance should be "7500" for the market "ETH/DEC21"
+    And the insurance pool balance should be "20000" for the asset "ETH"
+    And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
   Scenario: Same as above, but the other market already terminated before the end of scenario, expecting 0 balances in per market insurance pools - all should go to per asset insurance pool
   
