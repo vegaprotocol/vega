@@ -1,7 +1,14 @@
 # Changelog
 
+## 0.45.4
+*2021-11-05*
+
+### Improvement
+- [4372](https://github.com/vegaprotocol/vega/pull/4372) - Fix associations + use validators vega public keys instead of IDs
+
+
 ## 0.45.3
-*2021-10-27*
+*2021-11-04*
 
 ### Improvement
 - [4362](https://github.com/vegaprotocol/vega/pull/4362) - Check current balance instead of caching at start of epoch in spam
