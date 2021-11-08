@@ -196,6 +196,7 @@ func NewApp(
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
+	app.abci.OnInfo = app.Info
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
