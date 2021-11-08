@@ -68,6 +68,7 @@ type NetParams interface {
 	Update(context.Context, string, string) error
 	GetFloat(string) (float64, error)
 	GetInt(string) (int64, error)
+	GetUint(string) (*num.Uint, error)
 	GetDuration(string) (time.Duration, error)
 	GetJSONStruct(string, netparams.Reset) error
 	Get(string) (string, error)
