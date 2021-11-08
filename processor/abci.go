@@ -299,8 +299,7 @@ func (app *App) cancel() {
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
 	return tmtypes.ResponseInfo{
-		// Data:             "", // Not sure if we need to set anything here
-		// AppVersion:       0,  // application protocol version?
+		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
 		LastBlockHeight:  height,
 		LastBlockAppHash: hash,

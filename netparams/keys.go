@@ -105,7 +105,7 @@ const (
 	NetworkCheckpointNetworkEOLDate                = "network.checkpoint.networkEndOfLifeDate"
 	NetworkCheckpointTimeElapsedBetweenCheckpoints = "network.checkpoint.timeElapsedBetweenCheckpoints"
 
-	// snapshot parameters
+	// snapshot parameters.
 	SnapshotIntervalLength = "snapshot.interval.length"
 )
 
