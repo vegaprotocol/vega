@@ -179,8 +179,7 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	mkt        *types.Market
-	mktChanged bool
+	mkt *types.Market
 
 	closingAt   time.Time
 	currentTime time.Time
