@@ -28,7 +28,7 @@ func TestLiquidity_RejectLPSubmissionIfFeeIncorrect(t *testing.T) {
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	buys := []*types.LiquidityOrder{
@@ -79,7 +79,7 @@ func TestLiquidity_RejectLPSubmissionIfSideMissing(t *testing.T) {
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	buys := []*types.LiquidityOrder{
@@ -130,7 +130,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
@@ -209,7 +209,7 @@ func TestLiquidity_TooManyShapeLevels(t *testing.T) {
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create a buy side that has too many items
@@ -333,7 +333,7 @@ func TestLiquidity_MustNotBeAbleToCancelOrAmendLPOrder(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
@@ -417,7 +417,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInInitialMargin(t *tes
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
@@ -488,7 +488,7 @@ func TestLiquidity_CheckThatBondAccountUsedToFundShortfallInMaintenanceMargin(t 
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
@@ -591,7 +591,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
@@ -683,7 +683,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	buys := []*types.LiquidityOrder{
@@ -732,7 +732,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// We shouldn't have a liquidity fee yet
@@ -795,7 +795,7 @@ func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
@@ -874,7 +874,7 @@ func TestLiquidity_CheckThatExistingPeggedOrdersCountTowardsCommitment(t *testin
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Create some normal orders to set the reference prices
