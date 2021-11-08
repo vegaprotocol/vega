@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.45.5
+*2021-11-08*
+
+### Fix
+- [4380](https://github.com/vegaprotocol/vega/pull/4380) - Fix invalid handling of network parameters (big amounts)
+
+
 ## 0.45.4
 *2021-11-05*
 
