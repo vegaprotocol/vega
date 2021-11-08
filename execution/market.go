@@ -105,6 +105,7 @@ type LiquidityMonitor interface {
 
 // TargetStakeCalculator interface.
 type TargetStakeCalculator interface {
+	types.StateProvider
 	RecordOpenInterest(oi uint64, now time.Time) error
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint
 	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint
@@ -157,8 +158,8 @@ type AuctionState interface {
 	ExpiresAt() *time.Time
 	Start() time.Time
 	// signal we've started/ended the auction
-	AuctionStarted(ctx context.Context) *events.Auction
-	AuctionExtended(ctx context.Context) *events.Auction
+	AuctionStarted(ctx context.Context, time time.Time) *events.Auction
+	AuctionExtended(ctx context.Context, time time.Time) *events.Auction
 	ExtendAuction(delta types.AuctionDuration)
 	Left(ctx context.Context, now time.Time) *events.Auction
 	// get some data

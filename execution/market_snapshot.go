@@ -31,7 +31,7 @@ func NewMarketFromSnapshot(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	liquidityConfig liquidity.Config,
-	collateralEngine Collateral,
+	collateralEngine MarketCollateral,
 	oracleEngine products.OracleEngine,
 	now time.Time,
 	broker Broker,
@@ -84,7 +84,7 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
 
-	tsCalc := target.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
+	tsCalc := target.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
 	pMonitor, err := price.NewMonitorFromSnapshot(em.PriceMonitor, mkt.PriceMonitoringSettings, tradableInstrument.RiskModel)
 	if err != nil {

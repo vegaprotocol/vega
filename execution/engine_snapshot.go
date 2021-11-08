@@ -14,12 +14,12 @@ var marketsKey = (&types.PayloadExecutionMarkets{}).Key()
 
 func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, error) {
 	mks := make([]*types.ExecMarket, 0, len(e.marketsCpy))
-	e.marketsStateProviders = make([]types.StateProvider, 0, (len(e.marketsCpy)-len(e.previouslySnapshottedMarkets))*3)
+	e.marketsStateProviders = make([]types.StateProvider, 0, (len(e.marketsCpy)-len(e.previouslySnapshottedMarkets))*4)
 	for _, m := range e.marketsCpy {
 		mks = append(mks, m.getState())
 
 		if _, ok := e.previouslySnapshottedMarkets[m.GetID()]; !ok {
-			e.marketsStateProviders = append(e.marketsStateProviders, m.position, m.matching)
+			e.marketsStateProviders = append(e.marketsStateProviders, m.position, m.matching, m.tsCalc, m.liquidity)
 			e.previouslySnapshottedMarkets[m.GetID()] = struct{}{}
 		}
 	}

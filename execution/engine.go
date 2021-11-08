@@ -47,13 +47,11 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-// Collateral engine
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
 	MarketCollateral
-	AssetExists(assetID string) bool
-	OnChainTimeUpdate(_ context.Context, t time.Time)
-	CreateMarketAccounts(ctx context.Context, marketID, asset string) (insuranceID, settleID string, err error)
+	AssetExists(string) bool
+	CreateMarketAccounts(context.Context, string, string) (string, string, error)
+	OnChainTimeUpdate(context.Context, time.Time)
 }
 
 // Engine is the execution engine.
