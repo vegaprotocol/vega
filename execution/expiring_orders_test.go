@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/execution"
-
 	"github.com/stretchr/testify/assert"
 )
 
 func TestExpiringOrders(t *testing.T) {
 	t.Run("expire orders ", testExpireOrders)
+	t.Run("snapshot ", testExpireOrdersSnapshot)
 }
 
 func testExpireOrders(t *testing.T) {
@@ -37,4 +37,38 @@ func testExpireOrders(t *testing.T) {
 	orders = eo.Expire(160)
 	assert.Equal(t, 1, len(orders))
 	assert.Equal(t, "5", orders[0])
+}
+
+func testExpireOrdersSnapshot(t *testing.T) {
+	a := assert.New(t)
+	eo := execution.NewExpiringOrders()
+	a.True(eo.Changed())
+
+	testOrders := getTestOrders()[:6]
+
+	// Test empty
+	a.Equal([]string{}, eo.GetState())
+	a.False(eo.Changed())
+
+	eo.Insert(testOrders[0].ID, 100)
+	eo.Insert(testOrders[1].ID, 110)
+	eo.Insert(testOrders[2].ID, 140)
+	eo.Insert(testOrders[3].ID, 140)
+	eo.Insert(testOrders[4].ID, 160)
+	eo.Insert(testOrders[5].ID, 170)
+	a.True(eo.Changed())
+
+	testIDs := []string{}
+	for _, to := range testOrders {
+		testIDs = append(testIDs, to.ID)
+	}
+
+	s := eo.GetState()
+	a.False(eo.Changed())
+	a.Equal(testIDs, s)
+
+	newEo := execution.NewExpiringOrdersFromState(testOrders)
+	a.True(newEo.Changed())
+	a.Equal(testIDs, newEo.GetState())
+	a.False(newEo.Changed())
 }

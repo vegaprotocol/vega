@@ -1,6 +1,7 @@
 package target
 
 import (
+	"context"
 	"time"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -55,6 +56,10 @@ func NewSnapshotEngine(
 	}
 }
 
+func (e *SnapshotEngine) Changed() bool {
+	return e.changed
+}
+
 func (e *SnapshotEngine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if err := e.Engine.RecordOpenInterest(oi, now); err != nil {
 		return err
@@ -97,18 +102,18 @@ func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *SnapshotEngine) GetState(k string) ([]byte, error) {
+func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != e.key {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	state, _, err := e.serialise()
-	return state, err
+	return state, nil, err
 }
 
-func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
+func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
@@ -116,7 +121,7 @@ func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 
 		// Check the payload is for this market
 		if e.marketID != pl.Target.MarketId {
-			return types.ErrUnknownSnapshotType
+			return nil, types.ErrUnknownSnapshotType
 		}
 
 		e.now = time.Unix(0, pl.Target.CurrentTime)
@@ -130,10 +135,10 @@ func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 		}
 
 		e.changed = true
-		return nil
+		return nil, nil
 
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
