@@ -67,11 +67,12 @@ type Engine struct {
 	hashes     map[string][]byte
 	versions   []int64
 
-	providers   map[string]types.StateProvider
-	providersNS map[types.SnapshotNamespace][]types.StateProvider
-	providerTS  map[string]StateProviderT
-	pollCtx     context.Context
-	pollCfunc   context.CancelFunc
+	providers    map[string]types.StateProvider
+	restoreProvs []types.PostRestore
+	providersNS  map[types.SnapshotNamespace][]types.StateProvider
+	providerTS   map[string]StateProviderT
+	pollCtx      context.Context
+	pollCfunc    context.CancelFunc
 
 	last          *iavl.ImmutableTree
 	hash          []byte
@@ -335,6 +336,10 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	e.app = e.wrap.AppState
 	// set the context with the height + block
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
+	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
+	now := time.Unix(e.app.Time, 0)
+	// restore app state
+	e.time.SetTimeNow(ctx, now)
 
 	// now let's load the data in the correct order, skip app state, we've already handled that
 	for _, ns := range nodeOrder[1:] {
@@ -352,10 +357,11 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 			}
 		}
 	}
-	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
-	now := time.Unix(e.app.Time, 0)
-	// restore app state
-	e.time.SetTimeNow(ctx, now)
+	for _, pp := range e.restoreProvs {
+		if err := pp.OnStateLoaded(ctx); err != nil {
+			return err
+		}
+	}
 	// we're done, we can clear the snapshot state
 	e.snapshot = nil
 	// no need to save, return here
@@ -616,6 +622,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 				e.providers[fullKey] = p
 				e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 			}
+			if pp, ok := p.(types.PostRestore); ok {
+				e.restoreProvs = append(e.restoreProvs, pp)
+			}
 			e.nsKeys[ns] = ks
 			continue
 		}
@@ -655,6 +664,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			e.keyNoNS[fullKey] = k
 			e.providers[fullKey] = p
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
+		}
+		if pp, ok := p.(types.PostRestore); ok {
+			e.restoreProvs = append(e.restoreProvs, pp)
 		}
 	}
 }
