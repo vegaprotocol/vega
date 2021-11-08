@@ -168,21 +168,11 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NotEmpty(t, bytes)
 	assert.Len(t, providers, 2)
 
-	mapBytes, err := engine.Snapshot()
-	assert.NoError(t, err)
-	assert.NotEmpty(t, mapBytes)
-
-	bytes, err := engine.GetState("ALL")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, bytes)
-	assert.Len(t, providers, 2)
-
 	hash1, err := engine.GetHash("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash1)
 
 	// Turn the bytes back into a payload and restore to a new engine
-
 	engine2 := createEngine(t)
 	assert.NotNil(t, engine2)
 	snap := &snapshot.Payload{}

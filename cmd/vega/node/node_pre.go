@@ -369,14 +369,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		panic(err)
 	}
 	// @TODO register StateProviders with snapshot engine:
-<<<<<<< HEAD
 	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
 		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd, l.executionEngine)
-=======
-	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams,
-		l.epochService, l.assets, l.banking, l.notary, l.spam, l.rewards, l.stakingAccounts,
-		l.stakeVerifier, l.limits, l.executionEngine)
->>>>>>> fix comments
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
