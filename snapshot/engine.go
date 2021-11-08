@@ -458,7 +458,7 @@ func (e *Engine) GetMissingChunks() []uint32 {
 }
 
 // Info simply returns the current snapshot hash
-// Can be used for the TM info call
+// Can be used for the TM info call.
 func (e *Engine) Info() ([]byte, int64) {
 	return e.hash, int64(e.app.Height)
 }
