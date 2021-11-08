@@ -56,6 +56,10 @@ func NewSnapshotEngine(
 	}
 }
 
+func (e *SnapshotEngine) Changed() bool {
+	return e.changed
+}
+
 func (e *SnapshotEngine) RecordOpenInterest(oi uint64, now time.Time) error {
 	if err := e.Engine.RecordOpenInterest(oi, now); err != nil {
 		return err

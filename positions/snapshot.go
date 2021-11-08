@@ -34,6 +34,10 @@ func NewSnapshotEngine(
 	}
 }
 
+func (e *SnapshotEngine) Changed() bool {
+	return e.changed
+}
+
 func (e *SnapshotEngine) RegisterOrder(order *types.Order) *MarketPosition {
 	e.changed = true
 	return e.Engine.RegisterOrder(order)

@@ -166,7 +166,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	bytes, providers, err := engine.GetState("ALL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
-	assert.Len(t, providers, 2)
+	assert.Len(t, providers, 4)
 
 	hash1, err := engine.GetHash("ALL")
 	assert.NoError(t, err)
@@ -179,7 +179,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	err = proto.Unmarshal(bytes, snap)
 	assert.NoError(t, err)
 	loadStateProviders, err := engine2.LoadState(context.Background(), types.PayloadFromProto(snap))
-	assert.Len(t, loadStateProviders, 2)
+	assert.Len(t, loadStateProviders, 4)
 
 	assert.NoError(t, err)
 

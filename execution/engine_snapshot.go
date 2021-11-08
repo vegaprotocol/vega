@@ -86,14 +86,14 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMarket) ([]types.StateProvider, error) {
 	e.markets = map[string]*Market{}
 
-	pvds := make([]types.StateProvider, 0, len(ems)*2)
+	pvds := make([]types.StateProvider, 0, len(ems)*4)
 	for _, em := range ems {
 		m, err := e.restoreMarket(ctx, em)
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore market: %w", err)
 		}
 
-		pvds = append(pvds, m.position, m.matching)
+		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity)
 	}
 
 	return pvds, nil

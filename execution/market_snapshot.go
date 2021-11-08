@@ -140,7 +140,10 @@ func (m *Market) changed() bool {
 		m.as.Changed() ||
 		m.peggedOrders.Changed() ||
 		m.expiringOrders.Changed() ||
-		m.equityShares.Changed())
+		m.equityShares.Changed() ||
+		m.liquidity.Changed() ||
+		m.position.Changed() ||
+		m.tsCalc.Changed())
 }
 
 func (m *Market) getState() *types.ExecMarket {

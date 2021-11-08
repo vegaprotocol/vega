@@ -70,6 +70,10 @@ func NewSnapshotEngine(config Config,
 	return se
 }
 
+func (e *SnapshotEngine) Changed() bool {
+	return e.parametersChanged
+}
+
 func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
 	return types.LiquiditySnapshot
 }
