@@ -2,6 +2,7 @@ package positions_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"testing"
 	"time"
@@ -82,7 +83,7 @@ func TestSnapshotSaveAndLoad(t *testing.T) {
 	// With no change the hashes are equal
 	require.True(t, bytes.Equal(h1, h2))
 
-	data, err := engine.GetState(keys[0])
+	data, _, err := engine.GetState(keys[0])
 	require.Nil(t, err)
 
 	snap := &snapshot.Payload{}
@@ -90,7 +91,8 @@ func TestSnapshotSaveAndLoad(t *testing.T) {
 	require.Nil(t, err)
 
 	snapEngine := getTestEngine(t)
-	err = snapEngine.LoadState(
+	_, err = snapEngine.LoadState(
+		context.TODO(),
 		types.PayloadFromProto(snap),
 	)
 	require.Nil(t, err)

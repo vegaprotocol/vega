@@ -18,7 +18,7 @@ type PriceMonitoringParameters struct {
 
 type PriceMonitoringTrigger struct {
 	Horizon          int64
-	HDec             num.Decimal
+	HorizonDec       num.Decimal
 	Probability      num.Decimal
 	AuctionExtension int64
 }
@@ -37,6 +37,13 @@ func (p PriceMonitoringSettings) IntoProto() *proto.PriceMonitoringSettings {
 	}
 	return &proto.PriceMonitoringSettings{
 		Parameters:      parameters,
+		UpdateFrequency: p.UpdateFrequency,
+	}
+}
+
+func (p PriceMonitoringSettings) DeepClone() *PriceMonitoringSettings {
+	return &PriceMonitoringSettings{
+		Parameters:      p.Parameters.DeepClone(),
 		UpdateFrequency: p.UpdateFrequency,
 	}
 }
@@ -136,7 +143,7 @@ func (p PriceMonitoringBounds) DeepClone() *PriceMonitoringBounds {
 func PriceMonitoringTriggerFromProto(p *proto.PriceMonitoringTrigger) *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		Horizon:          p.Horizon,
-		HDec:             num.DecimalFromInt64(p.Horizon),
+		HorizonDec:       num.DecimalFromInt64(p.Horizon),
 		Probability:      num.DecimalFromFloat(p.Probability),
 		AuctionExtension: p.AuctionExtension,
 	}
@@ -155,7 +162,7 @@ func (p PriceMonitoringTrigger) IntoProto() *proto.PriceMonitoringTrigger {
 func (p PriceMonitoringTrigger) DeepClone() *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		Horizon:          p.Horizon,
-		HDec:             p.HDec,
+		HorizonDec:       p.HorizonDec,
 		Probability:      p.Probability,
 		AuctionExtension: p.AuctionExtension,
 	}

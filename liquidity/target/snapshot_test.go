@@ -1,6 +1,7 @@
 package target_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -33,7 +34,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	h, err := se.GetHash("")
 	a.Empty(h)
 	a.EqualError(err, types.ErrSnapshotKeyDoesNotExist.Error())
-	h, err = se.GetState("")
+	h, _, err = se.GetState("")
 	a.Empty(h)
 	a.EqualError(err, types.ErrSnapshotKeyDoesNotExist.Error())
 
@@ -48,7 +49,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	h1, err := se.GetHash(key)
 	a.NotEmpty(h1)
 	a.NoError(err)
-	s, err := se.GetState(key)
+	s, _, err := se.GetState(key)
 	a.NotEmpty(s)
 	a.NoError(err)
 
@@ -57,7 +58,7 @@ func TestSaveAndLoadSnapshot(t *testing.T) {
 	pl := snapshot.Payload{}
 	assert.NoError(t, proto.Unmarshal(s, &pl))
 
-	err = se2.LoadState(types.PayloadFromProto(&pl))
+	_, err = se2.LoadState(context.TODO(), types.PayloadFromProto(&pl))
 	a.NoError(err)
 
 	h2, err := se2.GetHash(key)

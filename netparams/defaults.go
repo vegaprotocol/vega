@@ -42,8 +42,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalMarketMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalMarketRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalMarketRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalMarketMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
-		GovernanceProposalMarketMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		GovernanceProposalMarketMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalMarketMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
 
 		// governance asset proposal
 		GovernanceProposalAssetMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -52,8 +52,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalAssetMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalAssetRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalAssetRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalAssetMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
-		GovernanceProposalAssetMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		GovernanceProposalAssetMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalAssetMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
 
 		// governance update market proposal
 		GovernanceProposalUpdateMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -62,8 +62,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateMarketMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalUpdateMarketRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateMarketRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateMarketMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateMarketMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateMarketMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateMarketMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
 
 		// governance UpdateNetParam proposal
 		GovernanceProposalUpdateNetParamMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
@@ -72,8 +72,8 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamMaxEnact:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
 		GovernanceProposalUpdateNetParamRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
 		GovernanceProposalUpdateNetParamRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
-		GovernanceProposalUpdateNetParamMinProposerBalance:    NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
-		GovernanceProposalUpdateNetParamMinVoterBalance:       NewInt(IntGTE(0)).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateNetParamMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalUpdateNetParamMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
 
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
