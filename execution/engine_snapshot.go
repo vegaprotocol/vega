@@ -191,3 +191,12 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
+
+func (e *Engine) OnStateLoaded(ctx context.Context) error {
+	for _, m := range e.markets {
+		if err := m.PostRestore(ctx); err != nil {
+			return err
+		}
+	}
+	return nil
+}

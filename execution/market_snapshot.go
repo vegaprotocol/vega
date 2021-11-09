@@ -128,7 +128,6 @@ func NewMarketFromSnapshot(
 		lastMidSellPrice:   em.LastMidAsk.Clone(),
 		markPrice:          em.CurrentMarkPrice.Clone(),
 		stateChanged:       true,
-		restorePositions:   true,
 	}
 
 	return market, nil
