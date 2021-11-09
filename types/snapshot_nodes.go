@@ -3395,13 +3395,15 @@ func (p *PayloadFutureState) Key() string {
 	return p.FutureState.MarketID
 }
 
-func (*PayloadLiquiditySupplied) Namespace() SnapshotNamespace {
+func (*PayloadFutureState) isPayload() {}
+
+func (*PayloadFutureState) Namespace() SnapshotNamespace {
 	return FutureStateSnapshot
 }
 
 func FutureStateFromProto(fs *snapshot.FutureState) *FutureState {
 	sp, _ := num.UintFromString(fs.SettlementPrice, 10)
-	return FutureState{
+	return &FutureState{
 		MarketID:          fs.MarketId,
 		SettlementPrice:   sp,
 		TradingTerminated: fs.TradingTerminated,
