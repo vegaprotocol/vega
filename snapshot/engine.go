@@ -66,8 +66,8 @@ type Engine struct {
 	keyNoNS    map[string]string // full key => key used by provider
 	hashes     map[string][]byte
 	versions   []int64
-	interval   int
-	current    int
+	interval   int64
+	current    int64
 
 	providers    map[string]types.StateProvider
 	restoreProvs []types.PostRestore
@@ -694,7 +694,7 @@ func (e *Engine) Close() error {
 	return e.db.Close()
 }
 
-func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int) error {
+func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) error {
 	e.interval = interval
 	if interval < e.current {
 		e.current = interval
