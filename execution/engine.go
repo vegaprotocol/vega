@@ -6,14 +6,13 @@ import (
 	"sort"
 	"time"
 
-	proto "code.vegaprotocol.io/protos/vega"
-	"code.vegaprotocol.io/vega/collateral"
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitor"
-	"code.vegaprotocol.io/vega/products"
+	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -35,10 +34,24 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
-// Broker  (no longer need to mock this, use the broker/mocks wrapper).
+// OracleEngine ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/products OracleEngine
+type OracleEngine interface {
+	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
+	Unsubscribe(context.Context, oracles.SubscriptionID)
+}
+
+// Broker (no longer need to mock this, use the broker/mocks wrapper).
 type Broker interface {
 	Send(event events.Event)
 	SendBatch(events []events.Event)
+}
+
+type Collateral interface {
+	MarketCollateral
+	AssetExists(string) bool
+	CreateMarketAccounts(context.Context, string, string) (string, string, error)
+	OnChainTimeUpdate(context.Context, time.Time)
 }
 
 // Engine is the execution engine.
@@ -48,15 +61,21 @@ type Engine struct {
 
 	markets    map[string]*Market
 	marketsCpy []*Market
-	collateral *collateral.Engine
+	collateral Collateral
 	idgen      *IDgenerator
 
 	broker Broker
 	time   TimeService
 
-	oracle products.OracleEngine
+	oracle OracleEngine
 
 	npv netParamsValues
+
+	// Snapshot
+	snapshotSerialised           []byte
+	snapshotHash                 []byte
+	marketsStateProviders        []types.StateProvider
+	previouslySnapshottedMarkets map[string]struct{} // Map of previously snapshotted market IDs
 }
 
 type netParamsValues struct {
@@ -103,23 +122,24 @@ func NewEngine(
 	log *logging.Logger,
 	executionConfig Config,
 	ts TimeService,
-	collateral *collateral.Engine,
-	oracle products.OracleEngine,
+	collateral Collateral,
+	oracle OracleEngine,
 	broker Broker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(executionConfig.Level.Get())
 	e := &Engine{
-		log:        log,
-		Config:     executionConfig,
-		markets:    map[string]*Market{},
-		time:       ts,
-		collateral: collateral,
-		idgen:      NewIDGen(),
-		broker:     broker,
-		oracle:     oracle,
-		npv:        defaultNetParamsValues(),
+		log:                          log,
+		Config:                       executionConfig,
+		markets:                      map[string]*Market{},
+		time:                         ts,
+		collateral:                   collateral,
+		idgen:                        NewIDGen(),
+		broker:                       broker,
+		oracle:                       oracle,
+		npv:                          defaultNetParamsValues(),
+		previouslySnapshottedMarkets: map[string]struct{}{},
 	}
 
 	// Add time change event handler
@@ -284,6 +304,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 			logging.AssetID(asset))
 	}
 
+	// @todo no need to set it
 	// set a fake tick size to the continuous trading if it's continuous
 	switch tmod := marketConfig.TradingModeConfig.(type) {
 	case *types.MarketContinuous:
@@ -709,7 +730,7 @@ func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v inter
 		)
 	}
 
-	pscalingFactors, ok := v.(*proto.ScalingFactors)
+	pscalingFactors, ok := v.(*vega.ScalingFactors)
 	if !ok {
 		return errors.New("invalid types for Margin ScalingFactors")
 	}

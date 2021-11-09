@@ -99,6 +99,8 @@ type Engine struct {
 
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
+
+	stateChanged bool
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
@@ -131,7 +133,7 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 			Trigger: p,
 		})
 		if _, ok := h[p.Horizon]; !ok {
-			h[p.Horizon] = p.HDec.Div(secondsPerYear)
+			h[p.Horizon] = p.HorizonDec.Div(secondsPerYear)
 		}
 	}
 
@@ -140,6 +142,7 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 		fpHorizons:      h,
 		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
 		bounds:          bounds,
+		stateChanged:    true,
 	}
 	// hack to work around the update frequency being 0 causing an infinite loop
 	// for now, this will do
@@ -152,6 +155,7 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 
 func (e *Engine) SetMinDuration(d time.Duration) {
 	e.minDuration = d
+	e.stateChanged = true
 }
 
 // GetHorizonYearFractions returns horizons of all the triggers specified, expressed as year fraction, sorted in ascending order.
@@ -216,6 +220,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		}
 		e.reset(p, v, now)
 		e.initialised = true
+		e.stateChanged = true
 	}
 
 	last := currentPrice{
@@ -323,12 +328,14 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 			e.pricesPast = e.pricesPast[len(e.pricesPast)-1:]
 		} else { // Otherwise can't initialise
 			e.initialised = false
+			e.stateChanged = true
 			return
 		}
 	}
 	e.priceRangeCacheTime = time.Time{}
 	e.resetBounds()
 	e.updateBounds()
+	e.stateChanged = true
 }
 
 func (e *Engine) resetBounds() {
@@ -337,12 +344,17 @@ func (e *Engine) resetBounds() {
 		b.DownFactor = num.DecimalZero()
 		b.UpFactor = num.DecimalZero()
 	}
+
+	if len(e.bounds) > 0 {
+		e.stateChanged = true
+	}
 }
 
 // recordPriceChange informs price monitoring module of a price change within the same instance as specified by the last call to UpdateTime.
 func (e *Engine) recordPriceChange(price *num.Uint, volume uint64) {
 	if volume > 0 {
 		e.pricesNow = append(e.pricesNow, currentPrice{Price: price.Clone(), Volume: volume})
+		e.stateChanged = true
 	}
 }
 
@@ -370,6 +382,7 @@ func (e *Engine) recordTimeChange(now time.Time) error {
 		e.pricesNow = e.pricesNow[:0]
 		e.now = now
 		e.updateBounds()
+		e.stateChanged = true
 	}
 	return nil
 }
@@ -415,6 +428,7 @@ func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
 			}
 		}
 		e.priceRangeCacheTime = e.now
+		e.stateChanged = true
 	}
 	return e.priceRangesCache
 }
@@ -423,6 +437,10 @@ func (e *Engine) updateBounds() {
 	if e.now.Before(e.update) || len(e.bounds) == 0 {
 		return
 	}
+
+	defer func() {
+		e.stateChanged = true
+	}()
 
 	// Iterate update time until in the future
 	for !e.update.After(e.now) {
@@ -461,10 +479,12 @@ func (e *Engine) updateBounds() {
 func (e *Engine) getRefPrice(horizon int64) num.Decimal {
 	if e.refPriceCacheTime != e.now {
 		e.refPriceCache = make(map[int64]num.Decimal, len(e.refPriceCache))
+		e.stateChanged = true
 	}
 
 	if _, ok := e.refPriceCache[horizon]; !ok {
 		e.refPriceCache[horizon] = e.calculateRefPrice(horizon)
+		e.stateChanged = true
 	}
 	return e.refPriceCache[horizon]
 }

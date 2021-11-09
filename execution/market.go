@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -92,6 +91,9 @@ type PriceMonitor interface {
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
+	// Snapshot
+	GetState() *types.PriceMonitor
+	Changed() bool
 }
 
 // LiquidityMonitor.
@@ -103,17 +105,46 @@ type LiquidityMonitor interface {
 
 // TargetStakeCalculator interface.
 type TargetStakeCalculator interface {
+	types.StateProvider
 	RecordOpenInterest(oi uint64, now time.Time) error
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint
 	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint
 	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
+	Changed() bool
+}
+
+type MarketCollateral interface {
+	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	EnableAsset(ctx context.Context, asset types.Asset) error
+	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetPartyBondAccount(market, partyID, asset string) (*types.Account, error)
+	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.TransferResponse, error)
+	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error)
+	GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error)
+	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
+	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error)
+	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
+	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
+	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
+	ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.TransferResponse, error)
+	HasGeneralAccount(party, asset string) bool
+	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.TransferResponse, error)
+	CanCoverBond(market, party, asset string, amount *num.Uint) bool
+	Hash() []byte
+	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
+	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
+	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error)
+	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error)
+	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error)
+	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
 }
 
 // AuctionState ...
-// We can't use the interface yet. AuctionState is passed to the engines, which access different methods
-// keep the interface for documentation purposes.
 type AuctionState interface {
+	price.AuctionState
+	lmon.AuctionState
 	// are we in auction, and what auction are we in?
 	InAuction() bool
 	IsOpeningAuction() bool
@@ -128,7 +159,9 @@ type AuctionState interface {
 	ExpiresAt() *time.Time
 	Start() time.Time
 	// signal we've started/ended the auction
-	AuctionStarted(ctx context.Context) *events.Auction
+	AuctionStarted(ctx context.Context, time time.Time) *events.Auction
+	AuctionExtended(ctx context.Context, time time.Time) *events.Auction
+	ExtendAuction(delta types.AuctionDuration)
 	Left(ctx context.Context, now time.Time) *events.Auction
 	// get some data
 	Mode() types.MarketTradingMode
@@ -136,6 +169,9 @@ type AuctionState interface {
 	ExtensionTrigger() types.AuctionTrigger
 	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
+	// Snapshot
+	GetState() *types.AuctionState
+	Changed() bool
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -144,7 +180,8 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	mkt         *types.Market
+	mkt *types.Market
+
 	closingAt   time.Time
 	currentTime time.Time
 
@@ -162,7 +199,7 @@ type Market struct {
 	liquidity          *liquidity.SnapshotEngine
 
 	// deps engines
-	collateral *collateral.Engine
+	collateral MarketCollateral
 
 	broker Broker
 	closed bool
@@ -174,7 +211,7 @@ type Market struct {
 
 	tsCalc TargetStakeCalculator
 
-	as *monitor.AuctionState // @TODO this should be an interface
+	as AuctionState
 
 	peggedOrders   *PeggedOrders
 	expiringOrders *ExpiringOrders
@@ -194,6 +231,9 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
+
+	stateChanged     bool
+	restorePositions bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -230,7 +270,7 @@ func NewMarket(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	liquidityConfig liquidity.Config,
-	collateralEngine *collateral.Engine,
+	collateralEngine MarketCollateral,
 	oracleEngine products.OracleEngine,
 	mkt *types.Market,
 	now time.Time,
@@ -246,7 +286,6 @@ func NewMarket(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
-
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get market closing time: %w", err)
@@ -257,6 +296,7 @@ func NewMarket(
 	book := matching.NewCachedOrderBook(
 		log, matchingConfig, mkt.ID, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
+
 	riskEngine := risk.NewEngine(
 		log,
 		riskConfig,
@@ -269,6 +309,7 @@ func NewMarket(
 		mkt.ID,
 		asset,
 	)
+
 	settleEngine := settlement.New(
 		log,
 		settlementConfig,
@@ -344,6 +385,7 @@ func NewMarket(
 		lastMidSellPrice:   num.Zero(),
 		lastMidBuyPrice:    num.Zero(),
 		lastBestBidPrice:   num.Zero(),
+		stateChanged:       true,
 	}
 
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
@@ -474,6 +516,8 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	m.stateChanged = true
+
 	return nil
 }
 
@@ -521,6 +565,27 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
+
+	// Restore all positions
+	if m.restorePositions {
+		m.settlement.Update(m.position.Positions())
+
+		pps := m.position.Parties()
+		peggedOrder := m.peggedOrders.GetAll()
+		parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
+
+		for _, p := range pps {
+			parties[p] = struct{}{}
+		}
+
+		for _, o := range m.peggedOrders.GetAll() {
+			parties[o.Party] = struct{}{}
+		}
+
+		m.restorePositions = false
+	}
+
+	m.stateChanged = true
 
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
@@ -580,6 +645,7 @@ func (m *Market) updateMarketValueProxy() {
 	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
 		m.marketValueWindowLength, ts)
 	m.equityShares.WithMVP(m.lastMarketValueProxy)
+	m.stateChanged = true
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
@@ -623,6 +689,8 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+	m.stateChanged = true
 	return nil
 }
 
@@ -736,6 +804,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
 		m.mkt.State = types.MarketStateSuspended
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		m.stateChanged = true
 	}
 }
 
@@ -745,6 +814,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+			m.stateChanged = true
 		}
 	}()
 
@@ -1457,6 +1527,7 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 		m.broker.Send(
 			events.NewMarketUpdatedEvent(ctx, *m.mkt),
 		)
+		m.stateChanged = true
 	}
 }
 
@@ -1922,6 +1993,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	// in the future this will use varying logic based on market config
 	// the responsibility for calculation could be elsewhere for testability
 	m.markPrice = trade.Price.Clone()
+	m.stateChanged = true
 }
 
 // this function handles moving money after settle MTM + risk margin updates
@@ -2732,6 +2804,22 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 	// remove if order was expiring
 	m.expiringOrders.RemoveOrder(order.ExpiresAt, order.ID)
 	m.peggedOrders.Remove(order)
+}
+
+// getOrdersByID returns orders based on given IDs. Returns NO error if order not found.
+// TODO implement this more efficiently - pre compute?
+func (m *Market) getOrdersByID(ids []string) []*types.Order {
+	orders := make([]*types.Order, 0, len(ids))
+
+	for _, id := range ids {
+		o, _, err := m.getOrderByID(id)
+		if err != nil {
+			continue
+		}
+		orders = append(orders, o.Clone())
+	}
+
+	return orders
 }
 
 // getOrderBy looks for the order in the order book and in the list

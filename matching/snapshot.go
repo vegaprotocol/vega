@@ -1,6 +1,7 @@
 package matching
 
 import (
+	"context"
 	"log"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -13,7 +14,7 @@ func (b *OrderBook) Keys() []string {
 }
 
 func (b *OrderBook) Snapshot() (map[string][]byte, error) {
-	payload, err := b.GetState(b.snapshot.Key())
+	payload, _, err := b.GetState(b.snapshot.Key())
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +30,7 @@ func (b *OrderBook) GetHash(key string) ([]byte, error) {
 		return nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
-	payload, e := b.GetState(key)
+	payload, _, e := b.GetState(key)
 	if e != nil {
 		return nil, e
 	}
@@ -37,18 +38,16 @@ func (b *OrderBook) GetHash(key string) ([]byte, error) {
 	return crypto.Hash(payload), nil
 }
 
-func (b *OrderBook) GetState(key string) ([]byte, error) {
+func (b *OrderBook) GetState(key string) ([]byte, []types.StateProvider, error) {
 	if key != b.snapshot.Key() {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	// Copy all the state into a domain object
 	payload := b.buildPayload()
 
-	// Convert the domain object into a protobuf payload message
-	p := payload.IntoProto()
-
-	return proto.Marshal(p)
+	s, err := proto.Marshal(payload.IntoProto())
+	return s, nil, err
 }
 
 func (b *OrderBook) buildPayload() *types.Payload {
@@ -77,9 +76,9 @@ func (b *OrderBook) copyOrders(obs *OrderBookSide) []*types.Order {
 	return orders
 }
 
-func (b *OrderBook) LoadState(payload *types.Payload) error {
+func (b *OrderBook) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if b.Namespace() != payload.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	var mb *types.MatchingBook
@@ -88,7 +87,7 @@ func (b *OrderBook) LoadState(payload *types.Payload) error {
 	case *types.PayloadMatchingBook:
 		mb = pl.MatchingBook
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 
 	// Check we have an empty book here or else we should panic
@@ -115,7 +114,7 @@ func (b *OrderBook) LoadState(payload *types.Payload) error {
 	if b.auction {
 		b.indicativePriceAndVolume = NewIndicativePriceAndVolume(b.log, b.buy, b.sell)
 	}
-	return nil
+	return nil, nil
 }
 
 func (b *OrderBook) addOrderToMaps(o *types.Order) {

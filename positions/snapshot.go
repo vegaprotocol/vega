@@ -1,7 +1,10 @@
 package positions
 
 import (
+	"context"
+
 	"code.vegaprotocol.io/vega/events"
+
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -29,6 +32,10 @@ func NewSnapshotEngine(
 		changed: true,
 		buf:     buf,
 	}
+}
+
+func (e *SnapshotEngine) Changed() bool {
+	return e.changed
 }
 
 func (e *SnapshotEngine) RegisterOrder(order *types.Order) *MarketPosition {
@@ -83,23 +90,18 @@ func (e *SnapshotEngine) GetHash(k string) ([]byte, error) {
 	return hash, err
 }
 
-func (e *SnapshotEngine) GetState(k string) ([]byte, error) {
+func (e *SnapshotEngine) GetState(k string) ([]byte, []types.StateProvider, error) {
 	if k != e.marketID {
-		return nil, types.ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	state, _, err := e.serialise()
-	return state, err
+	return state, nil, err
 }
 
-func (e *SnapshotEngine) Snapshot() (map[string][]byte, error) {
-	state, _, err := e.serialise()
-	return map[string][]byte{e.marketID: state}, err
-}
-
-func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
+func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if e.Namespace() != payload.Data.Namespace() {
-		return types.ErrInvalidSnapshotNamespace
+		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
@@ -107,7 +109,7 @@ func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 
 		// Check the payload is for this market
 		if e.marketID != pl.MarketPositions.MarketID {
-			return types.ErrUnknownSnapshotType
+			return nil, types.ErrUnknownSnapshotType
 		}
 
 		for _, p := range pl.MarketPositions.Positions {
@@ -120,13 +122,14 @@ func (e *SnapshotEngine) LoadState(payload *types.Payload) error {
 			pos.vwSellPrice = p.VwSell
 
 			e.positionsCpy = append(e.positionsCpy, pos)
+			e.positions[p.PartyID] = pos
 
 			e.changed = true
 		}
-		return nil
+		return nil, nil
 
 	default:
-		return types.ErrUnknownSnapshotType
+		return nil, types.ErrUnknownSnapshotType
 	}
 }
 

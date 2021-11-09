@@ -65,10 +65,10 @@ func (e *Engine) getProposalParametersFromNetParams(
 	pp.RequiredParticipation = num.DecimalFromFloat(rp)
 	rm, _ := e.netp.GetFloat(requiredMajorityKey)
 	pp.RequiredMajority = num.DecimalFromFloat(rm)
-	mpb, _ := e.netp.GetInt(minProposerBalanceKey)
-	pp.MinProposerBalance = num.NewUint(uint64(mpb))
-	mvb, _ := e.netp.GetInt(minVoterBalanceKey)
-	pp.MinVoterBalance = num.NewUint(uint64(mvb))
+	mpb, _ := e.netp.GetUint(minProposerBalanceKey)
+	pp.MinProposerBalance = mpb
+	mvb, _ := e.netp.GetUint(minVoterBalanceKey)
+	pp.MinVoterBalance = mvb
 	return &pp
 }
 

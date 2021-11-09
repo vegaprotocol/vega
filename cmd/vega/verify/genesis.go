@@ -29,8 +29,8 @@ func verifyGenesis(r *reporter, bs []byte) string {
 				ReplayAttackThreshold *int `json:"replay_attack_threshold"`
 			} `json:"network"`
 			NetworkParameters map[string]string `json:"network_parameters"`
-			Validators        map[string]string `json:"validators"`
-			Assets            *struct {
+			// Validators        map[string]string `json:"validators"`
+			Assets *struct {
 				ERC20 map[string]types.ERC20 `json:"ERC20"`
 			} `json:"assets"`
 		} `json:"app_state"`
@@ -85,22 +85,23 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		}
 	}
 
-	if g.AppState.Validators == nil || len(g.AppState.Validators) <= 0 {
-		r.Warn("app_state.validators is missing or empty")
-	} else {
-		for k, v := range g.AppState.Validators {
-			if len(k) <= 0 {
-				r.Err("app_state.validators contains an empty key")
-			} else if !isValidTMKey(k) {
-				r.Err("app_state.validators contains an non valid TM public key, `%v`", k)
-			}
-			if len(v) <= 0 {
-				r.Err("app_state.validators contains an empty value for key `%v`", k)
-			} else if !isValidParty(v) {
-				r.Err("app_state.validators contains an non valid vega public key, `%v`", v)
-			}
-		}
-	}
+	// TODO(): uncomment in a follow up PR + FIX
+	// if g.AppState.Validators == nil || len(g.AppState.Validators) <= 0 {
+	// 	r.Warn("app_state.validators is missing or empty")
+	// } else {
+	// 	for k, v := range g.AppState.Validators {
+	// 		if len(k) <= 0 {
+	// 			r.Err("app_state.validators contains an empty key")
+	// 		} else if !isValidTMKey(k) {
+	// 			r.Err("app_state.validators contains an non valid TM public key, `%v`", k)
+	// 		}
+	// 		if len(v) <= 0 {
+	// 			r.Err("app_state.validators contains an empty value for key `%v`", k)
+	// 		} else if !isValidParty(v) {
+	// 			r.Err("app_state.validators contains an non valid vega public key, `%v`", v)
+	// 		}
+	// 	}
+	// }
 
 	if g.AppState.Assets == nil {
 		r.Warn("no assets specified as part of the genesis")
