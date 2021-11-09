@@ -159,7 +159,7 @@ func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.C
 	return nil
 }
 
-// UpdateOptimalStakeMultiplierStakingRewardScheme updaates the value of optimal stake multiplier
+// UpdateOptimalStakeMultiplierStakingRewardScheme updaates the value of optimal stake multiplier.
 func (e *Engine) UpdateOptimalStakeMultiplierStakingRewardScheme(ctx context.Context, optimalStakeMultiplier num.Decimal) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
 	if !ok {

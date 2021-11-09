@@ -711,7 +711,6 @@ func testDelegateSuccessWithPreviousPendingUndelegateExactlyCovered(t *testing.T
 	require.Equal(t, num.NewUint(6), nextEpoch["party1"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(3), nextEpoch["party2"].nodeToAmount["node2"])
 	require.Equal(t, 2, len(nextEpoch))
-
 }
 
 /// undelegate.
@@ -877,7 +876,6 @@ func testUndelegateSuccessWithPreviousPendingDelegateFullyCovered(t *testing.T) 
 	require.Equal(t, 2, len(nextEpoch["party2"].nodeToAmount))
 	require.Equal(t, num.NewUint(5), nextEpoch["party2"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(1), nextEpoch["party2"].nodeToAmount["node2"])
-
 }
 
 // preprocess delegation state from last epoch for changes in stake balance - such that there were no changes so no forced undelegation is expected.
@@ -1309,7 +1307,6 @@ func testPendingDelegationInsufficientBalance(t *testing.T) {
 	require.Equal(t, num.NewUint(8), testEngine.engine.nextPartyDelegationState["party1"].totalDelegated)
 	require.Equal(t, num.NewUint(8), testEngine.engine.partyDelegationState["party1"].nodeToAmount["node1"])
 	require.Equal(t, num.NewUint(8), testEngine.engine.nextPartyDelegationState["party1"].nodeToAmount["node1"])
-
 }
 
 // process pending delegation successfully.
@@ -1528,7 +1525,6 @@ func testUndelegateNowAllWithCommittedOnly(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 1, len(testEngine.engine.partyDelegationState))
 	require.Equal(t, 1, len(testEngine.engine.nextPartyDelegationState))
-
 }
 
 // there's both committed and pending delegation, take all from both.

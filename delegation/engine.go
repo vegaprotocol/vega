@@ -474,7 +474,7 @@ func (e *Engine) ProcessEpochDelegations(ctx context.Context, epoch types.Epoch)
 	return stateForRewards
 }
 
-// sendDelegatedBalanceEvent emits an event with the delegation balance for the given epoch
+// sendDelegatedBalanceEvent emits an event with the delegation balance for the given epoch.
 func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID string, seq uint64, amt *num.Uint) {
 	if amt == nil {
 		e.broker.Send(events.NewDelegationBalance(ctx, party, nodeID, num.Zero(), num.NewUint(seq).String()))
@@ -483,7 +483,7 @@ func (e *Engine) sendDelegatedBalanceEvent(ctx context.Context, party, nodeID st
 	}
 }
 
-// decrease the delegation balance fire an event and cleanup if requested
+// decrease the delegation balance fire an event and cleanup if requested.
 func (e *Engine) decreaseBalanceAndFireEvent(ctx context.Context, party, nodeID string, amt *num.Uint, epoch uint64, delegationState map[string]*partyDelegation, cleanup, fireEvent bool) {
 	if _, ok := delegationState[party]; !ok {
 		return
@@ -543,7 +543,7 @@ func (e *Engine) stakeInRangeFunc(from, to time.Time) func(string) (*num.Uint, e
 	}
 }
 
-// take a copy of the next epoch delegation ignoring delegations that have been zero for the currend and next epoch
+// take a copy of the next epoch delegation ignoring delegations that have been zero for the currend and next epoch.
 func (e *Engine) prepareNextEpochDelegationState() map[string]*partyDelegation {
 	nextEpoch := make(map[string]*partyDelegation, len(e.nextPartyDelegationState))
 	for party, partyDS := range e.nextPartyDelegationState {
