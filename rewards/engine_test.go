@@ -50,6 +50,7 @@ func testMultipleEpochsWithPendingPayouts(t *testing.T) {
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(3))
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
@@ -103,6 +104,7 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(3))
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
@@ -307,6 +309,8 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
+
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	epoch := types.Epoch{}
@@ -337,6 +341,7 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	epoch := types.Epoch{}
@@ -365,6 +370,8 @@ func testDistributePayout(t *testing.T) {
 	// setup reward account
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
@@ -408,6 +415,7 @@ func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	// setup delay
@@ -491,6 +499,7 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")

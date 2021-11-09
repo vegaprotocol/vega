@@ -22,7 +22,8 @@ func TestRepeatedRounds(t *testing.T) {
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
-	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 2)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	// start with 10 VEGA
@@ -80,7 +81,8 @@ func TestNoDriftdRounds(t *testing.T) {
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
-	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 2)
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(5))
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	delegatorForVal1 := map[string]*num.Uint{}
@@ -127,7 +129,8 @@ func TestReproBug4220(t *testing.T) {
 		engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(100000000000000000000))
 		engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
 		engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
-		engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+		engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 2)
+		engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(5))
 		engine.OnEpochEvent(context.Background(), types.Epoch{})
 
 		rs := engine.rewardSchemes[stakingAndDelegationSchemeID]

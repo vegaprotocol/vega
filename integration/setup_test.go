@@ -233,16 +233,12 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.rewardsEngine.UpdateCompetitionLevelForStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
-			Watcher: e.delegationEngine.OnCompLevelChanged,
-		},
-		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardsMinValidators,
 			Watcher: e.rewardsEngine.UpdateMinValidatorsStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardsMinValidators,
-			Watcher: e.delegationEngine.OnMinValidatorsChanged,
+			Param:   netparams.StakingAndDelegationRewardOptimalStakeMultiplier,
+			Watcher: e.rewardsEngine.UpdateOptimalStakeMultiplierStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsEpochLength,
