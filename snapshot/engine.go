@@ -110,7 +110,6 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.RewardSnapshot,
 	types.TopologySnapshot,
 	types.EventForwarderSnapshot,
-	types.OracleDataSnapshot,
 }
 
 // New returns a new snapshot engine.

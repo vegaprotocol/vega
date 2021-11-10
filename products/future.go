@@ -24,11 +24,13 @@ var (
 
 // Future represent a Future as describe by the market framework.
 type Future struct {
-	log             *logging.Logger
-	SettlementAsset string
-	QuoteName       string
-	Maturity        time.Time
-	oracle          oracle
+	log                        *logging.Logger
+	SettlementAsset            string
+	QuoteName                  string
+	Maturity                   time.Time
+	oracle                     oracle
+	tradingTerminationlistener func(context.Context, bool)
+	settlementPricelistener    func(context.Context, *num.Uint)
 }
 
 type oracle struct {
@@ -58,6 +60,14 @@ func (d *oracleData) IsTradingTerminated() bool {
 type oracleBinding struct {
 	settlementPriceProperty    string
 	tradingTerminationProperty string
+}
+
+func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Uint)) {
+	f.settlementPricelistener = listener
+}
+
+func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool)) {
+	f.tradingTerminationlistener = listener
 }
 
 func (f *Future) SettlementPrice() (*num.Uint, error) {
@@ -115,6 +125,9 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	}
 
 	f.oracle.data.tradingTerminated = tradingTerminated
+	if f.tradingTerminationlistener != nil {
+		f.tradingTerminationlistener(ctx, tradingTerminated)
+	}
 	return nil
 }
 
@@ -133,6 +146,9 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	}
 
 	f.oracle.data.settlementPrice = settlementPrice
+	if f.settlementPricelistener != nil {
+		f.settlementPricelistener(ctx, settlementPrice)
+	}
 
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug(
