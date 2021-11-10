@@ -13,7 +13,7 @@ var (
 	ErrEmptyNetParamValue = errors.New("empty network parmater value")
 )
 
-func (e *Engine) getNewMarketProposalParameters() (*ProposalParameters, error) {
+func (e *Engine) getNewMarketProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalMarketMinClose,
 		netparams.GovernanceProposalMarketMaxClose,
@@ -26,7 +26,7 @@ func (e *Engine) getNewMarketProposalParameters() (*ProposalParameters, error) {
 	)
 }
 
-func (e *Engine) getNewAssetProposalParameters() (*ProposalParameters, error) {
+func (e *Engine) getNewAssetProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalAssetMinClose,
 		netparams.GovernanceProposalAssetMaxClose,
@@ -39,7 +39,7 @@ func (e *Engine) getNewAssetProposalParameters() (*ProposalParameters, error) {
 	)
 }
 
-func (e *Engine) getUpdateNetworkParameterProposalParameters() (*ProposalParameters, error) {
+func (e *Engine) getUpdateNetworkParameterProposalParameters() *ProposalParameters {
 	return e.getProposalParametersFromNetParams(
 		netparams.GovernanceProposalUpdateNetParamMinClose,
 		netparams.GovernanceProposalUpdateNetParamMaxClose,
@@ -55,7 +55,7 @@ func (e *Engine) getUpdateNetworkParameterProposalParameters() (*ProposalParamet
 func (e *Engine) getProposalParametersFromNetParams(
 	minCloseKey, maxCloseKey, minEnactKey, maxEnactKey, requiredParticipationKey,
 	requiredMajorityKey, minProposerBalanceKey, minVoterBalanceKey string,
-) (*ProposalParameters, error) {
+) *ProposalParameters {
 	pp := ProposalParameters{}
 	pp.MinClose, _ = e.netp.GetDuration(minCloseKey)
 	pp.MaxClose, _ = e.netp.GetDuration(maxCloseKey)
@@ -65,11 +65,11 @@ func (e *Engine) getProposalParametersFromNetParams(
 	pp.RequiredParticipation = num.DecimalFromFloat(rp)
 	rm, _ := e.netp.GetFloat(requiredMajorityKey)
 	pp.RequiredMajority = num.DecimalFromFloat(rm)
-	mpb, _ := e.netp.GetInt(minProposerBalanceKey)
-	pp.MinProposerBalance = num.NewUint(uint64(mpb))
-	mvb, _ := e.netp.GetInt(minVoterBalanceKey)
-	pp.MinVoterBalance = num.NewUint(uint64(mvb))
-	return &pp, nil
+	mpb, _ := e.netp.GetUint(minProposerBalanceKey)
+	pp.MinProposerBalance = mpb
+	mvb, _ := e.netp.GetUint(minVoterBalanceKey)
+	pp.MinVoterBalance = mvb
+	return &pp
 }
 
 func validateNetworkParameterUpdate(

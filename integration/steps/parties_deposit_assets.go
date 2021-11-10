@@ -14,17 +14,19 @@ import (
 func PartiesDepositTheFollowingAssets(
 	collateralEngine *collateral.Engine,
 	broker *stubs.BrokerStub,
+	netDeposits *num.Uint,
 	table *godog.Table,
 ) error {
 	ctx := context.Background()
 
 	for _, r := range parseDepositAssetTable(table) {
 		row := depositAssetRow{row: r}
+		amount := row.Amount()
 		_, err := collateralEngine.Deposit(
 			ctx,
 			row.Party(),
 			row.Asset(),
-			row.Amount(),
+			amount,
 		)
 		if err := checkExpectedError(row, err); err != nil {
 			return err
@@ -34,6 +36,7 @@ func PartiesDepositTheFollowingAssets(
 		if err != nil {
 			return errNoGeneralAccountForParty(row, err)
 		}
+		netDeposits.Add(netDeposits, amount)
 	}
 	return nil
 }

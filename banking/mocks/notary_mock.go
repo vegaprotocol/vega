@@ -49,28 +49,26 @@ func (mr *MockNotaryMockRecorder) IsSigned(arg0, arg1, arg2 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSigned", reflect.TypeOf((*MockNotary)(nil).IsSigned), arg0, arg1, arg2)
 }
 
-// SendSignature mocks base method
-func (m *MockNotary) SendSignature(arg0 context.Context, arg1 string, arg2 []byte, arg3 v1.NodeSignatureKind) error {
+// OfferSignatures mocks base method
+func (m *MockNotary) OfferSignatures(arg0 v1.NodeSignatureKind, arg1 func(string) []byte) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SendSignature", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "OfferSignatures", arg0, arg1)
 }
 
-// SendSignature indicates an expected call of SendSignature
-func (mr *MockNotaryMockRecorder) SendSignature(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// OfferSignatures indicates an expected call of OfferSignatures
+func (mr *MockNotaryMockRecorder) OfferSignatures(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendSignature", reflect.TypeOf((*MockNotary)(nil).SendSignature), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OfferSignatures", reflect.TypeOf((*MockNotary)(nil).OfferSignatures), arg0, arg1)
 }
 
 // StartAggregate mocks base method
-func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind) {
+func (m *MockNotary) StartAggregate(arg0 string, arg1 v1.NodeSignatureKind, arg2 []byte) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartAggregate", arg0, arg1)
+	m.ctrl.Call(m, "StartAggregate", arg0, arg1, arg2)
 }
 
 // StartAggregate indicates an expected call of StartAggregate
-func (mr *MockNotaryMockRecorder) StartAggregate(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockNotaryMockRecorder) StartAggregate(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartAggregate", reflect.TypeOf((*MockNotary)(nil).StartAggregate), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartAggregate", reflect.TypeOf((*MockNotary)(nil).StartAggregate), arg0, arg1, arg2)
 }

@@ -106,10 +106,24 @@ type MarginCalculator struct {
 	ScalingFactors *ScalingFactors
 }
 
+func (m MarginCalculator) DeepClone() *MarginCalculator {
+	return &MarginCalculator{
+		ScalingFactors: m.ScalingFactors.DeepClone(),
+	}
+}
+
 type ScalingFactors struct {
 	SearchLevel       num.Decimal
 	InitialMargin     num.Decimal
 	CollateralRelease num.Decimal
+}
+
+func (s ScalingFactors) DeepClone() *ScalingFactors {
+	return &ScalingFactors{
+		SearchLevel:       s.SearchLevel,
+		InitialMargin:     s.InitialMargin,
+		CollateralRelease: s.CollateralRelease,
+	}
 }
 
 type MarginLevels struct {

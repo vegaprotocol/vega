@@ -68,6 +68,7 @@ type NetParams interface {
 	Update(context.Context, string, string) error
 	GetFloat(string) (float64, error)
 	GetInt(string) (int64, error)
+	GetUint(string) (*num.Uint, error)
 	GetDuration(string) (time.Duration, error)
 	GetJSONStruct(string, netparams.Reset) error
 	Get(string) (string, error)
@@ -387,7 +388,8 @@ func (e *Engine) SubmitProposal(
 		p.State = proto.Proposal_STATE_REJECTED
 		p.Reason = perr
 		if e.log.GetLevel() == logging.DebugLevel {
-			e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID))
+			e.log.Debug("Proposal rejected", logging.String("proposal-id", p.ID),
+				logging.String("proposal details", p.IntoProto().String()))
 		}
 		return nil, err
 	}
@@ -482,11 +484,11 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	switch terms.Change.GetTermType() {
 	case types.ProposalTerms_NEW_MARKET:
-		return e.getNewMarketProposalParameters()
+		return e.getNewMarketProposalParameters(), nil
 	case types.ProposalTerms_NEW_ASSET:
-		return e.getNewAssetProposalParameters()
+		return e.getNewAssetProposalParameters(), nil
 	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
-		return e.getUpdateNetworkParameterProposalParameters()
+		return e.getUpdateNetworkParameterProposalParameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
@@ -496,10 +498,7 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalError, error) {
 	params, err := e.getProposalParams(proposal.Terms)
 	if err != nil {
-		// FIXME(): not checking the error here
-		// we return unspecified here because not getting proposal
-		// params is not possible, the check done before needs to be removed
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
+		return types.ProposalError_PROPOSAL_ERROR_UNKNOWN_TYPE, err
 	}
 
 	closeTime := time.Unix(proposal.Terms.ClosingTimestamp, 0)

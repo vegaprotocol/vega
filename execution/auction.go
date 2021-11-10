@@ -34,7 +34,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 				logging.String("market-id", m.GetID()),
 				logging.Error(err))
 		}
-		if evt := m.as.AuctionExtended(ctx); evt != nil {
+		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 			// this should never, ever happen
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
 		}
@@ -75,7 +75,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		if isPrice && end {
 			m.checkLiquidity(ctx, ft)
 		}
-		if evt := m.as.AuctionExtended(ctx); evt != nil {
+		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 			m.broker.Send(evt)
 			end = false
 		}

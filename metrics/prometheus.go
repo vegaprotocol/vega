@@ -40,6 +40,8 @@ var (
 	apiRequestCallCounter *prometheus.CounterVec
 	// Total time counters for each request type per API.
 	apiRequestTimeCounter *prometheus.CounterVec
+	// Total time spent snapshoting.
+	snapshotTimeCounter *prometheus.CounterVec
 )
 
 // abstract prometheus types.
@@ -456,6 +458,23 @@ func setupMetrics() error {
 	}
 	apiRequestTimeCounter = rpac
 
+	// snapshots times
+	h, err = AddInstrument(
+		Counter,
+		"snapshot_time_total",
+		Namespace("vega"),
+		Vectors("engine"),
+		Help("Total time spent snapshotting state"),
+	)
+	if err != nil {
+		return err
+	}
+	snap, err := h.CounterVec()
+	if err != nil {
+		return err
+	}
+	snapshotTimeCounter = snap
+
 	return nil
 }
 
@@ -537,5 +556,16 @@ func StartAPIRequestAndTimeGRPC(request string) func() {
 		apiRequestCallCounter.WithLabelValues("GRPC", request).Inc()
 		duration := time.Since(startTime).Seconds()
 		apiRequestTimeCounter.WithLabelValues("GRPC", request).Add(duration)
+	}
+}
+
+func StartSnapshot(engine string) func() {
+	startTime := time.Now()
+	return func() {
+		if snapshotTimeCounter == nil {
+			return
+		}
+		duration := time.Since(startTime).Seconds()
+		snapshotTimeCounter.WithLabelValues(engine).Add(duration)
 	}
 }

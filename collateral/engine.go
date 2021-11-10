@@ -553,7 +553,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 
 		for _, bal := range res.Balances {
 			amountCollected.AddSum(bal.Balance)
-			if err := e.UpdateBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.ID),
@@ -650,7 +650,7 @@ func (e *Engine) FinalSettlement(ctx context.Context, marketID string, transfers
 
 		// update the to accounts now
 		for _, bal := range res.Balances {
-			if err := e.UpdateBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
+			if err := e.IncrementBalance(ctx, bal.Account.ID, bal.Balance); err != nil {
 				e.log.Error(
 					"Could not update the target account in transfer",
 					logging.String("account-id", bal.Account.ID),
@@ -1778,6 +1778,9 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 			return nil, err
 		}
 	}
+
+	// remove the insurance account for the market
+	e.removeAccount(marketInsuranceID)
 
 	return append(resps, insuranceLedgerEntries), nil
 }

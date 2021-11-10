@@ -82,12 +82,14 @@ type res struct {
 	// the context used to notify the routine to exit
 	cfunc context.CancelFunc
 	// the function to call one validation is done
-	cb func(interface{}, bool)
+	cb           func(interface{}, bool)
+	lastSentVote time.Time
 }
 
 func (r *res) addVote(key string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	if _, ok := r.votes[key]; ok {
 		return ErrDuplicateVoteFromNode
 	}
@@ -95,6 +97,14 @@ func (r *res) addVote(key string) error {
 	// add the vote
 	r.votes[key] = struct{}{}
 	return nil
+}
+
+func (r *res) selfVoteReceived(self string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	_, ok := r.votes[self]
+	return ok
 }
 
 func (r *res) voteCount() int {
@@ -190,7 +200,7 @@ func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) err
 		return ErrVoteFromNonValidator
 	}
 	w.setChangedLocked(true)
-	return r.addVote(string(nv.PubKey))
+	return r.addVote(hexPubKey)
 }
 
 func (w *Witness) setChangedLocked(changed bool) {
@@ -224,6 +234,7 @@ func (w *Witness) StartCheck(
 	}
 
 	w.resources[id] = rs
+	w.setChangedLocked(true)
 
 	// if we are a validator, we just start the routine.
 	// so we can ensure the resources exists
@@ -235,7 +246,6 @@ func (w *Witness) StartCheck(
 		// check succeeded
 		atomic.StoreUint32(&rs.state, voteSent)
 	}
-	w.setChangedLocked(true)
 	return nil
 }
 
@@ -285,7 +295,6 @@ func (w *Witness) start(ctx context.Context, r *res) {
 
 	// check succeeded
 	atomic.StoreUint32(&r.state, validated)
-	w.setChangedLocked(true)
 }
 
 func (w *Witness) votePassed(votesCount, topLen int) bool {
@@ -310,7 +319,6 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 
 		state := atomic.LoadUint32(&v.state)
 		votesLen := v.voteCount()
-
 		checkPass := w.votePassed(votesLen, topLen)
 
 		// if the time is expired, or we received enough votes
@@ -348,6 +356,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 		// if we are a validator, and the resource was validated
 		// then we try to send our vote.
 		if isValidator && state == validated || w.needResend(k) {
+			v.lastSentVote = t
 			pubKey, _ := hex.DecodeString(w.top.SelfNodeID())
 			nv := &commandspb.NodeVote{
 				PubKey:    pubKey,
@@ -356,7 +365,11 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
-			w.setChangedLocked(true)
+		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
+			if v.selfVoteReceived(w.top.SelfNodeID()) {
+				continue
+			}
+			w.onCommandSent(v.res.GetID())(errors.New("no self votes received after 10 seconds"))
 		}
 	}
 }
@@ -374,6 +387,7 @@ func (w *Witness) needResend(res string) bool {
 func (w *Witness) onCommandSent(res string) func(error) {
 	return func(err error) {
 		if err != nil {
+			w.log.Error("could not send command", logging.String("res-id", res), logging.Error(err))
 			w.needResendMu.Lock()
 			defer w.needResendMu.Unlock()
 			w.needResendRes[res] = struct{}{}

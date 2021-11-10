@@ -158,43 +158,72 @@ func (e *Engine) startERC20Signatures(
 	asset *erc20.ERC20,
 	ref *big.Int,
 ) error {
-	// we were able to lock the funds, then we can send the vote through the network
-	e.notary.StartAggregate(w.ID, types.NodeSignatureKindAssetWithdrawal)
+	var (
+		signature []byte
+		err       error
+	)
 
-	// if not a validator, we're good to go.
+	// if we are a validator, we want to build a signature
+	if e.top.IsValidator() {
+		_, signature, err = asset.SignWithdrawal(
+			w.Amount, w.ExpirationDate, w.Ext.GetErc20().GetReceiverAddress(), ref)
+		if err != nil {
+			// there's not reason we cannot build the signature here
+			// apart if the node isn't configure properly
+			e.log.Panic("unable to sign withdrawal",
+				logging.WithdrawalID(w.ID),
+				logging.PartyID(w.PartyID),
+				logging.AssetID(w.Asset),
+				logging.BigUint("amount", w.Amount),
+				logging.Error(err))
+		}
+	}
+
+	// we were able to lock the funds, then we can send the vote through the network
+	e.notary.StartAggregate(w.ID, types.NodeSignatureKindAssetWithdrawal, signature)
+
+	return nil
+}
+
+func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 	if !e.top.IsValidator() {
 		return nil
 	}
 
-	_, sig, err := asset.SignWithdrawal(
-		w.Amount, w.ExpirationDate, w.Ext.GetErc20().GetReceiverAddress(), ref)
+	wref, ok := e.withdrawals[resource]
+	if !ok {
+		// there's not reason we cannot find the withdrawal here
+		// apart if the node isn't configured properly
+		e.log.Panic("unable to find withdrawal",
+			logging.WithdrawalID(resource))
+	}
+	w := wref.w
+
+	asset, err := e.assets.Get(w.Asset)
 	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to sign withdrawal",
+		// there's not reason we cannot build the signature here
+		// apart if the node isn't configure properly
+		e.log.Panic("unable to get asset when offering signature",
 			logging.WithdrawalID(w.ID),
 			logging.PartyID(w.PartyID),
 			logging.AssetID(w.Asset),
 			logging.BigUint("amount", w.Amount),
 			logging.Error(err))
-		return err
 	}
 
-	err = e.notary.SendSignature(
-		ctx, w.ID, sig, types.NodeSignatureKindAssetWithdrawal)
+	erc20asset, _ := asset.ERC20()
+	_, signature, err := erc20asset.SignWithdrawal(
+		w.Amount, w.ExpirationDate, w.Ext.GetErc20().GetReceiverAddress(), wref.ref)
 	if err != nil {
-		// we don't cancel it here
-		// we may not be able to sign for some reason, but other may be able
-		// and we would aggregate enough signature
-		e.log.Error("unable to send node signature",
+		// there's not reason we cannot build the signature here
+		// apart if the node isn't configure properly
+		e.log.Panic("unable to sign withdrawal",
 			logging.WithdrawalID(w.ID),
 			logging.PartyID(w.PartyID),
 			logging.AssetID(w.Asset),
 			logging.BigUint("amount", w.Amount),
 			logging.Error(err))
-		return err
 	}
 
-	return nil
+	return signature
 }

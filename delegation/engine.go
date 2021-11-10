@@ -11,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/validators"
 )
 
 var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
@@ -48,6 +49,7 @@ type TimeService interface {
 type ValidatorTopology interface {
 	IsValidatorNode(nodeID string) bool
 	AllNodeIDs() []string
+	Get(key string) *validators.ValidatorData
 }
 
 // Broker send events
@@ -120,9 +122,11 @@ type Engine struct {
 
 // New instantiate a new delegation engine.
 func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTopology, stakingAccounts StakingAccounts, epochEngine EpochEngine, ts TimeService) *Engine {
+	log = log.Named(namedLogger)
+	log.SetLevel(config.Level.Get())
 	e := &Engine{
 		config:               config,
-		log:                  log.Named(namedLogger),
+		log:                  log,
 		broker:               broker,
 		topology:             topology,
 		stakingAccounts:      stakingAccounts,
@@ -350,34 +354,28 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 		partyDelegationBalance = partyDelegation.totalDelegated
 	}
 
-	// if the party withdrew from their account and now don't have sufficient cover for their current delegation, prevent them from further delgations
-	// no need to immediately undelegate because this will be handled at epoch end
-	if partyBalance.LTE(partyDelegationBalance) {
-		e.log.Error("Party has insufficient account balance", logging.String("party", party), logging.String("nodeID", nodeID), logging.String("partyBalance", num.UintToString(partyBalance)), logging.String("partyDelegationBalance", num.UintToString(partyDelegationBalance)), logging.String("amount", num.UintToString(amount)))
-		return ErrInsufficientBalanceForDelegation
-	}
-
-	// subrtact the committed delegation balance and apply pending if any
-
-	balanceAvailableForDelegation := num.Zero().Sub(partyBalance, partyDelegationBalance)
 	partyPendingDelegation := currentPendingPartyDelegation.totalDelegation
 	partyPendingUndelegation := currentPendingPartyDelegation.totalUndelegation
 
-	// add pending undelegations to available balance
-	if !partyPendingUndelegation.IsZero() {
-		balanceAvailableForDelegation.AddSum(partyPendingUndelegation)
-	}
-	// subtract pending delegations from available balance
-	if !partyPendingDelegation.IsZero() {
-		// if there's somehow more pending than available for delegation due to withdrawls return error
-		if partyPendingDelegation.GT(balanceAvailableForDelegation) {
-			e.log.Error("Party has insufficient account balance", logging.String("party", party), logging.String("nodeID", nodeID), logging.String("partyBalance", num.UintToString(partyBalance)), logging.String("balanceAvailableForDelegation", num.UintToString(balanceAvailableForDelegation)), logging.String("partyPendingDelegation", num.UintToString(partyPendingDelegation)), logging.String("amount", num.UintToString(amount)))
-			return ErrInsufficientBalanceForDelegation
-		}
-		balanceAvailableForDelegation = num.Zero().Sub(balanceAvailableForDelegation, partyPendingDelegation)
+	// calculate the balance for the next epoch with the current effective delegation and the requested
+	// delegations and undelegations
+	nextEpochsBalance := num.Zero().Add(partyDelegationBalance, partyPendingDelegation)
+	if nextEpochsBalance.LT(partyPendingUndelegation) {
+		nextEpochsBalance = num.Zero()
+	} else {
+		nextEpochsBalance = nextEpochsBalance.Sub(nextEpochsBalance, partyPendingUndelegation)
 	}
 
-	// if the balance with committed and pending delegations/undelegations is insufficient to satisfy the delegation return error
+	// if the projected balance for next epoch is already greater than the current balance reject the transaction
+	if nextEpochsBalance.GT(partyBalance) {
+		e.log.Error("Party has insufficient account balance", logging.Uint64("epoch", e.currentEpoch.Seq), logging.String("party", party), logging.String("nodeID", nodeID), logging.String("partyBalance", num.UintToString(partyBalance)), logging.String("partyDelegationBalance", num.UintToString(partyDelegationBalance)), logging.String("amount", num.UintToString(amount)))
+		return ErrInsufficientBalanceForDelegation
+	}
+
+	// check how much there is left for next epoch for delegation with respect to the association balance and the next epoch's projected balance
+	balanceAvailableForDelegation := num.Zero().Sub(partyBalance, nextEpochsBalance)
+
+	// if the balance available for delegation in the next epoch is smaller than requested amount reject the transaction
 	if balanceAvailableForDelegation.LT(amt) {
 		e.log.Error("Party has insufficient account balance", logging.String("party", party), logging.String("nodeID", nodeID), logging.String("partyBalance", num.UintToString(partyBalance)), logging.String("balanceAvailableForDelegation", num.UintToString(balanceAvailableForDelegation)), logging.String("amount", num.UintToString(amount)))
 		return ErrInsufficientBalanceForDelegation
@@ -1202,13 +1200,15 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 	for _, nodeID := range validatorNodes {
 		validatorState, ok := e.nodeDelegationState[nodeID]
 		if ok {
+			pk := e.topology.Get(nodeID).VegaPubKey
 			validator := &types.ValidatorData{
 				NodeID:     nodeID,
+				PubKey:     pk,
 				Delegators: map[string]*num.Uint{},
 			}
 			selfStake := num.Zero()
 			for delegatingParties, amt := range validatorState.partyToAmount {
-				if delegatingParties == nodeID {
+				if delegatingParties == pk {
 					selfStake = amt.Clone()
 				} else {
 					validator.Delegators[delegatingParties] = amt.Clone()
@@ -1222,6 +1222,7 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 		// validator with no delegation at all
 		validators = append(validators, &types.ValidatorData{
 			NodeID:            nodeID,
+			PubKey:            e.topology.Get(nodeID).VegaPubKey,
 			Delegators:        map[string]*num.Uint{},
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.Zero(),

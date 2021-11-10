@@ -32,6 +32,8 @@ type Product interface {
 	GetAsset() string
 	IsTradingTerminated() bool
 	SettlementPrice() (*num.Uint, error)
+	NotifyOnTradingTerminated(listener func(context.Context, bool))
+	NotifyOnSettlementPrice(listener func(context.Context, *num.Uint))
 }
 
 // New instance a new product from a Market framework product configuration.

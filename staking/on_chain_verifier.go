@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
@@ -108,9 +109,12 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 			continue
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		iter, err := filterer.FilterStakeDeposited(
 			&bind.FilterOpts{
-				Start: event.BlockNumber - 1,
+				Start:   event.BlockNumber - 1,
+				Context: ctx,
 			},
 			// user
 			[]ethcmn.Address{ethcmn.HexToAddress(event.EthereumAddress)},
@@ -182,9 +186,12 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 			continue
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		iter, err := filterer.FilterStakeRemoved(
 			&bind.FilterOpts{
-				Start: event.BlockNumber - 1,
+				Start:   event.BlockNumber - 1,
+				Context: ctx,
 			},
 			// user
 			[]ethcmn.Address{ethcmn.HexToAddress(event.EthereumAddress)},

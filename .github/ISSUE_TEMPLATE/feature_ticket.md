@@ -99,7 +99,7 @@ A list of the engines that we believe will be impacted by the development of thi
 - Liquidity bot
 - Trader bot
 
-# API Calls 
+# API Calls
 A list of the API calls that are needed for this feature, written in an implementation-agnostic format i.e. "Get a list of widgets, categorised by X", rather than "GET /widgets?category=X":
 
 - Get a list of widgets, categorised by X

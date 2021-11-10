@@ -32,9 +32,10 @@ func TestSimpleSpamProtection(t *testing.T) {
 	t.Run("On end of block, block proposal counters are reset and take a snapshot roundtrip", testProposalEndBlockReset)
 }
 
-func getCommandSpamPolicy() *spam.SimpleSpamPolicy {
+func getCommandSpamPolicy(accounts map[string]*num.Uint) *spam.SimpleSpamPolicy {
+	testAccounts := testAccounts{balances: accounts}
 	logger := logging.NewTestLogger()
-	policy := spam.NewSimpleSpamPolicy("simple", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, logger)
+	policy := spam.NewSimpleSpamPolicy("simple", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, logger, testAccounts)
 	minTokensForProposal, _ := num.UintFromString("100000000000000000000000", 10)
 	policy.UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
 	policy.UpdateIntParam(netparams.SpamProtectionMaxProposals, 3)
@@ -42,13 +43,12 @@ func getCommandSpamPolicy() *spam.SimpleSpamPolicy {
 }
 
 func testProposalEndBlockReset(t *testing.T) {
-	// set state
-	policy := getCommandSpamPolicy()
-
 	tokenMap := make(map[string]*num.Uint, 1)
 	tokenMap["party1"] = sufficientPropTokens
+	// set state
+	policy := getCommandSpamPolicy(tokenMap)
 
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// in each block we vote once
 	var i uint64 = 0
@@ -79,7 +79,7 @@ func testProposalEndBlockReset(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(bytes1, bytes2))
 
-	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 1})
 
 	bytes3, err := policy.Serialise()
 	require.Nil(t, err)
@@ -88,9 +88,7 @@ func testProposalEndBlockReset(t *testing.T) {
 
 // reject proposal when the proposer doesn't have sufficient balance at the beginning of the epoch.
 func testCommandPreRejectInsufficientBalance(t *testing.T) {
-	policy := getCommandSpamPolicy()
-
-	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": insufficientPropTokens})
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": insufficientPropTokens})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
@@ -99,10 +97,10 @@ func testCommandPreRejectInsufficientBalance(t *testing.T) {
 
 // reject proposal requests from banned parties for as long as they are banned.
 func testCommandPreRejectBannedParty(t *testing.T) {
-	policy := getCommandSpamPolicy()
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": sufficientPropTokens})
 
 	// epoch 0 started party1 has enough balance
-	policy.Reset(types.Epoch{Seq: 0}, map[string]*num.Uint{"party1": sufficientPropTokens})
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// trigger banning of party1 by causing it to post reject 3/6 of the proposal
 	tx := &testTx{party: "party1", proposal: "proposal1"}
@@ -131,24 +129,22 @@ func testCommandPreRejectBannedParty(t *testing.T) {
 
 	// advance epochs - verify still banned until epoch 4 (including)
 	for i := 0; i < 4; i++ {
-		policy.Reset(types.Epoch{Seq: uint64(i + 1)}, map[string]*num.Uint{"party1": sufficientPropTokens})
+		policy.Reset(types.Epoch{Seq: uint64(i + 1)})
 		accept, err := policy.PreBlockAccept(tx)
 		require.Equal(t, false, accept)
 		require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
 	}
 	// should be released from ban on epoch 5
-	policy.Reset(types.Epoch{Seq: 5}, map[string]*num.Uint{"party1": sufficientPropTokens})
+	policy.Reset(types.Epoch{Seq: 5})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, true, accept)
 	require.Nil(t, err)
 }
 
 func testCommandPreRejectTooManyProposals(t *testing.T) {
-	policy := getCommandSpamPolicy()
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": sufficientPropTokens})
 	// epoch 0 block 0
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientPropTokens
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// propose 4 proposals, all preaccepted 3 post accepted
 	tx := &testTx{party: "party1", proposal: "proposal1"}
@@ -175,7 +171,7 @@ func testCommandPreRejectTooManyProposals(t *testing.T) {
 	require.Equal(t, errors.New("party has already proposed the maximum number of simple requests per epoch"), err)
 
 	// advance to next epoch to reset limits
-	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 1})
 	for i := 0; i < 3; i++ {
 		tx := &testTx{party: "party1", proposal: "proposal1"}
 		accept, err := policy.PreBlockAccept(tx)
@@ -185,11 +181,9 @@ func testCommandPreRejectTooManyProposals(t *testing.T) {
 }
 
 func testCommandPreAccept(t *testing.T) {
-	policy := getCommandSpamPolicy()
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": sufficientPropTokens})
 	// epoch 0 block 0
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientPropTokens
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 0})
 
 	// propose 5 times all pre accepted, 3 for each post accepted
 	for i := 0; i < 2; i++ {
@@ -204,10 +198,8 @@ func testCommandPreAccept(t *testing.T) {
 }
 
 func testCommandPostAccept(t *testing.T) {
-	policy := getCommandSpamPolicy()
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientPropTokens
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": sufficientPropTokens})
+	policy.Reset(types.Epoch{Seq: 0})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	// pre accepted
 	for i := 0; i < 3; i++ {
@@ -225,10 +217,8 @@ func testCommandPostAccept(t *testing.T) {
 }
 
 func testCommandPostRejectTooManyProposals(t *testing.T) {
-	policy := getCommandSpamPolicy()
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientPropTokens
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": sufficientPropTokens})
+	policy.Reset(types.Epoch{Seq: 0})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	// pre accepted
 	for i := 0; i < 5; i++ {
@@ -253,10 +243,8 @@ func testCommandPostRejectTooManyProposals(t *testing.T) {
 }
 
 func testCommandCountersUpdated(t *testing.T) {
-	policy := getCommandSpamPolicy()
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientPropTokens
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": sufficientPropTokens})
+	policy.Reset(types.Epoch{Seq: 0})
 
 	tx := &testTx{party: "party1", proposal: "proposal"}
 	// pre accepted
@@ -281,12 +269,8 @@ func testCommandCountersUpdated(t *testing.T) {
 
 func testCommandReset(t *testing.T) {
 	// set state
-	policy := getCommandSpamPolicy()
-
-	tokenMap := make(map[string]*num.Uint, 1)
-	tokenMap["party1"] = sufficientPropTokens
-
-	policy.Reset(types.Epoch{Seq: 0}, tokenMap)
+	policy := getCommandSpamPolicy(map[string]*num.Uint{"party1": sufficientPropTokens})
+	policy.Reset(types.Epoch{Seq: 0})
 	tx := &testTx{party: "party1", proposal: "proposal1"}
 	// pre accepted
 	for i := 0; i < 6; i++ {
@@ -310,28 +294,28 @@ func testCommandReset(t *testing.T) {
 	// trigger ban of party1 until epoch 4
 	policy.EndOfBlock(1)
 	// verify reset at the start of new epoch, party1 should still be banned for the epoch until epoch 4
-	policy.Reset(types.Epoch{Seq: 1}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 1})
 	accept, err := policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
 
 	// advance epochs until the ban is lifted fro party1
-	policy.Reset(types.Epoch{Seq: 2}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 2})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
 
-	policy.Reset(types.Epoch{Seq: 3}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 3})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
 
-	policy.Reset(types.Epoch{Seq: 4}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 4})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, false, accept)
 	require.Equal(t, errors.New("party is banned from submitting simple in the current epoch"), err)
 
-	policy.Reset(types.Epoch{Seq: 5}, tokenMap)
+	policy.Reset(types.Epoch{Seq: 5})
 	accept, err = policy.PreBlockAccept(tx)
 	require.Equal(t, true, accept)
 	require.Nil(t, err)

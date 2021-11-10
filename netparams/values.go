@@ -24,8 +24,8 @@ func (b *baseValue) ToInt() (int64, error) {
 	return 0, errors.New("not an int value")
 }
 
-func (b *baseValue) ToUint() (uint64, error) {
-	return 0, errors.New("not an uint value")
+func (b *baseValue) ToUint() (*num.Uint, error) {
+	return num.Zero(), errors.New("not an uint value")
 }
 
 func (b *baseValue) ToBool() (bool, error) {
@@ -1048,4 +1048,162 @@ func (s *String) MustUpdate(value string) *String {
 
 func (s *String) String() string {
 	return s.rawval
+}
+
+type UintRule func(*num.Uint) error
+
+type Uint struct {
+	*baseValue
+	value   *num.Uint
+	rawval  string
+	rules   []UintRule
+	mutable bool
+}
+
+func NewUint(rules ...UintRule) *Uint {
+	return &Uint{
+		baseValue: &baseValue{},
+		rules:     rules,
+		value:     num.Zero(),
+	}
+}
+
+func (i *Uint) GetDispatch() func(context.Context, interface{}) error {
+	return func(ctx context.Context, rawfn interface{}) error {
+		// there can't be errors here, as all dispatcher
+		// should have been check earlier when being register
+		fn := rawfn.(func(context.Context, *num.Uint) error)
+		return fn(ctx, i.value.Clone())
+	}
+}
+
+func (i *Uint) CheckDispatch(fn interface{}) error {
+	if _, ok := fn.(func(context.Context, *num.Uint) error); !ok {
+		return errors.New("invalid type, expected func(context.Context, int64) error")
+	}
+	return nil
+}
+
+func (i *Uint) AddRules(fns ...interface{}) error {
+	for _, fn := range fns {
+		// asset they have the right type
+		v, ok := fn.(UintRule)
+		if !ok {
+			return errors.New("ints require BigUintRule functions")
+		}
+		i.rules = append(i.rules, v)
+	}
+
+	return nil
+}
+
+func (i *Uint) ToUint() (*num.Uint, error) {
+	return i.value.Clone(), nil
+}
+
+func (i *Uint) Validate(value string) error {
+	val, overflow := num.UintFromString(value, 10)
+	if overflow {
+		return errors.New("invalid uint")
+	}
+
+	if !i.mutable {
+		return errors.New("value is not mutable")
+	}
+
+	var err error
+	for _, fn := range i.rules {
+		if newerr := fn(val.Clone()); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+	return err
+}
+
+func (i *Uint) Update(value string) error {
+	if !i.mutable {
+		return errors.New("value is not mutable")
+	}
+	val, overflow := num.UintFromString(value, 10)
+	if overflow {
+		return errors.New("invalid uint")
+	}
+
+	var err error
+	for _, fn := range i.rules {
+		if newerr := fn(val); newerr != nil {
+			if err != nil {
+				err = fmt.Errorf("%v, %w", err, newerr)
+			} else {
+				err = newerr
+			}
+		}
+	}
+
+	if err == nil {
+		i.rawval = value
+		i.value = val
+	}
+
+	return err
+}
+
+func (i *Uint) Mutable(b bool) *Uint {
+	i.mutable = b
+	return i
+}
+
+func (i *Uint) MustUpdate(value string) *Uint {
+	if err := i.Update(value); err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (i *Uint) String() string {
+	return i.rawval
+}
+
+func UintGTE(i *num.Uint) func(*num.Uint) error {
+	icopy := i.Clone()
+	return func(val *num.Uint) error {
+		if val.GTE(icopy) {
+			return nil
+		}
+		return fmt.Errorf("expect >= %v got %v", i, val)
+	}
+}
+
+func UintGT(i *num.Uint) func(*num.Uint) error {
+	icopy := i.Clone()
+	return func(val *num.Uint) error {
+		if val.GT(icopy) {
+			return nil
+		}
+		return fmt.Errorf("expect > %v got %v", i, val)
+	}
+}
+
+func UintLTE(i *num.Uint) func(*num.Uint) error {
+	icopy := i.Clone()
+	return func(val *num.Uint) error {
+		if val.LTE(icopy) {
+			return nil
+		}
+		return fmt.Errorf("expect <= %v got %v", i, val)
+	}
+}
+
+func UintLT(i *num.Uint) func(*num.Uint) error {
+	icopy := i.Clone()
+	return func(val *num.Uint) error {
+		if val.LT(icopy) {
+			return nil
+		}
+		return fmt.Errorf("expect < %v got %v", i, val)
+	}
 }

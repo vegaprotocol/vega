@@ -3,7 +3,6 @@ package oracles
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -29,9 +28,7 @@ type Engine struct {
 	log           *logging.Logger
 	broker        Broker
 	CurrentTime   time.Time
-	buffer        []OracleData
 	subscriptions specSubscriptions
-	lock          sync.Mutex
 }
 
 // NewEngine creates a new oracle Engine.
@@ -59,18 +56,6 @@ func NewEngine(
 // UpdateCurrentTime listens to update of the current Vega time.
 func (e *Engine) UpdateCurrentTime(ctx context.Context, ts time.Time) {
 	e.CurrentTime = ts
-
-	e.lock.Lock()
-	for _, data := range e.buffer {
-		err := e.sendOracleUpdate(ctx, data)
-		if err != nil {
-			e.log.Debug("failed to send oracle update",
-				logging.Error(err),
-			)
-		}
-	}
-	e.buffer = nil
-	e.lock.Unlock()
 }
 
 func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
@@ -98,13 +83,15 @@ func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {
 	return nil
 }
 
-// BroadcastData appends the OracleData to the buffer and is broadcast on chain time event
-// to products and risk models that are interested in it. If no one is listening to this OracleData, it is discarded.
+// BroadcastData broadcasts data to products and risk models that are interested in it. If no one is listening to this OracleData, it is discarded.
 func (e *Engine) BroadcastData(ctx context.Context, data OracleData) error {
-	e.lock.Lock()
-	e.buffer = append(e.buffer, data)
-	e.lock.Unlock()
-	return nil
+	err := e.sendOracleUpdate(ctx, data)
+	if err != nil {
+		e.log.Debug("failed to send oracle update",
+			logging.Error(err),
+		)
+	}
+	return err
 }
 
 // Subscribe registers a callback for a given OracleSpec that is call when an

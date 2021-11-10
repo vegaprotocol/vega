@@ -10,6 +10,7 @@ import (
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/cosmos/iavl"
@@ -107,6 +108,8 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.LimitSnapshot,
 	types.ReplayProtectionSnapshot,
 	types.RewardSnapshot,
+	types.TopologySnapshot,
+	types.EventForwarderSnapshot,
 }
 
 // New returns a new snapshot engine.
@@ -392,6 +395,7 @@ func (e *Engine) GetMissingChunks() []uint32 {
 }
 
 func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
+	defer metrics.StartSnapshot("all")()
 	// always iterate over slices, so loops are deterministic
 	updated := false
 	for _, ns := range e.namespaces {
@@ -455,6 +459,7 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 }
 
 func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
+	defer metrics.StartSnapshot(string(ns))()
 	treeKeys, ok := e.nsTreeKeys[ns]
 	if !ok || len(treeKeys) == 0 {
 		return false, nil

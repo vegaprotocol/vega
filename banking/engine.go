@@ -43,9 +43,9 @@ type Assets interface {
 // Notary ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/notary_mock.go -package mocks code.vegaprotocol.io/vega/banking Notary
 type Notary interface {
-	StartAggregate(resID string, kind types.NodeSignatureKind)
-	SendSignature(ctx context.Context, id string, sig []byte, kind types.NodeSignatureKind) error
+	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	OfferSignatures(kind types.NodeSignatureKind, f func(resources string) []byte)
 }
 
 // Collateral engine
@@ -222,6 +222,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		delete(e.assetActs, k)
 		e.bss.changed[assetActionsKey] = true
 	}
+
+	// we may want a dedicated method on the snapshot engine at some
+	// point but this will do for now
+	// this will be restarting the signatures aggregates
+	e.notary.OfferSignatures(
+		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {

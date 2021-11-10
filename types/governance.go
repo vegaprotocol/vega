@@ -81,6 +81,10 @@ const (
 	ProposalError_PROPOSAL_ERROR_COULD_NOT_INSTANTIATE_MARKET ProposalError = 25
 	// Market proposal market contained invalid product definition.
 	ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT ProposalError = 26
+	// Proposal is an unknown type.
+	ProposalError_PROPOSAL_ERROR_UNKNOWN_TYPE ProposalError = 27
+	// Proposal has an unknown risk parameter type.
+	ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE ProposalError = 28
 )
 
 type ProposalState = proto.Proposal_State

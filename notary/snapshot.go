@@ -22,10 +22,17 @@ var (
 )
 
 // NewWithSnapshot returns an "extended" Notary type which contains the ability to take engine snapshots.
-func NewWithSnapshot(log *logging.Logger, cfg Config, top ValidatorTopology, broker Broker, cmd Commander) *SnapshotNotary {
+func NewWithSnapshot(
+	log *logging.Logger,
+	cfg Config,
+	top ValidatorTopology,
+	broker Broker,
+	cmd Commander,
+	tt TimeTicker,
+) *SnapshotNotary {
 	log = log.Named(namedLogger)
 	return &SnapshotNotary{
-		Notary:  New(log, cfg, top, broker, cmd),
+		Notary:  New(log, cfg, top, broker, cmd, tt),
 		changed: true,
 	}
 }
@@ -40,19 +47,27 @@ type SnapshotNotary struct {
 }
 
 // StartAggregate is a wrapper to Notary's StartAggregate which also manages the snapshot state.
-func (n *SnapshotNotary) StartAggregate(resID string, kind v1.NodeSignatureKind) {
-	n.Notary.StartAggregate(resID, kind)
+func (n *SnapshotNotary) StartAggregate(
+	resource string,
+	kind v1.NodeSignatureKind,
+	signature []byte,
+) {
+	n.Notary.StartAggregate(resource, kind, signature)
 	n.changed = true
 }
 
-// AddSig is a wrapper to Notary's AddSig which also manages the snapshot state.
-func (n *SnapshotNotary) AddSig(ctx context.Context, pubKey string, ns v1.NodeSignature) ([]v1.NodeSignature, bool, error) {
-	sigsout, ok, err := n.Notary.AddSig(ctx, pubKey, ns)
+// RegisterSignature is a wrapper to Notary's RegisterSignature which also manages the snapshot state.
+func (n *SnapshotNotary) RegisterSignature(
+	ctx context.Context,
+	pubKey string,
+	ns v1.NodeSignature,
+) error {
+	err := n.Notary.RegisterSignature(ctx, pubKey, ns)
 	if err == nil {
 		n.changed = true
 	}
 
-	return sigsout, ok, err
+	return err
 }
 
 // get the serialised form and hash of the given key.
@@ -108,6 +123,22 @@ func (n *SnapshotNotary) LoadState(ctx context.Context, payload *types.Payload) 
 	}
 }
 
+func (n *SnapshotNotary) OfferSignatures(
+	kind types.NodeSignatureKind,
+	// a callback taking a list of resource that a signature is required
+	// for, returning a map of signature for given resources
+	f func(resource string) []byte,
+) {
+	for k, v := range n.retries.txs {
+		if k.kind != kind {
+			continue
+		}
+		if signature := f(k.id); signature != nil {
+			v.signature = signature
+		}
+	}
+}
+
 // serialiseLimits returns the engine's limit data as marshalled bytes.
 func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	sigs := make([]*types.NotarySigs, 0, len(n.sigs)) // it will likely be longer than this but we don't know yet
@@ -130,32 +161,7 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 	}
 
 	sort.SliceStable(sigs, func(i, j int) bool {
-		switch strings.Compare(sigs[i].ID, sigs[j].ID) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-
-		switch strings.Compare(sigs[i].Node, sigs[j].Node) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-
-		switch strings.Compare(sigs[i].Sig, sigs[j].Sig) {
-		case -1:
-			return true
-		case 1:
-			return false
-		}
-
-		if sigs[i].Kind == sigs[j].Kind {
-			n.log.Panic("could not deterministically order notary sigs for snapshot")
-		}
-
-		return sigs[i].Kind < sigs[j].Kind
+		return sigs[i].Sig < sigs[j].Sig
 	})
 
 	pl := types.Payload{
@@ -169,11 +175,25 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 }
 
 func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
-	sigs := map[idKind]map[nodeSig]struct{}{}
-
+	var (
+		sigs    = map[idKind]map[nodeSig]struct{}{}
+		retries = &txTracker{
+			txs: map[idKind]*signatureTime{},
+		}
+		isValidator = n.Notary.top.IsValidator()
+		selfSigned  = map[idKind]bool{}
+		self        = n.Notary.top.SelfVegaPubKey()
+	)
 	for _, s := range notary.Sigs {
 		idK := idKind{id: s.ID, kind: v1.NodeSignatureKind(s.Kind)}
 		ns := nodeSig{node: s.Node, sig: s.Sig}
+
+		if isValidator {
+			signed := selfSigned[idK]
+			if !signed {
+				selfSigned[idK] = strings.EqualFold(s.Node, self)
+			}
+		}
 
 		if _, ok := sigs[idK]; !ok {
 			sigs[idK] = map[nodeSig]struct{}{}
@@ -184,6 +204,14 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
 		}
 	}
 
+	for resource, ok := range selfSigned {
+		if !ok {
+			// this is not signed, just add it to the retries list
+			retries.Add(resource, nil)
+		}
+	}
+
 	n.sigs = sigs
+	n.retries = retries
 	return nil
 }

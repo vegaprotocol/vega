@@ -35,9 +35,6 @@ type Engine struct {
 	// any function to mutate them, so we can consider it safe to return
 	// this slice.
 	positionsCpy []events.MarketPosition
-
-	// Snapshot state
-	pss *positionsSnapshotState
 }
 
 // New instantiates a new positions engine.
@@ -52,10 +49,6 @@ func New(log *logging.Logger, config Config, marketID string) *Engine {
 		log:          log,
 		positions:    map[string]*MarketPosition{},
 		positionsCpy: []events.MarketPosition{},
-		pss: &positionsSnapshotState{
-			pl:      types.Payload{},
-			changed: true,
-		},
 	}
 }
 
@@ -119,8 +112,6 @@ func (e *Engine) RegisterOrder(order *types.Order) *MarketPosition {
 	}
 
 	pos.RegisterOrder(order)
-
-	e.pss.changed = true
 	return pos
 }
 
@@ -134,8 +125,6 @@ func (e *Engine) UnregisterOrder(order *types.Order) *MarketPosition {
 	}
 
 	pos.UnregisterOrder(e.log, order)
-
-	e.pss.changed = true
 	return pos
 }
 
@@ -150,7 +139,6 @@ func (e *Engine) AmendOrder(originalOrder, newOrder *types.Order) *MarketPositio
 	}
 
 	pos.AmendOrder(e.log, originalOrder, newOrder)
-	e.pss.changed = true
 	return pos
 }
 
@@ -202,7 +190,6 @@ func (e *Engine) UpdateNetwork(trade *types.Trade) []events.MarketPosition {
 	}
 	pos.size += size
 
-	e.pss.changed = true
 	cpy := pos.Clone()
 	return []events.MarketPosition{*cpy}
 }
@@ -257,8 +244,6 @@ func (e *Engine) Update(trade *types.Trade) []events.MarketPosition {
 			logging.String("buyer-position", fmt.Sprintf("%+v", buyer)),
 			logging.String("seller-position", fmt.Sprintf("%+v", seller)))
 	}
-
-	e.pss.changed = true
 	return ret
 }
 
@@ -286,8 +271,6 @@ func (e *Engine) RemoveDistressed(parties []events.MarketPosition) []events.Mark
 			}
 		}
 	}
-
-	e.pss.changed = true
 	return ret
 }
 
@@ -297,8 +280,6 @@ func (e *Engine) UpdateMarkPrice(markPrice *num.Uint) []events.MarketPosition {
 	for _, pos := range e.positions {
 		pos.price.Set(markPrice)
 	}
-
-	e.pss.changed = true
 	return e.positionsCpy
 }
 

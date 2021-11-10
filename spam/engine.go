@@ -2,6 +2,7 @@ package spam
 
 import (
 	"context"
+	"sync"
 
 	"code.vegaprotocol.io/vega/netparams"
 
@@ -21,8 +22,8 @@ const (
 	banFactor                              = 0.5
 )
 
-type Accounting interface {
-	GetAllAvailableBalances() map[string]*num.Uint
+type StakingAccounts interface {
+	GetAvailableBalance(party string) (*num.Uint, error)
 }
 
 type EpochEngine interface {
@@ -32,7 +33,8 @@ type EpochEngine interface {
 type Engine struct {
 	log        *logging.Logger
 	config     Config
-	accounting Accounting
+	accounting StakingAccounts
+	cfgMu      sync.Mutex
 
 	transactionTypeToPolicy map[txn.Command]SpamPolicy
 	currentEpoch            *types.Epoch
@@ -41,7 +43,7 @@ type Engine struct {
 }
 
 type SpamPolicy interface {
-	Reset(epoch types.Epoch, tokenBalances map[string]*num.Uint)
+	Reset(epoch types.Epoch)
 	EndOfBlock(blockHeight uint64)
 	PreBlockAccept(tx abci.Tx) (bool, error)
 	PostBlockAccept(tx abci.Tx) (bool, error)
@@ -51,8 +53,24 @@ type SpamPolicy interface {
 	Deserialise(payload *types.Payload) error
 }
 
+// ReloadConf updates the internal configuration of the spam engine.
+func (e *Engine) ReloadConf(cfg Config) {
+	e.log.Info("reloading configuration")
+	if e.log.GetLevel() != cfg.Level.Get() {
+		e.log.Info("updating log level",
+			logging.String("old", e.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		e.log.SetLevel(cfg.Level.Get())
+	}
+
+	e.cfgMu.Lock()
+	e.config = cfg
+	e.cfgMu.Unlock()
+}
+
 // New instantiates a new spam engine.
-func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting Accounting) *Engine {
+func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting StakingAccounts) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -62,9 +80,9 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 		transactionTypeToPolicy: map[txn.Command]SpamPolicy{},
 	}
 
-	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log)
-	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log)
-	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log)
+	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log, accounting)
+	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log, accounting)
+	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
 	voteKey := (&types.PayloadDelegationActive{}).Key()
 	e.policyNameToPolicy = map[string]SpamPolicy{voteKey: votePolicy, proposalPolicy.policyName: proposalPolicy, delegationPolicy.policyName: delegationPolicy}
@@ -123,9 +141,9 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 			e.log.Debug("Spam protection new epoch started", logging.Uint64("epochSeq", epoch.Seq))
 		}
 		e.currentEpoch = &epoch
-		balances := e.accounting.GetAllAvailableBalances()
+
 		for _, policy := range e.transactionTypeToPolicy {
-			policy.Reset(epoch, balances)
+			policy.Reset(epoch)
 		}
 	}
 }
