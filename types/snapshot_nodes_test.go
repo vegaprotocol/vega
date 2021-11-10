@@ -192,8 +192,6 @@ func TestPayloadConversion(t *testing.T) {
 		Data: &types.PayloadRewardsPayout{
 			RewardsPendingPayouts: &types.RewardsPendingPayouts{},
 		},
-	}, &types.Payload{
-		Data: &types.PayloadOracleData{},
 	},
 	)
 	asProto := all.IntoProto()
