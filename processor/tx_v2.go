@@ -285,3 +285,7 @@ func (t TxV2) Validate() error {
 func (t TxV2) BlockHeight() uint64 {
 	return t.inputData.BlockHeight
 }
+
+func (t TxV2) RawTx() *commandspb.Transaction {
+	return t.tx
+}
