@@ -525,7 +525,6 @@ func TestMarketClosing(t *testing.T) {
 		PubKeys: []string{"0xDEADBEEF"},
 		Data:    properties,
 	})
-	tm.oracleEngine.UpdateCurrentTime(context.Background(), closingAt.Add(1*time.Second))
 	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
 
 	// there's not settlement price yet
@@ -667,8 +666,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		PubKeys: []string{"0xDEADBEEF"},
 		Data:    properties,
 	})
-	tm.oracleEngine.UpdateCurrentTime(context.Background(), futureTime)
-	tm.collateralEngine.OnChainTimeUpdate(context.Background(), futureTime)
 	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
 	assert.True(t, closed)
 }
