@@ -1779,6 +1779,9 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		}
 	}
 
+	// remove the insurance account for the market
+	e.removeAccount(marketInsuranceID)
+
 	return append(resps, insuranceLedgerEntries), nil
 }
 
