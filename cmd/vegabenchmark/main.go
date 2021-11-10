@@ -63,7 +63,7 @@ func runBenchmark(recording string) string {
 	var totalOrders uint64
 	benchResults := testing.Benchmark(func(b *testing.B) {
 		b.Helper()
-		b.N = opts.times //lint:ignore SA3001 it's OK to use b.N in this kind of usage.
+		b.N = opts.times //nolint:staticcheck
 		for n := 0; n < b.N; n++ {
 			// setup a new vega
 			proc, bstats, err := setupVega()

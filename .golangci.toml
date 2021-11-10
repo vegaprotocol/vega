@@ -1,4 +1,59 @@
+[run]
+allow-parallel-runners = true
+print-linter-name = true
+timeout = '5m0s'
+
 [issues]
-[[issues.exclude-rules]]
+max-issues-per-linter = 0
+max-same-issues = 0
+
+[linters]
+
+enable-all = true
+disable = [
+    "promlinter",
+    "wrapcheck",
+    "tagliatelle", 
+    "paralleltest",
+    "nlreturn", 
+    "gomnd",
+    "goerr113", 
+    "tparallel",
+    "testpackage",
+    "gochecknoglobals", 
+    "forcetypeassert",
+    "exhaustivestruct",
+    "exhaustive",
+    "errorlint",
+    "cyclop",
+    "wsl",
+    "unparam",
+    "scopelint",
+    "revive",
+    "nestif",
+    "maligned",
+    "lll",
+    "interfacer",
+    "gosec",
+    "gomoddirectives",
+    "golint",
+    "goimports",
+    "godox",
+    "gocritic",
+    "goconst",
+    "gocognit",
+    "gochecknoinits",
+    "stylecheck",
+    "gci",
+    "forbidigo",
+    "errcheck",
+    "dupl",
+    "dogsled",
+    "funlen",
+    "gocyclo",
+    "errname",
+]
+
+[issues.exclude-rules]
 linters = ["staticcheck"]
 text = "SA1019:"
