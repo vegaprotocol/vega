@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: ''
-labels: "bug \U0001F41E, bug \U0001F41ELow"
+labels: "bug 🐞Low, bug 🐞Medium, bug 🐞Critical"
 assignees: ''
 
 ---
@@ -10,21 +10,14 @@ assignees: ''
 # Problem encountered
 A clear and concise description of what the bug is.
 
+# Observed behaviour
+A clear and concise description of how the system is behaving.
+
+# Expected behaviour
+A clear and concise description of what you expected to happen.
+
 # System response
 Describe what the system response was, include the output from the command, automation, or else.
-
-**System version:** Specify the system version (0.xx.xx)
-**Protocol:** Specify the protocol
-- [ ] gRPC
-- [ ] REST
-- [ ] GraphQL
-
-**Component:** Specify the components that might be related
-- [ ] [Vega](https://github.com/vegaprotocol/vega/)
-- [ ] [Tendermint](https://github.com/tendermint/tendermint)
-- [ ] [Console](https://github.com/vegaprotocol/console/)
-- [ ] [Ethereum Bridge](https://github.com/vegaprotocol/Event_Queue)
-- [ ] [Vega Wallet](https://github.com/vegaprotocol/vegawallet/)
 
 # Steps to reproduce
 
@@ -42,14 +35,10 @@ https://github.com/vegaprotocol/system-tests/tree/master/....
 
 `Add the necessary file(s) needed to reproduce the problem`
 
-## Not reproducible
-Explain why the problem/bug is not reproducible
+# Evidence
 
-# Expected behaviour
-A clear and concise description of what you expected to happen.
-
-# Logs
+## Logs
 If applicable, add logs and/or screenshots to help explain your problem.
 
-# Additional content
-Add any other context about the problem here.
+## Additional context
+Add any other context about the problem here including; system version numbers, components affected.
