@@ -64,7 +64,7 @@ func (e *Engine) serialiseActive() ([]byte, error) {
 }
 
 func (e *Engine) serialisePending() ([]byte, error) {
-	pending := e.getPending()
+	pending := e.getPendingNew()
 	pendingDelegations := make([]*types.Delegation, 0, len(pending))
 	pendingUndelegations := make([]*types.Delegation, 0, len(pending))
 	for _, a := range pending {
@@ -188,7 +188,7 @@ func (e *Engine) restorePending(ctx context.Context, delegations *types.Delegati
 			EpochSeq: epoch,
 		})
 	}
-	e.setPending(ctx, entries)
+	e.setPendingNew(ctx, entries)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
 	e.dss.changed[pendingKey] = true
 	return nil
