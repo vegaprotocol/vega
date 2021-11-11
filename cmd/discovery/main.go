@@ -11,6 +11,7 @@ import (
 	"strconv"
 
 	"code.vegaprotocol.io/vega/processor"
+	"code.vegaprotocol.io/vega/txn"
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/golang/protobuf/proto"
@@ -125,6 +126,10 @@ func main() {
 			tx, err := processor.DecodeTxV2(buf)
 			if err != nil {
 				panic(err)
+			}
+
+			if tx.Command() != txn.WithdrawCommand && tx.Command() != txn.NodeSignatureCommand {
+				continue
 			}
 
 			m := jsonpb.Marshaler{
