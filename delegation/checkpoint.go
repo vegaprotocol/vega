@@ -256,5 +256,4 @@ func (e *Engine) setPendingBackwardCompatible(ctx context.Context, entries []*ty
 	if len(evts) > 0 {
 		e.broker.SendBatch(evts)
 	}
-
 }
