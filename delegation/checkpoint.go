@@ -122,6 +122,8 @@ func (e *Engine) getPendingNew() []*types.DelegationEntry {
 	return e.delegationStateToDelegationEntry(e.nextPartyDelegationState, e.currentEpoch.Seq+1)
 }
 
+// getPendingBackwardCompatible is calculating deltas based on next epoch balances to be saved in the checkpoint.
+// this is because for backward compatibility we continue to save deltas rather than balances in the checkpoint for pending (i.e. next epoch's delegations).
 func (e *Engine) getPendingBackwardCompatible() []*types.DelegationEntry {
 	des := []*types.DelegationEntry{}
 	for party, state := range e.nextPartyDelegationState {
@@ -197,6 +199,9 @@ func (e *Engine) setPendingNew(ctx context.Context, entries []*types.DelegationE
 	e.delegationStateFromDelegationEntry(ctx, e.nextPartyDelegationState, entries, num.NewUint(e.currentEpoch.Seq+1).String())
 }
 
+// setPendingBackwardCompatible is taking deltas from the checkpoint and calculate from them the associated balance for the next epoch
+// populating nextPartyDelegationState.
+// NB: the event emitted are based on the *current* epoch in play rather than on the meaningless epoch from the DelegationEntry.
 func (e *Engine) setPendingBackwardCompatible(ctx context.Context, entries []*types.DelegationEntry) {
 	// first initialise the state with the current state
 	for party, pds := range e.partyDelegationState {
