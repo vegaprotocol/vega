@@ -8,7 +8,6 @@ max-issues-per-linter = 0
 max-same-issues = 0
 
 [linters]
-
 enable-all = true
 disable = [
     "promlinter",
@@ -45,7 +44,6 @@ disable = [
     "gochecknoinits",
     "stylecheck",
     "gci",
-    "forbidigo",
     "errcheck",
     "dupl",
     "dogsled",
@@ -54,6 +52,25 @@ disable = [
     "errname",
 ]
 
-[issues.exclude-rules]
+[[issues.exclude-rules]]
 linters = ["staticcheck"]
 text = "SA1019:"
+
+[[issues.exclude-rules]]
+path = "_test\\.go"
+linters = ["forbidigo"]
+
+[[issues.exclude-rules]]
+path = "cmd/"
+linters = ["forbidigo"]
+
+[[issues.exclude-rules]]
+path = "flags.go"
+linters = ["forbidigo"]
+
+[[issues.exclude-rules]]
+path = "print.go"
+linters = ["forbidigo"]
+
+[linters-settings.forbidigo]
+forbid = ["fmt\\.Print.*"]

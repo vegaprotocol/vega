@@ -187,14 +187,6 @@ pipeline {
 
         stage('Linters') {
             parallel {
-                stage('check print') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'make print_check'
-                        }
-                    }
-                }
                 stage('linters') {
                     steps {
                         dir('vega') {

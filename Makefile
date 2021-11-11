@@ -32,10 +32,6 @@ build: ## install the binaries in cmd/{progname}/
 	go build -o cmd/vega ./cmd/vega 
 	go build -o cmd/vega ./cmd/vegabenchmark
 
-.PHONY: gofmtsimplify
-gofmtsimplify:
-	@find . -path vendor -prune -o \( -name '*.go' -and -not -name '*_test.go' -and -not -name '*_mock.go' \) -print0 | xargs -0r gofmt -s -w
-
 .PHONY: install
 install: ## install the binaries in GOPATH/bin
 	go install ./...
