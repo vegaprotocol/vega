@@ -3,188 +3,112 @@
 This document is a guide for new Go developers.
 
 It starts with a vanilla Linux or MacOSX installation, and runs through all the
-steps needed to get a working single-node Vega system.
-
-A Vega system back end requires Vega (from the `trading-core` repo) and
-`tendermint` (third party open source software providing Byzantine Fault
-Tolerant (BFT) state machine replication, i.e. blockchain).
-
-## System packages
-
-The following OS packages are required:
-
-* `bash` (or a shell of your choice, but this document assumes `bash`)
-* `make`
+steps needed to build and test vega.
 
 ## Installing Golang
 
-**Required version: 1.16.2**
+Almost all of vega (including tools not in this repo) are written in Go, so you will need it installed locally. The version targeted can be found in the `go.mod` at the root of this repo, but realistically there is not much harm in having a slightly newer version.
 
-Get Golang via OS package manager, or directly from from https://golang.org/dl/.
-See also the [Golang installation guide](https://golang.org/doc/install).
-Install it somewhere, then point "`$GOROOT`" at that location:
+The Go tool-chain can be installed via an OS package manager, or directly from from https://golang.org/dl/. Use whichever you are most comfortable with. See also the [Golang installation guide](https://golang.org/doc/install) for more information.
+
+After installation set the following environment variables:
 
 ```bash
 # Add to $HOME/.bashrc:
-export GOROOT="/path/to/your/go1.16.2"
+export GOROOT="/path/to/your/go/install"
+export GOPATH="$HOME/go"
 export PATH="$PATH:$GOROOT/bin"
 ```
 
-Ensure you have `go` and `gofmt`:
+Now run the following to ensure everything exists and is in working order:
 
 ```bash
 $ which go gofmt
-/path/to/your/go1.16.2/bin/go
-/path/to/your/go1.16.2/bin/gofmt
+/path/to/your/go/install/bin/go
+/path/to/your/go/install/bin/gofmt
 
 $ go version
-go version go1.16.2 linux/amd64
+go version go[INSTALLED VERSION] linux/amd64
 ```
+## GitHub Authentication and Git configurations
 
-## Set up Go source path
+To be able to clone/push/pull from github in a seamless way, it is worth setting up SSH keys in github so that authentication can happen magically. If not already set up, following this guide (https://github.com/settings/keys)
 
-At present (June 2019), Go Modules are in the process of being introduced to the
-Go ecosystem, so things are a little clunky. There are several ways of getting
-things working. The default option used in this project is:
-
-* Set `GO111MODULE` to `on`. Install all source **inside** `$GOPATH`.
-  Remember that source that does not use Go Modules will have to be treated
-  differently.
-
-For advanced Golang users who are happy to support the system themselves:
-
-* Set `GO111MODULE` to `auto`. Install source that **uses** Go Modules
-  **outside** `$GOPATH` and source that **does not use** Go Modules **inside**
-  `$GOPATH`.
-
-All Vega Golang repositories have been set up to use Go Modules (check for files
-`go.mod` and `go.sum` in the top-level directory).
-
-## GitHub Authentication
-
-Either use your existing GitHub account, or create a Vega-specific one.
-
-If not already present (in `$HOME/.ssh`), create an RSA keypair:
-
-```bash
-ssh-keygen -t rsa -b 4096
-```
-
-Add the public key (found in `$HOME/.ssh/id_rsa.pub`) to GitHub:
-https://github.com/settings/keys
-
-## Get vega
-
-The `vega` repo uses Vega's `quant` repo. Ensure Go knows to use `ssh`
-instead of `https` when accessing `vegaprotocol` repositories on Github:
+You also now need to tell git to prefer SSH over HTTPS when accessing all `vegaprotocol` repositories by doing the following:
 
 ```bash
 git config --global url."git@github.com:vegaprotocol".insteadOf "https://github.com/vegaprotocol"
 ```
 
-Next, clone `vega`:
+This is necessary since some of the repos that `vega` depends on in `vegaprotocol` are private repositories. The git setting ensure that `go get` now knows to use `ssh` too.
+
+## Building and Testing Vega
+
+Go makes building easy:
 
 ```bash
-cd $GOPATH/src
 git clone git@github.com:vegaprotocol/vega.git
 cd vega
-git status # On branch develop, Your branch is up to date with 'origin/develop'.
 
-make deps # get the source dependencies
-make install # build the binaries and put them in $GOPATH/bin
+go install ./...
 
-# Now check:
-git rev-parse HEAD | cut -b1-8
-vega --version
-# hashes should match.
+# check binary works
+vega --help
 ```
 
-## Get Tendermint
-
-**Required version: 0.33.8**
-
-[Tendermint](https://tendermint.com/docs/introduction/what-is-tendermint.html)
-performs Byzantine Fault Tolerant (BFT) state machine replication (SMR) for
-arbitrary deterministic, finite state machines. It is required for Vega nodes to
-communicate.
-
-It is quicker and easier to download a pre-built binary, rather than compiling
-from source.
-
-Download Tendermint from https://github.com/tendermint/tendermint/releases/.
-Install the binary somewhere on `$PATH`. If needed, see also the
-[Tendermint installation guide](https://tendermint.com/docs/introduction/install.html).
-
-## Running Vega
-
-* To create a new configuration file, use:
-
-  ```bash
-  vega init -f
-  ```
-this will trigger a password prompt which will be used to encrypt your vega node wallets.
-
-If used in automation you can specify a file containing the password:
-```bash
-vega init -f
-```
-
-* To remove Vega store content then run a Vega node, use:
-
-  ```bash
-  rm -rf "$HOME/.vega/"*[r,e]store
-  vega node
-```
-
-If used in automation you can specify a file containing the password:
-```bash
-vega node --nodewallet-passphrase-file="path/to/file"
-```
-
-## Running Tendermint
-
-* The version must match the required version (above). To check the version,
-  use:
-  ```bash
-  tendermint version
-  ```
-
-* To create a new configuration file, use:
-  ```bash
-  tendermint init
-  ```
-* To remove chain data (go back to genesis) then run a Tendermint node, use:
-
-  ```bash
-  tendermint unsafe_reset_all
-  tendermint node
-  ```
-* At this stage, you should be able to watch the block production (an other Tendermint events) using:
-  ```bash
-  vega watch "tm.event = 'NewBlock'"
-  ```
-
-* Optional: To run a multi-node network, use `tendermint testnet` to generate
-  configuration files for nodes.
-
-## Developing trading-core
-
-In order to develop trading core, more tools are needed. Install them with:
+And equally also makes testing easy:
 
 ```bash
-# get the dev tools
-make gettools_develop
-make gqlgen_check # warning: This may take a minute, with no output.
-make proto_check
+go test ./...
+go test -race ./...
+go test -v ./integration/... --godog.format=pretty
 ```
 
-## Running Traderbot
+There is also a `Makefile` which contain the above commands and also some other useful things.
+## Running A Vega Node Locally
 
-Clone Traderbot from https://github.com/vegaprotocol/traderbot/ into
-`$GOPATH/src`.
+With vega built it is technically possible to run the node locally, but it is a bit cumbersome. The steps are here if you are feeling brave: https://github.com/vegaprotocol/networks
 
-Build: `make install`
+An alternative is to use `dockerizedvega` (DV) which will trivially spin up a working system for you. The script and some detailed information can be found here: https://github.com/vegaprotocol/devops-infra/blob/master/scripts/dockerisedvega.sh
 
-Run: `traderbot -config configfiles/localhost.yaml`
+In summary you just need to do the following (Note that if you are on MacOS and probably also Windows you may need to increase the allocated memory to 4GB using the Docker Desktop UI):
 
-Start traders: `curl --silent -XPUT "http://localhost:8081/traders?action=start"`
+```
+dockerisedvega.sh --vega-loglevel DEBUG --prefix mydvbits --portbase 1000 --validators 2 --nonvalidators 1 start
+
+dockerisedvega.sh --vega-loglevel DEBUG --prefix mydvbits --portbase 1000 --validators 2 --nonvalidators 1 stop
+```
+
+This will pull images containing the latest versions of all the vega tools. To inject a locally built vega into DV you need to build a new image. This can be done using the following script:
+
+```
+#!/bin/bash
+
+# If on a Mac we will need to cross-compile
+export GOOS=linux
+export GOARCH=amd64
+
+go build -v -gcflags "all=-N -l" -o "cmd/vega/vega-dbg-lin64" "./cmd/vega"
+
+mkdir -p docker/bin
+cp -a cmd/vega/vega-dbg-lin64 docker/bin/vega
+
+# remove any existing image with that tag
+docker rmi docker.pkg.github.com/vegaprotocol/vega/vega:local -f
+
+docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:local
+```
+
+with this you can then run the DV start line again with the addition of the option `--vega-version local`.
+
+## Other Things to Try and Build
+
+There are other repos that you will probably need to touch at some point so it is worth trying to build those too. Having completed the above you will be in a good place to do this. Have a fiddle in these repos:
+- `vegawallet`
+- `data-node`
+- `vegatools`
+- `protos` (will involve some more go getting)
+
+
+
+
