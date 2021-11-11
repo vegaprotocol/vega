@@ -65,8 +65,6 @@ Feature: Test settlement at expiry
       | prices.ETH.value | 42    |
     Then time is updated to "2020-01-01T01:01:02Z"
 
-    # TODO (WG): Currently the step below fails as market gets deleted as soon as it settles, is that what we want?
-    # Then the market state should be "STATE_SETTLED" for the market "ETH/DEC19"
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                         |
       | party1 | ETH/DEC19 | sell | 1      | 1000  | 0                | TYPE_LIMIT | TIF_GTC | ref-7     | OrderError: Invalid Market ID |
@@ -159,10 +157,10 @@ Feature: Test settlement at expiry
       | name               | value |
       | trading.terminated | true  |
 
-    # Order placed after oracle data is received should not be processed (expecting party positions to remain unchanged)
+    # Order can't be placed after oracle data is received (expecting party positions to remain unchanged)
     When the parties place the following orders:
-      | party  | market id | side | volume | price | resulting trades | type       | tif     | 
-      | party3 | ETH/DEC19 | buy  | 1      | 2000  | 1                | TYPE_LIMIT | TIF_GTC | 
+      | party  | market id | side | volume | price | resulting trades | type       | tif     | error                |
+      | party3 | ETH/DEC19 | buy  | 1      | 2000  | 0                | TYPE_LIMIT | TIF_GTC | trading not allowed  |      
   
     And time is updated to "2020-01-01T01:01:01Z"
 
