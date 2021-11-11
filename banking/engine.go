@@ -307,6 +307,7 @@ func (e *Engine) finalizeWithdraw(
 
 	res, err := e.col.Withdraw(ctx, w.PartyID, w.Asset, w.Amount.Clone())
 	if err != nil {
+		w.Status = types.WithdrawalStatusCancelled
 		return err
 	}
 
