@@ -92,17 +92,7 @@ steps:
         from_secret: JENKINS_TOKEN
     commands:
       - failed=""
-      - if test "$$DRONE_TARGET_BRANCH" = master -o "$$(grep -cE '(^go.(mod|sum)|\.go)$$' git_diff.txt)" -gt 0 ; then
-          make retest || exit 1 ;
-          for target in print_check race vet ;
-          do
-            echo "$$COL_CYAN$$target$$COL_RESET" ;
-            make "$$target" || failed="$$failed $$target" ;
-          done ;
-        else
-          echo "No Go files changed. Skipping go tests" ;
-        fi
-      - for target in codeowners_check misspell staticcheck; do
+      - for target in codeowners_check; do
           echo "$$COL_CYAN$$target$$COL_RESET" ;
           make "$$target" || failed="$$failed $$target" ;
         done
