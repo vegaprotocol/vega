@@ -162,6 +162,12 @@ func (b *BrokerStub) ClearOrderEvents() {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) ClearAllEvents() {
+	b.mu.Lock()
+	b.data = map[events.Type][]events.Event{}
+	b.mu.Unlock()
+}
+
 func (b *BrokerStub) GetBookDepth(market string) (sell map[string]uint64, buy map[string]uint64) {
 	batch := b.GetImmBatch(events.OrderEvent)
 	if len(batch) == 0 {

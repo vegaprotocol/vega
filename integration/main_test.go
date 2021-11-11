@@ -375,4 +375,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.ClearOrderEvents(execsetup.broker)
 		return nil
 	})
+	s.Step(`^clear all events$`, func() error {
+		steps.ClearAllEvents(execsetup.broker)
+		return nil
+	})
 }

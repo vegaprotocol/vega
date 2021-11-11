@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Improvements
+- [4394](https://github.com/vegaprotocol/vega/pull/4394) - Add step to clear all events in integration tests
+
 ## 0.45.2
 *2021-10-27*
 
