@@ -42,22 +42,6 @@ codeowners_check:
 		exit 1 ; \
 	fi
 
-.PHONY: print_check
-print_check: ## Check for fmt.Print functions in Go code
-	@f="$$(mktemp)" && \
-	find -name vendor -prune -o \
-		-name cmd -prune -o \
-		-name 'json.go' -prune -o \
-		-name 'print.go' -prune -o \
-		-name '*_test.go' -prune -o \
-		-name 'flags.go' -prune -o \
-		-name '*.go' -print0 | \
-		xargs -0 grep -E '^([^/]|/[^/])*fmt.Print' | \
-		tee "$$f" && \
-	count="$$(wc -l <"$$f")" && \
-	rm -f "$$f" && \
-	if test "$$count" -gt 0 ; then exit 1 ; fi
-
 # Make sure the mdspell command matches the one in .drone.yml.
 .PHONY: spellcheck
 spellcheck: ## Run markdown spellcheck container
