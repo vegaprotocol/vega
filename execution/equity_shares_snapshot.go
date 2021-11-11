@@ -29,7 +29,7 @@ func (es EquityShares) Changed() bool {
 	return es.stateChanged
 }
 
-func (es EquityShares) GetState() *types.EquityShare {
+func (es *EquityShares) GetState() *types.EquityShare {
 	lps := make([]*types.EquityShareLP, 0, len(es.lps))
 	for id, lp := range es.lps {
 		lps = append(lps, &types.EquityShareLP{
