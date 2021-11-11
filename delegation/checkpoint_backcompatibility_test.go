@@ -25,7 +25,7 @@ func testCheckpointBridgeWithDelegation(t *testing.T) {
 	testEngine := getEngine(t)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 
-	active := []*types.DelegationEntry{&types.DelegationEntry{
+	active := []*types.DelegationEntry{{
 		Party:      "party1",
 		Node:       "node1",
 		Amount:     num.NewUint(50),
@@ -33,7 +33,7 @@ func testCheckpointBridgeWithDelegation(t *testing.T) {
 		EpochSeq:   100,
 	}}
 
-	pending := []*types.DelegationEntry{&types.DelegationEntry{
+	pending := []*types.DelegationEntry{{
 		Party:      "party1",
 		Node:       "node1",
 		Amount:     num.NewUint(100),
@@ -64,7 +64,7 @@ func testCheckpointBridgeWithUndelegation(t *testing.T) {
 	testEngine := getEngine(t)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 
-	active := []*types.DelegationEntry{&types.DelegationEntry{
+	active := []*types.DelegationEntry{{
 		Party:      "party1",
 		Node:       "node1",
 		Amount:     num.NewUint(150),
@@ -72,7 +72,7 @@ func testCheckpointBridgeWithUndelegation(t *testing.T) {
 		EpochSeq:   100,
 	}}
 
-	pending := []*types.DelegationEntry{&types.DelegationEntry{
+	pending := []*types.DelegationEntry{{
 		Party:      "party1",
 		Node:       "node1",
 		Amount:     num.NewUint(50),
@@ -103,7 +103,7 @@ func testCheckpointBridgeWithNewDelegation(t *testing.T) {
 	testEngine := getEngine(t)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 
-	active := []*types.DelegationEntry{&types.DelegationEntry{
+	active := []*types.DelegationEntry{{
 		Party:      "party1",
 		Node:       "node1",
 		Amount:     num.NewUint(50),
@@ -111,14 +111,14 @@ func testCheckpointBridgeWithNewDelegation(t *testing.T) {
 		EpochSeq:   100,
 	}}
 
-	pending := []*types.DelegationEntry{&types.DelegationEntry{
+	pending := []*types.DelegationEntry{{
 		Party:      "party1",
 		Node:       "node1",
 		Amount:     num.NewUint(100),
 		Undelegate: false,
 		EpochSeq:   101,
 	},
-		&types.DelegationEntry{
+		{
 			Party:      "party1",
 			Node:       "node2",
 			Amount:     num.NewUint(120),
@@ -153,42 +153,42 @@ func testCheckpointBridgeMultiPartyMultiNode(t *testing.T) {
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 
 	active := []*types.DelegationEntry{
-		&types.DelegationEntry{
+		{
 			Party:      "party1",
 			Node:       "node1",
 			Amount:     num.NewUint(10),
 			Undelegate: false,
 			EpochSeq:   100,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party1",
 			Node:       "node2",
 			Amount:     num.NewUint(20),
 			Undelegate: false,
 			EpochSeq:   100,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party2",
 			Node:       "node1",
 			Amount:     num.NewUint(30),
 			Undelegate: false,
 			EpochSeq:   100,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party2",
 			Node:       "node3",
 			Amount:     num.NewUint(40),
 			Undelegate: false,
 			EpochSeq:   100,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party3",
 			Node:       "node3",
 			Amount:     num.NewUint(50),
 			Undelegate: false,
 			EpochSeq:   100,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party4",
 			Node:       "node4",
 			Amount:     num.NewUint(60),
@@ -199,35 +199,35 @@ func testCheckpointBridgeMultiPartyMultiNode(t *testing.T) {
 	// party1 undelegates all from node1 and moves it to node 3
 	// party2 delegates to node2
 	pending := []*types.DelegationEntry{
-		&types.DelegationEntry{
+		{
 			Party:      "party1",
 			Node:       "node1",
 			Amount:     num.NewUint(10),
 			Undelegate: true,
 			EpochSeq:   101,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party1",
 			Node:       "node3",
 			Amount:     num.NewUint(10),
 			Undelegate: false,
 			EpochSeq:   101,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party2",
 			Node:       "node2",
 			Amount:     num.NewUint(50),
 			Undelegate: false,
 			EpochSeq:   101,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party3",
 			Node:       "node3",
 			Amount:     num.NewUint(50),
 			Undelegate: true,
 			EpochSeq:   101,
 		},
-		&types.DelegationEntry{
+		{
 			Party:      "party5",
 			Node:       "node5",
 			Amount:     num.NewUint(70),
