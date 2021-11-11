@@ -36,8 +36,13 @@ func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker
 		e.log.Panic("failed to read reward scheme param", logging.String("minVal", rewardScheme.Parameters["minVal"].Value))
 	}
 
+	optimalStakeMultiplier, err := rewardScheme.Parameters["optimalStakeMultiplier"].GetDecimal()
+	if err != nil {
+		e.log.Panic("failed to read reward scheme param", logging.String("optimalStakeMultiplier", rewardScheme.Parameters["optimalStakeMultiplier"].Value))
+	}
+
 	// calculate the validator score for each validator and the total score for all
-	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, broker, epochSeq, validatorData, minVal, compLevel, e.rng)
+	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, broker, epochSeq, validatorData, minVal, compLevel, *optimalStakeMultiplier, e.rng)
 	for node, score := range validatorNormalisedScores {
 		e.log.Info("Rewards: calculated normalised score", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
@@ -212,23 +217,22 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 }
 
 // calculate the score for each validator and normalise by the total score.
-func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, rng *rand.Rand) map[string]num.Decimal {
+func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, optimalStakeMultiplier num.Decimal, rng *rand.Rand) map[string]num.Decimal {
 	// calculate the total amount of tokens delegated across all validators
-	totalDelegated := calcTotalDelegated(validatorsData)
+	totalStake := calcTotalStake(validatorsData)
 	totalScore := num.DecimalZero()
 	rawScores := make(map[string]num.Decimal, len(validatorsData))
 	valScores := make(map[string]num.Decimal, len(validatorsData))
 
-	if totalDelegated.IsZero() {
+	if totalStake.IsZero() {
 		return valScores
 	}
 
 	// for each validator calculate the score
 	nodeIDSlice := []string{}
 	for _, vd := range validatorsData {
-		totalValStake := num.Zero().Add(vd.StakeByDelegators, vd.SelfStake)
-		normalisedValStake := totalValStake.ToDecimal().Div(totalDelegated.ToDecimal())
-		valScore := calcValidatorScore(normalisedValStake, minVal, compLevel, num.DecimalFromInt64(int64(len(validatorsData))))
+		valStake := num.Sum(vd.StakeByDelegators, vd.SelfStake)
+		valScore := calcValidatorScore(valStake.ToDecimal(), totalStake.ToDecimal(), minVal, compLevel, num.DecimalFromInt64(int64(len(validatorsData))), optimalStakeMultiplier)
 		rawScores[vd.NodeID] = valScore
 		totalScore = totalScore.Add(valScore)
 		nodeIDSlice = append(nodeIDSlice, vd.NodeID)
@@ -259,15 +263,20 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	return valScores
 }
 
-// score_val(stake_val): min(1/a, validatorStake/totalStake).
-func calcValidatorScore(normalisedValStake, minVal, compLevel, numVal num.Decimal) num.Decimal {
+// calculate the validator score.
+func calcValidatorScore(valStake, totalStake, minVal, compLevel, numVal, optimalStakeMultiplier num.Decimal) num.Decimal {
 	a := num.MaxD(minVal, numVal.Div(compLevel))
-
-	return num.MinD(normalisedValStake, num.DecimalFromInt64(1).Div(a))
+	optStake := totalStake.Div(a)
+	penaltyFlatAmt := num.MaxD(num.DecimalZero(), valStake.Sub(optStake))
+	penaltyDownAmt := num.MaxD(num.DecimalZero(), valStake.Sub(optimalStakeMultiplier.Mul(optStake)))
+	linearScore := valStake.Sub(penaltyFlatAmt).Sub(penaltyDownAmt).Div(totalStake)
+	decimal1, _ := num.DecimalFromString("1.0")
+	linearScore = num.MinD(decimal1, num.MaxD(num.DecimalZero(), linearScore))
+	return linearScore
 }
 
 // calculate the total amount of tokens delegated to the validators including self and party delegation.
-func calcTotalDelegated(validatorsData []*types.ValidatorData) *num.Uint {
+func calcTotalStake(validatorsData []*types.ValidatorData) *num.Uint {
 	total := num.Zero()
 	for _, d := range validatorsData {
 		total.AddSum(d.StakeByDelegators, d.SelfStake)

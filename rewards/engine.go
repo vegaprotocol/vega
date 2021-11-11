@@ -159,6 +159,21 @@ func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.C
 	return nil
 }
 
+// UpdateOptimalStakeMultiplierStakingRewardScheme updaates the value of optimal stake multiplier.
+func (e *Engine) UpdateOptimalStakeMultiplierStakingRewardScheme(ctx context.Context, optimalStakeMultiplier num.Decimal) error {
+	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
+	if !ok {
+		e.log.Panic("reward scheme for staking and delegation must exist")
+	}
+
+	rs.Parameters["optimalStakeMultiplier"] = types.RewardSchemeParam{
+		Name:  "optimalStakeMultiplier",
+		Type:  "float",
+		Value: optimalStakeMultiplier.String(),
+	}
+	return nil
+}
+
 // UpdateCompetitionLevelForStakingRewardScheme is called when the competition level has changed.
 func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel float64) error {
 	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]

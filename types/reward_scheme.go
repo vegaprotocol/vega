@@ -84,6 +84,17 @@ func (rsp RewardSchemeParam) GetUint() (*num.Uint, error) {
 	return nil, errors.New("mismatch between requested type and configured type " + rsp.Name)
 }
 
+func (rsp RewardSchemeParam) GetDecimal() (*num.Decimal, error) {
+	if rsp.Type == "float" {
+		res, err := num.DecimalFromString(rsp.Value)
+		if err != nil {
+			return nil, errors.New("mismatch between requested type and configured type " + rsp.Name)
+		}
+		return &res, nil
+	}
+	return nil, errors.New("mismatch between requested type and configured type " + rsp.Name)
+}
+
 // ErrRewardSchemeMisconfiguration is returned when trying to calculate the reward for a given account balance and the scheme has incompatible end time and payout type
 // this should never happen as the reward scheme needs to be validated prior to being added but just to be safe.
 var ErrRewardSchemeMisconfiguration = errors.New("payout type balanced is incompatible with having no end time")

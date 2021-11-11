@@ -14,6 +14,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
       | reward.staking.delegation.minValidators           |  5     |
+      | reward.staking.delegation.optimalStakeMultiplier  |  5.0   |
 
 
     Given time is updated to "2021-08-26T00:00:00Z"
@@ -177,367 +178,6 @@ Feature: Staking & Delegation
     | party1 |  node2   |    0   |       
     | party1 |  node3   |    0   |        
   
-  Scenario: A party cannot delegate stake size such that it exceeds maximum amount of stake for a validator
-    Description: A party attempts to delegate token stake which exceed maximum stake for a validator
-
-    #epoch1 started
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node1   |    1500   | 
-    | party1 |  node2   |    2000   | 
-    | party1 |  node3   |    2500   | 
-
-    #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
-    Then the parties should have the following delegation balances for epoch 1:
-    | party  | node id  | amount |
-    | party1 |  node1   |   0    | 
-    | party1 |  node2   |   0    |       
-    | party1 |  node3   |   0    |        
-
-    And the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party1 |  node3   | 2500   |        
-
-    #however when the epoch ends and the delegations are processed the max allowed delegation per node is calculated as 
-    #roughly 1.1/13 * (13 * 10000 + 1500 + 2000 + 2500) =  ~101507 which means each node will only accept max delegation of ~1507 (on top of 10k self delegation)
-    When the network moves ahead "7" blocks
-    Then the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   | 
-
-    Then the network moves ahead "7" blocks
-    
-    # amounts remain constant even as total delegated amount changes (due to application of the cap)
-    Then the parties should have the following delegation balances for epoch 3:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   | 
-
-    Then the network moves ahead "1" blocks
-
-    And the parties submit the following undelegations:
-    | party  | node id  | amount |     when     |
-    | party1 |  node1   |  500   | end of epoch | 
-    | party1 |  node2   |  500   | end of epoch |     
-    | party1 |  node3   |  500   | end of epoch | 
-
-    Then the network moves ahead "6" blocks
-
-    Then the parties should have the following delegation balances for epoch 4:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1000   | 
-    | party1 |  node2   | 1007   |       
-    | party1 |  node3   | 1007   | 
-
-    Then the network moves ahead "14" blocks
-
-    Then the parties should have the following delegation balances for epoch 6:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1000   | 
-    | party1 |  node2   | 1007   |       
-    | party1 |  node3   | 1007   | 
-
-    And the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node4   |    2000   | 
-
-    And the network moves ahead "1" blocks
-
-    Then the parties should have the following delegation balances for epoch 7:
-    | party  | node id  | amount |
-    | party1 |  node4   | 2000   |   
-
-    When the network moves ahead "6" blocks
-
-    #Given stakes of 1000, 1007, 1007 & 2000 I expect the new max delegation of about 1424
-    Then the parties should have the following delegation balances for epoch 7:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1000   | 
-    | party1 |  node2   | 1007   |       
-    | party1 |  node3   | 1007   |   
-    | party1 |  node4   | 1424   |   
-
-  Scenario: Maximum amount of stake for a validator is not affected by delegations/undelegations that net each other
-    Description: Expecting same result as above despite multiple delegations/undelegations
-
-    #epoch1 started
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node1   |    1500   | 
-    | party1 |  node2   |    2000   | 
-    | party1 |  node3   |    2500   | 
-    | party1 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks
-
-    And the parties submit the following undelegations:
-    | party  | node id  | amount |  when         |
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  end of epoch |    
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node2   |    1000   |   
-
-    When the network moves ahead "1" blocks
-
-    And the parties submit the following undelegations:
-    | party  | node id  | amount |  when     |
-    | party1 |  node2   |  500   |  now      |    
-
-    When the network moves ahead "1" blocks  
-    And the parties submit the following undelegations:
-    | party  | node id  | amount |  when         |
-    | party1 |  node2   |  500   |  end of epoch | 
-
-    #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
-    Then the parties should have the following delegation balances for epoch 1:
-    | party  | node id  | amount |
-    | party1 |  node1   |   0    | 
-    | party1 |  node2   |   0    |       
-    | party1 |  node3   |   0    |        
-
-    And the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party1 |  node3   | 2500   |        
-
-    When the network moves ahead "3" blocks
-    Then the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   |   
-
-  Scenario: Maximum amount of stake for a validator increased by delegations that cannot be met at epoch end due to insufficient token balance after a withdrawal.
-
-    And the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party2 | VEGA   | 10000  |
-
-    #epoch1 started
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node1   |    1500   | 
-    | party1 |  node2   |    2000   | 
-    | party2 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party2 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party2 |  node3   |    2500   |  
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party2 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks  
-
-    Given the parties withdraw from staking account the following amount:  
-    | party  | asset  | amount |
-    | party2 | VEGA   |  7500  |
-
-    #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
-    Then the parties should have the following delegation balances for epoch 1:
-    | party  | node id  | amount |
-    | party1 |  node1   |   0    | 
-    | party1 |  node2   |   0    |       
-    | party2 |  node3   |   0    |        
-
-    And the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 10000  |        
-
-    When the network moves ahead "3" blocks
-    Then the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 2142   |
-
-    When the network moves ahead "1" blocks
-
-    Given the parties withdraw from staking account the following amount:  
-    | party  | asset  | amount |
-    | party2 | VEGA   |   500  |
-
-    When the network moves ahead "1" blocks
-
-    Then the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 2142   |
-
-    When the network moves ahead "7" blocks
-
-    Then the parties should have the following delegation balances for epoch 3:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 2000   |
-
-  Scenario: Maximum amount of stake for a validator is not affected by delegations/undelegations that net each other
-    Description: Expecting same result as above despite multiple delegations/undelegations
-
-    #epoch1 started
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node1   |    1500   | 
-    | party1 |  node2   |    2000   | 
-    | party1 |  node3   |    2500   | 
-    | party1 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks
-
-    And the parties submit the following undelegations:
-    | party  | node id  | amount |  when         |
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  now          |      
-    | party1 |  node3   |  500   |  end of epoch |    
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node2   |    1000   |   
-
-    When the network moves ahead "1" blocks
-
-    And the parties submit the following undelegations:
-    | party  | node id  | amount |  when     |
-    | party1 |  node2   |  500   |  now      |    
-
-    When the network moves ahead "1" blocks  
-    And the parties submit the following undelegations:
-    | party  | node id  | amount |  when         |
-    | party1 |  node2   |  500   |  end of epoch | 
-
-    #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
-    Then the parties should have the following delegation balances for epoch 1:
-    | party  | node id  | amount |
-    | party1 |  node1   |   0    | 
-    | party1 |  node2   |   0    |       
-    | party1 |  node3   |   0    |        
-
-    And the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party1 |  node3   | 2500   |        
-
-    When the network moves ahead "3" blocks
-    Then the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   |   
-
-  Scenario: Maximum amount of stake for a validator increased by delegations that cannot be met at epoch end due to insufficient token balance after a withdrawal.
-
-    And the parties deposit on staking account the following amount:  
-    | party  | asset  | amount |
-    | party2 | VEGA   | 10000  |
-
-    #epoch1 started
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party1 |  node1   |    1500   | 
-    | party1 |  node2   |    2000   | 
-    | party2 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party2 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party2 |  node3   |    2500   |  
-
-    When the network moves ahead "1" blocks
-
-    When the parties submit the following delegations:
-    | party  | node id  |   amount  | 
-    | party2 |  node3   |    2500   | 
-
-    When the network moves ahead "1" blocks  
-
-    Given the parties withdraw from staking account the following amount:  
-    | party  | asset  | amount |
-    | party2 | VEGA   |  7500  |
-
-    #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
-    Then the parties should have the following delegation balances for epoch 1:
-    | party  | node id  | amount |
-    | party1 |  node1   |   0    | 
-    | party1 |  node2   |   0    |       
-    | party2 |  node3   |   0    |        
-
-    And the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 10000  |        
-
-    When the network moves ahead "3" blocks
-    Then the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 2142   |
-
-    When the network moves ahead "1" blocks
-
-    Given the parties withdraw from staking account the following amount:  
-    | party  | asset  | amount |
-    | party2 | VEGA   |   500  |
-
-    When the network moves ahead "1" blocks
-
-    Then the parties should have the following delegation balances for epoch 2:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 2142   |
-
-    When the network moves ahead "7" blocks
-
-    Then the parties should have the following delegation balances for epoch 3:
-    | party  | node id  | amount |
-    | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 2000   |       
-    | party2 |  node3   | 2000   |
-
   Scenario: A party changes delegation from one validator to another in the same epoch
     Description: A party can change delegatation from one Validator to another
 
@@ -616,9 +256,8 @@ Feature: Staking & Delegation
     When the network moves ahead "7" blocks    
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
-    | party1 |  node1   | 1423   | 
+    | party1 |  node1   | 5000   | 
 
-    #party1 already have 1423 delegated so they can only theoretically delegate 10000-1423 = 8577
     Then the parties submit the following delegations:
     | party  | node id  |  amount | reference | error                               |
     | party1 |  node2   |   1000  |           |                                     |    
@@ -636,7 +275,7 @@ Feature: Staking & Delegation
     When the network moves ahead "7" blocks
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
-    | party1 |  node1   | 1423   | 
+    | party1 |  node1   | 5000   | 
 
     Then the parties submit the following undelegations:
     | party  | node id  | amount |    when      |
@@ -714,7 +353,7 @@ Feature: Staking & Delegation
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
-    | node1   |  node1   |  1000  | 
+    | node1   |  node1  |  1000  | 
     
     #we are now in epoch 1 so the delegation balance for epoch 1 should not include the delegation but the hypothetical balance for epoch 2 should 
     Then the parties should have the following delegation balances for epoch 1:
@@ -1017,15 +656,13 @@ Feature: Staking & Delegation
     | party1 |  node2   | 2000   |       
     | party1 |  node3   | 2500   |        
 
-    #however when the epoch ends and the delegations are processed the max allowed delegation per node is calculated as 
-    #roughly 1.3/13 * (13 * 10000 + 1000 + 2000 + 3000) =  ~1507 which means each node will only accept max delegation of ~1507
     When the network moves ahead "7" blocks 
 
     Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
     | party1 |  node1   | 1500   | 
-    | party1 |  node2   | 1507   |       
-    | party1 |  node3   | 1507   |   
+    | party1 |  node2   | 2000   |       
+    | party1 |  node3   | 2500   |   
 
     Given the following network parameters are set:
       | name                                            | value |
@@ -1033,12 +670,11 @@ Feature: Staking & Delegation
 
      When the network moves ahead "7" blocks   
 
-     # The new expected limit is 566, but a drop in limit doesn't trigger undelegation hence expecting old delegation values.
      Then the parties should have the following delegation balances for epoch 3:
       | party  | node id  | amount |
       | party1 |  node1   | 1500   | 
-      | party1 |  node2   | 1507   |       
-      | party1 |  node3   | 1507   |   
+      | party1 |  node2   | 2000   |       
+      | party1 |  node3   | 2500   |   
 
      Given the following network parameters are set:
       | name                                            | value |
@@ -1050,8 +686,8 @@ Feature: Staking & Delegation
      Then the parties should have the following delegation balances for epoch 4:
       | party  | node id  | amount |
       | party1 |  node1   | 1500   | 
-      | party1 |  node2   | 1507   |       
-      | party1 |  node3   | 1507   |   
+      | party1 |  node2   | 2000   |       
+      | party1 |  node3   | 2500   |   
 
 
     When the parties submit the following delegations:
@@ -1066,16 +702,16 @@ Feature: Staking & Delegation
     Then the parties should have the following delegation balances for epoch 5:
       | party  | node id  | amount |
       | party1 |  node1   | 2500   | 
-      | party1 |  node2   | 2007   |       
-      | party1 |  node3   | 3707   |   
+      | party1 |  node2   | 2500   |       
+      | party1 |  node3   | 4700   |   
 
     When the network moves ahead "6" blocks
 
     Then the parties should have the following delegation balances for epoch 5:
       | party  | node id  | amount |
       | party1 |  node1   | 2500   | 
-      | party1 |  node2   | 2007   |       
-      | party1 |  node3   | 2758   |
+      | party1 |  node2   | 2500   |       
+      | party1 |  node3   | 4700   |
 
   Scenario: A party undelegates now and then withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
     Description: A party undelegates now and then withdraws from their staking account during an epoch - then immediately delegations are processed the party will be forced to undelegate the difference between the stake they have delegated and their staking account balance. 
@@ -1177,7 +813,7 @@ Feature: Staking & Delegation
     | party  | node id  | amount |
     | party1 |  node1   |  500   |    
 
-Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
+  Scenario: A party withdraws from their staking account during an epoch - their stake is being undelegated automatically to match the difference
     Description: A party with delegated stake withdraws from their staking account during an epoch - at the end of the epoch when delegations are processed the party will be forced to undelegate the difference between the stake they have delegated and their staking account balance. 
 
     When the parties submit the following delegations:

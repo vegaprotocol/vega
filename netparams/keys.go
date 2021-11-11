@@ -72,6 +72,7 @@ const (
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
 	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
+	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
 	// spam policies params.
 	SpamProtectionMaxVotes               = "spam.protection.max.votes"
@@ -170,4 +171,5 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinTokensForDelegation:                  {},
 	StakingAndDelegationRewardCompetitionLevel:            {},
 	StakingAndDelegationRewardsMinValidators:              {},
+	StakingAndDelegationRewardOptimalStakeMultiplier:      {},
 }
