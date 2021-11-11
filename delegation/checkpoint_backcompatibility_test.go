@@ -111,20 +111,22 @@ func testCheckpointBridgeWithNewDelegation(t *testing.T) {
 		EpochSeq:   100,
 	}}
 
-	pending := []*types.DelegationEntry{{
-		Party:      "party1",
-		Node:       "node1",
-		Amount:     num.NewUint(100),
-		Undelegate: false,
-		EpochSeq:   101,
-	},
+	pending := []*types.DelegationEntry{
+		{
+			Party:      "party1",
+			Node:       "node1",
+			Amount:     num.NewUint(100),
+			Undelegate: false,
+			EpochSeq:   101,
+		},
 		{
 			Party:      "party1",
 			Node:       "node2",
 			Amount:     num.NewUint(120),
 			Undelegate: false,
 			EpochSeq:   101,
-		}}
+		},
+	}
 
 	data := &types.DelegateCP{
 		Active:  active,
@@ -194,7 +196,8 @@ func testCheckpointBridgeMultiPartyMultiNode(t *testing.T) {
 			Amount:     num.NewUint(60),
 			Undelegate: false,
 			EpochSeq:   100,
-		}}
+		},
+	}
 
 	// party1 undelegates all from node1 and moves it to node 3
 	// party2 delegates to node2
