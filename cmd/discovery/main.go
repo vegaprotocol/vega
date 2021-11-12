@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/txn"
 
@@ -113,6 +114,9 @@ func main() {
 		opts.to = getLastBlockHeight()
 	}
 
+	// vote -> signers
+	nodeVotes := map[string][]string{}
+
 	for i := opts.from; i < opts.to; i++ {
 		p := getBlock(i)
 
@@ -128,9 +132,9 @@ func main() {
 				panic(err)
 			}
 
-			if tx.Command() != txn.WithdrawCommand && tx.Command() != txn.NodeSignatureCommand {
-				continue
-			}
+			// if tx.Command() != txn.WithdrawCommand && tx.Command() != txn.NodeSignatureCommand {
+			// 	continue
+			// }
 
 			m := jsonpb.Marshaler{
 				Indent:       "  ",
@@ -153,6 +157,17 @@ func main() {
 			buf2, err := json.MarshalIndent(&finalTx, "", " ")
 			if err != nil {
 				panic(err)
+			}
+
+			if tx.Command() == txn.NodeVoteCommand {
+				pks := nodeVotes[tx.GetCmd().(*commandspb.NodeVote).Reference]
+				if pks == nil {
+					pks = []string{}
+				}
+				pks = append(pks, tx.PubKeyHex())
+				nodeVotes[tx.GetCmd().(*commandspb.NodeVote).Reference] = pks
+
+				fmt.Printf("VOTE(%v) - %v", tx.GetCmd().(*commandspb.NodeVote).Reference, pks)
 			}
 
 			fmt.Printf("%v - %v\n", tx.Command().String(), string(buf2))

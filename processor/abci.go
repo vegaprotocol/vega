@@ -249,6 +249,7 @@ func (app *App) RequireValidatorPubKeyW(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+			fmt.Printf("NOT A VALIDATOR: %v - %v", tx.Command(), tx.PubKeyHex())
 			return err
 		}
 		return f(ctx, tx)
