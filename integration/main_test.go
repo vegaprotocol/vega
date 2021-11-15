@@ -371,4 +371,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
 		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
 	})
+	s.Step(`^a total of "([0-9]+)" events should be emitted"$`, func(eventCounter int) error {
+		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
+	})
 }

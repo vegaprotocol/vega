@@ -106,6 +106,16 @@ func (b *BrokerStub) Send(e events.Event) {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) GetAllEvents() []events.Event {
+	b.mu.Lock()
+	evs := []events.Event{}
+	for _, d := range b.data {
+		evs = append(evs, d...)
+	}
+	b.mu.Unlock()
+	return evs
+}
+
 func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 	b.mu.Lock()
 	r := b.data[t]
