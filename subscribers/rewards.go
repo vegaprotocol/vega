@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"sync/atomic"
+	"time"
 
+	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
@@ -51,8 +54,28 @@ type RewardCounters struct {
 	rewardsPerPartyPerAsset map[string]map[string]*rewardsDetails
 	mu                      sync.RWMutex
 
+	subscriberCnt int32
+	subscribers   map[uint64]subscription
+	subscriberID  uint64
+
 	// Logger
 	log *logging.Logger
+}
+
+type rewardFilter struct {
+	assetID string
+	party   string
+}
+
+func (rf rewardFilter) filter(rw vega.RewardDetails) bool {
+	return (len(rf.assetID) <= 0 || rf.assetID == rw.AssetId) && (len(rf.party) <= 0 || rf.party == rw.PartyId)
+}
+
+type subscription struct {
+	subscriber chan vega.RewardDetails
+	filter     rewardFilter
+	cancel     func()
+	retries    int
 }
 
 // NewRewards constructor to create an object to handle reward totals
@@ -61,6 +84,7 @@ func NewRewards(ctx context.Context, log *logging.Logger, ack bool) *RewardCount
 		Base:                    NewBase(ctx, 10, ack),
 		log:                     log,
 		rewardsPerPartyPerAsset: map[string]map[string]*rewardsDetails{},
+		subscribers:             map[uint64]subscription{},
 	}
 
 	if rc.isRunning() {
@@ -136,6 +160,137 @@ func (rc *RewardCounters) addNewReward(rpe types.RewardPayoutEvent) {
 
 	perAsset.rewards = append(perAsset.rewards, rd)
 	perAsset.totalAmount.AddSum(rd.amount)
+
+	rc.notifyWithLock(vega.RewardDetails{
+		AssetId:           rd.assetID,
+		PartyId:           rd.partyID,
+		Epoch:             rd.epoch,
+		Amount:            rd.amount.String(),
+		PercentageOfTotal: strconv.FormatFloat(rd.percentageAmount, 'f', 5, 64),
+		ReceivedAt:        rd.receivedAt,
+	})
+}
+
+func (rc *RewardCounters) notifyWithLock(rd vega.RewardDetails) {
+	if len(rc.subscribers) == 0 {
+		return
+	}
+
+	for id, sub := range rc.subscribers {
+		if sub.filter.filter(rd) {
+			retryCount := sub.retries
+			ok := false
+			for !ok && retryCount >= 0 {
+				select {
+				case sub.subscriber <- rd:
+					rc.log.Debug(
+						"Reward details for subscriber sent successfully",
+						logging.Uint64("ref", id),
+					)
+					ok = true
+				default:
+					retryCount--
+					if retryCount > 0 {
+						rc.log.Debug(
+							"Reward details for subscriber not sent",
+							logging.Uint64("ref", id))
+					}
+					time.Sleep(time.Duration(10) * time.Millisecond)
+				}
+			}
+			if !ok && retryCount <= 0 {
+				rc.log.Warn(
+					"Reward details subscriber has hit the retry limit",
+					logging.Uint64("ref", id),
+					logging.Int("retries", sub.retries))
+				sub.cancel()
+			}
+		}
+	}
+}
+
+//subscribe allows a client to register for updates of the reward details.
+func (rc *RewardCounters) subscribe(sub subscription) uint64 {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	rc.subscriberID++
+	rc.subscribers[rc.subscriberID] = sub
+
+	rc.log.Debug("reward details subscriber added store",
+		logging.Uint64("subscriber-id", rc.subscriberID))
+
+	return rc.subscriberID
+}
+
+// Unsubscribe allows the client to unregister interest in reward details.
+func (rc *RewardCounters) unsubscribe(id uint64) error {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	if len(rc.subscribers) == 0 {
+		rc.log.Debug("Un-subscribe called in reward details, no subscribers connected",
+			logging.Uint64("subscriber-id", id))
+		return nil
+	}
+
+	if _, exists := rc.subscribers[id]; exists {
+		delete(rc.subscribers, id)
+		return nil
+	}
+
+	return fmt.Errorf("subscriber to delegation updates does not exist with id: %d", id)
+}
+
+//ObserveRewardDetails returns a channel for subscribing to reward details.
+func (rc *RewardCounters) ObserveRewardDetails(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan vega.RewardDetails, ref uint64) {
+	rewards := make(chan vega.RewardDetails)
+	ctx, cancel := context.WithCancel(ctx)
+	ref = rc.subscribe(subscription{
+		filter: rewardFilter{
+			assetID: assetID,
+			party:   party,
+		},
+		subscriber: rewards,
+		cancel:     cancel,
+		retries:    retries,
+	})
+
+	go func() {
+		atomic.AddInt32(&rc.subscriberCnt, 1)
+		defer atomic.AddInt32(&rc.subscriberCnt, -1)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
+		defer cancel()
+		for {
+			select {
+			case <-ctx.Done():
+				rc.log.Debug(
+					"rewards subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				// this error only happens when the subscriber reference doesn't exist
+				// so we can still safely close the channels
+				if err := rc.unsubscribe(ref); err != nil {
+					rc.log.Error(
+						"Failure un-subscribing delegations subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(rewards)
+				return
+			}
+		}
+	}()
+
+	return rewards, ref
+}
+
+// GetAccountSubscribersCount returns the total number of active subscribers for ObserveRewardDetails.
+func (rc *RewardCounters) GetAccountSubscribersCount() int32 {
+	return atomic.LoadInt32(&rc.subscriberCnt)
 }
 
 // GetRewardDetails returns the information relating to rewards for a single party

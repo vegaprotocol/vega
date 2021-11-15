@@ -1,6 +1,11 @@
 package delegations
 
 import (
+	"context"
+	"sync/atomic"
+	"time"
+
+	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
 	pb "code.vegaprotocol.io/protos/vega"
 )
@@ -15,6 +20,8 @@ type DelegationStore interface {
 	GetPartyNodeDelegationsOnEpoch(party string, node string, epochSeq string) ([]*pb.Delegation, error)
 	GetNodeDelegations(nodeID string) ([]*pb.Delegation, error)
 	GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pb.Delegation, error)
+	Subscribe(updates chan pb.Delegation) uint64
+	Unsubscribe(id uint64) error
 }
 
 // Service represent the epoch service
@@ -22,6 +29,7 @@ type Service struct {
 	Config
 	log             *logging.Logger
 	delegationStore DelegationStore
+	subscriberCnt   int32
 }
 
 // NewService creates an validators service with the necessary dependencies
@@ -53,6 +61,92 @@ func (s *Service) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
+}
+
+// GetAccountSubscribersCount returns the total number of active subscribers for ObserveDelegations.
+func (s *Service) GetAccountSubscribersCount() int32 {
+	return atomic.LoadInt32(&s.subscriberCnt)
+}
+
+//ObserveDelegations returns a channel for subscribing to delegation updates.
+func (s *Service) ObserveDelegations(ctx context.Context, retries int, party, nodeID string) (delegationsCh <-chan pb.Delegation, ref uint64) {
+	delegations := make(chan pb.Delegation)
+	internal := make(chan pb.Delegation)
+	ref = s.delegationStore.Subscribe(internal)
+
+	var cancel func()
+	ctx, cancel = context.WithCancel(ctx)
+	go func() {
+		atomic.AddInt32(&s.subscriberCnt, 1)
+		defer atomic.AddInt32(&s.subscriberCnt, -1)
+		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
+		defer cancel()
+		for {
+			select {
+			case <-ctx.Done():
+				s.log.Debug(
+					"Delegations subscriber closed connection",
+					logging.Uint64("id", ref),
+					logging.String("ip-address", ip),
+				)
+				// this error only happens when the subscriber reference doesn't exist
+				// so we can still safely close the channels
+				if err := s.delegationStore.Unsubscribe(ref); err != nil {
+					s.log.Error(
+						"Failure un-subscribing delegations subscriber when context.Done()",
+						logging.Uint64("id", ref),
+						logging.String("ip-address", ip),
+						logging.Error(err),
+					)
+				}
+				close(internal)
+				close(delegations)
+				return
+			case dl := <-internal:
+				// if it's not required by the filter, we're done here, otherwise try to push it into the outer channel
+				success := true
+				if (len(party) <= 0 || party == dl.Party) &&
+					(len(nodeID) <= 0 || nodeID == dl.NodeId) {
+					success = false
+				}
+				retryCount := retries
+
+				for !success && retryCount >= 0 {
+					select {
+					case delegations <- dl:
+						retryCount = retries
+						s.log.Debug(
+							"Delegations for subscriber sent successfully",
+							logging.Uint64("ref", ref),
+							logging.String("ip-address", ip),
+						)
+						success = true
+					default:
+						retryCount--
+						if retryCount > 0 {
+							s.log.Debug(
+								"Delegations for subscriber not sent",
+								logging.Uint64("ref", ref),
+								logging.String("ip-address", ip))
+						}
+						time.Sleep(time.Duration(10) * time.Millisecond)
+					}
+				}
+				if !success && retryCount <= 0 {
+					s.log.Warn(
+						"Delegations subscriber has hit the retry limit",
+						logging.Uint64("ref", ref),
+						logging.String("ip-address", ip),
+						logging.Int("retries", retries))
+					cancel()
+				}
+
+			}
+		}
+	}()
+
+	return delegations, ref
+
 }
 
 func (s *Service) GetAllDelegations() ([]*pb.Delegation, error) {

@@ -1752,6 +1752,103 @@ func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string,
 
 type mySubscriptionResolver VegaResolverRoot
 
+func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID *string) (<-chan *types.Delegation, error) {
+	var p, n string
+	if party == nil {
+		p = ""
+	} else {
+		p = *party
+	}
+	if nodeID == nil {
+		n = ""
+	} else {
+		n = *nodeID
+	}
+
+	req := &protoapi.ObserveDelegationsRequest{
+		Party:  p,
+		NodeId: n,
+	}
+	stream, err := r.tradingDataClient.ObserveDelegations(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	ch := make(chan *types.Delegation)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(ch)
+		}()
+		for {
+			dl, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("delegations: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("delegations levls: stream closed", logging.Error(err))
+				break
+			}
+			ch <- dl.Delegation
+		}
+	}()
+
+	return ch, nil
+}
+
+func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, party *string) (<-chan *Reward, error) {
+	var a, p string
+	if assetID == nil {
+		a = ""
+	} else {
+		a = *assetID
+	}
+	if party == nil {
+		p = ""
+	} else {
+		p = *party
+	}
+
+	req := &protoapi.ObserveRewardDetailsRequest{
+		AssetId: a,
+		Party:   p,
+	}
+	stream, err := r.tradingDataClient.ObserveRewardDetails(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	ch := make(chan *Reward)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(ch)
+		}()
+		for {
+			rd, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("reward details: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("reward details: stream closed", logging.Error(err))
+				break
+			}
+			ch <- &Reward{
+				AssetID:           rd.RewardDetails.AssetId,
+				PartyID:           rd.RewardDetails.PartyId,
+				Epoch:             int(rd.RewardDetails.Epoch),
+				Amount:            rd.RewardDetails.Amount,
+				PercentageOfTotal: rd.RewardDetails.PercentageOfTotal,
+				ReceivedAt:        vegatime.Format(vegatime.UnixNano(rd.RewardDetails.ReceivedAt)),
+			}
+		}
+	}()
+
+	return ch, nil
+}
+
 func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, marketID *string) (<-chan *types.MarginLevels, error) {
 	var mktid string
 	if marketID != nil {
