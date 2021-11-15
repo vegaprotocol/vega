@@ -261,27 +261,24 @@ func (rc *RewardCounters) ObserveRewardDetails(ctx context.Context, retries int,
 		defer atomic.AddInt32(&rc.subscriberCnt, -1)
 		ip, _ := contextutil.RemoteIPAddrFromContext(ctx)
 		defer cancel()
-		for {
-			select {
-			case <-ctx.Done():
-				rc.log.Debug(
-					"rewards subscriber closed connection",
+		for range ctx.Done() {
+			rc.log.Debug(
+				"rewards subscriber closed connection",
+				logging.Uint64("id", ref),
+				logging.String("ip-address", ip),
+			)
+			// this error only happens when the subscriber reference doesn't exist
+			// so we can still safely close the channels
+			if err := rc.unsubscribe(ref); err != nil {
+				rc.log.Error(
+					"Failure un-subscribing delegations subscriber when context.Done()",
 					logging.Uint64("id", ref),
 					logging.String("ip-address", ip),
+					logging.Error(err),
 				)
-				// this error only happens when the subscriber reference doesn't exist
-				// so we can still safely close the channels
-				if err := rc.unsubscribe(ref); err != nil {
-					rc.log.Error(
-						"Failure un-subscribing delegations subscriber when context.Done()",
-						logging.Uint64("id", ref),
-						logging.String("ip-address", ip),
-						logging.Error(err),
-					)
-				}
-				close(rewards)
-				return
 			}
+			close(rewards)
+			return
 		}
 	}()
 
