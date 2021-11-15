@@ -18,9 +18,10 @@ func TestPartyByID(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
-	conn, broker := NewTestServer(t, ctx, true)
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
 
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
+	PublishEvents(t, ctx, server.broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		party := be.GetParty()
 		require.NotNil(t, party)
 		e := events.NewPartyEvent(ctx, pb.Party{
@@ -29,7 +30,7 @@ func TestPartyByID(t *testing.T) {
 		return e, nil
 	}, "parties-events.golden")
 
-	client := apipb.NewTradingDataServiceClient(conn)
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
 	require.NotNil(t, client)
 
 	partyID := "c1f55d6be5dddbbff20312e1103a6f4b86ff4a798b74d7e9c980f98fb6747c11"

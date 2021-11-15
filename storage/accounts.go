@@ -40,16 +40,13 @@ type Account struct {
 }
 
 // NewAccounts creates a new account store with the logger and configuration specified.
-func NewAccounts(log *logging.Logger, c Config, onCriticalError func()) (*Account, error) {
+func NewAccounts(log *logging.Logger, home string, c Config, onCriticalError func()) (*Account, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	if err := InitStoreDirectory(c.AccountsDirPath); err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for account storage")
-	}
-	db, err := badger.Open(getOptionsFromConfig(c.Accounts, c.AccountsDirPath, log))
+	db, err := badger.Open(getOptionsFromConfig(c.Accounts, home, log))
 	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for account storage")
+		return nil, fmt.Errorf("couldn't open Badger accounts database: %w", err)
 	}
 
 	return &Account{

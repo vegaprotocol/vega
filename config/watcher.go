@@ -2,27 +2,25 @@ package config
 
 import (
 	"context"
-	"io/ioutil"
-	"path/filepath"
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/shared/paths"
 	"github.com/fsnotify/fsnotify"
-	"github.com/zannen/toml"
 )
 
 const (
-	configFileName = "config.toml"
-	namedLogger    = "cfgwatcher"
+	namedLogger = "cfgwatcher"
 )
 
 // Watcher is looking for updates in the configurations files
 type Watcher struct {
-	log  *logging.Logger
-	cfg  Config
-	path string
+	log            *logging.Logger
+	cfg            Config
+	configFilePath string
 
 	// to be used as an atomic
 	hasChanged         int32
@@ -41,15 +39,21 @@ func Use(use func(*Config) error) Option {
 	return fn
 }
 
-// NewFromFile instantiate a new watcher from the vega config files
-func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath string, path string, opts ...Option) (*Watcher, error) {
-	watcherlog := log.Named(namedLogger)
+// NewWatcher instantiate a new watcher from the vega config files
+func NewWatcher(ctx context.Context, log *logging.Logger, vegaPaths paths.Paths, opts ...Option) (*Watcher, error) {
+	watcherLog := log.Named(namedLogger)
 	// set this logger to debug level as we want to be notified for any configuration changes at any time
-	watcherlog.SetLevel(logging.DebugLevel)
+	watcherLog.SetLevel(logging.DebugLevel)
+
+	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get path for %s: %w", paths.NodeDefaultConfigFile, err)
+	}
+
 	w := &Watcher{
-		log:                watcherlog,
-		cfg:                NewDefaultConfig(defaultStoreDirPath),
-		path:               filepath.Join(path, configFileName),
+		log:                watcherLog,
+		cfg:                NewDefaultConfig(),
+		configFilePath:     configFilePath,
 		cfgUpdateListeners: []func(Config){},
 	}
 
@@ -57,7 +61,7 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 		opt(w)
 	}
 
-	err := w.load()
+	err = w.load()
 	if err != nil {
 		return nil, err
 	}
@@ -66,13 +70,13 @@ func NewFromFile(ctx context.Context, log *logging.Logger, defaultStoreDirPath s
 	if err != nil {
 		return nil, err
 	}
-	err = watcher.Add(w.path)
+	err = watcher.Add(w.configFilePath)
 	if err != nil {
 		return nil, err
 	}
 
 	w.log.Info("config watcher started successfully",
-		logging.String("config", w.path))
+		logging.String("config", w.configFilePath))
 
 	go w.watch(ctx, watcher)
 
@@ -121,12 +125,8 @@ func (w *Watcher) load() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	buf, err := ioutil.ReadFile(w.path)
-	if err != nil {
-		return err
-	}
-	if _, err := toml.Decode(string(buf), &w.cfg); err != nil {
-		return err
+	if err := paths.ReadStructuredFile(w.configFilePath, &w.cfg); err != nil {
+		return fmt.Errorf("couldn't read configuration file at %s: %w", w.configFilePath, err)
 	}
 
 	for _, f := range w.cfgHandlers {

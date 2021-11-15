@@ -4,11 +4,13 @@ import (
 	"testing"
 	"time"
 
+	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -31,8 +33,14 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(logging.NewTestLogger(), config)
-	candleStore, err := storage.NewCandles(logging.NewTestLogger(), config, func() {})
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+
+	st, err := storage.InitialiseStorage(vegaPaths)
+	defer st.Purge()
+	require.NoError(t, err)
+
+	candleStore, err := storage.NewCandles(logging.NewTestLogger(), st.CandlesHome, config, func() {})
 	assert.Nil(t, err)
 	defer candleStore.Close()
 

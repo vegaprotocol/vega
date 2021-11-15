@@ -19,9 +19,10 @@ func TestDeposits(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
-	conn, broker := NewTestServer(t, ctx, true)
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
 
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
+	PublishEvents(t, ctx, server.broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		deposit := be.GetDeposit()
 		require.NotNil(t, deposit)
 		amt, _ := num.UintFromString(deposit.Amount, 10)
@@ -38,7 +39,7 @@ func TestDeposits(t *testing.T) {
 		return e, nil
 	}, "deposit-events.golden")
 
-	client := apipb.NewTradingDataServiceClient(conn)
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
 	require.NotNil(t, client)
 
 	depositID := "af6e66ee1e1a643338f55b8dfe00129b09b926a997edddf1f10e76b31c65cdad"

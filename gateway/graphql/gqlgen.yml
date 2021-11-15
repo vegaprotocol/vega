@@ -172,6 +172,8 @@ models:
     model: code.vegaprotocol.io/protos/vega.EpochTimestamps
   RewardPerAssetDetail:
     model: code.vegaprotocol.io/protos/vega.RewardPerAssetDetail
+  Reward:
+    model: code.vegaprotocol.io/protos/vega.RewardDetails
   StakeLinking:
     model: code.vegaprotocol.io/protos/vega/events/v1.StakeLinking
   PartyStake:

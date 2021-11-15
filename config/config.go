@@ -3,8 +3,8 @@
 package config
 
 import (
-	"io/ioutil"
-	"path/filepath"
+	"fmt"
+	"os"
 
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/api"
@@ -35,8 +35,8 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
-
-	"github.com/zannen/toml"
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
+	"code.vegaprotocol.io/shared/paths"
 )
 
 // Config ties together all other application configuration types.
@@ -76,7 +76,7 @@ type Config struct {
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
-func NewDefaultConfig(defaultStoreDirPath string) Config {
+func NewDefaultConfig() Config {
 	return Config{
 		Trades:            trades.NewDefaultConfig(),
 		API:               api.NewDefaultConfig(),
@@ -89,7 +89,7 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 		Parties:           parties.NewDefaultConfig(),
 		Candles:           candles.NewDefaultConfig(),
 		Risk:              risk.NewDefaultConfig(),
-		Storage:           storage.NewDefaultConfig(defaultStoreDirPath),
+		Storage:           storage.NewDefaultConfig(),
 		Pprof:             pprof.NewDefaultConfig(),
 		Logging:           logging.NewDefaultConfig(),
 		Gateway:           gateway.NewDefaultConfig(),
@@ -110,16 +110,48 @@ func NewDefaultConfig(defaultStoreDirPath string) Config {
 	}
 }
 
-func Read(rootPath string) (*Config, error) {
-	path := filepath.Join(rootPath, configFileName)
-	buf, err := ioutil.ReadFile(path)
+type Loader struct {
+	configFilePath string
+}
+
+func InitialiseLoader(vegaPaths paths.Paths) (*Loader, error) {
+	configFilePath, err := vegaPaths.CreateConfigPathFor(paths.DataNodeDefaultConfigFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("couldn't get path for %s: %w", paths.NodeDefaultConfigFile, err)
 	}
-	cfg := NewDefaultConfig(rootPath)
-	if _, err := toml.Decode(string(buf), &cfg); err != nil {
-		return nil, err
+
+	return &Loader{
+		configFilePath: configFilePath,
+	}, nil
+}
+
+func (l *Loader) ConfigFilePath() string {
+	return l.configFilePath
+}
+
+func (l *Loader) ConfigExists() (bool, error) {
+	exists, err := vgfs.FileExists(l.configFilePath)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}
+
+func (l *Loader) Save(cfg *Config) error {
+	if err := paths.WriteStructuredFile(l.configFilePath, cfg); err != nil {
+		return fmt.Errorf("couldn't write configuration file at %s: %w", l.configFilePath, err)
+	}
+	return nil
+}
+
+func (l *Loader) Get() (*Config, error) {
+	cfg := NewDefaultConfig()
+	if err := paths.ReadStructuredFile(l.configFilePath, &cfg); err != nil {
+		return nil, fmt.Errorf("couldn't read configuration file at %s: %w", l.configFilePath, err)
 	}
 	return &cfg, nil
+}
 
+func (l *Loader) Remove() {
+	_ = os.RemoveAll(l.configFilePath)
 }

@@ -50,7 +50,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	}()
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 
-	conf := l.cfgwatchr.Get()
+	conf := l.configWatcher.Get()
 
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
@@ -61,13 +61,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		if err != nil {
 			return
 		}
-		l.cfgwatchr.OnConfigUpdate(
+		l.configWatcher.OnConfigUpdate(
 			func(cfg config.Config) { l.pproffhandlr.ReloadConf(cfg.Pprof) },
 		)
 	}
 
 	l.Log.Info("Starting Vega",
-		logging.String("config-path", l.configPath),
 		logging.String("version", l.Version),
 		logging.String("version-hash", l.VersionHash))
 
@@ -87,12 +86,12 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	if err := l.setupStorages(); err != nil {
 		return err
 	}
-	l.setupSubscibers()
+	l.setupSubscribers()
 
 	return nil
 }
 
-func (l *NodeCommand) setupSubscibers() {
+func (l *NodeCommand) setupSubscribers() {
 	l.timeUpdateSub = subscribers.NewTimeSub(l.ctx, l.timeService, l.Log, true)
 	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
@@ -116,43 +115,47 @@ func (l *NodeCommand) setupSubscibers() {
 	l.checkpointSub = subscribers.NewCheckpointSub(l.ctx, l.Log, l.checkpointStore, true)
 }
 
-func (l *NodeCommand) setupStorages() (err error) {
+func (l *NodeCommand) setupStorages() error {
+	var err error
+
 	l.marketDataStore = storage.NewMarketData(l.Log, l.conf.Storage)
 	l.riskStore = storage.NewRisks(l.Log, l.conf.Storage)
-
-	if l.marketStore, err = storage.NewMarkets(l.Log, l.conf.Storage, l.cancel); err != nil {
-		return
-	}
-
-	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
-		return
-	}
-	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
-		return
-	}
-
-	if l.candleStore, err = storage.NewCandles(l.Log, l.conf.Storage, l.cancel); err != nil {
-		return
-	}
-
-	if l.orderStore, err = storage.NewOrders(l.Log, l.conf.Storage, l.cancel); err != nil {
-		return
-	}
-	if l.tradeStore, err = storage.NewTrades(l.Log, l.conf.Storage, l.cancel); err != nil {
-		return
-	}
-	if l.accounts, err = storage.NewAccounts(l.Log, l.conf.Storage, l.cancel); err != nil {
-		return
-	}
-	if l.checkpointStore, err = storage.NewCheckpoints(l.Log, l.conf.Storage, l.cancel); err != nil {
-		return
-	}
-
 	l.nodeStore = storage.NewNode(l.Log, l.conf.Storage)
 	l.epochStore = storage.NewEpoch(l.Log, l.nodeStore, l.conf.Storage)
 	l.delegationStore = storage.NewDelegations(l.Log, l.conf.Storage)
 
-	l.cfgwatchr.OnConfigUpdate(
+	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
+		return err
+	}
+	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
+		return err
+	}
+
+	st, err := storage.InitialiseStorage(l.vegaPaths)
+	if err != nil {
+		return fmt.Errorf("couldn't initialise storage: %w", err)
+	}
+
+	if l.marketStore, err = storage.NewMarkets(l.Log, st.MarketsHome, l.conf.Storage, l.cancel); err != nil {
+		return err
+	}
+	if l.candleStore, err = storage.NewCandles(l.Log, st.CandlesHome, l.conf.Storage, l.cancel); err != nil {
+		return err
+	}
+	if l.orderStore, err = storage.NewOrders(l.Log, st.OrdersHome, l.conf.Storage, l.cancel); err != nil {
+		return err
+	}
+	if l.tradeStore, err = storage.NewTrades(l.Log, st.TradesHome, l.conf.Storage, l.cancel); err != nil {
+		return err
+	}
+	if l.accounts, err = storage.NewAccounts(l.Log, st.AccountsHome, l.conf.Storage, l.cancel); err != nil {
+		return err
+	}
+	if l.checkpointStore, err = storage.NewCheckpoints(l.Log, st.CheckpointsHome, l.conf.Storage, l.cancel); err != nil {
+		return err
+	}
+
+	l.configWatcher.OnConfigUpdate(
 		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.orderStore.ReloadConf(cfg.Storage) },
@@ -167,7 +170,7 @@ func (l *NodeCommand) setupStorages() (err error) {
 		func(cfg config.Config) { l.delegationStore.ReloadConf(cfg.Storage) },
 	)
 
-	return
+	return nil
 }
 
 // we've already set everything up WRT arguments etc... just bootstrap the node
@@ -237,13 +240,13 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// setup config reloads for all services /etc
 	l.setupConfigWatchers()
-	l.timeService.NotifyOnTick(l.cfgwatchr.OnTimeUpdate)
+	l.timeService.NotifyOnTick(l.configWatcher.OnTimeUpdate)
 
 	return nil
 }
 
 func (l *NodeCommand) setupConfigWatchers() {
-	l.cfgwatchr.OnConfigUpdate(
+	l.configWatcher.OnConfigUpdate(
 		func(cfg config.Config) { l.candleService.ReloadConf(cfg.Candles) },
 		func(cfg config.Config) { l.orderService.ReloadConf(cfg.Orders) },
 		func(cfg config.Config) { l.liquidityService.ReloadConf(cfg.Liquidity) },

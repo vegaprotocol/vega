@@ -29,7 +29,7 @@ func (o ByXY) Less(i, j int) bool {
 func TestNodes(t *testing.T) {
 	a := assert.New(t)
 
-	nodeStore := storage.NewNode(logging.NewTestLogger(), storage.NewDefaultConfig(""))
+	nodeStore := storage.NewNode(logging.NewTestLogger(), storage.NewDefaultConfig())
 
 	n, err := nodeStore.GetByID("pub_key_1", "1")
 	a.Nil(n)

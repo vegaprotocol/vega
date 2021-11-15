@@ -2633,11 +2633,11 @@ type LiquidityProvision {
 "Reward information for a single party"
 type Reward {
   "The asset for which this reward is associated"
-  assetId: String!
+  asset: Asset!
   "Party receiving the reward"
-  partyId: String!
+  party: Party!
   "Epoch for which this reward was distributed"
-  epoch: Int!
+  epoch: Epoch!
   "Amount received for this reward"
   amount: String!
   "Percentage out of the total distributed reward"

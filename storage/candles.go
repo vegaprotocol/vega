@@ -49,18 +49,14 @@ type marketCandle struct {
 // NewCandles is used to initialise and create a CandleStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewCandles(log *logging.Logger, c Config, onCriticalError func()) (*Candle, error) {
+func NewCandles(log *logging.Logger, home string, c Config, onCriticalError func()) (*Candle, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.CandlesDirPath)
+	db, err := badger.Open(getOptionsFromConfig(c.Candles, home, log))
 	if err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for candles storage")
-	}
-	db, err := badger.Open(getOptionsFromConfig(c.Candles, c.CandlesDirPath, log))
-	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for candles storage")
+		return nil, fmt.Errorf("couldn't open Badger candles database: %w", err)
 	}
 	bs := badgerStore{db: db}
 	return &Candle{

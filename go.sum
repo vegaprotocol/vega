@@ -10,17 +10,23 @@ cloud.google.com/go/datastore v1.0.0/go.mod h1:LXYbyblFSglQ5pkeyhO+Qmw7ukd3C+pD7
 cloud.google.com/go/firestore v1.1.0/go.mod h1:ulACoGHTpvq5r8rxGJ4ddJZBZqakUQqClKRT5SZwBmk=
 cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2kNxGRt3I=
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
-code.vegaprotocol.io/go-wallet v0.9.0-pre4.0.20211015155859-687799acd28e/go.mod h1:Hia2pYUkqYjA0u0a7tpBTwa/+2TxF55v65hiKOz/CnE=
 code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3/go.mod h1:1Gwg5D0PbFEE92Vip8EU0/+n80Kx3GwlGvP850S0op8=
 code.vegaprotocol.io/protos v0.43.1-0.20211004102311-d2ad34ada37b/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+<<<<<<< HEAD
 code.vegaprotocol.io/protos v0.45.1-0.20211019111742-f1e05e5bcd0b/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/protos v0.45.2-0.20211114191554-6de8cffce7b8 h1:KVhojlVh8Ptcl5zeZ8X0fTM15bBKcGPCKXu/bkKls7Q=
 code.vegaprotocol.io/protos v0.45.2-0.20211114191554-6de8cffce7b8/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+=======
+code.vegaprotocol.io/protos v0.45.2-0.20211026143814-fd1dc62fd4e8 h1:+TW9DW+OBW/IEHEYk2Q7F8t7VSXQ5Y8qLdS+iLjOzfY=
+code.vegaprotocol.io/protos v0.45.2-0.20211026143814-fd1dc62fd4e8/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+>>>>>>> 8dcccb0271835ddec969910bc8900fe7be5fed51
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
+code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090 h1:SF7ZRvZ/JASJNEQigbuUwk1rQuugLy6gqbOFs8D8VXI=
 code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090/go.mod h1:dmahiiphuDJvjXXDvQvo22tFPx7yk9wW8z1glU/JgHE=
-code.vegaprotocol.io/vega v0.45.1-0.20211021161637-753981c96698 h1:3MJp0ZuQkPT1jsY0ykCTeXzAerZ6LleMfNlsMlZuygk=
-code.vegaprotocol.io/vega v0.45.1-0.20211021161637-753981c96698/go.mod h1:3m35A+Sh+y7FqL/GDGl9Z3tJK0yXPDPRW/eGSEeM40I=
+code.vegaprotocol.io/vega v0.45.3-0.20211029150423-746d5f89ca51 h1:MFZeIdIwBuxrmU966hBrpdCdhEHHoF49ORc7YS9baGk=
+code.vegaprotocol.io/vega v0.45.3-0.20211029150423-746d5f89ca51/go.mod h1:Drso/B8y8Q2Q7hJAkRSYzIdj97AyqSRK6LaCuilbrRQ=
+code.vegaprotocol.io/vegawallet v0.9.2/go.mod h1:B7TBK1bkXaoVlEsGy75LKzJ35EGgqixgYh2Ty4BIBxs=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/99designs/gqlgen v0.13.0 h1:haLTcUp3Vwp80xMVEg5KRNwzfUrgFdRmtBY8fuB8scA=
@@ -59,6 +65,7 @@ github.com/VictoriaMetrics/fastcache v1.5.7/go.mod h1:ptDBkNMQI4RtmVo8VS/XwRY6Ro
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
 github.com/Workiva/go-datastructures v1.0.52/go.mod h1:Z+F2Rca0qCsVYDS8z7bAGm8f3UkzuWYS/oBZz5a7VVA=
 github.com/adlio/schema v1.1.13/go.mod h1:L5Z7tw+7lRK1Fnpi/LT/ooCP1elkXn0krMWBQHUhEDE=
+github.com/adrg/xdg v0.3.3 h1:s/tV7MdqQnzB1nKY8aqHvAMD+uCiuEDzVB5HLRY849U=
 github.com/adrg/xdg v0.3.3/go.mod h1:61xAR2VZcggl2St4O9ohF5qCKe08+JDmE4VNzPFQvOQ=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=

@@ -5,9 +5,11 @@ import (
 	"strings"
 	"testing"
 
+	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/storage"
 	types "code.vegaprotocol.io/protos/vega"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,15 +28,17 @@ func TestStorage_NewOrders(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(logging.NewTestLogger(), config)
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
 
-	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), st.OrdersHome, config, func() {})
 	assert.NotNil(t, orderStore)
 	assert.Nil(t, err)
 
-	config.OrdersDirPath = ""
-
-	orderStore, err = storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	orderStore, err = storage.NewOrders(logging.NewTestLogger(), "", config, func() {})
 	assert.Nil(t, orderStore)
 	assert.NotNil(t, err)
 
@@ -48,8 +52,13 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(logging.NewTestLogger(), config)
-	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), st.OrdersHome, config, func() {})
 	assert.NoError(t, err)
 	defer orderStore.Close()
 
@@ -73,8 +82,13 @@ func TestStorage_PostAndGetByReference(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(logging.NewTestLogger(), config)
-	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), st.OrdersHome, config, func() {})
 	assert.NoError(t, err)
 	defer orderStore.Close()
 
@@ -98,8 +112,6 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
-
-	storage.FlushStores(logging.NewTestLogger(), config)
 
 	var tests = []struct {
 		inMarkets      []string
@@ -189,7 +201,12 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+		vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+
+		st, err := storage.InitialiseStorage(vegaPaths)
+		require.NoError(t, err)
+
+		orderStore, err := storage.NewOrders(logging.NewTestLogger(), st.OrdersHome, config, func() {})
 		assert.Nil(t, err)
 
 		vOrders := make([]types.Order, len(tt.inOrders))
@@ -206,6 +223,8 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, tt.outOrdersCount, len(orders))
 		orderStore.Close()
+
+		cleanupFn()
 	}
 }
 
@@ -215,9 +234,13 @@ func TestStorage_GetOrdersForParty(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	storage.FlushStores(logging.NewTestLogger(), config)
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
 
-	orderStore, err := storage.NewOrders(logging.NewTestLogger(), config, func() {})
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	orderStore, err := storage.NewOrders(logging.NewTestLogger(), st.OrdersHome, config, func() {})
 	assert.Nil(t, err)
 	defer orderStore.Close()
 
@@ -281,8 +304,13 @@ func TestStorage_GetOrderByReference(t *testing.T) {
 
 	log := logging.NewTestLogger()
 
-	storage.FlushStores(log, config)
-	newOrderStore, err := storage.NewOrders(log, config, func() {})
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	newOrderStore, err := storage.NewOrders(log, st.OrdersHome, config, func() {})
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
@@ -317,8 +345,13 @@ func TestStorage_GetOrderByID(t *testing.T) {
 
 	log := logging.NewTestLogger()
 
-	storage.FlushStores(log, config)
-	newOrderStore, err := storage.NewOrders(log, config, func() {})
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	newOrderStore, err := storage.NewOrders(log, st.OrdersHome, config, func() {})
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 
@@ -365,8 +398,14 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	}
 
 	log := logging.NewTestLogger()
-	storage.FlushStores(log, config)
-	newOrderStore, err := storage.NewOrders(log, config, func() {})
+
+	vegaPaths, cleanupFn := vgtesting.NewVegaPaths()
+	defer cleanupFn()
+
+	st, err := storage.InitialiseStorage(vegaPaths)
+	require.NoError(t, err)
+
+	newOrderStore, err := storage.NewOrders(log, st.OrdersHome, config, func() {})
 	assert.Nil(t, err)
 	defer newOrderStore.Close()
 

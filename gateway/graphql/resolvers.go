@@ -283,6 +283,10 @@ func (r *VegaResolverRoot) PartyStake() PartyStakeResolver {
 	return (*partyStakeResolver)(r)
 }
 
+func (r *VegaResolverRoot) Reward() RewardResolver {
+	return (*rewardResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
@@ -436,11 +440,12 @@ func (r *myQueryResolver) Erc20WithdrawalApproval(ctx context.Context, wid strin
 	}
 
 	return &Erc20WithdrawalApproval{
-		AssetSource: res.AssetSource,
-		Amount:      res.Amount,
-		Expiry:      strconv.FormatInt(res.Expiry, 10),
-		Nonce:       res.Nonce,
-		Signatures:  res.Signatures,
+		AssetSource:   res.AssetSource,
+		Amount:        res.Amount,
+		Expiry:        strconv.FormatInt(res.Expiry, 10),
+		Nonce:         res.Nonce,
+		Signatures:    res.Signatures,
+		TargetAddress: res.TargetAddress,
 	}, nil
 }
 

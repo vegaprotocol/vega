@@ -31,18 +31,14 @@ type Trade struct {
 // NewTrades is used to initialise and create a TradeStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewTrades(log *logging.Logger, c Config, onCriticalError func()) (*Trade, error) {
+func NewTrades(log *logging.Logger, home string, c Config, onCriticalError func()) (*Trade, error) {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.TradesDirPath)
+	db, err := badger.Open(getOptionsFromConfig(c.Trades, home, log))
 	if err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for trades storage")
-	}
-	db, err := badger.Open(getOptionsFromConfig(c.Trades, c.TradesDirPath, log))
-	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for trades storage")
+		return nil, fmt.Errorf("couldn't open Badger trades database: %w", err)
 	}
 	bs := badgerStore{db: db}
 	return &Trade{
@@ -114,7 +110,7 @@ func (ts *Trade) GetByMarket(ctx context.Context, market string, skip, limit uin
 	var (
 		err error
 	)
-	//TODO: (WG 05/11/2019): Bug: Setting limit to maximum value of uint64 results in l=-1
+	// TODO: (WG 05/11/2019): Bug: Setting limit to maximum value of uint64 results in l=-1
 	result := make([]*types.Trade, 0, int(limit))
 
 	ctx, cancel := context.WithTimeout(ctx, ts.Config.Timeout.Duration)

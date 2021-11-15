@@ -1,0 +1,79 @@
+package storage
+
+import (
+	"fmt"
+	"os"
+
+	"code.vegaprotocol.io/shared/paths"
+)
+
+const (
+	// AccountsDataPath is the default path for the account store files
+	AccountsDataPath = "accounts"
+	// CandlesDataPath is the default path for the candle store files
+	CandlesDataPath = "candles"
+	// CheckpointsDataPath is the default path for the checkpoints store files
+	CheckpointsDataPath = "checkpoints"
+	// MarketsDataPath is the default path for the market store files
+	MarketsDataPath = "markets"
+	// OrdersDataPath is the default path for the order store files
+	OrdersDataPath = "orders"
+	// TradesDataPath is the default path for the trade store files
+	TradesDataPath = "trades"
+)
+
+type Storage struct {
+	BaseDir         string
+	AccountsHome    string
+	OrdersHome      string
+	TradesHome      string
+	CandlesHome     string
+	MarketsHome     string
+	CheckpointsHome string
+}
+
+func InitialiseStorage(vegaPaths paths.Paths) (*Storage, error) {
+	var err error
+
+	storageHome, err := vegaPaths.CreateStateDirFor(paths.DataNodeStorageHome)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't get storage directory: %w", err)
+	}
+
+	storage := &Storage{
+		BaseDir: storageHome,
+	}
+
+	if storage.AccountsHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, AccountsDataPath)); err != nil {
+		return nil, fmt.Errorf("couldn't get accounts storage directory: %w", err)
+	}
+
+	if storage.OrdersHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, OrdersDataPath)); err != nil {
+		return nil, fmt.Errorf("couldn't get orders storage directory: %w", err)
+	}
+
+	if storage.TradesHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, TradesDataPath)); err != nil {
+		return nil, fmt.Errorf("couldn't get trades storage directory: %w", err)
+	}
+
+	if storage.CandlesHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, CandlesDataPath)); err != nil {
+		return nil, fmt.Errorf("couldn't get candles storage directory: %w", err)
+	}
+
+	if storage.MarketsHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, MarketsDataPath)); err != nil {
+		return nil, fmt.Errorf("couldn't get accounts storage directory: %w", err)
+	}
+
+	if storage.CheckpointsHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, CheckpointsDataPath)); err != nil {
+		return nil, fmt.Errorf("couldn't get checkpoints storage directory: %w", err)
+	}
+
+	return storage, nil
+}
+
+// Purge will remove/clear the badger key and value files (i.e. databases)
+// from disk at the locations specified by the given storage.Config. This is
+// currently used within unit and integration tests to clear between runs.
+func (s *Storage) Purge() {
+	_ = os.RemoveAll(s.BaseDir)
+}
