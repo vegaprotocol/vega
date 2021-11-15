@@ -145,23 +145,6 @@ func (b *BrokerStub) GetTransferResponses() []events.TransferResponse {
 	return ret
 }
 
-func (b *BrokerStub) ClearTransferEvents() {
-	t := events.TransferResponses
-	b.mu.Lock()
-	r := b.data[t]
-	b.data[t] = make([]events.Event, 0, cap(r))
-	b.mu.Unlock()
-}
-
-func (b *BrokerStub) ClearOrderEvents() {
-	t := events.OrderEvent
-	b.mu.Lock()
-	r := b.data[t]
-	// reallocate new slice
-	b.data[t] = make([]events.Event, 0, cap(r))
-	b.mu.Unlock()
-}
-
 func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Lock()
 	b.data = map[events.Type][]events.Event{}
