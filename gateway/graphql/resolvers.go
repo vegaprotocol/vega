@@ -76,11 +76,6 @@ func (r *VegaResolverRoot) Query() QueryResolver {
 	return (*myQueryResolver)(r)
 }
 
-// Mutation returns the mutations resolver
-func (r *VegaResolverRoot) Mutation() MutationResolver {
-	return (*myMutationResolver)(r)
-}
-
 // Candle returns the candles resolver
 func (r *VegaResolverRoot) Candle() CandleResolver {
 	return (*myCandleResolver)(r)
@@ -241,8 +236,8 @@ func (r *VegaResolverRoot) Condition() ConditionResolver {
 
 func (r *VegaResolverRoot) AuctionEvent() AuctionEventResolver {
 	return (*auctionEventResolver)(r)
-
 }
+
 func (r *VegaResolverRoot) Vote() VoteResolver {
 	return (*voteResolver)(r)
 }
@@ -321,6 +316,7 @@ func (r *myLiquidityProvisionResolver) Party(ctx context.Context, obj *types.Liq
 func (r *myLiquidityProvisionResolver) CreatedAt(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.CreatedAt)), nil
 }
+
 func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types.LiquidityProvision) (*string, error) {
 	var updatedAt *string
 	if obj.UpdatedAt > 0 {
@@ -329,9 +325,11 @@ func (r *myLiquidityProvisionResolver) UpdatedAt(ctx context.Context, obj *types
 	}
 	return updatedAt, nil
 }
+
 func (r *myLiquidityProvisionResolver) Market(ctx context.Context, obj *types.LiquidityProvision) (*types.Market, error) {
 	return r.r.getMarketByID(ctx, obj.MarketId)
 }
+
 func (r *myLiquidityProvisionResolver) CommitmentAmount(ctx context.Context, obj *types.LiquidityProvision) (string, error) {
 	return obj.CommitmentAmount, nil
 }
@@ -475,9 +473,7 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 	timeInForce OrderTimeInForce, expiration *string, ty OrderType) (*OrderEstimate, error) {
 	order := &types.Order{}
 
-	var (
-		err error
-	)
+	var err error
 
 	// We need to convert strings to uint64 (JS doesn't yet support uint64)
 	if price != nil {
@@ -556,7 +552,6 @@ func (r *myQueryResolver) EstimateOrder(ctx context.Context, market, party strin
 		TotalFeeAmount: ttf,
 		MarginLevels:   respm.MarginLevels,
 	}, nil
-
 }
 
 func (r *myQueryResolver) Asset(ctx context.Context, id string) (*types.Asset, error) {
@@ -1379,6 +1374,7 @@ func (r *myOrderResolver) RejectionReason(_ context.Context, o *types.Order) (*O
 func (r *myOrderResolver) Price(ctx context.Context, obj *types.Order) (string, error) {
 	return obj.Price, nil
 }
+
 func (r *myOrderResolver) TimeInForce(ctx context.Context, obj *types.Order) (OrderTimeInForce, error) {
 	return convertOrderTimeInForceFromProto(obj.TimeInForce)
 }
@@ -1593,24 +1589,31 @@ type myCandleResolver VegaResolverRoot
 func (r *myCandleResolver) High(ctx context.Context, obj *types.Candle) (string, error) {
 	return obj.High, nil
 }
+
 func (r *myCandleResolver) Low(ctx context.Context, obj *types.Candle) (string, error) {
 	return obj.Low, nil
 }
+
 func (r *myCandleResolver) Open(ctx context.Context, obj *types.Candle) (string, error) {
 	return obj.Open, nil
 }
+
 func (r *myCandleResolver) Close(ctx context.Context, obj *types.Candle) (string, error) {
 	return obj.Close, nil
 }
+
 func (r *myCandleResolver) Volume(ctx context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatUint(obj.Volume, 10), nil
 }
+
 func (r *myCandleResolver) Datetime(ctx context.Context, obj *types.Candle) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Timestamp)), nil
 }
+
 func (r *myCandleResolver) Timestamp(ctx context.Context, obj *types.Candle) (string, error) {
 	return strconv.FormatInt(obj.Timestamp, 10), nil
 }
+
 func (r *myCandleResolver) Interval(ctx context.Context, obj *types.Candle) (Interval, error) {
 	return convertIntervalFromProto(obj.Interval)
 }
@@ -1706,52 +1709,6 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 }
 
 // END: Position Resolver
-
-// BEGIN: Mutation Resolver
-
-type myMutationResolver VegaResolverRoot
-
-func (r *myMutationResolver) SubmitTransaction(ctx context.Context, data string, sig SignatureInput, ty *SubmitTransactionType) (*TransactionSubmitted, error) {
-	pty := vegaprotoapi.SubmitTransactionRequest_TYPE_ASYNC
-	if ty != nil {
-		switch *ty {
-		case SubmitTransactionTypeSync:
-			pty = vegaprotoapi.SubmitTransactionRequest_TYPE_SYNC
-		case SubmitTransactionTypeCommit:
-			pty = vegaprotoapi.SubmitTransactionRequest_TYPE_COMMIT
-		}
-	}
-
-	decodedData, err := base64.StdEncoding.DecodeString(data)
-	if err != nil {
-		return nil, err
-	}
-	decodedSig, err := base64.StdEncoding.DecodeString(sig.Sig)
-	if err != nil {
-		return nil, err
-	}
-
-	req := &vegaprotoapi.SubmitTransactionRequest{
-		Tx: &commandspb.Transaction{
-			InputData: decodedData,
-			Signature: &commandspb.Signature{
-				Value:   string(decodedSig),
-				Algo:    sig.Algo,
-				Version: uint32(sig.Version),
-			},
-		},
-		Type: pty,
-	}
-	res, err := r.tradingProxyClient.SubmitTransaction(ctx, req)
-	if err != nil {
-		r.log.Error("Failed to submit transaction", logging.Error(err))
-		return nil, customErrorFromStatus(err)
-	}
-
-	return &TransactionSubmitted{
-		Success: res.Success,
-	}, nil
-}
 
 // BEGIN: Subscription Resolver
 
@@ -1884,9 +1841,7 @@ func (r *mySubscriptionResolver) Accounts(ctx context.Context, marketID *string,
 }
 
 func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, party *string) (<-chan []*types.Order, error) {
-	var (
-		mkt, pty string
-	)
+	var mkt, pty string
 	if market != nil {
 		mkt = *market
 	}
@@ -1927,9 +1882,7 @@ func (r *mySubscriptionResolver) Orders(ctx context.Context, market *string, par
 }
 
 func (r *mySubscriptionResolver) Trades(ctx context.Context, market *string, party *string) (<-chan []*types.Trade, error) {
-	var (
-		mkt, pty string
-	)
+	var mkt, pty string
 	if market != nil {
 		mkt = *market
 	}
@@ -2075,7 +2028,6 @@ func (r *mySubscriptionResolver) MarketDepthUpdate(ctx context.Context, market s
 }
 
 func (r *mySubscriptionResolver) Candles(ctx context.Context, market string, interval Interval) (<-chan *types.Candle, error) {
-
 	pinterval, err := convertIntervalToProto(interval)
 	if err != nil {
 		r.log.Debug("invalid interval for candles subscriptions", logging.Error(err))
@@ -2218,7 +2170,6 @@ func (r *mySubscriptionResolver) subscribePartyVotes(ctx context.Context, partyI
 }
 
 func (r *mySubscriptionResolver) Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error) {
-
 	if proposalID != nil && len(*proposalID) == 0 {
 		return r.subscribeProposalVotes(ctx, *proposalID)
 	} else if partyID != nil && len(*partyID) == 0 {
