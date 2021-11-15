@@ -368,4 +368,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.ClearAllEvents(execsetup.broker)
 		return nil
 	})
+	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
+		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
+	})
 }
