@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	"code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -1802,7 +1803,7 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, party *string) (<-chan *Reward, error) {
+func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, party *string) (<-chan *vega.RewardDetails, error) {
 	var a, p string
 	if assetID == nil {
 		a = ""
@@ -1824,7 +1825,7 @@ func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, par
 		return nil, customErrorFromStatus(err)
 	}
 
-	ch := make(chan *Reward)
+	ch := make(chan *vega.RewardDetails)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -1840,14 +1841,7 @@ func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, par
 				r.log.Error("reward details: stream closed", logging.Error(err))
 				break
 			}
-			ch <- &Reward{
-				AssetID:           rd.RewardDetails.AssetId,
-				PartyID:           rd.RewardDetails.PartyId,
-				Epoch:             int(rd.RewardDetails.Epoch),
-				Amount:            rd.RewardDetails.Amount,
-				PercentageOfTotal: rd.RewardDetails.PercentageOfTotal,
-				ReceivedAt:        vegatime.Format(vegatime.UnixNano(rd.RewardDetails.ReceivedAt)),
-			}
+			ch <- rd.RewardDetails
 		}
 	}()
 

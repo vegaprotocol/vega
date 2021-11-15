@@ -1255,7 +1255,7 @@ type SubscriptionResolver interface {
 	Votes(ctx context.Context, proposalID *string, partyID *string) (<-chan *ProposalVote, error)
 	BusEvents(ctx context.Context, types []BusEventType, marketID *string, partyID *string, batchSize int) (<-chan []*BusEvent, error)
 	Delegations(ctx context.Context, party *string, nodeID *string) (<-chan *vega.Delegation, error)
-	RewardDetails(ctx context.Context, assetID *string, party *string) (<-chan *Reward, error)
+	RewardDetails(ctx context.Context, assetID *string, party *string) (<-chan *vega.RewardDetails, error)
 }
 type TradableInstrumentResolver interface {
 	RiskModel(ctx context.Context, obj *vega.TradableInstrument) (RiskModel, error)
@@ -25748,7 +25748,7 @@ func (ec *executionContext) _Subscription_rewardDetails(ctx context.Context, fie
 		return nil
 	}
 	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *Reward)
+		res, ok := <-resTmp.(<-chan *vega.RewardDetails)
 		if !ok {
 			return nil
 		}
@@ -25756,7 +25756,7 @@ func (ec *executionContext) _Subscription_rewardDetails(ctx context.Context, fie
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐReward(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardDetails(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -36905,11 +36905,11 @@ func (ec *executionContext) marshalNProposalVotes2ᚖcodeᚗvegaprotocolᚗioᚋ
 	return ec._ProposalVotes(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNReward2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐReward(ctx context.Context, sel ast.SelectionSet, v Reward) graphql.Marshaler {
+func (ec *executionContext) marshalNReward2codeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardDetails(ctx context.Context, sel ast.SelectionSet, v vega.RewardDetails) graphql.Marshaler {
 	return ec._Reward(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐReward(ctx context.Context, sel ast.SelectionSet, v *Reward) graphql.Marshaler {
+func (ec *executionContext) marshalNReward2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐRewardDetails(ctx context.Context, sel ast.SelectionSet, v *vega.RewardDetails) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
