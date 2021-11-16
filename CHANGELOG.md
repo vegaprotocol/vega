@@ -1,8 +1,8 @@
 # Changelog
 
 
-## Unreleased (X.Y.Z)
-*YYYY-MM-DD*
+## Unreleased (`X.Y.Z`)
+*`YYYY-MM-DD`*
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/pull/) - 
@@ -15,7 +15,7 @@
 - [208](https://github.com/vegaprotocol/data-node/pull/208) - Turn off `api_tests` when run on the CI
 - [197](https://github.com/vegaprotocol/data-node/pull/197) - Set time limit for system-tests, and also do not ignore failures for pull requests
 - [](https://github.com/vegaprotocol/data-node/pull/) - Move to XDG file structure #162
-- [212](https://github.com/vegaprotocol/data-node/pull/212) - Stabalise api tests
+- [212](https://github.com/vegaprotocol/data-node/pull/212) - Stabilise api tests
 - [221](https://github.com/vegaprotocol/data-node/pull/221) - Populate target address for `erc20WithdrawalApprovals`
 - [225](https://github.com/vegaprotocol/data-node/pull/225) - Remove SubmitTransaction GraphQL endpoint
 
@@ -28,7 +28,7 @@
 *2021-10-23*
 
 ### 🛠 Improvements
-- [202](https://github.com/vegaprotocol/data-node/pull/202) - CI: follow up updates after vegawallet name change #202
+- [202](https://github.com/vegaprotocol/data-node/pull/202) - Updates after vegawallet name change
 - [203](https://github.com/vegaprotocol/data-node/pull/203) - Release version `v0.45.1`
 - [205](https://github.com/vegaprotocol/data-node/pull/205) - Release version `v0.45.1`
 
