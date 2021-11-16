@@ -211,6 +211,8 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 			return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 		}
 		te.a = asset.Type()
+	case types.ProposalTerms_NEW_FREEFORM:
+		te.f = &ToEnactFreeform{}
 	}
 	return
 }
@@ -274,7 +276,8 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 
 			if proposal.State != proto.Proposal_STATE_OPEN && proposal.State != proto.Proposal_STATE_PASSED {
 				toBeRemoved = append(toBeRemoved, proposal.ID)
-			} else if proposal.State == proto.Proposal_STATE_PASSED && proposal.Terms.EnactmentTimestamp < now {
+			} else if proposal.State == proto.Proposal_STATE_PASSED &&
+				(e.isAutoEnactableProposal(proposal.Proposal) || proposal.Terms.EnactmentTimestamp < now) {
 				enact, _, err := e.preEnactProposal(proposal.Proposal)
 				if err != nil {
 					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
@@ -481,6 +484,16 @@ func (e *Engine) isTwoStepsProposal(p *types.Proposal) bool {
 	return e.nodeProposalValidation.IsNodeValidationRequired(p)
 }
 
+// isAutoEnactableProposal returns true if the proposal is of a type that has no on-chain enactment
+// and so can be automatically enacted without needing to care for the enactment timestamps.
+func (e *Engine) isAutoEnactableProposal(p *types.Proposal) bool {
+	switch p.Terms.Change.GetTermType() {
+	case types.ProposalTerms_NEW_FREEFORM:
+		return true
+	}
+	return false
+}
+
 func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParameters, error) {
 	switch terms.Change.GetTermType() {
 	case types.ProposalTerms_NEW_MARKET:
@@ -489,6 +502,8 @@ func (e *Engine) getProposalParams(terms *types.ProposalTerms) (*ProposalParamet
 		return e.getNewAssetProposalParameters(), nil
 	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
 		return e.getUpdateNetworkParameterProposalParameters(), nil
+	case types.ProposalTerms_NEW_FREEFORM:
+		return e.getNewFreeformProposalarameters(), nil
 	default:
 		return nil, ErrUnsupportedProposalType
 	}
@@ -524,7 +539,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 
 	enactTime := time.Unix(proposal.Terms.EnactmentTimestamp, 0)
 	minEnactTime := e.currentTime.Add(params.MinEnact)
-	if enactTime.Before(minEnactTime) {
+	if !e.isAutoEnactableProposal(&proposal) && enactTime.Before(minEnactTime) {
 		e.log.Debug("proposal enact time is too soon",
 			logging.Time("expected-min", minEnactTime),
 			logging.Time("provided", enactTime),
@@ -534,7 +549,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 	}
 
 	maxEnactTime := e.currentTime.Add(params.MaxEnact)
-	if enactTime.After(maxEnactTime) {
+	if !e.isAutoEnactableProposal(&proposal) && enactTime.After(maxEnactTime) {
 		e.log.Debug("proposal enact time is too late",
 			logging.Time("expected-max", maxEnactTime),
 			logging.Time("provided", enactTime),
@@ -555,7 +570,7 @@ func (e *Engine) validateOpenProposal(proposal types.Proposal) (types.ProposalEr
 		}
 	}
 
-	if enactTime.Before(closeTime) {
+	if !e.isAutoEnactableProposal(&proposal) && enactTime.Before(closeTime) {
 		e.log.Debug("proposal enactment time can't be smaller than closing time",
 			logging.Time("enactment-time", enactTime),
 			logging.Time("closing-time", closeTime),
@@ -599,6 +614,8 @@ func (e *Engine) validateChange(terms *types.ProposalTerms) (types.ProposalError
 		return validateNewAsset(terms.GetNewAsset().Changes)
 	case types.ProposalTerms_UPDATE_NETWORK_PARAMETER:
 		return validateNetworkParameterUpdate(e.netp, terms.GetUpdateNetworkParameter().Changes)
+	case types.ProposalTerms_NEW_FREEFORM:
+		return validateNewFreeform(terms.GetNewFreeform())
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }

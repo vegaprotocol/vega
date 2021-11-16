@@ -85,6 +85,8 @@ const (
 	ProposalError_PROPOSAL_ERROR_UNKNOWN_TYPE ProposalError = 27
 	// Proposal has an unknown risk parameter type.
 	ProposalError_PROPOSAL_ERROR_UNKNOWN_RISK_PARAMETER_TYPE ProposalError = 28
+	// Validation failed for freeform proposal.
+	ProposalError_PROPOSAL_ERROR_INVALID_FREEFORM ProposalError = 29
 )
 
 type ProposalState = proto.Proposal_State
@@ -115,6 +117,7 @@ const (
 	ProposalTerms_NEW_MARKET
 	ProposalTerms_UPDATE_NETWORK_PARAMETER
 	ProposalTerms_NEW_ASSET
+	ProposalTerms_NEW_FREEFORM
 )
 
 // Vote represents a governance vote casted by a party for a given proposal.
@@ -422,6 +425,16 @@ type ProposalTerms_NewAsset struct {
 	NewAsset *NewAsset
 }
 
+type NewFreeform struct {
+	URL         string
+	Description string
+	Hash        string
+}
+
+type ProposalTerms_NewFreeform struct {
+	NewFreeform *NewFreeform
+}
+
 type pterms interface {
 	isPTerm()
 	oneOfProto() interface{} // calls IntoProto
@@ -598,6 +611,8 @@ func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *proto.ProposalTerms_NewAsset:
 			change = NewNewAssetFromProto(ch)
+		case *proto.ProposalTerms_NewFreeform:
+			change = NewNewFreeformFromProto(ch)
 		}
 	}
 
@@ -663,6 +678,21 @@ func NewNewAssetFromProto(p *proto.ProposalTerms_NewAsset) *ProposalTerms_NewAss
 	}
 }
 
+func NewNewFreeformFromProto(p *proto.ProposalTerms_NewFreeform) *ProposalTerms_NewFreeform {
+	var newFreeform *NewFreeform
+	if p.NewFreeform != nil {
+		newFreeform = &NewFreeform{
+			URL:         p.NewFreeform.Url,
+			Description: p.NewFreeform.Description,
+			Hash:        p.NewFreeform.Hash,
+		}
+	}
+
+	return &ProposalTerms_NewFreeform{
+		NewFreeform: newFreeform,
+	}
+}
+
 func (p ProposalTerms) IntoProto() *proto.ProposalTerms {
 	change := p.Change.oneOfProto()
 	r := &proto.ProposalTerms{
@@ -678,6 +708,8 @@ func (p ProposalTerms) IntoProto() *proto.ProposalTerms {
 	case *proto.ProposalTerms_UpdateNetworkParameter:
 		r.Change = ch
 	case *proto.ProposalTerms_NewAsset:
+		r.Change = ch
+	case *proto.ProposalTerms_NewFreeform:
 		r.Change = ch
 	}
 	return r
@@ -715,6 +747,15 @@ func (p *ProposalTerms) GetUpdateNetworkParameter() *UpdateNetworkParameter {
 	switch c := p.Change.(type) {
 	case *ProposalTerms_UpdateNetworkParameter:
 		return c.UpdateNetworkParameter
+	default:
+		return nil
+	}
+}
+
+func (p *ProposalTerms) GetNewFreeform() *NewFreeform {
+	switch c := p.Change.(type) {
+	case *ProposalTerms_NewFreeform:
+		return c.NewFreeform
 	default:
 		return nil
 	}
@@ -1188,5 +1229,53 @@ func (d DiscreteTrading) IntoProto() *proto.DiscreteTrading {
 	return &proto.DiscreteTrading{
 		DurationNs: d.DurationNs,
 		TickSize:   d.TickSize,
+	}
+}
+
+func (f ProposalTerms_NewFreeform) IntoProto() *proto.ProposalTerms_NewFreeform {
+	var newFreeform *proto.NewFreeform
+	if f.NewFreeform != nil {
+		newFreeform = f.NewFreeform.IntoProto()
+	}
+	return &proto.ProposalTerms_NewFreeform{
+		NewFreeform: newFreeform,
+	}
+}
+
+func (f ProposalTerms_NewFreeform) isPTerm() {}
+func (f ProposalTerms_NewFreeform) oneOfProto() interface{} {
+	return f.IntoProto()
+}
+
+func (f ProposalTerms_NewFreeform) GetTermType() Proposal_Terms_TYPE {
+	return ProposalTerms_NEW_FREEFORM
+}
+
+func (f ProposalTerms_NewFreeform) DeepClone() pterms {
+	if f.NewFreeform == nil {
+		return &ProposalTerms_NewFreeform{}
+	}
+	return &ProposalTerms_NewFreeform{
+		NewFreeform: f.NewFreeform.DeepClone(),
+	}
+}
+
+func (n NewFreeform) IntoProto() *proto.NewFreeform {
+	return &proto.NewFreeform{
+		Url:         n.URL,
+		Description: n.Description,
+		Hash:        n.Hash,
+	}
+}
+
+func (n NewFreeform) String() string {
+	return n.IntoProto().String()
+}
+
+func (n NewFreeform) DeepClone() *NewFreeform {
+	return &NewFreeform{
+		URL:         n.URL,
+		Description: n.Description,
+		Hash:        n.Hash,
 	}
 }

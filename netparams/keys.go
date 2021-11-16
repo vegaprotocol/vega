@@ -63,6 +63,14 @@ const (
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
 
+	// freeform proposal parameters.
+	GovernanceProposalFreeformMinClose              = "governance.proposal.freeform.minClose"
+	GovernanceProposalFreeformMaxClose              = "governance.proposal.freeform.maxClose"
+	GovernanceProposalFreeformRequiredParticipation = "governance.proposal.freeform.requiredParticipation"
+	GovernanceProposalFreeformRequiredMajority      = "governance.proposal.freeform.requiredMajority"
+	GovernanceProposalFreeformMinProposerBalance    = "governance.proposal.freeform.minProposerBalance"
+	GovernanceProposalFreeformMinVoterBalance       = "governance.proposal.freeform.minVoterBalance"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"

@@ -52,6 +52,19 @@ func (e *Engine) getUpdateNetworkParameterProposalParameters() *ProposalParamete
 	)
 }
 
+func (e *Engine) getNewFreeformProposalarameters() *ProposalParameters {
+	return e.getProposalParametersFromNetParams(
+		netparams.GovernanceProposalFreeformMinClose,
+		netparams.GovernanceProposalFreeformMaxClose,
+		"0s",
+		"0s",
+		netparams.GovernanceProposalFreeformRequiredParticipation,
+		netparams.GovernanceProposalFreeformRequiredMajority,
+		netparams.GovernanceProposalFreeformMinProposerBalance,
+		netparams.GovernanceProposalFreeformMinVoterBalance,
+	)
+}
+
 func (e *Engine) getProposalParametersFromNetParams(
 	minCloseKey, maxCloseKey, minEnactKey, maxEnactKey, requiredParticipationKey,
 	requiredMajorityKey, minProposerBalanceKey, minVoterBalanceKey string,
