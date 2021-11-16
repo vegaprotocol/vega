@@ -3,7 +3,6 @@ package bridge
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/bridges"
@@ -176,7 +175,6 @@ type ERC20WithdrawAssetCmd struct {
 	TokenAddress    string `long:"token-address" required:"true" description:"The Ethereum address of the new token"`
 	Amount          string `long:"amount" required:"true" description:"The amount to be withdrawn"`
 	ReceiverAddress string `long:"receiver-address" required:"true" description:"The ethereum address of the wallet which is to receive the funds"`
-	Expiry          int64  `long:"expiry" required:"true" description:"The data at which the withdrawal will expiry (here for legacy reason, to be set in a that in the future (e.g: 10 years), will be removed soon"`
 	BridgeAddress   string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
 	Nonce           string `long:"nonce" required:"true" description:"A nonce for this signature"`
 }
@@ -217,8 +215,7 @@ func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
 
 	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress)
 	bundle, err := erc20Logic.WithdrawAsset(
-		opts.TokenAddress, amount, opts.ReceiverAddress,
-		time.Unix(opts.Expiry, 0), nonce,
+		opts.TokenAddress, amount, opts.ReceiverAddress, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
