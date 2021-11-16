@@ -21,7 +21,6 @@
 
 ### 🐛 Fixes
 - [207](https://github.com/vegaprotocol/data-node/pull/207) - Fix rewards schema and update vega dependencies to have reward event fixes
-- 
 
 
 ## 0.45.1
