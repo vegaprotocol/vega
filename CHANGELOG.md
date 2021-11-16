@@ -14,13 +14,13 @@
 - [228](https://github.com/vegaprotocol/data-node/pull/228) - Add changelog and project board Github actions and update linked PR action version
 - [208](https://github.com/vegaprotocol/data-node/pull/208) - Turn off `api_tests` when run on the CI
 - [197](https://github.com/vegaprotocol/data-node/pull/197) - Set time limit for system-tests, and also do not ignore failures for pull requests
-- [](https://github.com/vegaprotocol/data-node/pull/) - Move to XDG file structure #162
+- [162](https://github.com/vegaprotocol/data-node/pull/162) - Move to XDG file structure
 - [212](https://github.com/vegaprotocol/data-node/pull/212) - Stabilise api tests
 - [221](https://github.com/vegaprotocol/data-node/pull/221) - Populate target address for `erc20WithdrawalApprovals`
 - [225](https://github.com/vegaprotocol/data-node/pull/225) - Remove SubmitTransaction GraphQL endpoint
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/) - fix rewards schema + update vega deps to have reward event fixes #207
+- [207](https://github.com/vegaprotocol/data-node/pull/207) - Fix rewards schema and update vega dependencies to have reward event fixes
 - 
 
 
