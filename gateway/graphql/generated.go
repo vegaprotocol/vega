@@ -63,7 +63,6 @@ type ResolverRoot interface {
 	MarketDepth() MarketDepthResolver
 	MarketDepthUpdate() MarketDepthUpdateResolver
 	MarketTimestamps() MarketTimestampsResolver
-	Mutation() MutationResolver
 	NewAsset() NewAssetResolver
 	NewMarket() NewMarketResolver
 	Node() NodeResolver
@@ -450,10 +449,6 @@ type ComplexityRoot struct {
 		Open     func(childComplexity int) int
 		Pending  func(childComplexity int) int
 		Proposed func(childComplexity int) int
-	}
-
-	Mutation struct {
-		SubmitTransaction func(childComplexity int, data string, sig SignatureInput, typeArg *SubmitTransactionType) int
 	}
 
 	NetworkParameter struct {
@@ -1075,9 +1070,6 @@ type MarketTimestampsResolver interface {
 	Pending(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
 	Open(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
 	Close(ctx context.Context, obj *vega.MarketTimestamps) (*string, error)
-}
-type MutationResolver interface {
-	SubmitTransaction(ctx context.Context, data string, sig SignatureInput, typeArg *SubmitTransactionType) (*TransactionSubmitted, error)
 }
 type NewAssetResolver interface {
 	Name(ctx context.Context, obj *vega.NewAsset) (string, error)
@@ -2847,18 +2839,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.MarketTimestamps.Proposed(childComplexity), true
-
-	case "Mutation.submitTransaction":
-		if e.complexity.Mutation.SubmitTransaction == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_submitTransaction_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.SubmitTransaction(childComplexity, args["data"].(string), args["sig"].(SignatureInput), args["type"].(*SubmitTransactionType)), true
 
 	case "NetworkParameter.key":
 		if e.complexity.NetworkParameter.Key == nil {
@@ -5206,20 +5186,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
-	case ast.Mutation:
-		return func(ctx context.Context) *graphql.Response {
-			if !first {
-				return nil
-			}
-			first = false
-			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
-			var buf bytes.Buffer
-			data.MarshalGQL(&buf)
-
-			return &graphql.Response{
-				Data: buf.Bytes(),
-			}
-		}
 	case ast.Subscription:
 		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
 
@@ -5268,34 +5234,8 @@ var sources = []*ast.Source{
 schema {
   query: Query
   subscription: Subscription
-  mutation: Mutation
 }
 
-"Mutations are similar to GraphQL queries, however they allow a caller to change or mutate data."
-type Mutation {
-  """
-  Submit a new, signed, transaction to the VEGA network. This transaction will not be executed immediately.
-  It validates the signature, and sends the transaction out for consensus
-  """
-  submitTransaction(
-    "The signed transaction"
-    data: String!
-    "The signature"
-    sig: SignatureInput!
-    "The way to send the transaction"
-    type: SubmitTransactionType
-  ): TransactionSubmitted!
-}
-
-"The way the transaction is sent to the blockchain"
-enum SubmitTransactionType {
-  "The call will return as soon as submitted"
-  Async
-  "The call will return once the mempool has run CheckTx on the transaction"
-  Sync
-  "The call will return once the transaction has been processed by the core"
-  Commit
-}
 
 "Create an order linked to an index rather than a price"
 type PeggedOrder {
@@ -5303,16 +5243,6 @@ type PeggedOrder {
   reference: PeggedReference!
   "Price offset from the peg"
   offset: String!
-}
-
-"A signature to be bundled with a transaction"
-input SignatureInput {
-  "The signature, base64 encoded"
-  sig: String!
-  "The algorithm used to produice the signature"
-  algo: String!
-  "The version of the signature"
-  version: Int!
 }
 
 "Subscriptions allow a caller to receive new information as it is available from the VEGA platform."
@@ -8044,39 +7974,6 @@ func (ec *executionContext) field_Market_trades_args(ctx context.Context, rawArg
 		}
 	}
 	args["last"] = arg2
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_submitTransaction_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["data"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["data"] = arg0
-	var arg1 SignatureInput
-	if tmp, ok := rawArgs["sig"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sig"))
-		arg1, err = ec.unmarshalNSignatureInput2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐSignatureInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sig"] = arg1
-	var arg2 *SubmitTransactionType
-	if tmp, ok := rawArgs["type"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
-		arg2, err = ec.unmarshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["type"] = arg2
 	return args, nil
 }
 
@@ -16511,48 +16408,6 @@ func (ec *executionContext) _MarketTimestamps_close(ctx context.Context, field g
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_submitTransaction(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_submitTransaction_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SubmitTransaction(rctx, args["data"].(string), args["sig"].(SignatureInput), args["type"].(*SubmitTransactionType))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*TransactionSubmitted)
-	fc.Result = res
-	return ec.marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NetworkParameter_key(ctx context.Context, field graphql.CollectedField, obj *vega.NetworkParameter) (ret graphql.Marshaler) {
@@ -28411,42 +28266,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputSignatureInput(ctx context.Context, obj interface{}) (SignatureInput, error) {
-	var it SignatureInput
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "sig":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sig"))
-			it.Sig, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "algo":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("algo"))
-			it.Algo, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "version":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
-			it.Version, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -31572,37 +31391,6 @@ func (ec *executionContext) _MarketTimestamps(ctx context.Context, sel ast.Selec
 				res = ec._MarketTimestamps_close(ctx, field, obj)
 				return res
 			})
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var mutationImplementors = []string{"Mutation"}
-
-func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
-
-	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
-		Object: "Mutation",
-	})
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Mutation")
-		case "submitTransaction":
-			out.Values[i] = ec._Mutation_submitTransaction(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36731,11 +36519,6 @@ func (ec *executionContext) marshalNSide2codeᚗvegaprotocolᚗioᚋdataᚑnode�
 	return v
 }
 
-func (ec *executionContext) unmarshalNSignatureInput2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐSignatureInput(ctx context.Context, v interface{}) (SignatureInput, error) {
-	res, err := ec.unmarshalInputSignatureInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalNSimpleRiskModelParams2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐSimpleModelParams(ctx context.Context, sel ast.SelectionSet, v *vega.SimpleModelParams) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -36863,20 +36646,6 @@ func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋdata�
 		return graphql.Null
 	}
 	return ec._TradingMode(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNTransactionSubmitted2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx context.Context, sel ast.SelectionSet, v TransactionSubmitted) graphql.Marshaler {
-	return ec._TransactionSubmitted(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNTransactionSubmitted2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransactionSubmitted(ctx context.Context, sel ast.SelectionSet, v *TransactionSubmitted) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._TransactionSubmitted(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTransferBalance2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferBalance(ctx context.Context, sel ast.SelectionSet, v *TransferBalance) graphql.Marshaler {
@@ -38897,22 +38666,6 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 		return graphql.Null
 	}
 	return graphql.MarshalString(*v)
-}
-
-func (ec *executionContext) unmarshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx context.Context, v interface{}) (*SubmitTransactionType, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(SubmitTransactionType)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOSubmitTransactionType2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐSubmitTransactionType(ctx context.Context, sel ast.SelectionSet, v *SubmitTransactionType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) marshalOTrade2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradeᚄ(ctx context.Context, sel ast.SelectionSet, v []*vega.Trade) graphql.Marshaler {
