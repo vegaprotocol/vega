@@ -1760,14 +1760,10 @@ type mySubscriptionResolver VegaResolverRoot
 
 func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID *string) (<-chan *types.Delegation, error) {
 	var p, n string
-	if party == nil {
-		p = ""
-	} else {
+	if party != nil {
 		p = *party
 	}
-	if nodeID == nil {
-		n = ""
-	} else {
+	if nodeID != nil {
 		n = *nodeID
 	}
 
@@ -1805,14 +1801,10 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 
 func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, party *string) (<-chan *vega.RewardDetails, error) {
 	var a, p string
-	if assetID == nil {
-		a = ""
-	} else {
+	if assetID != nil {
 		a = *assetID
 	}
-	if party == nil {
-		p = ""
-	} else {
+	if party != nil {
 		p = *party
 	}
 

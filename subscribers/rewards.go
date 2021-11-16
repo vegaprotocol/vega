@@ -285,8 +285,8 @@ func (rc *RewardCounters) ObserveRewardDetails(ctx context.Context, retries int,
 	return rewards, ref
 }
 
-// GetAccountSubscribersCount returns the total number of active subscribers for ObserveRewardDetails.
-func (rc *RewardCounters) GetAccountSubscribersCount() int32 {
+// GetRewardSubscribersCount returns the total number of active subscribers for ObserveRewardDetails.
+func (rc *RewardCounters) GetRewardSubscribersCount() int32 {
 	return atomic.LoadInt32(&rc.subscriberCnt)
 }
 

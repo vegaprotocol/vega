@@ -63,15 +63,15 @@ func (s *Service) ReloadConf(cfg Config) {
 	s.Config = cfg
 }
 
-// GetAccountSubscribersCount returns the total number of active subscribers for ObserveDelegations.
-func (s *Service) GetAccountSubscribersCount() int32 {
+// GetDelegationSubscribersCount returns the total number of active subscribers for ObserveDelegations.
+func (s *Service) GetDelegationSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
 
 //ObserveDelegations returns a channel for subscribing to delegation updates.
 func (s *Service) ObserveDelegations(ctx context.Context, retries int, party, nodeID string) (delegationsCh <-chan pb.Delegation, ref uint64) {
-	delegations := make(chan pb.Delegation)
-	internal := make(chan pb.Delegation)
+	delegations := make(chan pb.Delegation, 10)
+	internal := make(chan pb.Delegation, 10)
 	ref = s.delegationStore.Subscribe(internal)
 
 	var cancel func()
