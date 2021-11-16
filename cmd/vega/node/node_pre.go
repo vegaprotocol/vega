@@ -553,6 +553,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.SpamProtectionMinTokensForDelegation,
 			Watcher: l.spam.OnMinTokensForDelegationChanged,
 		},
+		netparams.WatchParam{
+			Param:   netparams.SnapshotIntervalLength,
+			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
+		},
 	)
 }
 

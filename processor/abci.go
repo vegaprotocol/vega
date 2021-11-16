@@ -68,6 +68,7 @@ type Snapshot interface {
 	ApplySnapshot(ctx context.Context) error
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
 	AddProviders(provs ...types.StateProvider)
+	Snapshot(ctx context.Context) ([]byte, error)
 }
 
 type App struct {
@@ -480,10 +481,18 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
-	resp.Data = app.exec.Hash()
-	resp.Data = append(resp.Data, app.delegation.Hash()...)
-	resp.Data = append(resp.Data, app.gov.Hash()...)
-	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
+	if err != nil {
+		app.log.Panic("Failed to create snapshot",
+			logging.Error(err))
+	}
+	resp.Data = snapHash
+	if len(snapHash) == 0 {
+		resp.Data = app.exec.Hash()
+		resp.Data = append(resp.Data, app.delegation.Hash()...)
+		resp.Data = append(resp.Data, app.gov.Hash()...)
+		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+	}
 
 	// Checkpoint can be nil if it wasn't time to create a checkpoint
 	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {

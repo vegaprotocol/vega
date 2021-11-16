@@ -66,6 +66,8 @@ type Engine struct {
 	keyNoNS    map[string]string // full key => key used by provider
 	hashes     map[string][]byte
 	versions   []int64
+	interval   int
+	current    int
 
 	providers    map[string]types.StateProvider
 	restoreProvs []types.PostRestore
@@ -156,6 +158,8 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		versionHeight: map[uint64]int64{},
 		wrap:          appPL,
 		app:           appPL.AppState,
+		interval:      1, // default to every block
+		current:       1,
 	}
 	if conf.StartHeight == 0 {
 		return eng, nil
@@ -464,6 +468,13 @@ func (e *Engine) Info() ([]byte, int64) {
 }
 
 func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
+	e.current--
+	// no snapshot to be taken yet
+	if e.current > 0 {
+		return nil, nil
+	}
+	// recent counter
+	e.current = e.interval
 	defer metrics.StartSnapshot("all")()
 	// always iterate over slices, so loops are deterministic
 	updated := false
@@ -681,6 +692,14 @@ func (e *Engine) Close() error {
 		}
 	}
 	return e.db.Close()
+}
+
+func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int) error {
+	e.interval = interval
+	if interval < e.current {
+		e.current = interval
+	}
+	return nil
 }
 
 func uniqueSubset(have, add []string) []string {
