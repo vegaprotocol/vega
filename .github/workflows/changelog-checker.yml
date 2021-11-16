@@ -8,6 +8,7 @@ name: ChangelogChecker
       - develop
 jobs:
   build:
+    if: startsWith(github.head_ref, 'renovate/') != true
     name: Check Actions
     runs-on: ubuntu-latest
     steps:
