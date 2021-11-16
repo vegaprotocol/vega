@@ -8,7 +8,9 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -418,6 +420,20 @@ func Time(rawTime string) (time.Time, error) {
 		return parsedTime, fmt.Errorf("invalid date value: %v", err)
 	}
 	return parsedTime, nil
+}
+
+func (r RowWrapper) MustEventType(name string) events.Type {
+	eventType, err := EventType(r.MustStr(name))
+	panicW(name, err)
+	return eventType
+}
+
+func EventType(rawValue string) (events.Type, error) {
+	ty, ok := eventspb.BusEventType_value[rawValue]
+	if !ok {
+		return 0, fmt.Errorf("invalid event type: %v", rawValue)
+	}
+	return events.Type(ty), nil
 }
 
 func (r RowWrapper) MustOrderType(name string) types.OrderType {

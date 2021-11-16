@@ -37,16 +37,16 @@ func DebugLPSTxErrors(broker *stubs.BrokerStub, log *logging.Logger) {
 
 func checkExpectedError(row ErroneousRow, returnedErr error) error {
 	if row.ExpectError() && returnedErr == nil {
-		return fmt.Errorf("\"%s\" should have fail", row.Reference())
+		return fmt.Errorf("action on \"%s\" should have fail", row.Reference())
 	}
 
 	if returnedErr != nil {
 		if !row.ExpectError() {
-			return fmt.Errorf("\"%s\" has failed: %s", row.Reference(), returnedErr.Error())
+			return fmt.Errorf("action on \"%s\" has failed: %s", row.Reference(), returnedErr.Error())
 		}
 
 		if row.Error() != returnedErr.Error() {
-			return formatDiff(fmt.Sprintf("\"%s\" is failing as expected but not with the expected error message", row.Reference()),
+			return formatDiff(fmt.Sprintf("action on \"%s\" is failing as expected but not with the expected error message", row.Reference()),
 				map[string]string{
 					"error": row.Error(),
 				},

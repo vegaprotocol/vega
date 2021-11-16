@@ -106,6 +106,16 @@ func (b *BrokerStub) Send(e events.Event) {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) GetAllEvents() []events.Event {
+	b.mu.Lock()
+	evs := []events.Event{}
+	for _, d := range b.data {
+		evs = append(evs, d...)
+	}
+	b.mu.Unlock()
+	return evs
+}
+
 func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 	b.mu.Lock()
 	r := b.data[t]
@@ -145,20 +155,9 @@ func (b *BrokerStub) GetTransferResponses() []events.TransferResponse {
 	return ret
 }
 
-func (b *BrokerStub) ClearTransferEvents() {
-	t := events.TransferResponses
+func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Lock()
-	r := b.data[t]
-	b.data[t] = make([]events.Event, 0, cap(r))
-	b.mu.Unlock()
-}
-
-func (b *BrokerStub) ClearOrderEvents() {
-	t := events.OrderEvent
-	b.mu.Lock()
-	r := b.data[t]
-	// reallocate new slice
-	b.data[t] = make([]events.Event, 0, cap(r))
+	b.data = map[events.Type][]events.Event{}
 	b.mu.Unlock()
 }
 
