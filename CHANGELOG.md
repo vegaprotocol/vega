@@ -11,7 +11,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/) - 
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/) - Add changelog, linked PR and project board Github actions
+- [](https://github.com/vegaprotocol/data-node/pull/) - Add changelog and project board Github actions and update linked PR action version
 - [208](https://github.com/vegaprotocol/data-node/pull/208) - Turn off `api_tests` when run on the CI
 - [197](https://github.com/vegaprotocol/data-node/pull/197) - Set time limit for system-tests, and also do not ignore failures for pull requests
 - [](https://github.com/vegaprotocol/data-node/pull/) - Move to XDG file structure #162
