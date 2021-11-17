@@ -52,7 +52,7 @@
 
 ## 0.45.4
 *2021-11-05*
-- [4372](https://github.com/vegaprotocol/vega/pull/4372) - Fix, if all association is nominated, allow unnomination and nomination in the same epoch
+- [4372](https://github.com/vegaprotocol/vega/pull/4372) - Fix, if all association is nominated, allow association to be unnominated and nominated again in the same epoch
 
 
 ## 0.45.3
