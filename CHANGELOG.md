@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/pull/) - 
 - 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/) - Add changelog and project board Github actions and update linked PR action version
+- [4406](https://github.com/vegaprotocol/data-node/pull/4406) - Add changelog and project board Github actions and update linked PR action version
 - [4328](https://github.com/vegaprotocol/vega/pull/4328) - Unwrap the timestamps in reward payout event
 - [4330](https://github.com/vegaprotocol/vega/pull/4330) - Remove badger related code from the codebase
 - [4336](https://github.com/vegaprotocol/vega/pull/4336) - Add oracle snapshot
