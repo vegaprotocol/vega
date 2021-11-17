@@ -1,21 +1,52 @@
 # Changelog
 
-## 0.45.1
 
-### Fixes
-- [198](https://github.com/vegaprotocol/data-node/pull/190) - Add timestamp to reward payload
+## Unreleased (`X.Y.Z`)
+*`YYYY-MM-DD`*
+
+### 🚨 Breaking changes
+- [](https://github.com/vegaprotocol/data-node/pull/) - 
+
+### 🗑️ Deprecation
+- [](https://github.com/vegaprotocol/data-node/pull/) - 
+
+### 🛠 Improvements
+- [226](https://github.com/vegaprotocol/data-node/pull/226) - Added subscriptions for delegations & rewards
+- [228](https://github.com/vegaprotocol/data-node/pull/228) - Add changelog and project board Github actions and update linked PR action version
+- [208](https://github.com/vegaprotocol/data-node/pull/208) - Turn off `api_tests` when run on the CI
+- [197](https://github.com/vegaprotocol/data-node/pull/197) - Set time limit for system-tests, and also do not ignore failures for pull requests
+- [162](https://github.com/vegaprotocol/data-node/pull/162) - Move to XDG file structure
+- [212](https://github.com/vegaprotocol/data-node/pull/212) - Stabilise api tests
+- [221](https://github.com/vegaprotocol/data-node/pull/221) - Populate target address for `erc20WithdrawalApprovals`
+- [225](https://github.com/vegaprotocol/data-node/pull/225) - Remove SubmitTransaction GraphQL endpoint
+
+### 🐛 Fixes
+- [207](https://github.com/vegaprotocol/data-node/pull/207) - Fix rewards schema and update vega dependencies to have reward event fixes
+
+
+## 0.45.1
+*2021-10-23*
+
+### 🛠 Improvements
+- [202](https://github.com/vegaprotocol/data-node/pull/202) - Updates after vegawallet name change
+- [203](https://github.com/vegaprotocol/data-node/pull/203) - Release version `v0.45.1`
+- [205](https://github.com/vegaprotocol/data-node/pull/205) - Release version `v0.45.1`
+
+### 🐛 Fixes
+- [199](https://github.com/vegaprotocol/data-node/pull/199) - Add timestamp to reward payload
+
 
 ## 0.45.0
 *2021-10-18*
 
-### Improvements
+### 🛠 Improvements
 - [190](https://github.com/vegaprotocol/data-node/pull/190) - Run golangci-lint as part of CI
 - [186](https://github.com/vegaprotocol/data-node/pull/186) - Add system-tests
 
 ## 0.44.0
 *2021-10-07*
 
-### Improvements
+### 🛠 Improvements
 - [168](https://github.com/vegaprotocol/data-node/pull/168) - De-duplicate stake linkings
 - [182](https://github.com/vegaprotocol/data-node/pull/182) - Update to latest proto, go mod tidy and set pendingStake to 0 in nodes
 - [181](https://github.com/vegaprotocol/data-node/pull/181) - add gRPC endpoint for GlobalRewardPool
@@ -23,7 +54,7 @@
 - [169](https://github.com/vegaprotocol/data-node/pull/169) - Port code to use last version of proto (layout change)
 - [163](https://github.com/vegaprotocol/data-node/pull/163) - Release 0.43.0
 
-### Fixes
+### 🐛 Fixes
 - [180](https://github.com/vegaprotocol/data-node/pull/180) - Update GraphQL schema (rewards)
 - [170](https://github.com/vegaprotocol/data-node/pull/170) - Fix setting current epoch
 
@@ -31,11 +62,11 @@
 ## 0.43.0
 *2021-09-24*
 
-### Improvements
+### 🛠 Improvements
 - [159](https://github.com/vegaprotocol/data-node/pull/159) - Remove the trading proxy to implement the TradingService
 - [154](https://github.com/vegaprotocol/data-node/pull/154) - Update to the last version of the proto repository
 
-### Fixes
+### 🐛 Fixes
 - [148](https://github.com/vegaprotocol/data-node/pull/148) - Remove required party filter for TxErr events
 - [147](https://github.com/vegaprotocol/data-node/pull/147) - Update the vega and proto repository dependencies to use the last version of the withdraw and deposits
 
@@ -43,7 +74,7 @@
 ## 0.42.0
 *2021-09-10*
 
-### Improvements
+### 🛠 Improvements
 - [144](https://github.com/vegaprotocol/data-node/pull/144) - Release 0.42.0
 - [142](https://github.com/vegaprotocol/data-node/pull/142) - point to latest proto
 - [139](https://github.com/vegaprotocol/data-node/pull/139) - Check version and add new event
@@ -93,7 +124,7 @@
 - [2](https://github.com/vegaprotocol/data-node/pull/2) - Remove tendermint integration
 - [1](https://github.com/vegaprotocol/data-node/pull/1) - Rename module from vega to data-node
 
-### Fixes
+### 🐛 Fixes
 - [138](https://github.com/vegaprotocol/data-node/pull/138) - Fix delegation balance to be string
 - [136](https://github.com/vegaprotocol/data-node/pull/136) - Fix API tests
 - [134](https://github.com/vegaprotocol/data-node/pull/134) - Fix bad reference copy of iterator
