@@ -3,7 +3,6 @@ package rewards
 import (
 	"context"
 	"errors"
-	"fmt"
 	"math/rand"
 	"sort"
 	"time"
@@ -17,6 +16,7 @@ import (
 
 const (
 	stakingAndDelegationSchemeID = "staking & delegation"
+	infrstructureFeeSchemeID     = "infrastructure fee"
 )
 
 var (
@@ -48,6 +48,7 @@ type Collateral interface {
 	CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error)
 	GetAccountByID(id string) (*types.Account, error)
 	TransferRewards(ctx context.Context, rewardAccountID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
+	GetInfraFeeAccountIDs() []string
 }
 
 //TimeService notifies the reward engine on time updates
@@ -69,6 +70,19 @@ type Engine struct {
 	assetForStakingAndDelegationReward string
 	rss                                *rewardsSnapshotState
 	rng                                *rand.Rand
+	global                             *globalRewardParams
+}
+
+type globalRewardParams struct {
+	maxPerEpoch             *num.Uint
+	minValStakeD            num.Decimal
+	minValStakeUInt         *num.Uint
+	optimalStakeMultiplier  num.Decimal
+	compLevel               num.Decimal
+	minValidators           num.Decimal
+	maxPayoutPerParticipant *num.Uint
+	payoutDelay             time.Duration
+	delegatorShare          num.Decimal
 }
 
 type payout struct {
@@ -97,6 +111,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 			hash:       []byte{},
 			serialised: []byte{},
 		},
+		global: &globalRewardParams{},
 	}
 
 	// register for epoch end notifications
@@ -108,7 +123,25 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 	// hack for sweetwater - hardcode reward scheme for staking and delegation
 	e.registerStakingAndDelegationRewardScheme()
 
+	// register the infrastructure fee scheme
+	e.registerInfrastructureFeeRewardScheme()
 	return e
+}
+
+// register the infrastructure fee reward scheme.
+func (e *Engine) registerInfrastructureFeeRewardScheme() {
+	// setup the reward scheme for staking and delegation
+	rs := &types.RewardScheme{
+		SchemeID:                  infrstructureFeeSchemeID,
+		Type:                      types.RewardSchemeInfrastructureFee,
+		ScopeType:                 types.RewardSchemeScopeNetwork,
+		Parameters:                map[string]types.RewardSchemeParam{},
+		StartTime:                 time.Time{},
+		PayoutType:                types.PayoutFractional,
+		MaxPayoutPerAssetPerParty: map[string]*num.Uint{},
+	}
+
+	e.rewardSchemes[rs.SchemeID] = rs
 }
 
 // this is a hack for sweetwater to hardcode the registeration of reward scheme for staking and delegation in a network scope param.
@@ -128,77 +161,34 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 	e.rewardSchemes[rs.SchemeID] = rs
 }
 
+// UpdateMaxPayoutPerEpochStakeForStakingRewardScheme controls the max payout per epoch
 func (e *Engine) UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(ctx context.Context, maxPerEpoch num.Decimal) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-
-	maxAsUint, _ := num.UintFromDecimal(maxPerEpoch)
-	rs.Parameters["maxPayoutPerEpoch"] = types.RewardSchemeParam{
-		Name:  "maxPayoutPerEpoch",
-		Type:  "uint",
-		Value: maxAsUint.String(),
-	}
+	e.global.maxPerEpoch, _ = num.UintFromDecimal(maxPerEpoch)
 	return nil
 }
 
 // UpdateMinimumValidatorStakeForStakingRewardScheme updaates the value of minimum validator stake for being considered for rewards.
 func (e *Engine) UpdateMinimumValidatorStakeForStakingRewardScheme(ctx context.Context, minValStake num.Decimal) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-
-	minValidatorStake, _ := num.UintFromDecimal(minValStake)
-	rs.Parameters["minValStake"] = types.RewardSchemeParam{
-		Name:  "minValStake",
-		Type:  "uint",
-		Value: minValidatorStake.String(),
-	}
+	e.global.minValStakeD = minValStake
+	e.global.minValStakeUInt, _ = num.UintFromDecimal(minValStake)
 	return nil
 }
 
 // UpdateOptimalStakeMultiplierStakingRewardScheme updaates the value of optimal stake multiplier.
 func (e *Engine) UpdateOptimalStakeMultiplierStakingRewardScheme(ctx context.Context, optimalStakeMultiplier num.Decimal) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-
-	rs.Parameters["optimalStakeMultiplier"] = types.RewardSchemeParam{
-		Name:  "optimalStakeMultiplier",
-		Type:  "float",
-		Value: optimalStakeMultiplier.String(),
-	}
+	e.global.optimalStakeMultiplier = optimalStakeMultiplier
 	return nil
 }
 
 // UpdateCompetitionLevelForStakingRewardScheme is called when the competition level has changed.
 func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel float64) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-	rs.Parameters["compLevel"] = types.RewardSchemeParam{
-		Name:  "compLevel",
-		Type:  "float",
-		Value: num.NewDecimalFromFloat(compLevel).String(),
-	}
+	e.global.compLevel = num.DecimalFromFloat(compLevel)
 	return nil
 }
 
 // UpdateMinValidatorsStakingRewardScheme is called when the the network parameter for min validator has changed.
 func (e *Engine) UpdateMinValidatorsStakingRewardScheme(ctx context.Context, minValidators int64) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-	rs.Parameters["minVal"] = types.RewardSchemeParam{
-		Name:  "minVal",
-		Type:  "float",
-		Value: num.DecimalFromInt64(minValidators).String(),
-	}
+	e.global.minValidators = num.DecimalFromInt64(minValidators)
 	return nil
 }
 
@@ -229,47 +219,30 @@ func (e *Engine) UpdateAssetForStakingAndDelegationRewardScheme(ctx context.Cont
 
 // UpdateMaxPayoutPerParticipantForStakingRewardScheme is a callback for changes in the network param for max payout per participant.
 func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context.Context, maxPayoutPerParticipant num.Decimal) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-
-	maxPayout, _ := num.UintFromDecimal(maxPayoutPerParticipant)
-	rs.MaxPayoutPerAssetPerParty[e.assetForStakingAndDelegationReward] = maxPayout
+	e.global.maxPayoutPerParticipant, _ = num.UintFromDecimal(maxPayoutPerParticipant)
 	return nil
 }
 
 // UpdatePayoutFractionForStakingRewardScheme is a callback for changes in the network param for payout fraction.
 func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context, payoutFraction float64) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
+	poFractionD := num.DecimalFromFloat(payoutFraction)
+	for _, rs := range e.rewardSchemes {
+		if rs.PayoutType == types.PayoutFractional {
+			rs.PayoutFraction = poFractionD
+		}
 	}
-	rs.PayoutFraction = payoutFraction
 	return nil
 }
 
 // UpdatePayoutDelayForStakingRewardScheme is a callback for changes in the network param for payout delay.
 func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, payoutDelay time.Duration) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-	rs.PayoutDelay = payoutDelay
+	e.global.payoutDelay = payoutDelay
 	return nil
 }
 
 // UpdateDelegatorShareForStakingRewardScheme is a callback for changes in the network param for delegator share.
 func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare float64) error {
-	rs, ok := e.rewardSchemes[stakingAndDelegationSchemeID]
-	if !ok {
-		e.log.Panic("reward scheme for staking and delegation must exist")
-	}
-	rs.Parameters["delegatorShare"] = types.RewardSchemeParam{
-		Name:  "delegatorShare",
-		Type:  "float",
-		Value: fmt.Sprintf("%f", delegatorShare),
-	}
+	e.global.delegatorShare = num.NewDecimalFromFloat(delegatorShare)
 	return nil
 }
 
@@ -316,7 +289,9 @@ func (e *Engine) calcTotalPendingPayout(accountID string) *num.Uint {
 }
 
 // process rewards when needed.
-func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, _ time.Time) {
+func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardScheme, epoch types.Epoch, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, onChainTreasury bool) []*payout {
+	payouts := []*payout{}
+
 	// get the reward pool accounts for the reward scheme
 	for _, accountID := range rewardScheme.RewardPoolAccountIDs {
 		account, err := e.collateral.GetAccountByID(accountID)
@@ -346,8 +321,21 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 
 		e.log.Info("Rewards: reward account pot for for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardAmt", rewardAmt.String()))
 
+		maxPayoutPerParticipant := num.Zero()
+		if onChainTreasury {
+			rewardAmt = num.Min(e.global.maxPerEpoch, rewardAmt)
+			maxPayoutPerParticipant = e.global.maxPayoutPerParticipant
+		}
+
+		e.log.Info("Rewards: reward pot for for epoch with max payout per epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardBalance", rewardAmt.String()))
+
+		// no point in doing anything after this point if the reward balance is 0
+		if rewardAmt.IsZero() {
+			continue
+		}
+
 		// calculate the rewards per the reward scheme and reword amount
-		po := e.calculateRewards(ctx, account.Asset, account.ID, rewardScheme, rewardAmt, epoch)
+		po := calculateRewards(num.NewUint(epoch.Seq).String(), account.Asset, accountID, rewardAmt, validatorNormalisedScores, validatorData, e.global.delegatorShare, maxPayoutPerParticipant, e.global.minValStakeUInt, e.rng, e.log)
 		if po == nil || po.totalReward.IsZero() {
 			continue
 		}
@@ -359,6 +347,8 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		if po.totalReward.GT(rewardAmt) {
 			e.log.Panic("Rewards: payout total greater than reward amount for epoch", logging.String("payoutTotal", po.totalReward.String()), logging.String("rewardAmountForEpoch", rewardAmt.String()), logging.Uint64("epoch", epoch.Seq))
 		}
+
+		payouts = append(payouts, po)
 
 		// emit events
 		timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
@@ -379,7 +369,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 
 		if rewardScheme.PayoutDelay == time.Duration(0) {
 			e.distributePayout(ctx, po)
-			return
+			continue
 		}
 
 		_, ok := e.pendingPayouts[timeToSend]
@@ -388,8 +378,15 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		} else {
 			e.pendingPayouts[timeToSend] = append(e.pendingPayouts[timeToSend], po)
 		}
+
 		e.rss.changed = true
 	}
+	return payouts
+}
+
+// update the account ids for asset infrastructure fees.
+func (e *Engine) updateInfraFeeAccountIDs() {
+	e.rewardSchemes[infrstructureFeeSchemeID].RewardPoolAccountIDs = e.collateral.GetInfraFeeAccountIDs()
 }
 
 // OnEpochEvent calculates the reward amounts parties get for available reward schemes.
@@ -403,11 +400,37 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		return
 	}
 
+	e.calculateRewardPayouts(ctx, epoch)
+}
+
+func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) []*payout {
 	rsIDs := make([]string, 0, len(e.rewardSchemes))
 	for rsID := range e.rewardSchemes {
 		rsIDs = append(rsIDs, rsID)
 	}
 	sort.Strings(rsIDs)
+
+	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
+	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
+
+	if e.log.GetLevel() == logging.DebugLevel {
+		for _, v := range validatorData {
+			e.log.Debug("Rewards: epoch stake summary for validator", logging.Uint64("epoch", epoch.Seq), logging.String("validator", v.NodeID), logging.String("selfStake", v.SelfStake.String()), logging.String("stakeByDelegators", v.StakeByDelegators.String()))
+			for party, d := range v.Delegators {
+				e.log.Debug("Rewards: epoch delegation for party", logging.Uint64("epoch", epoch.Seq), logging.String("party", party), logging.String("validator", v.NodeID), logging.String("amount", d.String()))
+			}
+		}
+	}
+
+	// calculate the validator score for each validator and the total score for all
+	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, e.broker, num.NewUint(epoch.Seq).String(), validatorData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng)
+	for node, score := range validatorNormalisedScores {
+		e.log.Info("Rewards: calculated normalised score", logging.String("validator", node), logging.String("normalisedScore", score.String()))
+	}
+
+	e.updateInfraFeeAccountIDs()
+	payouts := []*payout{}
+
 	for _, rsID := range rsIDs {
 		rewardScheme := e.rewardSchemes[rsID]
 
@@ -416,8 +439,10 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 			continue
 		}
 
-		e.processRewards(ctx, rewardScheme, epoch, epoch.EndTime)
+		onChainTreasury := rewardScheme.Type == types.RewardSchemeStakingAndDelegation
+		payouts = append(payouts, e.processRewards(ctx, rewardScheme, epoch, validatorData, validatorNormalisedScores, onChainTreasury)...)
 	}
+	return payouts
 }
 
 // make the required transfers for distributing reward payout.
@@ -447,26 +472,4 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
-}
-
-// delegates the reward calculation to the reward scheme
-// NB currently the only reward scheme type supported is staking and delegation.
-func (e *Engine) calculateRewards(ctx context.Context, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, epoch types.Epoch) *payout {
-	if rewardScheme.Type != types.RewardSchemeStakingAndDelegation {
-		e.log.Panic("unsupported reward scheme type", logging.Int("type", int(rewardScheme.Type)))
-	}
-
-	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
-	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
-
-	if e.log.GetLevel() == logging.DebugLevel {
-		for _, v := range validatorData {
-			e.log.Debug("Rewards: epoch stake summary for validator", logging.Uint64("epoch", epoch.Seq), logging.String("validator", v.NodeID), logging.String("selfStake", v.SelfStake.String()), logging.String("stakeByDelegators", v.StakeByDelegators.String()))
-			for party, d := range v.Delegators {
-				e.log.Debug("Rewards: epoch delegation for party", logging.Uint64("epoch", epoch.Seq), logging.String("party", party), logging.String("validator", v.NodeID), logging.String("amount", d.String()))
-			}
-		}
-	}
-
-	return e.calculatStakingAndDelegationRewards(ctx, e.broker, num.NewUint(epoch.Seq).String(), asset, accountID, rewardScheme, rewardBalance, validatorData)
 }

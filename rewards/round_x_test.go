@@ -24,10 +24,15 @@ func TestRepeatedRounds(t *testing.T) {
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 2)
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
+	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
+
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	// start with 10 VEGA
 	rewardBalance, _ := num.UintFromString("10000000000000000000", 10)
+	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], rewardBalance)
+	require.Nil(t, err)
+
 	expectedParty1Ratio := 0.104571
 	expectedParty2Ratio := 0.024
 	expectedNode1Ratio := 0.14
@@ -41,7 +46,9 @@ func TestRepeatedRounds(t *testing.T) {
 		println(round, rewardForEpoch.String())
 		testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 
-		res := engine.calculateRewards(context.Background(), "ETH", rs.RewardPoolAccountIDs[0], rs, rewardForEpoch, epoch)
+		payouts := engine.calculateRewardPayouts(context.Background(), epoch)
+		res := payouts[0]
+
 		// node1, node2, node3, party1, party2
 		require.Equal(t, 5, len(res.partyToAmount))
 
@@ -83,6 +90,8 @@ func TestNoDriftdRounds(t *testing.T) {
 	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 2)
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(5))
+	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
+
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
 	delegatorForVal1 := map[string]*num.Uint{}
@@ -98,6 +107,8 @@ func TestNoDriftdRounds(t *testing.T) {
 
 	// start with 10 VEGA reward balance
 	rewardBalance, _ := num.UintFromString("10000000000000000000", 10)
+	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], rewardBalance)
+	require.Nil(t, err)
 
 	// run for 10000 epochs and verify that the ratio each party gets remains constant
 	for round := uint64(0); round < 10000; round++ {
@@ -106,7 +117,8 @@ func TestNoDriftdRounds(t *testing.T) {
 		println(round, rewardForEpoch.String())
 		testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(validatorData)
 
-		res := engine.calculateRewards(context.Background(), "ETH", rs.RewardPoolAccountIDs[0], rs, rewardForEpoch, epoch)
+		payouts := engine.calculateRewardPayouts(context.Background(), epoch)
+		res := payouts[0]
 		require.Equal(t, 2, len(res.partyToAmount))
 
 		party1, _ := res.partyToAmount["party1"].ToDecimal().Div(rewardForEpoch.ToDecimal()).Float64()
@@ -131,6 +143,7 @@ func TestReproBug4220(t *testing.T) {
 		engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 0.1)
 		engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 2)
 		engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(5))
+		engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 		engine.OnEpochEvent(context.Background(), types.Epoch{})
 
 		rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
@@ -192,18 +205,14 @@ func TestReproBug4220(t *testing.T) {
 		validatorData4 := []*types.ValidatorData{validator14}
 
 		baseRewardIncrement, _ := num.UintFromString("100000000000000000000", 10)
-		rewardBalance := baseRewardIncrement.Clone()
+		testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], baseRewardIncrement)
+
 		var res *payout
 		for round := uint64(187); round < 370; round++ {
 			if round == 319 || round == 350 || round == 365 {
-				rewardBalance.AddSum(baseRewardIncrement)
+				testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], baseRewardIncrement)
 			}
-			println("rewardBalance for epoch", round, rewardBalance.String())
-
 			epoch := types.Epoch{Seq: round}
-			rewardForEpoch, _ := rs.GetReward(rewardBalance, epoch)
-			println(round, rewardForEpoch.String())
-
 			validatorDataToReturn := validatorData1
 			if round > 368 {
 				validatorDataToReturn = validatorData4
@@ -214,9 +223,8 @@ func TestReproBug4220(t *testing.T) {
 			}
 			testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(validatorDataToReturn)
 
-			res = engine.calculateRewards(context.Background(), "ETH", rs.RewardPoolAccountIDs[0], rs, rewardForEpoch, epoch)
-
-			rewardBalance.Sub(rewardBalance, res.totalReward)
+			payouts := engine.calculateRewardPayouts(context.Background(), epoch)
+			res = payouts[0]
 
 			println("reward amount for validator 7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f for round", round, res.partyToAmount["7d46981bb0b901ae471f3f592004ffcef667a4bd3a0c0b5d2b5346ba41f05a1f"].String())
 			println("reward amount for party 8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2 for round", round, res.partyToAmount["8696ea4067a708fc0d65a6989bc8e23ed0f4e34019586c1fbfad4b709d79dde2"].String())
@@ -226,7 +234,6 @@ func TestReproBug4220(t *testing.T) {
 			if round > 353 {
 				println("reward amount for party e77492db04301678115c19086caf3982e9b8045be5be2d9bd09f85fb601bcb7c for round", round, res.partyToAmount["e77492db04301678115c19086caf3982e9b8045be5be2d9bd09f85fb601bcb7c"].String())
 			}
-			println("reward balance after round", round, "is", rewardBalance.String())
 		}
 
 		expectedTotalRewardDistributed, _ := num.UintFromString("7963389516750398902", 10)

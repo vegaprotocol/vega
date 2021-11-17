@@ -437,6 +437,15 @@ func (e *Engine) transferFees(ctx context.Context, marketID string, assetID stri
 	return responses, nil
 }
 
+//GetInfraFeeAccountIDs returns the account IDs of the infrastructure fee accounts for all enabled assets.
+func (e *Engine) GetInfraFeeAccountIDs() []string {
+	accountIDs := []string{}
+	for asset := range e.enabledAssets {
+		accountIDs = append(accountIDs, e.accountID(noMarket, systemOwner, asset, types.AccountTypeFeesInfrastructure))
+	}
+	return accountIDs
+}
+
 // this func uses named returns because it makes body of the func look clearer.
 func (e *Engine) getFeesAccounts(marketID, asset string) (maker, infra, liqui *types.Account, err error) {
 	makerID := e.accountID(marketID, systemOwner, asset, types.AccountTypeFeesMaker)

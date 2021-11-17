@@ -20,7 +20,7 @@ func PartiesShouldReceiveTheFollowingReward(
 		row := rewardRow{row: r}
 
 		actualReward := num.Zero().String()
-		if reward, ok := rewards[row.Party()]; ok {
+		if reward, ok := rewards[stubs.AssetParty{row.Asset(), row.Party()}]; ok {
 			actualReward = reward.Amount.String()
 		}
 

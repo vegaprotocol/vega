@@ -23,6 +23,7 @@ type RewardSchemeType int
 const (
 	RewardSchemeUndefined RewardSchemeType = iota
 	RewardSchemeStakingAndDelegation
+	RewardSchemeInfrastructureFee
 )
 
 // PayoutType - fractional or balanced.
@@ -51,7 +52,7 @@ type RewardScheme struct {
 	StartTime                 time.Time
 	EndTime                   *time.Time
 	PayoutType                PayoutType
-	PayoutFraction            float64
+	PayoutFraction            num.Decimal
 	MaxPayoutPerAssetPerParty map[string]*num.Uint
 	PayoutDelay               time.Duration
 	RewardPoolAccountIDs      []string
@@ -112,7 +113,7 @@ func (rs *RewardScheme) GetReward(rewardPoolBalance *num.Uint, epoch Epoch) (*nu
 
 	var rewardBalance *num.Uint
 	if rs.PayoutType == PayoutFractional {
-		rewardBalance, _ = num.UintFromDecimal(num.NewDecimalFromFloat(rs.PayoutFraction).Mul(rewardPoolBalance.ToDecimal()))
+		rewardBalance, _ = num.UintFromDecimal(rs.PayoutFraction.Mul(rewardPoolBalance.ToDecimal()))
 	} else {
 		if rs.EndTime == nil {
 			return nil, ErrRewardSchemeMisconfiguration
