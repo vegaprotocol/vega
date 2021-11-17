@@ -2,7 +2,6 @@ package bridges_test
 
 import (
 	"testing"
-	"time"
 
 	"code.vegaprotocol.io/vega/bridges"
 	"code.vegaprotocol.io/vega/types/num"
@@ -69,8 +68,7 @@ func testWithdrawAsset(t *testing.T) {
 		erc20AssetAddr,
 		num.NewUint(42), // amount
 		ethPartyAddr,
-		time.Unix(10000, 0), // expiry
-		num.NewUint(1000),   // nonce
+		num.NewUint(1000), // nonce
 	)
 
 	assert.NoError(t, err)
@@ -78,7 +76,7 @@ func testWithdrawAsset(t *testing.T) {
 	assert.NotNil(t, sig.Signature)
 	assert.True(t, signer.Verify(sig.Message, sig.Signature))
 	assert.Equal(t,
-		"8ef446debbaef6279260f13f6004dd533924bc88a3dbbe4ad49beae60120eb9e65a27011c31483e32dfdd80c4d8d833af4d2497f8ae21ea246a14413c245d30e",
+		"bd5cdc0cdc21379846f56a52eee351eff24d6c4094e6bf0d3a107214ad785b31c3902bafd2ceed98bd600cba4180aaeaa98ab6ee1a589d801be80a870bc0520a",
 		sig.Signature.Hex(),
 	)
 }

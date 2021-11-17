@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.45.5
+
+*2021-11-16*
+
+### Fixes
+- [4403](https://github.com/vegaprotocol/vega/pull/4403) -  Fully remove expiry from withdrawals
+
+
 ## 0.45.4
 *2021-11-05*
 

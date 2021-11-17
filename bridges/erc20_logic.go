@@ -3,8 +3,6 @@ package bridges
 import (
 	"encoding/hex"
 	"fmt"
-	"math/big"
-	"time"
 
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -138,7 +136,6 @@ func (e ERC20Logic) WithdrawAsset(
 	tokenAddress string,
 	amount *num.Uint,
 	ethPartyAddress string,
-	expiry time.Time,
 	nonce *num.Uint,
 ) (*SignaturePayload, error) {
 	typAddr, err := abi.NewType("address", "", nil)
@@ -164,10 +161,6 @@ func (e ERC20Logic) WithdrawAsset(
 			Type: typU256,
 		},
 		{
-			Name: "uint256",
-			Type: typU256,
-		},
-		{
 			Name: "address",
 			Type: typAddr,
 		},
@@ -183,10 +176,9 @@ func (e ERC20Logic) WithdrawAsset(
 
 	ethTokenAddr := ethcmn.HexToAddress(tokenAddress)
 	hexEthPartyAddress := ethcmn.HexToAddress(ethPartyAddress)
-	expiryUnix := expiry.Unix() // require in unix by the bridge
 
 	buf, err := args.Pack([]interface{}{
-		ethTokenAddr, amount.BigInt(), big.NewInt(expiryUnix),
+		ethTokenAddr, amount.BigInt(),
 		hexEthPartyAddress, nonce.BigInt(), "withdraw_asset",
 	}...)
 	if err != nil {

@@ -70,7 +70,6 @@ func testWithdrawAsset(t *testing.T) {
 	token := newTestERC20(t)
 	msg, sig, err := token.SignWithdrawal(
 		num.NewUint(42),
-		1000,
 		ethPartyAddr,
 		big.NewInt(84),
 	)
@@ -80,7 +79,7 @@ func testWithdrawAsset(t *testing.T) {
 	assert.NotNil(t, sig)
 	assert.True(t, verifySignature(msg, sig))
 	assert.Equal(t,
-		"8185a0025d157b822e9a1077febc45038abef27fb2007855b75e3207536baba2d3ed69f9292f80c049c35a2ae7036bca884cdf4784f685f685af619d4326c70b",
+		"c888ddbca11784c473c7a8dd5f5ff6f17aa5d229d7e8e1642bb3008474330e8a8a536cf0a501bc2c690ccf8cd5cbe8ec08ddb9328787407276a7d01685d51903",
 		hex.EncodeToString(sig),
 	)
 }
