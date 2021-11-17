@@ -47,16 +47,22 @@
 
 ## 0.45.5
 *2021-11-16*
+
+### 🐛 Fixes
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals and release version `v0.45.5`
 
 
 ## 0.45.4
 *2021-11-05*
+
+### 🐛 Fixes
 - [4372](https://github.com/vegaprotocol/vega/pull/4372) - Fix, if all association is nominated, allow association to be unnominated and nominated again in the same epoch
 
 
 ## 0.45.3
 *2021-11-04*
+
+### 🐛 Fixes
 - [4362](https://github.com/vegaprotocol/vega/pull/4362) - Remove staking of cache at the beginning of the epoch for spam protection
 
 
