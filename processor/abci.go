@@ -996,6 +996,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.log.Error("update market enactment is not implemented")
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
+		case toEnact.IsFreeform():
+			app.enactFreeform(ctx, prop)
 		default:
 			prop.State = types.ProposalStateFailed
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
@@ -1056,6 +1058,11 @@ func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
+}
+
+func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
+	// There is nothing to enact in a freeform proposal so we just set the state
+	prop.State = types.ProposalStateEnacted
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {

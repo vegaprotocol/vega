@@ -63,6 +63,10 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Test withdrawing asset before proposal end", testSubmittingVoteAndWithdrawingFundsDeclined)
 	t.Run("Validate market proposal commitment", testValidateProposalCommitment)
 
+	t.Run("Valid freeform proposal", testValidFreeformProposal)
+	t.Run("Invalid freeform proposal", testInvalidFreeformProposal)
+	t.Run("Freeform proposal does not wait for enactment timestamp", testFreeformProposalDoesNotWaitToEnact)
+
 	t.Run("Can vote during validation period - proposal passed", testSubmittingMajorityOfYesVoteDuringValidationMakesProposalPassed)
 
 	t.Run("test hash", testGovernanceHash)
@@ -1241,6 +1245,133 @@ func testGovernanceHash(t *testing.T) {
 	)
 }
 
+func testValidFreeformProposal(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := eng.newOpenFreeformProposal(party.Id, time.Now())
+
+	// setup
+	eng.expectSendOpenProposalEvent(t, party, proposal)
+
+	// when
+	toSubmit, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
+
+	// then
+	assert.NoError(t, err)
+	assert.NotNil(t, toSubmit)
+}
+
+func testFreeformProposalDoesNotWaitToEnact(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// when
+	proposer := eng.newValidParty("proposer", 1)
+	voter1 := eng.newValidPartyTimes("voter-1", 7, 2)
+	voter2 := eng.newValidPartyTimes("voter2", 1, 0)
+	proposal := eng.newOpenFreeformProposal(proposer.Id, time.Now())
+
+	// setup
+	eng.accounts.EXPECT().GetStakingAssetTotalSupply().Times(1).
+		Return(num.NewUint(9))
+	eng.expectAnyAsset()
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+
+	// when
+	_, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// setup
+	eng.expectSendVoteEvent(t, voter1, proposal)
+
+	// then
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_YES,
+		ProposalID: proposal.ID,
+	}, voter1.Id)
+
+	// then
+	assert.NoError(t, err)
+
+	// given
+	afterClosing := time.Unix(proposal.Terms.ClosingTimestamp, 0).Add(time.Second)
+
+	// setup
+	eng.broker.EXPECT().Send(gomock.Any()).Times(1).Do(func(evt events.Event) {
+		pe, ok := evt.(*events.Proposal)
+		assert.True(t, ok)
+		p := pe.Proposal()
+		assert.Equal(t, proto.Proposal_STATE_PASSED, p.State)
+		assert.Equal(t, proposal.ID, p.Id)
+	})
+	eng.broker.EXPECT().SendBatch(gomock.Any()).Times(1).Do(func(evts []events.Event) {
+		v, ok := evts[0].(*events.Vote)
+		assert.True(t, ok)
+		assert.Equal(t, "1", v.TotalGovernanceTokenWeight())
+		assert.Equal(t, "7", v.TotalGovernanceTokenBalance())
+	})
+
+	// when the proposal is closed, it is enacted immediately
+	toBeEnacted, _ := eng.OnChainTimeUpdate(context.Background(), afterClosing)
+
+	// then
+	assert.Len(t, toBeEnacted, 1)
+	assert.Equal(t, proposal.ID, toBeEnacted[0].Proposal().ID)
+
+	// when
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_NO,
+		ProposalID: proposal.ID,
+	}, voter2.Id)
+
+	// then
+	assert.Error(t, err)
+	assert.EqualError(t, err, governance.ErrProposalNotFound.Error())
+}
+
+func testInvalidFreeformProposal(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+
+	// given
+	id := eng.newProposalID()
+	now := time.Now()
+	d := "I am much too long I am much too long I am much too long I am much too long I am much too long"
+	party := eng.newValidParty("a-valid-party", 123456789)
+	proposal := types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     "a-valid-party",
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change: &types.ProposalTerms_NewFreeform{
+				NewFreeform: &types.NewFreeform{
+					URL:         "https://example.com",
+					Description: d + d + d,
+					Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+				},
+			},
+		},
+	}
+
+	// setup
+	eng.expectSendRejectedProposalEvent(t, party.Id)
+
+	// when
+	toSubmit, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, party.Id)
+
+	// then
+	assert.ErrorIs(t, err, governance.ErrFreeformDescriptionTooLong)
+	assert.Nil(t, toSubmit)
+}
+
 func getTestEngine(t *testing.T) *tstEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
@@ -1267,6 +1398,16 @@ func getTestEngine(t *testing.T) *tstEngine {
 		assets:   assets,
 		witness:  witness,
 		netp:     netp,
+	}
+}
+
+func newValidFreeformTerms() *types.ProposalTerms_NewFreeform {
+	return &types.ProposalTerms_NewFreeform{
+		NewFreeform: &types.NewFreeform{
+			URL:         "https://example.com",
+			Description: "Test my freeform proposal",
+			Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+		},
 	}
 }
 
@@ -1417,6 +1558,21 @@ func (e *tstEngine) newOpenAssetProposal(partyID string, now time.Time) types.Pr
 			EnactmentTimestamp:  now.Add(2 * 48 * time.Hour).Unix(),
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change:              newValidAssetTerms(),
+		},
+	}
+}
+
+func (e *tstEngine) newOpenFreeformProposal(partyID string, now time.Time) types.Proposal {
+	id := e.newProposalID()
+	return types.Proposal{
+		ID:        id,
+		Reference: "ref-" + id,
+		Party:     partyID,
+		State:     types.ProposalStateOpen,
+		Terms: &types.ProposalTerms{
+			ClosingTimestamp:    now.Add(48 * time.Hour).Unix(),
+			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
+			Change:              newValidFreeformTerms(),
 		},
 	}
 }
