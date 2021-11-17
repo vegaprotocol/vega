@@ -391,6 +391,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	// let's assume genesis block is block 0
 	ctx := vgcontext.WithBlockHeight(context.Background(), 0)
 	ctx = vgcontext.WithTraceID(ctx, hash)
+	ctx = vgcontext.WithChainID(ctx, req.ChainId)
 	app.blockCtx = ctx
 
 	app.abci.RegisterSnapshot(app.snapshot)
