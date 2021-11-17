@@ -437,7 +437,7 @@ func (e *Engine) transferFees(ctx context.Context, marketID string, assetID stri
 	return responses, nil
 }
 
-//GetInfraFeeAccountIDs returns the account IDs of the infrastructure fee accounts for all enabled assets.
+// GetInfraFeeAccountIDs returns the account IDs of the infrastructure fee accounts for all enabled assets.
 func (e *Engine) GetInfraFeeAccountIDs() []string {
 	accountIDs := []string{}
 	for asset := range e.enabledAssets {

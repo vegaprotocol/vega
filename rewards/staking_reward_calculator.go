@@ -11,7 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-// Utilities for calcualting delegation based rewards
+// Utilities for calculating delegation based rewards
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints.
 func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {

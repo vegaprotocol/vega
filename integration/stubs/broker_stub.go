@@ -14,6 +14,7 @@ import (
 type AssetParty struct {
 	Asset, Party string
 }
+
 type BrokerStub struct {
 	mu   sync.Mutex
 	data map[events.Type][]events.Event
