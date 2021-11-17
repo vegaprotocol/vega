@@ -166,7 +166,7 @@ func (e *Engine) startERC20Signatures(
 	// if we are a validator, we want to build a signature
 	if e.top.IsValidator() {
 		_, signature, err = asset.SignWithdrawal(
-			w.Amount, w.ExpirationDate, w.Ext.GetErc20().GetReceiverAddress(), ref)
+			w.Amount, w.Ext.GetErc20().GetReceiverAddress(), ref)
 		if err != nil {
 			// there's not reason we cannot build the signature here
 			// apart if the node isn't configure properly
