@@ -65,6 +65,8 @@ type TestServer struct {
 	clientConn *grpc.ClientConn
 	broker     *broker.Broker
 	trStorage  *storage.TransferResponse
+	dl         *delegations.Service
+	rw         *subscribers.RewardCounters
 }
 
 // NewTestServer instantiates a new api.GRPCServer and returns a conn to it and the broker this server subscribes to.
@@ -160,6 +162,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 
 	nodeStore := storage.NewNode(logger, conf.Storage)
 	epochStore := storage.NewEpoch(logger, nodeStore, conf.Storage)
+	delegationBalanceSub := subscribers.NewDelegationBalanceSub(ctx, nodeStore, epochStore, delegationStore, logger, true)
 
 	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
 	tradeSub := subscribers.NewTradeSub(ctx, tradeStore, logger, true)
@@ -213,6 +216,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		deposit,
 		withdrawal,
 		checkpointSub,
+		delegationBalanceSub,
+		rewardsService,
 	)
 
 	srv := api.NewGRPCServer(
@@ -284,6 +289,8 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 		broker:     eventBroker,
 		clientConn: conn,
 		trStorage:  transferResponseStore,
+		dl:         delegationService,
+		rw:         rewardsService,
 	}
 }
 

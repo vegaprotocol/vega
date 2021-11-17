@@ -111,6 +111,22 @@ type Subscription {
     "Specifies the size that the client will receive events in. Using 0 results in a variable batch size being sent. The stream will be closed if the client fails to read a batch within 5 seconds"
     batchSize: Int!
   ): [BusEvent!]
+
+  "Subscribe to delegation data"
+  delegations(
+    "the party to subscribe for, empty if all"
+    party: ID
+    "the node to subscribe for, empty if all"
+    nodeID: ID 
+  ): Delegation!
+
+  "Subscribe to reward details data"
+  rewardDetails(
+    "the asset to subscribe for, empty if all"
+    assetId: ID
+    "the party to subscribe for, empty if all"
+    party: ID
+  ): Reward!
 }
 
 "Margins for a given a party"

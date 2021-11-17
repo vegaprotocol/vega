@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"sync"
 
 	"code.vegaprotocol.io/data-node/logging"
@@ -14,6 +15,8 @@ type Delegations struct {
 	mut                     sync.RWMutex
 	epochToPartyDelegations map[string]map[string]map[string]string // epoch -> party -> node -> amount
 	log                     *logging.Logger
+	subscribers             map[uint64]chan pb.Delegation
+	subscriberID            uint64
 }
 
 func NewDelegations(log *logging.Logger, c Config) *Delegations {
@@ -25,6 +28,7 @@ func NewDelegations(log *logging.Logger, c Config) *Delegations {
 		epochToPartyDelegations: map[string]map[string]map[string]string{},
 		log:                     log,
 		Config:                  c,
+		subscribers:             map[uint64]chan pb.Delegation{},
 	}
 }
 
@@ -40,6 +44,39 @@ func (s *Delegations) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
+}
+
+// Subscribe allows a client to register for updates of the delegations
+func (s *Delegations) Subscribe(updates chan pb.Delegation) uint64 {
+	s.mut.Lock()
+	defer s.mut.Unlock()
+
+	s.subscriberID++
+	s.subscribers[s.subscriberID] = updates
+
+	s.log.Debug("Delegations subscriber added in delegations store",
+		logging.Uint64("subscriber-id", s.subscriberID))
+
+	return s.subscriberID
+}
+
+// Unsubscribe allows the client to unregister interest in delegation
+func (s *Delegations) Unsubscribe(id uint64) error {
+	s.mut.Lock()
+	defer s.mut.Unlock()
+
+	if len(s.subscribers) == 0 {
+		s.log.Debug("Un-subscribe called in delegations store, no subscribers connected",
+			logging.Uint64("subscriber-id", id))
+		return nil
+	}
+
+	if _, exists := s.subscribers[id]; exists {
+		delete(s.subscribers, id)
+		return nil
+	}
+
+	return fmt.Errorf("subscriber to delegation updates does not exist with id: %d", id)
 }
 
 //AddDelegation is updated with new delegation update from the subscriber
@@ -60,6 +97,31 @@ func (s *Delegations) AddDelegation(de pb.Delegation) {
 		epoch[de.Party] = party
 	}
 	party[de.NodeId] = de.Amount
+
+	s.notifyWithLock(de)
+}
+
+//notifyWithLock notifies registered subscribers - assumes lock has already been acquired
+func (s *Delegations) notifyWithLock(de pb.Delegation) {
+	if len(s.subscribers) == 0 {
+		return
+	}
+	var ok bool
+	for id, sub := range s.subscribers {
+		select {
+		case sub <- de:
+			ok = true
+		default:
+			ok = false
+		}
+		if ok {
+			s.log.Debug("Delegations channel updated for subscriber successfully",
+				logging.Uint64("id", id))
+		} else {
+			s.log.Debug("Delegations channel could not be updated for subscriber",
+				logging.Uint64("id", id))
+		}
+	}
 }
 
 //GetAllDelegations returns all delegations across all epochs, all parties, all nodes

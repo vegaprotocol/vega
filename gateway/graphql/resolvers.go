@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
+	"code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -1713,6 +1714,88 @@ func (r *myPositionResolver) Margins(ctx context.Context, obj *types.Position) (
 // BEGIN: Subscription Resolver
 
 type mySubscriptionResolver VegaResolverRoot
+
+func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID *string) (<-chan *types.Delegation, error) {
+	var p, n string
+	if party != nil {
+		p = *party
+	}
+	if nodeID != nil {
+		n = *nodeID
+	}
+
+	req := &protoapi.ObserveDelegationsRequest{
+		Party:  p,
+		NodeId: n,
+	}
+	stream, err := r.tradingDataClient.ObserveDelegations(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	ch := make(chan *types.Delegation)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(ch)
+		}()
+		for {
+			dl, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("delegations: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("delegations levls: stream closed", logging.Error(err))
+				break
+			}
+			ch <- dl.Delegation
+		}
+	}()
+
+	return ch, nil
+}
+
+func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, party *string) (<-chan *vega.RewardDetails, error) {
+	var a, p string
+	if assetID != nil {
+		a = *assetID
+	}
+	if party != nil {
+		p = *party
+	}
+
+	req := &protoapi.ObserveRewardDetailsRequest{
+		AssetId: a,
+		Party:   p,
+	}
+	stream, err := r.tradingDataClient.ObserveRewardDetails(ctx, req)
+	if err != nil {
+		return nil, customErrorFromStatus(err)
+	}
+
+	ch := make(chan *vega.RewardDetails)
+	go func() {
+		defer func() {
+			stream.CloseSend()
+			close(ch)
+		}()
+		for {
+			rd, err := stream.Recv()
+			if err == io.EOF {
+				r.log.Error("reward details: stream closed by server", logging.Error(err))
+				break
+			}
+			if err != nil {
+				r.log.Error("reward details: stream closed", logging.Error(err))
+				break
+			}
+			ch <- rd.RewardDetails
+		}
+	}()
+
+	return ch, nil
+}
 
 func (r *mySubscriptionResolver) Margins(ctx context.Context, partyID string, marketID *string) (<-chan *types.MarginLevels, error) {
 	var mktid string

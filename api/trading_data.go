@@ -224,12 +224,14 @@ type DelegationService interface {
 	GetPartyNodeDelegationsOnEpoch(party string, node string, epochSeq string) ([]*pbtypes.Delegation, error)
 	GetNodeDelegations(nodeID string) ([]*pbtypes.Delegation, error)
 	GetNodeDelegationsOnEpoch(nodeID string, epochSeq string) ([]*pbtypes.Delegation, error)
+	ObserveDelegations(ctx context.Context, retries int, party, nodeID string) (delegationsCh <-chan pbtypes.Delegation, ref uint64)
 }
 
 // RewardsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/rewards_service_mock.go -package mocks code.vegaprotocol.io/data-node/api RewardsService
 type RewardsService interface {
 	GetRewardDetails(ctx context.Context, party string) (*protoapi.GetRewardDetailsResponse, error)
+	ObserveRewardDetails(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan pbtypes.RewardDetails, ref uint64)
 }
 
 // StakingService ...
@@ -357,6 +359,40 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 	return &protoapi.GetNodeByIDResponse{
 		Node: node,
 	}, nil
+}
+
+func (t *tradingDataService) ObserveDelegations(
+	req *protoapi.ObserveDelegationsRequest,
+	stream protoapi.TradingDataService_ObserveDelegationsServer,
+) error {
+	defer metrics.StartAPIRequestAndTimeGRPC("ObserveDelegation")()
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("starting streaming delegation updates")
+	}
+	ch, _ := t.delegationService.ObserveDelegations(ctx, t.Config.StreamRetries, req.Party, req.NodeId)
+	for {
+		select {
+		case dl, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+
+			resp := &protoapi.ObserveDelegationsResponse{
+				Delegation: &dl,
+			}
+			if err := stream.Send(resp); err != nil {
+				t.log.Error("failed to send delegations data into stream",
+					logging.Error(err))
+				return apiError(codes.Internal, ErrStreamInternal, err)
+			}
+
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		}
+	}
 }
 
 func (t *tradingDataService) Delegations(ctx context.Context, req *protoapi.DelegationsRequest) (*protoapi.DelegationsResponse, error) {
@@ -625,6 +661,39 @@ func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi
 		return nil, err
 	}
 	return details, nil
+}
+
+func (t *tradingDataService) ObserveRewardDetails(req *protoapi.ObserveRewardDetailsRequest,
+	stream protoapi.TradingDataService_ObserveRewardDetailsServer,
+) error {
+	defer metrics.StartAPIRequestAndTimeGRPC("ObserveRewardDetails")()
+	ctx, cfunc := context.WithCancel(stream.Context())
+	defer cfunc()
+	if t.log.GetLevel() == logging.DebugLevel {
+		t.log.Debug("starting streaming reward updates")
+	}
+	ch, _ := t.rewardsService.ObserveRewardDetails(ctx, t.Config.StreamRetries, req.AssetId, req.Party)
+	for {
+		select {
+		case rwd, ok := <-ch:
+			if !ok {
+				cfunc()
+				return nil
+			}
+
+			resp := &protoapi.ObserveRewardDetailsResponse{
+				RewardDetails: &rwd,
+			}
+			if err := stream.Send(resp); err != nil {
+				t.log.Error("failed to send reward details data into stream",
+					logging.Error(err))
+				return apiError(codes.Internal, ErrStreamInternal, err)
+			}
+
+		case <-ctx.Done():
+			return apiError(codes.Internal, ErrStreamInternal, ctx.Err())
+		}
+	}
 }
 
 func (t *tradingDataService) AssetByID(ctx context.Context, req *protoapi.AssetByIDRequest) (*protoapi.AssetByIDResponse, error) {
