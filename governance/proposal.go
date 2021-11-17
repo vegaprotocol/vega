@@ -28,6 +28,7 @@ type ToEnact struct {
 	n  *types.NetworkParameter
 	as *types.AssetDetails
 	u  *types.UpdateMarket
+	f  *ToEnactFreeform
 }
 
 // ToEnactMarket is just a empty struct, to signal
@@ -35,6 +36,9 @@ type ToEnact struct {
 // for now (later maybe add information to check
 // end of opening auction or so).
 type ToEnactMarket struct{}
+
+// ToEnactFreeform there is nothing to enact with a freeform proposal.
+type ToEnactFreeform struct{}
 
 func (t ToEnact) IsNewMarket() bool {
 	return t.m != nil
@@ -57,6 +61,10 @@ func (t ToEnact) IsNewAssetDetails() bool {
 	return t.IsNewAsset()
 }
 
+func (t ToEnact) IsFreeform() bool {
+	return t.f != nil
+}
+
 func (t *ToEnact) NewMarket() *ToEnactMarket {
 	return t.m
 }
@@ -75,6 +83,10 @@ func (t *ToEnact) UpdateNetworkParameter() *types.NetworkParameter {
 
 func (t *ToEnact) UpdateMarket() *types.UpdateMarket {
 	return t.u
+}
+
+func (t *ToEnact) NewFreeform() *ToEnactFreeform {
+	return t.f
 }
 
 func (t *ToEnact) Proposal() *types.Proposal {
