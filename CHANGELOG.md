@@ -14,7 +14,7 @@
 - [4330](https://github.com/vegaprotocol/vega/pull/4330) - Remove badger related code from the codebase
 - [4336](https://github.com/vegaprotocol/vega/pull/4336) - Add oracle snapshot
 - [4299](https://github.com/vegaprotocol/vega/pull/4299) - Add liquidity snapshot
-- [4196](https://github.com/vegaprotocol/vega/pull/4196) - Experiment at removing the snapshotting details from the engine
+- [4196](https://github.com/vegaprotocol/vega/pull/4196) - Experiment at removing the snapshot details from the engine
 - [4338](https://github.com/vegaprotocol/vega/pull/4338) - Adding more error messages
 - [4317](https://github.com/vegaprotocol/vega/pull/4317) - Extend integration tests with global check for net deposits
 - [3616](https://github.com/vegaprotocol/vega/pull/3616) - Add tests to show margins not being released
@@ -23,14 +23,14 @@
 - [4346](https://github.com/vegaprotocol/vega/pull/4346) - Implement liquidity supplied snapshot
 - [4351](https://github.com/vegaprotocol/vega/pull/4351) - Add target liquidity engine
 - [4362](https://github.com/vegaprotocol/vega/pull/4362) - Remove staking of cache at the beginning of the epoch for spam protection
-- [4364](https://github.com/vegaprotocol/vega/pull/4364) - Change spam error messages to debug and enabled reloading of config
+- [4364](https://github.com/vegaprotocol/vega/pull/4364) - Change spam error messages to debug and enabled reloading of configuration
 - [4353](https://github.com/vegaprotocol/vega/pull/4353) - remove usage of `vegatime.Now` over the codebase
-- [4382](https://github.com/vegaprotocol/vega/pull/4382) - Add prometheus metrics on snapshots
+- [4382](https://github.com/vegaprotocol/vega/pull/4382) - Add Prometheus metrics on snapshots
 - [4190](https://github.com/vegaprotocol/vega/pull/4190) - Add markets snapshot
 - [4389](https://github.com/vegaprotocol/vega/pull/4389) - Update issue templates #4389
-- [4392](https://github.com/vegaprotocol/vega/pull/4392) - Update GETTING_STARTED.md documentation
+- [4392](https://github.com/vegaprotocol/vega/pull/4392) - Update `GETTING_STARTED.md` documentation
 - [4391](https://github.com/vegaprotocol/vega/pull/4391) - Refactor delegation
-- [4400](https://github.com/vegaprotocol/vega/pull/4400) - Add transaction hash to SubmitTransactionResponse
+- [4400](https://github.com/vegaprotocol/vega/pull/4400) - Add transaction hash to `SubmitTransactionResponse`
 - [4394](https://github.com/vegaprotocol/vega/pull/4394) - Add step to clear all events in integration tests
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals #4403
 
@@ -39,7 +39,7 @@
 - [4334](https://github.com/vegaprotocol/vega/pull/4334) - Fix notary implementation
 - [4343](https://github.com/vegaprotocol/vega/pull/4343) - Fix non deterministic test by using same `idGenerator`
 - [4352](https://github.com/vegaprotocol/vega/pull/4352) - Remove usage of `time.Now()` in the auction state
-- [4380](https://github.com/vegaprotocol/vega/pull/4380) - Implement Uint for netparams and use it for monies values
+- [4380](https://github.com/vegaprotocol/vega/pull/4380) - Implement Uint for network parameters and use it for monies values
 - [4369](https://github.com/vegaprotocol/vega/pull/4369) - Fix orders still being accepted after market in trading terminated state
 - [4395](https://github.com/vegaprotocol/vega/pull/4395) - Fix drone pipeline
 - [4398](https://github.com/vegaprotocol/vega/pull/4398) - Fix to set proper status on withdrawal errors
@@ -52,7 +52,7 @@
 
 ## 0.45.4
 *2021-11-05*
-- [4372](https://github.com/vegaprotocol/vega/pull/4372) - Fix, if all association is nominated, allow un-nomination and nomination in the same epoch
+- [4372](https://github.com/vegaprotocol/vega/pull/4372) - Fix, if all association is nominated, allow unnomination and nomination in the same epoch
 
 
 ## 0.45.3
@@ -64,7 +64,7 @@
 *2021-10-27*
 
 ### 🛠 Improvements
-- [4308](https://github.com/vegaprotocol/vega/pull/4308) - Add vscode config
+- [4308](https://github.com/vegaprotocol/vega/pull/4308) - Add Visual Studio Code configuration
 - [4319](https://github.com/vegaprotocol/vega/pull/4319) - Add snapshot node topology
 - [4321](https://github.com/vegaprotocol/vega/pull/4321) - Release version `v0.45.2` #4321
 
