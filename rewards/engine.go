@@ -161,7 +161,7 @@ func (e *Engine) registerStakingAndDelegationRewardScheme() {
 	e.rewardSchemes[rs.SchemeID] = rs
 }
 
-// UpdateMaxPayoutPerEpochStakeForStakingRewardScheme controls the max payout per epoch
+// UpdateMaxPayoutPerEpochStakeForStakingRewardScheme controls the max payout per epoch.
 func (e *Engine) UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(ctx context.Context, maxPerEpoch num.Decimal) error {
 	e.global.maxPerEpoch, _ = num.UintFromDecimal(maxPerEpoch)
 	return nil
