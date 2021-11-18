@@ -6,7 +6,7 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
-// Hello event emitted by a broker when a client first connects
+// Hello event emitted by a broker when a client first connects.
 type Hello struct {
 	*Base
 	chainId string
