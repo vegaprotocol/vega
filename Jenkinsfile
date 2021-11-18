@@ -398,8 +398,7 @@ pipeline {
                     }
                     options { retry(3) }
                     steps {
-                        devnetDeploy ignoreFailure: false,
-                            vegaCore: commitHash
+                        devnetDeploy vegaCore: commitHash
                     }
                 }
             }
