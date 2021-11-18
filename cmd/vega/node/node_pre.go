@@ -292,7 +292,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
-	l.genesisHandler.OnGenesisChainIDLoaded(l.sendHello)
+	l.genesisHandler.OnGenesisChainIDLoaded(l.sendStreamStart)
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
 		log.Error("unable to initialise broker", logging.Error(err))
@@ -390,8 +390,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	return l.setupNetParameters()
 }
 
-func (l *NodeCommand) sendHello(ctx context.Context, chainID string) {
-	event := events.NewHello(ctx, chainID)
+func (l *NodeCommand) sendStreamStart(ctx context.Context, chainID string) {
+	event := events.NewStreamStart(ctx, chainID)
 	l.broker.Send(event)
 }
 
