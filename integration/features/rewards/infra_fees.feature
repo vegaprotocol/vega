@@ -133,17 +133,13 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
       | 1002       | TRADING_MODE_CONTINUOUS |
 
     Then the following trades should be executed:
-      # | buyer   | price | size | seller  | maker   | taker   |
-      # | trader3 | 1002  | 3    | trader4 | trader3 | trader4 |
-      # TODO to be implemented by Core Team
       | buyer   | price | size | seller  |
       | trader3 | 1002  | 3    | trader4 |
       
     # trade_value_for_fee_purposes = size_of_trade * price_of_trade = 3 *1002 = 3006
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.02 * 3006 = 60.12 = 61 (rounded up to nearest whole value)
+    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.5 * 3006 = 1503
     # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.05 * 3006 = 150.30 = 151 (rounded up to nearest whole value)
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0 * 3006 = 0
-
     And the following transfers should happen:
       | from    | to      | from account            | to account                       | market id | amount | asset |
       | trader4 | market  | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 |  151   | ETH   |
@@ -153,8 +149,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     
     # total_fee = infrastructure_fee + maker_fee + liquidity_fee = 1503 + 151 + 0 = 1654
     # Trader3 margin + general account balance = 10000 + 151 ( Maker fees) = 10151
-    # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 61 (Infra fee) = 9788
-
+    # Trader4 margin + general account balance = 10000 - 151 ( Maker fees) - 1503 (Infra fee) = 8346
     Then the parties should have the following account balances:
       | party   | asset | market id | margin | general |
       | trader3 | ETH   | ETH/DEC21 | 1089   | 9062    | 
@@ -162,7 +157,6 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
       
     And the accumulated infrastructure fees should be "1503" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
-
     Then the network moves ahead "7" blocks 
 
     #verify validator score 
@@ -183,7 +177,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
     #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
     #node4 - node13 gets: 0.07657 * 50000
-    #infrstructure fees rewards -> 1503 * 0.8 = 1202
+    #infrastructure fees rewards -> 1503 * 0.8 = 1202
     #party1 gets 0.07734 * 1202 * 0.883 * 100/10100 + 0.07810 * 1202 * 0.883 * 200/10200 + 0.07887 * 1202 * 0.883 * 300/10300
     #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 1202
     #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 1202

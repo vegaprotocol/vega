@@ -66,7 +66,7 @@ Feature: Staking & Delegation with delay
     Then the network moves ahead "7" blocks
 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped 
-    Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
+    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
     
     And the global reward account gets the following deposits:
       | asset | amount |
