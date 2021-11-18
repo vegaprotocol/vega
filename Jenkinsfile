@@ -224,6 +224,9 @@ pipeline {
                     }
                 }
                 stage('markdown spellcheck') {
+                    environment {
+                        FORCE_COLOR = '1'
+                    }
                     options { retry(3) }
                     steps {
                         dir('vega') {
