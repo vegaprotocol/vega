@@ -224,6 +224,9 @@ pipeline {
                     }
                 }
                 stage('markdown spellcheck') {
+                    environment {
+                        FORCE_COLOR = '1'
+                    }
                     options { retry(3) }
                     steps {
                         dir('vega') {
@@ -392,14 +395,13 @@ pipeline {
                     }
                 }
 
-                stage('[TODO] deploy to Devnet') {
+                stage('Deploy to Devnet') {
                     when {
                         branch 'develop'
                     }
                     options { retry(3) }
                     steps {
-                        echo 'Deploying to Devnet....'
-                        echo 'Run basic tests on Devnet network ...'
+                        devnetDeploy vegaCore: commitHash
                     }
                 }
             }
