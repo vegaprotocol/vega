@@ -392,14 +392,14 @@ pipeline {
                     }
                 }
 
-                stage('[TODO] deploy to Devnet') {
+                stage('Deploy to Devnet') {
                     when {
                         branch 'develop'
                     }
                     options { retry(3) }
                     steps {
-                        echo 'Deploying to Devnet....'
-                        echo 'Run basic tests on Devnet network ...'
+                        devnetDeploy ignoreFailure: false,
+                            vegaCore: commitHash
                     }
                 }
             }
