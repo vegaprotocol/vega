@@ -11,61 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func (e *Engine) calculatStakingAndDelegationRewards(ctx context.Context, broker Broker, epochSeq, asset, accountID string, rewardScheme *types.RewardScheme, rewardBalance *num.Uint, validatorData []*types.ValidatorData) *payout {
-	delegatorShareStr := rewardScheme.Parameters["delegatorShare"].GetString()
-	delegatorShare, err := num.DecimalFromString(delegatorShareStr)
-	if err != nil {
-		e.log.Panic("failed to read reward scheme param", logging.String("delegatorShare", rewardScheme.Parameters["delegatorShare"].Value))
-	}
-
-	compLevelStr := rewardScheme.Parameters["compLevel"].GetString()
-	compLevel, err := num.DecimalFromString(compLevelStr)
-	if err != nil {
-		e.log.Panic("failed to read reward scheme param", logging.String("compLevel", rewardScheme.Parameters["compLevel"].Value))
-	}
-
-	// max payout is not mandatory, if it's not defined, pass nil so that max payout is not enforced for the asset
-	maxPayoutPerParticipant, ok := rewardScheme.MaxPayoutPerAssetPerParty[asset]
-	if !ok {
-		maxPayoutPerParticipant = num.Zero()
-	}
-
-	minValStr := rewardScheme.Parameters["minVal"].GetString()
-	minVal, err := num.DecimalFromString(minValStr)
-	if err != nil {
-		e.log.Panic("failed to read reward scheme param", logging.String("minVal", rewardScheme.Parameters["minVal"].Value))
-	}
-
-	optimalStakeMultiplier, err := rewardScheme.Parameters["optimalStakeMultiplier"].GetDecimal()
-	if err != nil {
-		e.log.Panic("failed to read reward scheme param", logging.String("optimalStakeMultiplier", rewardScheme.Parameters["optimalStakeMultiplier"].Value))
-	}
-
-	// calculate the validator score for each validator and the total score for all
-	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, broker, epochSeq, validatorData, minVal, compLevel, *optimalStakeMultiplier, e.rng)
-	for node, score := range validatorNormalisedScores {
-		e.log.Info("Rewards: calculated normalised score", logging.String("validator", node), logging.String("normalisedScore", score.String()))
-	}
-
-	minStakePerValidator, err := rewardScheme.Parameters["minValStake"].GetUint()
-	if err != nil {
-		e.log.Panic("failed to read reward scheme param", logging.String("minValStake", rewardScheme.Parameters["minValStake"].Value))
-	}
-
-	maxPayoutPerEpoch, err := rewardScheme.Parameters["maxPayoutPerEpoch"].GetUint()
-	if err != nil {
-		e.log.Panic("failed to read reward scheme param", logging.String("maxPayoutPerEpoch", rewardScheme.Parameters["maxPayoutPerEpoch"].Value))
-	}
-
-	rewardBalance = num.Min(maxPayoutPerEpoch, rewardBalance)
-	e.log.Info("Rewards: reward pot for for epoch with max payout per epoch", logging.String("epoch", epochSeq), logging.String("rewardBalance", rewardBalance.String()))
-
-	// no point in doing anything after this point if the reward balance is 0
-	if rewardBalance.IsZero() {
-		return nil
-	}
-	return calculateRewards(epochSeq, asset, accountID, rewardBalance, validatorNormalisedScores, validatorData, delegatorShare, maxPayoutPerParticipant, minStakePerValidator, e.rng, e.log)
-}
+// Utilities for calculating delegation based rewards
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints.
 func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
