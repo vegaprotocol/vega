@@ -52,11 +52,9 @@ func testMultipleEpochsWithPendingPayouts(t *testing.T) {
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(3))
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
-
+	engine.UpdatePayoutDelayForStakingRewardScheme(context.Background(), 120*time.Second)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	// setup delay
-	rs.PayoutDelay = 120 * time.Second
 	rs.PayoutFraction = num.DecimalFromFloat(0.5)
 
 	// setup reward account balance
@@ -72,7 +70,7 @@ func testMultipleEpochsWithPendingPayouts(t *testing.T) {
 
 	// at this point there should be a payout pending
 	require.Equal(t, 1, len(engine.pendingPayouts))
-	require.Equal(t, num.NewUint(499999), engine.pendingPayouts[now.Add(rs.PayoutDelay)][0].totalReward)
+	require.Equal(t, num.NewUint(499999), engine.pendingPayouts[now.Add(120*time.Second)][0].totalReward)
 	require.Equal(t, num.NewUint(499999), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
 
 	// now add reward for epoch 2
@@ -84,7 +82,7 @@ func testMultipleEpochsWithPendingPayouts(t *testing.T) {
 
 	// at this point there should be a payout pending
 	require.Equal(t, 2, len(engine.pendingPayouts))
-	require.Equal(t, num.NewUint(249999), engine.pendingPayouts[now2.Add(rs.PayoutDelay)][0].totalReward)
+	require.Equal(t, num.NewUint(249999), engine.pendingPayouts[now2.Add(120*time.Second)][0].totalReward)
 	require.Equal(t, num.NewUint(749998), engine.calcTotalPendingPayout(rs.RewardPoolAccountIDs[0]))
 
 	// run to the end of delay to have payouts distributed
@@ -107,10 +105,9 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(3))
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
+	engine.UpdatePayoutDelayForStakingRewardScheme(context.Background(), 120*time.Second)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	// setup delay
-	rs.PayoutDelay = 120 * time.Second
 	rs.PayoutFraction = num.DecimalFromFloat(0.1)
 
 	// setup reward account balance
@@ -423,11 +420,8 @@ func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
-
+	engine.UpdatePayoutDelayForStakingRewardScheme(context.Background(), 120*time.Second)
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
-
-	// setup delay
-	rs.PayoutDelay = 120 * time.Second
 
 	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
@@ -451,7 +445,7 @@ func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	engine.OnEpochEvent(context.Background(), epoch2)
 
 	// let time advance by 2 minutes
-	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(rs.PayoutDelay))
+	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(120*time.Second))
 
 	// the second reward is pending
 	require.Equal(t, 1, len(engine.pendingPayouts))
@@ -469,7 +463,7 @@ func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	require.Equal(t, num.NewUint(400000), node2Acc.Balance)
 	require.Equal(t, num.NewUint(331428), node3Acc.Balance)
 
-	engine.onChainTimeUpdate(context.Background(), epoch2.EndTime.Add(rs.PayoutDelay))
+	engine.onChainTimeUpdate(context.Background(), epoch2.EndTime.Add(120*time.Second))
 
 	// nothing is left pending
 	require.Equal(t, 0, len(engine.pendingPayouts))
@@ -502,6 +496,7 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
+	engine.UpdatePayoutDelayForStakingRewardScheme(context.Background(), 0*time.Second)
 
 	// setup party accounts
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
@@ -511,9 +506,6 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node3", "ETH")
 
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
-
-	// setup delay
-	rs.PayoutDelay = 0 * time.Second
 
 	// setup reward account balance
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
@@ -525,7 +517,7 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.OnEpochEvent(context.Background(), epoch)
-	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(rs.PayoutDelay))
+	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(120*time.Second))
 
 	// total distributed is 999999
 	require.Equal(t, 0, len(engine.pendingPayouts))

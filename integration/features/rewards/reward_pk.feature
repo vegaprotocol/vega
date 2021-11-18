@@ -1,4 +1,4 @@
-Feature: Staking & Delegation 
+Feature: Staking & Delegation with delay
 
   Background:
     Given the following network parameters are set:
@@ -6,7 +6,7 @@ Feature: Staking & Delegation
       | reward.asset                                      |  VEGA                    |
       | validators.epoch.length                           |  10s                     |
       | validators.delegation.minAmount                   |  10                      |
-      | reward.staking.delegation.payoutDelay             |  0s                      |
+      | reward.staking.delegation.payoutDelay             |  30s                     |
       | reward.staking.delegation.delegatorShare          |  0.883                   |
       | reward.staking.delegation.minimumValidatorStake   |  100                     |
       | reward.staking.delegation.payoutFraction          |  0.5                     |
@@ -65,24 +65,6 @@ Feature: Staking & Delegation
     #complete the first epoch for the self delegation to take effect
     Then the network moves ahead "7" blocks
 
-   Scenario: Parties get rewarded for a full epoch of having delegated stake
-    Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
-
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-
-    #advance to the end of the epoch / start next epoch
-    Then the network moves ahead "7" blocks
-
-    #verify validator score 
-    Then the validators should have the following val scores for epoch 1:
-    | node id | validator score  | normalised score |
-    |  node1  |      0.07734     |     0.07734      |    
-    |  node2  |      0.07810     |     0.07810      |
-    |  node3  |      0.07887     |     0.07887      | 
-    |  node4  |      0.07657     |     0.07657      | 
- 
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
     
@@ -118,7 +100,27 @@ Feature: Staking & Delegation
     | pk6    | VEGA  |  3828  | 
     | pk7    | VEGA  |  3828  | 
     | pk8    | VEGA  |  3828  | 
+    | pk9    | VEGA  |  3828  | 
     | pk10   | VEGA  |  3828  | 
     | pk11   | VEGA  |  3828  | 
     | pk12   | VEGA  |  3828  | 
     | pk13   | VEGA  |  3828  | 
+
+    Then the network moves ahead "21" blocks
+
+    Then "party1" should have general account balance of "201" for asset "VEGA"
+    And "pk1" should have general account balance of "3832" for asset "VEGA"
+    And "pk2" should have general account balance of "3837" for asset "VEGA"
+    And "pk3" should have general account balance of "3841" for asset "VEGA"
+    And "pk4" should have general account balance of "3828" for asset "VEGA"
+    And "pk5" should have general account balance of "3828" for asset "VEGA"
+    And "pk6" should have general account balance of "3828" for asset "VEGA"
+    And "pk7" should have general account balance of "3828" for asset "VEGA"
+    And "pk8" should have general account balance of "3828" for asset "VEGA"
+    And "pk9" should have general account balance of "3828" for asset "VEGA"
+    And "pk10" should have general account balance of "3828" for asset "VEGA"
+    And "pk11" should have general account balance of "3828" for asset "VEGA"
+    And "pk12" should have general account balance of "3828" for asset "VEGA"
+    And "pk13" should have general account balance of "3828" for asset "VEGA"
+
+     

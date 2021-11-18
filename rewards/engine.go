@@ -351,7 +351,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		payouts = append(payouts, po)
 
 		// emit events
-		timeToSend := epoch.EndTime.Add(rewardScheme.PayoutDelay)
+		timeToSend := epoch.EndTime.Add(e.global.payoutDelay)
 		payoutEvents := map[string]*events.RewardPayout{}
 		parties := []string{}
 		for party, amount := range po.partyToAmount {
@@ -367,7 +367,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		}
 		e.broker.SendBatch(payoutEventSlice)
 
-		if rewardScheme.PayoutDelay == time.Duration(0) {
+		if e.global.payoutDelay == time.Duration(0) {
 			e.distributePayout(ctx, po)
 			continue
 		}
