@@ -2,6 +2,7 @@ package notary
 
 import (
 	"context"
+	"encoding/hex"
 	"sort"
 	"strings"
 
@@ -149,7 +150,7 @@ func (n *SnapshotNotary) serialiseNotary() ([]byte, error) {
 					ID:   ik.id,
 					Kind: int32(ik.kind),
 					Node: n.node,
-					Sig:  n.sig,
+					Sig:  hex.EncodeToString([]byte(n.sig)),
 				},
 			)
 		}
@@ -186,7 +187,12 @@ func (n *SnapshotNotary) restoreNotary(notary *types.Notary) error {
 	)
 	for _, s := range notary.Sigs {
 		idK := idKind{id: s.ID, kind: v1.NodeSignatureKind(s.Kind)}
-		ns := nodeSig{node: s.Node, sig: s.Sig}
+
+		sig, err := hex.DecodeString(s.Sig)
+		if err != nil {
+			n.log.Panic("invalid signature from snapshot", logging.Error(err))
+		}
+		ns := nodeSig{node: s.Node, sig: string(sig)}
 
 		if isValidator {
 			signed := selfSigned[idK]

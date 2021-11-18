@@ -104,6 +104,9 @@ const (
 	NetworkCheckpointMarketFreezeDate              = "network.checkpoint.marketFreezeDate"
 	NetworkCheckpointNetworkEOLDate                = "network.checkpoint.networkEndOfLifeDate"
 	NetworkCheckpointTimeElapsedBetweenCheckpoints = "network.checkpoint.timeElapsedBetweenCheckpoints"
+
+	// snapshot parameters.
+	SnapshotIntervalLength = "snapshot.interval.length"
 )
 
 var AllKeys = map[string]struct{}{
@@ -180,4 +183,5 @@ var AllKeys = map[string]struct{}{
 	StakingAndDelegationRewardCompetitionLevel:            {},
 	StakingAndDelegationRewardsMinValidators:              {},
 	StakingAndDelegationRewardOptimalStakeMultiplier:      {},
+	SnapshotIntervalLength:                                {},
 }

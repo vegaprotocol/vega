@@ -227,6 +227,10 @@ type PayloadLiquidityTarget struct {
 	Target *snapshot.LiquidityTarget
 }
 
+type PayloadFutureState struct {
+	FutureState *FutureState
+}
+
 type MatchingBook struct {
 	MarketID        string
 	Buy             []*Order
@@ -488,6 +492,12 @@ type Notary struct {
 	Sigs []*NotarySigs
 }
 
+type FutureState struct {
+	MarketID          string
+	SettlementPrice   *num.Uint
+	TradingTerminated bool
+}
+
 type PayloadLiquiditySupplied struct {
 	LiquiditySupplied *snapshot.LiquiditySupplied
 }
@@ -703,6 +713,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquiditySuppliedFromProto(dt)
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = PayloadLiquidityTargetFromProto(dt)
+	case *snapshot.Payload_FutureState:
+		ret.Data = PayloadFutureStateFromProto(dt)
 	}
 
 	return ret
@@ -813,6 +825,12 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityProvisions:
 		ret.Data = dt
 	case *snapshot.Payload_LiquiditySupplied:
+		ret.Data = dt
+	case *snapshot.Payload_FutureState:
+		ret.Data = dt
+	case *snapshot.Payload_NetworkParameters:
+		ret.Data = dt
+	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = dt
 	}
 	return &ret
@@ -3355,6 +3373,49 @@ func (p *PayloadLiquiditySupplied) Key() string {
 
 func (*PayloadLiquiditySupplied) Namespace() SnapshotNamespace {
 	return LiquiditySnapshot
+}
+
+func PayloadFutureStateFromProto(pf *snapshot.Payload_FutureState) *PayloadFutureState {
+	return &PayloadFutureState{
+		FutureState: FutureStateFromProto(pf.FutureState),
+	}
+}
+
+func (p *PayloadFutureState) IntoProto() *snapshot.Payload_FutureState {
+	return &snapshot.Payload_FutureState{
+		FutureState: p.FutureState.IntoProto(),
+	}
+}
+
+func (p *PayloadFutureState) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (p *PayloadFutureState) Key() string {
+	return p.FutureState.MarketID
+}
+
+func (*PayloadFutureState) isPayload() {}
+
+func (*PayloadFutureState) Namespace() SnapshotNamespace {
+	return FutureStateSnapshot
+}
+
+func FutureStateFromProto(fs *snapshot.FutureState) *FutureState {
+	sp, _ := num.UintFromString(fs.SettlementPrice, 10)
+	return &FutureState{
+		MarketID:          fs.MarketId,
+		SettlementPrice:   sp,
+		TradingTerminated: fs.TradingTerminated,
+	}
+}
+
+func (f *FutureState) IntoProto() *snapshot.FutureState {
+	return &snapshot.FutureState{
+		MarketId:          f.MarketID,
+		SettlementPrice:   f.SettlementPrice.String(),
+		TradingTerminated: f.TradingTerminated,
+	}
 }
 
 // KeyFromPayload is useful in snapshot engine, used by the Payload type, too.

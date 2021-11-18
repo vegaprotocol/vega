@@ -123,5 +123,7 @@ func defaultNetParams() map[string]value {
 		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(true).MustUpdate("never"),
 		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(true).MustUpdate("never"),
 		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m"),
+		// take a snapshot every N blocks, default to every block for now (debug)
+		SnapshotIntervalLength: NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
 	}
 }

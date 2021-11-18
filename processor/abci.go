@@ -59,6 +59,7 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
+	Info() ([]byte, int64)
 	List() ([]*types.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
 	RejectSnapshot() error
@@ -67,6 +68,7 @@ type Snapshot interface {
 	ApplySnapshot(ctx context.Context) error
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
 	AddProviders(provs ...types.StateProvider)
+	Snapshot(ctx context.Context) ([]byte, error)
 }
 
 type App struct {
@@ -78,6 +80,7 @@ type App struct {
 	cBlock            string
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
+	version           string
 
 	vegaPaths paths.Paths
 	cfg       Config
@@ -141,6 +144,7 @@ func NewApp(
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
 	snapshot Snapshot,
+	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -180,6 +184,7 @@ func NewApp(
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
 		snapshot:        snapshot,
+		version:         version,
 	}
 
 	// register replay protection if needed:
@@ -191,6 +196,7 @@ func NewApp(
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
+	app.abci.OnInfo = app.Info
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
@@ -288,6 +294,16 @@ func (app *App) Abci() *abci.App {
 func (app *App) cancel() {
 	if fn := app.cancelFn; fn != nil {
 		fn()
+	}
+}
+
+func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
+	hash, height := app.snapshot.Info()
+	return tmtypes.ResponseInfo{
+		AppVersion:       0, // application protocol version TBD.
+		Version:          app.version,
+		LastBlockHeight:  height,
+		LastBlockAppHash: hash,
 	}
 }
 
@@ -465,10 +481,18 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
-	resp.Data = app.exec.Hash()
-	resp.Data = append(resp.Data, app.delegation.Hash()...)
-	resp.Data = append(resp.Data, app.gov.Hash()...)
-	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
+	if err != nil {
+		app.log.Panic("Failed to create snapshot",
+			logging.Error(err))
+	}
+	resp.Data = snapHash
+	if len(snapHash) == 0 {
+		resp.Data = app.exec.Hash()
+		resp.Data = append(resp.Data, app.delegation.Hash()...)
+		resp.Data = append(resp.Data, app.gov.Hash()...)
+		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+	}
 
 	// Checkpoint can be nil if it wasn't time to create a checkpoint
 	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
