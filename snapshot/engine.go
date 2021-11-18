@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/shared/paths"
@@ -469,8 +468,6 @@ func (e *Engine) Info() ([]byte, int64) {
 }
 
 func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
-	fmt.Printf("WILL TAKE SNAPSHOT: %v\n", e.current)
-	defer func() { fmt.Printf("SNAPSHOT GOOD: %v - %v\n", errlol, e.version) }()
 	e.current--
 	// no snapshot to be taken yet
 	if e.current > 0 {
