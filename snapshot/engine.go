@@ -481,6 +481,10 @@ func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
 	for _, ns := range e.namespaces {
 		u, err := e.update(ns)
 		if err != nil {
+			e.log.Error("Failed to update snapshot namespace",
+				logging.String("snapshot-namespace", ns.String()),
+				logging.Error(err),
+			)
 			return nil, err
 		}
 		if u {
