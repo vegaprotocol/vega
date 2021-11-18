@@ -59,7 +59,7 @@ type Event interface {
 }
 
 const (
-	// All event type -> used by subscrubers to just receive all events, has no actual corresponding event payload.
+	// All event type -> used by subscribers to just receive all events, has no actual corresponding event payload.
 	All Type = iota
 	// other event types that DO have corresponding event types.
 	TimeUpdate
@@ -98,6 +98,7 @@ const (
 	RewardPayoutEvent
 	CheckpointEvent
 	ValidatorScoreEvent
+	HelloEvent
 )
 
 var (
@@ -147,6 +148,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:       StakeLinkingEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:    ValidatorUpdateEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:          CheckpointEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_HELLO:               HelloEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -186,6 +188,7 @@ var (
 		RewardPayoutEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT,
 		CheckpointEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT,
 		ValidatorScoreEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE,
+		HelloEvent:              eventspb.BusEventType_BUS_EVENT_TYPE_HELLO,
 	}
 
 	eventStrings = map[Type]string{
@@ -226,6 +229,7 @@ var (
 		RewardPayoutEvent:       "RewardPayoutEvent",
 		CheckpointEvent:         "CheckpointEvent",
 		ValidatorScoreEvent:     "ValidatorScoreEvent",
+		HelloEvent:              "HelloEvent",
 	}
 )
 

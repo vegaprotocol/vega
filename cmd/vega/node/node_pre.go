@@ -17,6 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
@@ -390,8 +391,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 }
 
 func (l *NodeCommand) sendHello(ctx context.Context, chainID string) {
-	// TODO: really send
-	l.Log.Infof("sending hello event %s", chainID)
+	event := events.NewHello(ctx, chainID)
+	l.broker.Send(event)
 }
 
 func (l *NodeCommand) setupNetParameters() error {
