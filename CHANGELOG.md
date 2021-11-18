@@ -34,6 +34,7 @@
 - [4394](https://github.com/vegaprotocol/vega/pull/4394) - Add step to clear all events in integration tests
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals #4403
 - [4396](https://github.com/vegaprotocol/vega/pull/4396) - Add free form governance proposals
+- [4413](https://github.com/vegaprotocol/vega/pull/4413) - Deploy to Devnet with Jenkins and remove drone
 
 ### 🐛 Fixes
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
