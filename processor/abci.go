@@ -203,7 +203,8 @@ func NewApp(
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData)
+		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
+		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.SubmitOrderCommand,
@@ -232,7 +233,9 @@ func NewApp(
 		HandleDeliverTx(txn.UndelegateCommand,
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
-			app.SendEventOnError(app.DeliverReloadCheckpoint))
+			app.SendEventOnError(app.DeliverReloadCheckpoint)).
+		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
+			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -256,6 +259,17 @@ func (app *App) RequireValidatorPubKeyW(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
+	}
+}
+
+func (app *App) RequireValidatorMasterPubKeyW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.RequireValidatorMasterPubKey(ctx, tx); err != nil {
 			return err
 		}
 		return f(ctx, tx)
@@ -438,6 +452,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	)
 
 	app.epoch.OnBlockEnd(ctx)
+	app.top.EndOfBlock(req.Height)
 
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
@@ -628,7 +643,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	if !app.limits.BootstrapFinished() {
 		// only validators can send transaction at this point.
 		party := tx.Party()
-		if !app.top.IsValidatorVegaPubKey(party) {
+		if !(app.top.IsValidatorVegaPubKey(party) || app.top.IsValidatorNode(party)) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
 		cmd := tx.Command()
@@ -713,6 +728,13 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
+		return ErrNodeSignatureFromNonValidator
+	}
+	return nil
+}
+
+func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
+	if !app.top.IsValidatorNode(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
 	}
 	return nil
@@ -1204,4 +1226,26 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err er
 	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
 	// emit an error event perhaps, log, etc...?
 	return err
+}
+
+func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
+	kr := &commandspb.KeyRotateSubmission{}
+	if err := tx.Unmarshal(kr); err != nil {
+		return err
+	}
+
+	currentBlockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+
+	return app.top.AddKeyRotate(
+		ctx,
+		currentBlockHeight,
+		int64(kr.TargetBlock),
+		tx.PubKeyHex(),
+		kr.NewPubKeyHash,
+		kr.KeyNumber,
+	)
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -262,4 +263,130 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 	broker.EXPECT().Send(updateEvent).Times(1)
 
 	assert.NoError(t, top.AddNodeRegistration(ctx, &nr))
+}
+
+func TestValidatorTopologyKeyRotate(t *testing.T) {
+	t.Run("add key rotate - success", testAddKeyRotateSuccess)
+	t.Run("add key rotate - fails when node does not exists", testAddKeyRotateSuccessFailsOnNonExistingNode)
+	t.Run("add key rotate - fails when target block height is less then current block height", testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight)
+	t.Run("end of block - success", testEndOfBlockSuccess)
+}
+
+func testAddKeyRotateSuccess(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+	top.UpdateValidatorSet([]string{tmPubKey})
+
+	id := "vega-master-pubkey"
+	vegaPubKey := "vega-key"
+	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
+
+	nr := commandspb.NodeRegistration{
+		Id:              id,
+		ChainPubKey:     tmPubKey,
+		VegaPubKey:      vegaPubKey,
+		EthereumAddress: "eth-address",
+	}
+	ctx := context.TODO()
+	err := top.AddNodeRegistration(ctx, &nr)
+	assert.NoError(t, err)
+
+	err = top.AddKeyRotate(ctx, 10, 15, id, newVegaPubKey, 1)
+	assert.NoError(t, err)
+}
+
+func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+	top.UpdateValidatorSet([]string{tmPubKey})
+
+	id := "vega-master-pubkey"
+	newVegaPubKey := "new-ega-key"
+
+	ctx := context.TODO()
+	err := top.AddKeyRotate(ctx, 10, 15, id, newVegaPubKey, 1)
+	assert.Error(t, err)
+	assert.EqualError(t, err, "failed to add key rotate for non existing node \"vega-master-pubkey\"")
+}
+
+func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+	top.UpdateValidatorSet([]string{tmPubKey})
+
+	id := "vega-master-pubkey"
+	vegaPubKey := "vega-key"
+	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
+
+	nr := commandspb.NodeRegistration{
+		Id:              id,
+		ChainPubKey:     tmPubKey,
+		VegaPubKey:      vegaPubKey,
+		EthereumAddress: "eth-address",
+	}
+	ctx := context.TODO()
+	err := top.AddNodeRegistration(ctx, &nr)
+	assert.NoError(t, err)
+
+	err = top.AddKeyRotate(ctx, 15, 10, id, newVegaPubKey, 1)
+	assert.EqualError(t, err, "target block height must be greater then current block")
+}
+
+func testEndOfBlockSuccess(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+
+	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2", "tm-pubkey-3", "tm-pubkey-4"}
+	top.UpdateValidatorSet(chainValidators)
+
+	ctx := context.TODO()
+	for i := 0; i < len(chainValidators); i++ {
+		j := i + 1
+		id := fmt.Sprintf("vega-master-pubkey-%d", j)
+		nr := commandspb.NodeRegistration{
+			Id:              id,
+			ChainPubKey:     chainValidators[i],
+			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
+		}
+
+		err := top.AddNodeRegistration(ctx, &nr)
+		assert.NoErrorf(t, err, "failed to add node registation %s", id)
+	}
+
+	// add key rotations
+	err := top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-1", "new-vega-key-1", 1)
+	assert.NoError(t, err)
+	err = top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-2", "new-vega-key-2", 1)
+	assert.NoError(t, err)
+	err = top.AddKeyRotate(ctx, 10, 13, "vega-master-pubkey-3", "new-vega-key-3", 1)
+	assert.NoError(t, err)
+	err = top.AddKeyRotate(ctx, 10, 13, "vega-master-pubkey-4", "new-vega-key-4", 1)
+	assert.NoError(t, err)
+
+	// when
+	top.EndOfBlock(11)
+	// then
+	data1 := top.Get("vega-master-pubkey-1")
+	assert.NotNil(t, data1)
+	assert.Equal(t, "new-vega-key-1", data1.VegaPubKey)
+	data2 := top.Get("vega-master-pubkey-2")
+	assert.NotNil(t, data2)
+	assert.Equal(t, "new-vega-key-2", data2.VegaPubKey)
+	data3 := top.Get("vega-master-pubkey-3")
+	assert.NotNil(t, data3)
+	assert.Equal(t, "vega-key-3", data3.VegaPubKey)
+	data4 := top.Get("vega-master-pubkey-4")
+	assert.NotNil(t, data4)
+	assert.Equal(t, "vega-key-4", data4.VegaPubKey)
+
+	// when
+	top.EndOfBlock(13)
+	// then
+	data3 = top.Get("vega-master-pubkey-3")
+	assert.NotNil(t, data3)
+	assert.Equal(t, "new-vega-key-3", data3.VegaPubKey)
+	data4 = top.Get("vega-master-pubkey-4")
+	assert.NotNil(t, data4)
+	assert.Equal(t, "new-vega-key-4", data4.VegaPubKey)
 }

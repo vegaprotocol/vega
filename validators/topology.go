@@ -13,13 +13,15 @@ import (
 )
 
 var (
-	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registered with the blockchain node")
-	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
+	ErrVegaNodeAlreadyRegisterForChain                = errors.New("a vega node is already registered with the blockchain node")
+	ErrInvalidChainPubKey                             = errors.New("invalid blockchain public key")
+	ErrTargetBlockHeightMustBeGraterThanCurrentHeight = errors.New("target block height must be greater then current block")
 )
 
 // Broker needs no mocks.
 type Broker interface {
 	Send(event events.Event)
+	SendBatch(events []events.Event)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
@@ -50,6 +52,14 @@ func (v ValidatorData) IsValid() bool {
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey.
 type ValidatorMapping map[string]ValidatorData
 
+// keyRotationMapping maps a block height => node id => new public key
+type keyRotationMapping map[int64]map[string]string
+
+type keyRotation struct {
+	nodeID       string
+	newPublicKey string
+}
+
 type Topology struct {
 	log    *logging.Logger
 	cfg    Config
@@ -63,6 +73,9 @@ type Topology struct {
 
 	isValidator bool
 
+	// block height to node to new public key
+	pendingPubKeyRotations keyRotationMapping
+
 	mu sync.RWMutex
 
 	tss *topologySnapshotState
@@ -73,13 +86,14 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) 
 	log.SetLevel(cfg.Level.Get())
 
 	t := &Topology{
-		log:             log,
-		cfg:             cfg,
-		wallet:          wallet,
-		broker:          broker,
-		validators:      ValidatorMapping{},
-		chainValidators: []string{},
-		tss:             &topologySnapshotState{changed: true},
+		log:                    log,
+		cfg:                    cfg,
+		wallet:                 wallet,
+		broker:                 broker,
+		validators:             ValidatorMapping{},
+		chainValidators:        []string{},
+		tss:                    &topologySnapshotState{changed: true},
+		pendingPubKeyRotations: keyRotationMapping{},
 	}
 
 	return t
@@ -107,7 +121,7 @@ func (t *Topology) Len() int {
 	return len(t.validators)
 }
 
-// Get returns validator data based on validator public key.
+// Get returns validator data based on validator master public key
 func (t *Topology) Get(key string) *ValidatorData {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -146,7 +160,6 @@ func (t *Topology) SelfVegaPubKey() string {
 }
 
 func (t *Topology) SelfNodeID() string {
-	// return t.wallet.ID().Hex()
 	return t.wallet.ID().Hex()
 }
 
@@ -165,7 +178,7 @@ func (t *Topology) IsValidatorNode(nodeID string) bool {
 	return ok
 }
 
-// IsValidatorVegaPubKey takes a nodeID and returns true if the node is a validator node.
+// IsValidatorVegaPubKey returns true if the given key is a Vega validator public key.
 func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	defer func() {
 		if t.log.GetLevel() <= logging.DebugLevel {
@@ -190,6 +203,29 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	}
 
 	return false
+}
+
+func (t *Topology) AddKeyRotate(ctx context.Context, currentBlockHeight, targetBlockHeight int64, nodeID, newPubKey string, keyNumber uint32) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	if !t.IsValidatorNode(nodeID) {
+		return fmt.Errorf("failed to add key rotate for non existing node %q", nodeID)
+	}
+
+	if currentBlockHeight > targetBlockHeight {
+		return ErrTargetBlockHeightMustBeGraterThanCurrentHeight
+	}
+
+	_, ok := t.pendingPubKeyRotations[targetBlockHeight]
+	if !ok {
+		t.pendingPubKeyRotations[targetBlockHeight] = map[string]string{}
+	}
+	t.pendingPubKeyRotations[targetBlockHeight][nodeID] = newPubKey
+
+	t.tss.changed = true
+
+	return nil
 }
 
 func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error {
@@ -253,6 +289,31 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 		nr.Name,
 		nr.AvatarUrl,
 	))
+}
+
+func (t *Topology) EndOfBlock(blockHeight int64) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	rotations, ok := t.pendingPubKeyRotations[blockHeight]
+	if !ok {
+		return
+	}
+
+	for nodeID, newPubKey := range rotations {
+		data, ok := t.validators[nodeID]
+		if !ok {
+			// this should never happened, but just to be safe
+			t.log.Error("failed to rotate key due to non existing validator", logging.String("nodeID", nodeID))
+			continue
+		}
+		data.VegaPubKey = newPubKey
+		t.validators[nodeID] = data
+	}
+
+	delete(t.pendingPubKeyRotations, blockHeight)
+
+	t.tss.changed = true
 }
 
 func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte) (err error) {
