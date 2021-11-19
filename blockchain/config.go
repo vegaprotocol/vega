@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	"code.vegaprotocol.io/vega/blockchain/noop"
+	nullchain "code.vegaprotocol.io/vega/blockchain/nullchain"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -16,7 +16,7 @@ type Config struct {
 	ChainProvider       string            `long:"chain-provider"`
 
 	Tendermint TendermintConfig `group:"Tendermint" namespace:"tendermint"`
-	Noop       noop.Config
+	Noop       nullchain.Config `group:"NullChain" namespace:"nullchain"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -28,7 +28,7 @@ func NewDefaultConfig() Config {
 		LogTimeDebug:        true,
 		ChainProvider:       "tendermint",
 		Tendermint:          NewDefaultTendermintConfig(),
-		Noop:                noop.NewDefaultConfig(),
+		Noop:                nullchain.NewDefaultConfig(),
 	}
 }
 

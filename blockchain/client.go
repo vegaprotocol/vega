@@ -14,7 +14,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-type chainClientImpl interface {
+type ChainClientImpl interface {
 	GetGenesisTime(context.Context) (time.Time, error)
 	GetChainID(context.Context) (string, error)
 	GetStatus(context.Context) (*tmctypes.ResultStatus, error)
@@ -32,11 +32,11 @@ type chainClientImpl interface {
 // Client abstract all communication to the blockchain.
 type Client struct {
 	*Config
-	clt chainClientImpl
+	clt ChainClientImpl
 }
 
 // NewClient instantiate a new blockchain client.
-func NewClient(clt chainClientImpl) *Client {
+func NewClient(clt ChainClientImpl) *Client {
 	return &Client{
 		clt: clt,
 	}
