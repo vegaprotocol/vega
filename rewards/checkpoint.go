@@ -92,7 +92,12 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 
 	e.pendingPayouts = make(map[time.Time][]*payout, len(cp.Rewards))
 	for _, payoutsAtTime := range cp.Rewards {
-		e.pendingPayouts[time.Unix(0, payoutsAtTime.PayoutTime)] = e.payoutsFromProto(payoutsAtTime.RewardsPayout)
+		payouts := e.payoutsFromProto(payoutsAtTime.RewardsPayout)
+		t := time.Unix(0, payoutsAtTime.PayoutTime)
+		e.pendingPayouts[t] = payouts
+		for _, po := range payouts {
+			e.emitEventsForPayout(ctx, t, po)
+		}
 	}
 
 	return nil

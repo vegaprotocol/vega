@@ -349,23 +349,8 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		}
 
 		payouts = append(payouts, po)
-
-		// emit events
 		timeToSend := epoch.EndTime.Add(e.global.payoutDelay)
-		payoutEvents := map[string]*events.RewardPayout{}
-		parties := []string{}
-		for party, amount := range po.partyToAmount {
-			proportion := amount.ToDecimal().Div(po.totalReward.ToDecimal())
-			pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
-			payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct)
-			parties = append(parties, party)
-		}
-		sort.Strings(parties)
-		payoutEventSlice := make([]events.Event, 0, len(parties))
-		for _, p := range parties {
-			payoutEventSlice = append(payoutEventSlice, *payoutEvents[p])
-		}
-		e.broker.SendBatch(payoutEventSlice)
+		e.emitEventsForPayout(ctx, timeToSend, po)
 
 		if e.global.payoutDelay == time.Duration(0) {
 			e.distributePayout(ctx, po)
@@ -382,6 +367,24 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		e.rss.changed = true
 	}
 	return payouts
+}
+
+func (e *Engine) emitEventsForPayout(ctx context.Context, t time.Time, po *payout) {
+	timeToSend := t.Add(e.global.payoutDelay)
+	payoutEvents := map[string]*events.RewardPayout{}
+	parties := []string{}
+	for party, amount := range po.partyToAmount {
+		proportion := amount.ToDecimal().Div(po.totalReward.ToDecimal())
+		pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
+		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct)
+		parties = append(parties, party)
+	}
+	sort.Strings(parties)
+	payoutEventSlice := make([]events.Event, 0, len(parties))
+	for _, p := range parties {
+		payoutEventSlice = append(payoutEventSlice, *payoutEvents[p])
+	}
+	e.broker.SendBatch(payoutEventSlice)
 }
 
 // update the account ids for asset infrastructure fees.
