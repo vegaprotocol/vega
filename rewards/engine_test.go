@@ -114,7 +114,6 @@ func testCheckpoint(t *testing.T) {
 	cp3, err := engine.Checkpoint()
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(cp3, cp2))
-
 }
 
 func testMultipleEpochsWithPendingPayouts(t *testing.T) {
