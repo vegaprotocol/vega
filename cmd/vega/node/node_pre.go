@@ -218,6 +218,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		l.spam,
 		l.stakingAccounts,
 		l.snapshot,
+		l.Version,
 	)
 
 	var abciApp tmtypes.Application
@@ -369,7 +370,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
-	// @TODO register StateProviders with snapshot engine:
+
+	// setup rewards engine
+	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
+
 	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
 		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd, l.executionEngine)
 
@@ -377,9 +381,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
 		return err
 	}
-
-	// setup rewards engine
-	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
@@ -557,6 +558,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMinTokensForDelegation,
 			Watcher: l.spam.OnMinTokensForDelegationChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SnapshotIntervalLength,
+			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
 		},
 	)
 }
