@@ -46,6 +46,7 @@ func NewClient(
 	log.SetLevel(cfg.Level.Get())
 	log.Info("starting nullblockchain")
 
+	now := time.Now()
 	n := &NullBlockchain{
 		log:                  log,
 		blockHeight:          1,
@@ -53,6 +54,8 @@ func NewClient(
 		chainID:              vgrand.RandomStr(12),
 		transactionsPerBlock: cfg.TransactionsPerBlock,
 		blockDuration:        cfg.BlockDuration.Duration,
+		genesisTime:          now,
+		now:                  now,
 	}
 
 	err := n.InitChain(cfg.GenesisFile)
@@ -78,12 +81,19 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 	// Parse the appstate of the genesis file so that we can send the netparams to core
 	// a tendermint genesis-file will do
 	genesis := struct {
-		Appstate json.RawMessage `json:"app_state"`
+		GenesisTime *time.Time      `json:"genesis_time"`
+		Appstate    json.RawMessage `json:"app_state"`
 	}{}
 
 	err = json.Unmarshal(b, &genesis)
 	if err != nil {
 		return err
+	}
+
+	// Set genesis time and now from config
+	if genesis.GenesisTime != nil {
+		n.genesisTime = *genesis.GenesisTime
+		n.now = *genesis.GenesisTime
 	}
 
 	n.service.InitChain(

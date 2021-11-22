@@ -284,7 +284,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		abciApp := app.Abci()
 		abciClt, err = nullchain.NewClient(l.Log, l.conf.Blockchain.Noop, abciApp)
 
-		// Set a server but don't start it
+		// Set a server but don't start it, this may be replaced by a time-forwarding backdoor later
 		srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
 		l.abciServer = srv
 	default:
