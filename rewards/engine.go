@@ -369,8 +369,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 	return payouts
 }
 
-func (e *Engine) emitEventsForPayout(ctx context.Context, t time.Time, po *payout) {
-	timeToSend := t.Add(e.global.payoutDelay)
+func (e *Engine) emitEventsForPayout(ctx context.Context, timeToSend time.Time, po *payout) {
 	payoutEvents := map[string]*events.RewardPayout{}
 	parties := []string{}
 	for party, amount := range po.partyToAmount {
