@@ -37,6 +37,83 @@ func Test(t *testing.T) {
 	t.Run("Process pending payouts on time update - time for payout hasn't come yet so no payouts sent", testOnChainTimeUpdateNoPayoutsToSend)
 	t.Run("Reward snapshot round trip with delayed payout", testRewardSnapshotRoundTrip)
 	t.Run("Calculate rewards with delays such that pending payouts pile and are accounted for reward amount available for next round next rounds before being distributed", testMultipleEpochsWithPendingPayouts)
+	t.Run("test checkpoint", testCheckpoint)
+}
+
+func testCheckpoint(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	payoutTime11 := &payout{
+		fromAccount:   "account1",
+		asset:         "asset1",
+		timestamp:     1,
+		totalReward:   num.NewUint(10000),
+		epochSeq:      "10",
+		partyToAmount: map[string]*num.Uint{"p1": num.NewUint(123), "p2": num.NewUint(456)},
+	}
+
+	payoutTime12 := &payout{
+		fromAccount:   "account2",
+		asset:         "asset2",
+		timestamp:     1,
+		totalReward:   num.NewUint(20000),
+		epochSeq:      "10",
+		partyToAmount: map[string]*num.Uint{"p1": num.NewUint(234), "p3": num.NewUint(567)},
+	}
+
+	payoutTime21 := &payout{
+		fromAccount:   "account1",
+		asset:         "asset1",
+		timestamp:     2,
+		totalReward:   num.NewUint(30000),
+		epochSeq:      "11",
+		partyToAmount: map[string]*num.Uint{"p4": num.NewUint(432), "p5": num.NewUint(657)},
+	}
+	payoutTime22 := &payout{
+		fromAccount:   "account2",
+		asset:         "asset2",
+		timestamp:     2,
+		totalReward:   num.NewUint(40000),
+		epochSeq:      "11",
+		partyToAmount: map[string]*num.Uint{"p4": num.NewUint(423), "p6": num.NewUint(675)},
+	}
+	payoutTime3 := &payout{
+		fromAccount:   "account1",
+		asset:         "asset1",
+		timestamp:     3,
+		totalReward:   num.NewUint(50000),
+		epochSeq:      "12",
+		partyToAmount: map[string]*num.Uint{"p1": num.NewUint(666), "p2": num.NewUint(777), "p3": num.NewUint(888)},
+	}
+
+	engine.pendingPayouts[time.Now().Add(-5*time.Minute)] = []*payout{payoutTime11, payoutTime12}
+	engine.pendingPayouts[time.Now().Add(-3*time.Minute)] = []*payout{payoutTime21, payoutTime22}
+	engine.pendingPayouts[time.Now()] = []*payout{payoutTime3}
+
+	cp, err := engine.Checkpoint()
+	require.Nil(t, err)
+
+	engine.pendingPayouts = map[time.Time][]*payout{}
+	err = engine.Load(context.Background(), cp)
+	require.Nil(t, err)
+
+	cp2, err := engine.Checkpoint()
+	require.Nil(t, err)
+	require.True(t, bytes.Equal(cp, cp2))
+
+	payoutTime4 := &payout{
+		fromAccount:   "account4",
+		asset:         "asset4",
+		timestamp:     4,
+		totalReward:   num.NewUint(60000),
+		epochSeq:      "13",
+		partyToAmount: map[string]*num.Uint{"p1": num.NewUint(777), "p2": num.NewUint(888), "p3": num.NewUint(999)},
+	}
+
+	engine.pendingPayouts[time.Now().Add(1*time.Minute)] = []*payout{payoutTime4}
+	cp3, err := engine.Checkpoint()
+	require.Nil(t, err)
+	require.False(t, bytes.Equal(cp3, cp2))
 }
 
 func testMultipleEpochsWithPendingPayouts(t *testing.T) {
