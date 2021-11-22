@@ -20,12 +20,13 @@ var (
 	ErrIncompatibleHashes               = errors.New("incompatible hashes")
 
 	cpOrder = []types.CheckpointName{
-		types.AssetsCheckpoint,     // assets are required for collateral to work, and the vote asset needs to be restored
-		types.CollateralCheckpoint, // without balances, governance (proposals, bonds) are difficult
-		types.NetParamsCheckpoint,  // net params should go right after assets and collateral, so vote tokens are restored
-		types.GovernanceCheckpoint, // depends on all of the above
-		types.EpochCheckpoint,      // restore epoch information...
-		types.DelegationCheckpoint, // so delegation sequence ID's make sense
+		types.AssetsCheckpoint,         // assets are required for collateral to work, and the vote asset needs to be restored
+		types.CollateralCheckpoint,     // without balances, governance (proposals, bonds) are difficult
+		types.NetParamsCheckpoint,      // net params should go right after assets and collateral, so vote tokens are restored
+		types.GovernanceCheckpoint,     // depends on all of the above
+		types.EpochCheckpoint,          // restore epoch information...
+		types.DelegationCheckpoint,     // so delegation sequence ID's make sense
+		types.PendingRewardsCheckpoint, // pending rewards can basically be reloaded any time
 	}
 )
 
