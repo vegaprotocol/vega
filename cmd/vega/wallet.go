@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vegawallet/cmd"
+
 	"github.com/jessevdk/go-flags"
 )
 
@@ -12,7 +13,13 @@ type walletCmd struct{}
 
 func (opts *walletCmd) Execute(_ []string) error {
 	os.Args = os.Args[1:]
-	cmd.Execute()
+
+	writer := &cmd.Writer{
+		Out: os.Stdout,
+		Err: os.Stderr,
+	}
+	cmd.Execute(writer)
+
 	return nil
 }
 
