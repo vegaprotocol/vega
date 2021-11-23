@@ -13,11 +13,15 @@ import (
 var marketsKey = (&types.PayloadExecutionMarkets{}).Key()
 
 func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, error) {
-	if len(e.marketsCpy) == 0 {
+	mkts := len(e.marketsCpy)
+	if mkts == 0 {
 		return nil, nil, nil
 	}
-	mks := make([]*types.ExecMarket, 0, len(e.marketsCpy))
-	e.marketsStateProviders = make([]types.StateProvider, 0, (len(e.marketsCpy)-len(e.previouslySnapshottedMarkets))*4)
+	mks := make([]*types.ExecMarket, 0, mkts)
+	if prev := len(e.previouslySnapshottedMarkets); prev < mkts {
+		mkts -= prev
+	}
+	e.marketsStateProviders = make([]types.StateProvider, 0, mkts*4)
 	for _, m := range e.marketsCpy {
 		mks = append(mks, m.getState())
 

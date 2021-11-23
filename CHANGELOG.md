@@ -48,6 +48,8 @@
 - [4395](https://github.com/vegaprotocol/vega/pull/4395) - Fix drone pipeline
 - [4398](https://github.com/vegaprotocol/vega/pull/4398) - Fix to set proper status on withdrawal errors
 - [4421](https://github.com/vegaprotocol/vega/issues/4421) - Fix to missing pending rewards in LNL checkpoint
+- [4419](https://github.com/vegaprotocol/vega/pull/4419) - Fix snapshot cleanup, improve logging when specified block height could not be reloaded.
+
 
 ## 0.45.5
 *2021-11-16*
