@@ -14,7 +14,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
       | reward.staking.delegation.minValidators           |  5     |
-
+      | reward.staking.delegation.optimalStakeMultiplier  |  5.0   |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -240,3 +240,102 @@ Feature: Staking & Delegation
     | party2 |  node2   | 400    |   
     | party2 |  node3   | 500    |   
     | party2 |  node4   | 600    |  
+
+ Scenario: A party withdraws during the epoch and has pending delegations for next epoch
+    Description: A party with a balance in the staking account can delegate to a validator
+
+    #we are in epoch one delegating for epoch 2
+    When the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party3 |  node1   |  100   | 
+    | party3 |  node2   |  100   |       
+    | party3 |  node3   |  100   |   
+    | party3 |  node4   |  100   | 
+    | party3 |  node5   |  100   | 
+
+    # the expected balance for epoch 2
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party3 |  node1   | 100    | 
+    | party3 |  node2   | 100    |       
+    | party3 |  node3   | 100    |  
+    | party3 |  node4   | 100    |  
+    | party3 |  node5   | 100    |  
+
+    #advance to epoch 2
+    When the network moves ahead "63" blocks
+
+    #parties change the delegation for epoch 3 to undelegate 100 from each node and delegate the 400 to the last node 
+    #to set a delegation of 500 to a single validator
+    Then the parties submit the following undelegations:
+    | party  | node id  | amount |      when     |
+    | party3 |  node1   |  100   |  end of epoch |
+    | party3 |  node2   |  100   |  end of epoch |              
+    | party3 |  node3   |  100   |  end of epoch |         
+    | party3 |  node4   |  100   |  end of epoch |         
+
+    Then the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party3 |  node5   |  400   | 
+
+    #so the expected balance for epoch 3 is 500 in node 5 ano nothing in the other nodes
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party3 |  node1   | 0      | 
+    | party3 |  node2   | 0      |       
+    | party3 |  node3   | 0      |  
+    | party3 |  node4   | 0      |  
+    | party3 |  node5   | 500    |  
+
+    #then during epoch 2 the party withdraws their stake 
+    Given the parties withdraw from staking account the following amount:  
+    | party  | asset  | amount  |
+    | party3 | VEGA   |  500  |
+
+    #within 30 seconds the *active delegations* are removed so the balances for epoch 2 are reset to 0
+    When the network moves ahead "20" blocks
+    Then the parties should have the following delegation balances for epoch 2:
+    | party  | node id  | amount |
+    | party3 |  node1   | 0      | 
+    | party3 |  node2   | 0      |       
+    | party3 |  node3   | 0      |  
+    | party3 |  node4   | 0      |  
+    | party3 |  node5   | 0      |  
+
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party3 |  node1   | 0      | 
+    | party3 |  node2   | 0      |       
+    | party3 |  node3   | 0      |  
+    | party3 |  node4   | 0      |  
+    | party3 |  node5   | 0      |  
+
+    # the party deposits 500 again
+    When the network moves ahead "5" blocks
+    And the parties deposit on staking account the following amount:  
+    | party  | asset  | amount |
+    | party3 | VEGA   | 500    |
+
+    # and delegates again 500 to node5 for epoch 3
+    Then the parties submit the following delegations:
+    | party  | node id  | amount |
+    | party3 |  node5   |  500   |    
+
+    # which gives a total of 900 
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party3 |  node1   | 0      | 
+    | party3 |  node2   | 0      |       
+    | party3 |  node3   | 0      |  
+    | party3 |  node4   | 0      |  
+    | party3 |  node5   | 500    |  
+  
+    # when the epoch ends we enforce the stronger rules and allow only 500 to go through .
+    When the network moves ahead "50" blocks
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party3 |  node1   | 0      | 
+    | party3 |  node2   | 0      |       
+    | party3 |  node3   | 0      |  
+    | party3 |  node4   | 0      |  
+    | party3 |  node5   | 500    |  

@@ -4,17 +4,16 @@ go 1.16
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.45.2-0.20211026143814-fd1dc62fd4e8
+	code.vegaprotocol.io/protos v0.46.0
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vegawallet v0.9.2
+	code.vegaprotocol.io/vegawallet v0.10.0
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/iavl v0.15.3
 	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3
-	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.9

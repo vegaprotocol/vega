@@ -187,92 +187,11 @@ pipeline {
 
         stage('Linters') {
             parallel {
-                stage('static check') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'staticcheck -checks "all,-SA1019,-ST1000,-ST1021" ./...'
-                        }
-                    }
-                }
-                stage('go vet') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'go vet ./...'
-                        }
-                    }
-                }
-                stage('check print') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'make print_check'
-                        }
-                    }
-                }
-                stage('misspell') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            sh 'golangci-lint run --allow-parallel-runners --disable-all --enable misspell'
-                        }
-                    }
-                }
-                stage('70+ linters') {
+                stage('linters') {
                     steps {
                         dir('vega') {
                             sh '''#!/bin/bash -e
-                                golangci-lint run -v \
-                                    --max-issues-per-linter 0 \
-                                    --max-same-issues 0 \
-                                    --allow-parallel-runners \
-                                    --config .golangci.toml \
-                                    --timeout '5m0s' \
-                                    --enable-all \
-                                    --color always \
-                                    --disable promlinter \
-                                    --disable wrapcheck \
-                                    --disable tagliatelle \
-                                    --disable paralleltest \
-                                    --disable nlreturn \
-                                    --disable gomnd \
-                                    --disable goerr113 \
-                                    --disable tparallel \
-                                    --disable testpackage \
-                                    --disable gochecknoglobals \
-                                    --disable forcetypeassert \
-                                    --disable exhaustivestruct \
-                                    --disable exhaustive \
-                                    --disable errorlint \
-                                    --disable cyclop \
-                                    --disable wsl \
-                                    --disable unparam \
-                                    --disable scopelint \
-                                    --disable revive \
-                                    --disable nestif \
-                                    --disable maligned \
-                                    --disable lll \
-                                    --disable interfacer \
-                                    --disable gosec \
-                                    --disable gomoddirectives \
-                                    --disable golint \
-                                    --disable goimports \
-                                    --disable godox \
-                                    --disable gocritic \
-                                    --disable goconst \
-                                    --disable gocognit \
-                                    --disable gochecknoinits \
-                                    --disable stylecheck \
-                                    --disable staticcheck \
-                                    --disable gci \
-                                    --disable forbidigo \
-                                    --disable errcheck \
-                                    --disable errname \
-                                    --disable dupl \
-                                    --disable dogsled \
-                                    --disable funlen \
-                                    --disable gocyclo \
+                                golangci-lint run -v --config .golangci.toml
                             '''
                         }
                     }
@@ -305,6 +224,9 @@ pipeline {
                     }
                 }
                 stage('markdown spellcheck') {
+                    environment {
+                        FORCE_COLOR = '1'
+                    }
                     options { retry(3) }
                     steps {
                         dir('vega') {
@@ -473,14 +395,13 @@ pipeline {
                     }
                 }
 
-                stage('[TODO] deploy to Devnet') {
+                stage('Deploy to Devnet') {
                     when {
                         branch 'develop'
                     }
                     options { retry(3) }
                     steps {
-                        echo 'Deploying to Devnet....'
-                        echo 'Run basic tests on Devnet network ...'
+                        devnetDeploy vegaCore: commitHash
                     }
                 }
             }

@@ -66,9 +66,8 @@ func TestEngine(t *testing.T) {
 }
 
 func testEngineReset(t *testing.T) {
-	testEngine := getEngine(t)
+	testEngine := getEngine(t, map[string]*num.Uint{"party1": sufficientPropTokens})
 	engine := testEngine.engine
-	testEngine.accounts.balances = map[string]*num.Uint{"party1": sufficientPropTokens}
 	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
@@ -151,10 +150,8 @@ func testEngineReset(t *testing.T) {
 }
 
 func testPreBlockAccept(t *testing.T) {
-	testEngine := getEngine(t)
+	testEngine := getEngine(t, map[string]*num.Uint{"party1": sufficientPropTokens})
 	engine := testEngine.engine
-	testEngine.accounts.balances = map[string]*num.Uint{"party1": sufficientPropTokens}
-
 	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
 	tx1 := &testTx{party: "party1", proposal: "proposal1", command: txn.ProposeCommand}
@@ -175,9 +172,8 @@ func testPreBlockAccept(t *testing.T) {
 }
 
 func testPostBlockAccept(t *testing.T) {
-	testEngine := getEngine(t)
+	testEngine := getEngine(t, map[string]*num.Uint{"party1": sufficientPropTokens})
 	engine := testEngine.engine
-	testEngine.accounts.balances = map[string]*num.Uint{"party1": sufficientPropTokens}
 
 	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
@@ -201,9 +197,8 @@ func testPostBlockAccept(t *testing.T) {
 }
 
 func testEndOfBlock(t *testing.T) {
-	testEngine := getEngine(t)
+	testEngine := getEngine(t, map[string]*num.Uint{"party1": sufficientPropTokens})
 	engine := testEngine.engine
-	testEngine.accounts.balances = map[string]*num.Uint{"party1": sufficientPropTokens}
 
 	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 0})
 
@@ -236,16 +231,20 @@ type testAccounts struct {
 	balances map[string]*num.Uint
 }
 
-func (t testAccounts) GetAllAvailableBalances() map[string]*num.Uint {
-	return t.balances
+func (t testAccounts) GetAvailableBalance(party string) (*num.Uint, error) {
+	balance, ok := t.balances[party]
+	if !ok {
+		return nil, errors.New("no balance for party")
+	}
+	return balance, nil
 }
 
-func getEngine(t *testing.T) *testEngine {
+func getEngine(t *testing.T, balances map[string]*num.Uint) *testEngine {
 	t.Helper()
 	conf := spam.NewDefaultConfig()
 	logger := logging.NewTestLogger()
 	epochEngine := &TestEpochEngine{callbacks: []func(context.Context, types.Epoch){}}
-	accounts := &testAccounts{balances: map[string]*num.Uint{}}
+	accounts := &testAccounts{balances: balances}
 
 	engine := spam.New(logger, conf, epochEngine, accounts)
 

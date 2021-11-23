@@ -23,12 +23,15 @@ type EquityShares struct {
 	lps map[string]*lp
 
 	openingAuctionEnded bool
+
+	stateChanged bool
 }
 
 func NewEquityShares(mvp num.Decimal) *EquityShares {
 	return &EquityShares{
-		mvp: mvp,
-		lps: map[string]*lp{},
+		mvp:          mvp,
+		lps:          map[string]*lp{},
+		stateChanged: true,
 	}
 }
 
@@ -40,6 +43,7 @@ func (es *EquityShares) OpeningAuctionEnded() {
 		panic("market already left opening auction")
 	}
 	es.openingAuctionEnded = true
+	es.stateChanged = true
 	es.setOpeningAuctionAVG()
 }
 
@@ -54,11 +58,15 @@ func (es *EquityShares) setOpeningAuctionAVG() {
 
 func (es *EquityShares) WithMVP(mvp num.Decimal) *EquityShares {
 	es.mvp = mvp
+	es.stateChanged = true
 	return es
 }
 
 // SetPartyStake sets LP values for a given party.
 func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
+	defer func() {
+		es.stateChanged = true
+	}()
 	if !es.openingAuctionEnded {
 		defer es.setOpeningAuctionAVG()
 	}
@@ -102,6 +110,7 @@ func (es *EquityShares) SetPartyStake(id string, newStakeU *num.Uint) {
 // AvgEntryValuation returns the Average Entry Valuation for a given party.
 func (es *EquityShares) AvgEntryValuation(id string) num.Decimal {
 	if v, ok := es.lps[id]; ok {
+		es.stateChanged = true
 		return v.avg
 	}
 	return num.DecimalZero()
@@ -155,6 +164,10 @@ func (es *EquityShares) Shares(undeployed map[string]struct{}) map[string]num.De
 		eqshare := eq.Div(totalEquity)
 		shares[id] = eqshare
 		es.lps[id].share = eqshare
+	}
+
+	if len(shares) > 0 {
+		es.stateChanged = true
 	}
 
 	return shares

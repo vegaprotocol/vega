@@ -39,6 +39,14 @@ func (f FeeFactors) IntoProto() *proto.FeeFactors {
 	}
 }
 
+func (f FeeFactors) DeepClone() *FeeFactors {
+	return &FeeFactors{
+		MakerFee:          f.MakerFee,
+		InfrastructureFee: f.InfrastructureFee,
+		LiquidityFee:      f.LiquidityFee,
+	}
+}
+
 type Fees struct {
 	Factors *FeeFactors
 }
@@ -55,6 +63,12 @@ func FeesFromProto(f *proto.Fees) *Fees {
 func (f Fees) IntoProto() *proto.Fees {
 	return &proto.Fees{
 		Factors: f.Factors.IntoProto(),
+	}
+}
+
+func (f Fees) DeepClone() *Fees {
+	return &Fees{
+		Factors: f.Factors.DeepClone(),
 	}
 }
 

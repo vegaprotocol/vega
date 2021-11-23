@@ -166,7 +166,7 @@ func (e *Engine) startERC20Signatures(
 	// if we are a validator, we want to build a signature
 	if e.top.IsValidator() {
 		_, signature, err = asset.SignWithdrawal(
-			w.Amount, w.ExpirationDate, w.Ext.GetErc20().GetReceiverAddress(), ref)
+			w.Amount, w.Ext.GetErc20().GetReceiverAddress(), ref)
 		if err != nil {
 			// there's not reason we cannot build the signature here
 			// apart if the node isn't configure properly
@@ -183,4 +183,47 @@ func (e *Engine) startERC20Signatures(
 	e.notary.StartAggregate(w.ID, types.NodeSignatureKindAssetWithdrawal, signature)
 
 	return nil
+}
+
+func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
+	if !e.top.IsValidator() {
+		return nil
+	}
+
+	wref, ok := e.withdrawals[resource]
+	if !ok {
+		// there's not reason we cannot find the withdrawal here
+		// apart if the node isn't configured properly
+		e.log.Panic("unable to find withdrawal",
+			logging.WithdrawalID(resource))
+	}
+	w := wref.w
+
+	asset, err := e.assets.Get(w.Asset)
+	if err != nil {
+		// there's not reason we cannot build the signature here
+		// apart if the node isn't configure properly
+		e.log.Panic("unable to get asset when offering signature",
+			logging.WithdrawalID(w.ID),
+			logging.PartyID(w.PartyID),
+			logging.AssetID(w.Asset),
+			logging.BigUint("amount", w.Amount),
+			logging.Error(err))
+	}
+
+	erc20asset, _ := asset.ERC20()
+	_, signature, err := erc20asset.SignWithdrawal(
+		w.Amount, w.Ext.GetErc20().GetReceiverAddress(), wref.ref)
+	if err != nil {
+		// there's not reason we cannot build the signature here
+		// apart if the node isn't configure properly
+		e.log.Panic("unable to sign withdrawal",
+			logging.WithdrawalID(w.ID),
+			logging.PartyID(w.PartyID),
+			logging.AssetID(w.Asset),
+			logging.BigUint("amount", w.Amount),
+			logging.Error(err))
+	}
+
+	return signature
 }

@@ -23,6 +23,8 @@ var (
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
+	marketID string
+
 	tWindow time.Duration
 	sFactor *num.Uint
 	oiCalc  OpenInterestCalculator
@@ -45,13 +47,14 @@ type OpenInterestCalculator interface {
 }
 
 // NewEngine returns a new instance of target stake calculation Engine.
-func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator) *Engine {
+func NewEngine(parameters types.TargetStakeParameters, oiCalc OpenInterestCalculator, marketID string) *Engine {
 	factor, _ := num.UintFromDecimal(parameters.ScalingFactor.Mul(expDec))
 
 	return &Engine{
-		tWindow: time.Duration(parameters.TimeWindow) * time.Second,
-		sFactor: factor,
-		oiCalc:  oiCalc,
+		marketID: marketID,
+		tWindow:  time.Duration(parameters.TimeWindow) * time.Second,
+		sFactor:  factor,
+		oiCalc:   oiCalc,
 	}
 }
 
@@ -99,9 +102,11 @@ func (e *Engine) RecordOpenInterest(oi uint64, now time.Time) error {
 
 // GetTargetStake returns target stake based current time, risk factors
 // and the open interest time series constructed by calls to RecordOpenInterest.
-func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint {
+func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) (*num.Uint, bool) {
+	var changed bool
 	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxOI(minTime)
+		changed = true
 	}
 
 	// float64(markPrice.Uint64()*e.max.OI) * math.Max(rf.Short, rf.Long) * e.sFactor
@@ -117,15 +122,17 @@ func (e *Engine) GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *n
 			factorUint.Mul(factorUint, e.sFactor),
 		),
 		exp2,
-	)
+	), changed
 }
 
 // GetTheoreticalTargetStake returns target stake based current time, risk factors
 // and the supplied trades without modifying the internal state.
-func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint {
+func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) (*num.Uint, bool) {
+	var changed bool
 	theoreticalOI := e.oiCalc.GetOpenInterestGivenTrades(trades)
 	if minTime := e.minTime(now); minTime.After(e.max.Time) {
 		e.computeMaxOI(minTime)
+		changed = true
 	}
 	maxOI := e.max.OI
 	if theoreticalOI > maxOI {
@@ -145,7 +152,7 @@ func (e *Engine) GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, m
 			factorUint.Mul(factorUint, e.sFactor),
 		),
 		exp2,
-	)
+	), changed
 }
 
 func (e *Engine) getMaxFromCurrent() timestampedOI {

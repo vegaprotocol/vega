@@ -64,7 +64,7 @@ func (e *Engine) serialiseActive() ([]byte, error) {
 }
 
 func (e *Engine) serialisePending() ([]byte, error) {
-	pending := e.getPending()
+	pending := e.getPendingNew()
 	pendingDelegations := make([]*types.Delegation, 0, len(pending))
 	pendingUndelegations := make([]*types.Delegation, 0, len(pending))
 	for _, a := range pending {
@@ -160,7 +160,6 @@ func (e *Engine) restoreLastReconTime(ctx context.Context, t time.Time) error {
 
 func (e *Engine) restoreActive(ctx context.Context, delegations *types.DelegationActive) error {
 	e.partyDelegationState = map[string]*partyDelegation{}
-	e.nodeDelegationState = map[string]*validatorDelegation{}
 	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations))
 	for _, d := range delegations.Delegations {
 		epoch, _ := strconv.ParseUint(d.EpochSeq, 10, 64)
@@ -178,8 +177,8 @@ func (e *Engine) restoreActive(ctx context.Context, delegations *types.Delegatio
 }
 
 func (e *Engine) restorePending(ctx context.Context, delegations *types.DelegationPending) error {
-	e.pendingState = map[uint64]map[string]*pendingPartyDelegation{}
-	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations)+len(delegations.Undelegation))
+	e.nextPartyDelegationState = map[string]*partyDelegation{}
+	entries := make([]*types.DelegationEntry, 0, len(delegations.Delegations))
 	for _, d := range delegations.Delegations {
 		epoch, _ := strconv.ParseUint(d.EpochSeq, 10, 64)
 		entries = append(entries, &types.DelegationEntry{
@@ -189,18 +188,7 @@ func (e *Engine) restorePending(ctx context.Context, delegations *types.Delegati
 			EpochSeq: epoch,
 		})
 	}
-	for _, d := range delegations.Undelegation {
-		epoch, _ := strconv.ParseUint(d.EpochSeq, 10, 64)
-		entries = append(entries, &types.DelegationEntry{
-			Party:      d.Party,
-			Node:       d.NodeID,
-			Amount:     d.Amount,
-			EpochSeq:   epoch,
-			Undelegate: true,
-		})
-	}
-	e.sortPending(entries)
-	e.setPending(ctx, entries)
+	e.setPendingNew(ctx, entries)
 	// after reloading we need to set the dirty flag to true so that we know next time to recalc the hash/serialise
 	e.dss.changed[pendingKey] = true
 	return nil

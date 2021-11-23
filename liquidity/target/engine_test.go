@@ -13,18 +13,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var now = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
+var (
+	now      = time.Date(2020, 10, 30, 9, 0, 0, 0, time.UTC)
+	marketID = "market-1"
+)
 
 func TestConstructor(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 
 	require.NotNil(t, engine)
 }
 
 func TestRecordOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	err := engine.RecordOpenInterest(9, now)
 	require.NoError(t, err)
 	err = engine.RecordOpenInterest(0, now)
@@ -39,13 +42,13 @@ func TestRecordOpenInterest(t *testing.T) {
 
 func TestGetTargetStake_NoRecordedOpenInterest(t *testing.T) {
 	params := types.TargetStakeParameters{TimeWindow: 3600, ScalingFactor: num.DecimalFromFloat(10)}
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	rf := types.RiskFactor{
 		Long:  num.DecimalFromFloat(0.3),
 		Short: num.DecimalFromFloat(0.1),
 	}
 
-	targetStake := engine.GetTargetStake(rf, now, num.NewUint(123))
+	targetStake, _ := engine.GetTargetStake(rf, now, num.NewUint(123))
 
 	require.Equal(t, num.Zero(), targetStake)
 }
@@ -68,7 +71,7 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	}
 	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
 
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -76,10 +79,10 @@ func TestGetTargetStake_VerifyFormula(t *testing.T) {
 	err := engine.RecordOpenInterest(oi, now)
 	require.NoError(t, err)
 
-	targetStakeNow := engine.GetTargetStake(rf, now, markPrice.Clone())
-	targetStakeLaterInWindow := engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
-	targetStakeAtEndOfWindow := engine.GetTargetStake(rf, now.Add(tWindow), markPrice.Clone())
-	targetStakeAfterWindow := engine.GetTargetStake(rf, now.Add(tWindow).Add(time.Nanosecond), markPrice.Clone())
+	targetStakeNow, _ := engine.GetTargetStake(rf, now, markPrice.Clone())
+	targetStakeLaterInWindow, _ := engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
+	targetStakeAtEndOfWindow, _ := engine.GetTargetStake(rf, now.Add(tWindow), markPrice.Clone())
+	targetStakeAfterWindow, _ := engine.GetTargetStake(rf, now.Add(tWindow).Add(time.Nanosecond), markPrice.Clone())
 
 	expectedUint, _ := num.UintFromDecimal(expectedTargetStake)
 	require.Equal(t, expectedUint, targetStakeNow)
@@ -108,7 +111,7 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 		return ump
 	}
 
-	engine := target.NewEngine(params, nil)
+	engine := target.NewEngine(params, nil, marketID)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -118,8 +121,8 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	var maxOI uint64 = 23
 	err := engine.RecordOpenInterest(maxOI, now)
 	require.NoError(t, err)
-	actualTargetStake1 := engine.GetTargetStake(rf, now, markPrice.Clone())
-	actualTargetStake2 := engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
+	actualTargetStake1, _ := engine.GetTargetStake(rf, now, markPrice.Clone())
+	actualTargetStake2, _ := engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake2)
 	// Max in past
@@ -127,8 +130,8 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	markPrice = num.NewUint(456)
 	err = engine.RecordOpenInterest(maxOI-1, now)
 	require.NoError(t, err)
-	actualTargetStake1 = engine.GetTargetStake(rf, now, markPrice.Clone())
-	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
+	actualTargetStake1, _ = engine.GetTargetStake(rf, now, markPrice.Clone())
+	actualTargetStake2, _ = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake2)
 
@@ -138,8 +141,8 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	markPrice = num.NewUint(23)
 	err = engine.RecordOpenInterest(maxOI, now)
 	require.NoError(t, err)
-	actualTargetStake1 = engine.GetTargetStake(rf, now, markPrice.Clone())
-	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
+	actualTargetStake1, _ = engine.GetTargetStake(rf, now, markPrice.Clone())
+	actualTargetStake2, _ = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice.Clone())
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(maxOI), actualTargetStake2)
 
@@ -150,8 +153,8 @@ func TestGetTargetStake_VerifyMaxOI(t *testing.T) {
 	require.NoError(t, err)
 	now = now.Add(3 * tWindow)
 	markPrice = num.NewUint(7777777)
-	actualTargetStake1 = engine.GetTargetStake(rf, now, markPrice)
-	actualTargetStake2 = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
+	actualTargetStake1, _ = engine.GetTargetStake(rf, now, markPrice)
+	actualTargetStake2, _ = engine.GetTargetStake(rf, now.Add(time.Minute), markPrice)
 	require.Equal(t, expectedTargetStake(lastRecordedValue), actualTargetStake1)
 	require.Equal(t, expectedTargetStake(lastRecordedValue), actualTargetStake2)
 }
@@ -176,7 +179,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	oiCalc := mocks.NewMockOpenInterestCalculator(ctrl)
-	engine := target.NewEngine(params, oiCalc)
+	engine := target.NewEngine(params, oiCalc, marketID)
 	rf := types.RiskFactor{
 		Long:  rfLong,
 		Short: rfShort,
@@ -185,7 +188,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	require.NoError(t, err)
 
 	expectedUint, _ := num.UintFromDecimal(expectedTargetStake)
-	targetStakeNow := engine.GetTargetStake(rf, now, markPrice.Clone())
+	targetStakeNow, _ := engine.GetTargetStake(rf, now, markPrice.Clone())
 	require.Equal(t, expectedUint, targetStakeNow)
 
 	var trades []*types.Trade
@@ -194,14 +197,14 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	theoreticalOI := oi
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
 	expectedTheoreticalTargetStake, _ := num.UintFromDecimal(expectedTargetStake)
-	theoreticalTargetStake := engine.GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades)
+	theoreticalTargetStake, _ := engine.GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
 
 	// OI decreases
 	theoreticalOI = oi - 2
 	oiCalc.EXPECT().GetOpenInterestGivenTrades(trades).Return(theoreticalOI).MaxTimes(1)
-	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+	theoreticalTargetStake, _ = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
 
@@ -215,7 +218,7 @@ func TestGetTheoreticalTargetStake(t *testing.T) {
 	expectedTargetStake = expectedTargetStake.Mul(factor.Mul(scalingFactor))
 	expectedTheoreticalTargetStake, _ = num.UintFromDecimal(expectedTargetStake)
 
-	theoreticalTargetStake = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
+	theoreticalTargetStake, _ = engine.GetTheoreticalTargetStake(rf, now, markPrice, trades)
 
 	require.Equal(t, expectedTheoreticalTargetStake, theoreticalTargetStake)
 }

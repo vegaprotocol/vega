@@ -25,6 +25,7 @@ cyclomatic
 datestamps
 datetime
 denylist
+Devnet
 dlv
 DoD
 DoR
@@ -91,6 +92,7 @@ uint256
 uint64
 undelegate
 unexported
+unnominated
 unparked
 Unstaking
 vega

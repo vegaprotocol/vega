@@ -217,6 +217,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		l.spam,
 		l.stakingAccounts,
 		l.snapshot,
+		l.Version,
 	)
 
 	var abciApp tmtypes.Application
@@ -360,9 +361,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.checkpoint.UponGenesis,
 	)
 
-	// l.notary = notary.NewWithSnapshot(l.Log, l.conf.Notary, l.topology, l.broker, commander)
-	l.notary = notary.New(
-		l.Log, l.conf.Notary, l.topology, l.broker, commander, l.timeService)
+	l.notary = notary.NewWithSnapshot(l.Log, l.conf.Notary, l.topology, l.broker, commander, l.timeService)
 	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker, l.topology)
 	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
@@ -370,19 +369,17 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
-	// @TODO register StateProviders with snapshot engine:
+
+	// setup rewards engine
+	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
+
 	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
-		/*l.notary, */ l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd)
-	// these haven't been implemented yet. Replay protection will require some trickery.
-	// l.snapshot.AddProviders(l.executionEngine)
+		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd, l.executionEngine)
 
 	// now instantiate the blockchain layer
 	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
 		return err
 	}
-
-	// setup rewards engine
-	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
@@ -513,16 +510,12 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.rewards.UpdateCompetitionLevelForStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
-			Watcher: l.delegation.OnCompLevelChanged,
-		},
-		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardsMinValidators,
 			Watcher: l.rewards.UpdateMinValidatorsStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardsMinValidators,
-			Watcher: l.delegation.OnMinValidatorsChanged,
+			Param:   netparams.StakingAndDelegationRewardOptimalStakeMultiplier,
+			Watcher: l.rewards.UpdateOptimalStakeMultiplierStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
@@ -559,6 +552,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.SpamProtectionMinTokensForDelegation,
 			Watcher: l.spam.OnMinTokensForDelegationChanged,
+		},
+		netparams.WatchParam{
+			Param:   netparams.SnapshotIntervalLength,
+			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
 		},
 	)
 }

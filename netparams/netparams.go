@@ -30,7 +30,7 @@ type value interface {
 	String() string
 	ToFloat() (float64, error)
 	ToInt() (int64, error)
-	ToUint() (uint64, error)
+	ToUint() (*num.Uint, error)
 	ToBool() (bool, error)
 	ToString() (string, error)
 	ToDuration() (time.Duration, error)
@@ -303,11 +303,11 @@ func (s *Store) GetUint(key string) (*num.Uint, error) {
 	if !ok {
 		return num.Zero(), ErrUnknownKey
 	}
-	asUint64, err := svalue.ToUint()
+	v, err := svalue.ToUint()
 	if err != nil {
 		return num.Zero(), err
 	}
-	return num.NewUint(asUint64), nil
+	return v.Clone(), nil
 }
 
 // GetBool a value associated to the given key.

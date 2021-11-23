@@ -6,6 +6,7 @@ package mocks
 
 import (
 	netparams "code.vegaprotocol.io/vega/netparams"
+	num "code.vegaprotocol.io/vega/types/num"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -107,6 +108,21 @@ func (m *MockNetParams) GetJSONStruct(arg0 string, arg1 netparams.Reset) error {
 func (mr *MockNetParamsMockRecorder) GetJSONStruct(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetJSONStruct", reflect.TypeOf((*MockNetParams)(nil).GetJSONStruct), arg0, arg1)
+}
+
+// GetUint mocks base method
+func (m *MockNetParams) GetUint(arg0 string) (*num.Uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUint", arg0)
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUint indicates an expected call of GetUint
+func (mr *MockNetParamsMockRecorder) GetUint(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUint", reflect.TypeOf((*MockNetParams)(nil).GetUint), arg0)
 }
 
 // Update mocks base method

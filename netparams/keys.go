@@ -63,6 +63,14 @@ const (
 	GovernanceProposalUpdateNetParamMinProposerBalance    = "governance.proposal.updateNetParam.minProposerBalance"
 	GovernanceProposalUpdateNetParamMinVoterBalance       = "governance.proposal.updateNetParam.minVoterBalance"
 
+	// freeform proposal parameters.
+	GovernanceProposalFreeformMinClose              = "governance.proposal.freeform.minClose"
+	GovernanceProposalFreeformMaxClose              = "governance.proposal.freeform.maxClose"
+	GovernanceProposalFreeformRequiredParticipation = "governance.proposal.freeform.requiredParticipation"
+	GovernanceProposalFreeformRequiredMajority      = "governance.proposal.freeform.requiredMajority"
+	GovernanceProposalFreeformMinProposerBalance    = "governance.proposal.freeform.minProposerBalance"
+	GovernanceProposalFreeformMinVoterBalance       = "governance.proposal.freeform.minVoterBalance"
+
 	// staking and delegation reward network params.
 	StakingAndDelegationRewardPayoutFraction          = "reward.staking.delegation.payoutFraction"
 	StakingAndDelegationRewardMaxPayoutPerParticipant = "reward.staking.delegation.maxPayoutPerParticipant"
@@ -72,6 +80,7 @@ const (
 	StakingAndDelegationRewardCompetitionLevel        = "reward.staking.delegation.competitionLevel"
 	StakingAndDelegationRewardMaxPayoutPerEpoch       = "reward.staking.delegation.maxPayoutPerEpoch"
 	StakingAndDelegationRewardsMinValidators          = "reward.staking.delegation.minValidators"
+	StakingAndDelegationRewardOptimalStakeMultiplier  = "reward.staking.delegation.optimalStakeMultiplier"
 
 	// spam policies params.
 	SpamProtectionMaxVotes               = "spam.protection.max.votes"
@@ -95,6 +104,9 @@ const (
 	NetworkCheckpointMarketFreezeDate              = "network.checkpoint.marketFreezeDate"
 	NetworkCheckpointNetworkEOLDate                = "network.checkpoint.networkEndOfLifeDate"
 	NetworkCheckpointTimeElapsedBetweenCheckpoints = "network.checkpoint.timeElapsedBetweenCheckpoints"
+
+	// snapshot parameters.
+	SnapshotIntervalLength = "snapshot.interval.length"
 )
 
 var AllKeys = map[string]struct{}{
@@ -170,4 +182,6 @@ var AllKeys = map[string]struct{}{
 	SpamProtectionMinTokensForDelegation:                  {},
 	StakingAndDelegationRewardCompetitionLevel:            {},
 	StakingAndDelegationRewardsMinValidators:              {},
+	StakingAndDelegationRewardOptimalStakeMultiplier:      {},
+	SnapshotIntervalLength:                                {},
 }

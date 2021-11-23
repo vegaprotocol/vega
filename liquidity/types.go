@@ -68,8 +68,78 @@ func (l LiquidityProvisions) sortByFee() LiquidityProvisions {
 	return LiquidityProvisions(byFee)
 }
 
+type SnapshotablePendingProvisions struct {
+	m       map[string]struct{}
+	updated bool
+}
+
+func newSnapshotablePendingProvisions() *SnapshotablePendingProvisions {
+	return &SnapshotablePendingProvisions{
+		m:       map[string]struct{}{},
+		updated: true,
+	}
+}
+
+func (s *SnapshotablePendingProvisions) HasUpdates() bool {
+	return s.updated
+}
+
+func (s *SnapshotablePendingProvisions) Add(key string) {
+	s.updated = true
+	s.m[key] = struct{}{}
+}
+
+func (s *SnapshotablePendingProvisions) Delete(key string) {
+	s.updated = true
+	delete(s.m, key)
+}
+
+func (s *SnapshotablePendingProvisions) ResetUpdated() {
+	s.updated = false
+}
+
+func (s *SnapshotablePendingProvisions) Exists(key string) bool {
+	_, ok := s.m[key]
+	return ok
+}
+
 // Provisions is a map of parties to *types.LiquidityProvision.
 type ProvisionsPerParty map[string]*types.LiquidityProvision
+
+type SnapshotableProvisionsPerParty struct {
+	ProvisionsPerParty
+	updated bool
+}
+
+func newSnapshotableProvisionsPerParty() *SnapshotableProvisionsPerParty {
+	return &SnapshotableProvisionsPerParty{
+		ProvisionsPerParty: map[string]*types.LiquidityProvision{},
+		updated:            true,
+	}
+}
+
+func (s *SnapshotableProvisionsPerParty) HasUpdates() bool {
+	return s.updated
+}
+
+func (s *SnapshotableProvisionsPerParty) ResetUpdated() {
+	s.updated = false
+}
+
+func (s *SnapshotableProvisionsPerParty) Delete(key string) {
+	s.updated = true
+	delete(s.ProvisionsPerParty, key)
+}
+
+func (s *SnapshotableProvisionsPerParty) Get(key string) (*types.LiquidityProvision, bool) {
+	p, ok := s.ProvisionsPerParty[key]
+	return p, ok
+}
+
+func (s *SnapshotableProvisionsPerParty) Set(key string, p *types.LiquidityProvision) {
+	s.updated = true
+	s.ProvisionsPerParty[key] = p
+}
 
 // Slice returns the parties as a slice.
 func (l ProvisionsPerParty) Slice() LiquidityProvisions {
@@ -123,4 +193,68 @@ func (ords Orders) ByParty() []PartyOrders {
 		return partyOrders[i].Party < partyOrders[j].Party
 	})
 	return partyOrders
+}
+
+type SnapshotablePartiesOrders struct {
+	m       map[string]map[string]*types.Order
+	updated bool
+}
+
+func newSnapshotablePartiesOrders() *SnapshotablePartiesOrders {
+	return &SnapshotablePartiesOrders{
+		m:       map[string]map[string]*types.Order{},
+		updated: true,
+	}
+}
+
+func (o *SnapshotablePartiesOrders) HasUpdates() bool {
+	return o.updated
+}
+
+func (o *SnapshotablePartiesOrders) ResetUpdated() {
+	o.updated = false
+}
+
+func (o *SnapshotablePartiesOrders) Get(party, orderID string) (*types.Order, bool) {
+	orders, ok := o.m[party]
+	if !ok {
+		return nil, false
+	}
+	order, ok := orders[orderID]
+	return order, ok
+}
+
+// GetForParty expects to read through them, not do any write operation.
+func (o *SnapshotablePartiesOrders) GetForParty(
+	party string) (map[string]*types.Order, bool) {
+	orders, ok := o.m[party]
+	return orders, ok
+}
+
+func (o *SnapshotablePartiesOrders) Add(party string, order *types.Order) {
+	o.updated = true
+	orders, ok := o.m[party]
+	if !ok {
+		orders = map[string]*types.Order{}
+		o.m[party] = orders
+	}
+	orders[order.ID] = order
+}
+
+func (o *SnapshotablePartiesOrders) Delete(party, order string) {
+	o.updated = true
+	delete(o.m[party], order)
+	if len(o.m[party]) <= 0 {
+		delete(o.m, party)
+	}
+}
+
+func (o *SnapshotablePartiesOrders) DeleteParty(party string) {
+	o.updated = true
+	delete(o.m, party)
+}
+
+func (o *SnapshotablePartiesOrders) ResetForParty(party string) {
+	o.updated = true
+	o.m[party] = map[string]*types.Order{}
 }

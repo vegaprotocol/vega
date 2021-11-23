@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,7 +32,7 @@ func (t *tstOB) Finish() {
 }
 
 func getCurrentUtcTimestampNano() int64 {
-	return vegatime.Now().UnixNano()
+	return time.Now().UnixNano()
 }
 
 func getTestOrderBook(t *testing.T, market string) *tstOB {
