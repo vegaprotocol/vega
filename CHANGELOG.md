@@ -7,7 +7,17 @@
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/pull/) -
--
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+
+## 0.46.0
+*2021-11-22*
+
 ### 🛠 Improvements
 - [4431](https://github.com/vegaprotocol/vega/pull/4431) - Update Vega wallet to version 0.10.0
 - [4406](https://github.com/vegaprotocol/vega/pull/4406) - Add changelog and project board Github actions and update linked PR action version
@@ -49,6 +59,7 @@
 - [4398](https://github.com/vegaprotocol/vega/pull/4398) - Fix to set proper status on withdrawal errors
 - [4421](https://github.com/vegaprotocol/vega/issues/4421) - Fix to missing pending rewards in LNL checkpoint
 - [4419](https://github.com/vegaprotocol/vega/pull/4419) - Fix snapshot cleanup, improve logging when specified block height could not be reloaded.
+
 
 
 ## 0.45.5
