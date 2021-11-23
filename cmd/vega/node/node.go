@@ -187,6 +187,9 @@ func (l *NodeCommand) runNode(args []string) error {
 	go proxyServer.Start()
 	metrics.Start(l.conf.Metrics)
 
+	// some clients need to start after the rpc-server is up
+	l.blockchainClient.Start()
+
 	l.Log.Info("Vega startup complete")
 	waitSig(l.ctx, l.Log)
 

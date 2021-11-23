@@ -7,7 +7,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-const namedLogger = "noop"
+const namedLogger = "nullchain"
 
 type Config struct {
 	Level                encoding.LogLevel `long:"log-level"`

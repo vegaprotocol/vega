@@ -27,6 +27,7 @@ type NullBlockchain struct {
 	log         *logging.Logger
 	service     ApplicationService
 	chainID     string
+	genesisFile string
 	genesisTime time.Time
 
 	blockHeight int64
@@ -40,7 +41,7 @@ func NewClient(
 	log *logging.Logger,
 	cfg Config,
 	service ApplicationService,
-) (*NullBlockchain, error) {
+) *NullBlockchain {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -54,15 +55,22 @@ func NewClient(
 		chainID:              vgrand.RandomStr(12),
 		transactionsPerBlock: cfg.TransactionsPerBlock,
 		blockDuration:        cfg.BlockDuration.Duration,
+		genesisFile:          cfg.GenesisFile,
 		genesisTime:          now,
 		now:                  now,
 	}
 
-	err := n.InitChain(cfg.GenesisFile)
+	return n
+}
+
+func (n *NullBlockchain) Start() error {
+	err := n.InitChain(n.genesisFile)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return n, nil
+
+	// TODO the next bit is to handle transactions, it'll go here.
+	return nil
 }
 
 // Blockchain server calls -- when tendermint calls into core

@@ -282,7 +282,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		abciClt, err = abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
 	case "nullchain":
 		abciApp := app.Abci()
-		abciClt, err = nullchain.NewClient(l.Log, l.conf.Blockchain.Noop, abciApp)
+		abciClt = nullchain.NewClient(l.Log, l.conf.Blockchain.Noop, abciApp)
 
 		// Set a server but don't start it, this may be replaced by a time-forwarding backdoor later
 		srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
@@ -420,6 +420,7 @@ func (l *NodeCommand) setupNetParameters() error {
 	// now we are going to setup some network parameters which can be done
 	// through runtime checks
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
+
 	if err := l.netParams.AddRules(
 		netparams.ParamStringRules(
 			netparams.RewardAsset,
