@@ -21,47 +21,9 @@ import (
 )
 
 func TestNullChain(t *testing.T) {
-	t.Run("test Nullchain Start", testNullChainStart)
 	t.Run("test transactions create block", testTransactionsCreateBlock)
 	t.Run("test timeforwarding creates blocks", testTimeForwardingCreatesBlocks)
-}
-
-func testNullChainStart(t *testing.T) {
-	testChain := getTestNullChain(t, 10, 2*time.Second)
-	defer testChain.ctrl.Finish()
-
-	testChain.app.EXPECT().InitChain(gomock.Any()).Times(1)
-	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(1)
-
-	testChain.chain.Start()
-}
-
-func testTimeForwardingCreatesBlocks(t *testing.T) {
-	ctx := context.Background()
-	testChain := getTestNullChain(t, 10, 2*time.Second)
-	defer testChain.ctrl.Finish()
-
-	// 10 blocks and a second (we should snap back to 20 blocks)
-	step := 21 * time.Second
-	now, _ := testChain.chain.GetGenesisTime(ctx)
-	beginBlockTime := now
-
-	// Fill in a partial blocks worth of transactions
-	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
-	testChain.chain.SendTransactionAsync(ctx, []byte(vgrand.RandomStr(5)))
-	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
-
-	// One round of block processing calls
-	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(10).Do(func(r abci.RequestBeginBlock) {
-		beginBlockTime = r.Header.Time
-	})
-	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(10)
-	testChain.app.EXPECT().Commit().Times(10)
-	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(3)
-
-	testChain.chain.ForwardTime(step)
-
-	assert.True(t, beginBlockTime.Equal(now.Add(20*time.Second)))
+	t.Run("test timeforwarding less than a block does nothing", testTimeForwardingLessThanABlockDoesNothing)
 }
 
 func testTransactionsCreateBlock(t *testing.T) {
@@ -85,6 +47,66 @@ func testTransactionsCreateBlock(t *testing.T) {
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
 	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+
+	count, err := testChain.chain.GetUnconfirmedTxCount(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, count)
+}
+
+func testTimeForwardingCreatesBlocks(t *testing.T) {
+	ctx := context.Background()
+	testChain := getTestNullChain(t, 10, 2*time.Second)
+	defer testChain.ctrl.Finish()
+
+	// each block is 2 seconds (we should snap back to 10 blocks)
+	step := 21 * time.Second
+	now, _ := testChain.chain.GetGenesisTime(ctx)
+	beginBlockTime := now
+	height := 0
+
+	// Fill in a partial blocks worth of transactions
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+
+	// One round of block processing calls
+	testChain.app.EXPECT().BeginBlock(gomock.Any()).Times(10).Do(func(r abci.RequestBeginBlock) {
+		beginBlockTime = r.Header.Time
+	})
+	testChain.app.EXPECT().EndBlock(gomock.Any()).Times(10).Do(func(r abci.RequestEndBlock) {
+		height = int(r.Height)
+	})
+	testChain.app.EXPECT().Commit().Times(10)
+	testChain.app.EXPECT().DeliverTx(gomock.Any()).Times(3)
+
+	testChain.chain.ForwardTime(step)
+
+	assert.True(t, beginBlockTime.Equal(now.Add(20*time.Second)))
+	assert.Equal(t, 10, height)
+
+	count, err := testChain.chain.GetUnconfirmedTxCount(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, count)
+}
+
+func testTimeForwardingLessThanABlockDoesNothing(t *testing.T) {
+	ctx := context.Background()
+	testChain := getTestNullChain(t, 10, 2*time.Second)
+	defer testChain.ctrl.Finish()
+
+	// half a block duration
+	step := time.Second
+
+	// Fill in a partial blocks worth of transactions
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+	testChain.chain.SendTransactionSync(ctx, []byte(vgrand.RandomStr(5)))
+
+	testChain.chain.ForwardTime(step)
+
+	count, err := testChain.chain.GetUnconfirmedTxCount(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, 3, count)
 }
 
 type testNullBlockChain struct {
@@ -94,6 +116,8 @@ type testNullBlockChain struct {
 }
 
 func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNullBlockChain {
+	t.Helper()
+
 	ctrl := gomock.NewController(t)
 
 	app := mocks.NewMockApplicationService(ctrl)
@@ -102,9 +126,16 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 	cfg.GenesisFile = newGenesisFile(t)
 	cfg.BlockDuration = encoding.Duration{Duration: d}
 	cfg.TransactionsPerBlock = txnPerBlock
+	cfg.Level = encoding.LogLevel{Level: logging.DebugLevel}
 
 	n := nullchain.NewClient(logging.NewTestLogger(), cfg, app)
 	require.NotNil(t, n)
+
+	app.EXPECT().InitChain(gomock.Any()).Times(1)
+	app.EXPECT().BeginBlock(gomock.Any()).Times(1)
+
+	err := n.Start()
+	require.NoError(t, err)
 
 	return &testNullBlockChain{
 		chain: n,

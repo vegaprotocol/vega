@@ -188,10 +188,12 @@ func (l *NodeCommand) runNode(args []string) error {
 	metrics.Start(l.conf.Metrics)
 
 	// some clients need to start after the rpc-server is up
-	l.blockchainClient.Start()
+	err := l.blockchainClient.Start()
 
-	l.Log.Info("Vega startup complete")
-	waitSig(l.ctx, l.Log)
+	if err == nil {
+		l.Log.Info("Vega startup complete")
+		waitSig(l.ctx, l.Log)
+	}
 
 	// Clean up and close resources
 	grpcServer.Stop()
@@ -199,7 +201,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	statusChecker.Stop()
 	proxyServer.Stop()
 
-	return nil
+	return err
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.

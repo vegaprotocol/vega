@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync"
 	"time"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
@@ -32,21 +33,19 @@ type ApplicationService interface {
 }
 
 type NullBlockchain struct {
-	log         *logging.Logger
-	service     ApplicationService
-	chainID     string
-	genesisFile string
-	genesisTime time.Time
-
-	blockHeight int64
-	now         time.Time
-	pending     []*abci.RequestDeliverTx
-
+	log                  *logging.Logger
+	service              ApplicationService
+	chainID              string
+	genesisFile          string
+	genesisTime          time.Time
 	transactionsPerBlock uint64
 	blockDuration        time.Duration
 
-	txs         chan []byte
-	timeForward chan time.Duration
+	now         time.Time
+	pending     []*abci.RequestDeliverTx
+	blockHeight int64
+
+	mu sync.Mutex
 }
 
 func NewClient(
@@ -71,9 +70,6 @@ func NewClient(
 		genesisTime:          now,
 		now:                  now,
 		pending:              make([]*abci.RequestDeliverTx, 0),
-
-		txs:         make(chan []byte),
-		timeForward: make(chan time.Duration),
 	}
 
 	return n
@@ -85,8 +81,8 @@ func (n *NullBlockchain) Start() error {
 		return err
 	}
 
-	n.start()
-
+	// Start the first block
+	n.BeginBlock()
 	return nil
 }
 
@@ -99,55 +95,46 @@ func (n *NullBlockchain) processBlock() {
 
 	n.blockHeight++
 	n.EndBlock()
-
 	n.service.Commit()
 
-	// Increment time, start a block
+	// Increment time, start and start new block
 	n.now = n.now.Add(n.blockDuration)
 	n.BeginBlock()
 }
 
-func (n *NullBlockchain) start() {
-	// Start the first block
-	n.BeginBlock()
-	time.Sleep(time.Second)
-	n.processBlock() // to propagate some netparams?
+func (n *NullBlockchain) handleTransaction(tx []byte) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 
-	go func() {
-		for {
-			select {
-			case tx := <-n.txs:
-				n.log.Debug("transaction received")
+	n.pending = append(n.pending, &abci.RequestDeliverTx{Tx: tx})
 
-				n.pending = append(n.pending, &abci.RequestDeliverTx{Tx: tx})
-
-				if len(n.pending) == int(n.transactionsPerBlock) {
-					n.processBlock()
-				}
-			case d := <-n.timeForward:
-				n.log.Debugf("time-forwarding by %s", d)
-
-				// we only step forward whole blocks, so a non-zero d can produce nBlocks==0 and thats fine
-				nBlocks := d / n.blockDuration
-				if nBlocks == 0 {
-					break
-				}
-
-				for i := 0; i < int(nBlocks); i++ {
-					n.processBlock()
-				}
-
-			}
-		}
-	}()
+	n.log.Debugf("transaction added to block: %d of %d", len(n.pending), n.transactionsPerBlock)
+	if len(n.pending) == int(n.transactionsPerBlock) {
+		n.processBlock()
+	}
 }
 
+// ForwardTime moves the chain time forward by the given duration, delivering any pending
+// transaction and creating any extra empty blocks if time is stepped forward by more than
+// a block duration.
 func (n *NullBlockchain) ForwardTime(d time.Duration) {
-	n.timeForward <- d
+	n.log.Debugf("time-forwarding by %s", d)
+
+	nBlocks := d / n.blockDuration
+	if nBlocks == 0 {
+		n.log.Debugf("not a full block-duration, not moving time: %s < %s", d, n.blockDuration)
+		return
+	}
+
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	for i := 0; i < int(nBlocks); i++ {
+		n.processBlock()
+	}
 }
 
-// Blockchain server calls -- when tendermint calls into core
-
+// InitChain processes the given genesis file setting the chain's time, and passing the
+// appstate through to the processors InitChain.
 func (n *NullBlockchain) InitChain(genesisFile string) error {
 	exists, err := vgfs.FileExists(genesisFile)
 	if !exists || err != nil {
@@ -159,8 +146,7 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		return err
 	}
 
-	// Parse the appstate of the genesis file so that we can send the netparams to core
-	// a tendermint genesis-file will do
+	// Parse the appstate of the genesis file, same layout as a TM genesis-file
 	genesis := struct {
 		GenesisTime *time.Time      `json:"genesis_time"`
 		Appstate    json.RawMessage `json:"app_state"`
@@ -171,7 +157,7 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		return err
 	}
 
-	// Set genesis time and now from config
+	// Set chain time from genesis file
 	if genesis.GenesisTime != nil {
 		n.genesisTime = *genesis.GenesisTime
 		n.now = *genesis.GenesisTime
@@ -199,14 +185,11 @@ func (n *NullBlockchain) BeginBlock() *NullBlockchain {
 
 func (n *NullBlockchain) EndBlock() *NullBlockchain {
 	r := abci.RequestEndBlock{
-		Height: int64(n.blockHeight),
+		Height: n.blockHeight,
 	}
 	n.service.EndBlock(r)
 	return n
 }
-
-// Blockchain client calls -- when core sends in requests to tendermint
-// Everything that isn't needed for starting out is currently just stubbed out
 
 func (n *NullBlockchain) GetGenesisTime(context.Context) (time.Time, error) {
 	return n.genesisTime, nil
@@ -236,11 +219,25 @@ func (n *NullBlockchain) GetNetworkInfo(context.Context) (*tmctypes.ResultNetInf
 }
 
 func (n *NullBlockchain) GetUnconfirmedTxCount(context.Context) (int, error) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 	return len(n.pending), nil
 }
 
 func (n *NullBlockchain) Health(_ context.Context) (*tmctypes.ResultHealth, error) {
 	return &tmctypes.ResultHealth{}, nil
+}
+
+func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (string, error) {
+	go func() {
+		n.handleTransaction(tx)
+	}()
+	return vgrand.RandomStr(64), nil
+}
+
+func (n *NullBlockchain) SendTransactionSync(ctx context.Context, tx []byte) (string, error) {
+	n.handleTransaction(tx)
+	return vgrand.RandomStr(64), nil
 }
 
 func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (string, error) {
@@ -249,16 +246,6 @@ func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (
 	// the complexity of trying to keep track of tx deliveries here.
 	n.log.Error("not implemented")
 	return "", ErrNotImplemented
-}
-
-func (n *NullBlockchain) SendTransactionAsync(ctx context.Context, tx []byte) (string, error) {
-	n.txs <- tx
-	return "", nil
-}
-
-func (n *NullBlockchain) SendTransactionSync(ctx context.Context, tx []byte) (string, error) {
-	n.txs <- tx
-	return "", nil
 }
 
 func (n *NullBlockchain) Validators(_ context.Context) ([]*tmtypes.Validator, error) {
