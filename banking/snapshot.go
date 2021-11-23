@@ -136,9 +136,12 @@ func (e *Engine) serialiseDeposits() ([]byte, error) {
 	}
 
 	sort.SliceStable(deposits, func(i, j int) bool { return deposits[i].ID < deposits[j].ID })
-	e.log.Info("serialiseDeposits: number of deposits:", logging.Int("len(deposits)", len(deposits)))
-	for i, d := range deposits {
-		e.log.Info("serialiseDeposits:", logging.Int("index", i), logging.String("ID", d.ID), logging.String("deposit", d.Deposit.IntoProto().String()))
+
+	if e.log.IsDebug() {
+		e.log.Info("serialiseDeposits: number of deposits:", logging.Int("len(deposits)", len(deposits)))
+		for i, d := range deposits {
+			e.log.Info("serialiseDeposits:", logging.Int("index", i), logging.String("ID", d.ID), logging.String("deposit", d.Deposit.IntoProto().String()))
+		}
 	}
 	payload := types.Payload{
 		Data: &types.PayloadBankingDeposits{
