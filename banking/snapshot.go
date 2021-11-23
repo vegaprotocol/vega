@@ -129,12 +129,17 @@ func (e *Engine) serialiseSeen() ([]byte, error) {
 }
 
 func (e *Engine) serialiseDeposits() ([]byte, error) {
+	e.log.Debug("serialiseDeposits: called")
 	deposits := make([]*types.BDeposit, 0, len(e.deposits))
 	for _, v := range e.deposits {
 		deposits = append(deposits, &types.BDeposit{ID: v.ID, Deposit: v})
 	}
 
 	sort.SliceStable(deposits, func(i, j int) bool { return deposits[i].ID < deposits[j].ID })
+	e.log.Info("serialiseDeposits: number of deposits:", logging.Int("len(deposits)", len(deposits)))
+	for i, d := range deposits {
+		e.log.Info("serialiseDeposits:", logging.Int("index", i), logging.String("ID", d.ID), logging.String("deposit", d.Deposit.IntoProto().String()))
+	}
 	payload := types.Payload{
 		Data: &types.PayloadBankingDeposits{
 			BankingDeposits: &types.BankingDeposits{
