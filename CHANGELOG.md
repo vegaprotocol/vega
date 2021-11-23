@@ -5,10 +5,20 @@
 *`YYYY-MM-DD`*
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/data-node/pull/) - 
+- [](https://github.com/vegaprotocol/data-node/pull/) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/data-node/pull/) - 
+- [](https://github.com/vegaprotocol/data-node/pull/) -
+
+### 🛠 Improvements
+- [](https://github.com/vegaprotocol/data-node/pull/) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/pull/) -
+
+
+## 0.46.0
+*`2021-11-22`*
 
 ### 🛠 Improvements
 - [226](https://github.com/vegaprotocol/data-node/pull/226) - Added subscriptions for delegations & rewards
