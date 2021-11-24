@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/data-node/vegatime"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
+	"code.vegaprotocol.io/shared/paths"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -142,11 +143,11 @@ type NodeCommand struct {
 	stakingService    *staking.Service
 	checkpointSvc     *checkpoint.Svc
 
-	pproffhandlr *pprof.Pprofhandler
-	configPath   string
-	conf         config.Config
-	Log          *logging.Logger
-	cfgwatchr    *config.Watcher
+	pproffhandlr  *pprof.Pprofhandler
+	Log           *logging.Logger
+	vegaPaths     paths.Paths
+	configWatcher *config.Watcher
+	conf          config.Config
 
 	// plugins
 	settlePlugin     *plugins.Positions
@@ -159,10 +160,11 @@ type NodeCommand struct {
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(cfgwatchr *config.Watcher, rootPath string, args []string) error {
-	l.cfgwatchr = cfgwatchr
+func (l *NodeCommand) Run(cfgwatchr *config.Watcher, vegaPaths paths.Paths, args []string) error {
+	l.configWatcher = cfgwatchr
 
-	l.conf, l.configPath = cfgwatchr.Get(), rootPath
+	l.conf = cfgwatchr.Get()
+	l.vegaPaths = vegaPaths
 
 	stages := []func([]string) error{
 		l.persistentPre,
@@ -218,7 +220,7 @@ func (l *NodeCommand) runNode(args []string) error {
 	)
 
 	// watch configs
-	l.cfgwatchr.OnConfigUpdate(
+	l.configWatcher.OnConfigUpdate(
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 	)
 

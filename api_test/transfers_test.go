@@ -14,20 +14,44 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// waits until the tranferStorage server has at least on subscriber
+func waitForSubsription(ctx context.Context, ts *TestServer) error {
+	nonExistentID := ^uint64(0) // really big
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			// This will return nil if there are no subscribers, even if the given ID doesn't
+			// exists. So we can use this to know when at least one subscriber exists. Its
+			// not great to rely on an implementation detail like this, but its better than adding
+			// an arbitrary sleep
+			if ts.trStorage.Unsubscribe(nonExistentID) != nil {
+				return nil
+			}
+		}
+	}
+}
+
 func TestObserveTransferResponses(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
-	conn, broker := NewTestServer(t, ctx, true)
+	server := NewTestServer(t, ctx, true)
+	defer server.ctrl.Finish()
 
-	client := apipb.NewTradingDataServiceClient(conn)
+	client := apipb.NewTradingDataServiceClient(server.clientConn)
 	require.NotNil(t, client)
 
 	// we need to subscribe to the stream prior to publishing the events
 	stream, err := client.TransferResponsesSubscribe(ctx, &apipb.TransferResponsesSubscribeRequest{})
 	assert.NoError(t, err)
 
-	PublishEvents(t, ctx, broker, func(be *eventspb.BusEvent) (events.Event, error) {
+	// wait until the transfer response has subscribed before sending events
+	err = waitForSubsription(ctx, server)
+	require.NoError(t, err)
+
+	PublishEvents(t, ctx, server.broker, func(be *eventspb.BusEvent) (events.Event, error) {
 		tr := be.GetTransferResponses()
 		require.NotNil(t, tr)
 		var responses []*pb.TransferResponse
@@ -41,29 +65,12 @@ func TestObserveTransferResponses(t *testing.T) {
 		return e, nil
 	}, "transfer-responses-events.golden")
 
-	// we only receive one response from the stream and assert it
-	var resp *apipb.TransferResponsesSubscribeResponse
-	done := make(chan struct{})
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				close(done)
-				return
-			default:
-				resp, err = stream.Recv()
-				if err == io.EOF {
-					close(done)
-					return
-				}
-				require.NoError(t, err)
-				close(done)
-				return
-			}
-		}
-	}()
-	<-done
+	// The stream contains a timeout from the context we gave it at creation so we don't
+	// have to worry about this blocking forever
+	resp, err := stream.Recv()
+	if err != io.EOF {
+		require.NoError(t, err)
+	}
 
 	require.NotNil(t, resp)
 	require.Equal(t, "076BB86A5AA41E3E*6d9d35f657589e40ddfb448b7ad4a7463b66efb307527fedd2aa7df1bbd5ea616", resp.Response.Transfers[0].FromAccount)

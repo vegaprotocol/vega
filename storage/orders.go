@@ -37,17 +37,13 @@ type Order struct {
 // NewOrders is used to initialise and create a OrderStore, this implementation is currently
 // using the badger k-v persistent storage engine under the hood. The caller will specify a dir to
 // use as the storage location on disk for any stored files via Config.
-func NewOrders(log *logging.Logger, c Config, onCriticalError func()) (*Order, error) {
+func NewOrders(log *logging.Logger, home string, c Config, onCriticalError func()) (*Order, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	err := InitStoreDirectory(c.OrdersDirPath)
+	db, err := badger.Open(getOptionsFromConfig(c.Orders, home, log))
 	if err != nil {
-		return nil, errors.Wrap(err, "error on init badger database for orders storage")
-	}
-	db, err := badger.Open(getOptionsFromConfig(c.Orders, c.OrdersDirPath, log))
-	if err != nil {
-		return nil, errors.Wrap(err, "error opening badger database for orders storage")
+		return nil, fmt.Errorf("couldn't open Badger orders database: %w", err)
 	}
 	bs := badgerStore{db: db}
 	return &Order{

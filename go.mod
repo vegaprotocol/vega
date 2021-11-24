@@ -3,9 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.45.1
+	code.vegaprotocol.io/protos v0.46.0
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/vega v0.45.1
+	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
+	code.vegaprotocol.io/vega v0.46.0
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fsnotify/fsnotify v1.4.9
@@ -21,7 +22,6 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/vektah/gqlparser/v2 v2.1.0
-	github.com/zannen/toml v0.3.2
 	go.elastic.co/apm/module/apmhttp v1.8.0
 	go.nanomsg.org/mangos/v3 v3.2.1
 	go.uber.org/multierr v1.6.0 // indirect

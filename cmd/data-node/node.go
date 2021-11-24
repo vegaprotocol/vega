@@ -6,11 +6,12 @@ import (
 	"code.vegaprotocol.io/data-node/cmd/data-node/node"
 	"code.vegaprotocol.io/data-node/config"
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/shared/paths"
 	"github.com/jessevdk/go-flags"
 )
 
 type NodeCmd struct {
-	config.RootPathFlag
+	config.VegaHomeFlag
 
 	config.Config
 }
@@ -30,7 +31,9 @@ func (cmd *NodeCmd) Execute(args []string) error {
 		return err
 	}
 
-	cfgwatchr, err := config.NewFromFile(context.Background(), log, cmd.RootPath, cmd.RootPath, config.Use(parseFlagOpt))
+	vegaPaths := paths.New(cmd.VegaHome)
+
+	configWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
 	if err != nil {
 		return err
 	}
@@ -40,17 +43,15 @@ func (cmd *NodeCmd) Execute(args []string) error {
 		Version:     CLIVersion,
 		VersionHash: CLIVersionHash,
 	}).Run(
-		cfgwatchr,
-		cmd.RootPath,
+		configWatcher,
+		vegaPaths,
 		args,
 	)
 }
 
 func Node(ctx context.Context, parser *flags.Parser) error {
-	rootPath := config.NewRootPathFlag()
 	nodeCmd = NodeCmd{
-		RootPathFlag: rootPath,
-		Config:       config.NewDefaultConfig(rootPath.RootPath),
+		Config: config.NewDefaultConfig(),
 	}
 	cmd, err := parser.AddCommand("node", "Runs a vega data node", "Runs a vega data node as defined by the config files", &nodeCmd)
 	if err != nil {

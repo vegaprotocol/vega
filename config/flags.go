@@ -5,21 +5,14 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"code.vegaprotocol.io/data-node/fsutil"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Empty is used when a command or sub-command receives no argument and has no execution.
 type Empty struct{}
 
-type RootPathFlag struct {
-	RootPath string `short:"r" long:"root-path" description:"Path of the root directory in which the configuration will be located" env:"VEGA_DATA_NODE_CONFIG"`
-}
-
-func NewRootPathFlag() RootPathFlag {
-	return RootPathFlag{
-		RootPath: fsutil.DefaultVegaDir(),
-	}
+type VegaHomeFlag struct {
+	VegaHome string `long:"home" description:"Path to the custom home for vega"`
 }
 
 type PassphraseFlag struct {
@@ -37,7 +30,7 @@ func (p Passphrase) Get(prompt string) (string, error) {
 }
 
 func (p Passphrase) getFromUser(prompt string) (string, error) {
-	fmt.Printf("please enter %s passphrase:", prompt)
+	fmt.Printf("Enter %s passphrase:", prompt)
 	password, err := terminal.ReadPassword(0)
 	if err != nil {
 		return "", err

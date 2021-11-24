@@ -303,22 +303,6 @@ type ProposalVotes struct {
 	No *ProposalVoteSide `json:"no"`
 }
 
-// Reward information for a single party
-type Reward struct {
-	// The asset for which this reward is associated
-	AssetID string `json:"assetId"`
-	// Party receiving the reward
-	PartyID string `json:"partyId"`
-	// Epoch for which this reward was distributed
-	Epoch int `json:"epoch"`
-	// Amount received for this reward
-	Amount string `json:"amount"`
-	// Percentage out of the total distributed reward
-	PercentageOfTotal string `json:"percentageOfTotal"`
-	// Time at which the rewards was received
-	ReceivedAt string `json:"receivedAt"`
-}
-
 type SettleDistressed struct {
 	// the market in which a position was closed out
 	MarketID string `json:"marketId"`
@@ -344,16 +328,6 @@ type SettlePosition struct {
 }
 
 func (SettlePosition) IsEvent() {}
-
-// A signature to be bundled with a transaction
-type SignatureInput struct {
-	// The signature, base64 encoded
-	Sig string `json:"sig"`
-	// The algorithm used to produice the signature
-	Algo string `json:"algo"`
-	// The version of the signature
-	Version int `json:"version"`
-}
 
 // Statistics about the node
 type Statistics struct {
@@ -1955,53 +1929,6 @@ func (e *StakeLinkingType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e StakeLinkingType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-// The way the transaction is sent to the blockchain
-type SubmitTransactionType string
-
-const (
-	// The call will return as soon as submitted
-	SubmitTransactionTypeAsync SubmitTransactionType = "Async"
-	// The call will return once the mempool has run CheckTx on the transaction
-	SubmitTransactionTypeSync SubmitTransactionType = "Sync"
-	// The call will return once the transaction has been processed by the core
-	SubmitTransactionTypeCommit SubmitTransactionType = "Commit"
-)
-
-var AllSubmitTransactionType = []SubmitTransactionType{
-	SubmitTransactionTypeAsync,
-	SubmitTransactionTypeSync,
-	SubmitTransactionTypeCommit,
-}
-
-func (e SubmitTransactionType) IsValid() bool {
-	switch e {
-	case SubmitTransactionTypeAsync, SubmitTransactionTypeSync, SubmitTransactionTypeCommit:
-		return true
-	}
-	return false
-}
-
-func (e SubmitTransactionType) String() string {
-	return string(e)
-}
-
-func (e *SubmitTransactionType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = SubmitTransactionType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid SubmitTransactionType", str)
-	}
-	return nil
-}
-
-func (e SubmitTransactionType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

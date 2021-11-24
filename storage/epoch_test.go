@@ -16,7 +16,7 @@ func TestEpochs(t *testing.T) {
 	a := assert.New(t)
 
 	log := logging.NewTestLogger()
-	c := storage.NewDefaultConfig("")
+	c := storage.NewDefaultConfig()
 
 	nodeStore := storage.NewNode(log, c)
 	epochStore := storage.NewEpoch(log, nodeStore, c)

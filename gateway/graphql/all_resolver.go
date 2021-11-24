@@ -13,6 +13,14 @@ type allResolver struct {
 	clt TradingDataServiceClient
 }
 
+func (r *allResolver) getEpochByID(ctx context.Context, id uint64) (*types.Epoch, error) {
+	req := &protoapi.GetEpochRequest{
+		Id: id,
+	}
+	resp, err := r.clt.GetEpoch(ctx, req)
+	return resp.Epoch, err
+}
+
 func (r *allResolver) getOrderByID(ctx context.Context, id string, version *int) (*types.Order, error) {
 	v, err := convertVersion(version)
 	if err != nil {
