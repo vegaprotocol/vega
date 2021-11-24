@@ -127,7 +127,7 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 		// if we still have parties that haven't maxed their reward, they are split the remaining balance
 		roundsRemaining := 10
 		for {
-			log.Info("Reward remaining to disrtibute to delegators", logging.String("epoch", epochSeq), logging.String("remainingRewardForDelegators", remainingRewardForDelegators.String()))
+			log.Info("Reward remaining to distribute to delegators", logging.String("epoch", epochSeq), logging.String("remainingRewardForDelegators", remainingRewardForDelegators.String()))
 
 			totalAwardedThisRound := num.Zero()
 			for _, party := range sortedParties {
