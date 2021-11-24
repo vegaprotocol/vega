@@ -201,7 +201,13 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 // List returns all snapshots available.
 func (e *Engine) List() ([]*types.Snapshot, error) {
 	trees := make([]*types.Snapshot, 0, len(e.versions))
-	for _, v := range e.versions {
+	// TM list of snapshots is limited to the 10 most recent ones.
+	i := len(e.versions) - 11
+	if i < 0 {
+		i = 0
+	}
+	for j := len(e.versions); i < j; i++ {
+		v := e.versions[i]
 		tree, err := e.avl.GetImmutable(v)
 		if err != nil {
 			return nil, err
