@@ -15,6 +15,13 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 
+## 0.46.1
+*2021-11-22*
+
+### 🐛 Fixes
+- Disable the snapshots
+
+
 ## 0.46.0
 *2021-11-22*
 
