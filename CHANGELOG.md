@@ -9,10 +9,10 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
-- [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create release_ticket.md issue template
+- [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
 
 ### 🐛 Fixes
-- [4435](https://github.com/vegaprotocol/vega/pull/4435) - BFix non determinism in deposits snapshot
+- [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
 
 ## 0.46.1
 *2021-11-22*
