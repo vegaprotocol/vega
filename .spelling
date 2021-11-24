@@ -19,6 +19,7 @@ CGO
 checkpointing
 CI
 Cleanup
+cleanup
 clef
 codegen
 cyclomatic
