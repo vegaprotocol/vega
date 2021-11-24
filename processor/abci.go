@@ -429,7 +429,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
-	app.abci.RegisterSnapshot(app.snapshot)
+	// app.abci.RegisterSnapshot(app.snapshot)
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -523,18 +523,18 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
-	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
-	if err != nil {
-		app.log.Panic("Failed to create snapshot",
-			logging.Error(err))
-	}
-	resp.Data = snapHash
-	if len(snapHash) == 0 {
-		resp.Data = app.exec.Hash()
-		resp.Data = append(resp.Data, app.delegation.Hash()...)
-		resp.Data = append(resp.Data, app.gov.Hash()...)
-		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
-	}
+	// snapHash, err := app.snapshot.Snapshot(app.blockCtx)
+	// if err != nil {
+	// 	app.log.Panic("Failed to create snapshot",
+	// 		logging.Error(err))
+	// }
+	// resp.Data = snapHash
+	// if len(snapHash) == 0 {
+	resp.Data = app.exec.Hash()
+	resp.Data = append(resp.Data, app.delegation.Hash()...)
+	resp.Data = append(resp.Data, app.gov.Hash()...)
+	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+	// }
 
 	// Checkpoint can be nil if it wasn't time to create a checkpoint
 	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
