@@ -9,11 +9,16 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create release_ticket.md issue template
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4435](https://github.com/vegaprotocol/vega/pull/4435) - BFix non determinism in deposits snapshot
 
+## 0.46.1
+*2021-11-22*
+
+### 🛠 Improvements
+- [4437](https://github.com/vegaprotocol/vega/pull/4437) - Turn snapshots off for `v0.46.1` only
 
 ## 0.46.0
 *2021-11-22*
@@ -47,6 +52,7 @@
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals #4403
 - [4396](https://github.com/vegaprotocol/vega/pull/4396) - Add free form governance proposals
 - [4413](https://github.com/vegaprotocol/vega/pull/4413) - Deploy to Devnet with Jenkins and remove drone
+- [4429](https://github.com/vegaprotocol/vega/pull/4429) - Release version `v0.46.0`
 
 ### 🐛 Fixes
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
