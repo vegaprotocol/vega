@@ -236,6 +236,7 @@ var (
 // A base event holds no data, so the constructor will not be called directly.
 func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := vgcontext.TraceIDFromContext(ctx)
+	cID, _ := vgcontext.ChainIDFromContext(ctx)
 	h, _ := vgcontext.BlockHeightFromContext(ctx)
 	return &Base{
 		ctx:     ctx,

@@ -78,6 +78,7 @@ type App struct {
 	txTotals          []uint64
 	txSizes           []int
 	cBlock            string
+	chainCtx          context.Context // use this to have access to chain ID
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
 	version           string
@@ -405,9 +406,9 @@ func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSn
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
-	ctx := vgcontext.WithBlockHeight(context.Background(), 0)
+	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
+	ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
 	ctx = vgcontext.WithTraceID(ctx, hash)
-	ctx = vgcontext.WithChainID(ctx, req.ChainId)
 	app.blockCtx = ctx
 
 	app.abci.RegisterSnapshot(app.snapshot)
@@ -448,7 +449,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
-	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(context.Background(), hash), req.Header.Height)
+	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
 	now := req.Header.Time
