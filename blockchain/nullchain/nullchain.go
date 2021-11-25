@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	ErrNotImplemented      = errors.New("not implemeneted for nullblockchain")
-	ErrGenesisFileRequired = errors.New("--blockchain.nullchain.genesis-file  is required")
+	ErrNotImplemented      = errors.New("not implemented for nullblockchain")
+	ErrGenesisFileRequired = errors.New("--blockchain.nullchain.genesis-file is required")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/application_service_mock.go -package mocks code.vegaprotocol.io/vega/blockchain/nullchain ApplicationService
