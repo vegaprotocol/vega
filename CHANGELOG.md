@@ -3,13 +3,24 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/pull/) - 
+- [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/pull/) - 
-- 
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
 ### 🛠 Improvements
-- [4406](https://github.com/vegaprotocol/data-node/pull/4406) - Add changelog and project board Github actions and update linked PR action version
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+
+## 0.46.0
+*2021-11-22*
+
+### 🛠 Improvements
+- [4431](https://github.com/vegaprotocol/vega/pull/4431) - Update Vega wallet to version 0.10.0
+- [4406](https://github.com/vegaprotocol/vega/pull/4406) - Add changelog and project board Github actions and update linked PR action version
 - [4328](https://github.com/vegaprotocol/vega/pull/4328) - Unwrap the timestamps in reward payout event
 - [4330](https://github.com/vegaprotocol/vega/pull/4330) - Remove badger related code from the codebase
 - [4336](https://github.com/vegaprotocol/vega/pull/4336) - Add oracle snapshot
@@ -30,11 +41,13 @@
 - [4389](https://github.com/vegaprotocol/vega/pull/4389) - Update issue templates #4389
 - [4392](https://github.com/vegaprotocol/vega/pull/4392) - Update `GETTING_STARTED.md` documentation
 - [4391](https://github.com/vegaprotocol/vega/pull/4391) - Refactor delegation
+- [4423](https://github.com/vegaprotocol/vega/pull/4423) - Add CLI options to start node with a null-blockchain
 - [4400](https://github.com/vegaprotocol/vega/pull/4400) - Add transaction hash to `SubmitTransactionResponse`
 - [4394](https://github.com/vegaprotocol/vega/pull/4394) - Add step to clear all events in integration tests
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals #4403
 - [4396](https://github.com/vegaprotocol/vega/pull/4396) - Add free form governance proposals
 - [4413](https://github.com/vegaprotocol/vega/pull/4413) - Deploy to Devnet with Jenkins and remove drone
+- [4442](https://github.com/vegaprotocol/vega/pull/4442) - Reduce the number of iterations in reward calculation
 
 ### 🐛 Fixes
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
@@ -42,10 +55,13 @@
 - [4343](https://github.com/vegaprotocol/vega/pull/4343) - Fix non deterministic test by using same `idGenerator`
 - [4352](https://github.com/vegaprotocol/vega/pull/4352) - Remove usage of `time.Now()` in the auction state
 - [4380](https://github.com/vegaprotocol/vega/pull/4380) - Implement Uint for network parameters and use it for monies values
+- [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
 - [4369](https://github.com/vegaprotocol/vega/pull/4369) - Fix orders still being accepted after market in trading terminated state
 - [4395](https://github.com/vegaprotocol/vega/pull/4395) - Fix drone pipeline
 - [4398](https://github.com/vegaprotocol/vega/pull/4398) - Fix to set proper status on withdrawal errors
 - [4421](https://github.com/vegaprotocol/vega/issues/4421) - Fix to missing pending rewards in LNL checkpoint
+- [4419](https://github.com/vegaprotocol/vega/pull/4419) - Fix snapshot cleanup, improve logging when specified block height could not be reloaded.
+- [4444](https://github.com/vegaprotocol/vega/pull/4444) - Fix division by zero when all validator scores are 0
 
 ## 0.45.5
 *2021-11-16*

@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -9,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/blockchain/nullchain"
 	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
@@ -48,6 +50,8 @@ import (
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
+
+var ErrUnknownChainProvider = errors.New("unknown chain provider")
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this shouldn't happen...
@@ -185,6 +189,54 @@ func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDe
 	return nil
 }
 
+func (l *NodeCommand) startABCIServer(ctx context.Context, app *processor.App) error {
+	var abciApp tmtypes.Application
+	tmCfg := l.conf.Blockchain.Tendermint
+	if path := tmCfg.ABCIRecordDir; path != "" {
+		rec, err := recorder.NewRecord(path, afero.NewOsFs())
+		if err != nil {
+			return err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		abciApp = recorder.NewApp(app.Abci(), rec)
+	} else {
+		abciApp = app.Abci()
+	}
+
+	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
+	if err := srv.Start(); err != nil {
+		return err
+	}
+	l.abciServer = srv
+
+	if path := tmCfg.ABCIReplayFile; path != "" {
+		rec, err := recorder.NewReplay(path, afero.NewOsFs())
+		if err != nil {
+			return err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		go func() {
+			if err := rec.Replay(abciApp); err != nil {
+				log.Fatalf("replay: %v", err)
+			}
+		}()
+	}
+
+	return nil
+}
+
 func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Commander) (*processor.App, error) {
 	app := processor.NewApp(
 		l.Log,
@@ -220,51 +272,25 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		l.Version,
 	)
 
-	var abciApp tmtypes.Application
-	tmCfg := l.conf.Blockchain.Tendermint
-	if path := tmCfg.ABCIRecordDir; path != "" {
-		rec, err := recorder.NewRecord(path, afero.NewOsFs())
-		if err != nil {
-			return nil, err
-		}
+	var (
+		err     error
+		abciClt blockchain.ChainClientImpl
+	)
+	switch l.conf.Blockchain.ChainProvider {
+	case "tendermint":
+		l.startABCIServer(ctx, app)
+		abciClt, err = abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
+	case "nullchain":
+		abciApp := app.Abci()
+		abciClt = nullchain.NewClient(l.Log, l.conf.Blockchain.Noop, abciApp)
 
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
-
-		abciApp = recorder.NewApp(app.Abci(), rec)
-	} else {
-		abciApp = app.Abci()
+		// Set a server but don't start it, this may be replaced by a time-forwarding backdoor later
+		srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
+		l.abciServer = srv
+	default:
+		return nil, ErrUnknownChainProvider
 	}
 
-	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
-	if err := srv.Start(); err != nil {
-		return nil, err
-	}
-	l.abciServer = srv
-
-	if path := tmCfg.ABCIReplayFile; path != "" {
-		rec, err := recorder.NewReplay(path, afero.NewOsFs())
-		if err != nil {
-			return nil, err
-		}
-
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
-
-		go func() {
-			if err := rec.Replay(abciApp); err != nil {
-				log.Fatalf("replay: %v", err)
-			}
-		}()
-	}
-
-	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -393,6 +419,7 @@ func (l *NodeCommand) setupNetParameters() error {
 	// now we are going to setup some network parameters which can be done
 	// through runtime checks
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
+
 	if err := l.netParams.AddRules(
 		netparams.ParamStringRules(
 			netparams.RewardAsset,

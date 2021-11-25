@@ -7,7 +7,7 @@ require (
 	code.vegaprotocol.io/protos v0.46.1-0.20211125092808-8c9433d9736d
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vegawallet v0.9.2
+	code.vegaprotocol.io/vegawallet v0.10.0
 	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible

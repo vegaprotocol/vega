@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -178,7 +179,16 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	e.mu.Lock()
 	e.currentTime = t
 	e.mu.Unlock()
-	for k, v := range e.assetActs {
+
+	assetActionKeys := make([]string, 0, len(e.assetActs))
+	for k := range e.assetActs {
+		assetActionKeys = append(assetActionKeys, k)
+	}
+	sort.Strings(assetActionKeys)
+
+	// iterate over asset actions deterministically
+	for _, k := range assetActionKeys {
+		v := e.assetActs[k]
 		state := atomic.LoadUint32(&v.state)
 		if state == pendingState {
 			continue
@@ -244,7 +254,14 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 }
 
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
-	for _, v := range e.withdrawals {
+	// sort withdraws to check deterministically
+	withdrawalsK := make([]string, 0, len(e.withdrawals))
+	for k := range e.withdrawals {
+		withdrawalsK = append(withdrawalsK, k)
+	}
+
+	for _, k := range withdrawalsK {
+		v := e.withdrawals[k]
 		if v.ref.Cmp(ref) == 0 {
 			return v.w, nil
 		}
