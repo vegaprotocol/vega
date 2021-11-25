@@ -42,6 +42,7 @@
 - [4392](https://github.com/vegaprotocol/vega/pull/4392) - Update `GETTING_STARTED.md` documentation
 - [4391](https://github.com/vegaprotocol/vega/pull/4391) - Refactor delegation
 - [4423](https://github.com/vegaprotocol/vega/pull/4423) - Add CLI options to start node with a null-blockchain
+- [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 - [4400](https://github.com/vegaprotocol/vega/pull/4400) - Add transaction hash to `SubmitTransactionResponse`
 - [4394](https://github.com/vegaprotocol/vega/pull/4394) - Add step to clear all events in integration tests
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals #4403
