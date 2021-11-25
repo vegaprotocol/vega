@@ -358,7 +358,7 @@ func (t Type) ToProto() eventspb.BusEventType {
 
 func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
 	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
-	evtCtx = vgcontext.WithChainID(ctx, be.ChainId)
+	evtCtx = vgcontext.WithChainID(evtCtx, be.ChainId)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
