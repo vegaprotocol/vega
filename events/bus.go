@@ -100,7 +100,6 @@ const (
 	RewardPayoutEvent
 	CheckpointEvent
 	ValidatorScoreEvent
-	StreamStartEvent
 )
 
 var (
@@ -229,7 +228,6 @@ var (
 		RewardPayoutEvent:       "RewardPayoutEvent",
 		CheckpointEvent:         "CheckpointEvent",
 		ValidatorScoreEvent:     "ValidatorScoreEvent",
-		StreamStartEvent:        "StreamStartEvent",
 	}
 )
 

@@ -318,6 +318,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
+
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
 		log.Error("unable to initialise broker", logging.Error(err))

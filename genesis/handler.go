@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/logging"
 )
 
@@ -14,7 +13,6 @@ type Handler struct {
 
 	onGenesisTimeLoadedCB     []func(context.Context, time.Time)
 	onGenesisAppStateLoadedCB []func(context.Context, []byte) error
-	onGenesisChainIDLoadedCB  []func(context.Context, string)
 }
 
 func New(log *logging.Logger, cfg Config) *Handler {
@@ -25,7 +23,6 @@ func New(log *logging.Logger, cfg Config) *Handler {
 		cfg:                       cfg,
 		onGenesisTimeLoadedCB:     []func(context.Context, time.Time){},
 		onGenesisAppStateLoadedCB: []func(context.Context, []byte) error{},
-		onGenesisChainIDLoadedCB:  []func(context.Context, string){},
 	}
 }
 
@@ -51,13 +48,6 @@ func (h *Handler) OnGenesis(ctx context.Context, t time.Time, state []byte) erro
 
 	h.log.Debug("vega initial state at genesis",
 		logging.String("state", string(state)))
-
-	chainID, _ := vgcontext.ChainIDFromContext(ctx)
-	h.log.Debug("chain id",
-		logging.String("chainID", chainID))
-	for _, f := range h.onGenesisChainIDLoadedCB {
-		f(ctx, chainID)
-	}
 	for _, f := range h.onGenesisAppStateLoadedCB {
 		if err := f(ctx, state); err != nil {
 			return err
@@ -73,8 +63,4 @@ func (h *Handler) OnGenesisTimeLoaded(f ...func(context.Context, time.Time)) {
 
 func (h *Handler) OnGenesisAppStateLoaded(f ...func(context.Context, []byte) error) {
 	h.onGenesisAppStateLoadedCB = append(h.onGenesisAppStateLoadedCB, f...)
-}
-
-func (h *Handler) OnGenesisChainIDLoaded(f ...func(context.Context, string)) {
-	h.onGenesisChainIDLoadedCB = append(h.onGenesisChainIDLoadedCB, f...)
 }
