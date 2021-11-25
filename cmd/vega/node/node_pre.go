@@ -17,7 +17,6 @@ import (
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
-	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/evtforward"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/genesis"
@@ -134,7 +133,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err err
 	}
 
 	for k, v := range state {
-		err := l.loadAsset(k, v)
+		err := l.loadAsset(ctx, k, v)
 		if err != nil {
 			return err
 		}
@@ -143,7 +142,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err err
 	return nil
 }
 
-func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
+func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDetails) error {
 	aid, err := l.assets.NewAsset(id, types.AssetDetailsFromProto(v))
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
@@ -176,7 +175,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	}
 
 	assetD := asset.Type()
-	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
+	if err := l.collateral.EnableAsset(ctx, *assetD); err != nil {
 		return fmt.Errorf("unable to enable asset in collateral: %v", err)
 	}
 
@@ -293,7 +292,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	l.genesisHandler = genesis.New(l.Log, l.conf.Genesis)
 	l.genesisHandler.OnGenesisTimeLoaded(l.timeService.SetTimeNow)
-	l.genesisHandler.OnGenesisChainIDLoaded(l.sendStreamStart)
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
 	if err != nil {
 		log.Error("unable to initialise broker", logging.Error(err))
@@ -389,11 +387,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches
 	return l.setupNetParameters()
-}
-
-func (l *NodeCommand) sendStreamStart(ctx context.Context, chainID string) {
-	event := events.NewStreamStart(ctx, chainID)
-	l.broker.Send(event)
 }
 
 func (l *NodeCommand) setupNetParameters() error {

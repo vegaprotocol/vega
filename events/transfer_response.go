@@ -49,6 +49,7 @@ func (t TransferResponse) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      t.eventID(),
 		Block:   t.TraceID(),
+		ChainId: t.ChainID(),
 		Type:    t.et.ToProto(),
 		Event: &eventspb.BusEvent_TransferResponses{
 			TransferResponses: &p,

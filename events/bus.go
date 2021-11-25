@@ -42,6 +42,7 @@ type marketPartyFilterable interface {
 type Base struct {
 	ctx     context.Context
 	traceID string
+	chainID string
 	blockNr int64
 	seq     uint64
 	et      Type
@@ -53,6 +54,7 @@ type Event interface {
 	Type() Type
 	Context() context.Context
 	TraceID() string
+	ChainID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
 	StreamMessage() *eventspb.BusEvent
@@ -148,7 +150,6 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:       StakeLinkingEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:    ValidatorUpdateEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:          CheckpointEvent,
-		eventspb.BusEventType_BUS_EVENT_TYPE_STREAM_START:        StreamStartEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -188,7 +189,6 @@ var (
 		RewardPayoutEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT,
 		CheckpointEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT,
 		ValidatorScoreEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE,
-		StreamStartEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_STREAM_START,
 	}
 
 	eventStrings = map[Type]string{
@@ -240,6 +240,7 @@ func newBase(ctx context.Context, t Type) *Base {
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
+		chainID: cID,
 		blockNr: h,
 		et:      t,
 	}
@@ -248,6 +249,10 @@ func newBase(ctx context.Context, t Type) *Base {
 // TraceID returns the... traceID obviously.
 func (b Base) TraceID() string {
 	return b.traceID
+}
+
+func (b Base) ChainID() string {
+	return b.chainID
 }
 
 func (b *Base) SetSequenceID(s uint64) {
@@ -354,10 +359,12 @@ func (t Type) ToProto() eventspb.BusEventType {
 
 func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
 	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
+	evtCtx = vgcontext.WithChainID(ctx, be.ChainId)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
 		traceID: be.Block,
+		chainID: be.ChainId,
 		blockNr: blockNr,
 		seq:     seq,
 		et:      t,

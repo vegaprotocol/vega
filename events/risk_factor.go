@@ -37,6 +37,7 @@ func (r RiskFactor) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      r.eventID(),
 		Block:   r.TraceID(),
+		ChainId: r.ChainID(),
 		Type:    r.et.ToProto(),
 		Event: &eventspb.BusEvent_RiskFactor{
 			RiskFactor: &r.r,

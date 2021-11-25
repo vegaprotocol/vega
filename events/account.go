@@ -46,6 +46,7 @@ func (a Acc) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      a.eventID(),
 		Block:   a.TraceID(),
+		ChainId: a.ChainID(),
 		Type:    a.et.ToProto(),
 		Event: &eventspb.BusEvent_Account{
 			Account: &a.a,
