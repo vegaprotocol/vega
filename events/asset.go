@@ -33,6 +33,7 @@ func (a Asset) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      a.eventID(),
 		Block:   a.TraceID(),
+		ChainId: a.ChainID(),
 		Type:    a.et.ToProto(),
 		Event: &eventspb.BusEvent_Asset{
 			Asset: &a.a,

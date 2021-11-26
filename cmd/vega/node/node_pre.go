@@ -137,7 +137,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err err
 	}
 
 	for k, v := range state {
-		err := l.loadAsset(k, v)
+		err := l.loadAsset(ctx, k, v)
 		if err != nil {
 			return err
 		}
@@ -146,7 +146,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err err
 	return nil
 }
 
-func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
+func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDetails) error {
 	aid, err := l.assets.NewAsset(id, types.AssetDetailsFromProto(v))
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
@@ -179,7 +179,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	}
 
 	assetD := asset.Type()
-	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
+	if err := l.collateral.EnableAsset(ctx, *assetD); err != nil {
 		return fmt.Errorf("unable to enable asset in collateral: %v", err)
 	}
 

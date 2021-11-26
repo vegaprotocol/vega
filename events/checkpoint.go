@@ -36,6 +36,7 @@ func (e Checkpoint) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      e.eventID(),
 		Block:   e.TraceID(),
+		ChainId: e.ChainID(),
 		Type:    e.et.ToProto(),
 		Event: &eventspb.BusEvent_Checkpoint{
 			Checkpoint: &e.data,

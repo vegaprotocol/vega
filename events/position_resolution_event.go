@@ -69,6 +69,7 @@ func (p PosRes) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      p.eventID(),
 		Block:   p.TraceID(),
+		ChainId: p.ChainID(),
 		Type:    p.et.ToProto(),
 		Event: &eventspb.BusEvent_PositionResolution{
 			PositionResolution: &pr,

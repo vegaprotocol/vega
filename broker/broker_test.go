@@ -37,6 +37,7 @@ type evt struct {
 	ctx context.Context
 	sid uint64
 	id  string
+	cid string
 }
 
 func getBroker(t *testing.T) *brokerTst {
@@ -61,6 +62,7 @@ func (b brokerTst) randomEvt() *evt {
 		t:   events.All,
 		ctx: b.ctx,
 		id:  idString,
+		cid: "testchain",
 	}
 }
 
@@ -715,6 +717,10 @@ func (e evt) Sequence() uint64 {
 
 func (e evt) TraceID() string {
 	return e.id
+}
+
+func (e evt) ChainID() string {
+	return e.cid
 }
 
 func (e evt) StreamMessage() *eventspb.BusEvent {

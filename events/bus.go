@@ -42,6 +42,7 @@ type marketPartyFilterable interface {
 type Base struct {
 	ctx     context.Context
 	traceID string
+	chainID string
 	blockNr int64
 	seq     uint64
 	et      Type
@@ -53,13 +54,14 @@ type Event interface {
 	Type() Type
 	Context() context.Context
 	TraceID() string
+	ChainID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
 	StreamMessage() *eventspb.BusEvent
 }
 
 const (
-	// All event type -> used by subscrubers to just receive all events, has no actual corresponding event payload.
+	// All event type -> used by subscribers to just receive all events, has no actual corresponding event payload.
 	All Type = iota
 	// other event types that DO have corresponding event types.
 	TimeUpdate
@@ -232,10 +234,12 @@ var (
 // A base event holds no data, so the constructor will not be called directly.
 func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := vgcontext.TraceIDFromContext(ctx)
+	cID, _ := vgcontext.ChainIDFromContext(ctx)
 	h, _ := vgcontext.BlockHeightFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
+		chainID: cID,
 		blockNr: h,
 		et:      t,
 	}
@@ -244,6 +248,10 @@ func newBase(ctx context.Context, t Type) *Base {
 // TraceID returns the... traceID obviously.
 func (b Base) TraceID() string {
 	return b.traceID
+}
+
+func (b Base) ChainID() string {
+	return b.chainID
 }
 
 func (b *Base) SetSequenceID(s uint64) {
@@ -350,10 +358,12 @@ func (t Type) ToProto() eventspb.BusEventType {
 
 func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
 	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
+	evtCtx = vgcontext.WithChainID(evtCtx, be.ChainId)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
 		traceID: be.Block,
+		chainID: be.ChainId,
 		blockNr: blockNr,
 		seq:     seq,
 		et:      t,

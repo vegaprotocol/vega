@@ -112,6 +112,7 @@ func (a Auction) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      a.eventID(),
 		Block:   a.TraceID(),
+		ChainId: a.ChainID(),
 		Type:    a.et.ToProto(),
 		Event: &eventspb.BusEvent_Auction{
 			Auction: &p,
@@ -126,6 +127,7 @@ func (a Auction) StreamMarketMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      a.eventID(),
 		Block:   a.TraceID(),
+		ChainId: a.ChainID(),
 		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
 		Event: &eventspb.BusEvent_Market{
 			Market: &eventspb.MarketEvent{
