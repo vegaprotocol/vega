@@ -368,7 +368,7 @@ func testEndOfBlockSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	top.EndOfBlock(11)
+	top.EndOfBlock(ctx, 11)
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
 	assert.NotNil(t, data1)
@@ -384,7 +384,7 @@ func testEndOfBlockSuccess(t *testing.T) {
 	assert.Equal(t, "vega-key-4", data4.VegaPubKey)
 
 	// when
-	top.EndOfBlock(13)
+	top.EndOfBlock(ctx, 13)
 	// then
 	data3 = top.Get("vega-master-pubkey-3")
 	assert.NotNil(t, data3)
@@ -398,13 +398,13 @@ type Callback struct {
 	mock.Mock
 }
 
-func (m *Callback) Call(a, b string) {
-	m.Called(a, b)
+func (m *Callback) Call(ctx context.Context, a, b string) {
+	m.Called(ctx, a, b)
 }
 
 func newCallback(times int) Callback {
 	c := Callback{}
-	c.On("Call", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(times)
+	c.On("Call", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(times)
 	return c
 }
 
@@ -442,7 +442,7 @@ func testEndOfBlockNotifyKeyChange(t *testing.T) {
 	top.NotifyOnKeyChange(c1.Call, c2.Call)
 
 	// when
-	top.EndOfBlock(11)
+	top.EndOfBlock(ctx, 11)
 
 	// then
 	c1.AssertExpectations(t)
@@ -480,7 +480,7 @@ func testEndOfBlockAddsToProcessedRotations(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	top.EndOfBlock(11)
+	top.EndOfBlock(ctx, 11)
 
 	// then
 	rotations := top.GetKeyRotations("vega-master-pubkey-2")
@@ -498,7 +498,7 @@ func testEndOfBlockAddsToProcessedRotations(t *testing.T) {
 	)
 
 	// when
-	top.EndOfBlock(12)
+	top.EndOfBlock(ctx, 12)
 
 	// then
 	rotations = top.GetKeyRotations("vega-master-pubkey-2")

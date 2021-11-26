@@ -81,7 +81,7 @@ type Topology struct {
 	// key rotations
 	pendingPubKeyRotations   pendingKeyRotationMapping
 	processedPubKeyRotations processedKeyRotationMapping
-	pubKeyChangeListeners    []func(oldPubKey, newPubKey string)
+	pubKeyChangeListeners    []func(ctx context.Context, oldPubKey, newPubKey string)
 
 	mu sync.RWMutex
 
@@ -299,13 +299,13 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 	))
 }
 
-func (t *Topology) NotifyOnKeyChange(fns ...func(oldPubKey, newPubKey string)) {
+func (t *Topology) NotifyOnKeyChange(fns ...func(ctx context.Context, oldPubKey, newPubKey string)) {
 	t.pubKeyChangeListeners = append(t.pubKeyChangeListeners, fns...)
 }
 
-func (t *Topology) notifyKeyChange(oldPubKey, newPubKey string) {
+func (t *Topology) notifyKeyChange(ctx context.Context, oldPubKey, newPubKey string) {
 	for _, f := range t.pubKeyChangeListeners {
-		f(oldPubKey, newPubKey)
+		f(ctx, oldPubKey, newPubKey)
 	}
 }
 
@@ -335,7 +335,7 @@ func (t *Topology) GetKeyRotations(nodeID string) []KeyRotation {
 	return rotations
 }
 
-func (t *Topology) EndOfBlock(blockHeight int64) {
+func (t *Topology) EndOfBlock(ctx context.Context, blockHeight int64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -358,7 +358,7 @@ func (t *Topology) EndOfBlock(blockHeight int64) {
 		t.validators[nodeID] = data
 
 		t.addProcessedKeyRotation(nodeID, oldPubKey, newPubKey, blockHeight)
-		t.notifyKeyChange(oldPubKey, newPubKey)
+		t.notifyKeyChange(ctx, oldPubKey, newPubKey)
 	}
 
 	delete(t.pendingPubKeyRotations, blockHeight)

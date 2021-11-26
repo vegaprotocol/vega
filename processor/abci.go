@@ -452,7 +452,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	)
 
 	app.epoch.OnBlockEnd(ctx)
-	app.top.EndOfBlock(req.Height)
+	app.top.EndOfBlock(ctx, req.Height)
 
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
