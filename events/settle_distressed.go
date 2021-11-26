@@ -66,6 +66,7 @@ func (s SettleDistressed) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      s.eventID(),
 		Block:   s.TraceID(),
+		ChainId: s.ChainID(),
 		Type:    s.et.ToProto(),
 		Event: &eventspb.BusEvent_SettleDistressed{
 			SettleDistressed: &p,

@@ -37,6 +37,7 @@ func (m MarketData) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      m.eventID(),
 		Block:   m.TraceID(),
+		ChainId: m.ChainID(),
 		Type:    m.et.ToProto(),
 		Event: &eventspb.BusEvent_MarketData{
 			MarketData: &m.md,

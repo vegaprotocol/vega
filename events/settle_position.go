@@ -73,6 +73,7 @@ func (s SettlePos) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      s.eventID(),
 		Block:   s.TraceID(),
+		ChainId: s.ChainID(),
 		Type:    s.et.ToProto(),
 		Event: &eventspb.BusEvent_SettlePosition{
 			SettlePosition: &p,

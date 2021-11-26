@@ -55,6 +55,7 @@
 - [4413](https://github.com/vegaprotocol/vega/pull/4413) - Deploy to Devnet with Jenkins and remove drone
 - [4429](https://github.com/vegaprotocol/vega/pull/4429) - Release version `v0.46.0`
 - [4442](https://github.com/vegaprotocol/vega/pull/4442) - Reduce the number of iterations in reward calculation
+- [4409](https://github.com/vegaprotocol/vega/pull/4409) - Include chain id in bus messages
 
 ### 🐛 Fixes
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
