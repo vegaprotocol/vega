@@ -19,6 +19,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -270,6 +271,8 @@ func TestValidatorTopologyKeyRotate(t *testing.T) {
 	t.Run("add key rotate - fails when node does not exists", testAddKeyRotateSuccessFailsOnNonExistingNode)
 	t.Run("add key rotate - fails when target block height is less then current block height", testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight)
 	t.Run("end of block - success", testEndOfBlockSuccess)
+	t.Run("end of block - notify key change", testEndOfBlockNotifyKeyChange)
+	t.Run("end of block - adds to processed key rotations", testEndOfBlockAddsToProcessedRotations)
 }
 
 func testAddKeyRotateSuccess(t *testing.T) {
@@ -389,4 +392,146 @@ func testEndOfBlockSuccess(t *testing.T) {
 	data4 = top.Get("vega-master-pubkey-4")
 	assert.NotNil(t, data4)
 	assert.Equal(t, "new-vega-key-4", data4.VegaPubKey)
+}
+
+type Callback struct {
+	mock.Mock
+}
+
+func (m *Callback) Call(a, b string) {
+	m.Called(a, b)
+}
+
+func newCallback(times int) Callback {
+	c := Callback{}
+	c.On("Call", mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(times)
+	return c
+}
+
+func testEndOfBlockNotifyKeyChange(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+
+	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2"}
+	top.UpdateValidatorSet(chainValidators)
+
+	ctx := context.TODO()
+	for i := 0; i < len(chainValidators); i++ {
+		j := i + 1
+		id := fmt.Sprintf("vega-master-pubkey-%d", j)
+		nr := commandspb.NodeRegistration{
+			Id:              id,
+			ChainPubKey:     chainValidators[i],
+			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
+		}
+
+		err := top.AddNodeRegistration(ctx, &nr)
+		assert.NoErrorf(t, err, "failed to add node registation %s", id)
+	}
+
+	// add key rotations
+	err := top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-1", "new-vega-key-1", 1)
+	assert.NoError(t, err)
+	err = top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-2", "new-vega-key-2", 1)
+	assert.NoError(t, err)
+
+	// register callbacks
+	c1 := newCallback(2)
+	c2 := newCallback(2)
+	top.NotifyOnKeyChange(c1.Call, c2.Call)
+
+	// when
+	top.EndOfBlock(11)
+
+	// then
+	c1.AssertExpectations(t)
+	c2.AssertExpectations(t)
+}
+
+func testEndOfBlockAddsToProcessedRotations(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+
+	chainValidators := []string{"tm-pubkey-1", "tm-pubkey-2"}
+	top.UpdateValidatorSet(chainValidators)
+
+	ctx := context.TODO()
+	for i := 0; i < len(chainValidators); i++ {
+		j := i + 1
+		id := fmt.Sprintf("vega-master-pubkey-%d", j)
+		nr := commandspb.NodeRegistration{
+			Id:              id,
+			ChainPubKey:     chainValidators[i],
+			VegaPubKey:      fmt.Sprintf("vega-key-%d", j),
+			EthereumAddress: fmt.Sprintf("eth-address-%d", j),
+		}
+
+		err := top.AddNodeRegistration(ctx, &nr)
+		assert.NoErrorf(t, err, "failed to add node registation %s", id)
+	}
+
+	// add key rotations
+	err := top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-1", "new-vega-key-1", 1)
+	assert.NoError(t, err)
+	err = top.AddKeyRotate(ctx, 10, 12, "vega-master-pubkey-1", "new-2-vega-key-1", 2)
+	assert.NoError(t, err)
+	err = top.AddKeyRotate(ctx, 10, 12, "vega-master-pubkey-2", "new-vega-key-2", 1)
+	assert.NoError(t, err)
+
+	// when
+	top.EndOfBlock(11)
+
+	// then
+	rotations := top.GetKeyRotations("vega-master-pubkey-2")
+	assert.Len(t, rotations, 0)
+	rotations = top.GetKeyRotations("vega-master-pubkey-1")
+	assert.Len(t, rotations, 1)
+	assert.Equal(t,
+		validators.KeyRotation{
+			NodeID:      "vega-master-pubkey-1",
+			OldPubKey:   "vega-key-1",
+			NewPubKey:   "new-vega-key-1",
+			BlockHeight: 11,
+		},
+		rotations[0],
+	)
+
+	// when
+	top.EndOfBlock(12)
+
+	// then
+	rotations = top.GetKeyRotations("vega-master-pubkey-2")
+	assert.Len(t, rotations, 1)
+	assert.Equal(t,
+		validators.KeyRotation{
+			NodeID:      "vega-master-pubkey-2",
+			OldPubKey:   "vega-key-2",
+			NewPubKey:   "new-vega-key-2",
+			BlockHeight: 12,
+		},
+		rotations[0],
+	)
+
+	rotations = top.GetKeyRotations("vega-master-pubkey-1")
+	assert.Len(t, rotations, 2)
+	assert.Equal(t,
+		validators.KeyRotation{
+			NodeID:      "vega-master-pubkey-1",
+			OldPubKey:   "vega-key-1",
+			NewPubKey:   "new-vega-key-1",
+			BlockHeight: 11,
+		},
+		rotations[0],
+	)
+	assert.Equal(t,
+		validators.KeyRotation{
+			NodeID:      "vega-master-pubkey-1",
+			OldPubKey:   "new-vega-key-1",
+			NewPubKey:   "new-2-vega-key-1",
+			BlockHeight: 12,
+		},
+		rotations[1],
+	)
+
 }

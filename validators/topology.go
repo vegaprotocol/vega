@@ -52,13 +52,18 @@ func (v ValidatorData) IsValid() bool {
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey.
 type ValidatorMapping map[string]ValidatorData
 
-// keyRotationMapping maps a block height => node id => new public key
-type keyRotationMapping map[int64]map[string]string
+// pendingKeyRotationMapping maps a block height => node id => new public key
+type pendingKeyRotationMapping map[int64]map[string]string
 
-type keyRotation struct {
-	nodeID       string
-	newPublicKey string
+type KeyRotation struct {
+	NodeID      string
+	OldPubKey   string
+	NewPubKey   string
+	BlockHeight int64
 }
+
+// processedKeyRotationMapping maps node id => slice of key rotations
+type processedKeyRotationMapping map[string][]KeyRotation
 
 type Topology struct {
 	log    *logging.Logger
@@ -73,9 +78,10 @@ type Topology struct {
 
 	isValidator bool
 
-	// block height to node to new public key
-	pendingPubKeyRotations keyRotationMapping
-	pubKeyChangeListeners  []func(oldPubKey, newPubKey string)
+	// key rotations
+	pendingPubKeyRotations   pendingKeyRotationMapping
+	processedPubKeyRotations processedKeyRotationMapping
+	pubKeyChangeListeners    []func(oldPubKey, newPubKey string)
 
 	mu sync.RWMutex
 
@@ -87,14 +93,15 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) 
 	log.SetLevel(cfg.Level.Get())
 
 	t := &Topology{
-		log:                    log,
-		cfg:                    cfg,
-		wallet:                 wallet,
-		broker:                 broker,
-		validators:             ValidatorMapping{},
-		chainValidators:        []string{},
-		tss:                    &topologySnapshotState{changed: true},
-		pendingPubKeyRotations: keyRotationMapping{},
+		log:                      log,
+		cfg:                      cfg,
+		wallet:                   wallet,
+		broker:                   broker,
+		validators:               ValidatorMapping{},
+		chainValidators:          []string{},
+		tss:                      &topologySnapshotState{changed: true},
+		pendingPubKeyRotations:   pendingKeyRotationMapping{},
+		processedPubKeyRotations: processedKeyRotationMapping{},
 	}
 
 	return t
@@ -302,6 +309,32 @@ func (t *Topology) notifyKeyChange(oldPubKey, newPubKey string) {
 	}
 }
 
+func (t *Topology) addProcessedKeyRotation(nodeID, oldPubKey, newPubKey string, blockHeight int64) {
+	if _, ok := t.processedPubKeyRotations[nodeID]; !ok {
+		t.processedPubKeyRotations[nodeID] = []KeyRotation{}
+	}
+
+	t.processedPubKeyRotations[nodeID] = append(t.processedPubKeyRotations[nodeID], KeyRotation{
+		NodeID:      nodeID,
+		OldPubKey:   oldPubKey,
+		NewPubKey:   newPubKey,
+		BlockHeight: blockHeight,
+	})
+}
+
+// GetKeyRotations returns a history of all processed key rotations per given node
+func (t *Topology) GetKeyRotations(nodeID string) []KeyRotation {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	rotations, ok := t.processedPubKeyRotations[nodeID]
+	if !ok {
+		return nil
+	}
+
+	return rotations
+}
+
 func (t *Topology) EndOfBlock(blockHeight int64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -324,6 +357,7 @@ func (t *Topology) EndOfBlock(blockHeight int64) {
 		data.VegaPubKey = newPubKey
 		t.validators[nodeID] = data
 
+		t.addProcessedKeyRotation(nodeID, oldPubKey, newPubKey, blockHeight)
 		t.notifyKeyChange(oldPubKey, newPubKey)
 	}
 
