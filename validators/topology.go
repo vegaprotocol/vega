@@ -75,6 +75,7 @@ type Topology struct {
 
 	// block height to node to new public key
 	pendingPubKeyRotations keyRotationMapping
+	pubKeyChangeListeners  []func(oldPubKey, newPubKey string)
 
 	mu sync.RWMutex
 
@@ -291,6 +292,16 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 	))
 }
 
+func (t *Topology) NotifyOnKeyChange(fns ...func(oldPubKey, newPubKey string)) {
+	t.pubKeyChangeListeners = append(t.pubKeyChangeListeners, fns...)
+}
+
+func (t *Topology) notifyKeyChange(oldPubKey, newPubKey string) {
+	for _, f := range t.pubKeyChangeListeners {
+		f(oldPubKey, newPubKey)
+	}
+}
+
 func (t *Topology) EndOfBlock(blockHeight int64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -307,8 +318,13 @@ func (t *Topology) EndOfBlock(blockHeight int64) {
 			t.log.Error("failed to rotate key due to non existing validator", logging.String("nodeID", nodeID))
 			continue
 		}
+
+		oldPubKey := data.VegaPubKey
+
 		data.VegaPubKey = newPubKey
 		t.validators[nodeID] = data
+
+		t.notifyKeyChange(oldPubKey, newPubKey)
 	}
 
 	delete(t.pendingPubKeyRotations, blockHeight)
