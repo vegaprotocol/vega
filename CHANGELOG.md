@@ -23,7 +23,7 @@
 *2021-11-24*
 
 ### 🐛 Fixes
-- [4445](https://github.com/vegaprotocol/vega/pull/4445) - Limit the number of iterations for reward calculation for delegators + fix for division by zero
+- [4445](https://github.com/vegaprotocol/vega/pull/4445) - Limit the number of iterations for reward calculation for delegator and fix for division by zero
 
 ## 0.46.1
 *2021-11-22*
