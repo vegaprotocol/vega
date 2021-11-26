@@ -18,6 +18,7 @@ Buf
 CGO
 checkpointing
 CI
+cleanup
 Cleanup
 clef
 codegen
@@ -25,6 +26,7 @@ cyclomatic
 datestamps
 datetime
 denylist
+delegator
 Devnet
 dlv
 DoD
@@ -100,4 +102,4 @@ vegawallet
 whitepaper
 XDG
 xor
-cleanup
+
