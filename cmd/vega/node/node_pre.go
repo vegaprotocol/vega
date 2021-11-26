@@ -189,13 +189,13 @@ func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDe
 	return nil
 }
 
-func (l *NodeCommand) startABCIServer(ctx context.Context, app *processor.App) error {
+func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.Server, error) {
 	var abciApp tmtypes.Application
 	tmCfg := l.conf.Blockchain.Tendermint
 	if path := tmCfg.ABCIRecordDir; path != "" {
 		rec, err := recorder.NewRecord(path, afero.NewOsFs())
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// closer
@@ -211,14 +211,13 @@ func (l *NodeCommand) startABCIServer(ctx context.Context, app *processor.App) e
 
 	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
 	if err := srv.Start(); err != nil {
-		return err
+		return nil, err
 	}
-	l.abciServer = srv
 
 	if path := tmCfg.ABCIReplayFile; path != "" {
 		rec, err := recorder.NewReplay(path, afero.NewOsFs())
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// closer
@@ -234,10 +233,10 @@ func (l *NodeCommand) startABCIServer(ctx context.Context, app *processor.App) e
 		}()
 	}
 
-	return nil
+	return srv, nil
 }
 
-func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Commander) (*processor.App, error) {
+func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallets.Commander) (*processor.App, error) {
 	app := processor.NewApp(
 		l.Log,
 		l.vegaPaths,
@@ -272,30 +271,31 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		l.Version,
 	)
 
-	var (
-		err     error
-		abciClt blockchain.ChainClientImpl
-	)
 	switch l.conf.Blockchain.ChainProvider {
 	case "tendermint":
-		l.startABCIServer(ctx, app)
-		abciClt, err = abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
+		srv, err := l.startABCI(ctx, app)
+		l.blockchainServer = blockchain.NewServer(srv)
+		if err != nil {
+			return nil, err
+		}
+
+		a, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
+		if err != nil {
+			return nil, err
+		}
+		l.blockchainClient = blockchain.NewClient(a)
 	case "nullchain":
 		abciApp := app.Abci()
-		abciClt = nullchain.NewClient(l.Log, l.conf.Blockchain.Null, abciApp)
-		// Set a server but don't start it, this may be replaced by a time-forwarding backdoor later
-		srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
-		l.abciServer = srv
+		n := nullchain.NewClient(l.Log, l.conf.Blockchain.Null, abciApp)
+
+		// nullchain acts as both the client and the server because its does everything
+		l.blockchainServer = blockchain.NewServer(n)
+		l.blockchainClient = blockchain.NewClient(n)
 	default:
 		return nil, ErrUnknownChainProvider
 	}
 
-	if err != nil {
-		return nil, err
-	}
-	l.blockchainClient = blockchain.NewClient(abciClt)
 	commander.SetChain(l.blockchainClient)
-
 	return app, nil
 }
 
@@ -402,7 +402,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd, l.executionEngine)
 
 	// now instantiate the blockchain layer
-	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
+	if l.app, err = l.startBlockchain(l.ctx, commander); err != nil {
 		return err
 	}
 
@@ -591,7 +591,7 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
-		func(cfg config.Config) { l.abciServer.ReloadConf(cfg.Blockchain) },
+		func(cfg config.Config) { l.blockchainServer.ReloadConf(cfg.Blockchain) },
 		func(cfg config.Config) { l.topology.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.witness.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },

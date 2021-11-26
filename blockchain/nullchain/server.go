@@ -1,6 +1,7 @@
 package nullchain
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,18 +12,29 @@ import (
 
 var ErrInvalidRequest = errors.New("invalid request")
 
-func (n *NullBlockchain) StartServer() error {
+func (n *NullBlockchain) Stop() {
+	n.log.Info("Stopping nullchain server")
+	if err := n.srv.Shutdown(context.Background()); err != nil {
+		n.log.Warn("failed to shutdown")
+	}
+}
+
+func (n *NullBlockchain) Start() error {
+	n.log.Info("starting blockchain")
+	if err := n.StartChain(); err != nil {
+		return err
+	}
+
+	n.srv = &http.Server{Addr: n.srvAddress}
 	http.HandleFunc("/forwardtime", n.handleForwardTime)
 
-	// Fire up http server
-	go http.ListenAndServe(n.srvAddress, nil)
-
+	n.log.Info("starting backdoor server")
+	go n.srv.ListenAndServe()
 	return nil
 }
 
-// requestToDuration req should either be a parsable duration or a RFC3339 datetime
-// work out which.
-func requestToDuration(req string, now time.Time) (time.Duration, error) {
+// RequestToDuration should receive either be a parsable duration or a RFC3339 datetime.
+func RequestToDuration(req string, now time.Time) (time.Duration, error) {
 	d, err := time.ParseDuration(req)
 	if err == nil {
 		return d, nil
@@ -61,7 +73,7 @@ func (n *NullBlockchain) handleForwardTime(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	d, err := requestToDuration(req.Forward, n.now)
+	d, err := RequestToDuration(req.Forward, n.now)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}

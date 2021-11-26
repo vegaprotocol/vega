@@ -2,12 +2,14 @@ package nullchain_test
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/vega/blockchain"
 
 	"code.vegaprotocol.io/vega/blockchain/nullchain"
 	"code.vegaprotocol.io/vega/blockchain/nullchain/mocks"
@@ -20,10 +22,34 @@ import (
 	"github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
+const (
+	chainID     = "somechainid"
+	genesisTime = "2021-11-25T10:22:23.03277423Z"
+)
+
 func TestNullChain(t *testing.T) {
+	t.Run("test basics", testBasics)
 	t.Run("test transactions create block", testTransactionsCreateBlock)
 	t.Run("test timeforwarding creates blocks", testTimeForwardingCreatesBlocks)
 	t.Run("test timeforwarding less than a block does nothing", testTimeForwardingLessThanABlockDoesNothing)
+	t.Run("test timeforwarding request conversion", testTimeForwardingRequestConversion)
+}
+
+func testBasics(t *testing.T) {
+	ctx := context.Background()
+	testChain := getTestNullChain(t, 2, time.Second)
+	defer testChain.ctrl.Finish()
+
+	// Check genesis time from genesis file has filtered through
+	gt, _ := time.Parse(time.RFC3339Nano, genesisTime)
+	getGT, err := testChain.chain.GetGenesisTime(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, gt, getGT)
+
+	// Check chainID time from genesis file has filtered through
+	id, err := testChain.chain.GetChainID(ctx)
+	assert.NoError(t, err)
+	assert.Equal(t, chainID, id)
 }
 
 func testTransactionsCreateBlock(t *testing.T) {
@@ -109,6 +135,30 @@ func testTimeForwardingLessThanABlockDoesNothing(t *testing.T) {
 	assert.Equal(t, 3, count)
 }
 
+func testTimeForwardingRequestConversion(t *testing.T) {
+	now := time.Time{}
+
+	// Bad input
+	_, err := nullchain.RequestToDuration("nonsense", now)
+	assert.Error(t, err)
+
+	// Valid duration
+	d, err := nullchain.RequestToDuration("1m10s", now)
+	assert.NoError(t, err)
+	assert.Equal(t, d, time.Minute+(10*time.Second))
+
+	// Valid datetime
+	forward := now.Add(time.Minute)
+	d, err = nullchain.RequestToDuration(forward.Format(time.RFC3339), now)
+	assert.NoError(t, err)
+	assert.Equal(t, time.Minute, d)
+
+	// backwards in time
+	forward = now.Add(-time.Hour)
+	_, err = nullchain.RequestToDuration(forward.Format(time.RFC3339), now)
+	assert.Error(t, err)
+}
+
 type testNullBlockChain struct {
 	chain *nullchain.NullBlockchain
 	ctrl  *gomock.Controller
@@ -122,7 +172,7 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 
 	app := mocks.NewMockApplicationService(ctrl)
 
-	cfg := nullchain.NewDefaultConfig()
+	cfg := blockchain.NewDefaultNullChainConfig()
 	cfg.GenesisFile = newGenesisFile(t)
 	cfg.BlockDuration = encoding.Duration{Duration: d}
 	cfg.TransactionsPerBlock = txnPerBlock
@@ -134,7 +184,7 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 	app.EXPECT().InitChain(gomock.Any()).Times(1)
 	app.EXPECT().BeginBlock(gomock.Any()).Times(1)
 
-	err := n.Start()
+	err := n.StartChain()
 	require.NoError(t, err)
 
 	return &testNullBlockChain{
@@ -146,7 +196,7 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 
 func newGenesisFile(t *testing.T) string {
 	t.Helper()
-	data := "{ \"appstate\": { \"stuff\": \"stuff\" }}"
+	data := fmt.Sprintf("{ \"genesis_time\": \"%s\",\"chain_id\": \"%s\", \"appstate\": { \"stuff\": \"stuff\" }}", genesisTime, chainID)
 
 	filePath := filepath.Join(t.TempDir(), "genesis.json")
 	if err := vgfs.WriteFile(filePath, []byte(data)); err != nil {

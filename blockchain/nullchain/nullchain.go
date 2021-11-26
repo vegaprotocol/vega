@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
+	"net/http"
 	"strconv"
 	"sync"
 	"time"
 
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -19,6 +21,8 @@ import (
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
+
+const namedLogger = "nullchain"
 
 var (
 	ErrNotImplemented      = errors.New("not implemented for nullblockchain")
@@ -48,18 +52,19 @@ type NullBlockchain struct {
 	blockHeight int64
 	pending     []*abci.RequestDeliverTx
 
+	srv *http.Server
+
 	mu sync.Mutex
 }
 
 func NewClient(
 	log *logging.Logger,
-	cfg Config,
+	cfg blockchain.NullChainConfig,
 	app ApplicationService,
 ) *NullBlockchain {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
-	log.Info("starting nullblockchain")
 
 	now := time.Now()
 	n := &NullBlockchain{
@@ -79,7 +84,19 @@ func NewClient(
 	return n
 }
 
-func (n *NullBlockchain) Start() error {
+// ReloadConf update the internal configuration.
+func (n *NullBlockchain) ReloadConf(cfg blockchain.Config) {
+	n.log.Info("reloading configuration")
+	if n.log.GetLevel() != cfg.Level.Get() {
+		n.log.Info("updating log level",
+			logging.String("old", n.log.GetLevel().String()),
+			logging.String("new", cfg.Level.String()),
+		)
+		n.log.SetLevel(cfg.Level.Get())
+	}
+}
+
+func (n *NullBlockchain) StartChain() error {
 	err := n.InitChain(n.genesisFile)
 	if err != nil {
 		return err
@@ -87,7 +104,6 @@ func (n *NullBlockchain) Start() error {
 
 	// Start the first block
 	n.BeginBlock()
-	n.StartServer()
 	return nil
 }
 
@@ -141,6 +157,10 @@ func (n *NullBlockchain) ForwardTime(d time.Duration) {
 // InitChain processes the given genesis file setting the chain's time, and passing the
 // appstate through to the processors InitChain.
 func (n *NullBlockchain) InitChain(genesisFile string) error {
+	n.log.Debugf("creating chain",
+		logging.String("genesisFile", genesisFile),
+	)
+
 	exists, err := vgfs.FileExists(genesisFile)
 	if !exists || err != nil {
 		return ErrGenesisFileRequired
@@ -173,6 +193,11 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		n.chainID = genesis.ChainID
 	}
 
+	n.log.Debug("sending InitChain into core",
+		logging.String("chainID", n.chainID),
+		logging.Int64("blockHeight", n.blockHeight),
+		logging.String("time", n.now.String()),
+	)
 	n.app.InitChain(
 		abci.RequestInitChain{
 			Time:          n.now,
@@ -184,6 +209,9 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 }
 
 func (n *NullBlockchain) BeginBlock() *NullBlockchain {
+	n.log.Debug("sending BeginBlock",
+		logging.String("time", n.now.String()),
+	)
 	r := abci.RequestBeginBlock{
 		Header: types.Header{
 			Time: n.now,
@@ -194,6 +222,9 @@ func (n *NullBlockchain) BeginBlock() *NullBlockchain {
 }
 
 func (n *NullBlockchain) EndBlock() *NullBlockchain {
+	n.log.Debug("sending EndBlock",
+		logging.Int64("blockHeight", n.blockHeight),
+	)
 	r := abci.RequestEndBlock{
 		Height: n.blockHeight,
 	}
