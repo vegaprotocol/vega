@@ -200,7 +200,12 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	checkpointSub := subscribers.NewCheckpointSub(ctx, logger, checkpointStore, true)
 	checkpointSvc := checkpoint.NewService(logger, conf.Checkpoint, checkpointStore)
 
-	eventBroker, err = broker.New(ctx, logger, conf.Broker)
+	chainInfoStore, err := storage.NewChainInfo(logger, st.ChainInfoHome, conf.Storage, cancel)
+	if err != nil {
+		t.Fatalf("failed to create chain info store: %v", err)
+	}
+
+	eventBroker, err = broker.New(ctx, logger, conf.Broker, chainInfoStore)
 	if err != nil {
 		t.Fatalf("failed to create broker: %v", err)
 	}

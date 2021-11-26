@@ -93,6 +93,7 @@ type NodeCommand struct {
 	epochStore            *storage.Epoch
 	delegationStore       *storage.Delegations
 	checkpointStore       *storage.Checkpoints
+	chainInfoStore        *storage.ChainInfo
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 

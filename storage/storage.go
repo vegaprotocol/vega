@@ -20,6 +20,8 @@ const (
 	OrdersDataPath = "orders"
 	// TradesDataPath is the default path for the trade store files
 	TradesDataPath = "trades"
+	// ChainInfoPath is the default path for the chain files
+	ChainInfoPath = "chain_info"
 )
 
 type Storage struct {
@@ -30,6 +32,7 @@ type Storage struct {
 	CandlesHome     string
 	MarketsHome     string
 	CheckpointsHome string
+	ChainInfoHome   string
 }
 
 func InitialiseStorage(vegaPaths paths.Paths) (*Storage, error) {
@@ -66,6 +69,10 @@ func InitialiseStorage(vegaPaths paths.Paths) (*Storage, error) {
 
 	if storage.CheckpointsHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, CheckpointsDataPath)); err != nil {
 		return nil, fmt.Errorf("couldn't get checkpoints storage directory: %w", err)
+	}
+
+	if storage.ChainInfoHome, err = vegaPaths.CreateStateDirFor(paths.JoinStatePath(paths.DataNodeStorageHome, ChainInfoPath)); err != nil {
+		return nil, fmt.Errorf("couldn't get chain info storage directory: %w", err)
 	}
 
 	return storage, nil

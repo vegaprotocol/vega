@@ -154,7 +154,9 @@ func (l *NodeCommand) setupStorages() error {
 	if l.checkpointStore, err = storage.NewCheckpoints(l.Log, st.CheckpointsHome, l.conf.Storage, l.cancel); err != nil {
 		return err
 	}
-
+	if l.chainInfoStore, err = storage.NewChainInfo(l.Log, st.ChainInfoHome, l.conf.Storage, l.cancel); err != nil {
+		return err
+	}
 	l.configWatcher.OnConfigUpdate(
 		func(cfg config.Config) { l.accounts.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.tradeStore.ReloadConf(cfg.Storage) },
@@ -168,6 +170,7 @@ func (l *NodeCommand) setupStorages() error {
 		func(cfg config.Config) { l.nodeStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.epochStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.delegationStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.chainInfoStore.ReloadConf(cfg.Storage) },
 	)
 
 	return nil
@@ -182,7 +185,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		}
 	}()
 
-	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker)
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore)
 	if err != nil {
 		l.Log.Error("unable to initialise broker", logging.Error(err))
 		return err
