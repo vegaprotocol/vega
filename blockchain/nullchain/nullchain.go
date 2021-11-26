@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -45,6 +47,8 @@ type NullBlockchain struct {
 	pending     []*abci.RequestDeliverTx
 	blockHeight int64
 
+	srvAddress string
+
 	mu sync.Mutex
 }
 
@@ -61,7 +65,7 @@ func NewClient(
 	now := time.Now()
 	n := &NullBlockchain{
 		log:                  log,
-		blockHeight:          0,
+		blockHeight:          1,
 		service:              service,
 		chainID:              vgrand.RandomStr(12),
 		transactionsPerBlock: cfg.TransactionsPerBlock,
@@ -70,6 +74,7 @@ func NewClient(
 		genesisTime:          now,
 		now:                  now,
 		pending:              make([]*abci.RequestDeliverTx, 0),
+		srvAddress:           net.JoinHostPort(cfg.IP, strconv.Itoa(cfg.Port)),
 	}
 
 	return n
@@ -83,6 +88,7 @@ func (n *NullBlockchain) Start() error {
 
 	// Start the first block
 	n.BeginBlock()
+	n.StartServer()
 	return nil
 }
 
@@ -93,11 +99,11 @@ func (n *NullBlockchain) processBlock() {
 	}
 	n.pending = n.pending[:0]
 
-	n.blockHeight++
 	n.EndBlock()
 	n.service.Commit()
 
-	// Increment time, start and start new block
+	// Increment time, blockheight, and start a new block
+	n.blockHeight++
 	n.now = n.now.Add(n.blockDuration)
 	n.BeginBlock()
 }
@@ -149,6 +155,7 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 	// Parse the appstate of the genesis file, same layout as a TM genesis-file
 	genesis := struct {
 		GenesisTime *time.Time      `json:"genesis_time"`
+		ChainID     string          `json:"chain_id"`
 		Appstate    json.RawMessage `json:"app_state"`
 	}{}
 
@@ -157,10 +164,14 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		return err
 	}
 
-	// Set chain time from genesis file
+	// Set genesis-time and chain-id from genesis file
 	if genesis.GenesisTime != nil {
 		n.genesisTime = *genesis.GenesisTime
 		n.now = *genesis.GenesisTime
+	}
+
+	if len(genesis.ChainID) != 0 {
+		n.chainID = genesis.ChainID
 	}
 
 	n.service.InitChain(

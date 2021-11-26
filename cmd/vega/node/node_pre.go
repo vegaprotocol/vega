@@ -282,8 +282,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		abciClt, err = abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
 	case "nullchain":
 		abciApp := app.Abci()
-		abciClt = nullchain.NewClient(l.Log, l.conf.Blockchain.Noop, abciApp)
-
+		abciClt = nullchain.NewClient(l.Log, l.conf.Blockchain.Null, abciApp)
 		// Set a server but don't start it, this may be replaced by a time-forwarding backdoor later
 		srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
 		l.abciServer = srv

@@ -16,7 +16,7 @@ type Config struct {
 	ChainProvider       string            `long:"chain-provider"`
 
 	Tendermint TendermintConfig `group:"Tendermint" namespace:"tendermint"`
-	Noop       nullchain.Config `group:"NullChain" namespace:"nullchain"`
+	Null       nullchain.Config `group:"NullChain" namespace:"nullchain"`
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
@@ -28,7 +28,7 @@ func NewDefaultConfig() Config {
 		LogTimeDebug:        true,
 		ChainProvider:       "tendermint",
 		Tendermint:          NewDefaultTendermintConfig(),
-		Noop:                nullchain.NewDefaultConfig(),
+		Null:                nullchain.NewDefaultConfig(),
 	}
 }
 
