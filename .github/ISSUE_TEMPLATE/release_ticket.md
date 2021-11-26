@@ -1,5 +1,12 @@
-### Release Version `X.Y.Z`
+---
+name: Release ticket
+about: A ticket to capture all the details of the release 
+title: 'Release Version `X.Y.Z`'
+labels: "release"
+assignees: '@gordsport'
+---
 
+### Release Version `X.Y.Z`
 
 ### Software Versions:
 
@@ -13,13 +20,13 @@
 
 ### Smart Contract:
 
-| Contract | DV Address | Dev Address | Stag1 Address | Stag2 Address | Test Address | Val Test Address | Mainnet Address |
+| Contract | DV Address | Devnet Address | Stagnet1 Address | Stagnet2 Address | Testnet Address | Val-Testnet1 Address | Mainnet1 Address |
 |:--------------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|
 | Multisig | tbc | tbc | tbc | tbc | tbc | tbc | tbc |
 | Staking Bridge | tbc | tbc | tbc | tbc | tbc | tbc | tbc |
 
 ### Documentation:
-
 TBC
 
-
+### QA test results
+TBC

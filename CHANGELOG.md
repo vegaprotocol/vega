@@ -10,15 +10,27 @@
 
 ### 🛠 Improvements
 - [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
+- [4409](https://github.com/vegaprotocol/vega/pull/4409) - Add chain id to bus messages
+- [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
+- [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 
 ### 🐛 Fixes
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
+- [4418](https://github.com/vegaprotocol/vega/pull/4418) - Add some logging + height/version handling fixes
+
+
+## 0.46.1
+*2021-11-24*
+
+### 🐛 Fixes
+- [4445](https://github.com/vegaprotocol/vega/pull/4445) - Limit the number of iterations for reward calculation for delegators + fix for division by zero
 
 ## 0.46.1
 *2021-11-22*
 
 ### 🛠 Improvements
 - [4437](https://github.com/vegaprotocol/vega/pull/4437) - Turn snapshots off for `v0.46.1` only
+
 
 ## 0.46.0
 *2021-11-22*
@@ -47,7 +59,6 @@
 - [4392](https://github.com/vegaprotocol/vega/pull/4392) - Update `GETTING_STARTED.md` documentation
 - [4391](https://github.com/vegaprotocol/vega/pull/4391) - Refactor delegation
 - [4423](https://github.com/vegaprotocol/vega/pull/4423) - Add CLI options to start node with a null-blockchain
-- [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 - [4400](https://github.com/vegaprotocol/vega/pull/4400) - Add transaction hash to `SubmitTransactionResponse`
 - [4394](https://github.com/vegaprotocol/vega/pull/4394) - Add step to clear all events in integration tests
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals #4403
@@ -63,7 +74,6 @@
 - [4343](https://github.com/vegaprotocol/vega/pull/4343) - Fix non deterministic test by using same `idGenerator`
 - [4352](https://github.com/vegaprotocol/vega/pull/4352) - Remove usage of `time.Now()` in the auction state
 - [4380](https://github.com/vegaprotocol/vega/pull/4380) - Implement Uint for network parameters and use it for monies values
-- [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
 - [4369](https://github.com/vegaprotocol/vega/pull/4369) - Fix orders still being accepted after market in trading terminated state
 - [4395](https://github.com/vegaprotocol/vega/pull/4395) - Fix drone pipeline
 - [4398](https://github.com/vegaprotocol/vega/pull/4398) - Fix to set proper status on withdrawal errors
