@@ -1245,7 +1245,7 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 		currentBlockHeight,
 		int64(kr.TargetBlock),
 		tx.PubKeyHex(),
-		kr.NewPubKeyHash,
+		kr.NewPubKey,
 		kr.KeyNumber,
 	)
 }
