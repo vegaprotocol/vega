@@ -23,9 +23,9 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level:                encoding.LogLevel{Level: logging.InfoLevel},
-		BlockDuration:        encoding.Duration{Duration: 1 * time.Second},
+		BlockDuration:        encoding.Duration{Duration: time.Second},
 		TransactionsPerBlock: 10,
 		IP:                   "localhost",
-		Port:                 26658,
+		Port:                 3009,
 	}
 }

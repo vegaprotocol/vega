@@ -36,18 +36,17 @@ type ApplicationService interface {
 
 type NullBlockchain struct {
 	log                  *logging.Logger
-	service              ApplicationService
+	app                  ApplicationService
+	srvAddress           string
 	chainID              string
 	genesisFile          string
 	genesisTime          time.Time
-	transactionsPerBlock uint64
 	blockDuration        time.Duration
+	transactionsPerBlock uint64
 
 	now         time.Time
-	pending     []*abci.RequestDeliverTx
 	blockHeight int64
-
-	srvAddress string
+	pending     []*abci.RequestDeliverTx
 
 	mu sync.Mutex
 }
@@ -55,7 +54,7 @@ type NullBlockchain struct {
 func NewClient(
 	log *logging.Logger,
 	cfg Config,
-	service ApplicationService,
+	app ApplicationService,
 ) *NullBlockchain {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -65,16 +64,16 @@ func NewClient(
 	now := time.Now()
 	n := &NullBlockchain{
 		log:                  log,
-		blockHeight:          1,
-		service:              service,
+		app:                  app,
+		srvAddress:           net.JoinHostPort(cfg.IP, strconv.Itoa(cfg.Port)),
 		chainID:              vgrand.RandomStr(12),
 		transactionsPerBlock: cfg.TransactionsPerBlock,
 		blockDuration:        cfg.BlockDuration.Duration,
 		genesisFile:          cfg.GenesisFile,
 		genesisTime:          now,
 		now:                  now,
+		blockHeight:          1,
 		pending:              make([]*abci.RequestDeliverTx, 0),
-		srvAddress:           net.JoinHostPort(cfg.IP, strconv.Itoa(cfg.Port)),
 	}
 
 	return n
@@ -95,12 +94,12 @@ func (n *NullBlockchain) Start() error {
 func (n *NullBlockchain) processBlock() {
 	n.log.Debugf("processing block %d with %d transactions", n.blockHeight, len(n.pending))
 	for _, tx := range n.pending {
-		n.service.DeliverTx(*tx)
+		n.app.DeliverTx(*tx)
 	}
 	n.pending = n.pending[:0]
 
 	n.EndBlock()
-	n.service.Commit()
+	n.app.Commit()
 
 	// Increment time, blockheight, and start a new block
 	n.blockHeight++
@@ -174,7 +173,7 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		n.chainID = genesis.ChainID
 	}
 
-	n.service.InitChain(
+	n.app.InitChain(
 		abci.RequestInitChain{
 			Time:          n.now,
 			ChainId:       n.chainID,
@@ -190,7 +189,7 @@ func (n *NullBlockchain) BeginBlock() *NullBlockchain {
 			Time: n.now,
 		},
 	}
-	n.service.BeginBlock(r)
+	n.app.BeginBlock(r)
 	return n
 }
 
@@ -198,7 +197,7 @@ func (n *NullBlockchain) EndBlock() *NullBlockchain {
 	r := abci.RequestEndBlock{
 		Height: n.blockHeight,
 	}
-	n.service.EndBlock(r)
+	n.app.EndBlock(r)
 	return n
 }
 
