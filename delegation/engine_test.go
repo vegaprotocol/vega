@@ -103,11 +103,31 @@ func Test(t *testing.T) {
 	t.Run("test roundtrip of checkpoint calculation with no pending delegations", testCheckpointRoundtripNoPending)
 	t.Run("test roundtrip of checkpoint calculation with no active delegations", testCheckpointRoundtripOnlyPending)
 
-	// // test snapshots
+	// test snapshots
 	t.Run("test roundtrip snapshot for active delegations", testActiveSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for pending delegations", testPendingSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for auto delegations", testAutoSnapshotRoundTrip)
 	t.Run("test roundtrip snapshot for last reconciliation time delegations", testLastReconTimeRoundTrip)
+
+	// test key rotated
+	t.Run("test key rotated with pending and active delegations", testKeyRotated)
+}
+
+func testKeyRotated(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	setupDefaultDelegationState(testEngine, 14, 7)
+
+	require.Equal(t, 2, len(engine.partyDelegationState["party1"].nodeToAmount))
+	require.Equal(t, num.NewUint(10), engine.partyDelegationState["party1"].totalDelegated)
+	engine.ValidatorKeyChanged(context.Background(), "party1", "party1_new")
+
+	_, ok := engine.partyDelegationState["party1"]
+	require.False(t, ok)
+	require.Equal(t, 2, len(engine.partyDelegationState["party1_new"].nodeToAmount))
+	require.Equal(t, num.NewUint(10), engine.partyDelegationState["party1_new"].totalDelegated)
+	require.Equal(t, 2, len(engine.nextPartyDelegationState["party1_new"].nodeToAmount))
+	require.Equal(t, num.NewUint(10), engine.nextPartyDelegationState["party1_new"].totalDelegated)
 }
 
 func testLastReconTimeRoundTrip(t *testing.T) {

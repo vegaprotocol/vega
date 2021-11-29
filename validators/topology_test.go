@@ -640,5 +640,4 @@ func testBeginBlockAddsToProcessedRotations(t *testing.T) {
 		},
 		rotations[1],
 	)
-
 }

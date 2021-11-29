@@ -207,3 +207,32 @@ func (a *Accounting) GetAvailableBalanceInRange(
 func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
 	return a.stakingAssetTotalSupply.Clone()
 }
+
+func (a *Accounting) ValidatorKeyChanged(ctx context.Context, old, new string) {
+	if _, ok := a.accounts[old]; !ok {
+		return
+	}
+	account := a.accounts[old]
+
+	// find the index of the old pub key in the hashable accounts slice.
+	oldInd := -1
+	for i, acc := range a.hashableAccounts {
+		if acc.Party == old {
+			oldInd = i
+			break
+		}
+	}
+
+	// instantiate new account and add to it all of the events with a modified party id
+	acc := NewStakingAccount(new)
+	a.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: new}))
+	a.accounts[new] = acc
+	for _, event := range account.Events {
+		event.Party = new
+		acc.AddEvent(event)
+		a.broker.Send(events.NewStakeLinking(ctx, *event))
+	}
+	// update the account with the new stake linking events
+	a.hashableAccounts[oldInd] = acc
+	a.accState.changed = true
+}

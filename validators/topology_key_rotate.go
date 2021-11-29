@@ -24,7 +24,7 @@ type pendingKeyRotation struct {
 	newKeyNumber uint32
 }
 
-// pendingKeyRotationMapping maps a block height => node id => new pending key rotation
+// pendingKeyRotationMapping maps a block height => node id => new pending key rotation.
 type pendingKeyRotationMapping map[uint64]map[string]pendingKeyRotation
 
 func (pr pendingKeyRotationMapping) getSortedNodeIDsPerHeight(height uint64) []string {
@@ -50,7 +50,7 @@ type KeyRotation struct {
 	BlockHeight uint64
 }
 
-// processedKeyRotationMapping maps node id => slice of key rotations
+// processedKeyRotationMapping maps node id => slice of key rotations.
 type processedKeyRotationMapping map[string][]KeyRotation
 
 func (t *Topology) hasPendingKeyRotation(nodeID string) bool {
@@ -123,7 +123,7 @@ func (t *Topology) addProcessedKeyRotation(nodeID, oldPubKey, newPubKey string, 
 	})
 }
 
-// GetKeyRotations returns a history of all processed key rotations per given node
+// GetKeyRotations returns a history of all processed key rotations per given node.
 func (t *Topology) GetKeyRotations(nodeID string) []KeyRotation {
 	t.mu.RLock()
 	defer t.mu.RUnlock()

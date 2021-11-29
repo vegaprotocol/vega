@@ -665,3 +665,32 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 
 	return validators
 }
+
+// ValidatorKeyChanged is called when the validator public key (aka party) is changed we need to update all delegation information to use the new key.
+func (e *Engine) ValidatorKeyChanged(ctx context.Context, old, new string) {
+	e.updateParty(ctx, e.partyDelegationState, old, new, e.currentEpoch.Seq)
+	e.updateParty(ctx, e.nextPartyDelegationState, old, new, e.currentEpoch.Seq+1)
+	if _, ok := e.autoDelegationMode[old]; ok {
+		delete(e.autoDelegationMode, old)
+		e.autoDelegationMode[new] = struct{}{}
+	}
+}
+
+func (e *Engine) updateParty(ctx context.Context, partyDelegationMap map[string]*partyDelegation, old, new string, epoch uint64) {
+	partyDelegationState, ok := partyDelegationMap[old]
+	if !ok {
+		return
+	}
+	delete(partyDelegationMap, old)
+	partyDelegationMap[new] = &partyDelegation{
+		party:          new,
+		nodeToAmount:   partyDelegationState.nodeToAmount,
+		totalDelegated: partyDelegationState.totalDelegated,
+	}
+
+	sortedNodes := e.sortNodes(partyDelegationState.nodeToAmount)
+	for _, node := range sortedNodes {
+		e.sendDelegatedBalanceEvent(ctx, old, node, epoch, num.Zero())
+		e.sendDelegatedBalanceEvent(ctx, new, node, epoch, partyDelegationState.nodeToAmount[node])
+	}
+}

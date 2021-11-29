@@ -38,11 +38,10 @@ func Test(t *testing.T) {
 	t.Run("Reward snapshot round trip with delayed payout", testRewardSnapshotRoundTrip)
 	t.Run("Calculate rewards with delays such that pending payouts pile and are accounted for reward amount available for next round next rounds before being distributed", testMultipleEpochsWithPendingPayouts)
 	t.Run("test checkpoint", testCheckpoint)
+	t.Run("test key rotated with pending and active delegations", testKeyRotated)
 }
 
-func testCheckpoint(t *testing.T) {
-	testEngine := getEngine(t)
-	engine := testEngine.engine
+func setDefaultPendingPayouts(engine *Engine) {
 	payoutTime11 := &payout{
 		fromAccount:   "account1",
 		asset:         "asset1",
@@ -89,6 +88,33 @@ func testCheckpoint(t *testing.T) {
 	engine.pendingPayouts[time.Now().Add(-5*time.Minute)] = []*payout{payoutTime11, payoutTime12}
 	engine.pendingPayouts[time.Now().Add(-3*time.Minute)] = []*payout{payoutTime21, payoutTime22}
 	engine.pendingPayouts[time.Now()] = []*payout{payoutTime3}
+
+}
+
+func testKeyRotated(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	setDefaultPendingPayouts(engine)
+	engine.ValidatorKeyChanged(context.Background(), "p1", "party1_new")
+
+	for _, payouts := range engine.pendingPayouts {
+		for _, p := range payouts {
+			_, ok := p.partyToAmount["p1"]
+			require.False(t, ok)
+			// the payouts are set such that all payouts for timestamps 1 and 3 have p1 originally
+			if p.timestamp != 2 {
+				_, ok := p.partyToAmount["party1_new"]
+				require.True(t, ok)
+			}
+		}
+	}
+
+}
+
+func testCheckpoint(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	setDefaultPendingPayouts(engine)
 
 	cp, err := engine.Checkpoint()
 	require.Nil(t, err)
