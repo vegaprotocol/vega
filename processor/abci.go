@@ -452,7 +452,6 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	)
 
 	app.epoch.OnBlockEnd(ctx)
-	app.top.EndOfBlock(ctx, req.Height)
 
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
@@ -490,6 +489,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		}
 		app.cpt = nil
 	}
+
+	app.top.BeginningOfBlock(ctx, uint64(req.Header.Height))
 
 	return ctx, resp
 }
@@ -643,6 +644,8 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	if !app.limits.BootstrapFinished() {
 		// only validators can send transaction at this point.
 		party := tx.Party()
+		// validator can be identified as with Vega public key with IsValidatorVegaPubKey function
+		// or with Vega master publick key with IsValidatorNode function.
 		if !(app.top.IsValidatorVegaPubKey(party) || app.top.IsValidatorNode(party)) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
@@ -1242,10 +1245,8 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 
 	return app.top.AddKeyRotate(
 		ctx,
-		currentBlockHeight,
-		int64(kr.TargetBlock),
 		tx.PubKeyHex(),
-		kr.NewPubKey,
-		kr.KeyNumber,
+		uint64(currentBlockHeight),
+		kr,
 	)
 }

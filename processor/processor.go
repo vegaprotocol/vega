@@ -129,8 +129,8 @@ type ValidatorTopology interface {
 	IsValidatorNode(mpk string) bool
 	AllVegaPubKeys() []string
 	IsValidator() bool
-	AddKeyRotate(ctx context.Context, currentBlockHeight, targetBlockHeight int64, nodeID, newPubKey string, keyNumber uint32) error
-	EndOfBlock(ctx context.Context, blockHeight int64)
+	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
+	BeginningOfBlock(ctx context.Context, blockHeight uint64)
 }
 
 // Broker - the event bus.

@@ -2,20 +2,21 @@ package validators
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 var (
-	ErrVegaNodeAlreadyRegisterForChain                = errors.New("a vega node is already registered with the blockchain node")
-	ErrInvalidChainPubKey                             = errors.New("invalid blockchain public key")
-	ErrTargetBlockHeightMustBeGraterThanCurrentHeight = errors.New("target block height must be greater then current block")
+	ErrVegaNodeAlreadyRegisterForChain = errors.New("a vega node is already registered with the blockchain node")
+	ErrInvalidChainPubKey              = errors.New("invalid blockchain public key")
 )
 
 // Broker needs no mocks.
@@ -31,14 +32,15 @@ type Wallet interface {
 }
 
 type ValidatorData struct {
-	ID              string `json:"id"`
-	VegaPubKey      string `json:"vega_pub_key"`
-	EthereumAddress string `json:"ethereum_address"`
-	TmPubKey        string `json:"tm_pub_key"`
-	InfoURL         string `json:"info_url"`
-	Country         string `json:"country"`
-	Name            string `json:"name"`
-	AvatarURL       string `json:"avatar_url"`
+	ID               string `json:"id"`
+	VegaPubKey       string `json:"vega_pub_key"`
+	VegaPubKeyNumber uint32 `json:"vega_pub_number"`
+	EthereumAddress  string `json:"ethereum_address"`
+	TmPubKey         string `json:"tm_pub_key"`
+	InfoURL          string `json:"info_url"`
+	Country          string `json:"country"`
+	Name             string `json:"name"`
+	AvatarURL        string `json:"avatar_url"`
 }
 
 func (v ValidatorData) IsValid() bool {
@@ -49,21 +51,13 @@ func (v ValidatorData) IsValid() bool {
 	return true
 }
 
-// ValidatorMapping maps a tendermint pubkey with a vega pubkey.
-type ValidatorMapping map[string]ValidatorData
-
-// pendingKeyRotationMapping maps a block height => node id => new public key
-type pendingKeyRotationMapping map[int64]map[string]string
-
-type KeyRotation struct {
-	NodeID      string
-	OldPubKey   string
-	NewPubKey   string
-	BlockHeight int64
+// HashVegaPubKey returns hash VegaPubKey encoded as base64 string.
+func (v ValidatorData) HashVegaPubKey() string {
+	return hex.EncodeToString(vgcrypto.Hash([]byte(v.VegaPubKey)))
 }
 
-// processedKeyRotationMapping maps node id => slice of key rotations
-type processedKeyRotationMapping map[string][]KeyRotation
+// ValidatorMapping maps a tendermint pubkey with a vega pubkey.
+type ValidatorMapping map[string]ValidatorData
 
 type Topology struct {
 	log    *logging.Logger
@@ -129,7 +123,7 @@ func (t *Topology) Len() int {
 	return len(t.validators)
 }
 
-// Get returns validator data based on validator master public key
+// Get returns validator data based on validator master public key.
 func (t *Topology) Get(key string) *ValidatorData {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -152,7 +146,7 @@ func (t *Topology) AllVegaPubKeys() []string {
 	return keys
 }
 
-// AllNodeIDs returns all the validators vega public keys.
+// AllNodeIDs returns all the validators node IDs keys.
 func (t *Topology) AllNodeIDs() []string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -213,29 +207,6 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	return false
 }
 
-func (t *Topology) AddKeyRotate(ctx context.Context, currentBlockHeight, targetBlockHeight int64, nodeID, newPubKey string, keyNumber uint32) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	if !t.IsValidatorNode(nodeID) {
-		return fmt.Errorf("failed to add key rotate for non existing node %q", nodeID)
-	}
-
-	if currentBlockHeight > targetBlockHeight {
-		return ErrTargetBlockHeightMustBeGraterThanCurrentHeight
-	}
-
-	_, ok := t.pendingPubKeyRotations[targetBlockHeight]
-	if !ok {
-		t.pendingPubKeyRotations[targetBlockHeight] = map[string]string{}
-	}
-	t.pendingPubKeyRotations[targetBlockHeight][nodeID] = newPubKey
-
-	t.tss.changed = true
-
-	return nil
-}
-
 func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -262,14 +233,15 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 
 	// then add it to the topology
 	t.validators[nr.Id] = ValidatorData{
-		ID:              nr.Id,
-		VegaPubKey:      nr.VegaPubKey,
-		EthereumAddress: nr.EthereumAddress,
-		TmPubKey:        nr.ChainPubKey,
-		InfoURL:         nr.InfoUrl,
-		Country:         nr.Country,
-		Name:            nr.Name,
-		AvatarURL:       nr.AvatarUrl,
+		ID:               nr.Id,
+		VegaPubKey:       nr.VegaPubKey,
+		VegaPubKeyNumber: nr.VegaPubKeyNumber,
+		EthereumAddress:  nr.EthereumAddress,
+		TmPubKey:         nr.ChainPubKey,
+		InfoURL:          nr.InfoUrl,
+		Country:          nr.Country,
+		Name:             nr.Name,
+		AvatarURL:        nr.AvatarUrl,
 	}
 
 	t.tss.changed = true
@@ -299,73 +271,6 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 	))
 }
 
-func (t *Topology) NotifyOnKeyChange(fns ...func(ctx context.Context, oldPubKey, newPubKey string)) {
-	t.pubKeyChangeListeners = append(t.pubKeyChangeListeners, fns...)
-}
-
-func (t *Topology) notifyKeyChange(ctx context.Context, oldPubKey, newPubKey string) {
-	for _, f := range t.pubKeyChangeListeners {
-		f(ctx, oldPubKey, newPubKey)
-	}
-}
-
-func (t *Topology) addProcessedKeyRotation(nodeID, oldPubKey, newPubKey string, blockHeight int64) {
-	if _, ok := t.processedPubKeyRotations[nodeID]; !ok {
-		t.processedPubKeyRotations[nodeID] = []KeyRotation{}
-	}
-
-	t.processedPubKeyRotations[nodeID] = append(t.processedPubKeyRotations[nodeID], KeyRotation{
-		NodeID:      nodeID,
-		OldPubKey:   oldPubKey,
-		NewPubKey:   newPubKey,
-		BlockHeight: blockHeight,
-	})
-}
-
-// GetKeyRotations returns a history of all processed key rotations per given node
-func (t *Topology) GetKeyRotations(nodeID string) []KeyRotation {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	rotations, ok := t.processedPubKeyRotations[nodeID]
-	if !ok {
-		return nil
-	}
-
-	return rotations
-}
-
-func (t *Topology) EndOfBlock(ctx context.Context, blockHeight int64) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	rotations, ok := t.pendingPubKeyRotations[blockHeight]
-	if !ok {
-		return
-	}
-
-	for nodeID, newPubKey := range rotations {
-		data, ok := t.validators[nodeID]
-		if !ok {
-			// this should never happened, but just to be safe
-			t.log.Error("failed to rotate key due to non existing validator", logging.String("nodeID", nodeID))
-			continue
-		}
-
-		oldPubKey := data.VegaPubKey
-
-		data.VegaPubKey = newPubKey
-		t.validators[nodeID] = data
-
-		t.addProcessedKeyRotation(nodeID, oldPubKey, newPubKey, blockHeight)
-		t.notifyKeyChange(ctx, oldPubKey, newPubKey)
-	}
-
-	delete(t.pendingPubKeyRotations, blockHeight)
-
-	t.tss.changed = true
-}
-
 func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte) (err error) {
 	t.log.Debug("Entering validators.Topology.LoadValidatorsOnGenesis")
 	defer func() {
@@ -392,14 +297,15 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		}
 
 		nr := &commandspb.NodeRegistration{
-			Id:              data.ID,
-			VegaPubKey:      data.VegaPubKey,
-			EthereumAddress: data.EthereumAddress,
-			ChainPubKey:     tm,
-			InfoUrl:         data.InfoURL,
-			Country:         data.Country,
-			Name:            data.Name,
-			AvatarUrl:       data.AvatarURL,
+			Id:               data.ID,
+			VegaPubKey:       data.VegaPubKey,
+			VegaPubKeyNumber: data.VegaPubKeyNumber,
+			EthereumAddress:  data.EthereumAddress,
+			ChainPubKey:      tm,
+			InfoUrl:          data.InfoURL,
+			Country:          data.Country,
+			Name:             data.Name,
+			AvatarUrl:        data.AvatarURL,
 		}
 		if err := t.AddNodeRegistration(ctx, nr); err != nil {
 			return err

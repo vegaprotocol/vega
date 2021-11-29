@@ -67,10 +67,11 @@ func (opts *generateCmd) Execute(_ []string) error {
 	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
 	genesisState := genesis.DefaultGenesisState()
 	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
-		ID:              walletID,
-		VegaPubKey:      vegaKey,
-		EthereumAddress: ethAddress,
-		TmPubKey:        b64TmPubKey,
+		ID:               walletID,
+		VegaPubKey:       vegaKey.value,
+		VegaPubKeyNumber: vegaKey.index,
+		EthereumAddress:  ethAddress,
+		TmPubKey:         b64TmPubKey,
 	}
 
 	if len(opts.Network) != 0 {
@@ -166,15 +167,25 @@ func loadTendermintPrivateValidatorKey(tmConfig *tmconfig.Config) (tmcrypto.PubK
 	return pubKey, nil
 }
 
-func loadNodeWalletPubKey(config nodewallets.Config, vegaPaths paths.Paths, registryPass string) (vegaKey, ethAddr, walletID string, err error) {
+type vegaPubKey struct {
+	index uint32
+	value string
+}
+
+func loadNodeWalletPubKey(config nodewallets.Config, vegaPaths paths.Paths, registryPass string) (vegaKey *vegaPubKey, ethAddr, walletID string, err error) {
 	nw, err := nodewallets.GetNodeWallets(config, vegaPaths, registryPass)
 	if err != nil {
-		return "", "", "", fmt.Errorf("couldn't get node wallets: %w", err)
+		return nil, "", "", fmt.Errorf("couldn't get node wallets: %w", err)
 	}
 
 	if err := nw.Verify(); err != nil {
-		return "", "", "", err
+		return nil, "", "", err
 	}
 
-	return nw.Vega.PubKey().Hex(), nw.Ethereum.PubKey().Hex(), nw.Vega.ID().Hex(), nil
+	vegaPubKey := &vegaPubKey{
+		index: nw.Vega.Index(),
+		value: nw.Vega.PubKey().Hex(),
+	}
+
+	return vegaPubKey, nw.Ethereum.PubKey().Hex(), nw.Vega.ID().Hex(), nil
 }

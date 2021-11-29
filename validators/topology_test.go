@@ -3,11 +3,13 @@ package validators_test
 import (
 	"context"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	brokerMocks "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
@@ -270,9 +272,12 @@ func TestValidatorTopologyKeyRotate(t *testing.T) {
 	t.Run("add key rotate - success", testAddKeyRotateSuccess)
 	t.Run("add key rotate - fails when node does not exists", testAddKeyRotateSuccessFailsOnNonExistingNode)
 	t.Run("add key rotate - fails when target block height is less then current block height", testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeight)
-	t.Run("end of block - success", testEndOfBlockSuccess)
-	t.Run("end of block - notify key change", testEndOfBlockNotifyKeyChange)
-	t.Run("end of block - adds to processed key rotations", testEndOfBlockAddsToProcessedRotations)
+	t.Run("add key rotate - fails when new key number is less then current current key number", testAddKeyRotateSuccessFailsWhenNewKeyNumberIsLessThenCurrentKeyNumber)
+	t.Run("add key rotate - fails when key rotation for node already exists", testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists)
+	t.Run("add key rotate - fails when current pub key hash does not match", testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch)
+	t.Run("beginning of block - success", testBeginningOfBlockSuccess)
+	t.Run("beginning of block - notify key change", testBeginningOfBlockNotifyKeyChange)
+	t.Run("beginning of block - adds to processed key rotations", testBeginningOfBlockAddsToProcessedRotations)
 }
 
 func testAddKeyRotateSuccess(t *testing.T) {
@@ -294,7 +299,14 @@ func testAddKeyRotateSuccess(t *testing.T) {
 	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
-	err = top.AddKeyRotate(ctx, 10, 15, id, newVegaPubKey, 1)
+	kr := &commandspb.KeyRotateSubmission{
+		KeyNumber:         1,
+		TargetBlock:       15,
+		NewPubKey:         newVegaPubKey,
+		CurrentPubKeyHash: hashKey(vegaPubKey),
+	}
+
+	err = top.AddKeyRotate(ctx, id, 10, kr)
 	assert.NoError(t, err)
 }
 
@@ -307,7 +319,8 @@ func testAddKeyRotateSuccessFailsOnNonExistingNode(t *testing.T) {
 	newVegaPubKey := "new-ega-key"
 
 	ctx := context.TODO()
-	err := top.AddKeyRotate(ctx, 10, 15, id, newVegaPubKey, 1)
+
+	err := top.AddKeyRotate(ctx, id, 10, newKeyRotationSubmission("", newVegaPubKey, 1, 10))
 	assert.Error(t, err)
 	assert.EqualError(t, err, "failed to add key rotate for non existing node \"vega-master-pubkey\"")
 }
@@ -331,11 +344,102 @@ func testAddKeyRotateSuccessFailsWhenTargetBlockHeightIsLessThenCurrentBlockHeig
 	err := top.AddNodeRegistration(ctx, &nr)
 	assert.NoError(t, err)
 
-	err = top.AddKeyRotate(ctx, 15, 10, id, newVegaPubKey, 1)
-	assert.EqualError(t, err, "target block height must be greater then current block")
+	err = top.AddKeyRotate(ctx, id, 15, newKeyRotationSubmission(vegaPubKey, newVegaPubKey, 1, 10))
+	assert.ErrorIs(t, err, validators.ErrTargetBlockHeightMustBeGraterThanCurrentHeight)
 }
 
-func testEndOfBlockSuccess(t *testing.T) {
+func testAddKeyRotateSuccessFailsWhenNewKeyNumberIsLessThenCurrentKeyNumber(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+	top.UpdateValidatorSet([]string{tmPubKey})
+
+	id := "vega-master-pubkey"
+	vegaPubKey := "vega-key"
+	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
+
+	nr := commandspb.NodeRegistration{
+		Id:               id,
+		ChainPubKey:      tmPubKey,
+		VegaPubKey:       vegaPubKey,
+		EthereumAddress:  "eth-address",
+		VegaPubKeyNumber: 2,
+	}
+	ctx := context.TODO()
+	err := top.AddNodeRegistration(ctx, &nr)
+	assert.NoError(t, err)
+
+	// test less then
+	err = top.AddKeyRotate(ctx, id, 10, newKeyRotationSubmission(vegaPubKey, newVegaPubKey, 1, 15))
+	assert.ErrorIs(t, err, validators.ErrNewVegaPubKeyNumberMustBeGreaterThenCurrentPubKeyNumber)
+}
+
+func testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+	top.UpdateValidatorSet([]string{tmPubKey})
+
+	id := "vega-master-pubkey"
+	vegaPubKey := "vega-key"
+	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
+
+	nr := commandspb.NodeRegistration{
+		Id:               id,
+		ChainPubKey:      tmPubKey,
+		VegaPubKey:       vegaPubKey,
+		EthereumAddress:  "eth-address",
+		VegaPubKeyNumber: 1,
+	}
+	ctx := context.TODO()
+	err := top.AddNodeRegistration(ctx, &nr)
+	assert.NoError(t, err)
+
+	// add first
+	err = top.AddKeyRotate(ctx, id, 10, newKeyRotationSubmission(vegaPubKey, newVegaPubKey, 2, 12))
+	assert.NoError(t, err)
+
+	// add second
+	err = top.AddKeyRotate(ctx, id, 10, newKeyRotationSubmission(vegaPubKey, newVegaPubKey, 2, 13))
+	assert.ErrorIs(t, err, validators.ErrNodeAlreadyHasPendingKeyRotation)
+}
+
+func testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch(t *testing.T) {
+	top := getTestTopWithDefaultValidator(t)
+	defer top.ctrl.Finish()
+	top.UpdateValidatorSet([]string{tmPubKey})
+
+	id := "vega-master-pubkey"
+	vegaPubKey := "vega-key"
+	newVegaPubKey := fmt.Sprintf("new-%s", vegaPubKey)
+
+	nr := commandspb.NodeRegistration{
+		Id:               id,
+		ChainPubKey:      tmPubKey,
+		VegaPubKey:       vegaPubKey,
+		EthereumAddress:  "eth-address",
+		VegaPubKeyNumber: 1,
+	}
+	ctx := context.TODO()
+	err := top.AddNodeRegistration(ctx, &nr)
+	assert.NoError(t, err)
+
+	err = top.AddKeyRotate(ctx, id, 10, newKeyRotationSubmission("random-key", newVegaPubKey, 2, 12))
+	assert.ErrorIs(t, err, validators.ErrCurrentPubKeyHashDoesNotMatch)
+}
+
+func hashKey(key string) string {
+	return hex.EncodeToString(vgcrypto.Hash([]byte(key)))
+}
+
+func newKeyRotationSubmission(currentPubKey, newVegaPubKey string, keyNumber uint32, targetBlock uint64) *commandspb.KeyRotateSubmission {
+	return &commandspb.KeyRotateSubmission{
+		KeyNumber:         keyNumber,
+		TargetBlock:       targetBlock,
+		NewPubKey:         newVegaPubKey,
+		CurrentPubKeyHash: hashKey(currentPubKey),
+	}
+}
+
+func testBeginningOfBlockSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
@@ -358,17 +462,17 @@ func testEndOfBlockSuccess(t *testing.T) {
 	}
 
 	// add key rotations
-	err := top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-1", "new-vega-key-1", 1)
+	err := top.AddKeyRotate(ctx, "vega-master-pubkey-1", 10, newKeyRotationSubmission("vega-key-1", "new-vega-key-1", 1, 11))
 	assert.NoError(t, err)
-	err = top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-2", "new-vega-key-2", 1)
+	err = top.AddKeyRotate(ctx, "vega-master-pubkey-2", 10, newKeyRotationSubmission("vega-key-2", "new-vega-key-2", 1, 11))
 	assert.NoError(t, err)
-	err = top.AddKeyRotate(ctx, 10, 13, "vega-master-pubkey-3", "new-vega-key-3", 1)
+	err = top.AddKeyRotate(ctx, "vega-master-pubkey-3", 10, newKeyRotationSubmission("vega-key-3", "new-vega-key-3", 1, 13))
 	assert.NoError(t, err)
-	err = top.AddKeyRotate(ctx, 10, 13, "vega-master-pubkey-4", "new-vega-key-4", 1)
+	err = top.AddKeyRotate(ctx, "vega-master-pubkey-4", 10, newKeyRotationSubmission("vega-key-4", "new-vega-key-4", 1, 13))
 	assert.NoError(t, err)
 
 	// when
-	top.EndOfBlock(ctx, 11)
+	top.BeginningOfBlock(ctx, 11)
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
 	assert.NotNil(t, data1)
@@ -384,7 +488,7 @@ func testEndOfBlockSuccess(t *testing.T) {
 	assert.Equal(t, "vega-key-4", data4.VegaPubKey)
 
 	// when
-	top.EndOfBlock(ctx, 13)
+	top.BeginningOfBlock(ctx, 13)
 	// then
 	data3 = top.Get("vega-master-pubkey-3")
 	assert.NotNil(t, data3)
@@ -408,7 +512,7 @@ func newCallback(times int) Callback {
 	return c
 }
 
-func testEndOfBlockNotifyKeyChange(t *testing.T) {
+func testBeginningOfBlockNotifyKeyChange(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
@@ -431,9 +535,9 @@ func testEndOfBlockNotifyKeyChange(t *testing.T) {
 	}
 
 	// add key rotations
-	err := top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-1", "new-vega-key-1", 1)
+	err := top.AddKeyRotate(ctx, "vega-master-pubkey-1", 10, newKeyRotationSubmission("vega-key-1", "new-vega-key-1", 1, 11))
 	assert.NoError(t, err)
-	err = top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-2", "new-vega-key-2", 1)
+	err = top.AddKeyRotate(ctx, "vega-master-pubkey-2", 10, newKeyRotationSubmission("vega-key-2", "new-vega-key-2", 1, 11))
 	assert.NoError(t, err)
 
 	// register callbacks
@@ -442,14 +546,14 @@ func testEndOfBlockNotifyKeyChange(t *testing.T) {
 	top.NotifyOnKeyChange(c1.Call, c2.Call)
 
 	// when
-	top.EndOfBlock(ctx, 11)
+	top.BeginningOfBlock(ctx, 11)
 
 	// then
 	c1.AssertExpectations(t)
 	c2.AssertExpectations(t)
 }
 
-func testEndOfBlockAddsToProcessedRotations(t *testing.T) {
+func testBeginningOfBlockAddsToProcessedRotations(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
@@ -472,15 +576,13 @@ func testEndOfBlockAddsToProcessedRotations(t *testing.T) {
 	}
 
 	// add key rotations
-	err := top.AddKeyRotate(ctx, 10, 11, "vega-master-pubkey-1", "new-vega-key-1", 1)
+	err := top.AddKeyRotate(ctx, "vega-master-pubkey-1", 10, newKeyRotationSubmission("vega-key-1", "new-vega-key-1", 1, 11))
 	assert.NoError(t, err)
-	err = top.AddKeyRotate(ctx, 10, 12, "vega-master-pubkey-1", "new-2-vega-key-1", 2)
-	assert.NoError(t, err)
-	err = top.AddKeyRotate(ctx, 10, 12, "vega-master-pubkey-2", "new-vega-key-2", 1)
+	err = top.AddKeyRotate(ctx, "vega-master-pubkey-2", 10, newKeyRotationSubmission("vega-key-2", "new-vega-key-2", 1, 12))
 	assert.NoError(t, err)
 
 	// when
-	top.EndOfBlock(ctx, 11)
+	top.BeginningOfBlock(ctx, 11)
 
 	// then
 	rotations := top.GetKeyRotations("vega-master-pubkey-2")
@@ -497,8 +599,12 @@ func testEndOfBlockAddsToProcessedRotations(t *testing.T) {
 		rotations[0],
 	)
 
+	// add key rotation to previous node
+	err = top.AddKeyRotate(ctx, "vega-master-pubkey-1", 10, newKeyRotationSubmission("new-vega-key-1", "new-2-vega-key-1", 2, 12))
+	assert.NoError(t, err)
+
 	// when
-	top.EndOfBlock(ctx, 12)
+	top.BeginningOfBlock(ctx, 12)
 
 	// then
 	rotations = top.GetKeyRotations("vega-master-pubkey-2")
