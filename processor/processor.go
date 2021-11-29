@@ -19,10 +19,11 @@ import (
 )
 
 var (
-	ErrInvalidSignature              = errors.New("invalid signature")
-	ErrChainEventFromNonValidator    = errors.New("chain event emitted from a non-validator node")
-	ErrUnsupportedChainEvent         = errors.New("unsupported chain event")
-	ErrNodeSignatureFromNonValidator = errors.New("node signature not sent by validator")
+	ErrInvalidSignature                       = errors.New("invalid signature")
+	ErrChainEventFromNonValidator             = errors.New("chain event emitted from a non-validator node")
+	ErrUnsupportedChainEvent                  = errors.New("unsupported chain event")
+	ErrNodeSignatureFromNonValidator          = errors.New("node signature not sent by validator")
+	ErrNodeSignatureWithNonValidatorMasterKey = errors.New("node signature not signed with validator master key")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService

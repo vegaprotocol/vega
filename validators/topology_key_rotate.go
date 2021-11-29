@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -36,6 +37,9 @@ func (pr pendingKeyRotationMapping) getSortedNodeIDsPerHeight(height uint64) []s
 	for nodeID := range rotationsPerHeight {
 		nodeIDs = append(nodeIDs, nodeID)
 	}
+
+	sort.Strings(nodeIDs)
+
 	return nodeIDs
 }
 

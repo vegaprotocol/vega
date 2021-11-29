@@ -738,7 +738,7 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 
 func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorNode(tx.PubKeyHex()) {
-		return ErrNodeSignatureFromNonValidator
+		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
 }
