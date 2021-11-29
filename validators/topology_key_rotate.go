@@ -128,12 +128,7 @@ func (t *Topology) GetKeyRotations(nodeID string) []KeyRotation {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	rotations, ok := t.processedPubKeyRotations[nodeID]
-	if !ok {
-		return nil
-	}
-
-	return rotations
+	return t.processedPubKeyRotations[nodeID]
 }
 
 func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
