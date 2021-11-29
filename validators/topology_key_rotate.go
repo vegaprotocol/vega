@@ -55,8 +55,7 @@ type processedKeyRotationMapping map[string][]KeyRotation
 
 func (t *Topology) hasPendingKeyRotation(nodeID string) bool {
 	for _, rotationsPerNodeID := range t.pendingPubKeyRotations {
-		_, ok := rotationsPerNodeID[nodeID]
-		if ok {
+		if _, ok := rotationsPerNodeID[nodeID]; ok {
 			return true
 		}
 	}
