@@ -16,7 +16,7 @@ func NewTopologyStub() *TopologyStub {
 	}
 }
 
-func (ts *TopologyStub) IsValidatorNode(nodeID string) bool {
+func (ts *TopologyStub) IsValidateNodeID(nodeID string) bool {
 	_, ok := ts.validators[nodeID]
 	return ok
 }

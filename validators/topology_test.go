@@ -173,7 +173,7 @@ func testExists(t *testing.T) {
 	top.UpdateValidatorSet([]string{tmPubKey})
 
 	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
-	assert.False(t, top.IsValidatorNode("vega-master-pubkey"))
+	assert.False(t, top.IsValidateNodeID("vega-master-pubkey"))
 
 	nr := commandspb.NodeRegistration{
 		Id:              "vega-master-pubkey",
@@ -186,7 +186,7 @@ func testExists(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.True(t, top.IsValidatorVegaPubKey("vega-key"))
-	assert.True(t, top.IsValidatorNode("vega-master-pubkey"))
+	assert.True(t, top.IsValidateNodeID("vega-master-pubkey"))
 }
 
 func testGetByKey(t *testing.T) {
@@ -195,7 +195,7 @@ func testGetByKey(t *testing.T) {
 	top.UpdateValidatorSet([]string{tmPubKey})
 
 	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
-	assert.False(t, top.IsValidatorNode("vega-master-pubkey"))
+	assert.False(t, top.IsValidateNodeID("vega-master-pubkey"))
 
 	nr := commandspb.NodeRegistration{
 		Id:              "vega-master-pubkey",
@@ -275,9 +275,9 @@ func TestValidatorTopologyKeyRotate(t *testing.T) {
 	t.Run("add key rotate - fails when new key number is less then current current key number", testAddKeyRotateSuccessFailsWhenNewKeyNumberIsLessThenCurrentKeyNumber)
 	t.Run("add key rotate - fails when key rotation for node already exists", testAddKeyRotateSuccessFailsWhenKeyRotationForNodeAlreadyExists)
 	t.Run("add key rotate - fails when current pub key hash does not match", testAddKeyRotateSuccessFailsWhenCurrentPubKeyHashDoesNotMatch)
-	t.Run("beginning of block - success", testBeginningOfBlockSuccess)
-	t.Run("beginning of block - notify key change", testBeginningOfBlockNotifyKeyChange)
-	t.Run("beginning of block - adds to processed key rotations", testBeginningOfBlockAddsToProcessedRotations)
+	t.Run("beginning of block - success", testBeginBlockSuccess)
+	t.Run("beginning of block - notify key change", testBeginBlockNotifyKeyChange)
+	t.Run("beginning of block - adds to processed key rotations", testBeginBlockAddsToProcessedRotations)
 }
 
 func testAddKeyRotateSuccess(t *testing.T) {
@@ -439,7 +439,7 @@ func newKeyRotationSubmission(currentPubKey, newVegaPubKey string, keyNumber uin
 	}
 }
 
-func testBeginningOfBlockSuccess(t *testing.T) {
+func testBeginBlockSuccess(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
@@ -472,7 +472,7 @@ func testBeginningOfBlockSuccess(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	top.BeginningOfBlock(ctx, 11)
+	top.BeginBlock(ctx, 11)
 	// then
 	data1 := top.Get("vega-master-pubkey-1")
 	assert.NotNil(t, data1)
@@ -488,7 +488,7 @@ func testBeginningOfBlockSuccess(t *testing.T) {
 	assert.Equal(t, "vega-key-4", data4.VegaPubKey)
 
 	// when
-	top.BeginningOfBlock(ctx, 13)
+	top.BeginBlock(ctx, 13)
 	// then
 	data3 = top.Get("vega-master-pubkey-3")
 	assert.NotNil(t, data3)
@@ -512,7 +512,7 @@ func newCallback(times int) Callback {
 	return c
 }
 
-func testBeginningOfBlockNotifyKeyChange(t *testing.T) {
+func testBeginBlockNotifyKeyChange(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
@@ -546,14 +546,14 @@ func testBeginningOfBlockNotifyKeyChange(t *testing.T) {
 	top.NotifyOnKeyChange(c1.Call, c2.Call)
 
 	// when
-	top.BeginningOfBlock(ctx, 11)
+	top.BeginBlock(ctx, 11)
 
 	// then
 	c1.AssertExpectations(t)
 	c2.AssertExpectations(t)
 }
 
-func testBeginningOfBlockAddsToProcessedRotations(t *testing.T) {
+func testBeginBlockAddsToProcessedRotations(t *testing.T) {
 	top := getTestTopWithDefaultValidator(t)
 	defer top.ctrl.Finish()
 
@@ -582,7 +582,7 @@ func testBeginningOfBlockAddsToProcessedRotations(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	top.BeginningOfBlock(ctx, 11)
+	top.BeginBlock(ctx, 11)
 
 	// then
 	rotations := top.GetKeyRotations("vega-master-pubkey-2")
@@ -604,7 +604,7 @@ func testBeginningOfBlockAddsToProcessedRotations(t *testing.T) {
 	assert.NoError(t, err)
 
 	// when
-	top.BeginningOfBlock(ctx, 12)
+	top.BeginBlock(ctx, 12)
 
 	// then
 	rotations = top.GetKeyRotations("vega-master-pubkey-2")

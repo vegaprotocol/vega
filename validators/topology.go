@@ -174,8 +174,8 @@ func (t *Topology) UpdateValidatorSet(keys []string) {
 	t.tss.changed = true
 }
 
-// IsValidatorNode takes a nodeID and returns true if the node is a validator node.
-func (t *Topology) IsValidatorNode(nodeID string) bool {
+// IsValidateNodeID takes a nodeID and returns true if the node is a validator node.
+func (t *Topology) IsValidateNodeID(nodeID string) bool {
 	_, ok := t.validators[nodeID]
 	return ok
 }

@@ -47,7 +47,7 @@ type TimeService interface {
 
 // ValidatorTopology represents the topology of validators and can check if a given node is a validator.
 type ValidatorTopology interface {
-	IsValidatorNode(nodeID string) bool
+	IsValidateNodeID(nodeID string) bool
 	AllNodeIDs() []string
 	Get(key string) *validators.ValidatorData
 }
@@ -267,7 +267,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	amt := amount.Clone()
 
 	// check if the node is a validator node
-	if !e.topology.IsValidatorNode(nodeID) {
+	if !e.topology.IsValidateNodeID(nodeID) {
 		e.log.Error("Trying to delegate to an invalid node", logging.Uint64("epoch", e.currentEpoch.Seq), logging.String("party", party), logging.String("validator", nodeID))
 		return ErrInvalidNodeID
 	}
@@ -323,7 +323,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 // UndelegateAtEndOfEpoch increases the pending undelegation balance and potentially decreases the pending delegation balance for a given validator node and party.
 func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error {
 	// check if the node is a validator node
-	if e.topology == nil || !e.topology.IsValidatorNode(nodeID) {
+	if e.topology == nil || !e.topology.IsValidateNodeID(nodeID) {
 		e.log.Error("Trying to delegate to an invalid node", logging.Uint64("epoch", e.currentEpoch.Seq), logging.String("party", party), logging.String("validator", nodeID))
 		return ErrInvalidNodeID
 	}
@@ -362,7 +362,7 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 // if possible it removed balance from pending delegated, if not enough it removes balance from the current epoch delegated amount.
 func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error {
 	// check if the node is a validator node
-	if e.topology == nil || !e.topology.IsValidatorNode(nodeID) {
+	if e.topology == nil || !e.topology.IsValidateNodeID(nodeID) {
 		e.log.Error("Trying to delegate to an invalid node", logging.Uint64("epoch", e.currentEpoch.Seq), logging.String("party", party), logging.String("validator", nodeID))
 		return ErrInvalidNodeID
 	}

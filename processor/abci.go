@@ -490,7 +490,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
-	app.top.BeginningOfBlock(ctx, uint64(req.Header.Height))
+	app.top.BeginBlock(ctx, uint64(req.Header.Height))
 
 	return ctx, resp
 }
@@ -645,8 +645,8 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 		// only validators can send transaction at this point.
 		party := tx.Party()
 		// validator can be identified as with Vega public key with IsValidatorVegaPubKey function
-		// or with Vega master publick key with IsValidatorNode function.
-		if !(app.top.IsValidatorVegaPubKey(party) || app.top.IsValidatorNode(party)) {
+		// or with Vega master publick key with IsValidateNodeID function.
+		if !(app.top.IsValidatorVegaPubKey(party) || app.top.IsValidateNodeID(party)) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
 		cmd := tx.Command()
@@ -737,7 +737,7 @@ func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 }
 
 func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
-	if !app.top.IsValidatorNode(tx.PubKeyHex()) {
+	if !app.top.IsValidateNodeID(tx.PubKeyHex()) {
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil

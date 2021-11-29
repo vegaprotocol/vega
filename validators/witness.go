@@ -43,7 +43,7 @@ type ValidatorTopology interface {
 	IsValidator() bool
 	SelfNodeID() string
 	AllNodeIDs() []string
-	IsValidatorNode(string) bool
+	IsValidateNodeID(string) bool
 }
 
 type Resource interface {
@@ -194,7 +194,7 @@ func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) err
 	}
 
 	// ensure the node is a validator
-	if !w.top.IsValidatorNode(hexPubKey) {
+	if !w.top.IsValidateNodeID(hexPubKey) {
 		w.log.Error("non-validator node tried to register node vote",
 			logging.String("node-id", hexPubKey))
 		return ErrVoteFromNonValidator

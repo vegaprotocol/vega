@@ -1933,7 +1933,7 @@ func newTestTopology() *TestTopology {
 	}
 }
 
-func (tt *TestTopology) IsValidatorNode(nodeID string) bool {
+func (tt *TestTopology) IsValidateNodeID(nodeID string) bool {
 	v, ok := tt.nodeToIsValidator[nodeID]
 	return ok && v
 }
