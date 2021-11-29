@@ -13,6 +13,7 @@
 - [4409](https://github.com/vegaprotocol/vega/pull/4409) - Add chain id to bus messages
 - [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
 - [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
+- [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
 
 ### 🐛 Fixes
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
