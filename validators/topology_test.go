@@ -507,10 +507,10 @@ func (m *Callback) Call(ctx context.Context, a, b string) {
 	m.Called(ctx, a, b)
 }
 
-func newCallback(times int) Callback {
+func newCallback(times int) *Callback {
 	c := Callback{}
 	c.On("Call", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Times(times)
-	return c
+	return &c
 }
 
 func testBeginBlockNotifyKeyChange(t *testing.T) {

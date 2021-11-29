@@ -477,7 +477,7 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 }
 
 // ValidatorKeyChanged is called when the validator public key (aka party) is changed we need to update all pending information to use the new key.
-func (e *Engine) ValidatorKeyChanged(ctx context.Context, old, new string) {
+func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {
 	if len(e.pendingPayouts) == 0 {
 		return
 	}
@@ -486,19 +486,20 @@ func (e *Engine) ValidatorKeyChanged(ctx context.Context, old, new string) {
 	for payTime := range e.pendingPayouts {
 		payTimes = append(payTimes, payTime)
 	}
-	payoutEvents := []*events.RewardPayout{}
+	payoutEvents := []events.Event{}
 	sort.Slice(payTimes, func(i, j int) bool { return payTimes[i].Before(payTimes[j]) })
 	for _, payTime := range payTimes {
 		// remove all paid payouts from pending
 		for _, p := range e.pendingPayouts[payTime] {
-			if amount, ok := p.partyToAmount[old]; ok {
-				delete(p.partyToAmount, old)
-				p.partyToAmount[new] = amount
+			if amount, ok := p.partyToAmount[oldKey]; ok {
+				delete(p.partyToAmount, oldKey)
+				p.partyToAmount[newKey] = amount
 				proportion := amount.ToDecimal().Div(p.totalReward.ToDecimal())
 				pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
-				payoutEvents = append(payoutEvents, events.NewRewardPayout(ctx, p.timestamp, old, p.epochSeq, p.asset, num.Zero(), 0))
-				payoutEvents = append(payoutEvents, events.NewRewardPayout(ctx, p.timestamp, new, p.epochSeq, p.asset, amount, pct))
+				payoutEvents = append(payoutEvents, *events.NewRewardPayout(ctx, p.timestamp, oldKey, p.epochSeq, p.asset, num.Zero(), 0))
+				payoutEvents = append(payoutEvents, *events.NewRewardPayout(ctx, p.timestamp, newKey, p.epochSeq, p.asset, amount, pct))
 			}
 		}
 	}
+	e.broker.SendBatch(payoutEvents)
 }

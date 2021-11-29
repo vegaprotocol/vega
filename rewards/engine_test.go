@@ -88,7 +88,6 @@ func setDefaultPendingPayouts(engine *Engine) {
 	engine.pendingPayouts[time.Now().Add(-5*time.Minute)] = []*payout{payoutTime11, payoutTime12}
 	engine.pendingPayouts[time.Now().Add(-3*time.Minute)] = []*payout{payoutTime21, payoutTime22}
 	engine.pendingPayouts[time.Now()] = []*payout{payoutTime3}
-
 }
 
 func testKeyRotated(t *testing.T) {
@@ -108,7 +107,6 @@ func testKeyRotated(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 func testCheckpoint(t *testing.T) {

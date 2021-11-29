@@ -667,30 +667,30 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 }
 
 // ValidatorKeyChanged is called when the validator public key (aka party) is changed we need to update all delegation information to use the new key.
-func (e *Engine) ValidatorKeyChanged(ctx context.Context, old, new string) {
-	e.updateParty(ctx, e.partyDelegationState, old, new, e.currentEpoch.Seq)
-	e.updateParty(ctx, e.nextPartyDelegationState, old, new, e.currentEpoch.Seq+1)
-	if _, ok := e.autoDelegationMode[old]; ok {
-		delete(e.autoDelegationMode, old)
-		e.autoDelegationMode[new] = struct{}{}
+func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {
+	e.updateParty(ctx, e.partyDelegationState, oldKey, newKey, e.currentEpoch.Seq)
+	e.updateParty(ctx, e.nextPartyDelegationState, oldKey, newKey, e.currentEpoch.Seq+1)
+	if _, ok := e.autoDelegationMode[oldKey]; ok {
+		delete(e.autoDelegationMode, oldKey)
+		e.autoDelegationMode[newKey] = struct{}{}
 	}
 }
 
-func (e *Engine) updateParty(ctx context.Context, partyDelegationMap map[string]*partyDelegation, old, new string, epoch uint64) {
-	partyDelegationState, ok := partyDelegationMap[old]
+func (e *Engine) updateParty(ctx context.Context, partyDelegationMap map[string]*partyDelegation, oldKey, newKey string, epoch uint64) {
+	partyDelegationState, ok := partyDelegationMap[oldKey]
 	if !ok {
 		return
 	}
-	delete(partyDelegationMap, old)
-	partyDelegationMap[new] = &partyDelegation{
-		party:          new,
+	delete(partyDelegationMap, oldKey)
+	partyDelegationMap[newKey] = &partyDelegation{
+		party:          newKey,
 		nodeToAmount:   partyDelegationState.nodeToAmount,
 		totalDelegated: partyDelegationState.totalDelegated,
 	}
 
 	sortedNodes := e.sortNodes(partyDelegationState.nodeToAmount)
 	for _, node := range sortedNodes {
-		e.sendDelegatedBalanceEvent(ctx, old, node, epoch, num.Zero())
-		e.sendDelegatedBalanceEvent(ctx, new, node, epoch, partyDelegationState.nodeToAmount[node])
+		e.sendDelegatedBalanceEvent(ctx, oldKey, node, epoch, num.Zero())
+		e.sendDelegatedBalanceEvent(ctx, newKey, node, epoch, partyDelegationState.nodeToAmount[node])
 	}
 }
