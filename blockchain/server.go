@@ -5,7 +5,7 @@ type ChainServerImpl interface {
 	Stop()
 }
 
-// Server abstraction for the abci server. Very small, and mostly so that we can just have a dummy one for if we have a nullchain
+// Server abstraction for the abci server.
 type Server struct {
 	*Config
 	srv ChainServerImpl
@@ -18,7 +18,7 @@ func NewServer(srv ChainServerImpl) *Server {
 	}
 }
 
-// Stop gracefully shutdowns down the blockchain provider's server
+// Stop gracefully shutdowns down the blockchain provider's server.
 func (s *Server) Stop() {
 	s.srv.Stop()
 }

@@ -26,7 +26,7 @@ func (n *NullBlockchain) Start() error {
 	}
 
 	n.srv = &http.Server{Addr: n.srvAddress}
-	http.HandleFunc("/forwardtime", n.handleForwardTime)
+	http.HandleFunc("/api/v1/forwardtime", n.handleForwardTime)
 
 	n.log.Info("starting backdoor server")
 	go n.srv.ListenAndServe()
@@ -36,19 +36,18 @@ func (n *NullBlockchain) Start() error {
 // RequestToDuration should receive either be a parsable duration or a RFC3339 datetime.
 func RequestToDuration(req string, now time.Time) (time.Duration, error) {
 	d, err := time.ParseDuration(req)
-	if err == nil {
-		return d, nil
-	}
-
-	newTime, err := time.Parse(time.RFC3339, req)
 	if err != nil {
-		return 0, fmt.Errorf("%w: time is not a duration or RFC3339 datetime", ErrInvalidRequest)
+		newTime, err := time.Parse(time.RFC3339, req)
+		if err != nil {
+			return 0, fmt.Errorf("%w: time is not a duration or RFC3339 datetime", ErrInvalidRequest)
+		}
+
+		// Convert to a duration by subtracting the current frozen time of the nullchain
+		d = newTime.Sub(now)
 	}
 
-	// Convert to a duration by subtracting the current frozen time of the nullchain
-	d = newTime.Sub(now)
 	if d < 0 {
-		return 0, fmt.Errorf("%w: cannot step backwards in time %s < %s", ErrInvalidRequest, newTime, now)
+		return 0, fmt.Errorf("%w: cannot step backwards in time", ErrInvalidRequest)
 	}
 
 	return d, nil

@@ -147,13 +147,16 @@ func testTimeForwardingRequestConversion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, d, time.Minute+(10*time.Second))
 
+	// backwards duration
+	_, err = nullchain.RequestToDuration("-1m10s", now)
+	assert.Error(t, err)
 	// Valid datetime
 	forward := now.Add(time.Minute)
 	d, err = nullchain.RequestToDuration(forward.Format(time.RFC3339), now)
 	assert.NoError(t, err)
 	assert.Equal(t, time.Minute, d)
 
-	// backwards in time
+	// backwards in datetime
 	forward = now.Add(-time.Hour)
 	_, err = nullchain.RequestToDuration(forward.Format(time.RFC3339), now)
 	assert.Error(t, err)
