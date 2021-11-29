@@ -2,8 +2,10 @@ package nullchain
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -17,6 +19,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/p2p"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"github.com/tendermint/tendermint/proto/tendermint/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -193,6 +196,25 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		n.chainID = genesis.ChainID
 	}
 
+	// read appstate from app-state so that we can set self
+	appstate := struct {
+		Validators map[string]struct{} `json:"validators"`
+	}{}
+
+	err = json.Unmarshal(genesis.Appstate, &appstate)
+	if err != nil {
+		return err
+	}
+
+	if len(appstate.Validators) > 1 {
+		return fmt.Errorf("more than one validator in genesis appstate: %w", ErrNotImplemented)
+	}
+
+	var pubKey []byte
+	for k := range appstate.Validators {
+		pubKey, _ = base64.StdEncoding.DecodeString(k)
+	}
+
 	n.log.Debug("sending InitChain into core",
 		logging.String("chainID", n.chainID),
 		logging.Int64("blockHeight", n.blockHeight),
@@ -204,7 +226,17 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 			ChainId:       n.chainID,
 			InitialHeight: n.blockHeight,
 			AppStateBytes: genesis.Appstate,
-		})
+			Validators: []abci.ValidatorUpdate{
+				{
+					PubKey: crypto.PublicKey{
+						Sum: &crypto.PublicKey_Ed25519{
+							Ed25519: pubKey,
+						},
+					},
+				},
+			},
+		},
+	)
 	return nil
 }
 
@@ -214,7 +246,9 @@ func (n *NullBlockchain) BeginBlock() *NullBlockchain {
 	)
 	r := abci.RequestBeginBlock{
 		Header: types.Header{
-			Time: n.now,
+			Time:    n.now,
+			Height:  n.blockHeight,
+			ChainID: n.chainID,
 		},
 	}
 	n.app.BeginBlock(r)
