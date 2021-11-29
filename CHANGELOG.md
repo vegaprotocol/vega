@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [232](https://github.com/vegaprotocol/data-node/pull/232) - Tidy up repo to align with team processes and workflows
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
