@@ -138,7 +138,7 @@ func (t *Topology) GetKeyRotations(nodeID string) []KeyRotation {
 	return rotations
 }
 
-func (t *Topology) BeginningOfBlock(ctx context.Context, blockHeight uint64) {
+func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
