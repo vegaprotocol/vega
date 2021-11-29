@@ -68,10 +68,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	conf := l.confWatcher.Get()
 
-	if flagProvided("--no-chain") {
-		conf.Blockchain.ChainProvider = "noop"
-	}
-
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -104,9 +100,11 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
-	l.ethClient, err = ethclient.Dial(l.ctx, l.conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return fmt.Errorf("could not instantiate ethereum client: %w", err)
+	if conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
+		l.ethClient, err = ethclient.Dial(l.ctx, l.conf.NodeWallet.ETH.Address)
+		if err != nil {
+			return fmt.Errorf("could not instantiate ethereum client: %w", err)
+		}
 	}
 
 	l.nodeWallets, err = nodewallets.GetNodeWallets(l.conf.NodeWallet, l.vegaPaths, l.nodeWalletPassphrase)
@@ -272,7 +270,7 @@ func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallet
 	)
 
 	switch l.conf.Blockchain.ChainProvider {
-	case "tendermint":
+	case blockchain.ProviderTendermint:
 		srv, err := l.startABCI(ctx, app)
 		l.blockchainServer = blockchain.NewServer(srv)
 		if err != nil {
@@ -284,7 +282,7 @@ func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallet
 			return nil, err
 		}
 		l.blockchainClient = blockchain.NewClient(a)
-	case "nullchain":
+	case blockchain.ProviderNullChain:
 		abciApp := app.Abci()
 		n := nullchain.NewClient(l.Log, l.conf.Blockchain.Null, abciApp)
 

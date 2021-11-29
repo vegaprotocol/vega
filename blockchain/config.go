@@ -7,6 +7,11 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+const (
+	ProviderNullChain  = "nullchain"
+	ProviderTendermint = "tendermint"
+)
+
 // Config represent the configuration of the blockchain package.
 type Config struct {
 	Level               encoding.LogLevel `long:"log-level"`
@@ -27,7 +32,7 @@ func NewDefaultConfig() Config {
 		Level:               encoding.LogLevel{Level: logging.InfoLevel},
 		LogOrderSubmitDebug: true,
 		LogTimeDebug:        true,
-		ChainProvider:       "tendermint",
+		ChainProvider:       ProviderTendermint,
 		Tendermint:          NewDefaultTendermintConfig(),
 		Null:                NewDefaultNullChainConfig(),
 	}
