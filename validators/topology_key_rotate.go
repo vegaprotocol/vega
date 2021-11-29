@@ -87,8 +87,7 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 		return ErrCurrentPubKeyHashDoesNotMatch
 	}
 
-	_, ok = t.pendingPubKeyRotations[kr.TargetBlock]
-	if !ok {
+	if _, ok = t.pendingPubKeyRotations[kr.TargetBlock]; !ok {
 		t.pendingPubKeyRotations[kr.TargetBlock] = map[string]pendingKeyRotation{}
 	}
 	t.pendingPubKeyRotations[kr.TargetBlock][nodeID] = pendingKeyRotation{
