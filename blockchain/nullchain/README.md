@@ -26,10 +26,11 @@ The other is by using an exposed HTTP endpoint to specify either a duration, or 
 
 ```
 # By duration
-curl -X POST -d "{\"forward\": \"10s\"}" http://localhost:3009/api/v1/forwardtime
+curl -X POST -d "{\"forward\": \"1s\"}" http://localhost:3101/api/v1/forwardtime
+
 
 # By datetime
-curl -X POST -d "{\"timeforward\": \"2021-11-25T14:14:00Z\"}" http://localhost:3009/api/v1/timeforward
+curl -X POST -d "{\"timeforward\": \"2021-11-25T14:14:00Z\"}" http://localhost:3101/api/v1/timeforward
 ```
 
 Moving time forward will create empty blocks until the target time is reached. Any pending transactions will be processed in the first block. If the target time is such that it does not move ahead by a multiple of `block-duration` then time will be snapped backwards to the block last ended, and `vegatime` could be less than the target time. 

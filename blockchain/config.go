@@ -83,6 +83,6 @@ func NewDefaultNullChainConfig() NullChainConfig {
 		BlockDuration:        encoding.Duration{Duration: time.Second},
 		TransactionsPerBlock: 10,
 		IP:                   "localhost",
-		Port:                 3009,
+		Port:                 3101,
 	}
 }

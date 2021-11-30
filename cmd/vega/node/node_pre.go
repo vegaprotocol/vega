@@ -351,6 +351,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
+	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
 	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 
@@ -362,8 +363,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
 		l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
 	}
-
-	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
 	l.netParams.Watch(
 		netparams.WatchParam{

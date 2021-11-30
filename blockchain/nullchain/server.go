@@ -83,5 +83,4 @@ func (n *NullBlockchain) handleForwardTime(w http.ResponseWriter, r *http.Reques
 
 	// Do the dance
 	n.ForwardTime(d)
-	w.WriteHeader(http.StatusOK)
 }
