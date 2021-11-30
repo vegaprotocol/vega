@@ -17,9 +17,10 @@
 - [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
 
 ### 🐛 Fixes
+
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
 - [4418](https://github.com/vegaprotocol/vega/pull/4418) - Add some logging + height/version handling fixes
-
+- [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
 
 ## 0.46.1
 *2021-11-24*

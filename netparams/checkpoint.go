@@ -38,7 +38,7 @@ func (s *Store) Checkpoint() ([]byte, error) {
 	return proto.Marshal(&params)
 }
 
-func (s *Store) Load(_ context.Context, data []byte) error {
+func (s *Store) Load(ctx context.Context, data []byte) error {
 	params := &snapshot.NetParams{}
 	if err := proto.Unmarshal(data, params); err != nil {
 		return err
@@ -47,7 +47,7 @@ func (s *Store) Load(_ context.Context, data []byte) error {
 	for _, param := range params.Params {
 		np[param.Key] = param.Value
 	}
-	if err := s.updateBatch(context.Background(), np); err != nil {
+	if err := s.updateBatch(ctx, np); err != nil {
 		return err
 	}
 	return nil
