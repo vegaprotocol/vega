@@ -1,8 +1,6 @@
 # Changelog
 
-
-## Unreleased (`X.Y.Z`)
-*`YYYY-MM-DD`*
+## Unreleased
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
@@ -11,7 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [232](https://github.com/vegaprotocol/data-node/pull/232) - Tidy up repo to align with team processes and workflows
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
@@ -21,6 +19,8 @@
 *`2021-11-22`*
 
 ### 🛠 Improvements
+- [230](https://github.com/vegaprotocol/data-node/pull/230) - Release Version `0.46.0`
+- [229](https://github.com/vegaprotocol/data-node/pull/229) - Add handling for checking/storing Chain ID
 - [226](https://github.com/vegaprotocol/data-node/pull/226) - Added subscriptions for delegations & rewards
 - [228](https://github.com/vegaprotocol/data-node/pull/228) - Add changelog and project board Github actions and update linked PR action version
 - [208](https://github.com/vegaprotocol/data-node/pull/208) - Turn off `api_tests` when run on the CI

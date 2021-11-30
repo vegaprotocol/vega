@@ -3,7 +3,7 @@
 name: ChangelogChecker
 "on":
   pull_request:
-    types: [review_requested, ready_for_review]
+    types: [review_requested, ready_for_review, assigned, synchronize]
     branches:
       - develop
 jobs:

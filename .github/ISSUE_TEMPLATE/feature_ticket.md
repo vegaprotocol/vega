@@ -13,14 +13,23 @@ _Add the **milestone** and **project** of the Major Release this feature is part
 _Add a **label** for the feature that this ticket is part of i.e. Data Sourcing_
 
 # Feature Overview
-A simple overview that describes what this feature (or sub feature) needs to do and why it's valuable. 
-This should be brief, understandable by anyone in the business and use the format: 
+A simple overview that describes **what** this feature (or sub feature) needs to do and **why** it's valuable. 
+This should be brief, understandable by anyone in the business and use one of the following the formats: 
 
-As a (who - the type of user/actor the feature serves)
+**As a** (who - the type of user/actor the feature serves)
+**I want** (what - the action to be performed / made possible)
+**So that** (why - the goal/result/value it achieves to the user/actor or the business)
 
-I want (what - the action to be performed / made possible)
+or
 
-So that (why - the goal/result/value it achieves to the user/actor or the business)
+**In order to** (context - overcome a problem or meet a requirerment)
+**We will** (what - carry out this piece of work / action)
+**So that** (why - we create these outcomes)
+
+## Specs
+
+- [Link](xyz) to spec or section within a spec
+- [Link](xyz) to another spec or section
 
 # Tasks
 A checklist of the tasks that are needed to develop the feature and meet the accceptance criteria and feature test scenarios. Ideally, tasks would reflect the pull requests likely to be created when developing the feature. 
@@ -90,7 +99,7 @@ A list of the engines that we believe will be impacted by the development of thi
 - Liquidity bot
 - Trader bot
 
-# API Calls 
+# API Calls
 A list of the API calls that are needed for this feature, written in an implementation-agnostic format i.e. "Get a list of widgets, categorised by X", rather than "GET /widgets?category=X":
 
 - Get a list of widgets, categorised by X
@@ -108,8 +117,6 @@ _Add a **label(s)** to represent the types of dependency this feature ticket has
 
 # Additional Details (optional)
 Any additional information that provides context or gives information that will help us develop the feature. 
-
-Feature spec: 
 
 # Examples (optional)
 Code snippets from the spec for reference
