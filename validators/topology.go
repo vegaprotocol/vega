@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
@@ -262,6 +263,7 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 		ctx,
 		nr.Id,
 		nr.VegaPubKey,
+		nr.VegaPubKeyNumber,
 		nr.EthereumAddress,
 		nr.ChainPubKey,
 		nr.InfoUrl,

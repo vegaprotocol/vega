@@ -255,6 +255,7 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 		ctx,
 		nr.Id,
 		nr.VegaPubKey,
+		nr.VegaPubKeyNumber,
 		nr.EthereumAddress,
 		nr.ChainPubKey,
 		nr.InfoUrl,

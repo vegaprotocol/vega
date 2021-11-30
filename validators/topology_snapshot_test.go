@@ -39,20 +39,51 @@ func TestTopologySnapshot(t *testing.T) {
 	h1, err := top.GetHash(topKey)
 	require.Nil(t, err)
 
-	top.UpdateValidatorSet([]string{tmPubKey})
+	tmPubKeys := []string{"tm-pubkey-1", "tm-pubkey-2"}
+	top.UpdateValidatorSet(tmPubKeys)
 
 	h2, err := top.GetHash(topKey)
 	require.Nil(t, err)
 
-	nr := commandspb.NodeRegistration{
+	ctx := context.Background()
+
+	nr1 := commandspb.NodeRegistration{
 		Id:              "vega-master-pubkey",
-		ChainPubKey:     tmPubKey,
+		ChainPubKey:     tmPubKeys[0],
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
-	ctx := context.Background()
-	err = top.AddNodeRegistration(ctx, &nr)
+	err = top.AddNodeRegistration(ctx, &nr1)
 	assert.NoError(t, err)
+
+	nr2 := commandspb.NodeRegistration{
+		Id:              "vega-master-pubkey-2",
+		ChainPubKey:     tmPubKeys[1],
+		VegaPubKey:      "vega-key-2",
+		EthereumAddress: "eth-address-2",
+	}
+	err = top.AddNodeRegistration(ctx, &nr2)
+	assert.NoError(t, err)
+
+	kr1 := &commandspb.KeyRotateSubmission{
+		KeyNumber:         1,
+		TargetBlock:       10,
+		NewPubKey:         "new-vega-key",
+		CurrentPubKeyHash: hashKey(nr1.VegaPubKey),
+	}
+	err = top.AddKeyRotate(ctx, nr1.Id, 5, kr1)
+	assert.NoError(t, err)
+
+	kr2 := &commandspb.KeyRotateSubmission{
+		KeyNumber:         1,
+		TargetBlock:       11,
+		NewPubKey:         "new-vega-key-2",
+		CurrentPubKeyHash: hashKey(nr2.VegaPubKey),
+	}
+	err = top.AddKeyRotate(ctx, nr2.Id, 5, kr2)
+	assert.NoError(t, err)
+
+	top.BeginBlock(ctx, 10)
 
 	// Check the hashes have changed after each state change
 	h3, err := top.GetHash(topKey)
