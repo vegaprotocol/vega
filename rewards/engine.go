@@ -502,4 +502,5 @@ func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string)
 		}
 	}
 	e.broker.SendBatch(payoutEvents)
+	e.rss.changed = true
 }

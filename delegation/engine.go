@@ -673,6 +673,7 @@ func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string)
 	if _, ok := e.autoDelegationMode[oldKey]; ok {
 		delete(e.autoDelegationMode, oldKey)
 		e.autoDelegationMode[newKey] = struct{}{}
+		e.dss.changed[autoKey] = true
 	}
 }
 
@@ -693,4 +694,6 @@ func (e *Engine) updateParty(ctx context.Context, partyDelegationMap map[string]
 		e.sendDelegatedBalanceEvent(ctx, oldKey, node, epoch, num.Zero())
 		e.sendDelegatedBalanceEvent(ctx, newKey, node, epoch, partyDelegationState.nodeToAmount[node])
 	}
+	e.dss.changed[activeKey] = true
+	e.dss.changed[pendingKey] = true
 }
