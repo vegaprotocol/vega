@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -196,7 +195,7 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		n.chainID = genesis.ChainID
 	}
 
-	// read appstate from app-state so that we can set self
+	// read appstate so that we can set the validators
 	appstate := struct {
 		Validators map[string]struct{} `json:"validators"`
 	}{}
@@ -206,19 +205,25 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		return err
 	}
 
-	if len(appstate.Validators) > 1 {
-		return fmt.Errorf("more than one validator in genesis appstate: %w", ErrNotImplemented)
-	}
-
-	var pubKey []byte
+	validators := make([]abci.ValidatorUpdate, 0, len(appstate.Validators))
 	for k := range appstate.Validators {
-		pubKey, _ = base64.StdEncoding.DecodeString(k)
+		pubKey, _ := base64.StdEncoding.DecodeString(k)
+		validators = append(validators,
+			abci.ValidatorUpdate{
+				PubKey: crypto.PublicKey{
+					Sum: &crypto.PublicKey_Ed25519{
+						Ed25519: pubKey,
+					},
+				},
+			},
+		)
 	}
 
 	n.log.Debug("sending InitChain into core",
 		logging.String("chainID", n.chainID),
 		logging.Int64("blockHeight", n.blockHeight),
 		logging.String("time", n.now.String()),
+		logging.Int("n_validators", len(validators)),
 	)
 	n.app.InitChain(
 		abci.RequestInitChain{
@@ -226,15 +231,7 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 			ChainId:       n.chainID,
 			InitialHeight: n.blockHeight,
 			AppStateBytes: genesis.Appstate,
-			Validators: []abci.ValidatorUpdate{
-				{
-					PubKey: crypto.PublicKey{
-						Sum: &crypto.PublicKey_Ed25519{
-							Ed25519: pubKey,
-						},
-					},
-				},
-			},
+			Validators:    validators,
 		},
 	)
 	return nil

@@ -354,7 +354,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
 	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
-
 		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
 		stakingLoop := nullchain.NewStakingLoop(l.collateral, l.assets)
 		l.governance = governance.NewEngine(l.Log, l.conf.Governance, stakingLoop, l.broker, l.assets, l.witness, l.netParams, now)

@@ -25,6 +25,8 @@ type StakingLoop struct {
 	stakingAsset string
 }
 
+// NewStakingLoop return a type that can "mock" a StakingAccount by instead reading deposited amounts
+// from the collateral engine. Used by the null-blockchain to remove the need for an Ethereum connection.
 func NewStakingLoop(col Collateral, assets Assets) *StakingLoop {
 	return &StakingLoop{
 		col:          col,
@@ -44,17 +46,13 @@ func (s *StakingLoop) GetAvailableBalance(party string) (*num.Uint, error) {
 func (s *StakingLoop) GetAvailableBalanceInRange(party string, from, to time.Time) (*num.Uint, error) {
 	// We're just going to have to say we have no notion of time range and whatever is has be deposited by the faucet
 	// has always been there.
-	balance, err := s.GetAvailableBalance(party)
-	if err != nil {
-		return nil, err
-	}
-	return balance, nil
+	return s.GetAvailableBalance(party)
 }
 
 func (s *StakingLoop) GetStakingAssetTotalSupply() *num.Uint {
 	asset, err := s.assets.Get(s.stakingAsset)
 	if err != nil {
-		return nil // its really should exist
+		return nil
 	}
 	return asset.Type().GetAssetTotalSupply()
 }
