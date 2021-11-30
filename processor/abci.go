@@ -1184,9 +1184,22 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err er
 	if err != nil {
 		app.log.Panic("Failed to get blockheight from checkpoint", logging.Error(err))
 	}
-	// ensure block height is set
+	// ensure block height and chain id are set
+	cid, err := vgcontext.ChainIDFromContext(app.chainCtx)
+	if err != nil {
+		app.log.Panic("Failed to get chain id", logging.Error(err))
+	}
+
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
+	ctx = vgcontext.WithChainID(ctx, cid)
 	app.blockCtx = ctx
+	//
+	// app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
+	// ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
+	// ctx = vgcontext.WithTraceID(ctx, hash)
+	// app.blockCtx = ctx
+
+	//
 	err = app.checkpoint.Load(ctx, cpt)
 	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect && !errors.Is(err, checkpoint.ErrNoCheckpointExpectedToBeRestored) && !errors.Is(err, checkpoint.ErrIncompatibleHashes) {
 		app.log.Panic("Failed to restore checkpoint", logging.Error(err))
