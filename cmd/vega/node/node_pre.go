@@ -352,10 +352,19 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 
-	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
+	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+
+		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
+		stakingLoop := nullchain.NewStakingLoop(l.collateral, l.assets)
+		l.governance = governance.NewEngine(l.Log, l.conf.Governance, stakingLoop, l.broker, l.assets, l.witness, l.netParams, now)
+		l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingLoop, l.epochService, l.timeService)
+	} else {
+		l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
+		l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
+	}
 
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
+
 	l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
