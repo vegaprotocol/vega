@@ -10,60 +10,60 @@ import (
 )
 
 const (
-	nodeID              = "vega-master-public-key"
-	vegaPublicKey       = "vega-public-key"
-	vegaPublicKeyNumber = 1
-	ethAddress          = "eth-address"
-	tmPublicKey         = "tm-public-key"
-	infoURL             = "no1.xyz.vega/nodes/a"
-	country             = "GB"
-	name                = "Validator"
-	avatarURL           = "https://not-an-avatar.com"
+	nodeID             = "vega-master-public-key"
+	vegaPublicKey      = "vega-public-key"
+	vegaPublicKeyIndex = 1
+	ethAddress         = "eth-address"
+	tmPublicKey        = "tm-public-key"
+	infoURL            = "no1.xyz.vega/nodes/a"
+	country            = "GB"
+	name               = "Validator"
+	avatarURL          = "https://not-an-avatar.com"
 )
 
 func TestValidatorUpdate(t *testing.T) {
 	t.Run("returns public key", func(t *testing.T) {
 		ctx := context.Background()
-		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyNumber, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
+		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyIndex, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
 
 		assert.Equal(t, vegaPublicKey, vu.VegaPublicKey())
 	})
 
 	t.Run("returns Tendermint public key", func(t *testing.T) {
 		ctx := context.Background()
-		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyNumber, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
+		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyIndex, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
 
 		assert.Equal(t, tmPublicKey, vu.TendermintPublicKey())
 	})
 
 	t.Run("returns info url", func(t *testing.T) {
 		ctx := context.Background()
-		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyNumber, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
+		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyIndex, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
 
 		assert.Equal(t, infoURL, vu.InfoURL())
 	})
 
 	t.Run("returns country", func(t *testing.T) {
 		ctx := context.Background()
-		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyNumber, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
+		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyIndex, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
 
 		assert.Equal(t, country, vu.Country())
 	})
 
 	t.Run("returns validator update event proto", func(t *testing.T) {
 		ctx := context.Background()
-		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyNumber, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
+		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyIndex, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
 
 		expected := eventspb.ValidatorUpdate{
-			NodeId:           nodeID,
-			VegaPubKey:       vegaPublicKey,
-			VegaPubKeyNumber: vegaPublicKeyNumber,
-			EthereumAddress:  ethAddress,
-			TmPubKey:         tmPublicKey,
-			InfoUrl:          infoURL,
-			Country:          country,
-			Name:             name,
-			AvatarUrl:        avatarURL,
+			NodeId:          nodeID,
+			VegaPubKey:      vegaPublicKey,
+			VegaPubKeyIndex: vegaPublicKeyIndex,
+			EthereumAddress: ethAddress,
+			TmPubKey:        tmPublicKey,
+			InfoUrl:         infoURL,
+			Country:         country,
+			Name:            name,
+			AvatarUrl:       avatarURL,
 		}
 
 		assert.Equal(t, expected, vu.Proto())
@@ -71,18 +71,18 @@ func TestValidatorUpdate(t *testing.T) {
 
 	t.Run("returns stream message with validator update", func(t *testing.T) {
 		ctx := context.Background()
-		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyNumber, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
+		vu := events.NewValidatorUpdateEvent(ctx, nodeID, vegaPublicKey, vegaPublicKeyIndex, ethAddress, tmPublicKey, infoURL, country, name, avatarURL)
 
 		vuProto := eventspb.ValidatorUpdate{
-			NodeId:           nodeID,
-			VegaPubKey:       vegaPublicKey,
-			VegaPubKeyNumber: vegaPublicKeyNumber,
-			EthereumAddress:  ethAddress,
-			TmPubKey:         tmPublicKey,
-			InfoUrl:          infoURL,
-			Country:          country,
-			Name:             name,
-			AvatarUrl:        avatarURL,
+			NodeId:          nodeID,
+			VegaPubKey:      vegaPublicKey,
+			VegaPubKeyIndex: vegaPublicKeyIndex,
+			EthereumAddress: ethAddress,
+			TmPubKey:        tmPublicKey,
+			InfoUrl:         infoURL,
+			Country:         country,
+			Name:            name,
+			AvatarUrl:       avatarURL,
 		}
 
 		expectedUpdate := &eventspb.BusEvent_ValidatorUpdate{

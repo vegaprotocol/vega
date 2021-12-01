@@ -73,15 +73,15 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 
 	validatorDataState := map[string]validators.ValidatorData{
 		base64.StdEncoding.EncodeToString(pubKey.Bytes()): {
-			ID:               walletID,
-			VegaPubKey:       vegaKey.value,
-			VegaPubKeyNumber: vegaKey.index,
-			TmPubKey:         b64TmPubKey,
-			EthereumAddress:  ethAddress,
-			Country:          opts.Country,
-			InfoURL:          opts.InfoURL,
-			Name:             opts.Name,
-			AvatarURL:        opts.AvatarURL,
+			ID:              walletID,
+			VegaPubKey:      vegaKey.value,
+			VegaPubKeyIndex: vegaKey.index,
+			TmPubKey:        b64TmPubKey,
+			EthereumAddress: ethAddress,
+			Country:         opts.Country,
+			InfoURL:         opts.InfoURL,
+			Name:            opts.Name,
+			AvatarURL:       opts.AvatarURL,
 		},
 	}
 	fmt.Println("Info to add in genesis file under `app_state.validators` key")

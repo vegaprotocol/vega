@@ -67,11 +67,11 @@ func (opts *generateCmd) Execute(_ []string) error {
 	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
 	genesisState := genesis.DefaultGenesisState()
 	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
-		ID:               walletID,
-		VegaPubKey:       vegaKey.value,
-		VegaPubKeyNumber: vegaKey.index,
-		EthereumAddress:  ethAddress,
-		TmPubKey:         b64TmPubKey,
+		ID:              walletID,
+		VegaPubKey:      vegaKey.value,
+		VegaPubKeyIndex: vegaKey.index,
+		EthereumAddress: ethAddress,
+		TmPubKey:        b64TmPubKey,
 	}
 
 	if len(opts.Network) != 0 {

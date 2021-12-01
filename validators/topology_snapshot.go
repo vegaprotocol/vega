@@ -40,15 +40,15 @@ func (t *Topology) serialiseNodes() []*eventspb.ValidatorUpdate {
 	for _, node := range t.validators {
 		nodes = append(nodes,
 			&eventspb.ValidatorUpdate{
-				NodeId:           node.ID,
-				VegaPubKey:       node.VegaPubKey,
-				VegaPubKeyNumber: node.VegaPubKeyNumber,
-				EthereumAddress:  node.EthereumAddress,
-				TmPubKey:         node.TmPubKey,
-				InfoUrl:          node.InfoURL,
-				Country:          node.Country,
-				Name:             node.Name,
-				AvatarUrl:        node.AvatarURL,
+				NodeId:          node.ID,
+				VegaPubKey:      node.VegaPubKey,
+				VegaPubKeyIndex: node.VegaPubKeyIndex,
+				EthereumAddress: node.EthereumAddress,
+				TmPubKey:        node.TmPubKey,
+				InfoUrl:         node.InfoURL,
+				Country:         node.Country,
+				Name:            node.Name,
+				AvatarUrl:       node.AvatarURL,
 			},
 		)
 	}
@@ -64,10 +64,10 @@ func (t *Topology) serialisePendingKeyRotation() []*snapshot.PendingKeyRotation 
 	for blockHeight, rotations := range t.pendingPubKeyRotations {
 		for nodeID, pr := range rotations {
 			pkrs = append(pkrs, &snapshot.PendingKeyRotation{
-				BlockHeight:  blockHeight,
-				NodeId:       nodeID,
-				NewPubKey:    pr.newPubKey,
-				NewKeyNumber: pr.newKeyNumber,
+				BlockHeight:    blockHeight,
+				NodeId:         nodeID,
+				NewPubKey:      pr.newPubKey,
+				NewPubKeyIndex: pr.newKeyIndex,
 			})
 		}
 	}
@@ -82,32 +82,13 @@ func (t *Topology) serialisePendingKeyRotation() []*snapshot.PendingKeyRotation 
 	return pkrs
 }
 
-func (t *Topology) serialiseProcessedKeyRotation() []*snapshot.KeyRotation {
-	// len(t.processedPubKeyRotations)*2 - assuming there is at least one rotation per nodeID
-	krs := make([]*snapshot.KeyRotation, 0, len(t.processedPubKeyRotations)*2)
-
-	for _, rotations := range t.processedPubKeyRotations {
-		for _, r := range rotations {
-			krs = append(krs, &snapshot.KeyRotation{
-				BlockHeight: r.BlockHeight,
-				NodeId:      r.NodeID,
-				NewPubKey:   r.NewPubKey,
-				OldPubKey:   r.OldPubKey,
-			})
-		}
-	}
-
-	return krs
-}
-
 func (t *Topology) serialise() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{
-				ChainValidators:          t.chainValidators[:],
-				ValidatorData:            t.serialiseNodes(),
-				PendingPubKeyRotations:   t.serialisePendingKeyRotation(),
-				ProcessedPubKeyRotations: t.serialiseProcessedKeyRotation(),
+				ChainValidators:        t.chainValidators[:],
+				ValidatorData:          t.serialiseNodes(),
+				PendingPubKeyRotations: t.serialisePendingKeyRotation(),
 			},
 		},
 	}
@@ -170,24 +151,9 @@ func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotatio
 		}
 
 		t.pendingPubKeyRotations[pkr.BlockHeight][pkr.NodeId] = pendingKeyRotation{
-			newPubKey:    pkr.NewPubKey,
-			newKeyNumber: pkr.NewKeyNumber,
+			newPubKey:   pkr.NewPubKey,
+			newKeyIndex: pkr.NewPubKeyIndex,
 		}
-	}
-}
-
-func (t *Topology) restoreProcessedKeyRotations(krs []*snapshot.KeyRotation) {
-	for _, kr := range krs {
-		if _, ok := t.processedPubKeyRotations[kr.NodeId]; !ok {
-			t.processedPubKeyRotations[kr.NodeId] = []KeyRotation{}
-		}
-
-		t.processedPubKeyRotations[kr.NodeId] = append(t.processedPubKeyRotations[kr.NodeId], KeyRotation{
-			NodeID:      kr.NodeId,
-			OldPubKey:   kr.OldPubKey,
-			NewPubKey:   kr.NewPubKey,
-			BlockHeight: kr.BlockHeight,
-		})
 	}
 }
 
@@ -199,15 +165,15 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 
 	for _, node := range topology.ValidatorData {
 		t.validators[node.NodeId] = ValidatorData{
-			ID:               node.NodeId,
-			VegaPubKey:       node.VegaPubKey,
-			VegaPubKeyNumber: node.VegaPubKeyNumber,
-			EthereumAddress:  node.EthereumAddress,
-			TmPubKey:         node.TmPubKey,
-			InfoURL:          node.InfoUrl,
-			Country:          node.Country,
-			Name:             node.Name,
-			AvatarURL:        node.AvatarUrl,
+			ID:              node.NodeId,
+			VegaPubKey:      node.VegaPubKey,
+			VegaPubKeyIndex: node.VegaPubKeyIndex,
+			EthereumAddress: node.EthereumAddress,
+			TmPubKey:        node.TmPubKey,
+			InfoURL:         node.InfoUrl,
+			Country:         node.Country,
+			Name:            node.Name,
+			AvatarURL:       node.AvatarUrl,
 		}
 
 		if walletID == node.NodeId {
@@ -216,7 +182,6 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	}
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
-	t.restoreProcessedKeyRotations(topology.ProcessedPubKeyRotations)
 	t.tss.changed = true
 	return nil
 }

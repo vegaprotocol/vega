@@ -24,6 +24,10 @@ code.vegaprotocol.io/protos v0.46.1-0.20211129194921-98c66d2c52d1 h1:mTzpZUal92d
 code.vegaprotocol.io/protos v0.46.1-0.20211129194921-98c66d2c52d1/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/protos v0.46.1-0.20211130150222-05b7f781b78d h1:J2obl7crTPR1B/RNj0wFII54qfqRUDERqY7eLUGRz3A=
 code.vegaprotocol.io/protos v0.46.1-0.20211130150222-05b7f781b78d/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+code.vegaprotocol.io/protos v0.46.1-0.20211201133206-e0e3f52d77af h1:lSp720j/kU2ZTB2hNUW8/9bQXrsiRQ7dR1sMp7kCaqU=
+code.vegaprotocol.io/protos v0.46.1-0.20211201133206-e0e3f52d77af/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
+code.vegaprotocol.io/protos v0.46.1-0.20211201150331-b536716fea70 h1:zqWTK+nnd1HK7oCCXIK/H3uoyync4R1flKX+A5XKsmQ=
+code.vegaprotocol.io/protos v0.46.1-0.20211201150331-b536716fea70/go.mod h1:NORK22Evpwn0GoetL7H6/oVUzGcfjAJEJTzw+zTkSyE=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090 h1:SF7ZRvZ/JASJNEQigbuUwk1rQuugLy6gqbOFs8D8VXI=
@@ -32,6 +36,8 @@ code.vegaprotocol.io/vegawallet v0.10.0 h1:bUtjeAxGg094QkABtbkp23anRLoh64qMynHLP
 code.vegaprotocol.io/vegawallet v0.10.0/go.mod h1:DVCdA2rYKOLMH4XN81gYB61sIfYXh+yL55bqKFCo+Ao=
 code.vegaprotocol.io/vegawallet v0.10.1-0.20211129095846-0f5763a6fbd7 h1:GvdQtQBzGAPsXrNFsvi8G/7CVgXPiy4AW7UMPCi7KWY=
 code.vegaprotocol.io/vegawallet v0.10.1-0.20211129095846-0f5763a6fbd7/go.mod h1:mO7DloFRrqCFfsAiQWdL+QT12Lu7XJb6n5B9/jiDcqU=
+code.vegaprotocol.io/vegawallet v0.10.1-0.20211201165331-1cb8560c9d78 h1:5h5sBL+fGyNyw5pODHtSvnu2SrzKfHEPLYcxz9alcXo=
+code.vegaprotocol.io/vegawallet v0.10.1-0.20211201165331-1cb8560c9d78/go.mod h1:OMS9RMeB1bEzhhcvNqlmmmVXT6YVaGWlcXJqNLT5+jY=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/Azure/azure-pipeline-go v0.2.1/go.mod h1:UGSo8XybXnIGZ3epmeBw7Jdz+HiUVpqIlpz/HKHylF4=

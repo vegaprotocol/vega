@@ -399,9 +399,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
 
 	// notify delegation, rewards, and accounting on changes in the validator pub key
-	l.topology.NotifyOnKeyChange(l.delegation.ValidatorKeyChanged)
-	l.topology.NotifyOnKeyChange(l.stakingAccounts.ValidatorKeyChanged)
-	l.topology.NotifyOnKeyChange(l.rewards.ValidatorKeyChanged)
+	l.topology.NotifyOnKeyChange(l.delegation.ValidatorKeyChanged, l.stakingAccounts.ValidatorKeyChanged, l.rewards.ValidatorKeyChanged)
 
 	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
 		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd, l.executionEngine)

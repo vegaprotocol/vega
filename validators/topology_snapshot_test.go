@@ -66,7 +66,7 @@ func TestTopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	kr1 := &commandspb.KeyRotateSubmission{
-		KeyNumber:         1,
+		NewPubKeyIndex:    1,
 		TargetBlock:       10,
 		NewPubKey:         "new-vega-key",
 		CurrentPubKeyHash: hashKey(nr1.VegaPubKey),
@@ -75,7 +75,7 @@ func TestTopologySnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	kr2 := &commandspb.KeyRotateSubmission{
-		KeyNumber:         1,
+		NewPubKeyIndex:    1,
 		TargetBlock:       11,
 		NewPubKey:         "new-vega-key-2",
 		CurrentPubKeyHash: hashKey(nr2.VegaPubKey),

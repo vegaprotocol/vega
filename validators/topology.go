@@ -33,15 +33,15 @@ type Wallet interface {
 }
 
 type ValidatorData struct {
-	ID               string `json:"id"`
-	VegaPubKey       string `json:"vega_pub_key"`
-	VegaPubKeyNumber uint32 `json:"vega_pub_number"`
-	EthereumAddress  string `json:"ethereum_address"`
-	TmPubKey         string `json:"tm_pub_key"`
-	InfoURL          string `json:"info_url"`
-	Country          string `json:"country"`
-	Name             string `json:"name"`
-	AvatarURL        string `json:"avatar_url"`
+	ID              string `json:"id"`
+	VegaPubKey      string `json:"vega_pub_key"`
+	VegaPubKeyIndex uint32 `json:"vega_pub_key_index"`
+	EthereumAddress string `json:"ethereum_address"`
+	TmPubKey        string `json:"tm_pub_key"`
+	InfoURL         string `json:"info_url"`
+	Country         string `json:"country"`
+	Name            string `json:"name"`
+	AvatarURL       string `json:"avatar_url"`
 }
 
 func (v ValidatorData) IsValid() bool {
@@ -74,9 +74,8 @@ type Topology struct {
 	isValidator bool
 
 	// key rotations
-	pendingPubKeyRotations   pendingKeyRotationMapping
-	processedPubKeyRotations processedKeyRotationMapping
-	pubKeyChangeListeners    []func(ctx context.Context, oldPubKey, newPubKey string)
+	pendingPubKeyRotations pendingKeyRotationMapping
+	pubKeyChangeListeners  []func(ctx context.Context, oldPubKey, newPubKey string)
 
 	mu sync.RWMutex
 
@@ -88,15 +87,14 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) 
 	log.SetLevel(cfg.Level.Get())
 
 	t := &Topology{
-		log:                      log,
-		cfg:                      cfg,
-		wallet:                   wallet,
-		broker:                   broker,
-		validators:               ValidatorMapping{},
-		chainValidators:          []string{},
-		tss:                      &topologySnapshotState{changed: true},
-		pendingPubKeyRotations:   pendingKeyRotationMapping{},
-		processedPubKeyRotations: processedKeyRotationMapping{},
+		log:                    log,
+		cfg:                    cfg,
+		wallet:                 wallet,
+		broker:                 broker,
+		validators:             ValidatorMapping{},
+		chainValidators:        []string{},
+		tss:                    &topologySnapshotState{changed: true},
+		pendingPubKeyRotations: pendingKeyRotationMapping{},
 	}
 
 	return t
@@ -234,15 +232,15 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 
 	// then add it to the topology
 	t.validators[nr.Id] = ValidatorData{
-		ID:               nr.Id,
-		VegaPubKey:       nr.VegaPubKey,
-		VegaPubKeyNumber: nr.VegaPubKeyNumber,
-		EthereumAddress:  nr.EthereumAddress,
-		TmPubKey:         nr.ChainPubKey,
-		InfoURL:          nr.InfoUrl,
-		Country:          nr.Country,
-		Name:             nr.Name,
-		AvatarURL:        nr.AvatarUrl,
+		ID:              nr.Id,
+		VegaPubKey:      nr.VegaPubKey,
+		VegaPubKeyIndex: nr.VegaPubKeyIndex,
+		EthereumAddress: nr.EthereumAddress,
+		TmPubKey:        nr.ChainPubKey,
+		InfoURL:         nr.InfoUrl,
+		Country:         nr.Country,
+		Name:            nr.Name,
+		AvatarURL:       nr.AvatarUrl,
 	}
 
 	t.tss.changed = true
@@ -263,7 +261,7 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 		ctx,
 		nr.Id,
 		nr.VegaPubKey,
-		nr.VegaPubKeyNumber,
+		nr.VegaPubKeyIndex,
 		nr.EthereumAddress,
 		nr.ChainPubKey,
 		nr.InfoUrl,
@@ -299,15 +297,15 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		}
 
 		nr := &commandspb.NodeRegistration{
-			Id:               data.ID,
-			VegaPubKey:       data.VegaPubKey,
-			VegaPubKeyNumber: data.VegaPubKeyNumber,
-			EthereumAddress:  data.EthereumAddress,
-			ChainPubKey:      tm,
-			InfoUrl:          data.InfoURL,
-			Country:          data.Country,
-			Name:             data.Name,
-			AvatarUrl:        data.AvatarURL,
+			Id:              data.ID,
+			VegaPubKey:      data.VegaPubKey,
+			VegaPubKeyIndex: data.VegaPubKeyIndex,
+			EthereumAddress: data.EthereumAddress,
+			ChainPubKey:     tm,
+			InfoUrl:         data.InfoURL,
+			Country:         data.Country,
+			Name:            data.Name,
+			AvatarUrl:       data.AvatarURL,
 		}
 		if err := t.AddNodeRegistration(ctx, nr); err != nil {
 			return err

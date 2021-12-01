@@ -12,16 +12,16 @@ import (
 )
 
 var (
-	ErrTargetBlockHeightMustBeGraterThanCurrentHeight          = errors.New("target block height must be greater then current block")
-	ErrNewVegaPubKeyNumberMustBeGreaterThenCurrentPubKeyNumber = errors.New("a new vega public key number must be greather then current public key number")
-	ErrInvalidVegaPubKeyForNode                                = errors.New("current vega public key is invalid for node")
-	ErrNodeAlreadyHasPendingKeyRotation                        = errors.New("node already has a pending key rotation")
-	ErrCurrentPubKeyHashDoesNotMatch                           = errors.New("current public key hash does not match")
+	ErrTargetBlockHeightMustBeGraterThanCurrentHeight        = errors.New("target block height must be greater then current block")
+	ErrNewVegaPubKeyIndexMustBeGreaterThenCurrentPubKeyIndex = errors.New("a new vega public key index must be greather then current public key index")
+	ErrInvalidVegaPubKeyForNode                              = errors.New("current vega public key is invalid for node")
+	ErrNodeAlreadyHasPendingKeyRotation                      = errors.New("node already has a pending key rotation")
+	ErrCurrentPubKeyHashDoesNotMatch                         = errors.New("current public key hash does not match")
 )
 
 type pendingKeyRotation struct {
-	newPubKey    string
-	newKeyNumber uint32
+	newPubKey   string
+	newKeyIndex uint32
 }
 
 // pendingKeyRotationMapping maps a block height => node id => new pending key rotation.
@@ -79,8 +79,8 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 		return ErrTargetBlockHeightMustBeGraterThanCurrentHeight
 	}
 
-	if node.VegaPubKeyNumber >= kr.KeyNumber {
-		return ErrNewVegaPubKeyNumberMustBeGreaterThenCurrentPubKeyNumber
+	if node.VegaPubKeyIndex >= kr.NewPubKeyIndex {
+		return ErrNewVegaPubKeyIndexMustBeGreaterThenCurrentPubKeyIndex
 	}
 
 	if node.HashVegaPubKey() != kr.CurrentPubKeyHash {
@@ -91,8 +91,8 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 		t.pendingPubKeyRotations[kr.TargetBlock] = map[string]pendingKeyRotation{}
 	}
 	t.pendingPubKeyRotations[kr.TargetBlock][nodeID] = pendingKeyRotation{
-		newPubKey:    kr.NewPubKey,
-		newKeyNumber: kr.KeyNumber,
+		newPubKey:   kr.NewPubKey,
+		newKeyIndex: kr.NewPubKeyIndex,
 	}
 
 	t.tss.changed = true
@@ -108,27 +108,6 @@ func (t *Topology) notifyKeyChange(ctx context.Context, oldPubKey, newPubKey str
 	for _, f := range t.pubKeyChangeListeners {
 		f(ctx, oldPubKey, newPubKey)
 	}
-}
-
-func (t *Topology) addProcessedKeyRotation(nodeID, oldPubKey, newPubKey string, blockHeight uint64) {
-	if _, ok := t.processedPubKeyRotations[nodeID]; !ok {
-		t.processedPubKeyRotations[nodeID] = []KeyRotation{}
-	}
-
-	t.processedPubKeyRotations[nodeID] = append(t.processedPubKeyRotations[nodeID], KeyRotation{
-		NodeID:      nodeID,
-		OldPubKey:   oldPubKey,
-		NewPubKey:   newPubKey,
-		BlockHeight: blockHeight,
-	})
-}
-
-// GetKeyRotations returns a history of all processed key rotations per given node.
-func (t *Topology) GetKeyRotations(nodeID string) []KeyRotation {
-	t.mu.RLock()
-	defer t.mu.RUnlock()
-
-	return t.processedPubKeyRotations[nodeID]
 }
 
 func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
@@ -153,10 +132,9 @@ func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
 		rotation := t.pendingPubKeyRotations[blockHeight][nodeID]
 
 		data.VegaPubKey = rotation.newPubKey
-		data.VegaPubKeyNumber = rotation.newKeyNumber
+		data.VegaPubKeyIndex = rotation.newKeyIndex
 		t.validators[nodeID] = data
 
-		t.addProcessedKeyRotation(nodeID, oldPubKey, rotation.newPubKey, blockHeight)
 		t.notifyKeyChange(ctx, oldPubKey, rotation.newPubKey)
 		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, blockHeight))
 	}
