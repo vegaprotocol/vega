@@ -2384,6 +2384,7 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 }
 
 func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
+	t.Helper()
 	// add the token asset
 	tokAsset := types.Asset{
 		ID: "VOTE",
