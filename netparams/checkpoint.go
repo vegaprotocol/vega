@@ -45,6 +45,9 @@ func (s *Store) Load(ctx context.Context, data []byte) error {
 	}
 	np := make(map[string]string, len(params.Params))
 	for _, param := range params.Params {
+		if _, ok := s.checkpointOverwrites[param.Key]; ok {
+			continue // skip all ovrwrites
+		}
 		np[param.Key] = param.Value
 	}
 	if err := s.updateBatch(ctx, np); err != nil {

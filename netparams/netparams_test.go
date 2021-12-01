@@ -2,6 +2,7 @@ package netparams_test
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -51,6 +52,7 @@ func TestNetParams(t *testing.T) {
 
 func TestCheckpoint(t *testing.T) {
 	t.Run("test get snapshot not empty", testNonEmptyCheckpoint)
+	t.Run("test get snapshot not empty with overwrite", testNonEmptyCheckpointWithOverWrite)
 	t.Run("test get snapshot invalid", testInvalidCheckpoint)
 }
 
@@ -262,4 +264,95 @@ func testInvalidCheckpoint(t *testing.T) {
 
 	data = append(data, []byte("foobar")...) // corrupt the data
 	require.Error(t, netp.Load(ctx, data))
+}
+
+func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
+	netp := getTestNetParams(t)
+	defer netp.ctrl.Finish()
+	ctx := context.Background()
+
+	newEOL := "2030-12-31"
+
+	// get the original default value
+	ov, err := netp.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ov)
+	assert.NotEqual(t, ov, "10h")
+
+	ovEOL, err := netp.Get(netparams.NetworkCheckpointNetworkEOLDate)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ovEOL)
+	assert.NotEqual(t, ov, newEOL)
+
+	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	err = netp.Update(ctx, netparams.GovernanceProposalMarketMinClose, "10h")
+	assert.NoError(t, err)
+
+	nv, err := netp.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, nv)
+	assert.NotEqual(t, nv, ov)
+	assert.Equal(t, nv, "10h")
+
+	err = netp.Update(ctx, netparams.NetworkCheckpointNetworkEOLDate, newEOL)
+	assert.NoError(t, err)
+	nvEOL, err := netp.Get(netparams.NetworkCheckpointNetworkEOLDate)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, nvEOL)
+	assert.NotEqual(t, ov, newEOL)
+
+	data, err := netp.Checkpoint()
+	require.NoError(t, err)
+	require.NotEmpty(t, data)
+
+	// now try and load the checkpoint
+	netp2 := getTestNetParams(t)
+	defer netp2.ctrl.Finish()
+	netp2.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	netp2.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	genesis := map[string]interface{}{
+		"network_parameters": map[string]string{
+			"network.checkpoint.networkEndOfLifeDate": "2040-12-31",
+		},
+		"network_parameters_checkpoint_overwrite": []string{"network.checkpoint.networkEndOfLifeDate"},
+	}
+
+	buf, err := json.Marshal(genesis)
+	assert.NoError(t, err)
+
+	assert.NoError(t, netp2.UponGenesis(context.Background(), buf))
+
+	// ensure the state != checkpoint we took
+	ov2, err := netp2.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ov2)
+	assert.NotEqual(t, ov2, "10h")
+	require.Equal(t, ov, ov2)
+
+	// ensure the state != checkpoint we took
+	ovEOL2, err := netp2.Get(netparams.NetworkCheckpointNetworkEOLDate)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ovEOL2)
+	assert.Equal(t, ovEOL2, "2040-12-31")
+
+	require.NoError(t, netp2.Load(ctx, data))
+
+	nv2, err := netp2.Get(netparams.GovernanceProposalMarketMinClose)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, nv2)
+	assert.NotEqual(t, nv2, ov)
+	assert.Equal(t, nv, nv2)
+
+	// make sure that, once restored, the same checkpoint data is restored
+	_, err = netp2.Checkpoint()
+	require.NoError(t, err)
+
+	// after checkpoint value is still the same
+	// ensure the state != checkpoint we took
+	ovEOL2, err = netp2.Get(netparams.NetworkCheckpointNetworkEOLDate)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, ovEOL2)
+	assert.Equal(t, ovEOL2, "2040-12-31")
 }

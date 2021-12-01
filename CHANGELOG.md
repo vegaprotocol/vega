@@ -21,6 +21,8 @@
 - [4477](https://github.com/vegaprotocol/vega/pull/4477) - Allow reloading of null-blockchain configuration while core is running
 - [4468](https://github.com/vegaprotocol/vega/pull/4468) - Change validator weights to be based on validator score
 - [4484](https://github.com/vegaprotocol/vega/pull/4484) - Add checkpoint validator key rotation
+- [4459](https://github.com/vegaprotocol/vega/pull/4459) - Add network parameters overwrite from checkpoints
+
 
 ### 🐛 Fixes
 
