@@ -83,8 +83,6 @@ func TestTopologySnapshot(t *testing.T) {
 	err = top.AddKeyRotate(ctx, nr2.Id, 5, kr2)
 	assert.NoError(t, err)
 
-	top.BeginBlock(ctx, 10)
-
 	// Check the hashes have changed after each state change
 	h3, err := top.GetHash(topKey)
 	require.Nil(t, err)
@@ -105,10 +103,12 @@ func TestTopologySnapshot(t *testing.T) {
 	require.Nil(t, err)
 
 	// Check the new reloaded engine is the same as the original
-	h4, err := top.GetHash(topKey)
+	h4, err := snapTop.GetHash(topKey)
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h3, h4))
 	assert.ElementsMatch(t, top.AllNodeIDs(), snapTop.AllNodeIDs())
 	assert.ElementsMatch(t, top.AllVegaPubKeys(), snapTop.AllVegaPubKeys())
 	assert.Equal(t, top.IsValidator(), snapTop.IsValidator())
+	assert.Equal(t, top.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey), snapTop.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey))
+	assert.Equal(t, top.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey), snapTop.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey))
 }

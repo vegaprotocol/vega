@@ -19,13 +19,13 @@ var (
 	ErrCurrentPubKeyHashDoesNotMatch                         = errors.New("current public key hash does not match")
 )
 
-type pendingKeyRotation struct {
-	newPubKey   string
-	newKeyIndex uint32
+type PendingKeyRotation struct {
+	NewPubKey   string
+	NewKeyIndex uint32
 }
 
 // pendingKeyRotationMapping maps a block height => node id => new pending key rotation.
-type pendingKeyRotationMapping map[uint64]map[string]pendingKeyRotation
+type pendingKeyRotationMapping map[uint64]map[string]PendingKeyRotation
 
 func (pr pendingKeyRotationMapping) getSortedNodeIDsPerHeight(height uint64) []string {
 	rotationsPerHeight := pr[height]
@@ -42,16 +42,6 @@ func (pr pendingKeyRotationMapping) getSortedNodeIDsPerHeight(height uint64) []s
 
 	return nodeIDs
 }
-
-type KeyRotation struct {
-	NodeID      string
-	OldPubKey   string
-	NewPubKey   string
-	BlockHeight uint64
-}
-
-// processedKeyRotationMapping maps node id => slice of key rotations.
-type processedKeyRotationMapping map[string][]KeyRotation
 
 func (t *Topology) hasPendingKeyRotation(nodeID string) bool {
 	for _, rotationsPerNodeID := range t.pendingPubKeyRotations {
@@ -88,11 +78,11 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 	}
 
 	if _, ok = t.pendingPubKeyRotations[kr.TargetBlock]; !ok {
-		t.pendingPubKeyRotations[kr.TargetBlock] = map[string]pendingKeyRotation{}
+		t.pendingPubKeyRotations[kr.TargetBlock] = map[string]PendingKeyRotation{}
 	}
-	t.pendingPubKeyRotations[kr.TargetBlock][nodeID] = pendingKeyRotation{
-		newPubKey:   kr.NewPubKey,
-		newKeyIndex: kr.NewPubKeyIndex,
+	t.pendingPubKeyRotations[kr.TargetBlock][nodeID] = PendingKeyRotation{
+		NewPubKey:   kr.NewPubKey,
+		NewKeyIndex: kr.NewPubKeyIndex,
 	}
 
 	t.tss.changed = true
@@ -100,14 +90,22 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 	return nil
 }
 
-func (t *Topology) NotifyOnKeyChange(fns ...func(ctx context.Context, oldPubKey, newPubKey string)) {
-	t.pubKeyChangeListeners = append(t.pubKeyChangeListeners, fns...)
-}
+func (t *Topology) GetPendingKeyRotation(blockHeight uint64, nodeID string) *PendingKeyRotation {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
-func (t *Topology) notifyKeyChange(ctx context.Context, oldPubKey, newPubKey string) {
-	for _, f := range t.pubKeyChangeListeners {
-		f(ctx, oldPubKey, newPubKey)
+	if _, ok := t.pendingPubKeyRotations[blockHeight]; !ok {
+		return nil
 	}
+
+	if pkr, ok := t.pendingPubKeyRotations[blockHeight][nodeID]; ok {
+		return &PendingKeyRotation{
+			NewPubKey:   pkr.NewPubKey,
+			NewKeyIndex: pkr.NewKeyIndex,
+		}
+	}
+
+	return nil
 }
 
 func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
@@ -131,15 +129,25 @@ func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
 		oldPubKey := data.VegaPubKey
 		rotation := t.pendingPubKeyRotations[blockHeight][nodeID]
 
-		data.VegaPubKey = rotation.newPubKey
-		data.VegaPubKeyIndex = rotation.newKeyIndex
+		data.VegaPubKey = rotation.NewPubKey
+		data.VegaPubKeyIndex = rotation.NewKeyIndex
 		t.validators[nodeID] = data
 
-		t.notifyKeyChange(ctx, oldPubKey, rotation.newPubKey)
-		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, blockHeight))
+		t.notifyKeyChange(ctx, oldPubKey, rotation.NewPubKey)
+		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.NewPubKey, blockHeight))
 	}
 
 	delete(t.pendingPubKeyRotations, blockHeight)
 
 	t.tss.changed = true
+}
+
+func (t *Topology) NotifyOnKeyChange(fns ...func(ctx context.Context, oldPubKey, newPubKey string)) {
+	t.pubKeyChangeListeners = append(t.pubKeyChangeListeners, fns...)
+}
+
+func (t *Topology) notifyKeyChange(ctx context.Context, oldPubKey, newPubKey string) {
+	for _, f := range t.pubKeyChangeListeners {
+		f(ctx, oldPubKey, newPubKey)
+	}
 }

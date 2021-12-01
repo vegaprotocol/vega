@@ -66,8 +66,8 @@ func (t *Topology) serialisePendingKeyRotation() []*snapshot.PendingKeyRotation 
 			pkrs = append(pkrs, &snapshot.PendingKeyRotation{
 				BlockHeight:    blockHeight,
 				NodeId:         nodeID,
-				NewPubKey:      pr.newPubKey,
-				NewPubKeyIndex: pr.newKeyIndex,
+				NewPubKey:      pr.NewPubKey,
+				NewPubKeyIndex: pr.NewKeyIndex,
 			})
 		}
 	}
@@ -147,12 +147,12 @@ func (t *Topology) LoadState(ctx context.Context, p *types.Payload) ([]types.Sta
 func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotation) {
 	for _, pkr := range pkrs {
 		if _, ok := t.pendingPubKeyRotations[pkr.BlockHeight]; !ok {
-			t.pendingPubKeyRotations[pkr.BlockHeight] = map[string]pendingKeyRotation{}
+			t.pendingPubKeyRotations[pkr.BlockHeight] = map[string]PendingKeyRotation{}
 		}
 
-		t.pendingPubKeyRotations[pkr.BlockHeight][pkr.NodeId] = pendingKeyRotation{
-			newPubKey:   pkr.NewPubKey,
-			newKeyIndex: pkr.NewPubKeyIndex,
+		t.pendingPubKeyRotations[pkr.BlockHeight][pkr.NodeId] = PendingKeyRotation{
+			NewPubKey:   pkr.NewPubKey,
+			NewKeyIndex: pkr.NewPubKeyIndex,
 		}
 	}
 }
