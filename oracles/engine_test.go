@@ -55,7 +55,6 @@ func testOracleEngineSubscribingWithoutCallbackFails(t *testing.T) {
 	ctx := context.Background()
 	currentTime := time.Now()
 	engine := newEngine(ctx, t, currentTime)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, spec.spec.Proto)
 
 	// when
 	subscribe := func() {
