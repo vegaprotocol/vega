@@ -102,4 +102,12 @@ type ValidatorData struct {
 	StakeByDelegators *num.Uint
 	SelfStake         *num.Uint
 	Delegators        map[string]*num.Uint
+	VotingPower       int64
+	TmPubKey          string
+}
+
+// ValidatorVotingPower is the scaled voting power for the given tm key.
+type ValidatorVotingPower struct {
+	TmPubKey    string
+	VotingPower int64
 }
