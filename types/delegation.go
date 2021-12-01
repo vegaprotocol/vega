@@ -102,7 +102,6 @@ type ValidatorData struct {
 	StakeByDelegators *num.Uint
 	SelfStake         *num.Uint
 	Delegators        map[string]*num.Uint
-	VotingPower       int64
 	TmPubKey          string
 }
 
