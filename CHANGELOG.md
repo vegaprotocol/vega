@@ -84,6 +84,7 @@
 - [4421](https://github.com/vegaprotocol/vega/issues/4421) - Fix to missing pending rewards in LNL checkpoint
 - [4419](https://github.com/vegaprotocol/vega/pull/4419) - Fix snapshot cleanup, improve logging when specified block height could not be reloaded.
 - [4444](https://github.com/vegaprotocol/vega/pull/4444) - Fix division by zero when all validator scores are 0
+- [4467](https://github.com/vegaprotocol/vega/pull/4467) - Fix reward account balance not being saved/loaded to/from checkpoint
 
 ## 0.45.5
 *2021-11-16*
