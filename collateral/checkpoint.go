@@ -71,7 +71,7 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
 			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward:
 			owner := acc.Owner
-			//handle reward account separately
+			// handle reward account separately.
 			if owner == systemOwner && acc.Type == types.AccountTypeGlobalReward {
 				owner = owner + acc.Type.String()
 			}
