@@ -442,6 +442,23 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
+
+	// check if we need to update the voting power of the validators
+	if validatorUpdates := app.delegation.EndOfBlock(req.Height); validatorUpdates != nil {
+		vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
+		for _, v := range validatorUpdates {
+			// using the default for key type which is ed25519 which seems fine for now because all validators in genesis use this key type
+			// TODO use the proper key type of the validators
+			update := tmtypes.UpdateValidator([]byte(v.TmPubKey), v.VotingPower, "")
+			vUpdates = append(vUpdates, update)
+			app.log.Info("Updated voting power of validator", logging.String("tmKey", v.TmPubKey), logging.Int64("votingPower", v.VotingPower))
+		}
+
+		resp = tmtypes.ResponseEndBlock{
+			ValidatorUpdates: vUpdates,
+		}
+
+	}
 	return
 }
 
