@@ -3,6 +3,7 @@ package processor
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -449,7 +450,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		for _, v := range validatorUpdates {
 			// using the default for key type which is ed25519 which seems fine for now because all validators in genesis use this key type
 			// TODO use the proper key type of the validators
-			update := tmtypes.UpdateValidator([]byte(v.TmPubKey), v.VotingPower, "")
+			pubkey, err := base64.StdEncoding.DecodeString(v.TmPubKey)
+			if err != nil {
+				continue
+			}
+			update := tmtypes.UpdateValidator(pubkey, v.VotingPower, "")
 			vUpdates = append(vUpdates, update)
 			app.log.Info("Updated voting power of validator", logging.String("tmKey", v.TmPubKey), logging.Int64("votingPower", v.VotingPower))
 		}
