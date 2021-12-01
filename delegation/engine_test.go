@@ -131,7 +131,6 @@ func testShouldUpdateVotingPower(t *testing.T) {
 
 	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2})
 	require.NotNil(t, engine.EndOfBlock(1001))
-
 }
 
 func testVotingPowerCalculation(t *testing.T) {

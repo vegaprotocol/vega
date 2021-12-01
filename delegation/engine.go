@@ -14,8 +14,10 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 )
 
-var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
-var votingPowerScalingFactor, _ = num.DecimalFromString("10000")
+var (
+	minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
+	votingPowerScalingFactor, _  = num.DecimalFromString("10000")
+)
 
 const reconciliationInterval = 30 * time.Second
 
@@ -99,7 +101,7 @@ type Engine struct {
 	dss                      *delegationSnapshotState          // snapshot state
 	keyToSerialiser          map[string]func() ([]byte, error) // snapshot key to serialisation function
 	lastReconciliation       time.Time                         // last time staking balance has been reconciled against delegation balance
-	newEpochStarted          bool                              //flag to signal new epoch so we can update the voting power at the end of the block
+	newEpochStarted          bool                              // flag to signal new epoch so we can update the voting power at the end of the block
 }
 
 // New instantiates a new delegation engine.
