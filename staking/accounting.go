@@ -209,10 +209,10 @@ func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
 }
 
 func (a *Accounting) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {
-	if _, ok := a.accounts[oldKey]; !ok {
+	account, ok := a.accounts[oldKey]
+	if !ok {
 		return
 	}
-	account := a.accounts[oldKey]
 
 	// find the index of the old pub key in the hashable accounts slice.
 	oldInd := -1

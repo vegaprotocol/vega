@@ -369,12 +369,17 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 	return payouts
 }
 
+func (e *Engine) calculatePercentageOfTotalReward(amount, totalReward *num.Uint) float64 {
+	proportion := amount.ToDecimal().Div(totalReward.ToDecimal())
+	pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
+	return pct
+}
+
 func (e *Engine) emitEventsForPayout(ctx context.Context, timeToSend time.Time, po *payout) {
 	payoutEvents := map[string]*events.RewardPayout{}
 	parties := []string{}
 	for party, amount := range po.partyToAmount {
-		proportion := amount.ToDecimal().Div(po.totalReward.ToDecimal())
-		pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
+		pct := e.calculatePercentageOfTotalReward(amount, po.totalReward)
 		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct)
 		parties = append(parties, party)
 	}
@@ -494,10 +499,11 @@ func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string)
 			if amount, ok := p.partyToAmount[oldKey]; ok {
 				delete(p.partyToAmount, oldKey)
 				p.partyToAmount[newKey] = amount
-				proportion := amount.ToDecimal().Div(p.totalReward.ToDecimal())
-				pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
-				payoutEvents = append(payoutEvents, *events.NewRewardPayout(ctx, p.timestamp, oldKey, p.epochSeq, p.asset, num.Zero(), 0))
-				payoutEvents = append(payoutEvents, *events.NewRewardPayout(ctx, p.timestamp, newKey, p.epochSeq, p.asset, amount, pct))
+				pct := e.calculatePercentageOfTotalReward(amount, p.totalReward)
+				payoutEvents = append(payoutEvents,
+					*events.NewRewardPayout(ctx, p.timestamp, oldKey, p.epochSeq, p.asset, num.Zero(), 0),
+					*events.NewRewardPayout(ctx, p.timestamp, newKey, p.epochSeq, p.asset, amount, pct),
+				)
 			}
 		}
 	}
