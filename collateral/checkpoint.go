@@ -34,8 +34,14 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	}
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
-		if balance.Party == systemOwner {
-			accID := e.accountID(noMarket, systemOwner, balance.Asset, types.AccountTypeGlobalInsurance)
+		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
+		if balance.Party == systemOwner || balance.Party == systemOwner+types.AccountTypeGlobalReward.String() {
+			tp := types.AccountTypeGlobalReward
+			if balance.Party == systemOwner {
+				tp = types.AccountTypeGlobalInsurance
+			}
+
+			accID := e.accountID(noMarket, systemOwner, balance.Asset, tp)
 			if _, err := e.GetAccountByID(accID); err != nil {
 				// this account is created when the asset is enabled. If we can't get this account,
 				// then the asset is not yet enabled and we have a problem...
@@ -53,7 +59,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	return nil
 }
 
-// get all balances for snapshot.
+// get all balances for checkpoint.
 func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 	// party -> asset -> balance
 	balances := make(map[string]map[string]*num.Uint, len(e.accs))
@@ -63,11 +69,17 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		}
 		switch acc.Type {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
-			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance:
-			assets, ok := balances[acc.Owner]
+			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward:
+			owner := acc.Owner
+			//handle reward account separately
+			if owner == systemOwner && acc.Type == types.AccountTypeGlobalReward {
+				owner = owner + acc.Type.String()
+			}
+
+			assets, ok := balances[owner]
 			if !ok {
 				assets = map[string]*num.Uint{}
-				balances[acc.Owner] = assets
+				balances[owner] = assets
 			}
 			balance, ok := assets[acc.Asset]
 			if !ok {

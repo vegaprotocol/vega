@@ -2383,21 +2383,7 @@ func (e *testEngine) getTestMTMTransfer(transfers []*types.Transfer) []events.Tr
 	return tt
 }
 
-func getTestEngine(t *testing.T, market string) *testEngine {
-	t.Helper()
-	ctrl := gomock.NewController(t)
-	broker := mocks.NewMockBroker(ctrl)
-	conf := collateral.NewDefaultConfig()
-	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
-	// 4 new events expected:
-	// 2 markets accounts
-	// 2 new assets
-	// 3 asset insurance accounts
-	broker.EXPECT().Send(gomock.Any()).Times(13)
-	// system accounts created
-
-	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
-
+func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 	// add the token asset
 	tokAsset := types.Asset{
 		ID: "VOTE",
@@ -2416,6 +2402,27 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	}
 	err := eng.EnableAsset(context.Background(), tokAsset)
 	assert.NoError(t, err)
+	eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "VOTE")
+	assert.NoError(t, err)
+}
+
+func getTestEngine(t *testing.T, market string) *testEngine {
+	t.Helper()
+	ctrl := gomock.NewController(t)
+	broker := mocks.NewMockBroker(ctrl)
+	conf := collateral.NewDefaultConfig()
+	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
+	// 4 new events expected:
+	// 2 markets accounts
+	// 2 new assets
+	// 3 asset insurance accounts
+	// 1 reward account
+	broker.EXPECT().Send(gomock.Any()).Times(14)
+	// system accounts created
+
+	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
+
+	enableGovernanceAsset(t, eng)
 
 	// enable the assert for the tests
 	asset := types.Asset{
@@ -2433,7 +2440,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			},
 		},
 	}
-	err = eng.EnableAsset(context.Background(), asset)
+	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 	// ETH is added hardcoded in some places
 	asset = types.Asset{
@@ -2586,7 +2593,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"29401e9399a8b4162fec5afaea65d38dc561584934b9c23ed69e4eb32be7f725",
+		"f98893cf460f1401f25b606be0740dde890c7913b4d98966964335bcfd1390b8",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
