@@ -458,6 +458,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: vUpdates,
 		}
 	}
+	return ctx, resp
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
