@@ -99,6 +99,9 @@ func testKeyRotated(t *testing.T) {
 	newBalance, err := acc.GetAvailableBalance("newPartyKey")
 	require.Nil(t, err)
 	require.Equal(t, balance, newBalance)
+	oldBalance, err := acc.GetAvailableBalance(testParty)
+	require.Equal(t, oldBalance, num.Zero())
+	require.ErrorIs(t, err, staking.ErrNoBalanceForParty)
 }
 
 func testPartyDontExists(t *testing.T) {

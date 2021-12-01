@@ -222,6 +222,9 @@ func (a *Accounting) ValidatorKeyChanged(ctx context.Context, oldKey, newKey str
 			break
 		}
 	}
+	if oldInd == -1 {
+		a.log.Panic("Accounts and hashable accounts are out of sync", logging.String("public-key", oldKey))
+	}
 
 	// instantiate new account and add to it all of the events with a modified party id
 	acc := NewStakingAccount(newKey)
@@ -232,6 +235,8 @@ func (a *Accounting) ValidatorKeyChanged(ctx context.Context, oldKey, newKey str
 		acc.AddEvent(event)
 		a.broker.Send(events.NewStakeLinking(ctx, *event))
 	}
+	delete(a.accounts, oldKey)
+
 	// update the account with the new stake linking events
 	a.hashableAccounts[oldInd] = acc
 	a.accState.changed = true
