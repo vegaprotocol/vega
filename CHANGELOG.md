@@ -71,6 +71,7 @@
 - [4429](https://github.com/vegaprotocol/vega/pull/4429) - Release version `v0.46.0`
 - [4442](https://github.com/vegaprotocol/vega/pull/4442) - Reduce the number of iterations in reward calculation
 - [4409](https://github.com/vegaprotocol/vega/pull/4409) - Include chain id in bus messages
+- [4464](https://github.com/vegaprotocol/vega/pull/4466) - Update validator power in tendermint based on their staking
 
 ### 🐛 Fixes
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
@@ -84,6 +85,7 @@
 - [4421](https://github.com/vegaprotocol/vega/issues/4421) - Fix to missing pending rewards in LNL checkpoint
 - [4419](https://github.com/vegaprotocol/vega/pull/4419) - Fix snapshot cleanup, improve logging when specified block height could not be reloaded.
 - [4444](https://github.com/vegaprotocol/vega/pull/4444) - Fix division by zero when all validator scores are 0
+- [4467](https://github.com/vegaprotocol/vega/pull/4467) - Fix reward account balance not being saved/loaded to/from checkpoint
 
 ## 0.45.5
 *2021-11-16*

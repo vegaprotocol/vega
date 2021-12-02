@@ -46,6 +46,7 @@ type DelegationEngine interface {
 	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 	Hash() []byte
+	EndOfBlock(blockHeight int64) []types.ValidatorVotingPower
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine

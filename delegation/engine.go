@@ -14,7 +14,10 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 )
 
-var minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
+var (
+	minRatioForAutoDelegation, _ = num.DecimalFromString("0.95")
+	votingPowerScalingFactor, _  = num.DecimalFromString("10000")
+)
 
 const reconciliationInterval = 30 * time.Second
 
@@ -98,6 +101,7 @@ type Engine struct {
 	dss                      *delegationSnapshotState          // snapshot state
 	keyToSerialiser          map[string]func() ([]byte, error) // snapshot key to serialisation function
 	lastReconciliation       time.Time                         // last time staking balance has been reconciled against delegation balance
+	newEpochStarted          bool                              // flag to signal new epoch so we can update the voting power at the end of the block
 }
 
 // New instantiates a new delegation engine.
@@ -120,6 +124,7 @@ func New(log *logging.Logger, config Config, broker Broker, topology ValidatorTo
 		},
 		keyToSerialiser:    map[string]func() ([]byte, error){},
 		lastReconciliation: time.Time{},
+		newEpochStarted:    false,
 	}
 
 	e.keyToSerialiser[activeKey] = e.serialiseActive
@@ -173,6 +178,7 @@ func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 				e.sendDelegatedBalanceEvent(ctx, p, n, epoch.Seq+1, e.nextPartyDelegationState[p].nodeToAmount[n])
 			}
 		}
+		e.newEpochStarted = true
 	}
 	e.currentEpoch = epoch
 }
@@ -630,6 +636,34 @@ func (e *Engine) processAutoDelegation(ctx context.Context, partyToAvailableBala
 	}
 }
 
+// shouldUpdateValidatorsVotingPower returns whether we should update the voting power of the validator in tendermint
+// currently this should happen at the beginning of each epoch (at the end of the first block of the new epoch) and every 1000 blocks.
+func (e *Engine) shouldUpdateValidatorsVotingPower(height int64) bool {
+	if e.newEpochStarted {
+		e.newEpochStarted = false
+		return true
+	}
+	return height%1000 == 0
+}
+
+// EndOfBlock returns the validator updates with the power of the validators based on their stake in the current block.
+func (e *Engine) EndOfBlock(blockHeight int64) []types.ValidatorVotingPower {
+	if !e.shouldUpdateValidatorsVotingPower(blockHeight) {
+		return nil
+	}
+
+	validators := e.getValidatorData()
+	votingPower := make([]types.ValidatorVotingPower, 0, len(validators))
+	for _, v := range validators {
+		votingPower = append(votingPower, types.ValidatorVotingPower{
+			VotingPower: v.VotingPower,
+			TmPubKey:    v.TmPubKey,
+		})
+	}
+
+	return votingPower
+}
+
 // returns the current state of the delegation per node.
 func (e *Engine) getValidatorData() []*types.ValidatorData {
 	validatorNodes := e.topology.AllNodeIDs()
@@ -642,9 +676,12 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 			Delegators:        map[string]*num.Uint{},
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.Zero(),
+			VotingPower:       10,
+			TmPubKey:          e.topology.Get(vn).TmPubKey,
 		}
 	}
 
+	totalStake := num.Zero()
 	for party, partyDS := range e.partyDelegationState {
 		for node, amt := range partyDS.nodeToAmount {
 			vn := validatorData[node]
@@ -654,6 +691,7 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 				vn.Delegators[party] = amt.Clone()
 				vn.StakeByDelegators.AddSum(amt)
 			}
+			totalStake.AddSum(amt)
 		}
 	}
 
@@ -661,6 +699,13 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 	sort.Strings(validatorNodes)
 	for _, v := range validatorNodes {
 		validators = append(validators, validatorData[v])
+	}
+
+	if !totalStake.IsZero() {
+		for _, v := range validators {
+			totalStakeD := totalStake.ToDecimal()
+			v.VotingPower = num.Sum(v.SelfStake, v.StakeByDelegators).ToDecimal().Mul(votingPowerScalingFactor).Div(totalStakeD).IntPart()
+		}
 	}
 
 	return validators
