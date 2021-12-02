@@ -408,7 +408,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	epoch := types.Epoch{}
+	epoch := types.Epoch{EndTime: time.Now()}
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
@@ -424,7 +424,7 @@ func testCalculateRewards(t *testing.T) {
 	require.Equal(t, num.NewUint(140000), res.partyToAmount["node1"])
 	require.Equal(t, num.NewUint(400000), res.partyToAmount["node2"])
 	require.Equal(t, num.NewUint(331428), res.partyToAmount["node3"])
-
+	require.Equal(t, epoch.EndTime.UnixNano(), res.timestamp)
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
