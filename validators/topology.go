@@ -52,7 +52,7 @@ func (v ValidatorData) IsValid() bool {
 	return true
 }
 
-// HashVegaPubKey returns hash VegaPubKey encoded as base64 string.
+// HashVegaPubKey returns hash VegaPubKey encoded as hex string.
 func (v ValidatorData) HashVegaPubKey() string {
 	return hex.EncodeToString(vgcrypto.Hash([]byte(v.VegaPubKey)))
 }

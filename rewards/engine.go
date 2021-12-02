@@ -351,6 +351,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		payouts = append(payouts, po)
 		timeToSend := epoch.EndTime.Add(e.global.payoutDelay)
 		e.emitEventsForPayout(ctx, timeToSend, po)
+		po.timestamp = timeToSend.UnixNano()
 
 		if e.global.payoutDelay == time.Duration(0) {
 			e.distributePayout(ctx, po)
