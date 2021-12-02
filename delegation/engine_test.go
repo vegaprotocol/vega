@@ -112,7 +112,7 @@ func Test(t *testing.T) {
 	// test key rotated
 	t.Run("test key rotated with pending and active delegations", testKeyRotated)
 
-  	// voting power calculation
+	// voting power calculation
 	t.Run("test should update voting power", testShouldUpdateVotingPower)
 	t.Run("test voting power calculation", testVotingPowerCalculation)
 }
