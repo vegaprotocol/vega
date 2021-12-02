@@ -127,7 +127,7 @@ type ValidatorTopology interface {
 	UpdateValidatorSet(keys []string)
 	Len() int
 	IsValidatorVegaPubKey(pk string) bool
-	IsValidateNodeID(nodeID string) bool
+	IsValidatorNodeID(nodeID string) bool
 	AllVegaPubKeys() []string
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error

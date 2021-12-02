@@ -145,7 +145,7 @@ func testNodeVoteNotAValidator(t *testing.T) {
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
 
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(false)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(false)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id})
 	assert.EqualError(t, err, validators.ErrVoteFromNonValidator.Error())
 }
@@ -165,7 +165,7 @@ func testNodeVoteOK(t *testing.T) {
 	err := erc.StartCheck(res, cb, checkUntil)
 	assert.NoError(t, err)
 
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id})
 	assert.NoError(t, err)
 }
@@ -186,12 +186,12 @@ func testNodeVoteDuplicateVote(t *testing.T) {
 	assert.NoError(t, err)
 
 	// first vote, all good
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	require.NoError(t, err)
 
 	// second vote, bad
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	require.EqualError(t, err, validators.ErrDuplicateVoteFromNode.Error())
 }
@@ -230,13 +230,13 @@ func testOnChainTimeUpdate(t *testing.T) {
 	erc.OnTick(context.Background(), newNow)
 
 	// then we propagate our own vote
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 	pubKeyBytes, _ := hex.DecodeString(selfPubKey)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: pubKeyBytes})
 	assert.NoError(t, err)
 
 	// second vote from another validator
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.NoError(t, err)
 
@@ -275,13 +275,13 @@ func testOnChainTimeUpdateNonValidator(t *testing.T) {
 	erc.OnTick(context.Background(), newNow)
 
 	// then we propagate our own vote
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 	pubKeyBytes, _ := hex.DecodeString(selfPubKey)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: pubKeyBytes})
 	assert.NoError(t, err)
 
 	// second vote from another validator
-	erc.top.EXPECT().IsValidateNodeID(gomock.Any()).Times(1).Return(true)
+	erc.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 	err = erc.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("somepubkey")})
 	assert.NoError(t, err)
 

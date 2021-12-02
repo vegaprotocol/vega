@@ -173,7 +173,7 @@ func testExists(t *testing.T) {
 	top.UpdateValidatorSet([]string{tmPubKey})
 
 	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
-	assert.False(t, top.IsValidateNodeID("vega-master-pubkey"))
+	assert.False(t, top.IsValidatorNodeID("vega-master-pubkey"))
 
 	nr := commandspb.NodeRegistration{
 		Id:              "vega-master-pubkey",
@@ -186,7 +186,7 @@ func testExists(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.True(t, top.IsValidatorVegaPubKey("vega-key"))
-	assert.True(t, top.IsValidateNodeID("vega-master-pubkey"))
+	assert.True(t, top.IsValidatorNodeID("vega-master-pubkey"))
 }
 
 func testGetByKey(t *testing.T) {
@@ -195,7 +195,7 @@ func testGetByKey(t *testing.T) {
 	top.UpdateValidatorSet([]string{tmPubKey})
 
 	assert.False(t, top.IsValidatorVegaPubKey("vega-key"))
-	assert.False(t, top.IsValidateNodeID("vega-master-pubkey"))
+	assert.False(t, top.IsValidatorNodeID("vega-master-pubkey"))
 
 	nr := commandspb.NodeRegistration{
 		Id:              "vega-master-pubkey",
