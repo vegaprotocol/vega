@@ -112,7 +112,7 @@ func Test(t *testing.T) {
 	// test key rotated
 	t.Run("test key rotated with pending and active delegations", testKeyRotated)
 
-  // voting power calculation
+  	// voting power calculation
 	t.Run("test should update voting power", testShouldUpdateVotingPower)
 	t.Run("test voting power calculation", testVotingPowerCalculation)
 }
@@ -133,7 +133,6 @@ func testKeyRotated(t *testing.T) {
 	require.Equal(t, 2, len(engine.nextPartyDelegationState["party1_new"].nodeToAmount))
 	require.Equal(t, num.NewUint(10), engine.nextPartyDelegationState["party1_new"].totalDelegated)
 }
-
 
 func testShouldUpdateVotingPower(t *testing.T) {
 	testEngine := getEngine(t)
