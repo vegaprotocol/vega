@@ -107,6 +107,7 @@ type App struct {
 	netp            NetworkParameters
 	oracles         *Oracle
 	delegation      DelegationEngine
+	rewards         RewardEngine
 	limits          Limits
 	stake           StakeVerifier
 	stakingAccounts StakingAccounts
@@ -145,6 +146,7 @@ func NewApp(
 	checkpoint Checkpoint,
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
+	rewards RewardEngine,
 	snapshot Snapshot,
 	version string, // we need the version for snapshot reload
 ) *App {
@@ -185,6 +187,7 @@ func NewApp(
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
+		rewards:         rewards,
 		snapshot:        snapshot,
 		version:         version,
 	}
@@ -445,7 +448,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	}
 
 	// check if we need to update the voting power of the validators
-	if validatorUpdates := app.delegation.EndOfBlock(req.Height); validatorUpdates != nil {
+	if validatorUpdates := app.rewards.EndOfBlock(req.Height); validatorUpdates != nil {
 		vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
 		for _, v := range validatorUpdates {
 			// using the default for key type which is ed25519 which seems fine for now because all validators in genesis use this key type

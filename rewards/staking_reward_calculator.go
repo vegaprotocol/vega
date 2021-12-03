@@ -177,8 +177,7 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 	}
 }
 
-// calculate the score for each validator and normalise by the total score.
-func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, optimalStakeMultiplier num.Decimal, rng *rand.Rand) map[string]num.Decimal {
+func calcNormalisedScore(epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, optimalStakeMultiplier num.Decimal, rng *rand.Rand) (map[string]num.Decimal, map[string]num.Decimal, []string) {
 	// calculate the total amount of tokens delegated across all validators
 	totalStake := calcTotalStake(validatorsData)
 	totalScore := num.DecimalZero()
@@ -186,7 +185,7 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	valScores := make(map[string]num.Decimal, len(validatorsData))
 
 	if totalStake.IsZero() {
-		return valScores
+		return valScores, rawScores, []string{}
 	}
 
 	// for each validator calculate the score
@@ -200,8 +199,6 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	}
 
 	sort.Strings(nodeIDSlice)
-	validatorScoreEventSlice := make([]events.Event, 0, len(valScores))
-
 	scoreSum := num.DecimalZero()
 	for _, k := range nodeIDSlice {
 		score := rawScores[k]
@@ -221,6 +218,16 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 		valScores[nodeIDSlice[unluckyValidator]] = num.MaxD(valScores[nodeIDSlice[unluckyValidator]].Sub(precisionError), num.DecimalZero())
 	}
 
+	return valScores, rawScores, nodeIDSlice
+}
+
+// calculate the score for each validator and normalise by the total score.
+func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, optimalStakeMultiplier num.Decimal, rng *rand.Rand) map[string]num.Decimal {
+	valScores, rawScores, nodeIDSlice := calcNormalisedScore(epochSeq, validatorsData, minVal, compLevel, optimalStakeMultiplier, rng)
+	if len(valScores) == 0 {
+		return valScores
+	}
+	validatorScoreEventSlice := make([]events.Event, 0, len(valScores))
 	for _, k := range nodeIDSlice {
 		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, rawScores[k], valScores[k]))
 	}
