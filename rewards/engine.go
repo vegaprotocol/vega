@@ -24,6 +24,8 @@ var (
 	ErrUnknownSchemeID = errors.New("unknown scheme identifier for update scheme")
 	// ErrUnsupported is returned when trying to register a reward scheme - this is not currently supported externally.
 	ErrUnsupported = errors.New("registering a reward scheme is unsupported")
+
+	votingPowerScalingFactor, _ = num.DecimalFromString("10000")
 )
 
 // Broker for sending events.
@@ -41,6 +43,7 @@ type EpochEngine interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/delegation_engine_mock.go -package mocks code.vegaprotocol.io/vega/rewards Delegation
 type Delegation interface {
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
+	GetValidatorData() []*types.ValidatorData
 }
 
 // Collateral engine provides access to account data and transferring rewards.
@@ -71,6 +74,8 @@ type Engine struct {
 	rss                                *rewardsSnapshotState
 	rng                                *rand.Rand
 	global                             *globalRewardParams
+	newEpochStarted                    bool // flag to signal new epoch so we can update the voting power at the end of the block
+	epochSeq                           string
 }
 
 type globalRewardParams struct {
@@ -111,7 +116,8 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 			hash:       []byte{},
 			serialised: []byte{},
 		},
-		global: &globalRewardParams{},
+		global:          &globalRewardParams{},
+		newEpochStarted: false,
 	}
 
 	// register for epoch end notifications
@@ -399,6 +405,8 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 		// resetting the seed every epoch, to both get some more unpredictability and still deterministic
 		// and play nicely with snapshot
 		e.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
+		e.epochSeq = num.NewUint(epoch.Seq).String()
+		e.newEpochStarted = true
 		return
 	}
 
@@ -474,4 +482,38 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
+}
+
+// shouldUpdateValidatorsVotingPower returns whether we should update the voting power of the validator in tendermint
+// currently this should happen at the beginning of each epoch (at the end of the first block of the new epoch) and every 1000 blocks.
+func (e *Engine) shouldUpdateValidatorsVotingPower(height int64) bool {
+	if e.newEpochStarted {
+		e.newEpochStarted = false
+		return true
+	}
+	return height%1000 == 0
+}
+
+// EndOfBlock returns the validator updates with the power of the validators based on their stake in the current block.
+func (e *Engine) EndOfBlock(blockHeight int64) []types.ValidatorVotingPower {
+	if !e.shouldUpdateValidatorsVotingPower(blockHeight) {
+		return nil
+	}
+
+	validatorsData := e.delegation.GetValidatorData()
+	normalisedScores, _, _ := calcNormalisedScore(e.epochSeq, validatorsData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng)
+	votingPower := make([]types.ValidatorVotingPower, 0, len(validatorsData))
+	for _, v := range validatorsData {
+		ns, ok := normalisedScores[v.NodeID]
+		power := int64(10)
+		if ok {
+			power = ns.Mul(votingPowerScalingFactor).IntPart()
+		}
+		votingPower = append(votingPower, types.ValidatorVotingPower{
+			VotingPower: power,
+			TmPubKey:    v.TmPubKey,
+		})
+	}
+
+	return votingPower
 }
