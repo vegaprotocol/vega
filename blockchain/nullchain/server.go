@@ -13,6 +13,10 @@ import (
 var ErrInvalidRequest = errors.New("invalid request")
 
 func (n *NullBlockchain) Stop() {
+	if n.srv == nil {
+		return
+	}
+
 	n.log.Info("Stopping nullchain server")
 	if err := n.srv.Shutdown(context.Background()); err != nil {
 		n.log.Warn("failed to shutdown")
@@ -79,5 +83,4 @@ func (n *NullBlockchain) handleForwardTime(w http.ResponseWriter, r *http.Reques
 
 	// Do the dance
 	n.ForwardTime(d)
-	w.WriteHeader(http.StatusOK)
 }

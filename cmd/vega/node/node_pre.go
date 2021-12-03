@@ -68,10 +68,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	conf := l.confWatcher.Get()
 
-	if flagProvided("--no-chain") {
-		conf.Blockchain.ChainProvider = "noop"
-	}
-
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
 
@@ -104,9 +100,11 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
-	l.ethClient, err = ethclient.Dial(l.ctx, l.conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return fmt.Errorf("could not instantiate ethereum client: %w", err)
+	if conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
+		l.ethClient, err = ethclient.Dial(l.ctx, l.conf.NodeWallet.ETH.Address)
+		if err != nil {
+			return fmt.Errorf("could not instantiate ethereum client: %w", err)
+		}
 	}
 
 	l.nodeWallets, err = nodewallets.GetNodeWallets(l.conf.NodeWallet, l.vegaPaths, l.nodeWalletPassphrase)
@@ -273,7 +271,7 @@ func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallet
 	)
 
 	switch l.conf.Blockchain.ChainProvider {
-	case "tendermint":
+	case blockchain.ProviderTendermint:
 		srv, err := l.startABCI(ctx, app)
 		l.blockchainServer = blockchain.NewServer(srv)
 		if err != nil {
@@ -285,7 +283,7 @@ func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallet
 			return nil, err
 		}
 		l.blockchainClient = blockchain.NewClient(a)
-	case "nullchain":
+	case blockchain.ProviderNullChain:
 		abciApp := app.Abci()
 		n := nullchain.NewClient(l.Log, l.conf.Blockchain.Null, abciApp)
 
@@ -354,11 +352,18 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
-
-	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
-
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
+
+	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
+		stakingLoop := nullchain.NewStakingLoop(l.collateral, l.assets)
+		l.governance = governance.NewEngine(l.Log, l.conf.Governance, stakingLoop, l.broker, l.assets, l.witness, l.netParams, now)
+		l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingLoop, l.epochService, l.timeService)
+	} else {
+		l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
+		l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
+	}
+
 	l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,

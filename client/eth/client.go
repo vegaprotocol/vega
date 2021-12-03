@@ -45,6 +45,9 @@ func Dial(ctx context.Context, rawURL string) (*Client, error) {
 }
 
 func (c *Client) OnEthereumConfigUpdate(ctx context.Context, v interface{}) error {
+	if c == nil {
+		return nil
+	}
 	ecfg, ok := v.(*types.EthereumConfig)
 	if !ok {
 		return errors.New("invalid types for Ethereum config")
