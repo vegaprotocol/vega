@@ -52,6 +52,7 @@ func TestCheckpoint(t *testing.T) {
 		// restricting the topup and the check later to the test asset because that gets enabled back in the test
 		if strings.Contains(feeAccount, testMarketAsset) {
 			err = eng.Engine.UpdateBalance(ctx, feeAccount, num.NewUint(12345))
+			require.NoError(t, err)
 		}
 	}
 
