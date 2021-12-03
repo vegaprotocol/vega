@@ -203,7 +203,7 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 	case BlockCheckpoint:
 		c.Block = val
 	case PendingRewardsCheckpoint:
-		c.Block = val
+		c.Rewards = val
 	}
 }
 
