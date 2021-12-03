@@ -390,6 +390,9 @@ type Query {
   "specific node in network"
   node("required id of node" id: String!): Node
 
+  "query for historic key rotations"
+  keyRotations(id: String): [KeyRotation!]
+
   "get data for a specific epoch, if id omitted it gets the current epoch"
   epoch(id: String): Epoch!
 }
@@ -416,6 +419,17 @@ type EpochTimestamps {
   # firstBlock: String!
   # "Height of last block in the epoch, null if not ended"
   # lastBlock: String
+}
+
+type KeyRotation {
+  "ID of node where rotation took place"
+  nodeId: String!
+  "Old public key rotated from"
+  oldPubKey: String!
+  "New public key rotated to"
+  newPubKey: String!
+  "Block height of where the rotation took place"
+  blockHeight: String!
 }
 
 type Epoch {
