@@ -35,10 +35,12 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
 		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
-		if balance.Party == systemOwner || balance.Party == systemOwner+types.AccountTypeGlobalReward.String() {
-			tp := types.AccountTypeGlobalReward
-			if balance.Party == systemOwner {
-				tp = types.AccountTypeGlobalInsurance
+		if balance.Party == systemOwner || balance.Party == systemOwner+types.AccountTypeGlobalReward.String() || balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() {
+			tp := types.AccountTypeGlobalInsurance
+			if balance.Party == systemOwner+types.AccountTypeGlobalReward.String() {
+				tp = types.AccountTypeGlobalReward
+			} else if balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() {
+				tp = types.AccountTypeFeesInfrastructure
 			}
 
 			accID := e.accountID(noMarket, systemOwner, balance.Asset, tp)
@@ -69,10 +71,10 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		}
 		switch acc.Type {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
-			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward:
+			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure:
 			owner := acc.Owner
-			// handle reward account separately.
-			if owner == systemOwner && acc.Type == types.AccountTypeGlobalReward {
+			// handle reward accounts separately.
+			if owner == systemOwner && (acc.Type == types.AccountTypeGlobalReward || acc.Type == types.AccountTypeFeesInfrastructure) {
 				owner = owner + acc.Type.String()
 			}
 
