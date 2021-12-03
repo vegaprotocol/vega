@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [232](https://github.com/vegaprotocol/data-node/pull/232) - Tidy up repo to align with team processes and workflows
+- [235](https://github.com/vegaprotocol/data-node/pull/235) - Add key rotation support
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
