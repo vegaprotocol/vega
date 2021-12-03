@@ -3,6 +3,7 @@ package collateral_test
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -46,6 +47,15 @@ func TestCheckpoint(t *testing.T) {
 	err = eng.Engine.UpdateBalance(ctx, rewardAccount, num.NewUint(10000))
 	assert.Nil(t, err)
 
+	// topup the infra fee account for the test asset
+	for _, feeAccount := range eng.GetInfraFeeAccountIDs() {
+		// restricting the topup and the check later to the test asset because that gets enabled back in the test
+		if strings.Contains(feeAccount, testMarketAsset) {
+			err = eng.Engine.UpdateBalance(ctx, feeAccount, num.NewUint(12345))
+			require.NoError(t, err)
+		}
+	}
+
 	snapshot, err := eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
@@ -79,6 +89,14 @@ func TestCheckpoint(t *testing.T) {
 	loadedReward, err := loadEng.GetGlobalRewardAccount("VOTE")
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(10000), loadedReward.Balance)
+
+	for _, feeAcc := range loadEng.GetInfraFeeAccountIDs() {
+		if strings.Contains(feeAcc, testMarketAsset) {
+			acc, err := loadEng.GetAccountByID(feeAcc)
+			require.NoError(t, err)
+			require.Equal(t, num.NewUint(12345), acc.Balance)
+		}
+	}
 }
 
 func TestSnapshots(t *testing.T) {
