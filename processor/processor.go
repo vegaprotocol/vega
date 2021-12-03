@@ -47,6 +47,9 @@ type DelegationEngine interface {
 	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 	Hash() []byte
+}
+
+type RewardEngine interface {
 	EndOfBlock(blockHeight int64) []types.ValidatorVotingPower
 }
 

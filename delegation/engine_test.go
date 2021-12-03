@@ -111,10 +111,6 @@ func Test(t *testing.T) {
 
 	// test key rotated
 	t.Run("test key rotated with pending and active delegations", testKeyRotated)
-
-	// voting power calculation
-	t.Run("test should update voting power", testShouldUpdateVotingPower)
-	t.Run("test voting power calculation", testVotingPowerCalculation)
 }
 
 func testKeyRotated(t *testing.T) {
@@ -132,41 +128,6 @@ func testKeyRotated(t *testing.T) {
 	require.Equal(t, num.NewUint(10), engine.partyDelegationState["party1_new"].totalDelegated)
 	require.Equal(t, 2, len(engine.nextPartyDelegationState["party1_new"].nodeToAmount))
 	require.Equal(t, num.NewUint(10), engine.nextPartyDelegationState["party1_new"].totalDelegated)
-}
-
-func testShouldUpdateVotingPower(t *testing.T) {
-	testEngine := getEngine(t)
-	engine := testEngine.engine
-	setupDefaultDelegationState(testEngine, 14, 7)
-
-	// the test engine initialisation calls on epoch event to start a new epoch so here we expect to get a non nil result
-	require.NotNil(t, engine.EndOfBlock(5), 0)
-
-	// now try to for all i between 1 and 999 and expect to get nil as no update is required
-	for i := 1; i < 1000; i++ {
-		require.Nil(t, engine.EndOfBlock(int64(i)))
-	}
-	require.NotNil(t, engine.EndOfBlock(0))
-	require.NotNil(t, engine.EndOfBlock(1000))
-
-	engine.onEpochEvent(context.Background(), types.Epoch{Seq: 2})
-	require.NotNil(t, engine.EndOfBlock(1001))
-}
-
-func testVotingPowerCalculation(t *testing.T) {
-	testEngine := getEngine(t)
-	engine := testEngine.engine
-	setupDefaultDelegationState(testEngine, 14, 7)
-
-	// total delegation = 15
-	// node1 = 10000 * 8/15
-	// node2 = 10000 * 7/15
-	res := engine.EndOfBlock(1)
-	require.Equal(t, int64(5333), res[0].VotingPower)
-	require.Equal(t, int64(4666), res[1].VotingPower)
-	require.Equal(t, int64(0), res[2].VotingPower)
-	require.Equal(t, int64(0), res[3].VotingPower)
-	require.Equal(t, int64(0), res[4].VotingPower)
 }
 
 func testLastReconTimeRoundTrip(t *testing.T) {
