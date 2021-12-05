@@ -2,6 +2,7 @@ package nullchain
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"net"
@@ -17,6 +18,7 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/p2p"
+	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"github.com/tendermint/tendermint/proto/tendermint/types"
 	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -193,10 +195,35 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 		n.chainID = genesis.ChainID
 	}
 
+	// read appstate so that we can set the validators
+	appstate := struct {
+		Validators map[string]struct{} `json:"validators"`
+	}{}
+
+	err = json.Unmarshal(genesis.Appstate, &appstate)
+	if err != nil {
+		return err
+	}
+
+	validators := make([]abci.ValidatorUpdate, 0, len(appstate.Validators))
+	for k := range appstate.Validators {
+		pubKey, _ := base64.StdEncoding.DecodeString(k)
+		validators = append(validators,
+			abci.ValidatorUpdate{
+				PubKey: crypto.PublicKey{
+					Sum: &crypto.PublicKey_Ed25519{
+						Ed25519: pubKey,
+					},
+				},
+			},
+		)
+	}
+
 	n.log.Debug("sending InitChain into core",
 		logging.String("chainID", n.chainID),
 		logging.Int64("blockHeight", n.blockHeight),
 		logging.String("time", n.now.String()),
+		logging.Int("n_validators", len(validators)),
 	)
 	n.app.InitChain(
 		abci.RequestInitChain{
@@ -204,7 +231,9 @@ func (n *NullBlockchain) InitChain(genesisFile string) error {
 			ChainId:       n.chainID,
 			InitialHeight: n.blockHeight,
 			AppStateBytes: genesis.Appstate,
-		})
+			Validators:    validators,
+		},
+	)
 	return nil
 }
 
@@ -214,7 +243,9 @@ func (n *NullBlockchain) BeginBlock() *NullBlockchain {
 	)
 	r := abci.RequestBeginBlock{
 		Header: types.Header{
-			Time: n.now,
+			Time:    n.now,
+			Height:  n.blockHeight,
+			ChainID: n.chainID,
 		},
 	}
 	n.app.BeginBlock(r)
