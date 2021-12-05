@@ -49,7 +49,7 @@ func Test(t *testing.T) {
 	t.Run("test checkpoint instrumentation through checkpoint engine", testCheckpointEngine)
 }
 
-// test instrumentation of checkpoint and reload from checkpoint through the checkpoint engine
+// test instrumentation of checkpoint and reload from checkpoint through the checkpoint engine.
 func testCheckpointEngine(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
