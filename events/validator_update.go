@@ -9,20 +9,22 @@ import (
 // ValidatorUpdate ...
 type ValidatorUpdate struct {
 	*Base
-	nodeID     string
-	vegaPubKey string
-	ethAddress string
-	tmPubKey   string
-	infoURL    string
-	country    string
-	name       string
-	avatarURL  string
+	nodeID          string
+	vegaPubKey      string
+	vegaPubKeyIndex uint32
+	ethAddress      string
+	tmPubKey        string
+	infoURL         string
+	country         string
+	name            string
+	avatarURL       string
 }
 
 func NewValidatorUpdateEvent(
 	ctx context.Context,
 	nodeID string,
 	vegaPubKey string,
+	vegaPubKeyIndex uint32,
 	ethAddress string,
 	tmPubKey string,
 	infoURL string,
@@ -31,15 +33,16 @@ func NewValidatorUpdateEvent(
 	avatarURL string,
 ) *ValidatorUpdate {
 	return &ValidatorUpdate{
-		Base:       newBase(ctx, ValidatorUpdateEvent),
-		nodeID:     nodeID,
-		vegaPubKey: vegaPubKey,
-		ethAddress: ethAddress,
-		tmPubKey:   tmPubKey,
-		infoURL:    infoURL,
-		country:    country,
-		name:       name,
-		avatarURL:  avatarURL,
+		Base:            newBase(ctx, ValidatorUpdateEvent),
+		nodeID:          nodeID,
+		vegaPubKey:      vegaPubKey,
+		vegaPubKeyIndex: vegaPubKeyIndex,
+		ethAddress:      ethAddress,
+		tmPubKey:        tmPubKey,
+		infoURL:         infoURL,
+		country:         country,
+		name:            name,
+		avatarURL:       avatarURL,
 	}
 }
 
@@ -51,6 +54,11 @@ func (vu ValidatorUpdate) NodeID() string {
 // VegaPublicKey returns validator's vega public key.
 func (vu ValidatorUpdate) VegaPublicKey() string {
 	return vu.vegaPubKey
+}
+
+// VegaPublicKey returns validator's vega public key index.
+func (vu ValidatorUpdate) VegaPublicKeyIndex() uint32 {
+	return vu.vegaPubKeyIndex
 }
 
 // EthereumAddress returns validator's ethereum address.
@@ -91,6 +99,7 @@ func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 	return eventspb.ValidatorUpdate{
 		NodeId:          vu.nodeID,
 		VegaPubKey:      vu.vegaPubKey,
+		VegaPubKeyIndex: vu.vegaPubKeyIndex,
 		EthereumAddress: vu.ethAddress,
 		TmPubKey:        vu.tmPubKey,
 		InfoUrl:         vu.infoURL,
@@ -122,14 +131,15 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 	}
 
 	return &ValidatorUpdate{
-		Base:       newBaseFromStream(ctx, ValidatorUpdateEvent, be),
-		nodeID:     event.GetNodeId(),
-		vegaPubKey: event.GetVegaPubKey(),
-		ethAddress: event.GetEthereumAddress(),
-		tmPubKey:   event.GetTmPubKey(),
-		infoURL:    event.GetInfoUrl(),
-		country:    event.GetCountry(),
-		name:       event.GetName(),
-		avatarURL:  event.GetAvatarUrl(),
+		Base:            newBaseFromStream(ctx, ValidatorUpdateEvent, be),
+		nodeID:          event.GetNodeId(),
+		vegaPubKey:      event.GetVegaPubKey(),
+		vegaPubKeyIndex: event.GetVegaPubKeyIndex(),
+		ethAddress:      event.GetEthereumAddress(),
+		tmPubKey:        event.GetTmPubKey(),
+		infoURL:         event.GetInfoUrl(),
+		country:         event.GetCountry(),
+		name:            event.GetName(),
+		avatarURL:       event.GetAvatarUrl(),
 	}
 }

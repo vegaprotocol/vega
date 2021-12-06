@@ -820,3 +820,20 @@ func getGovernanceTokens(accounts StakingAccounts, party string) (*num.Uint, err
 
 	return balance, err
 }
+
+func (e *Engine) updateValidatorKey(ctx context.Context, m map[string]*types.Vote, oldKey, newKey string) {
+	if vote, ok := m[oldKey]; ok {
+		delete(m, oldKey)
+		vote.PartyID = newKey
+		e.broker.Send(events.NewVoteEvent(ctx, *vote))
+		m[newKey] = vote
+	}
+}
+
+func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {
+	for _, p := range e.activeProposals {
+		e.updateValidatorKey(ctx, p.yes, oldKey, newKey)
+		e.updateValidatorKey(ctx, p.no, oldKey, newKey)
+		e.updateValidatorKey(ctx, p.invalidVotes, oldKey, newKey)
+	}
+}

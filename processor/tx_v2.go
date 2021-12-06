@@ -110,6 +110,8 @@ func (t TxV2) Command() txn.Command {
 		return txn.UndelegateCommand
 	case *commandspb.InputData_RestoreSnapshotSubmission:
 		return txn.CheckpointRestoreCommand
+	case *commandspb.InputData_KeyRotateSubmission:
+		return txn.KeyRotateSubmissionCommand
 	default:
 		panic("unsupported command")
 	}
@@ -147,6 +149,8 @@ func (t TxV2) GetCmd() interface{} {
 		return cmd.UndelegateSubmission
 	case *commandspb.InputData_RestoreSnapshotSubmission:
 		return cmd.RestoreSnapshotSubmission
+	case *commandspb.InputData_KeyRotateSubmission:
+		return cmd.KeyRotateSubmission
 	default:
 		return errors.New("unsupported command")
 	}
@@ -244,6 +248,12 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshal RestoreSnapshotSubmission")
 		}
 		*underlyingCmd = *cmd.RestoreSnapshotSubmission
+	case *commandspb.InputData_KeyRotateSubmission:
+		underlyingCmd, ok := i.(*commandspb.KeyRotateSubmission)
+		if !ok {
+			return errors.New("failed to unmarshal KeyRotateSubmission")
+		}
+		*underlyingCmd = *cmd.KeyRotateSubmission
 	default:
 		return errors.New("unsupported command")
 	}

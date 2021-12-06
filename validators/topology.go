@@ -2,11 +2,14 @@ package validators
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+
+	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -20,6 +23,7 @@ var (
 // Broker needs no mocks.
 type Broker interface {
 	Send(event events.Event)
+	SendBatch(events []events.Event)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
@@ -31,6 +35,7 @@ type Wallet interface {
 type ValidatorData struct {
 	ID              string `json:"id"`
 	VegaPubKey      string `json:"vega_pub_key"`
+	VegaPubKeyIndex uint32 `json:"vega_pub_key_index"`
 	EthereumAddress string `json:"ethereum_address"`
 	TmPubKey        string `json:"tm_pub_key"`
 	InfoURL         string `json:"info_url"`
@@ -45,6 +50,11 @@ func (v ValidatorData) IsValid() bool {
 		return false
 	}
 	return true
+}
+
+// HashVegaPubKey returns hash VegaPubKey encoded as hex string.
+func (v ValidatorData) HashVegaPubKey() string {
+	return hex.EncodeToString(vgcrypto.Hash([]byte(v.VegaPubKey)))
 }
 
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey.
@@ -63,6 +73,10 @@ type Topology struct {
 
 	isValidator bool
 
+	// key rotations
+	pendingPubKeyRotations pendingKeyRotationMapping
+	pubKeyChangeListeners  []func(ctx context.Context, oldPubKey, newPubKey string)
+
 	mu sync.RWMutex
 
 	tss *topologySnapshotState
@@ -73,13 +87,14 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) 
 	log.SetLevel(cfg.Level.Get())
 
 	t := &Topology{
-		log:             log,
-		cfg:             cfg,
-		wallet:          wallet,
-		broker:          broker,
-		validators:      ValidatorMapping{},
-		chainValidators: []string{},
-		tss:             &topologySnapshotState{changed: true},
+		log:                    log,
+		cfg:                    cfg,
+		wallet:                 wallet,
+		broker:                 broker,
+		validators:             ValidatorMapping{},
+		chainValidators:        []string{},
+		tss:                    &topologySnapshotState{changed: true},
+		pendingPubKeyRotations: pendingKeyRotationMapping{},
 	}
 
 	return t
@@ -107,7 +122,7 @@ func (t *Topology) Len() int {
 	return len(t.validators)
 }
 
-// Get returns validator data based on validator public key.
+// Get returns validator data based on validator master public key.
 func (t *Topology) Get(key string) *ValidatorData {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -130,7 +145,7 @@ func (t *Topology) AllVegaPubKeys() []string {
 	return keys
 }
 
-// AllNodeIDs returns all the validators vega public keys.
+// AllNodeIDs returns all the validators node IDs keys.
 func (t *Topology) AllNodeIDs() []string {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -146,7 +161,6 @@ func (t *Topology) SelfVegaPubKey() string {
 }
 
 func (t *Topology) SelfNodeID() string {
-	// return t.wallet.ID().Hex()
 	return t.wallet.ID().Hex()
 }
 
@@ -159,13 +173,13 @@ func (t *Topology) UpdateValidatorSet(keys []string) {
 	t.tss.changed = true
 }
 
-// IsValidatorNode takes a nodeID and returns true if the node is a validator node.
-func (t *Topology) IsValidatorNode(nodeID string) bool {
+// IsValidatorNodeID takes a nodeID and returns true if the node is a validator node.
+func (t *Topology) IsValidatorNodeID(nodeID string) bool {
 	_, ok := t.validators[nodeID]
 	return ok
 }
 
-// IsValidatorVegaPubKey takes a nodeID and returns true if the node is a validator node.
+// IsValidatorVegaPubKey returns true if the given key is a Vega validator public key.
 func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	defer func() {
 		if t.log.GetLevel() <= logging.DebugLevel {
@@ -220,6 +234,7 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 	t.validators[nr.Id] = ValidatorData{
 		ID:              nr.Id,
 		VegaPubKey:      nr.VegaPubKey,
+		VegaPubKeyIndex: nr.VegaPubKeyIndex,
 		EthereumAddress: nr.EthereumAddress,
 		TmPubKey:        nr.ChainPubKey,
 		InfoURL:         nr.InfoUrl,
@@ -246,6 +261,7 @@ func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.
 		ctx,
 		nr.Id,
 		nr.VegaPubKey,
+		nr.VegaPubKeyIndex,
 		nr.EthereumAddress,
 		nr.ChainPubKey,
 		nr.InfoUrl,
@@ -283,6 +299,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		nr := &commandspb.NodeRegistration{
 			Id:              data.ID,
 			VegaPubKey:      data.VegaPubKey,
+			VegaPubKeyIndex: data.VegaPubKeyIndex,
 			EthereumAddress: data.EthereumAddress,
 			ChainPubKey:     tm,
 			InfoUrl:         data.InfoURL,

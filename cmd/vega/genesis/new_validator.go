@@ -74,7 +74,8 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 	validatorDataState := map[string]validators.ValidatorData{
 		base64.StdEncoding.EncodeToString(pubKey.Bytes()): {
 			ID:              walletID,
-			VegaPubKey:      vegaKey,
+			VegaPubKey:      vegaKey.value,
+			VegaPubKeyIndex: vegaKey.index,
 			TmPubKey:        b64TmPubKey,
 			EthereumAddress: ethAddress,
 			Country:         opts.Country,
