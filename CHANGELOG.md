@@ -16,6 +16,7 @@
 - [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 - [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
 - [4463](https://github.com/vegaprotocol/vega/pull/4463) - Remove the need for an Ethereum connection when using the null-blockchain
+- [4477](https://github.com/vegaprotocol/vega/pull/4477) - Allow reloading of nullchain config while core is running
 
 ### 🐛 Fixes
 
