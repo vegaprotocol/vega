@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.46.1-0.20211125131239-ced5f6a0391e
+	code.vegaprotocol.io/protos v0.46.1-0.20211206120432-d454f140891c
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vega v0.46.1-0.20211126095248-3255c3c31173
+	code.vegaprotocol.io/vega v0.46.1-0.20211202110753-76c084d8856d
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fsnotify/fsnotify v1.4.9
@@ -34,7 +34,3 @@ require (
 )
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
-
-// TODO: Remove
-// replace code.vegaprotocol.io/protos => /home/scotty/work/protos
-// replace code.vegaprotocol.io/vega => /home/scotty/work/vega

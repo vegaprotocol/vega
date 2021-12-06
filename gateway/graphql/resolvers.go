@@ -255,6 +255,10 @@ func (r *VegaResolverRoot) Node() NodeResolver {
 	return (*nodeResolver)(r)
 }
 
+func (r *VegaResolverRoot) KeyRotation() KeyRotationResolver {
+	return (*keyRotationResolver)(r)
+}
+
 func (r *VegaResolverRoot) Delegation() DelegationResolver {
 	return (*delegationResolver)(r)
 }
@@ -765,6 +769,24 @@ func (r *myQueryResolver) Nodes(ctx context.Context) ([]*types.Node, error) {
 
 func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, error) {
 	return r.r.getNodeByID(ctx, id)
+}
+
+func (r *myQueryResolver) KeyRotations(ctx context.Context, id *string) ([]*protoapi.KeyRotation, error) {
+	if id != nil {
+		resp, err := r.tradingDataClient.GetKeyRotationsByNode(ctx, &protoapi.GetKeyRotationsByNodeRequest{NodeId: *id})
+		if err != nil {
+			return nil, err
+		}
+
+		return resp.Rotations, nil
+	}
+
+	resp, err := r.tradingDataClient.GetKeyRotations(ctx, &protoapi.GetKeyRotationsRequest{})
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Rotations, nil
 }
 
 func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, error) {

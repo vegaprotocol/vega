@@ -79,6 +79,8 @@ func toEvent(ctx context.Context, be *eventspb.BusEvent) events.Event {
 		return events.ValidatorScoreEventFromStream(ctx, be)
 	case eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:
 		return events.CheckpointEventFromStream(ctx, be)
+	case eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:
+		return events.KeyRotationEventFromStream(ctx, be)
 	}
 	return nil
 }

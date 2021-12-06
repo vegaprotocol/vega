@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"code.vegaprotocol.io/data-node/logging"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	pb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -22,11 +23,19 @@ type node struct {
 	scoresPerEpoch              map[string]nodeScore
 }
 
+type keyRotation struct {
+	nodeId      string
+	oldPubKey   string
+	newPubKey   string
+	blockHeight uint64
+}
+
 type Node struct {
 	Config
 
-	nodes map[string]node
-	mut   sync.RWMutex
+	nodes                  map[string]node
+	pubKeyrotationsPerNode map[string][]keyRotation
+	mut                    sync.RWMutex
 
 	log *logging.Logger
 }
@@ -37,9 +46,10 @@ func NewNode(log *logging.Logger, c Config) *Node {
 	log.SetLevel(c.Level.Get())
 
 	return &Node{
-		nodes:  map[string]node{},
-		log:    log,
-		Config: c,
+		nodes:                  map[string]node{},
+		pubKeyrotationsPerNode: map[string][]keyRotation{},
+		log:                    log,
+		Config:                 c,
 	}
 }
 
@@ -101,7 +111,6 @@ func (ns *Node) AddDelegation(de pb.Delegation) {
 	node.delegationsPerEpochPerParty[de.GetEpochSeq()][de.GetParty()] = de
 }
 
-// GetByID returns a specific node by ID per epoch
 func (ns *Node) GetByID(id, epochID string) (*pb.Node, error) {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
@@ -180,6 +189,71 @@ func (ns *Node) GetStakedTotal(epochID string) string {
 	}
 
 	return stakedTotal.String()
+}
+
+func (ns *Node) PublickKeyChanged(nodeID string, oldPubKey string, newPubKey string, blockHeight uint64) {
+	ns.mut.Lock()
+	defer ns.mut.Unlock()
+
+	node, ok := ns.nodes[nodeID]
+	if !ok {
+		ns.log.Error("Received public key change for non existing node", logging.String("node_id", nodeID))
+		return
+	}
+
+	// update public key in node
+	node.n.PubKey = newPubKey
+	ns.nodes[nodeID] = node
+
+	// add to pub key rotations history
+	if _, ok := ns.pubKeyrotationsPerNode[nodeID]; !ok {
+		ns.pubKeyrotationsPerNode[nodeID] = []keyRotation{}
+	}
+
+	ns.pubKeyrotationsPerNode[nodeID] = append(ns.pubKeyrotationsPerNode[nodeID], keyRotation{
+		nodeId:      nodeID,
+		oldPubKey:   oldPubKey,
+		newPubKey:   newPubKey,
+		blockHeight: blockHeight,
+	})
+}
+
+func (ns *Node) GetAllPubKeyRotations() []*protoapi.KeyRotation {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
+
+	rotations := make([]*protoapi.KeyRotation, 0, len(ns.pubKeyrotationsPerNode))
+	for _, rts := range ns.pubKeyrotationsPerNode {
+		for _, r := range rts {
+			rotations = append(rotations, keyRotationProtoFromInternal(r))
+		}
+	}
+	return rotations
+}
+
+func (ns *Node) GetPubKeyRotationsPerNode(nodeID string) []*protoapi.KeyRotation {
+	ns.mut.RLock()
+	defer ns.mut.RUnlock()
+
+	internalRotations, ok := ns.pubKeyrotationsPerNode[nodeID]
+	if !ok {
+		return []*protoapi.KeyRotation{}
+	}
+
+	rotations := make([]*protoapi.KeyRotation, 0, len(internalRotations))
+	for _, r := range internalRotations {
+		rotations = append(rotations, keyRotationProtoFromInternal(r))
+	}
+	return rotations
+}
+
+func keyRotationProtoFromInternal(kr keyRotation) *protoapi.KeyRotation {
+	return &protoapi.KeyRotation{
+		NodeId:      kr.nodeId,
+		NewPubKey:   kr.newPubKey,
+		OldPubKey:   kr.oldPubKey,
+		BlockHeight: kr.blockHeight,
+	}
 }
 
 func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {

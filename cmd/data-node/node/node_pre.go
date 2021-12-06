@@ -108,7 +108,7 @@ func (l *NodeCommand) setupSubscribers() {
 	l.candleSub = subscribers.NewCandleSub(l.ctx, l.candleStore, l.Log, true)
 	l.marketDepthSub = subscribers.NewMarketDepthBuilder(l.ctx, l.Log, true)
 	l.riskFactorSub = subscribers.NewRiskFactorSub(l.ctx, l.riskStore, l.Log, true)
-	l.validatorUpdateSub = subscribers.NewValidatorUpdateSub(l.ctx, l.nodeStore, l.Log, true)
+	l.nodesSub = subscribers.NewNodesSub(l.ctx, l.nodeStore, l.Log, true)
 	l.delegationBalanceSub = subscribers.NewDelegationBalanceSub(l.ctx, l.nodeStore, l.epochStore, l.delegationStore, l.Log, true)
 	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
 	l.rewardsSub = subscribers.NewRewards(l.ctx, l.Log, true)
@@ -227,7 +227,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub,
-		l.validatorUpdateSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
+		l.nodesSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
 		l.stakingService, l.checkpointSub,
 	)
 

@@ -19,22 +19,28 @@ type ValidatorScoreEvent interface {
 	Proto() eventspb.ValidatorScoreEvent
 }
 
+type KeyRotationEvent interface {
+	events.Event
+	Proto() eventspb.KeyRotation
+}
+
 type NodeStore interface {
 	AddNode(types.Node)
 	AddDelegation(types.Delegation)
 	GetAllIDs() []string
 	AddNodeScore(nodeID, epochID, score, normalisedScore string)
+	PublickKeyChanged(nodeID, oldPubKey string, newPubKey string, blockHeight uint64)
 }
 
-type ValidatorUpdateSub struct {
+type NodesSub struct {
 	*Base
 	nodeStore NodeStore
 
 	log *logging.Logger
 }
 
-func NewValidatorUpdateSub(ctx context.Context, nodeStore NodeStore, log *logging.Logger, ack bool) *ValidatorUpdateSub {
-	sub := &ValidatorUpdateSub{
+func NewNodesSub(ctx context.Context, nodeStore NodeStore, log *logging.Logger, ack bool) *NodesSub {
+	sub := &NodesSub{
 		Base:      NewBase(ctx, 10, ack),
 		nodeStore: nodeStore,
 		log:       log,
@@ -47,21 +53,21 @@ func NewValidatorUpdateSub(ctx context.Context, nodeStore NodeStore, log *loggin
 	return sub
 }
 
-func (vu *ValidatorUpdateSub) loop(ctx context.Context) {
+func (ns *NodesSub) loop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			vu.Halt()
+			ns.Halt()
 			return
-		case e := <-vu.ch:
-			if vu.isRunning() {
-				vu.Push(e...)
+		case e := <-ns.ch:
+			if ns.isRunning() {
+				ns.Push(e...)
 			}
 		}
 	}
 }
 
-func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
+func (ns *NodesSub) Push(evts ...events.Event) {
 	if len(evts) == 0 {
 		return
 	}
@@ -71,7 +77,7 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 		case ValidatorUpdateEvent:
 			vue := et.Proto()
 
-			vu.nodeStore.AddNode(types.Node{
+			ns.nodeStore.AddNode(types.Node{
 				Id:               vue.GetNodeId(),
 				PubKey:           vue.GetVegaPubKey(),
 				TmPubKey:         vue.GetTmPubKey(),
@@ -85,21 +91,26 @@ func (vu *ValidatorUpdateSub) Push(evts ...events.Event) {
 		case ValidatorScoreEvent:
 			vse := et.Proto()
 
-			vu.nodeStore.AddNodeScore(
+			ns.nodeStore.AddNodeScore(
 				vse.GetNodeId(),
 				vse.GetEpochSeq(),
 				vse.GetValidatorScore(),
 				vse.GetNormalisedScore(),
 			)
+		case KeyRotationEvent:
+			kre := et.Proto()
+
+			ns.nodeStore.PublickKeyChanged(kre.NodeId, kre.OldPubKey, kre.NewPubKey, kre.BlockHeight)
 		default:
-			vu.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
+			ns.log.Panic("Unknown event type in candles subscriber", logging.String("Type", et.Type().String()))
 		}
 	}
 }
 
-func (vu *ValidatorUpdateSub) Types() []events.Type {
+func (ns *NodesSub) Types() []events.Type {
 	return []events.Type{
 		events.ValidatorUpdateEvent,
 		events.ValidatorScoreEvent,
+		events.KeyRotationEvent,
 	}
 }
