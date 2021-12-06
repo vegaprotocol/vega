@@ -1966,5 +1966,6 @@ func (tt *TestTopology) Get(key string) *validators.ValidatorData {
 	return &validators.ValidatorData{
 		ID:         key,
 		VegaPubKey: key,
+		TmPubKey:   key,
 	}
 }

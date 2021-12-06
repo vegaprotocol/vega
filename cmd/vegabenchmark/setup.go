@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"code.vegaprotocol.io/vega/rewards"
+
 	ptypes "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
@@ -170,6 +172,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
 
+	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
@@ -214,6 +217,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		cp,
 		spamEngine,
 		nil,
+		rewardEngine,
 		snapshot,
 		"benchmark",
 	)

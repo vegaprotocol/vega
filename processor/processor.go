@@ -49,6 +49,10 @@ type DelegationEngine interface {
 	Hash() []byte
 }
 
+type RewardEngine interface {
+	EndOfBlock(blockHeight int64) []types.ValidatorVotingPower
+}
+
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
 	// orders stuff

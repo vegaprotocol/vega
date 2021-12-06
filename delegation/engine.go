@@ -630,6 +630,11 @@ func (e *Engine) processAutoDelegation(ctx context.Context, partyToAvailableBala
 	}
 }
 
+// GetValidatorData returns the current state of the delegation per node.
+func (e *Engine) GetValidatorData() []*types.ValidatorData {
+	return e.getValidatorData()
+}
+
 // returns the current state of the delegation per node.
 func (e *Engine) getValidatorData() []*types.ValidatorData {
 	validatorNodes := e.topology.AllNodeIDs()
@@ -642,6 +647,7 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 			Delegators:        map[string]*num.Uint{},
 			SelfStake:         num.Zero(),
 			StakeByDelegators: num.Zero(),
+			TmPubKey:          e.topology.Get(vn).TmPubKey,
 		}
 	}
 

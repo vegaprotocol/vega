@@ -215,13 +215,3 @@ func waitSig(ctx context.Context, log *logging.Logger) {
 		// nothing to do
 	}
 }
-
-func flagProvided(flag string) bool {
-	for _, v := range os.Args[1:] {
-		if v == flag {
-			return true
-		}
-	}
-
-	return false
-}

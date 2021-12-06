@@ -16,6 +16,7 @@
 - [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 - [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
 - [4422](https://github.com/vegaprotocol/vega/pull/4422) - Add support for validator key rotation
+- [4463](https://github.com/vegaprotocol/vega/pull/4463) - Remove the need for an Ethereum connection when using the null-blockchain
 
 ### 🐛 Fixes
 
@@ -71,6 +72,7 @@
 - [4429](https://github.com/vegaprotocol/vega/pull/4429) - Release version `v0.46.0`
 - [4442](https://github.com/vegaprotocol/vega/pull/4442) - Reduce the number of iterations in reward calculation
 - [4409](https://github.com/vegaprotocol/vega/pull/4409) - Include chain id in bus messages
+- [4464](https://github.com/vegaprotocol/vega/pull/4466) - Update validator power in tendermint based on their staking
 
 ### 🐛 Fixes
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
@@ -85,6 +87,7 @@
 - [4419](https://github.com/vegaprotocol/vega/pull/4419) - Fix snapshot cleanup, improve logging when specified block height could not be reloaded.
 - [4444](https://github.com/vegaprotocol/vega/pull/4444) - Fix division by zero when all validator scores are 0
 - [4467](https://github.com/vegaprotocol/vega/pull/4467) - Fix reward account balance not being saved/loaded to/from checkpoint
+- [4474](https://github.com/vegaprotocol/vega/pull/4474) - Wire rewards checkpoint to checkpoint engine and store infrastructure fee accounts in collateral checkpoint
 
 ## 0.45.5
 *2021-11-16*

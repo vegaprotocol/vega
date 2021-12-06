@@ -39,6 +39,107 @@ func Test(t *testing.T) {
 	t.Run("Calculate rewards with delays such that pending payouts pile and are accounted for reward amount available for next round next rounds before being distributed", testMultipleEpochsWithPendingPayouts)
 	t.Run("test checkpoint", testCheckpoint)
 	t.Run("test key rotated with pending and active delegations", testKeyRotated)
+	t.Run("test should update voting power", testShouldUpdateVotingPower)
+	t.Run("test voting power calculation", testVotingPowerCalculation)
+}
+
+func testShouldUpdateVotingPower(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	engine.registerStakingAndDelegationRewardScheme()
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(3))
+	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
+	engine.UpdatePayoutDelayForStakingRewardScheme(context.Background(), 120*time.Second)
+
+	// now try to for all i between 1 and 999 and expect to get nil as no update is required
+	for i := 1; i < 1000; i++ {
+		require.Nil(t, engine.EndOfBlock(int64(i)))
+	}
+	testEngine.delegation.EXPECT().GetValidatorData().Return(testEngine.validatorData)
+	require.NotNil(t, engine.EndOfBlock(0))
+	testEngine.delegation.EXPECT().GetValidatorData().Return(testEngine.validatorData)
+	require.NotNil(t, engine.EndOfBlock(1000))
+	testEngine.delegation.EXPECT().GetValidatorData().Return(testEngine.validatorData)
+	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 2})
+	require.NotNil(t, engine.EndOfBlock(1001))
+}
+
+func testVotingPowerCalculation(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	engine.registerStakingAndDelegationRewardScheme()
+	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
+	engine.UpdatePayoutFractionForStakingRewardScheme(context.Background(), 1.0)
+	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), 0.3)
+	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
+	engine.UpdateAssetForStakingAndDelegationRewardScheme(context.Background(), "ETH")
+	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), 1.1)
+	engine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(1000000000))
+	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(3))
+	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
+	engine.UpdatePayoutDelayForStakingRewardScheme(context.Background(), 120*time.Second)
+
+	engine.OnEpochEvent(context.Background(), types.Epoch{Seq: 1})
+	delegatorForVal1 := map[string]*num.Uint{}
+	delegatorForVal1["party1"] = num.NewUint(6000)
+	delegatorForVal1["party2"] = num.NewUint(4000)
+	validator1 := &types.ValidatorData{
+		NodeID:            "node1",
+		PubKey:            "node1",
+		TmPubKey:          "node1",
+		SelfStake:         num.Zero(),
+		StakeByDelegators: num.NewUint(10000),
+		Delegators:        delegatorForVal1,
+	}
+	validator2 := &types.ValidatorData{
+		NodeID:            "node2",
+		PubKey:            "node2",
+		TmPubKey:          "node2",
+		SelfStake:         num.NewUint(20000),
+		StakeByDelegators: num.Zero(),
+		Delegators:        map[string]*num.Uint{},
+	}
+
+	delegatorForVal3 := map[string]*num.Uint{}
+	delegatorForVal3["party1"] = num.NewUint(40000)
+	validator3 := &types.ValidatorData{
+		NodeID:            "node3",
+		PubKey:            "node3",
+		TmPubKey:          "node3",
+		SelfStake:         num.NewUint(30000),
+		StakeByDelegators: num.NewUint(40000),
+		Delegators:        delegatorForVal3,
+	}
+
+	validator4 := &types.ValidatorData{
+		NodeID:            "node4",
+		PubKey:            "node4",
+		TmPubKey:          "node4",
+		SelfStake:         num.Zero(),
+		StakeByDelegators: num.Zero(),
+		Delegators:        map[string]*num.Uint{},
+	}
+
+	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
+	testEngine.delegation.EXPECT().GetValidatorData().Return(validatorData)
+
+	// the normalised scores are as follows (from the test above)
+	// node1 - 0.25
+	// node2 - 0.5
+	// node3 - 0.25
+	// node4 - 0
+	res := engine.EndOfBlock(1)
+	require.Equal(t, int64(2500), res[0].VotingPower)
+	require.Equal(t, int64(5000), res[1].VotingPower)
+	require.Equal(t, int64(2500), res[2].VotingPower)
+	require.Equal(t, int64(0), res[3].VotingPower)
 }
 
 func setDefaultPendingPayouts(engine *Engine) {
@@ -408,7 +509,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	epoch := types.Epoch{}
+	epoch := types.Epoch{EndTime: time.Now()}
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
@@ -424,7 +525,7 @@ func testCalculateRewards(t *testing.T) {
 	require.Equal(t, num.NewUint(140000), res.partyToAmount["node1"])
 	require.Equal(t, num.NewUint(400000), res.partyToAmount["node2"])
 	require.Equal(t, num.NewUint(331428), res.partyToAmount["node3"])
-
+	require.Equal(t, epoch.EndTime.UnixNano(), res.timestamp)
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
