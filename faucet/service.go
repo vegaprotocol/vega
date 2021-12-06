@@ -219,9 +219,6 @@ func (f *Faucet) getAllowedAmount(ctx context.Context, amount *num.Uint, asset s
 	}
 	resp, err := f.coreclt.ListAssets(ctx, req)
 	if err != nil {
-		if resp == nil {
-			return ErrAssetNotFound
-		}
 		return err
 	}
 	if len(resp.Assets) <= 0 {

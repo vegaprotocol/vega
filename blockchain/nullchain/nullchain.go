@@ -88,6 +88,9 @@ func NewClient(
 
 // ReloadConf update the internal configuration.
 func (n *NullBlockchain) ReloadConf(cfg blockchain.Config) {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+
 	n.log.Info("reloading configuration")
 	if n.log.GetLevel() != cfg.Level.Get() {
 		n.log.Info("updating log level",
@@ -96,6 +99,9 @@ func (n *NullBlockchain) ReloadConf(cfg blockchain.Config) {
 		)
 		n.log.SetLevel(cfg.Level.Get())
 	}
+
+	n.blockDuration = cfg.Null.BlockDuration.Duration
+	n.transactionsPerBlock = cfg.Null.TransactionsPerBlock
 }
 
 func (n *NullBlockchain) StartChain() error {
