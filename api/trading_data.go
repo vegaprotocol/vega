@@ -206,7 +206,7 @@ type NodeService interface {
 	GetNodes(ctx context.Context) ([]*pbtypes.Node, error)
 	GetNodeByID(ctx context.Context, id string) (*pbtypes.Node, error)
 	GetAllPubKeyRotations(ctx context.Context) ([]*protoapi.KeyRotation, error)
-	GetPubKeyRotationsPerNodeID(ctx context.Context, nodeID string) ([]*protoapi.KeyRotation, error)
+	GetPubKeyRotationsPerNode(ctx context.Context, nodeID string) ([]*protoapi.KeyRotation, error)
 }
 
 // EpochService ...
@@ -383,7 +383,7 @@ func (t *tradingDataService) GetKeyRotationsByNode(ctx context.Context, req *pro
 		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
 	}
 
-	rotations, err := t.nodeService.GetPubKeyRotationsPerNodeID(ctx, req.GetNodeId())
+	rotations, err := t.nodeService.GetPubKeyRotationsPerNode(ctx, req.GetNodeId())
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}

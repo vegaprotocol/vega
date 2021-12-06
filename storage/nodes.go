@@ -231,7 +231,7 @@ func (ns *Node) GetAllPubKeyRotations() []*protoapi.KeyRotation {
 	return rotations
 }
 
-func (ns *Node) GetPubKeyRotationsPerNodeID(nodeID string) []*protoapi.KeyRotation {
+func (ns *Node) GetPubKeyRotationsPerNode(nodeID string) []*protoapi.KeyRotation {
 	ns.mut.RLock()
 	defer ns.mut.RUnlock()
 

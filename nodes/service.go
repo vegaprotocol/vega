@@ -18,7 +18,7 @@ type NodeStore interface {
 	GetValidatingNodesNumber() int
 	GetStakedTotal(epochSeq string) string
 	GetAllPubKeyRotations() []*protoapi.KeyRotation
-	GetPubKeyRotationsPerNodeID(nodeID string) []*protoapi.KeyRotation
+	GetPubKeyRotationsPerNode(nodeID string) []*protoapi.KeyRotation
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_store_mock.go -package mocks code.vegaprotocol.io/data-node/nodes EpochStore
@@ -93,6 +93,6 @@ func (s *Service) GetAllPubKeyRotations(ctx context.Context) ([]*protoapi.KeyRot
 	return s.nodeStore.GetAllPubKeyRotations(), nil
 }
 
-func (s *Service) GetPubKeyRotationsPerNodeID(ctx context.Context, nodeID string) ([]*protoapi.KeyRotation, error) {
-	return s.nodeStore.GetPubKeyRotationsPerNodeID(nodeID), nil
+func (s *Service) GetPubKeyRotationsPerNode(ctx context.Context, nodeID string) ([]*protoapi.KeyRotation, error) {
+	return s.nodeStore.GetPubKeyRotationsPerNode(nodeID), nil
 }
