@@ -17,6 +17,8 @@
 - [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
 - [4422](https://github.com/vegaprotocol/vega/pull/4422) - Add support for validator key rotation
 - [4463](https://github.com/vegaprotocol/vega/pull/4463) - Remove the need for an Ethereum connection when using the null-blockchain
+- [4477](https://github.com/vegaprotocol/vega/pull/4477) - Allow reloading of null-blockchain configuration while core is running
+
 
 ### 🐛 Fixes
 
