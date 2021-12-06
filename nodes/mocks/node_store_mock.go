@@ -77,18 +77,18 @@ func (mr *MockNodeStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNodeStore)(nil).GetByID), arg0, arg1)
 }
 
-// GetPubKeyRotationsPerNodeID mocks base method
-func (m *MockNodeStore) GetPubKeyRotationsPerNodeID(arg0 string) []*v1.KeyRotation {
+// GetPubKeyRotationsPerNode mocks base method
+func (m *MockNodeStore) GetPubKeyRotationsPerNode(arg0 string) []*v1.KeyRotation {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPubKeyRotationsPerNodeID", arg0)
+	ret := m.ctrl.Call(m, "GetPubKeyRotationsPerNode", arg0)
 	ret0, _ := ret[0].([]*v1.KeyRotation)
 	return ret0
 }
 
-// GetPubKeyRotationsPerNodeID indicates an expected call of GetPubKeyRotationsPerNodeID
-func (mr *MockNodeStoreMockRecorder) GetPubKeyRotationsPerNodeID(arg0 interface{}) *gomock.Call {
+// GetPubKeyRotationsPerNode indicates an expected call of GetPubKeyRotationsPerNode
+func (mr *MockNodeStoreMockRecorder) GetPubKeyRotationsPerNode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyRotationsPerNodeID", reflect.TypeOf((*MockNodeStore)(nil).GetPubKeyRotationsPerNodeID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyRotationsPerNode", reflect.TypeOf((*MockNodeStore)(nil).GetPubKeyRotationsPerNode), arg0)
 }
 
 // GetStakedTotal mocks base method

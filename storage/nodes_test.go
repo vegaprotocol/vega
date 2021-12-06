@@ -180,7 +180,7 @@ func TestNodes(t *testing.T) {
 
 	allKeyRotations := nodeStore.GetAllPubKeyRotations()
 	assert.Len(t, allKeyRotations, 1)
-	assert.Equal(t, allKeyRotations, nodeStore.GetPubKeyRotationsPerNodeID("pub_key_2"))
+	assert.Equal(t, allKeyRotations, nodeStore.GetPubKeyRotationsPerNode("pub_key_2"))
 }
 
 func assertNode(

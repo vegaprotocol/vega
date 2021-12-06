@@ -197,7 +197,7 @@ func TestNodesService_GetAllPubKeyRotations(t *testing.T) {
 	})
 }
 
-func TestNodesService_GetPubKeyRotationsPerNodeID(t *testing.T) {
+func TestNodesService_GetPubKeyRotationsPerNode(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		a := assert.New(t)
 		testService := getTestService(t)
@@ -218,9 +218,9 @@ func TestNodesService_GetPubKeyRotationsPerNodeID(t *testing.T) {
 			},
 		}
 
-		testService.nodeStore.EXPECT().GetPubKeyRotationsPerNodeID("node_1").Return(expectedRotations).Times(1)
+		testService.nodeStore.EXPECT().GetPubKeyRotationsPerNode("node_1").Return(expectedRotations).Times(1)
 
-		rotations, err := testService.GetPubKeyRotationsPerNodeID(testService.ctx, "node_1")
+		rotations, err := testService.GetPubKeyRotationsPerNode(testService.ctx, "node_1")
 		a.NoError(err)
 		a.Equal(expectedRotations, rotations)
 	})
