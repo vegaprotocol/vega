@@ -13,7 +13,7 @@
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
-
+- [233](https://github.com/vegaprotocol/data-node/pull/233) - Don't return API error when no rewards for party
 
 ## 0.46.0
 *`2021-11-22`*
