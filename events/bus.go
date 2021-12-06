@@ -100,6 +100,7 @@ const (
 	RewardPayoutEvent
 	CheckpointEvent
 	ValidatorScoreEvent
+	KeyRotationEvent
 )
 
 var (
@@ -149,6 +150,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_STAKE_LINKING:       StakeLinkingEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:    ValidatorUpdateEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:          CheckpointEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:        KeyRotationEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -188,6 +190,7 @@ var (
 		RewardPayoutEvent:       eventspb.BusEventType_BUS_EVENT_TYPE_REWARD_PAYOUT_EVENT,
 		CheckpointEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT,
 		ValidatorScoreEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE,
+		KeyRotationEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION,
 	}
 
 	eventStrings = map[Type]string{
@@ -228,6 +231,7 @@ var (
 		RewardPayoutEvent:       "RewardPayoutEvent",
 		CheckpointEvent:         "CheckpointEvent",
 		ValidatorScoreEvent:     "ValidatorScoreEvent",
+		KeyRotationEvent:        "KeyRotationEvent",
 	}
 )
 

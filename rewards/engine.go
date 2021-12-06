@@ -357,6 +357,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		payouts = append(payouts, po)
 		timeToSend := epoch.EndTime.Add(e.global.payoutDelay)
 		e.emitEventsForPayout(ctx, timeToSend, po)
+		po.timestamp = timeToSend.UnixNano()
 
 		if e.global.payoutDelay == time.Duration(0) {
 			e.distributePayout(ctx, po)
@@ -375,12 +376,17 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 	return payouts
 }
 
+func (e *Engine) calculatePercentageOfTotalReward(amount, totalReward *num.Uint) float64 {
+	proportion := amount.ToDecimal().Div(totalReward.ToDecimal())
+	pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
+	return pct
+}
+
 func (e *Engine) emitEventsForPayout(ctx context.Context, timeToSend time.Time, po *payout) {
 	payoutEvents := map[string]*events.RewardPayout{}
 	parties := []string{}
 	for party, amount := range po.partyToAmount {
-		proportion := amount.ToDecimal().Div(po.totalReward.ToDecimal())
-		pct, _ := proportion.Mul(num.DecimalFromInt64(100)).Float64()
+		pct := e.calculatePercentageOfTotalReward(amount, po.totalReward)
 		payoutEvents[party] = events.NewRewardPayout(ctx, timeToSend.UnixNano(), party, po.epochSeq, po.asset, amount, pct)
 		parties = append(parties, party)
 	}
@@ -482,6 +488,36 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
+}
+
+// ValidatorKeyChanged is called when the validator public key (aka party) is changed we need to update all pending information to use the new key.
+func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {
+	if len(e.pendingPayouts) == 0 {
+		return
+	}
+
+	payTimes := make([]time.Time, 0, len(e.pendingPayouts))
+	for payTime := range e.pendingPayouts {
+		payTimes = append(payTimes, payTime)
+	}
+	payoutEvents := []events.Event{}
+	sort.Slice(payTimes, func(i, j int) bool { return payTimes[i].Before(payTimes[j]) })
+	for _, payTime := range payTimes {
+		// remove all paid payouts from pending
+		for _, p := range e.pendingPayouts[payTime] {
+			if amount, ok := p.partyToAmount[oldKey]; ok {
+				delete(p.partyToAmount, oldKey)
+				p.partyToAmount[newKey] = amount
+				pct := e.calculatePercentageOfTotalReward(amount, p.totalReward)
+				payoutEvents = append(payoutEvents,
+					*events.NewRewardPayout(ctx, p.timestamp, oldKey, p.epochSeq, p.asset, num.Zero(), 0),
+					*events.NewRewardPayout(ctx, p.timestamp, newKey, p.epochSeq, p.asset, amount, pct),
+				)
+			}
+		}
+	}
+	e.broker.SendBatch(payoutEvents)
+	e.rss.changed = true
 }
 
 // shouldUpdateValidatorsVotingPower returns whether we should update the voting power of the validator in tendermint

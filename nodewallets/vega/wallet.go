@@ -36,6 +36,10 @@ func (w *Wallet) PubKey() crypto.PublicKey {
 	return w.pubKey
 }
 
+func (w *Wallet) Index() uint32 {
+	return w.keyPair.Index()
+}
+
 func (w *Wallet) ID() crypto.PublicKey {
 	return w.walletID
 }

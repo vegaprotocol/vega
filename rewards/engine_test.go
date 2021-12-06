@@ -38,6 +38,7 @@ func Test(t *testing.T) {
 	t.Run("Reward snapshot round trip with delayed payout", testRewardSnapshotRoundTrip)
 	t.Run("Calculate rewards with delays such that pending payouts pile and are accounted for reward amount available for next round next rounds before being distributed", testMultipleEpochsWithPendingPayouts)
 	t.Run("test checkpoint", testCheckpoint)
+	t.Run("test key rotated with pending and active delegations", testKeyRotated)
 	t.Run("test should update voting power", testShouldUpdateVotingPower)
 	t.Run("test voting power calculation", testVotingPowerCalculation)
 }
@@ -141,9 +142,7 @@ func testVotingPowerCalculation(t *testing.T) {
 	require.Equal(t, int64(0), res[3].VotingPower)
 }
 
-func testCheckpoint(t *testing.T) {
-	testEngine := getEngine(t)
-	engine := testEngine.engine
+func setDefaultPendingPayouts(engine *Engine) {
 	payoutTime11 := &payout{
 		fromAccount:   "account1",
 		asset:         "asset1",
@@ -190,6 +189,31 @@ func testCheckpoint(t *testing.T) {
 	engine.pendingPayouts[time.Now().Add(-5*time.Minute)] = []*payout{payoutTime11, payoutTime12}
 	engine.pendingPayouts[time.Now().Add(-3*time.Minute)] = []*payout{payoutTime21, payoutTime22}
 	engine.pendingPayouts[time.Now()] = []*payout{payoutTime3}
+}
+
+func testKeyRotated(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	setDefaultPendingPayouts(engine)
+	engine.ValidatorKeyChanged(context.Background(), "p1", "party1_new")
+
+	for _, payouts := range engine.pendingPayouts {
+		for _, p := range payouts {
+			_, ok := p.partyToAmount["p1"]
+			require.False(t, ok)
+			// the payouts are set such that all payouts for timestamps 1 and 3 have p1 originally
+			if p.timestamp != 2 {
+				_, ok := p.partyToAmount["party1_new"]
+				require.True(t, ok)
+			}
+		}
+	}
+}
+
+func testCheckpoint(t *testing.T) {
+	testEngine := getEngine(t)
+	engine := testEngine.engine
+	setDefaultPendingPayouts(engine)
 
 	cp, err := engine.Checkpoint()
 	require.Nil(t, err)
@@ -485,7 +509,7 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 	rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
-	epoch := types.Epoch{}
+	epoch := types.Epoch{EndTime: time.Now()}
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	err := testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(1000000))
@@ -501,7 +525,7 @@ func testCalculateRewards(t *testing.T) {
 	require.Equal(t, num.NewUint(140000), res.partyToAmount["node1"])
 	require.Equal(t, num.NewUint(400000), res.partyToAmount["node2"])
 	require.Equal(t, num.NewUint(331428), res.partyToAmount["node3"])
-
+	require.Equal(t, epoch.EndTime.UnixNano(), res.timestamp)
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
 
