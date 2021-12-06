@@ -335,24 +335,24 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetKeyRotations(arg0, arg1 i
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyRotations", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetKeyRotations), varargs...)
 }
 
-// GetKeyRotationsByNodeID mocks base method
-func (m *MockTradingDataServiceClient) GetKeyRotationsByNodeID(arg0 context.Context, arg1 *v1.GetKeyRotationsByNodeIDRequest, arg2 ...grpc.CallOption) (*v1.GetKeyRotationsByNodeIDResponse, error) {
+// GetKeyRotationsByNode mocks base method
+func (m *MockTradingDataServiceClient) GetKeyRotationsByNode(arg0 context.Context, arg1 *v1.GetKeyRotationsByNodeRequest, arg2 ...grpc.CallOption) (*v1.GetKeyRotationsByNodeResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetKeyRotationsByNodeID", varargs...)
-	ret0, _ := ret[0].(*v1.GetKeyRotationsByNodeIDResponse)
+	ret := m.ctrl.Call(m, "GetKeyRotationsByNode", varargs...)
+	ret0, _ := ret[0].(*v1.GetKeyRotationsByNodeResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetKeyRotationsByNodeID indicates an expected call of GetKeyRotationsByNodeID
-func (mr *MockTradingDataServiceClientMockRecorder) GetKeyRotationsByNodeID(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+// GetKeyRotationsByNode indicates an expected call of GetKeyRotationsByNode
+func (mr *MockTradingDataServiceClientMockRecorder) GetKeyRotationsByNode(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyRotationsByNodeID", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetKeyRotationsByNodeID), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyRotationsByNode", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetKeyRotationsByNode), varargs...)
 }
 
 // GetNetworkParametersProposals mocks base method

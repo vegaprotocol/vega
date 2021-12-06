@@ -237,7 +237,7 @@ func (ns *Node) GetPubKeyRotationsPerNodeID(nodeID string) []*protoapi.KeyRotati
 
 	internalRotations, ok := ns.pubKeyrotationsPerNode[nodeID]
 	if !ok {
-		return nil
+		return []*protoapi.KeyRotation{}
 	}
 
 	rotations := make([]*protoapi.KeyRotation, 0, len(internalRotations))

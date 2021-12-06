@@ -773,7 +773,7 @@ func (r *myQueryResolver) Node(ctx context.Context, id string) (*types.Node, err
 
 func (r *myQueryResolver) KeyRotations(ctx context.Context, id *string) ([]*protoapi.KeyRotation, error) {
 	if id != nil {
-		resp, err := r.tradingDataClient.GetKeyRotationsByNodeID(ctx, &protoapi.GetKeyRotationsByNodeIDRequest{Id: *id})
+		resp, err := r.tradingDataClient.GetKeyRotationsByNode(ctx, &protoapi.GetKeyRotationsByNodeRequest{NodeId: *id})
 		if err != nil {
 			return nil, err
 		}

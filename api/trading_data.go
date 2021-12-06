@@ -376,19 +376,19 @@ func (t *tradingDataService) GetKeyRotations(ctx context.Context, req *protoapi.
 	}, nil
 }
 
-func (t *tradingDataService) GetKeyRotationsByNodeID(ctx context.Context, req *protoapi.GetKeyRotationsByNodeIDRequest) (*protoapi.GetKeyRotationsByNodeIDResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotationsByNodeID")()
+func (t *tradingDataService) GetKeyRotationsByNode(ctx context.Context, req *protoapi.GetKeyRotationsByNodeRequest) (*protoapi.GetKeyRotationsByNodeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotationsByNode")()
 
-	if req.GetId() == "" {
+	if req.GetNodeId() == "" {
 		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
 	}
 
-	rotations, err := t.nodeService.GetPubKeyRotationsPerNodeID(ctx, req.GetId())
+	rotations, err := t.nodeService.GetPubKeyRotationsPerNodeID(ctx, req.GetNodeId())
 	if err != nil {
 		return nil, apiError(codes.Internal, err)
 	}
 
-	return &protoapi.GetKeyRotationsByNodeIDResponse{
+	return &protoapi.GetKeyRotationsByNodeResponse{
 		Rotations: rotations,
 	}, nil
 }
