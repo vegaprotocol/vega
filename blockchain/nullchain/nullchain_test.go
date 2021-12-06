@@ -59,7 +59,7 @@ func testTransactionsCreateBlock(t *testing.T) {
 
 	// Expected BeginBlock to be called with time shuffled forward by a block
 	now, _ := testChain.chain.GetGenesisTime(ctx)
-	r := abci.RequestBeginBlock{Header: types.Header{Time: now.Add(time.Second)}}
+	r := abci.RequestBeginBlock{Header: types.Header{Time: now.Add(time.Second), ChainID: chainID, Height: 2}}
 
 	// One round of block processing calls
 	testChain.app.EXPECT().BeginBlock(r).Times(1)
@@ -199,7 +199,7 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 
 func newGenesisFile(t *testing.T) string {
 	t.Helper()
-	data := fmt.Sprintf("{ \"genesis_time\": \"%s\",\"chain_id\": \"%s\", \"appstate\": { \"stuff\": \"stuff\" }}", genesisTime, chainID)
+	data := fmt.Sprintf("{ \"genesis_time\": \"%s\",\"chain_id\": \"%s\", \"app_state\": { \"validators\": {}}}", genesisTime, chainID)
 
 	filePath := filepath.Join(t.TempDir(), "genesis.json")
 	if err := vgfs.WriteFile(filePath, []byte(data)); err != nil {
