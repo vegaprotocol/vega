@@ -44,7 +44,7 @@ func sortPendingKeyRotations(pkrs []*validators.PendingKeyRotation) {
 }
 
 func TestTopologyCheckpoint(t *testing.T) {
-	// t.Run("test checkpoint success", testTopologyCheckpointSuccess)
+	t.Run("test checkpoint success", testTopologyCheckpointSuccess)
 	t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
 }
 

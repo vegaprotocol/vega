@@ -2,7 +2,6 @@ package validators
 
 import (
 	"context"
-	"fmt"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/types"
@@ -21,7 +20,6 @@ func (t *Topology) Checkpoint() ([]byte, error) {
 	snap := &checkpoint.KeyRotations{
 		PendingKeyRotations: t.getCheckpointPendingKeyRotations(),
 	}
-	fmt.Println("snap:", snap)
 	return proto.Marshal(snap)
 }
 
