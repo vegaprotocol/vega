@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
-- []() - 
+- [4480](https://github.com/vegaprotocol/vega/pull/4439) - Update `CHANGELOG.md` since GH Action implemented
 - [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
 - [4456](https://github.com/vegaprotocol/vega/pull/4456) - Return 400 on bad mint amounts sent via the faucet
 - [4409](https://github.com/vegaprotocol/vega/pull/4409) - Add chain id to bus messages
