@@ -133,6 +133,10 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		log.Error("Could not create AVL tree", logging.Error(err))
 		return nil, err
 	}
+	if _, err := tree.Load(); err != nil {
+		log.Error("Could not load AVL tree versions", logging.Error(err))
+		// no return, this could indicate that we've just created the snapshot DB
+	}
 	sctx, cfunc := context.WithCancel(ctx)
 	appPL := &types.PayloadAppState{
 		AppState: &types.AppState{},
@@ -167,6 +171,10 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		current:       1,
 	}
 	if conf.StartHeight == 0 {
+		if err := eng.loadTree(); err != nil {
+			log.Error("Failed to load AVL version", logging.Error(err))
+			// do not return error, this could simply indicate we've created a new DB
+		}
 		return eng, nil
 	}
 	if err := eng.loadHeight(ctx, conf.StartHeight); err != nil {
@@ -223,8 +231,15 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 }
 
 func (e *Engine) loadHeight(ctx context.Context, h int64) error {
+	err := e.loadTree()
 	if h < 0 {
-		return e.LoadLast(ctx)
+		return e.load(ctx)
+	}
+	// not loading last, now we have to load the most recent version
+	if err != nil {
+		e.log.Error("Failed to load AVL version", logging.Error(err))
+		// perhaps we should return this error here, if load fails
+		// then we're unlikely to find the requested height anyway
 	}
 	height := uint64(h)
 	versions := e.avl.AvailableVersions()
@@ -270,14 +285,14 @@ func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 	return types.ErrNoSnapshot
 }
 
-func (e *Engine) LoadLast(ctx context.Context) error {
-	version, err := e.avl.Load()
+func (e *Engine) loadTree() error {
+	v, err := e.avl.Load()
 	if err != nil {
 		return err
 	}
-	e.version = version
+	e.version = v
 	e.last = e.avl.ImmutableTree
-	return e.load(ctx)
+	return nil
 }
 
 func (e *Engine) load(ctx context.Context) error {
