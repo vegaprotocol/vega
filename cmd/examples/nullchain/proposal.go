@@ -18,7 +18,7 @@ func proposeAndVoteMarket(w *Wallets, conn *Connection) {
 	parties := w.GetParties()
 
 	now, _ := conn.VegaTime()
-	fmt.Printf("Proposing Market Vegatime: %s\n")
+	fmt.Printf("Proposing Market Vegatime: %s\n", now)
 	txn := MarketProposalTxn(now, parties[0].pubkey)
 	err := w.SubmitTransaction(conn, parties[0], txn)
 	if err != nil {

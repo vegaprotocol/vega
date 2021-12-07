@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"code.vegaprotocol.io/vega/cmd/examples/nullchain/faucet"
@@ -42,9 +43,11 @@ func main() {
 	}
 	defer conn.Close()
 
+	vt, err := conn.VegaTime()
 	if err != nil {
 		return
 	}
+	fmt.Printf("Starting Vegatime: %s\n", vt)
 
 	w := NewWallet(config.WalletFolder, config.Passphrase)
 
@@ -65,7 +68,7 @@ func main() {
 		parties := w.GetParties()
 		term := OrcaleTxn("trading.termination", "true")
 		err = w.SubmitTransaction(conn, parties[0], term)
-		settle := OrcaleTxn("prices.XYZ.value", "1000")
+		settle := OrcaleTxn(strings.Join([]string{"prices", config.NormalAsset, "value"}, "."), "1000")
 		err = w.SubmitTransaction(conn, parties[0], settle)
 		timefoward.MoveByDuration(5 * config.BlockDuration)
 
@@ -75,7 +78,7 @@ func main() {
 		}
 	}
 
-	vt, err := conn.VegaTime()
+	vt, err = conn.VegaTime()
 	if err != nil {
 		return
 	}
