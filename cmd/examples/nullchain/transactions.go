@@ -136,7 +136,7 @@ func OrderTxn(marketId string, price, size uint64, side vega.Side,
 	}
 }
 
-func OrcaleTxn(key, value string) *walletpb.SubmitTransactionRequest {
+func OracleTxn(key, value string) *walletpb.SubmitTransactionRequest {
 	data := map[string]string{
 		key: value,
 	}
