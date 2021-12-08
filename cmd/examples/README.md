@@ -43,7 +43,7 @@ vegawallet key generate --wallet=B --home=vegahome
 vegawallet key generate --wallet=C --home=vegahome
 ```
 
-Next you need to fiddle with the vega config file to switch the blockchain on by chaning the `BlockChain` section in `vegahome/config/node/config.toml` to look the this:
+Next you need to fiddle with the vega config file to switch the blockchain on by changing the `BlockChain` section in `vegahome/config/node/config.toml` to look like this:
 ```
 [Blockchain]
   Level = "Info"
