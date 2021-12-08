@@ -33,7 +33,7 @@ vega tm init --home=vegahome
 vega genesis generate --home=vegahome
 vega genesis update --tm-root=/vegahome --home=/vegahome
 
-# initiliase the data-node
+# initialise the data-node
 data-node init -f --home=vegahome
 
 # initialise a vegawallet and make some parties
