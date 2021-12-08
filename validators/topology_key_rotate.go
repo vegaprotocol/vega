@@ -20,12 +20,19 @@ var (
 )
 
 type PendingKeyRotation struct {
+	BlockHeight uint64
+	NodeID      string
 	NewPubKey   string
 	NewKeyIndex uint32
 }
 
+type pendingKeyRotation struct {
+	newPubKey   string
+	newKeyIndex uint32
+}
+
 // pendingKeyRotationMapping maps a block height => node id => new pending key rotation.
-type pendingKeyRotationMapping map[uint64]map[string]PendingKeyRotation
+type pendingKeyRotationMapping map[uint64]map[string]pendingKeyRotation
 
 func (pr pendingKeyRotationMapping) getSortedNodeIDsPerHeight(height uint64) []string {
 	rotationsPerHeight := pr[height]
@@ -78,11 +85,11 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 	}
 
 	if _, ok = t.pendingPubKeyRotations[kr.TargetBlock]; !ok {
-		t.pendingPubKeyRotations[kr.TargetBlock] = map[string]PendingKeyRotation{}
+		t.pendingPubKeyRotations[kr.TargetBlock] = map[string]pendingKeyRotation{}
 	}
-	t.pendingPubKeyRotations[kr.TargetBlock][nodeID] = PendingKeyRotation{
-		NewPubKey:   kr.NewPubKey,
-		NewKeyIndex: kr.NewPubKeyIndex,
+	t.pendingPubKeyRotations[kr.TargetBlock][nodeID] = pendingKeyRotation{
+		newPubKey:   kr.NewPubKey,
+		newKeyIndex: kr.NewPubKeyIndex,
 	}
 
 	t.tss.changed = true
@@ -100,17 +107,40 @@ func (t *Topology) GetPendingKeyRotation(blockHeight uint64, nodeID string) *Pen
 
 	if pkr, ok := t.pendingPubKeyRotations[blockHeight][nodeID]; ok {
 		return &PendingKeyRotation{
-			NewPubKey:   pkr.NewPubKey,
-			NewKeyIndex: pkr.NewKeyIndex,
+			BlockHeight: blockHeight,
+			NodeID:      nodeID,
+			NewPubKey:   pkr.newPubKey,
+			NewKeyIndex: pkr.newKeyIndex,
 		}
 	}
 
 	return nil
 }
 
+func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	pkrs := make([]*PendingKeyRotation, 0, len(t.pendingPubKeyRotations)*2)
+	for blockHeight, rotations := range t.pendingPubKeyRotations {
+		for nodeID, r := range rotations {
+			pkrs = append(pkrs, &PendingKeyRotation{
+				BlockHeight: blockHeight,
+				NodeID:      nodeID,
+				NewPubKey:   r.newPubKey,
+				NewKeyIndex: r.newKeyIndex,
+			})
+		}
+	}
+
+	return pkrs
+}
+
 func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
+
+	t.currentBlockHeight = blockHeight
 
 	// key swaps should run in deterministic order
 	nodeIDs := t.pendingPubKeyRotations.getSortedNodeIDsPerHeight(blockHeight)
@@ -129,12 +159,12 @@ func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
 		oldPubKey := data.VegaPubKey
 		rotation := t.pendingPubKeyRotations[blockHeight][nodeID]
 
-		data.VegaPubKey = rotation.NewPubKey
-		data.VegaPubKeyIndex = rotation.NewKeyIndex
+		data.VegaPubKey = rotation.newPubKey
+		data.VegaPubKeyIndex = rotation.newKeyIndex
 		t.validators[nodeID] = data
 
-		t.notifyKeyChange(ctx, oldPubKey, rotation.NewPubKey)
-		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.NewPubKey, blockHeight))
+		t.notifyKeyChange(ctx, oldPubKey, rotation.newPubKey)
+		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, blockHeight))
 	}
 
 	delete(t.pendingPubKeyRotations, blockHeight)
