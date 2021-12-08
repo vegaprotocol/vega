@@ -29,6 +29,7 @@ type OnChainVerifier struct {
 	mu                sync.RWMutex
 	ethCfg            vgproto.EthereumConfig
 	contractAddresses []ethcmn.Address
+	genesisLoaded     bool // used to determine whether ConfigUpdate is from genesis or not
 }
 
 func NewOnChainVerifier(
@@ -60,10 +61,14 @@ func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg inter
 	o.ethCfg = *cfg
 	o.contractAddresses = nil
 	for _, address := range o.ethCfg.StakingBridgeAddresses {
-
 		o.contractAddresses = append(
 			o.contractAddresses, ethcmn.HexToAddress(address))
 
+		if o.genesisLoaded {
+			continue
+		}
+
+		// We're loading from genesis, verify contracts are the ones we expect
 		if err := o.ethClient.VerifyContract(context.Background(), address); err != nil {
 			return err
 		}
@@ -78,6 +83,7 @@ func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg inter
 			logging.Strings("addresses", addresses))
 	}
 
+	o.genesisLoaded = true
 	return nil
 }
 

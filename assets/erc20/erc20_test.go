@@ -108,6 +108,7 @@ func (testEthClient) HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header
 func (testEthClient) BridgeAddress() ethcommon.Address              { return ethcommon.HexToAddress(bridgeAddress) }
 func (testEthClient) CurrentHeight(context.Context) (uint64, error) { return 100, nil }
 func (testEthClient) ConfirmationsRequired() uint32                 { return 1 }
+func (testEthClient) VerifyContract(context.Context, string) error  { return nil }
 
 type testWallet struct{}
 

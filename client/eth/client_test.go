@@ -73,6 +73,7 @@ type testClient struct {
 }
 
 func getTestClient(t *testing.T) *testClient {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	mockEthClient := mocks.NewMockETHClient(ctrl)
 	c := &eth.Client{ETHClient: mockEthClient}

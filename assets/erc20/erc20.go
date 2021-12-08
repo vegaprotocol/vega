@@ -86,7 +86,30 @@ func (b *ERC20) IsValid() bool {
 	return b.ok
 }
 
+// OnGenesisValidation a superset of Validate which is used only on assets created from the genesis-file.
+func (b *ERC20) OnGenesisValidate() error {
+	if err := b.validate(); err != nil {
+		return err
+	}
+
+	if err := b.ethClient.VerifyContract(context.Background(), b.address); err != nil {
+		return err
+	}
+
+	b.ok = true
+	return nil
+}
+
 func (b *ERC20) Validate() error {
+	if err := b.validate(); err != nil {
+		return err
+	}
+
+	b.ok = true
+	return nil
+}
+
+func (b *ERC20) validate() error {
 	t, err := NewErc20(ethcommon.HexToAddress(b.address), b.ethClient)
 	if err != nil {
 		return err
@@ -121,15 +144,10 @@ func (b *ERC20) Validate() error {
 	// 	carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.TotalSupply, totalSupply)
 	// }
 
-	if err := b.ethClient.VerifyContract(context.Background(), b.address); err != nil {
-		return err
-	}
-
 	if carryErr != nil {
 		return carryErr
 	}
 
-	b.ok = true
 	return nil
 }
 

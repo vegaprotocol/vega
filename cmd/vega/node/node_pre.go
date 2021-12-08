@@ -165,7 +165,7 @@ func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDe
 	// just a simple backoff here
 	err = backoff.Retry(
 		func() error {
-			err := asset.Validate()
+			err := asset.OnGenesisValidate()
 			if !asset.IsValid() {
 				return err
 			}

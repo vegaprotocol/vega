@@ -23,7 +23,7 @@ var (
 	ErrContractHashMismatch      = errors.New("mismatched contract code")
 )
 
-// ContractHashes map[contract addresses] -> sha3-256(contract bytecode)
+// ContractHashes map[contract addresses] -> sha3-256(contract bytecode).
 var ContractHashes = map[string]string{
 	// vega mainnet1 - eth mainnet
 	"0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e": "071ef7d545de2de23ecc5eb71a148eaeac7ccd40d9ccef302b3cd363ed580929", // VEGA token
@@ -136,7 +136,7 @@ func (c *Client) ConfirmationsRequired() uint32 {
 	return c.ethConfig.Confirmations
 }
 
-// VerifyContract takes the address of a contract in hex and checks the hash of the byte-code is as expected
+// VerifyContract takes the address of a contract in hex and checks the hash of the byte-code is as expected.
 func (c *Client) VerifyContract(ctx context.Context, address string) error {
 	expected, ok := ContractHashes[address]
 	if !ok {
@@ -151,7 +151,7 @@ func (c *Client) VerifyContract(ctx context.Context, address string) error {
 
 	actual := hex.EncodeToString(vgcrypto.Hash(b))
 	if expected != actual {
-		return ErrContractHashMismatch
+		return fmt.Errorf("%w: address: %s, expected: %s got %s", ErrContractHashMismatch, address, expected, actual)
 	}
 	return nil
 }
