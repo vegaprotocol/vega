@@ -18,6 +18,7 @@ import (
 
 type EthereumClient interface {
 	bind.ContractFilterer
+	VerifyContract(context.Context, string) error
 }
 
 type OnChainVerifier struct {
@@ -59,8 +60,13 @@ func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg inter
 	o.ethCfg = *cfg
 	o.contractAddresses = nil
 	for _, address := range o.ethCfg.StakingBridgeAddresses {
+
 		o.contractAddresses = append(
 			o.contractAddresses, ethcmn.HexToAddress(address))
+
+		if err := o.ethClient.VerifyContract(context.Background(), address); err != nil {
+			return err
+		}
 	}
 
 	if o.log.GetLevel() <= logging.DebugLevel {

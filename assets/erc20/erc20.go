@@ -42,6 +42,7 @@ type ETHClient interface {
 	BridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
 	ConfirmationsRequired() uint32
+	VerifyContract(context.Context, string) error
 }
 
 type ERC20 struct {
@@ -119,6 +120,10 @@ func (b *ERC20) Validate() error {
 	// } else if totalSupply.String() != b.asset.Details.TotalSupply {
 	// 	carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.TotalSupply, totalSupply)
 	// }
+
+	if err := b.ethClient.VerifyContract(context.Background(), b.address); err != nil {
+		return err
+	}
 
 	if carryErr != nil {
 		return carryErr

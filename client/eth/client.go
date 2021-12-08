@@ -2,6 +2,7 @@ package eth
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -9,11 +10,32 @@ import (
 	"time"
 
 	types "code.vegaprotocol.io/protos/vega"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
+
+var (
+	ErrUnexpectedContractAddress = errors.New("unexpected contract address - cannot verify contract code")
+	ErrContractHashMismatch      = errors.New("mismatched contract code")
+)
+
+// ContractHashes map[contract addresses] -> sha256(contract bytecode)
+var ContractHashes = map[string]string{
+	// vega mainnet1 - eth mainnet
+	"0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e": "071ef7d545de2de23ecc5eb71a148eaeac7ccd40d9ccef302b3cd363ed580929",
+	"0x23d1bFE8fA50a167816fBD79D7932577c06011f4": "0d83655b7be5c60f6762723e29f20ce1ed6e0f4d4de0781c2a2332e83d65a11f",
+	"0x195064D33f09e0c42cF98E665D9506e0dC17de68": "889a39f8323d9fd1fd6bcc9a549fc4cf6a41b537af01d3f0523343398e12b5d7",
+	"0xCd403f722b76366f7d609842C589906ca051310f": "885e507d590170eae2a3b52d56894e1486eb25f6c65ca92e6e37e952d4f75e33",
+
+	// vega testnet1 - eth ropsten
+	"0xF0598Cd16FA3bf4c34052923cBE2D34028da0c69": "55e66d2955a8b1ab59bd1b14bc306e5eef6900d6fd3137da07e3d5a15f48dc21",
+	"0x0614188938f5C3bD8461D4B413A39eeC2C5f42D9": "885e507d590170eae2a3b52d56894e1486eb25f6c65ca92e6e37e952d4f75e33",
+	"0xfce2CC92203A266a9C8e67461ae5067c78f67235": "e91eb100c4cbecb6c404de873bf84457b5313da8e39fed231edc965812f12ae1",
+}
 
 // ETHClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/client/eth ETHClient
@@ -104,4 +126,24 @@ func (c *Client) CurrentHeight(ctx context.Context) (uint64, error) {
 
 func (c *Client) ConfirmationsRequired() uint32 {
 	return c.ethConfig.Confirmations
+}
+
+// VerifyContract takes the address of a contract in hex and checks the hash of the byte-code is as expected
+func (c *Client) VerifyContract(ctx context.Context, address string) error {
+	expected, ok := ContractHashes[address]
+	if !ok {
+		return fmt.Errorf("%w: address %s", ErrUnexpectedContractAddress, address)
+	}
+
+	// nil block number means latest block
+	b, err := c.CodeAt(ctx, ethcommon.HexToAddress(address), nil)
+	if err != nil {
+		return err
+	}
+
+	actual := hex.EncodeToString(vgcrypto.Hash(b))
+	if expected != actual {
+		return ErrContractHashMismatch
+	}
+	return nil
 }
