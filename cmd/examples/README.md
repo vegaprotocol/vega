@@ -101,7 +101,7 @@ Now update the genesis file in `vegahome/config/genesis.json` to include the fol
     },
 ```
 
-Now spin up all the services by runnin the following each in their own terminal:
+Now spin up all the services by running the following each in their own terminal:
 
 ```
 vega node run --home=vegahome
