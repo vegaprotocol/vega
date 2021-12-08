@@ -40,6 +40,7 @@ func (d Deposit) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      d.eventID(),
 		Block:   d.TraceID(),
+		ChainId: d.ChainID(),
 		Type:    d.et.ToProto(),
 		Event: &eventspb.BusEvent_Deposit{
 			Deposit: &dep,

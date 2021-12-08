@@ -232,8 +232,7 @@ type Market struct {
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
 
-	stateChanged     bool
-	restorePositions bool
+	stateChanged bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -547,6 +546,23 @@ func (m *Market) GetID() string {
 	return m.mkt.ID
 }
 
+func (m *Market) PostRestore(ctx context.Context) error {
+	m.settlement.Update(m.position.Positions())
+
+	pps := m.position.Parties()
+	peggedOrder := m.peggedOrders.GetAll()
+	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
+
+	for _, p := range pps {
+		parties[p] = struct{}{}
+	}
+
+	for _, o := range m.peggedOrders.GetAll() {
+		parties[o.Party] = struct{}{}
+	}
+	return nil
+}
+
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
@@ -565,25 +581,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
-
-	// Restore all positions
-	if m.restorePositions {
-		m.settlement.Update(m.position.Positions())
-
-		pps := m.position.Parties()
-		peggedOrder := m.peggedOrders.GetAll()
-		parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
-
-		for _, p := range pps {
-			parties[p] = struct{}{}
-		}
-
-		for _, o := range m.peggedOrders.GetAll() {
-			parties[o.Party] = struct{}{}
-		}
-
-		m.restorePositions = false
-	}
 
 	m.stateChanged = true
 

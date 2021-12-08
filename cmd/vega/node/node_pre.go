@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -9,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
+	"code.vegaprotocol.io/vega/blockchain/nullchain"
 	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
@@ -49,6 +51,8 @@ import (
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
+var ErrUnknownChainProvider = errors.New("unknown chain provider")
+
 func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this shouldn't happen...
 	if l.cancel != nil {
@@ -63,10 +67,6 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 	l.ctx, l.cancel = context.WithCancel(context.Background())
 
 	conf := l.confWatcher.Get()
-
-	if flagProvided("--no-chain") {
-		conf.Blockchain.ChainProvider = "noop"
-	}
 
 	// reload logger with the setup from configuration
 	l.Log = logging.NewLoggerFromConfig(conf.Logging)
@@ -100,9 +100,11 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 	l.stats = stats.New(l.Log, l.conf.Stats, l.Version, l.VersionHash)
 
-	l.ethClient, err = ethclient.Dial(l.ctx, l.conf.NodeWallet.ETH.Address)
-	if err != nil {
-		return fmt.Errorf("could not instantiate ethereum client: %w", err)
+	if conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
+		l.ethClient, err = ethclient.Dial(l.ctx, l.conf.NodeWallet.ETH.Address)
+		if err != nil {
+			return fmt.Errorf("could not instantiate ethereum client: %w", err)
+		}
 	}
 
 	l.nodeWallets, err = nodewallets.GetNodeWallets(l.conf.NodeWallet, l.vegaPaths, l.nodeWalletPassphrase)
@@ -133,7 +135,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err err
 	}
 
 	for k, v := range state {
-		err := l.loadAsset(k, v)
+		err := l.loadAsset(ctx, k, v)
 		if err != nil {
 			return err
 		}
@@ -142,7 +144,7 @@ func (l *NodeCommand) UponGenesis(ctx context.Context, rawstate []byte) (err err
 	return nil
 }
 
-func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
+func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDetails) error {
 	aid, err := l.assets.NewAsset(id, types.AssetDetailsFromProto(v))
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
@@ -175,7 +177,7 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	}
 
 	assetD := asset.Type()
-	if err := l.collateral.EnableAsset(context.Background(), *assetD); err != nil {
+	if err := l.collateral.EnableAsset(ctx, *assetD); err != nil {
 		return fmt.Errorf("unable to enable asset in collateral: %v", err)
 	}
 
@@ -185,7 +187,54 @@ func (l *NodeCommand) loadAsset(id string, v *proto.AssetDetails) error {
 	return nil
 }
 
-func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Commander) (*processor.App, error) {
+func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.Server, error) {
+	var abciApp tmtypes.Application
+	tmCfg := l.conf.Blockchain.Tendermint
+	if path := tmCfg.ABCIRecordDir; path != "" {
+		rec, err := recorder.NewRecord(path, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		abciApp = recorder.NewApp(app.Abci(), rec)
+	} else {
+		abciApp = app.Abci()
+	}
+
+	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
+	if err := srv.Start(); err != nil {
+		return nil, err
+	}
+
+	if path := tmCfg.ABCIReplayFile; path != "" {
+		rec, err := recorder.NewReplay(path, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		go func() {
+			if err := rec.Replay(abciApp); err != nil {
+				log.Fatalf("replay: %v", err)
+			}
+		}()
+	}
+
+	return srv, nil
+}
+
+func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallets.Commander) (*processor.App, error) {
 	app := processor.NewApp(
 		l.Log,
 		l.vegaPaths,
@@ -216,60 +265,36 @@ func (l *NodeCommand) startABCI(ctx context.Context, commander *nodewallets.Comm
 		l.checkpoint,
 		l.spam,
 		l.stakingAccounts,
+		l.rewards,
 		l.snapshot,
+		l.Version,
 	)
 
-	var abciApp tmtypes.Application
-	tmCfg := l.conf.Blockchain.Tendermint
-	if path := tmCfg.ABCIRecordDir; path != "" {
-		rec, err := recorder.NewRecord(path, afero.NewOsFs())
+	switch l.conf.Blockchain.ChainProvider {
+	case blockchain.ProviderTendermint:
+		srv, err := l.startABCI(ctx, app)
+		l.blockchainServer = blockchain.NewServer(srv)
 		if err != nil {
 			return nil, err
 		}
 
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
-
-		abciApp = recorder.NewApp(app.Abci(), rec)
-	} else {
-		abciApp = app.Abci()
-	}
-
-	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
-	if err := srv.Start(); err != nil {
-		return nil, err
-	}
-	l.abciServer = srv
-
-	if path := tmCfg.ABCIReplayFile; path != "" {
-		rec, err := recorder.NewReplay(path, afero.NewOsFs())
+		a, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
 		if err != nil {
 			return nil, err
 		}
+		l.blockchainClient = blockchain.NewClient(a)
+	case blockchain.ProviderNullChain:
+		abciApp := app.Abci()
+		n := nullchain.NewClient(l.Log, l.conf.Blockchain.Null, abciApp)
 
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
-
-		go func() {
-			if err := rec.Replay(abciApp); err != nil {
-				log.Fatalf("replay: %v", err)
-			}
-		}()
+		// nullchain acts as both the client and the server because its does everything
+		l.blockchainServer = blockchain.NewServer(n)
+		l.blockchainClient = blockchain.NewClient(n)
+	default:
+		return nil, ErrUnknownChainProvider
 	}
 
-	abciClt, err := abci.NewClient(l.conf.Blockchain.Tendermint.ClientAddr)
-	if err != nil {
-		return nil, err
-	}
-	l.blockchainClient = blockchain.NewClient(abciClt)
 	commander.SetChain(l.blockchainClient)
-
 	return app, nil
 }
 
@@ -327,19 +352,29 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
-
-	l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
-
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
-	l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
+
+	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
+		stakingLoop := nullchain.NewStakingLoop(l.collateral, l.assets)
+		l.governance = governance.NewEngine(l.Log, l.conf.Governance, stakingLoop, l.broker, l.assets, l.witness, l.netParams, now)
+		l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, stakingLoop, l.epochService, l.timeService)
+	} else {
+		l.governance = governance.NewEngine(l.Log, l.conf.Governance, l.stakingAccounts, l.broker, l.assets, l.witness, l.netParams, now)
+		l.delegation = delegation.New(l.Log, delegation.NewDefaultConfig(), l.broker, l.topology, l.stakingAccounts, l.epochService, l.timeService)
+	}
+
 	l.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.DelegationMinAmount,
 			Watcher: l.delegation.OnMinAmountChanged,
 		})
 
+	// setup rewards engine
+	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
+
 	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams, l.delegation, l.epochService)
+	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams, l.delegation, l.epochService, l.rewards)
 	if err != nil {
 		panic(err)
 	}
@@ -368,17 +403,17 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
-	// @TODO register StateProviders with snapshot engine:
+
+	// notify delegation, rewards, and accounting on changes in the validator pub key
+	l.topology.NotifyOnKeyChange(l.delegation.ValidatorKeyChanged, l.stakingAccounts.ValidatorKeyChanged, l.rewards.ValidatorKeyChanged, l.governance.ValidatorKeyChanged)
+
 	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
 		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd, l.executionEngine)
 
 	// now instantiate the blockchain layer
-	if l.app, err = l.startABCI(l.ctx, commander); err != nil {
+	if l.app, err = l.startBlockchain(l.ctx, commander); err != nil {
 		return err
 	}
-
-	// setup rewards engine
-	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
 
 	// setup config reloads for all engines / services /etc
 	l.setupConfigWatchers()
@@ -393,6 +428,7 @@ func (l *NodeCommand) setupNetParameters() error {
 	// now we are going to setup some network parameters which can be done
 	// through runtime checks
 	// e.g: changing the governance asset require the Assets and Collateral engines, so we can ensure any changes there are made for a valid asset
+
 	if err := l.netParams.AddRules(
 		netparams.ParamStringRules(
 			netparams.RewardAsset,
@@ -509,16 +545,12 @@ func (l *NodeCommand) setupNetParameters() error {
 			Watcher: l.rewards.UpdateCompetitionLevelForStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
-			Watcher: l.delegation.OnCompLevelChanged,
-		},
-		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardsMinValidators,
 			Watcher: l.rewards.UpdateMinValidatorsStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardsMinValidators,
-			Watcher: l.delegation.OnMinValidatorsChanged,
+			Param:   netparams.StakingAndDelegationRewardOptimalStakeMultiplier,
+			Watcher: l.rewards.UpdateOptimalStakeMultiplierStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
@@ -556,6 +588,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.SpamProtectionMinTokensForDelegation,
 			Watcher: l.spam.OnMinTokensForDelegationChanged,
 		},
+		netparams.WatchParam{
+			Param:   netparams.SnapshotIntervalLength,
+			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
+		},
 	)
 }
 
@@ -564,7 +600,7 @@ func (l *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { l.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { l.notary.ReloadConf(cfg.Notary) },
 		func(cfg config.Config) { l.evtfwd.ReloadConf(cfg.EvtForward) },
-		func(cfg config.Config) { l.abciServer.ReloadConf(cfg.Blockchain) },
+		func(cfg config.Config) { l.blockchainServer.ReloadConf(cfg.Blockchain) },
 		func(cfg config.Config) { l.topology.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.witness.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { l.assets.ReloadConf(cfg.Assets) },

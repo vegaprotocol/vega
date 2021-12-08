@@ -34,6 +34,7 @@ func (o OracleData) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      o.eventID(),
 		Block:   o.TraceID(),
+		ChainId: o.ChainID(),
 		Type:    o.et.ToProto(),
 		Event: &eventspb.BusEvent_OracleData{
 			OracleData: &spec,

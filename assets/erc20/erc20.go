@@ -210,15 +210,13 @@ func (b *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex 
 
 func (b *ERC20) SignWithdrawal(
 	amount *num.Uint,
-	expiry int64,
 	ethPartyAddress string,
 	withdrawRef *big.Int,
 ) (msg []byte, sig []byte, err error) {
 	nonce, _ := num.UintFromBig(withdrawRef)
 	bridgeAddress := b.ethClient.BridgeAddress().Hex()
 	bundle, err := bridges.NewERC20Logic(b.wallet, bridgeAddress).
-		WithdrawAsset(b.address, amount, ethPartyAddress,
-			time.Unix(expiry, 0), nonce)
+		WithdrawAsset(b.address, amount, ethPartyAddress, nonce)
 	if err != nil {
 		return nil, nil, err
 	}

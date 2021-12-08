@@ -331,6 +331,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	// Debug steps
+	s.Step(`^debug accounts$`, func() error {
+		steps.DebugAccounts(execsetup.broker, execsetup.log)
+		return nil
+	})
 	s.Step(`^debug transfers$`, func() error {
 		steps.DebugTransfers(execsetup.broker, execsetup.log)
 		return nil
@@ -364,15 +368,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	// Event steps
-	s.Step(`^clear order events by reference:$`, func(table *godog.Table) error {
-		return steps.ClearOrdersByReference(execsetup.broker, table)
-	})
-	s.Step(`^clear transfer events$`, func() error {
-		steps.ClearTransferEvents(execsetup.broker)
+	s.Step(`^clear all events$`, func() error {
+		steps.ClearAllEvents(execsetup.broker)
 		return nil
 	})
-	s.Step(`^clear order events$`, func() error {
-		steps.ClearOrderEvents(execsetup.broker)
-		return nil
+	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
+		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
+	})
+	s.Step(`^a total of "([0-9]+)" events should be emitted"$`, func(eventCounter int) error {
+		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
 	})
 }

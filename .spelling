@@ -18,6 +18,7 @@ Buf
 CGO
 checkpointing
 CI
+cleanup
 Cleanup
 clef
 codegen
@@ -25,6 +26,8 @@ cyclomatic
 datestamps
 datetime
 denylist
+delegator
+Devnet
 dlv
 DoD
 DoR
@@ -91,6 +94,7 @@ uint256
 uint64
 undelegate
 unexported
+unnominated
 unparked
 Unstaking
 vega
@@ -98,3 +102,4 @@ vegawallet
 whitepaper
 XDG
 xor
+

@@ -44,6 +44,7 @@ func (vd ValidatorScore) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      vd.eventID(),
 		Block:   vd.TraceID(),
+		ChainId: vd.ChainID(),
 		Type:    vd.et.ToProto(),
 		Event: &eventspb.BusEvent_ValidatorScore{
 			ValidatorScore: &p,

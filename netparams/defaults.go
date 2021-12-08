@@ -75,6 +75,14 @@ func defaultNetParams() map[string]value {
 		GovernanceProposalUpdateNetParamMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
 		GovernanceProposalUpdateNetParamMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
 
+		// governance Freeform proposal
+		GovernanceProposalFreeformMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
+		GovernanceProposalFreeformMaxClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("8760h0m0s"),
+		GovernanceProposalFreeformRequiredParticipation: NewFloat(FloatGTE(0), FloatLTE(1)).Mutable(true).MustUpdate("0.00001"),
+		GovernanceProposalFreeformRequiredMajority:      NewFloat(FloatGTE(0.5), FloatLTE(1)).Mutable(true).MustUpdate("0.66"),
+		GovernanceProposalFreeformMinProposerBalance:    NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+		GovernanceProposalFreeformMinVoterBalance:       NewUint(UintGTE(num.Zero())).Mutable(true).MustUpdate("0"),
+
 		// Delegation default params
 		DelegationMinAmount: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
 
@@ -87,6 +95,7 @@ func defaultNetParams() map[string]value {
 		StakingAndDelegationRewardCompetitionLevel:        NewFloat(FloatGT(1), FloatLTE(1000)).Mutable(true).MustUpdate("1.1"),
 		StakingAndDelegationRewardMaxPayoutPerEpoch:       NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("7000000000000000000000"),
 		StakingAndDelegationRewardsMinValidators:          NewInt(IntGTE(1)).Mutable(true).MustUpdate("5"),
+		StakingAndDelegationRewardOptimalStakeMultiplier:  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("3.0"),
 
 		// spam protection policies
 		SpamProtectionMaxVotes:               NewInt(IntGTE(0)).Mutable(true).MustUpdate("3"),
@@ -114,5 +123,7 @@ func defaultNetParams() map[string]value {
 		NetworkCheckpointMarketFreezeDate:              NewTime().Mutable(true).MustUpdate("never"),
 		NetworkCheckpointNetworkEOLDate:                NewTime().Mutable(true).MustUpdate("never"),
 		NetworkCheckpointTimeElapsedBetweenCheckpoints: NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m"),
+		// take a snapshot every N blocks, default to every block for now (debug)
+		SnapshotIntervalLength: NewInt(IntGTE(0)).Mutable(true).MustUpdate("1"),
 	}
 }

@@ -3,6 +3,7 @@ package processor
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -59,6 +60,7 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
+	Info() ([]byte, int64)
 	List() ([]*types.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
 	RejectSnapshot() error
@@ -67,6 +69,7 @@ type Snapshot interface {
 	ApplySnapshot(ctx context.Context) error
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
 	AddProviders(provs ...types.StateProvider)
+	Snapshot(ctx context.Context) ([]byte, error)
 }
 
 type App struct {
@@ -76,8 +79,10 @@ type App struct {
 	txTotals          []uint64
 	txSizes           []int
 	cBlock            string
+	chainCtx          context.Context // use this to have access to chain ID
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
+	version           string
 
 	vegaPaths paths.Paths
 	cfg       Config
@@ -102,6 +107,7 @@ type App struct {
 	netp            NetworkParameters
 	oracles         *Oracle
 	delegation      DelegationEngine
+	rewards         RewardEngine
 	limits          Limits
 	stake           StakeVerifier
 	stakingAccounts StakingAccounts
@@ -140,7 +146,9 @@ func NewApp(
 	checkpoint Checkpoint,
 	spam SpamEngine,
 	stakingAccounts StakingAccounts,
+	rewards RewardEngine,
 	snapshot Snapshot,
+	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
@@ -179,7 +187,9 @@ func NewApp(
 		spam:            spam,
 		stakingAccounts: stakingAccounts,
 		epoch:           epoch,
+		rewards:         rewards,
 		snapshot:        snapshot,
+		version:         version,
 	}
 
 	// register replay protection if needed:
@@ -191,12 +201,14 @@ func NewApp(
 	app.abci.OnCommit = app.OnCommit
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
+	app.abci.OnInfo = app.Info
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
-		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData)
+		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
+		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.SubmitOrderCommand,
@@ -225,7 +237,9 @@ func NewApp(
 		HandleDeliverTx(txn.UndelegateCommand,
 			app.SendEventOnError(app.DeliverUndelegate)).
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
-			app.SendEventOnError(app.DeliverReloadCheckpoint))
+			app.SendEventOnError(app.DeliverReloadCheckpoint)).
+		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
+			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -249,6 +263,17 @@ func (app *App) RequireValidatorPubKeyW(
 ) func(context.Context, abci.Tx) error {
 	return func(ctx context.Context, tx abci.Tx) error {
 		if err := app.RequireValidatorPubKey(ctx, tx); err != nil {
+			return err
+		}
+		return f(ctx, tx)
+	}
+}
+
+func (app *App) RequireValidatorMasterPubKeyW(
+	f func(context.Context, abci.Tx) error,
+) func(context.Context, abci.Tx) error {
+	return func(ctx context.Context, tx abci.Tx) error {
+		if err := app.RequireValidatorMasterPubKey(ctx, tx); err != nil {
 			return err
 		}
 		return f(ctx, tx)
@@ -288,6 +313,16 @@ func (app *App) Abci() *abci.App {
 func (app *App) cancel() {
 	if fn := app.cancelFn; fn != nil {
 		fn()
+	}
+}
+
+func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
+	hash, height := app.snapshot.Info()
+	return tmtypes.ResponseInfo{
+		AppVersion:       0, // application protocol version TBD.
+		Version:          app.version,
+		LastBlockHeight:  height,
+		LastBlockAppHash: hash,
 	}
 }
 
@@ -389,7 +424,8 @@ func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSn
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
-	ctx := vgcontext.WithBlockHeight(context.Background(), 0)
+	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
+	ctx := vgcontext.WithBlockHeight(app.chainCtx, 0)
 	ctx = vgcontext.WithTraceID(ctx, hash)
 	app.blockCtx = ctx
 
@@ -424,14 +460,34 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 	if app.spam != nil {
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
-	return
+
+	// check if we need to update the voting power of the validators
+	if validatorUpdates := app.rewards.EndOfBlock(req.Height); validatorUpdates != nil {
+		vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
+		for _, v := range validatorUpdates {
+			// using the default for key type which is ed25519 which seems fine for now because all validators in genesis use this key type
+			// TODO use the proper key type of the validators
+			pubkey, err := base64.StdEncoding.DecodeString(v.TmPubKey)
+			if err != nil {
+				continue
+			}
+			update := tmtypes.UpdateValidator(pubkey, v.VotingPower, "")
+			vUpdates = append(vUpdates, update)
+			app.log.Info("Updated voting power of validator", logging.String("tmKey", v.TmPubKey), logging.Int64("votingPower", v.VotingPower))
+		}
+
+		resp = tmtypes.ResponseEndBlock{
+			ValidatorUpdates: vUpdates,
+		}
+	}
+	return ctx, resp
 }
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
-	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(context.Background(), hash), req.Header.Height)
+	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
 	now := req.Header.Time
@@ -458,6 +514,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
+	app.top.BeginBlock(ctx, uint64(req.Header.Height))
+
 	return ctx, resp
 }
 
@@ -465,10 +523,18 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
-	resp.Data = app.exec.Hash()
-	resp.Data = append(resp.Data, app.delegation.Hash()...)
-	resp.Data = append(resp.Data, app.gov.Hash()...)
-	resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
+	if err != nil {
+		app.log.Panic("Failed to create snapshot",
+			logging.Error(err))
+	}
+	resp.Data = snapHash
+	if len(snapHash) == 0 {
+		resp.Data = app.exec.Hash()
+		resp.Data = append(resp.Data, app.delegation.Hash()...)
+		resp.Data = append(resp.Data, app.gov.Hash()...)
+		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+	}
 
 	// Checkpoint can be nil if it wasn't time to create a checkpoint
 	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
@@ -602,7 +668,9 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 	if !app.limits.BootstrapFinished() {
 		// only validators can send transaction at this point.
 		party := tx.Party()
-		if !app.top.IsValidatorVegaPubKey(party) {
+		// validator can be identified as with Vega public key with IsValidatorVegaPubKey function
+		// or with Vega master publick key with IsValidatorNodeID function.
+		if !(app.top.IsValidatorVegaPubKey(party) || app.top.IsValidatorNodeID(party)) {
 			return ErrNoTransactionAllowedDuringBootstrap
 		}
 		cmd := tx.Command()
@@ -688,6 +756,13 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 func (app *App) RequireValidatorPubKey(ctx context.Context, tx abci.Tx) error {
 	if !app.top.IsValidatorVegaPubKey(tx.PubKeyHex()) {
 		return ErrNodeSignatureFromNonValidator
+	}
+	return nil
+}
+
+func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) error {
+	if !app.top.IsValidatorNodeID(tx.PubKeyHex()) {
+		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
 }
@@ -996,6 +1071,8 @@ func (app *App) onTick(ctx context.Context, t time.Time) {
 			app.log.Error("update market enactment is not implemented")
 		case toEnact.IsUpdateNetworkParameter():
 			app.enactNetworkParameterUpdate(ctx, prop, toEnact.UpdateNetworkParameter())
+		case toEnact.IsFreeform():
+			app.enactFreeform(ctx, prop)
 		default:
 			prop.State = types.ProposalStateFailed
 			app.log.Error("unknown proposal cannot be enacted", logging.ProposalID(prop.ID))
@@ -1056,6 +1133,11 @@ func (app *App) enactMarket(_ context.Context, prop *types.Proposal) {
 	prop.State = types.ProposalStateEnacted
 
 	// TODO: add checks for end of auction in here
+}
+
+func (app *App) enactFreeform(_ context.Context, prop *types.Proposal) {
+	// There is nothing to enact in a freeform proposal so we just set the state
+	prop.State = types.ProposalStateEnacted
 }
 
 func (app *App) enactNetworkParameterUpdate(ctx context.Context, prop *types.Proposal, np *types.NetworkParameter) {
@@ -1151,8 +1233,14 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err er
 	if err != nil {
 		app.log.Panic("Failed to get blockheight from checkpoint", logging.Error(err))
 	}
-	// ensure block height is set
+	// ensure block height and chain id are set
+	cid, err := vgcontext.ChainIDFromContext(app.chainCtx)
+	if err != nil {
+		app.log.Panic("Failed to get chain id", logging.Error(err))
+	}
+
 	ctx = vgcontext.WithBlockHeight(ctx, bh)
+	ctx = vgcontext.WithChainID(ctx, cid)
 	app.blockCtx = ctx
 	err = app.checkpoint.Load(ctx, cpt)
 	if err != nil && err != types.ErrCheckpointStateInvalid && err != types.ErrCheckpointHashIncorrect && !errors.Is(err, checkpoint.ErrNoCheckpointExpectedToBeRestored) && !errors.Is(err, checkpoint.ErrIncompatibleHashes) {
@@ -1165,4 +1253,24 @@ func (app *App) DeliverReloadCheckpoint(ctx context.Context, tx abci.Tx) (err er
 	// @TODO if the snapshot hash was invalid, or its payload incorrect, the data was potentially tampered with
 	// emit an error event perhaps, log, etc...?
 	return err
+}
+
+func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) error {
+	if app.reloadCP {
+		app.log.Debug("Skipping transaction while waiting for checkpoint restore")
+		return nil
+	}
+	kr := &commandspb.KeyRotateSubmission{}
+	if err := tx.Unmarshal(kr); err != nil {
+		return err
+	}
+
+	currentBlockHeight, _ := vgcontext.BlockHeightFromContext(ctx)
+
+	return app.top.AddKeyRotate(
+		ctx,
+		tx.PubKeyHex(),
+		uint64(currentBlockHeight),
+		kr,
+	)
 }

@@ -66,12 +66,15 @@ type Engine struct {
 	keyNoNS    map[string]string // full key => key used by provider
 	hashes     map[string][]byte
 	versions   []int64
+	interval   int64
+	current    int64
 
-	providers   map[string]types.StateProvider
-	providersNS map[types.SnapshotNamespace][]types.StateProvider
-	providerTS  map[string]StateProviderT
-	pollCtx     context.Context
-	pollCfunc   context.CancelFunc
+	providers    map[string]types.StateProvider
+	restoreProvs []types.PostRestore
+	providersNS  map[types.SnapshotNamespace][]types.StateProvider
+	providerTS   map[string]StateProviderT
+	pollCtx      context.Context
+	pollCfunc    context.CancelFunc
 
 	last          *iavl.ImmutableTree
 	hash          []byte
@@ -114,6 +117,11 @@ var nodeOrder = []types.SnapshotNamespace{
 
 // New returns a new snapshot engine.
 func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
+	// default to min 1 version, just so we don't have to account for negative cap or nil slice.
+	// A single version kept in memory is pretty harmless.
+	if conf.Versions < 1 {
+		conf.Versions = 1
+	}
 	log = log.Named(namedLogger)
 	dbConn, err := getDB(conf, vegapath)
 	if err != nil {
@@ -130,7 +138,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		AppState: &types.AppState{},
 	}
 	app := appPL.Namespace()
-	return &Engine{
+	eng := &Engine{
 		Config:     conf,
 		ctx:        sctx,
 		cfunc:      cfunc,
@@ -155,7 +163,19 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		versionHeight: map[uint64]int64{},
 		wrap:          appPL,
 		app:           appPL.AppState,
-	}, nil
+		interval:      1, // default to every block
+		current:       1,
+	}
+	if conf.StartHeight == 0 {
+		return eng, nil
+	}
+	if err := eng.loadHeight(ctx, conf.StartHeight); err != nil {
+		return nil, err
+	}
+	eng.log.Debug("Loaded snapshot",
+		logging.Int64("loaded height", conf.StartHeight),
+	)
+	return eng, nil
 }
 
 func (e *Engine) ReloadConfig(cfg Config) {
@@ -196,13 +216,65 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return trees, nil
 }
 
-func (e *Engine) LoadFromStore(ctx context.Context) error {
+func (e *Engine) loadHeight(ctx context.Context, h int64) error {
+	if h < 0 {
+		return e.LoadLast(ctx)
+	}
+	height := uint64(h)
+	versions := e.avl.AvailableVersions()
+	// descending order, because that makes most sense
+	var last, first uint64
+	for i := len(versions) - 1; i > -1; i-- {
+		version := int64(versions[i])
+		if _, err := e.avl.LoadVersion(version); err != nil {
+			return err
+		}
+		app, err := types.AppStateFromTree(e.avl.ImmutableTree)
+		if err != nil {
+			e.log.Error("Failed to get app state data from snapshot",
+				logging.Error(err),
+				logging.Int64("snapshot-version", version),
+			)
+			continue
+		}
+		if app.AppState.Height == height {
+			e.version = version
+			e.last = e.avl.ImmutableTree
+			return e.load(ctx)
+		}
+		// we've gone past the specified height, we're not going to find the snapshot
+		// log and error
+		if app.AppState.Height < height {
+			e.log.Error("Unable to find a snapshot for the specified height",
+				logging.Uint64("snapshot-height", height),
+				logging.Uint64("max-height", first),
+			)
+			return types.ErrNoSnapshot
+		}
+		last = app.AppState.Height
+		if first == 0 {
+			first = last
+		}
+	}
+	e.log.Error("Specified height too low",
+		logging.Uint64("specified-height", height),
+		logging.Uint64("maximum-height", first),
+		logging.Uint64("minimum-height", last),
+	)
+	return types.ErrNoSnapshot
+}
+
+func (e *Engine) LoadLast(ctx context.Context) error {
 	version, err := e.avl.Load()
 	if err != nil {
 		return err
 	}
 	e.version = version
 	e.last = e.avl.ImmutableTree
+	return e.load(ctx)
+}
+
+func (e *Engine) load(ctx context.Context) error {
 	snap, err := types.SnapshotFromTree(e.last)
 	if err != nil {
 		return err
@@ -278,6 +350,10 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	e.app = e.wrap.AppState
 	// set the context with the height + block
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
+	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
+	now := time.Unix(e.app.Time, 0)
+	// restore app state
+	e.time.SetTimeNow(ctx, now)
 
 	// now let's load the data in the correct order, skip app state, we've already handled that
 	for _, ns := range nodeOrder[1:] {
@@ -295,10 +371,11 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 			}
 		}
 	}
-	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
-	now := time.Unix(e.app.Time, 0)
-	// restore app state
-	e.time.SetTimeNow(ctx, now)
+	for _, pp := range e.restoreProvs {
+		if err := pp.OnStateLoaded(ctx); err != nil {
+			return err
+		}
+	}
 	// we're done, we can clear the snapshot state
 	e.snapshot = nil
 	// no need to save, return here
@@ -394,13 +471,30 @@ func (e *Engine) GetMissingChunks() []uint32 {
 	return e.snapshot.GetMissing()
 }
 
-func (e *Engine) Snapshot(ctx context.Context) ([]byte, error) {
+// Info simply returns the current snapshot hash
+// Can be used for the TM info call.
+func (e *Engine) Info() ([]byte, int64) {
+	return e.hash, int64(e.app.Height)
+}
+
+func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
+	e.current--
+	// no snapshot to be taken yet
+	if e.current > 0 {
+		return nil, nil
+	}
+	// recent counter
+	e.current = e.interval
 	defer metrics.StartSnapshot("all")()
 	// always iterate over slices, so loops are deterministic
 	updated := false
 	for _, ns := range e.namespaces {
 		u, err := e.update(ns)
 		if err != nil {
+			e.log.Error("Failed to update snapshot namespace",
+				logging.String("snapshot-namespace", ns.String()),
+				logging.Error(err),
+			)
 			return nil, err
 		}
 		if u {
@@ -445,6 +539,13 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 	e.hash = h
 	e.version = v
 	if len(e.versions) >= cap(e.versions) {
+		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
+			// this is not a fatal error, but still we should be paying attention.
+			e.log.Warn("Could not delete old version",
+				logging.Int64("old-version", e.versions[0]),
+				logging.Error(err),
+			)
+		}
 		// drop first version
 		copy(e.versions[0:], e.versions[1:])
 		// set the last value in the slice to the current version
@@ -553,6 +654,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 				e.providers[fullKey] = p
 				e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 			}
+			if pp, ok := p.(types.PostRestore); ok {
+				e.restoreProvs = append(e.restoreProvs, pp)
+			}
 			e.nsKeys[ns] = ks
 			continue
 		}
@@ -593,6 +697,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			e.providers[fullKey] = p
 			e.nsTreeKeys[ns] = append(e.nsTreeKeys[ns], []byte(fullKey))
 		}
+		if pp, ok := p.(types.PostRestore); ok {
+			e.restoreProvs = append(e.restoreProvs, pp)
+		}
 	}
 }
 
@@ -606,6 +713,14 @@ func (e *Engine) Close() error {
 		}
 	}
 	return e.db.Close()
+}
+
+func (e *Engine) OnSnapshotIntervalUpdate(ctx context.Context, interval int64) error {
+	e.interval = interval
+	if interval < e.current {
+		e.current = interval
+	}
+	return nil
 }
 
 func uniqueSubset(have, add []string) []string {

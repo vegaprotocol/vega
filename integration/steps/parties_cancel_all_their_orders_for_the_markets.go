@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/stubs"
 	"code.vegaprotocol.io/vega/types"
 
@@ -22,7 +23,12 @@ func PartiesCancelAllTheirOrdersForTheMarkets(
 
 		orders := broker.GetOrdersByPartyAndMarket(party, row.MarketID())
 
+		dedupOrders := map[string]vega.Order{}
 		for _, o := range orders {
+			dedupOrders[o.Reference] = o
+		}
+
+		for _, o := range dedupOrders {
 			cancel := types.OrderCancellation{
 				OrderId:  o.Id,
 				MarketId: o.MarketId,

@@ -37,7 +37,6 @@ Feature: Test LP orders
       | party           | market id | side | volume | price | status        |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
-    And clear order events
     Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
       | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    |

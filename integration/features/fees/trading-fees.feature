@@ -242,7 +242,6 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | trader3b | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 4      | 1002  | 2                | TYPE_LIMIT | TIF_GTC |
 
-    And debug orders
     Then the parties should have the following account balances:
       | party      | asset | market id | margin | general  |
       | trader3a    | ETH   | ETH/DEC21 | 480    | 9531 |
@@ -523,14 +522,10 @@ Scenario: Testing fees in continuous trading with insufficient balance in their 
       | party  | market id | maintenance | search | initial | release |
       | trader4 | ETH/DEC21 | 17820       | 19602  | 21384   | 24948   |
    
-    Then clear transfer events
- 
     When the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3  | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
-
-    Then debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account            | to account                       | market id | amount | asset |
@@ -588,8 +583,6 @@ Scenario: Testing fees to confirm fees are collected first and then margin
       | party   | market id | side | volume | price | resulting trades | type       | tif     | reference      |
       | trader3  | ETH/DEC21 | buy  | 1      | 1002  | 0                | TYPE_LIMIT | TIF_GTC | trader3-buy-1  |
       | trader4  | ETH/DEC21 | sell | 1      | 1002  | 1                | TYPE_LIMIT | TIF_GTC | trader4-sell-2 |
-
-    Then debug transfers
 
     And the following transfers should happen:
       | from    | to       | from account             | to account                       | market id | amount | asset |
@@ -675,7 +668,6 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
       | buyer   | price | size | seller  |
       | trader3 | 1002  | 1    | trader4 |
 
-     Then debug transfers
     And the following transfers should happen:
       | from    | to       | from account             | to account                       | market id | amount | asset |
       | trader4 | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 6      | ETH   |
@@ -1137,7 +1129,6 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 2 * 3006
     # maker_fee =  0 in auction
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 3006 = 3.006 = 4 (rounded up)
- Then debug transfers
 
     And the following transfers should happen:
       | from     | to       | from account            | to account                       | market id | amount | asset |
@@ -1240,8 +1231,6 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 2 * 900
     # maker_fee =  0 in auction
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 1800 = 1.8 = 2/2 = 1
-
-    Then debug transfers
 
     And the following transfers should happen:
       | from     | to       | from account            | to account                       | market id | amount | asset |
@@ -1349,8 +1338,6 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
     # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 2 * 2700
     # maker_fee =  0 in auction
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 2700 = 2.7 = 3/2 = 1.5 = 2 (rounded up)
-
-    Then debug transfers
 
     And the following transfers should happen:
       | from     | to       | from account            | to account                       | market id | amount | asset |
@@ -1552,7 +1539,6 @@ Scenario: WIP - Testing fees in continuous trading during position resolution wi
     # infrastructure_fee for party 3b = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 54000 = 108
     # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0
 
-  And debug transfers
   And the following transfers should happen:
       | from     | to       | from account             | to account                       | market id | amount | asset |
       | trader3a | market   | ACCOUNT_TYPE_GENERAL     | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 48     | ETH   |
@@ -1619,8 +1605,6 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | mark price | trading mode            | 
       | 1000       | TRADING_MODE_CONTINUOUS |  
 
-   And debug orders
-
     And the order book should have the following volumes for market "ETH/DEC21":
       | side | price | volume |
       | sell | 1080  | 1      |
@@ -1633,7 +1617,6 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
       
-     And debug orders
      Then the parties should have the following account balances:
       | party    | asset | market id | margin | general |
       | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |

@@ -20,7 +20,7 @@ func PartiesShouldReceiveTheFollowingReward(
 		row := rewardRow{row: r}
 
 		actualReward := num.Zero().String()
-		if reward, ok := rewards[row.Party()]; ok {
+		if reward, ok := rewards[stubs.AssetParty{Asset: row.Asset(), Party: row.Party()}]; ok {
 			actualReward = reward.Amount.String()
 		}
 
@@ -35,10 +35,10 @@ func errMismatchedReward(row rewardRow, actualReward string) error {
 	return formatDiff(
 		fmt.Sprintf("reward amount did not match for party(%s)", row.Party()),
 		map[string]string{
-			"delegation balance": row.Amount(),
+			"reward amount": row.Amount(),
 		},
 		map[string]string{
-			"delegation balance": actualReward,
+			"reward amount": actualReward,
 		},
 	)
 }

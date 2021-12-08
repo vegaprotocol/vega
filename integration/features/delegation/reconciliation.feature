@@ -14,7 +14,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.competitionLevel        |  1.1   |
       | reward.staking.delegation.maxPayoutPerEpoch       |  50000 |
       | reward.staking.delegation.minValidators           |  5     |
-
+      | reward.staking.delegation.optimalStakeMultiplier  |  5.0   |
 
     Given time is updated to "2021-08-26T00:00:00Z"
     Given the average block duration is "2"
@@ -302,15 +302,13 @@ Feature: Staking & Delegation
     | party3 |  node4   | 0      |  
     | party3 |  node5   | 0      |  
 
-    #this is where it gets interesting because the pending delegations for epoch 3 are untouched - but the balance for epoch 3 for node5 is adjusted
-    #due to the undelegation of the 100 for epoch2 due to the withdrawal
     Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party3 |  node1   | 0      | 
     | party3 |  node2   | 0      |       
     | party3 |  node3   | 0      |  
     | party3 |  node4   | 0      |  
-    | party3 |  node5   | 400    |  
+    | party3 |  node5   | 0      |  
 
     # the party deposits 500 again
     When the network moves ahead "5" blocks
@@ -330,7 +328,7 @@ Feature: Staking & Delegation
     | party3 |  node2   | 0      |       
     | party3 |  node3   | 0      |  
     | party3 |  node4   | 0      |  
-    | party3 |  node5   | 900    |  
+    | party3 |  node5   | 500    |  
   
     # when the epoch ends we enforce the stronger rules and allow only 500 to go through .
     When the network moves ahead "50" blocks

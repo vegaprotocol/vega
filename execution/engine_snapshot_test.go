@@ -17,9 +17,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func createEngine(t *testing.T) *execution.Engine {
+func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	log := logging.NewTestLogger()
@@ -36,17 +37,22 @@ func createEngine(t *testing.T) *execution.Engine {
 	oracleService := mocks.NewMockOracleEngine(ctrl)
 	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker)
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {
-	engine := createEngine(t)
+	engine, ctrl := createEngine(t)
 	assert.NotNil(t, engine)
+	defer ctrl.Finish()
+
+	keys := engine.Keys()
+	require.Equal(t, 1, len(keys))
+	key := keys[0]
 
 	// Check that the starting state is empty
-	bytes, providers, err := engine.GetState("")
+	bytes, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
-	assert.Empty(t, bytes)
+	assert.NotEmpty(t, bytes)
 	assert.Empty(t, providers)
 }
 
@@ -154,26 +160,46 @@ func getMarketConfig() *types.Market {
 	}
 }
 
+func TestEmptyExecEngineSnapshot(t *testing.T) {
+	engine, ctrl := createEngine(t)
+	assert.NotNil(t, engine)
+	defer ctrl.Finish()
+
+	keys := engine.Keys()
+	require.Equal(t, 1, len(keys))
+	key := keys[0]
+
+	bytes, providers, err := engine.GetState(key)
+	require.NoError(t, err)
+	require.Empty(t, providers)
+	require.NotNil(t, bytes)
+}
+
 func TestValidMarketSnapshot(t *testing.T) {
-	engine := createEngine(t)
+	engine, ctrl := createEngine(t)
+	defer ctrl.Finish()
 	assert.NotNil(t, engine)
 
 	marketConfig := getMarketConfig()
 	err := engine.SubmitMarket(context.TODO(), marketConfig)
 	assert.NoError(t, err)
 
+	keys := engine.Keys()
+	require.Equal(t, 1, len(keys))
+	key := keys[0]
 	// Take the snapshot and hash
-	bytes, providers, err := engine.GetState("ALL")
+	bytes, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 	assert.Len(t, providers, 4)
 
-	hash1, err := engine.GetHash("ALL")
+	hash1, err := engine.GetHash(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, hash1)
 
 	// Turn the bytes back into a payload and restore to a new engine
-	engine2 := createEngine(t)
+	engine2, ctrl := createEngine(t)
+	defer ctrl.Finish()
 	assert.NotNil(t, engine2)
 	snap := &snapshot.Payload{}
 	err = proto.Unmarshal(bytes, snap)
@@ -184,7 +210,7 @@ func TestValidMarketSnapshot(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Check the hashes are the same
-	hash2, err := engine2.GetHash("ALL")
+	hash2, err := engine2.GetHash(key)
 	assert.NoError(t, err)
 	assert.Equal(t, hash1, hash2)
 }

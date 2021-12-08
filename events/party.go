@@ -37,6 +37,7 @@ func (p Party) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      p.eventID(),
 		Block:   p.TraceID(),
+		ChainId: p.ChainID(),
 		Type:    p.et.ToProto(),
 		Event: &eventspb.BusEvent_Party{
 			Party: &p.p,

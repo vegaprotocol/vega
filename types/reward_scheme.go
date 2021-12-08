@@ -23,6 +23,7 @@ type RewardSchemeType int
 const (
 	RewardSchemeUndefined RewardSchemeType = iota
 	RewardSchemeStakingAndDelegation
+	RewardSchemeInfrastructureFee
 )
 
 // PayoutType - fractional or balanced.
@@ -51,7 +52,7 @@ type RewardScheme struct {
 	StartTime                 time.Time
 	EndTime                   *time.Time
 	PayoutType                PayoutType
-	PayoutFraction            float64
+	PayoutFraction            num.Decimal
 	MaxPayoutPerAssetPerParty map[string]*num.Uint
 	PayoutDelay               time.Duration
 	RewardPoolAccountIDs      []string
@@ -84,6 +85,17 @@ func (rsp RewardSchemeParam) GetUint() (*num.Uint, error) {
 	return nil, errors.New("mismatch between requested type and configured type " + rsp.Name)
 }
 
+func (rsp RewardSchemeParam) GetDecimal() (*num.Decimal, error) {
+	if rsp.Type == "float" {
+		res, err := num.DecimalFromString(rsp.Value)
+		if err != nil {
+			return nil, errors.New("mismatch between requested type and configured type " + rsp.Name)
+		}
+		return &res, nil
+	}
+	return nil, errors.New("mismatch between requested type and configured type " + rsp.Name)
+}
+
 // ErrRewardSchemeMisconfiguration is returned when trying to calculate the reward for a given account balance and the scheme has incompatible end time and payout type
 // this should never happen as the reward scheme needs to be validated prior to being added but just to be safe.
 var ErrRewardSchemeMisconfiguration = errors.New("payout type balanced is incompatible with having no end time")
@@ -101,7 +113,7 @@ func (rs *RewardScheme) GetReward(rewardPoolBalance *num.Uint, epoch Epoch) (*nu
 
 	var rewardBalance *num.Uint
 	if rs.PayoutType == PayoutFractional {
-		rewardBalance, _ = num.UintFromDecimal(num.NewDecimalFromFloat(rs.PayoutFraction).Mul(rewardPoolBalance.ToDecimal()))
+		rewardBalance, _ = num.UintFromDecimal(rs.PayoutFraction.Mul(rewardPoolBalance.ToDecimal()))
 	} else {
 		if rs.EndTime == nil {
 			return nil, ErrRewardSchemeMisconfiguration

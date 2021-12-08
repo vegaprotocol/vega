@@ -11,6 +11,10 @@ import (
 	"code.vegaprotocol.io/vega/events"
 )
 
+type AssetParty struct {
+	Asset, Party string
+}
+
 type BrokerStub struct {
 	mu   sync.Mutex
 	data map[events.Type][]events.Event
@@ -106,6 +110,16 @@ func (b *BrokerStub) Send(e events.Event) {
 	b.mu.Unlock()
 }
 
+func (b *BrokerStub) GetAllEvents() []events.Event {
+	b.mu.Lock()
+	evs := []events.Event{}
+	for _, d := range b.data {
+		evs = append(evs, d...)
+	}
+	b.mu.Unlock()
+	return evs
+}
+
 func (b *BrokerStub) GetBatch(t events.Type) []events.Event {
 	b.mu.Lock()
 	r := b.data[t]
@@ -145,20 +159,9 @@ func (b *BrokerStub) GetTransferResponses() []events.TransferResponse {
 	return ret
 }
 
-func (b *BrokerStub) ClearTransferEvents() {
-	t := events.TransferResponses
+func (b *BrokerStub) ClearAllEvents() {
 	b.mu.Lock()
-	r := b.data[t]
-	b.data[t] = make([]events.Event, 0, cap(r))
-	b.mu.Unlock()
-}
-
-func (b *BrokerStub) ClearOrderEvents() {
-	t := events.OrderEvent
-	b.mu.Lock()
-	r := b.data[t]
-	// reallocate new slice
-	b.data[t] = make([]events.Event, 0, cap(r))
+	b.data = map[events.Type][]events.Event{}
 	b.mu.Unlock()
 }
 
@@ -352,23 +355,23 @@ func (b *BrokerStub) GetDelegationBalance(epochSeq string) []types.Delegation {
 	return balances
 }
 
-func (b *BrokerStub) GetRewards(epochSeq string) map[string]events.RewardPayout {
+func (b *BrokerStub) GetRewards(epochSeq string) map[AssetParty]events.RewardPayout {
 	batch := b.GetBatch(events.RewardPayoutEvent)
 	if len(batch) == 0 {
 		return nil
 	}
 
-	rewards := map[string]events.RewardPayout{}
+	rewards := map[AssetParty]events.RewardPayout{}
 
 	for _, e := range batch {
 		switch et := e.(type) {
 		case events.RewardPayout:
 			if et.EpochSeq == epochSeq {
-				rewards[et.Party] = et
+				rewards[AssetParty{et.Asset, et.Party}] = et
 			}
 		case *events.RewardPayout:
 			if (*et).EpochSeq == epochSeq {
-				rewards[et.Party] = *et
+				rewards[AssetParty{et.Asset, et.Party}] = *et
 			}
 		}
 	}

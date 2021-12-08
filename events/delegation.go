@@ -40,6 +40,7 @@ func (db DelegationBalance) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      db.eventID(),
 		Block:   db.TraceID(),
+		ChainId: db.ChainID(),
 		Type:    db.et.ToProto(),
 		Event: &eventspb.BusEvent_DelegationBalance{
 			DelegationBalance: &p,
