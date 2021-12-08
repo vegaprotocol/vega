@@ -68,7 +68,7 @@ func main() {
 		parties := w.GetParties()
 		term := OracleTxn("trading.termination", "true")
 		err = w.SubmitTransaction(conn, parties[0], term)
-		settle := OrcaleTxn(strings.Join([]string{"prices", config.NormalAsset, "value"}, "."), "1000")
+		settle := OracleTxn(strings.Join([]string{"prices", config.NormalAsset, "value"}, "."), "1000")
 		err = w.SubmitTransaction(conn, parties[0], settle)
 		timefoward.MoveByDuration(5 * config.BlockDuration)
 
