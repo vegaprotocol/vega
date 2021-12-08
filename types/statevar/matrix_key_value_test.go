@@ -3,9 +3,9 @@ package statevar_test
 import (
 	"testing"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"code.vegaprotocol.io/vega/statevar"
+	"code.vegaprotocol.io/vega/types/statevar"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,6 +13,7 @@ func TestFloatMatrix(t *testing.T) {
 	t.Run("test equality of two float matrices", testFloatMatrixEquality)
 	t.Run("test two matrices are within tolerance of each other", testFloatMatrixWithinTol)
 	t.Run("test converion of float matrix to a decimal matrix", testFloatMatrixToDecimal)
+	t.Run("test conversion to proto", testMatrixToProto)
 }
 
 // testFloatVectorEquality tests that given the same key and equal/not equal value, equals function returns the correct value.
@@ -101,4 +102,29 @@ func testFloatMatrixToDecimal(t *testing.T) {
 	default:
 		t.Fail()
 	}
+}
+
+// testMatrixToProto tests conversion of matrix variable to proto
+func testMatrixToProto(t *testing.T) {
+	kvb1 := &statevar.KeyValueBundle{}
+	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
+		Key:       "matrix value",
+		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{-4.4, -3.3, -2.2, -1.1}}},
+		Tolerance: 0.1,
+	})
+	res := kvb1.ToProto()
+	require.Equal(t, 1, len(res))
+	require.Equal(t, "matrix value", res[0].Key)
+	require.Equal(t, 0.1, res[0].Tolerance)
+	switch v := res[0].Value.Value.(type) {
+	case *vega.StateVarValue_MatrixVal:
+		require.Equal(t, []float64{1.1, 2.2, 3.3, 4.4}, v.MatrixVal.Value[0].Value)
+		require.Equal(t, []float64{-4.4, -3.3, -2.2, -1.1}, v.MatrixVal.Value[1].Value)
+	default:
+		t.Fail()
+	}
+
+	kvb2 := statevar.KeyValueBundleFromProto(res)
+	require.Equal(t, kvb1, kvb2)
+
 }

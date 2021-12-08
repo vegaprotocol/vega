@@ -3,6 +3,7 @@ package statevar
 import (
 	"math"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -66,5 +67,22 @@ func (fv *FloatMatrix) ToDecimal() DecimalValue {
 
 	return &DecimalMatrixValue{
 		Value: rows,
+	}
+}
+
+//ToProto converts the state variable value to protobuf
+func (fv *FloatMatrix) ToProto() *vega.StateVarValue {
+	rows := make([]*vega.VectorValue, 0, len(fv.Val))
+	for _, fvi := range fv.Val {
+		rows = append(rows, &vega.VectorValue{
+			Value: fvi,
+		})
+	}
+	return &vega.StateVarValue{
+		Value: &vega.StateVarValue_MatrixVal{
+			MatrixVal: &vega.MatrixValue{
+				Value: rows,
+			},
+		},
 	}
 }

@@ -3,6 +3,7 @@ package statevar
 import (
 	"math"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -45,5 +46,16 @@ func (fv *FloatValue) withinTolerance(other *FloatValue, tolerance float64) bool
 func (fv *FloatValue) ToDecimal() DecimalValue {
 	return &DecimalScalarValue{
 		Value: num.DecimalFromFloat(fv.Val),
+	}
+}
+
+//ToProto converts the state variable value to protobuf
+func (fv *FloatValue) ToProto() *vega.StateVarValue {
+	return &vega.StateVarValue{
+		Value: &vega.StateVarValue_ScalarVal{
+			ScalarVal: &vega.ScalarValue{
+				Value: fv.Val,
+			},
+		},
 	}
 }

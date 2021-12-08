@@ -3,9 +3,9 @@ package statevar_test
 import (
 	"testing"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"code.vegaprotocol.io/vega/statevar"
+	"code.vegaprotocol.io/vega/types/statevar"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,6 +13,7 @@ func TestFloatVector(t *testing.T) {
 	t.Run("test equality of two float vectors", testFloatVectorEquality)
 	t.Run("test two vectors are within tolerance of each other", testFloatVectorWithinTol)
 	t.Run("test converion of float vector to a decimal vector", testFloatVectorToDecimal)
+	t.Run("test conversion to proto", testVectorToProto)
 }
 
 // testFloatVectorEquality tests that given the same key and equal/not equal value, equals function returns the correct value.
@@ -98,4 +99,27 @@ func testFloatVectorToDecimal(t *testing.T) {
 	default:
 		t.Fail()
 	}
+}
+
+// testVectorToProto tests conversion of vector variable to proto
+func testVectorToProto(t *testing.T) {
+	kvb1 := &statevar.KeyValueBundle{}
+	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
+		Key:       "vector value",
+		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
+		Tolerance: 0.1,
+	})
+	res := kvb1.ToProto()
+	require.Equal(t, 1, len(res))
+	require.Equal(t, "vector value", res[0].Key)
+	require.Equal(t, 0.1, res[0].Tolerance)
+	switch v := res[0].Value.Value.(type) {
+	case *vega.StateVarValue_VectorVal:
+		require.Equal(t, []float64{1.1, 2.2, 3.3, 4.4}, v.VectorVal.Value)
+	default:
+		t.Fail()
+	}
+
+	kvb2 := statevar.KeyValueBundleFromProto(res)
+	require.Equal(t, kvb1, kvb2)
 }

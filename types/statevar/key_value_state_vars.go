@@ -1,6 +1,7 @@
 package statevar
 
 import (
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
@@ -9,6 +10,7 @@ type value interface {
 	Equals(other value) bool
 	WithinTolerance(other value, tolerance float64) bool
 	ToDecimal() DecimalValue
+	ToProto() *vega.StateVarValue
 }
 
 // KeyValueBundle is a slice of key value and their expected tolerances.
@@ -25,6 +27,55 @@ func (kvb *KeyValueBundle) ToDecimal() *KeyValueResult {
 		res.KeyDecimalValue[kv.Key] = kv.Val.ToDecimal()
 	}
 	return res
+}
+
+func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
+	res := make([]*vega.KeyValueBundle, 0, len(kvb.KVT))
+	for _, kvt := range kvb.KVT {
+		res = append(res, &vega.KeyValueBundle{
+			Key:       kvt.Key,
+			Tolerance: kvt.Tolerance,
+			Value:     kvt.Val.ToProto(),
+		})
+	}
+	return res
+}
+
+func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) *KeyValueBundle {
+	KVT := make([]KeyValueTol, 0, len(protoKVT))
+	for _, pKVT := range protoKVT {
+		KVT = append(KVT, KeyValueTol{
+			Key:       pKVT.Key,
+			Tolerance: pKVT.Tolerance,
+			Val:       ValueFromProto(pKVT.Value),
+		})
+	}
+	return &KeyValueBundle{
+		KVT: KVT,
+	}
+}
+
+func ValueFromProto(val *vega.StateVarValue) value {
+	switch v := val.Value.(type) {
+	case *vega.StateVarValue_ScalarVal:
+		return &FloatValue{
+			Val: v.ScalarVal.Value,
+		}
+	case *vega.StateVarValue_VectorVal:
+		return &FloatVector{
+			Val: v.VectorVal.Value,
+		}
+	case *vega.StateVarValue_MatrixVal:
+		mat := [][]float64{}
+		for _, val := range v.MatrixVal.Value {
+			mat = append(mat, val.Value)
+		}
+		return &FloatMatrix{
+			Val: mat,
+		}
+	default:
+		return nil
+	}
 }
 
 // WithinTolerance returns true if the two bundles have the same keys, same tolerances and the values at the same index are with the tolerance of each other
