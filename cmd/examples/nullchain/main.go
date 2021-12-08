@@ -66,7 +66,7 @@ func main() {
 	if settleMarket {
 
 		parties := w.GetParties()
-		term := OrcaleTxn("trading.termination", "true")
+		term := OracleTxn("trading.termination", "true")
 		err = w.SubmitTransaction(conn, parties[0], term)
 		settle := OrcaleTxn(strings.Join([]string{"prices", config.NormalAsset, "value"}, "."), "1000")
 		err = w.SubmitTransaction(conn, parties[0], settle)
