@@ -9,6 +9,16 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+## 0.47.0
+*2021-11-24*
+
+
+### 🛠 Improvements
 - [4480](https://github.com/vegaprotocol/vega/pull/4439) - Update `CHANGELOG.md` since GH Action implemented
 - [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
 - [4456](https://github.com/vegaprotocol/vega/pull/4456) - Return 400 on bad mint amounts sent via the faucet
@@ -25,7 +35,6 @@
 
 
 ### 🐛 Fixes
-
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
 - [4418](https://github.com/vegaprotocol/vega/pull/4418) - Add some logging + height/version handling fixes
 - [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
