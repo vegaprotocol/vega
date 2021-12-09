@@ -1,8 +1,6 @@
 package statevar
 
 import (
-	"math"
-
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -23,11 +21,11 @@ func (fv *FloatVector) Equals(other value) bool {
 
 // equals returns true if the two vectors are equal.
 func (fv *FloatVector) equals(other *FloatVector) bool {
-	return fv.withinTolerance(other, 0)
+	return fv.withinTolerance(other, num.DecimalZero())
 }
 
 // WithinTolerance returns true if the other value is a vector and has the same shape and values in the same index are within the given tolerance of each other
-func (fv *FloatVector) WithinTolerance(other value, tolerance float64) bool {
+func (fv *FloatVector) WithinTolerance(other value, tolerance num.Decimal) bool {
 	switch v := other.(type) {
 	case *FloatVector:
 		return fv.withinTolerance(v, tolerance)
@@ -37,13 +35,13 @@ func (fv *FloatVector) WithinTolerance(other value, tolerance float64) bool {
 }
 
 // withinTolerance returns true if the two vectors have the same shape and values in the same index are within the given tolerance of each other
-func (fv *FloatVector) withinTolerance(other *FloatVector, tolerance float64) bool {
+func (fv *FloatVector) withinTolerance(other *FloatVector, tolerance num.Decimal) bool {
 	if len(fv.Val) != len(other.Val) {
 		return false
 	}
 	for i := range fv.Val {
 		// we probably don't need the tolerance on the tolerance check but for testing its useful
-		if math.Abs(fv.Val[i]-other.Val[i]) > tolerance {
+		if num.DecimalFromFloat(fv.Val[i]).Sub(num.DecimalFromFloat(other.Val[i])).Abs().GreaterThan(tolerance) {
 			return false
 		}
 	}

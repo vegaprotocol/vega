@@ -1,8 +1,6 @@
 package statevar
 
 import (
-	"math"
-
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -24,11 +22,11 @@ func (fv *FloatValue) Equals(other value) bool {
 
 // equals returns true if the two values are equal.
 func (fv *FloatValue) equals(other *FloatValue) bool {
-	return fv.withinTolerance(other, 0)
+	return fv.withinTolerance(other, num.DecimalZero())
 }
 
 // WithinTolerance returns true if the other value is a scalar value and is equal to this scalar value within the given tolerance.
-func (fv *FloatValue) WithinTolerance(other value, tolerance float64) bool {
+func (fv *FloatValue) WithinTolerance(other value, tolerance num.Decimal) bool {
 	switch v := other.(type) {
 	case *FloatValue:
 		return fv.withinTolerance(v, tolerance)
@@ -38,8 +36,8 @@ func (fv *FloatValue) WithinTolerance(other value, tolerance float64) bool {
 }
 
 // withinTolerance returns true if the two scalar values are equal within the given tolerance
-func (fv *FloatValue) withinTolerance(other *FloatValue, tolerance float64) bool {
-	return math.Abs(fv.Val-other.Val) <= tolerance
+func (fv *FloatValue) withinTolerance(other *FloatValue, tolerance num.Decimal) bool {
+	return num.DecimalFromFloat(fv.Val).Sub(num.DecimalFromFloat(other.Val)).Abs().LessThanOrEqual(tolerance)
 }
 
 // ToDecimal converts the float scalar to a decimal value

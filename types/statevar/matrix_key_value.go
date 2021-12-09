@@ -1,8 +1,6 @@
 package statevar
 
 import (
-	"math"
-
 	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -23,11 +21,11 @@ func (fv *FloatMatrix) Equals(other value) bool {
 
 // equals returns true if the two matrices are equal.
 func (fv *FloatMatrix) equals(other *FloatMatrix) bool {
-	return fv.withinTolerance(other, 0)
+	return fv.withinTolerance(other, num.DecimalZero())
 }
 
 // WithinTolerance returns true if the other value is a matrix and has the same shape and values in the same index are within the given tolerance of each other.
-func (fv *FloatMatrix) WithinTolerance(other value, tolerance float64) bool {
+func (fv *FloatMatrix) WithinTolerance(other value, tolerance num.Decimal) bool {
 	switch v := other.(type) {
 	case *FloatMatrix:
 		return fv.withinTolerance(v, tolerance)
@@ -37,7 +35,7 @@ func (fv *FloatMatrix) WithinTolerance(other value, tolerance float64) bool {
 }
 
 // withinTolerance retunrs true if the two matrices have the same shape and values in the same index are within tolerance of each other
-func (fv *FloatMatrix) withinTolerance(other *FloatMatrix, tolerance float64) bool {
+func (fv *FloatMatrix) withinTolerance(other *FloatMatrix, tolerance num.Decimal) bool {
 	if len(fv.Val) != len(other.Val) {
 		return false
 	}
@@ -46,7 +44,7 @@ func (fv *FloatMatrix) withinTolerance(other *FloatMatrix, tolerance float64) bo
 			return false
 		}
 		for j := range fv.Val[i] {
-			if math.Abs(fv.Val[i][j]-other.Val[i][j]) > tolerance {
+			if num.DecimalFromFloat(fv.Val[i][j]).Sub(num.DecimalFromFloat(other.Val[i][j])).Abs().GreaterThan(tolerance) {
 				return false
 			}
 		}

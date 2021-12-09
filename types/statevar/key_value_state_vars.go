@@ -8,7 +8,7 @@ import (
 // value is an interface for representing differnet types of floating point scalars vectors and matrices.
 type value interface {
 	Equals(other value) bool
-	WithinTolerance(other value, tolerance float64) bool
+	WithinTolerance(other value, tolerance num.Decimal) bool
 	ToDecimal() DecimalValue
 	ToProto() *vega.StateVarValue
 }
@@ -34,7 +34,7 @@ func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
 	for _, kvt := range kvb.KVT {
 		res = append(res, &vega.KeyValueBundle{
 			Key:       kvt.Key,
-			Tolerance: kvt.Tolerance,
+			Tolerance: kvt.Tolerance.String(),
 			Value:     kvt.Val.ToProto(),
 		})
 	}
@@ -44,9 +44,13 @@ func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
 func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) *KeyValueBundle {
 	KVT := make([]KeyValueTol, 0, len(protoKVT))
 	for _, pKVT := range protoKVT {
+		tol, err := num.DecimalFromString(pKVT.Tolerance)
+		if err != nil {
+			continue
+		}
 		KVT = append(KVT, KeyValueTol{
 			Key:       pKVT.Key,
-			Tolerance: pKVT.Tolerance,
+			Tolerance: tol,
 			Val:       ValueFromProto(pKVT.Value),
 		})
 	}
@@ -115,9 +119,9 @@ func (kvb *KeyValueBundle) Equals(other *KeyValueBundle) bool {
 }
 
 type KeyValueTol struct {
-	Key       string  // the name of the key
-	Val       value   // the floating point value (scalar, vector, matrix)
-	Tolerance float64 // the tolerance to use in comparison
+	Key       string      // the name of the key
+	Val       value       // the floating point value (scalar, vector, matrix)
+	Tolerance num.Decimal // the tolerance to use in comparison
 }
 
 // the result of a state variable is keyed by the name and the value is a decimal value (scalar/vector/matrix)
