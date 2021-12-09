@@ -39,10 +39,23 @@ func mint(asset, amount, party string) error {
 	return fmt.Errorf("%w: %s", ErrFaucet, string(data))
 }
 
-func FillAccounts(asset, amount string, parties []*Party) {
+func FillAccounts(asset, amount string, parties []*Party) error {
+	var err error
 	for _, party := range parties {
-		mint(asset, amount, party.pubkey)
-		MoveByDuration(config.BlockDuration)
+
+		err = mint(asset, amount, party.pubkey)
+		if err != nil {
+			return err
+		}
+		err = MoveByDuration(config.BlockDuration)
+		if err != nil {
+			return err
+		}
 	}
-	MoveByDuration(config.BlockDuration)
+	err = MoveByDuration(config.BlockDuration)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

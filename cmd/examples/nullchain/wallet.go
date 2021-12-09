@@ -22,35 +22,15 @@ type Wallet struct {
 	handler    *wallets.Handler
 	store      *storev1.Store
 	passphrase string
-	parties    []*Party
 }
 
 func NewWallet(root, passphrase string) *Wallet {
 	store, _ := storev1.InitialiseStore(root)
-	handler := wallets.NewHandler(store)
-	wallets, _ := handler.ListWallets()
-
-	parties := make([]*Party, 0)
-	for _, w := range wallets {
-		handler.LoginWallet(w, passphrase)
-		keys, _ := handler.ListPublicKeys(w)
-
-		for _, k := range keys {
-			parties = append(parties,
-				&Party{
-					wallet: w,
-					pubkey: k.Key(),
-				})
-			break
-		}
-		handler.LogoutWallet(w)
-	}
 
 	return &Wallet{
-		handler:    handler,
+		handler:    wallets.NewHandler(store),
 		store:      store,
 		passphrase: passphrase,
-		parties:    parties,
 	}
 }
 
@@ -100,10 +80,6 @@ func (w *Wallet) Login(wallet string) {
 
 func (w *Wallet) Logout(wallet string) {
 	w.handler.LogoutWallet(wallet)
-}
-
-func (w *Wallet) GetParties() []*Party {
-	return w.parties
 }
 
 func (w *Wallet) SubmitTransaction(conn *Connection, party *Party, txn *walletpb.SubmitTransactionRequest) error {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	config "code.vegaprotocol.io/vega/cmd/examples/nullchain/config"
+	"github.com/pkg/errors"
 
 	datanode "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
@@ -44,7 +45,7 @@ func (c *Connection) LastBlockHeight() (uint64, error) {
 	bhReq := &api.LastBlockHeightRequest{}
 	resp, err := c.core.LastBlockHeight(ctx, bhReq)
 	if err != nil {
-		return 0, err
+		return 0, errors.WithStack(err)
 	}
 	return resp.Height, nil
 }
@@ -56,7 +57,7 @@ func (c *Connection) VegaTime() (time.Time, error) {
 	gvtReq := &datanode.GetVegaTimeRequest{}
 	response, err := c.datanode.GetVegaTime(ctx, gvtReq)
 	if err != nil {
-		return time.Time{}, err
+		return time.Time{}, errors.WithStack(err)
 	}
 
 	t := time.Unix(0, response.Timestamp)
@@ -72,7 +73,7 @@ func (c *Connection) GetProposalsByParty(party *Party) ([]*vega.GovernanceData, 
 			PartyId: party.pubkey,
 		})
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return r.Data, nil
@@ -87,7 +88,7 @@ func (c *Connection) GetProposalByReference(ref string) (*vega.Proposal, error) 
 			Reference: ref,
 		})
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return r.Data.Proposal, nil
@@ -96,7 +97,7 @@ func (c *Connection) GetProposalByReference(ref string) (*vega.Proposal, error) 
 func (c *Connection) GetMarkets() ([]*vega.Market, error) {
 	markets, err := c.datanode.Markets(context.Background(), &datanode.MarketsRequest{})
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 
 	return markets.Markets, nil

@@ -1,7 +1,7 @@
 package nullchain
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	config "code.vegaprotocol.io/vega/cmd/examples/nullchain/config"
@@ -9,12 +9,10 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 )
 
-func CreateMarketAny(w *Wallet, conn *Connection, proposer *Party, voters ...*Party) (*vega.Market, error) {
-	block, _ := conn.LastBlockHeight()
-	fmt.Println("Starting blockHeight: ", block)
+var ErrMarketCreationFailed = errors.New("market creation failed")
 
+func CreateMarketAny(w *Wallet, conn *Connection, proposer *Party, voters ...*Party) (*vega.Market, error) {
 	now, _ := conn.VegaTime()
-	fmt.Printf("Proposing Market Vegatime: %s\n", now)
 	txn, reference := MarketProposalTxn(now, proposer.pubkey)
 	err := w.SubmitTransaction(conn, proposer, txn)
 	if err != nil {
@@ -48,6 +46,11 @@ func CreateMarketAny(w *Wallet, conn *Connection, proposer *Party, voters ...*Pa
 		return nil, err
 	}
 
+	if len(markets) == 0 {
+		return nil, ErrMarketCreationFailed
+	}
+
+	// Return the last market as that *should* be the newest one
 	return markets[len(markets)-1], nil
 }
 
@@ -64,5 +67,5 @@ func SettleMarket(w *Wallet, conn *Connection, oracle *Party) error {
 		return err
 	}
 	// Move time so that it is processed
-	return MoveByDuration(5 * config.BlockDuration)
+	return MoveByDuration(10 * config.BlockDuration)
 }

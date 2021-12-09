@@ -8,7 +8,7 @@ const (
 	GRCPAddress        = "localhost:3007"
 	GoveranceAsset     = "VOTE"
 	NormalAsset        = "XYZ"
-	WalletFolder       = "YOU_PATH_TO/vegahome/data/wallets"
+	WalletFolder       = "nullchain-wallet"
 	Passphrase         = "pin"
 	BlockDuration      = time.Second
 )
