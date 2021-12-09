@@ -1,8 +1,9 @@
-package timefoward
+package nullchain
 
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 	config "code.vegaprotocol.io/vega/cmd/examples/nullchain/config"
 )
 
+var ErrTimeForward = errors.New("time forward failed")
+
 func move(raw string) error {
 	values := map[string]string{"forward": raw}
 
@@ -18,16 +21,19 @@ func move(raw string) error {
 
 	r, err := http.Post(config.TimeforwardAddress, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
-		return err
+		return fmt.Errorf("time forward failed: %w", err)
 	}
+	defer r.Body.Close()
 
 	if r.StatusCode == http.StatusOK {
 		return nil
 	}
 
-	data, _ := ioutil.ReadAll(r.Body)
-	fmt.Println(string(data))
-	return err
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return fmt.Errorf("time forward failed: %w", err)
+	}
+	return fmt.Errorf("%w: %s", ErrTimeForward, string(data))
 }
 
 func MoveByDuration(d time.Duration) error {

@@ -1,4 +1,4 @@
-package main
+package nullchain
 
 import (
 	"context"
@@ -25,8 +25,6 @@ func NewConnection() (*Connection, error) {
 		return nil, err
 	}
 
-	_ = api.NewCoreServiceClient(conn)
-	_ = datanode.NewTradingDataServiceClient(conn)
 	return &Connection{
 		conn:     conn,
 		core:     api.NewCoreServiceClient(conn),
@@ -35,8 +33,8 @@ func NewConnection() (*Connection, error) {
 	}, nil
 }
 
-func (c *Connection) Close() {
-	c.conn.Close()
+func (c *Connection) Close() error {
+	return c.conn.Close()
 }
 
 func (c *Connection) LastBlockHeight() (uint64, error) {
@@ -65,7 +63,7 @@ func (c *Connection) VegaTime() (time.Time, error) {
 	return t, nil
 }
 
-func (c *Connection) GetProposalByParty(party *Party) (string, error) {
+func (c *Connection) GetProposalsByParty(party *Party) ([]*vega.GovernanceData, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 
@@ -74,19 +72,32 @@ func (c *Connection) GetProposalByParty(party *Party) (string, error) {
 			PartyId: party.pubkey,
 		})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// Just take first for now, this is just an example
-	return r.Data[0].Proposal.Id, nil
+	return r.Data, nil
 }
 
-func (c *Connection) GetMarket() (*vega.Market, error) {
+func (c *Connection) GetProposalByReference(ref string) (*vega.Proposal, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	r, err := c.datanode.GetProposalByReference(ctx,
+		&datanode.GetProposalByReferenceRequest{
+			Reference: ref,
+		})
+	if err != nil {
+		return nil, err
+	}
+
+	return r.Data.Proposal, nil
+}
+
+func (c *Connection) GetMarkets() ([]*vega.Market, error) {
 	markets, err := c.datanode.Markets(context.Background(), &datanode.MarketsRequest{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Return the newest for now, its just an example
-	return markets.Markets[len(markets.Markets)-1], nil
+	return markets.Markets, nil
 }

@@ -1,4 +1,4 @@
-package main
+package nullchain
 
 import (
 	"encoding/json"
@@ -9,9 +9,11 @@ import (
 	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
+	vgrand "code.vegaprotocol.io/shared/libs/rand"
+	"code.vegaprotocol.io/vega/cmd/examples/nullchain/config"
 )
 
-func MarketProposalTxn(now time.Time, oraclePubkey string) *walletpb.SubmitTransactionRequest {
+func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTransactionRequest, string) {
 	buys := []*vega.LiquidityOrder{
 		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1600, Proportion: 25},
 	}
@@ -19,11 +21,12 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) *walletpb.SubmitTrans
 		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1600, Proportion: 25},
 	}
 
-	// TODO not hardcode this
-	ref := "blahblah"
+	reference := "ref-" + vgrand.RandomStr(10)
+	asset := config.NormalAsset
+
 	cmd := &walletpb.SubmitTransactionRequest_ProposalSubmission{
 		ProposalSubmission: &v1.ProposalSubmission{
-			Reference: ref,
+			Reference: reference,
 			Terms: &vega.ProposalTerms{
 				ValidationTimestamp: now.Add(2 * time.Second).Unix(),
 				ClosingTimestamp:    now.Add(10 * time.Second).Unix(),
@@ -36,7 +39,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) *walletpb.SubmitTrans
 								Name: "NOV 2021 BTC vs USD future",
 								Product: &vega.InstrumentConfiguration_Future{
 									Future: &vega.FutureProduct{
-										SettlementAsset: "XYZ", // TODO not hardcode this
+										SettlementAsset: asset,
 										Maturity:        "2021-11-30T22:59:59Z",
 										QuoteName:       "BTCUSD",
 
@@ -45,7 +48,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) *walletpb.SubmitTrans
 											Filters: []*oraclesv1.Filter{
 												{
 													Key: &oraclesv1.PropertyKey{
-														Name: "prices.XYZ.value",
+														Name: "prices." + asset + ".value",
 														Type: oraclesv1.PropertyKey_TYPE_INTEGER,
 													},
 													Conditions: []*oraclesv1.Condition{},
@@ -65,7 +68,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) *walletpb.SubmitTrans
 											},
 										},
 										OracleSpecBinding: &vega.OracleSpecToFutureBinding{
-											SettlementPriceProperty:    "prices.XYZ.value",
+											SettlementPriceProperty:    "prices." + asset + ".value",
 											TradingTerminationProperty: "trading.termination",
 										},
 									},
@@ -102,7 +105,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) *walletpb.SubmitTrans
 
 	return &walletpb.SubmitTransactionRequest{
 		Command: cmd,
-	}
+	}, reference
 }
 
 func VoteTxn(proposalID string, vote vega.Vote_Value) *walletpb.SubmitTransactionRequest {
