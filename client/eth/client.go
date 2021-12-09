@@ -26,14 +26,13 @@ var (
 // ContractHashes map[contract addresses] -> sha3-256(contract bytecode).
 var ContractHashes = map[string]string{
 	// vega mainnet1 - eth mainnet
-	"0xcB84d72e61e383767C4DFEb2d8ff7f4FB89abc6e": "071ef7d545de2de23ecc5eb71a148eaeac7ccd40d9ccef302b3cd363ed580929", // VEGA token
 	"0x23d1bFE8fA50a167816fBD79D7932577c06011f4": "0d83655b7be5c60f6762723e29f20ce1ed6e0f4d4de0781c2a2332e83d65a11f", // vesting
 	"0x195064D33f09e0c42cF98E665D9506e0dC17de68": "889a39f8323d9fd1fd6bcc9a549fc4cf6a41b537af01d3f0523343398e12b5d7", // staking
 
 	// vega testnet1 - eth ropsten
-	"0xF0598Cd16FA3bf4c34052923cBE2D34028da0c69": "55e66d2955a8b1ab59bd1b14bc306e5eef6900d6fd3137da07e3d5a15f48dc21", // VEGA token
 	"0xfce2CC92203A266a9C8e67461ae5067c78f67235": "e91eb100c4cbecb6c404de873bf84457b5313da8e39fed231edc965812f12ae1", // staking
 	"0x0614188938f5C3bD8461D4B413A39eeC2C5f42D9": "885e507d590170eae2a3b52d56894e1486eb25f6c65ca92e6e37e952d4f75e33", // vesting
+
 }
 
 // ETHClient ...

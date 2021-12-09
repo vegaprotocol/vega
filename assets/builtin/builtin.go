@@ -37,10 +37,6 @@ func (b *Builtin) IsValid() bool {
 	return true
 }
 
-func (b *Builtin) OnGenesisValidate() error {
-	return nil
-}
-
 func (b *Builtin) Validate() error {
 	return nil
 }

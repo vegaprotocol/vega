@@ -17,9 +17,6 @@ type isAsset interface {
 	// Validate this is used to validate that the asset
 	// exist on the target chain
 	Validate() error
-	// OnGenesisValidation a superset of Validate which is used only
-	// on assets created from the genesis-file.
-	OnGenesisValidate() error
 	String() string
 }
 
