@@ -59,6 +59,8 @@ type Store struct {
 	watchers     map[string][]WatchParam
 	paramUpdates map[string]struct{}
 
+	checkpointOverwrites map[string]struct{}
+
 	state *snapState
 }
 
@@ -67,13 +69,14 @@ func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 	log.SetLevel(cfg.Level.Get())
 	store := defaultNetParams()
 	return &Store{
-		log:          log,
-		cfg:          cfg,
-		store:        store,
-		broker:       broker,
-		watchers:     map[string][]WatchParam{},
-		paramUpdates: map[string]struct{}{},
-		state:        newSnapState(store),
+		log:                  log,
+		cfg:                  cfg,
+		store:                store,
+		broker:               broker,
+		watchers:             map[string][]WatchParam{},
+		paramUpdates:         map[string]struct{}{},
+		checkpointOverwrites: map[string]struct{}{},
+		state:                newSnapState(store),
 	}
 }
 
@@ -131,6 +134,20 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			return fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
 		}
+	}
+
+	overwrites, err := LoadGenesisStateOverwrite(rawState)
+	if err != nil {
+		s.log.Error("unable to load genesis state overwrites",
+			logging.Error(err))
+		return err
+	}
+
+	for _, v := range overwrites {
+		if _, ok := AllKeys[v]; !ok {
+			s.log.Error("unknown network parameter", logging.String("netp", v))
+		}
+		s.checkpointOverwrites[v] = struct{}{}
 	}
 
 	return nil
