@@ -145,7 +145,7 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 
 	for _, v := range overwrites {
 		if _, ok := AllKeys[v]; !ok {
-			s.log.Error("unknow network parameter", logging.String("netp", v))
+			s.log.Error("unknown network parameter", logging.String("netp", v))
 		}
 		s.checkpointOverwrites[v] = struct{}{}
 	}
