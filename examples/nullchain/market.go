@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	config "code.vegaprotocol.io/vega/cmd/examples/nullchain/config"
+	config "code.vegaprotocol.io/vega/examples/nullchain/config"
 
 	"code.vegaprotocol.io/protos/vega"
 )

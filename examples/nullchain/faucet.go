@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	config "code.vegaprotocol.io/vega/cmd/examples/nullchain/config"
+	config "code.vegaprotocol.io/vega/examples/nullchain/config"
 )
 
 var ErrFaucet = errors.New("faucet failed")

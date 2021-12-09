@@ -10,7 +10,7 @@ import (
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	walletpb "code.vegaprotocol.io/protos/vega/wallet/v1"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
-	"code.vegaprotocol.io/vega/cmd/examples/nullchain/config"
+	"code.vegaprotocol.io/vega/examples/nullchain/config"
 )
 
 func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTransactionRequest, string) {

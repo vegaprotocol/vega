@@ -31,7 +31,6 @@ mocks: ## Make mocks
 build: ## install the binaries in cmd/{progname}/
 	go build -o cmd/vega ./cmd/vega 
 	go build -o cmd/vega ./cmd/vegabenchmark
-	go build -o cmd/examples/nullchain ./cmd/examples/nullchain
 
 .PHONY: install
 install: ## install the binaries in GOPATH/bin

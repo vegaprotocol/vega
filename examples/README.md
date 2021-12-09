@@ -1,8 +1,22 @@
 # Examples
 
-This folder contains examples use-cases which can be built as clients to a local vega system.
+This folder contains examples use-cases which can be built into clients to a local vega system.
 
 ## Nullchain
+
+This is a go-package with a high-level of abstraction that gives the ability to manipulate a Vega node running with the `null-blockchain`. The idea is that with this package trading-scenarios can be written from a point of view that doesn't require a lot of technical knowledge of how vega works. For example, the below will connect to vega, create 3 parties, and then move the blockchain forward:
+
+```
+
+func main() {
+  w := nullchain.NewWallet(config.WalletFolder, config.Passphrase)
+  conn, _ := nullchain.NewConnection()
+  parties, err := w.MakeParties(3)
+
+  nullchain.MoveByDuration(config.BlockDuration)
+
+}
+```
 
 Prerequistes:
 - A Vega node in nullchain mode up and running
