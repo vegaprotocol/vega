@@ -279,7 +279,7 @@ func (n *NullBlockchain) GetChainID(context.Context) (string, error) {
 func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
 		NodeInfo: tmtypes.NodeInfo{
-			Version: "0.34.12",
+			Version: "0.35.0",
 		},
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: false,
