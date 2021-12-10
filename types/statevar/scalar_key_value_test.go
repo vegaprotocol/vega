@@ -45,14 +45,14 @@ func testScalarWithinTol(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 1.23456},
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 6.54321},
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 
 	require.False(t, kvb1.WithinTolerance(kvb2))
@@ -61,7 +61,7 @@ func testScalarWithinTol(t *testing.T) {
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 2.23456},
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 	require.True(t, kvb1.WithinTolerance(kvb3))
 }
@@ -72,7 +72,7 @@ func testScalarToDecimal(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 1.23456},
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 
 	res1 := kvb1.ToDecimal()
@@ -90,12 +90,12 @@ func testScalarToProto(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 1.23456},
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 	res := kvb1.ToProto()
 	require.Equal(t, 1, len(res))
 	require.Equal(t, "scalar value", res[0].Key)
-	require.Equal(t, 1.0, res[0].Tolerance)
+	require.Equal(t, "1", res[0].Tolerance)
 	switch v := res[0].Value.Value.(type) {
 	case *vega.StateVarValue_ScalarVal:
 		require.Equal(t, 1.23456, v.ScalarVal.Value)

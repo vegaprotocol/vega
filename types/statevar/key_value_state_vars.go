@@ -91,7 +91,7 @@ func (kvb *KeyValueBundle) WithinTolerance(other *KeyValueBundle) bool {
 		if kv.Key != other.KVT[i].Key {
 			return false
 		}
-		if kv.Tolerance != other.KVT[i].Tolerance {
+		if !kv.Tolerance.Equal(other.KVT[i].Tolerance) {
 			return false
 		}
 
@@ -124,8 +124,17 @@ type KeyValueTol struct {
 	Tolerance num.Decimal // the tolerance to use in comparison
 }
 
+type StateValidity int
+
+const (
+	StateValidityDefault   StateValidity = iota
+	StateValidityConsensus               = iota
+	StateValidityStale                   = iota
+)
+
 // the result of a state variable is keyed by the name and the value is a decimal value (scalar/vector/matrix)
 type KeyValueResult struct {
+	Validity        StateValidity
 	KeyDecimalValue map[string]DecimalValue
 }
 

@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var tol, _ = num.DecimalFromString("0.1")
+
 func TestFloatMatrix(t *testing.T) {
 	t.Run("test equality of two float matrices", testFloatMatrixEquality)
 	t.Run("test two matrices are within tolerance of each other", testFloatMatrixWithinTol)
@@ -58,14 +60,14 @@ func testFloatMatrixWithinTol(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{4.4, 3.3, 2.2, 1.1}}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.2, 2.2, 3.2, 4.5}, []float64{4, 3.3, 2.2, 1.1}}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	// almost within tolerance but not
@@ -75,7 +77,7 @@ func testFloatMatrixWithinTol(t *testing.T) {
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.09, 2.2, 3.21, 4.49}, []float64{4.31, 3.2199999, 2.2, 1.0999999999}}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	// within tolerance on either side
@@ -88,7 +90,7 @@ func testFloatMatrixToDecimal(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{-4.4, -3.3, -2.2, -1.1}}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	res1 := kvb1.ToDecimal()
@@ -110,12 +112,12 @@ func testMatrixToProto(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{-4.4, -3.3, -2.2, -1.1}}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 	res := kvb1.ToProto()
 	require.Equal(t, 1, len(res))
 	require.Equal(t, "matrix value", res[0].Key)
-	require.Equal(t, 0.1, res[0].Tolerance)
+	require.Equal(t, "0.1", res[0].Tolerance)
 	switch v := res[0].Value.Value.(type) {
 	case *vega.StateVarValue_MatrixVal:
 		require.Equal(t, []float64{1.1, 2.2, 3.3, 4.4}, v.MatrixVal.Value[0].Value)

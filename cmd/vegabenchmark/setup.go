@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/statevar"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
@@ -187,6 +188,8 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		panic(err)
 	}
 
+	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, epochService, timeService)
+
 	app := processor.NewApp(
 		log,
 		&paths.DefaultPaths{},
@@ -219,6 +222,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		nil,
 		rewardEngine,
 		snapshot,
+		stateVarEngine,
 		"benchmark",
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)

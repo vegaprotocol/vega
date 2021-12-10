@@ -58,14 +58,14 @@ func testFloatVectorWithinTol(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{1.2, 2.3, 3.4, 4.6}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	// almost within tolerance but not
@@ -75,7 +75,7 @@ func testFloatVectorWithinTol(t *testing.T) {
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{1.099999999, 2.100000005, 3.3999999, 4.3000001}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	// within tolerance on either side
@@ -88,7 +88,7 @@ func testFloatVectorToDecimal(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 
 	res1 := kvb1.ToDecimal()
@@ -107,12 +107,12 @@ func testVectorToProto(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
-		Tolerance: 0.1,
+		Tolerance: tol,
 	})
 	res := kvb1.ToProto()
 	require.Equal(t, 1, len(res))
 	require.Equal(t, "vector value", res[0].Key)
-	require.Equal(t, 0.1, res[0].Tolerance)
+	require.Equal(t, "0.1", res[0].Tolerance)
 	switch v := res[0].Value.Value.(type) {
 	case *vega.StateVarValue_VectorVal:
 		require.Equal(t, []float64{1.1, 2.2, 3.3, 4.4}, v.VectorVal.Value)

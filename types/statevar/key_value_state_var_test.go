@@ -59,34 +59,34 @@ func testWithinTolerance(t *testing.T) {
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 1.23456},
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
-		Tolerance: 2,
+		Tolerance: num.DecimalFromInt64(2),
 	})
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{4.4, 3.3, 2.2, 1.1}}},
-		Tolerance: 3,
+		Tolerance: num.DecimalFromInt64(3),
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 2.2},
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{3, 4, 1.3000000001, 4}},
-		Tolerance: 2,
+		Tolerance: num.DecimalFromInt64(2),
 	})
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{-1.1, 1.1, 0.31, 2}, []float64{4.4, 3.3, 2.2, 1.1}}},
-		Tolerance: 3,
+		Tolerance: num.DecimalFromInt64(3),
 	})
 
 	require.True(t, kvb1.WithinTolerance(kvb2))
@@ -96,17 +96,17 @@ func testWithinTolerance(t *testing.T) {
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "scalar value",
 		Val:       &statevar.FloatValue{Val: 0.2}, // too far
-		Tolerance: 1,
+		Tolerance: num.DecimalFromInt64(1),
 	})
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
 		Val:       &statevar.FloatVector{Val: []float64{3, 4, 1.3000000001, 4}},
-		Tolerance: 2,
+		Tolerance: num.DecimalFromInt64(2),
 	})
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
 		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{-1.1, 1.1, 0.31, 2}, []float64{4.4, 3.3, 2.2, 1.1}}},
-		Tolerance: 3,
+		Tolerance: num.DecimalFromInt64(3),
 	})
 
 	require.False(t, kvb1.WithinTolerance(kvb3))

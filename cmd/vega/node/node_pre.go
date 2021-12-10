@@ -39,6 +39,7 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
@@ -267,6 +268,7 @@ func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallet
 		l.stakingAccounts,
 		l.rewards,
 		l.snapshot,
+		l.statevar,
 		l.Version,
 	)
 
@@ -403,6 +405,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
+
+	l.statevar = statevar.New(l.Log, l.conf.StateVar, l.broker, l.topology, commander, l.epochService, l.timeService)
 
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	l.topology.NotifyOnKeyChange(l.delegation.ValidatorKeyChanged, l.stakingAccounts.ValidatorKeyChanged, l.rewards.ValidatorKeyChanged, l.governance.ValidatorKeyChanged)
