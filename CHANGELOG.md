@@ -1,21 +1,32 @@
 # Changelog
 
-## Unreleased
+## Unreleased (0.48.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
-### 🗑️ Deprecation
+### 🗑️  Deprecation
 - [](https://github.com/vegaprotocol/data-node/pull/) -
+
+### 🛠  Improvements
+- [](https://github.com/vegaprotocol/data-node/pull/) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/data-node/pull/) -
+
+
+## 0.47.0
+*`2021-12-10`*
 
 ### 🛠 Improvements
 - [232](https://github.com/vegaprotocol/data-node/pull/232) - Tidy up repo to align with team processes and workflows
 - [235](https://github.com/vegaprotocol/data-node/pull/235) - Add key rotation support
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/) -
 - [233](https://github.com/vegaprotocol/data-node/pull/233) - Don't return API error when no rewards for party
 - [240](https://github.com/vegaprotocol/data-node/pull/240) - Allow risk factor events to be streamed via GraphQL subscription
+
+
 
 ## 0.46.0
 *`2021-11-22`*
