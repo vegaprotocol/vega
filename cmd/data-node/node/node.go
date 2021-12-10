@@ -93,6 +93,7 @@ type NodeCommand struct {
 	epochStore            *storage.Epoch
 	delegationStore       *storage.Delegations
 	checkpointStore       *storage.Checkpoints
+	chainInfoStore        *storage.ChainInfo
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
@@ -113,7 +114,7 @@ type NodeCommand struct {
 	candleSub            *subscribers.CandleSub
 	riskFactorSub        *subscribers.RiskFactorSub
 	marketDepthSub       *subscribers.MarketDepthBuilder
-	validatorUpdateSub   *subscribers.ValidatorUpdateSub
+	nodesSub             *subscribers.NodesSub
 	delegationBalanceSub *subscribers.DelegationBalanceSub
 	epochUpdateSub       *subscribers.EpochUpdateSub
 	timeUpdateSub        *subscribers.Time

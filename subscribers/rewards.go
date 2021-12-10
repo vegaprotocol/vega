@@ -296,7 +296,7 @@ func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) 
 	defer rc.mu.RUnlock()
 	rewards, ok := rc.rewardsPerPartyPerAsset[partyID]
 	if !ok {
-		return nil, fmt.Errorf("no rewards found for partyid %s", partyID)
+		rewards = make(map[string]*rewardsDetails)
 	}
 
 	// Now build up the proto message from the details we have stored

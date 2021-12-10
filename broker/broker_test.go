@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/broker/mocks"
 	"code.vegaprotocol.io/data-node/logging"
+	mocksdn "code.vegaprotocol.io/data-node/mocks"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -28,6 +29,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/errgroup"
 )
+
+const testChainId = "test-chain"
 
 type brokerTst struct {
 	*broker.Broker
@@ -43,6 +46,7 @@ type evt struct {
 	ctx context.Context
 	sid uint64
 	id  string
+	cid string
 }
 
 func getBroker(t *testing.T) *brokerTst {
@@ -59,7 +63,9 @@ func getBroker(t *testing.T) *brokerTst {
 	assert.NoError(t, err)
 	socketConfig := config.SocketConfig
 
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+	chainInfo := mocksdn.NewMockChainInfoI(ctrl)
+	chainInfo.EXPECT().GetChainID().Return(testChainId, nil).AnyTimes()
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config, chainInfo)
 	return &brokerTst{
 		Broker:   broker,
 		cfunc:    cfunc,
@@ -79,6 +85,7 @@ func (b brokerTst) randomEvt() *evt {
 		t:   events.All,
 		ctx: b.ctx,
 		id:  idString,
+		cid: "testchain",
 	}
 }
 
@@ -271,6 +278,7 @@ func testSendsReceivedEvents(t *testing.T) {
 			Version: 1,
 			Id:      "id-1",
 			Block:   "1",
+			ChainId: testChainId,
 			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
 			Event: &eventspb.BusEvent_TimeUpdate{
 				TimeUpdate: &eventspb.TimeUpdate{
@@ -282,6 +290,7 @@ func testSendsReceivedEvents(t *testing.T) {
 			Version: 1,
 			Id:      "id-2",
 			Block:   "2",
+			ChainId: testChainId,
 			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
 			Event: &eventspb.BusEvent_TimeUpdate{
 				TimeUpdate: &eventspb.TimeUpdate{
@@ -293,6 +302,7 @@ func testSendsReceivedEvents(t *testing.T) {
 			Version: 1,
 			Id:      "id-3",
 			Block:   "3",
+			ChainId: testChainId,
 			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
 			Event: &eventspb.BusEvent_TimeUpdate{
 				TimeUpdate: &eventspb.TimeUpdate{
@@ -625,4 +635,8 @@ func (e evt) TraceID() string {
 
 func (e evt) StreamMessage() *eventspb.BusEvent {
 	return nil
+}
+
+func (e evt) ChainID() string {
+	return e.cid
 }

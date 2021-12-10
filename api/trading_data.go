@@ -205,6 +205,8 @@ type NodeService interface {
 	GetNodeData(ctx context.Context) (*pbtypes.NodeData, error)
 	GetNodes(ctx context.Context) ([]*pbtypes.Node, error)
 	GetNodeByID(ctx context.Context, id string) (*pbtypes.Node, error)
+	GetAllPubKeyRotations(ctx context.Context) ([]*protoapi.KeyRotation, error)
+	GetPubKeyRotationsPerNode(ctx context.Context, nodeID string) ([]*protoapi.KeyRotation, error)
 }
 
 // EpochService ...
@@ -358,6 +360,36 @@ func (t *tradingDataService) GetNodeByID(ctx context.Context, req *protoapi.GetN
 
 	return &protoapi.GetNodeByIDResponse{
 		Node: node,
+	}, nil
+}
+
+func (t *tradingDataService) GetKeyRotations(ctx context.Context, req *protoapi.GetKeyRotationsRequest) (*protoapi.GetKeyRotationsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotations")()
+
+	rotations, err := t.nodeService.GetAllPubKeyRotations(ctx)
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetKeyRotationsResponse{
+		Rotations: rotations,
+	}, nil
+}
+
+func (t *tradingDataService) GetKeyRotationsByNode(ctx context.Context, req *protoapi.GetKeyRotationsByNodeRequest) (*protoapi.GetKeyRotationsByNodeResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetKeyRotationsByNode")()
+
+	if req.GetNodeId() == "" {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing node ID parameter"))
+	}
+
+	rotations, err := t.nodeService.GetPubKeyRotationsPerNode(ctx, req.GetNodeId())
+	if err != nil {
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.GetKeyRotationsByNodeResponse{
+		Rotations: rotations,
 	}, nil
 }
 

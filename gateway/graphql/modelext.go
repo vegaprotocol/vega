@@ -261,6 +261,9 @@ func transfersFromProto(transfers []*types.LedgerEntry) []*LedgerEntry {
 
 func eventFromProto(e *eventspb.BusEvent) Event {
 	switch e.Type {
+	case eventspb.BusEventType_BUS_EVENT_TYPE_RISK_FACTOR:
+		rf := e.GetRiskFactor()
+		return rf
 	case eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE:
 		return &TimeUpdate{
 			Timestamp: secondsTSToDatetime(e.GetTimeUpdate().Timestamp),

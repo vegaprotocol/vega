@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/nodes"
 	"code.vegaprotocol.io/data-node/nodes/mocks"
+	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	pb "code.vegaprotocol.io/protos/vega"
 
 	"github.com/golang/mock/gomock"
@@ -164,6 +165,64 @@ func TestNodesService_GetByID(t *testing.T) {
 		node, err := testService.GetNodeByID(testService.ctx, "non_existing")
 		a.EqualError(err, "node not found")
 		a.Nil(node)
+	})
+}
+
+func TestNodesService_GetAllPubKeyRotations(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		a := assert.New(t)
+		testService := getTestService(t)
+		defer testService.Finish()
+
+		expectedRotations := []*protoapi.KeyRotation{
+			{
+				NodeId:      "node_1",
+				OldPubKey:   "old_node_1",
+				NewPubKey:   "new_node_1",
+				BlockHeight: 10,
+			},
+			{
+				NodeId:      "node_2",
+				OldPubKey:   "old_node_2",
+				NewPubKey:   "new_node_2",
+				BlockHeight: 11,
+			},
+		}
+
+		testService.nodeStore.EXPECT().GetAllPubKeyRotations().Return(expectedRotations).Times(1)
+
+		rotations, err := testService.GetAllPubKeyRotations(testService.ctx)
+		a.NoError(err)
+		a.Equal(expectedRotations, rotations)
+	})
+}
+
+func TestNodesService_GetPubKeyRotationsPerNode(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		a := assert.New(t)
+		testService := getTestService(t)
+		defer testService.Finish()
+
+		expectedRotations := []*protoapi.KeyRotation{
+			{
+				NodeId:      "node_1",
+				OldPubKey:   "old_node_1",
+				NewPubKey:   "new_node_2",
+				BlockHeight: 10,
+			},
+			{
+				NodeId:      "node_1",
+				OldPubKey:   "old_node_2",
+				NewPubKey:   "new_node_3",
+				BlockHeight: 22,
+			},
+		}
+
+		testService.nodeStore.EXPECT().GetPubKeyRotationsPerNode("node_1").Return(expectedRotations).Times(1)
+
+		rotations, err := testService.GetPubKeyRotationsPerNode(testService.ctx, "node_1")
+		a.NoError(err)
+		a.Equal(expectedRotations, rotations)
 	})
 }
 

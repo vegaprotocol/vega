@@ -178,3 +178,5 @@ models:
     model: code.vegaprotocol.io/protos/vega/events/v1.StakeLinking
   PartyStake:
     model: code.vegaprotocol.io/protos/data-node/api/v1.PartyStakeResponse
+  KeyRotation:
+    model: code.vegaprotocol.io/protos/data-node/api/v1.KeyRotation

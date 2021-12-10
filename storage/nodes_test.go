@@ -164,6 +164,23 @@ func TestNodes(t *testing.T) {
 
 	a.Equal("105", nodeStore.GetStakedTotal("1"))
 	a.Equal("60", nodeStore.GetStakedTotal("2"))
+
+	// test key change
+	node, err = nodeStore.GetByID("pub_key_2", "2")
+	assert.NoError(t, err)
+	assert.Equal(t, "pub_key_2", node.PubKey)
+
+	// when
+	nodeStore.PublickKeyChanged("pub_key_2", "pub_key_2", "new_vega_pub_key", 10)
+
+	// then
+	node, err = nodeStore.GetByID("pub_key_2", "2")
+	assert.NoError(t, err)
+	assert.Equal(t, "new_vega_pub_key", node.PubKey)
+
+	allKeyRotations := nodeStore.GetAllPubKeyRotations()
+	assert.Len(t, allKeyRotations, 1)
+	assert.Equal(t, allKeyRotations, nodeStore.GetPubKeyRotationsPerNode("pub_key_2"))
 }
 
 func assertNode(

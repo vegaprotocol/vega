@@ -229,7 +229,13 @@ func getTestGRPCServer(
 
 	// stub...
 	gov, vote := govStub{}, voteStub{}
-	broker, err := broker.New(ctx, logger, conf.Broker)
+
+	chainInfoStore, err := storage.NewChainInfo(logger, st.ChainInfoHome, conf.Storage, cancel)
+	if err != nil {
+		t.Fatalf("failed to create chain info store: %v", err)
+	}
+
+	broker, err := broker.New(ctx, logger, conf.Broker, chainInfoStore)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create broker")
 		return

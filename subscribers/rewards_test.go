@@ -141,6 +141,7 @@ func TestPartyWithNoRewards(t *testing.T) {
 
 	details, err := re.GetRewardDetails(ctx, partyID)
 
-	assert.Error(t, err)
-	assert.Nil(t, details)
+	assert.NoError(t, err)
+	assert.NotNil(t, details)
+	assert.Zero(t, len(details.RewardDetails))
 }

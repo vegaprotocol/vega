@@ -1,26 +1,39 @@
 # Changelog
 
-
-## Unreleased (`X.Y.Z`)
-*`YYYY-MM-DD`*
+## Unreleased (0.48.0)
 
 ### 🚨 Breaking changes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
-### 🗑️ Deprecation
+### 🗑️  Deprecation
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
-### 🛠 Improvements
+### 🛠  Improvements
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
 
+## 0.47.0
+*`2021-12-10`*
+
+### 🛠 Improvements
+- [232](https://github.com/vegaprotocol/data-node/pull/232) - Tidy up repo to align with team processes and workflows
+- [235](https://github.com/vegaprotocol/data-node/pull/235) - Add key rotation support
+
+### 🐛 Fixes
+- [233](https://github.com/vegaprotocol/data-node/pull/233) - Don't return API error when no rewards for party
+- [240](https://github.com/vegaprotocol/data-node/pull/240) - Allow risk factor events to be streamed via GraphQL subscription
+
+
+
 ## 0.46.0
 *`2021-11-22`*
 
 ### 🛠 Improvements
+- [230](https://github.com/vegaprotocol/data-node/pull/230) - Release Version `0.46.0`
+- [229](https://github.com/vegaprotocol/data-node/pull/229) - Add handling for checking/storing Chain ID
 - [226](https://github.com/vegaprotocol/data-node/pull/226) - Added subscriptions for delegations & rewards
 - [228](https://github.com/vegaprotocol/data-node/pull/228) - Add changelog and project board Github actions and update linked PR action version
 - [208](https://github.com/vegaprotocol/data-node/pull/208) - Turn off `api_tests` when run on the CI
@@ -32,7 +45,7 @@
 
 ### 🐛 Fixes
 - [207](https://github.com/vegaprotocol/data-node/pull/207) - Fix rewards schema and update vega dependencies to have reward event fixes
-
+- [239](https://github.com/vegaprotocol/data-node/pull/238) - Update GraphQL schema to not require every asset has a global reward account.
 
 ## 0.45.1
 *2021-10-23*

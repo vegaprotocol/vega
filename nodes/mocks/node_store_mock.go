@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	v1 "code.vegaprotocol.io/protos/data-node/api/v1"
 	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -47,6 +48,20 @@ func (mr *MockNodeStoreMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockNodeStore)(nil).GetAll), arg0)
 }
 
+// GetAllPubKeyRotations mocks base method
+func (m *MockNodeStore) GetAllPubKeyRotations() []*v1.KeyRotation {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllPubKeyRotations")
+	ret0, _ := ret[0].([]*v1.KeyRotation)
+	return ret0
+}
+
+// GetAllPubKeyRotations indicates an expected call of GetAllPubKeyRotations
+func (mr *MockNodeStoreMockRecorder) GetAllPubKeyRotations() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPubKeyRotations", reflect.TypeOf((*MockNodeStore)(nil).GetAllPubKeyRotations))
+}
+
 // GetByID mocks base method
 func (m *MockNodeStore) GetByID(arg0, arg1 string) (*vega.Node, error) {
 	m.ctrl.T.Helper()
@@ -60,6 +75,20 @@ func (m *MockNodeStore) GetByID(arg0, arg1 string) (*vega.Node, error) {
 func (mr *MockNodeStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNodeStore)(nil).GetByID), arg0, arg1)
+}
+
+// GetPubKeyRotationsPerNode mocks base method
+func (m *MockNodeStore) GetPubKeyRotationsPerNode(arg0 string) []*v1.KeyRotation {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPubKeyRotationsPerNode", arg0)
+	ret0, _ := ret[0].([]*v1.KeyRotation)
+	return ret0
+}
+
+// GetPubKeyRotationsPerNode indicates an expected call of GetPubKeyRotationsPerNode
+func (mr *MockNodeStoreMockRecorder) GetPubKeyRotationsPerNode(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyRotationsPerNode", reflect.TypeOf((*MockNodeStore)(nil).GetPubKeyRotationsPerNode), arg0)
 }
 
 // GetStakedTotal mocks base method
