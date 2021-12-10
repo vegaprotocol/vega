@@ -76,6 +76,7 @@ type Topology struct {
 	// key rotations
 	pendingPubKeyRotations pendingKeyRotationMapping
 	pubKeyChangeListeners  []func(ctx context.Context, oldPubKey, newPubKey string)
+	currentBlockHeight     uint64
 
 	mu sync.RWMutex
 
