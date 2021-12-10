@@ -43,6 +43,65 @@ func TestStakingAccounting(t *testing.T) {
 	t.Run("get available balance at", testAccountingGetAvailableBalanceAt)
 	t.Run("get available balance in range", testAccountingGetAvailableBalanceInRange)
 	t.Run("generate Hash", testAccountingGenerateHash)
+	t.Run("validator key rotated", testKeyRotated)
+}
+
+func testKeyRotated(t *testing.T) {
+	acc := getAccountingTest(t)
+	defer acc.ctrl.Finish()
+
+	cases := []struct {
+		evt    types.StakeLinking
+		expect error
+	}{
+		{
+			evt: types.StakeLinking{
+				ID:     "someid1",
+				Type:   types.StakeLinkingTypeDeposited,
+				TS:     100,
+				Party:  testParty,
+				Amount: num.NewUint(10),
+			},
+			expect: nil,
+		},
+		{
+			evt: types.StakeLinking{
+				ID:     "someid2",
+				Type:   types.StakeLinkingTypeRemoved,
+				TS:     110,
+				Party:  testParty,
+				Amount: num.NewUint(1),
+			},
+			expect: nil,
+		},
+		{
+			evt: types.StakeLinking{
+				ID:     "someid3",
+				Type:   types.StakeLinkingTypeDeposited,
+				TS:     120,
+				Party:  testParty,
+				Amount: num.NewUint(5),
+			},
+			expect: nil,
+		},
+	}
+
+	acc.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	for _, c := range cases {
+		c := c
+		acc.AddEvent(context.Background(), &c.evt)
+	}
+
+	balance, _ := acc.GetAvailableBalance(testParty)
+	acc.broker.EXPECT().Send(gomock.Any()).Times(4) // one for the new party + 3 for stake linking to the new party
+	acc.ValidatorKeyChanged(context.Background(), testParty, "newPartyKey")
+	newBalance, err := acc.GetAvailableBalance("newPartyKey")
+	require.Nil(t, err)
+	require.Equal(t, balance, newBalance)
+	oldBalance, err := acc.GetAvailableBalance(testParty)
+	require.Equal(t, oldBalance, num.Zero())
+	require.ErrorIs(t, err, staking.ErrNoBalanceForParty)
 }
 
 func testPartyDontExists(t *testing.T) {

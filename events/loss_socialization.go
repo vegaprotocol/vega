@@ -67,6 +67,7 @@ func (l LossSoc) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      l.eventID(),
 		Block:   l.TraceID(),
+		ChainId: l.ChainID(),
 		Type:    l.et.ToProto(),
 		Event: &eventspb.BusEvent_LossSocialization{
 			LossSocialization: &p,

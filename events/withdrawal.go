@@ -40,6 +40,7 @@ func (w Withdrawal) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      w.eventID(),
 		Block:   w.TraceID(),
+		ChainId: w.ChainID(),
 		Type:    w.et.ToProto(),
 		Event: &eventspb.BusEvent_Withdrawal{
 			Withdrawal: &wit,

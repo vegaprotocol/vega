@@ -14,6 +14,44 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
+## 0.47.0
+*2021-11-24*
+
+
+### 🛠 Improvements
+- [4480](https://github.com/vegaprotocol/vega/pull/4439) - Update `CHANGELOG.md` since GH Action implemented
+- [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
+- [4456](https://github.com/vegaprotocol/vega/pull/4456) - Return 400 on bad mint amounts sent via the faucet
+- [4409](https://github.com/vegaprotocol/vega/pull/4409) - Add chain id to bus messages
+- [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
+- [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
+- [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
+- [4422](https://github.com/vegaprotocol/vega/pull/4422) - Add support for validator key rotation
+- [4463](https://github.com/vegaprotocol/vega/pull/4463) - Remove the need for an Ethereum connection when using the null-blockchain
+- [4477](https://github.com/vegaprotocol/vega/pull/4477) - Allow reloading of null-blockchain configuration while core is running
+- [4468](https://github.com/vegaprotocol/vega/pull/4468) - Change validator weights to be based on validator score
+- [4484](https://github.com/vegaprotocol/vega/pull/4484) - Add checkpoint validator key rotation
+- [4459](https://github.com/vegaprotocol/vega/pull/4459) - Add network parameters overwrite from checkpoints
+
+
+### 🐛 Fixes
+- [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
+- [4418](https://github.com/vegaprotocol/vega/pull/4418) - Add some logging + height/version handling fixes
+- [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
+- [4475](https://github.com/vegaprotocol/vega/pull/4475) - Fix rewards checkpoint not assigned to its correct place
+
+## 0.46.1
+*2021-11-24*
+
+### 🐛 Fixes
+- [4445](https://github.com/vegaprotocol/vega/pull/4445) - Limit the number of iterations for reward calculation for delegator and fix for division by zero
+
+## 0.46.1
+*2021-11-22*
+
+### 🛠 Improvements
+- [4437](https://github.com/vegaprotocol/vega/pull/4437) - Turn snapshots off for `v0.46.1` only
+
 
 ## 0.46.0
 *2021-11-22*
@@ -41,11 +79,16 @@
 - [4389](https://github.com/vegaprotocol/vega/pull/4389) - Update issue templates #4389
 - [4392](https://github.com/vegaprotocol/vega/pull/4392) - Update `GETTING_STARTED.md` documentation
 - [4391](https://github.com/vegaprotocol/vega/pull/4391) - Refactor delegation
+- [4423](https://github.com/vegaprotocol/vega/pull/4423) - Add CLI options to start node with a null-blockchain
 - [4400](https://github.com/vegaprotocol/vega/pull/4400) - Add transaction hash to `SubmitTransactionResponse`
 - [4394](https://github.com/vegaprotocol/vega/pull/4394) - Add step to clear all events in integration tests
 - [4403](https://github.com/vegaprotocol/vega/pull/4403) - Fully remove expiry from withdrawals #4403
 - [4396](https://github.com/vegaprotocol/vega/pull/4396) - Add free form governance proposals
 - [4413](https://github.com/vegaprotocol/vega/pull/4413) - Deploy to Devnet with Jenkins and remove drone
+- [4429](https://github.com/vegaprotocol/vega/pull/4429) - Release version `v0.46.0`
+- [4442](https://github.com/vegaprotocol/vega/pull/4442) - Reduce the number of iterations in reward calculation
+- [4409](https://github.com/vegaprotocol/vega/pull/4409) - Include chain id in bus messages
+- [4464](https://github.com/vegaprotocol/vega/pull/4466) - Update validator power in tendermint based on their staking
 
 ### 🐛 Fixes
 - [4325](https://github.com/vegaprotocol/vega/pull/4325) - Remove state from the witness snapshot and infer it from votes
@@ -57,7 +100,10 @@
 - [4395](https://github.com/vegaprotocol/vega/pull/4395) - Fix drone pipeline
 - [4398](https://github.com/vegaprotocol/vega/pull/4398) - Fix to set proper status on withdrawal errors
 - [4421](https://github.com/vegaprotocol/vega/issues/4421) - Fix to missing pending rewards in LNL checkpoint
-
+- [4419](https://github.com/vegaprotocol/vega/pull/4419) - Fix snapshot cleanup, improve logging when specified block height could not be reloaded.
+- [4444](https://github.com/vegaprotocol/vega/pull/4444) - Fix division by zero when all validator scores are 0
+- [4467](https://github.com/vegaprotocol/vega/pull/4467) - Fix reward account balance not being saved/loaded to/from checkpoint
+- [4474](https://github.com/vegaprotocol/vega/pull/4474) - Wire rewards checkpoint to checkpoint engine and store infrastructure fee accounts in collateral checkpoint
 
 ## 0.45.5
 *2021-11-16*

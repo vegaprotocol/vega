@@ -52,6 +52,7 @@ func (rp RewardPayout) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      rp.eventID(),
 		Block:   rp.TraceID(),
+		ChainId: rp.ChainID(),
 		Type:    rp.et.ToProto(),
 		Event: &eventspb.BusEvent_RewardPayout{
 			RewardPayout: &p,

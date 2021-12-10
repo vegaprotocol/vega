@@ -213,6 +213,10 @@ func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) er
 	return <-errCh
 }
 
+func (c *Client) Start() error {
+	return nil // Nothing to do for this client type.
+}
+
 type userInputError struct {
 	code    uint32
 	details string

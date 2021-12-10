@@ -70,6 +70,28 @@ func TestSubmitProposals(t *testing.T) {
 	t.Run("Can vote during validation period - proposal passed", testSubmittingMajorityOfYesVoteDuringValidationMakesProposalPassed)
 
 	t.Run("test hash", testGovernanceHash)
+	t.Run("key rotation test", testKeyRotated)
+}
+
+func testKeyRotated(t *testing.T) {
+	eng := getTestEngine(t)
+	defer eng.ctrl.Finish()
+	proposer := eng.newValidParty("proposer", 1)
+	voter := eng.newValidParty("voter", 1)
+	proposal := eng.newOpenProposal(proposer.Id, time.Now())
+	eng.expectAnyAsset()
+	eng.expectSendOpenProposalEvent(t, proposer, proposal)
+	_, err := eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&proposal), proposal.ID, proposer.Id)
+	assert.NoError(t, err)
+	eng.expectSendVoteEvent(t, voter, proposal)
+	err = eng.AddVote(context.Background(), types.VoteSubmission{
+		Value:      proto.Vote_VALUE_YES,
+		ProposalID: proposal.ID,
+	}, voter.Id)
+	assert.NoError(t, err)
+
+	eng.expectSendVoteEvent(t, &proto.Party{Id: "newVoter"}, proposal)
+	eng.ValidatorKeyChanged(context.Background(), "voter", "newVoter")
 }
 
 func testValidateProposalCommitment(t *testing.T) {

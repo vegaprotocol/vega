@@ -33,6 +33,7 @@ func (s StakeLinking) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      s.eventID(),
 		Block:   s.TraceID(),
+		ChainId: s.ChainID(),
 		Type:    s.et.ToProto(),
 		Event: &eventspb.BusEvent_StakeLinking{
 			StakeLinking: &s.evt,

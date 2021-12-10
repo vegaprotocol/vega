@@ -14,7 +14,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-type chainClientImpl interface {
+type ChainClientImpl interface {
 	GetGenesisTime(context.Context) (time.Time, error)
 	GetChainID(context.Context) (string, error)
 	GetStatus(context.Context) (*tmctypes.ResultStatus, error)
@@ -27,16 +27,17 @@ type chainClientImpl interface {
 	GenesisValidators(context.Context) ([]*tmtypes.Validator, error)
 	Validators(context.Context) ([]*tmtypes.Validator, error)
 	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
+	Start() error
 }
 
 // Client abstract all communication to the blockchain.
 type Client struct {
 	*Config
-	clt chainClientImpl
+	clt ChainClientImpl
 }
 
 // NewClient instantiate a new blockchain client.
-func NewClient(clt chainClientImpl) *Client {
+func NewClient(clt ChainClientImpl) *Client {
 	return &Client{
 		clt: clt,
 	}
@@ -123,7 +124,6 @@ func (c *Client) Health() (*tmctypes.ResultHealth, error) {
 func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	return c.clt.GenesisValidators(ctx)
 }
 
@@ -136,4 +136,8 @@ func (c *Client) Validators() ([]*tmtypes.Validator, error) {
 
 func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {
 	return c.clt.Subscribe(ctx, fn, queries...)
+}
+
+func (c *Client) Start() error {
+	return c.clt.Start()
 }

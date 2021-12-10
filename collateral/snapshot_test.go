@@ -3,6 +3,7 @@ package collateral_test
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -40,6 +41,21 @@ func TestCheckpoint(t *testing.T) {
 	err = eng.Engine.UpdateBalance(ctx, mktInsAcc.ID, insBal)
 	assert.Nil(t, err)
 
+	// topup the global reward account
+	rewardAccount, err := eng.CreateOrGetAssetRewardPoolAccount(ctx, "VOTE")
+	assert.Nil(t, err)
+	err = eng.Engine.UpdateBalance(ctx, rewardAccount, num.NewUint(10000))
+	assert.Nil(t, err)
+
+	// topup the infra fee account for the test asset
+	for _, feeAccount := range eng.GetInfraFeeAccountIDs() {
+		// restricting the topup and the check later to the test asset because that gets enabled back in the test
+		if strings.Contains(feeAccount, testMarketAsset) {
+			err = eng.Engine.UpdateBalance(ctx, feeAccount, num.NewUint(12345))
+			require.NoError(t, err)
+		}
+	}
+
 	snapshot, err := eng.Checkpoint()
 	require.NoError(t, err)
 	require.NotEmpty(t, snapshot)
@@ -48,6 +64,7 @@ func TestCheckpoint(t *testing.T) {
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
 	// system accounts created
 	loadEng := collateral.New(logging.NewTestLogger(), conf, eng.broker, time.Now())
+	enableGovernanceAsset(t, loadEng)
 
 	asset := types.Asset{
 		ID: testMarketAsset,
@@ -57,6 +74,8 @@ func TestCheckpoint(t *testing.T) {
 	}
 	// we need to enable the assets before being able to load the balances
 	loadEng.EnableAsset(ctx, asset)
+	require.NoError(t, err)
+
 	err = loadEng.Load(ctx, snapshot)
 	require.NoError(t, err)
 	loadedPartyAcc, err := loadEng.GetPartyGeneralAccount(party, testMarketAsset)
@@ -66,6 +85,18 @@ func TestCheckpoint(t *testing.T) {
 	loadedGlobInsPool, err := loadEng.GetAssetInsurancePoolAccount(testMarketAsset)
 	require.NoError(t, err)
 	require.Equal(t, insBal, loadedGlobInsPool.Balance)
+
+	loadedReward, err := loadEng.GetGlobalRewardAccount("VOTE")
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(10000), loadedReward.Balance)
+
+	for _, feeAcc := range loadEng.GetInfraFeeAccountIDs() {
+		if strings.Contains(feeAcc, testMarketAsset) {
+			acc, err := loadEng.GetAccountByID(feeAcc)
+			require.NoError(t, err)
+			require.Equal(t, num.NewUint(12345), acc.Balance)
+		}
+	}
 }
 
 func TestSnapshots(t *testing.T) {

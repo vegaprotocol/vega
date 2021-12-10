@@ -30,6 +30,9 @@ var (
 
 	// ErrAssetNotFound is raised when an asset id is not found.
 	ErrAssetNotFound = errors.New("asset was not found")
+
+	// ErrInvalidMintAmount is raised when the mint amount is too high.
+	ErrInvalidMintAmount = errors.New("mint amount is invalid")
 )
 
 type Faucet struct {
@@ -132,7 +135,7 @@ func (f *Faucet) Mint(w http.ResponseWriter, r *http.Request, _ httprouter.Param
 	}
 
 	if err := f.getAllowedAmount(r.Context(), amount, req.Asset); err != nil {
-		if errors.Is(err, ErrAssetNotFound) {
+		if errors.Is(err, ErrAssetNotFound) || errors.Is(err, ErrInvalidMintAmount) {
 			writeError(w, newError(err.Error()), http.StatusBadRequest)
 			return
 		}
@@ -216,9 +219,6 @@ func (f *Faucet) getAllowedAmount(ctx context.Context, amount *num.Uint, asset s
 	}
 	resp, err := f.coreclt.ListAssets(ctx, req)
 	if err != nil {
-		if resp == nil {
-			return ErrAssetNotFound
-		}
 		return err
 	}
 	if len(resp.Assets) <= 0 {
@@ -230,10 +230,10 @@ func (f *Faucet) getAllowedAmount(ctx context.Context, amount *num.Uint, asset s
 	}
 	maxAmount, overflowed := num.UintFromString(source.MaxFaucetAmountMint, 10)
 	if overflowed {
-		return errors.New("invalid source asset max faucet amount min")
+		return ErrInvalidMintAmount
 	}
 	if maxAmount.LT(amount) {
-		return fmt.Errorf("amount request exceed maximal amount of %v", maxAmount)
+		return fmt.Errorf("amount request exceed maximal amount of %v: %w", maxAmount, ErrInvalidMintAmount)
 	}
 
 	return nil

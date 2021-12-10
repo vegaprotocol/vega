@@ -15,7 +15,6 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
-	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
 	ethclient "code.vegaprotocol.io/vega/client/eth"
@@ -63,7 +62,7 @@ type NodeCommand struct {
 	epochService *epochtime.Svc
 	eventService *subscribers.Service
 
-	abciServer       *abci.Server
+	blockchainServer *blockchain.Server
 	blockchainClient *blockchain.Client
 
 	pproffhandlr *pprof.Pprofhandler
@@ -187,16 +186,21 @@ func (l *NodeCommand) runNode(args []string) error {
 	go proxyServer.Start()
 	metrics.Start(l.conf.Metrics)
 
-	l.Log.Info("Vega startup complete")
-	waitSig(l.ctx, l.Log)
+	// some clients need to start after the rpc-server is up
+	err := l.blockchainClient.Start()
+
+	if err == nil {
+		l.Log.Info("Vega startup complete")
+		waitSig(l.ctx, l.Log)
+	}
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	l.abciServer.Stop()
+	l.blockchainServer.Stop()
 	statusChecker.Stop()
 	proxyServer.Stop()
 
-	return nil
+	return err
 }
 
 // waitSig will wait for a sigterm or sigint interrupt.
@@ -210,14 +214,4 @@ func waitSig(ctx context.Context, log *logging.Logger) {
 	case <-ctx.Done():
 		// nothing to do
 	}
-}
-
-func flagProvided(flag string) bool {
-	for _, v := range os.Args[1:] {
-		if v == flag {
-			return true
-		}
-	}
-
-	return false
 }

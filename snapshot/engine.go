@@ -117,6 +117,11 @@ var nodeOrder = []types.SnapshotNamespace{
 
 // New returns a new snapshot engine.
 func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
+	// default to min 1 version, just so we don't have to account for negative cap or nil slice.
+	// A single version kept in memory is pretty harmless.
+	if conf.Versions < 1 {
+		conf.Versions = 1
+	}
 	log = log.Named(namedLogger)
 	dbConn, err := getDB(conf, vegapath)
 	if err != nil {
@@ -218,7 +223,7 @@ func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 	height := uint64(h)
 	versions := e.avl.AvailableVersions()
 	// descending order, because that makes most sense
-	var last uint64
+	var last, first uint64
 	for i := len(versions) - 1; i > -1; i-- {
 		version := int64(versions[i])
 		if _, err := e.avl.LoadVersion(version); err != nil {
@@ -242,13 +247,18 @@ func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 		if app.AppState.Height < height {
 			e.log.Error("Unable to find a snapshot for the specified height",
 				logging.Uint64("snapshot-height", height),
+				logging.Uint64("max-height", first),
 			)
 			return types.ErrNoSnapshot
 		}
 		last = app.AppState.Height
+		if first == 0 {
+			first = last
+		}
 	}
 	e.log.Error("Specified height too low",
 		logging.Uint64("specified-height", height),
+		logging.Uint64("maximum-height", first),
 		logging.Uint64("minimum-height", last),
 	)
 	return types.ErrNoSnapshot
@@ -529,6 +539,13 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 	e.hash = h
 	e.version = v
 	if len(e.versions) >= cap(e.versions) {
+		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
+			// this is not a fatal error, but still we should be paying attention.
+			e.log.Warn("Could not delete old version",
+				logging.Int64("old-version", e.versions[0]),
+				logging.Error(err),
+			)
+		}
 		// drop first version
 		copy(e.versions[0:], e.versions[1:])
 		// set the last value in the slice to the current version
