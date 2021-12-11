@@ -14,7 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/types/statevar"
 )
 
-// StateVarConsensusState trakcs the state transitions of a state variable
+// StateVarConsensusState trakcs the state transitions of a state variable.
 type StateVarConsensusState int
 
 const (
@@ -45,7 +45,6 @@ type StateVariable struct {
 	trigger       []StateVarEventType                      // events that should trigger the calculation of the state variable
 	frequency     time.Duration                            // the frequency for time based triggering
 	result        func(*statevar.KeyValueResult) error     // a callback to be called when the value reaches consensus
-	defaultValue  *statevar.KeyValueResult                 // the default value for the bundle
 
 	// state
 	nextTimeToRun    time.Time                           // the next scheduled calculation
@@ -164,8 +163,7 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 	sv.consensusReached(dResult)
 }
 
-// the bundles are not all equal to each other
-// choose
+// if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance, if none can be found, mark the value as stale.
 func (sv *StateVariable) reachConsensus(rng *rand.Rand, validatorVotesRequired num.Decimal) {
 	// sort the node IDs for determinism
 	nodeIDs := make([]string, 0, len(sv.validatorResults))
@@ -211,7 +209,7 @@ func (sv *StateVariable) reachConsensus(rng *rand.Rand, validatorVotesRequired n
 	sv.sendEvent()
 }
 
-// consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators
+// consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators.
 func (sv *StateVariable) consensusReached(acceptedValue *statevar.KeyValueResult) {
 	sv.result(acceptedValue)
 	sv.eventID = ""

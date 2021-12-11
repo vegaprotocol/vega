@@ -52,7 +52,7 @@ func testFloatVectorEquality(t *testing.T) {
 	require.True(t, kvb1.Equals(kvb4))
 }
 
-// testFloatVectorWithinTol check that the values of the vectors are within tolerance
+// testFloatVectorWithinTol check that the values of the vectors are within tolerance.
 func testFloatVectorWithinTol(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
@@ -82,7 +82,7 @@ func testFloatVectorWithinTol(t *testing.T) {
 	require.True(t, kvb1.WithinTolerance(kvb3))
 }
 
-// testFloatVectorToDecimal tests conversion to decimal
+// testFloatVectorToDecimal tests conversion to decimal.
 func testFloatVectorToDecimal(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
@@ -101,7 +101,7 @@ func testFloatVectorToDecimal(t *testing.T) {
 	}
 }
 
-// testVectorToProto tests conversion of vector variable to proto
+// testVectorToProto tests conversion of vector variable to proto.
 func testVectorToProto(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{

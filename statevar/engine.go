@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"sort"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -23,7 +24,7 @@ var (
 	ErrDuplicateStateVar = errors.New("Duplicate state variable")
 )
 
-//mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander
+//mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
@@ -34,7 +35,7 @@ type Broker interface {
 }
 
 // Topology the topology service.
-//mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Tolopology
+//mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Tolopology.
 type Topology interface {
 	IsValidatorNodeID(nodeID string) bool
 	AllNodeIDs() []string
@@ -43,12 +44,12 @@ type Topology interface {
 	SelfNodeID() string
 }
 
-// EpochEngine for being notified on epochs
+// EpochEngine for being notified on epochs.
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
 }
 
-// TimeService for being notified on new blocks for time based calculations
+// TimeService for being notified on new blocks for time based calculations.
 type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
@@ -64,7 +65,7 @@ const (
 	StateVarEventTypeRiskModelChanged                   = iota
 )
 
-// Engine is an engine for creating consensus for floaing point "state variables"
+// Engine is an engine for creating consensus for floaing point "state variables".
 type Engine struct {
 	log                    *logging.Logger
 	config                 Config
@@ -80,8 +81,10 @@ type Engine struct {
 
 // New instantiates the state variable engine.
 func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Commander, epochEngine EpochEngine, ts TimeService) *Engine {
+	lg := log.Named(namedLogger)
+	lg.SetLevel(config.Level.Get())
 	e := &Engine{
-		log:                 log,
+		log:                 lg,
 		config:              config,
 		broker:              broker,
 		top:                 top,
@@ -97,6 +100,7 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 
 func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
 	e.validatorVotesRequired = num.DecimalFromFloat(f)
+	e.log.Info("ValidatorsVoteRequired updated", logging.String("validatorVotesRequired", e.validatorVotesRequired.String()))
 	return nil
 }
 
@@ -105,23 +109,42 @@ func (e *Engine) NewEvent(eventType StateVarEventType, eventID string) {
 	if _, ok := e.eventTypeToStateVar[eventType]; !ok {
 		return
 	}
+
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("New event for state variable received", logging.String("eventID", eventID))
+	}
+
 	for _, sv := range e.eventTypeToStateVar[eventType] {
 		sv.eventTriggered(eventID)
 	}
 }
 
-// OnTimeTick triggers the calculation of state variables whose next scheduled calculation is due
+// OnTimeTick triggers the calculation of state variables whose next scheduled calculation is due.
 func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 	e.currentTime = t
-	for _, sv := range e.stateVars {
+
+	stateVarIDs := []string{}
+	for ID, sv := range e.stateVars {
 		if (sv.nextTimeToRun != time.Time{}) && sv.nextTimeToRun.UnixNano() <= t.UnixNano() {
-			sv.eventTriggered(t.Format("20060102_150405.999999999"))
-			sv.nextTimeToRun = t.Add(sv.frequency)
+			stateVarIDs = append(stateVarIDs, ID)
 		}
+	}
+
+	sort.Strings(stateVarIDs)
+
+	for _, ID := range stateVarIDs {
+		sv := e.stateVars[ID]
+		eventID := t.Format("20060102_150405.999999999")
+		if e.log.GetLevel() <= logging.DebugLevel {
+			e.log.Debug("New time based event for state variable received", logging.String("eventID", eventID))
+		}
+		sv.eventTriggered(eventID)
+		sv.nextTimeToRun = t.Add(sv.frequency)
+
 	}
 }
 
-// OnEpochEvent resets the seed of the rng when a new epoch begins
+// OnEpochEvent resets the seed of the rng when a new epoch begins.
 func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if (epoch.EndTime == time.Time{}) {
 		e.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
@@ -134,7 +157,7 @@ func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 // trigger - a slice of events that should trigger the calculation of the state variable
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
 // result - a callback for storing the result
-// defaultValue - the default value to use (as decimal)
+// defaultValue - the default value to use (as decimal).
 func (e *Engine) AddStateVariable(ID string, calculateFunc func() (*statevar.KeyValueBundle, error), trigger []StateVarEventType, frequency time.Duration, result func(*statevar.KeyValueResult) error, defaultValue *statevar.KeyValueResult) error {
 	if _, ok := e.stateVars[ID]; ok {
 		return ErrDuplicateStateVar

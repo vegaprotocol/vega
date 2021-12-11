@@ -34,7 +34,7 @@ func (fv *FloatMatrix) WithinTolerance(other value, tolerance num.Decimal) bool 
 	}
 }
 
-// withinTolerance retunrs true if the two matrices have the same shape and values in the same index are within tolerance of each other
+// withinTolerance retunrs true if the two matrices have the same shape and values in the same index are within tolerance of each other.
 func (fv *FloatMatrix) withinTolerance(other *FloatMatrix, tolerance num.Decimal) bool {
 	if len(fv.Val) != len(other.Val) {
 		return false
@@ -52,7 +52,7 @@ func (fv *FloatMatrix) withinTolerance(other *FloatMatrix, tolerance num.Decimal
 	return true
 }
 
-// ToDecimal converts the float matrix to decimal matrix
+// ToDecimal converts the float matrix to decimal matrix.
 func (fv *FloatMatrix) ToDecimal() DecimalValue {
 	rows := make([][]num.Decimal, 0, len(fv.Val))
 	for _, r := range fv.Val {
@@ -68,7 +68,7 @@ func (fv *FloatMatrix) ToDecimal() DecimalValue {
 	}
 }
 
-//ToProto converts the state variable value to protobuf
+//ToProto converts the state variable value to protobuf.
 func (fv *FloatMatrix) ToProto() *vega.StateVarValue {
 	rows := make([]*vega.VectorValue, 0, len(fv.Val))
 	for _, fvi := range fv.Val {

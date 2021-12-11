@@ -16,7 +16,7 @@ func TestFloatScalar(t *testing.T) {
 	t.Run("test conversion to proto", testScalarToProto)
 }
 
-// testFloatEquality tests that given the same key and equal/not equal value, equals function returns the correct value
+// testFloatEquality tests that given the same key and equal/not equal value, equals function returns the correct value.
 func testFloatEquality(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
@@ -66,7 +66,7 @@ func testScalarWithinTol(t *testing.T) {
 	require.True(t, kvb1.WithinTolerance(kvb3))
 }
 
-// testScalarToDecimal tests conversion to decimal
+// testScalarToDecimal tests conversion to decimal.
 func testScalarToDecimal(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{

@@ -24,7 +24,7 @@ func (fv *FloatVector) equals(other *FloatVector) bool {
 	return fv.withinTolerance(other, num.DecimalZero())
 }
 
-// WithinTolerance returns true if the other value is a vector and has the same shape and values in the same index are within the given tolerance of each other
+// WithinTolerance returns true if the other value is a vector and has the same shape and values in the same index are within the given tolerance of each other.
 func (fv *FloatVector) WithinTolerance(other value, tolerance num.Decimal) bool {
 	switch v := other.(type) {
 	case *FloatVector:
@@ -34,7 +34,7 @@ func (fv *FloatVector) WithinTolerance(other value, tolerance num.Decimal) bool 
 	}
 }
 
-// withinTolerance returns true if the two vectors have the same shape and values in the same index are within the given tolerance of each other
+// withinTolerance returns true if the two vectors have the same shape and values in the same index are within the given tolerance of each other.
 func (fv *FloatVector) withinTolerance(other *FloatVector, tolerance num.Decimal) bool {
 	if len(fv.Val) != len(other.Val) {
 		return false
@@ -49,7 +49,7 @@ func (fv *FloatVector) withinTolerance(other *FloatVector, tolerance num.Decimal
 	return true
 }
 
-// ToDecimal converts the float vector to a vector of decimals
+// ToDecimal converts the float vector to a vector of decimals.
 func (fv *FloatVector) ToDecimal() DecimalValue {
 	vec := make([]num.Decimal, 0, len(fv.Val))
 	for _, v := range fv.Val {
@@ -60,7 +60,7 @@ func (fv *FloatVector) ToDecimal() DecimalValue {
 	}
 }
 
-//ToProto converts the state variable value to protobuf
+//ToProto converts the state variable value to protobuf.
 func (fv *FloatVector) ToProto() *vega.StateVarValue {
 	return &vega.StateVarValue{
 		Value: &vega.StateVarValue_VectorVal{

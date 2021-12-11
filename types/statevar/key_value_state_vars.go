@@ -29,6 +29,7 @@ func (kvb *KeyValueBundle) ToDecimal() *KeyValueResult {
 	return res
 }
 
+// ToProto converts KevValueBundle into proto.
 func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
 	res := make([]*vega.KeyValueBundle, 0, len(kvb.KVT))
 	for _, kvt := range kvb.KVT {
@@ -41,6 +42,7 @@ func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
 	return res
 }
 
+// KeyValueBundleFromProto converts from proto into KeyValueBundle.
 func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) *KeyValueBundle {
 	KVT := make([]KeyValueTol, 0, len(protoKVT))
 	for _, pKVT := range protoKVT {
@@ -59,6 +61,7 @@ func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) *KeyValueBundle {
 	}
 }
 
+// ValueFromProto converts the proto into a value.
 func ValueFromProto(val *vega.StateVarValue) value {
 	switch v := val.Value.(type) {
 	case *vega.StateVarValue_ScalarVal:
@@ -82,7 +85,7 @@ func ValueFromProto(val *vega.StateVarValue) value {
 	}
 }
 
-// WithinTolerance returns true if the two bundles have the same keys, same tolerances and the values at the same index are with the tolerance of each other
+// WithinTolerance returns true if the two bundles have the same keys, same tolerances and the values at the same index are with the tolerance of each other.
 func (kvb *KeyValueBundle) WithinTolerance(other *KeyValueBundle) bool {
 	if len(kvb.KVT) != len(other.KVT) {
 		return false
@@ -102,7 +105,7 @@ func (kvb *KeyValueBundle) WithinTolerance(other *KeyValueBundle) bool {
 	return true
 }
 
-// Equals returns true of the two bundles have the same keys in the same order and the values in the same index are equal
+// Equals returns true of the two bundles have the same keys in the same order and the values in the same index are equal.
 func (kvb *KeyValueBundle) Equals(other *KeyValueBundle) bool {
 	if len(kvb.KVT) != len(other.KVT) {
 		return false
@@ -132,7 +135,7 @@ const (
 	StateValidityStale                   = iota
 )
 
-// the result of a state variable is keyed by the name and the value is a decimal value (scalar/vector/matrix)
+// KeyValueResult the result of a state variable is keyed by the name and the value is a decimal value (scalar/vector/matrix).
 type KeyValueResult struct {
 	Validity        StateValidity
 	KeyDecimalValue map[string]DecimalValue

@@ -35,19 +35,19 @@ func (fv *FloatValue) WithinTolerance(other value, tolerance num.Decimal) bool {
 	}
 }
 
-// withinTolerance returns true if the two scalar values are equal within the given tolerance
+// withinTolerance returns true if the two scalar values are equal within the given tolerance.
 func (fv *FloatValue) withinTolerance(other *FloatValue, tolerance num.Decimal) bool {
 	return num.DecimalFromFloat(fv.Val).Sub(num.DecimalFromFloat(other.Val)).Abs().LessThanOrEqual(tolerance)
 }
 
-// ToDecimal converts the float scalar to a decimal value
+// ToDecimal converts the float scalar to a decimal value.
 func (fv *FloatValue) ToDecimal() DecimalValue {
 	return &DecimalScalarValue{
 		Value: num.DecimalFromFloat(fv.Val),
 	}
 }
 
-//ToProto converts the state variable value to protobuf
+//ToProto converts the state variable value to protobuf.
 func (fv *FloatValue) ToProto() *vega.StateVarValue {
 	return &vega.StateVarValue{
 		Value: &vega.StateVarValue_ScalarVal{
