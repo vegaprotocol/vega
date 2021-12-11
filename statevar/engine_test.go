@@ -43,7 +43,7 @@ func TestAddStateVar(t *testing.T) {
 	})
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &types.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val:       &types.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
 		Tolerance: num.DecimalFromInt64(3),
 	})
 
@@ -71,7 +71,7 @@ func TestAddStateVar(t *testing.T) {
 	})
 	defaultValue.KVT = append(defaultValue.KVT, types.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &types.FloatMatrix{Val: [][]float64{[]float64{-1.1, 1.1, 0.31, 2}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val:       &types.FloatMatrix{Val: [][]float64{{-1.1, 1.1, 0.31, 2}, {4.4, 3.3, 2.2, 1.1}}},
 		Tolerance: num.DecimalFromInt64(3),
 	})
 	defaultResult := defaultValue.ToDecimal()

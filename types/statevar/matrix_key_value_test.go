@@ -99,7 +99,8 @@ func testFloatMatrixToDecimal(t *testing.T) {
 	case *statevar.DecimalMatrixValue:
 		require.Equal(t, [][]num.Decimal{
 			{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)},
-			{num.DecimalFromFloat(-4.4), num.DecimalFromFloat(-3.3), num.DecimalFromFloat(-2.2), num.DecimalFromFloat(-1.1)}},
+			{num.DecimalFromFloat(-4.4), num.DecimalFromFloat(-3.3), num.DecimalFromFloat(-2.2), num.DecimalFromFloat(-1.1)},
+		},
 			v.Value)
 	default:
 		t.Fail()
@@ -128,5 +129,4 @@ func testMatrixToProto(t *testing.T) {
 
 	kvb2 := statevar.KeyValueBundleFromProto(res)
 	require.Equal(t, kvb1, kvb2)
-
 }
