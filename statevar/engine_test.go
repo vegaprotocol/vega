@@ -29,6 +29,7 @@ func TestAddStateVar(t *testing.T) {
 	startTime := time.Now().Add(-24 * time.Hour)
 	tEngine := getTestEngine(t, startTime)
 	engine := tEngine.engine
+	tEngine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	kvb1 := &types.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
