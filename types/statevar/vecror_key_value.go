@@ -60,7 +60,7 @@ func (fv *FloatVector) ToDecimal() DecimalValue {
 	}
 }
 
-//ToProto converts the state variable value to protobuf.
+// ToProto converts the state variable value to protobuf.
 func (fv *FloatVector) ToProto() *vega.StateVarValue {
 	return &vega.StateVarValue{
 		Value: &vega.StateVarValue_VectorVal{
