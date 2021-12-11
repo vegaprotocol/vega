@@ -68,7 +68,7 @@ func (fv *FloatMatrix) ToDecimal() DecimalValue {
 	}
 }
 
-//ToProto converts the state variable value to protobuf.
+// ToProto converts the state variable value to protobuf.
 func (fv *FloatMatrix) ToProto() *vega.StateVarValue {
 	rows := make([]*vega.VectorValue, 0, len(fv.Val))
 	for _, fvi := range fv.Val {

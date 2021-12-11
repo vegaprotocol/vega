@@ -24,7 +24,7 @@ var (
 	ErrDuplicateStateVar = errors.New("Duplicate state variable")
 )
 
-//mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
+// mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
@@ -35,7 +35,7 @@ type Broker interface {
 }
 
 // Topology the topology service.
-//mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Tolopology.
+// mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Tolopology.
 type Topology interface {
 	IsValidatorNodeID(nodeID string) bool
 	AllNodeIDs() []string
@@ -58,7 +58,7 @@ type TimeService interface {
 type StateVarEventType int
 
 const (
-	// sample events there may be many more
+	// sample events there may be many more.
 
 	StateVarEventTypeAuctionUnknown   StateVarEventType = iota
 	StateVarEventTypeAuctionEnded                       = iota
@@ -140,7 +140,6 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 		}
 		sv.eventTriggered(eventID)
 		sv.nextTimeToRun = t.Add(sv.frequency)
-
 	}
 }
 

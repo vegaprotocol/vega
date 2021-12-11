@@ -26,7 +26,7 @@ func testEqualityAllMatch(t *testing.T) {
 	})
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key: "matrix value",
-		Val: &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val: &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
 	})
 
 	require.True(t, kvb1.Equals(kvb1))
@@ -40,7 +40,7 @@ func testEqualityAllMatch(t *testing.T) {
 	kvb3 := &statevar.KeyValueBundle{}
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key: "matrix value",
-		Val: &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val: &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
 	})
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key: "vector value",
@@ -68,7 +68,7 @@ func testWithinTolerance(t *testing.T) {
 	})
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val:       &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
 		Tolerance: num.DecimalFromInt64(3),
 	})
 
@@ -85,7 +85,7 @@ func testWithinTolerance(t *testing.T) {
 	})
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{-1.1, 1.1, 0.31, 2}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val:       &statevar.FloatMatrix{Val: [][]float64{{-1.1, 1.1, 0.31, 2}, {4.4, 3.3, 2.2, 1.1}}},
 		Tolerance: num.DecimalFromInt64(3),
 	})
 
@@ -105,7 +105,7 @@ func testWithinTolerance(t *testing.T) {
 	})
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{[]float64{-1.1, 1.1, 0.31, 2}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val:       &statevar.FloatMatrix{Val: [][]float64{{-1.1, 1.1, 0.31, 2}, {4.4, 3.3, 2.2, 1.1}}},
 		Tolerance: num.DecimalFromInt64(3),
 	})
 
@@ -125,7 +125,7 @@ func testToDecimal(t *testing.T) {
 	})
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key: "matrix value",
-		Val: &statevar.FloatMatrix{Val: [][]float64{[]float64{1.1, 2.2, 3.3, 4.4}, []float64{4.4, 3.3, 2.2, 1.1}}},
+		Val: &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
 	})
 
 	kvResult := kvb1.ToDecimal()
@@ -149,8 +149,8 @@ func testToDecimal(t *testing.T) {
 	switch v := matrixValue.(type) {
 	case *statevar.DecimalMatrixValue:
 		require.Equal(t, [][]num.Decimal{
-			[]num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)},
-			[]num.Decimal{num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}},
+			{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)},
+			{num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}},
 			v.Value)
 	default:
 		t.Fail()

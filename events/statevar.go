@@ -6,7 +6,7 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
-// StateVar is an event for tracking consensus in floating point state variables
+// StateVar is an event for tracking consensus in floating point state variables.
 type StateVar struct {
 	*Base
 	ID      string
