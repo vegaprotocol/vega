@@ -596,6 +596,10 @@ func (l *NodeCommand) setupNetParameters() error {
 			Param:   netparams.SnapshotIntervalLength,
 			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsVoteRequired,
+			Watcher: l.statevar.OnDefaultValidatorsVoteRequiredUpdate,
+		},
 	)
 }
 

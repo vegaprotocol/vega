@@ -17,8 +17,6 @@ import (
 )
 
 var (
-	// VotingThreshold the minimum threshold for results or votes we need to get be able to proceed to the next step.
-	VotingThreshold = num.DecimalFromInt64(2).Div(num.DecimalFromInt64(3))
 	// ErrUnknownStateVar is returned when we get a request (vote, result) for a state variable we don't have.
 	ErrUnknownStateVar = errors.New("unknown state variable")
 	// ErrDuplicateStateVar is returned when trying to add a state variable that already exists.
@@ -68,15 +66,16 @@ const (
 
 // Engine is an engine for creating consensus for floaing point "state variables"
 type Engine struct {
-	log                 *logging.Logger
-	config              Config
-	broker              Broker
-	top                 Topology
-	rng                 *rand.Rand
-	cmd                 Commander
-	eventTypeToStateVar map[StateVarEventType][]*StateVariable
-	stateVars           map[string]*StateVariable
-	currentTime         time.Time
+	log                    *logging.Logger
+	config                 Config
+	broker                 Broker
+	top                    Topology
+	rng                    *rand.Rand
+	cmd                    Commander
+	eventTypeToStateVar    map[StateVarEventType][]*StateVariable
+	stateVars              map[string]*StateVariable
+	currentTime            time.Time
+	validatorVotesRequired num.Decimal
 }
 
 // New instantiates the state variable engine.
@@ -94,6 +93,11 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 	ts.NotifyOnTick(e.OnTimeTick)
 
 	return e
+}
+
+func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
+	e.validatorVotesRequired = num.DecimalFromFloat(f)
+	return nil
 }
 
 // NewEvent triggers calculation of state variables that depend on the event type.
@@ -150,7 +154,7 @@ func (e *Engine) AddStateVariable(ID string, calculateFunc func() (*statevar.Key
 // ProposedValueReceived is called when we receive a result from another node with a proposed result for the calculation triggered by an event.
 func (e *Engine) ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error {
 	if sv, ok := e.stateVars[ID]; ok {
-		sv.bundleReceived(nodeID, eventID, bundle, e.rng)
+		sv.bundleReceived(nodeID, eventID, bundle, e.rng, e.validatorVotesRequired)
 		return nil
 	}
 	return ErrUnknownStateVar

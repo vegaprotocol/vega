@@ -189,6 +189,10 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	}
 
 	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, epochService, timeService)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.ValidatorsVoteRequired,
+		Watcher: stateVarEngine.OnDefaultValidatorsVoteRequiredUpdate,
+	})
 
 	app := processor.NewApp(
 		log,

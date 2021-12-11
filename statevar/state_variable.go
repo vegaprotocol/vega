@@ -114,7 +114,7 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 }
 
 // bundleReceived is called when we get a result from another validator corresponding to a given event ID.
-func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand) {
+func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand, validatorVotesRequired num.Decimal) {
 	// if the bundle is received for a stale or wrong event, ignore it
 	if sv.eventID != eventID {
 		sv.log.Debug("received a result for a stale event", logging.String("ID", sv.ID), logging.String("fromNode", nodeID), logging.String("currentEventID", sv.eventID), logging.String("receivedEventID", eventID))
@@ -132,7 +132,7 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 	sv.validatorResults[nodeID] = bundle
 	numResults := num.DecimalFromInt64(int64(len(sv.validatorResults)))
 	validatorsNum := num.DecimalFromInt64(int64(len(sv.top.AllNodeIDs())))
-	if !numResults.Div(validatorsNum).GreaterThanOrEqual(VotingThreshold) {
+	if !numResults.Div(validatorsNum).GreaterThanOrEqual(validatorVotesRequired) {
 		return
 	}
 
@@ -149,25 +149,26 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 		allMatch = allMatch && sv.validatorResults[nodeID].Equals(result)
 	}
 
-	if allMatch {
-		// we are done - happy days!
-		sv.log.Debug("state var consensus reached through perfect match", logging.String("stateVar", sv.ID), logging.String("eventID", eventID), logging.Int("numResults", len(sv.validatorResults)))
-		sv.state = StateVarConsensusStatePerfectMatch
-		// convert the result to decimal and let the owner of the state variable know
-		dResult := result.ToDecimal()
-		dResult.Validity = statevar.StateValidityConsensus
-		sv.consensusReached(dResult)
-	} else {
+	if !allMatch {
 		// initiate a round of voting
-		sv.reachConsensus(rng)
+		sv.reachConsensus(rng, validatorVotesRequired)
+		return
 	}
+
+	// we are done - happy days!
+	sv.log.Debug("state var consensus reached through perfect match", logging.String("stateVar", sv.ID), logging.String("eventID", eventID), logging.Int("numResults", len(sv.validatorResults)))
+	sv.state = StateVarConsensusStatePerfectMatch
+	// convert the result to decimal and let the owner of the state variable know
+	dResult := result.ToDecimal()
+	dResult.Validity = statevar.StateValidityConsensus
+	sv.consensusReached(dResult)
 }
 
 // the bundles are not all equal to each other
 // choose
-func (sv *StateVariable) reachConsensus(rng *rand.Rand) {
+func (sv *StateVariable) reachConsensus(rng *rand.Rand, validatorVotesRequired num.Decimal) {
 	// sort the node IDs for determinism
-	nodeIDs := []string{}
+	nodeIDs := make([]string, 0, len(sv.validatorResults))
 	for nodeID := range sv.validatorResults {
 		nodeIDs = append(nodeIDs, nodeID)
 	}
@@ -191,7 +192,7 @@ func (sv *StateVariable) reachConsensus(rng *rand.Rand) {
 				countMatch++
 			}
 		}
-		if num.DecimalFromInt64(countMatch).Div(num.DecimalFromInt64(int64(len(sv.validatorResults)))).GreaterThanOrEqual(VotingThreshold) {
+		if num.DecimalFromInt64(countMatch).Div(num.DecimalFromInt64(int64(len(sv.validatorResults)))).GreaterThanOrEqual(validatorVotesRequired) {
 			sv.consensusReached(candidateResult.ToDecimal())
 			consensusReached = true
 			break
