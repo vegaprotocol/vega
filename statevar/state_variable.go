@@ -227,7 +227,6 @@ func (sv *StateVariable) tryConsensus(rng *rand.Rand, validatorVotesRequired num
 	}
 	sv.state = StateVarConsensusStateConsensusNotReached
 	sv.sendEvent()
-
 }
 
 // consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators.
