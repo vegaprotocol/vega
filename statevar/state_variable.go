@@ -23,6 +23,8 @@ const (
 	StateVarConsensusStatePerfectMatch                               = iota
 	StateVarConsensusStateConsensusReached                           = iota
 	StateVarConsensusStateConsensusNotReached                        = iota
+	StateVarConsensusStateCalculationAborted                         = iota
+	StateVarConsensusStateError                                      = iota
 )
 
 var stateToName = map[StateVarConsensusState]string{
@@ -31,6 +33,8 @@ var stateToName = map[StateVarConsensusState]string{
 	StateVarConsensusStatePerfectMatch:        "perfect_match",
 	StateVarConsensusStateConsensusReached:    "consensus_reached",
 	StateVarConsensusStateConsensusNotReached: "consensus_not_reached",
+	StateVarConsensusStateCalculationAborted:  "consensus_calc_aborted",
+	StateVarConsensusStateError:               "error",
 }
 
 type StateVariable struct {
@@ -39,7 +43,6 @@ type StateVariable struct {
 	cmd    Commander
 	broker Broker
 	// configuration
-	name          string                                   // the name of the state variable
 	ID            string                                   // the unique identifier of the state variable
 	calculateFunc func() (*statevar.KeyValueBundle, error) // a callback to the owner to calculate the value of the state variable
 	trigger       []StateVarEventType                      // events that should trigger the calculation of the state variable
@@ -82,13 +85,20 @@ func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander
 	return sv
 }
 
-func (sv *StateVariable) String() string {
-	return sv.name + ", triggered by " + sv.eventID
-}
-
 // calculation is required for the state variable for the given event id.
 func (sv *StateVariable) eventTriggered(eventID string) error {
-	sv.log.Debug("eventTriggered", logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+	if sv.log.GetLevel() <= logging.DebugLevel {
+		sv.log.Debug("eventTriggered", logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+	}
+
+	// if we get a new event while processing an existing event we abort the current calculation and start a new one
+	if sv.eventID != "" {
+		if sv.log.GetLevel() <= logging.DebugLevel {
+			sv.log.Debug("aborting state variable event", logging.String("stateVar", sv.ID), logging.String("abortedEventID", sv.eventID), logging.String("newEventID", sv.eventID))
+		}
+		sv.state = StateVarConsensusStateCalculationAborted
+		sv.sendEvent()
+	}
 
 	// reset any existing state
 	sv.eventID = eventID
@@ -101,13 +111,19 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 		candidateState, err := sv.calculateFunc()
 		if err != nil {
 			sv.log.Error("could not calculate state for", logging.String("ID", sv.ID), logging.String("eventID", eventID))
+			sv.state = StateVarConsensusStateError
+			sv.sendEvent()
+			sv.eventID = ""
 			return err
 		}
 
+		// save our result and send the result to vega to be updated by other nodes.
 		sv.validatorResults[sv.top.SelfNodeID()] = candidateState
 		svp := &commandspb.StateVariableProposal{}
 		sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(error) {})
-		sv.log.Debug("result calculated and sent to vega", logging.String("validator", sv.top.SelfNodeID()), logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+		if sv.log.GetLevel() <= logging.DebugLevel {
+			sv.log.Debug("result calculated and sent to vega", logging.String("validator", sv.top.SelfNodeID()), logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+		}
 	}
 	return nil
 }
@@ -125,17 +141,24 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 		return
 	}
 
-	sv.log.Debug("state var bundle received", logging.String("fromValidator", nodeID), logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+	if sv.log.GetLevel() <= logging.DebugLevel {
+		sv.log.Debug("state var bundle received", logging.String("fromValidator", nodeID), logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+	}
 
 	// save the result from the validator and check if we have a quorum
 	sv.validatorResults[nodeID] = bundle
 	numResults := num.DecimalFromInt64(int64(len(sv.validatorResults)))
 	validatorsNum := num.DecimalFromInt64(int64(len(sv.top.AllNodeIDs())))
 	if !numResults.Div(validatorsNum).GreaterThanOrEqual(validatorVotesRequired) {
+		if sv.log.GetLevel() <= logging.DebugLevel {
+			sv.log.Debug("waiting for more results for state variable consensus check", logging.String("stateVar", sv.ID), logging.String("eventID", eventID), logging.String("received", numResults.String()), logging.String("outOf", validatorsNum.String()))
+		}
 		return
 	}
 
-	sv.log.Debug("state var checking consensus (2/3 of the results received", logging.String("fromValidator", nodeID), logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+	if sv.log.GetLevel() <= logging.DebugLevel {
+		sv.log.Debug("state var checking consensus (2/3 of the results received", logging.String("fromValidator", nodeID), logging.String("stateVar", sv.ID), logging.String("eventID", eventID))
+	}
 
 	// we got enough results lets check if they match
 	allMatch := true
@@ -149,22 +172,26 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 	}
 
 	if !allMatch {
+		if sv.log.GetLevel() <= logging.DebugLevel {
+			sv.log.Debug("state var consensus NOT reached through perfect match", logging.String("stateVar", sv.ID), logging.String("eventID", eventID), logging.Int("numResults", len(sv.validatorResults)))
+		}
+
 		// initiate a round of voting
-		sv.reachConsensus(rng, validatorVotesRequired)
+		sv.tryConsensus(rng, validatorVotesRequired)
 		return
 	}
 
 	// we are done - happy days!
-	sv.log.Debug("state var consensus reached through perfect match", logging.String("stateVar", sv.ID), logging.String("eventID", eventID), logging.Int("numResults", len(sv.validatorResults)))
+	if sv.log.GetLevel() <= logging.DebugLevel {
+		sv.log.Debug("state var consensus reached through perfect match", logging.String("stateVar", sv.ID), logging.String("eventID", eventID), logging.Int("numResults", len(sv.validatorResults)))
+	}
 	sv.state = StateVarConsensusStatePerfectMatch
 	// convert the result to decimal and let the owner of the state variable know
-	dResult := result.ToDecimal()
-	dResult.Validity = statevar.StateValidityConsensus
-	sv.consensusReached(dResult)
+	sv.consensusReached(result.ToDecimal())
 }
 
 // if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance, if none can be found, mark the value as stale.
-func (sv *StateVariable) reachConsensus(rng *rand.Rand, validatorVotesRequired num.Decimal) {
+func (sv *StateVariable) tryConsensus(rng *rand.Rand, validatorVotesRequired num.Decimal) {
 	// sort the node IDs for determinism
 	nodeIDs := make([]string, 0, len(sv.validatorResults))
 	for nodeID := range sv.validatorResults {
@@ -173,7 +200,6 @@ func (sv *StateVariable) reachConsensus(rng *rand.Rand, validatorVotesRequired n
 	sort.Strings(nodeIDs)
 
 	alreadyUsed := map[string]struct{}{}
-	consensusReached := false
 	for {
 		if len(alreadyUsed) == len(nodeIDs) {
 			break
@@ -192,26 +218,29 @@ func (sv *StateVariable) reachConsensus(rng *rand.Rand, validatorVotesRequired n
 		}
 		if num.DecimalFromInt64(countMatch).Div(num.DecimalFromInt64(int64(len(sv.validatorResults)))).GreaterThanOrEqual(validatorVotesRequired) {
 			sv.consensusReached(candidateResult.ToDecimal())
-			consensusReached = true
-			break
+			return
 		}
 	}
 
-	if !consensusReached {
+	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("state var consensus NOT reached through random selection", logging.String("stateVar", sv.ID), logging.String("eventID", sv.eventID))
-		sv.state = StateVarConsensusStateConsensusNotReached
-		sv.sendEvent()
-		return
 	}
-
-	sv.log.Debug("state var consensus reached through random selection", logging.String("stateVar", sv.ID), logging.String("eventID", sv.eventID))
-	sv.state = StateVarConsensusStateConsensusReached
+	sv.state = StateVarConsensusStateConsensusNotReached
 	sv.sendEvent()
+
 }
 
 // consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators.
 func (sv *StateVariable) consensusReached(acceptedValue *statevar.KeyValueResult) {
+	if sv.log.GetLevel() <= logging.DebugLevel {
+		sv.log.Debug("consensus reached", logging.String("stateVar", sv.ID), logging.String("eventID", sv.eventID))
+	}
+	acceptedValue.Validity = statevar.StateValidityConsensus
+	sv.state = StateVarConsensusStateConsensusReached
 	sv.result(acceptedValue)
+	sv.sendEvent()
+
+	// reset the state
 	sv.eventID = ""
 	sv.validatorResults = nil
 	sv.currentValue = acceptedValue

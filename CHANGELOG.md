@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/pull/) -
