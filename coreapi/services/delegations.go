@@ -2,6 +2,8 @@ package services
 
 import (
 	"context"
+	"math"
+	"strconv"
 	"sync"
 
 	pb "code.vegaprotocol.io/protos/vega"
@@ -9,6 +11,9 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/subscribers"
 )
+
+// next, current and last two
+const maxEpochsToKeep = uint64(4)
 
 type delegationE interface {
 	events.Event
@@ -23,6 +28,7 @@ type Delegations struct {
 	mut                     sync.RWMutex
 	epochToPartyDelegations map[string]map[string]map[string]string // epoch -> party -> node -> amount
 	ch                      chan eventspb.DelegationBalanceEvent
+	minEpoch                uint64
 }
 
 func NewDelegations(ctx context.Context) (delegations *Delegations) {
@@ -33,6 +39,7 @@ func NewDelegations(ctx context.Context) (delegations *Delegations) {
 		ctx:                     ctx,
 		epochToPartyDelegations: map[string]map[string]map[string]string{},
 		ch:                      make(chan eventspb.DelegationBalanceEvent, 100),
+		minEpoch:                math.MaxUint64,
 	}
 }
 
@@ -95,6 +102,28 @@ func (d *Delegations) List(party, node, epoch string) []*pb.Delegation {
 	return delegations
 }
 
+// clearOldDelegations makes sure we only keep as many as <maxEpochsToKeep> epoch delegations
+func (d *Delegations) clearOldDelegations(epochSeq string) {
+	epochSeqUint, err := strconv.ParseUint(epochSeq, 10, 64)
+	if err != nil {
+		return
+	}
+	// if we see an epoch younger than we've seen before - update the min epoch
+	if epochSeqUint <= d.minEpoch {
+		d.minEpoch = epochSeqUint
+	}
+	// if we haven't seen yet <maxEpochsToKeep> or we have no more than the required number of epochs - we don't have anything to do here
+	if epochSeqUint < maxEpochsToKeep || d.minEpoch >= (epochSeqUint-maxEpochsToKeep+1) {
+		return
+	}
+
+	// cleanup enough epochs such that we have at most <maxEpochsToKeep> epochs
+	for i := d.minEpoch; i < (epochSeqUint - maxEpochsToKeep + 1); i++ {
+		delete(d.epochToPartyDelegations, strconv.FormatUint(i, 10))
+	}
+	d.minEpoch = epochSeqUint - maxEpochsToKeep + 1
+}
+
 // AddDelegation is updated with new delegation update from the subscriber.
 func (d *Delegations) addDelegation(de pb.Delegation) {
 	// update party delegations
@@ -102,6 +131,7 @@ func (d *Delegations) addDelegation(de pb.Delegation) {
 	if !ok {
 		epoch = map[string]map[string]string{}
 		d.epochToPartyDelegations[de.EpochSeq] = epoch
+		d.clearOldDelegations(de.EpochSeq)
 	}
 
 	party, ok := epoch[de.Party]
