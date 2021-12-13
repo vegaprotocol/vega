@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/statevar/mocks"
 	"code.vegaprotocol.io/vega/txn"
+	vegatypes "code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	types "code.vegaprotocol.io/vega/types/statevar"
 	"github.com/golang/mock/gomock"
@@ -26,11 +27,11 @@ type testEngine struct {
 }
 
 func TestAddStateVar(t *testing.T) {
-	startTime := time.Now().Add(-24 * time.Hour)
+	startTime := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
 	tEngine := getTestEngine(t, startTime)
 	engine := tEngine.engine
 	tEngine.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-
+	engine.OnEpochEvent(context.Background(), vegatypes.Epoch{StartTime: startTime})
 	kvb1 := &types.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
 		Key:       "scalar value",
@@ -78,7 +79,7 @@ func TestAddStateVar(t *testing.T) {
 	defaultResult := defaultValue.ToDecimal()
 	defaultResult.Validity = types.StateValidityDefault
 
-	engine.AddStateVariable("12345", calcFunc, []statevar.StateVarEventType{}, 10*time.Minute, resultCallBack, defaultResult)
+	engine.AddStateVariable(calcFunc, []statevar.StateVarEventType{}, 10*time.Minute, resultCallBack, defaultResult)
 	require.Equal(t, 1, countResults)
 	require.Equal(t, defaultResult, resultValue)
 
@@ -86,7 +87,7 @@ func TestAddStateVar(t *testing.T) {
 	tt := startTime.Add(10 * time.Second)
 	eventID := tt.Format("20060102_150405.999999999")
 	f := func(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error)) {
-		engine.ProposedValueReceived(context.Background(), "12345", "n1", eventID, kvb1)
+		engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", "n1", eventID, kvb1)
 	}
 	tEngine.topology.EXPECT().SelfNodeID().Return("n1").Times(2)
 	tEngine.topology.EXPECT().IsValidator().Return(true)

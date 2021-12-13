@@ -20,8 +20,7 @@ import (
 var (
 	// ErrUnknownStateVar is returned when we get a request (vote, result) for a state variable we don't have.
 	ErrUnknownStateVar = errors.New("unknown state variable")
-	// ErrDuplicateStateVar is returned when trying to add a state variable that already exists.
-	ErrDuplicateStateVar = errors.New("Duplicate state variable")
+	chars              = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
 
 // mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
@@ -92,10 +91,18 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		eventTypeToStateVar: map[StateVarEventType][]*StateVariable{},
 		stateVars:           map[string]*StateVariable{},
 	}
-	epochEngine.NotifyOnEpoch(e.onEpochEvent)
+	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
 	ts.NotifyOnTick(e.OnTimeTick)
 
 	return e
+}
+
+func (e *Engine) variableID() string {
+	b := make([]rune, 32)
+	for i := range b {
+		b[i] = chars[e.rng.Intn(len(chars))]
+	}
+	return string(b)
 }
 
 func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
@@ -144,7 +151,7 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 }
 
 // OnEpochEvent resets the seed of the rng when a new epoch begins.
-func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
+func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	if (epoch.EndTime == time.Time{}) {
 		e.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 	}
@@ -157,10 +164,8 @@ func (e *Engine) onEpochEvent(ctx context.Context, epoch types.Epoch) {
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
 // result - a callback for storing the result
 // defaultValue - the default value to use (as decimal).
-func (e *Engine) AddStateVariable(ID string, calculateFunc func() (*statevar.KeyValueBundle, error), trigger []StateVarEventType, frequency time.Duration, result func(*statevar.KeyValueResult) error, defaultValue *statevar.KeyValueResult) error {
-	if _, ok := e.stateVars[ID]; ok {
-		return ErrDuplicateStateVar
-	}
+func (e *Engine) AddStateVariable(calculateFunc func() (*statevar.KeyValueBundle, error), trigger []StateVarEventType, frequency time.Duration, result func(*statevar.KeyValueResult) error, defaultValue *statevar.KeyValueResult) error {
+	ID := e.variableID()
 
 	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, calculateFunc, trigger, frequency, result, defaultValue)
 	e.stateVars[ID] = sv

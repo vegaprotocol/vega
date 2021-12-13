@@ -128,6 +128,7 @@ func NewDefaultConfig() Config {
 		Broker:            broker.NewDefaultConfig(),
 		UlimitNOFile:      8192,
 		Snapshot:          snapshot.NewDefaultConfig(),
+		StateVar:          statevar.NewDefaultConfig(),
 	}
 }
 
