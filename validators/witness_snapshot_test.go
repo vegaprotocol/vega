@@ -66,7 +66,7 @@ func TestSnapshot(t *testing.T) {
 		require.True(t, bytes.Equal(state2, state3))
 
 		// add a vote
-		erc2.top.EXPECT().IsValidatorNode(gomock.Any()).Times(1).Return(true)
+		erc2.top.EXPECT().IsValidatorNodeID(gomock.Any()).Times(1).Return(true)
 		err = erc2.AddNodeCheck(context.Background(), &commandspb.NodeVote{Reference: res.id, PubKey: []byte("1234")})
 
 		assert.NoError(t, err)

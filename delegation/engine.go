@@ -47,7 +47,7 @@ type TimeService interface {
 
 // ValidatorTopology represents the topology of validators and can check if a given node is a validator.
 type ValidatorTopology interface {
-	IsValidatorNode(nodeID string) bool
+	IsValidatorNodeID(nodeID string) bool
 	AllNodeIDs() []string
 	Get(key string) *validators.ValidatorData
 }
@@ -267,7 +267,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 	amt := amount.Clone()
 
 	// check if the node is a validator node
-	if !e.topology.IsValidatorNode(nodeID) {
+	if !e.topology.IsValidatorNodeID(nodeID) {
 		e.log.Error("Trying to delegate to an invalid node", logging.Uint64("epoch", e.currentEpoch.Seq), logging.String("party", party), logging.String("validator", nodeID))
 		return ErrInvalidNodeID
 	}
@@ -323,7 +323,7 @@ func (e *Engine) Delegate(ctx context.Context, party string, nodeID string, amou
 // UndelegateAtEndOfEpoch increases the pending undelegation balance and potentially decreases the pending delegation balance for a given validator node and party.
 func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeID string, amount *num.Uint) error {
 	// check if the node is a validator node
-	if e.topology == nil || !e.topology.IsValidatorNode(nodeID) {
+	if e.topology == nil || !e.topology.IsValidatorNodeID(nodeID) {
 		e.log.Error("Trying to delegate to an invalid node", logging.Uint64("epoch", e.currentEpoch.Seq), logging.String("party", party), logging.String("validator", nodeID))
 		return ErrInvalidNodeID
 	}
@@ -362,7 +362,7 @@ func (e *Engine) UndelegateAtEndOfEpoch(ctx context.Context, party string, nodeI
 // if possible it removed balance from pending delegated, if not enough it removes balance from the current epoch delegated amount.
 func (e *Engine) UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error {
 	// check if the node is a validator node
-	if e.topology == nil || !e.topology.IsValidatorNode(nodeID) {
+	if e.topology == nil || !e.topology.IsValidatorNodeID(nodeID) {
 		e.log.Error("Trying to delegate to an invalid node", logging.Uint64("epoch", e.currentEpoch.Seq), logging.String("party", party), logging.String("validator", nodeID))
 		return ErrInvalidNodeID
 	}
@@ -670,4 +670,36 @@ func (e *Engine) getValidatorData() []*types.ValidatorData {
 	}
 
 	return validators
+}
+
+// ValidatorKeyChanged is called when the validator public key (aka party) is changed we need to update all delegation information to use the new key.
+func (e *Engine) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {
+	e.updateParty(ctx, e.partyDelegationState, oldKey, newKey, e.currentEpoch.Seq)
+	e.updateParty(ctx, e.nextPartyDelegationState, oldKey, newKey, e.currentEpoch.Seq+1)
+	if _, ok := e.autoDelegationMode[oldKey]; ok {
+		delete(e.autoDelegationMode, oldKey)
+		e.autoDelegationMode[newKey] = struct{}{}
+		e.dss.changed[autoKey] = true
+	}
+}
+
+func (e *Engine) updateParty(ctx context.Context, partyDelegationMap map[string]*partyDelegation, oldKey, newKey string, epoch uint64) {
+	partyDelegationState, ok := partyDelegationMap[oldKey]
+	if !ok {
+		return
+	}
+	delete(partyDelegationMap, oldKey)
+	partyDelegationMap[newKey] = &partyDelegation{
+		party:          newKey,
+		nodeToAmount:   partyDelegationState.nodeToAmount,
+		totalDelegated: partyDelegationState.totalDelegated,
+	}
+
+	sortedNodes := e.sortNodes(partyDelegationState.nodeToAmount)
+	for _, node := range sortedNodes {
+		e.sendDelegatedBalanceEvent(ctx, oldKey, node, epoch, num.Zero())
+		e.sendDelegatedBalanceEvent(ctx, newKey, node, epoch, partyDelegationState.nodeToAmount[node])
+	}
+	e.dss.changed[activeKey] = true
+	e.dss.changed[pendingKey] = true
 }

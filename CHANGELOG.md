@@ -9,19 +9,36 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+### 🐛 Fixes
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+## 0.47.0
+*2021-11-24*
+
+
+### 🛠 Improvements
+- [4480](https://github.com/vegaprotocol/vega/pull/4439) - Update `CHANGELOG.md` since GH Action implemented
 - [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
 - [4456](https://github.com/vegaprotocol/vega/pull/4456) - Return 400 on bad mint amounts sent via the faucet
 - [4409](https://github.com/vegaprotocol/vega/pull/4409) - Add chain id to bus messages
 - [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
 - [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 - [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
+- [4422](https://github.com/vegaprotocol/vega/pull/4422) - Add support for validator key rotation
 - [4463](https://github.com/vegaprotocol/vega/pull/4463) - Remove the need for an Ethereum connection when using the null-blockchain
+- [4477](https://github.com/vegaprotocol/vega/pull/4477) - Allow reloading of null-blockchain configuration while core is running
+- [4468](https://github.com/vegaprotocol/vega/pull/4468) - Change validator weights to be based on validator score
+- [4484](https://github.com/vegaprotocol/vega/pull/4484) - Add checkpoint validator key rotation
+- [4459](https://github.com/vegaprotocol/vega/pull/4459) - Add network parameters overwrite from checkpoints
+
 
 ### 🐛 Fixes
-
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
 - [4418](https://github.com/vegaprotocol/vega/pull/4418) - Add some logging + height/version handling fixes
 - [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
+- [4475](https://github.com/vegaprotocol/vega/pull/4475) - Fix rewards checkpoint not assigned to its correct place
 
 ## 0.46.1
 *2021-11-24*

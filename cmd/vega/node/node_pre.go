@@ -374,7 +374,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.rewards = rewards.New(l.Log, l.conf.Rewards, l.broker, l.delegation, l.epochService, l.collateral, l.timeService)
 
 	// checkpoint engine
-	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams, l.delegation, l.epochService, l.rewards)
+	l.checkpoint, err = checkpoint.New(l.Log, l.conf.Checkpoint, l.assets, l.collateral, l.governance, l.netParams, l.delegation, l.epochService, l.rewards, l.topology)
 	if err != nil {
 		panic(err)
 	}
@@ -403,6 +403,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
+
+	// notify delegation, rewards, and accounting on changes in the validator pub key
+	l.topology.NotifyOnKeyChange(l.delegation.ValidatorKeyChanged, l.stakingAccounts.ValidatorKeyChanged, l.rewards.ValidatorKeyChanged, l.governance.ValidatorKeyChanged)
 
 	l.snapshot.AddProviders(l.checkpoint, l.collateral, l.governance, l.delegation, l.netParams, l.epochService, l.assets, l.banking,
 		l.notary, l.spam, l.rewards, l.stakingAccounts, l.stakeVerifier, l.limits, l.topology, l.evtfwd, l.executionEngine)

@@ -22,4 +22,5 @@ proto/**.orig
 gomock_reflect_*
 integration.test
 *.patch
+.metals
 

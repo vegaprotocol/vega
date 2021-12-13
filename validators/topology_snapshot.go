@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
@@ -33,7 +34,7 @@ func (t *Topology) Keys() []string {
 	return topHashKeys
 }
 
-func (t *Topology) serialise() ([]byte, error) {
+func (t *Topology) serialiseNodes() []*eventspb.ValidatorUpdate {
 	nodes := make([]*eventspb.ValidatorUpdate, 0, len(t.validators))
 
 	for _, node := range t.validators {
@@ -41,6 +42,7 @@ func (t *Topology) serialise() ([]byte, error) {
 			&eventspb.ValidatorUpdate{
 				NodeId:          node.ID,
 				VegaPubKey:      node.VegaPubKey,
+				VegaPubKeyIndex: node.VegaPubKeyIndex,
 				EthereumAddress: node.EthereumAddress,
 				TmPubKey:        node.TmPubKey,
 				InfoUrl:         node.InfoURL,
@@ -52,12 +54,41 @@ func (t *Topology) serialise() ([]byte, error) {
 	}
 
 	sort.SliceStable(nodes, func(i, j int) bool { return nodes[i].NodeId < nodes[j].NodeId })
+	return nodes
+}
 
+func (t *Topology) serialisePendingKeyRotation() []*snapshot.PendingKeyRotation {
+	// len(t.pendingPubKeyRotations)*2 - assuming there is at least one rotation per blockHeight
+	pkrs := make([]*snapshot.PendingKeyRotation, 0, len(t.pendingPubKeyRotations)*2)
+
+	for blockHeight, rotations := range t.pendingPubKeyRotations {
+		for nodeID, pr := range rotations {
+			pkrs = append(pkrs, &snapshot.PendingKeyRotation{
+				BlockHeight:    blockHeight,
+				NodeId:         nodeID,
+				NewPubKey:      pr.newPubKey,
+				NewPubKeyIndex: pr.newKeyIndex,
+			})
+		}
+	}
+
+	sort.SliceStable(pkrs, func(i, j int) bool {
+		if pkrs[i].BlockHeight == pkrs[j].BlockHeight {
+			return pkrs[i].NodeId < pkrs[j].NodeId
+		}
+		return pkrs[i].BlockHeight < pkrs[j].BlockHeight
+	})
+
+	return pkrs
+}
+
+func (t *Topology) serialise() ([]byte, error) {
 	payload := types.Payload{
 		Data: &types.PayloadTopology{
 			Topology: &types.Topology{
-				ChainValidators: t.chainValidators[:],
-				ValidatorData:   nodes,
+				ChainValidators:        t.chainValidators[:],
+				ValidatorData:          t.serialiseNodes(),
+				PendingPubKeyRotations: t.serialisePendingKeyRotation(),
 			},
 		},
 	}
@@ -113,6 +144,19 @@ func (t *Topology) LoadState(ctx context.Context, p *types.Payload) ([]types.Sta
 	}
 }
 
+func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotation) {
+	for _, pkr := range pkrs {
+		if _, ok := t.pendingPubKeyRotations[pkr.BlockHeight]; !ok {
+			t.pendingPubKeyRotations[pkr.BlockHeight] = map[string]pendingKeyRotation{}
+		}
+
+		t.pendingPubKeyRotations[pkr.BlockHeight][pkr.NodeId] = pendingKeyRotation{
+			newPubKey:   pkr.NewPubKey,
+			newKeyIndex: pkr.NewPubKeyIndex,
+		}
+	}
+}
+
 func (t *Topology) restore(ctx context.Context, topology *types.Topology) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -123,6 +167,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		t.validators[node.NodeId] = ValidatorData{
 			ID:              node.NodeId,
 			VegaPubKey:      node.VegaPubKey,
+			VegaPubKeyIndex: node.VegaPubKeyIndex,
 			EthereumAddress: node.EthereumAddress,
 			TmPubKey:        node.TmPubKey,
 			InfoURL:         node.InfoUrl,
@@ -136,6 +181,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		}
 	}
 	t.chainValidators = topology.ChainValidators[:]
+	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
 	t.tss.changed = true
 	return nil
 }
