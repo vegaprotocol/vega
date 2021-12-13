@@ -26,6 +26,7 @@ var (
 	ErrUnsupported = errors.New("registering a reward scheme is unsupported")
 
 	votingPowerScalingFactor, _ = num.DecimalFromString("10000")
+	decimal1, _                 = num.DecimalFromString("1")
 )
 
 // Broker for sending events.
@@ -542,8 +543,9 @@ func (e *Engine) EndOfBlock(blockHeight int64) []types.ValidatorVotingPower {
 	for _, v := range validatorsData {
 		ns, ok := normalisedScores[v.NodeID]
 		power := int64(10)
+
 		if ok {
-			power = ns.Mul(votingPowerScalingFactor).IntPart()
+			power = num.MaxD(decimal1, ns.Mul(votingPowerScalingFactor)).IntPart()
 		}
 		votingPower = append(votingPower, types.ValidatorVotingPower{
 			VotingPower: power,
