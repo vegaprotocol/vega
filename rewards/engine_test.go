@@ -55,7 +55,7 @@ func testCheckpointEngine(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
 
-	checkpointEngine, err := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig(), engine)
+	checkpointEngine, err := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig(), testEngine.collateral, engine)
 	require.NoError(t, err)
 
 	t1 := time.Now().Add(-5 * time.Minute)
@@ -111,6 +111,10 @@ func testCheckpointEngine(t *testing.T) {
 	engine.pendingPayouts[t2] = []*payout{payoutTime21, payoutTime22}
 	engine.pendingPayouts[t3] = []*payout{payoutTime3}
 
+	rewardAccountID, _ := testEngine.collateral.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccountID, num.NewUint(1000000))
+	require.Nil(t, err)
+
 	// request a checkpoint to be taken
 	state, err := checkpointEngine.BalanceCheckpoint(context.Background())
 	require.NoError(t, err)
@@ -129,8 +133,13 @@ func testCheckpointEngine(t *testing.T) {
 	require.Equal(t, 1, len(r.Rewards[2].RewardsPayout))
 
 	// instantiate the load engine and load checkpoint
-	loadEngine := getEngine(t).engine
-	loadCheckpointEngine, err := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig(), loadEngine)
+
+	loadTestEngine := getEngine(t)
+	loadEngine := loadTestEngine.engine
+	loadRewardAccountID, _ := loadTestEngine.collateral.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+	require.NoError(t, err)
+
+	loadCheckpointEngine, err := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig(), loadTestEngine.collateral, loadEngine)
 	require.NoError(t, err)
 	// add the cp hash we took into genesis of the load engine
 	genesisState := checkpoint.GenesisState{
@@ -151,6 +160,10 @@ func testCheckpointEngine(t *testing.T) {
 	loadCheckpointEngine.Load(context.Background(), state)
 	require.Equal(t, 3, len(engine.pendingPayouts))
 	require.Equal(t, len(engine.pendingPayouts), len(loadEngine.pendingPayouts))
+
+	rewardBalance, err := loadTestEngine.collateral.GetAccountByID(loadRewardAccountID)
+	require.NoError(t, err)
+	require.Equal(t, num.NewUint(1000000), rewardBalance.Balance)
 
 	// verify that a checkpoint taken with the loadEngine after load matches what it was before the load
 	loadCP, err := loadEngine.Checkpoint()
