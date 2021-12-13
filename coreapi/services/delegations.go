@@ -12,7 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 )
 
-// next, current and last two
+// next, current and last two.
 const maxEpochsToKeep = uint64(4)
 
 type delegationE interface {
@@ -102,7 +102,7 @@ func (d *Delegations) List(party, node, epoch string) []*pb.Delegation {
 	return delegations
 }
 
-// clearOldDelegations makes sure we only keep as many as <maxEpochsToKeep> epoch delegations
+// clearOldDelegations makes sure we only keep as many as <maxEpochsToKeep> epoch delegations.
 func (d *Delegations) clearOldDelegations(epochSeq string) {
 	epochSeqUint, err := strconv.ParseUint(epochSeq, 10, 64)
 	if err != nil {
