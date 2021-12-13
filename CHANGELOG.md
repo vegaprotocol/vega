@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/pull/) -
@@ -26,7 +26,6 @@
 - [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
 - [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 - [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
-- [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
 - [4422](https://github.com/vegaprotocol/vega/pull/4422) - Add support for validator key rotation
 - [4463](https://github.com/vegaprotocol/vega/pull/4463) - Remove the need for an Ethereum connection when using the null-blockchain
 - [4477](https://github.com/vegaprotocol/vega/pull/4477) - Allow reloading of null-blockchain configuration while core is running
