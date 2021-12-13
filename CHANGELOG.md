@@ -12,7 +12,7 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
 
 ## 0.47.1
 *2021-11-24*

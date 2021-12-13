@@ -134,12 +134,12 @@ func testVotingPowerCalculation(t *testing.T) {
 	// node1 - 0.25
 	// node2 - 0.5
 	// node3 - 0.25
-	// node4 - 0
+	// node4 - 0 => 1
 	res := engine.EndOfBlock(1)
 	require.Equal(t, int64(2500), res[0].VotingPower)
 	require.Equal(t, int64(5000), res[1].VotingPower)
 	require.Equal(t, int64(2500), res[2].VotingPower)
-	require.Equal(t, int64(0), res[3].VotingPower)
+	require.Equal(t, int64(1), res[3].VotingPower)
 }
 
 func setDefaultPendingPayouts(engine *Engine) {
