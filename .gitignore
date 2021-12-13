@@ -2,6 +2,7 @@
 cmd/*/*-dbg
 cmd/vega/vega*
 cmd/vegabenchmark/vegabenchmark*
+cmd/examples/nullchain/nullchain*
 data/
 .DS_Store
 .envrc
