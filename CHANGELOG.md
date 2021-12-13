@@ -10,6 +10,7 @@
 
 ### 🛠 Improvements
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
+- [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/pull/) -
