@@ -34,7 +34,7 @@ func verifier(params []string, f func(*reporter, []byte) string) error {
 		}
 	}
 	if rprter.HasError() {
-		return errors.New("error: one or more file are ill formated or invalid")
+		return errors.New("error: one or more files are malformed or invalid")
 	}
 	return nil
 }
@@ -82,24 +82,16 @@ func isValidParty(party string) bool {
 		return false
 	}
 
-	if _, err := hex.DecodeString(party); err != nil {
-		return false
-	}
-
-	return true
+	_, err := hex.DecodeString(party)
+	return err == nil
 }
 
-// TODO: uncomment in a follow up PR.
 func isValidTMKey(key string) bool {
-	if keybytes, err := base64.StdEncoding.DecodeString(key); err != nil {
+	keybytes, err := base64.StdEncoding.DecodeString(key)
+	if err != nil {
 		return false
-	} else {
-		if len(keybytes) != 32 {
-			return false
-		}
 	}
-
-	return true
+	return len(keybytes) == 32
 }
 
 func isValidEthereumAddress(v string) bool {

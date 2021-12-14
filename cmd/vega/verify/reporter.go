@@ -35,7 +35,7 @@ func (r *reporter) Dump(result string) {
 	ok := green("OK")
 	if r.hasCurrError {
 		r.hasError = true
-		ok = red("KO")
+		ok = red("NOT OK")
 	}
 	fmt.Printf("%v: %v\n", r.file, ok)
 	if len(result) > 0 {
