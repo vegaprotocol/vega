@@ -786,12 +786,12 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 			case types.PeggedReferenceBestAsk:
 				return errors.New("order in buy side shape with best ask price reference")
 			case types.PeggedReferenceBestBid:
-				if lo.Offset > 0 {
-					return errors.New("order in buy side shape offset must be <= 0")
+				if lo.Offset < 0 {
+					return errors.New("order in buy side shape offset must be >= 0")
 				}
 			case types.PeggedReferenceMid:
-				if lo.Offset >= 0 {
-					return errors.New("order in buy side shape offset must be < 0")
+				if lo.Offset <= 0 {
+					return errors.New("order in buy side shape offset must be > 0")
 				}
 			}
 		} else {

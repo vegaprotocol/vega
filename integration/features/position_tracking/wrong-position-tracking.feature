@@ -22,7 +22,7 @@ Feature: Test position tracking with auctions
 # submit our LP
     Then the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | -10    | submission |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
       | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment |
 
 # get out of auction
@@ -52,8 +52,8 @@ Feature: Test position tracking with auctions
 
     Then the parties place the following pegged orders:
       | party | market id | side | volume | pegged reference | offset |
-      | ruser  | ETH/DEC19 | buy  | 35     | BID              | -1000  |
-      | ruser  | ETH/DEC19 | sell | 35     | ASK              | 3000   |
+      | ruser  | ETH/DEC19 | buy  | 35     | BID              | 1000  |
+      | ruser  | ETH/DEC19 | sell | 35     | ASK              | 3000  |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     | reference |
@@ -63,7 +63,7 @@ Feature: Test position tracking with auctions
 
     Then the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
-      | party0 | ETH/DEC19 | buy  | 100    | BID              | -5000  |
+      | party0 | ETH/DEC19 | buy  | 100    | BID              | 5000   |
       | party1 | ETH/DEC19 | sell | 95     | ASK              | 1000   |
 
     And time is updated to "2019-11-30T00:01:00Z"

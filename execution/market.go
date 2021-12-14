@@ -746,13 +746,11 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.Zero(), ErrUnableToReprice
 	}
 
-	if order.PeggedOrder.Offset >= 0 {
+	if order.Side == types.SideSell {
 		return num.Sum(price, num.NewUint(uint64(order.PeggedOrder.Offset))), nil
 	}
 
-	// At this stage offset is negative so we change it's sign to cast it to an
-	// unsigned type
-	offset := num.NewUint(uint64(-order.PeggedOrder.Offset))
+	offset := num.NewUint(uint64(order.PeggedOrder.Offset))
 	if price.LTE(offset) {
 		return num.Zero(), ErrUnableToReprice
 	}
@@ -945,12 +943,12 @@ func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
 		case types.PeggedReferenceBestAsk:
 			return types.ErrPeggedOrderBuyCannotReferenceBestAskPrice
 		case types.PeggedReferenceBestBid:
-			if order.PeggedOrder.Offset > 0 {
-				return types.ErrPeggedOrderOffsetMustBeLessOrEqualToZero
+			if order.PeggedOrder.Offset < 0 {
+				return types.ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
 			}
 		case types.PeggedReferenceMid:
-			if order.PeggedOrder.Offset >= 0 {
-				return types.ErrPeggedOrderOffsetMustBeLessThanZero
+			if order.PeggedOrder.Offset <= 0 {
+				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
 			}
 		}
 	} else {

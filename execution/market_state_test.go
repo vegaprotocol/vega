@@ -89,7 +89,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 			{
 				Reference:  types.PeggedReferenceMid,
 				Proportion: 1,
-				Offset:     -1,
+				Offset:     1,
 			},
 		},
 	}

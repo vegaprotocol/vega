@@ -67,12 +67,12 @@ func TestIssue2876(t *testing.T) {
 			{
 				Reference:  types.PeggedReferenceBestBid,
 				Proportion: 10,
-				Offset:     -1000,
+				Offset:     1000,
 			},
 			{
 				Reference:  types.PeggedReferenceMid,
 				Proportion: 13,
-				Offset:     -1500,
+				Offset:     1500,
 			},
 		},
 		Sells: []*types.LiquidityOrder{

@@ -44,7 +44,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -1,
+				Offset:     1,
 				Proportion: 1,
 			},
 		},
@@ -63,7 +63,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -10,
+				Offset:     10,
 				Proportion: 42,
 			},
 		},
@@ -92,7 +92,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesLiquidityOrders:market-id": "0254d8b74441ca3bac8f9b141408502d9b1f297e8ef1054d45775566677a8072",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
-		"provisions:market-id":             "236cf44c1a419b99955aa7662dacfed9bba4d5f391e4606bb00f50676f99b40a",
+		"provisions:market-id":             "81b3826f582f142a6ff0e1ccec41c6447dd723d039960a59c7abb5115a19cc02",
 		"liquiditySupplied:market-id":      "79236135f389cc75b9c1a43b6acce8fecb7d56a2c14c3fc4b043523b9933828b",
 	}
 
@@ -105,7 +105,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		kToS[key] = s
 
 		// compare hashes to the expected ones
-		assert.Equal(t, hex.EncodeToString(h), expectedHashes[key])
+		assert.Equalf(t, expectedHashes[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 	}
 
 	// now we reload the keys / state
@@ -130,7 +130,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesLiquidityOrders:market-id": "c76075385924d7207d9002d2f9855c089f1c409c7e6e235d5b0ddc4a84bc7fc4",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
-		"provisions:market-id":             "56319a9f75b8f0a5eb53afb0a6cfd2286e6a8168fd28cbbbd0855b47cdde94b9",
+		"provisions:market-id":             "7a0a12dab8c50b6bb983e0441d267ea37829999f2fd3bff0d9aa52839ad54c11",
 		"liquiditySupplied:market-id":      "9af43ab189f6eb27c5ec88f31498ac65901ed9f7da5de344a0f017509d83fda5",
 	}
 
@@ -141,7 +141,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -10,
+				Offset:     10,
 				Proportion: 42,
 			},
 		},
@@ -196,7 +196,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		assert.NoError(t, err)
 
 		// compare hashes to the expected ones
-		assert.Equal(t, hex.EncodeToString(h), expectedHashes2[key], key)
+		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 
 		pl := snapshotpb.Payload{}
 		assert.NoError(t, proto.Unmarshal(s, &pl))
@@ -208,6 +208,6 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		h, err := e3.engine.GetHash(key)
 		assert.NoError(t, err)
 		// compare hashes to the expected ones
-		assert.Equal(t, hex.EncodeToString(h), expectedHashes2[key], key)
+		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 	}
 }

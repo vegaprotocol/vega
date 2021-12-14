@@ -486,10 +486,6 @@ const (
 	OrderErrorWithoutReferencePrice OrderError = proto.OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE
 	// Buy pegged order cannot reference best ask price.
 	OrderErrorBuyCannotReferenceBestAskPrice OrderError = proto.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE
-	// Pegged order offset must be <= 0.
-	OrderErrorOffsetMustBeLessOrEqualToZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO
-	// Pegged order offset must be < 0.
-	OrderErrorOffsetMustBeLessThanZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO
 	// Pegged order offset must be >= 0.
 	OrderErrorOffsetMustBeGreaterOrEqualToZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
 	// Sell pegged order cannot reference best bid price.
@@ -529,8 +525,6 @@ var (
 	ErrPeggedOrderMustBeGTTOrGTC                   = OrderErrorMustBeGTTOrGTC
 	ErrPeggedOrderWithoutReferencePrice            = OrderErrorWithoutReferencePrice
 	ErrPeggedOrderBuyCannotReferenceBestAskPrice   = OrderErrorBuyCannotReferenceBestAskPrice
-	ErrPeggedOrderOffsetMustBeLessOrEqualToZero    = OrderErrorOffsetMustBeLessOrEqualToZero
-	ErrPeggedOrderOffsetMustBeLessThanZero         = OrderErrorOffsetMustBeLessThanZero
 	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = OrderErrorOffsetMustBeGreaterOrEqualToZero
 	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderErrorSellCannotReferenceBestBidPrice
 	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderErrorOffsetMustBeGreaterThanZero

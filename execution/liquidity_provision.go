@@ -745,9 +745,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	}
 
 	// This is handling bestBid / mid for BID
-	// At this stage offset is negative so we change
-	// it's sign to cast it to an unsigned type
-	offset := num.NewUint(uint64(-po.Offset))
+	offset := num.NewUint(uint64(po.Offset))
 
 	// first the case where we are sure to be able to price
 	if price.GT(offset) {
@@ -771,19 +769,19 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			case types.PeggedReferenceBestBid:
 				po.Offset = 0
 			case types.PeggedReferenceMid:
-				po.Offset = -1
+				po.Offset = 1
 				if m.as.InAuction() {
 					po.Offset = 0
 				}
 			}
-			return price.Sub(price, num.NewUint(uint64(-po.Offset))), po, nil
+			return price.Sub(price, num.NewUint(uint64(po.Offset))), po, nil
 		}
 
 		// now this is the case where basePrice is < minPrice
 		// and minPrice is non-negative + inferior to bestBid
 		if !minP.IsZero() && minP.LT(price) {
 			off := num.Zero().Sub(price, minP)
-			po.Offset = -int64(off.Uint64())
+			po.Offset = int64(off.Uint64())
 			return price.Sub(price, off), po, nil
 		}
 
@@ -792,17 +790,17 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// in that case we will just assign the offset
 		// to the price
 		// we also know the price here cannot be 0
-		// so it's safe to have a -1 offset
+		// so it's safe to have a 1 offset
 		switch po.Reference {
 		case types.PeggedReferenceBestBid:
 			po.Offset = 0
 		case types.PeggedReferenceMid:
-			po.Offset = -1
+			po.Offset = 1
 			if m.as.InAuction() {
 				po.Offset = 0
 			}
 		}
-		return price.Sub(price, num.NewUint(uint64(-po.Offset))), po, nil
+		return price.Sub(price, num.NewUint(uint64(po.Offset))), po, nil
 	}
 
 	// now at this point we know that price - offset
@@ -816,14 +814,14 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		case types.PeggedReferenceBestBid:
 			po.Offset = 0
 		case types.PeggedReferenceMid:
-			po.Offset = -1
+			po.Offset = 1
 		}
-		return price.Sub(price, num.NewUint(uint64(-po.Offset))), po, nil
+		return price.Sub(price, num.NewUint(uint64(po.Offset))), po, nil
 	}
 
 	// this is the last case where we can use the minPrice
 	off := num.Zero().Sub(price, minP)
-	po.Offset = -int64(off.Uint64())
+	po.Offset = int64(off.Uint64())
 	return price.Sub(price, off), po, nil
 }
 
