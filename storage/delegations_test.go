@@ -97,7 +97,11 @@ func TestClearOldEpochs(t *testing.T) {
 		})
 		delegations, _ := testService.ds.GetAllDelegations()
 
-		require.True(t, len(delegations) <= 30)
+		if i < 30 {
+			require.Equal(t, i+1, len(delegations))
+		} else {
+			require.Equal(t, 30, len(delegations))
+		}
 	}
 }
 
