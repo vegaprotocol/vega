@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var epochs []types.Epoch
@@ -106,4 +107,57 @@ func TestEpochService(t *testing.T) {
 	nextDay = now.Add(time.Hour * 24)
 	assert.Equal(t, nextDay.String(), epoch.ExpireTime.String())
 	assert.True(t, epoch.EndTime.IsZero())
+}
+
+// TestEpochServiceCheckpointLoading tests that when an epoch is loaded from checkpoint within the same epoch, the epoch is not prematurely ending right after the load.
+func TestEpochServiceCheckpointLoading(t *testing.T) {
+	now := time.Unix(0, 0).UTC()
+
+	ctx := context.Background()
+	service := getEpochServiceMT(t)
+	defer service.ctrl.Finish()
+
+	service.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Move time forward to generate first epoch
+	service.cb(ctx, now)
+
+	// move to 13 hours into the epoch
+	now = now.Add(time.Hour * 13)
+	println(now.String())
+	service.cb(ctx, now)
+
+	// take a checkpoint - 11h to go for the epoch
+	cp, _ := service.Checkpoint()
+
+	loadService := getEpochServiceMT(t)
+	defer loadService.ctrl.Finish()
+	loadService.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	loadEpochs := []types.Epoch{}
+	onLoadEpoch := func(ctx context.Context, e types.Epoch) {
+		loadEpochs = append(loadEpochs, e)
+	}
+	loadService.NotifyOnEpoch(onLoadEpoch)
+
+	// we're loading the checkpoint 4 hours after the time it was taken but we're still within the same epoch for another few good hours
+	now = now.Add((time.Hour * 4))
+	println(now.String())
+	loadService.cb(ctx, now)
+	loadService.Load(ctx, cp)
+	require.Equal(t, 1, len(loadEpochs))
+
+	// run to the expected end of the epoch and verify it's ended
+	now = now.Add((time.Hour * 7) + 1*time.Second)
+	println(now.String())
+	loadService.cb(ctx, now)
+	require.Equal(t, 1, len(loadEpochs))
+
+	loadService.OnBlockEnd(ctx)
+	// add another second to start a new epoch
+	now = now.Add(1 * time.Second)
+	loadService.cb(ctx, now)
+	require.Equal(t, 3, len(loadEpochs))
+	require.Equal(t, now.String(), loadEpochs[1].EndTime.String())
+	require.Equal(t, now.String(), loadEpochs[2].StartTime.String())
 }
