@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	tsmock "code.vegaprotocol.io/vega/netparams/mocks"
+
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/netparams"
@@ -273,6 +275,12 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 	defer netp.ctrl.Finish()
 	ctx := context.Background()
 	netp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	tm := tsmock.NewMockVegaTime(netp.ctrl)
+	var netpCb func(context.Context, time.Time)
+	tm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
+		netpCb = cb
+	})
+	tm.NotifyOnTick(netp.OnChainTimeUpdate)
 
 	counter := 0
 	countNotificationsFunc := func(_ context.Context, minAmount num.Decimal) error {
@@ -290,7 +298,7 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 	err := netp.Update(ctx, netparams.DelegationMinAmount, "2.0")
 	assert.NoError(t, err)
 
-	netp.OnChainTimeUpdate(ctx, time.Now())
+	netpCb(ctx, time.Now())
 	require.Equal(t, 1, counter)
 
 	cp, err := netp.Checkpoint()
@@ -300,6 +308,13 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 	defer loadNp.ctrl.Finish()
 	loadNp.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	loadNp.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	loadTm := tsmock.NewMockVegaTime(netp.ctrl)
+	var loadNetpCb func(context.Context, time.Time)
+	loadTm.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(cb func(context.Context, time.Time)) {
+		loadNetpCb = cb
+	})
+	loadTm.NotifyOnTick(loadNp.OnChainTimeUpdate)
 
 	var loadMinAmount num.Decimal
 	loadCountNotificationsFunc := func(_ context.Context, minAmount num.Decimal) error {
@@ -313,7 +328,7 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 		},
 	)
 	loadNp.Load(ctx, cp)
-	loadNp.OnChainTimeUpdate(ctx, time.Now())
+	loadNetpCb(ctx, time.Now())
 	require.Equal(t, "2", loadMinAmount.String())
 }
 
