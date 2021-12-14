@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 	"time"
@@ -12,12 +13,11 @@ import (
 )
 
 type epoch struct {
-	seq        string
-	startTime  int64
-	expiryTime int64
-	endTime    int64
-	nodeIDs    []string
-
+	seq                        string
+	startTime                  int64
+	expiryTime                 int64
+	endTime                    int64
+	nodeIDs                    []string
 	delegationsPerNodePerParty map[string]map[string]pb.Delegation
 }
 
@@ -25,12 +25,12 @@ type Epoch struct {
 	Config
 
 	mut          sync.RWMutex
-	epochs       map[string]epoch
+	epochs       map[string]*epoch
 	currentEpoch string
 
 	nodeStore *Node
-
-	log *logging.Logger
+	minEpoch  *uint64
+	log       *logging.Logger
 }
 
 func NewEpoch(log *logging.Logger, nodeStore *Node, c Config) *Epoch {
@@ -38,12 +38,16 @@ func NewEpoch(log *logging.Logger, nodeStore *Node, c Config) *Epoch {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	return &Epoch{
+	e := &Epoch{
 		nodeStore: nodeStore,
-		epochs:    map[string]epoch{},
+		epochs:    map[string]*epoch{},
 		log:       log,
 		Config:    c,
+		minEpoch:  new(uint64),
 	}
+
+	*e.minEpoch = math.MaxUint64
+	return e
 }
 
 // ReloadConf update the internal conf of the market
@@ -89,7 +93,7 @@ func (e *Epoch) addEpoch(seq string, startTime, expiryTime, endTime int64) {
 	e.mut.Lock()
 	defer e.mut.Unlock()
 
-	e.epochs[seq] = epoch{
+	e.epochs[seq] = &epoch{
 		seq:        seq,
 		startTime:  startTime,
 		expiryTime: expiryTime,
@@ -99,6 +103,12 @@ func (e *Epoch) addEpoch(seq string, startTime, expiryTime, endTime int64) {
 		nodeIDs:                    e.nodeStore.GetAllIDs(),
 		delegationsPerNodePerParty: map[string]map[string]pb.Delegation{},
 	}
+
+	clearOldEpochsDelegations(seq, e.minEpoch, func(epochSeq string) {
+		if epoch, ok := e.epochs[epochSeq]; ok {
+			epoch.delegationsPerNodePerParty = map[string]map[string]pb.Delegation{}
+		}
+	})
 }
 
 func (e *Epoch) AddDelegation(de pb.Delegation) {
@@ -178,7 +188,7 @@ func (e *Epoch) GetEpochByID(id string) (*pb.Epoch, error) {
 	return pe, nil
 }
 
-func (e *Epoch) epochProtoFromInternal(ie epoch) (*pb.Epoch, error) {
+func (e *Epoch) epochProtoFromInternal(ie *epoch) (*pb.Epoch, error) {
 	seq, err := strconv.ParseUint(ie.seq, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse uint from %s: %w", ie.seq, err)

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"sync"
 
@@ -21,6 +22,7 @@ type node struct {
 
 	delegationsPerEpochPerParty map[string]map[string]pb.Delegation
 	scoresPerEpoch              map[string]nodeScore
+	minEpoch                    *uint64
 }
 
 type keyRotation struct {
@@ -36,8 +38,7 @@ type Node struct {
 	nodes                  map[string]node
 	pubKeyrotationsPerNode map[string][]keyRotation
 	mut                    sync.RWMutex
-
-	log *logging.Logger
+	log                    *logging.Logger
 }
 
 func NewNode(log *logging.Logger, c Config) *Node {
@@ -71,11 +72,14 @@ func (ns *Node) AddNode(n pb.Node) {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
 
-	ns.nodes[n.GetId()] = node{
+	nd := node{
 		n:                           n,
 		scoresPerEpoch:              map[string]nodeScore{},
 		delegationsPerEpochPerParty: map[string]map[string]pb.Delegation{},
+		minEpoch:                    new(uint64),
 	}
+	*nd.minEpoch = math.MaxUint64
+	ns.nodes[n.GetId()] = nd
 }
 
 func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore string) {
@@ -105,6 +109,7 @@ func (ns *Node) AddDelegation(de pb.Delegation) {
 	}
 
 	if _, ok := node.delegationsPerEpochPerParty[de.GetEpochSeq()]; !ok {
+		clearOldEpochsDelegations(de.GetEpochSeq(), node.minEpoch, func(epochSeq string) { delete(node.delegationsPerEpochPerParty, epochSeq) })
 		node.delegationsPerEpochPerParty[de.GetEpochSeq()] = map[string]pb.Delegation{}
 	}
 
