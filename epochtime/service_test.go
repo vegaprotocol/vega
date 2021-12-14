@@ -109,7 +109,7 @@ func TestEpochService(t *testing.T) {
 	assert.True(t, epoch.EndTime.IsZero())
 }
 
-// TestEpochServiceCheckpointLoading tests that when an epoch is loaded from checkpoint within the same epoch, the epoch is not prematurely ending right after the load
+// TestEpochServiceCheckpointLoading tests that when an epoch is loaded from checkpoint within the same epoch, the epoch is not prematurely ending right after the load.
 func TestEpochServiceCheckpointLoading(t *testing.T) {
 	now := time.Unix(0, 0).UTC()
 
