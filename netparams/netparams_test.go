@@ -315,7 +315,6 @@ func testCheckpointNotificationsDelivered(t *testing.T) {
 	loadNp.Load(ctx, cp)
 	loadNp.OnChainTimeUpdate(ctx, time.Now())
 	require.Equal(t, "2", loadMinAmount.String())
-
 }
 
 func testNonEmptyCheckpointWithOverWrite(t *testing.T) {
