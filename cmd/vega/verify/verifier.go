@@ -2,6 +2,7 @@ package verify
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -89,17 +90,17 @@ func isValidParty(party string) bool {
 }
 
 // TODO: uncomment in a follow up PR.
-// func isValidTMKey(key string) bool {
-// 	if keybytes, err := base64.StdEncoding.DecodeString(key); err != nil {
-// 		return false
-// 	} else {
-// 		if len(keybytes) != 32 {
-// 			return false
-// 		}
-// 	}
+func isValidTMKey(key string) bool {
+	if keybytes, err := base64.StdEncoding.DecodeString(key); err != nil {
+		return false
+	} else {
+		if len(keybytes) != 32 {
+			return false
+		}
+	}
 
-// 	return true
-// }
+	return true
+}
 
 func isValidEthereumAddress(v string) bool {
 	re := regexp.MustCompile("^0x[0-9a-fA-F]{40}$")

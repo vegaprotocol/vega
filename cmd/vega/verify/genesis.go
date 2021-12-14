@@ -29,7 +29,17 @@ func verifyGenesis(r *reporter, bs []byte) string {
 				ReplayAttackThreshold *int `json:"replay_attack_threshold"`
 			} `json:"network"`
 			NetworkParameters map[string]string `json:"network_parameters"`
-			// Validators        map[string]string `json:"validators"`
+			Validators        map[string]struct {
+				ID              string `json:"id"`
+				VegaPubKey      string `json:"vega_pub_key"`
+				VegaPubKeyIndex int    `json:"vega_pub_key_index"`
+				EthereumAddress string `json:"ethereum_address"`
+				TMPubKey        string `json:"tm_pub_key"`
+				InfoURL         string `json:"info_url"`
+				Country         string `json:"country"`
+				Name            string `json:"name"`
+				AvatarURL       string `json:"avatar_url"`
+			} `json:"validators,omitempty"`
 			Assets *struct {
 				ERC20 map[string]types.ERC20 `json:"ERC20"`
 			} `json:"assets"`
@@ -86,22 +96,19 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	}
 
 	// TODO(): uncomment in a follow up PR + FIX
-	// if g.AppState.Validators == nil || len(g.AppState.Validators) <= 0 {
-	// 	r.Warn("app_state.validators is missing or empty")
-	// } else {
-	// 	for k, v := range g.AppState.Validators {
-	// 		if len(k) <= 0 {
-	// 			r.Err("app_state.validators contains an empty key")
-	// 		} else if !isValidTMKey(k) {
-	// 			r.Err("app_state.validators contains an non valid TM public key, `%v`", k)
-	// 		}
-	// 		if len(v) <= 0 {
-	// 			r.Err("app_state.validators contains an empty value for key `%v`", k)
-	// 		} else if !isValidParty(v) {
-	// 			r.Err("app_state.validators contains an non valid vega public key, `%v`", v)
-	// 		}
-	// 	}
-	// }
+	if g.AppState.Validators == nil || len(g.AppState.Validators) <= 0 {
+		r.Warn("app_state.validators is missing or empty")
+	} else {
+		for k, v := range g.AppState.Validators {
+			if len(k) <= 0 {
+				r.Err("app_state.validators contains an empty key")
+			} else if !isValidTMKey(k) {
+				r.Err("app_state.validators contains an non valid TM public key, `%v`", k)
+			} else if !isValidParty(v.VegaPubKey) {
+				r.Err("app_state.validators contains an non valid vega public key, `%v`", v)
+			}
+		}
+	}
 
 	if g.AppState.Assets == nil {
 		r.Warn("no assets specified as part of the genesis")
