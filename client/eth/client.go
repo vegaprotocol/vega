@@ -24,7 +24,7 @@ var (
 	ErrUnexpectedSolidityFormat = errors.New("unexpected format of solidity bytecode")
 )
 
-// ContractHashes the sha3-256(bytecode)
+// ContractHashes the sha3-256(contract-bytecode stripped of metadata).
 var ContractHashes = map[string]struct{}{
 	"d66948e12817f8ae6ca94d56b43ca12e66416e7e9bc23bb09056957b25afc6bd": {}, // staking
 	"5278802577f4aca315b9524bfa78790f8f0fae08939ec58bc9e8f0ea40123b09": {}, // vesting
