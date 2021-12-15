@@ -19,6 +19,7 @@ type limitsTest struct {
 }
 
 func getLimitsTest(t *testing.T) *limitsTest {
+	t.Helper()
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
