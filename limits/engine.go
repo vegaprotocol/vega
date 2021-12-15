@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 )
 
 type Engine struct {
-	log *logging.Logger
-	cfg Config
+	log    *logging.Logger
+	cfg    Config
+	broker Broker
 
 	blockCount uint16
 
@@ -28,14 +31,19 @@ type Engine struct {
 	lss *limitsSnapshotState
 }
 
-func New(log *logging.Logger, cfg Config) *Engine {
+type Broker interface {
+	Send(event events.Event)
+}
+
+func New(log *logging.Logger, cfg Config, broker Broker) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	return &Engine{
-		log: log,
-		cfg: cfg,
-		lss: &limitsSnapshotState{changed: true},
+		log:    log,
+		cfg:    cfg,
+		lss:    &limitsSnapshotState{changed: true},
+		broker: broker,
 	}
 }
 
@@ -80,10 +88,25 @@ func (e *Engine) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 	e.log.Info("loaded limits genesis state",
 		logging.String("state", fmt.Sprintf("%#v", *state)))
 
+	e.sendEvent(ctx)
 	return nil
 }
 
-func (e *Engine) OnTick(_ context.Context, t time.Time) {
+func (e *Engine) sendEvent(ctx context.Context) {
+	limits := vega.NetworkLimits{
+		CanProposeMarket:     e.canProposeMarket,
+		CanProposeAsset:      e.canProposeAsset,
+		BootstrapFinished:    e.bootstrapFinished,
+		ProposeMarketEnabled: e.proposeMarketEnabled,
+		ProposeAssetEnabled:  e.proposeAssetEnabled,
+		BootstrapBlockCount:  uint32(e.bootstrapBlockCount),
+		GenesisLoaded:        e.genesisLoaded,
+	}
+	event := events.NewNetworkLimitsEvent(ctx, &limits)
+	e.broker.Send(event)
+}
+
+func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	if !e.genesisLoaded || (e.bootstrapFinished && e.canProposeAsset && e.canProposeMarket) {
 		return
 	}
@@ -93,6 +116,7 @@ func (e *Engine) OnTick(_ context.Context, t time.Time) {
 		if e.blockCount > e.bootstrapBlockCount {
 			e.log.Info("bootstraping period finished, transactions are now allowed")
 			e.bootstrapFinished = true
+			e.sendEvent(ctx)
 		}
 		e.lss.changed = true
 	}
@@ -101,11 +125,13 @@ func (e *Engine) OnTick(_ context.Context, t time.Time) {
 		e.log.Info("all required conditions are met, proposing markets is now allowed")
 		e.canProposeMarket = true
 		e.lss.changed = true
+		e.sendEvent(ctx)
 	}
 	if !e.canProposeAsset && e.bootstrapFinished && e.proposeAssetEnabled && t.After(e.proposeAssetEnabledFrom) {
 		e.log.Info("all required conditions are met, proposing assets is now allowed")
 		e.canProposeAsset = true
 		e.lss.changed = true
+		e.sendEvent(ctx)
 	}
 }
 

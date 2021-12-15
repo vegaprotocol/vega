@@ -18,7 +18,7 @@ import (
 var allKey = (&types.PayloadLimitState{}).Key()
 
 func TestLimitSnapshotEmpty(t *testing.T) {
-	l := getLimitsTest()
+	l := getLimitsTest(t)
 
 	h, err := l.GetHash(allKey)
 	require.Nil(t, err)
@@ -26,7 +26,7 @@ func TestLimitSnapshotEmpty(t *testing.T) {
 }
 
 func TestLimitSnapshotWrongPayLoad(t *testing.T) {
-	l := getLimitsTest()
+	l := getLimitsTest(t)
 	snap := &types.Payload{Data: &types.PayloadEpoch{}}
 	_, err := l.LoadState(context.Background(), snap)
 	assert.ErrorIs(t, types.ErrInvalidSnapshotNamespace, err)
@@ -36,7 +36,7 @@ func TestLimitSnapshotGenesisState(t *testing.T) {
 	gs := &limits.GenesisState{
 		BootstrapBlockCount: 1,
 	}
-	lmt := getLimitsTest()
+	lmt := getLimitsTest(t)
 	h1, err := lmt.GetHash(allKey)
 	require.Nil(t, err)
 
@@ -52,7 +52,7 @@ func TestLimitSnapshotBlockCount(t *testing.T) {
 	gs := &limits.GenesisState{
 		BootstrapBlockCount: 1,
 	}
-	lmt := getLimitsTest()
+	lmt := getLimitsTest(t)
 	lmt.loadGenesisState(t, gs)
 
 	h1, err := lmt.GetHash(allKey)
@@ -75,7 +75,7 @@ func TestLimitSnapshotBlockCount(t *testing.T) {
 
 	// Load state into new engine and check the blockcount has returned
 	// be counting the expected steps for boostrapping to have finished
-	snapLmt := getLimitsTest()
+	snapLmt := getLimitsTest(t)
 	snapLmt.loadGenesisState(t, gs)
 	_, err = snapLmt.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
@@ -92,7 +92,7 @@ func TestLimitSnapshotBootstrapFinished(t *testing.T) {
 		ProposeMarketEnabled: true,
 		ProposeAssetEnabled:  true,
 	}
-	lmt := getLimitsTest()
+	lmt := getLimitsTest(t)
 	lmt.loadGenesisState(t, gs)
 
 	// Tick to get out of bootstrapping
@@ -109,7 +109,7 @@ func TestLimitSnapshotBootstrapFinished(t *testing.T) {
 	require.Nil(t, err)
 
 	// Load state into new engine and check all the flags have returned
-	snapLmt := getLimitsTest()
+	snapLmt := getLimitsTest(t)
 	snapLmt.loadGenesisState(t, gs)
 	_, err = snapLmt.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)

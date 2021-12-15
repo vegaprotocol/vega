@@ -343,7 +343,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.limits = limits.New(l.Log, l.conf.Limits)
+	l.limits = limits.New(l.Log, l.conf.Limits, l.broker)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, l.nodeWallets.Vega, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
