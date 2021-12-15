@@ -209,6 +209,11 @@ func NewApp(
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
 	app.abci.OnInfo = app.Info
+	// snapshot specific handlers.
+	app.abci.OnListSnapshots = app.ListSnapshots
+	app.abci.OnOfferSnapshot = app.OfferSnapshot
+	app.abci.OnApplySnapshotChunk = app.ApplySnapshotChunk
+	app.abci.OnLoadSnapshotChunk = app.LoadSnapshotChunk
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
@@ -421,7 +426,7 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 	return resp
 }
 
-func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		return tmtypes.ResponseLoadSnapshotChunk{}
