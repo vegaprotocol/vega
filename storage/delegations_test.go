@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"sort"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -74,6 +75,34 @@ func setup(t *testing.T) *delegationTest {
 	testService.ds.AddDelegation(testService.delegation4)
 
 	return &testService
+}
+
+func TestClearOldEpochs(t *testing.T) {
+	config, err := storage.NewTestConfig()
+	if err != nil {
+		t.Fatalf("unable to setup badger dirs: %v", err)
+	}
+
+	delegationStore := storage.NewDelegations(logging.NewTestLogger(), config)
+	testService := delegationTest{
+		ds: delegationStore,
+	}
+
+	for i := 0; i < 100; i++ {
+		testService.ds.AddDelegation(pb.Delegation{
+			Party:    "party1",
+			NodeId:   "node1",
+			EpochSeq: strconv.Itoa(i),
+			Amount:   "100",
+		})
+		delegations, _ := testService.ds.GetAllDelegations()
+
+		if i < 30 {
+			require.Equal(t, i+1, len(delegations))
+		} else {
+			require.Equal(t, 30, len(delegations))
+		}
+	}
 }
 
 func TestGetAllDelegations(t *testing.T) {

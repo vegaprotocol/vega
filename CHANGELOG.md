@@ -9,7 +9,7 @@
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [244](https://github.com/vegaprotocol/data-node/pull/244) - Constrain the number of epochs for which we keep delegations in memory
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/) -

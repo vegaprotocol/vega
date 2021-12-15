@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"math"
 	"sync"
 
 	"code.vegaprotocol.io/data-node/logging"
@@ -17,6 +18,7 @@ type Delegations struct {
 	log                     *logging.Logger
 	subscribers             map[uint64]chan pb.Delegation
 	subscriberID            uint64
+	minEpoch                *uint64
 }
 
 func NewDelegations(log *logging.Logger, c Config) *Delegations {
@@ -24,12 +26,16 @@ func NewDelegations(log *logging.Logger, c Config) *Delegations {
 	log = log.Named(namedLogger)
 	log.SetLevel(c.Level.Get())
 
-	return &Delegations{
+	d := &Delegations{
 		epochToPartyDelegations: map[string]map[string]map[string]string{},
 		log:                     log,
 		Config:                  c,
 		subscribers:             map[uint64]chan pb.Delegation{},
+		minEpoch:                new(uint64),
 	}
+
+	*d.minEpoch = math.MaxUint64
+	return d
 }
 
 // ReloadConf update the internal conf of the market
@@ -89,6 +95,7 @@ func (s *Delegations) AddDelegation(de pb.Delegation) {
 	if !ok {
 		epoch = map[string]map[string]string{}
 		s.epochToPartyDelegations[de.EpochSeq] = epoch
+		clearOldEpochsDelegations(de.EpochSeq, s.minEpoch, func(epochSeq string) { delete(s.epochToPartyDelegations, epochSeq) })
 	}
 
 	party, ok := epoch[de.Party]
