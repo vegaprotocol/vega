@@ -58,7 +58,7 @@ var commandName = map[Command]string{
 	UndelegateCommand:            "Undelegate",
 	CheckpointRestoreCommand:     "Checkpoint Restore",
 	KeyRotateSubmissionCommand:   "Key Rotate Submission",
-	StateVariableProposalCommand: "State variable proposal",
+	StateVariableProposalCommand: "State Variable Proposal",
 }
 
 func (cmd Command) IsValidatorCommand() bool {

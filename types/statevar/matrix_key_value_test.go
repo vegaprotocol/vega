@@ -11,25 +11,25 @@ import (
 
 var tol, _ = num.DecimalFromString("0.1")
 
-func TestFloatMatrix(t *testing.T) {
-	t.Run("test equality of two float matrices", testFloatMatrixEquality)
-	t.Run("test two matrices are within tolerance of each other", testFloatMatrixWithinTol)
-	t.Run("test converion of float matrix to a decimal matrix", testFloatMatrixToDecimal)
+func TestDecimalMatrix(t *testing.T) {
+	t.Run("test equality of two decimal matrices", testDecimalMatrixEquality)
+	t.Run("test two matrices are within tolerance of each other", testDecimalMatrixWithinTol)
+	t.Run("test converion of decimal matrix to a decimal matrix", testDecimalMatrixToDecimal)
 	t.Run("test conversion to proto", testMatrixToProto)
 }
 
 // testFloatVectorEquality tests that given the same key and equal/not equal value, equals function returns the correct value.
-func testFloatMatrixEquality(t *testing.T) {
+func testDecimalMatrixEquality(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key: "matrix value",
-		Val: &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
+		Val: &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}}},
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key: "matrix value",
-		Val: &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3}}},
+		Val: &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3)}}},
 	})
 
 	// the matrices have different shape
@@ -38,7 +38,7 @@ func testFloatMatrixEquality(t *testing.T) {
 	kvb3 := &statevar.KeyValueBundle{}
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key: "matrix value",
-		Val: &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {-4.4, -3.3, -2.2, -1.1}}},
+		Val: &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(-4.4), num.DecimalFromFloat(-3.3), num.DecimalFromFloat(-2.2), num.DecimalFromFloat(-1.1)}}},
 	})
 
 	// the matrices have same shape but different values
@@ -47,26 +47,26 @@ func testFloatMatrixEquality(t *testing.T) {
 	kvb4 := &statevar.KeyValueBundle{}
 	kvb4.KVT = append(kvb4.KVT, statevar.KeyValueTol{
 		Key: "matrix value",
-		Val: &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
+		Val: &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}}},
 	})
 
 	// they are equal
 	require.True(t, kvb1.Equals(kvb4))
 }
 
-// testFloatVectorWithinTol check that the values of the vectors are within tolerance.
-func testFloatMatrixWithinTol(t *testing.T) {
+// testDecimalMatrixWithinTol check that the values of the vectors are within tolerance.
+func testDecimalMatrixWithinTol(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
+		Val:       &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}}},
 		Tolerance: tol,
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{{1.2, 2.2, 3.2, 4.5}, {4, 3.3, 2.2, 1.1}}},
+		Val:       &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.2), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.2), num.DecimalFromFloat(4.5)}, {num.DecimalFromFloat(4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}}},
 		Tolerance: tol,
 	})
 
@@ -76,7 +76,7 @@ func testFloatMatrixWithinTol(t *testing.T) {
 	kvb3 := &statevar.KeyValueBundle{}
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{{1.09, 2.2, 3.21, 4.49}, {4.31, 3.2199999, 2.2, 1.0999999999}}},
+		Val:       &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.09), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.21), num.DecimalFromFloat(4.49)}, {num.DecimalFromFloat(4.31), num.DecimalFromFloat(3.2199999), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.0999999999)}}},
 		Tolerance: tol,
 	})
 
@@ -84,24 +84,24 @@ func testFloatMatrixWithinTol(t *testing.T) {
 	require.True(t, kvb1.WithinTolerance(kvb3))
 }
 
-// testFloatVectorToDecimal tests conversion to decimal.
-func testFloatMatrixToDecimal(t *testing.T) {
+// testDecimalMatrixToDecimal tests conversion to decimal.
+func testDecimalMatrixToDecimal(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {-4.4, -3.3, -2.2, -1.1}}},
+		Val:       &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(-4.4), num.DecimalFromFloat(-3.3), num.DecimalFromFloat(-2.2), num.DecimalFromFloat(-1.1)}}},
 		Tolerance: tol,
 	})
 
 	res1 := kvb1.ToDecimal()
 	res := res1.KeyDecimalValue[kvb1.KVT[0].Key]
 	switch v := res.(type) {
-	case *statevar.DecimalMatrixValue:
+	case *statevar.DecimalMatrix:
 		require.Equal(t, [][]num.Decimal{
 			{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)},
 			{num.DecimalFromFloat(-4.4), num.DecimalFromFloat(-3.3), num.DecimalFromFloat(-2.2), num.DecimalFromFloat(-1.1)},
 		},
-			v.Value)
+			v.Val)
 	default:
 		t.Fail()
 	}
@@ -112,7 +112,7 @@ func testMatrixToProto(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &statevar.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {-4.4, -3.3, -2.2, -1.1}}},
+		Val:       &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(-4.4), num.DecimalFromFloat(-3.3), num.DecimalFromFloat(-2.2), num.DecimalFromFloat(-1.1)}}},
 		Tolerance: tol,
 	})
 	res := kvb1.ToProto()
@@ -121,8 +121,8 @@ func testMatrixToProto(t *testing.T) {
 	require.Equal(t, "0.1", res[0].Tolerance)
 	switch v := res[0].Value.Value.(type) {
 	case *vega.StateVarValue_MatrixVal:
-		require.Equal(t, []float64{1.1, 2.2, 3.3, 4.4}, v.MatrixVal.Value[0].Value)
-		require.Equal(t, []float64{-4.4, -3.3, -2.2, -1.1}, v.MatrixVal.Value[1].Value)
+		require.Equal(t, []string{num.DecimalFromFloat(1.1).String(), num.DecimalFromFloat(2.2).String(), num.DecimalFromFloat(3.3).String(), num.DecimalFromFloat(4.4).String()}, v.MatrixVal.Value[0].Value)
+		require.Equal(t, []string{num.DecimalFromFloat(-4.4).String(), num.DecimalFromFloat(-3.3).String(), num.DecimalFromFloat(-2.2).String(), num.DecimalFromFloat(-1.1).String()}, v.MatrixVal.Value[1].Value)
 	default:
 		t.Fail()
 	}

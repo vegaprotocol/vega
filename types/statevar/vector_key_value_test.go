@@ -9,25 +9,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFloatVector(t *testing.T) {
-	t.Run("test equality of two float vectors", testFloatVectorEquality)
-	t.Run("test two vectors are within tolerance of each other", testFloatVectorWithinTol)
-	t.Run("test converion of float vector to a decimal vector", testFloatVectorToDecimal)
+func TestDecimalVector(t *testing.T) {
+	t.Run("test equality of two decimal vectors", testDecimalVectorEquality)
+	t.Run("test two vectors are within tolerance of each other", testDecimalVectorWithinTol)
+	t.Run("test converion of decimal vector to a decimal vector", testDecimalVectorToDecimal)
 	t.Run("test conversion to proto", testVectorToProto)
 }
 
-// testFloatVectorEquality tests that given the same key and equal/not equal value, equals function returns the correct value.
-func testFloatVectorEquality(t *testing.T) {
+// testDecimalVectorEquality tests that given the same key and equal/not equal value, equals function returns the correct value.
+func testDecimalVectorEquality(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key: "vector value",
-		Val: &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
+		Val: &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key: "vector value",
-		Val: &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3}},
+		Val: &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3)}},
 	})
 
 	// the vectors have different shape
@@ -36,7 +36,7 @@ func testFloatVectorEquality(t *testing.T) {
 	kvb3 := &statevar.KeyValueBundle{}
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key: "vector value",
-		Val: &statevar.FloatVector{Val: []float64{2.2, 3.3, 4.4, 1.1}},
+		Val: &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4), num.DecimalFromFloat(1.1)}},
 	})
 
 	// the vectors have different values
@@ -45,26 +45,26 @@ func testFloatVectorEquality(t *testing.T) {
 	kvb4 := &statevar.KeyValueBundle{}
 	kvb4.KVT = append(kvb4.KVT, statevar.KeyValueTol{
 		Key: "vector value",
-		Val: &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
+		Val: &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 	})
 
 	// they are equal
 	require.True(t, kvb1.Equals(kvb4))
 }
 
-// testFloatVectorWithinTol check that the values of the vectors are within tolerance.
-func testFloatVectorWithinTol(t *testing.T) {
+// testDecimalVectorWithinTol check that the values of the vectors are within tolerance.
+func testDecimalVectorWithinTol(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
-		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
+		Val:       &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 		Tolerance: tol,
 	})
 
 	kvb2 := &statevar.KeyValueBundle{}
 	kvb2.KVT = append(kvb2.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
-		Val:       &statevar.FloatVector{Val: []float64{1.2, 2.3, 3.4, 4.6}},
+		Val:       &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.2), num.DecimalFromFloat(2.3), num.DecimalFromFloat(3.4), num.DecimalFromFloat(4.6)}},
 		Tolerance: tol,
 	})
 
@@ -74,7 +74,7 @@ func testFloatVectorWithinTol(t *testing.T) {
 	kvb3 := &statevar.KeyValueBundle{}
 	kvb3.KVT = append(kvb3.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
-		Val:       &statevar.FloatVector{Val: []float64{1.099999999, 2.100000005, 3.3999999, 4.3000001}},
+		Val:       &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.099999999), num.DecimalFromFloat(2.100000005), num.DecimalFromFloat(3.3999999), num.DecimalFromFloat(4.3000001)}},
 		Tolerance: tol,
 	})
 
@@ -82,20 +82,20 @@ func testFloatVectorWithinTol(t *testing.T) {
 	require.True(t, kvb1.WithinTolerance(kvb3))
 }
 
-// testFloatVectorToDecimal tests conversion to decimal.
-func testFloatVectorToDecimal(t *testing.T) {
+// testDecimalVectorToDecimal tests conversion to decimal.
+func testDecimalVectorToDecimal(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
-		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
+		Val:       &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 		Tolerance: tol,
 	})
 
 	res1 := kvb1.ToDecimal()
 	res := res1.KeyDecimalValue[kvb1.KVT[0].Key]
 	switch v := res.(type) {
-	case *statevar.DecimalVectorValue:
-		require.Equal(t, []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, v.Value)
+	case *statevar.DecimalVector:
+		require.Equal(t, []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, v.Val)
 	default:
 		t.Fail()
 	}
@@ -106,7 +106,7 @@ func testVectorToProto(t *testing.T) {
 	kvb1 := &statevar.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, statevar.KeyValueTol{
 		Key:       "vector value",
-		Val:       &statevar.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
+		Val:       &statevar.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 		Tolerance: tol,
 	})
 	res := kvb1.ToProto()
@@ -115,7 +115,7 @@ func testVectorToProto(t *testing.T) {
 	require.Equal(t, "0.1", res[0].Tolerance)
 	switch v := res[0].Value.Value.(type) {
 	case *vega.StateVarValue_VectorVal:
-		require.Equal(t, []float64{1.1, 2.2, 3.3, 4.4}, v.VectorVal.Value)
+		require.Equal(t, []string{num.DecimalFromFloat(1.1).String(), num.DecimalFromFloat(2.2).String(), num.DecimalFromFloat(3.3).String(), num.DecimalFromFloat(4.4).String()}, v.VectorVal.Value)
 	default:
 		t.Fail()
 	}

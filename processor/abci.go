@@ -74,7 +74,7 @@ type Snapshot interface {
 }
 
 type StateVarEngine interface {
-	ProposedValueReceived(ctx context.Context, ID, nodeI, eventID string, bundle *statevar.KeyValueBundle) error
+	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
 }
 
 type App struct {
@@ -249,7 +249,7 @@ func NewApp(
 		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
 			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
 		HandleDeliverTx(txn.StateVariableProposalCommand,
-			app.RequireValidatorMasterPubKeyW(app.DeliverStateVarProposal))
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -1292,7 +1292,7 @@ func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 	}
 
 	stateVarID := proposal.Proposal.StateVarId
-	nodeID := hex.EncodeToString(proposal.PubKey)
+	nodeID := tx.PubKeyHex()
 	eventID := proposal.Proposal.EventId
 	bundle := statevar.KeyValueBundleFromProto(proposal.Proposal.Kvb)
 	return app.stateVar.ProposedValueReceived(ctx, stateVarID, nodeID, eventID, bundle)

@@ -35,17 +35,17 @@ func TestAddStateVar(t *testing.T) {
 	kvb1 := &types.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
 		Key:       "scalar value",
-		Val:       &types.FloatValue{Val: 1.23456},
+		Val:       &types.DecimalScalar{Val: num.DecimalFromFloat(1.23456)},
 		Tolerance: num.DecimalFromInt64(1),
 	})
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
 		Key:       "vector value",
-		Val:       &types.FloatVector{Val: []float64{1.1, 2.2, 3.3, 4.4}},
+		Val:       &types.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 		Tolerance: num.DecimalFromInt64(2),
 	})
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &types.FloatMatrix{Val: [][]float64{{1.1, 2.2, 3.3, 4.4}, {4.4, 3.3, 2.2, 1.1}}},
+		Val:       &types.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}}},
 		Tolerance: num.DecimalFromInt64(3),
 	})
 
@@ -63,17 +63,17 @@ func TestAddStateVar(t *testing.T) {
 	defaultValue := &types.KeyValueBundle{}
 	defaultValue.KVT = append(defaultValue.KVT, types.KeyValueTol{
 		Key:       "scalar value",
-		Val:       &types.FloatValue{Val: 2.2},
+		Val:       &types.DecimalScalar{Val: num.DecimalFromFloat(2.2)},
 		Tolerance: num.DecimalFromInt64(1),
 	})
 	defaultValue.KVT = append(defaultValue.KVT, types.KeyValueTol{
 		Key:       "vector value",
-		Val:       &types.FloatVector{Val: []float64{3, 4, 1.3000000001, 4}},
+		Val:       &types.DecimalVector{Val: []num.Decimal{num.DecimalFromFloat(3), num.DecimalFromFloat(4), num.DecimalFromFloat(1.3000000001), num.DecimalFromFloat(4)}},
 		Tolerance: num.DecimalFromInt64(2),
 	})
 	defaultValue.KVT = append(defaultValue.KVT, types.KeyValueTol{
 		Key:       "matrix value",
-		Val:       &types.FloatMatrix{Val: [][]float64{{-1.1, 1.1, 0.31, 2}, {4.4, 3.3, 2.2, 1.1}}},
+		Val:       &types.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(-1.1), num.DecimalFromFloat(1.1), num.DecimalFromFloat(0.31), num.DecimalFromFloat(2)}, {num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}}},
 		Tolerance: num.DecimalFromInt64(3),
 	})
 	defaultResult := defaultValue.ToDecimal()

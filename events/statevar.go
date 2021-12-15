@@ -48,7 +48,7 @@ func (sv StateVar) StreamMessage() *eventspb.BusEvent {
 func StateVarEventFromStream(ctx context.Context, be *eventspb.BusEvent) *StateVar {
 	event := be.GetStateVar()
 	if event == nil {
-		return nil
+		panic("failed to get state var event from event bus")
 	}
 
 	return &StateVar{

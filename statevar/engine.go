@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
 	"code.vegaprotocol.io/vega/validators"
+
 	"github.com/golang/protobuf/proto"
 )
 
@@ -23,7 +24,7 @@ var (
 	chars              = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
 
-// mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
+// go:generate go run github.com/golang/mock/mockgem -destination -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
@@ -34,7 +35,7 @@ type Broker interface {
 }
 
 // Topology the topology service.
-// mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Tolopology.
+// go:generate go run github.com/golang/mock/mockgem -destination -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/statevar Tolopology.
 type Topology interface {
 	IsValidatorNodeID(nodeID string) bool
 	AllNodeIDs() []string
@@ -59,9 +60,9 @@ type StateVarEventType int
 const (
 	// sample events there may be many more.
 
-	StateVarEventTypeAuctionUnknown   StateVarEventType = iota
-	StateVarEventTypeAuctionEnded                       = iota
-	StateVarEventTypeRiskModelChanged                   = iota
+	StateVarEventTypeAuctionUnknown StateVarEventType = iota
+	StateVarEventTypeAuctionEnded
+	StateVarEventTypeRiskModelChanged
 )
 
 // Engine is an engine for creating consensus for floaing point "state variables".
@@ -114,7 +115,7 @@ func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f fl
 // NewEvent triggers calculation of state variables that depend on the event type.
 func (e *Engine) NewEvent(eventType StateVarEventType, eventID string) {
 	if _, ok := e.eventTypeToStateVar[eventType]; !ok {
-		return
+		e.log.Panic("Unexpected event received", logging.Int("event-type", int(eventType)), logging.String("event-id", eventID))
 	}
 
 	if e.log.GetLevel() <= logging.DebugLevel {
@@ -138,10 +139,9 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 	}
 
 	sort.Strings(stateVarIDs)
-
+	eventID := t.Format("20060102_150405.999999999")
 	for _, ID := range stateVarIDs {
 		sv := e.stateVars[ID]
-		eventID := t.Format("20060102_150405.999999999")
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("New time based event for state variable received", logging.String("eventID", eventID))
 		}

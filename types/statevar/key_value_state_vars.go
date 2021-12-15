@@ -65,19 +65,35 @@ func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) *KeyValueBundle {
 func ValueFromProto(val *vega.StateVarValue) value {
 	switch v := val.Value.(type) {
 	case *vega.StateVarValue_ScalarVal:
-		return &FloatValue{
-			Val: v.ScalarVal.Value,
+		val, _ := num.DecimalFromString(v.ScalarVal.Value)
+		return &DecimalScalar{
+			Val: val,
 		}
 	case *vega.StateVarValue_VectorVal:
-		return &FloatVector{
-			Val: v.VectorVal.Value,
+		vec := make([]num.Decimal, 0, len(v.VectorVal.Value))
+		for _, entry := range v.VectorVal.Value {
+			value, err := num.DecimalFromString(entry)
+			if err == nil {
+				vec = append(vec, value)
+			}
+		}
+
+		return &DecimalVector{
+			Val: vec,
 		}
 	case *vega.StateVarValue_MatrixVal:
-		mat := [][]float64{}
+		mat := [][]num.Decimal{}
 		for _, val := range v.MatrixVal.Value {
-			mat = append(mat, val.Value)
+			row := make([]num.Decimal, 0, len(val.Value))
+			for _, entry := range val.Value {
+				value, err := num.DecimalFromString(entry)
+				if err == nil {
+					row = append(row, value)
+				}
+			}
+			mat = append(mat, row)
 		}
-		return &FloatMatrix{
+		return &DecimalMatrix{
 			Val: mat,
 		}
 	default:
@@ -142,15 +158,3 @@ type KeyValueResult struct {
 }
 
 type DecimalValue interface{}
-
-type DecimalScalarValue struct {
-	Value num.Decimal
-}
-
-type DecimalVectorValue struct {
-	Value []num.Decimal
-}
-
-type DecimalMatrixValue struct {
-	Value [][]num.Decimal
-}
