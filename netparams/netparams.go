@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -193,7 +194,15 @@ func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
+
+	// sort for deterministic order of processing.
+	params := make([]string, 0, len(s.paramUpdates))
 	for k := range s.paramUpdates {
+		params = append(params, k)
+	}
+	sort.Strings(params)
+
+	for _, k := range params {
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			s.log.Debug("unable to dispatch netparams update", logging.Error(err))
 		}
