@@ -9,10 +9,13 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
+- [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit the number of epochs for which we keep delegations in memory in core api
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
+- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it. 
+- [4505](https://github.com/vegaprotocol/vega/pull/4506) - Wire `net params` to time service to flush pending updates
 
 ## 0.47.0
 *2021-11-24*
