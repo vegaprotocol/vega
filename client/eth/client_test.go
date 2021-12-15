@@ -2,7 +2,6 @@ package eth_test
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/hex"
 	"testing"
 
@@ -17,13 +16,12 @@ import (
 func TestNullChain(t *testing.T) {
 	t.Run("test valid hash", testValidHash)
 	t.Run("test mismatch hash", testMismatchHash)
-	t.Run("test unknown address", testUnknownAddress)
 }
 
 func testValidHash(t *testing.T) {
 	contractAddress := "0xBC944ba38753A6fCAdd634Be98379330dbaB3Eb8"
-	contractCode := make([]byte, 64)
-	rand.Read(contractCode)
+	byteCode := "BC944ba38753A6fCAdd634Be98379330dbaB3Eb8"
+	contractCode, _ := hex.DecodeString(byteCode + "a2640033")
 
 	c := getTestClient(t)
 	defer c.ctrl.Finish()
@@ -31,8 +29,9 @@ func testValidHash(t *testing.T) {
 	c.mockEthClient.EXPECT().CodeAt(gomock.Any(), ethcommon.HexToAddress(contractAddress), gomock.Any()).Times(1).Return(contractCode, nil)
 
 	// Inject address map
-	eth.ContractHashes = map[string]string{
-		contractAddress: hex.EncodeToString(vgcrypto.Hash(contractCode)),
+	asBytes, _ := hex.DecodeString(byteCode)
+	eth.ContractHashes = map[string]struct{}{
+		hex.EncodeToString(vgcrypto.Hash(asBytes)): {},
 	}
 
 	err := c.client.VerifyContract(context.Background(), contractAddress)
@@ -41,8 +40,8 @@ func testValidHash(t *testing.T) {
 
 func testMismatchHash(t *testing.T) {
 	contractAddress := "0xBC944ba38753A6fCAdd634Be98379330dbaB3Eb8"
-	contractCode := make([]byte, 64)
-	rand.Read(contractCode)
+	byteCode := "BC944ba38753A6fCAdd634Be98379330dbaB3Eb8"
+	contractCode, _ := hex.DecodeString(byteCode + "a2640033")
 
 	c := getTestClient(t)
 	defer c.ctrl.Finish()
@@ -50,20 +49,12 @@ func testMismatchHash(t *testing.T) {
 	c.mockEthClient.EXPECT().CodeAt(gomock.Any(), ethcommon.HexToAddress(contractAddress), gomock.Any()).Times(1).Return(contractCode, nil)
 
 	// Inject address map
-	eth.ContractHashes = map[string]string{
-		contractAddress: "someinvalidhash",
+	eth.ContractHashes = map[string]struct{}{
+		"somehashthatisdifferent": {},
 	}
 
 	err := c.client.VerifyContract(context.Background(), contractAddress)
-	assert.ErrorIs(t, err, eth.ErrContractHashMismatch)
-}
-
-func testUnknownAddress(t *testing.T) {
-	c := getTestClient(t)
-	defer c.ctrl.Finish()
-
-	err := c.client.VerifyContract(context.Background(), "HELLO")
-	assert.ErrorIs(t, err, eth.ErrUnexpectedContractAddress)
+	assert.ErrorIs(t, err, eth.ErrUnexpectedContractHash)
 }
 
 type testClient struct {

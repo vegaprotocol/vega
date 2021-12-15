@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strings"
 	"sync"
 	"time"
 
@@ -19,19 +20,14 @@ import (
 )
 
 var (
-	ErrUnexpectedContractAddress = errors.New("unexpected contract address - cannot verify contract code")
-	ErrContractHashMismatch      = errors.New("mismatched contract code")
+	ErrUnexpectedContractHash   = errors.New("hash of contract bytecode not as expected")
+	ErrUnexpectedSolidityFormat = errors.New("unexpected format of solidity bytecode")
 )
 
-// ContractHashes map[contract addresses] -> sha3-256(contract bytecode).
-var ContractHashes = map[string]string{
-	// vega mainnet1 - eth mainnet
-	"0x23d1bFE8fA50a167816fBD79D7932577c06011f4": "0d83655b7be5c60f6762723e29f20ce1ed6e0f4d4de0781c2a2332e83d65a11f", // vesting
-	"0x195064D33f09e0c42cF98E665D9506e0dC17de68": "889a39f8323d9fd1fd6bcc9a549fc4cf6a41b537af01d3f0523343398e12b5d7", // staking
-
-	// vega testnet1 - eth ropsten
-	"0xfce2CC92203A266a9C8e67461ae5067c78f67235": "e91eb100c4cbecb6c404de873bf84457b5313da8e39fed231edc965812f12ae1", // staking
-	"0x0614188938f5C3bD8461D4B413A39eeC2C5f42D9": "885e507d590170eae2a3b52d56894e1486eb25f6c65ca92e6e37e952d4f75e33", // vesting
+// ContractHashes the sha3-256(bytecode)
+var ContractHashes = map[string]struct{}{
+	"d66948e12817f8ae6ca94d56b43ca12e66416e7e9bc23bb09056957b25afc6bd": {}, // staking
+	"5278802577f4aca315b9524bfa78790f8f0fae08939ec58bc9e8f0ea40123b09": {}, // vesting
 
 }
 
@@ -128,20 +124,30 @@ func (c *Client) ConfirmationsRequired() uint32 {
 
 // VerifyContract takes the address of a contract in hex and checks the hash of the byte-code is as expected.
 func (c *Client) VerifyContract(ctx context.Context, address string) error {
-	expected, ok := ContractHashes[address]
-	if !ok {
-		return fmt.Errorf("%w: address %s", ErrUnexpectedContractAddress, address)
-	}
-
 	// nil block number means latest block
 	b, err := c.CodeAt(ctx, ethcommon.HexToAddress(address), nil)
 	if err != nil {
 		return err
 	}
 
-	actual := hex.EncodeToString(vgcrypto.Hash(b))
-	if expected != actual {
-		return fmt.Errorf("%w: address: %s, expected: %s got %s", ErrContractHashMismatch, address, expected, actual)
+	// the bytecode of the contract is appended which is deployment specific. We only care about
+	// the contract code itself and so we need to strip this meta-data before hashing it. For the version
+	// of Solidity we use, the format is [contract-bytecode]a264[CBOR-encoded meta-data]
+	asHex := strings.Split(hex.EncodeToString(b), "a264")
+	if len(asHex) != 2 {
+		return fmt.Errorf("%w: address: %s", ErrUnexpectedSolidityFormat, address)
 	}
+
+	// Back to bytes for hashing
+	b, err = hex.DecodeString(asHex[0])
+	if err != nil {
+		return err
+	}
+
+	h := hex.EncodeToString(vgcrypto.Hash(b))
+	if _, ok := ContractHashes[h]; !ok {
+		return fmt.Errorf("%w: address: %s, hash: %s", ErrUnexpectedContractHash, address, h)
+	}
+
 	return nil
 }
