@@ -24,7 +24,7 @@ func NewClient(addr string) (*Client, error) {
 		return nil, ErrEmptyClientAddr
 	}
 
-	clt, err := tmclihttp.New(fmt.Sprintf("%s/websocket", addr))
+	clt, err := tmclihttp.New(addr)
 	if err != nil {
 		return nil, err
 	}
