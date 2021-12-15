@@ -155,7 +155,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		netparams.NewDefaultConfig(),
 		broker,
 	)
-
+	timeService.NotifyOnTick(netp.OnChainTimeUpdate)
 	bstats := stats.NewBlockchain()
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)

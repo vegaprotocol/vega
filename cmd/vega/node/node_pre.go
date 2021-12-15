@@ -348,6 +348,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, l.nodeWallets.Vega, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
+	l.timeService.NotifyOnTick(l.netParams.OnChainTimeUpdate)
 
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
