@@ -13,6 +13,22 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+// START PATCH
+// this code is here only to ensure network parameter restored
+// from checkpoint get processed, it will help dispatch at a given
+// time the network parameters.
+var startProcessingTimeUpdate time.Time
+
+func init() {
+	var err error
+	startProcessingTimeUpdate, err = time.Parse(time.RFC3339, "2021-12-20T00:00:00Z") // 2021 Dec 20 at 00:00 UTC
+	if err != nil {
+		panic(err)
+	}
+}
+
+// END PATCH
+
 var ErrUnknownKey = errors.New("unknown key")
 
 // Broker - event bus.
@@ -173,7 +189,18 @@ func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 
 // OnChainTimeUpdate is trigger once per blocks
 // we will send parameters update to watchers.
-func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
+func (s *Store) OnChainTimeUpdate(ctx context.Context, t time.Time) {
+	// START PATCH
+	// this code is here only to ensure network parameter restored
+	// from checkpoint get processed, it will help dispatch at a given
+	// time the network parameters.
+	if t.Before(startProcessingTimeUpdate) {
+		// until we reach the defined time, we still don't process
+		// the time update to keep the behaviour observed previously.
+		return
+	}
+	// END PATCH
+
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
