@@ -8,6 +8,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	vgmath "code.vegaprotocol.io/vega/libs/math"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -305,7 +306,7 @@ func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 			sSize = p.size
 		}
 		// Change in open interest due to trades equals change in longs
-		d += max(0, bSize+int64(t.Size)) - max(0, bSize) + max(0, sSize-int64(t.Size)) - max(0, sSize)
+		d += vgmath.Max(0, bSize+int64(t.Size)) - vgmath.Max(0, bSize) + vgmath.Max(0, sSize-int64(t.Size)) - vgmath.Max(0, sSize)
 	}
 	if d > 0 {
 		oi += uint64(d)
@@ -315,13 +316,6 @@ func (e *Engine) GetOpenInterestGivenTrades(trades []*types.Trade) uint64 {
 	}
 
 	return oi
-}
-
-func max(a int64, b int64) int64 {
-	if a >= b {
-		return a
-	}
-	return b
 }
 
 // Positions is just the logic to update buyer, will eventually return the MarketPosition we need to push.

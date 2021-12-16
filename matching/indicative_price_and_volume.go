@@ -3,6 +3,7 @@ package matching
 import (
 	"sort"
 
+	vgmath "code.vegaprotocol.io/vega/libs/math"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -222,9 +223,9 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		// 130   | 11   | 6   | 6   | 6    | 0
 		// 150   | 10   | 0   | 0   | 0    | 0
 		if j >= half {
-			cumulativeVolumes[i].maxTradableAmount = min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
-			cumulativeVolumes[j].maxTradableAmount = min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
-			maxTradable = max(maxTradable, max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
+			cumulativeVolumes[i].maxTradableAmount = vgmath.Min(cumulativeVolumes[i].cumulativeAskVolume, cumulativeVolumes[i].cumulativeBidVolume)
+			cumulativeVolumes[j].maxTradableAmount = vgmath.Min(cumulativeVolumes[j].cumulativeAskVolume, cumulativeVolumes[j].cumulativeBidVolume)
+			maxTradable = vgmath.Max(maxTradable, vgmath.Max(cumulativeVolumes[i].maxTradableAmount, cumulativeVolumes[j].maxTradableAmount))
 		}
 	}
 

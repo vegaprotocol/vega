@@ -9,6 +9,7 @@ import (
 
 	ptypes "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
+	vgmath "code.vegaprotocol.io/vega/libs/math"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -344,14 +345,6 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	md.changes = make([]*priceLevel, 0, len(md.changes))
 }
 
-// Returns the min of 2 uint64s.
-func min(x, y uint64) uint64 {
-	if y < x {
-		return y
-	}
-	return x
-}
-
 // GetMarketDepth builds up the structure to be sent out to any market depth listeners.
 func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string, limit uint64) (*types.MarketDepth, error) {
 	mdb.mu.RLock()
@@ -370,8 +363,8 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 	buyLimit := uint64(len(md.buySide))
 	sellLimit := uint64(len(md.sellSide))
 	if limit > 0 {
-		buyLimit = min(buyLimit, limit)
-		sellLimit = min(sellLimit, limit)
+		buyLimit = vgmath.Min(buyLimit, limit)
+		sellLimit = vgmath.Min(sellLimit, limit)
 	}
 
 	buyPtr := make([]*types.PriceLevel, buyLimit)

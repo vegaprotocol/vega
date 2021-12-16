@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	vgmath "code.vegaprotocol.io/vega/libs/math"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -164,23 +165,7 @@ func (l *PriceLevel) uncross(agg *types.Order, checkWashTrades bool) (filled boo
 }
 
 func (l *PriceLevel) getVolumeAllocation(agg, pass *types.Order) uint64 {
-	return min(agg.Remaining, pass.Remaining)
-}
-
-// Returns the min of 2 uint64s.
-func min(x, y uint64) uint64 {
-	if y < x {
-		return y
-	}
-	return x
-}
-
-// Returns the max of 2 uint64s.
-func max(x, y uint64) uint64 {
-	if x > y {
-		return x
-	}
-	return y
+	return vgmath.Min(agg.Remaining, pass.Remaining)
 }
 
 // Creates a trade of a given size between two orders and updates the order details.

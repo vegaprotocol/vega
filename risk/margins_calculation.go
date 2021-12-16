@@ -2,6 +2,7 @@ package risk
 
 import (
 	"code.vegaprotocol.io/vega/events"
+	vgmath "code.vegaprotocol.io/vega/libs/math"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -95,7 +96,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	// marginMaintenanceLng will be 0 by default
 	if riskiestLng > 0 {
 		var (
-			slippageVolume  = num.DecimalFromInt64(max(openVolume, 0))
+			slippageVolume  = num.DecimalFromInt64(vgmath.Max(openVolume, 0))
 			slippagePerUnit = num.Zero()
 			negSlippage     bool
 		)
@@ -136,7 +137,7 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 	// marginMaintenanceSht will be 0 by default
 	if riskiestSht < 0 {
 		var (
-			slippageVolume  = num.DecimalFromInt64(min(openVolume, 0))
+			slippageVolume  = num.DecimalFromInt64(vgmath.Min(openVolume, 0))
 			slippagePerUnit = num.Zero()
 		)
 		// slippageVolume would be negative we abs it in the next phase
@@ -182,18 +183,4 @@ func (e *Engine) calculateMargins(m events.Margin, markPrice *num.Uint, rf types
 		InitialMargin:          num.Zero(),
 		CollateralReleaseLevel: num.Zero(),
 	}
-}
-
-func max(a, b int64) int64 {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int64) int64 {
-	if a < b {
-		return a
-	}
-	return b
 }
