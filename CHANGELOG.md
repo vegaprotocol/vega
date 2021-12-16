@@ -13,8 +13,18 @@
 
 ### 🐛 Fixes
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
-- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it. 
+- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it.
 - [4505](https://github.com/vegaprotocol/vega/pull/4506) - Wire `net params` to time service to flush pending updates
+
+
+## 0.47.2
+*2021-11-24*
+
+### 🐛 Fixes
+- [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum for validator power to avoid accidentally removing them
+- [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit delegation epochs in core API
+- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Fix premature ending of epoch when loading from checkpoint
+- [4506](https://github.com/vegaprotocol/vega/pull/4506) - Wire network parameters to time service to flush out pending changes
 
 
 ## 0.47.1
