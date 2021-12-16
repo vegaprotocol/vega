@@ -44,7 +44,7 @@
 - [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
 - [4475](https://github.com/vegaprotocol/vega/pull/4475) - Fix rewards checkpoint not assigned to its correct place
 
-## 0.46.1
+## 0.46.2
 *2021-11-24*
 
 ### 🐛 Fixes
