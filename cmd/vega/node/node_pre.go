@@ -53,7 +53,7 @@ import (
 
 var (
 	ErrUnknownChainProvider    = errors.New("unknown chain provider")
-	ErrERC20AssetWithNullChain = errors.New("cannot use ERC20 with nullchain")
+	ErrERC20AssetWithNullChain = errors.New("cannot use ERC20 asset with nullchain")
 )
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
