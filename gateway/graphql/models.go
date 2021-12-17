@@ -329,68 +329,6 @@ type SettlePosition struct {
 
 func (SettlePosition) IsEvent() {}
 
-// Statistics about the node
-type Statistics struct {
-	// Current block number
-	BlockHeight int `json:"blockHeight"`
-	// Number of items in the backlog
-	BacklogLength int `json:"backlogLength"`
-	// Total number of peers on the vega network
-	TotalPeers int `json:"totalPeers"`
-	// RFC3339Nano genesis time of the chain
-	GenesisTime string `json:"genesisTime"`
-	// RFC3339Nano current time (real)
-	CurrentTime string `json:"currentTime"`
-	// RFC3339Nano uptime of the node
-	UpTime string `json:"upTime"`
-	// RFC3339Nano current time of the chain (decided through consensus)
-	VegaTime string `json:"vegaTime"`
-	// Status of the vega application connection with the chain
-	Status string `json:"status"`
-	// Number of transaction processed per block
-	TxPerBlock int `json:"txPerBlock"`
-	// Average size of the transactions
-	AverageTxBytes int `json:"averageTxBytes"`
-	// Average number of orders added per blocks
-	AverageOrdersPerBlock int `json:"averageOrdersPerBlock"`
-	// Number of the trades per seconds
-	TradesPerSecond int `json:"tradesPerSecond"`
-	// Number of orders per seconds
-	OrdersPerSecond int `json:"ordersPerSecond"`
-	// Total number of markets
-	TotalMarkets int `json:"totalMarkets"`
-	// Total number of amended orders
-	TotalAmendOrder int `json:"totalAmendOrder"`
-	// Total number of cancelled orders
-	TotalCancelOrder int `json:"totalCancelOrder"`
-	// Total number of orders created
-	TotalCreateOrder int `json:"totalCreateOrder"`
-	// Total number of orders
-	TotalOrders int `json:"totalOrders"`
-	// Total number of trades
-	TotalTrades int `json:"totalTrades"`
-	// Version commit hash of the vega node
-	AppVersionHash string `json:"appVersionHash"`
-	// Version of the vega node (semver)
-	AppVersion string `json:"appVersion"`
-	// Version of the chain (semver)
-	ChainVersion string `json:"chainVersion"`
-	// Duration of the last block, in nanoseconds
-	BlockDuration int `json:"blockDuration"`
-	// Number of orders subscriptions
-	OrderSubscriptions int `json:"orderSubscriptions"`
-	// Number of trades subscriptions
-	TradeSubscriptions int `json:"tradeSubscriptions"`
-	// Number of candles subscriptions
-	CandleSubscriptions int `json:"candleSubscriptions"`
-	// Number of market depth subscriptions
-	MarketDepthSubscriptions int `json:"marketDepthSubscriptions"`
-	// Number of market depth update subscriptions
-	MarketDepthUpdateSubscriptions int `json:"marketDepthUpdateSubscriptions"`
-	// Number of positions subscriptions
-	PositionsSubscriptions int `json:"positionsSubscriptions"`
-}
-
 // TargetStakeParameters contains parameters used in target stake calculation
 type TargetStakeParameters struct {
 	// Specifies length of time window expressed in seconds for target stake calculation

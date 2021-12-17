@@ -395,6 +395,9 @@ type Query {
 
   "get data for a specific epoch, if id omitted it gets the current epoch"
   epoch(id: String): Epoch!
+
+  "get statistics about the vega node"
+  statistics: Statistics!
 }
 
 enum NodeStatus {
@@ -625,13 +628,13 @@ enum NodeSignatureKind {
 "Statistics about the node"
 type Statistics {
   "Current block number"
-  blockHeight: Int!
+  blockHeight: String!
 
   "Number of items in the backlog"
-  backlogLength: Int!
+  backlogLength: String!
 
   "Total number of peers on the vega network"
-  totalPeers: Int!
+  totalPeers: String!
 
   "RFC3339Nano genesis time of the chain"
   genesisTime: String!
@@ -649,37 +652,37 @@ type Statistics {
   status: String!
 
   "Number of transaction processed per block"
-  txPerBlock: Int!
+  txPerBlock: String!
 
   "Average size of the transactions"
-  averageTxBytes: Int!
+  averageTxBytes: String!
 
   "Average number of orders added per blocks"
-  averageOrdersPerBlock: Int!
+  averageOrdersPerBlock: String!
 
   "Number of the trades per seconds"
-  tradesPerSecond: Int!
+  tradesPerSecond: String!
 
   "Number of orders per seconds"
-  ordersPerSecond: Int!
+  ordersPerSecond: String!
 
   "Total number of markets"
-  totalMarkets: Int!
+  totalMarkets: String!
 
   "Total number of amended orders"
-  totalAmendOrder: Int!
+  totalAmendOrder: String!
 
   "Total number of cancelled orders"
-  totalCancelOrder: Int!
+  totalCancelOrder: String!
 
   "Total number of orders created"
-  totalCreateOrder: Int!
+  totalCreateOrder: String!
 
   "Total number of orders"
-  totalOrders: Int!
+  totalOrders: String!
 
   "Total number of trades"
-  totalTrades: Int!
+  totalTrades: String!
 
   "Version commit hash of the vega node"
   appVersionHash: String!
@@ -691,25 +694,11 @@ type Statistics {
   chainVersion: String!
 
   "Duration of the last block, in nanoseconds"
-  blockDuration: Int!
+  blockDuration: String!
 
-  "Number of orders subscriptions"
-  orderSubscriptions: Int!
+  "Current chain id"
+  chainId: String!
 
-  "Number of trades subscriptions"
-  tradeSubscriptions: Int!
-
-  "Number of candles subscriptions"
-  candleSubscriptions: Int!
-
-  "Number of market depth subscriptions"
-  marketDepthSubscriptions: Int!
-
-  "Number of market depth update subscriptions"
-  marketDepthUpdateSubscriptions: Int!
-
-  "Number of positions subscriptions"
-  positionsSubscriptions: Int!
 }
 
 "A mode where Vega tries to execute orders as soon as they are received"
