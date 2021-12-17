@@ -16,6 +16,7 @@
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
 - [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it. 
 - [4505](https://github.com/vegaprotocol/vega/pull/4506) - Wire `net params` to time service to flush pending updates
+- [4516](https://github.com/vegaprotocol/vega/pull/4516) - Fix release number title typo - 0.46.1 > 0.46.2 
 
 ## 0.47.0
 *2021-11-24*
@@ -44,7 +45,7 @@
 - [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
 - [4475](https://github.com/vegaprotocol/vega/pull/4475) - Fix rewards checkpoint not assigned to its correct place
 
-## 0.46.1
+## 0.46.2
 *2021-11-24*
 
 ### 🐛 Fixes
