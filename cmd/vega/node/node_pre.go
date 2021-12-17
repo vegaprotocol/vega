@@ -252,7 +252,6 @@ func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallet
 		l.witness,
 		l.evtfwd,
 		l.executionEngine,
-		commander,
 		l.genesisHandler,
 		l.governance,
 		l.notary,

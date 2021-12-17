@@ -10,11 +10,9 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 )
 
@@ -118,11 +116,6 @@ type Assets interface {
 	NewAsset(ref string, assetSrc *types.AssetDetails) (string, error)
 	Get(assetID string) (*assets.Asset, error)
 	IsEnabled(string) bool
-}
-
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
-type Commander interface {
-	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology

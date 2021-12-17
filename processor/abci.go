@@ -99,7 +99,6 @@ type App struct {
 	assets          Assets
 	banking         Banking
 	broker          Broker
-	cmd             Commander
 	witness         Witness
 	evtfwd          EvtForwarder
 	exec            ExecutionEngine
@@ -135,7 +134,6 @@ func NewApp(
 	witness Witness,
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
-	cmd Commander,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
 	notary Notary,
@@ -174,7 +172,6 @@ func NewApp(
 		assets:          assets,
 		banking:         banking,
 		broker:          broker,
-		cmd:             cmd,
 		witness:         witness,
 		evtfwd:          evtfwd,
 		exec:            exec,

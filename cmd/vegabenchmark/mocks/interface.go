@@ -70,6 +70,7 @@ type OracleAdaptors interface {
 //go:generate go run github.com/golang/mock/mockgen -destination commander_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks Commander
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination governance_engine_mock.go -package mocks code.vegaprotocol.io/vega/cmd/vegabenchmark/mocks GovernanceEngine
