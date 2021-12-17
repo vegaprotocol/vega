@@ -484,11 +484,12 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		})
 	}
 
-	_, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
+	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
 	if err != nil {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
+	e.broker.Send(events.NewTransferResponse(ctx, responses))
 }
 
 // ValidatorKeyChanged is called when the validator public key (aka party) is changed we need to update all pending information to use the new key.
