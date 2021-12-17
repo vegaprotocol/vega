@@ -170,10 +170,12 @@ models:
     model: code.vegaprotocol.io/protos/vega.Epoch
   EpochTimestamps:
     model: code.vegaprotocol.io/protos/vega.EpochTimestamps
-  RewardPerAssetDetail:
-    model: code.vegaprotocol.io/protos/vega.RewardPerAssetDetail
+  RewardPerAssetDetail:   # TODO: Depricated, remove once front end has caught up
+    model: code.vegaprotocol.io/protos/vega.RewardSummary
   Reward:
-    model: code.vegaprotocol.io/protos/vega.RewardDetails
+    model: code.vegaprotocol.io/protos/vega.Reward
+  RewardSummary:
+    model: code.vegaprotocol.io/protos/vega.RewardSummary
   StakeLinking:
     model: code.vegaprotocol.io/protos/vega/events/v1.StakeLinking
   PartyStake:

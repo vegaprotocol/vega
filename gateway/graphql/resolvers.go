@@ -15,7 +15,6 @@ import (
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/vegatime"
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
-	"code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -271,8 +270,17 @@ func (r *VegaResolverRoot) EpochTimestamps() EpochTimestampsResolver {
 	return (*epochTimestampsResolver)(r)
 }
 
+// TODO: RewardPerAssetDetail is deprecated, remove once front end has caught up
 func (r *VegaResolverRoot) RewardPerAssetDetail() RewardPerAssetDetailResolver {
 	return (*rewardPerAssetDetailResolver)(r)
+}
+
+func (r *VegaResolverRoot) Reward() RewardResolver {
+	return (*rewardResolver)(r)
+}
+
+func (r *VegaResolverRoot) RewardSummary() RewardSummaryResolver {
+	return (*rewardSummaryResolver)(r)
 }
 
 func (r *VegaResolverRoot) StakeLinking() StakeLinkingResolver {
@@ -281,10 +289,6 @@ func (r *VegaResolverRoot) StakeLinking() StakeLinkingResolver {
 
 func (r *VegaResolverRoot) PartyStake() PartyStakeResolver {
 	return (*partyStakeResolver)(r)
-}
-
-func (r *VegaResolverRoot) Reward() RewardResolver {
-	return (*rewardResolver)(r)
 }
 
 // LiquidityOrder resolver
@@ -808,14 +812,6 @@ func (r *myQueryResolver) Epoch(ctx context.Context, id *string) (*types.Epoch, 
 	return resp.Epoch, nil
 }
 
-func (r *myQueryResolver) RewardDetails(ctx context.Context, partyID string) ([]*types.RewardPerAssetDetail, error) {
-	req := &protoapi.GetRewardDetailsRequest{
-		PartyId: partyID,
-	}
-	resp, _ := r.tradingDataClient.GetRewardDetails(ctx, req)
-	return resp.RewardDetails, nil
-}
-
 // END: Root Resolver
 
 type myNodeSignatureResolver VegaResolverRoot
@@ -858,20 +854,58 @@ func makePagination(skip, first, last *int) *protoapi.Pagination {
 	}
 }
 
+// TODO: RewardDetails have been depricated, remove once front end catches up
 func (r *myPartyResolver) RewardDetails(
 	ctx context.Context,
 	party *types.Party,
-) ([]*types.RewardPerAssetDetail, error) {
-	req := &protoapi.GetRewardDetailsRequest{
+) ([]*types.RewardSummary, error) {
+	req := &protoapi.GetRewardSummariesRequest{
 		PartyId: party.Id,
 	}
-	resp, err := r.tradingDataClient.GetRewardDetails(ctx, req)
-	if err != nil {
-		// not returning an error here, as it's we just don't have any rewards
-		// for the given party
-		return nil, nil
+	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
+	return resp.Summaries, err
+}
+
+func (r *myPartyResolver) Rewards(
+	ctx context.Context,
+	party *types.Party,
+	asset *string,
+	skip, first, last *int,
+) ([]*types.Reward, error) {
+
+	var assetID string
+	if asset != nil {
+		assetID = *asset
 	}
-	return resp.RewardDetails, nil
+
+	p := makePagination(skip, first, last)
+
+	req := &protoapi.GetRewardsRequest{
+		PartyId:    party.Id,
+		AssetId:    assetID,
+		Pagination: p,
+	}
+	resp, err := r.tradingDataClient.GetRewards(ctx, req)
+	return resp.Rewards, err
+}
+
+func (r *myPartyResolver) RewardSummaries(
+	ctx context.Context,
+	party *types.Party,
+	asset *string) ([]*types.RewardSummary, error) {
+
+	var assetID string
+	if asset != nil {
+		assetID = *asset
+	}
+
+	req := &protoapi.GetRewardSummariesRequest{
+		PartyId: party.Id,
+		AssetId: assetID,
+	}
+
+	resp, err := r.tradingDataClient.GetRewardSummaries(ctx, req)
+	return resp.Summaries, err
 }
 
 func (r *myPartyResolver) Stake(
@@ -1778,7 +1812,7 @@ func (r *mySubscriptionResolver) Delegations(ctx context.Context, party, nodeID 
 	return ch, nil
 }
 
-func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, party *string) (<-chan *vega.RewardDetails, error) {
+func (r *mySubscriptionResolver) Rewards(ctx context.Context, assetID, party *string) (<-chan *types.Reward, error) {
 	var a, p string
 	if assetID != nil {
 		a = *assetID
@@ -1787,16 +1821,16 @@ func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, par
 		p = *party
 	}
 
-	req := &protoapi.ObserveRewardDetailsRequest{
+	req := &protoapi.ObserveRewardsRequest{
 		AssetId: a,
 		Party:   p,
 	}
-	stream, err := r.tradingDataClient.ObserveRewardDetails(ctx, req)
+	stream, err := r.tradingDataClient.ObserveRewards(ctx, req)
 	if err != nil {
 		return nil, customErrorFromStatus(err)
 	}
 
-	ch := make(chan *vega.RewardDetails)
+	ch := make(chan *types.Reward)
 	go func() {
 		defer func() {
 			stream.CloseSend()
@@ -1812,7 +1846,7 @@ func (r *mySubscriptionResolver) RewardDetails(ctx context.Context, assetID, par
 				r.log.Error("reward details: stream closed", logging.Error(err))
 				break
 			}
-			ch <- rd.RewardDetails
+			ch <- rd.Reward
 		}
 	}()
 
@@ -2309,7 +2343,7 @@ func (r *mySubscriptionResolver) BusEvents(ctx context.Context, types []BusEvent
 	// about 10MB message size allowed
 	msgSize := grpc.MaxCallRecvMsgSize(mb * 10e6)
 
-	// build the bidirectionnal stream connection
+	// build the bidirectional stream connection
 	stream, err := r.tradingDataClient.ObserveEventBus(ctx, msgSize)
 	if err != nil {
 		return nil, customErrorFromStatus(err)

@@ -3,6 +3,7 @@ package subscribers
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -10,7 +11,6 @@ import (
 
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
-	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	"code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
@@ -22,8 +22,8 @@ type RE interface {
 	RewardPayoutEvent() types.RewardPayoutEvent
 }
 
-// rewardDetails holds all the details about a single asset based reward
-type rewardDetails struct {
+// reward holds all the details about a single asset based reward
+type reward struct {
 	// The asset this reward is for
 	assetID string
 	// The party that received the reward
@@ -38,10 +38,21 @@ type rewardDetails struct {
 	receivedAt int64
 }
 
-// rewardsDetails contains all rewards
-type rewardsDetails struct {
+func (r reward) IntoProto() *vega.Reward {
+	return &vega.Reward{
+		AssetId:           r.assetID,
+		PartyId:           r.partyID,
+		Epoch:             r.epoch,
+		Amount:            r.amount.String(),
+		PercentageOfTotal: strconv.FormatFloat(r.percentageAmount, 'f', 5, 64),
+		ReceivedAt:        r.receivedAt,
+	}
+}
+
+// rewardSummary contains all rewards
+type rewardSummary struct {
 	// Slice containing all rewards we have received
-	rewards []*rewardDetails
+	rewards []*reward
 	// Total amount of reward received
 	totalAmount *num.Uint
 }
@@ -51,7 +62,7 @@ type RewardCounters struct {
 	*Base
 
 	// Map of map per partyID per asset to reward details
-	rewardsPerPartyPerAsset map[string]map[string]*rewardsDetails
+	rewardsPerPartyPerAsset map[string]map[string]*rewardSummary
 	mu                      sync.RWMutex
 
 	subscriberCnt int32
@@ -67,12 +78,12 @@ type rewardFilter struct {
 	party   string
 }
 
-func (rf rewardFilter) filter(rw vega.RewardDetails) bool {
+func (rf rewardFilter) filter(rw vega.Reward) bool {
 	return (len(rf.assetID) <= 0 || rf.assetID == rw.AssetId) && (len(rf.party) <= 0 || rf.party == rw.PartyId)
 }
 
 type subscription struct {
-	subscriber chan vega.RewardDetails
+	subscriber chan vega.Reward
 	filter     rewardFilter
 	cancel     func()
 	retries    int
@@ -83,7 +94,7 @@ func NewRewards(ctx context.Context, log *logging.Logger, ack bool) *RewardCount
 	rc := RewardCounters{
 		Base:                    NewBase(ctx, 10, ack),
 		log:                     log,
-		rewardsPerPartyPerAsset: map[string]map[string]*rewardsDetails{},
+		rewardsPerPartyPerAsset: map[string]map[string]*rewardSummary{},
 		subscribers:             map[uint64]subscription{},
 	}
 
@@ -124,13 +135,13 @@ func (rc *RewardCounters) addNewReward(rpe types.RewardPayoutEvent) {
 	defer rc.mu.Unlock()
 
 	if _, ok := rc.rewardsPerPartyPerAsset[rpe.Party]; !ok {
-		rc.rewardsPerPartyPerAsset[rpe.Party] = map[string]*rewardsDetails{}
+		rc.rewardsPerPartyPerAsset[rpe.Party] = map[string]*rewardSummary{}
 	}
 
 	if _, ok := rc.rewardsPerPartyPerAsset[rpe.Party][rpe.Asset]; !ok {
 		// First reward for this asset
-		perAsset := &rewardsDetails{
-			rewards:     make([]*rewardDetails, 0),
+		perAsset := &rewardSummary{
+			rewards:     make([]*reward, 0),
 			totalAmount: num.Zero(),
 		}
 		rc.rewardsPerPartyPerAsset[rpe.Party][rpe.Asset] = perAsset
@@ -149,7 +160,7 @@ func (rc *RewardCounters) addNewReward(rpe types.RewardPayoutEvent) {
 	}
 
 	amount, _ := num.UintFromString(rpe.Amount, 10)
-	rd := &rewardDetails{
+	rd := &reward{
 		assetID:          rpe.Asset,
 		partyID:          rpe.Party,
 		epoch:            epoch,
@@ -161,17 +172,10 @@ func (rc *RewardCounters) addNewReward(rpe types.RewardPayoutEvent) {
 	perAsset.rewards = append(perAsset.rewards, rd)
 	perAsset.totalAmount.AddSum(rd.amount)
 
-	rc.notifyWithLock(vega.RewardDetails{
-		AssetId:           rd.assetID,
-		PartyId:           rd.partyID,
-		Epoch:             rd.epoch,
-		Amount:            rd.amount.String(),
-		PercentageOfTotal: strconv.FormatFloat(rd.percentageAmount, 'f', 5, 64),
-		ReceivedAt:        rd.receivedAt,
-	})
+	rc.notifyWithLock(*rd.IntoProto())
 }
 
-func (rc *RewardCounters) notifyWithLock(rd vega.RewardDetails) {
+func (rc *RewardCounters) notifyWithLock(rd vega.Reward) {
 	if len(rc.subscribers) == 0 {
 		return
 	}
@@ -243,8 +247,8 @@ func (rc *RewardCounters) unsubscribe(id uint64) error {
 }
 
 //ObserveRewardDetails returns a channel for subscribing to reward details.
-func (rc *RewardCounters) ObserveRewardDetails(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan vega.RewardDetails, ref uint64) {
-	rewards := make(chan vega.RewardDetails)
+func (rc *RewardCounters) ObserveRewards(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan vega.Reward, ref uint64) {
+	rewards := make(chan vega.Reward)
 	ctx, cancel := context.WithCancel(ctx)
 	ref = rc.subscribe(subscription{
 		filter: rewardFilter{
@@ -285,45 +289,60 @@ func (rc *RewardCounters) ObserveRewardDetails(ctx context.Context, retries int,
 	return rewards, ref
 }
 
-// GetRewardSubscribersCount returns the total number of active subscribers for ObserveRewardDetails.
+// GetRewardSubscribersCount returns the total number of active subscribers for ObserveReward.
 func (rc *RewardCounters) GetRewardSubscribersCount() int32 {
 	return atomic.LoadInt32(&rc.subscriberCnt)
 }
 
-// GetRewardDetails returns the information relating to rewards for a single party
-func (rc *RewardCounters) GetRewardDetails(ctx context.Context, partyID string) (*protoapi.GetRewardDetailsResponse, error) {
+// Get the total amount of rewards for each asset (optionally filtering on an asset ID)
+func (rc *RewardCounters) GetRewardSummaries(ctx context.Context, partyID string, assetID *string) []*vega.RewardSummary {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
-	rewards, ok := rc.rewardsPerPartyPerAsset[partyID]
+	summaries := []*vega.RewardSummary{}
+	rewardsPerAsset, ok := rc.rewardsPerPartyPerAsset[partyID]
 	if !ok {
-		rewards = make(map[string]*rewardsDetails)
+		return summaries
 	}
 
-	// Now build up the proto message from the details we have stored
-	resp := &protoapi.GetRewardDetailsResponse{
-		RewardDetails: make([]*vega.RewardPerAssetDetail, 0, len(rewards)),
+	for rewardAssetID, sum := range rewardsPerAsset {
+		if assetID != nil && *assetID != rewardAssetID {
+			continue
+		}
+		s := vega.RewardSummary{AssetId: rewardAssetID,
+			PartyId: partyID,
+			Amount:  sum.totalAmount.String()}
+
+		summaries = append(summaries, &s)
+	}
+	return summaries
+}
+
+// GetRewardsForAsset returns the information relating to rewards for a single (asset, party) pair
+func (rc *RewardCounters) GetRewardsForAsset(ctx context.Context, partyID, assetID string, skip, limit uint64, descending bool) []*vega.Reward {
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+	rewards := rc.getRewards(ctx, partyID, assetID)
+	rewards = PaginateRewards(rewards, skip, limit, descending)
+	return rewards
+}
+
+// GetRewards returns the information relating to rewards for a single party
+func (rc *RewardCounters) GetRewards(ctx context.Context, partyID string, skip, limit uint64, descending bool) []*vega.Reward {
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+
+	rewardsPerAsset, ok := rc.rewardsPerPartyPerAsset[partyID]
+	if !ok {
+		return []*vega.Reward{}
 	}
 
-	for asset, rpad := range rewards {
-		perAsset := vega.RewardPerAssetDetail{
-			Asset:         asset,
-			TotalForAsset: rpad.totalAmount.String(),
-			Details:       make([]*vega.RewardDetails, 0),
-		}
-		for _, rd := range rpad.rewards {
-			reward := vega.RewardDetails{
-				AssetId:           rd.assetID,
-				PartyId:           rd.partyID,
-				Epoch:             rd.epoch,
-				Amount:            rd.amount.String(),
-				PercentageOfTotal: strconv.FormatFloat(rd.percentageAmount, 'f', 5, 64),
-				ReceivedAt:        rd.receivedAt,
-			}
-			perAsset.Details = append(perAsset.Details, &reward)
-		}
-		resp.RewardDetails = append(resp.RewardDetails, &perAsset)
+	rewards := []*vega.Reward{}
+	for assetID := range rewardsPerAsset {
+		rewards = append(rewards, rc.getRewards(ctx, partyID, assetID)...)
 	}
-	return resp, nil
+
+	rewards = PaginateRewards(rewards, skip, limit, descending)
+	return rewards
 }
 
 // Types returns all the message types this subscriber wants to receive
@@ -331,4 +350,44 @@ func (rc *RewardCounters) Types() []events.Type {
 	return []events.Type{
 		events.RewardPayoutEvent,
 	}
+}
+
+// A little helper used by GetRewards and GetRewardsForAsset
+func (rc *RewardCounters) getRewards(ctx context.Context, partyID, assetID string) []*vega.Reward {
+	rewards := []*vega.Reward{}
+	if _, ok := rc.rewardsPerPartyPerAsset[partyID]; !ok {
+		return rewards
+	}
+
+	summary, ok := rc.rewardsPerPartyPerAsset[partyID][assetID]
+	if !ok {
+		return rewards
+	}
+
+	for _, r := range summary.rewards {
+		rewards = append(rewards, r.IntoProto())
+	}
+	return rewards
+}
+
+// Paginate rewards, sorting by epoch
+func PaginateRewards(rewards []*vega.Reward, skip, limit uint64, descending bool) []*vega.Reward {
+	length := uint64(len(rewards))
+	start := uint64(0)
+	end := length
+
+	sort_fn := func(i, j int) bool { return rewards[i].Epoch < rewards[j].Epoch }
+	if descending {
+		sort_fn = func(i, j int) bool { return rewards[i].Epoch > rewards[j].Epoch }
+	}
+
+	sort.Slice(rewards, sort_fn)
+	start = skip
+	if limit != 0 {
+		end = skip + limit
+	}
+
+	start = min(start, length)
+	end = min(end, length)
+	return rewards[start:end]
 }

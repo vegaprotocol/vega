@@ -32,6 +32,7 @@
 *`2021-11-22`*
 
 ### 🛠 Improvements
+- [238](https://github.com/vegaprotocol/data-node/pull/230) - Add filtering/pagination GraphQL schema for rewards
 - [230](https://github.com/vegaprotocol/data-node/pull/230) - Release Version `0.46.0`
 - [229](https://github.com/vegaprotocol/data-node/pull/229) - Add handling for checking/storing Chain ID
 - [226](https://github.com/vegaprotocol/data-node/pull/226) - Added subscriptions for delegations & rewards

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	v1 "code.vegaprotocol.io/protos/data-node/api/v1"
+	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -34,17 +34,45 @@ func (m *MockRewardsService) EXPECT() *MockRewardsServiceMockRecorder {
 	return m.recorder
 }
 
-// GetRewardDetails mocks base method
-func (m *MockRewardsService) GetRewardDetails(arg0 context.Context, arg1 string) (*v1.GetRewardDetailsResponse, error) {
+// GetRewards mocks base method
+func (m *MockRewardsService) GetRewards(arg0 context.Context, arg1 string) []*vega.Reward {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRewardDetails", arg0, arg1)
-	ret0, _ := ret[0].(*v1.GetRewardDetailsResponse)
-	ret1, _ := ret[1].(error)
+	ret := m.ctrl.Call(m, "GetRewards", arg0, arg1)
+	ret0, _ := ret[0].([]*vega.Reward)
+	return ret0
+}
+
+// GetRewards indicates an expected call of GetRewards
+func (mr *MockRewardsServiceMockRecorder) GetRewards(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewards", reflect.TypeOf((*MockRewardsService)(nil).GetRewards), arg0, arg1)
+}
+
+// GetRewardsForAsset mocks base method
+func (m *MockRewardsService) GetRewardsForAsset(arg0 context.Context, arg1, arg2 string) []*vega.Reward {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRewardsForAsset", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]*vega.Reward)
+	return ret0
+}
+
+// GetRewardsForAsset indicates an expected call of GetRewardsForAsset
+func (mr *MockRewardsServiceMockRecorder) GetRewardsForAsset(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardsForAsset", reflect.TypeOf((*MockRewardsService)(nil).GetRewardsForAsset), arg0, arg1, arg2)
+}
+
+// ObserveRewards mocks base method
+func (m *MockRewardsService) ObserveRewards(arg0 context.Context, arg1 int, arg2, arg3 string) (<-chan vega.Reward, uint64) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObserveRewards", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(<-chan vega.Reward)
+	ret1, _ := ret[1].(uint64)
 	return ret0, ret1
 }
 
-// GetRewardDetails indicates an expected call of GetRewardDetails
-func (mr *MockRewardsServiceMockRecorder) GetRewardDetails(arg0, arg1 interface{}) *gomock.Call {
+// ObserveRewards indicates an expected call of ObserveRewards
+func (mr *MockRewardsServiceMockRecorder) ObserveRewards(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRewardDetails", reflect.TypeOf((*MockRewardsService)(nil).GetRewardDetails), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveRewards", reflect.TypeOf((*MockRewardsService)(nil).ObserveRewards), arg0, arg1, arg2, arg3)
 }

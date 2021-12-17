@@ -38,7 +38,7 @@ func TestRewardObserver(t *testing.T) {
 
 func testObserveRewardsResponsesNoFilter(t *testing.T) {
 	ctx := context.Background()
-	req := &apipb.ObserveRewardDetailsRequest{}
+	req := &apipb.ObserveRewardsRequest{}
 	rewardEvents := []*events.RewardPayout{
 		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), 0.1),
 		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), 0.2),
@@ -52,7 +52,7 @@ func testObserveRewardsResponsesNoFilter(t *testing.T) {
 
 func testObserveRewardsResponsesWithAssetFilter(t *testing.T) {
 	ctx := context.Background()
-	req := &apipb.ObserveRewardDetailsRequest{AssetId: "asset1"}
+	req := &apipb.ObserveRewardsRequest{AssetId: "asset1"}
 	rewardEvents := []*events.RewardPayout{
 		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), 0.1),
 		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), 0.2),
@@ -71,7 +71,7 @@ func testObserveRewardsResponsesWithAssetFilter(t *testing.T) {
 
 func testObserveRewardsResponsesWithPartyFilter(t *testing.T) {
 	ctx := context.Background()
-	req := &apipb.ObserveRewardDetailsRequest{Party: "party1"}
+	req := &apipb.ObserveRewardsRequest{Party: "party1"}
 	rewardEvents := []*events.RewardPayout{
 		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), 0.1),
 		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), 0.2),
@@ -88,7 +88,7 @@ func testObserveRewardsResponsesWithPartyFilter(t *testing.T) {
 
 func testObserveRewardsResponsesWithAssetPartyFilter(t *testing.T) {
 	ctx := context.Background()
-	req := &apipb.ObserveRewardDetailsRequest{Party: "party1", AssetId: "asset1"}
+	req := &apipb.ObserveRewardsRequest{Party: "party1", AssetId: "asset1"}
 	rewardEvents := []*events.RewardPayout{
 		events.NewRewardPayout(ctx, 0, "party1", "1", "asset1", num.NewUint(100), 0.1),
 		events.NewRewardPayout(ctx, 1, "party2", "2", "asset2", num.NewUint(200), 0.2),
@@ -104,7 +104,7 @@ func testObserveRewardsResponsesWithAssetPartyFilter(t *testing.T) {
 	testRWObserverWithFilter(t, req, rewardEvents, expectedEvents)
 }
 
-func testRWObserverWithFilter(t *testing.T, req *apipb.ObserveRewardDetailsRequest, evts []*events.RewardPayout, expectedEvents []*events.RewardPayout) {
+func testRWObserverWithFilter(t *testing.T, req *apipb.ObserveRewardsRequest, evts []*events.RewardPayout, expectedEvents []*events.RewardPayout) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimout)
 	defer cancel()
 
@@ -115,7 +115,7 @@ func testRWObserverWithFilter(t *testing.T, req *apipb.ObserveRewardDetailsReque
 	require.NotNil(t, client)
 
 	// we need to subscribe to the stream prior to publishing the events
-	stream, err := client.ObserveRewardDetails(ctx, req)
+	stream, err := client.ObserveRewards(ctx, req)
 	assert.NoError(t, err)
 
 	// wait until the transfer response has subscribed before sending events
@@ -136,11 +136,11 @@ func testRWObserverWithFilter(t *testing.T, req *apipb.ObserveRewardDetailsReque
 		}
 
 		require.NotNil(t, resp)
-		require.Equal(t, expectedEvents[i].Party, resp.RewardDetails.PartyId)
-		require.Equal(t, expectedEvents[i].Asset, resp.RewardDetails.AssetId)
-		require.Equal(t, expectedEvents[i].Amount.String(), resp.RewardDetails.Amount)
-		require.Equal(t, expectedEvents[i].PercentageOfTotalReward[:7], resp.RewardDetails.PercentageOfTotal)
-		require.Equal(t, expectedEvents[i].EpochSeq, strconv.Itoa(int(resp.RewardDetails.Epoch)))
+		require.Equal(t, expectedEvents[i].Party, resp.Reward.PartyId)
+		require.Equal(t, expectedEvents[i].Asset, resp.Reward.AssetId)
+		require.Equal(t, expectedEvents[i].Amount.String(), resp.Reward.Amount)
+		require.Equal(t, expectedEvents[i].PercentageOfTotalReward[:7], resp.Reward.PercentageOfTotal)
+		require.Equal(t, expectedEvents[i].EpochSeq, strconv.Itoa(int(resp.Reward.Epoch)))
 		i++
 	}
 }

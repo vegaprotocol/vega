@@ -176,7 +176,7 @@ type LiquidityProviderFeeShare struct {
 	Party *vega.Party `json:"party"`
 	// The share own by this liquidity provider (float)
 	EquityLikeShare string `json:"equityLikeShare"`
-	// the average entry valuation of the liqidity provider for the market
+	// the average entry valuation of the liquidity provider for the market
 	AverageEntryValuation string `json:"averageEntryValuation"`
 }
 
@@ -230,11 +230,11 @@ type OrderEstimate struct {
 type PositionResolution struct {
 	// the market ID where position resolution happened
 	MarketID string `json:"marketId"`
-	// number of distressed partys on market
+	// number of distressed parties on market
 	Distressed int `json:"distressed"`
-	// number of partys closed out
+	// number of parties closed out
 	Closed int `json:"closed"`
-	// the mark price at which partys were distressed/closed out
+	// the mark price at which parties were distressed/closed out
 	MarkPrice string `json:"markPrice"`
 }
 
@@ -258,7 +258,7 @@ type PriceMonitoringParameters struct {
 	Triggers []*PriceMonitoringTrigger `json:"triggers"`
 }
 
-// Configuration of a market price monitorings auctions triggers
+// Configuration of a market price monitoring auctions triggers
 type PriceMonitoringSettings struct {
 	// Specified a set of PriceMonitoringParameters to be use for price monitoring purposes
 	Parameters *PriceMonitoringParameters `json:"parameters"`
@@ -458,9 +458,9 @@ const (
 	AccountTypeGlobalInsurance AccountType = "GlobalInsurance"
 	// Settlement - only for 'system' party
 	AccountTypeSettlement AccountType = "Settlement"
-	// Margin - The leverage account for partys
+	// Margin - The leverage account for parties
 	AccountTypeMargin AccountType = "Margin"
-	// General account - the account containing 'unused' collateral for partys
+	// General account - the account containing 'unused' collateral for parties
 	AccountTypeGeneral AccountType = "General"
 	// Infrastructure fee account - the account where all infrastructure fees are collected
 	AccountTypeFeeInfrastructure AccountType = "FeeInfrastructure"
@@ -1451,7 +1451,7 @@ const (
 	OrderTypeMarket OrderType = "Market"
 	// mentioned in ticket, but as yet unused order type
 	OrderTypeLimit OrderType = "Limit"
-	// Used for distressed partys, an order placed by the network to close out distressed partys
+	// Used for distressed parties, an order placed by the network to close out distressed parties
 	// similar to Market order, only no party is attached to the order.
 	OrderTypeNetwork OrderType = "Network"
 )

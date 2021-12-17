@@ -232,8 +232,10 @@ type DelegationService interface {
 // RewardsService ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/rewards_service_mock.go -package mocks code.vegaprotocol.io/data-node/api RewardsService
 type RewardsService interface {
-	GetRewardDetails(ctx context.Context, party string) (*protoapi.GetRewardDetailsResponse, error)
-	ObserveRewardDetails(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan pbtypes.RewardDetails, ref uint64)
+	GetRewards(ctx context.Context, party string, skip, limit uint64, descending bool) []*pbtypes.Reward
+	GetRewardsForAsset(ctx context.Context, party, asset string, skip, limit uint64, descending bool) []*pbtypes.Reward
+	GetRewardSummaries(ctx context.Context, party string, asset *string) []*pbtypes.RewardSummary
+	ObserveRewards(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan pbtypes.Reward, ref uint64)
 }
 
 // StakingService ...
@@ -683,28 +685,53 @@ func (t *tradingDataService) Deposits(ctx context.Context, req *protoapi.Deposit
 	}, nil
 }
 
-func (t *tradingDataService) GetRewardDetails(ctx context.Context, req *protoapi.GetRewardDetailsRequest) (*protoapi.GetRewardDetailsResponse, error) {
-	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardDetails")()
+func (t *tradingDataService) GetRewardSummaries(ctx context.Context, req *protoapi.GetRewardSummariesRequest) (*protoapi.GetRewardSummariesResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRewardSummaries")()
 	if len(req.PartyId) <= 0 {
 		return nil, ErrMissingPartyID
 	}
-	details, err := t.rewardsService.GetRewardDetails(ctx, req.PartyId)
-	if err != nil {
-		return nil, err
+
+	var assetID *string
+	if len(req.AssetId) > 0 {
+		assetID = &req.AssetId
 	}
-	return details, nil
+
+	summaries := t.rewardsService.GetRewardSummaries(ctx, req.PartyId, assetID)
+	return &protoapi.GetRewardSummariesResponse{Summaries: summaries}, nil
 }
 
-func (t *tradingDataService) ObserveRewardDetails(req *protoapi.ObserveRewardDetailsRequest,
-	stream protoapi.TradingDataService_ObserveRewardDetailsServer,
+func (t *tradingDataService) GetRewards(ctx context.Context, req *protoapi.GetRewardsRequest) (*protoapi.GetRewardsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetRewards")()
+	if len(req.PartyId) <= 0 {
+		return nil, ErrMissingPartyID
+	}
+
+	p := defaultPagination
+	if req.Pagination != nil {
+		p = *req.Pagination
+	}
+
+	var rewards []*pbtypes.Reward
+
+	if len(req.AssetId) <= 0 {
+		rewards = t.rewardsService.GetRewards(ctx, req.PartyId, p.Skip, p.Limit, p.Descending)
+	} else {
+		rewards = t.rewardsService.GetRewardsForAsset(ctx, req.PartyId, req.AssetId, p.Skip, p.Limit, p.Descending)
+	}
+
+	return &protoapi.GetRewardsResponse{Rewards: rewards}, nil
+}
+
+func (t *tradingDataService) ObserveRewards(req *protoapi.ObserveRewardsRequest,
+	stream protoapi.TradingDataService_ObserveRewardsServer,
 ) error {
-	defer metrics.StartAPIRequestAndTimeGRPC("ObserveRewardDetails")()
+	defer metrics.StartAPIRequestAndTimeGRPC("ObserveRewards")()
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("starting streaming reward updates")
 	}
-	ch, _ := t.rewardsService.ObserveRewardDetails(ctx, t.Config.StreamRetries, req.AssetId, req.Party)
+	ch, _ := t.rewardsService.ObserveRewards(ctx, t.Config.StreamRetries, req.AssetId, req.Party)
 	for {
 		select {
 		case rwd, ok := <-ch:
@@ -713,8 +740,8 @@ func (t *tradingDataService) ObserveRewardDetails(req *protoapi.ObserveRewardDet
 				return nil
 			}
 
-			resp := &protoapi.ObserveRewardDetailsResponse{
-				RewardDetails: &rwd,
+			resp := &protoapi.ObserveRewardsResponse{
+				Reward: &rwd,
 			}
 			if err := stream.Send(resp); err != nil {
 				t.log.Error("failed to send reward details data into stream",

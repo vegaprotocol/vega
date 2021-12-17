@@ -3,7 +3,7 @@ module code.vegaprotocol.io/data-node
 go 1.16
 
 require (
-	code.vegaprotocol.io/protos v0.47.0
+	code.vegaprotocol.io/protos v0.47.1-0.20211216163632-a6cde1ba3f57
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
 	code.vegaprotocol.io/vega v0.47.0
