@@ -102,6 +102,15 @@ func (e *Engine) sendEvent(ctx context.Context) {
 		BootstrapBlockCount:  uint32(e.bootstrapBlockCount),
 		GenesisLoaded:        e.genesisLoaded,
 	}
+
+	if !e.proposeMarketEnabledFrom.IsZero() {
+		limits.ProposeMarketEnabledFrom = e.proposeAssetEnabledFrom.UnixNano()
+	}
+
+	if !e.proposeAssetEnabledFrom.IsZero() {
+		limits.ProposeAssetEnabledFrom = e.proposeAssetEnabledFrom.UnixNano()
+	}
+
 	event := events.NewNetworkLimitsEvent(ctx, &limits)
 	e.broker.Send(event)
 }
