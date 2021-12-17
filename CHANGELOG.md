@@ -16,7 +16,7 @@
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
 - [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it. 
 - [4505](https://github.com/vegaprotocol/vega/pull/4506) - Wire `net params` to time service to flush pending updates
-- [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the nullchain with an ERC20 asset
+- [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
 - [4516](https://github.com/vegaprotocol/vega/pull/4516) - Fix release number title typo - 0.46.1 > 0.46.2 
 
 ## 0.47.0
