@@ -123,6 +123,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		conf.Versions = 1
 	}
 	log = log.Named(namedLogger)
+	log.SetLevel(conf.Level.Get())
 	dbConn, err := getDB(conf, vegapath)
 	if err != nil {
 		log.Error("Failed to open DB connection", logging.Error(err))
