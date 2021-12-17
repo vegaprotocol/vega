@@ -212,7 +212,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		witness,
 		evtfwd,
 		exec,
-		commander,
 		genesisHandler,
 		governance,
 		notary,
