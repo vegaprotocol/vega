@@ -151,7 +151,7 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 // startCalculation - a callback to trigger an asynchronous state var calc - the result of which is given through the FinaliseCalculation interface
 // trigger - a slice of events that should trigger the calculation of the state variable
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
-// result - a callback for returning the result converted to the desired structure
+// result - a callback for returning the result converted to the native structure.
 func (e *Engine) AddStateVariable(converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(statevar.StateVariableResult) error) error {
 	ID := e.variableID()
 
