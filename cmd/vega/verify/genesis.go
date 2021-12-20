@@ -71,7 +71,6 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 	}
 
 	for k, v := range assets {
-
 		if _, failed := num.UintFromString(v.TotalSupply, 10); failed {
 			r.Err("app_state.assets[%s].total_supply not a valid number: %s", k, v.TotalSupply)
 		}
@@ -102,7 +101,6 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 		default:
 			r.Err("app_state.assets[%s].source must be either builtin or ERC20", k)
 		}
-
 	}
 }
 
@@ -113,7 +111,6 @@ func verifyValidators(r *reporter, validators map[string]validator) {
 	}
 
 	for tmkey, v := range validators {
-
 		switch {
 		case len(tmkey) <= 0:
 			r.Err("app_state.validators contains an empty key")

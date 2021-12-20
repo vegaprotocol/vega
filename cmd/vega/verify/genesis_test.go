@@ -205,7 +205,7 @@ func testUnknownAppstateField(t *testing.T) {
 
 	// marshall it
 	file, _ := json.MarshalIndent(genesis, "", " ")
-	err = os.WriteFile(testFile, file, 0644)
+	err = os.WriteFile(testFile, file, 0o644)
 	require.NoError(t, err)
 
 	// expected failure given unknown field
@@ -222,7 +222,7 @@ func getFileFromAppstate(t *testing.T, gs genesis.GenesisState) string {
 	}{AppState: gs}
 	// marshall it
 	file, _ := json.MarshalIndent(genesis, "", " ")
-	err := os.WriteFile(testFile, file, 0644)
+	err := os.WriteFile(testFile, file, 0o644)
 
 	// write to file
 	require.NoError(t, err)
