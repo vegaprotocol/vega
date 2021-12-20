@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.45.6
+
+*2021-11-16*
+
+### Fixes
+- [4506](https://github.com/vegaprotocol/vega/pull/4506) -  Wire network parameters to time service to flush out pending changes
+
+
 ## 0.45.5
 
 *2021-11-16*
