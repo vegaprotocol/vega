@@ -101,12 +101,13 @@ func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, sta
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	return testEngine.engine.AddStateVariable(converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeRiskModelChanged}, time.Duration(10*time.Second), resultCallback)
+	return testEngine.engine.AddStateVariable(converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeRiskModelChanged}, 10*time.Second, resultCallback)
 }
 
 func defaultStartCalc() func(string, types.FinaliseCalculation) {
 	return func(string, types.FinaliseCalculation) {}
 }
+
 func defaultResultBack() func(types.StateVariableResult) error {
 	return func(types.StateVariableResult) error { return nil }
 }
@@ -329,7 +330,6 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		require.Equal(t, "eventID1", evt2.EventID)
 		require.Equal(t, "perfect_match", evt2.State)
 	}
-
 }
 
 func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
