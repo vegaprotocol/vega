@@ -21,7 +21,7 @@ var startProcessingTimeUpdate time.Time
 
 func init() {
 	var err error
-	startProcessingTimeUpdate, err = time.Parse(time.RFC3339, "2021-12-27T12:00:00Z") // 2021 Dec 27 at 12:00 UTC
+	startProcessingTimeUpdate, err = time.Parse(time.RFC3339, "2021-12-22T12:00:00Z") // 2021 Dec 22 at 12:00 UTC
 	if err != nil {
 		panic(err)
 	}
