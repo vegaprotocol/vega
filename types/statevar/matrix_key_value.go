@@ -52,11 +52,6 @@ func (dm *DecimalMatrix) withinTolerance(other *DecimalMatrix, tolerance num.Dec
 	return true
 }
 
-// ToDecimal converts the float matrix to decimal matrix.
-func (dm *DecimalMatrix) ToDecimal() DecimalValue {
-	return dm
-}
-
 // ToProto converts the state variable value to protobuf.
 func (dm *DecimalMatrix) ToProto() *vega.StateVarValue {
 	rows := make([]*vega.VectorValue, 0, len(dm.Val))

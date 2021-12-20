@@ -40,11 +40,6 @@ func (dv *DecimalScalar) withinTolerance(other *DecimalScalar, tolerance num.Dec
 	return dv.Val.Sub(other.Val).Abs().LessThanOrEqual(tolerance)
 }
 
-// ToDecimal converts the float scalar to a decimal value.
-func (dv *DecimalScalar) ToDecimal() DecimalValue {
-	return dv
-}
-
 // ToProto converts the state variable value to protobuf.
 func (fv *DecimalScalar) ToProto() *vega.StateVarValue {
 	return &vega.StateVarValue{

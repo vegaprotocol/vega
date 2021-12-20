@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -38,26 +39,24 @@ var stateToName = map[StateVarConsensusState]string{
 }
 
 type StateVariable struct {
-	log    *logging.Logger
-	top    Topology
-	cmd    Commander
-	broker Broker
-	// configuration
-	ID            string                                   // the unique identifier of the state variable
-	calculateFunc func() (*statevar.KeyValueBundle, error) // a callback to the owner to calculate the value of the state variable
-	trigger       []StateVarEventType                      // events that should trigger the calculation of the state variable
-	frequency     time.Duration                            // the frequency for time based triggering
-	result        func(*statevar.KeyValueResult) error     // a callback to be called when the value reaches consensus
+	log              *logging.Logger
+	top              Topology
+	cmd              Commander
+	broker           Broker
+	ID               string                                     // the unique identifier of the state variable
+	converter        statevar.Converter                         // convert to/from the key/value bundle model into typed result model
+	startCalculation func(string, statevar.FinaliseCalculation) // a callback to the owner to start the calculation of the value of the state variable
+	trigger          []statevar.StateVarEventType               // events that should trigger the calculation of the state variable
+	frequency        time.Duration                              // the frequency for time based triggering
+	result           func(statevar.StateVariableResult) error   // a callback to be called when the value reaches consensus
 
-	// state
 	nextTimeToRun    time.Time                           // the next scheduled calculation
 	state            StateVarConsensusState              // the current status of consensus
 	eventID          string                              // the event ID triggering the calculation
 	validatorResults map[string]*statevar.KeyValueBundle // the result of the calculation as received from validators
-	currentValue     *statevar.KeyValueResult            // the current result
 }
 
-func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander, currentTime time.Time, ID string, calculateFunc func() (*statevar.KeyValueBundle, error), trigger []StateVarEventType, frequency time.Duration, result func(*statevar.KeyValueResult) error, defaultValue *statevar.KeyValueResult) *StateVariable {
+func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander, currentTime time.Time, ID string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(statevar.StateVariableResult) error) *StateVariable {
 	// if frequency is specified, "schedule" a calculation for now
 	nextTimeToRun := time.Time{}
 	if frequency != time.Duration(0) {
@@ -69,20 +68,15 @@ func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander
 		top:              top,
 		cmd:              cmd,
 		ID:               ID,
-		calculateFunc:    calculateFunc,
+		converter:        converter,
+		startCalculation: startCalculation,
 		trigger:          trigger,
 		result:           result,
 		state:            StateVarConsensusStateUnspecified,
 		validatorResults: map[string]*statevar.KeyValueBundle{},
 		nextTimeToRun:    nextTimeToRun,
-		currentValue:     defaultValue,
 		frequency:        frequency,
 	}
-	sv.currentValue = &statevar.KeyValueResult{
-		KeyDecimalValue: defaultValue.KeyDecimalValue,
-		Validity:        statevar.StateValidityDefault,
-	}
-	result(sv.currentValue)
 	return sv
 }
 
@@ -105,30 +99,44 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.eventID = eventID
 	sv.validatorResults = map[string]*statevar.KeyValueBundle{}
 	sv.state = StateVarConsensusStateCalculationStarted
+	sv.sendEvent()
 
 	if !sv.top.IsValidator() {
 		return nil
 	}
 
-	// if we are a validator we save our result
-	// request calculation of the state from the owner of the component
-	candidateState, err := sv.calculateFunc()
+	// kickoff calculation
+	sv.startCalculation(sv.eventID, sv)
+
+	return nil
+}
+
+// CalculationFinished is called from the owner when the calculation is completed to kick off consensus.
+func (sv *StateVariable) CalculationFinished(eventID string, result statevar.StateVariableResult, err error) {
+	if sv.eventID != eventID {
+		sv.log.Warn("ignoring recevied the result of a calculation of an old eventID", logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+	}
+
 	if err != nil {
 		sv.log.Error("could not calculate state for", logging.String("id", sv.ID), logging.String("event-id", eventID))
 		sv.state = StateVarConsensusStateError
 		sv.sendEvent()
 		sv.eventID = ""
-		return err
+		return
 	}
 
 	// save our result and send the result to vega to be updated by other nodes.
-	sv.validatorResults[sv.top.SelfNodeID()] = candidateState
-	svp := &commandspb.StateVariableProposal{}
+	svp := &commandspb.StateVariableProposal{
+		Proposal: &vegapb.StateValueProposal{
+			StateVarId: sv.ID,
+			EventId:    sv.eventID,
+			Kvb:        sv.converter.InterfaceToBundle(result).ToProto(),
+		},
+	}
 	sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(error) {})
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("result calculated and sent to vega", logging.String("validator", sv.top.SelfNodeID()), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 	}
-	return nil
 }
 
 // bundleReceived is called when we get a result from another validator corresponding to a given event ID.
@@ -142,12 +150,16 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 	// if for some reason we received a result from a non validator node, ignore it
 	if !sv.top.IsValidatorNodeID(nodeID) {
 		sv.log.Debug("state var bundle received from a non validator node - ignoring", logging.String("from-validator", nodeID), logging.String("state-var", sv.ID), logging.String("eventID", eventID))
-
 		return
 	}
 
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("state var bundle received", logging.String("from-validator", nodeID), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+	}
+
+	if sv.state == StateVarConsensusStatePerfectMatch || sv.state == StateVarConsensusStateConsensusReached {
+		sv.log.Debug("state var bundle received, consensus already reached", logging.String("from-validator", nodeID), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+		return
 	}
 
 	// save the result from the validator and check if we have a quorum
@@ -198,10 +210,10 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 	}
 	sv.state = StateVarConsensusStatePerfectMatch
 	// convert the result to decimal and let the owner of the state variable know
-	sv.consensusReached(result.ToDecimal())
+	sv.consensusReached(result)
 }
 
-// if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance, if none can be found, mark the value as stale.
+// if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance.
 func (sv *StateVariable) tryConsensus(rng *rand.Rand, requiredMatches int64) {
 	// sort the node IDs for determinism
 	nodeIDs := make([]string, 0, len(sv.validatorResults))
@@ -223,13 +235,14 @@ func (sv *StateVariable) tryConsensus(rng *rand.Rand, requiredMatches int64) {
 		alreadyCheckedForTolerance[nodeID] = struct{}{}
 		candidateResult := sv.validatorResults[nodeID]
 		countMatch := int64(0)
-		for _, res := range sv.validatorResults {
-			if res.WithinTolerance(candidateResult) {
+		for _, nID := range nodeIDs {
+			if sv.validatorResults[nID].WithinTolerance(candidateResult) {
 				countMatch++
 			}
 		}
 		if countMatch >= requiredMatches {
-			sv.consensusReached(candidateResult.ToDecimal())
+			sv.state = StateVarConsensusStateConsensusReached
+			sv.consensusReached(candidateResult)
 			return
 		}
 	}
@@ -240,19 +253,17 @@ func (sv *StateVariable) tryConsensus(rng *rand.Rand, requiredMatches int64) {
 }
 
 // consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators.
-func (sv *StateVariable) consensusReached(acceptedValue *statevar.KeyValueResult) {
+func (sv *StateVariable) consensusReached(acceptedValue *statevar.KeyValueBundle) {
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("consensus reached", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
 	}
-	acceptedValue.Validity = statevar.StateValidityConsensus
-	sv.state = StateVarConsensusStateConsensusReached
-	sv.result(acceptedValue)
+
+	sv.result(sv.converter.BundleToInterface(acceptedValue))
 	sv.sendEvent()
 
 	// reset the state
 	sv.eventID = ""
 	sv.validatorResults = nil
-	sv.currentValue = acceptedValue
 }
 
 func (sv *StateVariable) sendEvent() {

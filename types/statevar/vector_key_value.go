@@ -49,11 +49,6 @@ func (dv *DecimalVector) withinTolerance(other *DecimalVector, tolerance num.Dec
 	return true
 }
 
-// ToDecimal converts the float vector to a vector of decimals.
-func (dv *DecimalVector) ToDecimal() DecimalValue {
-	return dv
-}
-
 // ToProto converts the state variable value to protobuf.
 func (dv *DecimalVector) ToProto() *vega.StateVarValue {
 	values := make([]string, 0, len(dv.Val))

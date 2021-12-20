@@ -75,8 +75,7 @@ func testScalarToDecimal(t *testing.T) {
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	res1 := kvb1.ToDecimal()
-	res := res1.KeyDecimalValue[kvb1.KVT[0].Key]
+	res := kvb1.KVT[0].Val
 	switch v := res.(type) {
 	case *statevar.DecimalScalar:
 		require.Equal(t, num.DecimalFromFloat(1.23456), v.Val)

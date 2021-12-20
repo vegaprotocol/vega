@@ -54,17 +54,6 @@ type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
-// StateVarEventType enumeration for supported events triggering calculation.
-type StateVarEventType int
-
-const (
-	// sample events there may be many more.
-
-	StateVarEventTypeAuctionUnknown StateVarEventType = iota
-	StateVarEventTypeAuctionEnded
-	StateVarEventTypeRiskModelChanged
-)
-
 // Engine is an engine for creating consensus for floaing point "state variables".
 type Engine struct {
 	log                    *logging.Logger
@@ -73,7 +62,7 @@ type Engine struct {
 	top                    Topology
 	rng                    *rand.Rand
 	cmd                    Commander
-	eventTypeToStateVar    map[StateVarEventType][]*StateVariable
+	eventTypeToStateVar    map[statevar.StateVarEventType][]*StateVariable
 	stateVars              map[string]*StateVariable
 	currentTime            time.Time
 	validatorVotesRequired num.Decimal
@@ -89,7 +78,7 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		broker:              broker,
 		top:                 top,
 		cmd:                 cmd,
-		eventTypeToStateVar: map[StateVarEventType][]*StateVariable{},
+		eventTypeToStateVar: map[statevar.StateVarEventType][]*StateVariable{},
 		stateVars:           map[string]*StateVariable{},
 	}
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
@@ -113,7 +102,7 @@ func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f fl
 }
 
 // NewEvent triggers calculation of state variables that depend on the event type.
-func (e *Engine) NewEvent(eventType StateVarEventType, eventID string) {
+func (e *Engine) NewEvent(eventType statevar.StateVarEventType, eventID string) {
 	if _, ok := e.eventTypeToStateVar[eventType]; !ok {
 		e.log.Panic("Unexpected event received", logging.Int("event-type", int(eventType)), logging.String("event-id", eventID))
 	}
@@ -158,16 +147,15 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 // AddStateVariable register a new state variable for which consensus should be managed.
-// ID - the unique identifier of the state variable
-// calculateFunc - a callback for calculating the value of the state variable
+// converter - converts from the native format of the variable and the key value bundle format and vice versa
+// startCalculation - a callback to trigger an asynchronous state var calc - the result of which is given through the FinaliseCalculation interface
 // trigger - a slice of events that should trigger the calculation of the state variable
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
-// result - a callback for storing the result
-// defaultValue - the default value to use (as decimal).
-func (e *Engine) AddStateVariable(calculateFunc func() (*statevar.KeyValueBundle, error), trigger []StateVarEventType, frequency time.Duration, result func(*statevar.KeyValueResult) error, defaultValue *statevar.KeyValueResult) error {
+// result - a callback for returning the result converted to the desired structure
+func (e *Engine) AddStateVariable(converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(statevar.StateVariableResult) error) error {
 	ID := e.variableID()
 
-	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, calculateFunc, trigger, frequency, result, defaultValue)
+	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, converter, startCalculation, trigger, frequency, result)
 	e.stateVars[ID] = sv
 	for _, t := range trigger {
 		if _, ok := e.eventTypeToStateVar[t]; !ok {

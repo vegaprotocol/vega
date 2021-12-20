@@ -9,24 +9,12 @@ import (
 type value interface {
 	Equals(other value) bool
 	WithinTolerance(other value, tolerance num.Decimal) bool
-	ToDecimal() DecimalValue
 	ToProto() *vega.StateVarValue
 }
 
 // KeyValueBundle is a slice of key value and their expected tolerances.
 type KeyValueBundle struct {
 	KVT []KeyValueTol
-}
-
-// ToDecimal converts a key value bundle to its decimal counterpart.
-func (kvb *KeyValueBundle) ToDecimal() *KeyValueResult {
-	res := &KeyValueResult{
-		KeyDecimalValue: map[string]DecimalValue{},
-	}
-	for _, kv := range kvb.KVT {
-		res.KeyDecimalValue[kv.Key] = kv.Val.ToDecimal()
-	}
-	return res
 }
 
 // ToProto converts KevValueBundle into proto.
@@ -143,18 +131,28 @@ type KeyValueTol struct {
 	Tolerance num.Decimal // the tolerance to use in comparison
 }
 
-type StateValidity int
+type DecimalValue interface{}
 
-const (
-	StateValidityDefault   StateValidity = iota
-	StateValidityConsensus               = iota
-	StateValidityStale                   = iota
-)
-
-// KeyValueResult the result of a state variable is keyed by the name and the value is a decimal value (scalar/vector/matrix).
-type KeyValueResult struct {
-	Validity        StateValidity
-	KeyDecimalValue map[string]DecimalValue
+type FinaliseCalculation interface {
+	CalculationFinished(string, StateVariableResult, error)
 }
 
-type DecimalValue interface{}
+type StateVariableResult interface{}
+
+type Converter interface {
+	BundleToInterface(*KeyValueBundle) StateVariableResult
+	InterfaceToBundle(StateVariableResult) *KeyValueBundle
+}
+
+// StateVarEventType enumeration for supported events triggering calculation.
+type StateVarEventType int
+
+const (
+	// sample events there may be many more.
+
+	StateVarEventTypeAuctionUnknown StateVarEventType = iota
+	StateVarEventTypeAuctionEnded
+	StateVarEventMarketEnactment
+	StateVarEventTypeMarketEnacatment
+	StateVarEventTypeRiskModelChanged
+)

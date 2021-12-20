@@ -128,8 +128,7 @@ func testToDecimal(t *testing.T) {
 		Val: &statevar.DecimalMatrix{Val: [][]num.Decimal{{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, {num.DecimalFromFloat(4.4), num.DecimalFromFloat(3.3), num.DecimalFromFloat(2.2), num.DecimalFromFloat(1.1)}}},
 	})
 
-	kvResult := kvb1.ToDecimal()
-	scalarValue := kvResult.KeyDecimalValue["scalar value"]
+	scalarValue := kvb1.KVT[0].Val
 	switch v := scalarValue.(type) {
 	case *statevar.DecimalScalar:
 		require.Equal(t, num.DecimalFromFloat(1.23456), v.Val)
@@ -137,7 +136,7 @@ func testToDecimal(t *testing.T) {
 		t.Fail()
 	}
 
-	vectorValue := kvResult.KeyDecimalValue["vector value"]
+	vectorValue := kvb1.KVT[1].Val
 	switch v := vectorValue.(type) {
 	case *statevar.DecimalVector:
 		require.Equal(t, []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, v.Val)
@@ -145,7 +144,7 @@ func testToDecimal(t *testing.T) {
 		t.Fail()
 	}
 
-	matrixValue := kvResult.KeyDecimalValue["matrix value"]
+	matrixValue := kvb1.KVT[2].Val
 	switch v := matrixValue.(type) {
 	case *statevar.DecimalMatrix:
 		require.Equal(t, [][]num.Decimal{

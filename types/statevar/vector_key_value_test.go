@@ -91,8 +91,7 @@ func testDecimalVectorToDecimal(t *testing.T) {
 		Tolerance: tol,
 	})
 
-	res1 := kvb1.ToDecimal()
-	res := res1.KeyDecimalValue[kvb1.KVT[0].Key]
+	res := kvb1.KVT[0].Val
 	switch v := res.(type) {
 	case *statevar.DecimalVector:
 		require.Equal(t, []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}, v.Val)

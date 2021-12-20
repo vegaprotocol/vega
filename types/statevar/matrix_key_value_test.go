@@ -93,8 +93,7 @@ func testDecimalMatrixToDecimal(t *testing.T) {
 		Tolerance: tol,
 	})
 
-	res1 := kvb1.ToDecimal()
-	res := res1.KeyDecimalValue[kvb1.KVT[0].Key]
+	res := kvb1.KVT[0].Val
 	switch v := res.(type) {
 	case *statevar.DecimalMatrix:
 		require.Equal(t, [][]num.Decimal{
