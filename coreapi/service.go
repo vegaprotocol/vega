@@ -21,6 +21,7 @@ type Service struct {
 	accounts     *services.Accounts
 	assets       *services.Assets
 	netparams    *services.NetParams
+	netlimits    *services.NetLimits
 	parties      *services.Parties
 	validators   *services.Validators
 	markets      *services.Markets
@@ -59,6 +60,12 @@ func NewService(
 		log.Info("starting network parameters core api")
 		svc.netparams = services.NewNetParams(ctx)
 		broker.SubscribeBatch(svc.netparams)
+	}
+
+	if cfg.NetworkLimits {
+		log.Info("starting network limits core api")
+		svc.netlimits = services.NewNetLimits(ctx)
+		broker.SubscribeBatch(svc.netlimits)
 	}
 
 	if cfg.Parties {
@@ -153,6 +160,17 @@ func (s *Service) ListNetworkParameters(
 	}
 	return &apipb.ListNetworkParametersResponse{
 		NetworkParameters: s.netparams.List(in.NetworkParameterKey),
+	}, nil
+}
+
+func (s *Service) ListNetworkLimits(
+	ctx context.Context, in *apipb.ListNetworkLimitsRequest,
+) (*apipb.ListNetworkLimitsResponse, error) {
+	if !s.cfg.NetworkLimits {
+		return nil, ErrServiceDisabled
+	}
+	return &apipb.ListNetworkLimitsResponse{
+		NetworkLimits: s.netlimits.Get(),
 	}, nil
 }
 

@@ -102,6 +102,7 @@ const (
 	ValidatorScoreEvent
 	KeyRotationEvent
 	StateVarEvent
+	NetworkLimitsEvent
 )
 
 var (
@@ -153,6 +154,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:          CheckpointEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:        KeyRotationEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:           StateVarEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:      NetworkLimitsEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -194,6 +196,7 @@ var (
 		ValidatorScoreEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE,
 		KeyRotationEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION,
 		StateVarEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR,
+		NetworkLimitsEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS,
 	}
 
 	eventStrings = map[Type]string{
@@ -236,6 +239,7 @@ var (
 		ValidatorScoreEvent:     "ValidatorScoreEvent",
 		KeyRotationEvent:        "KeyRotationEvent",
 		StateVarEvent:           "StateVarEvent",
+		NetworkLimitsEvent:      "NetworkLimitsEvent",
 	}
 )
 

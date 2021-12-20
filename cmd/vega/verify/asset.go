@@ -50,6 +50,7 @@ func verifyAssetTerms(r *reporter, prop *types.Proposal) {
 	} else if time.Unix(prop.Terms.ValidationTimestamp, 0).Before(time.Now()) {
 		r.Warn("prop.terms.validationTimestamp may be in the past")
 	}
+
 	if prop.Terms.EnactmentTimestamp == 0 {
 		r.Err("prop.terms.enactmentTimestamp is missing or 0")
 	} else if time.Unix(prop.Terms.EnactmentTimestamp, 0).Before(time.Now()) {

@@ -9,8 +9,8 @@ import (
 )
 
 type VerifyCmd struct {
-	Asset   verify.AssetCmd   `command:"passet" description:"verify an asset proposal payload"`
-	Genesis verify.GenesisCmd `command:"genesis" description:"verify a vega genesis app state"`
+	Asset   verify.AssetCmd   `command:"passet" description:"verify the payload of an asset proposal"`
+	Genesis verify.GenesisCmd `command:"genesis" description:"verify the appstate of a genesis file"`
 }
 
 var verifyCmd VerifyCmd
@@ -18,6 +18,6 @@ var verifyCmd VerifyCmd
 func Verify(ctx context.Context, parser *flags.Parser) error {
 	verifyCmd = VerifyCmd{}
 
-	_, err := parser.AddCommand("verify", "verify vega commands and genesis state", "", &verifyCmd)
+	_, err := parser.AddCommand("verify", "Verify Vega payloads or genesis appstate", "", &verifyCmd)
 	return err
 }

@@ -12,11 +12,18 @@
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
 - [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
 - [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit the number of epochs for which we keep delegations in memory in core api
+- [4514](https://github.com/vegaprotocol/vega/pull/4514) - Add network limits service and events
+- [4516](https://github.com/vegaprotocol/vega/pull/4516) - Add a command to cleanup all vega node state
 
 ### 🐛 Fixes
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
-- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it. 
+- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it.
 - [4505](https://github.com/vegaprotocol/vega/pull/4506) - Wire `net params` to time service to flush pending updates
+- [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
+- [4516](https://github.com/vegaprotocol/vega/pull/4516) - Fix release number title typo - 0.46.1 > 0.46.2
+- [4524](https://github.com/vegaprotocol/vega/pull/4524) - Updated `vega verify genesis` to understand new `app_state` layout
+- [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
+- [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 
 ## 0.47.0
 *2021-11-24*
@@ -45,7 +52,7 @@
 - [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
 - [4475](https://github.com/vegaprotocol/vega/pull/4475) - Fix rewards checkpoint not assigned to its correct place
 
-## 0.46.1
+## 0.46.2
 *2021-11-24*
 
 ### 🐛 Fixes

@@ -2,14 +2,13 @@ package evtforward
 
 import (
 	"context"
-	"errors"
 	"sort"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"github.com/golang/protobuf/proto"
-
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
+
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -18,8 +17,6 @@ var (
 	hashKeys = []string{
 		key,
 	}
-
-	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for event forwarder snapshot")
 )
 
 type efSnapshotState struct {
@@ -54,30 +51,27 @@ func (e *EvtForwarder) serialise() ([]byte, error) {
 			Events: events,
 		},
 	}
-	x := payload.IntoProto()
-	return proto.Marshal(x)
+	return proto.Marshal(payload.IntoProto())
 }
 
 // get the serialised form and hash of the given key.
-func (e *EvtForwarder) getSerialisedAndHash(k string) ([]byte, []byte, error) {
+func (e *EvtForwarder) getSerialisedAndHash(k string) (data []byte, hash []byte, err error) {
 	if k != key {
-		return nil, nil, ErrSnapshotKeyDoesNotExist
+		return nil, nil, types.ErrSnapshotKeyDoesNotExist
 	}
 
 	if !e.efss.changed {
 		return e.efss.serialised, e.efss.hash, nil
 	}
 
-	data, err := e.serialise()
+	e.efss.serialised, err = e.serialise()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	hash := crypto.Hash(data)
-	e.efss.serialised = data
-	e.efss.hash = hash
+	e.efss.hash = crypto.Hash(e.efss.serialised)
 	e.efss.changed = false
-	return data, hash, nil
+	return e.efss.serialised, e.efss.hash, nil
 }
 
 func (e *EvtForwarder) GetHash(k string) ([]byte, error) {
@@ -95,12 +89,11 @@ func (e *EvtForwarder) LoadState(ctx context.Context, p *types.Payload) ([]types
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 	// see what we're reloading
-	switch pl := p.Data.(type) {
-	case *types.PayloadEventForwarder:
+	if pl, ok := p.Data.(*types.PayloadEventForwarder); ok {
 		return nil, e.restore(ctx, pl.Events)
-	default:
-		return nil, types.ErrUnknownSnapshotType
 	}
+
+	return nil, types.ErrUnknownSnapshotType
 }
 
 func (e *EvtForwarder) restore(ctx context.Context, events []*commandspb.ChainEvent) error {

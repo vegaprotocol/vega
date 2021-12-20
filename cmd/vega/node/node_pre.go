@@ -52,7 +52,10 @@ import (
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
-var ErrUnknownChainProvider = errors.New("unknown chain provider")
+var (
+	ErrUnknownChainProvider    = errors.New("unknown chain provider")
+	ErrERC20AssetWithNullChain = errors.New("cannot use ERC20 asset with nullchain")
+)
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this shouldn't happen...
@@ -154,6 +157,10 @@ func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDe
 	asset, err := l.assets.Get(aid)
 	if err != nil {
 		return fmt.Errorf("unable to get asset %v", err)
+	}
+
+	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && asset.IsERC20() {
+		return ErrERC20AssetWithNullChain
 	}
 
 	// just a simple backoff here
@@ -345,7 +352,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		return err
 	}
 
-	l.limits = limits.New(l.Log, l.conf.Limits)
+	l.limits = limits.New(l.Log, l.conf.Limits, l.broker)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, l.nodeWallets.Vega, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
