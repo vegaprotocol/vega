@@ -1,6 +1,7 @@
 package verify
 
 import (
+	"bytes"
 	"encoding/json"
 
 	vgjson "code.vegaprotocol.io/shared/libs/json"
@@ -49,6 +50,7 @@ type appState struct {
 	Assets                       map[string]asset     `json:"assets"`
 	NetworkParametersCPOverwrite []string             `json:"network_parameters_checkpoint_overwrite"`
 	NetworkLimits                *json.RawMessage     `json:"network_limits"`
+	Checkpoint                   *json.RawMessage     `json:"checkpoint"`
 }
 
 type GenesisCmd struct{}
@@ -185,7 +187,7 @@ func verifyNetworkParameters(r *reporter, nps map[string]string, overwriteParame
 func verifyGenesis(r *reporter, bs []byte) string {
 	// Unmarshal to get appstate
 	g := struct {
-		AppState *appState `json:"app_state"`
+		AppState json.RawMessage `json:"app_state"`
 	}{}
 
 	if err := json.Unmarshal(bs, &g); err != nil {
@@ -193,7 +195,15 @@ func verifyGenesis(r *reporter, bs []byte) string {
 		return ""
 	}
 
-	appstate := g.AppState
+	appstate := &appState{}
+	d := json.NewDecoder(bytes.NewBuffer(g.AppState))
+	d.DisallowUnknownFields() // This allows us to fail if an appstate field is found which we don't know about
+
+	if err := d.Decode(appstate); err != nil {
+		r.Err("unable to unmarshal genesis file, %v", err)
+		return ""
+	}
+
 	if appstate == nil {
 		r.Err("app_state is missing")
 		return ""

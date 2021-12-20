@@ -20,6 +20,7 @@ func Test(t *testing.T) {
 	t.Run("verify builtin assets", testVerifyBuiltinAssets)
 	t.Run("verify netparams", testVerifyNetworkParams)
 	t.Run("verify netparams", testVerifyValidators)
+	t.Run("verify unknown appstate field", testUnknownAppstateField)
 }
 
 func testVerifyDefaultGenesis(t *testing.T) {
@@ -178,6 +179,37 @@ func testVerifyValidators(t *testing.T) {
 	invalid.VegaPubKey = "too short"
 	gs.Validators[valid.TmPubKey] = invalid
 	assert.Error(t, cmd.Execute([]string{getFileFromAppstate(t, gs)}))
+}
+
+func testUnknownAppstateField(t *testing.T) {
+	cmd := verify.GenesisCmd{}
+	gs := genesis.DefaultGenesisState()
+
+	// Marshall and unmarshal unstructured so we can add an unknown field
+	var unstructured map[string]interface{}
+	b, err := json.Marshal(gs)
+	require.NoError(t, err)
+
+	err = json.Unmarshal(b, &unstructured)
+	require.NoError(t, err)
+
+	unstructured["unknownfield"] = "unknownvalue"
+	n, err := json.Marshal(unstructured)
+	require.NoError(t, err)
+
+	testFile := filepath.Join(t.TempDir(), "genesistest.json")
+
+	genesis := struct {
+		AppState json.RawMessage `json:"app_state"`
+	}{AppState: json.RawMessage(n)}
+
+	// marshall it
+	file, _ := json.MarshalIndent(genesis, "", " ")
+	err = os.WriteFile(testFile, file, 0644)
+	require.NoError(t, err)
+
+	// expected failure given unknown field
+	assert.Error(t, cmd.Execute([]string{testFile}))
 }
 
 func getFileFromAppstate(t *testing.T, gs genesis.GenesisState) string {
