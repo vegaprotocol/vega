@@ -12,7 +12,7 @@ import (
 )
 
 // These types are copies of the ones in the engines that read the genesis file appstate
-// but the double-book keeping allows us to know when a change to the genesis state occurs
+// but the double-book keeping allows us to know when a change to the genesis state occurs.
 type validator struct {
 	ID              string `json:"id"`
 	VegaPubKey      string `json:"vega_pub_key"`
@@ -200,7 +200,7 @@ func verifyGenesis(r *reporter, bs []byte) string {
 	d.DisallowUnknownFields() // This allows us to fail if an appstate field is found which we don't know about
 
 	if err := d.Decode(appstate); err != nil {
-		r.Err("unable to unmarshal genesis file, %v", err)
+		r.Err("unable to unmarshal app_state in genesis file, %v", err)
 		return ""
 	}
 
