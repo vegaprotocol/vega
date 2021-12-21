@@ -3,6 +3,7 @@ package eth_test
 import (
 	"context"
 	"encoding/hex"
+	"math/big"
 	"testing"
 
 	"code.vegaprotocol.io/vega/client/eth"
@@ -68,6 +69,7 @@ func getTestClient(t *testing.T) *testClient {
 	ctrl := gomock.NewController(t)
 	mockEthClient := mocks.NewMockETHClient(ctrl)
 	c := &eth.Client{ETHClient: mockEthClient}
+	mockEthClient.EXPECT().ChainID(gomock.Any()).Return(big.NewInt(1), nil).AnyTimes()
 
 	return &testClient{
 		ctrl:          ctrl,

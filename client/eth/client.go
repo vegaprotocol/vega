@@ -31,6 +31,11 @@ var ContractHashes = map[string]struct{}{
 
 }
 
+const (
+	mainnetChainID = "1"
+	ropstenChainID = "3"
+)
+
 // ETHClient ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/eth_client_mock.go -package mocks code.vegaprotocol.io/vega/client/eth ETHClient
 type ETHClient interface {
@@ -124,6 +129,18 @@ func (c *Client) ConfirmationsRequired() uint32 {
 
 // VerifyContract takes the address of a contract in hex and checks the hash of the byte-code is as expected.
 func (c *Client) VerifyContract(ctx context.Context, address string) error {
+	chainID, err := c.ChainID(ctx)
+	if err != nil {
+		return err
+	}
+
+	switch chainID.String() {
+	case ropstenChainID:
+	case mainnetChainID:
+	default:
+		return nil // running locally with ganache so we skip the check
+	}
+
 	// nil block number means latest block
 	b, err := c.CodeAt(ctx, ethcommon.HexToAddress(address), nil)
 	if err != nil {
