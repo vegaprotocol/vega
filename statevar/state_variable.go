@@ -43,12 +43,14 @@ type StateVariable struct {
 	top              Topology
 	cmd              Commander
 	broker           Broker
-	ID               string                                     // the unique identifier of the state variable
-	converter        statevar.Converter                         // convert to/from the key/value bundle model into typed result model
-	startCalculation func(string, statevar.FinaliseCalculation) // a callback to the owner to start the calculation of the value of the state variable
-	trigger          []statevar.StateVarEventType               // events that should trigger the calculation of the state variable
-	frequency        time.Duration                              // the frequency for time based triggering
-	result           func(statevar.StateVariableResult) error   // a callback to be called when the value reaches consensus
+	ID               string                                                    // the unique identifier of the state variable
+	asset            string                                                    // the asset of the state variable - used for filtering relevant events
+	market           string                                                    // the market of the state variable - used for filtering relevant events
+	converter        statevar.Converter                                        // convert to/from the key/value bundle model into typed result model
+	startCalculation func(string, statevar.FinaliseCalculation)                // a callback to the owner to start the calculation of the value of the state variable
+	trigger          []statevar.StateVarEventType                              // events that should trigger the calculation of the state variable
+	frequency        time.Duration                                             // the frequency for time based triggering
+	result           func(context.Context, statevar.StateVariableResult) error // a callback to be called when the value reaches consensus
 
 	nextTimeToRun    time.Time                           // the next scheduled calculation
 	state            StateVarConsensusState              // the current status of consensus
@@ -56,7 +58,7 @@ type StateVariable struct {
 	validatorResults map[string]*statevar.KeyValueBundle // the result of the calculation as received from validators
 }
 
-func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander, currentTime time.Time, ID string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(statevar.StateVariableResult) error) *StateVariable {
+func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander, currentTime time.Time, ID, asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(context.Context, statevar.StateVariableResult) error) *StateVariable {
 	// if frequency is specified, "schedule" a calculation for now
 	nextTimeToRun := time.Time{}
 	if frequency != time.Duration(0) {
@@ -68,6 +70,8 @@ func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander
 		top:              top,
 		cmd:              cmd,
 		ID:               ID,
+		asset:            asset,
+		market:           market,
 		converter:        converter,
 		startCalculation: startCalculation,
 		trigger:          trigger,
@@ -78,6 +82,16 @@ func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander
 		frequency:        frequency,
 	}
 	return sv
+}
+
+// GetAsset returns the asset of the state variable.
+func (sv *StateVariable) GetAsset() string {
+	return sv.asset
+}
+
+// GetMarket returns the market of the state variable.
+func (sv *StateVariable) GetMarket() string {
+	return sv.market
 }
 
 // calculation is required for the state variable for the given event id.
@@ -140,7 +154,7 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 }
 
 // bundleReceived is called when we get a result from another validator corresponding to a given event ID.
-func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand, validatorVotesRequired num.Decimal) {
+func (sv *StateVariable) bundleReceived(ctx context.Context, nodeID, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand, validatorVotesRequired num.Decimal) {
 	// if the bundle is received for a stale or wrong event, ignore it
 	if sv.eventID != eventID {
 		sv.log.Debug("received a result for a stale event", logging.String("ID", sv.ID), logging.String("from-node", nodeID), logging.String("current-even-id", sv.eventID), logging.String("receivedEventID", eventID))
@@ -177,7 +191,7 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 
 	// if we're already in seeking consensus state, no point in checking if all match - suffice checking if there's a majority with matching within tolerance
 	if sv.state == StateVarConsensusStateSeekingConsensus {
-		sv.tryConsensus(rng, requiredNumberOfResults)
+		sv.tryConsensus(ctx, rng, requiredNumberOfResults)
 		return
 	}
 
@@ -199,7 +213,7 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 
 			// initiate a round of voting
 			sv.state = StateVarConsensusStateSeekingConsensus
-			sv.tryConsensus(rng, validatorsNum.Mul(validatorVotesRequired).IntPart())
+			sv.tryConsensus(ctx, rng, validatorsNum.Mul(validatorVotesRequired).IntPart())
 			return
 		}
 	}
@@ -210,11 +224,11 @@ func (sv *StateVariable) bundleReceived(nodeID, eventID string, bundle *statevar
 	}
 	sv.state = StateVarConsensusStatePerfectMatch
 	// convert the result to decimal and let the owner of the state variable know
-	sv.consensusReached(result)
+	sv.consensusReached(ctx, result)
 }
 
 // if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance.
-func (sv *StateVariable) tryConsensus(rng *rand.Rand, requiredMatches int64) {
+func (sv *StateVariable) tryConsensus(ctx context.Context, rng *rand.Rand, requiredMatches int64) {
 	// sort the node IDs for determinism
 	nodeIDs := make([]string, 0, len(sv.validatorResults))
 	for nodeID := range sv.validatorResults {
@@ -242,7 +256,7 @@ func (sv *StateVariable) tryConsensus(rng *rand.Rand, requiredMatches int64) {
 		}
 		if countMatch >= requiredMatches {
 			sv.state = StateVarConsensusStateConsensusReached
-			sv.consensusReached(candidateResult)
+			sv.consensusReached(ctx, candidateResult)
 			return
 		}
 	}
@@ -253,12 +267,12 @@ func (sv *StateVariable) tryConsensus(rng *rand.Rand, requiredMatches int64) {
 }
 
 // consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators.
-func (sv *StateVariable) consensusReached(acceptedValue *statevar.KeyValueBundle) {
+func (sv *StateVariable) consensusReached(ctx context.Context, acceptedValue *statevar.KeyValueBundle) {
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("consensus reached", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
 	}
 
-	sv.result(sv.converter.BundleToInterface(acceptedValue))
+	sv.result(ctx, sv.converter.BundleToInterface(acceptedValue))
 	sv.sendEvent()
 
 	// reset the state

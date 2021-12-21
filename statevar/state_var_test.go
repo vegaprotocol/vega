@@ -91,7 +91,7 @@ func getValidators(t *testing.T, now time.Time, numValidators int) []*testEngine
 	return validators
 }
 
-func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, startTime time.Time, startCalc func(string, types.FinaliseCalculation), resultCallback func(types.StateVariableResult) error) error {
+func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, startTime time.Time, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) error {
 	t.Helper()
 	testEngine.engine.OnEpochEvent(context.Background(), vegatypes.Epoch{StartTime: startTime})
 	kvb1 := &types.KeyValueBundle{}
@@ -101,18 +101,18 @@ func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, sta
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	return testEngine.engine.AddStateVariable(converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeRiskModelChanged}, 10*time.Second, resultCallback)
+	return testEngine.engine.AddStateVariable("ETH", "ETHDEC21", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeRiskModelChanged}, 10*time.Second, resultCallback)
 }
 
 func defaultStartCalc() func(string, types.FinaliseCalculation) {
 	return func(string, types.FinaliseCalculation) {}
 }
 
-func defaultResultBack() func(types.StateVariableResult) error {
-	return func(types.StateVariableResult) error { return nil }
+func defaultResultBack() func(context.Context, types.StateVariableResult) error {
+	return func(context.Context, types.StateVariableResult) error { return nil }
 }
 
-func setupValidators(t *testing.T, offset int, numValidators int, startCalc func(string, types.FinaliseCalculation), resultCallback func(types.StateVariableResult) error) []*testEngine {
+func setupValidators(t *testing.T, offset int, numValidators int, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) []*testEngine {
 	t.Helper()
 	now := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
 	validators := getValidators(t, now, numValidators)
@@ -179,13 +179,13 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged, "eventID12345")
+		v.engine.NewEvent("ETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
 	for _, bes := range brokerEvents {
 		evt := events.StateVarEventFromStream(context.Background(), bes.StreamMessage())
-		require.Equal(t, "eventID12345", evt.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
 }
@@ -201,29 +201,29 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged, "eventID1")
+		v.engine.NewEvent("ETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
 	for _, bes := range brokerEvents {
 		evt := events.StateVarEventFromStream(context.Background(), bes.StreamMessage())
-		require.Equal(t, "eventID1", evt.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged, "eventID2")
+		v.engine.NewEvent("ETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, 3*len(validators), len(brokerEvents))
 
 	for i := 4; i < 3*len(validators); i += 2 {
 		evt1 := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "eventID1", evt1.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt1.EventID)
 		require.Equal(t, "consensus_calc_aborted", evt1.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+1].StreamMessage())
-		require.Equal(t, "eventID2", evt2.EventID)
+		require.Equal(t, "DW3ZsFqgASg5QYBpLzHnzOdKbatwkl7p_2", evt2.EventID)
 		require.Equal(t, "consensus_calc_started", evt2.State)
 	}
 }
@@ -242,17 +242,17 @@ func testEventTriggeredCalculationError(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged, "eventID1")
+		v.engine.NewEvent("ETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, 2*len(validators), len(brokerEvents))
 	for i := 0; i < 2*len(validators); i += 2 {
 		evt1 := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "eventID1", evt1.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt1.EventID)
 		require.Equal(t, "consensus_calc_started", evt1.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+1].StreamMessage())
-		require.Equal(t, "eventID1", evt2.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
 		require.Equal(t, "error", evt2.State)
 	}
 }
@@ -267,7 +267,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	}
 
 	counter := 0
-	resultCallback := func(r types.StateVariableResult) error {
+	resultCallback := func(_ context.Context, r types.StateVariableResult) error {
 		counter++
 		require.Equal(t, res, r)
 		return nil
@@ -282,8 +282,19 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		})
 	}
 
+	// event for the right asset/market
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged, "eventID1")
+		v.engine.NewEvent("ETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
+	}
+
+	// event for irrelevant asset - should have no impact
+	for _, v := range validators {
+		v.engine.NewEvent("NotETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
+	}
+
+	// event for irrelevant market - should have no impact
+	for _, v := range validators {
+		v.engine.NewEvent("ETH", "NotETHDEC21", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -303,7 +314,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "eventID1", bundle)
+			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", bundle)
 		}
 	}
 	require.Equal(t, 0, counter)
@@ -313,7 +324,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "eventID1", bundle)
+			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", bundle)
 		}
 	}
 	// this means that the result callback has been called with the same result for all of them
@@ -323,11 +334,11 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	require.Equal(t, 8, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
 		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "eventID1", evt.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+len(validators)].StreamMessage())
-		require.Equal(t, "eventID1", evt2.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
 		require.Equal(t, "perfect_match", evt2.State)
 	}
 }
@@ -351,7 +362,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	}
 
 	counter := 0
-	resultCallback := func(r types.StateVariableResult) error {
+	resultCallback := func(_ context.Context, r types.StateVariableResult) error {
 		counter++
 		require.Equal(t, validatorResults[2], r)
 		return nil
@@ -371,7 +382,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged, "eventID1")
+		v.engine.NewEvent("ETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -381,7 +392,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "eventID1", c.InterfaceToBundle(validatorResults[i]))
+			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", c.InterfaceToBundle(validatorResults[i]))
 		}
 	}
 	// this means that the result callback has been called with the same result for all of them
@@ -391,11 +402,11 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	require.Equal(t, 10, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
 		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "eventID1", evt.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+len(validators)].StreamMessage())
-		require.Equal(t, "eventID1", evt2.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
 		require.Equal(t, "consensus_reached", evt2.State)
 	}
 }
@@ -417,7 +428,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 		})
 	}
 
-	resultCallback := func(r types.StateVariableResult) error {
+	resultCallback := func(_ context.Context, r types.StateVariableResult) error {
 		require.Fail(t, "expecting no consensus")
 		return nil
 	}
@@ -436,7 +447,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged, "eventID1")
+		v.engine.NewEvent("ETH", "ETHDEC21", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -446,7 +457,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "eventID1", c.InterfaceToBundle(validatorResults[i]))
+			validators[j].engine.ProposedValueReceived(context.Background(), "8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", c.InterfaceToBundle(validatorResults[i]))
 		}
 	}
 
@@ -454,7 +465,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	require.Equal(t, 5, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
 		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "eventID1", evt.EventID)
+		require.Equal(t, "OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
 }
@@ -479,7 +490,7 @@ func testTimeBasedEvent(t *testing.T) {
 	}
 
 	counter := 0
-	resultCallback := func(r types.StateVariableResult) error {
+	resultCallback := func(_ context.Context, r types.StateVariableResult) error {
 		counter++
 		require.Equal(t, validatorResults[2], r)
 		return nil
