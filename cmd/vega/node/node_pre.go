@@ -39,7 +39,6 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
-	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
@@ -341,11 +340,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()
 
-	// instantiate the execution engine
-	l.executionEngine = execution.NewEngine(
-		l.Log, l.conf.Execution, l.timeService, l.collateral, l.oracle, l.broker,
-	)
-
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander, err := nodewallets.NewCommander(l.conf.NodeWallet, l.Log, nil, l.nodeWallets.Vega, l.stats)
 	if err != nil {
@@ -363,6 +357,11 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
+
+	// instantiate the execution engine
+	l.executionEngine = execution.NewEngine(
+		l.Log, l.conf.Execution, l.timeService, l.collateral, l.oracle, l.broker,
+	)
 
 	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
@@ -413,9 +412,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
-
-	l.statevar = statevar.New(l.Log, l.conf.StateVar, l.broker, l.topology, commander, l.epochService, l.timeService)
-
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	l.topology.NotifyOnKeyChange(l.delegation.ValidatorKeyChanged, l.stakingAccounts.ValidatorKeyChanged, l.rewards.ValidatorKeyChanged, l.governance.ValidatorKeyChanged)
 
@@ -603,10 +599,6 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.SnapshotIntervalLength,
 			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
-		},
-		netparams.WatchParam{
-			Param:   netparams.ValidatorsVoteRequired,
-			Watcher: l.statevar.OnDefaultValidatorsVoteRequiredUpdate,
 		},
 	)
 }

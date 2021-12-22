@@ -43,7 +43,6 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
-	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
@@ -74,7 +73,6 @@ type NodeCommand struct {
 	conf        config.Config
 	confWatcher *config.Watcher
 
-	statevar             *statevar.Engine
 	snapshot             *snapshot.Engine
 	executionEngine      *execution.Engine
 	governance           *governance.Engine

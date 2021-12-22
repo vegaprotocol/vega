@@ -68,10 +68,12 @@ type Engine struct {
 	currentTime            time.Time
 	validatorVotesRequired num.Decimal
 	seq                    int
+	asset                  string
+	market                 string
 }
 
 // New instantiates the state variable engine.
-func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Commander, epochEngine EpochEngine, ts TimeService) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Commander, epochEngine EpochEngine, ts TimeService, asset, market string) *Engine {
 	lg := log.Named(namedLogger)
 	lg.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -83,6 +85,8 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		eventTypeToStateVar: map[statevar.StateVarEventType][]*StateVariable{},
 		stateVars:           map[string]*StateVariable{},
 		seq:                 0,
+		asset:               asset,
+		market:              market,
 	}
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
 	ts.NotifyOnTick(e.OnTimeTick)
@@ -96,7 +100,7 @@ func (e *Engine) generateID() string {
 	for i := range b {
 		b[i] = chars[e.rng.Intn(len(chars))]
 	}
-	return string(b)
+	return e.asset + "_" + e.market + "_" + string(b)
 }
 
 // generate a random event identifier.
@@ -114,21 +118,18 @@ func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f fl
 }
 
 // NewEvent triggers calculation of state variables that depend on the event type.
-func (e *Engine) NewEvent(asset, market string, eventType statevar.StateVarEventType) {
+func (e *Engine) NewEvent(eventType statevar.StateVarEventType) {
 	if _, ok := e.eventTypeToStateVar[eventType]; !ok {
-		e.log.Panic("Unexpected event received", logging.Int("event-type", int(eventType)), logging.String("asset", asset), logging.String("market", market))
+		e.log.Panic("Unexpected event received", logging.Int("event-type", int(eventType)), logging.String("asset", e.asset), logging.String("market", e.market))
 	}
 	// generate a unique event id
 	eventID := e.generateEventID()
 	if e.log.GetLevel() <= logging.DebugLevel {
-		e.log.Debug("New event for state variable received", logging.String("eventID", eventID), logging.String("asset", asset), logging.String("market", market))
+		e.log.Debug("New event for state variable received", logging.String("eventID", eventID), logging.String("asset", e.asset), logging.String("market", e.market))
 	}
 
 	for _, sv := range e.eventTypeToStateVar[eventType] {
-		// filter by asset and market and propagate the event to the state variable
-		if sv.GetAsset() == asset && sv.GetMarket() == market {
-			sv.eventTriggered(eventID)
-		}
+		sv.eventTriggered(eventID)
 	}
 }
 
@@ -163,17 +164,15 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 }
 
 // AddStateVariable register a new state variable for which consensus should be managed.
-// asset - the asset for the state variable
-// market - the market for the state variable
 // converter - converts from the native format of the variable and the key value bundle format and vice versa
 // startCalculation - a callback to trigger an asynchronous state var calc - the result of which is given through the FinaliseCalculation interface
 // trigger - a slice of events that should trigger the calculation of the state variable
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
 // result - a callback for returning the result converted to the native structure.
-func (e *Engine) AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(context.Context, statevar.StateVariableResult) error) error {
+func (e *Engine) AddStateVariable(converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(context.Context, statevar.StateVariableResult) error) error {
 	ID := e.generateID()
 
-	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, asset, market, converter, startCalculation, trigger, frequency, result)
+	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, converter, startCalculation, trigger, frequency, result)
 	e.stateVars[ID] = sv
 	for _, t := range trigger {
 		if _, ok := e.eventTypeToStateVar[t]; !ok {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/rewards"
-	"code.vegaprotocol.io/vega/statevar"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
@@ -140,15 +139,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		topology,
 	)
 
-	exec := execution.NewEngine(
-		log,
-		execution.NewDefaultConfig(),
-		timeService,
-		collateral,
-		oraclesM,
-		broker,
-	)
-
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
 
 	netp := netparams.New(
@@ -160,6 +150,15 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	bstats := stats.NewBlockchain()
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+
+	exec := execution.NewEngine(
+		log,
+		execution.NewDefaultConfig(),
+		timeService,
+		collateral,
+		oraclesM,
+		broker,
+	)
 
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
@@ -187,12 +186,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	if err != nil {
 		panic(err)
 	}
-
-	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, epochService, timeService)
-	netp.Watch(netparams.WatchParam{
-		Param:   netparams.ValidatorsVoteRequired,
-		Watcher: stateVarEngine.OnDefaultValidatorsVoteRequiredUpdate,
-	})
 
 	app := processor.NewApp(
 		log,
