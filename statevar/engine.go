@@ -68,8 +68,6 @@ type Engine struct {
 	currentTime            time.Time
 	validatorVotesRequired num.Decimal
 	seq                    int
-	asset                  string
-	market                 string
 }
 
 // New instantiates the state variable engine.
