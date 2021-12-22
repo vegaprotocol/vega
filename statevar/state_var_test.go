@@ -67,7 +67,7 @@ func getTestEngine(t *testing.T, startTime time.Time) *testEngine {
 
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	epoch.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
-	engine := statevar.New(logger, conf, broker, topology, commander, epoch, ts, "asset", "market")
+	engine := statevar.New(logger, conf, broker, topology, commander, epoch, ts)
 	engine.OnTimeTick(context.Background(), startTime)
 
 	return &testEngine{
@@ -101,7 +101,7 @@ func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, sta
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	return testEngine.engine.AddStateVariable(converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeRiskModelChanged}, 10*time.Second, resultCallback)
+	return testEngine.engine.AddStateVariable("asset", "market", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeRiskModelChanged}, 10*time.Second, resultCallback)
 }
 
 func defaultStartCalc() func(string, types.FinaliseCalculation) {
@@ -179,7 +179,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
@@ -201,7 +201,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
@@ -212,7 +212,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, 3*len(validators), len(brokerEvents))
@@ -242,7 +242,7 @@ func testEventTriggeredCalculationError(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	require.Equal(t, 2*len(validators), len(brokerEvents))
@@ -284,7 +284,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 
 	// event for the right asset/market
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -372,7 +372,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -437,7 +437,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent(types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id

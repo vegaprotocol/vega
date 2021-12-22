@@ -44,6 +44,8 @@ type StateVariable struct {
 	cmd              Commander
 	broker           Broker
 	ID               string                                                    // the unique identifier of the state variable
+	asset            string                                                    // the asset of the state variable - used for filtering relevant events
+	market           string                                                    // the market of the state variable - used for filtering relevant events
 	converter        statevar.Converter                                        // convert to/from the key/value bundle model into typed result model
 	startCalculation func(string, statevar.FinaliseCalculation)                // a callback to the owner to start the calculation of the value of the state variable
 	trigger          []statevar.StateVarEventType                              // events that should trigger the calculation of the state variable
@@ -56,7 +58,7 @@ type StateVariable struct {
 	validatorResults map[string]*statevar.KeyValueBundle // the result of the calculation as received from validators
 }
 
-func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander, currentTime time.Time, ID string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(context.Context, statevar.StateVariableResult) error) *StateVariable {
+func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander, currentTime time.Time, ID, asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(context.Context, statevar.StateVariableResult) error) *StateVariable {
 	// if frequency is specified, "schedule" a calculation for now
 	nextTimeToRun := time.Time{}
 	if frequency != time.Duration(0) {
@@ -68,6 +70,8 @@ func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander
 		top:              top,
 		cmd:              cmd,
 		ID:               ID,
+		asset:            asset,
+		market:           market,
 		converter:        converter,
 		startCalculation: startCalculation,
 		trigger:          trigger,
@@ -78,6 +82,16 @@ func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander
 		frequency:        frequency,
 	}
 	return sv
+}
+
+// GetAsset returns the asset of the state variable.
+func (sv *StateVariable) GetAsset() string {
+	return sv.asset
+}
+
+// GetMarket returns the market of the state variable.
+func (sv *StateVariable) GetMarket() string {
+	return sv.market
 }
 
 // calculation is required for the state variable for the given event id.

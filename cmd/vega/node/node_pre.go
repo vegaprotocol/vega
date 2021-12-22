@@ -39,6 +39,7 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
@@ -358,6 +359,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
+	l.statevar = statevar.New(l.Log, l.conf.StateVar, l.broker, l.topology, commander, l.epochService, l.timeService)
+
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
 		l.Log, l.conf.Execution, l.timeService, l.collateral, l.oracle, l.broker,
@@ -599,6 +602,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.SnapshotIntervalLength,
 			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsVoteRequired,
+			Watcher: l.statevar.OnDefaultValidatorsVoteRequiredUpdate,
 		},
 	)
 }
