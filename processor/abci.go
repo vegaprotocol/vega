@@ -1297,8 +1297,11 @@ func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 	}
 
 	stateVarID := proposal.Proposal.StateVarId
-	nodeID := tx.PubKeyHex()
+	node := tx.PubKeyHex()
 	eventID := proposal.Proposal.EventId
-	bundle := statevar.KeyValueBundleFromProto(proposal.Proposal.Kvb)
-	return app.stateVar.ProposedValueReceived(ctx, stateVarID, nodeID, eventID, bundle)
+	bundle, err := statevar.KeyValueBundleFromProto(proposal.Proposal.Kvb)
+	if err != nil {
+		return err
+	}
+	return app.stateVar.ProposedValueReceived(ctx, stateVarID, node, eventID, bundle)
 }

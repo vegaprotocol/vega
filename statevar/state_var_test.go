@@ -11,7 +11,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/statevar/mocks"
-	vegatypes "code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	types "code.vegaprotocol.io/vega/types/statevar"
 	"github.com/golang/mock/gomock"
@@ -37,6 +36,8 @@ type sampleParams struct {
 
 type converter struct{}
 
+var now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+
 func (converter) BundleToInterface(kvb *types.KeyValueBundle) types.StateVariableResult {
 	return &sampleParams{
 		param1: kvb.KVT[0].Val.(*types.DecimalScalar).Val,
@@ -61,13 +62,11 @@ func getTestEngine(t *testing.T, startTime time.Time) *testEngine {
 	broker := mocks.NewMockBroker(ctrl)
 	logger := logging.NewTestLogger()
 	topology := mocks.NewMockTopology(ctrl)
-	epoch := mocks.NewMockEpochEngine(ctrl)
 	ts := mocks.NewMockTimeService(ctrl)
 	commander := mocks.NewMockCommander(ctrl)
 
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	epoch.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
-	engine := statevar.New(logger, conf, broker, topology, commander, epoch, ts)
+	engine := statevar.New(logger, conf, broker, topology, commander, ts)
 	engine.OnTimeTick(context.Background(), startTime)
 
 	return &testEngine{
@@ -75,7 +74,6 @@ func getTestEngine(t *testing.T, startTime time.Time) *testEngine {
 		topology:    topology,
 		broker:      broker,
 		commander:   commander,
-		epoch:       epoch,
 		timeService: ts,
 	}
 }
@@ -86,6 +84,7 @@ func getValidators(t *testing.T, now time.Time, numValidators int) []*testEngine
 	for i := 0; i < numValidators; i++ {
 		validators = append(validators, getTestEngine(t, now))
 		validators[i].engine.OnDefaultValidatorsVoteRequiredUpdate(context.Background(), 0.67)
+		validators[i].engine.OnFloatingPointUpdatesDurationUpdate(context.Background(), 10*time.Second)
 		validators[i].engine.OnTimeTick(context.Background(), now)
 	}
 	return validators
@@ -93,7 +92,6 @@ func getValidators(t *testing.T, now time.Time, numValidators int) []*testEngine
 
 func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, startTime time.Time, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) error {
 	t.Helper()
-	testEngine.engine.OnEpochEvent(context.Background(), vegatypes.Epoch{StartTime: startTime})
 	kvb1 := &types.KeyValueBundle{}
 	kvb1.KVT = append(kvb1.KVT, types.KeyValueTol{
 		Key:       "scalar value",
@@ -101,7 +99,7 @@ func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, sta
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	return testEngine.engine.AddStateVariable("asset", "market", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeRiskModelChanged}, 10*time.Second, resultCallback)
+	return testEngine.engine.AddStateVariable("asset", "market", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeMarketEnacatment, types.StateVarEventTypeTimeTrigger}, resultCallback)
 }
 
 func defaultStartCalc() func(string, types.FinaliseCalculation) {
@@ -114,7 +112,6 @@ func defaultResultBack() func(context.Context, types.StateVariableResult) error 
 
 func setupValidators(t *testing.T, offset int, numValidators int, startCalc func(string, types.FinaliseCalculation), resultCallback func(context.Context, types.StateVariableResult) error) []*testEngine {
 	t.Helper()
-	now := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
 	validators := getValidators(t, now, numValidators)
 	allNodeIds := []string{"0", "1", "2", "3", "4"}
 	for i, v := range validators {
@@ -123,7 +120,7 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 		name := strconv.Itoa(i + offset)
 		v.topology.EXPECT().SelfNodeID().Return(name).Times(2)
 		v.topology.EXPECT().IsValidator().Return(true).AnyTimes()
-		v.topology.EXPECT().IsValidatorNodeID(gomock.Any()).DoAndReturn(func(nodeID string) bool {
+		v.topology.EXPECT().IsValidatorVegaPubKey(gomock.Any()).DoAndReturn(func(nodeID string) bool {
 			ID, err := strconv.Atoi(nodeID)
 			return err == nil && ID >= 0 && ID < len(allNodeIds)
 		}).AnyTimes()
@@ -173,13 +170,19 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 	validators := setupValidators(t, 0, 4, defaultStartCalc(), defaultResultBack())
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
-		v.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event events.Event) {
-			brokerEvents = append(brokerEvents, event)
+		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
+			for _, e := range events {
+				brokerEvents = append(brokerEvents, e)
+			}
 		})
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+	}
+
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
@@ -195,13 +198,19 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
-		v.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event events.Event) {
-			brokerEvents = append(brokerEvents, event)
+		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
+			for _, e := range events {
+				brokerEvents = append(brokerEvents, e)
+			}
 		})
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+	}
+
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	require.Equal(t, len(validators), len(brokerEvents))
@@ -212,7 +221,11 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+	}
+
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now.Add(2*time.Second))
 	}
 
 	require.Equal(t, 3*len(validators), len(brokerEvents))
@@ -223,7 +236,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 		require.Equal(t, "consensus_calc_aborted", evt1.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+1].StreamMessage())
-		require.Equal(t, "asset_market_DW3ZsFqgASg5QYBpLzHnzOdKbatwkl7p_2", evt2.EventID)
+		require.Equal(t, "asset_market_G8FFe2zipFM1jPoS3X31grPi7QrcJ1QF_2", evt2.EventID)
 		require.Equal(t, "consensus_calc_started", evt2.State)
 	}
 }
@@ -236,13 +249,19 @@ func testEventTriggeredCalculationError(t *testing.T) {
 
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
-		v.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event events.Event) {
-			brokerEvents = append(brokerEvents, event)
+		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
+			for _, e := range events {
+				brokerEvents = append(brokerEvents, e)
+			}
 		})
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+	}
+
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
 	require.Equal(t, 2*len(validators), len(brokerEvents))
@@ -277,14 +296,16 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	validators := setupValidators(t, 0, 4, startCalc, resultCallback)
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
-		v.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event events.Event) {
-			brokerEvents = append(brokerEvents, event)
+		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
+			for _, e := range events {
+				brokerEvents = append(brokerEvents, e)
+			}
 		})
 	}
 
 	// event for the right asset/market
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -320,14 +341,18 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 4, counter)
 
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+	}
+
 	// we exepct there to be 8 events emitted, 4 for starting and 4 for perfect match
 	require.Equal(t, 8, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
-		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
+		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i].StreamMessage())
 		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 
-		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+len(validators)].StreamMessage())
+		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i+1].StreamMessage())
 		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
 		require.Equal(t, "perfect_match", evt2.State)
 	}
@@ -366,16 +391,17 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	// start sending publishing the results from each validators (they all would match so after 2/3+1 we should get the result back)
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
-		v.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event events.Event) {
-			brokerEvents = append(brokerEvents, event)
+		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
+			for _, e := range events {
+				brokerEvents = append(brokerEvents, e)
+			}
 		})
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
 	}
 
-	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
 	c := converter{}
 
 	for i := 0; i < len(validators); i++ {
@@ -388,14 +414,18 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 5, counter)
 
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+	}
+
 	// we exepct there to be 10 events emitted, 5 for starting and 5 for consensus reached
 	require.Equal(t, 10, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
-		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
+		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i].StreamMessage())
 		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 
-		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+len(validators)].StreamMessage())
+		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i+1].StreamMessage())
 		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
 		require.Equal(t, "consensus_reached", evt2.State)
 	}
@@ -431,13 +461,15 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	// start sending publishing the results from each validators (they all would match so after 2/3+1 we should get the result back)
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
-		v.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event events.Event) {
-			brokerEvents = append(brokerEvents, event)
+		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
+			for _, e := range events {
+				brokerEvents = append(brokerEvents, e)
+			}
 		})
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeRiskModelChanged)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -451,6 +483,10 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 		}
 	}
 
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
+	}
+
 	// we exepct there to be 5 events emitted
 	require.Equal(t, 5, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
@@ -461,7 +497,6 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 }
 
 func testTimeBasedEvent(t *testing.T) {
-	now := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
 	// 3 of the results are within the acceptable tolerance, the other two are far off and are received first, so will require all 5 results to be received to reach consensus
 	// therefore consensus is possible
 	validatorResults := []*sampleParams{
@@ -491,16 +526,23 @@ func testTimeBasedEvent(t *testing.T) {
 		validators = append(validators, setupValidators(t, i, 1, startCalcFuncs[i], resultCallback)[0])
 	}
 
+	for _, validator := range validators {
+		validator.engine.ReadyForTimeTrigger("asset", "market")
+	}
+
 	// start sending publishing the results from each validators (they all would match so after 2/3+1 we should get the result back)
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
-		v.broker.EXPECT().Send(gomock.Any()).AnyTimes().Do(func(event events.Event) {
-			brokerEvents = append(brokerEvents, event)
+		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
+			for _, e := range events {
+				brokerEvents = append(brokerEvents, e)
+			}
 		})
 	}
 
+	now = now.Add(time.Second * 10)
 	for _, v := range validators {
-		v.engine.OnTimeTick(context.Background(), now.Add(time.Second*10))
+		v.engine.OnTimeTick(context.Background(), now)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -513,18 +555,44 @@ func testTimeBasedEvent(t *testing.T) {
 			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "20210221_011040", c.InterfaceToBundle(validatorResults[i]))
 		}
 	}
+
+	now = now.Add(time.Second * 1)
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now)
+	}
+
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 5, counter)
 
 	// we exepct there to be 10 events emitted, 5 for starting and 5 for consensus reached
 	require.Equal(t, 10, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
-		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
+		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i].StreamMessage())
 		require.Equal(t, "20210221_011040", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 
-		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+len(validators)].StreamMessage())
+		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i+1].StreamMessage())
 		require.Equal(t, "20210221_011040", evt2.EventID)
 		require.Equal(t, "consensus_reached", evt2.State)
+	}
+
+	// advance 9 more seconds to get another time trigger
+	now = now.Add(time.Second * 9)
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now)
+	}
+	brokerEvents = []events.Event{}
+
+	// start another block for events to be emitted
+	now = now.Add(time.Second * 1)
+	for _, v := range validators {
+		v.engine.OnTimeTick(context.Background(), now)
+	}
+
+	require.Equal(t, 5, len(brokerEvents))
+	for i := 0; i < len(validators); i++ {
+		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
+		require.Equal(t, "20210221_011050", evt.EventID)
+		require.Equal(t, "consensus_calc_started", evt.State)
 	}
 }

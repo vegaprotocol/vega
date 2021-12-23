@@ -152,10 +152,14 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
-	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, epochService, timeService)
+	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, timeService)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.ValidatorsVoteRequired,
 		Watcher: stateVarEngine.OnDefaultValidatorsVoteRequiredUpdate,
+	})
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.FloatingPointUpdatesDuration,
+		Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
 	})
 
 	exec := execution.NewEngine(

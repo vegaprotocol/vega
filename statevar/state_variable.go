@@ -26,6 +26,7 @@ const (
 	StateVarConsensusStateConsensusReached
 	StateVarConsensusStateCalculationAborted
 	StateVarConsensusStateError
+	StateVarConsensusStateStale
 )
 
 var stateToName = map[StateVarConsensusState]string{
@@ -48,38 +49,42 @@ type StateVariable struct {
 	market           string                                                    // the market of the state variable - used for filtering relevant events
 	converter        statevar.Converter                                        // convert to/from the key/value bundle model into typed result model
 	startCalculation func(string, statevar.FinaliseCalculation)                // a callback to the owner to start the calculation of the value of the state variable
-	trigger          []statevar.StateVarEventType                              // events that should trigger the calculation of the state variable
-	frequency        time.Duration                                             // the frequency for time based triggering
 	result           func(context.Context, statevar.StateVariableResult) error // a callback to be called when the value reaches consensus
 
-	nextTimeToRun    time.Time                           // the next scheduled calculation
-	state            StateVarConsensusState              // the current status of consensus
-	eventID          string                              // the event ID triggering the calculation
-	validatorResults map[string]*statevar.KeyValueBundle // the result of the calculation as received from validators
+	state                       StateVarConsensusState              // the current status of consensus
+	eventID                     string                              // the event ID triggering the calculation
+	validatorResults            map[string]*statevar.KeyValueBundle // the result of the calculation as received from validators
+	roundsSinceMeaningfulUpdate uint
+	pendingEvents               []pendingEvent
 }
 
-func NewStateVar(log *logging.Logger, broker Broker, top Topology, cmd Commander, currentTime time.Time, ID, asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, frequency time.Duration, result func(context.Context, statevar.StateVariableResult) error) *StateVariable {
-	// if frequency is specified, "schedule" a calculation for now
-	nextTimeToRun := time.Time{}
-	if frequency != time.Duration(0) {
-		nextTimeToRun = currentTime
-	}
+func NewStateVar(
+	log *logging.Logger,
+	broker Broker,
+	top Topology,
+	cmd Commander,
+	currentTime time.Time,
+	ID, asset,
+	market string,
+	converter statevar.Converter,
+	startCalculation func(string, statevar.FinaliseCalculation),
+	trigger []statevar.StateVarEventType,
+	result func(context.Context, statevar.StateVariableResult) error,
+) *StateVariable {
 	sv := &StateVariable{
-		log:              log,
-		broker:           broker,
-		top:              top,
-		cmd:              cmd,
-		ID:               ID,
-		asset:            asset,
-		market:           market,
-		converter:        converter,
-		startCalculation: startCalculation,
-		trigger:          trigger,
-		result:           result,
-		state:            StateVarConsensusStateUnspecified,
-		validatorResults: map[string]*statevar.KeyValueBundle{},
-		nextTimeToRun:    nextTimeToRun,
-		frequency:        frequency,
+		log:                         log,
+		broker:                      broker,
+		top:                         top,
+		cmd:                         cmd,
+		ID:                          ID,
+		asset:                       asset,
+		market:                      market,
+		converter:                   converter,
+		startCalculation:            startCalculation,
+		result:                      result,
+		state:                       StateVarConsensusStateUnspecified,
+		validatorResults:            map[string]*statevar.KeyValueBundle{},
+		roundsSinceMeaningfulUpdate: 0,
 	}
 	return sv
 }
@@ -94,6 +99,17 @@ func (sv *StateVariable) GetMarket() string {
 	return sv.market
 }
 
+// startBlock flushes the pending events
+func (sv *StateVariable) startBlock(ctx context.Context) {
+	evts := make([]events.Event, 0, len(sv.pendingEvents))
+	for _, pending := range sv.pendingEvents {
+		evts = append(evts, events.NewStateVarEvent(context.Background(), sv.ID, pending.eventID, pending.state))
+	}
+
+	sv.broker.SendBatch(evts)
+	sv.pendingEvents = []pendingEvent{}
+}
+
 // calculation is required for the state variable for the given event id.
 func (sv *StateVariable) eventTriggered(eventID string) error {
 	if sv.log.GetLevel() <= logging.DebugLevel {
@@ -105,15 +121,26 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 		if sv.log.GetLevel() <= logging.DebugLevel {
 			sv.log.Debug("aborting state variable event", logging.String("state-var", sv.ID), logging.String("aborted-event-id", sv.eventID), logging.String("new-event-id", sv.eventID))
 		}
+
+		// if we got a new event and were not in consensus, increase the number of rounds with no consensus and if
+		// we've not had a meaningful update - send an event with stale state
+		if sv.state == StateVarConsensusStateSeekingConsensus {
+			sv.roundsSinceMeaningfulUpdate++
+			if sv.roundsSinceMeaningfulUpdate >= 3 {
+				sv.state = StateVarConsensusStateStale
+				sv.addEvent()
+			}
+		}
+
 		sv.state = StateVarConsensusStateCalculationAborted
-		sv.sendEvent()
+		sv.addEvent()
 	}
 
 	// reset any existing state
 	sv.eventID = eventID
 	sv.validatorResults = map[string]*statevar.KeyValueBundle{}
 	sv.state = StateVarConsensusStateCalculationStarted
-	sv.sendEvent()
+	sv.addEvent()
 
 	if !sv.top.IsValidator() {
 		return nil
@@ -134,7 +161,7 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 	if err != nil {
 		sv.log.Error("could not calculate state for", logging.String("id", sv.ID), logging.String("event-id", eventID))
 		sv.state = StateVarConsensusStateError
-		sv.sendEvent()
+		sv.addEvent()
 		sv.eventID = ""
 		return
 	}
@@ -147,37 +174,46 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 			Kvb:        sv.converter.InterfaceToBundle(result).ToProto(),
 		},
 	}
-	sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(error) {})
+	sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(err error) { sv.logAndRetry(err, svp) })
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("result calculated and sent to vega", logging.String("validator", sv.top.SelfNodeID()), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 	}
 }
 
+// logAndRetry logs errors from tendermint transaction submission failure and retries if we're still handling the same event
+func (sv *StateVariable) logAndRetry(err error, svp *commandspb.StateVariableProposal) {
+	sv.log.Error("failed to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
+	if svp.Proposal.EventId == sv.eventID {
+		sv.log.Info("retrying to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
+		sv.cmd.Command(context.Background(), txn.StateVariableProposalCommand, svp, func(err error) { sv.logAndRetry(err, svp) })
+	}
+}
+
 // bundleReceived is called when we get a result from another validator corresponding to a given event ID.
-func (sv *StateVariable) bundleReceived(ctx context.Context, nodeID, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand, validatorVotesRequired num.Decimal) {
+func (sv *StateVariable) bundleReceived(ctx context.Context, t time.Time, node, eventID string, bundle *statevar.KeyValueBundle, rng *rand.Rand, validatorVotesRequired num.Decimal) {
 	// if the bundle is received for a stale or wrong event, ignore it
 	if sv.eventID != eventID {
-		sv.log.Debug("received a result for a stale event", logging.String("ID", sv.ID), logging.String("from-node", nodeID), logging.String("current-even-id", sv.eventID), logging.String("receivedEventID", eventID))
+		sv.log.Debug("received a result for a stale event", logging.String("ID", sv.ID), logging.String("from-node", node), logging.String("current-even-id", sv.eventID), logging.String("receivedEventID", eventID))
 		return
 	}
 
 	// if for some reason we received a result from a non validator node, ignore it
-	if !sv.top.IsValidatorNodeID(nodeID) {
-		sv.log.Debug("state var bundle received from a non validator node - ignoring", logging.String("from-validator", nodeID), logging.String("state-var", sv.ID), logging.String("eventID", eventID))
+	if !sv.top.IsValidatorVegaPubKey(node) {
+		sv.log.Debug("state var bundle received from a non validator node - ignoring", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("eventID", eventID))
 		return
 	}
 
 	if sv.log.GetLevel() <= logging.DebugLevel {
-		sv.log.Debug("state var bundle received", logging.String("from-validator", nodeID), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+		sv.log.Debug("state var bundle received", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 	}
 
 	if sv.state == StateVarConsensusStatePerfectMatch || sv.state == StateVarConsensusStateConsensusReached {
-		sv.log.Debug("state var bundle received, consensus already reached", logging.String("from-validator", nodeID), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+		sv.log.Debug("state var bundle received, consensus already reached", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 		return
 	}
 
 	// save the result from the validator and check if we have a quorum
-	sv.validatorResults[nodeID] = bundle
+	sv.validatorResults[node] = bundle
 	numResults := int64(len(sv.validatorResults))
 	validatorsNum := num.DecimalFromInt64(int64(len(sv.top.AllNodeIDs())))
 	requiredNumberOfResults := validatorsNum.Mul(validatorVotesRequired).IntPart()
@@ -191,12 +227,12 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, nodeID, eventID str
 
 	// if we're already in seeking consensus state, no point in checking if all match - suffice checking if there's a majority with matching within tolerance
 	if sv.state == StateVarConsensusStateSeekingConsensus {
-		sv.tryConsensus(ctx, rng, requiredNumberOfResults)
+		sv.tryConsensus(ctx, t, rng, requiredNumberOfResults)
 		return
 	}
 
 	if sv.log.GetLevel() <= logging.DebugLevel {
-		sv.log.Debug("state var checking consensus (2/3 of the results received", logging.String("from-validator", nodeID), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
+		sv.log.Debug("state var checking consensus (2/3 of the results received", logging.String("from-validator", node), logging.String("state-var", sv.ID), logging.String("event-id", eventID))
 	}
 
 	// we got enough results lets check if they match
@@ -213,7 +249,7 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, nodeID, eventID str
 
 			// initiate a round of voting
 			sv.state = StateVarConsensusStateSeekingConsensus
-			sv.tryConsensus(ctx, rng, validatorsNum.Mul(validatorVotesRequired).IntPart())
+			sv.tryConsensus(ctx, t, rng, validatorsNum.Mul(validatorVotesRequired).IntPart())
 			return
 		}
 	}
@@ -224,11 +260,11 @@ func (sv *StateVariable) bundleReceived(ctx context.Context, nodeID, eventID str
 	}
 	sv.state = StateVarConsensusStatePerfectMatch
 	// convert the result to decimal and let the owner of the state variable know
-	sv.consensusReached(ctx, result)
+	sv.consensusReached(ctx, t, result)
 }
 
 // if the bundles are not all equal to each other, choose one at random and verify that all others are within tolerance.
-func (sv *StateVariable) tryConsensus(ctx context.Context, rng *rand.Rand, requiredMatches int64) {
+func (sv *StateVariable) tryConsensus(ctx context.Context, t time.Time, rng *rand.Rand, requiredMatches int64) {
 	// sort the node IDs for determinism
 	nodeIDs := make([]string, 0, len(sv.validatorResults))
 	for nodeID := range sv.validatorResults {
@@ -238,10 +274,7 @@ func (sv *StateVariable) tryConsensus(ctx context.Context, rng *rand.Rand, requi
 
 	alreadyCheckedForTolerance := map[string]struct{}{}
 
-	for {
-		if len(alreadyCheckedForTolerance) == len(nodeIDs) {
-			break
-		}
+	for len(alreadyCheckedForTolerance) != len(nodeIDs) {
 		nodeID := nodeIDs[rng.Intn(len(nodeIDs))]
 		if _, ok := alreadyCheckedForTolerance[nodeID]; ok {
 			continue
@@ -256,7 +289,7 @@ func (sv *StateVariable) tryConsensus(ctx context.Context, rng *rand.Rand, requi
 		}
 		if countMatch >= requiredMatches {
 			sv.state = StateVarConsensusStateConsensusReached
-			sv.consensusReached(ctx, candidateResult)
+			sv.consensusReached(ctx, t, candidateResult)
 			return
 		}
 	}
@@ -267,19 +300,25 @@ func (sv *StateVariable) tryConsensus(ctx context.Context, rng *rand.Rand, requi
 }
 
 // consensus was reached either through a vote or through perfect matching of all of 2/3 of the validators.
-func (sv *StateVariable) consensusReached(ctx context.Context, acceptedValue *statevar.KeyValueBundle) {
+func (sv *StateVariable) consensusReached(ctx context.Context, t time.Time, acceptedValue *statevar.KeyValueBundle) {
 	if sv.log.GetLevel() <= logging.DebugLevel {
 		sv.log.Debug("consensus reached", logging.String("state-var", sv.ID), logging.String("event-id", sv.eventID))
 	}
 
 	sv.result(ctx, sv.converter.BundleToInterface(acceptedValue))
-	sv.sendEvent()
+	sv.addEvent()
 
 	// reset the state
 	sv.eventID = ""
 	sv.validatorResults = nil
+	sv.roundsSinceMeaningfulUpdate = 0
 }
 
-func (sv *StateVariable) sendEvent() {
-	sv.broker.Send(events.NewStateVarEvent(context.Background(), sv.ID, sv.eventID, stateToName[sv.state]))
+func (sv *StateVariable) addEvent() {
+	sv.pendingEvents = append(sv.pendingEvents, pendingEvent{sv.eventID, stateToName[sv.state]})
+}
+
+type pendingEvent struct {
+	eventID string
+	state   string
 }

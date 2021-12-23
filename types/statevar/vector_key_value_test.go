@@ -119,6 +119,7 @@ func testVectorToProto(t *testing.T) {
 		t.Fail()
 	}
 
-	kvb2 := statevar.KeyValueBundleFromProto(res)
+	kvb2, err := statevar.KeyValueBundleFromProto(res)
+	require.NoError(t, err)
 	require.Equal(t, kvb1, kvb2)
 }

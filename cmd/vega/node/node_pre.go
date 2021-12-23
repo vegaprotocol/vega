@@ -359,7 +359,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
-	l.statevar = statevar.New(l.Log, l.conf.StateVar, l.broker, l.topology, commander, l.epochService, l.timeService)
+	l.statevar = statevar.New(l.Log, l.conf.StateVar, l.broker, l.topology, commander, l.timeService)
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
@@ -606,6 +606,10 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: l.statevar.OnDefaultValidatorsVoteRequiredUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.FloatingPointUpdatesDuration,
+			Watcher: l.statevar.OnFloatingPointUpdatesDurationUpdate,
 		},
 	)
 }

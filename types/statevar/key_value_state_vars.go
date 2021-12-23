@@ -31,61 +31,70 @@ func (kvb *KeyValueBundle) ToProto() []*vega.KeyValueBundle {
 }
 
 // KeyValueBundleFromProto converts from proto into KeyValueBundle.
-func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) *KeyValueBundle {
+func KeyValueBundleFromProto(protoKVT []*vega.KeyValueBundle) (*KeyValueBundle, error) {
 	KVT := make([]KeyValueTol, 0, len(protoKVT))
 	for _, pKVT := range protoKVT {
 		tol, err := num.DecimalFromString(pKVT.Tolerance)
 		if err != nil {
-			continue
+			return nil, err
+		}
+
+		v, err := ValueFromProto(pKVT.Value)
+		if err != nil {
+			return nil, err
 		}
 		KVT = append(KVT, KeyValueTol{
 			Key:       pKVT.Key,
 			Tolerance: tol,
-			Val:       ValueFromProto(pKVT.Value),
+			Val:       v,
 		})
 	}
 	return &KeyValueBundle{
 		KVT: KVT,
-	}
+	}, nil
 }
 
 // ValueFromProto converts the proto into a value.
-func ValueFromProto(val *vega.StateVarValue) value {
+func ValueFromProto(val *vega.StateVarValue) (value, error) {
 	switch v := val.Value.(type) {
 	case *vega.StateVarValue_ScalarVal:
-		val, _ := num.DecimalFromString(v.ScalarVal.Value)
+		val, err := num.DecimalFromString(v.ScalarVal.Value)
+		if err != nil {
+			return nil, err
+		}
 		return &DecimalScalar{
 			Val: val,
-		}
+		}, nil
 	case *vega.StateVarValue_VectorVal:
 		vec := make([]num.Decimal, 0, len(v.VectorVal.Value))
 		for _, entry := range v.VectorVal.Value {
 			value, err := num.DecimalFromString(entry)
-			if err == nil {
-				vec = append(vec, value)
+			if err != nil {
+				return nil, err
 			}
+			vec = append(vec, value)
 		}
-
 		return &DecimalVector{
 			Val: vec,
-		}
+		}, nil
 	case *vega.StateVarValue_MatrixVal:
-		mat := [][]num.Decimal{}
+		mat := make([][]num.Decimal, 0, len(v.MatrixVal.Value))
 		for _, val := range v.MatrixVal.Value {
 			row := make([]num.Decimal, 0, len(val.Value))
 			for _, entry := range val.Value {
 				value, err := num.DecimalFromString(entry)
-				if err == nil {
-					row = append(row, value)
+				if err != nil {
+					return nil, err
 				}
+				row = append(row, value)
 			}
 			mat = append(mat, row)
 		}
 		return &DecimalMatrix{
 			Val: mat,
-		}
+		}, nil
 	default:
-		return nil
+		return nil, nil
 	}
 }
 
@@ -131,8 +140,6 @@ type KeyValueTol struct {
 	Tolerance num.Decimal // the tolerance to use in comparison
 }
 
-type DecimalValue interface{}
-
 type FinaliseCalculation interface {
 	CalculationFinished(string, StateVariableResult, error)
 }
@@ -151,8 +158,16 @@ const (
 	// sample events there may be many more.
 
 	StateVarEventTypeAuctionUnknown StateVarEventType = iota
-	StateVarEventTypeAuctionEnded
-	StateVarEventMarketEnactment
 	StateVarEventTypeMarketEnacatment
-	StateVarEventTypeRiskModelChanged
+	StateVarEventTypeOpeningAuctionFirstUncrossingPrice
+	StateVarEventTypeOpeningAuctionEnded
+	StateVarEventTypeTimeTrigger
 )
+
+var StateVarEventTypeToName = map[StateVarEventType]string{
+	StateVarEventTypeAuctionUnknown:                     "unknown",
+	StateVarEventTypeMarketEnacatment:                   "market-enacted",
+	StateVarEventTypeOpeningAuctionFirstUncrossingPrice: "opening-auction-first-uncrossing-price",
+	StateVarEventTypeOpeningAuctionEnded:                "auction-ended",
+	StateVarEventTypeTimeTrigger:                        "time-trigger",
+}
