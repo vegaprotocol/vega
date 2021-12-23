@@ -112,9 +112,10 @@ func (e *Engine) generateEventID(asset, market string) string {
 }
 
 // OnFloatingPointUpdatesDurationUpdate updates the update frequency from the network parameter.
-func (e *Engine) OnFloatingPointUpdatesDurationUpdate(ctx context.Context, updateFrequency time.Duration) {
+func (e *Engine) OnFloatingPointUpdatesDurationUpdate(ctx context.Context, updateFrequency time.Duration) error {
 	e.log.Info("updating floating point update frequency", logging.String("updateFrequency", updateFrequency.String()))
 	e.updateFrequency = updateFrequency
+	return nil
 }
 
 // OnDefaultValidatorsVoteRequiredUpdate updates the required majority for a vote on a proposed value.
