@@ -22,7 +22,6 @@ type testEngine struct {
 	topology    *mocks.MockTopology
 	broker      *mocks.MockBroker
 	commander   *mocks.MockCommander
-	epoch       *mocks.MockEpochEngine
 	timeService *mocks.MockTimeService
 }
 
@@ -171,9 +170,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
-			for _, e := range events {
-				brokerEvents = append(brokerEvents, e)
-			}
+			brokerEvents = append(brokerEvents, events...)
 		})
 	}
 
@@ -199,9 +196,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
-			for _, e := range events {
-				brokerEvents = append(brokerEvents, e)
-			}
+			brokerEvents = append(brokerEvents, events...)
 		})
 	}
 
@@ -250,9 +245,7 @@ func testEventTriggeredCalculationError(t *testing.T) {
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
-			for _, e := range events {
-				brokerEvents = append(brokerEvents, e)
-			}
+			brokerEvents = append(brokerEvents, events...)
 		})
 	}
 
@@ -297,9 +290,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
-			for _, e := range events {
-				brokerEvents = append(brokerEvents, e)
-			}
+			brokerEvents = append(brokerEvents, events...)
 		})
 	}
 
@@ -392,9 +383,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
-			for _, e := range events {
-				brokerEvents = append(brokerEvents, e)
-			}
+			brokerEvents = append(brokerEvents, events...)
 		})
 	}
 
@@ -462,9 +451,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
-			for _, e := range events {
-				brokerEvents = append(brokerEvents, e)
-			}
+			brokerEvents = append(brokerEvents, events...)
 		})
 	}
 
@@ -534,9 +521,7 @@ func testTimeBasedEvent(t *testing.T) {
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
-			for _, e := range events {
-				brokerEvents = append(brokerEvents, e)
-			}
+			brokerEvents = append(brokerEvents, events...)
 		})
 	}
 

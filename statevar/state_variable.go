@@ -99,7 +99,7 @@ func (sv *StateVariable) GetMarket() string {
 	return sv.market
 }
 
-// startBlock flushes the pending events
+// startBlock flushes the pending events.
 func (sv *StateVariable) startBlock(ctx context.Context) {
 	evts := make([]events.Event, 0, len(sv.pendingEvents))
 	for _, pending := range sv.pendingEvents {
@@ -180,7 +180,7 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 	}
 }
 
-// logAndRetry logs errors from tendermint transaction submission failure and retries if we're still handling the same event
+// logAndRetry logs errors from tendermint transaction submission failure and retries if we're still handling the same event.
 func (sv *StateVariable) logAndRetry(err error, svp *commandspb.StateVariableProposal) {
 	sv.log.Error("failed to send state variable proposal command", logging.String("id", sv.ID), logging.String("event-id", sv.eventID))
 	if svp.Proposal.EventId == sv.eventID {

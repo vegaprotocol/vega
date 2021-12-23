@@ -182,7 +182,7 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 }
 
 // ReadyForTimeTrigger is called when the market is ready for time triggered event and sets the next time to run for all state variables of that market that are time triggered.
-// This is expected to be called at the end of the opening auction for the market
+// This is expected to be called at the end of the opening auction for the market.
 func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 	if _, ok := e.readyForTimeTrigger[asset+mktID]; !ok {
 		e.readyForTimeTrigger[mktID] = struct{}{}
