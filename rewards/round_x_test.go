@@ -3,6 +3,7 @@ package rewards
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -145,6 +146,7 @@ func TestReproBug4220(t *testing.T) {
 		engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(5))
 		engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 		engine.OnEpochEvent(context.Background(), types.Epoch{})
+		engine.onChainTimeUpdate(context.Background(), time.Time{})
 
 		rs := engine.rewardSchemes[stakingAndDelegationSchemeID]
 
