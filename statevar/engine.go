@@ -113,7 +113,7 @@ func (e *Engine) generateEventID(asset, market string) string {
 
 // OnFloatingPointUpdatesDurationUpdate updates the update frequency from the network parameter.
 func (e *Engine) OnFloatingPointUpdatesDurationUpdate(ctx context.Context, updateFrequency time.Duration) {
-	e.log.Info("updating floating point update frequency", logging.Strings("updateFrequency", updateFrequency.String()))
+	e.log.Info("updating floating point update frequency", logging.String("updateFrequency", updateFrequency.String()))
 	e.updateFrequency = updateFrequency
 }
 
