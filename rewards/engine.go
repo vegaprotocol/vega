@@ -265,6 +265,10 @@ func (e *Engine) UpdateRewardScheme(rs *types.RewardScheme) error {
 
 // whenever we have a time update, check if there are pending payouts ready to be sent.
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
+	// resetting the seed every block, to both get some more unpredictability and still deterministic
+	// and play nicely with snapshot
+	e.rng = rand.New(rand.NewSource(t.Unix()))
+
 	// check if we have any outstanding payouts that need to be distributed
 	payTimes := make([]time.Time, 0, len(e.pendingPayouts))
 	for payTime := range e.pendingPayouts {
@@ -409,9 +413,6 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEvent")
 
 	if (epoch.EndTime == time.Time{}) {
-		// resetting the seed every epoch, to both get some more unpredictability and still deterministic
-		// and play nicely with snapshot
-		e.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 		e.epochSeq = num.NewUint(epoch.Seq).String()
 		e.newEpochStarted = true
 		return

@@ -107,6 +107,8 @@ const (
 
 	// snapshot parameters.
 	SnapshotIntervalLength = "snapshot.interval.length"
+
+	FloatingPointUpdatesDuration = "network.floatingPointUpdates.delay"
 )
 
 var AllKeys = map[string]struct{}{
@@ -190,4 +192,5 @@ var AllKeys = map[string]struct{}{
 	StakingAndDelegationRewardsMinValidators:              {},
 	StakingAndDelegationRewardOptimalStakeMultiplier:      {},
 	SnapshotIntervalLength:                                {},
+	FloatingPointUpdatesDuration:                          {},
 }
