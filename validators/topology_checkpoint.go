@@ -2,6 +2,7 @@ package validators
 
 import (
 	"context"
+	"sort"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/types"
@@ -61,8 +62,23 @@ func (t *Topology) getRelativeBlockHeight(blockHeight, currentBlockHeight uint64
 
 func (t *Topology) getCheckpointPendingKeyRotations() []*checkpoint.PendingKeyRotation {
 	rotations := make([]*checkpoint.PendingKeyRotation, 0, len(t.pendingPubKeyRotations)*2)
-	for blockHeight, rs := range t.pendingPubKeyRotations {
-		for nodeID, r := range rs {
+
+	blockHeights := make([]uint64, 0, len(t.pendingPubKeyRotations))
+	for blockHeight := range t.pendingPubKeyRotations {
+		blockHeights = append(blockHeights, blockHeight)
+	}
+	sort.Slice(blockHeights, func(i, j int) bool { return blockHeights[i] < blockHeights[j] })
+
+	for _, blockHeight := range blockHeights {
+		rs := t.pendingPubKeyRotations[blockHeight]
+		nodeIDs := make([]string, 0, len(rs))
+		for nodeID := range rs {
+			nodeIDs = append(nodeIDs, nodeID)
+		}
+		sort.Strings(nodeIDs)
+
+		for _, nodeID := range nodeIDs {
+			r := rs[nodeID]
 			rotations = append(rotations, &checkpoint.PendingKeyRotation{
 				RelativeTargetBlockHeight: t.getRelativeBlockHeight(blockHeight, t.currentBlockHeight),
 				NodeId:                    nodeID,
