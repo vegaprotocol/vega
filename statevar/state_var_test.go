@@ -82,7 +82,7 @@ func getValidators(t *testing.T, now time.Time, numValidators int) []*testEngine
 	validators := make([]*testEngine, 0, numValidators)
 	for i := 0; i < numValidators; i++ {
 		validators = append(validators, getTestEngine(t, now))
-		validators[i].engine.OnDefaultValidatorsVoteRequiredUpdate(context.Background(), 0.67)
+		validators[i].engine.OnDefaultValidatorsVoteRequiredUpdate(context.Background(), num.DecimalFromFloat(0.67))
 		validators[i].engine.OnFloatingPointUpdatesDurationUpdate(context.Background(), 10*time.Second)
 		validators[i].engine.OnTimeTick(context.Background(), now)
 	}

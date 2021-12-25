@@ -47,7 +47,7 @@ func TestNetParams(t *testing.T) {
 	t.Run("test update - validation failed", testUpdateValidationFailed)
 	t.Run("test exists - success", testExistsSuccess)
 	t.Run("test exists - failure", testExistsFailure)
-	t.Run("get float", testGetFloat)
+	t.Run("get decimal", testGetDecimal)
 	t.Run("get duration", testGetDuration)
 	t.Run("dispatch after update", testDispatchAfterUpdate)
 	t.Run("register dispatch function - failure", testRegisterDispatchFunctionFailure)
@@ -71,7 +71,7 @@ func testRegisterDispatchFunctionFailure(t *testing.T) {
 		},
 	)
 
-	assert.EqualError(t, err, "invalid type, expected func(context.Context, time.Duration) error")
+	assert.EqualError(t, err, "governance.proposal.asset.maxClose: invalid type, expected func(context.Context, time.Duration) error")
 }
 
 func testDispatchAfterUpdate(t *testing.T) {
@@ -185,14 +185,14 @@ func testExistsFailure(t *testing.T) {
 	assert.False(t, ok)
 }
 
-func testGetFloat(t *testing.T) {
+func testGetDecimal(t *testing.T) {
 	netp := getTestNetParams(t)
 	defer netp.ctrl.Finish()
 
-	_, err := netp.GetFloat(netparams.GovernanceProposalUpdateNetParamRequiredMajority)
+	_, err := netp.GetDecimal(netparams.GovernanceProposalUpdateNetParamRequiredMajority)
 	assert.NoError(t, err)
-	_, err = netp.GetFloat(netparams.GovernanceProposalAssetMaxClose)
-	assert.EqualError(t, err, "not a float value")
+	_, err = netp.GetInt(netparams.GovernanceProposalAssetMaxClose)
+	assert.EqualError(t, err, "not an int value")
 }
 
 func testGetDuration(t *testing.T) {

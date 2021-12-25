@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/monitor"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -82,18 +83,18 @@ type netParamsValues struct {
 	shapesMaxSize                   int64
 	feeDistributionTimeStep         time.Duration
 	timeWindowUpdate                time.Duration
-	targetStakeScalingFactor        float64
+	targetStakeScalingFactor        num.Decimal
 	marketValueWindowLength         time.Duration
-	suppliedStakeToObligationFactor float64
-	infrastructureFee               float64
-	makerFee                        float64
+	suppliedStakeToObligationFactor num.Decimal
+	infrastructureFee               num.Decimal
+	makerFee                        num.Decimal
 	scalingFactors                  *types.ScalingFactors
-	maxLiquidityFee                 float64
-	bondPenaltyFactor               float64
-	targetStakeTriggeringRatio      float64
+	maxLiquidityFee                 num.Decimal
+	bondPenaltyFactor               num.Decimal
+	targetStakeTriggeringRatio      num.Decimal
 	auctionMinDuration              time.Duration
-	probabilityOfTradingTauScaling  float64
-	minProbabilityOfTradingLPOrders float64
+	probabilityOfTradingTauScaling  num.Decimal
+	minProbabilityOfTradingLPOrders num.Decimal
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -101,18 +102,18 @@ func defaultNetParamsValues() netParamsValues {
 		shapesMaxSize:                   -1,
 		feeDistributionTimeStep:         -1,
 		timeWindowUpdate:                -1,
-		targetStakeScalingFactor:        -1,
+		targetStakeScalingFactor:        num.DecimalFromInt64(-1),
 		marketValueWindowLength:         -1,
-		suppliedStakeToObligationFactor: -1,
-		infrastructureFee:               -1,
-		makerFee:                        -1,
+		suppliedStakeToObligationFactor: num.DecimalFromInt64(-1),
+		infrastructureFee:               num.DecimalFromInt64(-1),
+		makerFee:                        num.DecimalFromInt64(-1),
 		scalingFactors:                  nil,
-		maxLiquidityFee:                 -1,
-		bondPenaltyFactor:               -1,
-		targetStakeTriggeringRatio:      -1,
+		maxLiquidityFee:                 num.DecimalFromInt64(-1),
+		bondPenaltyFactor:               num.DecimalFromInt64(-1),
+		targetStakeTriggeringRatio:      num.DecimalFromInt64(-1),
 		auctionMinDuration:              -1,
-		probabilityOfTradingTauScaling:  -1,
-		minProbabilityOfTradingLPOrders: -1,
+		probabilityOfTradingTauScaling:  num.DecimalFromInt64(-1),
+		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
 	}
 }
 
@@ -355,10 +356,10 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 }
 
 func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) error {
-	if e.npv.probabilityOfTradingTauScaling != -1 {
+	if !e.npv.probabilityOfTradingTauScaling.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, e.npv.probabilityOfTradingTauScaling)
 	}
-	if e.npv.minProbabilityOfTradingLPOrders != -1 {
+	if !e.npv.minProbabilityOfTradingLPOrders.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketMinProbabilityOfTradingLPOrdersUpdate(ctx, e.npv.minProbabilityOfTradingLPOrders)
 	}
 	if e.npv.auctionMinDuration != -1 {
@@ -370,19 +371,19 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 		}
 	}
 
-	if e.npv.targetStakeScalingFactor != -1 {
+	if !e.npv.targetStakeScalingFactor.Equal(num.DecimalFromInt64(-1)) {
 		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(e.npv.targetStakeScalingFactor); err != nil {
 			return err
 		}
 	}
 
-	if e.npv.infrastructureFee != -1 {
+	if !e.npv.infrastructureFee.Equal(num.DecimalFromInt64(-1)) {
 		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, e.npv.infrastructureFee); err != nil {
 			return err
 		}
 	}
 
-	if e.npv.makerFee != -1 {
+	if !e.npv.makerFee.Equal(num.DecimalFromInt64(-1)) {
 		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, e.npv.makerFee); err != nil {
 			return err
 		}
@@ -406,16 +407,16 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 		mkt.OnMarketValueWindowLengthUpdate(e.npv.marketValueWindowLength)
 	}
 
-	if e.npv.suppliedStakeToObligationFactor != -1 {
+	if !e.npv.suppliedStakeToObligationFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnSuppliedStakeToObligationFactorUpdate(e.npv.suppliedStakeToObligationFactor)
 	}
-	if e.npv.bondPenaltyFactor != -1 {
+	if !e.npv.bondPenaltyFactor.Equal(num.DecimalFromInt64(-1)) {
 		mkt.BondPenaltyFactorUpdate(ctx, e.npv.bondPenaltyFactor)
 	}
-	if e.npv.targetStakeTriggeringRatio != -1 {
+	if !e.npv.targetStakeTriggeringRatio.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, e.npv.targetStakeTriggeringRatio)
 	}
-	if e.npv.maxLiquidityFee != -1 {
+	if !e.npv.maxLiquidityFee.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(e.npv.maxLiquidityFee)
 	}
 	return nil
@@ -707,18 +708,18 @@ func (e *Engine) OnMarketAuctionMinimumDurationUpdate(ctx context.Context, d tim
 	return nil
 }
 
-func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, v float64) error {
+func (e *Engine) OnMarketLiquidityBondPenaltyUpdate(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market liquidity bond penalty",
-			logging.Float64("bond-penalty-factor", v),
+			logging.Decimal("bond-penalty-factor", d),
 		)
 	}
 
 	for _, mkt := range e.markets {
-		mkt.BondPenaltyFactorUpdate(ctx, v)
+		mkt.BondPenaltyFactorUpdate(ctx, d)
 	}
 
-	e.npv.bondPenaltyFactor = v
+	e.npv.bondPenaltyFactor = d
 
 	return nil
 }
@@ -746,54 +747,54 @@ func (e *Engine) OnMarketMarginScalingFactorsUpdate(ctx context.Context, v inter
 	return nil
 }
 
-func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
+func (e *Engine) OnMarketFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update maker fee in market fee factors",
-			logging.Float64("maker-fee", f),
+			logging.Decimal("maker-fee", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, f); err != nil {
+		if err := mkt.OnFeeFactorsMakerFeeUpdate(ctx, d); err != nil {
 			return err
 		}
 	}
 
-	e.npv.makerFee = f
+	e.npv.makerFee = d
 
 	return nil
 }
 
-func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
+func (e *Engine) OnMarketFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update infrastructure fee in market fee factors",
-			logging.Float64("infrastructure-fee", f),
+			logging.Decimal("infrastructure-fee", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, f); err != nil {
+		if err := mkt.OnFeeFactorsInfrastructureFeeUpdate(ctx, d); err != nil {
 			return err
 		}
 	}
 
-	e.npv.infrastructureFee = f
+	e.npv.infrastructureFee = d
 
 	return nil
 }
 
-func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, v float64) error {
+func (e *Engine) OnSuppliedStakeToObligationFactorUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update supplied stake to obligation factor",
-			logging.Float64("factor", v),
+			logging.Decimal("factor", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		mkt.OnSuppliedStakeToObligationFactorUpdate(v)
+		mkt.OnSuppliedStakeToObligationFactorUpdate(d)
 	}
 
-	e.npv.suppliedStakeToObligationFactor = v
+	e.npv.suppliedStakeToObligationFactor = d
 
 	return nil
 }
@@ -814,20 +815,20 @@ func (e *Engine) OnMarketValueWindowLengthUpdate(_ context.Context, d time.Durat
 	return nil
 }
 
-func (e *Engine) OnMarketTargetStakeScalingFactorUpdate(_ context.Context, v float64) error {
+func (e *Engine) OnMarketTargetStakeScalingFactorUpdate(_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update market stake scaling factor",
-			logging.Float64("scaling-factor", v),
+			logging.Decimal("scaling-factor", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(v); err != nil {
+		if err := mkt.OnMarketTargetStakeScalingFactorUpdate(d); err != nil {
 			return err
 		}
 	}
 
-	e.npv.targetStakeScalingFactor = v
+	e.npv.targetStakeScalingFactor = d
 
 	return nil
 }
@@ -882,66 +883,66 @@ func (e *Engine) OnMarketLiquidityProvisionShapesMaxSizeUpdate(
 }
 
 func (e *Engine) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(
-	_ context.Context, f float64) error {
+	_ context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update liquidity provision max liquidity fee factor",
-			logging.Float64("max-liquidity-fee", f),
+			logging.Decimal("max-liquidity-fee", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(f)
+		mkt.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(d)
 	}
 
-	e.npv.maxLiquidityFee = f
+	e.npv.maxLiquidityFee = d
 
 	return nil
 }
 
-func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) error {
+func (e *Engine) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update target stake triggering ratio",
-			logging.Float64("max-liquidity-fee", v),
+			logging.Decimal("max-liquidity-fee", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, v)
+		mkt.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, d)
 	}
 
-	e.npv.targetStakeTriggeringRatio = v
+	e.npv.targetStakeTriggeringRatio = d
 
 	return nil
 }
 
-func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Context, v float64) error {
+func (e *Engine) OnMarketProbabilityOfTradingTauScalingUpdate(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update probability of trading tau scaling",
-			logging.Float64("probability-of-trading-tau-scaling", v),
+			logging.Decimal("probability-of-trading-tau-scaling", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, v)
+		mkt.OnMarketProbabilityOfTradingTauScalingUpdate(ctx, d)
 	}
 
-	e.npv.probabilityOfTradingTauScaling = v
+	e.npv.probabilityOfTradingTauScaling = d
 
 	return nil
 }
 
-func (e *Engine) OnMarketMinProbabilityOfTradingForLPOrdersUpdate(ctx context.Context, v float64) error {
+func (e *Engine) OnMarketMinProbabilityOfTradingForLPOrdersUpdate(ctx context.Context, d num.Decimal) error {
 	if e.log.IsDebug() {
 		e.log.Debug("update min probability of trading tau scaling",
-			logging.Float64("min-probability-of-trading-lp-orders", v),
+			logging.Decimal("min-probability-of-trading-lp-orders", d),
 		)
 	}
 
 	for _, mkt := range e.marketsCpy {
-		mkt.OnMarketMinProbabilityOfTradingLPOrdersUpdate(ctx, v)
+		mkt.OnMarketMinProbabilityOfTradingLPOrdersUpdate(ctx, d)
 	}
 
-	e.npv.minProbabilityOfTradingLPOrders = v
+	e.npv.minProbabilityOfTradingLPOrders = d
 
 	return nil
 }

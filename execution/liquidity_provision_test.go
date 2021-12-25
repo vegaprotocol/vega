@@ -272,7 +272,7 @@ func TestLiquidityProvisionFeeValidation(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -588,7 +588,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	addAccountWithAmount(tm, "party-B", 10000000)
 	addAccountWithAmount(tm, "party-C", 10000000)
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.2))
 
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
 	tm.mas.AuctionStarted(ctx, now)
@@ -1067,7 +1067,7 @@ func TestLpCannotGetClosedOutWhenDeployingOrderForTheFirstTime(t *testing.T) {
 		WithAccountAndAmount(party1, 1000000000).
 		WithAccountAndAmount(party0, 1000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(.3)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.3))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -1162,7 +1162,7 @@ func TestCloseOutLPPartyContIssue3086(t *testing.T) {
 		WithAccountAndAmount(ruser2, 8600).
 		WithAccountAndAmount(ruser3, 10000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(.2)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(.2))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -1362,7 +1362,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 		WithAccountAndAmount(lpparty, 500000000000).
 		WithAccountAndAmount(lpparty2, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -1506,7 +1506,7 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 		WithAccountAndAmount(oth1, 500000000000).
 		WithAccountAndAmount(oth2, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -1689,7 +1689,7 @@ func TestRejectedMarketStopLiquidityProvision(t *testing.T) {
 
 	tm := newTestMarket(t, now).Run(ctx, mktCfg)
 	tm.WithAccountAndAmount(lpparty, 100000000000000)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -1784,7 +1784,7 @@ func TestParkOrderPanicOrderNotFoundInBook(t *testing.T) {
 		WithAccountAndAmount(lpparty, 100000000000000)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.2)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.2))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -1974,7 +1974,7 @@ func TestLotsOfPeggedAndNonPeggedOrders(t *testing.T) {
 		WithAccountAndAmount(lpparty, 100000000000000)
 
 	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, 1*time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -2147,7 +2147,7 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 		WithAccountAndAmount(lpparty, 100000000000000)
 
 	tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -2286,7 +2286,7 @@ func TestFeesNotPaidToUndeployedLPs(t *testing.T) {
 		WithAccountAndAmount(lpparty, 100000000000000)
 
 	tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -2421,7 +2421,7 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 		WithAccountAndAmount(lpparty, 100000000000000)
 
 	tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.7)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	lpSubmission := &types.LiquidityProvisionSubmission{

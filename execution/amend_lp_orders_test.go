@@ -48,7 +48,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -466,7 +466,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -559,7 +559,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 500000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(0.20)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.20))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -691,7 +691,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		WithAccountAndAmount("party-yolo", 1000000000).
 		WithAccountAndAmount("party-yolo1", 1000000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
