@@ -12,13 +12,17 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🐛 Fixes
-- [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
-- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Prevent premature ending of an epoch when loading from a checkpoint within the same epoch of taking it.
-- [4505](https://github.com/vegaprotocol/vega/pull/4506) - Wire `net params` to time service to flush pending updates
+- [](https://github.com/vegaprotocol/vega/pull/) -
+
+## 0.47.3
+*2021-12-24*
+
+### 🐛 Fixes
+- [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
 
 
 ## 0.47.2
-*2021-11-24*
+*2021-12-17*
 
 ### 🐛 Fixes
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum for validator power to avoid accidentally removing them
@@ -29,7 +33,6 @@
 
 ## 0.47.1
 *2021-11-24*
-
 - [4488](https://github.com/vegaprotocol/vega/pull/4488) - Disable snapshots
 
 
