@@ -39,6 +39,7 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/types"
@@ -51,7 +52,10 @@ import (
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
-var ErrUnknownChainProvider = errors.New("unknown chain provider")
+var (
+	ErrUnknownChainProvider    = errors.New("unknown chain provider")
+	ErrERC20AssetWithNullChain = errors.New("cannot use ERC20 asset with nullchain")
+)
 
 func (l *NodeCommand) persistentPre(args []string) (err error) {
 	// this shouldn't happen...
@@ -153,6 +157,10 @@ func (l *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDe
 	asset, err := l.assets.Get(aid)
 	if err != nil {
 		return fmt.Errorf("unable to get asset %v", err)
+	}
+
+	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain && asset.IsERC20() {
+		return ErrERC20AssetWithNullChain
 	}
 
 	// just a simple backoff here
@@ -267,6 +275,7 @@ func (l *NodeCommand) startBlockchain(ctx context.Context, commander *nodewallet
 		l.stakingAccounts,
 		l.rewards,
 		l.snapshot,
+		l.statevar,
 		l.Version,
 	)
 
@@ -332,27 +341,30 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.timeService.NotifyOnTick(l.oracle.UpdateCurrentTime)
 	l.oracleAdaptors = oracleAdaptors.New()
 
-	// instantiate the execution engine
-	l.executionEngine = execution.NewEngine(
-		l.Log, l.conf.Execution, l.timeService, l.collateral, l.oracle, l.broker,
-	)
-
 	// we cannot pass the Chain dependency here (that's set by the blockchain)
 	commander, err := nodewallets.NewCommander(l.conf.NodeWallet, l.Log, nil, l.nodeWallets.Vega, l.stats)
 	if err != nil {
 		return err
 	}
 
-	l.limits = limits.New(l.Log, l.conf.Limits)
+	l.limits = limits.New(l.Log, l.conf.Limits, l.broker)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, l.nodeWallets.Vega, l.broker)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
+	l.timeService.NotifyOnTick(l.netParams.OnChainTimeUpdate)
 
 	l.stakingAccounts, l.stakeVerifier = staking.New(
 		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
 	)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
+
+	l.statevar = statevar.New(l.Log, l.conf.StateVar, l.broker, l.topology, commander, l.timeService)
+
+	// instantiate the execution engine
+	l.executionEngine = execution.NewEngine(
+		l.Log, l.conf.Execution, l.timeService, l.collateral, l.oracle, l.broker,
+	)
 
 	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
 		// Use staking-loop to pretend a dummy builtin asssets deposited with the faucet was staked
@@ -403,7 +415,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	if err != nil {
 		panic(err)
 	}
-
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	l.topology.NotifyOnKeyChange(l.delegation.ValidatorKeyChanged, l.stakingAccounts.ValidatorKeyChanged, l.rewards.ValidatorKeyChanged, l.governance.ValidatorKeyChanged)
 
@@ -591,6 +602,14 @@ func (l *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.SnapshotIntervalLength,
 			Watcher: l.snapshot.OnSnapshotIntervalUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.ValidatorsVoteRequired,
+			Watcher: l.statevar.OnDefaultValidatorsVoteRequiredUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.FloatingPointUpdatesDuration,
+			Watcher: l.statevar.OnFloatingPointUpdatesDurationUpdate,
 		},
 	)
 }

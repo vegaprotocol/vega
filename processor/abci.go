@@ -28,6 +28,7 @@ import (
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -70,6 +71,10 @@ type Snapshot interface {
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
 	AddProviders(provs ...types.StateProvider)
 	Snapshot(ctx context.Context) ([]byte, error)
+}
+
+type StateVarEngine interface {
+	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
 }
 
 type App struct {
@@ -115,8 +120,8 @@ type App struct {
 	spam            SpamEngine
 	epoch           EpochService
 	snapshot        Snapshot
-
-	cpt abci.Tx
+	stateVar        StateVarEngine
+	cpt             abci.Tx
 }
 
 func NewApp(
@@ -148,6 +153,7 @@ func NewApp(
 	stakingAccounts StakingAccounts,
 	rewards RewardEngine,
 	snapshot Snapshot,
+	stateVarEngine StateVarEngine,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -189,6 +195,7 @@ func NewApp(
 		epoch:           epoch,
 		rewards:         rewards,
 		snapshot:        snapshot,
+		stateVar:        stateVarEngine,
 		version:         version,
 	}
 
@@ -202,13 +209,19 @@ func NewApp(
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
 	app.abci.OnInfo = app.Info
+	// snapshot specific handlers.
+	app.abci.OnListSnapshots = app.ListSnapshots
+	app.abci.OnOfferSnapshot = app.OfferSnapshot
+	app.abci.OnApplySnapshotChunk = app.ApplySnapshotChunk
+	app.abci.OnLoadSnapshotChunk = app.LoadSnapshotChunk
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
-		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey)
+		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
+		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.SubmitOrderCommand,
@@ -239,7 +252,9 @@ func NewApp(
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
 			app.SendEventOnError(app.DeliverReloadCheckpoint)).
 		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
-			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission))
+			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
+		HandleDeliverTx(txn.StateVariableProposalCommand,
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -411,7 +426,7 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 	return resp
 }
 
-func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		return tmtypes.ResponseLoadSnapshotChunk{}
@@ -1273,4 +1288,20 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 		uint64(currentBlockHeight),
 		kr,
 	)
+}
+
+func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
+	proposal := &commandspb.StateVariableProposal{}
+	if err := tx.Unmarshal(proposal); err != nil {
+		return err
+	}
+
+	stateVarID := proposal.Proposal.StateVarId
+	node := tx.PubKeyHex()
+	eventID := proposal.Proposal.EventId
+	bundle, err := statevar.KeyValueBundleFromProto(proposal.Proposal.Kvb)
+	if err != nil {
+		return err
+	}
+	return app.stateVar.ProposedValueReceived(ctx, stateVarID, node, eventID, bundle)
 }

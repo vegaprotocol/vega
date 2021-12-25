@@ -41,6 +41,7 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -83,6 +84,7 @@ type Config struct {
 	Delegation        delegation.Config  `group:"Delegation" namespace:"delegation"`
 	Spam              spam.Config        `group:"Spam" namespace:"spam"`
 	Snapshot          snapshot.Config    `group:"Snapshot" namespace:"snapshot"`
+	StateVar          statevar.Config    `group:"StateVar" namespace:"statevar"`
 
 	Pprof        pprof.Config `group:"Pprof" namespace:"pprof"`
 	UlimitNOFile uint64       `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
@@ -126,6 +128,7 @@ func NewDefaultConfig() Config {
 		Broker:            broker.NewDefaultConfig(),
 		UlimitNOFile:      8192,
 		Snapshot:          snapshot.NewDefaultConfig(),
+		StateVar:          statevar.NewDefaultConfig(),
 	}
 }
 

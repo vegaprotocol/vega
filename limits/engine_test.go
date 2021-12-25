@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/limits"
 	"code.vegaprotocol.io/vega/logging"
-
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,10 +18,14 @@ type limitsTest struct {
 	log *logging.Logger
 }
 
-func getLimitsTest() *limitsTest {
+func getLimitsTest(t *testing.T) *limitsTest {
+	t.Helper()
 	log := logging.NewTestLogger()
+	ctrl := gomock.NewController(t)
+	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	return &limitsTest{
-		Engine: limits.New(log, limits.NewDefaultConfig()),
+		Engine: limits.New(log, limits.NewDefaultConfig(), broker),
 		log:    log,
 	}
 }
@@ -53,7 +58,7 @@ func TestLimits(t *testing.T) {
 }
 
 func testEmptyGenesis(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 
 	assert.False(t, lmts.CanProposeAsset())
 	assert.False(t, lmts.CanProposeMarket())
@@ -62,7 +67,7 @@ func testEmptyGenesis(t *testing.T) {
 }
 
 func testNilGenesis(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, nil)
 
 	// need to call onTick
@@ -74,7 +79,7 @@ func testNilGenesis(t *testing.T) {
 }
 
 func testAllDisabled(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{})
 
 	// need to call onTick
@@ -86,7 +91,7 @@ func testAllDisabled(t *testing.T) {
 }
 
 func testAllEnabled(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
 		ProposeAssetEnabled:  true,
 		ProposeMarketEnabled: true,
@@ -101,7 +106,7 @@ func testAllEnabled(t *testing.T) {
 }
 
 func testMarketEnabledAssetDisabled(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
 		ProposeAssetEnabled:  false,
 		ProposeMarketEnabled: true,
@@ -116,7 +121,7 @@ func testMarketEnabledAssetDisabled(t *testing.T) {
 }
 
 func testMarketdisabledAssetenabled(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
 		ProposeAssetEnabled:  true,
 		ProposeMarketEnabled: false,
@@ -131,7 +136,7 @@ func testMarketdisabledAssetenabled(t *testing.T) {
 }
 
 func testDisabledUntilTimeIsReach(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
 		ProposeAssetEnabled:      true,
 		ProposeMarketEnabled:     true,
@@ -155,7 +160,7 @@ func testDisabledUntilTimeIsReach(t *testing.T) {
 }
 
 func testStayDisabledIfTimeIsReachedButEnabledIsFalse(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
 		ProposeAssetEnabled:      false,
 		ProposeMarketEnabled:     false,
@@ -179,7 +184,7 @@ func testStayDisabledIfTimeIsReachedButEnabledIsFalse(t *testing.T) {
 }
 
 func testBootstrapFinishedEnabledProposals(t *testing.T) {
-	lmts := getLimitsTest()
+	lmts := getLimitsTest(t)
 	lmts.loadGenesisState(t, &limits.GenesisState{
 		ProposeAssetEnabled:      true,
 		ProposeMarketEnabled:     true,
