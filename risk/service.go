@@ -113,9 +113,15 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *ptypes.Order) (*ptypes.
 		return nil, ErrInvalidOrderSide
 	}
 
-	f := num.DecimalFromFloat(rf.Short)
+	f, err := num.DecimalFromString(rf.Short)
+	if err != nil {
+		return nil, err
+	}
 	if order.Side == ptypes.Side_SIDE_BUY {
-		f = num.DecimalFromFloat(rf.Long)
+		f, err = num.DecimalFromString(rf.Long)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	asset, err := mkt.GetAsset()

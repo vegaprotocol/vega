@@ -12,11 +12,9 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrMissingLogNormalParameter = errors.New("missing log normal parameters")
-)
+var ErrMissingLogNormalParameter = errors.New("missing log normal parameters")
 
-// LogNormal represent a future risk model
+// LogNormal represent a future risk model.
 type LogNormal struct {
 	riskAversionParameter, tau num.Decimal
 	params                     riskmodelbs.ModelParamsBS
@@ -27,7 +25,7 @@ type LogNormal struct {
 	cacheHorizon num.Decimal
 }
 
-// NewBuiltinFutures instantiate a new builtin future
+// NewBuiltinFutures instantiate a new builtin future.
 func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, error) {
 	if pf.Params == nil {
 		return nil, ErrMissingLogNormalParameter
@@ -50,33 +48,21 @@ func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, 
 }
 
 // CalculationInterval return the calculation interval for
-// the Forward risk model
+// the Forward risk model.
 func (f *LogNormal) CalculationInterval() time.Duration {
 	return time.Duration(0)
 }
 
 // CalculateRiskFactors calls the risk model in order to get
-// the new risk models
-func (f *LogNormal) CalculateRiskFactors(
-	current *types.RiskResult) (bool, *types.RiskResult) {
+// the new risk models.
+func (f *LogNormal) CalculateRiskFactors() *types.RiskFactor {
 	rav, _ := f.riskAversionParameter.Float64()
 	tau, _ := f.tau.Float64()
 	rawrf := riskmodelbs.RiskFactorsForward(rav, tau, f.params)
-	rf := &types.RiskResult{
-		RiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  num.DecimalFromFloat(rawrf.Long),
-				Short: num.DecimalFromFloat(rawrf.Short),
-			},
-		},
-		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  num.DecimalFromFloat(rawrf.Long),
-				Short: num.DecimalFromFloat(rawrf.Short),
-			},
-		},
+	return &types.RiskFactor{
+		Long:  num.DecimalFromFloat(rawrf.Long),
+		Short: num.DecimalFromFloat(rawrf.Short),
 	}
-	return true, rf
 }
 
 // PriceRange returns the minimum and maximum price as implied by the model's probability distribution with horizon given by yearFraction (e.g. 0.5 for half a year) and probability level (e.g. 0.95 for 95%).
@@ -91,11 +77,11 @@ func (f *LogNormal) PriceRange(currentP, yFrac, probabilityLevel num.Decimal) (n
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
 // Additional arguments control optional truncation of probability density outside the [minPrice,maxPrice] range.
-func (f *LogNormal) ProbabilityOfTrading(currentP, orderP, minP, maxP *num.Uint, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
+func (f *LogNormal) ProbabilityOfTrading(currentP, orderP *num.Uint, minP, maxP num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal {
 	dist := f.getDistribution(currentP, yFrac)
-	min := math.Max(minP.Float64(), 0)
+	min := math.Max(minP.InexactFloat64(), 0)
 	// still, quant uses floats
-	prob := pd.ProbabilityOfTrading(dist, orderP.Float64(), isBid, applyMinMax, min, maxP.Float64())
+	prob := pd.ProbabilityOfTrading(dist, orderP.Float64(), isBid, applyMinMax, min, maxP.InexactFloat64())
 	return num.DecimalFromFloat(prob)
 }
 
@@ -108,7 +94,7 @@ func (f *LogNormal) getDistribution(currentP *num.Uint, yFrac num.Decimal) inter
 	return f.distCache
 }
 
-// GetProjectionHorizon returns the projection horizon used by the model for margin calculation pruposes
+// GetProjectionHorizon returns the projection horizon used by the model for margin calculation pruposes.
 func (f *LogNormal) GetProjectionHorizon() num.Decimal {
 	return f.tau
 }
