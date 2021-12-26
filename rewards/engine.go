@@ -188,8 +188,8 @@ func (e *Engine) UpdateOptimalStakeMultiplierStakingRewardScheme(ctx context.Con
 }
 
 // UpdateCompetitionLevelForStakingRewardScheme is called when the competition level has changed.
-func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel float64) error {
-	e.global.compLevel = num.DecimalFromFloat(compLevel)
+func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel num.Decimal) error {
+	e.global.compLevel = compLevel
 	return nil
 }
 
@@ -231,11 +231,10 @@ func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context
 }
 
 // UpdatePayoutFractionForStakingRewardScheme is a callback for changes in the network param for payout fraction.
-func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context, payoutFraction float64) error {
-	poFractionD := num.DecimalFromFloat(payoutFraction)
+func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context, payoutFraction num.Decimal) error {
 	for _, rs := range e.rewardSchemes {
 		if rs.PayoutType == types.PayoutFractional {
-			rs.PayoutFraction = poFractionD
+			rs.PayoutFraction = payoutFraction
 		}
 	}
 	return nil
@@ -248,8 +247,8 @@ func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, pa
 }
 
 // UpdateDelegatorShareForStakingRewardScheme is a callback for changes in the network param for delegator share.
-func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare float64) error {
-	e.global.delegatorShare = num.NewDecimalFromFloat(delegatorShare)
+func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare num.Decimal) error {
+	e.global.delegatorShare = delegatorShare
 	return nil
 }
 

@@ -119,8 +119,8 @@ func (e *Engine) OnFloatingPointUpdatesDurationUpdate(ctx context.Context, updat
 }
 
 // OnDefaultValidatorsVoteRequiredUpdate updates the required majority for a vote on a proposed value.
-func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
-	e.validatorVotesRequired = num.DecimalFromFloat(f)
+func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, d num.Decimal) error {
+	e.validatorVotesRequired = d
 	e.log.Info("ValidatorsVoteRequired updated", logging.String("validatorVotesRequired", e.validatorVotesRequired.String()))
 	return nil
 }

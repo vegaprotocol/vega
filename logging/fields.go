@@ -102,6 +102,11 @@ func Strings(key string, val []string) zap.Field {
 	return zap.Strings(key, val)
 }
 
+// Decimal constructs a field with the given key and value.
+func Decimal(key string, val num.Decimal) zap.Field {
+	return String(key, val.String())
+}
+
 // BigUint constructs a field with the given key and value.
 func BigUint(key string, val *num.Uint) zap.Field {
 	return String(key, val.String())
