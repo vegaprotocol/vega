@@ -27,6 +27,7 @@
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
+- [4529](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
 
 ## 0.47.0
 *2021-11-24*
