@@ -118,6 +118,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		validators.NewDefaultConfig(),
 		nw.Vega,
 		broker,
+		true,
 	)
 
 	witness := validators.NewWitness(

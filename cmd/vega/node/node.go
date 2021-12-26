@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/nodewallets"
 	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
@@ -110,30 +111,40 @@ type NodeCommand struct {
 	stakingAccounts *staking.Accounting
 	stakeVerifier   *staking.StakeVerifier
 
+	commander *nodewallets.Commander
+
 	app *processor.App
 
 	Version     string
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(confWatcher *config.Watcher, vegaPaths paths.Paths, nodeWalletPassphrase string, args []string) error {
-	l.confWatcher = confWatcher
-	l.nodeWalletPassphrase = nodeWalletPassphrase
+func (n *NodeCommand) Run(
+	confWatcher *config.Watcher,
+	vegaPaths paths.Paths,
+	nodeWalletPassphrase string,
+	args []string,
+) error {
+	n.confWatcher = confWatcher
+	n.nodeWalletPassphrase = nodeWalletPassphrase
 
-	l.conf = confWatcher.Get()
-	l.vegaPaths = vegaPaths
+	n.conf = confWatcher.Get()
+	n.vegaPaths = vegaPaths
 
-	tmCfg := l.conf.Blockchain.Tendermint
+	tmCfg := n.conf.Blockchain.Tendermint
 	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
 		return errors.New("you can't specify both abci-record and abci-replay flags")
 	}
 
 	stages := []func([]string) error{
-		l.persistentPre,
-		l.preRun,
-		l.runNode,
-		l.postRun,
-		l.persistentPost,
+		// n.persistentPre,
+		n.setupCommon,
+		n.startBlockchainConnections,
+		n.loadNodeWallets,
+		n.startServices,
+		n.runNode,
+		n.postRun,
+		n.persistentPost,
 	}
 	for _, fn := range stages {
 		if err := fn(args); err != nil {

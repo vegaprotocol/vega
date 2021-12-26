@@ -20,8 +20,9 @@ func New(
 	ethClient AllEthereumClient,
 	netp *netparams.Store,
 	evtFwd EvtForwarder,
+	isValidator bool,
 ) (*Accounting, *StakeVerifier) {
-	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt)
+	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt, isValidator)
 	ethCfns := NewEthereumConfirmations(ethClient, nil)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
 	sakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)

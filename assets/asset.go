@@ -17,6 +17,9 @@ type isAsset interface {
 	// Validate this is used to validate that the asset
 	// exist on the target chain
 	Validate() error
+	// Validate this is used to validate that the asset
+	// exist on the target chain
+	SetValidNonValidator()
 	String() string
 }
 
