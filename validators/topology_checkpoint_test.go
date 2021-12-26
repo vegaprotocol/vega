@@ -32,8 +32,10 @@ func addNodes(top *testTop, number int) {
 }
 
 func TestTopologyCheckpoint(t *testing.T) {
-	t.Run("test checkpoint success", testTopologyCheckpointSuccess)
-	t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
+	for i := 0; i < 100; i++ {
+		t.Run("test checkpoint success", testTopologyCheckpointSuccess)
+		t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
+	}
 }
 
 func testTopologyCheckpointSuccess(t *testing.T) {

@@ -122,8 +122,22 @@ func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
 	defer t.mu.RUnlock()
 
 	pkrs := make([]*PendingKeyRotation, 0, len(t.pendingPubKeyRotations)*2)
-	for blockHeight, rotations := range t.pendingPubKeyRotations {
-		for nodeID, r := range rotations {
+
+	blockHeights := make([]uint64, 0, len(t.pendingPubKeyRotations))
+	for blockHeight := range t.pendingPubKeyRotations {
+		blockHeights = append(blockHeights, blockHeight)
+	}
+	sort.Slice(blockHeights, func(i, j int) bool { return blockHeights[i] < blockHeights[j] })
+
+	for _, blockHeight := range blockHeights {
+		rotations := t.pendingPubKeyRotations[blockHeight]
+		nodeIDs := make([]string, 0, len(rotations))
+		for nodeID := range rotations {
+			nodeIDs = append(nodeIDs, nodeID)
+		}
+		sort.Strings(nodeIDs)
+		for _, nodeID := range nodeIDs {
+			r := rotations[nodeID]
 			pkrs = append(pkrs, &PendingKeyRotation{
 				BlockHeight: blockHeight,
 				NodeID:      nodeID,
