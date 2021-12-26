@@ -350,12 +350,13 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.limits = limits.New(l.Log, l.conf.Limits, l.broker)
 	l.timeService.NotifyOnTick(l.limits.OnTick)
 	l.topology = validators.NewTopology(l.Log, l.conf.Validators, l.nodeWallets.Vega, l.broker)
+	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.witness = validators.NewWitness(l.Log, l.conf.Validators, l.topology, commander, l.timeService)
 	l.netParams = netparams.New(l.Log, l.conf.NetworkParameters, l.broker)
 	l.timeService.NotifyOnTick(l.netParams.OnChainTimeUpdate)
 
 	l.stakingAccounts, l.stakeVerifier = staking.New(
-		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams,
+		l.Log, l.conf.Staking, l.broker, l.timeService, l.witness, l.ethClient, l.netParams, l.evtfwd,
 	)
 	l.epochService = epochtime.NewService(l.Log, l.conf.Epoch, l.timeService, l.broker)
 
@@ -408,7 +409,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 
 	l.notary = notary.NewWithSnapshot(l.Log, l.conf.Notary, l.topology, l.broker, commander, l.timeService)
-	l.evtfwd = evtforward.New(l.Log, l.conf.EvtForward, commander, l.timeService, l.topology)
 	l.banking = banking.New(l.Log, l.conf.Banking, l.collateral, l.witness, l.timeService, l.assets, l.notary, l.broker, l.topology)
 	l.spam = spam.New(l.Log, l.conf.Spam, l.epochService, l.stakingAccounts)
 	l.snapshot, err = snapshot.New(l.ctx, l.vegaPaths, l.conf.Snapshot, l.Log, l.timeService)

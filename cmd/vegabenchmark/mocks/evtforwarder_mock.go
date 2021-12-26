@@ -46,3 +46,15 @@ func (mr *MockEvtForwarderMockRecorder) Ack(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Ack", reflect.TypeOf((*MockEvtForwarder)(nil).Ack), arg0)
 }
+
+// ForwardFromSelf mocks base method
+func (m *MockEvtForwarder) ForwardFromSelf(arg0 *v1.ChainEvent) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ForwardFromSelf", arg0)
+}
+
+// ForwardFromSelf indicates an expected call of ForwardFromSelf
+func (mr *MockEvtForwarderMockRecorder) ForwardFromSelf(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardFromSelf", reflect.TypeOf((*MockEvtForwarder)(nil).ForwardFromSelf), arg0)
+}

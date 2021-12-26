@@ -7,6 +7,7 @@ import (
 	"time"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
+	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/events"
 	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
@@ -29,6 +30,12 @@ type EthereumClientCaller interface {
 
 var ErrNoBalanceForParty = errors.New("no balance for party")
 
+// EvtForwarder forwarder information to the tendermint chain to be agreed on by validators
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/staking EvtForwader
+type EvtForwarder interface {
+	ForwardFromSelf(evt *commandspb.ChainEvent)
+}
+
 type Accounting struct {
 	log              *logging.Logger
 	ethClient        EthereumClientCaller
@@ -42,6 +49,11 @@ type Accounting struct {
 
 	// snapshot bits
 	accState accountingSnapshotState
+
+	// these two are used in order to propagate
+	// the staking asset total supply at genesis.
+	evtFwd  EvtForwarder
+	witness Witness
 }
 
 func NewAccounting(
@@ -49,6 +61,8 @@ func NewAccounting(
 	cfg Config,
 	broker Broker,
 	ethClient EthereumClientCaller,
+	evtForward EvtForwarder,
+	witness Witness,
 ) *Accounting {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -61,6 +75,8 @@ func NewAccounting(
 		accounts:                map[string]*StakingAccount{},
 		stakingAssetTotalSupply: num.Zero(),
 		accState:                accountingSnapshotState{changed: true},
+		evtFwd:                  evtForward,
+		witness:                 witness,
 	}
 }
 
@@ -126,42 +142,73 @@ func (a *Accounting) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{
 	return nil
 }
 
+func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.StakeTotalSupply) error {
+	return nil
+}
+
 func (a *Accounting) updateStakingAssetTotalSupply() error {
+	address, err := a.getStakingBridgeAddress()
+	if err != nil {
+		return nil
+	}
+
+	totalSupply, err := a.getStakeAssetTotalSupply(address)
+	if err != nil {
+		return err
+	}
+
+	// send the event to be forwarded
+	a.evtFwd.ForwardFromSelf(&commandspb.ChainEvent{
+		Event: &commandspb.ChainEvent_StakingEvent{
+			StakingEvent: &vgproto.StakingEvent{
+				Action: &vgproto.StakingEvent_TotalSupply{
+					TotalSupply: &vgproto.StakeTotalSupply{
+						TokenAddress: address.Hex(),
+						TotalSupply:  totalSupply.String(),
+					},
+				},
+			},
+		},
+	})
+
+	return nil
+}
+
+func (a *Accounting) getStakingBridgeAddress() (ethcmn.Address, error) {
 	if len(a.ethCfg.StakingBridgeAddresses) <= 0 {
 		a.log.Error("no staking bridge address setup",
 			logging.String("eth-cfg", a.ethCfg.String()),
 		)
-		return nil
+		return ethcmn.Address{}, errors.New("not staking bridge address setup")
 	}
+	return ethcmn.HexToAddress(a.ethCfg.StakingBridgeAddresses[0]), nil
+}
 
-	addr := ethcmn.HexToAddress(a.ethCfg.StakingBridgeAddresses[0])
-
-	sc, err := NewStakingCaller(addr, a.ethClient)
+func (a *Accounting) getStakeAssetTotalSupply(address ethcmn.Address) (*num.Uint, error) {
+	sc, err := NewStakingCaller(address, a.ethClient)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	st, err := sc.StakingToken(&bind.CallOpts{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tc, err := erc20.NewErc20Caller(st, a.ethClient)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ts, err := tc.TotalSupply(&bind.CallOpts{})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	totalSupply, overflowed := num.UintFromBig(ts)
 	if overflowed {
-		return fmt.Errorf("failed to convert big.Int to num.Uint: %s", ts.String())
+		return nil, fmt.Errorf("failed to convert big.Int to num.Uint: %s", ts.String())
 	}
-
-	a.stakingAssetTotalSupply = totalSupply
 
 	symbol, _ := tc.Symbol(&bind.CallOpts{})
 	decimals, _ := tc.Decimals(&bind.CallOpts{})
@@ -172,7 +219,7 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 		logging.String("total-supply", ts.String()),
 	)
 
-	return nil
+	return totalSupply, nil
 }
 
 func (a *Accounting) GetAvailableBalance(party string) (*num.Uint, error) {
@@ -205,7 +252,10 @@ func (a *Accounting) GetAvailableBalanceInRange(
 }
 
 func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
-	return a.stakingAssetTotalSupply.Clone()
+	if a.stakingAssetTotalSupply != nil {
+		return a.stakingAssetTotalSupply.Clone()
+	}
+	return nil
 }
 
 func (a *Accounting) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {
