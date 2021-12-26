@@ -29,6 +29,26 @@ const (
 	StakeLinkingStatusRejected                       = eventspb.StakeLinking_STATUS_REJECTED
 )
 
+type StakeTotalSupply struct {
+	TokenAddress string
+	TotalSupply  *num.Uint
+}
+
+func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, error) {
+	totalSupply := num.Zero()
+	if len(s.TotalSupply) > 0 {
+		var overflowed bool
+		totalSupply, overflowed = num.UintFromString(s.TotalSupply, 10)
+		if overflowed {
+			return nil, errors.New("invalid amount (not a base 10 uint)")
+		}
+	}
+	return &StakeTotalSupply{
+		TokenAddress: s.TokenAddress,
+		TotalSupply:  totalSupply,
+	}, nil
+}
+
 type StakeLinking struct {
 	ID          string
 	Type        StakeLinkingType
