@@ -45,14 +45,15 @@ func getAccountingTest(t *testing.T) *accountingTest {
 	})
 
 	return &accountingTest{
-		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker, nil, evtfwd, witness, tt),
-		log:        log,
-		ctrl:       ctrl,
-		broker:     broker,
-		evtfwd:     evtfwd,
-		witness:    witness,
-		tt:         tt,
-		onTick:     onTick,
+		Accounting: staking.NewAccounting(
+			log, staking.NewDefaultConfig(), broker, nil, evtfwd, witness, tt, true),
+		log:     log,
+		ctrl:    ctrl,
+		broker:  broker,
+		evtfwd:  evtfwd,
+		witness: witness,
+		tt:      tt,
+		onTick:  onTick,
 	}
 }
 

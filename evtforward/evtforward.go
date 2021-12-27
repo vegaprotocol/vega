@@ -227,7 +227,7 @@ func (e *EvtForwarder) ForwardFromSelf(evt *commandspb.ChainEvent) {
 
 	key, err := e.getEvtKey(evt)
 	if err != nil {
-		// no way this error would be badly formatted
+		// no way this event would be badly formatted
 		// it is sent by the node, a badly formatted event
 		// would mean a code bug
 		e.log.Panic("invalid event to be forwarded",
