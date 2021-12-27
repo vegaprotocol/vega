@@ -16,6 +16,7 @@
 - [4516](https://github.com/vegaprotocol/vega/pull/4516) - Add a command to cleanup all vega node state
 - [4531](https://github.com/vegaprotocol/vega/pull/4531) - Remove Float from network parameters, use `num.Decimal` instead
 - [4537](https://github.com/vegaprotocol/vega/pull/4537) - Send staking asset total supply through consensus
+- [4540](https://github.com/vegaprotocol/vega/pull/4540) - Require Go minimum version 1.17
 
 
 ### 🐛 Fixes
