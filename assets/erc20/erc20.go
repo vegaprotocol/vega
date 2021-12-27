@@ -90,9 +90,9 @@ func (e *ERC20) IsValid() bool {
 	return e.ok
 }
 
-// SetValidNonValidator this method is here temporarly
+// SetValidNonValidator this method is here temporarsy
 // to avoid requiring ethclient for the non-validators
-// will be removed once the eth client can be removed from this type
+// will be removed once the eth client can be removed from this type.
 func (e *ERC20) SetValidNonValidator() {
 	e.ok = true
 }

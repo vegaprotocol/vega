@@ -110,7 +110,7 @@ func NodeModeFromString(s string) (NodeMode, error) {
 	case NodeModeFull:
 		return NodeModeFull, nil
 	default:
-		return NodeModeUnsupported, fmt.Errorf("%s is not a valid node mode, expected [validator, full]", string(s))
+		return NodeModeUnsupported, fmt.Errorf("%s is not a valid node mode, expected [validator, full]", s)
 	}
 }
 

@@ -68,7 +68,6 @@ func (n *NodeCommand) loadNodeWallets(_ []string) (err error) {
 	}
 
 	return n.nodeWallets.Verify()
-
 }
 
 func (n *NodeCommand) startBlockchainConnections(_ []string) error {

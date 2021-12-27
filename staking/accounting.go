@@ -180,6 +180,7 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 	}
 
 	expectedSupply := evt.TotalSupply.Clone()
+
 	a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
 		sts: evt,
 		check: func() error {
@@ -225,7 +226,7 @@ func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {
 
 func (a *Accounting) updateStakingAssetTotalSupply() error {
 	if !a.isValidator {
-		a.stakingAssetTotalSupply, _ = num.UintFromString("64999723000000000000000000", 10)
+		// nothing to do here if we are not a validator
 		return nil
 	}
 	address, err := a.getStakingBridgeAddress()

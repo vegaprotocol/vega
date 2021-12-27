@@ -1,11 +1,15 @@
 package node
 
 import (
+	"context"
+	"errors"
+
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/blockchain/nullchain"
+	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
@@ -36,6 +40,14 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
+	"github.com/prometheus/common/log"
+	"github.com/spf13/afero"
+	tmtypes "github.com/tendermint/tendermint/abci/types"
+)
+
+var (
+	ErrUnknownChainProvider    = errors.New("unknown chain provider")
+	ErrERC20AssetWithNullChain = errors.New("cannot use ERC20 asset with nullchain")
 )
 
 func (n *NodeCommand) startServices(_ []string) (err error) {
@@ -91,15 +103,16 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		n.topology = validators.NewTopology(n.Log, n.conf.Validators, n.nodeWallets.Vega, n.broker, n.conf.IsValidator())
 	} else {
 		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator())
-
 	}
 
 	n.witness = validators.NewWitness(n.Log, n.conf.Validators, n.topology, n.commander, n.timeService)
 	n.netParams = netparams.New(n.Log, n.conf.NetworkParameters, n.broker)
 	n.timeService.NotifyOnTick(n.netParams.OnChainTimeUpdate)
+	n.evtfwd = evtforward.New(
+		n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
 
 	n.stakingAccounts, n.stakeVerifier = staking.New(
-		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.conf.IsValidator(),
+		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.evtfwd, n.conf.IsValidator(),
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 
@@ -147,7 +160,6 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	n.notary = notary.NewWithSnapshot(
 		n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
-	n.evtfwd = evtforward.New(n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
 	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology)
 	n.spam = spam.New(n.Log, n.conf.Spam, n.epochService, n.stakingAccounts)
 	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService)
@@ -439,4 +451,51 @@ func (n *NodeCommand) setupConfigWatchers() {
 		func(cfg config.Config) { n.app.ReloadConf(cfg.Processor) },
 		func(cfg config.Config) { n.stats.ReloadConf(cfg.Stats) },
 	)
+}
+
+func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.Server, error) {
+	var abciApp tmtypes.Application
+	tmCfg := l.conf.Blockchain.Tendermint
+	if path := tmCfg.ABCIRecordDir; path != "" {
+		rec, err := recorder.NewRecord(path, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		abciApp = recorder.NewApp(app.Abci(), rec)
+	} else {
+		abciApp = app.Abci()
+	}
+
+	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
+	if err := srv.Start(); err != nil {
+		return nil, err
+	}
+
+	if path := tmCfg.ABCIReplayFile; path != "" {
+		rec, err := recorder.NewReplay(path, afero.NewOsFs())
+		if err != nil {
+			return nil, err
+		}
+
+		// closer
+		go func() {
+			<-ctx.Done()
+			rec.Stop()
+		}()
+
+		go func() {
+			if err := rec.Replay(abciApp); err != nil {
+				log.Fatalf("replay: %v", err)
+			}
+		}()
+	}
+
+	return srv, nil
 }
