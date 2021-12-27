@@ -156,60 +156,62 @@ func (n *NodeCommand) Run(
 }
 
 // runNode is the entry of node command.
-func (l *NodeCommand) runNode(args []string) error {
-	defer l.cancel()
+func (n *NodeCommand) runNode(args []string) error {
+	defer n.cancel()
 	defer func() {
-		if err := l.nodeWallets.Ethereum.Cleanup(); err != nil {
-			l.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
+		if n.conf.IsValidator() {
+			if err := n.nodeWallets.Ethereum.Cleanup(); err != nil {
+				n.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
+			}
 		}
 	}()
 
-	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
-	statusChecker.OnChainDisconnect(l.cancel)
+	statusChecker := monitoring.New(n.Log, n.conf.Monitoring, n.blockchainClient)
+	statusChecker.OnChainDisconnect(n.cancel)
 	statusChecker.OnChainVersionObtained(
-		func(v string) { l.stats.SetChainVersion(v) },
+		func(v string) { n.stats.SetChainVersion(v) },
 	)
 
 	grpcServer := api.NewGRPC(
-		l.Log,
-		l.conf.API,
-		l.stats,
-		l.blockchainClient,
-		l.evtfwd,
-		l.timeService,
-		l.eventService,
+		n.Log,
+		n.conf.API,
+		n.stats,
+		n.blockchainClient,
+		n.evtfwd,
+		n.timeService,
+		n.eventService,
 		statusChecker,
 	)
 
 	grpcServer.RegisterService(func(server *grpc.Server) {
-		svc := coreapi.NewService(l.ctx, l.Log, l.conf.CoreAPI, l.broker)
+		svc := coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.broker)
 		apipb.RegisterCoreStateServiceServer(server, svc)
 	})
 
 	// watch configs
-	l.confWatcher.OnConfigUpdate(
+	n.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
-	proxyServer := rest.NewProxyServer(l.Log, l.conf.API)
+	proxyServer := rest.NewProxyServer(n.Log, n.conf.API)
 
 	// start the grpc server
 	go grpcServer.Start()
 	go proxyServer.Start()
-	metrics.Start(l.conf.Metrics)
+	metrics.Start(n.conf.Metrics)
 
 	// some clients need to start after the rpc-server is up
-	err := l.blockchainClient.Start()
+	err := n.blockchainClient.Start()
 
 	if err == nil {
-		l.Log.Info("Vega startup complete")
-		waitSig(l.ctx, l.Log)
+		n.Log.Info("Vega startup complete")
+		waitSig(n.ctx, n.Log)
 	}
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	l.blockchainServer.Stop()
+	n.blockchainServer.Stop()
 	statusChecker.Stop()
 	proxyServer.Stop()
 
