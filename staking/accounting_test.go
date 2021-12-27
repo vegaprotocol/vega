@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/staking"
+	smocks "code.vegaprotocol.io/vega/staking/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -19,9 +20,14 @@ import (
 
 type accountingTest struct {
 	*staking.Accounting
-	log    *logging.Logger
-	ctrl   *gomock.Controller
-	broker *mocks.MockBrokerI
+	log     *logging.Logger
+	ctrl    *gomock.Controller
+	broker  *mocks.MockBrokerI
+	evtfwd  *smocks.MockEvtForwarder
+	witness *smocks.MockWitness
+	tt      *smocks.MockTimeTicker
+
+	onTick func(context.Context, time.Time)
 }
 
 func getAccountingTest(t *testing.T) *accountingTest {
@@ -29,12 +35,24 @@ func getAccountingTest(t *testing.T) *accountingTest {
 	log := logging.NewTestLogger()
 	ctrl := gomock.NewController(t)
 	broker := mocks.NewMockBrokerI(ctrl)
+	evtfwd := smocks.NewMockEvtForwarder(ctrl)
+	witness := smocks.NewMockWitness(ctrl)
+	tt := smocks.NewMockTimeTicker(ctrl)
+	var onTick func(context.Context, time.Time)
+
+	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
+		onTick = f
+	})
 
 	return &accountingTest{
-		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker, nil),
+		Accounting: staking.NewAccounting(log, staking.NewDefaultConfig(), broker, nil, evtfwd, witness, tt),
 		log:        log,
 		ctrl:       ctrl,
 		broker:     broker,
+		evtfwd:     evtfwd,
+		witness:    witness,
+		tt:         tt,
+		onTick:     onTick,
 	}
 }
 

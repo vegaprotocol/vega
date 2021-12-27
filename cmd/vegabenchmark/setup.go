@@ -174,7 +174,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	stakingAccounts, _ := staking.New(
-		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams,
+		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams, evtfwd,
 	)
 
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService, timeService)

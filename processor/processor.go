@@ -215,4 +215,5 @@ type StakeVerifier interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
 type StakingAccounts interface {
 	Hash() []byte
+	ProcessStakeTotalSupply(ctx context.Context, event *types.StakeTotalSupply) error
 }
