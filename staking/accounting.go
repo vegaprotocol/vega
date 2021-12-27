@@ -2,6 +2,7 @@ package staking
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -19,6 +20,12 @@ import (
 	ethcmn "github.com/ethereum/go-ethereum/common"
 )
 
+var (
+	ErrNoBalanceForParty                = errors.New("no balance for party")
+	ErrStakeTotalSupplyAlreadyProcessed = errors.New("stake total supply already processed")
+	ErrStakeTotalSupplyBeingProcessed   = errors.New("stake total supply being processed")
+)
+
 // Broker - the event bus.
 type Broker interface {
 	Send(events.Event)
@@ -28,10 +35,8 @@ type EthereumClientCaller interface {
 	bind.ContractCaller
 }
 
-var ErrNoBalanceForParty = errors.New("no balance for party")
-
 // EvtForwarder forwarder information to the tendermint chain to be agreed on by validators
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/staking EvtForwader
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/evt_forwarder_mock.go -package mocks code.vegaprotocol.io/vega/staking EvtForwarder
 type EvtForwarder interface {
 	ForwardFromSelf(evt *commandspb.ChainEvent)
 }
@@ -52,9 +57,21 @@ type Accounting struct {
 
 	// these two are used in order to propagate
 	// the staking asset total supply at genesis.
-	evtFwd  EvtForwarder
-	witness Witness
+	evtFwd                  EvtForwarder
+	witness                 Witness
+	pendingStakeTotalSupply *pendingStakeTotalSupply
+	currentTime             time.Time
 }
+
+type pendingStakeTotalSupply struct {
+	sts   *types.StakeTotalSupply
+	check func() error
+}
+
+func (p pendingStakeTotalSupply) GetID() string {
+	return hex.EncodeToString(vgcrypto.Hash([]byte(p.sts.String())))
+}
+func (p *pendingStakeTotalSupply) Check() error { return p.check() }
 
 func NewAccounting(
 	log *logging.Logger,
@@ -63,7 +80,11 @@ func NewAccounting(
 	ethClient EthereumClientCaller,
 	evtForward EvtForwarder,
 	witness Witness,
-) *Accounting {
+	tt TimeTicker,
+) (acc *Accounting) {
+	defer func() {
+		tt.NotifyOnTick(acc.onTick)
+	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -78,6 +99,10 @@ func NewAccounting(
 		evtFwd:                  evtForward,
 		witness:                 witness,
 	}
+}
+
+func (a *Accounting) onTick(_ context.Context, t time.Time) {
+	a.currentTime = t
 }
 
 func (a *Accounting) Hash() []byte {
@@ -143,12 +168,62 @@ func (a *Accounting) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{
 }
 
 func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.StakeTotalSupply) error {
-	return nil
+	if a.stakingAssetTotalSupply.NEQ(num.Zero()) {
+		return ErrStakeTotalSupplyAlreadyProcessed
+	}
+
+	if a.pendingStakeTotalSupply != nil {
+		return ErrStakeTotalSupplyBeingProcessed
+	}
+
+	expectedSupply := evt.TotalSupply.Clone()
+	a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
+		sts: evt,
+		check: func() error {
+			address, err := a.getStakingBridgeAddress()
+			if err != nil {
+				return err
+			}
+
+			totalSupply, err := a.getStakeAssetTotalSupply(address)
+			if err != nil {
+				return err
+			}
+
+			if totalSupply.NEQ(expectedSupply) {
+				return fmt.Errorf(
+					"invalid stake asset total supply, expected %s got %s",
+					expectedSupply.String(), totalSupply.String(),
+				)
+			}
+
+			return nil
+		},
+	}
+
+	a.log.Info("stake total supply event received, starting validation",
+		logging.String("event", evt.String()))
+
+	return a.witness.StartCheck(
+		a.pendingStakeTotalSupply,
+		a.onStakeTotalSupplyVerified,
+		a.currentTime.Add(timeTilCancel),
+	)
+}
+
+func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {
+	if ok {
+		a.stakingAssetTotalSupply = a.pendingStakeTotalSupply.sts.TotalSupply
+		a.log.Info("stake total supply finalized",
+			logging.BigUint("total-supply", a.stakingAssetTotalSupply))
+	}
+	a.pendingStakeTotalSupply = nil
 }
 
 func (a *Accounting) updateStakingAssetTotalSupply() error {
 	address, err := a.getStakingBridgeAddress()
 	if err != nil {
+		a.log.Error("could not get bridge address", logging.Error(err))
 		return nil
 	}
 
@@ -159,6 +234,7 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 
 	// send the event to be forwarded
 	a.evtFwd.ForwardFromSelf(&commandspb.ChainEvent{
+		TxId: "internal",
 		Event: &commandspb.ChainEvent_StakingEvent{
 			StakingEvent: &vgproto.StakingEvent{
 				Action: &vgproto.StakingEvent_TotalSupply{
@@ -252,10 +328,7 @@ func (a *Accounting) GetAvailableBalanceInRange(
 }
 
 func (a *Accounting) GetStakingAssetTotalSupply() *num.Uint {
-	if a.stakingAssetTotalSupply != nil {
-		return a.stakingAssetTotalSupply.Clone()
-	}
-	return nil
+	return a.stakingAssetTotalSupply.Clone()
 }
 
 func (a *Accounting) ValidatorKeyChanged(ctx context.Context, oldKey, newKey string) {

@@ -214,7 +214,7 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 }
 
 // ForwardFromSelf will forward event seen by the node itself, not from
-// an external service like the eef for example
+// an external service like the eef for example.
 func (e *EvtForwarder) ForwardFromSelf(evt *commandspb.ChainEvent) {
 	if e.log.GetLevel() <= logging.DebugLevel {
 		e.log.Debug("new event received to be forwarded",

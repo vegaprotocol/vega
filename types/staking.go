@@ -34,6 +34,17 @@ type StakeTotalSupply struct {
 	TotalSupply  *num.Uint
 }
 
+func (s *StakeTotalSupply) IntoProto() *vgproto.StakeTotalSupply {
+	return &vgproto.StakeTotalSupply{
+		TokenAddress: s.TokenAddress,
+		TotalSupply:  s.TotalSupply.String(),
+	}
+}
+
+func (s *StakeTotalSupply) String() string {
+	return s.IntoProto().String()
+}
+
 func StakeTotalSupplyFromProto(s *vgproto.StakeTotalSupply) (*StakeTotalSupply, error) {
 	totalSupply := num.Zero()
 	if len(s.TotalSupply) > 0 {

@@ -21,7 +21,7 @@ func New(
 	netp *netparams.Store,
 	evtFwd EvtForwarder,
 ) (*Accounting, *StakeVerifier) {
-	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness)
+	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt)
 	ethCfns := NewEthereumConfirmations(ethClient, nil)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
 	sakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)

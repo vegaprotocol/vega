@@ -26,7 +26,10 @@ type stakeVerifierTest struct {
 	ocv     *mocks.MockEthOnChainVerifier
 	tt      *mocks.MockTimeTicker
 	witness *mocks.MockWitness
-	onTick  func(context.Context, time.Time)
+	evtfwd  *mocks.MockEvtForwarder
+
+	onTick           func(context.Context, time.Time)
+	onTickAccounting func(context.Context, time.Time)
 }
 
 func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
@@ -35,10 +38,16 @@ func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	broker := bmocks.NewMockBrokerI(ctrl)
 	log := logging.NewTestLogger()
 	cfg := staking.NewDefaultConfig()
-	accs := staking.NewAccounting(log, cfg, broker, nil)
 	ocv := mocks.NewMockEthOnChainVerifier(ctrl)
 	tt := mocks.NewMockTimeTicker(ctrl)
 	witness := mocks.NewMockWitness(ctrl)
+	evtfwd := mocks.NewMockEvtForwarder(ctrl)
+
+	var onTickAccounting func(context.Context, time.Time)
+	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
+		onTickAccounting = f
+	})
+	accs := staking.NewAccounting(log, cfg, broker, nil, evtfwd, witness, tt)
 
 	var onTick func(context.Context, time.Time)
 	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
@@ -46,14 +55,16 @@ func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	})
 
 	return &stakeVerifierTest{
-		StakeVerifier: staking.NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv),
-		ctrl:          ctrl,
-		broker:        broker,
-		accs:          accs,
-		ocv:           ocv,
-		tt:            tt,
-		witness:       witness,
-		onTick:        onTick,
+		StakeVerifier:    staking.NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv),
+		ctrl:             ctrl,
+		broker:           broker,
+		accs:             accs,
+		ocv:              ocv,
+		tt:               tt,
+		witness:          witness,
+		onTick:           onTick,
+		onTickAccounting: onTickAccounting,
+		evtfwd:           evtfwd,
 	}
 }
 
