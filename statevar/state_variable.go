@@ -115,7 +115,6 @@ func (sv *StateVariable) startBlock(ctx context.Context) {
 		}
 	}
 
-	// disable temporarily for testing
 	sv.broker.SendBatch(evts)
 	sv.pendingEvents = []pendingEvent{}
 }
