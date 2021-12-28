@@ -118,7 +118,6 @@ func (sv *StateVariable) startBlock(ctx context.Context) {
 	sv.lock.Unlock()
 
 	sv.broker.SendBatch(evts)
-
 }
 
 // calculation is required for the state variable for the given event id.
