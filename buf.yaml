@@ -1,0 +1,21 @@
+---
+version: v1beta1
+
+build:
+  roots:
+    - proto
+    - third_party/proto
+lint:
+  use:
+    - DEFAULT
+  except:
+    - PACKAGE_DIRECTORY_MATCH
+    - PACKAGE_VERSION_SUFFIX
+  ignore_only:
+    ENUM_VALUE_PREFIX:
+      - tm/replay.proto
+    ENUM_ZERO_VALUE_SUFFIX:
+      - tm/replay.proto
+breaking:
+  use:
+    - WIRE_JSON

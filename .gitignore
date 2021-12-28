@@ -1,0 +1,27 @@
+# Vega specific entries
+cmd/*/*-dbg
+cmd/vega/vega*
+cmd/vegabenchmark/vegabenchmark*
+cmd/examples/nullchain/nullchain*
+data/
+.DS_Store
+.envrc
+.idea/
+*.iws
+.mypy_cache
+proto/*-re
+.testCoverage.html
+.testCoverage.txt
+*.tmp
+tmp/
+*.log
+vendor/
+.vscode/**/*
+!.vscode/launch.json
+proto/**.orig
+*.pb.go-re
+gomock_reflect_*
+integration.test
+*.patch
+.metals
+
