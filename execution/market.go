@@ -405,6 +405,12 @@ func appendBytes(bz ...[]byte) []byte {
 	return out
 }
 
+// UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.
+// Never use this for anything functional.
+func (m *Market) UpdateRiskFactorsForTest() {
+	m.risk.CalculateRiskFactorsForTest()
+}
+
 func (m *Market) Hash() []byte {
 	mID := logging.String("market-id", m.GetID())
 	matchingHash := m.matching.Hash()

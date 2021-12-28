@@ -93,7 +93,7 @@ func NewEngine(
 		Config:             config,
 		marginCalculator:   marginCalculator,
 		scalingFactorsUint: sfUint,
-		factors:            model.CalculateRiskFactors(), // TODO use default
+		factors:            model.DefaultRiskFactors(),
 		model:              model,
 		waiting:            false,
 		ob:                 ob,
@@ -117,6 +117,12 @@ func (e *Engine) startCalcRiskFactorsCalcultion(eventID string, endOfCalcCallbac
 		e.log.Info("risk factors calculated", logging.String("event-id", eventID), logging.Decimal("short", rf.Short), logging.Decimal("long", rf.Long))
 		endOfCalcCallback.CalculationFinished(eventID, rf, nil)
 	}()
+}
+
+// CalculateRiskFactorsForTest is a hack for testing for setting directly the risk factors for a market
+func (e *Engine) CalculateRiskFactorsForTest() {
+	e.factors = e.model.CalculateRiskFactors()
+	e.factors.Market = e.mktID
 }
 
 // updateRiskFactor sets the risk factor value to that of the decimal consensus value.

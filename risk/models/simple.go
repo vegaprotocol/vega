@@ -64,7 +64,7 @@ func (f *Simple) GetProjectionHorizon() num.Decimal {
 
 func (f *Simple) DefaultRiskFactors() *types.RiskFactor {
 	return &types.RiskFactor{
-		Short: num.DecimalFromInt64(1),
-		Long:  num.DecimalFromInt64(1),
+		Long:  f.factorLong,
+		Short: f.factorShort,
 	}
 }

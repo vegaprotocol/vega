@@ -332,7 +332,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	model.EXPECT().CalculateRiskFactors().Return(r).Times(1)
+	model.EXPECT().DefaultRiskFactors().Return(r).Times(1)
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
@@ -410,7 +410,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	as := mocks.NewMockAuctionState(ctrl)
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
-	model.EXPECT().CalculateRiskFactors().Return(r).Times(1)
+	model.EXPECT().DefaultRiskFactors().Return(r).Times(1)
 
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	// instantiate the book then fill it with the orders
@@ -482,7 +482,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 	ob := mocks.NewMockOrderbook(ctrl)
 	broker := bmock.NewMockBroker(ctrl)
 	as := mocks.NewMockAuctionState(ctrl)
-	model.EXPECT().CalculateRiskFactors().Return(initialRisk).Times(1)
+	model.EXPECT().DefaultRiskFactors().Return(initialRisk).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())

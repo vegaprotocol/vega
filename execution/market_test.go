@@ -181,6 +181,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	require.NoError(tm.t, err)
 
 	tm.market = &marketW{mktEngine}
+	tm.market.UpdateRiskFactorsForTest()
 	tm.collateralEngine = collateralEngine
 	tm.asset = asset
 	tm.mas = mas
@@ -339,6 +340,7 @@ func getTestMarket2(
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas, statevar)
 	assert.NoError(t, err)
+	mktEngine.UpdateRiskFactorsForTest()
 
 	if startOpeningAuction {
 		d := time.Second
