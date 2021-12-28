@@ -40,7 +40,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/risk StateVarEngine
 type StateVarEngine interface {
-	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error, sync bool) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 }
 
@@ -104,7 +104,7 @@ func NewEngine(
 		asset:              asset,
 	}
 
-	stateVarEngine.AddStateVariable(asset, mktID, RiskFactorConverter{}, e.startCalcRiskFactorsCalcultion, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
+	stateVarEngine.AddStateVariable(asset, mktID, RiskFactorConverter{}, e.startCalcRiskFactorsCalcultion, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor, false)
 	// trigger the calculation of risk factors for the market
 	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	return e
@@ -112,11 +112,9 @@ func NewEngine(
 
 // startCalcRiskFactorsCalcultion kicks off the risk factors calculation, done asynchronously for illustration.
 func (e *Engine) startCalcRiskFactorsCalcultion(eventID string, endOfCalcCallback statevar.FinaliseCalculation) {
-	go func() {
-		rf := e.model.CalculateRiskFactors()
-		e.log.Info("risk factors calculated", logging.String("event-id", eventID), logging.Decimal("short", rf.Short), logging.Decimal("long", rf.Long))
-		endOfCalcCallback.CalculationFinished(eventID, rf, nil)
-	}()
+	rf := e.model.CalculateRiskFactors()
+	e.log.Info("risk factors calculated", logging.String("event-id", eventID), logging.Decimal("short", rf.Short), logging.Decimal("long", rf.Long))
+	endOfCalcCallback.CalculationFinished(eventID, rf, nil)
 }
 
 // CalculateRiskFactorsForTest is a hack for testing for setting directly the risk factors for a market.

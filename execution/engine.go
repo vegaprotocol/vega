@@ -58,7 +58,7 @@ type Collateral interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
 type StateVarEngine interface {
-	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error, sync bool) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }

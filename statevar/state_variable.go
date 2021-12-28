@@ -58,6 +58,7 @@ type StateVariable struct {
 	roundsSinceMeaningfulUpdate uint
 	pendingEvents               []pendingEvent
 	lock                        sync.Mutex
+	sync                        bool // should the calculation be called synchronously
 }
 
 func NewStateVar(
@@ -72,6 +73,7 @@ func NewStateVar(
 	startCalculation func(string, statevar.FinaliseCalculation),
 	trigger []statevar.StateVarEventType,
 	result func(context.Context, statevar.StateVariableResult) error,
+	sync bool,
 ) *StateVariable {
 	sv := &StateVariable{
 		log:                         log,
@@ -87,6 +89,7 @@ func NewStateVar(
 		state:                       StateVarConsensusStateUnspecified,
 		validatorResults:            map[string]*statevar.KeyValueBundle{},
 		roundsSinceMeaningfulUpdate: 0,
+		sync:                        sync,
 	}
 	return sv
 }
@@ -104,19 +107,18 @@ func (sv *StateVariable) GetMarket() string {
 // startBlock flushes the pending events.
 func (sv *StateVariable) startBlock(ctx context.Context) {
 	sv.lock.Lock()
-	defer sv.lock.Unlock()
 	evts := make([]events.Event, 0, len(sv.pendingEvents))
 	for _, pending := range sv.pendingEvents {
 		newEvt := events.NewStateVarEvent(context.Background(), sv.ID, pending.eventID, pending.state)
 		evts = append(evts, newEvt)
 		protoEvt := newEvt.Proto()
-		if sv.log.GetLevel() <= logging.DebugLevel {
-			sv.log.Debug("state-var event sent", logging.String("event", protoEvt.String()))
-		}
+		sv.log.Info("state-var event sent", logging.String("event", protoEvt.String()))
 	}
+	sv.pendingEvents = []pendingEvent{}
+	sv.lock.Unlock()
 
 	sv.broker.SendBatch(evts)
-	sv.pendingEvents = []pendingEvent{}
+
 }
 
 // calculation is required for the state variable for the given event id.
@@ -158,7 +160,11 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.lock.Unlock()
 
 	// kickoff calculation
-	sv.startCalculation(sv.eventID, sv)
+	if sv.sync {
+		sv.startCalculation(sv.eventID, sv)
+	} else {
+		go sv.startCalculation(sv.eventID, sv)
+	}
 
 	return nil
 }

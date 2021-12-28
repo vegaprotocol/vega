@@ -335,7 +335,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	model.EXPECT().DefaultRiskFactors().Return(r).Times(1)
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
 	testE := risk.NewEngine(log, conf.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar)
 	evt := testMargin{
@@ -436,7 +436,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	}
 
 	statevar := mocks.NewMockStateVarEngine(ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
 	testE := risk.NewEngine(log, conf.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar)
 	evt := testMargin{
@@ -484,7 +484,7 @@ func getTestEngine(t *testing.T, initialRisk *types.RiskFactor) *testEngine {
 	as := mocks.NewMockAuctionState(ctrl)
 	model.EXPECT().DefaultRiskFactors().Return(initialRisk).Times(1)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
 	engine := risk.NewEngine(
 		logging.NewTestLogger(),

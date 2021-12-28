@@ -36,17 +36,17 @@ func (m *MockStateVarEngine) EXPECT() *MockStateVarEngineMockRecorder {
 }
 
 // AddStateVariable mocks base method.
-func (m *MockStateVarEngine) AddStateVariable(arg0, arg1 string, arg2 statevar.Converter, arg3 func(string, statevar.FinaliseCalculation), arg4 []statevar.StateVarEventType, arg5 func(context.Context, statevar.StateVariableResult) error) error {
+func (m *MockStateVarEngine) AddStateVariable(arg0, arg1 string, arg2 statevar.Converter, arg3 func(string, statevar.FinaliseCalculation), arg4 []statevar.StateVarEventType, arg5 func(context.Context, statevar.StateVariableResult) error, arg6 bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddStateVariable", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "AddStateVariable", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddStateVariable indicates an expected call of AddStateVariable.
-func (mr *MockStateVarEngineMockRecorder) AddStateVariable(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *MockStateVarEngineMockRecorder) AddStateVariable(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddStateVariable", reflect.TypeOf((*MockStateVarEngine)(nil).AddStateVariable), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddStateVariable", reflect.TypeOf((*MockStateVarEngine)(nil).AddStateVariable), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
 }
 
 // NewEvent mocks base method.
