@@ -93,7 +93,7 @@ func NewEngine(
 		Config:             config,
 		marginCalculator:   marginCalculator,
 		scalingFactorsUint: sfUint,
-		factors:            model.CalculateRiskFactors(), //TODO use default
+		factors:            model.CalculateRiskFactors(), // TODO use default
 		model:              model,
 		waiting:            false,
 		ob:                 ob,
@@ -119,7 +119,7 @@ func (e *Engine) startCalcRiskFactorsCalcultion(eventID string, endOfCalcCallbac
 	}()
 }
 
-// updateRiskFactor sets the risk factor value to that of the decimal consensus value
+// updateRiskFactor sets the risk factor value to that of the decimal consensus value.
 func (e *Engine) updateRiskFactor(ctx context.Context, res statevar.StateVariableResult) error {
 	e.factors = res.(*types.RiskFactor)
 	e.factors.Market = e.mktID
