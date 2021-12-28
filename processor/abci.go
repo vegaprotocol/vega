@@ -1293,6 +1293,7 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 	proposal := &commandspb.StateVariableProposal{}
 	if err := tx.Unmarshal(proposal); err != nil {
+		app.log.Error("failed to unmarshal StateVariableProposal", logging.Error(err))
 		return err
 	}
 
@@ -1301,6 +1302,7 @@ func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 	eventID := proposal.Proposal.EventId
 	bundle, err := statevar.KeyValueBundleFromProto(proposal.Proposal.Kvb)
 	if err != nil {
+		app.log.Error("failed to propose value", logging.Error(err))
 		return err
 	}
 	return app.stateVar.ProposedValueReceived(ctx, stateVarID, node, eventID, bundle)

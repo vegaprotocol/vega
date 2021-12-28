@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/integration/helpers"
@@ -100,7 +101,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
-	execsetup.topology = stubs.NewTopologyStub()
+	execsetup.topology = stubs.NewTopologyStub("nodeID")
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
@@ -110,6 +111,10 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
+
+	commander := stubs.NewCommanderStub()
+	stateVarEngine := statevar.New(execsetup.log, statevar.NewDefaultConfig(), execsetup.broker, execsetup.topology, commander, execsetup.timeService)
+	stateVarEngine.OnTimeTick(context.Background(), execsetup.timeService.GetTimeNow())
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -118,6 +123,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.collateralEngine,
 			execsetup.oracleEngine,
 			execsetup.broker,
+			stateVarEngine,
 		),
 		execsetup.broker,
 	)

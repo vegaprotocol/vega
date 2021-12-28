@@ -158,16 +158,16 @@ const (
 	// sample events there may be many more.
 
 	StateVarEventTypeAuctionUnknown StateVarEventType = iota
-	StateVarEventTypeMarketEnacatment
+	StateVarEventTypeMarketEnactment
 	StateVarEventTypeOpeningAuctionFirstUncrossingPrice
-	StateVarEventTypeOpeningAuctionEnded
+	StateVarEventTypeAuctionEnded
 	StateVarEventTypeTimeTrigger
 )
 
 var StateVarEventTypeToName = map[StateVarEventType]string{
 	StateVarEventTypeAuctionUnknown:                     "unknown",
-	StateVarEventTypeMarketEnacatment:                   "market-enacted",
+	StateVarEventTypeMarketEnactment:                    "market-enacted",
 	StateVarEventTypeOpeningAuctionFirstUncrossingPrice: "opening-auction-first-uncrossing-price",
-	StateVarEventTypeOpeningAuctionEnded:                "auction-ended",
+	StateVarEventTypeAuctionEnded:                       "auction-ended",
 	StateVarEventTypeTimeTrigger:                        "time-trigger",
 }

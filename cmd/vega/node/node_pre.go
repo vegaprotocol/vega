@@ -364,7 +364,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	// instantiate the execution engine
 	l.executionEngine = execution.NewEngine(
-		l.Log, l.conf.Execution, l.timeService, l.collateral, l.oracle, l.broker,
+		l.Log, l.conf.Execution, l.timeService, l.collateral, l.oracle, l.broker, l.statevar,
 	)
 
 	if l.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {

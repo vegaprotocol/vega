@@ -127,9 +127,10 @@ func (e *Engine) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, d nu
 
 // NewEvent triggers calculation of state variables that depend on the event type.
 func (e *Engine) NewEvent(asset, market string, eventType statevar.StateVarEventType) {
-	if _, ok := e.eventTypeToStateVar[eventType]; !ok {
-		e.log.Panic("Unexpected event received", logging.Int("event-type", int(eventType)), logging.String("asset", asset), logging.String("market", market))
-	}
+	// disabling for now until wiring all state variables
+	// if _, ok := e.eventTypeToStateVar[eventType]; !ok {
+	// 	e.log.Panic("Unexpected event received", logging.Int("event-type", int(eventType)), logging.String("asset", asset), logging.String("market", market))
+	// }
 	// generate a unique event id
 	eventID := e.generateEventID(asset, market)
 	if e.log.GetLevel() <= logging.DebugLevel {
@@ -137,6 +138,9 @@ func (e *Engine) NewEvent(asset, market string, eventType statevar.StateVarEvent
 	}
 
 	for _, sv := range e.eventTypeToStateVar[eventType] {
+		if sv.market != market || sv.asset != asset {
+			continue
+		}
 		sv.eventTriggered(eventID)
 		// if the sv is time triggered - reset the next run to be now + frequency
 		if _, ok := e.stateVarToNextCalc[sv.ID]; ok {
@@ -185,6 +189,7 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 // ReadyForTimeTrigger is called when the market is ready for time triggered event and sets the next time to run for all state variables of that market that are time triggered.
 // This is expected to be called at the end of the opening auction for the market.
 func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
+	e.log.Info("ReadyForTimeTrigger", logging.String("asset", asset), logging.String("market-id", mktID))
 	if _, ok := e.readyForTimeTrigger[asset+mktID]; !ok {
 		e.readyForTimeTrigger[mktID] = struct{}{}
 		for _, sv := range e.eventTypeToStateVar[statevar.StateVarEventTypeTimeTrigger] {
@@ -204,6 +209,8 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 func (e *Engine) AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error {
 	ID := e.generateID(asset, market)
 
+	e.log.Info("added state variable", logging.String("id", ID), logging.String("asset", asset), logging.String("market", market))
+
 	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, asset, market, converter, startCalculation, trigger, result)
 	e.stateVars[ID] = sv
 	for _, t := range trigger {
@@ -217,9 +224,12 @@ func (e *Engine) AddStateVariable(asset, market string, converter statevar.Conve
 
 // ProposedValueReceived is called when we receive a result from another node with a proposed result for the calculation triggered by an event.
 func (e *Engine) ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error {
+	e.log.Info("bundle received", logging.String("id", ID), logging.String("from-node", nodeID), logging.String("event-id", eventID))
+
 	if sv, ok := e.stateVars[ID]; ok {
 		sv.bundleReceived(ctx, e.currentTime, nodeID, eventID, bundle, e.rng, e.validatorVotesRequired)
 		return nil
 	}
+	e.log.Error("ProposedValueReceived called with unknown var", logging.String("id", ID), logging.String("from-node", nodeID))
 	return ErrUnknownStateVar
 }
