@@ -119,7 +119,7 @@ func (e *Engine) startCalcRiskFactorsCalcultion(eventID string, endOfCalcCallbac
 	}()
 }
 
-// CalculateRiskFactorsForTest is a hack for testing for setting directly the risk factors for a market
+// CalculateRiskFactorsForTest is a hack for testing for setting directly the risk factors for a market.
 func (e *Engine) CalculateRiskFactorsForTest() {
 	e.factors = e.model.CalculateRiskFactors()
 	e.factors.Market = e.mktID
