@@ -119,8 +119,12 @@ func VoteTxn(proposalID string, vote vega.Vote_Value) *walletpb.SubmitTransactio
 	}
 }
 
-func OrderTxn(marketId string, price, size uint64, side vega.Side,
-	orderT vega.Order_Type, expiresAt time.Time,
+func OrderTxn(
+	marketId string,
+	price, size uint64,
+	side vega.Side,
+	orderT vega.Order_Type,
+	expiresAt time.Time,
 ) *walletpb.SubmitTransactionRequest {
 	cmd := &walletpb.SubmitTransactionRequest_OrderSubmission{
 		OrderSubmission: &v1.OrderSubmission{

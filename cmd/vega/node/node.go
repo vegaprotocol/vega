@@ -137,7 +137,6 @@ func (n *NodeCommand) Run(
 	}
 
 	stages := []func([]string) error{
-		// n.persistentPre,
 		n.setupCommon,
 		n.startBlockchainConnections,
 		n.loadNodeWallets,

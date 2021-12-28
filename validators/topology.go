@@ -125,10 +125,7 @@ func (t *Topology) ReloadConf(cfg Config) {
 }
 
 func (t *Topology) IsValidator() bool {
-	if !t.isValidatorSetup {
-		return false
-	}
-	return t.isValidator
+	return t.isValidatorSetup && t.isValidator
 }
 
 func (t *Topology) Len() int {
@@ -304,13 +301,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		return err
 	}
 
-	var walletID string
-	// if we are a validator then we can look for our
-	// own key in the genesis state
-	if t.isValidatorSetup {
-		walletID = t.wallet.ID().Hex()
-	}
-
+	walletID := t.SelfNodeID()
 	// tm is base64 encoded, vega is hex
 	for tm, data := range state {
 		if !data.IsValid() {

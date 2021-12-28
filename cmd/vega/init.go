@@ -42,16 +42,20 @@ func (opts *InitCmd) Execute(args []string) error {
 		return err
 	}
 
-	pass, err := opts.Get("node wallet", true)
-	if err != nil {
-		return err
-	}
-
 	vegaPaths := paths.New(opts.VegaHome)
 
-	nwRegistry, err := nodewallets.NewRegistryLoader(vegaPaths, pass)
-	if err != nil {
-		return err
+	// a nodewallet will be required only for a validator node
+	var nwRegistry *nodewallets.RegistryLoader
+	if mode == encoding.NodeModeValidator {
+		pass, err := opts.Get("node wallet", true)
+		if err != nil {
+			return err
+		}
+
+		nwRegistry, err = nodewallets.NewRegistryLoader(vegaPaths, pass)
+		if err != nil {
+			return err
+		}
 	}
 
 	cfgLoader, err := config.InitialiseLoader(vegaPaths)
@@ -85,12 +89,19 @@ func (opts *InitCmd) Execute(args []string) error {
 	if output.IsHuman() {
 		logger.Info("configuration generated successfully", logging.String("path", cfgLoader.ConfigFilePath()))
 	} else if output.IsJSON() {
+		if mode == encoding.NodeModeValidator {
+			return vgjson.Print(struct {
+				ConfigFilePath           string `json:"configFilePath"`
+				NodeWalletConfigFilePath string `json:"nodeWalletConfigFilePath"`
+			}{
+				ConfigFilePath:           cfgLoader.ConfigFilePath(),
+				NodeWalletConfigFilePath: nwRegistry.RegistryFilePath(),
+			})
+		}
 		return vgjson.Print(struct {
-			ConfigFilePath           string `json:"configFilePath"`
-			NodeWalletConfigFilePath string `json:"nodeWalletConfigFilePath"`
+			ConfigFilePath string `json:"configFilePath"`
 		}{
-			ConfigFilePath:           cfgLoader.ConfigFilePath(),
-			NodeWalletConfigFilePath: nwRegistry.RegistryFilePath(),
+			ConfigFilePath: cfgLoader.ConfigFilePath(),
 		})
 	}
 
