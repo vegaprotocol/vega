@@ -101,7 +101,7 @@ func (f *LogNormal) GetProjectionHorizon() num.Decimal {
 
 func (f *LogNormal) DefaultRiskFactors() *types.RiskFactor {
 	return &types.RiskFactor{
-		Short: num.DecimalFromInt64(1),
-		Long:  num.DecimalFromInt64(1),
+		Short: num.DecimalFromFloat(1),
+		Long:  num.DecimalFromFloat(1),
 	}
 }

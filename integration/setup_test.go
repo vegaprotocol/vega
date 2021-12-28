@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/rewards"
-	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/integration/helpers"
@@ -112,9 +111,9 @@ func newExecutionTestSetup() *executionTestSetup {
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
 
-	commander := stubs.NewCommanderStub()
-	stateVarEngine := statevar.New(execsetup.log, statevar.NewDefaultConfig(), execsetup.broker, execsetup.topology, commander, execsetup.timeService)
-	stateVarEngine.OnTimeTick(context.Background(), execsetup.timeService.GetTimeNow())
+	stateVarEngine := stubs.NewStateVar()
+	execsetup.timeService.NotifyOnTick(stateVarEngine.OnTimeTick)
+
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -137,6 +136,13 @@ func newExecutionTestSetup() *executionTestSetup {
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
 		panic(err)
 	}
+
+	execsetup.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.FloatingPointUpdatesDuration,
+			Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+		},
+	)
 
 	execsetup.netDeposits = num.Zero()
 
