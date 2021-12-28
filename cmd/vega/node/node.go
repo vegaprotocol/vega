@@ -205,7 +205,8 @@ func (n *NodeCommand) runNode(args []string) error {
 	err := n.blockchainClient.Start()
 
 	if err == nil {
-		n.Log.Info("Vega startup complete")
+		n.Log.Info("Vega startup complete",
+			logging.String("node-mode", string(n.conf.NodeMode)))
 		waitSig(n.ctx, n.Log)
 	}
 

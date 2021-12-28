@@ -321,7 +321,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		e.log.Info("Rewards: total pending reward payouts", logging.Uint64("epoch", epoch.Seq), logging.String("totalPendingPayouts", totalPendingPayouts.String()))
 
 		rewardAccountBalance = num.Zero().Sub(rewardAccountBalance, totalPendingPayouts)
-		e.log.Info("Rewards: effective reward account balance for for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("effectiveRewardBalance", rewardAccountBalance.String()))
+		e.log.Info("Rewards: effective reward account balance for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("effectiveRewardBalance", rewardAccountBalance.String()))
 
 		// get how much reward needs to be distributed based on the current balance and the reward scheme
 		rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
@@ -329,7 +329,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			e.log.Panic("reward scheme misconfiguration", logging.Error(err))
 		}
 
-		e.log.Info("Rewards: reward account pot for for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardAmt", rewardAmt.String()))
+		e.log.Info("Rewards: reward account pot for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardAmt", rewardAmt.String()))
 
 		maxPayoutPerParticipant := num.Zero()
 		if onChainTreasury {
@@ -337,7 +337,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			maxPayoutPerParticipant = e.global.maxPayoutPerParticipant
 		}
 
-		e.log.Info("Rewards: reward pot for for epoch with max payout per epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardBalance", rewardAmt.String()))
+		e.log.Info("Rewards: reward pot for epoch with max payout per epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardBalance", rewardAmt.String()))
 
 		// no point in doing anything after this point if the reward balance is 0
 		if rewardAmt.IsZero() {
