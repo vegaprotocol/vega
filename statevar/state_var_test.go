@@ -130,14 +130,17 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 }
 
 func TestStateVar(t *testing.T) {
-	t.Run("test converters from/to native data type/key value bundle", testConverters)
-	t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
-	t.Run("new event comes in aborting an existing event", testEventTriggeredWithPreviousEvent)
-	t.Run("new event comes in and triggers a calculation that resulst in an error", testEventTriggeredCalculationError)
-	t.Run("perfect match through quorum", testBundleReceivedPerfectMatchOfQuorum)
-	t.Run("reach consensus through random selection of one that is within reach of 2/3+1 of the others", testBundleReceivedReachingConsensusSuccessfuly)
-	t.Run("no consensus can be reached", testBundleReceivedReachingConsensusNotSuccessful)
-	t.Run("time based trigger", testTimeBasedEvent)
+	for i := 1; i < 100; i++ {
+		now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+		t.Run("test converters from/to native data type/key value bundle", testConverters)
+		t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
+		t.Run("new event comes in aborting an existing event", testEventTriggeredWithPreviousEvent)
+		t.Run("new event comes in and triggers a calculation that result in an error", testEventTriggeredCalculationError)
+		t.Run("perfect match through quorum", testBundleReceivedPerfectMatchOfQuorum)
+		t.Run("reach consensus through random selection of one that is within reach of 2/3+1 of the others", testBundleReceivedReachingConsensusSuccessfuly)
+		t.Run("no consensus can be reached", testBundleReceivedReachingConsensusNotSuccessful)
+		t.Run("time based trigger", testTimeBasedEvent)
+	}
 }
 
 func testConverters(t *testing.T) {
@@ -178,6 +181,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -204,6 +208,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -219,6 +224,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(100 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(2*time.Second))
 	}
@@ -253,6 +259,7 @@ func testEventTriggeredCalculationError(t *testing.T) {
 		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -332,6 +339,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 5, counter)
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -403,6 +411,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 5, counter)
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -470,6 +479,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 		}
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -484,6 +494,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 }
 
 func testTimeBasedEvent(t *testing.T) {
+	now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
 	// 4 of the results are within the acceptable tolerance, the other two are far off and are received first, so will require all 5 results to be received to reach consensus
 	// therefore consensus is possible
 	validatorResults := []*sampleParams{
@@ -529,6 +540,7 @@ func testTimeBasedEvent(t *testing.T) {
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now)
 	}
+	time.Sleep(10 * time.Millisecond)
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
 	c := converter{}
@@ -542,9 +554,12 @@ func testTimeBasedEvent(t *testing.T) {
 	}
 
 	now = now.Add(time.Second * 1)
+
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now)
 	}
+
+	time.Sleep(10 * time.Millisecond)
 
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 5, counter)
@@ -573,6 +588,7 @@ func testTimeBasedEvent(t *testing.T) {
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now)
 	}
+	time.Sleep(10 * time.Millisecond)
 
 	require.Equal(t, 5, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
