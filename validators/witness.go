@@ -254,8 +254,7 @@ func (w *Witness) StartCheck(
 }
 
 func (w *Witness) validateCheckUntil(checkUntil time.Time) error {
-	minValid, maxValid :=
-		w.now.Add(minValidationPeriod),
+	minValid, maxValid := w.now.Add(minValidationPeriod),
 		w.now.Add(maxValidationPeriod)
 	if checkUntil.Unix() < minValid.Unix() || checkUntil.Unix() > maxValid.Unix() {
 		if w.log.GetLevel() <= logging.DebugLevel {

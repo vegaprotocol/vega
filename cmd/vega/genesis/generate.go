@@ -31,7 +31,7 @@ type generateCmd struct {
 
 	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
 	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
-	TmRoot  string `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	TmHome  string `short:"t" long:"tm-home" description:"The home path of tendermint"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
@@ -58,7 +58,7 @@ func (opts *generateCmd) Execute(_ []string) error {
 
 	// genesis file
 	tmConfig := tmconfig.DefaultConfig()
-	tmConfig.SetRoot(os.ExpandEnv(opts.TmRoot))
+	tmConfig.SetRoot(os.ExpandEnv(opts.TmHome))
 
 	pubKey, err := loadTendermintPrivateValidatorKey(tmConfig)
 	if err != nil {

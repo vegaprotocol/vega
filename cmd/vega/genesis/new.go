@@ -13,7 +13,7 @@ type newCmd struct {
 func initNewCmd(ctx context.Context, parentCmd *flags.Command) error {
 	cmd := newCmd{
 		Validator: newValidatorCmd{
-			TmRoot: "$HOME/.tendermint",
+			TmHome: "$HOME/.tendermint",
 		},
 	}
 

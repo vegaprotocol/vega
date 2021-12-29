@@ -14,7 +14,7 @@ func (suite *CommandSuite) TestFaucet(t *testing.T) {
 	// defer closer()
 	ctx, cancel := context.WithCancel(context.Background())
 
-	_, err = suite.RunMain(ctx, "init --output json --home %s --nodewallet-passphrase-file %s", path, pass)
+	_, err = suite.RunMain(ctx, "init --output json --home %s --nodewallet-passphrase-file %s validator", path, pass)
 	require.NoError(t, err)
 
 	_, err = suite.RunMain(ctx, "faucet init --output json --home %s -p %s", path, pass)

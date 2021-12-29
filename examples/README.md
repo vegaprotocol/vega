@@ -45,7 +45,7 @@ vega faucet init -f --home=/vegahome --update-in-place
 # initialise TM just so we can auto-generate a genesis file to fill in
 vega tm init --home=vegahome
 vega genesis generate --home=vegahome
-vega genesis update --tm-root=/vegahome --home=/vegahome
+vega genesis update --tm-home=/tenderminthome --home=/vegahome
 
 # initialise the data-node
 data-node init -f --home=vegahome

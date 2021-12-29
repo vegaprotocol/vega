@@ -3,10 +3,13 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4390](https://github.com/vegaprotocol/vega/pull/4390) - Introduce node mode, `vega init` now require a mode: full or validator
+- [4383](https://github.com/vegaprotocol/vega/pull/4383) - Rename flag `--tm-root` to `--tm-home`
+
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/pull/) -
+
 
 ### 🛠 Improvements
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
@@ -17,6 +20,7 @@
 - [4531](https://github.com/vegaprotocol/vega/pull/4531) - Remove Float from network parameters, use `num.Decimal` instead
 - [4537](https://github.com/vegaprotocol/vega/pull/4537) - Send staking asset total supply through consensus
 - [4530](https://github.com/vegaprotocol/vega/pull/4530) - Integrate risk factors with floating point consensus engine
+- [4485](https://github.com/vegaprotocol/vega/pull/4485) - Change snapshot interval default to 1000 blocks
 
 ### 🐛 Fixes
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
@@ -29,6 +33,7 @@
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
 - [4529](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
+
 
 ## 0.47.0
 *2021-11-24*

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
+	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/coreapi"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
@@ -86,14 +87,16 @@ type Config struct {
 	Snapshot          snapshot.Config    `group:"Snapshot" namespace:"snapshot"`
 	StateVar          statevar.Config    `group:"StateVar" namespace:"statevar"`
 
-	Pprof        pprof.Config `group:"Pprof" namespace:"pprof"`
-	UlimitNOFile uint64       `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
+	Pprof        pprof.Config         `group:"Pprof" namespace:"pprof"`
+	NodeMode     cfgencoding.NodeMode `long:"mode" description:"The mode of the vega node [validator, full]"`
+	UlimitNOFile uint64               `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig() Config {
 	return Config{
+		NodeMode:          cfgencoding.NodeModeValidator,
 		API:               api.NewDefaultConfig(),
 		CoreAPI:           coreapi.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),
@@ -130,6 +133,10 @@ func NewDefaultConfig() Config {
 		Snapshot:          snapshot.NewDefaultConfig(),
 		StateVar:          statevar.NewDefaultConfig(),
 	}
+}
+
+func (c Config) IsValidator() bool {
+	return c.NodeMode == cfgencoding.NodeModeValidator
 }
 
 type Loader struct {
