@@ -4,9 +4,12 @@
 
 ### 🚨 Breaking changes
 - [4390](https://github.com/vegaprotocol/vega/pull/4390) - Introduce node mode, `vega init` now require a mode: full or validator
+- [4383](https://github.com/vegaprotocol/vega/pull/4383) - Rename flag `--tm-root` to `--tm-home`
+
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/pull/) -
+
 
 ### 🛠 Improvements
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
@@ -30,6 +33,7 @@
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
 - [4529](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
+
 
 ## 0.47.0
 *2021-11-24*
