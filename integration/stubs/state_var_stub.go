@@ -50,7 +50,7 @@ func (e *StateVarStub) OnFloatingPointUpdatesDurationUpdate(ctx context.Context,
 	return nil
 }
 
-func (e *StateVarStub) AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error, sync bool) error {
+func (e *StateVarStub) AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error {
 	ID := asset + "_" + market + strconv.Itoa(e.seq)
 	e.seq++
 	e.svs[ID] = &sv{

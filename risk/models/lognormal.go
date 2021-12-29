@@ -3,7 +3,6 @@ package models
 import (
 	"errors"
 	"math"
-	"time"
 
 	"code.vegaprotocol.io/quant/interfaces"
 	pd "code.vegaprotocol.io/quant/pricedistribution"
@@ -45,12 +44,6 @@ func NewBuiltinFutures(pf *types.LogNormalRiskModel, asset string) (*LogNormal, 
 		},
 		asset: asset,
 	}, nil
-}
-
-// CalculationInterval return the calculation interval for
-// the Forward risk model.
-func (f *LogNormal) CalculationInterval() time.Duration {
-	return time.Duration(0)
 }
 
 // CalculateRiskFactors calls the risk model in order to get

@@ -58,7 +58,6 @@ type StateVariable struct {
 	roundsSinceMeaningfulUpdate uint
 	pendingEvents               []pendingEvent
 	lock                        sync.Mutex
-	sync                        bool // should the calculation be called synchronously
 }
 
 func NewStateVar(
@@ -73,7 +72,6 @@ func NewStateVar(
 	startCalculation func(string, statevar.FinaliseCalculation),
 	trigger []statevar.StateVarEventType,
 	result func(context.Context, statevar.StateVariableResult) error,
-	sync bool,
 ) *StateVariable {
 	sv := &StateVariable{
 		log:                         log,
@@ -89,7 +87,6 @@ func NewStateVar(
 		state:                       StateVarConsensusStateUnspecified,
 		validatorResults:            map[string]*statevar.KeyValueBundle{},
 		roundsSinceMeaningfulUpdate: 0,
-		sync:                        sync,
 	}
 	return sv
 }
@@ -159,11 +156,7 @@ func (sv *StateVariable) eventTriggered(eventID string) error {
 	sv.lock.Unlock()
 
 	// kickoff calculation
-	if sv.sync {
-		sv.startCalculation(sv.eventID, sv)
-	} else {
-		go sv.startCalculation(sv.eventID, sv)
-	}
+	go sv.startCalculation(sv.eventID, sv)
 
 	return nil
 }

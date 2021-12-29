@@ -164,7 +164,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
 	statevar := mocks.NewMockStateVarEngine(tm.ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
 
@@ -333,7 +333,7 @@ func getTestMarket2(
 
 	mas := monitor.NewAuctionState(mktCfg, now)
 	statevar := mocks.NewMockStateVarEngine(tm.ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
 	mktEngine, err := execution.NewMarket(context.Background(),

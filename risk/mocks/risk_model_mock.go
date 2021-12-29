@@ -6,7 +6,6 @@ package mocks
 
 import (
 	reflect "reflect"
-	time "time"
 
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
@@ -49,20 +48,6 @@ func (m *MockModel) CalculateRiskFactors() *types.RiskFactor {
 func (mr *MockModelMockRecorder) CalculateRiskFactors() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateRiskFactors", reflect.TypeOf((*MockModel)(nil).CalculateRiskFactors))
-}
-
-// CalculationInterval mocks base method.
-func (m *MockModel) CalculationInterval() time.Duration {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CalculationInterval")
-	ret0, _ := ret[0].(time.Duration)
-	return ret0
-}
-
-// CalculationInterval indicates an expected call of CalculationInterval.
-func (mr *MockModelMockRecorder) CalculationInterval() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculationInterval", reflect.TypeOf((*MockModel)(nil).CalculationInterval))
 }
 
 // DefaultRiskFactors mocks base method.
