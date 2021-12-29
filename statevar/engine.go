@@ -206,12 +206,12 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 // trigger - a slice of events that should trigger the calculation of the state variable
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
 // result - a callback for returning the result converted to the native structure.
-func (e *Engine) AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error, sync bool) error {
+func (e *Engine) AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error {
 	ID := e.generateID(asset, market)
 
 	e.log.Info("added state variable", logging.String("id", ID), logging.String("asset", asset), logging.String("market", market))
 
-	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, asset, market, converter, startCalculation, trigger, result, sync)
+	sv := NewStateVar(e.log, e.broker, e.top, e.cmd, e.currentTime, ID, asset, market, converter, startCalculation, trigger, result)
 	e.stateVars[ID] = sv
 	for _, t := range trigger {
 		if _, ok := e.eventTypeToStateVar[t]; !ok {

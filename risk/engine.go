@@ -40,7 +40,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/risk StateVarEngine
 type StateVarEngine interface {
-	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error, sync bool) error
+	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 }
 
@@ -104,7 +104,7 @@ func NewEngine(
 		asset:              asset,
 	}
 
-	stateVarEngine.AddStateVariable(asset, mktID, RiskFactorConverter{}, e.startCalcRiskFactorsCalcultion, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor, false)
+	stateVarEngine.AddStateVariable(asset, mktID, RiskFactorConverter{}, e.startCalcRiskFactorsCalcultion, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
 	// trigger the calculation of risk factors for the market
 	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	return e
@@ -177,7 +177,6 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	low := []events.Margin{}
 	eventBatch := make([]events.Event, 0, len(evts))
 	// for now, we can assume a single asset for all events
-	asset := evts[0].Asset()
 	rFactors := *e.factors
 	for _, evt := range evts {
 		levels := e.calculateAuctionMargins(evt, price, rFactors)
@@ -186,7 +185,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		}
 
 		levels.Party = evt.Party()
-		levels.Asset = asset // This is assuming there's a single asset at play here
+		levels.Asset = e.asset // This is assuming there's a single asset at play here
 		levels.Timestamp = e.currTime
 		levels.MarketID = e.mktID
 
@@ -209,7 +208,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			Owner: evt.Party(),
 			Type:  types.TransferTypeMarginLow,
 			Amount: &types.FinancialAmount{
-				Asset:  asset,
+				Asset:  e.asset,
 				Amount: amt,
 			},
 			MinAmount: minAmount,

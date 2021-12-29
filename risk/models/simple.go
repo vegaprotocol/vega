@@ -1,8 +1,6 @@
 package models
 
 import (
-	"time"
-
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -25,11 +23,6 @@ func NewSimple(ps *types.SimpleRiskModel, asset string) (*Simple, error) {
 		asset:       asset,
 		prob:        ps.Params.ProbabilityOfTrading,
 	}, nil
-}
-
-// CalculationInterval return the calculation interval for the simple/dummy risk model.
-func (f *Simple) CalculationInterval() time.Duration {
-	return time.Duration(0)
 }
 
 // CalculateRiskFactors returns the fixed risk factors for the simple risk model.
