@@ -109,7 +109,7 @@ func (sv *StateVariable) startBlock(ctx context.Context) {
 	sv.lock.Lock()
 	evts := make([]events.Event, 0, len(sv.pendingEvents))
 	for _, pending := range sv.pendingEvents {
-		newEvt := events.NewStateVarEvent(context.Background(), sv.ID, pending.eventID, pending.state)
+		newEvt := events.NewStateVarEvent(ctx, sv.ID, pending.eventID, pending.state)
 		evts = append(evts, newEvt)
 		protoEvt := newEvt.Proto()
 		sv.log.Info("state-var event sent", logging.String("event", protoEvt.String()))
