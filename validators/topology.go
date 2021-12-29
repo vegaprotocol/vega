@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -301,14 +302,17 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		return err
 	}
 
-	walletID := t.SelfNodeID()
 	// tm is base64 encoded, vega is hex
 	for tm, data := range state {
 		if !data.IsValid() {
 			return fmt.Errorf("missing required field from validator data: %#v", data)
 		}
-		if walletID == data.ID {
-			t.isValidator = true
+
+		// this node is started and expect to be a validator
+		// but so far we haven't seen ourselve as validators for
+		// this network.
+		if t.isValidatorSetup && !t.isValidator {
+			t.checkValidatorDataWithSelfWallets(data)
 		}
 
 		nr := &commandspb.NodeRegistration{
@@ -328,4 +332,40 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 	}
 
 	return nil
+}
+
+// checkValidatorDataWithSelfWallets in the genesis file, validators data
+// are a mapping of a tendermint pubkey to validator info.
+// in here we are going to check if:
+// - the tm pubkey is the same as the one stored in the nodewallet
+//  - if no we return straight away and consider ourself as non validator
+//  - if yes then we do the following checks
+// - check that all pubkeys / addresses matches what's in the node wallet
+//  - if they all match, we are a validator!
+//  - if they don't, we panic, that's a missconfiguration from the checkValidatorDataWithSelfWallets, ever the genesis or the node is misconfigured
+func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
+	if data.TmPubKey != t.wallets.GetTendermintPubkey() {
+		return
+	}
+
+	// if any of these are wrong, the nodewallet didn't import
+	// the keys set in the genesis block
+	var hasError = t.wallets.GetVega().ID().Hex() != data.ID ||
+		t.wallets.GetVega().ID().Hex() != data.VegaPubKey ||
+		t.wallets.GetEthereumAddress() != strings.TrimLeft(data.EthereumAddress, "0x")
+
+	if hasError {
+		t.log.Panic("invalid node wallet configurations, the genesis validator mapping differ to the wallets imported by the nodewallet",
+			logging.String("genesis-tendermint-pubkey", data.TmPubKey),
+			logging.String("nodewallet-tendermint-pubkey", t.wallets.GetTendermintPubkey()),
+			logging.String("genesis-vega-pubkey", data.VegaPubKey),
+			logging.String("nodewallet-vega-pubkey", t.wallets.GetVega().PubKey().Hex()),
+			logging.String("genesis-vega-id", data.ID),
+			logging.String("nodewallet-vega-id", t.wallets.GetVega().ID().Hex()),
+			logging.String("genesis-ethereum-address", data.EthereumAddress),
+			logging.String("nodewallet-ethereum-address", t.wallets.GetEthereumAddress()),
+		)
+	}
+
+	t.isValidator = true
 }

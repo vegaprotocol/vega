@@ -25,7 +25,7 @@ type importCmd struct {
 	WalletPassphrase   config.Passphrase   `long:"wallet-passphrase-file"`
 	ClefAccountAddress config.PromptString `long:"clef-account-address" description:"The Ethereum account address to be imported by Vega from Clef. In hex."`
 
-	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum, tendermint)"`
+	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum" choice:"tendermint"`
 	WalletPath config.PromptString `long:"wallet-path" description:"The path to the wallet file to import"`
 	Force      bool                `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
 
