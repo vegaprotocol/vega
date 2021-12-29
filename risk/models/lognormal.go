@@ -55,26 +55,14 @@ func (f *LogNormal) CalculationInterval() time.Duration {
 
 // CalculateRiskFactors calls the risk model in order to get
 // the new risk models.
-func (f *LogNormal) CalculateRiskFactors(
-	current *types.RiskResult) (bool, *types.RiskResult) {
+func (f *LogNormal) CalculateRiskFactors() *types.RiskFactor {
 	rav, _ := f.riskAversionParameter.Float64()
 	tau, _ := f.tau.Float64()
 	rawrf := riskmodelbs.RiskFactorsForward(rav, tau, f.params)
-	rf := &types.RiskResult{
-		RiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  num.DecimalFromFloat(rawrf.Long),
-				Short: num.DecimalFromFloat(rawrf.Short),
-			},
-		},
-		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			f.asset: {
-				Long:  num.DecimalFromFloat(rawrf.Long),
-				Short: num.DecimalFromFloat(rawrf.Short),
-			},
-		},
+	return &types.RiskFactor{
+		Long:  num.DecimalFromFloat(rawrf.Long),
+		Short: num.DecimalFromFloat(rawrf.Short),
 	}
-	return true, rf
 }
 
 // PriceRange returns the minimum and maximum price as implied by the model's probability distribution with horizon given by yearFraction (e.g. 0.5 for half a year) and probability level (e.g. 0.95 for 95%).
@@ -109,4 +97,11 @@ func (f *LogNormal) getDistribution(currentP *num.Uint, yFrac num.Decimal) inter
 // GetProjectionHorizon returns the projection horizon used by the model for margin calculation pruposes.
 func (f *LogNormal) GetProjectionHorizon() num.Decimal {
 	return f.tau
+}
+
+func (f *LogNormal) DefaultRiskFactors() *types.RiskFactor {
+	return &types.RiskFactor{
+		Short: num.DecimalFromInt64(1),
+		Long:  num.DecimalFromInt64(1),
+	}
 }
