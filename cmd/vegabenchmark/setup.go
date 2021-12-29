@@ -109,6 +109,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		nw,
 		ethClient,
 		timeService,
+		true,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -118,6 +119,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		validators.NewDefaultConfig(),
 		nw.Vega,
 		broker,
+		true,
 	)
 
 	witness := validators.NewWitness(
@@ -174,7 +176,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	stakingAccounts, _ := staking.New(
-		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams, evtfwd,
+		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams, evtfwd, true,
 	)
 
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService, timeService)

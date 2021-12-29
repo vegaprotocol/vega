@@ -71,7 +71,13 @@ type Topology struct {
 
 	chainValidators []string
 
+	// this is the runtime information
+	// has the validator been added to the validator set
 	isValidator bool
+
+	// this is about the node setup,
+	// is the node configured to be a validator
+	isValidatorSetup bool
 
 	// key rotations
 	pendingPubKeyRotations pendingKeyRotationMapping
@@ -83,7 +89,9 @@ type Topology struct {
 	tss *topologySnapshotState
 }
 
-func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) *Topology {
+func NewTopology(
+	log *logging.Logger, cfg Config, wallet Wallet, broker Broker, isValidatorSetup bool,
+) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -96,6 +104,7 @@ func NewTopology(log *logging.Logger, cfg Config, wallet Wallet, broker Broker) 
 		chainValidators:        []string{},
 		tss:                    &topologySnapshotState{changed: true},
 		pendingPubKeyRotations: pendingKeyRotationMapping{},
+		isValidatorSetup:       isValidatorSetup,
 	}
 
 	return t
@@ -116,7 +125,7 @@ func (t *Topology) ReloadConf(cfg Config) {
 }
 
 func (t *Topology) IsValidator() bool {
-	return t.isValidator
+	return t.isValidatorSetup && t.isValidator
 }
 
 func (t *Topology) Len() int {
@@ -158,10 +167,16 @@ func (t *Topology) AllNodeIDs() []string {
 }
 
 func (t *Topology) SelfVegaPubKey() string {
+	if !t.isValidatorSetup {
+		return ""
+	}
 	return t.wallet.PubKey().Hex()
 }
 
 func (t *Topology) SelfNodeID() string {
+	if !t.isValidatorSetup {
+		return ""
+	}
 	return t.wallet.ID().Hex()
 }
 
@@ -286,8 +301,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 		return err
 	}
 
-	walletID := t.wallet.ID().Hex()
-
+	walletID := t.SelfNodeID()
 	// tm is base64 encoded, vega is hex
 	for tm, data := range state {
 		if !data.IsValid() {

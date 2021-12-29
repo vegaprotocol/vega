@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4390](https://github.com/vegaprotocol/vega/pull/4390) - Introduce node mode, `vega init` now require a mode: full or validator
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/pull/) -

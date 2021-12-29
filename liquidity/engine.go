@@ -32,7 +32,6 @@ type Broker interface {
 // RiskModel allows calculation of min/max price range and a probability of trading.
 type RiskModel interface {
 	ProbabilityOfTrading(currentPrice, orderPrice *num.Uint, minPrice, maxPrice num.Decimal, yFrac num.Decimal, isBid, applyMinMax bool) num.Decimal
-
 	GetProjectionHorizon() num.Decimal
 }
 

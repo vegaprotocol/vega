@@ -47,7 +47,7 @@ func getStakeVerifierTest(t *testing.T) *stakeVerifierTest {
 	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
 		onTickAccounting = f
 	})
-	accs := staking.NewAccounting(log, cfg, broker, nil, evtfwd, witness, tt)
+	accs := staking.NewAccounting(log, cfg, broker, nil, evtfwd, witness, tt, true)
 
 	var onTick func(context.Context, time.Time)
 	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
