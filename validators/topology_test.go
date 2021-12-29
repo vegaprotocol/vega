@@ -27,6 +27,22 @@ import (
 
 var tmPubKey = "tm-pub-key"
 
+type NodeWallets struct {
+	vega validators.Wallet
+}
+
+func (n *NodeWallets) GetVega() validators.Wallet {
+	return n.vega
+}
+
+func (n *NodeWallets) GetTendermintPubkey() string {
+	return ""
+}
+
+func (n *NodeWallets) GetEthereumAddress() string {
+	return ""
+}
+
 type testTop struct {
 	*validators.Topology
 	ctrl   *gomock.Controller
@@ -48,7 +64,11 @@ func getTestTopology(t *testing.T) *testTop {
 	wallet.EXPECT().PubKey().Return(pubKey).AnyTimes()
 	wallet.EXPECT().ID().Return(pubKey).AnyTimes()
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker, true)
+	nw := &NodeWallets{
+		vega: wallet,
+	}
+
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true)
 	return &testTop{
 		Topology: top,
 		ctrl:     ctrl,
@@ -235,8 +255,12 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 	wallet, err := nodewallets.GetVegaWallet(vegaPaths, "pass")
 	require.NoError(t, err)
 
+	nw := &NodeWallets{
+		vega: wallet,
+	}
+
 	broker := brokerMocks.NewMockBroker(ctrl)
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker, true)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), nw, broker, true)
 	top.UpdateValidatorSet([]string{tmPubKey})
 
 	ctx := context.Background()

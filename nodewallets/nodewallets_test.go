@@ -17,8 +17,9 @@ func TestNodeWallet(t *testing.T) {
 
 func testVerifyNodeWalletsSucceeds(t *testing.T) {
 	nw := &nodewallets.NodeWallets{
-		Vega:     &vgnw.Wallet{},
-		Ethereum: &ethnw.Wallet{},
+		Vega:       &vgnw.Wallet{},
+		Ethereum:   &ethnw.Wallet{},
+		Tendermint: &nodewallets.TendermintPubkey{},
 	}
 
 	assert.NoError(t, nw.Verify())

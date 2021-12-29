@@ -61,10 +61,10 @@ func (v ValidatorData) HashVegaPubKey() string {
 type ValidatorMapping map[string]ValidatorData
 
 type Topology struct {
-	log    *logging.Logger
-	cfg    Config
-	wallet Wallet
-	broker Broker
+	log     *logging.Logger
+	cfg     Config
+	wallets NodeWallets
+	broker  Broker
 
 	// vega pubkey to validator data
 	validators ValidatorMapping
@@ -90,7 +90,7 @@ type Topology struct {
 }
 
 func NewTopology(
-	log *logging.Logger, cfg Config, wallet Wallet, broker Broker, isValidatorSetup bool,
+	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool,
 ) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -98,7 +98,7 @@ func NewTopology(
 	t := &Topology{
 		log:                    log,
 		cfg:                    cfg,
-		wallet:                 wallet,
+		wallets:                wallets,
 		broker:                 broker,
 		validators:             ValidatorMapping{},
 		chainValidators:        []string{},
@@ -170,14 +170,14 @@ func (t *Topology) SelfVegaPubKey() string {
 	if !t.isValidatorSetup {
 		return ""
 	}
-	return t.wallet.PubKey().Hex()
+	return t.wallets.GetVega().PubKey().Hex()
 }
 
 func (t *Topology) SelfNodeID() string {
 	if !t.isValidatorSetup {
 		return ""
 	}
-	return t.wallet.ID().Hex()
+	return t.wallets.GetVega().ID().Hex()
 }
 
 // UpdateValidatorSet updates the chain validator set

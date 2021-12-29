@@ -161,7 +161,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	walletID := t.wallet.ID().Hex()
+	walletID := t.wallets.GetVega().ID().Hex()
 
 	for _, node := range topology.ValidatorData {
 		t.validators[node.NodeId] = ValidatorData{
