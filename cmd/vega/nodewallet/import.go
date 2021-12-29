@@ -1,17 +1,20 @@
 package nodewallet
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
-
 	"code.vegaprotocol.io/vega/config"
 	vgfmt "code.vegaprotocol.io/vega/libs/fmt"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 
 	"github.com/jessevdk/go-flags"
+	tmconfig "github.com/tendermint/tendermint/config"
 )
 
 type importCmd struct {
@@ -22,9 +25,13 @@ type importCmd struct {
 	WalletPassphrase   config.Passphrase   `long:"wallet-passphrase-file"`
 	ClefAccountAddress config.PromptString `long:"clef-account-address" description:"The Ethereum account address to be imported by Vega from Clef. In hex."`
 
-	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
+	Chain      string              `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum, tendermint)"`
 	WalletPath config.PromptString `long:"wallet-path" description:"The path to the wallet file to import"`
 	Force      bool                `long:"force" description:"Should the command re-write an existing nodewallet file if it exists"`
+
+	// tendermint flags
+	TendermintPubkey string `long:"tendermint-pubkey" description:"The tendermint pubkey of the tendermint validator node"`
+	TendermintHome   string `long:"tendermint-home" description:"The tendermint home from which to look the for the pubkey"`
 }
 
 func (opts *importCmd) Execute(_ []string) error {
@@ -96,6 +103,23 @@ func (opts *importCmd) Execute(_ []string) error {
 		if err != nil {
 			return fmt.Errorf("couldn't import Vega node wallet: %w", err)
 		}
+	case tendermintChain:
+		if len(opts.TendermintHome) > 0 && len(opts.TendermintPubkey) > 0 {
+			return errors.New("couldn't import Tendermint public key, only one of --tendermint-home or --tendermint-pubkey flag is required")
+		}
+
+		var tendermintPubkey = opts.TendermintPubkey
+		if len(opts.TendermintHome) > 0 {
+			tendermintPubkey, err = getLocalTendermintPubkey(opts.TendermintHome)
+			if err != nil {
+				return err
+			}
+		}
+		data, err = nodewallets.ImportTendermintPubkey(
+			vegaPaths, registryPass, tendermintPubkey, opts.Force)
+		if err != nil {
+			return fmt.Errorf("couldn't import Tendermint pubkey: %w", err)
+		}
 	}
 
 	if output.IsHuman() {
@@ -108,4 +132,27 @@ func (opts *importCmd) Execute(_ []string) error {
 	}
 
 	return nil
+}
+
+func getLocalTendermintPubkey(tendermintHome string) (string, error) {
+	tmConfig := tmconfig.DefaultConfig()
+	tmConfig.SetRoot(tendermintHome)
+	genesisFilePath := tmConfig.PrivValidatorKeyFile()
+
+	data, err := vgfs.ReadFile(genesisFilePath)
+	if err != nil {
+		return "", err
+	}
+
+	var privValidatorKey = struct {
+		PubKey struct {
+			Value string `json:"value"`
+		} `json:"pub_key"`
+	}{}
+
+	if err = json.Unmarshal(data, &privValidatorKey); err != nil {
+		return "", fmt.Errorf("could not read priv_validator_key.json")
+	}
+
+	return privValidatorKey.PubKey.Value, nil
 }

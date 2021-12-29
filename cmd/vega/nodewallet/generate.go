@@ -26,8 +26,9 @@ type generateCmd struct {
 }
 
 const (
-	ethereumChain = "ethereum"
-	vegaChain     = "vega"
+	ethereumChain   = "ethereum"
+	vegaChain       = "vega"
+	tendermintChain = "tendermint"
 )
 
 func (opts *generateCmd) Execute(_ []string) error {
