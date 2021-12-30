@@ -36,6 +36,7 @@ func NewMarketFromSnapshot(
 	now time.Time,
 	broker Broker,
 	idgen *IDgenerator,
+	stateVarEngine StateVarEngine,
 ) (*Market, error) {
 	mkt := em.Market
 
@@ -68,6 +69,7 @@ func NewMarketFromSnapshot(
 		now.UnixNano(),
 		mkt.ID,
 		asset,
+		stateVarEngine,
 	)
 
 	settleEngine := settlement.New(

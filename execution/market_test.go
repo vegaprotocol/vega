@@ -163,9 +163,14 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
+	statevar := mocks.NewMockStateVarEngine(tm.ctrl)
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
+
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas,
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevar,
 	)
 	require.NoError(tm.t, err)
 
@@ -176,6 +181,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	require.NoError(tm.t, err)
 
 	tm.market = &marketW{mktEngine}
+	tm.market.UpdateRiskFactorsForTest()
 	tm.collateralEngine = collateralEngine
 	tm.asset = asset
 	tm.mas = mas
@@ -326,10 +332,15 @@ func getTestMarket2(
 	mktCfg := &mkt
 
 	mas := monitor.NewAuctionState(mktCfg, now)
+	statevar := mocks.NewMockStateVarEngine(tm.ctrl)
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas)
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas, statevar)
 	assert.NoError(t, err)
+	mktEngine.UpdateRiskFactorsForTest()
 
 	if startOpeningAuction {
 		d := time.Second

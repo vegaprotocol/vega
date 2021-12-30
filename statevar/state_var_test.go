@@ -98,7 +98,7 @@ func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, sta
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	return testEngine.engine.AddStateVariable("asset", "market", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeMarketEnacatment, types.StateVarEventTypeTimeTrigger}, resultCallback)
+	return testEngine.engine.AddStateVariable("asset", "market", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, resultCallback)
 }
 
 func defaultStartCalc() func(string, types.FinaliseCalculation) {
@@ -130,14 +130,17 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 }
 
 func TestStateVar(t *testing.T) {
-	t.Run("test converters from/to native data type/key value bundle", testConverters)
-	t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
-	t.Run("new event comes in aborting an existing event", testEventTriggeredWithPreviousEvent)
-	t.Run("new event comes in and triggers a calculation that resulst in an error", testEventTriggeredCalculationError)
-	t.Run("perfect match through quorum", testBundleReceivedPerfectMatchOfQuorum)
-	t.Run("reach consensus through random selection of one that is within reach of 2/3+1 of the others", testBundleReceivedReachingConsensusSuccessfuly)
-	t.Run("no consensus can be reached", testBundleReceivedReachingConsensusNotSuccessful)
-	t.Run("time based trigger", testTimeBasedEvent)
+	for i := 1; i < 100; i++ {
+		now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+		t.Run("test converters from/to native data type/key value bundle", testConverters)
+		t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
+		t.Run("new event comes in aborting an existing event", testEventTriggeredWithPreviousEvent)
+		t.Run("new event comes in and triggers a calculation that result in an error", testEventTriggeredCalculationError)
+		t.Run("perfect match through quorum", testBundleReceivedPerfectMatchOfQuorum)
+		t.Run("reach consensus through random selection of one that is within reach of 2/3+1 of the others", testBundleReceivedReachingConsensusSuccessfuly)
+		t.Run("no consensus can be reached", testBundleReceivedReachingConsensusNotSuccessful)
+		t.Run("time based trigger", testTimeBasedEvent)
+	}
 }
 
 func testConverters(t *testing.T) {
@@ -175,9 +178,10 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -201,9 +205,10 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -216,9 +221,10 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(100 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(2*time.Second))
 	}
@@ -250,9 +256,10 @@ func testEventTriggeredCalculationError(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -286,7 +293,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	}
 
 	// start sending publishing the results from each validators (they all would match so after 2/3+1 we should get the result back)
-	validators := setupValidators(t, 0, 4, startCalc, resultCallback)
+	validators := setupValidators(t, 0, 5, startCalc, resultCallback)
 	brokerEvents := make([]events.Event, 0, len(validators))
 	for _, v := range validators {
 		v.broker.EXPECT().SendBatch(gomock.Any()).AnyTimes().Do(func(events []events.Event) {
@@ -296,7 +303,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 
 	// event for the right asset/market
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -311,7 +318,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	}
 	require.Equal(t, 0, counter)
 
-	// send 3 results from non validator nodes, should be all ignored although it's for theh right event
+	// send 5 results from non validator nodes, should be all ignored although it's for theh right event
 	for i := 5; i < 10; i++ {
 		iAsString := strconv.Itoa(i)
 
@@ -321,7 +328,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	}
 	require.Equal(t, 0, counter)
 
-	// send bundles from 3/4 validators
+	// send bundles from 4/5 validators
 	for i := 0; i < len(validators)-1; i++ {
 		iAsString := strconv.Itoa(i)
 
@@ -330,14 +337,15 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		}
 	}
 	// this means that the result callback has been called with the same result for all of them
-	require.Equal(t, 4, counter)
+	require.Equal(t, 5, counter)
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
 
-	// we exepct there to be 8 events emitted, 4 for starting and 4 for perfect match
-	require.Equal(t, 8, len(brokerEvents))
+	// we exepct there to be 10 events emitted, 5 for starting and 5 for perfect match
+	require.Equal(t, 10, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
 		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i].StreamMessage())
 		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
@@ -350,14 +358,14 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 }
 
 func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
-	// 3 of the results are within the acceptable tolerance, the other two are far off and are received first, so will require all 5 results to be received to reach consensus
+	// 4 of the results are within the acceptable tolerance, the other one is far off and are received first, so will require 4 good results to be received to reach consensus
 	// therefore consensus is possible
 	validatorResults := []*sampleParams{
-		{param1: num.DecimalFromFloat(100.23456), param2: []num.Decimal{num.DecimalFromFloat(30), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
+		{param1: num.DecimalFromFloat(0.23456), param2: []num.Decimal{num.DecimalFromFloat(31), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
+		{param1: num.DecimalFromFloat(1.234), param2: []num.Decimal{num.DecimalFromFloat(30), num.DecimalFromFloat(0.3), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
 		{param1: num.DecimalFromFloat(1.23456), param2: []num.Decimal{num.DecimalFromFloat(30), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
-		{param1: num.DecimalFromFloat(1.23456), param2: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
+		{param1: num.DecimalFromFloat(1.23456), param2: []num.Decimal{num.DecimalFromFloat(31.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 		{param1: num.DecimalFromFloat(2.23456), param2: []num.Decimal{num.DecimalFromFloat(3), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
-		{param1: num.DecimalFromFloat(0.23456), param2: []num.Decimal{num.DecimalFromFloat(0.11), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 	}
 
 	startCalcFuncs := make([]func(eventID string, f types.FinaliseCalculation), 0, len(validatorResults))
@@ -370,7 +378,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	counter := 0
 	resultCallback := func(_ context.Context, r types.StateVariableResult) error {
 		counter++
-		require.Equal(t, validatorResults[2], r)
+		require.Equal(t, validatorResults[1], r)
 		return nil
 	}
 
@@ -388,7 +396,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
 	c := converter{}
@@ -403,6 +411,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 5, counter)
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -456,7 +465,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	}
 
 	for _, v := range validators {
-		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnacatment)
+		v.engine.NewEvent("asset", "market", types.StateVarEventTypeMarketEnactment)
 	}
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
@@ -470,6 +479,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 		}
 	}
 
+	time.Sleep(10 * time.Millisecond)
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now.Add(1*time.Second))
 	}
@@ -484,14 +494,15 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 }
 
 func testTimeBasedEvent(t *testing.T) {
-	// 3 of the results are within the acceptable tolerance, the other two are far off and are received first, so will require all 5 results to be received to reach consensus
+	now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+	// 4 of the results are within the acceptable tolerance, the other two are far off and are received first, so will require all 5 results to be received to reach consensus
 	// therefore consensus is possible
 	validatorResults := []*sampleParams{
-		{param1: num.DecimalFromFloat(100.23456), param2: []num.Decimal{num.DecimalFromFloat(30), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
 		{param1: num.DecimalFromFloat(1.23456), param2: []num.Decimal{num.DecimalFromFloat(30), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
-		{param1: num.DecimalFromFloat(1.23456), param2: []num.Decimal{num.DecimalFromFloat(1.1), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
+		{param1: num.DecimalFromFloat(1.23456), param2: []num.Decimal{num.DecimalFromFloat(30), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
+		{param1: num.DecimalFromFloat(0.23456), param2: []num.Decimal{num.DecimalFromFloat(30), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
+		{param1: num.DecimalFromFloat(1.23456), param2: []num.Decimal{num.DecimalFromFloat(31), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 		{param1: num.DecimalFromFloat(2.23456), param2: []num.Decimal{num.DecimalFromFloat(3), num.DecimalFromFloat(0.2), num.DecimalFromFloat(1.3), num.DecimalFromFloat(2.4)}},
-		{param1: num.DecimalFromFloat(0.23456), param2: []num.Decimal{num.DecimalFromFloat(0.11), num.DecimalFromFloat(2.2), num.DecimalFromFloat(3.3), num.DecimalFromFloat(4.4)}},
 	}
 
 	startCalcFuncs := make([]func(eventID string, f types.FinaliseCalculation), 0, len(validatorResults))
@@ -529,6 +540,7 @@ func testTimeBasedEvent(t *testing.T) {
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now)
 	}
+	time.Sleep(10 * time.Millisecond)
 
 	// send an unexpected results from all validators to all others, so that there would have been a quorum had it been the right event id
 	c := converter{}
@@ -542,9 +554,12 @@ func testTimeBasedEvent(t *testing.T) {
 	}
 
 	now = now.Add(time.Second * 1)
+
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now)
 	}
+
+	time.Sleep(10 * time.Millisecond)
 
 	// this means that the result callback has been called with the same result for all of them
 	require.Equal(t, 5, counter)
@@ -573,6 +588,7 @@ func testTimeBasedEvent(t *testing.T) {
 	for _, v := range validators {
 		v.engine.OnTimeTick(context.Background(), now)
 	}
+	time.Sleep(10 * time.Millisecond)
 
 	require.Equal(t, 5, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {

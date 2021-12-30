@@ -100,7 +100,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
-	execsetup.topology = stubs.NewTopologyStub()
+	execsetup.topology = stubs.NewTopologyStub("nodeID")
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
@@ -110,6 +110,10 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
+
+	stateVarEngine := stubs.NewStateVar()
+	execsetup.timeService.NotifyOnTick(stateVarEngine.OnTimeTick)
+
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
 			execsetup.log,
@@ -118,6 +122,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			execsetup.collateralEngine,
 			execsetup.oracleEngine,
 			execsetup.broker,
+			stateVarEngine,
 		),
 		execsetup.broker,
 	)
@@ -131,6 +136,13 @@ func newExecutionTestSetup() *executionTestSetup {
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
 		panic(err)
 	}
+
+	execsetup.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.FloatingPointUpdatesDuration,
+			Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+		},
+	)
 
 	execsetup.netDeposits = num.Zero()
 

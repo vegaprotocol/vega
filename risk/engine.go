@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-	"code.vegaprotocol.io/vega/vegatime"
+	"code.vegaprotocol.io/vega/types/statevar"
 )
 
 var (
@@ -38,6 +38,12 @@ type Broker interface {
 	SendBatch([]events.Event)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/risk StateVarEngine
+type StateVarEngine interface {
+	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	NewEvent(asset, market string, eventType statevar.StateVarEventType)
+}
+
 type marginChange struct {
 	events.Margin // previous event that caused this change
 	transfer      *types.Transfer
@@ -52,7 +58,7 @@ type Engine struct {
 	log                *logging.Logger
 	cfgMu              sync.Mutex
 	model              Model
-	factors            *types.RiskResult
+	factors            *types.RiskFactor
 	waiting            bool
 	ob                 Orderbook
 	as                 AuctionState
@@ -75,18 +81,19 @@ func NewEngine(
 	initialTime int64,
 	mktID string,
 	asset string,
+	stateVarEngine StateVarEngine,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
 	sfUint := scalingFactorsUintFromDecimals(marginCalculator.ScalingFactors)
-	return &Engine{
+	e := &Engine{
 		log:                log,
 		Config:             config,
 		marginCalculator:   marginCalculator,
 		scalingFactorsUint: sfUint,
-		factors:            getInitialFactors(model, asset),
+		factors:            model.DefaultRiskFactors(),
 		model:              model,
 		waiting:            false,
 		ob:                 ob,
@@ -96,6 +103,34 @@ func NewEngine(
 		mktID:              mktID,
 		asset:              asset,
 	}
+
+	stateVarEngine.AddStateVariable(asset, mktID, RiskFactorConverter{}, e.startCalcRiskFactorsCalcultion, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
+	// trigger the calculation of risk factors for the market
+	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
+	return e
+}
+
+// startCalcRiskFactorsCalcultion kicks off the risk factors calculation, done asynchronously for illustration.
+func (e *Engine) startCalcRiskFactorsCalcultion(eventID string, endOfCalcCallback statevar.FinaliseCalculation) {
+	rf := e.model.CalculateRiskFactors()
+	e.log.Info("risk factors calculated", logging.String("event-id", eventID), logging.Decimal("short", rf.Short), logging.Decimal("long", rf.Long))
+	endOfCalcCallback.CalculationFinished(eventID, rf, nil)
+}
+
+// CalculateRiskFactorsForTest is a hack for testing for setting directly the risk factors for a market.
+func (e *Engine) CalculateRiskFactorsForTest() {
+	e.factors = e.model.CalculateRiskFactors()
+	e.factors.Market = e.mktID
+}
+
+// updateRiskFactor sets the risk factor value to that of the decimal consensus value.
+func (e *Engine) updateRiskFactor(ctx context.Context, res statevar.StateVariableResult) error {
+	e.factors = res.(*types.RiskFactor)
+	e.factors.Market = e.mktID
+	e.log.Info("risk factor calculated", logging.String("market", e.mktID), logging.Decimal("short", e.factors.Short), logging.Decimal("long", e.factors.Long))
+	// then we can send in the broker
+	e.broker.Send(events.NewRiskFactorEvent(ctx, *e.factors))
+	return nil
 }
 
 func (e *Engine) OnMarginScalingFactorsUpdate(sf *types.ScalingFactors) error {
@@ -128,45 +163,9 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.cfgMu.Unlock()
 }
 
-// CalculateFactors trigger the calculation of the risk factors.
-func (e *Engine) CalculateFactors(ctx context.Context, now time.Time) {
-	// don't calculate risk factors if we are before or at the next update time (calcs are before
-	// processing and we calc factors after the time so we wait for time > nextUpdateTime) OR if we are
-	// already waiting on risk calcs
-	// NB: for continuous risk calcs nextUpdateTime will be 0 so we will always find time > nextUpdateTime
-	if e.waiting || now.Before(vegatime.UnixNano(e.factors.NextUpdateTimestamp)) {
-		return
-	}
-
-	wasCalculated, result := e.model.CalculateRiskFactors(e.factors)
-	if !wasCalculated {
-		e.waiting = true
-		return
-	}
-	e.waiting = false
-	if e.model.CalculationInterval() > 0 {
-		result.NextUpdateTimestamp = now.Add(e.model.CalculationInterval()).UnixNano()
-	}
-	e.factors = result
-	// FIXME(jeremy): here we are iterating over the risk factors map
-	// although we know there's only one asset in the map, we should probably
-	// refactor the returned values from the model.
-	var rf types.RiskFactor
-	for _, v := range result.RiskFactors {
-		rf = *v
-	}
-	rf.Market = e.mktID
-	// then we can send in the broker
-	e.broker.Send(events.NewRiskFactorEvent(ctx, rf))
-}
-
 // GetRiskFactors returns risk factors per specified asset if available and an error otherwise.
 func (e *Engine) GetRiskFactors(asset string) (*types.RiskFactor, error) {
-	rf, ok := e.factors.RiskFactors[asset]
-	if !ok {
-		return nil, ErrRiskFactorsNotAvailableForAsset
-	}
-	return rf, nil
+	return e.factors, nil
 }
 
 func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, price *num.Uint) ([]events.Risk, []events.Margin) {
@@ -178,8 +177,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 	low := []events.Margin{}
 	eventBatch := make([]events.Event, 0, len(evts))
 	// for now, we can assume a single asset for all events
-	asset := evts[0].Asset()
-	rFactors := *e.factors.RiskFactors[asset]
+	rFactors := *e.factors
 	for _, evt := range evts {
 		levels := e.calculateAuctionMargins(evt, price, rFactors)
 		if levels == nil {
@@ -187,7 +185,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 		}
 
 		levels.Party = evt.Party()
-		levels.Asset = asset // This is assuming there's a single asset at play here
+		levels.Asset = e.asset // This is assuming there's a single asset at play here
 		levels.Timestamp = e.currTime
 		levels.MarketID = e.mktID
 
@@ -210,7 +208,7 @@ func (e *Engine) UpdateMarginAuction(ctx context.Context, evts []events.Margin, 
 			Owner: evt.Party(),
 			Type:  types.TransferTypeMarginLow,
 			Amount: &types.FinancialAmount{
-				Asset:  asset,
+				Asset:  e.asset,
 				Amount: amt,
 			},
 			MinAmount: minAmount,
@@ -235,9 +233,9 @@ func (e *Engine) UpdateMarginOnNewOrder(ctx context.Context, evt events.Margin, 
 
 	var margins *types.MarginLevels
 	if !e.as.InAuction() || e.as.CanLeave() {
-		margins = e.calculateMargins(evt, markPrice, *e.factors.RiskFactors[evt.Asset()], true, false)
+		margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
 	} else {
-		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors.RiskFactors[evt.Asset()])
+		margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
 	}
 	// no margins updates, nothing to do then
 	if margins == nil {
@@ -317,9 +315,9 @@ func (e *Engine) UpdateMarginsOnSettlement(
 		// channel is closed, and we've got a nil interface
 		var margins *types.MarginLevels
 		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors.RiskFactors[evt.Asset()], true, false)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, true, false)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors.RiskFactors[evt.Asset()])
+			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {
@@ -404,9 +402,9 @@ func (e *Engine) ExpectMargins(
 	for _, evt := range evts {
 		var margins *types.MarginLevels
 		if !e.as.InAuction() || e.as.CanLeave() {
-			margins = e.calculateMargins(evt, markPrice, *e.factors.RiskFactors[evt.Asset()], false, false)
+			margins = e.calculateMargins(evt, markPrice, *e.factors, false, false)
 		} else {
-			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors.RiskFactors[evt.Asset()])
+			margins = e.calculateAuctionMargins(evt, markPrice, *e.factors)
 		}
 		// no margins updates, nothing to do then
 		if margins == nil {
@@ -446,19 +444,4 @@ func (m marginChange) Transfer() *types.Transfer {
 
 func (m marginChange) MarginLevels() *types.MarginLevels {
 	return m.margins
-}
-
-func getInitialFactors(rm Model, asset string) *types.RiskResult {
-	if ok, fact := rm.CalculateRiskFactors(nil); ok {
-		return fact
-	}
-	// default to hard-coded risk factors
-	return &types.RiskResult{
-		RiskFactors: map[string]*types.RiskFactor{
-			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
-		},
-		PredictedNextRiskFactors: map[string]*types.RiskFactor{
-			asset: {Long: num.DecimalFromFloat(0.15), Short: num.DecimalFromFloat(0.25)},
-		},
-	}
 }

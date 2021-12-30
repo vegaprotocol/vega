@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 )
 
 var (
@@ -55,6 +56,13 @@ type Collateral interface {
 	OnChainTimeUpdate(context.Context, time.Time)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
+type StateVarEngine interface {
+	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	NewEvent(asset, market string, eventType statevar.StateVarEventType)
+	ReadyForTimeTrigger(asset, mktID string)
+}
+
 // Engine is the execution engine.
 type Engine struct {
 	Config
@@ -65,8 +73,9 @@ type Engine struct {
 	collateral Collateral
 	idgen      *IDgenerator
 
-	broker Broker
-	time   TimeService
+	broker         Broker
+	time           TimeService
+	stateVarEngine StateVarEngine
 
 	oracle OracleEngine
 
@@ -126,6 +135,7 @@ func NewEngine(
 	collateral Collateral,
 	oracle OracleEngine,
 	broker Broker,
+	stateVarEngine StateVarEngine,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -141,6 +151,7 @@ func NewEngine(
 		oracle:                       oracle,
 		npv:                          defaultNetParamsValues(),
 		previouslySnapshottedMarkets: map[string]struct{}{},
+		stateVarEngine:               stateVarEngine,
 	}
 
 	// Add time change event handler
@@ -332,6 +343,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.broker,
 		e.idgen,
 		mas,
+		e.stateVarEngine,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
