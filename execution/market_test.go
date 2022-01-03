@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/integration/stubs"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
@@ -332,10 +334,7 @@ func getTestMarket2(
 	mktCfg := &mkt
 
 	mas := monitor.NewAuctionState(mktCfg, now)
-	statevar := mocks.NewMockStateVarEngine(tm.ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
+	statevar := stubs.NewStateVar()
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
 		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas, statevar)

@@ -59,28 +59,28 @@ func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) erro
 	}
 	// compare uint64
 	for _, u := range u64Set {
-		e, g := cmp.u64Map[u], parsed.u64Map[u] // get pointers to both fields
+		e, g := parsed.u64Map[u], cmp.u64Map[u] // get pointers to both fields
 		if *e != *g {
 			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead got '%d'", *e, u, *g))
 		}
 	}
 	// compare int64
 	for _, i := range i64Set {
-		e, g := cmp.i64Map[i], parsed.i64Map[i]
+		e, g := parsed.i64Map[i], cmp.i64Map[i]
 		if *e != *g {
 			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead got '%d'", *e, i, *g))
 		}
 	}
 	// compare times, which is basically identical to comparing i64
 	for _, i := range tSet {
-		e, g := cmp.tMap[i], parsed.tMap[i]
+		e, g := parsed.tMap[i], cmp.tMap[i]
 		if *e != *g {
 			errs = append(errs, fmt.Errorf("expected '%d' for %s, instead got '%d'", *e, i, *g))
 		}
 	}
 	// compare strings
 	for _, s := range strSet {
-		e, g := cmp.strMap[s], parsed.strMap[s]
+		e, g := parsed.strMap[s], cmp.strMap[s]
 		if *e != *g {
 			errs = append(errs, fmt.Errorf("expected '%s' for %s, instead got '%s'", *e, s, *g))
 		}

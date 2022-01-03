@@ -214,14 +214,12 @@ func TestEvents_EnteringAuctionCancelsGFNOrders(t *testing.T) {
 	assert.Equal(t, types.AuctionTriggerPrice, tm.market.GetMarketData().Trigger)
 
 	// Check we have the right amount of events
-	// assert.Equal(t, uint64(8), tm.orderEventCount)
-	assert.Equal(t, uint64(7), tm.orderEventCount)
-	// assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
-	assert.Equal(t, int64(5), tm.market.GetOrdersOnBookCount())
+	assert.Equal(t, uint64(8), tm.orderEventCount)
+
+	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
 	processEvents(t, tm, mdb)
-	// assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
-	assert.Equal(t, int64(5), mdb.GetOrderCount(tm.market.GetID()))
+	assert.Equal(t, int64(4), mdb.GetOrderCount(tm.market.GetID()))
 }
 
 func TestEvents_CloseOutParty(t *testing.T) {
