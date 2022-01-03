@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	types "code.vegaprotocol.io/vega/types"
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -44,4 +46,18 @@ func (m *MockStakingAccounts) Hash() []byte {
 func (mr *MockStakingAccountsMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockStakingAccounts)(nil).Hash))
+}
+
+// ProcessStakeTotalSupply mocks base method
+func (m *MockStakingAccounts) ProcessStakeTotalSupply(arg0 context.Context, arg1 *types.StakeTotalSupply) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProcessStakeTotalSupply", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ProcessStakeTotalSupply indicates an expected call of ProcessStakeTotalSupply
+func (mr *MockStakingAccountsMockRecorder) ProcessStakeTotalSupply(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessStakeTotalSupply", reflect.TypeOf((*MockStakingAccounts)(nil).ProcessStakeTotalSupply), arg0, arg1)
 }

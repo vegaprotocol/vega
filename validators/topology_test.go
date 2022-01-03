@@ -48,7 +48,7 @@ func getTestTopology(t *testing.T) *testTop {
 	wallet.EXPECT().PubKey().Return(pubKey).AnyTimes()
 	wallet.EXPECT().ID().Return(pubKey).AnyTimes()
 
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker, true)
 	return &testTop{
 		Topology: top,
 		ctrl:     ctrl,
@@ -236,7 +236,7 @@ func testAddNodeRegistrationSendsValidatorUpdateEventToBroker(t *testing.T) {
 	require.NoError(t, err)
 
 	broker := brokerMocks.NewMockBroker(ctrl)
-	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker)
+	top := validators.NewTopology(logging.NewTestLogger(), validators.NewDefaultConfig(), wallet, broker, true)
 	top.UpdateValidatorSet([]string{tmPubKey})
 
 	ctx := context.Background()

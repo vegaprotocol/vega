@@ -155,6 +155,14 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 		} else {
 			panic("failed to wrap RestoreSnapshot")
 		}
+	case txn.StateVariableProposalCommand:
+		if underlyingCmd, ok := payload.(*commandspb.StateVariableProposal); ok {
+			data.Command = &commandspb.InputData_StateVariableProposal{
+				StateVariableProposal: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap StateVariableProposal")
+		}
 	default:
 		panic(fmt.Errorf("command %v is not supported", cmd))
 	}

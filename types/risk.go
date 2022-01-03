@@ -143,13 +143,6 @@ type RiskFactor struct {
 	Long   num.Decimal
 }
 
-type RiskResult struct {
-	UpdatedTimestamp         int64
-	RiskFactors              map[string]*RiskFactor
-	NextUpdateTimestamp      int64
-	PredictedNextRiskFactors map[string]*RiskFactor
-}
-
 func (m MarginLevels) IntoProto() *proto.MarginLevels {
 	return &proto.MarginLevels{
 		MaintenanceMargin:      num.UintToString(m.MaintenanceMargin),
@@ -167,33 +160,11 @@ func (m MarginLevels) String() string {
 	return m.IntoProto().String()
 }
 
-func (r RiskResult) IntoProto() *proto.RiskResult {
-	pr := &proto.RiskResult{
-		UpdatedTimestamp:         r.UpdatedTimestamp,
-		RiskFactors:              make(map[string]*proto.RiskFactor, len(r.RiskFactors)),
-		NextUpdateTimestamp:      r.NextUpdateTimestamp,
-		PredictedNextRiskFactors: make(map[string]*proto.RiskFactor, len(r.PredictedNextRiskFactors)),
-	}
-	for k, f := range r.RiskFactors {
-		pr.RiskFactors[k] = f.IntoProto()
-	}
-	for k, f := range r.PredictedNextRiskFactors {
-		pr.PredictedNextRiskFactors[k] = f.IntoProto()
-	}
-	return pr
-}
-
-func (r RiskResult) String() string {
-	return r.IntoProto().String()
-}
-
 func (r RiskFactor) IntoProto() *proto.RiskFactor {
-	short, _ := r.Short.Float64()
-	long, _ := r.Long.Float64()
 	return &proto.RiskFactor{
 		Market: r.Market,
-		Short:  short,
-		Long:   long,
+		Short:  r.Short.String(),
+		Long:   r.Long.String(),
 	}
 }
 

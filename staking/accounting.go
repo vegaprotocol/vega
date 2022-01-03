@@ -48,6 +48,7 @@ type Accounting struct {
 	broker           Broker
 	accounts         map[string]*StakingAccount
 	hashableAccounts []*StakingAccount
+	isValidator      bool
 
 	stakingAssetTotalSupply *num.Uint
 	ethCfg                  vgproto.EthereumConfig
@@ -81,6 +82,7 @@ func NewAccounting(
 	evtForward EvtForwarder,
 	witness Witness,
 	tt TimeTicker,
+	isValidator bool,
 ) (acc *Accounting) {
 	defer func() {
 		tt.NotifyOnTick(acc.onTick)
@@ -98,6 +100,7 @@ func NewAccounting(
 		accState:                accountingSnapshotState{changed: true},
 		evtFwd:                  evtForward,
 		witness:                 witness,
+		isValidator:             isValidator,
 	}
 }
 
@@ -177,6 +180,7 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 	}
 
 	expectedSupply := evt.TotalSupply.Clone()
+
 	a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
 		sts: evt,
 		check: func() error {
@@ -221,6 +225,10 @@ func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {
 }
 
 func (a *Accounting) updateStakingAssetTotalSupply() error {
+	if !a.isValidator {
+		// nothing to do here if we are not a validator
+		return nil
+	}
 	address, err := a.getStakingBridgeAddress()
 	if err != nil {
 		a.log.Error("could not get bridge address", logging.Error(err))

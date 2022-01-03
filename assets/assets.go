@@ -44,9 +44,18 @@ type Service struct {
 	ethClient       erc20.ETHClient
 	ass             *assetsSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
+
+	isValidator bool
 }
 
-func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient erc20.ETHClient, ts TimeService) *Service {
+func New(
+	log *logging.Logger,
+	cfg Config,
+	nw *nodewallets.NodeWallets,
+	ethClient erc20.ETHClient,
+	ts TimeService,
+	isValidator bool,
+) *Service {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -63,6 +72,7 @@ func New(log *logging.Logger, cfg Config, nw *nodewallets.NodeWallets, ethClient
 			serialised: map[string][]byte{},
 		},
 		keyToSerialiser: map[string]func() ([]byte, error){},
+		isValidator:     isValidator,
 	}
 
 	s.keyToSerialiser[activeKey] = s.serialiseActive
@@ -121,7 +131,17 @@ func (s *Service) assetFromDetails(assetID string, assetDetails *types.AssetDeta
 			builtin.New(assetID, assetDetails),
 		}, nil
 	case *types.AssetDetailsErc20:
-		asset, err := erc20.New(assetID, assetDetails, s.nodeWallets.Ethereum, s.ethClient)
+		// TODO(): fix once the ethereum wallet and client are not required
+		// anymore to construct assets
+		var (
+			asset *erc20.ERC20
+			err   error
+		)
+		if s.isValidator {
+			asset, err = erc20.New(assetID, assetDetails, s.nodeWallets.Ethereum, s.ethClient)
+		} else {
+			asset, err = erc20.New(assetID, assetDetails, nil, nil)
+		}
 		if err != nil {
 			return nil, err
 		}

@@ -24,16 +24,16 @@ var genesisCmd Cmd
 func Genesis(ctx context.Context, parser *flags.Parser) error {
 	genesisCmd = Cmd{
 		Generate: generateCmd{
-			TmRoot: "$HOME/.tendermint",
+			TmHome: "$HOME/.tendermint",
 		},
 		Sign: signCmd{
-			TmRoot: "$HOME/.tendermint",
+			TmHome: "$HOME/.tendermint",
 		},
 		Verify: verifyCmd{
-			TmRoot: "$HOME/.tendermint",
+			TmHome: "$HOME/.tendermint",
 		},
 		Update: updateCmd{
-			TmRoot: "$HOME/.tendermint",
+			TmHome: "$HOME/.tendermint",
 		},
 	}
 
