@@ -33,7 +33,8 @@
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
-- [4529](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
+- [4536](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
+- [4550](https://github.com/vegaprotocol/vega/pull/4550) - Do not validate assets when loading checkpoint from non-validators
 
 
 ## 0.47.0
