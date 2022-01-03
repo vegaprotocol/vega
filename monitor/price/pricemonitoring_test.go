@@ -2,7 +2,6 @@ package price_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -719,7 +718,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	extendedAuctionEnd := now.Add(time.Duration(t1.AuctionExtension+t2.AuctionExtension) * time.Second)
 
 	// get new bounds
-	decPrice, pMin1, pMax1, _, _ = getPriceBounds(cPrice, 1, 2)
+	_, pMin1, pMax1, _, _ = getPriceBounds(cPrice, 1, 2)
 	_, pMin2, pMax2, _, _ = getPriceBounds(cPrice, 1*4, 2*4)
 
 	t1lb1, _ = num.UintFromDecimal(pMin1)
@@ -1052,23 +1051,4 @@ func getPriceBounds(price *num.Uint, min, max uint64) (decPr, minPr, maxPr num.D
 func horizonToYearFraction(horizon int64) num.Decimal {
 	hdec := num.DecimalFromFloat(float64(horizon))
 	return hdec.Div(secondsPerYear)
-}
-
-type decMatcher struct {
-	v num.Decimal
-}
-
-func (d *decMatcher) Matches(x interface{}) bool {
-	v, ok := x.(num.Decimal)
-	if !ok {
-		return false
-	}
-	if d.v.String() != v.String() {
-		panic(fmt.Sprintf("Got %#v, does not match %#v", v, d.v))
-	}
-	return d.v.String() == v.String()
-}
-
-func (d *decMatcher) String() string {
-	return "a decimal equal to " + d.v.String()
 }

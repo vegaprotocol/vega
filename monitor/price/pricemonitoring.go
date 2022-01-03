@@ -65,8 +65,10 @@ type boundFactors struct {
 	down []num.Decimal
 }
 
-var defaultDownFactor = num.MustDecimalFromString("0.9")
-var defaultUpFactor = num.MustDecimalFromString("1.1")
+var (
+	defaultDownFactor = num.MustDecimalFromString("0.9")
+	defaultUpFactor   = num.MustDecimalFromString("1.1")
+)
 
 type boundFactorsConverter struct{}
 
@@ -491,8 +493,7 @@ func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar
 	endOfCalcCallback.CalculationFinished(eventID, res, nil)
 }
 
-// updatePriceBounds is called back from the state variable consensus engine when consensus is reached for the down/up factors and updates the price bounds
-// and in addition clearing irrelevant
+// updatePriceBounds is called back from the state variable consensus engine when consensus is reached for the down/up factors and updates the price bounds.
 func (e *Engine) updatePriceBounds(ctx context.Context, res statevar.StateVariableResult) error {
 	bRes := res.(*boundFactors)
 	e.updateFactors(bRes.down, bRes.up)
@@ -514,6 +515,7 @@ func (e *Engine) updateFactors(down, up []num.Decimal) {
 		e.getCurrentPriceRanges(true)
 	}
 
+	e.clearStalePrices()
 	e.stateChanged = true
 }
 
