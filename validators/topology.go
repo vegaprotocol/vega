@@ -350,9 +350,9 @@ func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 
 	// if any of these are wrong, the nodewallet didn't import
 	// the keys set in the genesis block
-	var hasError = t.wallets.GetVega().ID().Hex() != data.ID ||
-		t.wallets.GetVega().ID().Hex() != data.VegaPubKey ||
-		t.wallets.GetEthereumAddress() != strings.TrimLeft(data.EthereumAddress, "0x")
+	hasError := t.wallets.GetVega().ID().Hex() != data.ID ||
+		t.wallets.GetVega().PubKey().Hex() != data.VegaPubKey ||
+		strings.TrimLeft(t.wallets.GetEthereumAddress(), "0x") != strings.TrimLeft(data.EthereumAddress, "0x")
 
 	if hasError {
 		t.log.Panic("invalid node wallet configurations, the genesis validator mapping differ to the wallets imported by the nodewallet",

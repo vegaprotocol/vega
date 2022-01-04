@@ -108,7 +108,7 @@ func (opts *importCmd) Execute(_ []string) error {
 			return errors.New("couldn't import Tendermint public key, only one of --tendermint-home or --tendermint-pubkey flag is required")
 		}
 
-		var tendermintPubkey = opts.TendermintPubkey
+		tendermintPubkey := opts.TendermintPubkey
 		if len(opts.TendermintHome) > 0 {
 			tendermintPubkey, err = getLocalTendermintPubkey(opts.TendermintHome)
 			if err != nil {
@@ -144,14 +144,14 @@ func getLocalTendermintPubkey(tendermintHome string) (string, error) {
 		return "", err
 	}
 
-	var privValidatorKey = struct {
+	privValidatorKey := struct {
 		PubKey struct {
 			Value string `json:"value"`
 		} `json:"pub_key"`
 	}{}
 
 	if err = json.Unmarshal(data, &privValidatorKey); err != nil {
-		return "", fmt.Errorf("could not read priv_validator_key.json")
+		return "", fmt.Errorf("could not read priv_validator_key.json: %w", err)
 	}
 
 	return privValidatorKey.PubKey.Value, nil

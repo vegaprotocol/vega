@@ -31,7 +31,7 @@ func (w *NodeWallets) Verify() error {
 		return ErrEthereumWalletIsMissing
 	}
 	if w.Tendermint == nil {
-		return ErrEthereumWalletIsMissing
+		return ErrTendermintPubkeyIsMissing
 	}
 	return nil
 }

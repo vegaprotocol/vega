@@ -161,8 +161,6 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	walletID := t.wallets.GetVega().ID().Hex()
-
 	for _, node := range topology.ValidatorData {
 		t.validators[node.NodeId] = ValidatorData{
 			ID:              node.NodeId,
@@ -176,8 +174,11 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 			AvatarURL:       node.AvatarUrl,
 		}
 
-		if walletID == node.NodeId {
-			t.isValidator = true
+		// this node is started and expect to be a validator
+		// but so far we haven't seen ourselve as validators for
+		// this network.
+		if t.isValidatorSetup && !t.isValidator {
+			t.checkValidatorDataWithSelfWallets(t.validators[node.NodeId])
 		}
 	}
 	t.chainValidators = topology.ChainValidators[:]
