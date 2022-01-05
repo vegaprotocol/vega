@@ -20,8 +20,9 @@ const (
 )
 
 type Registry struct {
-	Ethereum *RegisteredEthereumWallet `json:"ethereum,omitempty"`
-	Vega     *RegisteredVegaWallet     `json:"vega,omitempty"`
+	Tendermint *RegisteredTendermintPubkey `json:"tendermint,omitempty"`
+	Ethereum   *RegisteredEthereumWallet   `json:"ethereum,omitempty"`
+	Vega       *RegisteredVegaWallet       `json:"vega,omitempty"`
 }
 
 type ethereumWalletType string
@@ -87,6 +88,10 @@ func (rw *RegisteredEthereumWallet) UnmarshalJSON(data []byte) error {
 type RegisteredVegaWallet struct {
 	Name       string `json:"name"`
 	Passphrase string `json:"passphrase"`
+}
+
+type RegisteredTendermintPubkey struct {
+	Pubkey string `json:"pubkey"`
 }
 
 type RegistryLoader struct {
