@@ -3,17 +3,27 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4390](https://github.com/vegaprotocol/vega/pull/4390) - Introduce node mode, `vega init` now require a mode: full or validator
+- [4383](https://github.com/vegaprotocol/vega/pull/4383) - Rename flag `--tm-root` to `--tm-home`
+
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
+
 ### 🛠 Improvements
+- [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
 - [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
 - [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit the number of epochs for which we keep delegations in memory in core api
 - [4514](https://github.com/vegaprotocol/vega/pull/4514) - Add network limits service and events
 - [4489](https://github.com/vegaprotocol/vega/pull/4489) - Check when `OnGenesis` that the hash of contract bytecode is as expected
 - [4516](https://github.com/vegaprotocol/vega/pull/4516) - Add a command to cleanup all vega node state
+- [4531](https://github.com/vegaprotocol/vega/pull/4531) - Remove Float from network parameters, use `num.Decimal` instead
+- [4537](https://github.com/vegaprotocol/vega/pull/4537) - Send staking asset total supply through consensus
+- [4540](https://github.com/vegaprotocol/vega/pull/4540) - Require Go minimum version 1.17
+- [4530](https://github.com/vegaprotocol/vega/pull/4530) - Integrate risk factors with floating point consensus engine
+- [4485](https://github.com/vegaprotocol/vega/pull/4485) - Change snapshot interval default to 1000 blocks
+- [4544](https://github.com/vegaprotocol/vega/pull/4544) - Ensure validators are started with the right set of keys
 
 ### 🐛 Fixes
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum power to tendermint consensus power for validator
@@ -24,6 +34,11 @@
 - [4524](https://github.com/vegaprotocol/vega/pull/4524) - Updated `vega verify genesis` to understand new `app_state` layout
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
+- [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
+- [4536](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
+- [4550](https://github.com/vegaprotocol/vega/pull/4550) - Do not validate assets when loading checkpoint from non-validators
+- [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
+
 
 ## 0.47.0
 *2021-11-24*

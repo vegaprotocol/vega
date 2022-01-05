@@ -68,7 +68,6 @@ type ExecutionEngine interface {
 
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
-
 	Hash() []byte
 }
 
@@ -169,7 +168,6 @@ type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
 	WithdrawBuiltinAsset(context.Context, string, string, string, *num.Uint) error
-
 	EnableERC20(context.Context, *types.ERC20AssetList, string, uint64, uint64, string) error
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
@@ -215,4 +213,5 @@ type StakeVerifier interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
 type StakingAccounts interface {
 	Hash() []byte
+	ProcessStakeTotalSupply(ctx context.Context, event *types.StakeTotalSupply) error
 }

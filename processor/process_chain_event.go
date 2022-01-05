@@ -51,6 +51,12 @@ func (app *App) processChainEvent(
 		blockNumber := c.StakingEvent.Block
 		logIndex := c.StakingEvent.Index
 		switch evt := c.StakingEvent.Action.(type) {
+		case *vgproto.StakingEvent_TotalSupply:
+			stakeTotalSupply, err := types.StakeTotalSupplyFromProto(evt.TotalSupply)
+			if err != nil {
+				return err
+			}
+			return app.stakingAccounts.ProcessStakeTotalSupply(ctx, stakeTotalSupply)
 		case *vgproto.StakingEvent_StakeDeposited:
 			stakeDeposited, err := types.StakeDepositedFromProto(
 				evt.StakeDeposited, blockNumber, logIndex, ce.TxId, id)

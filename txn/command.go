@@ -37,30 +37,33 @@ const (
 	CheckpointRestoreCommand Command = 0x4F
 	// KeyRotateSubmissionCommand ...
 	KeyRotateSubmissionCommand Command = 0x50
+	// StateVariableProposalCommand ...
+	StateVariableProposalCommand Command = 0x51
 )
 
 var commandName = map[Command]string{
-	SubmitOrderCommand:         "Submit Order",
-	CancelOrderCommand:         "Cancel Order",
-	AmendOrderCommand:          "Amend Order",
-	WithdrawCommand:            "Withdraw",
-	ProposeCommand:             "Proposal",
-	VoteCommand:                "Vote on Proposal",
-	RegisterNodeCommand:        "Register new Node",
-	NodeVoteCommand:            "Node Vote",
-	NodeSignatureCommand:       "Node Signature",
-	LiquidityProvisionCommand:  "Liquidity Provision Order",
-	ChainEventCommand:          "Chain Event",
-	SubmitOracleDataCommand:    "Submit Oracle Data",
-	DelegateCommand:            "Delegate",
-	UndelegateCommand:          "Undelegate",
-	CheckpointRestoreCommand:   "Checkpoint Restore",
-	KeyRotateSubmissionCommand: "Key Rotate Submission",
+	SubmitOrderCommand:           "Submit Order",
+	CancelOrderCommand:           "Cancel Order",
+	AmendOrderCommand:            "Amend Order",
+	WithdrawCommand:              "Withdraw",
+	ProposeCommand:               "Proposal",
+	VoteCommand:                  "Vote on Proposal",
+	RegisterNodeCommand:          "Register new Node",
+	NodeVoteCommand:              "Node Vote",
+	NodeSignatureCommand:         "Node Signature",
+	LiquidityProvisionCommand:    "Liquidity Provision Order",
+	ChainEventCommand:            "Chain Event",
+	SubmitOracleDataCommand:      "Submit Oracle Data",
+	DelegateCommand:              "Delegate",
+	UndelegateCommand:            "Undelegate",
+	CheckpointRestoreCommand:     "Checkpoint Restore",
+	KeyRotateSubmissionCommand:   "Key Rotate Submission",
+	StateVariableProposalCommand: "State Variable Proposal",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
 	switch cmd {
-	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, RegisterNodeCommand, KeyRotateSubmissionCommand:
+	case CheckpointRestoreCommand, NodeSignatureCommand, ChainEventCommand, NodeVoteCommand, RegisterNodeCommand, KeyRotateSubmissionCommand, StateVariableProposalCommand:
 		return true
 	default:
 		return false

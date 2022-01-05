@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrEthereumWalletAlreadyExists = errors.New("the Ethereum node wallet already exists")
-	ErrVegaWalletAlreadyExists     = errors.New("the Vega node wallet already exists")
+	ErrEthereumWalletAlreadyExists   = errors.New("the Ethereum node wallet already exists")
+	ErrVegaWalletAlreadyExists       = errors.New("the Vega node wallet already exists")
+	ErrTendermintPubkeyAlreadyExists = errors.New("the Tendermint pubkey already exists")
 )
 
 func GetVegaWallet(vegaPaths paths.Paths, registryPassphrase string) (*vega.Wallet, error) {
@@ -73,6 +74,12 @@ func GetNodeWallets(config Config, vegaPaths paths.Paths, registryPassphrase str
 		nodeWallets.Vega, err = vegaWalletLoader.Load(registry.Vega.Name, registry.Vega.Passphrase)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't load Vega node wallet: %w", err)
+		}
+	}
+
+	if registry.Tendermint != nil {
+		nodeWallets.Tendermint = &TendermintPubkey{
+			Pubkey: registry.Tendermint.Pubkey,
 		}
 	}
 
@@ -157,4 +164,37 @@ func ImportVegaWallet(vegaPaths paths.Paths, registryPassphrase, walletPassphras
 
 	data["registryFilePath"] = registryLoader.RegistryFilePath()
 	return data, nil
+}
+
+func ImportTendermintPubkey(
+	vegaPaths paths.Paths,
+	registryPassphrase, pubkey string,
+	overwrite bool,
+) (map[string]string, error) {
+	registryLoader, err := NewRegistryLoader(vegaPaths, registryPassphrase)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't initialise node wallet registry: %v", err)
+	}
+
+	registry, err := registryLoader.GetRegistry(registryPassphrase)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load node wallet registry: %v", err)
+	}
+
+	if !overwrite && registry.Tendermint != nil {
+		return nil, ErrTendermintPubkeyAlreadyExists
+	}
+
+	registry.Tendermint = &RegisteredTendermintPubkey{
+		Pubkey: pubkey,
+	}
+
+	if err := registryLoader.SaveRegistry(registry, registryPassphrase); err != nil {
+		return nil, fmt.Errorf("couldn't save registry: %w", err)
+	}
+
+	return map[string]string{
+		"registryFilePath": registryLoader.RegistryFilePath(),
+		"tendermintPubkey": pubkey,
+	}, nil
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/statevar"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
@@ -108,6 +109,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		nw,
 		ethClient,
 		timeService,
+		true,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -115,8 +117,9 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	topology := validators.NewTopology(
 		log,
 		validators.NewDefaultConfig(),
-		nw.Vega,
+		validators.WrapNodeWallets(nw),
 		broker,
+		true,
 	)
 
 	witness := validators.NewWitness(
@@ -139,15 +142,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		topology,
 	)
 
-	exec := execution.NewEngine(
-		log,
-		execution.NewDefaultConfig(),
-		timeService,
-		collateral,
-		oraclesM,
-		broker,
-	)
-
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
 
 	netp := netparams.New(
@@ -160,10 +154,30 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
+	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, timeService)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.ValidatorsVoteRequired,
+		Watcher: stateVarEngine.OnDefaultValidatorsVoteRequiredUpdate,
+	})
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.FloatingPointUpdatesDuration,
+		Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+	})
+
+	exec := execution.NewEngine(
+		log,
+		execution.NewDefaultConfig(),
+		timeService,
+		collateral,
+		oraclesM,
+		broker,
+		stateVarEngine,
+	)
+
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	stakingAccounts, _ := staking.New(
-		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams,
+		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams, evtfwd, true,
 	)
 
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService, timeService)
@@ -219,6 +233,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		nil,
 		rewardEngine,
 		snapshot,
+		stateVarEngine,
 		"benchmark",
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)

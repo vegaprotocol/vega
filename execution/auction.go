@@ -40,6 +40,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 		}
 		m.as.SetReadyToLeave()
 		m.LeaveAuction(ctx, now)
+		m.OnOpeningAuctionFirstUncrossingPrice()
 		// the market is now in a ACTIVE state
 		m.mkt.State = types.MarketStateActive
 		// the market is now properly open, so set the timestamp to when the opening auction actually ended
@@ -86,6 +87,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 				m.extendAuctionIncompleteBook()
 				return
 			}
+			m.OnAuctionEnded()
 			m.LeaveAuction(ctx, now)
 		}
 	}

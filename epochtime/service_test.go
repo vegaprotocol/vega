@@ -145,19 +145,20 @@ func TestEpochServiceCheckpointLoading(t *testing.T) {
 	println(now.String())
 	loadService.cb(ctx, now)
 	loadService.Load(ctx, cp)
-	require.Equal(t, 1, len(loadEpochs))
+	// after the load we expect an event regardless of what epoch we were in before
+	require.Equal(t, 2, len(loadEpochs))
 
 	// run to the expected end of the epoch and verify it's ended
 	now = now.Add((time.Hour * 7) + 1*time.Second)
 	println(now.String())
 	loadService.cb(ctx, now)
-	require.Equal(t, 1, len(loadEpochs))
+	require.Equal(t, 2, len(loadEpochs))
 
 	loadService.OnBlockEnd(ctx)
 	// add another second to start a new epoch
 	now = now.Add(1 * time.Second)
 	loadService.cb(ctx, now)
-	require.Equal(t, 3, len(loadEpochs))
-	require.Equal(t, now.String(), loadEpochs[1].EndTime.String())
-	require.Equal(t, now.String(), loadEpochs[2].StartTime.String())
+	require.Equal(t, 4, len(loadEpochs))
+	require.Equal(t, now.String(), loadEpochs[2].EndTime.String())
+	require.Equal(t, now.String(), loadEpochs[3].StartTime.String())
 }

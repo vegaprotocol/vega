@@ -19,7 +19,7 @@ import (
 type newValidatorCmd struct {
 	Config nodewallets.Config
 
-	TmRoot    string `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	TmHome    string `short:"t" long:"tm-home" description:"The home path of tendermint"`
 	Country   string `long:"country" description:"The country from which the validator operates" required:"true"`
 	InfoURL   string `long:"info-url" description:"The URL from which people can get to know the validator" required:"true"`
 	Name      string `long:"name" description:"The name of the validator node" required:"true"`
@@ -50,7 +50,7 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 
 	// genesis file
 	tmConfig := tmconfig.DefaultConfig()
-	tmConfig.SetRoot(os.ExpandEnv(opts.TmRoot))
+	tmConfig.SetRoot(os.ExpandEnv(opts.TmHome))
 
 	pubKey, err := loadTendermintPrivateValidatorKey(tmConfig)
 	if err != nil {

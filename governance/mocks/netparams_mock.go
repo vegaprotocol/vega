@@ -9,6 +9,7 @@ import (
 	num "code.vegaprotocol.io/vega/types/num"
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	decimal "github.com/shopspring/decimal"
 	reflect "reflect"
 	time "time"
 )
@@ -51,6 +52,21 @@ func (mr *MockNetParamsMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNetParams)(nil).Get), arg0)
 }
 
+// GetDecimal mocks base method
+func (m *MockNetParams) GetDecimal(arg0 string) (decimal.Decimal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDecimal", arg0)
+	ret0, _ := ret[0].(decimal.Decimal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDecimal indicates an expected call of GetDecimal
+func (mr *MockNetParamsMockRecorder) GetDecimal(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDecimal", reflect.TypeOf((*MockNetParams)(nil).GetDecimal), arg0)
+}
+
 // GetDuration mocks base method
 func (m *MockNetParams) GetDuration(arg0 string) (time.Duration, error) {
 	m.ctrl.T.Helper()
@@ -64,21 +80,6 @@ func (m *MockNetParams) GetDuration(arg0 string) (time.Duration, error) {
 func (mr *MockNetParamsMockRecorder) GetDuration(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDuration", reflect.TypeOf((*MockNetParams)(nil).GetDuration), arg0)
-}
-
-// GetFloat mocks base method
-func (m *MockNetParams) GetFloat(arg0 string) (float64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFloat", arg0)
-	ret0, _ := ret[0].(float64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetFloat indicates an expected call of GetFloat
-func (mr *MockNetParamsMockRecorder) GetFloat(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFloat", reflect.TypeOf((*MockNetParams)(nil).GetFloat), arg0)
 }
 
 // GetInt mocks base method
