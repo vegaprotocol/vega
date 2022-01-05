@@ -36,6 +36,7 @@
 - [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
 - [4536](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
 - [4550](https://github.com/vegaprotocol/vega/pull/4550) - Do not validate assets when loading checkpoint from non-validators
+- [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
 
 
 ## 0.47.0
