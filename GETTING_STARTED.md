@@ -105,13 +105,13 @@ There is also a `Makefile` which contain the above commands and also some other 
 
 With vega built it is technically possible to run the node locally, but it is a bit cumbersome. The steps are here if you are feeling brave: https://github.com/vegaprotocol/networks
 
-An alternative is to use `dockerizedvega` (DV) which will trivially spin up a working system for you. The script and some detailed information can be found here: https://github.com/vegaprotocol/devops-infra/blob/master/scripts/dockerisedvega.sh
+An alternative is to use `dockerisedvega` (DV) which will trivially spin up a working system for you. The script and some detailed information can be found here: https://github.com/vegaprotocol/devops-infra/blob/master/scripts/dockerisedvega.sh
 
 ### Accessing Docker Registry
 
-To use the `dockerizedvega.sh` script, you will need to pull images from the Vega private docker registry on GitHub. To do this, you need to generate a personal access token and use it to log in to the registry via the docker-cli.
+To use the `dockerisedvega.sh` script, you will need to pull images from the Vega private docker registry on GitHub. To do this, you need to generate a personal access token and use it to log into the registry via the docker-cli.
 
-To generate a personal access token, log in to GitHub and navigate to the `Personal access tokens` page in your profile settings [https://github.com/settings/tokens](https://github.com/settings/tokens).
+To generate a personal access token, log into GitHub and navigate to the `Personal access tokens` page in your profile settings [https://github.com/settings/tokens](https://github.com/settings/tokens).
 
 - Click on `Generate new token` button to generate a new token
 - Under note, give the token a descriptive name so you know what the token is for
@@ -127,7 +127,7 @@ Once the token has been generated, you can use it to log into the GitHub Docker 
 - Enter the command `docker login docker.pkg.github.com --username <your-github-username>`
 - When prompted for the password, enter the personal access token code that was generated
 
-You should see a `Login successful` message once you have logged into the docker registry. Now you can use the `dockerizedvega.sh` script.
+You should see a `Login successful` message once you have logged into the docker registry. Now you can use the `dockerisedvega.sh` script.
 
 In summary you just need to do the following (Note that if you are on MacOS and probably also Windows you may need to increase the allocated memory to 4GB using the Docker Desktop UI):
 
