@@ -100,7 +100,8 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.timeService.NotifyOnTick(n.limits.OnTick)
 
 	if n.conf.IsValidator() {
-		n.topology = validators.NewTopology(n.Log, n.conf.Validators, n.nodeWallets.Vega, n.broker, n.conf.IsValidator())
+		n.topology = validators.NewTopology(
+			n.Log, n.conf.Validators, validators.WrapNodeWallets(n.nodeWallets), n.broker, n.conf.IsValidator())
 	} else {
 		n.topology = validators.NewTopology(n.Log, n.conf.Validators, nil, n.broker, n.conf.IsValidator())
 	}
