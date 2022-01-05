@@ -54,7 +54,7 @@ $ brew install bash
 
 ### jq
 ```bash
-brew install jq
+$ brew install jq
 ```
 
 ### gnu-sed
