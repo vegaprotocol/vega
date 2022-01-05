@@ -14,6 +14,13 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
+## 0.47.4
+*2021-12-24*
+
+### 🐛 Fixes
+- [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
+
+
 ## 0.47.3
 *2021-12-24*
 
@@ -36,7 +43,6 @@
 - [4488](https://github.com/vegaprotocol/vega/pull/4488) - Disable snapshots
 - [4536](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
 - [4550](https://github.com/vegaprotocol/vega/pull/4550) - Do not validate assets when loading checkpoint from non-validators
-- [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
 
 
 ## 0.47.0
