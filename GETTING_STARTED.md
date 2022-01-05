@@ -46,34 +46,34 @@ This is necessary since some of the repos that `vega` depends on in `vegaprotoco
 ## MacOS Requirements
 
 In order to get the required tools for MacOS make sure to install the following packages:
-```
-# bash v5
-brew install bash
+### bash
+```bash
+$ brew install bash
 # now make sure you are using bash, not zsh (this can be tricky to modify)
 ```
 
-```
-# jq
+### jq
+```bash
 brew install jq
 ```
 
-```
-# gnu-sed
-brew install gnu-sed
+### gnu-sed
+```bash
+$ brew install gnu-sed
 # read the stdout, cos it asks you to modify `.profile` or `.bash_profile`
 # e.g. add export PATH="/usr/local/Cellar/gnu-sed/4.8/libexec/gnubin:$PATH"
 ```
 
-```
-# coreutils
-brew install coreutils
+### coreutils
+```bash
+$ brew install coreutils
 # again read the stdout - similar changes required to modify `.profile` or `.bash_profile`
 # e.g export PATH="/usr/local/Cellar/coreutils/9.0/libexec/gnubin:$PATH" 
 ```
 
-```
-# findutils
-brew install findutils
+### findutils
+```bash
+$ brew install findutils
 # again read the stdout to modify `.profile` or `.bash_profile`
 # e.g. export PATH="/usr/local/Cellar/findutils/4.8.0_1/libexec/gnubin:$PATH"
 ```
