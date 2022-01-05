@@ -141,6 +141,7 @@ var errorMap = map[string]int32{
 	ErrTradeServiceGetByParty.Error():          40002,
 	ErrTradeServiceGetPositionsByParty.Error(): 40003,
 	ErrTradeServiceGetByOrderID.Error():        40004,
+	ErrMissingProposalID.Error():               40005,
 	// Parties
 	ErrPartyServiceGetAll.Error():  50001,
 	ErrPartyServiceGetByID.Error(): 50002,
