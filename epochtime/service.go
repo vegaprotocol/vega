@@ -150,7 +150,7 @@ func (s *Svc) Checkpoint() ([]byte, error) {
 	return proto.Marshal(s.epoch.IntoProto())
 }
 
-func (s *Svc) Load(_ context.Context, data []byte) error {
+func (s *Svc) Load(ctx context.Context, data []byte) error {
 	pb := &eventspb.EpochEvent{}
 	if err := proto.Unmarshal(data, pb); err != nil {
 		return err
@@ -161,6 +161,7 @@ func (s *Svc) Load(_ context.Context, data []byte) error {
 	// let the time end the epoch organically
 	s.readyToStartNewEpoch = false
 	s.readyToEndEpoch = false
+	s.notify(ctx, s.epoch)
 	return nil
 }
 

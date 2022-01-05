@@ -117,7 +117,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	topology := validators.NewTopology(
 		log,
 		validators.NewDefaultConfig(),
-		nw.Vega,
+		validators.WrapNodeWallets(nw),
 		broker,
 		true,
 	)
