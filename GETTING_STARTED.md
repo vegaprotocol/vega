@@ -46,32 +46,32 @@ This is necessary since some of the repos that `vega` depends on in `vegaprotoco
 ## MacOS Requirements
 
 In order to get the required tools for MacOS make sure to install the following packages:
-### bash
+### `bash`
 ```bash
 $ brew install bash
 # now make sure you are using bash, not zsh (this can be tricky to modify)
 ```
 
-### jq
+### `jq`
 ```bash
 $ brew install jq
 ```
 
-### gnu-sed
+### `gnu-sed`
 ```bash
 $ brew install gnu-sed
 # read the stdout, cos it asks you to modify `.profile` or `.bash_profile`
 # e.g. add export PATH="/usr/local/Cellar/gnu-sed/4.8/libexec/gnubin:$PATH"
 ```
 
-### coreutils
+### `coreutils`
 ```bash
 $ brew install coreutils
 # again read the stdout - similar changes required to modify `.profile` or `.bash_profile`
 # e.g export PATH="/usr/local/Cellar/coreutils/9.0/libexec/gnubin:$PATH" 
 ```
 
-### findutils
+### `findutils`
 ```bash
 $ brew install findutils
 # again read the stdout to modify `.profile` or `.bash_profile`
@@ -109,7 +109,7 @@ An alternative is to use `dockerisedvega` (DV) which will trivially spin up a wo
 
 ### Accessing Docker Registry
 
-To use the `dockerisedvega.sh` script, you will need to pull images from the Vega private docker registry on GitHub. To do this, you need to generate a personal access token and use it to log into the registry via the docker-cli.
+To use the `dockerisedvega.sh` script, you will need to pull images from the Vega private docker registry on GitHub. To do this, you need to generate a personal access token and use it to log into the registry via the `docker-cli`.
 
 To generate a personal access token, log into GitHub and navigate to the `Personal access tokens` page in your profile settings [https://github.com/settings/tokens](https://github.com/settings/tokens).
 

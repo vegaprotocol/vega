@@ -12,7 +12,7 @@
 
 
 ### 🛠 Improvements
-- [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add information required to use dockerizedvega.sh script with private Docker repository
+- [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
 - [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
 - [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit the number of epochs for which we keep delegations in memory in core api
