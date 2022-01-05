@@ -129,7 +129,7 @@ Once the token has been generated, you can use it to log into the GitHub Docker 
 
 You should see a `Login successful` message once you have logged into the docker registry. Now you can use the `dockerisedvega.sh` script.
 
-In summary you just need to do the following (Note that if you are on MacOS and probably also Windows you may need to increase the allocated memory to 4GB using the Docker Desktop UI):
+You can now run the following commands to get DV running locally. (Note that if you are on MacOS and probably also Windows you may need to increase the allocated memory to 4GB using the Docker Desktop UI):
 
 ```
 dockerisedvega.sh --vega-loglevel DEBUG --prefix mydvbits --portbase 1000 --validators 2 --nonvalidators 1 start
