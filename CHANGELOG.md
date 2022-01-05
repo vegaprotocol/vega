@@ -15,7 +15,7 @@
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ## 0.47.4
-*2021-12-24*
+*2022-01-05*
 
 ### 🐛 Fixes
 - [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
