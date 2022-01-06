@@ -70,7 +70,7 @@ func (n *NodeCommand) loadAsset(ctx context.Context, id string, v *proto.AssetDe
 			backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 		)
 		if err != nil {
-			return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
+			return fmt.Errorf("unable to instantiate asset \"%s\": %w", v.Name, err)
 		}
 	} else {
 		asset.SetValidNonValidator()

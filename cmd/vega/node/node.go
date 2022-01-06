@@ -91,13 +91,14 @@ type NodeCommand struct {
 	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
 
-	assets         *assets.Service
-	topology       *validators.Topology
-	notary         *notary.SnapshotNotary
-	evtfwd         *evtforward.EvtForwarder
-	witness        *validators.Witness
-	banking        *banking.Engine
-	genesisHandler *genesis.Handler
+	assets               *assets.Service
+	topology             *validators.Topology
+	notary               *notary.SnapshotNotary
+	eventForwarder       *evtforward.Forwarder
+	eventForwarderEngine EventForwarderEngine
+	witness              *validators.Witness
+	banking              *banking.Engine
+	genesisHandler       *genesis.Handler
 
 	// plugins
 	settlePlugin     *plugins.Positions
@@ -142,6 +143,7 @@ func (n *NodeCommand) Run(
 		n.loadNodeWallets,
 		n.startServices,
 		n.runNode,
+		n.stopServices,
 		n.postRun,
 		n.persistentPost,
 	}
@@ -176,7 +178,7 @@ func (n *NodeCommand) runNode(args []string) error {
 		n.conf.API,
 		n.stats,
 		n.blockchainClient,
-		n.evtfwd,
+		n.eventForwarder,
 		n.timeService,
 		n.eventService,
 		statusChecker,

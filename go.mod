@@ -10,6 +10,7 @@ require (
 	code.vegaprotocol.io/vegawallet v0.11.1-0.20220118134126-26f681c98f91
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
+	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/cosmos/iavl v0.15.3
 	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3
@@ -61,7 +62,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/btcsuite/btcd v0.21.0-beta // indirect
-	github.com/cenkalti/backoff/v4 v4.0.2 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/confio/ics23/go v0.6.3 // indirect
