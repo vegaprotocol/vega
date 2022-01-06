@@ -6,6 +6,7 @@ Feature: Test interactions between different auction types
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.targetstake.triggering.ratio | 0     |
+      | network.floatingPointUpdates.delay            | 5s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -219,13 +220,15 @@ Feature: Test interactions between different auction types
     When the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference | error                                                       |
       | party2 | ETH/DEC21 | sell | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GTC | no-reject |                                                             |
-      | party1 | ETH/DEC21 | buy  | 10     | 1120  | 0                | TYPE_LIMIT | TIF_GFN | reject-me | OrderError: non-persistent order trades out of price bounds |
+      | party1 | ETH/DEC21 | buy  | 10     | 1020  | 0                | TYPE_LIMIT | TIF_GFN | reject-me | OrderError: non-persistent order trades out of price bounds |
     Then the following orders should be stopped:
       | party  | market id | reason                                               |
       | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
+    
+    Then the network moves ahead "5" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1000      | 1020      | 1000         | 1000           | 10            |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1001      | 1019      | 1000         | 1000           | 10            |
 
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> leave auction mode

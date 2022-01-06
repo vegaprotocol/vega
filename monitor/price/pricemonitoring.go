@@ -184,7 +184,7 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 		boundFactorsConsensusDone: false,
 	}
 
-	stateVarEngine.AddStateVariable(asset, mktID, boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
+	stateVarEngine.AddStateVariable(asset, mktID, boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
 	return e, nil
 }
 
