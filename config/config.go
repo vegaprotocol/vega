@@ -25,20 +25,15 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/limits"
-	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
@@ -57,12 +52,7 @@ type Config struct {
 	Execution         execution.Config   `group:"Execution" namespace:"execution"`
 	Processor         processor.Config   `group:"Processor" namespace:"processor"`
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
-	Matching          matching.Config    `group:"Matching" namespace:"matching"`
 	Oracles           oracles.Config     `group:"Oracles" namespace:"oracles"`
-	Liquidity         liquidity.Config   `group:"Liquidity" namespace:"liquidity"`
-	Position          positions.Config   `group:"Position" namespace:"position"`
-	Risk              risk.Config        `group:"Risk" namespace:"risk"`
-	Settlement        settlement.Config  `group:"Settlement" namespace:"settlement"`
 	Time              vegatime.Config    `group:"Time" namespace:"time"`
 	Epoch             epochtime.Config   `group:"Epoch" namespace:"epochtime"`
 	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
@@ -103,16 +93,11 @@ func NewDefaultConfig() Config {
 		Execution:         execution.NewDefaultConfig(),
 		Processor:         processor.NewDefaultConfig(),
 		Oracles:           oracles.NewDefaultConfig(),
-		Liquidity:         liquidity.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
 		Epoch:             epochtime.NewDefaultConfig(),
-		Matching:          matching.NewDefaultConfig(),
-		Risk:              risk.NewDefaultConfig(),
 		Pprof:             pprof.NewDefaultConfig(),
 		Monitoring:        monitoring.NewDefaultConfig(),
 		Logging:           logging.NewDefaultConfig(),
-		Position:          positions.NewDefaultConfig(),
-		Settlement:        settlement.NewDefaultConfig(),
 		Collateral:        collateral.NewDefaultConfig(),
 		Metrics:           metrics.NewDefaultConfig(),
 		Governance:        governance.NewDefaultConfig(),
