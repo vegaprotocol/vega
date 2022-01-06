@@ -76,12 +76,15 @@ func (n *NodeCommand) startBlockchainConnections(_ []string) error {
 		return nil
 	}
 
-	if n.conf.Blockchain.ChainProvider != blockchain.ProviderNullChain {
-		var err error
-		n.ethClient, err = ethclient.Dial(n.ctx, n.conf.NodeWallet.ETH.Address)
-		if err != nil {
-			return fmt.Errorf("could not instantiate ethereum client: %w", err)
-		}
+	// if we are in nullchain mode, skip creating and eth connection
+	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		return nil
+	}
+
+	var err error
+	n.ethClient, err = ethclient.Dial(n.ctx, n.conf.NodeWallet.ETH.Address)
+	if err != nil {
+		return fmt.Errorf("could not instantiate ethereum client: %w", err)
 	}
 
 	return nil

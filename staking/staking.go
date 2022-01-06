@@ -24,7 +24,7 @@ func New(
 ) (*Accounting, *StakeVerifier) {
 	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt, isValidator)
 	ethCfns := NewEthereumConfirmations(ethClient, nil)
-	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)
+	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns, isValidator)
 	sakeV := NewStakeVerifier(log, cfg, accs, tt, witness, broker, ocv)
 
 	netp.Watch(netparams.WatchParam{

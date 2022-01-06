@@ -25,6 +25,7 @@ type OnChainVerifier struct {
 	log              *logging.Logger
 	ethClient        EthereumClient
 	ethConfirmations EthConfirmations
+	isValidator      bool
 
 	mu                sync.RWMutex
 	ethCfg            vgproto.EthereumConfig
@@ -37,6 +38,7 @@ func NewOnChainVerifier(
 	log *logging.Logger,
 	ethClient EthereumClient,
 	ethConfirmations EthConfirmations,
+	isValidator bool,
 ) *OnChainVerifier {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
@@ -44,6 +46,7 @@ func NewOnChainVerifier(
 		log:              log,
 		ethClient:        ethClient,
 		ethConfirmations: ethConfirmations,
+		isValidator:      isValidator,
 	}
 }
 
@@ -65,6 +68,10 @@ func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg inter
 			o.contractAddresses, ethcmn.HexToAddress(address))
 
 		if o.genesisLoaded {
+			continue
+		}
+
+		if !o.isValidator {
 			continue
 		}
 
