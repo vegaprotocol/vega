@@ -14,6 +14,7 @@
 
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/data-node/pull/) -
+- [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
 
 
 ## 0.47.0
