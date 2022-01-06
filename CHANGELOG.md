@@ -12,6 +12,7 @@
 
 
 ### 🛠 Improvements
+- [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
 - [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
 - [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit the number of epochs for which we keep delegations in memory in core api
@@ -38,7 +39,7 @@
 - [4536](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
 - [4550](https://github.com/vegaprotocol/vega/pull/4550) - Do not validate assets when loading checkpoint from non-validators
 - [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
-
+- [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
 
 ## 0.47.0
 *2021-11-24*
