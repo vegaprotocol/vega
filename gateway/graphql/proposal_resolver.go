@@ -101,7 +101,7 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 	}
 	var noWeight float64
 	var noToken = num.Zero()
-	for _, no := range obj.Yes {
+	for _, no := range obj.No {
 		weight, err := strconv.ParseFloat(no.TotalGovernanceTokenWeight, 64)
 		if err != nil {
 			return nil, err

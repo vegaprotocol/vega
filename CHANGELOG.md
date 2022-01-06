@@ -13,7 +13,7 @@
 - [251](https://github.com/vegaprotocol/data-node/pull/251) - Updated proto and core and added support for the new events (state var and network limits)
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens
 
 
 ## 0.47.0
