@@ -28,8 +28,8 @@ const (
 	WithdrawalStatusUnspecified WithdrawalStatus = 0
 	// WithdrawalStatusOpen The withdrawal is open and being processed by the network.
 	WithdrawalStatusOpen WithdrawalStatus = 1
-	// WithdrawalStatusCancelled The withdrawal have been cancelled.
-	WithdrawalStatusCancelled WithdrawalStatus = 2
+	// WithdrawalStatusRejected The withdrawal have been rejected.
+	WithdrawalStatusRejected WithdrawalStatus = 2
 	// WithdrawalStatusFinalized The withdrawal went through and is fully finalised, the funds are removed from the
 	// Vega network and are unlocked on the foreign chain bridge, for example, on the Ethereum network.
 	WithdrawalStatusFinalized WithdrawalStatus = 3
