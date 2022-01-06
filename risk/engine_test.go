@@ -312,7 +312,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
+	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -337,7 +337,7 @@ func testMarginWithOrderInBook(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar)
 	evt := testMargin{
 		party:   "tx",
 		size:    10,
@@ -415,7 +415,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	as.EXPECT().InAuction().AnyTimes().Return(false)
 	// instantiate the book then fill it with the orders
 
-	book := matching.NewOrderBook(log, conf.Matching, marketID, false)
+	book := matching.NewOrderBook(log, conf.Execution.Matching, marketID, false)
 
 	for _, v := range ordersInBook {
 		o := &types.Order{
@@ -438,7 +438,7 @@ func testMarginWithOrderInBook2(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any())
-	testE := risk.NewEngine(log, conf.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar)
+	testE := risk.NewEngine(log, conf.Execution.Risk, mc, model, book, as, broker, 0, "mktid", "ETH", statevar)
 	evt := testMargin{
 		party:   "tx",
 		size:    13,
