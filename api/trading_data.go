@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -2094,8 +2095,10 @@ func (t *tradingDataService) GetProposalByID(_ context.Context,
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	proposal, err := t.governanceService.GetProposalByID(in.ProposalId)
-	if err != nil {
-		return nil, apiError(codes.Internal, ErrMissingProposalID, err)
+	if err.Error() == governance.ErrProposalNotFound.Error() {
+		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
+	} else if err != nil {
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
 	}
 	return &protoapi.GetProposalByIDResponse{Data: proposal}, nil
 }
