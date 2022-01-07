@@ -44,14 +44,14 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     1,
+				Offset:     num.NewUint(1),
 				Proportion: 1,
 			},
 		},
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     1,
+				Offset:     num.NewUint(1),
 				Proportion: 1,
 			},
 		},
@@ -63,14 +63,14 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     10,
+				Offset:     num.NewUint(10),
 				Proportion: 42,
 			},
 		},
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     42,
+				Offset:     num.NewUint(42),
 				Proportion: 58,
 			},
 		},
@@ -141,14 +141,14 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     10,
+				Offset:     num.NewUint(10),
 				Proportion: 42,
 			},
 		},
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     42,
+				Offset:     num.NewUint(42),
 				Proportion: 58,
 			},
 		},

@@ -149,7 +149,7 @@ func testValidateProposalCommitment(t *testing.T) {
 
 	// Then invalid shapes
 	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Offset = 100
+	prop.Terms.GetNewMarket().LiquidityCommitment.Buys[0].Offset = num.NewUint(100)
 	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "order in buy side shape offset must be <= 0")
@@ -161,7 +161,7 @@ func testValidateProposalCommitment(t *testing.T) {
 	assert.Contains(t, err.Error(), "order in buy side shape with best ask price reference")
 
 	prop.Terms.GetNewMarket().LiquidityCommitment = newMarketLiquidityCommitment()
-	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Offset = -100
+	prop.Terms.GetNewMarket().LiquidityCommitment.Sells[0].Offset = num.NewUint(100)
 	_, err = eng.SubmitProposal(context.Background(), *types.ProposalSubmissionFromProposal(&prop), "proposal-id", party.Id)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "order in sell shape offset must be >= 0")
@@ -1524,10 +1524,10 @@ func newMarketLiquidityCommitment() *types.NewMarketCommitment {
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.5),
 		Sells: []*types.LiquidityOrder{
-			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: 10},
+			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Proportion: 1, Offset: num.NewUint(10)},
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: -10},
+			{Reference: proto.PeggedReference_PEGGED_REFERENCE_BEST_BID, Proportion: 1, Offset: num.NewUint(10)},
 		},
 	}
 }

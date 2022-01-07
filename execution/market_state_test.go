@@ -79,18 +79,8 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		CommitmentAmount: num.NewUint(1),
 		Fee:              num.DecimalFromFloat(0.1),
 		Sells: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceBestAsk,
-				Proportion: 1,
-				Offset:     1,
-			},
-		},
-		Buys: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceMid,
-				Proportion: 1,
-				Offset:     1,
-			},
+			getLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
+			getLiquidityOrder(types.PeggedReferenceMid, 1, 1),
 		},
 	}
 

@@ -86,21 +86,11 @@ func (l LiquidityProvisionSubmission) IntoProto() *commandspb.LiquidityProvision
 	}
 
 	for _, sell := range l.Sells {
-		order := &proto.LiquidityOrder{
-			Reference:  sell.Reference,
-			Proportion: sell.Proportion,
-			Offset:     sell.Offset,
-		}
-		lps.Sells = append(lps.Sells, order)
+		lps.Sells = append(lps.Sells, sell.IntoProto())
 	}
 
 	for _, buy := range l.Buys {
-		order := &proto.LiquidityOrder{
-			Reference:  buy.Reference,
-			Proportion: buy.Proportion,
-			Offset:     buy.Offset,
-		}
-		lps.Buys = append(lps.Buys, order)
+		lps.Buys = append(lps.Buys, buy.IntoProto())
 	}
 	return lps
 }
@@ -130,19 +120,17 @@ func LiquidityProvisionSubmissionFromProto(p *commandspb.LiquidityProvisionSubmi
 	}
 
 	for _, sell := range p.Sells {
-		order := &LiquidityOrder{
-			Reference:  sell.Reference,
-			Proportion: sell.Proportion,
-			Offset:     sell.Offset,
+		order, err := LiquidityOrderFromProto(sell)
+		if err != nil {
+			return nil, err
 		}
 		l.Sells = append(l.Sells, order)
 	}
 
 	for _, buy := range p.Buys {
-		order := &LiquidityOrder{
-			Reference:  buy.Reference,
-			Proportion: buy.Proportion,
-			Offset:     buy.Offset,
+		order, err := LiquidityOrderFromProto(buy)
+		if err != nil {
+			return nil, err
 		}
 		l.Buys = append(l.Buys, order)
 	}
@@ -203,27 +191,11 @@ func (l LiquidityProvision) IntoProto() *proto.LiquidityProvision {
 	}
 
 	for _, sell := range l.Sells {
-		lor := &proto.LiquidityOrderReference{
-			OrderId: sell.OrderID,
-			LiquidityOrder: &proto.LiquidityOrder{
-				Reference:  sell.LiquidityOrder.Reference,
-				Proportion: sell.LiquidityOrder.Proportion,
-				Offset:     sell.LiquidityOrder.Offset,
-			},
-		}
-		lp.Sells = append(lp.Sells, lor)
+		lp.Sells = append(lp.Sells, sell.IntoProto())
 	}
 
 	for _, buy := range l.Buys {
-		lor := &proto.LiquidityOrderReference{
-			OrderId: buy.OrderID,
-			LiquidityOrder: &proto.LiquidityOrder{
-				Reference:  buy.LiquidityOrder.Reference,
-				Proportion: buy.LiquidityOrder.Proportion,
-				Offset:     buy.LiquidityOrder.Offset,
-			},
-		}
-		lp.Buys = append(lp.Buys, lor)
+		lp.Buys = append(lp.Buys, buy.IntoProto())
 	}
 	return lp
 }
@@ -254,25 +226,17 @@ func LiquidityProvisionFromProto(p *proto.LiquidityProvision) (*LiquidityProvisi
 	}
 
 	for _, sell := range p.Sells {
-		lor := &LiquidityOrderReference{
-			OrderID: sell.OrderId,
-			LiquidityOrder: &LiquidityOrder{
-				Reference:  sell.LiquidityOrder.Reference,
-				Proportion: sell.LiquidityOrder.Proportion,
-				Offset:     sell.LiquidityOrder.Offset,
-			},
+		lor, err := LiquidityOrderReferenceFromProto(sell)
+		if err != nil {
+			return nil, err
 		}
 		l.Sells = append(l.Sells, lor)
 	}
 
 	for _, buy := range p.Buys {
-		lor := &LiquidityOrderReference{
-			OrderID: buy.OrderId,
-			LiquidityOrder: &LiquidityOrder{
-				Reference:  buy.LiquidityOrder.Reference,
-				Proportion: buy.LiquidityOrder.Proportion,
-				Offset:     buy.LiquidityOrder.Offset,
-			},
+		lor, err := LiquidityOrderReferenceFromProto(buy)
+		if err != nil {
+			return nil, err
 		}
 		l.Buys = append(l.Buys, lor)
 	}
@@ -298,15 +262,16 @@ func (l LiquidityOrderReference) IntoProto() *proto.LiquidityOrderReference {
 	}
 }
 
-func LiquidityOrderReferenceFromProto(p *proto.LiquidityOrderReference) *LiquidityOrderReference {
-	return &LiquidityOrderReference{
-		OrderID: p.OrderId,
-		LiquidityOrder: &LiquidityOrder{
-			Reference:  p.LiquidityOrder.Reference,
-			Proportion: p.LiquidityOrder.Proportion,
-			Offset:     p.LiquidityOrder.Offset,
-		},
+func LiquidityOrderReferenceFromProto(p *proto.LiquidityOrderReference) (*LiquidityOrderReference, error) {
+	lo, err := LiquidityOrderFromProto(p.LiquidityOrder)
+	if err != nil {
+		return nil, err
 	}
+
+	return &LiquidityOrderReference{
+		OrderID:        p.OrderId,
+		LiquidityOrder: lo,
+	}, nil
 }
 
 type LiquidityOrder struct {
@@ -315,7 +280,7 @@ type LiquidityOrder struct {
 	// The relative proportion of the commitment to be allocated at a price level
 	Proportion uint32
 	// The offset/amount of units away for the order
-	Offset int64
+	Offset *num.Uint
 }
 
 func (l LiquidityOrder) DeepClone() *LiquidityOrder {
@@ -330,16 +295,21 @@ func (l LiquidityOrder) IntoProto() *proto.LiquidityOrder {
 	return &proto.LiquidityOrder{
 		Reference:  l.Reference,
 		Proportion: l.Proportion,
-		Offset:     l.Offset,
+		Offset:     l.Offset.String(),
 	}
 }
 
-func LiquidityOrderFromProto(p *proto.LiquidityOrder) *LiquidityOrder {
+func LiquidityOrderFromProto(p *proto.LiquidityOrder) (*LiquidityOrder, error) {
+	offset, overflow := num.UintFromString(p.Offset, 10)
+	if overflow {
+		return nil, errors.New("invalid offset")
+	}
+
 	return &LiquidityOrder{
-		Offset:     p.Offset,
+		Offset:     offset,
 		Proportion: p.Proportion,
 		Reference:  p.Reference,
-	}
+	}, nil
 }
 
 type LiquidityMonitoringParameters struct {
