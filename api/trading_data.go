@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"code.vegaprotocol.io/data-node/governance"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/metrics"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -2094,8 +2095,11 @@ func (t *tradingDataService) GetProposalByID(_ context.Context,
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	proposal, err := t.governanceService.GetProposalByID(in.ProposalId)
+	if errors.Is(err, governance.ErrProposalNotFound) {
+		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
+	}
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMissingProposalID, err)
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
 	}
 	return &protoapi.GetProposalByIDResponse{Data: proposal}, nil
 }
@@ -2109,8 +2113,11 @@ func (t *tradingDataService) GetProposalByReference(_ context.Context,
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 	proposal, err := t.governanceService.GetProposalByReference(in.Reference)
+	if errors.Is(err, governance.ErrProposalNotFound) {
+		return nil, apiError(codes.NotFound, ErrMissingProposalReference, err)
+	}
 	if err != nil {
-		return nil, apiError(codes.Internal, ErrMissingProposalReference, err)
+		return nil, apiError(codes.Internal, ErrNotMapped, err)
 	}
 	return &protoapi.GetProposalByReferenceResponse{Data: proposal}, nil
 }
