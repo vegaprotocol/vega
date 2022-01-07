@@ -2114,7 +2114,7 @@ func (t *tradingDataService) GetProposalByReference(_ context.Context,
 	}
 	proposal, err := t.governanceService.GetProposalByReference(in.Reference)
 	if errors.Is(err, governance.ErrProposalNotFound) {
-		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
+		return nil, apiError(codes.NotFound, ErrMissingProposalReference, err)
 	}
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrNotMapped, err)
