@@ -126,6 +126,7 @@ var errorMap = map[string]int32{
 	ErrSubmitOrder.Error():                10018,
 	ErrAmendOrder.Error():                 10019,
 	ErrCancelOrder.Error():                10020,
+	ErrMissingProposalID.Error():          10021,
 	// Orders
 	ErrOrderServiceGetByMarket.Error():      20001,
 	ErrOrderServiceGetByMarketAndID.Error(): 20002,
@@ -141,7 +142,6 @@ var errorMap = map[string]int32{
 	ErrTradeServiceGetByParty.Error():          40002,
 	ErrTradeServiceGetPositionsByParty.Error(): 40003,
 	ErrTradeServiceGetByOrderID.Error():        40004,
-	ErrMissingProposalID.Error():               40005,
 	// Parties
 	ErrPartyServiceGetAll.Error():  50001,
 	ErrPartyServiceGetByID.Error(): 50002,
