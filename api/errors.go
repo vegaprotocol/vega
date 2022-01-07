@@ -127,6 +127,7 @@ var errorMap = map[string]int32{
 	ErrAmendOrder.Error():                 10019,
 	ErrCancelOrder.Error():                10020,
 	ErrMissingProposalID.Error():          10021,
+	ErrMissingProposalReference.Error():   10022,
 	// Orders
 	ErrOrderServiceGetByMarket.Error():      20001,
 	ErrOrderServiceGetByMarketAndID.Error(): 20002,
