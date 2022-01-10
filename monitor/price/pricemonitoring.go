@@ -70,25 +70,6 @@ var (
 	defaultUpFactor   = num.MustDecimalFromString("1.1")
 )
 
-type boundFactorsConverter struct{}
-
-func (boundFactorsConverter) BundleToInterface(kvb *statevar.KeyValueBundle) statevar.StateVariableResult {
-	return &boundFactors{
-		up:   kvb.KVT[0].Val.(*statevar.DecimalVector).Val,
-		down: kvb.KVT[1].Val.(*statevar.DecimalVector).Val,
-	}
-}
-
-func (boundFactorsConverter) InterfaceToBundle(res statevar.StateVariableResult) *statevar.KeyValueBundle {
-	value := res.(*boundFactors)
-	return &statevar.KeyValueBundle{
-		KVT: []statevar.KeyValueTol{
-			{Key: "up", Val: &statevar.DecimalVector{Val: value.up}, Tolerance: tolerance},
-			{Key: "down", Val: &statevar.DecimalVector{Val: value.down}, Tolerance: tolerance},
-		},
-	}
-}
-
 type priceRange struct {
 	MinPrice       num.WrappedDecimal
 	MaxPrice       num.WrappedDecimal
@@ -368,13 +349,13 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 		}
 	}
 	e.priceRangeCacheTime = time.Time{}
-	e.resetBounds()
-	e.clearStalePrices()
+	// we're not reseetting the down/up factors - they will be updated as triggered by auction end/time
+	e.reactivateBounds()
 	e.stateChanged = true
 }
 
-// resetBounds reactivates all bounds.
-func (e *Engine) resetBounds() {
+// reactivateBounds reactivates all bounds.
+func (e *Engine) reactivateBounds() {
 	for _, b := range e.bounds {
 		if !b.Active {
 			e.stateChanged = true
@@ -474,49 +455,6 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 	e.priceRangeCacheTime = e.now
 	e.stateChanged = true
 	return e.priceRangesCache
-}
-
-// startCalcPriceRanges kicks off the bounds factors factors calculation, done asynchronously for illustration.
-func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar.FinaliseCalculation) {
-	down := make([]num.Decimal, 0, len(e.bounds))
-	up := make([]num.Decimal, 0, len(e.bounds))
-	for _, b := range e.bounds {
-		ref := e.getRefPrice(b.Trigger.Horizon)
-		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
-		down = append(down, minPrice.Div(ref))
-		up = append(up, maxPrice.Div(ref))
-	}
-	res := &boundFactors{
-		down: down,
-		up:   up,
-	}
-	endOfCalcCallback.CalculationFinished(eventID, res, nil)
-}
-
-// updatePriceBounds is called back from the state variable consensus engine when consensus is reached for the down/up factors and updates the price bounds.
-func (e *Engine) updatePriceBounds(ctx context.Context, res statevar.StateVariableResult) error {
-	bRes := res.(*boundFactors)
-	e.updateFactors(bRes.down, bRes.up)
-	return nil
-}
-
-func (e *Engine) updateFactors(down, up []num.Decimal) {
-	for i, b := range e.bounds {
-		if !b.Active {
-			continue
-		}
-
-		b.DownFactor = down[i]
-		b.UpFactor = up[i]
-	}
-	e.boundFactorsConsensusDone = true
-	// force invalidation of the price range cache
-	if len(e.pricesNow) > 0 {
-		e.getCurrentPriceRanges(true)
-	}
-
-	e.clearStalePrices()
-	e.stateChanged = true
 }
 
 // clearStalePrices updates the pricesPast slice to hold only as many prices as implied by the horizon.
