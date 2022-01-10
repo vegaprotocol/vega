@@ -48,7 +48,6 @@ require (
 	google.golang.org/protobuf v1.26.0
 )
 
-
 require (
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
