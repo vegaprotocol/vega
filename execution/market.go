@@ -937,31 +937,29 @@ func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
 		return types.ErrPeggedOrderWithoutReferencePrice
 	}
 
-	zero := num.NewUint(0)
-
 	if order.Side == types.SideBuy {
 		switch order.PeggedOrder.Reference {
 		case types.PeggedReferenceBestAsk:
 			return types.ErrPeggedOrderBuyCannotReferenceBestAskPrice
 		case types.PeggedReferenceBestBid:
-			if order.PeggedOrder.Offset.LT(zero) {
+			if order.PeggedOrder.Offset.LT(num.Zero()) {
 				return types.ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
 			}
 		case types.PeggedReferenceMid:
-			if order.PeggedOrder.Offset.LTE(zero) {
+			if order.PeggedOrder.Offset.LTE(num.Zero()) {
 				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
 			}
 		}
 	} else {
 		switch order.PeggedOrder.Reference {
 		case types.PeggedReferenceBestAsk:
-			if order.PeggedOrder.Offset.LT(zero) {
+			if order.PeggedOrder.Offset.LT(num.Zero()) {
 				return types.ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
 			}
 		case types.PeggedReferenceBestBid:
 			return types.ErrPeggedOrderSellCannotReferenceBestBidPrice
 		case types.PeggedReferenceMid:
-			if order.PeggedOrder.Offset.LTE(zero) {
+			if order.PeggedOrder.Offset.LTE(num.Zero()) {
 				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
 			}
 		}

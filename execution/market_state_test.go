@@ -82,6 +82,9 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 			getLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
 			getLiquidityOrder(types.PeggedReferenceMid, 1, 1),
 		},
+		Buys: []*types.LiquidityOrder{
+			getLiquidityOrder(types.PeggedReferenceMid, 1, 1),
+		},
 	}
 
 	err = tm.market.SubmitLiquidityProvision(ctx, lpsub, "someparty", "lpid1")

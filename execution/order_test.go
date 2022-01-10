@@ -1339,11 +1339,6 @@ func testPeggedOrderBuys(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	order.PeggedOrder = getPeggedOrder(types.PeggedReferenceBestBid, 3)
-	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
-	assert.Nil(t, confirmation)
-	assert.Error(t, err)
-
 	order.PeggedOrder = getPeggedOrder(types.PeggedReferenceBestBid, 0)
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
@@ -1351,11 +1346,6 @@ func testPeggedOrderBuys(t *testing.T) {
 
 	// MID peg must be > 0
 	order.PeggedOrder = getPeggedOrder(types.PeggedReferenceMid, 0)
-	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
-	assert.Nil(t, confirmation)
-	assert.Error(t, err)
-
-	order.PeggedOrder = getPeggedOrder(types.PeggedReferenceMid, 3)
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.Nil(t, confirmation)
 	assert.Error(t, err)
@@ -1419,17 +1409,7 @@ func testPeggedOrderSells(t *testing.T) {
 	assert.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	order.PeggedOrder = getPeggedOrder(types.PeggedReferenceMid, 3)
-	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
-	assert.Nil(t, confirmation)
-	assert.Error(t, err)
-
 	// BEST ASK peg must be >= 0
-	order.PeggedOrder = getPeggedOrder(types.PeggedReferenceBestAsk, 3)
-	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
-	assert.Nil(t, confirmation)
-	assert.Error(t, err)
-
 	order.PeggedOrder = getPeggedOrder(types.PeggedReferenceBestAsk, 3)
 	confirmation, err = tm.market.SubmitOrder(context.Background(), &order)
 	assert.NotNil(t, confirmation)
@@ -1800,9 +1780,9 @@ func testPeggedOrderRepricing(t *testing.T) {
 			expectedPrice: num.NewUint(buyPrice - 3),
 		},
 		{
-			reference:      types.PeggedReferenceBestBid,
+			reference:      types.PeggedReferenceBestAsk,
 			side:           types.SideBuy,
-			offset:         3,
+			offset:         0,
 			expectedPrice:  num.Zero(),
 			expectingError: "offset must be greater than zero",
 		},
@@ -1823,13 +1803,6 @@ func testPeggedOrderRepricing(t *testing.T) {
 			side:          types.SideSell,
 			offset:        5,
 			expectedPrice: num.NewUint(sellPrice + 5),
-		},
-		{
-			reference:      types.PeggedReferenceBestAsk,
-			side:           types.SideSell,
-			offset:         5,
-			expectingError: "can't have a negative offset on Sell orders",
-			expectedPrice:  num.Zero(),
 		},
 	}
 

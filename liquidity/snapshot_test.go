@@ -92,7 +92,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesLiquidityOrders:market-id": "0254d8b74441ca3bac8f9b141408502d9b1f297e8ef1054d45775566677a8072",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
-		"provisions:market-id":             "81b3826f582f142a6ff0e1ccec41c6447dd723d039960a59c7abb5115a19cc02",
+		"provisions:market-id":             "609b730ff00fb9478ccf2abba16d6551a93fce223a487a8ac4c9f4c05f85b45e",
 		"liquiditySupplied:market-id":      "79236135f389cc75b9c1a43b6acce8fecb7d56a2c14c3fc4b043523b9933828b",
 	}
 
@@ -130,7 +130,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesLiquidityOrders:market-id": "c76075385924d7207d9002d2f9855c089f1c409c7e6e235d5b0ddc4a84bc7fc4",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
-		"provisions:market-id":             "7a0a12dab8c50b6bb983e0441d267ea37829999f2fd3bff0d9aa52839ad54c11",
+		"provisions:market-id":             "c6fc3641b0fd754a55e6f980bae9a6e5a96ac53c42488487318a8ff7f17f365e",
 		"liquiditySupplied:market-id":      "9af43ab189f6eb27c5ec88f31498ac65901ed9f7da5de344a0f017509d83fda5",
 	}
 
