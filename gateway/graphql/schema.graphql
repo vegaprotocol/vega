@@ -2545,9 +2545,9 @@ type RiskFactor {
   "market the risk factor was emitted for"
   market: String!
   "short factor"
-  short: Float!
+  short: String!
   "long factor"
-  long: Float!
+  long: String!
 }
 
 "A special order type for liquidity providers"
@@ -2650,6 +2650,8 @@ type RewardSummary {
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
+  "Id of asset in which the reward was paid"
+  assetId: String! @deprecated(reason: "Use asset{id} instead")
   "A list of rewards received for this asset"
   rewards: [Reward]
   "The total amount of rewards received for this asset."

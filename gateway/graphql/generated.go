@@ -745,6 +745,7 @@ type ComplexityRoot struct {
 
 	RewardPerAssetDetail struct {
 		Asset       func(childComplexity int) int
+		AssetId     func(childComplexity int) int
 		Rewards     func(childComplexity int) int
 		TotalAmount func(childComplexity int) int
 	}
@@ -1245,6 +1246,7 @@ type RewardResolver interface {
 }
 type RewardPerAssetDetailResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
+
 	Rewards(ctx context.Context, obj *vega.RewardSummary) ([]*vega.Reward, error)
 	TotalAmount(ctx context.Context, obj *vega.RewardSummary) (string, error)
 }
@@ -4391,6 +4393,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RewardPerAssetDetail.Asset(childComplexity), true
+
+	case "RewardPerAssetDetail.assetId":
+		if e.complexity.RewardPerAssetDetail.AssetId == nil {
+			break
+		}
+
+		return e.complexity.RewardPerAssetDetail.AssetId(childComplexity), true
 
 	case "RewardPerAssetDetail.rewards":
 		if e.complexity.RewardPerAssetDetail.Rewards == nil {
@@ -7914,9 +7923,9 @@ type RiskFactor {
   "market the risk factor was emitted for"
   market: String!
   "short factor"
-  short: Float!
+  short: String!
   "long factor"
-  long: Float!
+  long: String!
 }
 
 "A special order type for liquidity providers"
@@ -8019,6 +8028,8 @@ type RewardSummary {
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
+  "Id of asset in which the reward was paid"
+  assetId: String! @deprecated(reason: "Use asset{id} instead")
   "A list of rewards received for this asset"
   rewards: [Reward]
   "The total amount of rewards received for this asset."
@@ -23487,6 +23498,41 @@ func (ec *executionContext) _RewardPerAssetDetail_asset(ctx context.Context, fie
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _RewardPerAssetDetail_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardPerAssetDetail",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _RewardPerAssetDetail_rewards(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23728,9 +23774,9 @@ func (ec *executionContext) _RiskFactor_short(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RiskFactor_long(ctx context.Context, field graphql.CollectedField, obj *vega.RiskFactor) (ret graphql.Marshaler) {
@@ -23763,9 +23809,9 @@ func (ec *executionContext) _RiskFactor_long(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ScalingFactors_searchLevel(ctx context.Context, field graphql.CollectedField, obj *vega.ScalingFactors) (ret graphql.Marshaler) {
@@ -34568,6 +34614,11 @@ func (ec *executionContext) _RewardPerAssetDetail(ctx context.Context, sel ast.S
 				}
 				return res
 			})
+		case "assetId":
+			out.Values[i] = ec._RewardPerAssetDetail_assetId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "rewards":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
