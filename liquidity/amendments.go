@@ -14,7 +14,7 @@ import (
 var ErrPartyHaveNoLiquidityProvision = errors.New("party have no liquidity provision")
 
 func (e *Engine) CanAmend(
-	lps *types.LiquidityProvisionSubmission,
+	lps *types.LiquidityProvisionAmendment,
 	party string,
 ) error {
 	// does the party is an LP
@@ -23,8 +23,8 @@ func (e *Engine) CanAmend(
 		return ErrPartyHaveNoLiquidityProvision
 	}
 
-	// is the new submission valid?
-	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
+	// is the new amendment valid?
+	if err := e.ValidateLiquidityProvisionAmendment(lps); err != nil {
 		return err
 	}
 
@@ -34,7 +34,7 @@ func (e *Engine) CanAmend(
 
 func (e *Engine) AmendLiquidityProvision(
 	ctx context.Context,
-	lps *types.LiquidityProvisionSubmission,
+	lps *types.LiquidityProvisionAmendment,
 	party string,
 ) ([]*types.Order, error) {
 	if err := e.CanAmend(lps, party); err != nil {
@@ -71,7 +71,7 @@ func (e *Engine) AmendLiquidityProvision(
 		lp.Status = types.LiquidityProvisionStatusUndeployed
 	}
 
-	e.buildLiquidityProvisionShapesReferences(lp, lps)
+	e.buildLiquidityProvisionShapesReferences(lp, lps.Buys, lps.Sells)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	e.provisions.Set(party, lp)
 	return cancels, nil
@@ -84,10 +84,10 @@ func (e *Engine) AmendLiquidityProvision(
 func (e *Engine) GetPotentialShapeOrders(
 	party string,
 	bestBidPrice, bestAskPrice *num.Uint,
-	lps *types.LiquidityProvisionSubmission,
+	lps *types.LiquidityProvisionAmendment,
 	repriceFn RepricePeggedOrder,
 ) ([]*types.Order, error) {
-	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
+	if err := e.ValidateLiquidityProvisionAmendment(lps); err != nil {
 		return nil, err
 	}
 

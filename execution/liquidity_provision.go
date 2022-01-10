@@ -34,7 +34,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	// if the party is amending an existing LP
 	// we go done the path of amending
 	if m.liquidity.IsLiquidityProvider(party) {
-		return m.amendOrCancelLiquidityProvision(ctx, sub, party)
+		return err
 	}
 
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
@@ -202,6 +202,48 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	m.liquidity.RemovePending(party)
 
 	return nil
+}
+
+// SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
+func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionAmendment, party, id string) (err error) {
+	if !m.canSubmitCommitment() {
+		return ErrCommitmentSubmissionNotAllowed
+	}
+
+	if err := m.liquidity.ValidateLiquidityProvisionAmendment(sub); err != nil {
+		return err
+	}
+
+	if !m.liquidity.IsLiquidityProvider(party) {
+		return err
+	}
+
+	lp := m.liquidity.LiquidityProvisionByPartyID(party)
+	if lp == nil {
+		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	}
+
+	// Increasing the commitment should always be allowed, but decreasing is
+	// only valid if the resulting amount still allows the market as a whole
+	// to reach it's commitment level. Otherwise the commitment reduction is
+	// rejected.
+	if sub.CommitmentAmount.LT(lp.CommitmentAmount) {
+		// first - does the market have enough stake
+		supplied := m.getSuppliedStake()
+		if m.getTargetStake().GTE(supplied) {
+			return ErrNotEnoughStake
+		}
+
+		// now if the stake surplus is > than the change we are OK
+		surplus := supplied.Sub(supplied, m.getTargetStake())
+		diff := num.Zero().Sub(lp.CommitmentAmount, sub.CommitmentAmount)
+		if surplus.LT(diff) {
+			return ErrNotEnoughStake
+		}
+	}
+
+	return m.amendLiquidityProvision(ctx, sub, party)
+
 }
 
 // this is a function to be called when orders already exists
@@ -808,46 +850,46 @@ func (m *Market) cancelLiquidityProvision(
 	return nil
 }
 
-func (m *Market) amendOrCancelLiquidityProvision(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
-) error {
-	lp := m.liquidity.LiquidityProvisionByPartyID(party)
-	if lp == nil {
-		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
-	}
+// func (m *Market) amendOrCancelLiquidityProvision(
+// 	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+// ) error {
+// 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
+// 	if lp == nil {
+// 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+// 	}
 
-	// Increasing the commitment should always be allowed, but decreasing is
-	// only valid if the resulting amount still allows the market as a whole
-	// to reach it's commitment level. Otherwise the commitment reduction is
-	// rejected.
-	if sub.CommitmentAmount.LT(lp.CommitmentAmount) {
-		// first - does the market have enough stake
-		supplied := m.getSuppliedStake()
-		if m.getTargetStake().GTE(supplied) {
-			return ErrNotEnoughStake
-		}
+// 	// Increasing the commitment should always be allowed, but decreasing is
+// 	// only valid if the resulting amount still allows the market as a whole
+// 	// to reach it's commitment level. Otherwise the commitment reduction is
+// 	// rejected.
+// 	if sub.CommitmentAmount.LT(lp.CommitmentAmount) {
+// 		// first - does the market have enough stake
+// 		supplied := m.getSuppliedStake()
+// 		if m.getTargetStake().GTE(supplied) {
+// 			return ErrNotEnoughStake
+// 		}
 
-		// now if the stake surplus is > than the change we are OK
-		surplus := supplied.Sub(supplied, m.getTargetStake())
-		diff := num.Zero().Sub(lp.CommitmentAmount, sub.CommitmentAmount)
-		if surplus.LT(diff) {
-			return ErrNotEnoughStake
-		}
-	}
+// 		// now if the stake surplus is > than the change we are OK
+// 		surplus := supplied.Sub(supplied, m.getTargetStake())
+// 		diff := num.Zero().Sub(lp.CommitmentAmount, sub.CommitmentAmount)
+// 		if surplus.LT(diff) {
+// 			return ErrNotEnoughStake
+// 		}
+// 	}
 
-	// here, we now we have a amendment
-	// if this amendment is to reduce the stake to 0, then we'll want to
-	// cancel this lp submission
-	if sub.CommitmentAmount.IsZero() {
-		return m.cancelLiquidityProvision(ctx, party, false)
-	}
+// 	// here, we now we have a amendment
+// 	// if this amendment is to reduce the stake to 0, then we'll want to
+// 	// cancel this lp submission
+// 	if sub.CommitmentAmount.IsZero() {
+// 		return m.cancelLiquidityProvision(ctx, party, false)
+// 	}
 
-	// if commitment != 0, then it's an amend
-	return m.amendLiquidityProvision(ctx, sub, party)
-}
+// 	// if commitment != 0, then it's an amend
+// 	return m.amendLiquidityProvision(ctx, sub, party)
+// }
 
 func (m *Market) amendLiquidityProvision(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) (err error) {
 	bondRollback, err := m.ensureLiquidityProvisionBond(ctx, sub, party)
 	if err != nil {
@@ -895,7 +937,7 @@ func (m *Market) amendLiquidityProvision(
 // - third, none of them are available, which just accept the change, all
 // hel may break loose when coming out of auction, but we know this.
 func (m *Market) amendLiquidityProvisionAuction(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	// first try to get the indicative uncrossing price from the book
 	price := m.matching.GetIndicativePrice()
@@ -924,7 +966,7 @@ func (m *Market) amendLiquidityProvisionAuction(
 // from there, then move the funds in the party margin account.
 func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	ctx context.Context,
-	sub *types.LiquidityProvisionSubmission,
+	sub *types.LiquidityProvisionAmendment,
 	party string,
 	price *num.Uint,
 ) error {
@@ -984,7 +1026,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 }
 
 func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
@@ -1009,7 +1051,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 }
 
 func (m *Market) amendLiquidityProvisionContinuous(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	bestBidPrice, bestAskPrice, err := m.getBestStaticPrices()
 	if err != nil {
@@ -1068,7 +1110,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 }
 
 func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
@@ -1111,7 +1153,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 
 // returns the rollback transfer in case of error.
 func (m *Market) ensureLiquidityProvisionBond(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) (*types.Transfer, error) {
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(

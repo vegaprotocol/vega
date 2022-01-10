@@ -404,3 +404,106 @@ func LiquidityProvisionSubmissionFromMarketCommitment(
 		Reference:        nmc.Reference,
 	}
 }
+
+type LiquidityProvisionAmendment struct {
+	LiquidityProvisionID string
+	// Market identifier for the order, required field
+	MarketID string
+	// Specified as a unitless number that represents the amount of settlement asset of the market
+	CommitmentAmount *num.Uint
+	// Nominated liquidity fee factor, which is an input to the calculation of taker fees on the market, as per setting fees and rewarding liquidity providers
+	Fee num.Decimal
+	// A set of liquidity sell orders to meet the liquidity provision obligation
+	Sells []*LiquidityOrder
+	// A set of liquidity buy orders to meet the liquidity provision obligation
+	Buys []*LiquidityOrder
+	// A reference to be added to every order created out of this liquidityProvisionAmendment
+	Reference string
+}
+
+func NewLiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendment) (*LiquidityProvisionAmendment, error) {
+	fee, err := num.DecimalFromString(p.Fee)
+	if err != nil {
+		return nil, err
+	}
+
+	commitmentAmount := num.Zero()
+	if len(p.CommitmentAmount) > 0 {
+		var overflowed bool
+		commitmentAmount, overflowed = num.UintFromString(p.CommitmentAmount, 10)
+		if overflowed {
+			return nil, errors.New("invalid commitment amount")
+		}
+	}
+
+	l := LiquidityProvisionAmendment{
+		LiquidityProvisionID: p.ID,
+		Fee:                  fee,
+		MarketID:             p.MarketId,
+		CommitmentAmount:     commitmentAmount,
+		Sells:                make([]*LiquidityOrder, 0, len(p.Sells)),
+		Buys:                 make([]*LiquidityOrder, 0, len(p.Buys)),
+		Reference:            p.Reference,
+	}
+
+	for _, sell := range p.Sells {
+		order := &LiquidityOrder{
+			Reference:  sell.Reference,
+			Proportion: sell.Proportion,
+			Offset:     sell.Offset,
+		}
+		l.Sells = append(l.Sells, order)
+	}
+
+	for _, buy := range p.Buys {
+		order := &LiquidityOrder{
+			Reference:  buy.Reference,
+			Proportion: buy.Proportion,
+			Offset:     buy.Offset,
+		}
+		l.Buys = append(l.Buys, order)
+	}
+	return &l, nil
+}
+
+func (l LiquidityProvisionAmendment) IntoProto() *commandspb.LiquidityProvisionAmendment {
+	lps := &commandspb.LiquidityProvisionSubmission{
+		MarketId:         l.MarketID,
+		CommitmentAmount: num.UintToString(l.CommitmentAmount),
+		Fee:              l.Fee.String(),
+		Sells:            make([]*proto.LiquidityOrder, 0, len(l.Sells)),
+		Buys:             make([]*proto.LiquidityOrder, 0, len(l.Buys)),
+		Reference:        l.Reference,
+	}
+
+	for _, sell := range l.Sells {
+		order := &proto.LiquidityOrder{
+			Reference:  sell.Reference,
+			Proportion: sell.Proportion,
+			Offset:     sell.Offset,
+		}
+		lps.Sells = append(lps.Sells, order)
+	}
+
+	for _, buy := range l.Buys {
+		order := &proto.LiquidityOrder{
+			Reference:  buy.Reference,
+			Proportion: buy.Proportion,
+			Offset:     buy.Offset,
+		}
+		lps.Buys = append(lps.Buys, order)
+	}
+	return lps
+}
+
+func (o LiquidityProvisionAmendment) String() string {
+	return o.IntoProto().String()
+}
+
+func (o LiquidityProvisionAmendment) GetLiquidityProvisionId() string {
+	return o.LiquidityProvisionID
+}
+
+func (o LiquidityProvisionAmendment) GetMarketId() string {
+	return o.MarketID
+}

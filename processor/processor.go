@@ -68,6 +68,8 @@ type ExecutionEngine interface {
 
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
+	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
+	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string) error
 	Hash() []byte
 }
 
@@ -89,6 +91,8 @@ type Stats interface {
 	IncCurrentOrdersInBatch()
 	IncTotalCancelOrder()
 	IncTotalAmendOrder()
+	IncTotalCancelLiquidityProvision()
+	IncTotalAmendLiquidityProvision()
 	// batch stats
 	IncTotalBatches()
 	NewBatch()
