@@ -206,6 +206,18 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to LiquidityProvisionSubmission")
 		}
 		*underlyingCmd = *cmd.LiquidityProvisionSubmission
+	case *commandspb.InputData_LiquidityProvisionCancellation:
+		underlyingCmd, ok := i.(*commandspb.LiquidityProvisionCancellation)
+		if !ok {
+			return errors.New("failed to unmarshall to LiquidityProvisionCancellation")
+		}
+		*underlyingCmd = *cmd.LiquidityProvisionCancellation
+	case *commandspb.InputData_LiquidityProvisionAmendment:
+		underlyingCmd, ok := i.(*commandspb.LiquidityProvisionAmendment)
+		if !ok {
+			return errors.New("failed to unmarshall to LiquidityProvisionAmendment")
+		}
+		*underlyingCmd = *cmd.LiquidityProvisionAmendment
 	case *commandspb.InputData_ProposalSubmission:
 		underlyingCmd, ok := i.(*commandspb.ProposalSubmission)
 		if !ok {
