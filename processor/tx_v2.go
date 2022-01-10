@@ -92,6 +92,10 @@ func (t TxV2) Command() txn.Command {
 		return txn.WithdrawCommand
 	case *commandspb.InputData_LiquidityProvisionSubmission:
 		return txn.LiquidityProvisionCommand
+	case *commandspb.InputData_LiquidityProvisionCancellation:
+		return txn.CancelLiquidityProvisionCommand
+	case *commandspb.InputData_LiquidityProvisionAmendment:
+		return txn.AmendLiquidityProvisionCommand
 	case *commandspb.InputData_ProposalSubmission:
 		return txn.ProposeCommand
 	case *commandspb.InputData_NodeRegistration:
@@ -133,6 +137,10 @@ func (t TxV2) GetCmd() interface{} {
 		return cmd.WithdrawSubmission
 	case *commandspb.InputData_LiquidityProvisionSubmission:
 		return cmd.LiquidityProvisionSubmission
+	case *commandspb.InputData_LiquidityProvisionCancellation:
+		return cmd.LiquidityProvisionCancellation
+	case *commandspb.InputData_LiquidityProvisionAmendment:
+		return cmd.LiquidityProvisionAmendment
 	case *commandspb.InputData_ProposalSubmission:
 		return cmd.ProposalSubmission
 	case *commandspb.InputData_NodeRegistration:
