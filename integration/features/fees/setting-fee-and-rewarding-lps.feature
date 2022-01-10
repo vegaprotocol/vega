@@ -3,7 +3,7 @@ Feature: Test liquidity provider reward distribution
 # Spec file: ../spec/0042-setting-fees-and-rewarding-lps.md
 
   Background:
-    Given the simple risk model named "simple-risk-model-1":
+    Given the simple risk model named "simple-risk-model-1": 
       | long | short | max move up | min move down | probability of trading |
       | 0.1  | 0.1   | 500         | 500           | 0.1                    |
     And the fees configuration named "fees-config-1":
@@ -24,6 +24,7 @@ Feature: Test liquidity provider reward distribution
       | market.liquidity.targetstake.triggering.ratio       | 0     |
       | market.liquidity.providers.fee.distributionTimeStep | 10m   |
 
+  Given the average block duration is "2"
 
   Scenario: 1 LP joining at start, checking liquidity rewards over 3 periods, 1 period with no trades
     # setup accounts
@@ -63,9 +64,11 @@ Feature: Test liquidity provider reward distribution
       | party | equity like share | average entry valuation |
       | lp1   | 1                 | 10000                   |
 
+    Then the network moves ahead "1" blocks
+
     And the price monitoring bounds for the market "ETH/DEC21" should be:
       | min bound | max bound |
-      | 500       | 1500      |
+      | 500       | 1500      | 
 
     And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
 

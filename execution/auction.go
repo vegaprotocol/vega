@@ -39,8 +39,8 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
 		}
 		m.as.SetReadyToLeave()
-		m.LeaveAuction(ctx, now)
 		m.OnOpeningAuctionFirstUncrossingPrice()
+		m.LeaveAuction(ctx, now)
 		// the market is now in a ACTIVE state
 		m.mkt.State = types.MarketStateActive
 		// the market is now properly open, so set the timestamp to when the opening auction actually ended

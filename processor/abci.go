@@ -1293,7 +1293,7 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
 	proposal := &commandspb.StateVariableProposal{}
 	if err := tx.Unmarshal(proposal); err != nil {
-		app.log.Error("failed to unmarshal StateVariableProposal", logging.Error(err))
+		app.log.Error("failed to unmarshal StateVariableProposal", logging.Error(err), logging.String("pub-key", tx.PubKeyHex()))
 		return err
 	}
 

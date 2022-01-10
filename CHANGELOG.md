@@ -20,6 +20,7 @@
 - [4540](https://github.com/vegaprotocol/vega/pull/4540) - Require Go minimum version 1.17
 - [4530](https://github.com/vegaprotocol/vega/pull/4530) - Integrate risk factors with floating point consensus engine
 - [4485](https://github.com/vegaprotocol/vega/pull/4485) - Change snapshot interval default to 1000 blocks
+- [4554](https://github.com/vegaprotocol/vega/pull/4554) - Integrate price ranges with floating point consensus engine
 - [4544](https://github.com/vegaprotocol/vega/pull/4544) - Ensure validators are started with the right set of keys
 - [4571](https://github.com/vegaprotocol/vega/pull/4571) - Update `CHANGELOG.md` for `0.47.x`
 - [4573](https://github.com/vegaprotocol/vega/pull/4573) - Remove execution configuration duplication from configuration root
