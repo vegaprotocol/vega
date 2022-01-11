@@ -223,10 +223,6 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.Liquidi
 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
 	}
 
-	if id != sub.LiquidityProvisionID {
-		return fmt.Errorf("provided liquidity provision does not match current liquidity provision (%v but found %v)", lp.ID, sub.LiquidityProvisionID)
-	}
-
 	// Increasing the commitment should always be allowed, but decreasing is
 	// only valid if the resulting amount still allows the market as a whole
 	// to reach it's commitment level. Otherwise the commitment reduction is
@@ -261,8 +257,15 @@ func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.Liq
 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
 	}
 
-	if lp.ID != cancel.LiquidityProvisionID {
-		return fmt.Errorf("provided liquidity provision does not match current liquidity provision (%v but found %v)", lp.ID, cancel.LiquidityProvisionID)
+	supplied := m.getSuppliedStake()
+	if m.getTargetStake().GTE(supplied) {
+		return ErrNotEnoughStake
+	}
+
+	// now if the stake surplus is > than the change we are OK
+	surplus := supplied.Sub(supplied, m.getTargetStake())
+	if surplus.LT(lp.CommitmentAmount) {
+		return ErrNotEnoughStake
 	}
 
 	return m.cancelLiquidityProvision(ctx, party, false)

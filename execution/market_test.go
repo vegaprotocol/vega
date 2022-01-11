@@ -2299,22 +2299,29 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 	tm.market.TSCalc().RecordOpenInterest(10, now)
 
 	// by set a very low commitment we should fail
-	lp.CommitmentAmount = num.NewUint(1)
+
+	lpa := &types.LiquidityProvisionAmendment{
+		MarketID:         lp.MarketID,
+		CommitmentAmount: num.NewUint(1),
+		Fee:              lp.Fee,
+		Buys:             lp.Buys,
+		Sells:            lp.Sells,
+	}
 	require.Equal(t, execution.ErrNotEnoughStake,
-		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, party1, "id-lp"),
 	)
 
 	// 2000 + 600 should be enough to get us on top of the
 	// target stake
-	lp.CommitmentAmount = num.NewUint(2000 + 600)
+	lpa.CommitmentAmount = num.NewUint(2000 + 600)
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, party1, "id-lp"),
 	)
 
 	// 2600 - 125 should be enough to get just at the required stake
-	lp.CommitmentAmount = num.NewUint(2600 - 125)
+	lpa.CommitmentAmount = num.NewUint(2600 - 125)
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(ctx, lp, party1, "id-lp"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, party1, "id-lp"),
 	)
 }
 
@@ -4295,22 +4302,22 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-A", "id-lp"))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
-	// Remove the LPSubmission by setting the commitment to 0
-	lp2 := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.Zero(),
-		Fee:              num.DecimalFromFloat(0.01),
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2000},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1000},
-		},
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1000},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -1500},
-		},
+	// Remove the LPSubmission
+	lpc := &types.LiquidityProvisionCancellation{
+		MarketID:             tm.market.GetID(),
+		LiquidityProvisionID: "id-lp",
+		// Fee:              num.DecimalFromFloat(0.01),
+		// Sells: []*types.LiquidityOrder{
+		// 	{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2000},
+		// 	{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1000},
+		// },
+		// Buys: []*types.LiquidityOrder{
+		// 	{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1000},
+		// 	{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -1500},
+		// },
 	}
 
-	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp2, "party-A", "id-lp"))
+	require.NoError(t, tm.market.CancelLiquidityProvision(ctx, lpc, "party-A", "id-lp"))
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 }
 
@@ -5015,13 +5022,18 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// now we do a cancellation
-	lpCancel := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.Zero(),
+	//lpCancel := &types.LiquidityProvisionSubmission{
+	//	MarketID:         tm.market.GetID(),
+	//	CommitmentAmount: num.Zero(),
+	//}
+
+	lpCancel := &types.LiquidityProvisionCancellation{
+		MarketID:             tm.market.GetID(),
+		LiquidityProvisionID: "id-lp",
 	}
 
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(ctx, lpCancel, "party-2", "id-lp2"),
+		tm.market.CancelLiquidityProvision(ctx, lpCancel, "party-2", "id-lp2"),
 		"commitment submission rejected, not enough stake",
 	)
 }
@@ -5237,15 +5249,15 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
 
 	// now we do a cancellation
-	lpCancel := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.Zero(),
+	lpCancel := &types.LiquidityProvisionCancellation{
+		MarketID:             tm.market.GetID(),
+		LiquidityProvisionID: "id-lp-2",
 	}
 
 	// cleanup the events before we continue
 	tm.events = nil
 
-	require.NoError(t, tm.market.SubmitLiquidityProvision(
+	require.NoError(t, tm.market.CancelLiquidityProvision(
 		ctx, lpCancel, "party-2-bis", "id-lp-id3"))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
@@ -6151,9 +6163,19 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
 
 	// don't use AddSum, we need to keep the original amount somewhere
-	lp2sub.CommitmentAmount = num.Sum(lp2sub.CommitmentAmount, num.NewUint(25750))
+	lpa := &types.LiquidityProvisionAmendment{
+		MarketID:         lp2sub.MarketID,
+		CommitmentAmount: num.Sum(lp2sub.CommitmentAmount, num.NewUint(25750)),
+		Fee:              num.DecimalFromFloat(0.1),
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -1},
+		},
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: +1},
+		},
+	}
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(ctx, lp2sub, lp2, "id-lp-2"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, lp2, "id-lp-2"),
 	)
 
 	// progress time so liquidity auction ends
@@ -6174,9 +6196,10 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, types.OrderStatusFilled, sellConf4.Order.Status)
 
 	// Bringing commitment back to old level shouldn't be allowed
-	lp2sub.CommitmentAmount = lp2Commitment.Clone()
+
+	lpa.CommitmentAmount = lp2Commitment.Clone()
 	require.Error(t,
-		tm.market.SubmitLiquidityProvision(ctx, lp2sub, lp2, "id-lp-2"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, lp2, "id-lp-2"),
 	)
 
 	md = tm.market.GetMarketData()
