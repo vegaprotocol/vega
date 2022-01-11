@@ -14,6 +14,7 @@ require (
 	github.com/cosmos/iavl v0.15.3
 	github.com/cucumber/godog v0.11.0
 	github.com/cucumber/messages-go/v10 v10.0.3
+	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/fatih/color v1.7.0
 	github.com/fsnotify/fsnotify v1.4.9
