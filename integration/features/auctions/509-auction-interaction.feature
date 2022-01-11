@@ -184,7 +184,6 @@ Feature: Test interactions between different auction types
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
       | party1 | ETH/DEC21 | buy  | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
       | party2 | ETH/DEC21 | sell | 20     | 1010  | 0                | TYPE_LIMIT | TIF_GTC |
-      #And clear order events
     And the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           | target stake | supplied stake | open interest |
       | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY | 1000         | 1000           | 10            |

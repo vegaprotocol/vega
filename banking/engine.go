@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -45,6 +46,7 @@ type Assets interface {
 type Notary interface {
 	StartAggregate(resID string, kind types.NodeSignatureKind, signature []byte)
 	IsSigned(ctx context.Context, id string, kind types.NodeSignatureKind) ([]types.NodeSignature, bool)
+	OfferSignatures(kind types.NodeSignatureKind, f func(resources string) []byte)
 }
 
 // Collateral engine
@@ -177,7 +179,16 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	e.mu.Lock()
 	e.currentTime = t
 	e.mu.Unlock()
-	for k, v := range e.assetActs {
+
+	assetActionKeys := make([]string, 0, len(e.assetActs))
+	for k := range e.assetActs {
+		assetActionKeys = append(assetActionKeys, k)
+	}
+	sort.Strings(assetActionKeys)
+
+	// iterate over asset actions deterministically
+	for _, k := range assetActionKeys {
+		v := e.assetActs[k]
 		state := atomic.LoadUint32(&v.state)
 		if state == pendingState {
 			continue
@@ -221,6 +232,12 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 		delete(e.assetActs, k)
 		e.bss.changed[assetActionsKey] = true
 	}
+
+	// we may want a dedicated method on the snapshot engine at some
+	// point but this will do for now
+	// this will be restarting the signatures aggregates
+	e.notary.OfferSignatures(
+		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {
@@ -237,7 +254,14 @@ func (e *Engine) onCheckDone(i interface{}, valid bool) {
 }
 
 func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
-	for _, v := range e.withdrawals {
+	// sort withdraws to check deterministically
+	withdrawalsK := make([]string, 0, len(e.withdrawals))
+	for k := range e.withdrawals {
+		withdrawalsK = append(withdrawalsK, k)
+	}
+
+	for _, k := range withdrawalsK {
+		v := e.withdrawals[k]
 		if v.ref.Cmp(ref) == 0 {
 			return v.w, nil
 		}
@@ -300,6 +324,7 @@ func (e *Engine) finalizeWithdraw(
 
 	res, err := e.col.Withdraw(ctx, w.PartyID, w.Asset, w.Amount.Clone())
 	if err != nil {
+		w.Status = types.WithdrawalStatusCancelled
 		return err
 	}
 

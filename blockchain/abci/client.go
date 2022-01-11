@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"code.vegaprotocol.io/vega/vegatime"
-
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -103,7 +101,7 @@ func (c *Client) SendTransactionCommit(ctx context.Context, bytes []byte) (strin
 func (c *Client) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
 	res, err := c.tmclt.Genesis(ctx)
 	if err != nil {
-		return vegatime.Now(), err
+		return time.Time{}, err
 	}
 	return res.Genesis.GenesisTime.UTC(), nil
 }
@@ -213,6 +211,10 @@ func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) er
 	defer c.tmclt.UnsubscribeAll(context.Background(), "vega")
 
 	return <-errCh
+}
+
+func (c *Client) Start() error {
+	return nil // Nothing to do for this client type.
 }
 
 type userInputError struct {

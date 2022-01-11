@@ -162,7 +162,6 @@ Feature: Test margin for lp near price monitoring boundaries
       | party | asset | market id  | margin   | general  | bond     |
       | lp1    | ETH2  | ETH2/MAR22 | 39083413 | 10916587 | 50000000 |
 
-    And clear order events
     Then the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference |
       | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-3 |
@@ -170,10 +169,6 @@ Feature: Test margin for lp near price monitoring boundaries
     And the market data for the market "ETH2/MAR22" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 43200   | 900       | 1109      | 3611         | 50000000       | 10            |
-    Then debug liquidity submission errors
-    And debug transaction errors
-    And debug liquidity provision events
-    And debug orders
     And the order book should have the following volumes for market "ETH2/MAR22":
       | side | price | volume |
       | sell | 1109  | 90173  |

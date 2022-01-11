@@ -17,8 +17,8 @@ import (
 )
 
 type testNotary struct {
-	// *notary.SnapshotNotary
-	*notary.Notary
+	*notary.SnapshotNotary
+	// 	*notary.Notary
 	ctrl   *gomock.Controller
 	top    *mocks.MockValidatorTopology
 	cmd    *mocks.MockCommander
@@ -40,17 +40,14 @@ func getTestNotary(t *testing.T) *testNotary {
 	tt.EXPECT().NotifyOnTick(gomock.Any()).Times(1).Do(func(f func(context.Context, time.Time)) {
 		onTick = f
 	})
-	// notr := notary.NewWithSnapshot(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd)
-	notr := notary.New(
-		logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd, tt)
+	notr := notary.NewWithSnapshot(logging.NewTestLogger(), notary.NewDefaultConfig(), top, broker, cmd, tt)
 	return &testNotary{
-		// SnapshotNotary: notr,
-		Notary: notr,
-		top:    top,
-		ctrl:   ctrl,
-		cmd:    cmd,
-		onTick: onTick,
-		tt:     tt,
+		SnapshotNotary: notr,
+		top:            top,
+		ctrl:           ctrl,
+		cmd:            cmd,
+		onTick:         onTick,
+		tt:             tt,
 	}
 }
 

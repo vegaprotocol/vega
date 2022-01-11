@@ -11,15 +11,17 @@ import (
 
 func PartiesWithdrawTheFollowingAssets(
 	collateral *collateral.Engine,
+	netDeposits *num.Uint,
 	table *godog.Table,
 ) error {
 	for _, r := range parseWithdrawAssetTable(table) {
 		row := withdrawAssetRow{row: r}
-
-		_, err := collateral.Withdraw(context.Background(), row.Party(), row.Asset(), row.Amount())
+		amount := row.Amount()
+		_, err := collateral.Withdraw(context.Background(), row.Party(), row.Asset(), amount)
 		if err := checkExpectedError(row, err); err != nil {
 			return err
 		}
+		netDeposits = netDeposits.Sub(netDeposits, amount)
 	}
 	return nil
 }

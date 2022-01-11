@@ -18,7 +18,7 @@ func (e *Engine) CanAmend(
 	party string,
 ) error {
 	// does the party is an LP
-	_, ok := e.provisions[party]
+	_, ok := e.provisions.Get(party)
 	if !ok {
 		return ErrPartyHaveNoLiquidityProvision
 	}
@@ -42,12 +42,14 @@ func (e *Engine) AmendLiquidityProvision(
 	}
 
 	// LP exists, checked in the previous func
-	lp := e.provisions[party]
+	lp, _ := e.provisions.Get(party)
 
 	// first we get all orders from this party to be cancelled
 	// get the liquidity order to be cancelled
-	cancels := make([]*types.Order, 0, len(e.liquidityOrders[party]))
-	for _, o := range e.liquidityOrders[party] {
+	// NOTE: safe to iterate over the map straight away here  as
+	// no operation is done on orders
+	cancels := make([]*types.Order, 0, len(e.liquidityOrders.m[party]))
+	for _, o := range e.liquidityOrders.m[party] {
 		cancels = append(cancels, o)
 	}
 
@@ -57,7 +59,7 @@ func (e *Engine) AmendLiquidityProvision(
 
 	// now let's apply all changes
 	// first reset the lp orders map
-	e.liquidityOrders[party] = map[string]*types.Order{}
+	e.liquidityOrders.ResetForParty(party)
 	// then update the LP
 	lp.UpdatedAt = e.currentTime.UnixNano()
 	lp.CommitmentAmount = lps.CommitmentAmount.Clone()
@@ -70,8 +72,8 @@ func (e *Engine) AmendLiquidityProvision(
 	}
 
 	e.buildLiquidityProvisionShapesReferences(lp, lps)
-
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
+	e.provisions.Set(party, lp)
 	return cancels, nil
 }
 
@@ -122,8 +124,8 @@ func (e *Engine) GetPotentialShapeOrders(
 	// Update this once we have updated the commitment value to use Uint TODO UINT
 	obligation, _ := num.UintFromDecimal(lps.CommitmentAmount.ToDecimal().Mul(e.stakeToObligationFactor).Round(0))
 	// Create a slice shaped copy of the orders
-	orders := make([]*types.Order, 0, len(e.orders[party]))
-	for _, order := range e.orders[party] {
+	orders := make([]*types.Order, 0, len(e.orders.m[party]))
+	for _, order := range e.orders.m[party] {
 		orders = append(orders, order)
 	}
 

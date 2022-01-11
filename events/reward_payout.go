@@ -52,6 +52,7 @@ func (rp RewardPayout) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      rp.eventID(),
 		Block:   rp.TraceID(),
+		ChainId: rp.ChainID(),
 		Type:    rp.et.ToProto(),
 		Event: &eventspb.BusEvent_RewardPayout{
 			RewardPayout: &p,
@@ -73,5 +74,6 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 		Asset:                   rp.Asset,
 		PercentageOfTotalReward: rp.PercentOfTotalReward,
 		Amount:                  amount,
+		Timestamp:               rp.Timestamp,
 	}
 }

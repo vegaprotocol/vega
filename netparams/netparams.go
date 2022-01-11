@@ -13,22 +13,6 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-// START PATCH
-// this code is here only to ensure network parameter restored
-// from checkpoint get processed, it will help dispatch at a given
-// time the network parameters.
-var startProcessingTimeUpdate time.Time
-
-func init() {
-	var err error
-	startProcessingTimeUpdate, err = time.Parse(time.RFC3339, "2021-12-29T12:00:00Z") // 2021 Dec 29 at 12:00 UTC
-	if err != nil {
-		panic(err)
-	}
-}
-
-// END PATCH
-
 var ErrUnknownKey = errors.New("unknown key")
 
 // Broker - event bus.
@@ -47,7 +31,7 @@ type value interface {
 	String() string
 	ToFloat() (float64, error)
 	ToInt() (int64, error)
-	ToUint() (uint64, error)
+	ToUint() (*num.Uint, error)
 	ToBool() (bool, error)
 	ToString() (string, error)
 	ToDuration() (time.Duration, error)
@@ -76,6 +60,8 @@ type Store struct {
 	watchers     map[string][]WatchParam
 	paramUpdates map[string]struct{}
 
+	checkpointOverwrites map[string]struct{}
+
 	state *snapState
 }
 
@@ -84,13 +70,14 @@ func New(log *logging.Logger, cfg Config, broker Broker) *Store {
 	log.SetLevel(cfg.Level.Get())
 	store := defaultNetParams()
 	return &Store{
-		log:          log,
-		cfg:          cfg,
-		store:        store,
-		broker:       broker,
-		watchers:     map[string][]WatchParam{},
-		paramUpdates: map[string]struct{}{},
-		state:        newSnapState(store),
+		log:                  log,
+		cfg:                  cfg,
+		store:                store,
+		broker:               broker,
+		watchers:             map[string][]WatchParam{},
+		paramUpdates:         map[string]struct{}{},
+		checkpointOverwrites: map[string]struct{}{},
+		state:                newSnapState(store),
 	}
 }
 
@@ -150,6 +137,20 @@ func (s *Store) UponGenesis(ctx context.Context, rawState []byte) (err error) {
 		}
 	}
 
+	overwrites, err := LoadGenesisStateOverwrite(rawState)
+	if err != nil {
+		s.log.Error("unable to load genesis state overwrites",
+			logging.Error(err))
+		return err
+	}
+
+	for _, v := range overwrites {
+		if _, ok := AllKeys[v]; !ok {
+			s.log.Error("unknown network parameter", logging.String("netp", v))
+		}
+		s.checkpointOverwrites[v] = struct{}{}
+	}
+
 	return nil
 }
 
@@ -189,18 +190,7 @@ func (s *Store) dispatchUpdate(ctx context.Context, p string) error {
 
 // OnChainTimeUpdate is trigger once per blocks
 // we will send parameters update to watchers.
-func (s *Store) OnChainTimeUpdate(ctx context.Context, t time.Time) {
-	// START PATCH
-	// this code is here only to ensure network parameter restored
-	// from checkpoint get processed, it will help dispatch at a given
-	// time the network parameters.
-	if t.Before(startProcessingTimeUpdate) {
-		// until we reach the defined time, we still don't process
-		// the time update to keep the behaviour observed previously.
-		return
-	}
-	// END PATCH
-
+func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
@@ -339,11 +329,11 @@ func (s *Store) GetUint(key string) (*num.Uint, error) {
 	if !ok {
 		return num.Zero(), ErrUnknownKey
 	}
-	asUint64, err := svalue.ToUint()
+	v, err := svalue.ToUint()
 	if err != nil {
 		return num.Zero(), err
 	}
-	return num.NewUint(asUint64), nil
+	return v.Clone(), nil
 }
 
 // GetBool a value associated to the given key.

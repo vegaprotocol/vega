@@ -2,6 +2,7 @@ package abci
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"sort"
 
@@ -39,7 +40,9 @@ func (rp *ReplayProtector) serialiseReplayProtection() ([]byte, error) {
 	for _, block := range rp.txs {
 		txs := make([]string, 0, len(block))
 		for tx := range block {
-			txs = append(txs, tx)
+			// tx is []byte cast to string, can contain invalid UTF-8 characters.
+			// we need to encode this properly for proto marshalling to work.
+			txs = append(txs, hex.EncodeToString([]byte(tx)))
 		}
 		sort.Strings(txs)
 		blocks = append(blocks, &types.ReplayBlockTransactions{Transactions: txs})
@@ -114,6 +117,14 @@ func (rp *ReplayProtector) restoreReplayState(ctx context.Context, blockTransact
 	for i, block := range blockTransactions {
 		rp.txs[i] = make(map[string]struct{}, len(block.Transactions))
 		for _, tx := range block.Transactions {
+			// convert to byte slice that was cast to string
+			bs, err := hex.DecodeString(tx)
+			if err != nil {
+				return err
+			}
+			// cast bytes as string, this can contain invalid UTF-8 characters,
+			// which is why we need the hex.EncodeToString stuff.
+			tx = string(bs)
 			rp.txs[i][tx] = struct{}{}
 		}
 	}

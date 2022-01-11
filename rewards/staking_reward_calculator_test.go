@@ -25,6 +25,7 @@ func init() {
 func TestStakingRewards(t *testing.T) {
 	t.Run("Calculate correctly the validator score", testValidatorScore)
 	t.Run("Calculate correctly the total delegate acorss all validators", testTotalDelegated)
+	t.Run("all validator score penalised to 0", testZeroValidatorScoresAllZero)
 	t.Run("Calculate normalised validator score", testCalcValidatorsScore)
 	t.Run("Calculate the reward when the balance of the reward account is 0", testCalcRewardNoBalance)
 	t.Run("Calculate the reward when the validator scores are 0", testCalcRewardsZeroScores)
@@ -32,22 +33,61 @@ func TestStakingRewards(t *testing.T) {
 	t.Run("Reward is calculated correctly when max reward per participant restricted but not breached", testCalcRewardsMaxPayoutNotBreached)
 	t.Run("Reward is calculated correctly when max reward per participant restricted and breached - no participant can be topped up", testCalcRewardSmallMaxPayoutBreached)
 	t.Run("Reward is calculated correctly when max reward per participant restricted and breached - participant can be topped up", testCalcRewardsMaxPayoutBreachedPartyCanTakeMore)
+	t.Run("Stop distributing leftover to delegation when remaining is less than 0.1% of max per participant", testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore)
 }
 
 func testValidatorScore(t *testing.T) {
 	validatorStake := num.DecimalFromInt64(10000)
+	largeValidatorStake := num.DecimalFromInt64(40000)
+	extraLargeValidatorStake := num.DecimalFromInt64(60000)
+	extraExtraLargeValidatorStake := num.DecimalFromInt64(70000)
 	totalStake := num.DecimalFromInt64(100000.0)
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")
-
-	ratio := validatorStake.Div(totalStake)
+	optimalStakeMultiplier, _ := num.DecimalFromString("3.0")
 
 	// minVal > numVal/compLevel => a = 5
 	// valScore = 0.1
-	require.Equal(t, "0.10", calcValidatorScore(ratio, minVal, compLevel, num.DecimalFromInt64(5)).StringFixed(2))
+	require.Equal(t, "0.10", calcValidatorScore(validatorStake, totalStake, minVal, compLevel, num.DecimalFromInt64(5), optimalStakeMultiplier).StringFixed(2))
 
-	// minVal < numVal/compLevel => a = 20
-	require.Equal(t, "0.05", calcValidatorScore(ratio, minVal, compLevel, num.DecimalFromInt64(22)).StringFixed(2))
+	// // minVal < numVal/compLevel => a = 20
+	// require.Equal(t, "0.05", calcValidatorScore(validatorStake, totalStake, minVal, compLevel, num.DecimalFromInt64(22), optimalStakeMultiplier).StringFixed(2))
+
+	// minVal > numVal/compLevel => a = 5
+	// valScore = 0.1
+	// no pentalty
+	require.Equal(t, "0.20", calcValidatorScore(largeValidatorStake, totalStake, minVal, compLevel, num.DecimalFromInt64(5), optimalStakeMultiplier).StringFixed(2))
+
+	// minVal > numVal/compLevel => a = 5
+	// valScore = 0.1
+	// with flat pentalty
+	require.Equal(t, "0.20", calcValidatorScore(extraLargeValidatorStake, totalStake, minVal, compLevel, num.DecimalFromInt64(5), optimalStakeMultiplier).StringFixed(2))
+
+	// minVal > numVal/compLevel => a = 5
+	// valScore = 0.1
+	// with flat and down pentalty
+	require.Equal(t, "0.10", calcValidatorScore(extraExtraLargeValidatorStake, totalStake, minVal, compLevel, num.DecimalFromInt64(5), optimalStakeMultiplier).StringFixed(2))
+}
+
+func testZeroValidatorScoresAllZero(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	validators := []*types.ValidatorData{}
+
+	for i := 0; i < 3; i++ {
+		validators = append(validators, &types.ValidatorData{
+			NodeID:            "node" + strconv.Itoa(i),
+			PubKey:            "node" + strconv.Itoa(i),
+			SelfStake:         num.Zero(),
+			StakeByDelegators: num.NewUint(10000),
+		})
+	}
+	// setting up that all 3 nodes get score of 0 because they are penalised for having too much stake given the expected stake per node = 30000/(3/0.1) = 1000 (they have 10k each)
+	normalisedScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, num.DecimalFromFloat(5), num.DecimalFromFloat(0.1), num.DecimalFromFloat(1), nil)
+	for _, v := range normalisedScores {
+		require.True(t, v.IsZero())
+	}
 }
 
 func testTotalDelegated(t *testing.T) {
@@ -69,7 +109,7 @@ func testTotalDelegated(t *testing.T) {
 		SelfStake:         num.NewUint(30000),
 		StakeByDelegators: num.NewUint(40000),
 	}
-	require.Equal(t, num.NewUint(100000), calcTotalDelegated([]*types.ValidatorData{validator1, validator2, validator3}))
+	require.Equal(t, num.NewUint(100000), calcTotalStake([]*types.ValidatorData{validator1, validator2, validator3}))
 }
 
 func testCalcValidatorsScore(t *testing.T) {
@@ -96,7 +136,8 @@ func testCalcValidatorsScore(t *testing.T) {
 
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, rng)
+	optimalStakeMultiplier, _ := num.DecimalFromString("3.0")
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng)
 	require.Equal(t, 13, len(valScores))
 
 	for i := 0; i < 12; i++ {
@@ -110,7 +151,7 @@ func testCalcValidatorsScore(t *testing.T) {
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(19900),
 	}
-	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, rng)
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng)
 	require.Equal(t, "0.001", valScores["node13"].StringFixed(3))
 
 	validators[12] = &types.ValidatorData{
@@ -119,13 +160,13 @@ func testCalcValidatorsScore(t *testing.T) {
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(919900),
 	}
-	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, rng)
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng)
 	require.Equal(t, "0.020", valScores["node13"].StringFixed(3))
 }
 
 func testCalcRewardNoBalance(t *testing.T) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, nil, num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -138,7 +179,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	scores["node3"] = num.DecimalZero()
 	scores["node4"] = num.DecimalZero()
 
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, nil, num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -147,6 +188,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")
+	optimalStakeMultiplier, _ := num.DecimalFromString("3.0")
 	delegatorShare, _ := num.DecimalFromString("0.3")
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
@@ -189,38 +231,38 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	}
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, rng)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
 	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
-	// node1 - 0.2
-	// node2 - 0.4
-	// node3 - 0.4
+	// node1 - 0.25
+	// node2 - 0.5
+	// node3 - 0.25
 	// node4 - 0
 	// as node3 and node4 has 0 score they get nothing.
 	// given a reward of 1000000,
 	//
-	// node1 and its delegators get 200,000
-	// node2 and its delegators get 400,000
-	// node3 and its delegators get 400,000
+	// node1 and its delegators get 250,000
+	// node2 and its delegators get 500,000
+	// node3 and its delegators get 250,000
 	// with a delegator share of 0.3,
-	// delegators to node1 get 0.3 * 200000 = 60000
-	// party1 gets 0.6 * 60000 = 36000
-	// party2 gets 0.4 * 60000 = 24000
-	// node1 gets 140000
-	// node2 gets 1 * 400000 = 400000
-	// delegators to node3 get 0.3 * 4/7 * 400000 = 68571
-	// party1 gets 68571
-	// node3 gets 1 - (0.3*4/7) = 331428
+	// delegators to node1 get 0.3 * 250000 = 75000
+	// party1 gets 0.6 * 75000 = 45000
+	// party2 gets 0.4 * 75000 = 30000
+	// node1 gets 175000
+	// node2 gets 1 * 500000 = 500000
+	// delegators to node3 get 0.3 * 4/7 * 250000 = 68571
+	// party1 gets 42857
+	// node3 gets 1 - (0.3*4/7) = 207142
 
 	// node1, node2, node3, party1, party2
 	require.Equal(t, 5, len(res.partyToAmount))
 
-	require.Equal(t, num.NewUint(104571), res.partyToAmount["party1"])
-	require.Equal(t, num.NewUint(24000), res.partyToAmount["party2"])
-	require.Equal(t, num.NewUint(140000), res.partyToAmount["node1"])
-	require.Equal(t, num.NewUint(400000), res.partyToAmount["node2"])
-	require.Equal(t, num.NewUint(331428), res.partyToAmount["node3"])
+	require.Equal(t, num.NewUint(87857), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(30000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(175000), res.partyToAmount["node1"])
+	require.Equal(t, num.NewUint(500000), res.partyToAmount["node2"])
+	require.Equal(t, num.NewUint(207142), res.partyToAmount["node3"])
 
 	require.Equal(t, num.NewUint(999999), res.totalReward)
 }
@@ -236,6 +278,7 @@ func testCalcRewardsMaxPayoutNotBreached(t *testing.T) {
 func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")
+	optimalStakeMultiplier, _ := num.DecimalFromString("3.0")
 	delegatorShare, _ := num.DecimalFromString("0.3")
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
@@ -278,7 +321,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, rng)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
 	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
@@ -316,6 +359,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")
+	optimalStakeMultiplier, _ := num.DecimalFromString("3.0")
 	delegatorShare, _ := num.DecimalFromString("0.3")
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
@@ -358,36 +402,132 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, rng)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
 	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
-	// node1 - 0.2
-	// node2 - 0.4
-	// node3 - 0.4
+	// node1 - 0.25
+	// node2 - 0.5
+	// node3 - 0.25
 	// node4 - 0
 	// as node3 and node4 has 0 score they get nothing.
 	// given a reward of 1000000,
 	//
-	// node1 and its delegators get 200,000
-	// node2 and its delegators get 400,000
-	// node3 and its delegators get 400,000
+	// node1 and its delegators get 250,000
+	// node2 and its delegators get 500,000
+	// node3 and its delegators get 250,000
 	// with a delegator share of 0.3,
-	// delegators to node1 get 0.3 * 200000 = 60000
-	// party1 gets 0.6 * 60000 = 36000 -> 36000
-	// party2 gets 0.4 * 60000 = 24000 -> 24000
-	// node1 gets 140000 -> 40000
-	// node2 gets 1 * 400000 = 400000 -> 40000
-	// delegators to node3 get 0.3 * 4/7 * 400000 = 68571
-	// party1 gets 68571 -> 40000
-	// node3 gets 1 - (0.3*4/7) = 331428 -> 40000
+	// delegators to node1 get 0.3 * 250000 = 75000
+	// party1 gets 0.6 * 75000 = 45000 -> 40000
+	// party2 gets 0.4 * 75000 = 30000 -> party can take 5k more from what's left =>
+	// when distributing the 5k leftover:
+	// iteration 0: party2 gets 0.4 * 75000 = 30000 = 2000
+	// iteration 1: party2 gets 0.4*5000 = 2000
+	// iteration 2: party2 gets 0.4*3000 = 1200
+	// iteration 3: party2 gets 0.4*1800 = 720
+	// iteration 4: party2 gets 0.4*1080 = 432
+	// iteration 5: party2 gets 0.4*648 = 259
+	// iteration 6: party2 gets 0.4*388 = 155
+	// iteration 7: party2 gets 0.4*233 = 93
+	// iteration 8: party2 gets 0.4*140 = 56
+	// iteration 9: party2 gets 0.4*84 = 34
+	// this runs for 10 iteration and stops therefore:
+	// and party 2 gets: 30000 + 2000 + 1200 + 720 +432 + 259 + 155 + 93 + 56 + 34 = 34949
+	// node1 gets 175000 -> 40000
+	// node2 gets 1 * 500000 = 500000 -> 40000
+	// delegators to node3 get 0.3 * 4/7 * 250000 = 42857
+	// party1 gets 42857 -> 40000
+	// node3 gets 1 - (0.3*4/7) = 207142 -> 40000
 	// node1, node2, party1, party2
 	require.Equal(t, 5, len(res.partyToAmount))
 
 	require.Equal(t, num.NewUint(40000), res.partyToAmount["party1"])
-	require.Equal(t, num.NewUint(24000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(34949), res.partyToAmount["party2"])
 	require.Equal(t, num.NewUint(40000), res.partyToAmount["node1"])
 	require.Equal(t, num.NewUint(40000), res.partyToAmount["node2"])
 	require.Equal(t, num.NewUint(40000), res.partyToAmount["node3"])
-	require.Equal(t, num.NewUint(184000), res.totalReward)
+	require.Equal(t, num.NewUint(194949), res.totalReward)
+}
+
+func testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
+	minVal := num.DecimalFromInt64(5)
+	compLevel, _ := num.DecimalFromString("1.1")
+	optimalStakeMultiplier, _ := num.DecimalFromString("3.0")
+	delegatorShare, _ := num.DecimalFromString("0.3")
+	delegatorForVal1 := map[string]*num.Uint{}
+	delegatorForVal1["party1"] = num.NewUint(6000)
+	delegatorForVal1["party2"] = num.NewUint(4000)
+	validator1 := &types.ValidatorData{
+		NodeID:            "node1",
+		PubKey:            "node1",
+		SelfStake:         num.Zero(),
+		StakeByDelegators: num.NewUint(10000),
+		Delegators:        delegatorForVal1,
+	}
+	validator2 := &types.ValidatorData{
+		NodeID:            "node2",
+		PubKey:            "node2",
+		SelfStake:         num.NewUint(20000),
+		StakeByDelegators: num.Zero(),
+		Delegators:        map[string]*num.Uint{},
+	}
+
+	delegatorForVal3 := map[string]*num.Uint{}
+	delegatorForVal3["party1"] = num.NewUint(40000)
+	validator3 := &types.ValidatorData{
+		NodeID:            "node3",
+		PubKey:            "node3",
+		SelfStake:         num.NewUint(30000),
+		StakeByDelegators: num.NewUint(40000),
+		Delegators:        delegatorForVal3,
+	}
+
+	validator4 := &types.ValidatorData{
+		NodeID:            "node4",
+		PubKey:            "node4",
+		SelfStake:         num.Zero(),
+		StakeByDelegators: num.Zero(),
+		Delegators:        map[string]*num.Uint{},
+	}
+
+	ctrl := gomock.NewController(t)
+	broker := bmock.NewMockBroker(ctrl)
+	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+
+	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
+	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), num.Zero(), rng, logging.NewTestLogger())
+
+	// 0.1% of 1000000000 = 1000000 - this test is demonstrating that regardless of the remaining balance to give to delegators is less than 0.1% of the max
+	// payout per participant, we still run one round and then stop.
+
+	// the normalised scores are as follows (from the test above)
+	// node1 - 0.25
+	// node2 - 0.5
+	// node3 - 0.25
+	// node4 - 0
+	// as node3 and node4 has 0 score they get nothing.
+	// given a reward of 1000000,
+	//
+	// node1 and its delegators get 250,000
+	// node2 and its delegators get 500,000
+	// node3 and its delegators get 250,000
+	// with a delegator share of 0.3,
+	// delegators to node1 get 0.3 * 250000 = 75000
+	// party1 gets 0.6 * 75000 = 45000
+	// party2 gets 0.4 * 75000 = 30000
+	// node1 gets 175000
+	// node2 gets 1 * 500000 = 500000
+	// delegators to node3 get 0.3 * 4/7 * 250000 = 42857
+	// party1 gets 42857
+	// node3 gets 1 - (0.3*4/7) = 207142 -> 207142
+	// node1, node2, party1, party2
+	require.Equal(t, 5, len(res.partyToAmount))
+
+	require.Equal(t, num.NewUint(87857), res.partyToAmount["party1"])
+	require.Equal(t, num.NewUint(30000), res.partyToAmount["party2"])
+	require.Equal(t, num.NewUint(175000), res.partyToAmount["node1"])
+	require.Equal(t, num.NewUint(500000), res.partyToAmount["node2"])
+	require.Equal(t, num.NewUint(207142), res.partyToAmount["node3"])
+	require.Equal(t, num.NewUint(999999), res.totalReward)
 }

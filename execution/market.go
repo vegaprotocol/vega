@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -92,6 +91,9 @@ type PriceMonitor interface {
 	GetCurrentBounds() []*types.PriceMonitoringBounds
 	SetMinDuration(d time.Duration)
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
+	// Snapshot
+	GetState() *types.PriceMonitor
+	Changed() bool
 }
 
 // LiquidityMonitor.
@@ -103,17 +105,46 @@ type LiquidityMonitor interface {
 
 // TargetStakeCalculator interface.
 type TargetStakeCalculator interface {
+	types.StateProvider
 	RecordOpenInterest(oi uint64, now time.Time) error
 	GetTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint) *num.Uint
 	GetTheoreticalTargetStake(rf types.RiskFactor, now time.Time, markPrice *num.Uint, trades []*types.Trade) *num.Uint
 	UpdateScalingFactor(sFactor num.Decimal) error
 	UpdateTimeWindow(tWindow time.Duration)
+	Changed() bool
+}
+
+type MarketCollateral interface {
+	Deposit(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
+	EnableAsset(ctx context.Context, asset types.Asset) error
+	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	GetPartyBondAccount(market, partyID, asset string) (*types.Account, error)
+	BondUpdate(ctx context.Context, market string, transfer *types.Transfer) (*types.TransferResponse, error)
+	MarginUpdateOnOrder(ctx context.Context, marketID string, update events.Risk) (*types.TransferResponse, events.Margin, error)
+	GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error)
+	GetPartyMarginAccount(market, party, asset string) (*types.Account, error)
+	RollbackMarginUpdateOnOrder(ctx context.Context, marketID string, assetID string, transfer *types.Transfer) (*types.TransferResponse, error)
+	GetOrCreatePartyBondAccount(ctx context.Context, partyID, marketID, asset string) (*types.Account, error)
+	CreatePartyMarginAccount(ctx context.Context, partyID, marketID, asset string) (string, error)
+	FinalSettlement(ctx context.Context, marketID string, transfers []*types.Transfer) ([]*types.TransferResponse, error)
+	ClearMarket(ctx context.Context, mktID, asset string, parties []string) ([]*types.TransferResponse, error)
+	HasGeneralAccount(party, asset string) bool
+	ClearPartyMarginAccount(ctx context.Context, party, market, asset string) (*types.TransferResponse, error)
+	CanCoverBond(market, party, asset string, amount *num.Uint) bool
+	Hash() []byte
+	TransferFeesContinuousTrading(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
+	TransferFees(ctx context.Context, marketID string, assetID string, ft events.FeesTransfer) ([]*types.TransferResponse, error)
+	MarginUpdate(ctx context.Context, marketID string, updates []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error)
+	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error)
+	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error)
+	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
 }
 
 // AuctionState ...
-// We can't use the interface yet. AuctionState is passed to the engines, which access different methods
-// keep the interface for documentation purposes.
 type AuctionState interface {
+	price.AuctionState
+	lmon.AuctionState
 	// are we in auction, and what auction are we in?
 	InAuction() bool
 	IsOpeningAuction() bool
@@ -128,7 +159,9 @@ type AuctionState interface {
 	ExpiresAt() *time.Time
 	Start() time.Time
 	// signal we've started/ended the auction
-	AuctionStarted(ctx context.Context) *events.Auction
+	AuctionStarted(ctx context.Context, time time.Time) *events.Auction
+	AuctionExtended(ctx context.Context, time time.Time) *events.Auction
+	ExtendAuction(delta types.AuctionDuration)
 	Left(ctx context.Context, now time.Time) *events.Auction
 	// get some data
 	Mode() types.MarketTradingMode
@@ -136,6 +169,9 @@ type AuctionState interface {
 	ExtensionTrigger() types.AuctionTrigger
 	// UpdateMinDuration works out whether or not the current auction period (if applicable) should be extended
 	UpdateMinDuration(ctx context.Context, d time.Duration) *events.Auction
+	// Snapshot
+	GetState() *types.AuctionState
+	Changed() bool
 }
 
 // Market represents an instance of a market in vega and is in charge of calling
@@ -144,7 +180,8 @@ type Market struct {
 	log   *logging.Logger
 	idgen *IDgenerator
 
-	mkt         *types.Market
+	mkt *types.Market
+
 	closingAt   time.Time
 	currentTime time.Time
 
@@ -156,13 +193,13 @@ type Market struct {
 	matching           *matching.CachedOrderBook
 	tradableInstrument *markets.TradableInstrument
 	risk               *risk.Engine
-	position           *positions.Engine
+	position           *positions.SnapshotEngine
 	settlement         *settlement.Engine
 	fee                *fee.Engine
-	liquidity          *liquidity.Engine
+	liquidity          *liquidity.SnapshotEngine
 
 	// deps engines
-	collateral *collateral.Engine
+	collateral MarketCollateral
 
 	broker Broker
 	closed bool
@@ -174,7 +211,7 @@ type Market struct {
 
 	tsCalc TargetStakeCalculator
 
-	as *monitor.AuctionState // @TODO this should be an interface
+	as AuctionState
 
 	peggedOrders   *PeggedOrders
 	expiringOrders *ExpiringOrders
@@ -194,6 +231,8 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
+
+	stateChanged bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -230,7 +269,7 @@ func NewMarket(
 	matchingConfig matching.Config,
 	feeConfig fee.Config,
 	liquidityConfig liquidity.Config,
-	collateralEngine *collateral.Engine,
+	collateralEngine MarketCollateral,
 	oracleEngine products.OracleEngine,
 	mkt *types.Market,
 	now time.Time,
@@ -246,7 +285,6 @@ func NewMarket(
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate a new market: %w", err)
 	}
-
 	closingAt, err := tradableInstrument.Instrument.GetMarketClosingTime()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get market closing time: %w", err)
@@ -257,6 +295,7 @@ func NewMarket(
 	book := matching.NewCachedOrderBook(
 		log, matchingConfig, mkt.ID, as.InAuction())
 	asset := tradableInstrument.Instrument.Product.GetAsset()
+
 	riskEngine := risk.NewEngine(
 		log,
 		riskConfig,
@@ -269,6 +308,7 @@ func NewMarket(
 		mkt.ID,
 		asset,
 	)
+
 	settleEngine := settlement.New(
 		log,
 		settlementConfig,
@@ -276,14 +316,14 @@ func NewMarket(
 		mkt.ID,
 		broker,
 	)
-	positionEngine := positions.New(log, positionConfig, mkt.ID)
+	positionEngine := positions.NewSnapshotEngine(log, positionConfig, mkt.ID)
 
 	feeEngine, err := fee.New(log, feeConfig, *mkt.Fees, asset)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate fee engine: %w", err)
 	}
 
-	tsCalc := liquiditytarget.NewEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine)
+	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
 	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, mkt.PriceMonitoringSettings)
 	if err != nil {
@@ -292,7 +332,8 @@ func NewMarket(
 
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
+	liqEngine := liquidity.NewSnapshotEngine(
+		liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -343,8 +384,11 @@ func NewMarket(
 		lastMidSellPrice:   num.Zero(),
 		lastMidBuyPrice:    num.Zero(),
 		lastBestBidPrice:   num.Zero(),
+		stateChanged:       true,
 	}
 
+	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
+	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	return market, nil
 }
 
@@ -471,6 +515,8 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+	m.stateChanged = true
+
 	return nil
 }
 
@@ -500,13 +546,33 @@ func (m *Market) GetID() string {
 	return m.mkt.ID
 }
 
+func (m *Market) PostRestore(ctx context.Context) error {
+	m.settlement.Update(m.position.Positions())
+
+	pps := m.position.Parties()
+	peggedOrder := m.peggedOrders.GetAll()
+	parties := make(map[string]struct{}, len(pps)+len(peggedOrder))
+
+	for _, p := range pps {
+		parties[p] = struct{}{}
+	}
+
+	for _, o := range m.peggedOrders.GetAll() {
+		parties[o.Party] = struct{}{}
+	}
+	return nil
+}
+
 // OnChainTimeUpdate notifies the market of a new time event/update.
 // todo: make this a more generic function name e.g. OnTimeUpdateEvent
 func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnChainTimeUpdate")
-
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if m.closed {
+		return true
+	}
 
 	// some engines still needs to get updates:
 	m.currentTime = t
@@ -515,6 +581,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.risk.OnTimeUpdate(t)
 	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
+
+	m.stateChanged = true
 
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
@@ -526,9 +594,8 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 		return false
 	}
 
-	// if we're already in trading terminated state and the market is closed it means
-	// we didn't complete final settlement as oracle price was not available
-	// retry here
+	// if in somce case we're still in trading terminated state and tried to settle but failed,
+	// as long as there's settlement price we can retry
 	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
 
 	if m.mkt.State == types.MarketStateTradingTerminated {
@@ -558,19 +625,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
-
-	closed := m.tradableInstrument.Instrument.Product.IsTradingTerminated()
-	if !closed {
-		m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
-	} else {
-		m.mkt.State = types.MarketStateTradingTerminated
-		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
-		if settlementPrice != nil {
-			m.closeMarket(ctx, t)
-		}
-	}
-
-	m.closed = m.mkt.State == types.MarketStateSettled
+	m.broker.Send(events.NewMarketTick(ctx, m.mkt.ID, t))
 	return m.closed
 }
 
@@ -587,6 +642,7 @@ func (m *Market) updateMarketValueProxy() {
 	m.lastMarketValueProxy = m.feeSplitter.MarketValueProxy(
 		m.marketValueWindowLength, ts)
 	m.equityShares.WithMVP(m.lastMarketValueProxy)
+	m.stateChanged = true
 }
 
 func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
@@ -630,6 +686,8 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	m.broker.Send(events.NewTransferResponse(ctx, clearMarketTransfers))
 	m.mkt.State = types.MarketStateSettled
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+	m.stateChanged = true
 	return nil
 }
 
@@ -717,7 +775,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	ordersToCancel := m.matching.EnterAuction()
 
 	// Move into auction mode to prevent pegged order repricing
-	event := m.as.AuctionStarted(ctx)
+	event := m.as.AuctionStarted(ctx, m.currentTime)
 
 	// this is at least the size of the orders to be cancelled
 	updatedOrders := make([]*types.Order, 0, len(ordersToCancel))
@@ -743,6 +801,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 	if m.as.InAuction() && (m.as.IsLiquidityAuction() || m.as.IsPriceAuction()) {
 		m.mkt.State = types.MarketStateSuspended
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+		m.stateChanged = true
 	}
 }
 
@@ -752,6 +811,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
 			m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+			m.stateChanged = true
 		}
 	}()
 
@@ -1251,7 +1311,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 		}
 	}
 
-	if evt := m.as.AuctionExtended(ctx); evt != nil {
+	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 		m.broker.Send(evt)
 	}
 	m.checkLiquidity(ctx, trades)
@@ -1464,6 +1524,7 @@ func (m *Market) updateLiquidityFee(ctx context.Context) {
 		m.broker.Send(
 			events.NewMarketUpdatedEvent(ctx, *m.mkt),
 		)
+		m.stateChanged = true
 	}
 }
 
@@ -1929,6 +1990,7 @@ func (m *Market) setMarkPrice(trade *types.Trade) {
 	// in the future this will use varying logic based on market config
 	// the responsibility for calculation could be elsewhere for testability
 	m.markPrice = trade.Price.Clone()
+	m.stateChanged = true
 }
 
 // this function handles moving money after settle MTM + risk margin updates
@@ -2741,6 +2803,22 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 	m.peggedOrders.Remove(order)
 }
 
+// getOrdersByID returns orders based on given IDs. Returns NO error if order not found.
+// TODO implement this more efficiently - pre compute?
+func (m *Market) getOrdersByID(ids []string) []*types.Order {
+	orders := make([]*types.Order, 0, len(ids))
+
+	for _, id := range ids {
+		o, _, err := m.getOrderByID(id)
+		if err != nil {
+			continue
+		}
+		orders = append(orders, o.Clone())
+	}
+
+	return orders
+}
+
 // getOrderBy looks for the order in the order book and in the list
 // of pegged orders in the market. Returns the order if found, a bool
 // representing if the order was found on the order book and any error code.
@@ -2818,7 +2896,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 		*rf,
 		m.getCurrentMarkPrice(),
 		vBid, vAsk)
-	if evt := m.as.AuctionExtended(ctx); evt != nil {
+	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 		m.broker.Send(evt)
 	}
 }
@@ -2841,9 +2919,38 @@ func (m *Market) commandLiquidityAuction(ctx context.Context) {
 		// TODO: Need to also get indicative trades and check how they'd impact target stake,
 		// see  https://github.com/vegaprotocol/vega/issues/3047
 		// If price monitoring doesn't trigger auction than leave it
-		if evt := m.as.AuctionExtended(ctx); evt != nil {
+		if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 			m.broker.Send(evt)
 		}
+	}
+}
+
+func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.mkt.State = types.MarketStateTradingTerminated
+	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
+
+	sp, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
+	if sp != nil {
+		m.settlementPriceWithLock(ctx, sp)
+	}
+}
+
+func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.settlementPriceWithLock(ctx, settlementPrice)
+}
+
+// NB this musy be called with the lock already acquired.
+func (m *Market) settlementPriceWithLock(ctx context.Context, settlementPrice *num.Uint) {
+	if m.closed {
+		return
+	}
+	if m.mkt.State == types.MarketStateTradingTerminated && settlementPrice != nil {
+		m.closeMarket(ctx, m.currentTime)
+		m.closed = m.mkt.State == types.MarketStateSettled
 	}
 }
 

@@ -43,7 +43,7 @@ type ValidatorTopology interface {
 	IsValidator() bool
 	SelfNodeID() string
 	AllNodeIDs() []string
-	IsValidatorNode(string) bool
+	IsValidatorNodeID(string) bool
 }
 
 type Resource interface {
@@ -194,7 +194,7 @@ func (w *Witness) AddNodeCheck(ctx context.Context, nv *commandspb.NodeVote) err
 	}
 
 	// ensure the node is a validator
-	if !w.top.IsValidatorNode(hexPubKey) {
+	if !w.top.IsValidatorNodeID(hexPubKey) {
 		w.log.Error("non-validator node tried to register node vote",
 			logging.String("node-id", hexPubKey))
 		return ErrVoteFromNonValidator
@@ -234,6 +234,7 @@ func (w *Witness) StartCheck(
 	}
 
 	w.resources[id] = rs
+	w.setChangedLocked(true)
 
 	// if we are a validator, we just start the routine.
 	// so we can ensure the resources exists
@@ -245,7 +246,6 @@ func (w *Witness) StartCheck(
 		// check succeeded
 		atomic.StoreUint32(&rs.state, voteSent)
 	}
-	w.setChangedLocked(true)
 	return nil
 }
 
@@ -295,7 +295,6 @@ func (w *Witness) start(ctx context.Context, r *res) {
 
 	// check succeeded
 	atomic.StoreUint32(&r.state, validated)
-	w.setChangedLocked(true)
 }
 
 func (w *Witness) votePassed(votesCount, topLen int) bool {
@@ -366,7 +365,6 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
-			w.setChangedLocked(true)
 		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
 			if v.selfVoteReceived(w.top.SelfNodeID()) {
 				continue

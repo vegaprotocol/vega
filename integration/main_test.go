@@ -69,6 +69,17 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		}
 	})
 
+	s.AfterScenario(func(s *godog.Scenario, err error) {
+		if err != nil {
+			return
+		}
+
+		berr := steps.TheCumulatedBalanceForAllAccountsShouldBeWorth(execsetup.broker, execsetup.netDeposits.String())
+		if berr != nil {
+			reporter.Fatalf("\n\nError at scenario end (testing net deposits/withdrawals against cumulated balance for all accounts): %v\n\n", berr)
+		}
+	})
+
 	// delegation/validator steps
 	s.Step(`the validators:$`, func(table *godog.Table) error {
 		return steps.TheValidators(execsetup.topology, execsetup.stakingAccount, execsetup.delegationEngine, table)
@@ -81,7 +92,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.ValidatorsShouldHaveTheFollowingScores(execsetup.broker, table, epoch)
 	})
 	s.Step(`^the global reward account gets the following deposits:$`, func(table *godog.Table) error {
-		return steps.DepositToRewardAccount(execsetup.collateralEngine, table)
+		return steps.DepositToRewardAccount(execsetup.collateralEngine, table, execsetup.netDeposits)
 	})
 
 	s.Step(`^the parties receive the following reward for epoch (\d+):$`, func(epoch string, table *godog.Table) error {
@@ -129,6 +140,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), marketInsuranceAccount.ID, amount); err != nil {
 				return err
 			}
+			// add to the net deposits
+			execsetup.netDeposits.Add(execsetup.netDeposits, amount)
 		}
 		return nil
 	})
@@ -167,7 +180,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		return steps.PartiesPlaceTheFollowingPeggedOrders(execsetup.executionEngine, table)
 	})
 	s.Step(`^the parties deposit on asset's general account the following amount:$`, func(table *godog.Table) error {
-		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, table)
+		return steps.PartiesDepositTheFollowingAssets(execsetup.collateralEngine, execsetup.broker, execsetup.netDeposits, table)
 	})
 	s.Step(`^the parties deposit on staking account the following amount:$`, func(table *godog.Table) error {
 		return steps.PartiesTransferToStakingAccount(execsetup.stakingAccount, execsetup.broker, table, "")
@@ -177,7 +190,7 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	s.Step(`^the parties withdraw the following assets:$`, func(table *godog.Table) error {
-		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, table)
+		return steps.PartiesWithdrawTheFollowingAssets(execsetup.collateralEngine, execsetup.netDeposits, table)
 	})
 	s.Step(`^the parties place the following orders:$`, func(table *godog.Table) error {
 		return steps.PartiesPlaceTheFollowingOrders(execsetup.executionEngine, table)
@@ -303,6 +316,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the accumulated liquidity fees should be "([^"]*)" for the market "([^"]*)"$`, func(amount, marketID string) error {
 		return steps.TheAccumulatedLiquidityFeesShouldBeForTheMarket(execsetup.broker, amount, marketID)
 	})
+	s.Step(`^the accumulated infrastructure fees should be "([^"]*)" for the asset "([^"]*)"$`, func(amount, asset string) error {
+		return steps.TheAccumulatedInfrastructureFeesShouldBeForTheMarket(execsetup.broker, amount, asset)
+	})
 	s.Step(`^the liquidity fee factor should "([^"]*)" for the market "([^"]*)"$`, func(fee, marketID string) error {
 		return steps.TheLiquidityFeeFactorShouldForTheMarket(execsetup.broker, fee, marketID)
 	})
@@ -315,6 +331,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	// Debug steps
+	s.Step(`^debug accounts$`, func() error {
+		steps.DebugAccounts(execsetup.broker, execsetup.log)
+		return nil
+	})
 	s.Step(`^debug transfers$`, func() error {
 		steps.DebugTransfers(execsetup.broker, execsetup.log)
 		return nil
@@ -348,15 +368,14 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 
 	// Event steps
-	s.Step(`^clear order events by reference:$`, func(table *godog.Table) error {
-		return steps.ClearOrdersByReference(execsetup.broker, table)
-	})
-	s.Step(`^clear transfer events$`, func() error {
-		steps.ClearTransferEvents(execsetup.broker)
+	s.Step(`^clear all events$`, func() error {
+		steps.ClearAllEvents(execsetup.broker)
 		return nil
 	})
-	s.Step(`^clear order events$`, func() error {
-		steps.ClearOrderEvents(execsetup.broker)
-		return nil
+	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
+		return steps.TheFollowingEventsShouldBeEmitted(execsetup.broker, table)
+	})
+	s.Step(`^a total of "([0-9]+)" events should be emitted"$`, func(eventCounter int) error {
+		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
 	})
 }

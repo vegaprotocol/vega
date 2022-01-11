@@ -138,7 +138,7 @@ func TestGetRewardBalanceIsZero(t *testing.T) {
 func TestGetRewardFractional(t *testing.T) {
 	rs := &types.RewardScheme{
 		PayoutType:     types.PayoutFractional,
-		PayoutFraction: 0.5,
+		PayoutFraction: num.DecimalFromFloat(0.5),
 	}
 	epoch := types.Epoch{}
 	rewardForScheme, err := rs.GetReward(num.NewUint(10000), epoch)

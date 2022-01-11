@@ -34,6 +34,7 @@ func (n NodeSignature) StreamMessage() *eventspb.BusEvent {
 		Version: eventspb.Version,
 		Id:      n.eventID(),
 		Block:   n.TraceID(),
+		ChainId: n.ChainID(),
 		Type:    n.et.ToProto(),
 		Event: &eventspb.BusEvent_NodeSignature{
 			NodeSignature: &n.e,

@@ -19,10 +19,11 @@ import (
 )
 
 var (
-	ErrInvalidSignature              = errors.New("invalid signature")
-	ErrChainEventFromNonValidator    = errors.New("chain event emitted from a non-validator node")
-	ErrUnsupportedChainEvent         = errors.New("unsupported chain event")
-	ErrNodeSignatureFromNonValidator = errors.New("node signature not sent by validator")
+	ErrInvalidSignature                       = errors.New("invalid signature")
+	ErrChainEventFromNonValidator             = errors.New("chain event emitted from a non-validator node")
+	ErrUnsupportedChainEvent                  = errors.New("unsupported chain event")
+	ErrNodeSignatureFromNonValidator          = errors.New("node signature not sent by validator")
+	ErrNodeSignatureWithNonValidatorMasterKey = errors.New("node signature not signed with validator master key")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/processor TimeService
@@ -46,6 +47,10 @@ type DelegationEngine interface {
 	UndelegateNow(ctx context.Context, party string, nodeID string, amount *num.Uint) error
 	ProcessEpochDelegations(ctx context.Context, epoch types.Epoch) []*types.ValidatorData
 	Hash() []byte
+}
+
+type RewardEngine interface {
+	EndOfBlock(blockHeight int64) []types.ValidatorVotingPower
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
@@ -126,8 +131,11 @@ type ValidatorTopology interface {
 	UpdateValidatorSet(keys []string)
 	Len() int
 	IsValidatorVegaPubKey(pk string) bool
+	IsValidatorNodeID(nodeID string) bool
 	AllVegaPubKeys() []string
 	IsValidator() bool
+	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
+	BeginBlock(ctx context.Context, blockHeight uint64)
 }
 
 // Broker - the event bus.
