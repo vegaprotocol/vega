@@ -118,5 +118,4 @@ func TestGetProbability(t *testing.T) {
 	require.Equal(t, "0.39", getProbabilityOfTrading(getBest, pot, num.DecimalFromInt64(242), false, minProb).String())
 	// 0.25*0.8 + 0.75*0.76 = 0.77 => scaled by 0.5 => 0.385
 	require.Equal(t, "0.385", getProbabilityOfTrading(getBest, pot, num.DecimalFromInt64(243), false, minProb).String())
-
 }

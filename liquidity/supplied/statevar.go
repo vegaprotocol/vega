@@ -114,8 +114,8 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 // if it matches a price point - the corresponding probability is returned (scaled by <defaultInRangeProbabilityOfTrading>)
 // otherwise it finds the first price point that is greater than the given price and returns the interpolation of the probabilities of this price point and the preceding one rescaled by <defaultInRangeProbabilityOfTrading>.
 func getProbabilityOfTrading(getBestStaticPrices func() (*num.Uint, *num.Uint, error), pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal) num.Decimal {
-	bestBidUint, bestAskUint, error := getBestStaticPrices()
-	if error != nil {
+	bestBidUint, bestAskUint, err := getBestStaticPrices()
+	if err != nil {
 		return minProbabilityOfTrading
 	}
 	bestBid := bestBidUint.ToDecimal()
