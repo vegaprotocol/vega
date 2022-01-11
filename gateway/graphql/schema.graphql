@@ -1954,12 +1954,6 @@ enum OrderRejectionReason {
   "Buy pegged order cannot reference best ask price"
   PeggedOrderBuyCannotReferenceBestAskPrice
 
-  "Pegged order offset must be <= 0"
-  PeggedOrderOffsetMustBeLessOrEqualToZero
-
-  "Pegged order offset must be < 0"
-  PeggedOrderOffsetMustBeLessThanZero
-
   "Pegged order offset must be >= 0"
   PeggedOrderOffsetMustBeGreaterOrEqualToZero
 
@@ -2581,7 +2575,7 @@ type LiquidityOrder {
   "The proportion of the commitment allocated to this order"
   proportion: Int!
   "Offset from the pegged reference"
-  offset: Int!
+  offset: String!
 }
 
 "Status of a liquidity provision order"

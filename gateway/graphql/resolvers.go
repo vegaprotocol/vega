@@ -1723,10 +1723,6 @@ func (r *myPeggedOrderResolver) Reference(ctx context.Context, obj *types.Pegged
 	return convertPeggedReferenceFromProto(obj.Reference)
 }
 
-func (r *myPeggedOrderResolver) Offset(ctx context.Context, obj *types.PeggedOrder) (string, error) {
-	return strconv.FormatInt(obj.Offset, 10), nil
-}
-
 // END: PeggedOrder Resolver
 
 // BEGIN: Position Resolver
