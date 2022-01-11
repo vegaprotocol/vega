@@ -44,10 +44,12 @@ func NewSnapshotEngine(config Config,
 	idGen IDGen,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
+	asset string,
 	market string,
+	stateVarEngine StateVarEngine,
 ) *SnapshotEngine {
 	se := &SnapshotEngine{
-		Engine: NewEngine(config, log, broker, idGen, riskModel, priceMonitor, market),
+		Engine: NewEngine(config, log, broker, idGen, riskModel, priceMonitor, asset, market, stateVarEngine),
 		pl:     types.Payload{},
 		market: market,
 

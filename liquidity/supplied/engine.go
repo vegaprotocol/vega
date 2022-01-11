@@ -1,10 +1,12 @@
 package supplied
 
 import (
+	"context"
 	"errors"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 )
 
 // ErrNoValidOrders informs that there weren't any valid orders to cover the liquidity obligation with.
@@ -12,11 +14,6 @@ import (
 // valid pegged orders (all the prives are invalid) to cover it with.
 var (
 	ErrNoValidOrders = errors.New("no valid orders to cover the liquidity obligation with")
-)
-
-var (
-	defaultInRangeProbabilityOfTrading = num.DecimalFromFloat(0.5)
-	defaultMinimumProbabilityOfTrading = num.DecimalFromFloat(1e-8)
 )
 
 // LiquidityOrder contains information required to compute volume required to fullfil liquidity obligation per set of liquidity provision orders for one side of the order book.
@@ -43,6 +40,10 @@ type PriceMonitor interface {
 	GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal)
 }
 
+type StateVarEngine interface {
+	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+}
+
 // Engine provides functionality related to supplied liquidity.
 type Engine struct {
 	rm                             RiskModel
@@ -59,11 +60,14 @@ type Engine struct {
 	// Ask cache
 	aCache  map[num.Uint]num.Decimal
 	changed bool
+
+	pot                 *probabilityOfTrading
+	getBestStaticPrices func() (*num.Uint, *num.Uint, error)
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine.
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, marketID string) *Engine {
-	return &Engine{
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine) *Engine {
+	e := &Engine{
 		rm:                             riskModel,
 		pm:                             priceMonitor,
 		marketID:                       marketID,
@@ -75,7 +79,15 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, marketID string) 
 		bCache:                         map[num.Uint]num.Decimal{},
 		aCache:                         map[num.Uint]num.Decimal{},
 		changed:                        true,
+		pot:                            &probabilityOfTrading{},
 	}
+
+	stateVarEngine.AddStateVariable(asset, marketID, probabilityOfTradingConverter{}, e.startCalcProbOfTrading, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updateProbabilities)
+	return e
+}
+
+func (e *Engine) SetGetStaticPricesFunc(f func() (*num.Uint, *num.Uint, error)) {
+	e.getBestStaticPrices = f
 }
 
 func (e *Engine) OnMinProbabilityOfTradingLPOrdersUpdate(v num.Decimal) {
@@ -139,14 +151,14 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	for _, o := range orders {
 		if o.Side == types.SideBuy {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), true, minPrice, maxPrice)
+			prob := getProbabilityOfTrading(e.getBestStaticPrices, e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			bLiq = bLiq.Add(d)
 		}
 		if o.Side == types.SideSell {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskPrice.Clone(), o.Price.Clone(), false, minPrice, maxPrice)
+			prob := getProbabilityOfTrading(e.getBestStaticPrices, e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			sLiq = sLiq.Add(d)
@@ -175,7 +187,7 @@ func (e *Engine) updateSizes(
 	for _, o := range orders {
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
-		prob := e.getProbabilityOfTrading(bestBidPrice.Clone(), bestAskprice.Clone(), o.Price.Clone(), isBid, minPrice, maxPrice)
+		prob := getProbabilityOfTrading(e.getBestStaticPrices, e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
 		if prob.IsZero() || prob.IsNegative() {
 			proportion = num.DecimalZero()
 		}
@@ -201,70 +213,6 @@ func (e *Engine) updateSizes(
 		o.LiquidityImpliedVolume = liv.Uint64()
 	}
 	return nil
-}
-
-func (e *Engine) getProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice num.WrappedDecimal) num.Decimal {
-	// if min, max changed since caches were created then reset
-	if e.cachedMin.NEQ(minPrice.Representation()) || e.cachedMax.NEQ(maxPrice.Representation()) {
-		e.bCache = make(map[num.Uint]num.Decimal, len(e.bCache))
-		e.aCache = make(map[num.Uint]num.Decimal, len(e.aCache))
-		e.cachedMin, e.cachedMax = minPrice.Representation(), maxPrice.Representation()
-		e.changed = true
-	}
-
-	// Any part of shape that's pegged between or equal to
-	// best_static_bid and best_static_ask
-	// has probability of trading = 1.
-	if orderPrice.GTE(bestBidPrice) && orderPrice.LTE(bestAskPrice) {
-		return defaultInRangeProbabilityOfTrading
-	}
-
-	prob := e.calcProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice, isBid, minPrice, maxPrice)
-
-	// if prob of trading is > than the minimum
-	// we can return now.
-	if prob.GreaterThanOrEqual(e.minProbabilityOfTrading) {
-		return prob
-	}
-
-	// A failsafe to shift the probability of trading up to the minimum not to end up with unwieldy order sizes
-	// This execution path should never be reached, but it is still theoretically possible for it to be reached due to rounding errors.
-	return e.minProbabilityOfTrading
-}
-
-func (e *Engine) calcProbabilityOfTrading(bestBidPrice, bestAskPrice, orderPrice *num.Uint, isBid bool, minPrice, maxPrice num.WrappedDecimal) num.Decimal {
-	tauScaled := e.horizon.Mul(e.probabilityOfTradingTauScaling)
-	if isBid {
-		return e.calcProbabilityOfTradingBid(bestBidPrice, orderPrice, minPrice, tauScaled)
-	}
-	return e.calcProbabilityOfTradingAsk(bestAskPrice, orderPrice, maxPrice, tauScaled)
-}
-
-func (e *Engine) calcProbabilityOfTradingAsk(bestAskPrice, orderPrice *num.Uint, maxPrice num.WrappedDecimal, tauScaled num.Decimal) (f num.Decimal) {
-	prob, ok := e.aCache[*orderPrice]
-	if !ok {
-		prob = e.rm.ProbabilityOfTrading(bestAskPrice, orderPrice, bestAskPrice.ToDecimal(), maxPrice.Original(), tauScaled, false, true)
-		prob = rescaleProbability(prob)
-		e.aCache[*orderPrice] = prob
-		e.changed = true
-	}
-	return prob
-}
-
-func (e *Engine) calcProbabilityOfTradingBid(bestBidPrice, orderPrice *num.Uint, minPrice num.WrappedDecimal, tauScaled num.Decimal) (f num.Decimal) {
-	prob, ok := e.bCache[*orderPrice]
-	if !ok {
-		prob = e.rm.ProbabilityOfTrading(bestBidPrice, orderPrice, minPrice.Original(), bestBidPrice.ToDecimal(), tauScaled, true, true)
-		prob = rescaleProbability(prob)
-		e.bCache[*orderPrice] = prob
-		e.changed = true
-	}
-	return prob
-}
-
-// Rescale probability so that it's at most the value returned between bid and ask.
-func rescaleProbability(prob num.Decimal) num.Decimal {
-	return prob.Mul(defaultInRangeProbabilityOfTrading)
 }
 
 func setSizesTo0(orders []*LiquidityOrder) {

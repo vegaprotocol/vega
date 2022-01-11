@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -199,13 +200,7 @@ func (e *Engine) Hash() []byte {
 }
 
 func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
-	tickSize := "0."
-	for decimalPlaces > 1 {
-		tickSize += "0"
-		decimalPlaces--
-	}
-	tickSize += "1"
-	return tickSize
+	return num.MustDecimalFromString("1e-" + strconv.Itoa(int(decimalPlaces))).String()
 }
 
 // RejectMarket will stop the execution of the market

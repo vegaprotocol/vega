@@ -337,7 +337,7 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
+		liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine)
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -392,6 +392,7 @@ func NewMarket(
 		stateVarEngine:     stateVarEngine,
 	}
 
+	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	return market, nil
