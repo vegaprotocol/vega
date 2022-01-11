@@ -181,7 +181,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	// Try to reduce our commitment to below the minimum level
-	lps = &types.LiquidityProvisionSubmission{
+	lpa := &types.LiquidityProvisionAmendment{
 		Fee:              num.DecimalFromFloat(0.01),
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(1),
@@ -189,7 +189,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
 	require.Error(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 }
@@ -642,8 +642,15 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Amend the commitment
-	lps.CommitmentAmount = num.NewUint(2000)
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+
+	lpa := &types.LiquidityProvisionAmendment{
+		Fee:              lps.Fee,
+		MarketID:         lps.MarketID,
+		CommitmentAmount: num.NewUint(2000),
+		Buys:             lps.Buys,
+		Sells:            lps.Sells,
+	}
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
@@ -660,9 +667,9 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	// Change the shape of the lp submission
 	buys = []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50}}
 	sells = []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50}}
-	lps.Buys = buys
-	lps.Sells = sells
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	lpa.Buys = buys
+	lpa.Sells = sells
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
 	require.NoError(t, err)
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
@@ -711,8 +718,15 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Now attempt to amend the LP submission with something invalid
-	lps.Buys = nil
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	lpa := &types.LiquidityProvisionAmendment{
+		Fee:              lps.Fee,
+		MarketID:         lps.MarketID,
+		CommitmentAmount: lps.CommitmentAmount,
+		Buys:             nil,
+		Sells:            lps.Sells,
+	}
+
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
 	require.EqualError(t, err, "empty SIDE_BUY shape")
 
 	// Check that the original LP submission is still working fine
@@ -757,8 +771,14 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	// TODO	assert.Equal(t, 0.01, tm.market.GetLiquidityFee())
 
 	// Update the fee
-	lps.Fee = num.DecimalFromFloat(0.5)
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	lpa := &types.LiquidityProvisionAmendment{
+		Fee:              num.DecimalFromFloat(0.5),
+		MarketID:         lps.MarketID,
+		CommitmentAmount: lps.CommitmentAmount,
+		Buys:             lps.Buys,
+		Sells:            lps.Sells,
+	}
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
 	require.NoError(t, err)
 
 	// Check the fee is correct
@@ -1448,11 +1468,18 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 	// now submit again the commitment, but we coverall othe target stake
 	// so our fee should be selected
 	tm.events = nil
-	lpSubmission2.CommitmentAmount = num.NewUint(60000)
+
+	lpa := &types.LiquidityProvisionAmendment{
+		Fee:              lpSubmission2.Fee,
+		MarketID:         lpSubmission2.MarketID,
+		CommitmentAmount: num.NewUint(60000),
+		Buys:             lpSubmission2.Buys,
+		Sells:            lpSubmission2.Sells,
+	}
 
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission2, lpparty2, "liquidity-submission-2"),
+		tm.market.AmendLiquidityProvision(
+			ctx, lpa, lpparty2, "liquidity-submission-2"),
 	)
 
 	t.Run("current liquidity fee is again 0.1", func(t *testing.T) {
