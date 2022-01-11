@@ -85,7 +85,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpSmallerCommitment := &types.LiquidityProvisionSubmission{
+	lpSmallerCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(60000),
 		Fee:              num.DecimalFromFloat(0.01),
@@ -103,7 +103,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	tm.events = nil
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
+		tm.market.AmendLiquidityProvision(
 			ctx, lpSmallerCommitment, lpparty, "liquidity-submission-2"),
 	)
 
@@ -175,7 +175,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpHigherCommitment := &types.LiquidityProvisionSubmission{
+	lpHigherCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(80000),
 		Fee:              num.DecimalFromFloat(0.01),
@@ -193,7 +193,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	tm.events = nil
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
+		tm.market.AmendLiquidityProvision(
 			ctx, lpHigherCommitment, lpparty, "liquidity-submission-3"),
 	)
 
@@ -265,7 +265,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpDifferentShapeCommitment := &types.LiquidityProvisionSubmission{
+	lpDifferentShapeCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(80000),
 		Fee:              num.DecimalFromFloat(0.01),
@@ -285,7 +285,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	tm.events = nil
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
+		tm.market.AmendLiquidityProvision(
 			ctx, lpDifferentShapeCommitment, lpparty, "liquidity-submission-3-bis"),
 	)
 
@@ -359,7 +359,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// the expected stake.
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpTooSmallCommitment := &types.LiquidityProvisionSubmission{
+	lpTooSmallCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(30000), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
@@ -377,7 +377,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	tm.events = nil
 	// submit our lp
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
+		tm.market.AmendLiquidityProvision(
 			ctx, lpTooSmallCommitment, lpparty, "liquidity-submission-4"),
 		"commitment submission rejected, not enough stake",
 	)
@@ -386,7 +386,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// at a point where we cannot fill the bond requirement
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpTooHighCommitment := &types.LiquidityProvisionSubmission{
+	lpTooHighCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(600000000000), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
@@ -404,7 +404,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	tm.events = nil
 	// submit our lp
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
+		tm.market.AmendLiquidityProvision(
 			ctx, lpTooHighCommitment, lpparty, "liquidity-submission-5"),
 		"commitment submission not allowed",
 	)
@@ -413,19 +413,15 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// at a point where we cannot fill the bond requirement
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpCancelCommitment := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.Zero(), // required commitment is 50000
-		Fee:              num.DecimalFromFloat(0.01),
-		Reference:        "ref-lp-submission-6",
-		Buys:             []*types.LiquidityOrder{},
-		Sells:            []*types.LiquidityOrder{},
+	lpCancelCommitment := &types.LiquidityProvisionCancellation{
+		MarketID:             tm.market.GetID(),
+		LiquidityProvisionID: "liquidity-submission-3-bis",
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
+		tm.market.CancelLiquidityProvision(
 			ctx, lpCancelCommitment, lpparty, "liquidity-submission-6"),
 		"commitment submission rejected, not enough stake",
 	)
@@ -499,22 +495,16 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 		assert.Equal(t, num.NewUint(70000), acc.Balance)
 	})
 
-	// Add a LPSubmission
-	// this is a log of stake, enough to cover all
-	// the required stake for the market
-	lpSubmissionCancel := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.Zero(),
-		Fee:              num.DecimalFromFloat(0.01),
-		Reference:        "ref-lp-submission-2",
-		Buys:             []*types.LiquidityOrder{},
-		Sells:            []*types.LiquidityOrder{},
+	// Cancel our lp
+	lpSubmissionCancel := &types.LiquidityProvisionCancellation{
+		MarketID:             tm.market.GetID(),
+		LiquidityProvisionID: "liquidity-submission-1",
 	}
 
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmissionCancel, lpparty, "liquidity-submission-2"),
+		tm.market.CancelLiquidityProvision(
+			ctx, lpSubmissionCancel, lpparty, "liquidity-submission-1"),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -766,7 +756,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	})
 
 	// commitment is being updated during auction
-	lpSubmissionUpdate := &types.LiquidityProvisionSubmission{
+	lpSubmissionUpdate := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
@@ -784,7 +774,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	// the submission should be all OK
 	// order are not deployed while still in auction
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
+		tm.market.AmendLiquidityProvision(
 			ctx, lpSubmissionUpdate, lpparty, "liquidity-submission-2"),
 		"margin would be below maintenance: insufficient margin",
 	)
