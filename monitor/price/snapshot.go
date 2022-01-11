@@ -2,7 +2,6 @@ package price
 
 import (
 	"sort"
-	"time"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -22,7 +21,6 @@ func NewMonitorFromSnapshot(
 
 	e := &Engine{
 		riskModel:           riskModel,
-		updateFrequency:     time.Duration(settings.UpdateFrequency) * time.Second,
 		initialised:         pm.Initialised,
 		fpHorizons:          keyDecimalPairToMap(pm.FPHorizons),
 		now:                 pm.Now,
@@ -35,12 +33,6 @@ func NewMonitorFromSnapshot(
 		pricesNow:           pricesNowToInternal(pm.PricesNow),
 		pricesPast:          pricesPastToInternal(pm.PricesPast),
 		stateChanged:        true,
-	}
-	// hack to work around the update frequency being 0 causing an infinite loop
-	// for now, this will do
-	// @TODO go through integration and system tests once we validate this properly
-	if settings.UpdateFrequency == 0 {
-		e.updateFrequency = time.Second
 	}
 	return e, nil
 }

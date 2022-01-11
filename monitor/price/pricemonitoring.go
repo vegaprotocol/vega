@@ -9,6 +9,7 @@ import (
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 )
 
 var (
@@ -25,6 +26,7 @@ var (
 // can't make this one constant...
 var (
 	secondsPerYear = num.DecimalFromFloat(365.25 * 24 * 60 * 60)
+	tolerance, _   = num.DecimalFromString("1e-6")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/auction_state_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price AuctionState
@@ -58,6 +60,16 @@ type bound struct {
 	Trigger    *types.PriceMonitoringTrigger
 }
 
+type boundFactors struct {
+	up   []num.Decimal
+	down []num.Decimal
+}
+
+var (
+	defaultDownFactor = num.MustDecimalFromString("0.9")
+	defaultUpFactor   = num.MustDecimalFromString("1.1")
+)
+
 type priceRange struct {
 	MinPrice       num.WrappedDecimal
 	MaxPrice       num.WrappedDecimal
@@ -80,11 +92,15 @@ type RangeProvider interface {
 	PriceRange(price, yearFraction, probability num.Decimal) (num.Decimal, num.Decimal)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price StateVarEngine
+type StateVarEngine interface {
+	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+}
+
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
-	riskModel       RangeProvider
-	updateFrequency time.Duration
-	minDuration     time.Duration
+	riskModel   RangeProvider
+	minDuration time.Duration
 
 	initialised bool
 	fpHorizons  map[int64]num.Decimal
@@ -100,11 +116,14 @@ type Engine struct {
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
 
-	stateChanged bool
+	boundFactorsConsensusDone bool
+
+	stateChanged   bool
+	stateVarEngine StateVarEngine
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
-func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings) (*Engine, error) {
+func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine) (*Engine, error) {
 	if riskModel == nil {
 		return nil, ErrNilRangeProvider
 	}
@@ -138,18 +157,15 @@ func NewMonitor(riskModel RangeProvider, settings *types.PriceMonitoringSettings
 	}
 
 	e := &Engine{
-		riskModel:       riskModel,
-		fpHorizons:      h,
-		updateFrequency: time.Duration(settings.UpdateFrequency) * time.Second,
-		bounds:          bounds,
-		stateChanged:    true,
+		riskModel:                 riskModel,
+		fpHorizons:                h,
+		bounds:                    bounds,
+		stateChanged:              true,
+		stateVarEngine:            stateVarEngine,
+		boundFactorsConsensusDone: false,
 	}
-	// hack to work around the update frequency being 0 causing an infinite loop
-	// for now, this will do
-	// @TODO go through integration and system tests once we validate this properly
-	if settings.UpdateFrequency == 0 {
-		e.updateFrequency = time.Second
-	}
+
+	stateVarEngine.AddStateVariable(asset, mktID, boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
 	return e, nil
 }
 
@@ -174,7 +190,7 @@ func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 	min := num.NewWrappedDecimal(num.Zero(), num.DecimalZero())
 	m := num.MaxUint()
 	max := num.NewWrappedDecimal(m, m.ToDecimal())
-	for _, pr := range e.getCurrentPriceRanges() {
+	for _, pr := range e.getCurrentPriceRanges(false) {
 		if pr.MinPrice.Representation().GT(min.Representation()) {
 			min = pr.MinPrice
 		}
@@ -187,7 +203,7 @@ func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 
 // GetCurrentBounds returns a list of valid price ranges per price monitoring trigger. Note these are subject to change as the time progresses.
 func (e *Engine) GetCurrentBounds() []*types.PriceMonitoringBounds {
-	priceRanges := e.getCurrentPriceRanges()
+	priceRanges := e.getCurrentPriceRanges(false)
 	ret := make([]*types.PriceMonitoringBounds, 0, len(priceRanges))
 	for b, pr := range priceRanges {
 		if b.Active {
@@ -333,20 +349,18 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 		}
 	}
 	e.priceRangeCacheTime = time.Time{}
-	e.resetBounds()
-	e.updateBounds()
+	// we're not reseetting the down/up factors - they will be updated as triggered by auction end/time
+	e.reactivateBounds()
 	e.stateChanged = true
 }
 
-func (e *Engine) resetBounds() {
+// reactivateBounds reactivates all bounds.
+func (e *Engine) reactivateBounds() {
 	for _, b := range e.bounds {
+		if !b.Active {
+			e.stateChanged = true
+		}
 		b.Active = true
-		b.DownFactor = num.DecimalZero()
-		b.UpFactor = num.DecimalZero()
-	}
-
-	if len(e.bounds) > 0 {
-		e.stateChanged = true
 	}
 }
 
@@ -358,41 +372,43 @@ func (e *Engine) recordPriceChange(price *num.Uint, volume uint64) {
 	}
 }
 
-// recordTimeChange updates the time in the price monitoring module and returns an error if any problems are encountered.
+// recordTimeChange updates the current time and moves prices from current prices to past prices by calculating their corresponding vwp.
 func (e *Engine) recordTimeChange(now time.Time) error {
 	if now.Before(e.now) {
 		return ErrTimeSequence // This shouldn't happen, but if it does there's something fishy going on
 	}
-	if now.After(e.now) {
-		if len(e.pricesNow) > 0 {
-			sumProduct, volSum := num.NewUint(0), num.NewUint(0)
-			for _, x := range e.pricesNow {
-				v := num.NewUint(x.Volume)
-				volSum.AddSum(v)
-				// yes, v is reassigned in the process of multiplying, but that's fine
-				// we're done with it
-				sumProduct.AddSum(v.Mul(v, x.Price))
-			}
-			e.pricesPast = append(e.pricesPast,
-				pastPrice{
-					Time:                e.now,
-					VolumeWeightedPrice: sumProduct.ToDecimal().Div(volSum.ToDecimal()),
-				})
-		}
-		e.pricesNow = e.pricesNow[:0]
-		e.now = now
-		e.updateBounds()
-		e.stateChanged = true
+	if now.Equal(e.now) {
+		return nil
 	}
+
+	if len(e.pricesNow) > 0 {
+		totalWeightedPrice, totalVol := num.Zero(), num.Zero()
+		for _, x := range e.pricesNow {
+			v := num.NewUint(x.Volume)
+			totalVol.AddSum(v)
+			totalWeightedPrice.AddSum(v.Mul(v, x.Price))
+		}
+		e.pricesPast = append(e.pricesPast,
+			pastPrice{
+				Time:                e.now,
+				VolumeWeightedPrice: totalWeightedPrice.ToDecimal().Div(totalVol.ToDecimal()),
+			})
+	}
+	e.pricesNow = e.pricesNow[:0]
+	e.now = now
+	e.clearStalePrices()
+	e.stateChanged = true
+
 	return nil
 }
 
+// checkBounds checks if the price is within price range for each of the bound and return trigger for each bound that it's not.
 func (e *Engine) checkBounds(ctx context.Context, p *num.Uint, v uint64) []*types.PriceMonitoringTrigger {
 	ret := []*types.PriceMonitoringTrigger{} // returned price projections, empty if all good
 	if v == 0 {
 		return ret // volume 0 so no bounds violated
 	}
-	priceRanges := e.getCurrentPriceRanges()
+	priceRanges := e.getCurrentPriceRanges(false)
 	for _, b := range e.bounds {
 		if !b.Active {
 			continue
@@ -400,62 +416,53 @@ func (e *Engine) checkBounds(ctx context.Context, p *num.Uint, v uint64) []*type
 		priceRange := priceRanges[b]
 		if p.LT(priceRange.MinPrice.Representation()) || p.GT(priceRange.MaxPrice.Representation()) {
 			ret = append(ret, b.Trigger)
-			// Disactivate the bound that just got violated so it doesn't prevent auction from terminating
+			// deactivate the bound that just got violated so it doesn't prevent auction from terminating
 			b.Active = false
 		}
 	}
 	return ret
 }
 
-func (e *Engine) getCurrentPriceRanges() map[*bound]priceRange {
-	if e.priceRangeCacheTime != e.now {
-		e.priceRangesCache = make(map[*bound]priceRange, len(e.priceRangesCache))
-
-		for _, b := range e.bounds {
-			if !b.Active {
-				continue
-			}
-			ref := e.getRefPrice(b.Trigger.Horizon)
-			min := ref.Mul(b.DownFactor)
-			max := ref.Mul(b.UpFactor)
-
-			minUint, _ := num.UintFromDecimal(min.Ceil())
-			maxUint, _ := num.UintFromDecimal(max.Floor())
-			e.priceRangesCache[b] = priceRange{
-				MinPrice:       num.NewWrappedDecimal(minUint, min),
-				MaxPrice:       num.NewWrappedDecimal(maxUint, max),
-				ReferencePrice: ref,
-			}
-		}
-		e.priceRangeCacheTime = e.now
-		e.stateChanged = true
+// getCurrentPriceRanges calculates price ranges from current reference prices and bound down/up factors.
+func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
+	if e.priceRangeCacheTime == e.now && !force {
+		return e.priceRangesCache
 	}
-	return e.priceRangesCache
-}
-
-func (e *Engine) updateBounds() {
-	if e.now.Before(e.update) || len(e.bounds) == 0 {
-		return
-	}
-
-	defer func() {
-		e.stateChanged = true
-	}()
-
-	// Iterate update time until in the future
-	for !e.update.After(e.now) {
-		e.update = e.update.Add(e.updateFrequency)
-	}
+	e.priceRangesCache = make(map[*bound]priceRange, len(e.priceRangesCache))
 
 	for _, b := range e.bounds {
 		if !b.Active {
 			continue
 		}
 		ref := e.getRefPrice(b.Trigger.Horizon)
-		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
-		b.DownFactor = minPrice.Div(ref)
-		b.UpFactor = maxPrice.Div(ref)
+		var min, max num.Decimal
+		if e.boundFactorsConsensusDone {
+			min = ref.Mul(b.DownFactor)
+			max = ref.Mul(b.UpFactor)
+		} else {
+			min = ref.Mul(defaultDownFactor)
+			max = ref.Mul(defaultUpFactor)
+		}
+
+		minUint, _ := num.UintFromDecimal(min.Ceil())
+		maxUint, _ := num.UintFromDecimal(max.Floor())
+		e.priceRangesCache[b] = priceRange{
+			MinPrice:       num.NewWrappedDecimal(minUint, min),
+			MaxPrice:       num.NewWrappedDecimal(maxUint, max),
+			ReferencePrice: ref,
+		}
 	}
+	e.priceRangeCacheTime = e.now
+	e.stateChanged = true
+	return e.priceRangesCache
+}
+
+// clearStalePrices updates the pricesPast slice to hold only as many prices as implied by the horizon.
+func (e *Engine) clearStalePrices() {
+	if e.now.Before(e.update) || len(e.bounds) == 0 || len(e.pricesPast) == 0 {
+		return
+	}
+
 	// Remove redundant average prices
 	minRequiredHorizon := e.now
 	if len(e.bounds) > 0 {
@@ -463,9 +470,6 @@ func (e *Engine) updateBounds() {
 		minRequiredHorizon = e.now.Add(time.Duration(-maxTau) * time.Second)
 	}
 
-	if len(e.pricesPast) == 0 {
-		return
-	}
 	// Make sure at least one entry is left hence the "len(..) - 1"
 	for i := 0; i < len(e.pricesPast)-1; i++ {
 		if !e.pricesPast[i].Time.Before(minRequiredHorizon) {
@@ -476,6 +480,7 @@ func (e *Engine) updateBounds() {
 	e.pricesPast = e.pricesPast[len(e.pricesPast)-1:]
 }
 
+// getRefPrice caches and returns the ref price for a given horizon. The cache is invalidated when block changes.
 func (e *Engine) getRefPrice(horizon int64) num.Decimal {
 	if e.refPriceCacheTime != e.now {
 		e.refPriceCache = make(map[int64]num.Decimal, len(e.refPriceCache))
@@ -489,6 +494,7 @@ func (e *Engine) getRefPrice(horizon int64) num.Decimal {
 	return e.refPriceCache[horizon]
 }
 
+// calculateRefPrice returns theh last VolumeWeightedPrice with time preceding currentTime - horizon seconds. If there's only one price it returns the Price.
 func (e *Engine) calculateRefPrice(horizon int64) num.Decimal {
 	t := e.now.Add(time.Duration(-horizon) * time.Second)
 	if len(e.pricesPast) < 1 {

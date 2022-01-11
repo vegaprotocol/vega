@@ -329,7 +329,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
-	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, mkt.PriceMonitoringSettings)
+	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
@@ -629,8 +629,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 
 	// check auction, if any
 	m.checkAuction(ctx, t)
-
-	// TODO(): handle market start time (is this comment still relevant?)
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
