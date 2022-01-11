@@ -507,3 +507,46 @@ func (o LiquidityProvisionAmendment) GetLiquidityProvisionId() string {
 func (o LiquidityProvisionAmendment) GetMarketId() string {
 	return o.MarketID
 }
+
+type LiquidityProvisionCancellation struct {
+	LiquidityProvisionID string
+	// Market identifier for the order, required field
+	MarketID string
+}
+
+func NewLiquidityProvisionCancellationFromProto(p *commandspb.LiquidityProvisionCancellation) (*LiquidityProvisionCancellation, error) {
+	if p == nil {
+		return nil
+	}
+
+	if p.ID == 0 {
+		return nil
+	}
+
+	l := LiquidityProvisionCancellation{
+		LiquidityProvisionID: p.ID,
+		MarketID:             p.MarketId,
+	}
+
+	return &l, nil
+}
+
+func (l LiquidityProvisionCancellation) IntoProto() *commandspb.LiquidityProvisionCancellation {
+	lps := &commandspb.LiquidityProvisionCancellation{
+		MarketId: l.MarketID,
+	}
+
+	return lps
+}
+
+func (o LiquidityProvisionCancellation) String() string {
+	return o.IntoProto().String()
+}
+
+func (o LiquidityProvisionCancellation) GetLiquidityProvisionId() string {
+	return o.LiquidityProvisionID
+}
+
+func (o LiquidityProvisionCancellation) GetMarketId() string {
+	return o.MarketID
+}

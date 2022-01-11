@@ -204,7 +204,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	return nil
 }
 
-// SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
+// AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
 func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionAmendment, party, id string) (err error) {
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
@@ -221,6 +221,10 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.Liquidi
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
 	if lp == nil {
 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	}
+
+	if id != sub.LiquidityProvisionID {
+		return fmt.Errorf("provided liquidity provision does not match current liquidity provision (%v but found %v)", lp.ID, sub.LiquidityProvisionID)
 	}
 
 	// Increasing the commitment should always be allowed, but decreasing is
@@ -244,6 +248,24 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.Liquidi
 
 	return m.amendLiquidityProvision(ctx, sub, party)
 
+}
+
+// CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
+func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party, id string) (err error) {
+	if !m.liquidity.IsLiquidityProvider(party) {
+		return err
+	}
+
+	lp := m.liquidity.LiquidityProvisionByPartyID(party)
+	if lp == nil {
+		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	}
+
+	if lp.ID != cancel.LiquidityProvisionID {
+		return fmt.Errorf("provided liquidity provision does not match current liquidity provision (%v but found %v)", lp.ID, cancel.LiquidityProvisionID)
+	}
+
+	return m.cancelLiquidityProvision(ctx, party, false)
 }
 
 // this is a function to be called when orders already exists
