@@ -525,7 +525,6 @@ func TestMarketClosing(t *testing.T) {
 		PubKeys: []string{"0xDEADBEEF"},
 		Data:    properties,
 	})
-	tm.oracleEngine.UpdateCurrentTime(context.Background(), closingAt.Add(1*time.Second))
 	closed := tm.market.OnChainTimeUpdate(context.Background(), closingAt.Add(1*time.Second))
 
 	// there's not settlement price yet
@@ -667,8 +666,6 @@ func TestMarketWithTradeClosing(t *testing.T) {
 		PubKeys: []string{"0xDEADBEEF"},
 		Data:    properties,
 	})
-	tm.oracleEngine.UpdateCurrentTime(context.Background(), futureTime)
-	tm.collateralEngine.OnChainTimeUpdate(context.Background(), futureTime)
 	closed := tm.market.OnChainTimeUpdate(context.Background(), futureTime)
 	assert.True(t, closed)
 }
@@ -987,7 +984,7 @@ func TestTriggerByPriceNoTradesInAuction(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1145,7 +1142,7 @@ func TestTriggerByPriceAuctionPriceInBounds(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1393,7 +1390,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1609,7 +1606,7 @@ func TestTriggerByMarketOrder(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -1799,13 +1796,13 @@ func TestPriceMonitoringBoundsInGetMarketData(t *testing.T) {
 	extension := int64(45)
 	t1 := &types.PriceMonitoringTrigger{
 		Horizon:          60,
-		HDec:             num.DecimalFromFloat(60),
+		HorizonDec:       num.DecimalFromFloat(60),
 		Probability:      num.DecimalFromFloat(0.95),
 		AuctionExtension: extension,
 	}
 	t2 := &types.PriceMonitoringTrigger{
 		Horizon:          120,
-		HDec:             num.DecimalFromFloat(120),
+		HorizonDec:       num.DecimalFromFloat(120),
 		Probability:      num.DecimalFromFloat(0.99),
 		AuctionExtension: extension * 2,
 	}
@@ -2801,7 +2798,7 @@ func TestOrderBook_Crash2651(t *testing.T) {
 
 	// Switch to auction mode
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGFA, "Order01", types.SideBuy, "613f", 5, 9000)
@@ -3036,7 +3033,7 @@ func TestTriggerAfterOpeningAuction(t *testing.T) {
 			Triggers: []*types.PriceMonitoringTrigger{
 				{
 					Horizon:          60,
-					HDec:             num.DecimalFromFloat(60),
+					HorizonDec:       num.DecimalFromFloat(60),
 					Probability:      num.DecimalFromFloat(0.95),
 					AuctionExtension: auctionExtensionSeconds,
 				},
@@ -3287,7 +3284,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 
 	// Flip to auction so the pegged order will be parked
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 	o2Update = tm.lastOrderUpdate(o2.ID)
 	assert.Equal(t, types.OrderStatusParked, o2Update.Status)
@@ -4123,7 +4120,7 @@ func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	buys := []*types.LiquidityOrder{
@@ -4166,7 +4163,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, now)
 	tm.market.EnterAuction(ctx)
 
 	// Add orders that will outlive the auction to set the reference prices

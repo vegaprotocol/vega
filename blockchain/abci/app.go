@@ -45,6 +45,7 @@ type App struct {
 	OnOfferSnapshot      OffserSnapshotHandler
 	OnLoadSnapshotChunk  LoadSnapshotChunkHandler
 	OnApplySnapshotChunk ApplySnapshotChunkHandler
+	OnInfo               InfoHandler
 
 	// These are Tx handlers
 	checkTxs   map[txn.Command]TxHandler

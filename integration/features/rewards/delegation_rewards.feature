@@ -14,6 +14,7 @@ Feature: Staking & Delegation
       | reward.staking.delegation.competitionLevel        |  1.1                     |
       | reward.staking.delegation.maxPayoutPerEpoch       |  50000                   |
       | reward.staking.delegation.minValidators           |  5                       |
+      | reward.staking.delegation.optimalStakeMultiplier  |  5.0                     |
 
 
     Given time is updated to "2021-08-26T00:00:00Z"

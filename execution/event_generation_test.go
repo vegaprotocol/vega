@@ -21,7 +21,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 
 	pmt := &types.PriceMonitoringTrigger{
 		Horizon:          60,
-		HDec:             num.DecimalFromFloat(60),
+		HorizonDec:       num.DecimalFromFloat(60),
 		Probability:      num.DecimalFromFloat(.95),
 		AuctionExtension: 60,
 	}
@@ -44,7 +44,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 	tm.market.OnMarketAuctionMinimumDurationUpdate(context.Background(), 10*time.Second)
 	// Start the opening auction
 	tm.mas.StartOpeningAuction(*now, &types.AuctionDuration{Duration: 10})
-	tm.mas.AuctionStarted(ctx)
+	tm.mas.AuctionStarted(ctx, *now)
 	tm.market.EnterAuction(ctx)
 
 	// Reset the event counter

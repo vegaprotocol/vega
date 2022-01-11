@@ -7,7 +7,7 @@ Feature: Test loss socialization case 4
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
-      
+
   Scenario: case 4 from https://docs.google.com/spreadsheets/d/1CIPH0aQmIKj6YeFW9ApP_l-jwB4OcsNQ/edit#gid=1555964910
 # setup accounts
     Given the initial insurance pool balance is "2900" for the markets:
@@ -15,12 +15,12 @@ Feature: Test loss socialization case 4
       | party           | asset | amount    |
       | sellSideProvider | BTC   | 100000000 |
       | buySideProvider  | BTC   | 100000000 |
-      | party1          | BTC   | 2000      |
-      | party2          | BTC   | 10000     |
-      | party3          | BTC   | 3000      |
-      | party4          | BTC   | 10000     |
-      | party5          | BTC   | 100000000 |
-      | party6          | BTC   | 100000000 |
+      | party1           | BTC   | 2000      |
+      | party2           | BTC   | 10000     |
+      | party3           | BTC   | 3000      |
+      | party4           | BTC   | 10000     |
+      | party5           | BTC   | 100000000 |
+      | party6           | BTC   | 100000000 |
       | aux1             | BTC   | 100000000 |
       | aux2             | BTC   | 100000000 |
 

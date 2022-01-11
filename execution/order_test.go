@@ -754,7 +754,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	amendOrder(t, tm, "party1", orderID3, 0, 0, types.OrderTimeInForceGFN, 0, false)
 }
 
-func TestPeggedOrders(t *testing.T) {
+func TestMarketPeggedOrders(t *testing.T) {
 	t.Run("pegged orders must be LIMIT orders ", testPeggedOrderTypes)
 	t.Run("pegged orders must be either GTT or GTC ", testPeggedOrderTIFs)
 	t.Run("pegged orders buy side validation", testPeggedOrderBuys)

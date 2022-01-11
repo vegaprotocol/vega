@@ -24,6 +24,15 @@ type StateProvider interface {
 	LoadState(ctx context.Context, pl *Payload) ([]StateProvider, error)
 }
 
+// PostRestore is basically a StateProvider which, after the full core state is restored, expects a callback to finalise the state restore
+// Note that the order in which the calls to this OnStateLoaded functions are called is not pre-defined. As such, this method should only be used
+// for engine internals (upkeep, essentially)
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/restore_state_provider_mock.go -package mocks code.vegaprotocol.io/vega/types PostRestore
+type PostRestore interface {
+	StateProvider
+	OnStateLoaded(ctx context.Context) error
+}
+
 type SnapshotNamespace string
 
 const (
@@ -51,6 +60,8 @@ const (
 	EventForwarderSnapshot   SnapshotNamespace = "eventforwarder"
 	WitnessSnapshot          SnapshotNamespace = "witness"
 	TopologySnapshot         SnapshotNamespace = "topology"
+	LiquiditySnapshot        SnapshotNamespace = "liquidity"
+	FutureStateSnapshot      SnapshotNamespace = "futureState"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB
@@ -78,6 +89,11 @@ var (
 		"notary":         NotarySnapshot,
 		"limits":         LimitSnapshot,
 		"witness":        WitnessSnapshot,
+		"topology":       TopologySnapshot,
+		"idgenerator":    IDGenSnapshot,
+		"stakeverifier":  StakeVerifierSnapshot,
+		"liquidity":      LiquiditySnapshot,
+		"futureState":    FutureStateSnapshot,
 	}
 
 	ErrSnapshotHashMismatch       = errors.New("snapshot hashes do not match")
@@ -145,6 +161,23 @@ func (s Snapshot) ToTM() *tmtypes.Snapshot {
 		Hash:     s.Hash,
 		Metadata: s.Metadata,
 	}
+}
+
+func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
+	appState := &Payload{
+		Data: &PayloadAppState{},
+	}
+	key := appState.GetTreeKey()
+	_, data := tree.Get([]byte(key))
+	if data == nil {
+		return nil, ErrSnapshotKeyDoesNotExist
+	}
+	prp := appState.IntoProto()
+	if err := proto.Unmarshal(data, prp); err != nil {
+		return nil, err
+	}
+	appState = PayloadFromProto(prp)
+	return appState.GetAppState(), nil
 }
 
 func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {

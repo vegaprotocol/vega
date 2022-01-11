@@ -58,7 +58,6 @@ func (w *Witness) serialise() ([]byte, error) {
 			ID:         id,
 			CheckUntil: r.checkUntil,
 			Votes:      votes,
-			State:      atomic.LoadUint32(&r.state),
 		})
 		r.mu.Unlock()
 	}
@@ -135,10 +134,22 @@ func (w *Witness) restore(ctx context.Context, witness *types.Witness) error {
 			checkUntil: r.CheckUntil,
 			votes:      map[string]struct{}{},
 		}
+		selfVoted := false
 		for _, v := range r.Votes {
 			w.resources[r.ID].votes[v] = struct{}{}
+			if r.ID == w.top.SelfNodeID() {
+				selfVoted = true
+			}
 		}
-		atomic.StoreUint32(&w.resources[r.ID].state, r.State)
+
+		// if not a validator or we've seen a self vote set the state to vote sent
+		// otherwise we stay in validated state
+		state := notValidated
+		if !w.top.IsValidator() || selfVoted {
+			state = voteSent
+		}
+
+		atomic.StoreUint32(&w.resources[r.ID].state, state)
 	}
 
 	w.wss.mu.Lock()
@@ -157,7 +168,8 @@ func (w *Witness) RestoreResource(r Resource, cb func(interface{}, bool)) error 
 	res.res = r
 	ctx, cfunc := context.WithDeadline(context.Background(), res.checkUntil)
 	res.cfunc = cfunc
-	if w.top.IsValidator() {
+	state := atomic.LoadUint32(&res.state)
+	if w.top.IsValidator() && state != voteSent {
 		go w.start(ctx, res)
 	}
 	w.wss.mu.Lock()

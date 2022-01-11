@@ -6,31 +6,6 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 )
 
-var now func() time.Time
-
-func init() {
-	now = time.Now
-}
-
-// SetNowFunc exists for testing purpose
-// e.g: set the vegatime.Now function to return a specific time
-//   vegatime.SetNowFunc(func() time.T { vegatime.Unix(123423, 0) })
-// reset the vegatime.Now function
-//   vegatime.SetNowFunc(nil)
-// this will reset the vegatime.Now function to use time.Now() again.
-func SetNowFunc(f func() time.Time) {
-	if f == nil {
-		now = time.Now
-	} else {
-		now = f
-	}
-}
-
-// Now return the current time in UTC timezone.
-func Now() time.Time {
-	return now().UTC()
-}
-
 // Unix create a new time from sec and nsec in UTC timezone.
 func Unix(sec int64, nsec int64) time.Time {
 	return time.Unix(sec, nsec).UTC()

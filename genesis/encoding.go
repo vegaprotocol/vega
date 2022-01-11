@@ -14,12 +14,13 @@ import (
 )
 
 type GenesisState struct {
-	Assets     assets.GenesisState     `json:"assets"`
-	Validators validators.GenesisState `json:"validators"`
-	Network    abci.GenesisState       `json:"network"`
-	NetParams  netparams.GenesisState  `json:"network_parameters"`
-	Limits     limits.GenesisState     `json:"network_limits"`
-	Checkpoint checkpoint.GenesisState `json:"checkpoint"`
+	Assets             assets.GenesisState             `json:"assets"`
+	Validators         validators.GenesisState         `json:"validators"`
+	Network            abci.GenesisState               `json:"network"`
+	NetParams          netparams.GenesisState          `json:"network_parameters"`
+	NetParamsOverwrite netparams.GenesisStateOverwrite `json:"network_parameters_checkpoint_overwrite"`
+	Limits             limits.GenesisState             `json:"network_limits"`
+	Checkpoint         checkpoint.GenesisState         `json:"checkpoint"`
 }
 
 func DefaultGenesisState() GenesisState {

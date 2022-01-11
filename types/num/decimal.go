@@ -13,6 +13,14 @@ var (
 	maxDecimal = decimal.NewFromBigInt(maxU256, 0)
 )
 
+func MustDecimalFromString(f string) Decimal {
+	d, err := DecimalFromString(f)
+	if err != nil {
+		panic(err)
+	}
+	return d
+}
+
 func DecimalZero() Decimal {
 	return dzero
 }

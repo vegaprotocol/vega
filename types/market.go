@@ -56,6 +56,15 @@ func (m MarketTimestamps) IntoProto() *proto.MarketTimestamps {
 	}
 }
 
+func (m MarketTimestamps) DeepClone() *MarketTimestamps {
+	return &MarketTimestamps{
+		Proposed: m.Proposed,
+		Pending:  m.Pending,
+		Open:     m.Open,
+		Close:    m.Close,
+	}
+}
+
 type MarketTradingMode = proto.Market_TradingMode
 
 const (
@@ -134,6 +143,14 @@ func (i InstrumentMetadata) String() string {
 	return i.IntoProto().String()
 }
 
+func (i InstrumentMetadata) DeepClone() *InstrumentMetadata {
+	ret := &InstrumentMetadata{
+		Tags: make([]string, len(i.Tags)),
+	}
+	copy(ret.Tags, i.Tags)
+	return ret
+}
+
 type Timestamp struct {
 	Value int64
 }
@@ -166,6 +183,13 @@ func (a AuctionDuration) IntoProto() *proto.AuctionDuration {
 
 func (a AuctionDuration) String() string {
 	return a.IntoProto().String()
+}
+
+func (a AuctionDuration) DeepClone() *AuctionDuration {
+	return &AuctionDuration{
+		Duration: a.Duration,
+		Volume:   a.Volume,
+	}
 }
 
 func (p Price) IntoProto() *proto.Price {
@@ -273,6 +297,15 @@ func (t TradableInstrument) GetLogNormalRiskModel() *LogNormalRiskModel {
 
 func (t TradableInstrument) String() string {
 	return t.IntoProto().String()
+}
+
+func (t TradableInstrument) DeepClone() *TradableInstrument {
+	return &TradableInstrument{
+		Instrument:       t.Instrument.DeepClone(),
+		MarginCalculator: t.MarginCalculator.DeepClone(),
+		RiskModel:        t.RiskModel,
+		rmt:              t.rmt,
+	}
 }
 
 type MarketDiscrete struct {
@@ -446,6 +479,16 @@ func (i Instrument) IntoProto() *proto.Instrument {
 		r.Product = pt
 	}
 	return r
+}
+
+func (i Instrument) DeepClone() *Instrument {
+	return &Instrument{
+		ID:       i.ID,
+		Code:     i.Code,
+		Name:     i.Name,
+		Metadata: i.Metadata.DeepClone(),
+		Product:  i.Product,
+	}
 }
 
 type MarketData struct {
@@ -709,5 +752,38 @@ func (m Market) String() string {
 }
 
 func (m Market) DeepClone() *Market {
-	return nil
+	cpy := &Market{
+		ID:                m.ID,
+		DecimalPlaces:     m.DecimalPlaces,
+		TradingModeConfig: m.TradingModeConfig,
+		TradingMode:       m.TradingMode,
+		State:             m.State,
+		tmc:               m.tmc,
+		asset:             m.asset,
+	}
+
+	if m.TradableInstrument != nil {
+		cpy.TradableInstrument = m.TradableInstrument.DeepClone()
+	}
+
+	if m.Fees != nil {
+		cpy.Fees = m.Fees.DeepClone()
+	}
+
+	if m.OpeningAuction != nil {
+		cpy.OpeningAuction = m.OpeningAuction.DeepClone()
+	}
+
+	if m.PriceMonitoringSettings != nil {
+		cpy.PriceMonitoringSettings = m.PriceMonitoringSettings.DeepClone()
+	}
+
+	if m.LiquidityMonitoringParameters != nil {
+		cpy.LiquidityMonitoringParameters = m.LiquidityMonitoringParameters.DeepClone()
+	}
+
+	if m.MarketTimestamps != nil {
+		cpy.MarketTimestamps = m.MarketTimestamps.DeepClone()
+	}
+	return cpy
 }

@@ -23,6 +23,17 @@ const (
 	AbciSpamError uint32 = 89
 )
 
+func (app *App) Info(req types.RequestInfo) types.ResponseInfo {
+	if fn := app.OnInfo; fn != nil {
+		resp := fn(req)
+		// only return this if we actually reloaded a snapshot
+		if resp.LastBlockHeight != 0 {
+			return resp
+		}
+	}
+	return app.BaseApplication.Info(req)
+}
+
 func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitChain) {
 	state, err := LoadGenesisState(req.AppStateBytes)
 	if err != nil {

@@ -36,4 +36,5 @@ type (
 	OffserSnapshotHandler     func(types.RequestOfferSnapshot) types.ResponseOfferSnapshot
 	LoadSnapshotChunkHandler  func(types.RequestLoadSnapshotChunk) types.ResponseLoadSnapshotChunk
 	ApplySnapshotChunkHandler func(context.Context, types.RequestApplySnapshotChunk) types.ResponseApplySnapshotChunk
+	InfoHandler               func(types.RequestInfo) types.ResponseInfo
 )

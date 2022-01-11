@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/steps/market"
@@ -66,6 +67,9 @@ type executionTestSetup struct {
 	block *helpers.Block
 
 	netParams *netparams.Store
+
+	// keep track of net deposits/withdrawals (ignores asset type)
+	netDeposits *num.Uint
 }
 
 func newExecutionTestSetup() *executionTestSetup {
@@ -127,6 +131,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	if err := execsetup.registerNetParamsCallbacks(); err != nil {
 		panic(err)
 	}
+
+	execsetup.netDeposits = num.Zero()
 
 	return execsetup
 }
@@ -227,16 +233,12 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Watcher: e.rewardsEngine.UpdateCompetitionLevelForStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
-			Watcher: e.delegationEngine.OnCompLevelChanged,
-		},
-		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardsMinValidators,
 			Watcher: e.rewardsEngine.UpdateMinValidatorsStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardsMinValidators,
-			Watcher: e.delegationEngine.OnMinValidatorsChanged,
+			Param:   netparams.StakingAndDelegationRewardOptimalStakeMultiplier,
+			Watcher: e.rewardsEngine.UpdateOptimalStakeMultiplierStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.ValidatorsEpochLength,
