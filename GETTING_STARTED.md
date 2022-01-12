@@ -152,9 +152,9 @@ mkdir -p docker/bin
 cp -a cmd/vega/vega-dbg-lin64 docker/bin/vega
 
 # remove any existing image with that tag
-docker rmi docker.pkg.github.com/vegaprotocol/vega/vega:local -f
+docker rmi ghcr.io/vegaprotocol/vega/vega:local -f
 
-docker build -t "docker.pkg.github.com/vegaprotocol/vega/vega:local
+docker build -t "ghcr.io/vegaprotocol/vega/vega:local
 ```
 
 with this you can then run the DV start line again with the addition of the option `--vega-version local`.
