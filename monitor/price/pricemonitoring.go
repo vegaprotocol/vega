@@ -198,6 +198,9 @@ func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 			max = pr.MaxPrice
 		}
 	}
+	if min.Original().LessThan(num.DecimalZero()) {
+		min = num.NewWrappedDecimal(num.Zero(), num.DecimalZero())
+	}
 	return min, max
 }
 
@@ -260,6 +263,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 			}
 			return nil
 		}
+		println("$$$$$ len(bounds)", len(bounds))
+
 		if !persistent {
 			// we're going to stay in continuous trading, make sure we still have bounds
 			e.reset(last.Price, last.Volume, now)
@@ -415,6 +420,8 @@ func (e *Engine) checkBounds(ctx context.Context, p *num.Uint, v uint64) []*type
 		}
 		priceRange := priceRanges[b]
 		if p.LT(priceRange.MinPrice.Representation()) || p.GT(priceRange.MaxPrice.Representation()) {
+			println("**** price", p.String(), "min", priceRange.MinPrice.Representation().String(), "max", priceRange.MaxPrice.Representation().String())
+
 			ret = append(ret, b.Trigger)
 			// deactivate the bound that just got violated so it doesn't prevent auction from terminating
 			b.Active = false
@@ -436,16 +443,20 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		}
 		ref := e.getRefPrice(b.Trigger.Horizon)
 		var min, max num.Decimal
+
 		if e.boundFactorsConsensusDone {
 			min = ref.Mul(b.DownFactor)
 			max = ref.Mul(b.UpFactor)
+			println("&&&&&&& ref = "+ref.String(), "b.DownFactor", b.DownFactor.String(), "minUint", min.String(), "maxUint", max.String())
 		} else {
 			min = ref.Mul(defaultDownFactor)
 			max = ref.Mul(defaultUpFactor)
+			println("&&&&&&& ref = "+ref.String(), "b.DownFactor", b.DownFactor.String(), "minUint", min.String(), "maxUint", max.String())
 		}
 
 		minUint, _ := num.UintFromDecimal(min.Ceil())
 		maxUint, _ := num.UintFromDecimal(max.Floor())
+
 		e.priceRangesCache[b] = priceRange{
 			MinPrice:       num.NewWrappedDecimal(minUint, min),
 			MaxPrice:       num.NewWrappedDecimal(maxUint, max),

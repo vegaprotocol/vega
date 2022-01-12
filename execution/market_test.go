@@ -62,9 +62,16 @@ var defaultCollateralAssets = []types.Asset{
 
 var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
 	Parameters: &types.PriceMonitoringParameters{
-		Triggers: []*types.PriceMonitoringTrigger{},
+		Triggers: []*types.PriceMonitoringTrigger{
+			{
+				Horizon:          600,
+				HorizonDec:       num.MustDecimalFromString("600"),
+				Probability:      num.DecimalFromFloat(0.9),
+				AuctionExtension: 120,
+			},
+		},
 	},
-	UpdateFrequency: 0,
+	UpdateFrequency: 300,
 }
 
 type marketW struct {
@@ -100,6 +107,7 @@ type testMarket struct {
 	orderEvents      []events.Event
 	mktCfg           *types.Market
 	oracleEngine     *oracles.Engine
+	stateVar         *stubs.StateVarStub
 
 	// Options
 	Assets []types.Asset
@@ -165,14 +173,10 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
-	statevar := mocks.NewMockStateVarEngine(tm.ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
-
+	statevarEngine := stubs.NewStateVar()
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevar,
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevarEngine,
 	)
 	require.NoError(tm.t, err)
 
@@ -320,16 +324,9 @@ func getTestMarket2(
 	}
 
 	collateralEngine.EnableAsset(context.Background(), tokAsset)
-
 	if pMonitorSettings == nil {
-		pMonitorSettings = &types.PriceMonitoringSettings{
-			Parameters: &types.PriceMonitoringParameters{
-				Triggers: []*types.PriceMonitoringTrigger{},
-			},
-			UpdateFrequency: 0,
-		}
+		pMonitorSettings = defaultPriceMonitorSettings
 	}
-
 	mkt := getMarket(closingAt, pMonitorSettings, openingAuctionDuration)
 	mktCfg := &mkt
 
@@ -362,6 +359,7 @@ func getTestMarket2(
 	tm.asset = asset
 	tm.mas = mas
 	tm.mktCfg = mktCfg
+	tm.stateVar = statevar
 
 	// Reset event counters
 	tm.eventCount = 0

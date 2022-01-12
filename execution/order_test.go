@@ -697,20 +697,7 @@ func TestUnableToAmendGFAGFN(t *testing.T) {
 	now := time.Unix(10, 0)
 	closeSec := int64(10000000000)
 	closingAt := time.Unix(closeSec, 0)
-	pmSettings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{
-				{
-					Horizon:          600,
-					HorizonDec:       num.MustDecimalFromString("600"),
-					Probability:      num.DecimalFromFloat(0.9),
-					AuctionExtension: 120,
-				},
-			},
-		},
-		UpdateFrequency: 300,
-	}
-	tm := getTestMarket(t, now, closingAt, pmSettings, &types.AuctionDuration{Duration: 1})
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 1})
 	mainParty := "party1"
 	auxParty := "party2"
 	auxParty2 := "party22"

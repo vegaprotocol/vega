@@ -35,7 +35,7 @@ func (f *Simple) CalculateRiskFactors() *types.RiskFactor {
 
 // PriceRange returns the minimum and maximum price as implied by the model's maxMoveUp/minMoveDown parameters and the current price.
 func (f *Simple) PriceRange(currentP, _, _ num.Decimal) (num.Decimal, num.Decimal) {
-	return currentP.Sub(f.minMoveDown), currentP.Add(f.maxMoveUp)
+	return num.MaxD(currentP.Sub(f.minMoveDown), num.DecimalZero()), currentP.Add(f.maxMoveUp)
 }
 
 // ProbabilityOfTrading of trading returns the probability of trading given current mark price, projection horizon expressed as year fraction, order price and side (isBid).
