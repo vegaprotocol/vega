@@ -54,3 +54,19 @@ func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquidi
 	}
 	return nil
 }
+
+func (e *exEng) AmendLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionAmendment, party string) error {
+	if err := e.Engine.AmendLiquidityProvision(ctx, sub, party); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, sub.IntoProto()))
+		return err
+	}
+	return nil
+}
+
+func (e *exEng) CancelLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionCancellation, party string) error {
+	if err := e.Engine.CancelLiquidityProvision(ctx, sub, party); err != nil {
+		e.broker.Send(events.NewTxErrEvent(ctx, err, party, sub.IntoProto()))
+		return err
+	}
+	return nil
+}

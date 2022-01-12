@@ -36,17 +36,17 @@ func testCanAmend(t *testing.T) {
 		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
 	)
 
-	lpa := getTestAmendSimpleSubmission()
+	lps := getTestSubmitSimpleSubmission()
 
 	// initially submit our provision to be amended, does not matter what's in
 	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	_, err := tng.engine.AmendLiquidityProvision(ctx, lpa, party)
+	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1")
 	assert.NoError(t, err)
 
+	lpa := getTestAmendSimpleSubmission()
 	// now we can do a OK can amend
 	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 
-	lpa = getTestAmendSimpleSubmission()
 	// previously, this tested for an empty string, this is impossible now with the decimal type
 	// so let's check for negatives instead
 	lpa.Fee = num.DecimalFromFloat(-1)
@@ -68,6 +68,25 @@ func testCanAmend(t *testing.T) {
 		tng.engine.CanAmend(lpa, party),
 		"empty SIDE_SELL shape",
 	)
+}
+
+func getTestSubmitSimpleSubmission() *types.LiquidityProvisionSubmission {
+	pb := &commandspb.LiquidityProvisionSubmission{
+		MarketId:         market,
+		CommitmentAmount: "10000",
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*proto.LiquidityOrder{
+			{Reference: types.PeggedReferenceBestBid, Proportion: 7, Offset: -10},
+			{Reference: types.PeggedReferenceMid, Proportion: 3, Offset: -15},
+		},
+		Sells: []*proto.LiquidityOrder{
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 8, Offset: 10},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: 15},
+		},
+	}
+	t, _ := types.LiquidityProvisionSubmissionFromProto(pb)
+	return t
 }
 
 func getTestAmendSimpleSubmission() *types.LiquidityProvisionAmendment {
