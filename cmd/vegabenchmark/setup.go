@@ -234,6 +234,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		rewardEngine,
 		snapshot,
 		stateVarEngine,
+		nil,
 		"benchmark",
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)

@@ -221,6 +221,7 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.rewards,
 		n.snapshot,
 		n.statevar,
+		n.blockchainClient,
 		n.Version,
 	)
 

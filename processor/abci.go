@@ -31,7 +31,9 @@ import (
 	"code.vegaprotocol.io/vega/types/statevar"
 	"code.vegaprotocol.io/vega/vegatime"
 
+	abcitypes "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypesint "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -77,6 +79,10 @@ type StateVarEngine interface {
 	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
 }
 
+type BlockchainClient interface {
+	Validators(height *int64) ([]*tmtypesint.Validator, error)
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -88,6 +94,7 @@ type App struct {
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
 	version           string
+	blockchainClient  BlockchainClient
 
 	vegaPaths paths.Paths
 	cfg       Config
@@ -154,6 +161,7 @@ func NewApp(
 	rewards RewardEngine,
 	snapshot Snapshot,
 	stateVarEngine StateVarEngine,
+	blockchainClient BlockchainClient,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -170,33 +178,34 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:        checkpoint.AwaitingRestore(),
-		assets:          assets,
-		banking:         banking,
-		broker:          broker,
-		cmd:             cmd,
-		witness:         witness,
-		evtfwd:          evtfwd,
-		exec:            exec,
-		ghandler:        ghandler,
-		gov:             gov,
-		notary:          notary,
-		stats:           stats,
-		time:            time,
-		top:             top,
-		netp:            netp,
-		oracles:         oracles,
-		delegation:      delegation,
-		limits:          limits,
-		stake:           stake,
-		checkpoint:      checkpoint,
-		spam:            spam,
-		stakingAccounts: stakingAccounts,
-		epoch:           epoch,
-		rewards:         rewards,
-		snapshot:        snapshot,
-		stateVar:        stateVarEngine,
-		version:         version,
+		reloadCP:         checkpoint.AwaitingRestore(),
+		assets:           assets,
+		banking:          banking,
+		broker:           broker,
+		cmd:              cmd,
+		witness:          witness,
+		evtfwd:           evtfwd,
+		exec:             exec,
+		ghandler:         ghandler,
+		gov:              gov,
+		notary:           notary,
+		stats:            stats,
+		time:             time,
+		top:              top,
+		netp:             netp,
+		oracles:          oracles,
+		delegation:       delegation,
+		limits:           limits,
+		stake:            stake,
+		checkpoint:       checkpoint,
+		spam:             spam,
+		stakingAccounts:  stakingAccounts,
+		epoch:            epoch,
+		rewards:          rewards,
+		snapshot:         snapshot,
+		stateVar:         stateVarEngine,
+		version:          version,
+		blockchainClient: blockchainClient,
 	}
 
 	// register replay protection if needed:
@@ -491,10 +500,28 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			app.log.Info("Updated voting power of validator", logging.String("tmKey", v.TmPubKey), logging.Int64("votingPower", v.VotingPower))
 		}
 
+		// get the current state of validators from tendermint for the *current block* - the important bit is the priorities
+		if app.blockchainClient != nil {
+			vd, err := app.blockchainClient.Validators(&req.Height)
+			if err == nil {
+				app.top.EndOfBlock(ctx, req.Height, vUpdates, vd)
+			}
+		}
+
 		resp = tmtypes.ResponseEndBlock{
 			ValidatorUpdates: vUpdates,
 		}
+	} else {
+		// even if we're not updating the weights in tendermint we need to get the priorities
+		if app.blockchainClient != nil {
+			vd, err := app.blockchainClient.Validators(&req.Height)
+			if err == nil {
+				app.top.EndOfBlock(ctx, req.Height, []abcitypes.ValidatorUpdate{}, vd)
+			}
+		}
+
 	}
+
 	return ctx, resp
 }
 
@@ -529,7 +556,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
-	app.top.BeginBlock(ctx, uint64(req.Header.Height))
+	app.top.BeginBlock(ctx, req)
 
 	return ctx, resp
 }

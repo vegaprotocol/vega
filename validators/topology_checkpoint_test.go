@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-
 	"github.com/stretchr/testify/assert"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 )
 
 func addNodes(top *testTop, number int) {
@@ -121,7 +122,7 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	var newNetworkBlockHeight uint64 = 100
 
 	// set current block height to newNetworkBlockHeight
-	newTop.BeginBlock(ctx, newNetworkBlockHeight)
+	newTop.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: int64(newNetworkBlockHeight)}})
 
 	newTop.Load(ctx, ckp)
 
