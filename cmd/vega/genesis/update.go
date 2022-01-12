@@ -2,21 +2,15 @@ package genesis
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"os"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
+	vgtm "code.vegaprotocol.io/vega/tendermint"
 	"code.vegaprotocol.io/vega/validators"
-
 	"github.com/jessevdk/go-flags"
-	tmconfig "github.com/tendermint/tendermint/config"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/types"
 )
 
 type updateCmd struct {
@@ -48,17 +42,16 @@ func (opts *updateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	// genesis file
-	tmConfig := tmconfig.DefaultConfig()
-	tmConfig.SetRoot(os.ExpandEnv(opts.TmHome))
+	tmConfig := vgtm.NewConfig(opts.TmHome)
 
-	pubKey, err := loadTendermintPrivateValidatorKey(tmConfig)
+	pubKey, err := tmConfig.PublicValidatorKey()
 	if err != nil {
 		return err
 	}
+
 	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
 	genesisState := genesis.DefaultGenesisState()
-	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
+	genesisState.Validators[b64TmPubKey] = validators.ValidatorData{
 		ID:              walletID,
 		VegaPubKey:      vegaKey.value,
 		VegaPubKeyIndex: vegaKey.index,
@@ -66,36 +59,25 @@ func (opts *updateCmd) Execute(_ []string) error {
 		TmPubKey:        b64TmPubKey,
 	}
 
-	rawGenesisState, err := json.Marshal(genesisState)
+	genesisDoc, _, err := tmConfig.Genesis()
 	if err != nil {
-		return fmt.Errorf("couldn't marshal the genesis state as JSON: %w", err)
+		return fmt.Errorf("couldn't get genesis file: %w", err)
 	}
 
-	genesisFilePath := tmConfig.GenesisFile()
-	data, err := vgfs.ReadFile(genesisFilePath)
-	if err != nil {
-		return err
+	if err := vgtm.AddAppStateToGenesis(genesisDoc, &genesisState); err != nil {
+		return fmt.Errorf("couldn't add app_state to genesis: %w", err)
 	}
-
-	genesisDoc := &types.GenesisDoc{}
-	err = tmjson.Unmarshal(data, genesisDoc)
-	if err != nil {
-		return fmt.Errorf("couldn't unmarshal the genesis document: %w", err)
-	}
-
-	genesisDoc.AppState = rawGenesisState
 
 	if !opts.DryRun {
-		log.Infof("Saving genesis doc at %s", genesisFilePath)
-		if err := genesisDoc.SaveAs(genesisFilePath); err != nil {
-			return fmt.Errorf("couldn't save the genesis file: %w", err)
+		if err := tmConfig.SaveGenesis(genesisDoc); err != nil {
+			return fmt.Errorf("couldn't save genesis: %w", err)
 		}
 	}
 
-	marshalledGenesisDoc, err := tmjson.MarshalIndent(genesisDoc, "", "  ")
+	prettifiedDoc, err := vgtm.Prettify(genesisDoc)
 	if err != nil {
-		return fmt.Errorf("couldn't marshal the genesis document as JSON: %w", err)
+		return err
 	}
-	fmt.Println(string(marshalledGenesisDoc))
-	return err
+	fmt.Println(prettifiedDoc)
+	return nil
 }

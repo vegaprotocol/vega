@@ -67,20 +67,18 @@ func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
 
 type GenesisState map[string]AssetDetails
 
-var (
-	governanceAsset = AssetDetails{
-		Name:        "VOTE",
-		Symbol:      "VOTE",
-		TotalSupply: "0",
-		Decimals:    5,
-		MinLpStake:  "1",
-		Source: &Source{
-			BuiltinAsset: &BuiltinAsset{
-				MaxFaucetAmountMint: "10000",
-			},
+var governanceAsset = AssetDetails{
+	Name:        "VOTE",
+	Symbol:      "VOTE",
+	TotalSupply: "0",
+	Decimals:    5,
+	MinLpStake:  "1",
+	Source: &Source{
+		BuiltinAsset: &BuiltinAsset{
+			MaxFaucetAmountMint: "10000",
 		},
-	}
-)
+	},
+}
 
 func DefaultGenesisState() GenesisState {
 	assets := map[string]AssetDetails{
