@@ -414,15 +414,14 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// this should result into an error, and the commitment staying
 	// untouched
 	lpCancelCommitment := &types.LiquidityProvisionCancellation{
-		MarketID:             tm.market.GetID(),
-		LiquidityProvisionID: "liquidity-submission-3-bis",
+		MarketID: tm.market.GetID(),
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.EqualError(t,
 		tm.market.CancelLiquidityProvision(
-			ctx, lpCancelCommitment, lpparty, "liquidity-submission-6"),
+			ctx, lpCancelCommitment, lpparty),
 		"commitment submission rejected, not enough stake",
 	)
 }
@@ -497,14 +496,13 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 
 	// Cancel our lp
 	lpSubmissionCancel := &types.LiquidityProvisionCancellation{
-		MarketID:             tm.market.GetID(),
-		LiquidityProvisionID: "liquidity-submission-1",
+		MarketID: tm.market.GetID(),
 	}
 
 	// submit our lp
 	require.NoError(t,
 		tm.market.CancelLiquidityProvision(
-			ctx, lpSubmissionCancel, lpparty, "liquidity-submission-1"),
+			ctx, lpSubmissionCancel, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {

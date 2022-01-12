@@ -4304,8 +4304,7 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 
 	// Remove the LPSubmission
 	lpc := &types.LiquidityProvisionCancellation{
-		MarketID:             tm.market.GetID(),
-		LiquidityProvisionID: "id-lp",
+		MarketID: tm.market.GetID(),
 		// Fee:              num.DecimalFromFloat(0.01),
 		// Sells: []*types.LiquidityOrder{
 		// 	{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2000},
@@ -4317,7 +4316,7 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 		// },
 	}
 
-	require.NoError(t, tm.market.CancelLiquidityProvision(ctx, lpc, "party-A", "id-lp"))
+	require.NoError(t, tm.market.CancelLiquidityProvision(ctx, lpc, "party-A"))
 	assert.Equal(t, 0, tm.market.GetLPSCount())
 }
 
@@ -5028,12 +5027,11 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 	//}
 
 	lpCancel := &types.LiquidityProvisionCancellation{
-		MarketID:             tm.market.GetID(),
-		LiquidityProvisionID: "id-lp",
+		MarketID: tm.market.GetID(),
 	}
 
 	require.EqualError(t,
-		tm.market.CancelLiquidityProvision(ctx, lpCancel, "party-2", "id-lp2"),
+		tm.market.CancelLiquidityProvision(ctx, lpCancel, "party-2"),
 		"commitment submission rejected, not enough stake",
 	)
 }
@@ -5250,15 +5248,14 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 
 	// now we do a cancellation
 	lpCancel := &types.LiquidityProvisionCancellation{
-		MarketID:             tm.market.GetID(),
-		LiquidityProvisionID: "id-lp-2",
+		MarketID: tm.market.GetID(),
 	}
 
 	// cleanup the events before we continue
 	tm.events = nil
 
 	require.NoError(t, tm.market.CancelLiquidityProvision(
-		ctx, lpCancel, "party-2-bis", "id-lp-id3"))
+		ctx, lpCancel, "party-2-bis"))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	t.Run("LiquidityProvision_CANCELLED", func(t *testing.T) {

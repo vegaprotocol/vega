@@ -420,7 +420,7 @@ type LiquidityProvisionAmendment struct {
 	Reference string
 }
 
-func NewLiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendment) (*LiquidityProvisionAmendment, error) {
+func LiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendment) (*LiquidityProvisionAmendment, error) {
 	fee, err := num.DecimalFromString(p.Fee)
 	if err != nil {
 		return nil, err

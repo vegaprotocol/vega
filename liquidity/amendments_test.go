@@ -36,43 +36,42 @@ func testCanAmend(t *testing.T) {
 		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
 	)
 
-	sub := getTestAmendSimpleSubmission()
+	lpa := getTestAmendSimpleSubmission()
 
 	// initially submit our provision to be amended, does not matter what's in
 	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	assert.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, sub, party, "some-id-1"),
-	)
+	_, err := tng.engine.AmendLiquidityProvision(ctx, lpa, party)
+	assert.NoError(t, err)
 
 	// now we can do a OK can amend
-	assert.NoError(t, tng.engine.CanAmend(sub, party))
+	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 
-	sub = getTestAmendSimpleSubmission()
+	lpa = getTestAmendSimpleSubmission()
 	// previously, this tested for an empty string, this is impossible now with the decimal type
 	// so let's check for negatives instead
-	sub.Fee = num.DecimalFromFloat(-1)
+	lpa.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
-		tng.engine.CanAmend(sub, party),
+		tng.engine.CanAmend(lpa, party),
 		"invalid liquidity provision fee",
 	)
 
-	sub = getTestAmendSimpleSubmission()
-	sub.Buys = nil
+	lpa = getTestAmendSimpleSubmission()
+	lpa.Buys = nil
 	assert.EqualError(t,
-		tng.engine.CanAmend(sub, party),
+		tng.engine.CanAmend(lpa, party),
 		"empty SIDE_BUY shape",
 	)
 
-	sub = getTestAmendSimpleSubmission()
-	sub.Sells = nil
+	lpa = getTestAmendSimpleSubmission()
+	lpa.Sells = nil
 	assert.EqualError(t,
-		tng.engine.CanAmend(sub, party),
+		tng.engine.CanAmend(lpa, party),
 		"empty SIDE_SELL shape",
 	)
 }
 
-func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
-	pb := &commandspb.LiquidityProvisionSubmission{
+func getTestAmendSimpleSubmission() *types.LiquidityProvisionAmendment {
+	pb := &commandspb.LiquidityProvisionAmendment{
 		MarketId:         market,
 		CommitmentAmount: "10000",
 		Fee:              "0.5",
@@ -86,6 +85,6 @@ func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
 			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: 15},
 		},
 	}
-	t, _ := types.LiquidityProvisionSubmissionFromProto(pb)
+	t, _ := types.LiquidityProvisionAmendmentFromProto(pb)
 	return t
 }

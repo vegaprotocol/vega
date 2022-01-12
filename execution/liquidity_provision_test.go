@@ -189,7 +189,7 @@ func TestLiquidity_PreventCommitmentReduction(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.Error(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 }
@@ -650,15 +650,15 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 		Buys:             lps.Buys,
 		Sells:            lps.Sells,
 	}
-	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
 	assert.Equal(t, num.NewUint(2000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 	// Amend the commitment
-	lps.CommitmentAmount = num.NewUint(500)
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	lpa.CommitmentAmount = num.NewUint(500)
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.NoError(t, err)
 
 	// Check we have the right amount of bond balance
@@ -669,7 +669,7 @@ func TestLiquidity_CheckThatChangingLPDuringAuctionWorks(t *testing.T) {
 	sells = []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50}}
 	lpa.Buys = buys
 	lpa.Sells = sells
-	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.NoError(t, err)
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
@@ -726,7 +726,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 		Sells:            lps.Sells,
 	}
 
-	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.EqualError(t, err, "empty SIDE_BUY shape")
 
 	// Check that the original LP submission is still working fine
@@ -778,7 +778,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 		Buys:             lps.Buys,
 		Sells:            lps.Sells,
 	}
-	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", "LPOrder01")
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.NoError(t, err)
 
 	// Check the fee is correct
@@ -1479,7 +1479,7 @@ func TestLiquidityFeeIsSelectedProperly(t *testing.T) {
 
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpa, lpparty2, "liquidity-submission-2"),
+			ctx, lpa, lpparty2),
 	)
 
 	t.Run("current liquidity fee is again 0.1", func(t *testing.T) {

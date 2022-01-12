@@ -91,8 +91,6 @@ type Stats interface {
 	IncCurrentOrdersInBatch()
 	IncTotalCancelOrder()
 	IncTotalAmendOrder()
-	IncTotalCancelLiquidityProvision()
-	IncTotalAmendLiquidityProvision()
 	// batch stats
 	IncTotalBatches()
 	NewBatch()

@@ -1010,7 +1010,6 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 		return err
 	}
 
-	app.stats.IncTotalCancelLiquidityProvision()
 	app.log.Debug("Blockchain service received a CANCEL Liquidity Provision request", logging.String("liquidity-provision-market-id", cancel.MarketId))
 
 	lpc, err := types.LiquidityProvisionCancellationFromProto(cancel)
@@ -1040,11 +1039,10 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) 
 		return err
 	}
 
-	app.stats.IncTotalAmendLiquidityProvision()
 	app.log.Debug("Blockchain service received a AMEND Liquidity Provision request", logging.String("liquidity-provision-market-id", lp.MarketId))
 
 	// Convert protobuf into local domain type
-	lpa, err := types.NewLiquidityProvisionAmendmentFromProto(lp)
+	lpa, err := types.LiquidityProvisionAmendmentFromProto(lp)
 	if err != nil {
 		return err
 	}
