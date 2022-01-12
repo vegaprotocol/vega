@@ -188,6 +188,16 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 }
 
 func (n *NodeCommand) startBlockchain() (*processor.App, error) {
+	// if tm chain, setup the client
+	switch n.conf.Blockchain.ChainProvider {
+	case blockchain.ProviderTendermint:
+		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
+		if err != nil {
+			return nil, err
+		}
+		n.blockchainClient = blockchain.NewClient(a)
+	}
+
 	app := processor.NewApp(
 		n.Log,
 		n.vegaPaths,
@@ -232,12 +242,6 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
-		if err != nil {
-			return nil, err
-		}
-		n.blockchainClient = blockchain.NewClient(a)
 	case blockchain.ProviderNullChain:
 		abciApp := app.Abci()
 		null := nullchain.NewClient(n.Log, n.conf.Blockchain.Null, abciApp)
