@@ -17,6 +17,11 @@ import (
 	tmconfig "github.com/tendermint/tendermint/config"
 )
 
+var (
+	ErrOneOfTendermintFlagIsRequired       = errors.New("one of --tendermint-home or --tendermint-pubkey flag is required")
+	ErrTendermintFlagsAreMutuallyExclusive = errors.New("--tendermint-home and --tendermint-pubkey are mutually exclusive")
+)
+
 type importCmd struct {
 	config.OutputFlag
 
@@ -104,19 +109,22 @@ func (opts *importCmd) Execute(_ []string) error {
 			return fmt.Errorf("couldn't import Vega node wallet: %w", err)
 		}
 	case tendermintChain:
+		if len(opts.TendermintHome) == 0 && len(opts.TendermintPubkey) == 0 {
+			return ErrOneOfTendermintFlagIsRequired
+		}
 		if len(opts.TendermintHome) > 0 && len(opts.TendermintPubkey) > 0 {
-			return errors.New("couldn't import Tendermint public key, only one of --tendermint-home or --tendermint-pubkey flag is required")
+			return ErrTendermintFlagsAreMutuallyExclusive
 		}
 
 		tendermintPubkey := opts.TendermintPubkey
 		if len(opts.TendermintHome) > 0 {
 			tendermintPubkey, err = getLocalTendermintPubkey(opts.TendermintHome)
 			if err != nil {
-				return err
+				return fmt.Errorf("couldn't retrieve tendermint public key: %w", err)
 			}
 		}
-		data, err = nodewallets.ImportTendermintPubkey(
-			vegaPaths, registryPass, tendermintPubkey, opts.Force)
+
+		data, err = nodewallets.ImportTendermintPubkey(vegaPaths, registryPass, tendermintPubkey, opts.Force)
 		if err != nil {
 			return fmt.Errorf("couldn't import Tendermint pubkey: %w", err)
 		}
