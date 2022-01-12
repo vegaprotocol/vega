@@ -1005,23 +1005,30 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
-	porder := &commandspb.LiquidityProvisionCancellation{}
-	if err := tx.Unmarshal(porder); err != nil {
+	cancel := &commandspb.LiquidityProvisionCancellation{}
+	if err := tx.Unmarshal(cancel); err != nil {
 		return err
 	}
 
 	app.stats.IncTotalCancelLiquidityProvision()
-	app.log.Debug("Blockchain service received a CANCEL Liquidity Provision request", logging.String("liquidity-provision-id", porder.OrderId))
+	app.log.Debug("Blockchain service received a CANCEL Liquidity Provision request", logging.String("liquidity-provision-market-id", cancel.MarketId))
 
-	lpc := types.LiquidityProvisionCancellationFromProto(porder)
-
-	err := app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
+	lpc, err := types.LiquidityProvisionCancellationFromProto(cancel)
 	if err != nil {
-		app.log.Error("error on cancelling order", logging.String("liquidity-provision-id", lpc.LiquidityProvisionId), logging.Error(err))
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert LiquidityProvisionCancellation protobuf message to domain type",
+				logging.LiquidityProvisionCancellationProto(cancel), logging.Error(err))
+		}
+		return err
+	}
+
+	err = app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
+	if err != nil {
+		app.log.Error("error on cancelling order", logging.String("liquidity-provision-market-id", lpc.MarketID), logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderCancelDebug {
-		app.log.Debug("Liquidity provision cancelled", logging.LiquidityProvisionCancellation(porder))
+		app.log.Debug("Liquidity provision cancelled", logging.LiquidityProvisionCancellation(*lpc))
 	}
 
 	return nil
@@ -1034,7 +1041,7 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) 
 	}
 
 	app.stats.IncTotalAmendLiquidityProvision()
-	app.log.Debug("Blockchain service received a AMEND Liquidity Provision request", logging.String("liquidity-provision-id", lp.LiquidityProvisionId))
+	app.log.Debug("Blockchain service received a AMEND Liquidity Provision request", logging.String("liquidity-provision-market-id", lp.MarketId))
 
 	// Convert protobuf into local domain type
 	lpa, err := types.NewLiquidityProvisionAmendmentFromProto(lp)
@@ -1045,11 +1052,11 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) 
 	// Submit the amend liquidity provision request to the Vega trading core
 	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party())
 	if err != nil {
-		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-id", lpa.LiquidityProvisionID), logging.Error(err))
+		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
 		return err
 	}
 	if app.cfg.LogOrderAmendDebug {
-		app.log.Debug("Liquidity Provision amended", logging.LiquidityProvisionAmendment(lp))
+		app.log.Debug("Liquidity Provision amended", logging.LiquidityProvisionAmendment(*lpa))
 	}
 
 	return nil

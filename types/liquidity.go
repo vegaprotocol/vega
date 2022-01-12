@@ -406,7 +406,6 @@ func LiquidityProvisionSubmissionFromMarketCommitment(
 }
 
 type LiquidityProvisionAmendment struct {
-	LiquidityProvisionID string
 	// Market identifier for the order, required field
 	MarketID string
 	// Specified as a unitless number that represents the amount of settlement asset of the market
@@ -437,13 +436,12 @@ func NewLiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAme
 	}
 
 	l := LiquidityProvisionAmendment{
-		LiquidityProvisionID: p.ID,
-		Fee:                  fee,
-		MarketID:             p.MarketId,
-		CommitmentAmount:     commitmentAmount,
-		Sells:                make([]*LiquidityOrder, 0, len(p.Sells)),
-		Buys:                 make([]*LiquidityOrder, 0, len(p.Buys)),
-		Reference:            p.Reference,
+		Fee:              fee,
+		MarketID:         p.MarketId,
+		CommitmentAmount: commitmentAmount,
+		Sells:            make([]*LiquidityOrder, 0, len(p.Sells)),
+		Buys:             make([]*LiquidityOrder, 0, len(p.Buys)),
+		Reference:        p.Reference,
 	}
 
 	for _, sell := range p.Sells {
@@ -467,7 +465,7 @@ func NewLiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAme
 }
 
 func (l LiquidityProvisionAmendment) IntoProto() *commandspb.LiquidityProvisionAmendment {
-	lps := &commandspb.LiquidityProvisionSubmission{
+	lps := &commandspb.LiquidityProvisionAmendment{
 		MarketId:         l.MarketID,
 		CommitmentAmount: num.UintToString(l.CommitmentAmount),
 		Fee:              l.Fee.String(),
@@ -500,32 +498,18 @@ func (o LiquidityProvisionAmendment) String() string {
 	return o.IntoProto().String()
 }
 
-func (o LiquidityProvisionAmendment) GetLiquidityProvisionId() string {
-	return o.LiquidityProvisionID
-}
-
 func (o LiquidityProvisionAmendment) GetMarketId() string {
 	return o.MarketID
 }
 
 type LiquidityProvisionCancellation struct {
-	LiquidityProvisionID string
 	// Market identifier for the order, required field
 	MarketID string
 }
 
-func NewLiquidityProvisionCancellationFromProto(p *commandspb.LiquidityProvisionCancellation) (*LiquidityProvisionCancellation, error) {
-	if p == nil {
-		return nil
-	}
-
-	if p.ID == 0 {
-		return nil
-	}
-
+func LiquidityProvisionCancellationFromProto(p *commandspb.LiquidityProvisionCancellation) (*LiquidityProvisionCancellation, error) {
 	l := LiquidityProvisionCancellation{
-		LiquidityProvisionID: p.ID,
-		MarketID:             p.MarketId,
+		MarketID: p.MarketId,
 	}
 
 	return &l, nil
@@ -541,10 +525,6 @@ func (l LiquidityProvisionCancellation) IntoProto() *commandspb.LiquidityProvisi
 
 func (o LiquidityProvisionCancellation) String() string {
 	return o.IntoProto().String()
-}
-
-func (o LiquidityProvisionCancellation) GetLiquidityProvisionId() string {
-	return o.LiquidityProvisionID
 }
 
 func (o LiquidityProvisionCancellation) GetMarketId() string {

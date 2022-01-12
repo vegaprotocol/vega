@@ -104,7 +104,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpSmallerCommitment, lpparty, "liquidity-submission-2"),
+			ctx, lpSmallerCommitment, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -194,7 +194,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpHigherCommitment, lpparty, "liquidity-submission-3"),
+			ctx, lpHigherCommitment, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -286,7 +286,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpDifferentShapeCommitment, lpparty, "liquidity-submission-3-bis"),
+			ctx, lpDifferentShapeCommitment, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -378,7 +378,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.EqualError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpTooSmallCommitment, lpparty, "liquidity-submission-4"),
+			ctx, lpTooSmallCommitment, lpparty),
 		"commitment submission rejected, not enough stake",
 	)
 
@@ -405,7 +405,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.EqualError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpTooHighCommitment, lpparty, "liquidity-submission-5"),
+			ctx, lpTooHighCommitment, lpparty),
 		"commitment submission not allowed",
 	)
 
@@ -775,7 +775,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	// order are not deployed while still in auction
 	require.EqualError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpSubmissionUpdate, lpparty, "liquidity-submission-2"),
+			ctx, lpSubmissionUpdate, lpparty),
 		"margin would be below maintenance: insufficient margin",
 	)
 }

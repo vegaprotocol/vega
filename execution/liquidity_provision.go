@@ -205,7 +205,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 }
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
-func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionAmendment, party, id string) (err error) {
+func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionAmendment, party string) (err error) {
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
@@ -247,7 +247,7 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.Liquidi
 }
 
 // CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
-func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party, id string) (err error) {
+func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
 	if !m.liquidity.IsLiquidityProvider(party) {
 		return err
 	}

@@ -2308,20 +2308,20 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		Sells:            lp.Sells,
 	}
 	require.Equal(t, execution.ErrNotEnoughStake,
-		tm.market.AmendLiquidityProvision(ctx, lpa, party1, "id-lp"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, party1),
 	)
 
 	// 2000 + 600 should be enough to get us on top of the
 	// target stake
 	lpa.CommitmentAmount = num.NewUint(2000 + 600)
 	require.NoError(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, party1, "id-lp"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, party1),
 	)
 
 	// 2600 - 125 should be enough to get just at the required stake
 	lpa.CommitmentAmount = num.NewUint(2600 - 125)
 	require.NoError(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, party1, "id-lp"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, party1),
 	)
 }
 
@@ -6175,7 +6175,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 		},
 	}
 	require.NoError(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, lp2, "id-lp-2"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, lp2),
 	)
 
 	// progress time so liquidity auction ends
@@ -6199,7 +6199,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	lpa.CommitmentAmount = lp2Commitment.Clone()
 	require.Error(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, lp2, "id-lp-2"),
+		tm.market.AmendLiquidityProvision(ctx, lpa, lp2),
 	)
 
 	md = tm.market.GetMarketData()
