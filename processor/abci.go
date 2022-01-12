@@ -485,9 +485,10 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
 
+	var vUpdates []tmtypes.ValidatorUpdate
 	// check if we need to update the voting power of the validators
 	if validatorUpdates := app.rewards.EndOfBlock(req.Height); validatorUpdates != nil {
-		vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
+		vUpdates = make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
 		for _, v := range validatorUpdates {
 			// using the default for key type which is ed25519 which seems fine for now because all validators in genesis use this key type
 			// TODO use the proper key type of the validators
@@ -500,24 +501,17 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			app.log.Info("Updated voting power of validator", logging.String("tmKey", v.TmPubKey), logging.Int64("votingPower", v.VotingPower))
 		}
 
-		// get the current state of validators from tendermint for the *current block* - the important bit is the priorities
-		if app.blockchainClient != nil {
-			vd, err := app.blockchainClient.Validators(&req.Height)
-			if err == nil {
-				app.top.EndOfBlock(ctx, req.Height, vUpdates, vd)
-			}
-		}
-
 		resp = tmtypes.ResponseEndBlock{
 			ValidatorUpdates: vUpdates,
 		}
-	} else {
-		// even if we're not updating the weights in tendermint we need to get the priorities
-		if app.blockchainClient != nil {
-			vd, err := app.blockchainClient.Validators(&req.Height)
-			if err == nil {
-				app.top.EndOfBlock(ctx, req.Height, []abcitypes.ValidatorUpdate{}, vd)
-			}
+	}
+	// even if we're not updating the weights in tendermint we need to get the priorities
+	if app.blockchainClient != nil {
+		vd, err := app.blockchainClient.Validators(&req.Height)
+		if err == nil {
+			app.top.EndOfBlock(ctx, req.Height, []abcitypes.ValidatorUpdate{}, vd)
+		} else {
+			app.log.Error("TM validators API Call failed", logging.Error(err))
 		}
 	}
 
