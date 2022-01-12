@@ -6,13 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/validators"
 
@@ -29,9 +26,8 @@ import (
 type generateCmd struct {
 	Config nodewallets.Config
 
-	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
-	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
-	TmHome  string `short:"t" long:"tm-home" description:"The home path of tendermint"`
+	DryRun bool   `long:"dry-run" description:"Display the genesis file without writing it"`
+	TmHome string `short:"t" long:"tm-home" description:"The home path of tendermint"`
 }
 
 func (opts *generateCmd) Execute(_ []string) error {
@@ -74,50 +70,9 @@ func (opts *generateCmd) Execute(_ []string) error {
 		TmPubKey:        b64TmPubKey,
 	}
 
-	if len(opts.Network) != 0 {
-		var ethConfig []byte
-		switch opts.Network {
-		case "mainnet":
-			delete(genesisState.Assets, "VOTE")
-			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenMainNet
-			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenMainNet.Symbol
-			ethConfig, err = json.Marshal(&vgproto.EthereumConfig{
-				NetworkId:     "1",
-				ChainId:       "1",
-				BridgeAddress: "0x4149257d844Ef09f11b02f2e73CbDfaB4c911a73",
-				Confirmations: 50,
-				StakingBridgeAddresses: []string{
-					"0x195064D33f09e0c42cF98E665D9506e0dC17de68",
-					"0x23d1bFE8fA50a167816fBD79D7932577c06011f4",
-				},
-			})
-			if err != nil {
-				return fmt.Errorf("couldn't marshal EthereumConfig: %w", err)
-			}
-
-		case "testnet":
-			delete(genesisState.Assets, "VOTE")
-			genesisState.Assets[assets.VegaTokenTestNet.Symbol] = assets.VegaTokenTestNet
-			genesisState.NetParams[netparams.RewardAsset] = assets.VegaTokenTestNet.Symbol
-			ethConfig, err = json.Marshal(&vgproto.EthereumConfig{
-				NetworkId:              "3",
-				ChainId:                "3",
-				BridgeAddress:          "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10",
-				Confirmations:          3,
-				StakingBridgeAddresses: []string{},
-			})
-			if err != nil {
-				return fmt.Errorf("couldn't marshal EthereumConfig: %w", err)
-			}
-		default:
-			return fmt.Errorf("network %s is not supported", opts.Network)
-		}
-		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = string(ethConfig)
-	}
-
 	rawGenesisState, err := json.Marshal(genesisState)
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't marshal genesis state as JSON: %w", err)
 	}
 
 	genesisDoc := tmtypes.GenesisDoc{
@@ -138,13 +93,13 @@ func (opts *generateCmd) Execute(_ []string) error {
 		genesisFilePath := tmConfig.GenesisFile()
 		log.Infof("Saving genesis doc at %s", genesisFilePath)
 		if err := genesisDoc.SaveAs(genesisFilePath); err != nil {
-			return err
+			return fmt.Errorf("couldn't save the genesis file: %w", err)
 		}
 	}
 
 	marshalledGenesisDoc, err := tmjson.MarshalIndent(genesisDoc, "", "  ")
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't marshal the genesis document as JSON: %w", err)
 	}
 	fmt.Println(string(marshalledGenesisDoc))
 	return err
