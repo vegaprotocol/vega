@@ -35,6 +35,7 @@
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
+- [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
 
 ## 0.47.4
 *2022-01-05*
