@@ -519,7 +519,6 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 				app.top.EndOfBlock(ctx, req.Height, []abcitypes.ValidatorUpdate{}, vd)
 			}
 		}
-
 	}
 
 	return ctx, resp

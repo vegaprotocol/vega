@@ -78,7 +78,7 @@ func (vp *ValidatorPerformance) EndOfBlock(height int64, updates []abcitypes.Val
 	vp.performance[nextProposer].lastHeightElected = height
 }
 
-// BeginBlock is called when a new block begins
+// BeginBlock is called when a new block begins.
 func (vp *ValidatorPerformance) BeginBlock(ctx context.Context, r abcitypes.RequestBeginBlock) {
 	proposer := hex.EncodeToString(r.Header.ProposerAddress)
 
