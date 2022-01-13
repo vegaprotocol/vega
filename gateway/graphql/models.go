@@ -1967,20 +1967,20 @@ const (
 	// The withdrawal is open and being processed by the network
 	WithdrawalStatusOpen WithdrawalStatus = "Open"
 	// The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain
-	WithdrawalStatusCancelled WithdrawalStatus = "Cancelled"
+	WithdrawalStatusRejected WithdrawalStatus = "Rejected"
 	// The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts
 	WithdrawalStatusFinalized WithdrawalStatus = "Finalized"
 )
 
 var AllWithdrawalStatus = []WithdrawalStatus{
 	WithdrawalStatusOpen,
-	WithdrawalStatusCancelled,
+	WithdrawalStatusRejected,
 	WithdrawalStatusFinalized,
 }
 
 func (e WithdrawalStatus) IsValid() bool {
 	switch e {
-	case WithdrawalStatusOpen, WithdrawalStatusCancelled, WithdrawalStatusFinalized:
+	case WithdrawalStatusOpen, WithdrawalStatusRejected, WithdrawalStatusFinalized:
 		return true
 	}
 	return false

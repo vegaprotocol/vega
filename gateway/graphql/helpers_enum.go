@@ -125,8 +125,8 @@ func convertWithdrawalStatusFromProto(x types.Withdrawal_Status) (WithdrawalStat
 	switch x {
 	case types.Withdrawal_STATUS_OPEN:
 		return WithdrawalStatusOpen, nil
-	case types.Withdrawal_STATUS_CANCELLED:
-		return WithdrawalStatusCancelled, nil
+	case types.Withdrawal_STATUS_REJECTED:
+		return WithdrawalStatusRejected, nil
 	case types.Withdrawal_STATUS_FINALIZED:
 		return WithdrawalStatusFinalized, nil
 	default:

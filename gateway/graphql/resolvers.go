@@ -1155,9 +1155,16 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 	return result, nil
 }
 
-func (r *myPartyResolver) Delegations(ctx context.Context, obj *types.Party, nodeID *string) ([]*types.Delegation, error) {
+func (r *myPartyResolver) Delegations(
+	ctx context.Context,
+	obj *types.Party,
+	nodeID *string,
+	skip, first, last *int,
+) ([]*types.Delegation, error) {
+
 	req := &protoapi.DelegationsRequest{
-		Party: obj.Id,
+		Party:      obj.Id,
+		Pagination: makePagination(skip, first, last),
 	}
 
 	if nodeID != nil {

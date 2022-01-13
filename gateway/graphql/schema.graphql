@@ -393,7 +393,7 @@ type Query {
   "query for historic key rotations"
   keyRotations(id: String): [KeyRotation!]
 
-  "get data for a specific epoch, if id omitted it gets the current epoch"
+  "get data for a specific epoch, if id omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
   "get statistics about the vega node"
@@ -445,7 +445,17 @@ type Epoch {
   "Validators that participated in this epoch"
   validators: [Node!]!
 
-  delegations: [Delegation!]!
+  delegations(
+    # Optional party id to filter on
+    partyId: String,
+    # Optional node id to filter on
+    nodeId: String,
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]!
 }
 
 type NodeData {
@@ -532,7 +542,13 @@ type Node {
   status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String): [Delegation!]
+  delegations(partyId: String,
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]
 
   score: String!
 
@@ -1322,7 +1338,15 @@ type Party {
   ): [LiquidityProvision!]
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations(nodeId: String): [Delegation!]
+  delegations (
+    "Optional node"
+    nodeId: String
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]
 
   "The staking information for this Party"
   stake: PartyStake!
@@ -1648,7 +1672,7 @@ enum WithdrawalStatus {
   "The withdrawal is open and being processed by the network"
   Open
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Cancelled
+  Rejected
   "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
   Finalized
 }
