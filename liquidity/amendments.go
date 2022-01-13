@@ -37,25 +37,12 @@ func (e *Engine) AmendLiquidityProvision(
 	lpa *types.LiquidityProvisionAmendment,
 	party string,
 ) ([]*types.Order, error) {
-	if err := e.CanAmend(lps, party); err != nil {
+	if err := e.CanAmend(lpa, party); err != nil {
 		return nil, err
 	}
 
 	// LP exists, checked in the previous func
 	lp, _ := e.provisions.Get(party)
-
-	if lpa.CommitmentAmount.IsZero() {
-		lpa.CommitmentAmount = lp.CommitmentAmount
-	}
-	if lpa.Fee.IsZero() {
-		lpa.Fee = lp.Fee
-	}
-	if lpa.Buys == nil || len(lpa.Buys) == 0 {
-		lpa.Buys = lp.Buys
-	}
-	if lpa.Sells == nil || len(lpa.Sells) == 0 {
-		lpa.Sells = lp.Sells
-	}
 
 	// first we get all orders from this party to be cancelled
 	// get the liquidity order to be cancelled
@@ -75,16 +62,16 @@ func (e *Engine) AmendLiquidityProvision(
 	e.liquidityOrders.ResetForParty(party)
 	// then update the LP
 	lp.UpdatedAt = e.currentTime.UnixNano()
-	lp.CommitmentAmount = lps.CommitmentAmount.Clone()
-	lp.Fee = lps.Fee
-	lp.Reference = lps.Reference
+	lp.CommitmentAmount = lpa.CommitmentAmount.Clone()
+	lp.Fee = lpa.Fee
+	lp.Reference = lpa.Reference
 	// only if it's active, we don't want to loose a PENDING
 	// status here.
 	if lp.Status == types.LiquidityProvisionStatusActive {
 		lp.Status = types.LiquidityProvisionStatusUndeployed
 	}
 
-	e.buildLiquidityProvisionShapesReferences(lp, lps.Buys, lps.Sells)
+	e.buildLiquidityProvisionShapesReferences(lp, lpa.Buys, lpa.Sells)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	e.provisions.Set(party, lp)
 	return cancels, nil

@@ -205,12 +205,12 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 }
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
-func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionAmendment, party string) (err error) {
+func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) (err error) {
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
 
-	if err := m.liquidity.ValidateLiquidityProvisionAmendment(sub); err != nil {
+	if err := m.liquidity.ValidateLiquidityProvisionAmendment(lpa); err != nil {
 		return err
 	}
 
@@ -223,11 +223,39 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.Liquidi
 		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
 	}
 
+	// If commitment amount is not provided we keep the same
+	if lpa.CommitmentAmount.IsZero() {
+		lpa.CommitmentAmount = lp.CommitmentAmount
+	}
+
+	// If commitment amount is not provided we keep the same
+	if lpa.Fee.IsZero() {
+		lpa.Fee = lp.Fee
+	}
+
+	// If orders shapes are not provided, keep the current LP orders
+	if lpa.Sells == nil {
+		lpa.Sells = make([]*types.LiquidityOrder, 0, len(lp.Sells))
+	}
+	if len(lpa.Sells) == 0 {
+		for _, sell := range lp.Sells {
+			lpa.Sells = append(lpa.Sells, sell.LiquidityOrder)
+		}
+	}
+	if lpa.Buys == nil {
+		lpa.Buys = make([]*types.LiquidityOrder, 0, len(lp.Buys))
+	}
+	if len(lpa.Buys) == 0 {
+		for _, buy := range lp.Buys {
+			lpa.Buys = append(lpa.Buys, buy.LiquidityOrder)
+		}
+	}
+
 	// Increasing the commitment should always be allowed, but decreasing is
 	// only valid if the resulting amount still allows the market as a whole
 	// to reach it's commitment level. Otherwise the commitment reduction is
 	// rejected.
-	if sub.CommitmentAmount.LT(lp.CommitmentAmount) {
+	if lpa.CommitmentAmount.LT(lp.CommitmentAmount) {
 		// first - does the market have enough stake
 		supplied := m.getSuppliedStake()
 		if m.getTargetStake().GTE(supplied) {
@@ -236,13 +264,13 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, sub *types.Liquidi
 
 		// now if the stake surplus is > than the change we are OK
 		surplus := supplied.Sub(supplied, m.getTargetStake())
-		diff := num.Zero().Sub(lp.CommitmentAmount, sub.CommitmentAmount)
+		diff := num.Zero().Sub(lp.CommitmentAmount, lpa.CommitmentAmount)
 		if surplus.LT(diff) {
 			return ErrNotEnoughStake
 		}
 	}
 
-	return m.amendLiquidityProvision(ctx, sub, party)
+	return m.amendLiquidityProvision(ctx, lpa, party)
 
 }
 
