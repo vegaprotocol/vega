@@ -52,22 +52,16 @@ func testCanAmend(t *testing.T) {
 	lpa.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
 		tng.engine.CanAmend(lpa, party),
-		"invalid liquidity provision fee",
+		"invalid liquidity provision amendment",
 	)
 
 	lpa = getTestAmendSimpleSubmission()
 	lpa.Buys = nil
-	assert.EqualError(t,
-		tng.engine.CanAmend(lpa, party),
-		"empty SIDE_BUY shape",
-	)
+	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 
 	lpa = getTestAmendSimpleSubmission()
 	lpa.Sells = nil
-	assert.EqualError(t,
-		tng.engine.CanAmend(lpa, party),
-		"empty SIDE_SELL shape",
-	)
+	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 }
 
 func getTestSubmitSimpleSubmission() *types.LiquidityProvisionSubmission {
