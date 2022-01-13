@@ -373,6 +373,6 @@ func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 	t.isValidator = true
 }
 
-func (t *Topology) ValidatorPerformance(address string) num.Decimal {
+func (t *Topology) ValidatorPerformanceScore(address string) num.Decimal {
 	return t.validatorPerformance.ValidatorPerformanceScore(address)
 }

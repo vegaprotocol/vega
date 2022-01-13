@@ -186,7 +186,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
 
-	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService)
+	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService, topology)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
