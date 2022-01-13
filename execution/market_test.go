@@ -6263,9 +6263,16 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.True(t, supplied.GreaterThan(target.Mul(factor)))
 
 	// Increasing total stake so that the new target stake is accommodated AND adding a sell so best_ask exists should stop the auction
-	lp1sub.CommitmentAmount = num.Sum(lp1Commitment, num.NewUint(10000))
+
+	lpa1 := &types.LiquidityProvisionAmendment{
+		MarketID:         lp1sub.MarketID,
+		CommitmentAmount: num.Sum(lp1Commitment, num.NewUint(10000)),
+		Fee:              lp1sub.Fee,
+		Buys:             lp1sub.Buys,
+		Sells:            lp1sub.Sells,
+	}
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(ctx, lp1sub, lp1, "id-lp-2"),
+		tm.market.AmendLiquidityProvision(ctx, lpa1, lp1),
 	)
 
 	md = tm.market.GetMarketData()
