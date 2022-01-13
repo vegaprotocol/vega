@@ -129,7 +129,7 @@ Once the token has been generated, you can use it to log into the GitHub Docker 
 
 You should see a `Login successful` message once you have logged into the docker registry. Now you can use the `dockerisedvega.sh` script.
 
-If you have installed docker on linux for the first time, you might need to update the user groups on your machine to prevent the need for using `sudo` in front of each command.
+If you have installed docker on Linux for the first time, you might need to update the user groups on your machine to prevent the need for using `sudo` in front of each command.
 
 ```
  sudo groupadd docker
