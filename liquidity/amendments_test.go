@@ -52,7 +52,7 @@ func testCanAmend(t *testing.T) {
 	lpa.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
 		tng.engine.CanAmend(lpa, party),
-		"invalid liquidity provision amendment",
+		"invalid liquidity provision fee",
 	)
 
 	lpa = getTestAmendSimpleSubmission()

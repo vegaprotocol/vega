@@ -760,9 +760,9 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	}
 
 	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
-	require.EqualError(t, err, "invalid liquidity provision amendment")
+	require.EqualError(t, err, "empty liquidity provision amendment content")
 
-	// Now attempt to amend the LP submission with no changes but sells and buys empty lists
+	// Now attempt to amend the LP submission with no changes with sells and buys empty lists
 	lpa = &types.LiquidityProvisionAmendment{
 		Fee:              num.DecimalZero(),
 		MarketID:         lps.MarketID,
@@ -772,7 +772,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	}
 
 	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
-	require.EqualError(t, err, "invalid liquidity provision amendment")
+	require.EqualError(t, err, "empty liquidity provision amendment content")
 
 	// Check that the original LP submission is still working fine
 	require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())
@@ -824,6 +824,49 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 
 	// Check the fee is correct
 	// TODO	assert.Equal(t, 0.5, tm.market.GetLiquidityFee())
+}
+
+func TestLiquidity_RejectLPAmendmentIfNoLP(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 7000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx, now)
+	tm.market.EnterAuction(ctx)
+
+	// Try to update the fee
+	lpa := &types.LiquidityProvisionAmendment{
+		Fee: num.DecimalFromFloat(0.5),
+	}
+	err := tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
+	require.EqualError(t, err, "party is not a liquidity provider")
+}
+
+func TestLiquidity_RejectLPCancellationIfNoLP(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 7000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx, now)
+	tm.market.EnterAuction(ctx)
+
+	lpc := &types.LiquidityProvisionCancellation{
+		MarketID: tm.market.GetID(),
+	}
+	err := tm.market.CancelLiquidityProvision(ctx, lpc, "party-A")
+	require.EqualError(t, err, "party is not a liquidity provider")
 }
 
 func TestLiquidity_CheckWeCanSubmitLPDuringPriceAuction(t *testing.T) {
