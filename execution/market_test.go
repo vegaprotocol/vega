@@ -66,7 +66,7 @@ var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
 			{
 				Horizon:          600,
 				HorizonDec:       num.MustDecimalFromString("600"),
-				Probability:      num.DecimalFromFloat(0.9),
+				Probability:      num.DecimalFromFloat(0.99),
 				AuctionExtension: 120,
 			},
 		},

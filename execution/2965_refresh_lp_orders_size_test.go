@@ -188,6 +188,11 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	md := tm.market.GetMarketData()
 	require.Equal(t, md.MarketTradingMode, types.MarketTradingModeContinuous, "not in continuous trading")
 	tm.events = nil
+
+	//assure that the order price is withing the valid price range so it can trade as expected
+	require.True(t, newOrder.Price.GT(md.PriceMonitoringBounds[0].MinValidPrice))
+	require.True(t, newOrder.Price.LT(md.PriceMonitoringBounds[0].MaxValidPrice))
+
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
 	assert.True(t, len(cnf.Trades) > 0)
