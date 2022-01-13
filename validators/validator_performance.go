@@ -3,6 +3,7 @@ package validators
 import (
 	"context"
 	"encoding/hex"
+	"strings"
 
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -45,10 +46,12 @@ func newPerformance() *validatorPerformance {
 // ValidatorPerformanceScore returns the validator's performance score.
 // in case the validator was never elected - they get a performance score of 1.
 func (vp *ValidatorPerformance) ValidatorPerformanceScore(address string) num.Decimal {
-	if _, ok := vp.performance[address]; !ok {
+	// the addresses of validators in the map are the result of encoding hex so are lower case apparently
+	// so to make sure we find them given the key may be upper case first convert to lower case
+	if _, ok := vp.performance[strings.ToLower(address)]; !ok {
 		return decimalOne
 	}
-	perf := vp.performance[address]
+	perf := vp.performance[strings.ToLower(address)]
 	if perf.elected == 0 {
 		return decimalOne
 	}
@@ -59,7 +62,7 @@ func (vp *ValidatorPerformance) ValidatorPerformanceScore(address string) num.De
 // applying the validator set changes on top of validator state from the ending block and getting the next proposer from the validator set.
 func (vp *ValidatorPerformance) EndOfBlock(height int64, updates []abcitypes.ValidatorUpdate, vd []*tmtypes.Validator) {
 	// given the state from the end of block we apply our changes
-	vs := tmtypes.NewValidatorSet(vd)
+	vs := tmtypes.ValidatorSet{Validators: vd}
 	if len(updates) > 0 {
 		changes, err := tmtypes.PB2TM.ValidatorUpdates(updates)
 		if err != nil {
@@ -67,10 +70,10 @@ func (vp *ValidatorPerformance) EndOfBlock(height int64, updates []abcitypes.Val
 		}
 		vs.UpdateWithChangeSet(changes)
 	}
+	vs.IncrementProposerPriority(1)
 
 	// get the proposer for the next round
 	nextProposer := hex.EncodeToString(vs.Proposer.Address)
-
 	if _, ok := vp.performance[nextProposer]; !ok {
 		vp.performance[nextProposer] = newPerformance()
 	}
