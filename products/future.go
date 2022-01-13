@@ -29,8 +29,8 @@ type Future struct {
 	QuoteName                  string
 	Maturity                   time.Time
 	oracle                     oracle
-	tradingTerminationlistener func(context.Context, bool)
-	settlementPricelistener    func(context.Context, *num.Uint)
+	tradingTerminationListener func(context.Context, bool)
+	settlementPriceListener    func(context.Context, *num.Uint)
 }
 
 type oracle struct {
@@ -63,11 +63,11 @@ type oracleBinding struct {
 }
 
 func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Uint)) {
-	f.settlementPricelistener = listener
+	f.settlementPriceListener = listener
 }
 
 func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool)) {
-	f.tradingTerminationlistener = listener
+	f.tradingTerminationListener = listener
 }
 
 func (f *Future) SettlementPrice() (*num.Uint, error) {
@@ -125,8 +125,8 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	}
 
 	f.oracle.data.tradingTerminated = tradingTerminated
-	if f.tradingTerminationlistener != nil {
-		f.tradingTerminationlistener(ctx, tradingTerminated)
+	if f.tradingTerminationListener != nil {
+		f.tradingTerminationListener(ctx, tradingTerminated)
 	}
 	return nil
 }
@@ -146,8 +146,8 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	}
 
 	f.oracle.data.settlementPrice = settlementPrice
-	if f.settlementPricelistener != nil {
-		f.settlementPricelistener(ctx, settlementPrice)
+	if f.settlementPriceListener != nil {
+		f.settlementPriceListener(ctx, settlementPrice)
 	}
 
 	if f.log.GetLevel() == logging.DebugLevel {
