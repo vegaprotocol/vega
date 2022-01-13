@@ -21,8 +21,10 @@ type validatorPerformance struct {
 	lastHeightElected  int64
 }
 
-var decimalOne = num.DecimalFromFloat(1)
-var minPerfScore = num.DecimalFromFloat(0.05)
+var (
+	decimalOne   = num.DecimalFromFloat(1)
+	minPerfScore = num.DecimalFromFloat(0.05)
+)
 
 type ValidatorPerformance struct {
 	performance map[string]*validatorPerformance
