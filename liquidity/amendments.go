@@ -34,7 +34,7 @@ func (e *Engine) CanAmend(
 
 func (e *Engine) AmendLiquidityProvision(
 	ctx context.Context,
-	lps *types.LiquidityProvisionAmendment,
+	lpa *types.LiquidityProvisionAmendment,
 	party string,
 ) ([]*types.Order, error) {
 	if err := e.CanAmend(lps, party); err != nil {
@@ -43,6 +43,19 @@ func (e *Engine) AmendLiquidityProvision(
 
 	// LP exists, checked in the previous func
 	lp, _ := e.provisions.Get(party)
+
+	if lpa.CommitmentAmount.IsZero() {
+		lpa.CommitmentAmount = lp.CommitmentAmount
+	}
+	if lpa.Fee.IsZero() {
+		lpa.Fee = lp.Fee
+	}
+	if lpa.Buys == nil || len(lpa.Buys) == 0 {
+		lpa.Buys = lp.Buys
+	}
+	if lpa.Sells == nil || len(lpa.Sells) == 0 {
+		lpa.Sells = lp.Sells
+	}
 
 	// first we get all orders from this party to be cancelled
 	// get the liquidity order to be cancelled

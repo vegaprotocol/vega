@@ -289,21 +289,32 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 }
 
 func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) (err error) {
-	if lp.CommitmentAmount.IsZero() {
-		return ErrCommitmentAmountIsZero
-	}
+	var invalidShapes, invalidFee bool = false, false
 
-	// not sure how to check for a missing fee, 0 could be valid
-	// then again, that validation should've happened before reaching this point
-	// if fee, err := strconv.ParseFloat(lp.Fee, 64); err != nil || fee < 0 || len(lp.Fee) <= 0 || fee > e.maxFee {
+	// If orders fee is provided, we need it to be valid
 	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
-		return errors.New("invalid liquidity provision fee")
+		invalidFee = true
 	}
 
-	if err := validateShape(lp.Buys, types.SideBuy, e.maxShapesSize); err != nil {
-		return err
+	emptyBuys := (lp.Buys == nil || len(lp.Buys) == 0)
+	emptySells := (lp.Sells == nil || len(lp.Sells) == 0)
+
+	// If orders shapes are provided, we need them to be valid
+	if !emptyBuys {
+		if err := validateShape(lp.Buys, types.SideBuy, e.maxShapesSize); err != nil {
+			invalidShapes = true
+		}
 	}
-	return validateShape(lp.Sells, types.SideSell, e.maxShapesSize)
+	if !emptySells {
+		if err := validateShape(lp.Sells, types.SideSell, e.maxShapesSize); err != nil {
+			invalidShapes = true
+		}
+	}
+
+	if invalidShapes || invalidFee || (lp.Fee.IsZero() && emptySells && emptyBuys) {
+		return errors.New("invalid liquidity provision amendment")
+	}
+	return nil
 }
 
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
