@@ -86,18 +86,8 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpSmallerCommitment := &types.LiquidityProvisionAmendment{
-		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(60000),
-		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-		},
 	}
 
 	tm.events = nil
@@ -176,18 +166,8 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
 	lpHigherCommitment := &types.LiquidityProvisionAmendment{
-		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(80000),
-		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-3",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-		},
 	}
 
 	tm.events = nil
@@ -757,16 +737,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	lpSubmissionUpdate := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
-		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-		},
 	}
 
 	// the submission should be all OK
