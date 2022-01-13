@@ -123,7 +123,7 @@ func TestIssue2876(t *testing.T) {
 	assert.NoError(t, err)
 
 	expMargin := num.NewUint(24001200)
-	//expMargin := num.NewUint(30622560)
+	// expMargin := num.NewUint(30622560)
 	assert.True(t, marginAccount.Balance.EQ(expMargin), "Expected: "+expMargin.String()+" got "+marginAccount.Balance.String())
 
 	expGeneral := num.NewUint(74998800)
