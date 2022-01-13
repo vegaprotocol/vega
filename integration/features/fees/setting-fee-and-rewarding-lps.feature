@@ -229,7 +229,7 @@ Feature: Test liquidity provider reward distribution
 
     And the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     | submission
+      | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | BID              | 1          | -2     | submission |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | lp1   | ETH/DEC21 | 8000              | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -403,11 +403,11 @@ Feature: Test liquidity provider reward distribution
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
-      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     | submission|
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
       | party | equity like share | average entry valuation |
