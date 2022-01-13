@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"strings"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types/num"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -21,14 +22,17 @@ type validatorPerformance struct {
 }
 
 var decimalOne = num.DecimalFromFloat(1)
+var minPerfScore = num.DecimalFromFloat(0.05)
 
 type ValidatorPerformance struct {
 	performance map[string]*validatorPerformance
+	log         *logging.Logger
 }
 
-func NewValidatorPerformance() *ValidatorPerformance {
+func NewValidatorPerformance(log *logging.Logger) *ValidatorPerformance {
 	return &ValidatorPerformance{
 		performance: map[string]*validatorPerformance{},
+		log:         log,
 	}
 }
 
@@ -55,48 +59,39 @@ func (vp *ValidatorPerformance) ValidatorPerformanceScore(address string) num.De
 	if perf.elected == 0 {
 		return decimalOne
 	}
-	return num.DecimalFromInt64(int64(perf.proposed)).Div(num.DecimalFromInt64(int64(perf.elected)))
+	return num.MaxD(minPerfScore, num.DecimalFromInt64(int64(perf.proposed)).Div(num.DecimalFromInt64(int64(perf.elected))))
 }
 
-// EndOfBlock is called at the end of a block to calculate the next block's expected proposer. This is done by
-// applying the validator set changes on top of validator state from the ending block and getting the next proposer from the validator set.
-func (vp *ValidatorPerformance) EndOfBlock(height int64, updates []abcitypes.ValidatorUpdate, vd []*tmtypes.Validator) {
-	// given the state from the end of block we apply our changes
-	vs := tmtypes.ValidatorSet{Validators: vd}
-	if len(updates) > 0 {
-		changes, err := tmtypes.PB2TM.ValidatorUpdates(updates)
-		if err != nil {
-			return
-		}
-		vs.UpdateWithChangeSet(changes)
+// BeginBlock is called when a new block begins. it calculates who should have been the proposer and updates the counters with the expected and actual proposers and voters.
+func (vp *ValidatorPerformance) BeginBlock(ctx context.Context, r abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
+	if len(vd) == 0 {
+		return
 	}
-	vs.IncrementProposerPriority(1)
-
-	// get the proposer for the next round
-	nextProposer := hex.EncodeToString(vs.Proposer.Address)
-	if _, ok := vp.performance[nextProposer]; !ok {
-		vp.performance[nextProposer] = newPerformance()
+	vs := &tmtypes.ValidatorSet{Validators: vd}
+	expectedProposer := hex.EncodeToString(vs.GetProposer().Address)
+	if _, ok := vp.performance[expectedProposer]; !ok {
+		vp.performance[expectedProposer] = newPerformance()
 	}
-	vp.performance[nextProposer].elected++
-	vp.performance[nextProposer].lastHeightElected = height
-}
+	vp.performance[expectedProposer].elected++
+	vp.performance[expectedProposer].lastHeightElected = r.Header.Height
 
-// BeginBlock is called when a new block begins.
-func (vp *ValidatorPerformance) BeginBlock(ctx context.Context, r abcitypes.RequestBeginBlock) {
 	proposer := hex.EncodeToString(r.Header.ProposerAddress)
-
 	if _, ok := vp.performance[proposer]; !ok {
 		vp.performance[proposer] = newPerformance()
 	}
 	vp.performance[proposer].proposed++
 	vp.performance[proposer].lastHeightProposed = r.Header.Height
 
+	if vp.log.GetLevel() <= logging.DebugLevel {
+		vp.log.Debug("ValidatorPerformance", logging.String("expected-proposer", expectedProposer), logging.String("actual-proposer", proposer))
+	}
+
 	for _, vote := range r.LastCommitInfo.Votes {
 		voter := hex.EncodeToString(vote.Validator.Address)
 		if _, ok := vp.performance[voter]; !ok {
-			vp.performance[proposer] = newPerformance()
+			vp.performance[voter] = newPerformance()
 		}
 		vp.performance[voter].voted++
-		vp.performance[proposer].lastHeightVoted = r.Header.Height
+		vp.performance[voter].lastHeightVoted = r.Header.Height
 	}
 }

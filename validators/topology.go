@@ -108,7 +108,7 @@ func NewTopology(
 		tss:                    &topologySnapshotState{changed: true},
 		pendingPubKeyRotations: pendingKeyRotationMapping{},
 		isValidatorSetup:       isValidatorSetup,
-		validatorPerformance:   NewValidatorPerformance(),
+		validatorPerformance:   NewValidatorPerformance(log),
 	}
 
 	return t

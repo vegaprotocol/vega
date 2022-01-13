@@ -31,7 +31,6 @@ import (
 	"code.vegaprotocol.io/vega/types/statevar"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	abcitypes "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
 )
@@ -485,10 +484,9 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		app.spam.EndOfBlock(uint64(req.Height))
 	}
 
-	var vUpdates []tmtypes.ValidatorUpdate
 	// check if we need to update the voting power of the validators
 	if validatorUpdates := app.rewards.EndOfBlock(req.Height); validatorUpdates != nil {
-		vUpdates = make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
+		vUpdates := make([]tmtypes.ValidatorUpdate, 0, len(validatorUpdates))
 		for _, v := range validatorUpdates {
 			// using the default for key type which is ed25519 which seems fine for now because all validators in genesis use this key type
 			// TODO use the proper key type of the validators
@@ -505,16 +503,6 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 			ValidatorUpdates: vUpdates,
 		}
 	}
-	// even if we're not updating the weights in tendermint we need to get the priorities
-	if app.blockchainClient != nil {
-		vd, err := app.blockchainClient.Validators(&req.Height)
-		if err == nil {
-			app.top.EndOfBlock(ctx, req.Height, []abcitypes.ValidatorUpdate{}, vd)
-		} else {
-			app.log.Error("TM validators API Call failed", logging.Error(err))
-		}
-	}
-
 	return ctx, resp
 }
 
@@ -549,7 +537,13 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
-	app.top.BeginBlock(ctx, req)
+	// read the state of validator set from the previous end of block
+	var vd []*tmtypesint.Validator
+	if app.blockchainClient != nil && req.Header.Height > 0 {
+		h := req.Header.Height - 1
+		vd, _ = app.blockchainClient.Validators(&h)
+	}
+	app.top.BeginBlock(ctx, req, vd)
 
 	return ctx, resp
 }

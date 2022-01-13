@@ -152,12 +152,8 @@ func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
 	return pkrs
 }
 
-func (t *Topology) EndOfBlock(ctx context.Context, currentBlockHeight int64, vUpdates []abcitypes.ValidatorUpdate, vd []*tmtypes.Validator) {
-	t.validatorPerformance.EndOfBlock(currentBlockHeight, vUpdates, vd)
-}
-
-func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock) {
-	t.validatorPerformance.BeginBlock(ctx, req)
+func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
+	t.validatorPerformance.BeginBlock(ctx, req, vd)
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
