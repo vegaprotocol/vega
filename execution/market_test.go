@@ -4305,15 +4305,6 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 	// Remove the LPSubmission
 	lpc := &types.LiquidityProvisionCancellation{
 		MarketID: tm.market.GetID(),
-		// Fee:              num.DecimalFromFloat(0.01),
-		// Sells: []*types.LiquidityOrder{
-		// 	{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2000},
-		// 	{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1000},
-		// },
-		// Buys: []*types.LiquidityOrder{
-		// 	{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1000},
-		// 	{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -1500},
-		// },
 	}
 
 	require.NoError(t, tm.market.CancelLiquidityProvision(ctx, lpc, "party-A"))
@@ -5019,12 +5010,6 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", "id-lp"))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
-
-	// now we do a cancellation
-	//lpCancel := &types.LiquidityProvisionSubmission{
-	//	MarketID:         tm.market.GetID(),
-	//	CommitmentAmount: num.Zero(),
-	//}
 
 	lpCancel := &types.LiquidityProvisionCancellation{
 		MarketID: tm.market.GetID(),
