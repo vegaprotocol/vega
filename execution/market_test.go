@@ -6145,19 +6145,11 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.Equal(t, types.AuctionTriggerLiquidity, md.Trigger)
 
 	// don't use AddSum, we need to keep the original amount somewhere
-	lpa := &types.LiquidityProvisionAmendment{
-		MarketID:         lp2sub.MarketID,
+	lpa2 := &types.LiquidityProvisionAmendment{
 		CommitmentAmount: num.Sum(lp2sub.CommitmentAmount, num.NewUint(25750)),
-		Fee:              num.DecimalFromFloat(0.1),
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -1},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: +1},
-		},
 	}
 	require.NoError(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, lp2),
+		tm.market.AmendLiquidityProvision(ctx, lpa2, lp2),
 	)
 
 	// progress time so liquidity auction ends
@@ -6179,9 +6171,9 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 
 	// Bringing commitment back to old level shouldn't be allowed
 
-	lpa.CommitmentAmount = lp2Commitment.Clone()
+	lpa2.CommitmentAmount = lp2Commitment.Clone()
 	require.Error(t,
-		tm.market.AmendLiquidityProvision(ctx, lpa, lp2),
+		tm.market.AmendLiquidityProvision(ctx, lpa2, lp2),
 	)
 
 	md = tm.market.GetMarketData()
@@ -6250,11 +6242,7 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	// Increasing total stake so that the new target stake is accommodated AND adding a sell so best_ask exists should stop the auction
 
 	lpa1 := &types.LiquidityProvisionAmendment{
-		MarketID:         lp1sub.MarketID,
 		CommitmentAmount: num.Sum(lp1Commitment, num.NewUint(10000)),
-		Fee:              lp1sub.Fee,
-		Buys:             lp1sub.Buys,
-		Sells:            lp1sub.Sells,
 	}
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(ctx, lpa1, lp1),

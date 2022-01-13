@@ -298,6 +298,7 @@ func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisio
 
 	emptyBuys := (lp.Buys == nil || len(lp.Buys) == 0)
 	emptySells := (lp.Sells == nil || len(lp.Sells) == 0)
+	emptyCommitmentAmount := (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero())
 
 	// If orders shapes are provided, we need them to be valid
 	if !emptyBuys {
@@ -311,7 +312,7 @@ func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisio
 		}
 	}
 
-	if invalidShapes || invalidFee || (lp.Fee.IsZero() && emptySells && emptyBuys) {
+	if invalidShapes || invalidFee || (lp.Fee.IsZero() && emptySells && emptyBuys && emptyCommitmentAmount) {
 		return errors.New("invalid liquidity provision amendment")
 	}
 	return nil
@@ -399,7 +400,6 @@ func (e *Engine) buildLiquidityProvisionShapesReferences(
 	lp *types.LiquidityProvision,
 	buys []*types.LiquidityOrder,
 	sells []*types.LiquidityOrder,
-	//lps *types.LiquidityProvisionSubmission,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes

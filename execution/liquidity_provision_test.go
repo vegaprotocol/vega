@@ -817,11 +817,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 
 	// Update the fee
 	lpa := &types.LiquidityProvisionAmendment{
-		Fee:              num.DecimalFromFloat(0.5),
-		MarketID:         lps.MarketID,
-		CommitmentAmount: lps.CommitmentAmount,
-		Buys:             lps.Buys,
-		Sells:            lps.Sells,
+		Fee: num.DecimalFromFloat(0.5),
 	}
 	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.NoError(t, err)

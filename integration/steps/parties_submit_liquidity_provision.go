@@ -83,7 +83,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 		}
 
 		if lp.LpType == "amendment" {
-			fmt.Println("Amending LP for party", party)
 			lpa := &types.LiquidityProvisionAmendment{
 				MarketID:         lp.MarketID,
 				CommitmentAmount: lp.CommitmentAmount,
@@ -93,12 +92,9 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Reference:        lp.Reference,
 			}
 			if err := exec.AmendLiquidityProvision(context.Background(), lpa, party); err != nil {
-				fmt.Println("Error Submitting LP for party", party)
 				return errAmendingLiquidityProvision(lpa, party, err)
 			}
-			fmt.Println("Amended LP for party", party)
 		} else if lp.LpType == "submission" {
-			fmt.Println("Submitting LP for party", party, lp)
 			sub := &types.LiquidityProvisionSubmission{
 				MarketID:         lp.MarketID,
 				CommitmentAmount: lp.CommitmentAmount,
@@ -108,14 +104,11 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Reference:        lp.Reference,
 			}
 			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id); err != nil {
-				fmt.Println("Error Submitting LP for party", party)
 				return errSubmittingLiquidityProvision(sub, party, id, err)
 			}
-			fmt.Println("Submitted LP for party", party)
 		}
 
 	}
-	fmt.Println("Done submitting")
 	return nil
 }
 
