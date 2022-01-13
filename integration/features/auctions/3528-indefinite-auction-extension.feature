@@ -241,7 +241,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
       | market.liquidity.targetstake.triggering.ratio | 0.8 |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     | submission |
       | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -296,7 +296,7 @@ Feature: Replicate issue 3528, where price monitoring continuously extended liqu
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |

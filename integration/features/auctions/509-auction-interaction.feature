@@ -121,7 +121,7 @@ Feature: Test interactions between different auction types
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     | amendment |
       | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -131,7 +131,7 @@ Feature: Test interactions between different auction types
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     | amendment |
       | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -142,7 +142,7 @@ Feature: Test interactions between different auction types
 
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     | amendment |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -283,7 +283,7 @@ Feature: Test interactions between different auction types
     When the network moves ahead "1" blocks
     Then  the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     | amendment |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -357,7 +357,7 @@ Feature: Test interactions between different auction types
 
     Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     | amendment |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -370,7 +370,7 @@ Feature: Test interactions between different auction types
     # We were in liquidity auction, we've updated the commitment amount
     When the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | buy  | BID              | 1          | -2     | amendment |
       | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | buy  | MID              | 2          | -1     | amendment |
       | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | sell | ASK              | 1          | 2      | amendment |
       | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | sell | MID              | 2          | 1      | amendment |
@@ -445,7 +445,7 @@ Feature: Test interactions between different auction types
       #
       #    And the parties submit the following liquidity provision:
       #      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           | submission |
+      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           | amendment |
       #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | MID             | 2                | -1           | amendment |
       #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 1                | 2            | amendment |
       #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | MID             | 2                | 1            | amendment |
