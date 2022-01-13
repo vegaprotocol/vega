@@ -32,9 +32,9 @@ Feature: Test interactions between different auction types
   Scenario: When trying to exit opening auction liquidity monitoring doesn't get triggered, hence the opening auction uncrosses and market goes into continuous trading mode.
 
     Given the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 500        | -10    |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 500        | 10     |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 500        | -10    | submissions |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 500        | 10     | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -57,11 +57,11 @@ Feature: Test interactions between different auction types
 
   # This ought to be "buy_shape" and "sell_shape" equivalents
     Given the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -99,11 +99,11 @@ Feature: Test interactions between different auction types
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 700               | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -120,32 +120,32 @@ Feature: Test interactions between different auction types
     #| TRADING_MODE_OPENING_AUCTION | AUCTION_TRIGGER_OPENING    |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 800               | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     When the network moves ahead "1" blocks
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 801               | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     When the network moves ahead "1" blocks
 
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC21"
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     | submissions |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     When the network moves ahead "1" blocks
 
@@ -160,11 +160,11 @@ Feature: Test interactions between different auction types
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     | submissions |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -196,11 +196,11 @@ Feature: Test interactions between different auction types
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     | submissions |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -237,11 +237,11 @@ Feature: Test interactions between different auction types
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     | submissions |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -282,11 +282,11 @@ Feature: Test interactions between different auction types
 
     When the network moves ahead "1" blocks
     Then  the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     | submissions |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     # leave liquidity auction
     When the network moves ahead "2" blocks
@@ -312,11 +312,11 @@ Feature: Test interactions between different auction types
       | market.liquidity.targetstake.triggering.ratio | 0.8   |
 
     And the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | BID              | 1          | -2     | submissions |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -356,11 +356,11 @@ Feature: Test interactions between different auction types
     When the network moves ahead "2" blocks
 
     Then the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | BID              | 1          | -2     | submissions |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 4080              | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     # We're still in liquidity auction
     And the market data for the market "ETH/DEC21" should be:
@@ -369,11 +369,11 @@ Feature: Test interactions between different auction types
 
     # We were in liquidity auction, we've updated the commitment amount
     When the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | buy  | BID              | 1          | -2     |
-      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | buy  | MID              | 2          | -1     |
-      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | sell | ASK              | 1          | 2      |
-      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | sell | MID              | 2          | 1      |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | buy  | BID              | 1          | -2     | submission |
+      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | buy  | MID              | 2          | -1     | amendment |
+      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | sell | ASK              | 1          | 2      | amendment |
+      | lp1 | party0 | ETH/DEC21 | 5100              | 0.001 | sell | MID              | 2          | 1      | amendment |
     And the network moves ahead "1" blocks
     Then the market data for the market "ETH/DEC21" should be:
       | trading mode                    | auction trigger           |
@@ -406,11 +406,11 @@ Feature: Test interactions between different auction types
       #      | market.liquidity.targetstake.triggering.ratio | 0.8   |
       #
       #    And the parties submit the following liquidity provision:
-      #      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy        | BID             | 1                | -2           |
-      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy        | MID             | 2                | -1           |
-      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell       | ASK             | 1                | 2            |
-      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell       | MID             | 2                | 1            |
+      #      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy        | BID             | 1                | -2           | submission |
+      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | buy        | MID             | 2                | -1           | amendment |
+      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell       | ASK             | 1                | 2            | amendment |
+      #      | lp1 | party0 | ETH/DEC21 | 1000              | 0.001 | sell       | MID             | 2                | 1            | amendment |
       #
       #    And the parties place the following orders:
       #      | party  | market id | side | volume | price | resulting trades | type       | tif     |
@@ -444,11 +444,11 @@ Feature: Test interactions between different auction types
       #      | TRADING_MODE_MONITORING_AUCTION | AUCTION_TRIGGER_LIQUIDITY |
       #
       #    And the parties submit the following liquidity provision:
-      #      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           |
-      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | MID             | 2                | -1           |
-      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 1                | 2            |
-      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | MID             | 2                | 1            |
+      #      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           | submission |
+      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | MID             | 2                | -1           | amendment |
+      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 1                | 2            | amendment |
+      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | MID             | 2                | 1            | amendment |
       #
       #    When the network moves ahead "1" blocks
       #    Then the auction ends with a traded volume of "20" at a price of "1020"
