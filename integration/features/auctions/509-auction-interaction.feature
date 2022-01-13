@@ -445,7 +445,7 @@ Feature: Test interactions between different auction types
       #
       #    And the parties submit the following liquidity provision:
       #      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           | submission |
+      #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | BID             | 1                | -2           | amendment |
       #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy        | MID             | 2                | -1           | amendment |
       #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | ASK             | 1                | 2            | amendment |
       #      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell       | MID             | 2                | 1            | amendment |
