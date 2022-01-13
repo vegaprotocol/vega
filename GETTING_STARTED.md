@@ -129,6 +129,14 @@ Once the token has been generated, you can use it to log into the GitHub Docker 
 
 You should see a `Login successful` message once you have logged into the docker registry. Now you can use the `dockerisedvega.sh` script.
 
+If you have installed docker on linux for the first time, you might need to update the user groups on your machine to prevent the need for using `sudo` in front of each command.
+
+```
+ sudo groupadd docker
+ sudo usermod -aG docker $USER
+ ```
+Then you will need to logout and back in again for the permissions to be updated
+
 You can now run the following commands to get DV running locally. (Note that if you are on MacOS and probably also Windows you may need to increase the allocated memory to 4GB using the Docker Desktop UI):
 
 ```
