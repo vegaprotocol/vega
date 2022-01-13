@@ -34,9 +34,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | party2 | ETH   | 10000000  |
 
     Given the parties submit the following liquidity provision:
-      | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | -100   |
-      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    |
+      | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | -100   | submission |
+      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    | amendment |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH/DEC21 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
@@ -118,9 +118,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | party2 | ETH2  | 10000000  |
 
     And the parties submit the following liquidity provision:
-      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    |
+      | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   | submission |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    | amendment |
     And the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
       | party1 | ETH2/MAR22 | buy  | 1      | 900   | 0                | TYPE_LIMIT | TIF_GTC | buy-ref-1  |
