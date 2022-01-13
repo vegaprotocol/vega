@@ -717,8 +717,29 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
-	// Now attempt to amend the LP submission with empty buys
+	// Now attempt to amend the LP submission with empty fee
 	lpa := &types.LiquidityProvisionAmendment{
+		MarketID:         lps.MarketID,
+		CommitmentAmount: lps.CommitmentAmount,
+		Buys:             lps.Buys,
+		Sells:            lps.Sells,
+	}
+
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
+	require.NoError(t, err)
+
+	// Now attempt to amend the LP submission with empty fee and commitment amount
+	lpa = &types.LiquidityProvisionAmendment{
+		MarketID: lps.MarketID,
+		Buys:     lps.Buys,
+		Sells:    lps.Sells,
+	}
+
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
+	require.NoError(t, err)
+
+	// Now attempt to amend the LP submission with empty buys
+	lpa = &types.LiquidityProvisionAmendment{
 		Fee:              lps.Fee,
 		MarketID:         lps.MarketID,
 		CommitmentAmount: lps.CommitmentAmount,
@@ -728,6 +749,30 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 
 	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 	require.NoError(t, err)
+
+	// Now attempt to amend the LP submission with no changes with nil buys and nil sells
+	lpa = &types.LiquidityProvisionAmendment{
+		Fee:              num.DecimalZero(),
+		MarketID:         lps.MarketID,
+		CommitmentAmount: num.Zero(),
+		Buys:             nil,
+		Sells:            nil,
+	}
+
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
+	require.EqualError(t, err, "invalid liquidity provision amendment")
+
+	// Now attempt to amend the LP submission with no changes but sells and buys empty lists
+	lpa = &types.LiquidityProvisionAmendment{
+		Fee:              num.DecimalZero(),
+		MarketID:         lps.MarketID,
+		CommitmentAmount: num.Zero(),
+		Buys:             []*types.LiquidityOrder{},
+		Sells:            []*types.LiquidityOrder{},
+	}
+
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
+	require.EqualError(t, err, "invalid liquidity provision amendment")
 
 	// Check that the original LP submission is still working fine
 	require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())

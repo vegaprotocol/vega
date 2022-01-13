@@ -224,7 +224,7 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 	}
 
 	// If commitment amount is not provided we keep the same
-	if lpa.CommitmentAmount.IsZero() {
+	if lpa.CommitmentAmount == nil || lpa.CommitmentAmount.IsZero() {
 		lpa.CommitmentAmount = lp.CommitmentAmount
 	}
 
