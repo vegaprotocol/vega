@@ -312,8 +312,11 @@ func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisio
 		}
 	}
 
-	if invalidShapes || invalidFee || (lp.Fee.IsZero() && emptySells && emptyBuys && emptyCommitmentAmount) {
-		return errors.New("invalid liquidity provision amendment")
+	if invalidShapes || invalidFee {
+		return fmt.Errorf("invalid liquidity provision amendment: invalid shape: %t, invalide fee: %t", invalidShapes, invalidFee)
+	}
+	if lp.Fee.IsZero() && emptySells && emptyBuys && emptyCommitmentAmount {
+		return errors.New("empty amendment content")
 	}
 	return nil
 }
