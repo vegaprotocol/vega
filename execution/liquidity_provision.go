@@ -271,7 +271,6 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 	}
 
 	return m.amendLiquidityProvision(ctx, lpa, party)
-
 }
 
 // CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
