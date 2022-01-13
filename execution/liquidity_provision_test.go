@@ -717,7 +717,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 	assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
-	// Now attempt to amend the LP submission with something invalid
+	// Now attempt to amend the LP submission with empty buys
 	lpa := &types.LiquidityProvisionAmendment{
 		Fee:              lps.Fee,
 		MarketID:         lps.MarketID,
@@ -727,7 +727,7 @@ func TestLiquidity_CheckThatFailedAmendDoesNotBreakExistingLP(t *testing.T) {
 	}
 
 	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
-	require.EqualError(t, err, "empty SIDE_BUY shape")
+	require.NoError(t, err)
 
 	// Check that the original LP submission is still working fine
 	require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())
