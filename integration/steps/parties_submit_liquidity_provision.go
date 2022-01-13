@@ -107,7 +107,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				return errSubmittingLiquidityProvision(sub, party, id, err)
 			}
 		}
-
 	}
 	return nil
 }

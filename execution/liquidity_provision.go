@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -215,7 +216,7 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 	}
 
 	if !m.liquidity.IsLiquidityProvider(party) {
-		return err
+		return errors.New(("party is not a liquidity provider"))
 	}
 
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
@@ -276,7 +277,7 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 // CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
 func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
 	if !m.liquidity.IsLiquidityProvider(party) {
-		return err
+		return errors.New(("party is not a liquidity provider"))
 	}
 
 	lp := m.liquidity.LiquidityProvisionByPartyID(party)
