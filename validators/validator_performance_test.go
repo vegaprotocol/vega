@@ -76,5 +76,4 @@ func TestElectedExpectationWithVotingPower(t *testing.T) {
 	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address3)).String())
 	require.Equal(t, "0.05", vp.ValidatorPerformanceScore(hex.EncodeToString(address4)).String())
 	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
-
 }
