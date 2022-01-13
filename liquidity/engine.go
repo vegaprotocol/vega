@@ -296,8 +296,8 @@ func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisio
 		invalidFee = true
 	}
 
-	emptyBuys := (lp.Buys == nil || len(lp.Buys) == 0)
-	emptySells := (lp.Sells == nil || len(lp.Sells) == 0)
+	emptyBuys := (len(lp.Buys) == 0)
+	emptySells := (len(lp.Sells) == 0)
 	emptyCommitmentAmount := (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero())
 
 	// If orders shapes are provided, we need them to be valid
