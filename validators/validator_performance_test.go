@@ -43,11 +43,11 @@ func TestElectedExpectation(t *testing.T) {
 
 	// the numbers are based on observing the consensus state on block x and the state of the validators on block x-1 on tendermint
 	vd1 := []*tmtypes.Validator{
-		&tmtypes.Validator{Address: address1, VotingPower: 10, ProposerPriority: 17},
-		&tmtypes.Validator{Address: address2, VotingPower: 10, ProposerPriority: 17},
-		&tmtypes.Validator{Address: address3, VotingPower: 10, ProposerPriority: -28},
-		&tmtypes.Validator{Address: address4, VotingPower: 10, ProposerPriority: -28},
-		&tmtypes.Validator{Address: address5, VotingPower: 10, ProposerPriority: 22},
+		{Address: address1, VotingPower: 10, ProposerPriority: 17},
+		{Address: address2, VotingPower: 10, ProposerPriority: 17},
+		{Address: address3, VotingPower: 10, ProposerPriority: -28},
+		{Address: address4, VotingPower: 10, ProposerPriority: -28},
+		{Address: address5, VotingPower: 10, ProposerPriority: 22},
 	}
 	vp.EndOfBlock(1, []abcitypes.ValidatorUpdate{}, vd1)
 	// address5 elected once but never proposed
@@ -55,11 +55,11 @@ func TestElectedExpectation(t *testing.T) {
 	require.Equal(t, "0", vp.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
 
 	vd2 := []*tmtypes.Validator{
-		&tmtypes.Validator{Address: address1, VotingPower: 10, ProposerPriority: 17},
-		&tmtypes.Validator{Address: address2, VotingPower: 10, ProposerPriority: 17},
-		&tmtypes.Validator{Address: address3, VotingPower: 10, ProposerPriority: -28},
-		&tmtypes.Validator{Address: address4, VotingPower: 10, ProposerPriority: -28},
-		&tmtypes.Validator{Address: address5, VotingPower: 10, ProposerPriority: 22},
+		{Address: address1, VotingPower: 10, ProposerPriority: 17},
+		{Address: address2, VotingPower: 10, ProposerPriority: 17},
+		{Address: address3, VotingPower: 10, ProposerPriority: -28},
+		{Address: address4, VotingPower: 10, ProposerPriority: -28},
+		{Address: address5, VotingPower: 10, ProposerPriority: 22},
 	}
 
 	// add another time for election of address 5
@@ -74,5 +74,4 @@ func TestElectedExpectation(t *testing.T) {
 	require.Equal(t, "0.5", vp.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
 	// verify that the lookup is case insensitive
 	require.Equal(t, "0.5", vp.ValidatorPerformanceScore(strings.ToUpper(hex.EncodeToString(address5))).String())
-
 }
