@@ -289,7 +289,7 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 }
 
 func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) (err error) {
-	if lp.Fee.IsZero() && (len(lp.Sells) == 0) && (len(lp.Buys) == 0) && (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero()) {
+	if lp.Fee.IsZero() && !lp.ContainsOrders() && (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero()) {
 		return errors.New("empty liquidity provision amendment content")
 	}
 

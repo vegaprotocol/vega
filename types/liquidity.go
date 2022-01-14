@@ -502,6 +502,10 @@ func (o LiquidityProvisionAmendment) GetMarketId() string {
 	return o.MarketID
 }
 
+func (o LiquidityProvisionAmendment) ContainsOrders() bool {
+	return (len(o.Sells) > 0 || len(o.Buys) > 0)
+}
+
 type LiquidityProvisionCancellation struct {
 	// Market identifier for the order, required field
 	MarketID string
