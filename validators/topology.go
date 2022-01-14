@@ -67,7 +67,7 @@ type Topology struct {
 	cfg                  Config
 	wallets              NodeWallets
 	broker               Broker
-	validatorPerformance *ValidatorPerformance
+	validatorPerformance *validatorPerformance
 
 	// vega pubkey to validator data
 	validators ValidatorMapping
