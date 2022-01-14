@@ -447,6 +447,11 @@ func (m *Market) GetMarketState() types.MarketState {
 	return m.mkt.State
 }
 
+func (m *Market) priceToMarketPrecision(price *num.Uint) *num.Uint {
+	// we assume the price is cloned correctly already
+	return price.Div(price, m.priceFactor)
+}
+
 func (m *Market) GetMarketData() types.MarketData {
 	bestBidPrice, bestBidVolume, _ := m.matching.BestBidPriceAndVolume()
 	bestOfferPrice, bestOfferVolume, _ := m.matching.BestOfferPriceAndVolume()
@@ -485,23 +490,30 @@ func (m *Market) GetMarketData() types.MarketData {
 	} else {
 		targetStake = m.getTargetStake().String()
 	}
+	one := num.NewUint(1) // for min price bounds
+	bounds := m.pMonitor.GetCurrentBounds()
+	for _, b := range bounds {
+		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
+		m.priceToMarketPrecision(b.MinValidPrice)
+		b.MinValidPrice.AddSum(one) // ceil
+	}
 
 	return types.MarketData{
 		Market:                    m.GetID(),
-		BestBidPrice:              bestBidPrice,
+		BestBidPrice:              m.priceToMarketPrecision(bestBidPrice),
 		BestBidVolume:             bestBidVolume,
-		BestOfferPrice:            bestOfferPrice,
+		BestOfferPrice:            m.priceToMarketPrecision(bestOfferPrice),
 		BestOfferVolume:           bestOfferVolume,
-		BestStaticBidPrice:        bestStaticBidPrice,
+		BestStaticBidPrice:        m.priceToMarketPrecision(bestStaticBidPrice),
 		BestStaticBidVolume:       bestStaticBidVolume,
-		BestStaticOfferPrice:      bestStaticOfferPrice,
+		BestStaticOfferPrice:      m.priceToMarketPrecision(bestStaticOfferPrice),
 		BestStaticOfferVolume:     bestStaticOfferVolume,
-		MidPrice:                  midPrice,
-		StaticMidPrice:            staticMidPrice,
-		MarkPrice:                 m.getCurrentMarkPrice(),
+		MidPrice:                  m.priceToMarketPrecision(midPrice),
+		StaticMidPrice:            m.priceToMarketPrecision(staticMidPrice),
+		MarkPrice:                 m.priceToMarketPrecision(m.getCurrentMarkPrice()),
 		Timestamp:                 m.currentTime.UnixNano(),
 		OpenInterest:              m.position.GetOpenInterest(),
-		IndicativePrice:           indicativePrice,
+		IndicativePrice:           m.priceToMarketPrecision(indicativePrice),
 		IndicativeVolume:          indicativeVolume,
 		AuctionStart:              auctionStart,
 		AuctionEnd:                auctionEnd,
@@ -510,7 +522,7 @@ func (m *Market) GetMarketData() types.MarketData {
 		ExtensionTrigger:          m.as.ExtensionTrigger(),
 		TargetStake:               targetStake,
 		SuppliedStake:             m.getSuppliedStake().String(),
-		PriceMonitoringBounds:     m.pMonitor.GetCurrentBounds(),
+		PriceMonitoringBounds:     bounds,
 		MarketValueProxy:          m.lastMarketValueProxy.String(),
 		LiquidityProviderFeeShare: lpsToLiquidityProviderFeeShare(m.equityShares.lps),
 	}
