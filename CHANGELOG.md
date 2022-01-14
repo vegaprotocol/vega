@@ -25,7 +25,7 @@
 - [4569](https://github.com/vegaprotocol/vega/pull/4569) - Move to `gchr.io` docker container registry
 - [4571](https://github.com/vegaprotocol/vega/pull/4571) - Update `CHANGELOG.md` for `0.47.x`
 - [4573](https://github.com/vegaprotocol/vega/pull/4573) - Remove execution configuration duplication from configuration root
-
+- [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
