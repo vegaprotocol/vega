@@ -826,6 +826,71 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	// TODO	assert.Equal(t, 0.5, tm.market.GetLiquidityFee())
 }
 
+// Reference must be updated when LP submissions are amended
+func TestLiquidity_CheckReferenceIsCorrectAfterChanges(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(1000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	ctx := context.Background()
+
+	// Create a new party account with very little funding
+	addAccountWithAmount(tm, "party-A", 7000)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	tm.mas.StartOpeningAuction(now, &types.AuctionDuration{Duration: 10})
+	tm.mas.AuctionStarted(ctx, now)
+	tm.market.EnterAuction(ctx)
+
+	buys := []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50}}
+	sells := []*types.LiquidityOrder{{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50}}
+
+	// Submitting a correct entry
+	lps := &types.LiquidityProvisionSubmission{
+		Fee:              num.DecimalFromFloat(0.01),
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(1000),
+		Reference:        "ref-lp-1",
+		Buys:             buys,
+		Sells:            sells,
+	}
+
+	err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	require.NoError(t, err)
+
+	// Update the fee
+	lpa := &types.LiquidityProvisionAmendment{
+		Fee: num.DecimalFromFloat(0.2),
+	}
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
+	require.NoError(t, err)
+
+	// Update the fee again with a new reference
+	lpa = &types.LiquidityProvisionAmendment{
+		Fee:       num.DecimalFromFloat(0.5),
+		Reference: "ref-lp-2",
+	}
+	err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
+	require.NoError(t, err)
+
+	t.Run("expect LP references", func(t *testing.T) {
+		// First collect all the lp events
+		found := map[string]*proto.LiquidityProvision{}
+		for _, e := range tm.events {
+			switch evt := e.(type) {
+			case *events.LiquidityProvision:
+				lp := evt.LiquidityProvision()
+				found[lp.Fee] = lp
+			}
+		}
+		expectedStatus := map[string]string{"0.01": "ref-lp-1", "0.2": "ref-lp-1", "0.5": "ref-lp-2"}
+		require.Len(t, found, len(expectedStatus))
+
+		for k, v := range expectedStatus {
+			assert.Equal(t, v, found[k].Reference)
+		}
+	})
+}
+
 func TestLiquidity_RejectLPAmendmentIfNoLP(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)

@@ -233,6 +233,11 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 		lpa.Fee = lp.Fee
 	}
 
+	// If commitment amount is not provided we keep the same
+	if lpa.Reference == "" {
+		lpa.Reference = lp.Reference
+	}
+
 	// If orders shapes are not provided, keep the current LP orders
 	if lpa.Sells == nil {
 		lpa.Sells = make([]*types.LiquidityOrder, 0, len(lp.Sells))
