@@ -3,6 +3,7 @@ package adaptors_test
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -18,6 +19,8 @@ func TestAdaptors(t *testing.T) {
 	t.Run("Creating adaptors succeeds", testCreatingAdaptorsSucceeds)
 	t.Run("Normalising data from unknown oracle fails", testAdaptorsNormalisingDataFromUnknownOracleFails)
 	t.Run("Normalising data from known oracle succeeds", testAdaptorsNormalisingDataFromKnownOracleSucceeds)
+	t.Run("Validating data should pass if validators return no errors", testAdaptorValidationSuccess)
+	t.Run("Validating data should fail if any validator returns an error", testAdaptorValidationFails)
 }
 
 func testCreatingAdaptorsSucceeds(t *testing.T) {
@@ -80,11 +83,15 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 	}
 }
 
-func stubbedAdaptors() *adaptors.Adaptors {
+func stubbedAdaptors(validators ...adaptors.ValidatorFunc) *adaptors.Adaptors {
 	return &adaptors.Adaptors{
 		Adaptors: map[commandspb.OracleDataSubmission_OracleSource]adaptors.Adaptor{
-			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
-			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        &dummyOracleAdaptor{},
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{
+				validators: validators,
+			},
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON: &dummyOracleAdaptor{
+				validators: validators,
+			},
 		},
 	}
 }
@@ -101,10 +108,107 @@ func dummyOraclePayload() []byte {
 	return payload
 }
 
-type dummyOracleAdaptor struct{}
+type dummyOracleAdaptor struct {
+	validators []adaptors.ValidatorFunc
+}
 
 func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	data := &oracles.OracleData{}
 	err := json.Unmarshal(payload, data)
 	return data, err
+}
+
+func (d *dummyOracleAdaptor) Validate(data *oracles.OracleData) error {
+	for _, validate := range d.validators {
+		if err := validate(data.Data); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func testAdaptorValidationSuccess(t *testing.T) {
+	tcs := []struct {
+		name   string
+		source commandspb.OracleDataSubmission_OracleSource
+	}{
+		{
+			name:   "with Open Oracle source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
+		}, {
+			name:   "with JSON source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// given
+			pubKeyB := []byte("0xdeadbeef")
+			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
+			rawData := commandspb.OracleDataSubmission{
+				Source:  tc.source,
+				Payload: dummyOraclePayload(),
+			}
+
+			// when
+			adaptor := stubbedAdaptors(passValidation, passValidation, passValidation)
+			normalisedData, err := adaptor.Normalise(pubKey, rawData)
+
+			validationErr := adaptor.Validate(tc.source, normalisedData)
+
+			// then
+			require.NoError(t, err)
+			assert.NotNil(t, normalisedData)
+			assert.NoError(tt, validationErr)
+		})
+	}
+}
+
+func testAdaptorValidationFails(t *testing.T) {
+	tcs := []struct {
+		name   string
+		source commandspb.OracleDataSubmission_OracleSource
+	}{
+		{
+			name:   "with Open Oracle source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
+		}, {
+			name:   "with JSON source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// given
+			pubKeyB := []byte("0xdeadbeef")
+			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
+			rawData := commandspb.OracleDataSubmission{
+				Source:  tc.source,
+				Payload: dummyOraclePayload(),
+			}
+
+			// when
+			adaptor := stubbedAdaptors(passValidation, failValidation, passValidation)
+			normalisedData, err := adaptor.Normalise(pubKey, rawData)
+
+			validationErr := adaptor.Validate(tc.source, normalisedData)
+
+			// then
+			require.NoError(t, err)
+			assert.NotNil(t, normalisedData)
+			assert.Error(tt, validationErr)
+		})
+	}
+
+}
+
+func passValidation(map[string]string) error {
+	return nil
+}
+
+func failValidation(map[string]string) error {
+	return errors.New("some error")
 }

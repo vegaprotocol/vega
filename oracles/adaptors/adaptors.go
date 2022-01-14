@@ -6,6 +6,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/oracles"
+	"code.vegaprotocol.io/vega/oracles/validation"
 )
 
 // ErrUnknownOracleSource is used when the input data is originated from an
@@ -16,6 +17,7 @@ var ErrUnknownOracleSource = errors.New("unknown oracle source")
 // a specific type of oracle.
 type Adaptor interface {
 	Normalise(crypto.PublicKey, []byte) (*oracles.OracleData, error)
+	Validate(*oracles.OracleData) error
 }
 
 // Adaptors normalises the input data into an oracles.OracleData according to
@@ -29,8 +31,8 @@ type Adaptors struct {
 func New() *Adaptors {
 	return &Adaptors{
 		Adaptors: map[commandspb.OracleDataSubmission_OracleSource]Adaptor{
-			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: NewOpenOracleAdaptor(),
-			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        NewJSONAdaptor(),
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: NewOpenOracleAdaptor(validation.CheckForInternalOracle),
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        NewJSONAdaptor(validation.CheckForInternalOracle),
 		},
 	}
 }
@@ -43,4 +45,13 @@ func (a *Adaptors) Normalise(txPubKey crypto.PublicKey, data commandspb.OracleDa
 	}
 
 	return adaptor.Normalise(txPubKey, data.Payload)
+}
+
+func (a *Adaptors) Validate(source commandspb.OracleDataSubmission_OracleSource, data *oracles.OracleData) error {
+	adaptor, ok := a.Adaptors[source]
+	if !ok {
+		return ErrUnknownOracleSource
+	}
+
+	return adaptor.Validate(data)
 }
