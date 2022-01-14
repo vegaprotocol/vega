@@ -826,7 +826,7 @@ func TestLiquidity_CheckFeeIsCorrectAfterChanges(t *testing.T) {
 	// TODO	assert.Equal(t, 0.5, tm.market.GetLiquidityFee())
 }
 
-// Reference must be updated when LP submissions are amended
+// Reference must be updated when LP submissions are amended.
 func TestLiquidity_CheckReferenceIsCorrectAfterChanges(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
