@@ -31,10 +31,9 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	// if the party is amending an existing LP
-	// we go done the path of amending
+	// if the party is alrready an LP we reject the new submission
 	if m.liquidity.IsLiquidityProvider(party) {
-		return err
+		return ErrPartyAlreadyLiquidityProvider
 	}
 
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
