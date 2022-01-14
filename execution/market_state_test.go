@@ -79,11 +79,11 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		CommitmentAmount: num.NewUint(1),
 		Fee:              num.DecimalFromFloat(0.1),
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
-			getLiquidityOrder(types.PeggedReferenceMid, 1, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
 		},
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceMid, 1, 1),
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
 		},
 	}
 

@@ -127,10 +127,10 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -184,10 +184,10 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -266,10 +266,10 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -363,10 +363,10 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -461,10 +461,10 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.0),
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -594,10 +594,10 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -699,10 +699,10 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 

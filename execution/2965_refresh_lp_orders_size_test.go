@@ -156,12 +156,12 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
-			getLiquidityOrder(types.PeggedReferenceMid, 15, 13),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -288,12 +288,12 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 500, 2),
-			getLiquidityOrder(types.PeggedReferenceMid, 500, 2),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 500, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 500, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 500, 13),
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 500, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 500, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 500, 13),
 		},
 	}
 
@@ -354,12 +354,12 @@ func TestCommitmentIsDeployed(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestBid, 50, 2),
-			getLiquidityOrder(types.PeggedReferenceMid, 50, 7),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 50, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 50, 7),
 		},
 		Sells: []*types.LiquidityOrder{
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 50, 13),
-			getLiquidityOrder(types.PeggedReferenceBestAsk, 50, 5),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 50, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 50, 5),
 		},
 	}
 

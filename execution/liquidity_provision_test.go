@@ -16,6 +16,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportion uint32) *types.LiquidityOrder {
+	return &types.LiquidityOrder{
+		Reference:  reference,
+		Proportion: proportion,
+		Offset:     num.NewUint(offset),
+	}
+}
+
 func TestSubmit(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
