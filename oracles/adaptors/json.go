@@ -10,11 +10,15 @@ import (
 
 // JSONAdaptor is an oracle Adaptor for simple oracle data broadcasting.
 // Link: https://compound.finance/docs/prices
-type JSONAdaptor struct{}
+type JSONAdaptor struct {
+	validators []ValidatorFunc
+}
 
 // NewJSONAdaptor creates a new JSONAdaptor.
-func NewJSONAdaptor() *JSONAdaptor {
-	return &JSONAdaptor{}
+func NewJSONAdaptor(validators ...ValidatorFunc) *JSONAdaptor {
+	return &JSONAdaptor{
+		validators: validators,
+	}
 }
 
 // Normalise normalises a JSON payload into an oracles.OracleData.
@@ -29,4 +33,10 @@ func (a *JSONAdaptor) Normalise(txPubKey crypto.PublicKey, data []byte) (*oracle
 		PubKeys: []string{txPubKey.Hex()},
 		Data:    kvs,
 	}, nil
+}
+
+// Validate checks the data using the validators that are passed when the adapter is instantiated
+// to ensure the data complies with the rules of each validator
+func (a *JSONAdaptor) Validate(data *oracles.OracleData) error {
+	return runValidation(data, a.validators)
 }
