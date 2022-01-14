@@ -46,7 +46,7 @@
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
 - [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
 - [4650](https://github.com/vegaprotocol/vega/pull/4650) - Restore code from rebase and ensure node retries connection with application
-
+- [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
