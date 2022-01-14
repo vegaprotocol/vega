@@ -49,3 +49,17 @@ func (mr *MockOracleAdaptorsMockRecorder) Normalise(arg0, arg1 interface{}) *gom
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Normalise", reflect.TypeOf((*MockOracleAdaptors)(nil).Normalise), arg0, arg1)
 }
+
+// Validate mocks base method
+func (m *MockOracleAdaptors) Validate(arg0 v1.OracleDataSubmission_OracleSource, arg1 *oracles.OracleData) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Validate", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Validate indicates an expected call of Validate
+func (mr *MockOracleAdaptorsMockRecorder) Validate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockOracleAdaptors)(nil).Validate), arg0, arg1)
+}
