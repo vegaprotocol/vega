@@ -23,6 +23,8 @@ var (
 	ErrMissingPropertyKey = errors.New("a property key is required")
 	// ErrMissingPropertyName is returned when a property as no name.
 	ErrMissingPropertyName = errors.New("a property name is required")
+	// ErrInvalidPropertyKey is returned if validation finds a reserved Vega property key
+	ErrInvalidPropertyKey = errors.New("property key is reserved")
 )
 
 type OracleSpecID string
