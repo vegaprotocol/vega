@@ -124,7 +124,7 @@ To generate a personal access token, log into GitHub and navigate to the `Person
 Once the token has been generated, you can use it to log into the GitHub Docker Registry. **Make sure you make a note of the Personal Access Token as it will only be shown the once after it has been generated**
 
 - Open a terminal
-- Enter the command `docker login docker.pkg.github.com --username <your-github-username>`
+- Enter the command `docker login ghcr.io --username <your-github-username>`
 - When prompted for the password, enter the personal access token code that was generated
 
 You should see a `Login successful` message once you have logged into the docker registry. Now you can use the `dockerisedvega.sh` script.
