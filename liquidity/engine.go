@@ -289,30 +289,27 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 }
 
 func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) (err error) {
+	if lp.Fee.IsZero() && (len(lp.Sells) == 0) && (len(lp.Buys) == 0) && (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero()) {
+		return errors.New("empty liquidity provision amendment content")
+	}
+
 	// If orders fee is provided, we need it to be valid
 	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
 		return errors.New("invalid liquidity provision fee")
 	}
 
-	emptyBuys := (len(lp.Buys) == 0)
-	emptySells := (len(lp.Sells) == 0)
-	emptyCommitmentAmount := (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero())
-
 	// If orders shapes are provided, we need them to be valid
-	if !emptyBuys {
+	if len(lp.Buys) > 0 {
 		if err := validateShape(lp.Buys, types.SideBuy, e.maxShapesSize); err != nil {
 			return err
 		}
 	}
-	if !emptySells {
+	if len(lp.Sells) > 0 {
 		if err := validateShape(lp.Sells, types.SideSell, e.maxShapesSize); err != nil {
 			return err
 		}
 	}
 
-	if lp.Fee.IsZero() && emptySells && emptyBuys && emptyCommitmentAmount {
-		return errors.New("empty liquidity provision amendment content")
-	}
 	return nil
 }
 

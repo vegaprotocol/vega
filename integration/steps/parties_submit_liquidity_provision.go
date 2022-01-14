@@ -11,7 +11,7 @@ import (
 	"github.com/cucumber/godog"
 )
 
-type LpUpdate struct {
+type LPUpdate struct {
 	MarketID         string
 	CommitmentAmount *num.Uint
 	Fee              num.Decimal
@@ -22,7 +22,7 @@ type LpUpdate struct {
 }
 
 func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
-	lps := map[string]*LpUpdate{}
+	lps := map[string]*LPUpdate{}
 	parties := map[string]string{}
 	keys := []string{}
 
@@ -35,7 +35,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 
 		lp, ok := lps[id]
 		if !ok {
-			lp = &LpUpdate{
+			lp = &LPUpdate{
 				MarketID:         row.MarketID(),
 				CommitmentAmount: row.CommitmentAmount(),
 				Fee:              row.Fee(),
