@@ -20,8 +20,10 @@ func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
 	t.Helper()
 
 	riskModel, settings := createPriceMonitorDeps(t, ctrl)
+	statevar := mocks.NewMockStateVarEngine(ctrl)
+	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor(riskModel, settings)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 

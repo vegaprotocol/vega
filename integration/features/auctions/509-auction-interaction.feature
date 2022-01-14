@@ -6,6 +6,7 @@ Feature: Test interactions between different auction types
       | market.stake.target.timeWindow                | 24h   |
       | market.stake.target.scalingFactor             | 1     |
       | market.liquidity.targetstake.triggering.ratio | 0     |
+      | network.floatingPointUpdates.delay            | 5s    |
     And the average block duration is "1"
     And the simple risk model named "simple-risk-model-1":
       | long | short | max move up | min move down | probability of trading |
@@ -223,6 +224,8 @@ Feature: Test interactions between different auction types
     Then the following orders should be stopped:
       | party  | market id | reason                                               |
       | party1 | ETH/DEC21 | ORDER_ERROR_NON_PERSISTENT_ORDER_OUT_OF_PRICE_BOUNDS |
+    
+    Then the network moves ahead "5" blocks
     And the market data for the market "ETH/DEC21" should be:
       | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
       | 1000       | TRADING_MODE_CONTINUOUS | 1       | 1001      | 1019      | 1000         | 1000           | 10            |
