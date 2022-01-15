@@ -2,13 +2,15 @@ package validators_test
 
 import (
 	"bytes"
-	"code.vegaprotocol.io/vega/validators"
 	"context"
 	"encoding/hex"
+	"testing"
+
+	"code.vegaprotocol.io/vega/validators"
+
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -38,7 +40,6 @@ func TestEmptySnapshot(t *testing.T) {
 }
 
 func TestTopologySnapshot(t *testing.T) {
-
 	top := getTestTopWithDefaultValidator(t)
 	updateValidatorPerformanceToNonDefaultState(t, top.Topology)
 	defer top.ctrl.Finish()
@@ -124,10 +125,10 @@ func TestTopologySnapshot(t *testing.T) {
 	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address3)).String())
 	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address4)).String())
 	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
-
 }
 
 func updateValidatorPerformanceToNonDefaultState(t *testing.T, top *validators.Topology) {
+	t.Helper()
 	vd1 := []*tmtypes.Validator{
 		{Address: address1, VotingPower: 3715, ProposerPriority: 5249},
 		{Address: address2, VotingPower: 3351, ProposerPriority: 796},
