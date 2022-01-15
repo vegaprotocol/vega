@@ -914,7 +914,7 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Send an event bus update
 	m.broker.Send(endEvt)
-
+	m.OnAuctionEnded()
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)

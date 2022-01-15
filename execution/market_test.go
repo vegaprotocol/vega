@@ -192,6 +192,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	tm.asset = asset
 	tm.mas = mas
 	tm.mktCfg = &mktCfg
+	tm.stateVar = statevarEngine
 
 	// Reset event counters
 	tm.eventCount = 0
@@ -325,7 +326,12 @@ func getTestMarket2(
 
 	collateralEngine.EnableAsset(context.Background(), tokAsset)
 	if pMonitorSettings == nil {
-		pMonitorSettings = defaultPriceMonitorSettings
+		pMonitorSettings = &types.PriceMonitoringSettings{
+			Parameters: &types.PriceMonitoringParameters{
+				Triggers: []*types.PriceMonitoringTrigger{},
+			},
+			UpdateFrequency: 0,
+		}
 	}
 	mkt := getMarket(closingAt, pMonitorSettings, openingAuctionDuration)
 	mktCfg := &mkt
@@ -4379,6 +4385,9 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 		},
 	}
 
+	tm.stateVar.ReadyForTimeTrigger(tm.asset, tm.market.GetID())
+	tm.stateVar.OnTimeTick(context.Background(), now.Add(6*time.Minute))
+
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-A", "id-lp"))
 	require.Equal(t, 0, tm.market.GetParkedOrderCount())
 	require.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
@@ -6070,6 +6079,8 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	closed := tm.market.OnChainTimeUpdate(ctx, now)
 	require.False(t, closed)
+	tm.stateVar.ReadyForTimeTrigger(tm.asset, tm.market.GetID())
+	tm.stateVar.OnTimeTick(context.Background(), now.Add(6*time.Minute))
 
 	totalCommitment := num.Sum(lp1Commitment, lp2Commitment)
 	currentStake := num.DecimalFromUint(totalCommitment)
@@ -6101,6 +6112,8 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.True(t, maxOrderSizeFp.GreaterThan(num.DecimalFromFloat(1)))
 	maxOSize, _ := num.UintFromDecimal(maxOrderSizeFp.Floor())
 	maxOrderSize := maxOSize.Uint64()
+
+	tm.stateVar.OnTimeTick(context.Background(), now.Add(11*time.Minute))
 
 	// Add orders that will trade (no auction triggered yet)
 	buyOrder3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder3", types.SideBuy, party1, maxOrderSize, matchingPrice)

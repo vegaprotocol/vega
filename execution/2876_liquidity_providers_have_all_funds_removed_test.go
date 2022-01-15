@@ -15,7 +15,7 @@ import (
 func TestIssue2876(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 30})
+	tm := getTestMarket(t, now, closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30})
 	ctx := context.Background()
 
 	tm.market.OnChainTimeUpdate(ctx, now)

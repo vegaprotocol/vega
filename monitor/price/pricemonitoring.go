@@ -447,11 +447,9 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		if e.boundFactorsConsensusDone {
 			min = ref.Mul(b.DownFactor)
 			max = ref.Mul(b.UpFactor)
-			println("&&&&&&& ref = "+ref.String(), "b.DownFactor", b.DownFactor.String(), "minUint", min.String(), "maxUint", max.String())
 		} else {
 			min = ref.Mul(defaultDownFactor)
 			max = ref.Mul(defaultUpFactor)
-			println("&&&&&&& ref = "+ref.String(), "b.DownFactor", b.DownFactor.String(), "minUint", min.String(), "maxUint", max.String())
 		}
 
 		minUint, _ := num.UintFromDecimal(min.Ceil())

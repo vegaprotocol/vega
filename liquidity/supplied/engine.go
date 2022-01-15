@@ -53,12 +53,6 @@ type Engine struct {
 	probabilityOfTradingTauScaling num.Decimal
 	minProbabilityOfTrading        num.Decimal
 
-	cachedMin *num.Uint
-	cachedMax *num.Uint
-	// Bid cache
-	bCache map[num.Uint]num.Decimal
-	// Ask cache
-	aCache  map[num.Uint]num.Decimal
 	changed bool
 
 	pot                 *probabilityOfTrading
@@ -71,13 +65,9 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		rm:                             riskModel,
 		pm:                             priceMonitor,
 		marketID:                       marketID,
-		cachedMin:                      num.Zero(),
-		cachedMax:                      num.Zero(),
 		horizon:                        riskModel.GetProjectionHorizon(),
 		probabilityOfTradingTauScaling: num.DecimalFromInt64(1), // this is the same as the default in the netparams
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
-		bCache:                         map[num.Uint]num.Decimal{},
-		aCache:                         map[num.Uint]num.Decimal{},
 		changed:                        true,
 		pot:                            &probabilityOfTrading{},
 	}
@@ -151,14 +141,14 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 	for _, o := range orders {
 		if o.Side == types.SideBuy {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(e.getBestStaticPrices, e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
+			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			bLiq = bLiq.Add(d)
 		}
 		if o.Side == types.SideSell {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(e.getBestStaticPrices, e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
+			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			sLiq = sLiq.Add(d)
@@ -187,7 +177,7 @@ func (e *Engine) updateSizes(
 	for _, o := range orders {
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
-		prob := getProbabilityOfTrading(e.getBestStaticPrices, e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
+		prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskprice.ToDecimal(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
 		if prob.IsZero() || prob.IsNegative() {
 			proportion = num.DecimalZero()
 		}

@@ -36,24 +36,17 @@ func (e *Engine) ResetUpdated() {
 }
 
 func (e *Engine) Payload() *snapshotpb.Payload {
+	// TODO if and when this PR gets approved, this whole snapshot can be deleted
 	return &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquiditySupplied{
 			LiquiditySupplied: &snapshotpb.LiquiditySupplied{
-				MarketId:  e.marketID,
-				CachedMin: e.cachedMin.String(),
-				CachedMax: e.cachedMax.String(),
-				BidCache:  e.mapToSlice(e.bCache),
-				AskCache:  e.mapToSlice(e.aCache),
+				MarketId: e.marketID,
 			},
 		},
 	}
 }
 
 func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
-	e.cachedMin, _ = num.UintFromString(ls.CachedMin, 10)
-	e.cachedMax, _ = num.UintFromString(ls.CachedMax, 10)
-	e.bCache = e.sliceToMap(ls.BidCache)
-	e.aCache = e.sliceToMap(ls.AskCache)
 	e.changed = true
 	return nil
 }

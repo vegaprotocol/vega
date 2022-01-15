@@ -1127,8 +1127,14 @@ func TestCloseOutLPPartyContIssue3086(t *testing.T) {
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
 
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -1475,7 +1481,13 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 	ctx := context.Background()
 
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
+	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -1623,13 +1635,13 @@ func TestLiquidityOrderGeneratedSizes(t *testing.T) {
 			"V0000000000-0000000002": 2,
 			"V0000000000-0000000003": 2,
 			"V0000000000-0000000004": 3,
-			"V0000000000-0000000005": 114,
+			"V0000000000-0000000005": 113,
 		}
 
 		for id, v := range found {
 			size, ok := expect[id]
 			assert.True(t, ok, "unexpected order id")
-			assert.Equal(t, v.Size, size, id)
+			assert.Equal(t, size, v.Size, id)
 		}
 	})
 
@@ -2118,8 +2130,14 @@ func TestMarketValueProxyIsUpdatedWithTrades(t *testing.T) {
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
 
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -2392,8 +2410,15 @@ func TestLPProviderSubmitLimitOrderWhichExpiresLPOrderAreRedeployed(t *testing.T
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
 
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
+
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{

@@ -22,7 +22,7 @@ var (
 	defaultMinimumProbabilityOfTrading = num.DecimalFromFloat(1e-8)
 	tolerance                          = num.DecimalFromFloat(1e-6)
 	numberOfPricePoints                = num.NewUint(100)
-	defaultProbability                 = num.DecimalFromFloat(0.005)
+	defaultProbability                 = num.DecimalFromFloat(0.05) //@witold should it be 0.05 or 0.005?
 	defaultTickDistance                = num.DecimalFromFloat(100)
 )
 
@@ -57,8 +57,20 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	}
 
 	minPrice, maxPrice := e.pm.GetValidPriceRange()
-	bidPrices, bidProbabilities := calculateRange(bestBid, minPrice.Representation(), bestBid, tauScaled, true, e.rm.ProbabilityOfTrading)
-	askPrices, askProbabilities := calculateRange(bestAsk, bestAsk, maxPrice.Representation(), tauScaled, false, e.rm.ProbabilityOfTrading)
+	bidFrom := minPrice.Representation()
+	askTo := maxPrice.Representation()
+
+	// if there's no min and max use 20% on either side of the best bid/ask as min/max
+	// so that we don't calculate an almost infinite range
+	if maxPrice.Representation().EQ(num.MaxUint()) {
+		mn, _ := num.UintFromDecimal(bestBid.ToDecimal().Mul(num.DecimalFromFloat(0.25)))
+		mx, _ := num.UintFromDecimal(bestAsk.ToDecimal().Mul(num.DecimalFromFloat(4)))
+		bidFrom = mn
+		askTo = mx
+	}
+
+	bidPrices, bidProbabilities := calculateRange(bestBid, bidFrom, bestBid, minPrice.Original(), bestBid.ToDecimal(), tauScaled, true, e.rm.ProbabilityOfTrading)
+	askPrices, askProbabilities := calculateRange(bestAsk, bestAsk, askTo, bestAsk.ToDecimal(), maxPrice.Original(), tauScaled, false, e.rm.ProbabilityOfTrading)
 
 	res := &probabilityOfTrading{
 		bidPrice:       bidPrices,
@@ -73,15 +85,13 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 // for bid this is expected to go from the min price in the price range to the best bid
 // for ask this is expected to go from best ask to the max price in the price range
 // the price increment in the range is attempting to have 100 price points but may have more (up to 199 - e.g. range between 100-199).
-func calculateRange(best, from, to *num.Uint, tauScaled num.Decimal, isBid bool, probabilityFunc func(*num.Uint, *num.Uint, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
+func calculateRange(best, from, to *num.Uint, min, max, tauScaled num.Decimal, isBid bool, probabilityFunc func(*num.Uint, *num.Uint, num.Decimal, num.Decimal, num.Decimal, bool, bool) num.Decimal) ([]num.Decimal, []num.Decimal) {
 	tickSize := num.Zero().Div(num.Zero().Sub(to, from), numberOfPricePoints)
 	cappedTickSize := num.Max(tickSize, num.NewUint(1))
 
 	prices := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
 	probabilities := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
 
-	min := from.ToDecimal()
-	max := to.ToDecimal()
 	p := from.Clone()
 	for p.LTE(to) {
 		prices = append(prices, p.ToDecimal())
@@ -113,17 +123,13 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 // if the price is worse than the min bid and is a bid price or is worse than the max ask and is an ask price it returns <minProbabilityOfTrading>
 // if it matches a price point - the corresponding probability is returned (scaled by <defaultInRangeProbabilityOfTrading>)
 // otherwise it finds the first price point that is greater than the given price and returns the interpolation of the probabilities of this price point and the preceding one rescaled by <defaultInRangeProbabilityOfTrading>.
-func getProbabilityOfTrading(getBestStaticPrices func() (*num.Uint, *num.Uint, error), pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal) num.Decimal {
-	bestBidUint, bestAskUint, err := getBestStaticPrices()
-	if err != nil {
-		return minProbabilityOfTrading
-	}
-	bestBid := bestBidUint.ToDecimal()
-	bestAsk := bestAskUint.ToDecimal()
+func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal) num.Decimal {
+	// if the price is between the current bid and ask, return the default in range probability
 	if price.GreaterThanOrEqual(bestBid) && price.LessThanOrEqual(bestAsk) {
 		return defaultInRangeProbabilityOfTrading
 	}
 
+	// no consensus yet
 	if (len(pot.bidPrice) == 0 && isBid) || (len(pot.askPrice) == 0 && !isBid) {
 		if isBid && bestBid.Sub(price).Abs().LessThanOrEqual(defaultTickDistance) {
 			return defaultProbability
@@ -142,9 +148,12 @@ func getProbabilityOfTrading(getBestStaticPrices func() (*num.Uint, *num.Uint, e
 		probabilities = pot.askProbability
 	}
 
-	// at this point we know that the price is not better than the best price so this condition means that for bid the order is worse than the min bid
-	// and for ask its worse than the max ask in which case we return the minimum
-	if price.LessThan(prices[0]) || price.GreaterThan(prices[len(prices)-1]) {
+	if (isBid && price.GreaterThanOrEqual(prices[len(prices)-1])) || (!isBid && price.LessThanOrEqual(prices[0])) {
+		return defaultInRangeProbabilityOfTrading
+	}
+
+	// check out of bounds
+	if isBid && price.LessThan(prices[0]) || !isBid && price.GreaterThan(prices[len(prices)-1]) {
 		return minProbabilityOfTrading
 	}
 
@@ -154,12 +163,16 @@ func getProbabilityOfTrading(getBestStaticPrices func() (*num.Uint, *num.Uint, e
 		return num.MaxD(minProbabilityOfTrading, rescaleProbability(probabilities[i]))
 	}
 
+	if i == 0 {
+		println(i)
+	}
 	// linear interpolation
 	prev := prices[i-1]
 	size := prices[i].Sub(prev)
 	ratio := price.Sub(prev).Div(size)
 	cRatio := num.DecimalFromInt64(1).Sub(ratio)
 	prob := ratio.Mul(probabilities[i]).Add(cRatio.Mul(probabilities[i-1]))
+	println(prob.String())
 	return num.MaxD(minProbabilityOfTrading, rescaleProbability(prob))
 }
 

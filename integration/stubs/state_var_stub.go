@@ -68,6 +68,7 @@ func (e *StateVarStub) AddStateVariable(asset, market string, converter statevar
 		}
 		e.eventTypeToStateVar[t] = append(e.eventTypeToStateVar[t], e.svs[ID])
 	}
+	e.ReadyForTimeTrigger(asset, market)
 	return nil
 }
 

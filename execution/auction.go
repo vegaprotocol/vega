@@ -87,7 +87,6 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 				m.extendAuctionIncompleteBook()
 				return
 			}
-			m.OnAuctionEnded()
 			m.LeaveAuction(ctx, now)
 		}
 	}
