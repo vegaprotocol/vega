@@ -1612,12 +1612,12 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | buy  | 990   | 20     |
       | sell | 1010  | 20     |
 
-    Then the parties place the following orders:
-      | party    | market id | side | volume | price | resulting trades | type       | tif     |
-      | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
-      | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
+    # Then the parties place the following orders:
+    #   | party    | market id | side | volume | price | resulting trades | type       | tif     |
+    #   | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
+    #   | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
 
-    When the network moves ahead "301" blocks
+    # When the network moves ahead "301" blocks
     #  Then the parties should have the following account balances:
     #   | party    | asset | market id | margin | general |
     #   | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |

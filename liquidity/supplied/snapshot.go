@@ -48,6 +48,12 @@ func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
 		askProbs = append(askProbs, num.MustDecimalFromString(ask.Probability))
 	}
 
+	e.pot = &probabilityOfTrading{
+		bidPrice:       bidPrices,
+		bidProbability: bidProbs,
+		askPrice:       askPrices,
+		askProbability: askProbs,
+	}
 	e.changed = true
 	return nil
 }

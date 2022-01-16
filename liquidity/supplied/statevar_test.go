@@ -31,10 +31,6 @@ func pOfT(best, p *num.Uint, min, max, tauScaled num.Decimal, isBid bool, applyM
 	return num.DecimalFromFloat(0.005)
 }
 
-func getBest() (*num.Uint, *num.Uint, error) {
-	return num.NewUint(120), num.NewUint(220), nil
-}
-
 func TestGetProbability(t *testing.T) {
 	minProb := num.DecimalFromFloat(0.021)
 	// no consensus - price within 100 ticks from the best bid - use default probability

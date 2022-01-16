@@ -25,6 +25,7 @@
 - [4569](https://github.com/vegaprotocol/vega/pull/4569) - Move to `gchr.io` docker container registry
 - [4571](https://github.com/vegaprotocol/vega/pull/4571) - Update `CHANGELOG.md` for `0.47.x`
 - [4573](https://github.com/vegaprotocol/vega/pull/4573) - Remove execution configuration duplication from configuration root
+- [4555](https://github.com/vegaprotocol/vega/issues/4555) - Probability of trading integrated into floating point consensus engine
 
 
 ### 🐛 Fixes

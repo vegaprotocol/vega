@@ -263,8 +263,6 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 			}
 			return nil
 		}
-		println("$$$$$ len(bounds)", len(bounds))
-
 		if !persistent {
 			// we're going to stay in continuous trading, make sure we still have bounds
 			e.reset(last.Price, last.Volume, now)
