@@ -38,8 +38,16 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			// this should never, ever happen
 			m.log.Panic("Leaving opening auction somehow triggered price monitoring to extend the auction")
 		}
+		// only do this once
+		if !m.as.CanLeave() {
+			m.OnOpeningAuctionFirstUncrossingPrice()
+		}
 		m.as.SetReadyToLeave()
-		m.OnOpeningAuctionFirstUncrossingPrice()
+		// if we don't have yet consensus for the floating point parameters, stay in the opening auction
+		if !m.CanLeaveOpeningAuction() {
+			m.log.Info("cannot leave opening auction - waiting for floating point to complete the first round")
+			return
+		}
 		m.LeaveAuction(ctx, now)
 		// the market is now in a ACTIVE state
 		m.mkt.State = types.MarketStateActive

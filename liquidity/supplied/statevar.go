@@ -47,6 +47,10 @@ func (probabilityOfTradingConverter) InterfaceToBundle(res statevar.StateVariabl
 	}
 }
 
+func (e *Engine) IsPoTInitialised() bool {
+	return e.potInitialised
+}
+
 // startCalcPriceRanges kicks off the probability of trading calculation.
 func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statevar.FinaliseCalculation) {
 	tauScaled := e.horizon.Mul(e.probabilityOfTradingTauScaling)
@@ -111,6 +115,8 @@ func calculateRange(best, from, to *num.Uint, min, max, tauScaled num.Decimal, i
 // updatePriceBounds is called back from the state variable consensus engine when consensus is reached for the down/up factors and updates the price bounds.
 func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVariableResult) error {
 	e.pot = res.(*probabilityOfTrading)
+	e.potInitialised = true
+	e.changed = true
 	return nil
 }
 

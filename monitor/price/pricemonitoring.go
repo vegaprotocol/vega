@@ -116,7 +116,7 @@ type Engine struct {
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
 
-	boundFactorsConsensusDone bool
+	boundFactorsInitialised bool
 
 	stateChanged   bool
 	stateVarEngine StateVarEngine
@@ -157,12 +157,12 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 	}
 
 	e := &Engine{
-		riskModel:                 riskModel,
-		fpHorizons:                h,
-		bounds:                    bounds,
-		stateChanged:              true,
-		stateVarEngine:            stateVarEngine,
-		boundFactorsConsensusDone: false,
+		riskModel:               riskModel,
+		fpHorizons:              h,
+		bounds:                  bounds,
+		stateChanged:            true,
+		stateVarEngine:          stateVarEngine,
+		boundFactorsInitialised: false,
 	}
 
 	stateVarEngine.AddStateVariable(asset, mktID, boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
@@ -442,7 +442,7 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		ref := e.getRefPrice(b.Trigger.Horizon)
 		var min, max num.Decimal
 
-		if e.boundFactorsConsensusDone {
+		if e.boundFactorsInitialised {
 			min = ref.Mul(b.DownFactor)
 			max = ref.Mul(b.UpFactor)
 		} else {

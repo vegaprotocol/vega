@@ -56,6 +56,7 @@ type Engine struct {
 	changed bool
 
 	pot                 *probabilityOfTrading
+	potInitialised      bool
 	getBestStaticPrices func() (*num.Uint, *num.Uint, error)
 }
 
@@ -70,6 +71,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		minProbabilityOfTrading:        defaultMinimumProbabilityOfTrading,
 		changed:                        true,
 		pot:                            &probabilityOfTrading{},
+		potInitialised:                 false,
 	}
 
 	stateVarEngine.AddStateVariable(asset, marketID, probabilityOfTradingConverter{}, e.startCalcProbOfTrading, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updateProbabilities)

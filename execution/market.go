@@ -95,6 +95,7 @@ type PriceMonitor interface {
 	// Snapshot
 	GetState() *types.PriceMonitor
 	Changed() bool
+	IsBoundFactorsInitialised() bool
 }
 
 // LiquidityMonitor.
@@ -530,6 +531,11 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.stateChanged = true
 
 	return nil
+}
+
+// CanLeaveOpeningAuction checks if the market can leave the opening auction based on whether floating point consensus has been reached on all 3 vars
+func (m *Market) CanLeaveOpeningAuction() bool {
+	return m.pMonitor.IsBoundFactorsInitialised() && m.liquidity.IsPoTInitialised() && m.risk.IsRiskFactorInitialised()
 }
 
 func (m *Market) StartOpeningAuction(ctx context.Context) error {

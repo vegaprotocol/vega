@@ -26,6 +26,10 @@ func (boundFactorsConverter) InterfaceToBundle(res statevar.StateVariableResult)
 	}
 }
 
+func (e *Engine) IsBoundFactorsInitialised() bool {
+	return e.boundFactorsInitialised
+}
+
 // startCalcPriceRanges kicks off the bounds factors factors calculation, done asynchronously for illustration.
 func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar.FinaliseCalculation) {
 	down := make([]num.Decimal, 0, len(e.bounds))
@@ -65,7 +69,7 @@ func (e *Engine) updateFactors(down, up []num.Decimal) {
 		b.DownFactor = down[i]
 		b.UpFactor = up[i]
 	}
-	e.boundFactorsConsensusDone = true
+	e.boundFactorsInitialised = true
 	// force invalidation of the price range cache
 	if len(e.pricesNow) > 0 {
 		e.getCurrentPriceRanges(true)

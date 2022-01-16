@@ -798,3 +798,7 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 	}
 	return nil
 }
+
+func (e *Engine) IsPoTInitialised() bool {
+	return e.suppliedEngine.IsPoTInitialised()
+}
