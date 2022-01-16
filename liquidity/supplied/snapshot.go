@@ -1,31 +1,9 @@
 package supplied
 
 import (
-	"sort"
-
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
 )
-
-func (e *Engine) mapToSlice(m map[num.Uint]num.Decimal) []*snapshotpb.LiquidityPriceProbabilityPair {
-	slice := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(m))
-	for k, v := range m {
-		slice = append(slice, &snapshotpb.LiquidityPriceProbabilityPair{Price: k.String(), Probability: v.String()})
-	}
-
-	sort.SliceStable(slice, func(i, j int) bool { return slice[i].Price < slice[j].Price })
-	return slice
-}
-
-func (e *Engine) sliceToMap(lppp []*snapshotpb.LiquidityPriceProbabilityPair) map[num.Uint]num.Decimal {
-	m := make(map[num.Uint]num.Decimal, len(lppp))
-	for _, pp := range lppp {
-		price, _ := num.UintFromString(pp.Price, 10)
-		probability, _ := num.DecimalFromString(pp.Probability)
-		m[*price] = probability
-	}
-	return m
-}
 
 func (e *Engine) HasUpdates() bool {
 	return e.changed
@@ -36,17 +14,40 @@ func (e *Engine) ResetUpdated() {
 }
 
 func (e *Engine) Payload() *snapshotpb.Payload {
-	// TODO if and when this PR gets approved, this whole snapshot can be deleted
+	bidCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.bidPrice))
+	for i := 0; i < len(e.pot.bidPrice); i++ {
+		bidCache = append(bidCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.bidPrice[i].String(), Probability: e.pot.bidProbability[i].String()})
+	}
+	askCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.askPrice))
+	for i := 0; i < len(e.pot.askPrice); i++ {
+		askCache = append(askCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.askPrice[i].String(), Probability: e.pot.askProbability[i].String()})
+	}
+
 	return &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquiditySupplied{
 			LiquiditySupplied: &snapshotpb.LiquiditySupplied{
 				MarketId: e.marketID,
+				BidCache: bidCache,
+				AskCache: askCache,
 			},
 		},
 	}
 }
 
 func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
+	bidPrices := make([]num.Decimal, 0, len(ls.BidCache))
+	bidProbs := make([]num.Decimal, 0, len(ls.BidCache))
+	for _, bid := range ls.BidCache {
+		bidPrices = append(bidPrices, num.MustDecimalFromString(bid.Price))
+		bidProbs = append(bidProbs, num.MustDecimalFromString(bid.Probability))
+	}
+	askPrices := make([]num.Decimal, 0, len(ls.AskCache))
+	askProbs := make([]num.Decimal, 0, len(ls.AskCache))
+	for _, ask := range ls.AskCache {
+		askPrices = append(askPrices, num.MustDecimalFromString(ask.Price))
+		askProbs = append(askProbs, num.MustDecimalFromString(ask.Probability))
+	}
+
 	e.changed = true
 	return nil
 }
