@@ -60,8 +60,8 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	bidFrom := minPrice.Representation()
 	askTo := maxPrice.Representation()
 
-	// if there's no min and max use 20% on either side of the best bid/ask as min/max
-	// so that we don't calculate an almost infinite range
+	// NB: to clip the range we're calculating for in case max is max uint or min is zero so that we're calculating for a small enough range
+	// we're confining the range to 0.25/4 times the current best bid/ask. This is primarily for testing, in reality the bounds could probably be much tighter.
 	if maxPrice.Representation().EQ(num.MaxUint()) {
 		mn, _ := num.UintFromDecimal(bestBid.ToDecimal().Mul(num.DecimalFromFloat(0.25)))
 		mx, _ := num.UintFromDecimal(bestAsk.ToDecimal().Mul(num.DecimalFromFloat(4)))
@@ -124,7 +124,7 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 // if it matches a price point - the corresponding probability is returned (scaled by <defaultInRangeProbabilityOfTrading>)
 // otherwise it finds the first price point that is greater than the given price and returns the interpolation of the probabilities of this price point and the preceding one rescaled by <defaultInRangeProbabilityOfTrading>.
 func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal) num.Decimal {
-	// if the price is between the current bid and ask, return the default in range probability
+	// if the price is between the *current* bid and ask, return the default in range probability
 	if price.GreaterThanOrEqual(bestBid) && price.LessThanOrEqual(bestAsk) {
 		return defaultInRangeProbabilityOfTrading
 	}
@@ -148,6 +148,9 @@ func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTra
 		probabilities = pot.askProbability
 	}
 
+	// NB: if the price is a bid order and it's better than the best bid at the time the probabilities were calculated
+	// or the price is an ask order and it's better than the best ask at the time the probabilities were calculated
+	// we return the <defaultInRangeProbabilityOfTrading>
 	if (isBid && price.GreaterThanOrEqual(prices[len(prices)-1])) || (!isBid && price.LessThanOrEqual(prices[0])) {
 		return defaultInRangeProbabilityOfTrading
 	}
@@ -163,16 +166,12 @@ func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTra
 		return num.MaxD(minProbabilityOfTrading, rescaleProbability(probabilities[i]))
 	}
 
-	if i == 0 {
-		println(i)
-	}
 	// linear interpolation
 	prev := prices[i-1]
 	size := prices[i].Sub(prev)
 	ratio := price.Sub(prev).Div(size)
 	cRatio := num.DecimalFromInt64(1).Sub(ratio)
 	prob := ratio.Mul(probabilities[i]).Add(cRatio.Mul(probabilities[i-1]))
-	println(prob.String())
 	return num.MaxD(minProbabilityOfTrading, rescaleProbability(prob))
 }
 

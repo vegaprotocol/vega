@@ -1611,66 +1611,67 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | buy  | 920   | 1      |
       | buy  | 990   | 20     |
       | sell | 1010  | 20     |
-  
+
     Then the parties place the following orders:
       | party    | market id | side | volume | price | resulting trades | type       | tif     |
       | trader3a | ETH/DEC21 | buy  | 10     | 990   | 0                | TYPE_LIMIT | TIF_GTC |
       | trader4  | ETH/DEC21 | sell | 30     | 990   | 1                | TYPE_LIMIT | TIF_GTC |
-      
-     Then the parties should have the following account balances:
-      | party    | asset | market id | margin | general |
-      | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
-      | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
+
+    When the network moves ahead "301" blocks
+    #  Then the parties should have the following account balances:
+    #   | party    | asset | market id | margin | general |
+    #   | trader3a | ETH   | ETH/DEC21 | 3216   | 96834   |
+    #   | trader4  | ETH   | ETH/DEC21 | 3600   | 96320   |
     
-    And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+    # And the liquidity fee factor should "0.001" for the market "ETH/DEC21"
+    # And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
 
-    Then the following trades should be executed:
-      # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
-      # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
-      # TODO to be implemented by Core Team
-      | buyer      | price | size | seller  |
-      # | aux1     | 990   | 19   | trader4 |
-        | trader3a | 990   | 10  | trader4 |
-      # Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed
+    # Then the following trades should be executed:
+    #   # | buyer    | price | size | seller  | maker   | taker   | buyer_fee | seller_fee | maker_fee |
+    #   # | trader3a | 1002  | 2    | trader4 | trader3 | trader4 | 30        | 11         | 11        |
+    #   # TODO to be implemented by Core Team
+    #   | buyer      | price | size | seller  |
+    #   # | aux1     | 990   | 19   | trader4 |
+    #     | trader3a | 990   | 10  | trader4 |
+    #   # Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed
 
-    Then the market data for the market "ETH/DEC21" should be:
-      | mark price | trading mode            |  
-      | 990        | TRADING_MODE_CONTINUOUS |
+    # Then the market data for the market "ETH/DEC21" should be:
+    #   | mark price | trading mode            |  
+    #   | 990        | TRADING_MODE_CONTINUOUS |
      
-    # For trader4 -
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
+    # # For trader4 -
+    # # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
+    # # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
+    # # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
+    # # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
 
-    # For trader3a -
-    # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
-    # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
-    # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
-    # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
+    # # For trader3a -
+    # # trade_value_for_fee_purposes for trader3a = size_of_trade * price_of_trade = 10 * 990 = 9900
+    # # infrastructure_fee = fee_factor[infrastructure] * trade_value_for_fee_purposes = 0.002 * 9900 = 19.8 = 20 (rounded up to nearest whole value)
+    # # maker_fee =  fee_factor[maker]  * trade_value_for_fee_purposes = 0.005 * 9900 = 49.5 = 50 (rounded up to nearest whole value)
+    # # liquidity_fee = fee_factor[liquidity] * trade_value_for_fee_purposes = 0.001 * 9900 = 9.9 = 10 (rounded up to nearest whole value)
 
 
-    And the following transfers should happen:
-      | from    | to       | from account            | to account                       | market id | amount | asset |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
-      | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
-      | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
-      | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |  
+    # And the following transfers should happen:
+    #   | from    | to       | from account            | to account                       | market id | amount | asset |
+    #   | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_MAKER          | ETH/DEC21 | 50     | ETH   |
+    #   | trader4 |          | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_INFRASTRUCTURE |           | 20     | ETH   |
+    #   | trader4 | market   | ACCOUNT_TYPE_GENERAL    | ACCOUNT_TYPE_FEES_LIQUIDITY      | ETH/DEC21 | 10     | ETH   |
+    #   | market  | trader3a | ACCOUNT_TYPE_FEES_MAKER | ACCOUNT_TYPE_GENERAL             | ETH/DEC21 | 50     | ETH   |  
 
-    Then the parties should have the following account balances:
-      | party      | asset | market id | margin | general |
-      | trader3a    | ETH   | ETH/DEC21 | 3216    | 96834    | 
-      | trader4     | ETH   | ETH/DEC21 | 3600    | 96320    |
+    # Then the parties should have the following account balances:
+    #   | party      | asset | market id | margin | general |
+    #   | trader3a    | ETH   | ETH/DEC21 | 3216    | 96834    | 
+    #   | trader4     | ETH   | ETH/DEC21 | 3600    | 96320    |
 
-    # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
-    And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
+    # # And the accumulated infrastructure fee should be "20" for the market "ETH/DEC21"
+    # And the accumulated liquidity fees should be "10" for the market "ETH/DEC21"
 
-    When the network moves ahead "11" blocks
+    # When the network moves ahead "11" blocks
     
-    And the following transfers should happen:
-      | from   | to   | from account                | to account           | market id | amount | asset |
-      | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
+    # And the following transfers should happen:
+    #   | from   | to   | from account                | to account           | market id | amount | asset |
+    #   | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
 
 Scenario: Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers) 
  Description : Changing net params does change the fees being collected appropriately even if the market is already running

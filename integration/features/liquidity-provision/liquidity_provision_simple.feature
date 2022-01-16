@@ -8,6 +8,7 @@ Feature: Test LP orders
     And the following network parameters are set:
       | name                           | value |
       | market.auction.minimumDuration | 1     |
+    And the average block duration is "1"   
 
   Scenario: create liquidity provisions
     Given the parties deposit on asset's general account the following amount:
@@ -37,14 +38,17 @@ Feature: Test LP orders
       | party           | market id | side | volume | price | status        |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | STATUS_ACTIVE |
       | buySideProvider  | ETH/DEC19 | buy  | 1000   | 80    | STATUS_ACTIVE |
+    
+    When the network moves ahead "301" blocks
     Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    |
-      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     |
+      | lp1 | party1  | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    |
+      | lp1 | party1  | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     |
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |
-      | lp1 | party1 | ETH/DEC19 | 50000             | STATUS_ACTIVE |
+      | lp1 | party1  | ETH/DEC19 | 50000             | STATUS_ACTIVE |
+   
     Then the orders should have the following states:
       | party  | market id | side | volume | price | status        |
-      | party1 | ETH/DEC19 | buy  | 2250   | 100   | STATUS_ACTIVE |
+      | party1 | ETH/DEC19 | buy  | 2250    | 100   | STATUS_ACTIVE |
       | party1 | ETH/DEC19 | sell | 1539   | 130   | STATUS_ACTIVE |
