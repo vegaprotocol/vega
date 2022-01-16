@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
 )
@@ -73,6 +74,8 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 		askTo = mx
 	}
 
+	e.log.Info("started calculation of probability of trading for", logging.String("event-id", eventID), logging.String("best-bid", bestBid.String()), logging.String("best-ask", bestAsk.String()), logging.String("min-bid", bidFrom.String()), logging.String("max-ask", askTo.String()), logging.String("tauScaled", tauScaled.String()))
+
 	bidPrices, bidProbabilities := calculateRange(bestBid, bidFrom, bestBid, minPrice.Original(), bestBid.ToDecimal(), tauScaled, true, e.rm.ProbabilityOfTrading)
 	askPrices, askProbabilities := calculateRange(bestAsk, bestAsk, askTo, bestAsk.ToDecimal(), maxPrice.Original(), tauScaled, false, e.rm.ProbabilityOfTrading)
 
@@ -115,6 +118,8 @@ func calculateRange(best, from, to *num.Uint, min, max, tauScaled num.Decimal, i
 // updatePriceBounds is called back from the state variable consensus engine when consensus is reached for the down/up factors and updates the price bounds.
 func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVariableResult) error {
 	e.pot = res.(*probabilityOfTrading)
+	e.log.Info("consensus reached for probability of trading", logging.String("market", e.marketID))
+
 	e.potInitialised = true
 	e.changed = true
 	return nil

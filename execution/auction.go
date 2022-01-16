@@ -48,6 +48,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			m.log.Info("cannot leave opening auction - waiting for floating point to complete the first round")
 			return
 		}
+		m.log.Info("leaving opening auction for market", logging.String("market-id", m.mkt.ID))
 		m.LeaveAuction(ctx, now)
 		// the market is now in a ACTIVE state
 		m.mkt.State = types.MarketStateActive

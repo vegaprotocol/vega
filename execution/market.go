@@ -330,7 +330,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
-	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine)
+	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine, log)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
@@ -535,7 +535,14 @@ func (m *Market) Reject(ctx context.Context) error {
 
 // CanLeaveOpeningAuction checks if the market can leave the opening auction based on whether floating point consensus has been reached on all 3 vars.
 func (m *Market) CanLeaveOpeningAuction() bool {
-	return m.pMonitor.IsBoundFactorsInitialised() && m.liquidity.IsPoTInitialised() && m.risk.IsRiskFactorInitialised()
+	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
+	potInitialised := m.liquidity.IsPoTInitialised()
+	riskFactorsInitialised := m.risk.IsRiskFactorInitialised()
+	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised
+	if !canLeave {
+		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("pot-initialised", potInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
+	}
+	return canLeave
 }
 
 func (m *Market) StartOpeningAuction(ctx context.Context) error {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/monitor/price/mocks"
 	"code.vegaprotocol.io/vega/types"
@@ -35,7 +36,7 @@ func TestEmptyParametersList(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -66,7 +67,7 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
-	pm, err := price.NewMonitor("asset", "market", nil, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", nil, settings, statevar, logging.NewTestLogger())
 	require.Error(t, err)
 	require.Nil(t, pm)
 }
@@ -86,7 +87,7 @@ func TestGetHorizonYearFractions(t *testing.T) {
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -119,7 +120,7 @@ func TestRecordPriceChange(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -174,7 +175,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactors, upFactors)
@@ -210,7 +211,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactors, upFactors)
@@ -225,7 +226,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactors, upFactors)
@@ -239,7 +240,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactors, upFactors)
@@ -253,7 +254,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactors, upFactors)
@@ -267,7 +268,7 @@ func TestCheckBoundViolationsWithinCurrentTimeWith2HorizonProbabilityPairs(t *te
 	require.NoError(t, err)
 
 	// Reinstantiate price monitoring after auction to reset internal state
-	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err = price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactors, upFactors)
@@ -533,7 +534,7 @@ func TestAuctionStartedAndEndendBy1Trigger(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	pm.UpdateTestFactors(downFactorsP1, upFactorsP1)
@@ -589,7 +590,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -657,7 +658,7 @@ func TestAuctionStartedAndEndendBy1TriggerAndExtendedBy2nd(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	downFactors := []num.Decimal{pMin1.Div(decPrice), pMin2.Div(decPrice)}
 	upFactors := []num.Decimal{pMax1.Div(decPrice), pMax2.Div(decPrice)}
 	pm.UpdateTestFactors(downFactors, upFactors)
@@ -764,7 +765,7 @@ func TestMarketInOpeningAuction(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -802,7 +803,7 @@ func TestMarketInGenericAuction(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -852,7 +853,7 @@ func TestGetValidPriceRange_NoTriggers(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 
@@ -898,7 +899,7 @@ func TestGetValidPriceRange_2triggers(t *testing.T) {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 	downFactors := []num.Decimal{pMin1.Div(currentPriceD), pMin2.Div(currentPriceD)}

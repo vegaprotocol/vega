@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
@@ -58,10 +59,11 @@ type Engine struct {
 	pot                 *probabilityOfTrading
 	potInitialised      bool
 	getBestStaticPrices func() (*num.Uint, *num.Uint, error)
+	log                 *logging.Logger
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine.
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine) *Engine {
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine, log *logging.Logger) *Engine {
 	e := &Engine{
 		rm:                             riskModel,
 		pm:                             priceMonitor,
@@ -72,6 +74,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		changed:                        true,
 		pot:                            &probabilityOfTrading{},
 		potInitialised:                 false,
+		log:                            log,
 	}
 
 	stateVarEngine.AddStateVariable(asset, marketID, probabilityOfTradingConverter{}, e.startCalcProbOfTrading, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updateProbabilities)

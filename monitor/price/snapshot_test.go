@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/monitor/price"
 	"code.vegaprotocol.io/vega/monitor/price/mocks"
 	"code.vegaprotocol.io/vega/types"
@@ -23,7 +24,7 @@ func createPriceMonitor(t *testing.T, ctrl *gomock.Controller) *price.Engine {
 	statevar := mocks.NewMockStateVarEngine(ctrl)
 	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 
-	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar)
+	pm, err := price.NewMonitor("asset", "market", riskModel, settings, statevar, logging.NewTestLogger())
 	require.NoError(t, err)
 	require.NotNil(t, pm)
 

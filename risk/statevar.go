@@ -49,7 +49,7 @@ func (e *Engine) updateRiskFactor(ctx context.Context, res statevar.StateVariabl
 	e.factors = res.(*types.RiskFactor)
 	e.factors.Market = e.mktID
 	e.riskFactorsInitialised = true
-	e.log.Info("risk factor calculated", logging.String("market", e.mktID), logging.Decimal("short", e.factors.Short), logging.Decimal("long", e.factors.Long))
+	e.log.Info("consensus reached for risk factors", logging.String("market", e.mktID), logging.Decimal("short", e.factors.Short), logging.Decimal("long", e.factors.Long))
 	// then we can send in the broker
 	e.broker.Send(events.NewRiskFactorEvent(ctx, *e.factors))
 	return nil

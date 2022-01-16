@@ -109,7 +109,7 @@ func NewEngine(config Config,
 		log:            log,
 		broker:         broker,
 		idGen:          idGen,
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine),
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, log),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),

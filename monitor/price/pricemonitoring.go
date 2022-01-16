@@ -7,6 +7,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
@@ -99,6 +100,7 @@ type StateVarEngine interface {
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
+	log         *logging.Logger
 	riskModel   RangeProvider
 	minDuration time.Duration
 
@@ -120,10 +122,12 @@ type Engine struct {
 
 	stateChanged   bool
 	stateVarEngine StateVarEngine
+	market         string
+	asset          string
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
-func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine) (*Engine, error) {
+func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
 	if riskModel == nil {
 		return nil, ErrNilRangeProvider
 	}
@@ -163,6 +167,9 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 		stateChanged:            true,
 		stateVarEngine:          stateVarEngine,
 		boundFactorsInitialised: false,
+		log:                     log,
+		market:                  mktID,
+		asset:                   asset,
 	}
 
 	stateVarEngine.AddStateVariable(asset, mktID, boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
