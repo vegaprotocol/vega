@@ -35,11 +35,6 @@ func LoadGenesisState(bytes []byte) (GenesisState, error) {
 
 type GenesisStateOverwrite []string
 
-func DefaultGenesisStateOverwrite() GenesisStateOverwrite {
-	state := []string{}
-	return state
-}
-
 func LoadGenesisStateOverwrite(bytes []byte) (GenesisStateOverwrite, error) {
 	state := struct {
 		NetParamsOverwrite *GenesisStateOverwrite `json:"network_parameters_checkpoint_overwrite"`
