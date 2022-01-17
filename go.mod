@@ -2,11 +2,9 @@ module code.vegaprotocol.io/vega
 
 go 1.17
 
-replace code.vegaprotocol.io/protos => ../protos
-
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.47.1-0.20220114164002-0922def4b422
+	code.vegaprotocol.io/protos v0.47.1-0.20220114182415-94ce199a170f
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
 	code.vegaprotocol.io/vegawallet v0.11.0
