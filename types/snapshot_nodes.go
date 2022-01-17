@@ -179,6 +179,7 @@ type Topology struct {
 	ValidatorData          []*eventspb.ValidatorUpdate
 	ChainValidators        []string
 	PendingPubKeyRotations []*snapshot.PendingKeyRotation
+	ValidatorPerformance   *snapshot.ValidatorPerformance
 }
 
 type PayloadFloatingPointConsensus struct {
@@ -3378,6 +3379,7 @@ func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
 			ChainValidators:        t.Topology.ChainKeys,
 			ValidatorData:          t.Topology.ValidatorData,
 			PendingPubKeyRotations: t.Topology.PendingPubKeyRotations,
+			ValidatorPerformance:   t.Topology.ValidatorPerformance,
 		},
 	}
 }
@@ -3388,6 +3390,7 @@ func (p *PayloadTopology) IntoProto() *snapshot.Payload_Topology {
 			ChainKeys:              p.Topology.ChainValidators,
 			ValidatorData:          p.Topology.ValidatorData,
 			PendingPubKeyRotations: p.Topology.PendingPubKeyRotations,
+			ValidatorPerformance:   p.Topology.ValidatorPerformance,
 		},
 	}
 }

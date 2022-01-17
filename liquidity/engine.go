@@ -301,6 +301,31 @@ func (e *Engine) ValidateLiquidityProvisionSubmission(
 	return validateShape(lp.Sells, types.SideSell, e.maxShapesSize)
 }
 
+func (e *Engine) ValidateLiquidityProvisionAmendment(lp *types.LiquidityProvisionAmendment) (err error) {
+	if lp.Fee.IsZero() && !lp.ContainsOrders() && (lp.CommitmentAmount == nil || lp.CommitmentAmount.IsZero()) {
+		return errors.New("empty liquidity provision amendment content")
+	}
+
+	// If orders fee is provided, we need it to be valid
+	if lp.Fee.IsNegative() || lp.Fee.GreaterThan(e.maxFee) {
+		return errors.New("invalid liquidity provision fee")
+	}
+
+	// If orders shapes are provided, we need them to be valid
+	if len(lp.Buys) > 0 {
+		if err := validateShape(lp.Buys, types.SideBuy, e.maxShapesSize); err != nil {
+			return err
+		}
+	}
+	if len(lp.Sells) > 0 {
+		if err := validateShape(lp.Sells, types.SideSell, e.maxShapesSize); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) {
 	// here we just build a liquidityProvision and set its
 	// status to rejected before sending it through the bus
@@ -374,20 +399,21 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.buildLiquidityProvisionShapesReferences(lp, lps)
+	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells)
 
 	return nil
 }
 
-func (e *Engine) buildLiquidityProvisionShapesReferences(
+func (e *Engine) setShapesReferencesOnLiquidityProvision(
 	lp *types.LiquidityProvision,
-	lps *types.LiquidityProvisionSubmission,
+	buys []*types.LiquidityOrder,
+	sells []*types.LiquidityOrder,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
 	order := &types.Order{}
-	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(lps.Buys))
-	for _, buy := range lps.Buys {
+	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
+	for _, buy := range buys {
 		e.idGen.SetID(order)
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
@@ -395,8 +421,8 @@ func (e *Engine) buildLiquidityProvisionShapesReferences(
 		})
 	}
 
-	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(lps.Sells))
-	for _, sell := range lps.Sells {
+	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(sells))
+	for _, sell := range sells {
 		e.idGen.SetID(order)
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			OrderID:        order.ID,

@@ -620,6 +620,50 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	return mkt.SubmitLiquidityProvision(ctx, sub, party, lpID)
 }
 
+func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) (returnedErr error) {
+	timer := metrics.NewTimeCounter(lpa.MarketID, "execution", "LiquidityProvisionAmendment")
+	defer func() {
+		timer.EngineTimeCounterAdd()
+	}()
+
+	if e.log.IsDebug() {
+		e.log.Debug("amend liquidity provision",
+			logging.LiquidityProvisionAmendment(*lpa),
+			logging.PartyID(party),
+			logging.MarketID(lpa.MarketID),
+		)
+	}
+
+	mkt, ok := e.markets[lpa.MarketID]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+
+	return mkt.AmendLiquidityProvision(ctx, lpa, party)
+}
+
+func (e *Engine) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (returnedErr error) {
+	timer := metrics.NewTimeCounter(cancel.MarketID, "execution", "LiquidityProvisionCancellation")
+	defer func() {
+		timer.EngineTimeCounterAdd()
+	}()
+
+	if e.log.IsDebug() {
+		e.log.Debug("cancel liquidity provision",
+			logging.LiquidityProvisionCancellation(*cancel),
+			logging.PartyID(party),
+			logging.MarketID(cancel.MarketID),
+		)
+	}
+
+	mkt, ok := e.markets[cancel.MarketID]
+	if !ok {
+		return types.ErrInvalidMarketID
+	}
+
+	return mkt.CancelLiquidityProvision(ctx, cancel, party)
+}
+
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 	timer := metrics.NewTimeCounter("-", "execution", "onChainTimeUpdate")
 
