@@ -84,16 +84,13 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 }
 
 func stubbedAdaptors(validators ...adaptors.ValidatorFunc) *adaptors.Adaptors {
-	return &adaptors.Adaptors{
-		Adaptors: map[commandspb.OracleDataSubmission_OracleSource]adaptors.Adaptor{
-			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{
-				validators: validators,
-			},
-			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON: &dummyOracleAdaptor{
-				validators: validators,
-			},
-		},
+	as := adaptors.New(validators...)
+	as.Adaptors = map[commandspb.OracleDataSubmission_OracleSource]adaptors.Adaptor{
+		commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
+		commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        &dummyOracleAdaptor{},
 	}
+
+	return as
 }
 
 func dummyOraclePayload() []byte {
@@ -109,23 +106,12 @@ func dummyOraclePayload() []byte {
 }
 
 type dummyOracleAdaptor struct {
-	validators []adaptors.ValidatorFunc
 }
 
 func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	data := &oracles.OracleData{}
 	err := json.Unmarshal(payload, data)
 	return data, err
-}
-
-func (d *dummyOracleAdaptor) Validate(data *oracles.OracleData) error {
-	for _, validate := range d.validators {
-		if err := validate(data.Data); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func testAdaptorValidationSuccess(t *testing.T) {

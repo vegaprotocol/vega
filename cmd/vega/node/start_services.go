@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
 	oracleAdaptors "code.vegaprotocol.io/vega/oracles/adaptors"
+	"code.vegaprotocol.io/vega/oracles/validation"
 	"code.vegaprotocol.io/vega/plugins"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
@@ -84,7 +85,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.assets = assets.New(n.Log, n.conf.Assets, n.nodeWallets, n.ethClient, n.timeService, n.conf.IsValidator())
 	n.collateral = collateral.New(n.Log, n.conf.Collateral, n.broker, now)
 	n.oracle = oracles.NewEngine(n.Log, n.conf.Oracles, now, n.broker, n.timeService, n.nodeWallets.Vega.PubKey())
-	n.oracleAdaptors = oracleAdaptors.New()
+	n.oracleAdaptors = oracleAdaptors.New(validation.CheckForInternalOracle)
 
 	// if we are not a validator, no need to instantiate the commander
 	if n.conf.IsValidator() {
