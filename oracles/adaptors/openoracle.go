@@ -13,14 +13,11 @@ import (
 // standard.
 // Link: https://compound.finance/docs/prices
 type OpenOracleAdaptor struct {
-	validators []ValidatorFunc
 }
 
 // NewOpenOracleAdaptor creates a new OpenOracleAdaptor.
-func NewOpenOracleAdaptor(validators ...ValidatorFunc) *OpenOracleAdaptor {
-	return &OpenOracleAdaptor{
-		validators: validators,
-	}
+func NewOpenOracleAdaptor() *OpenOracleAdaptor {
+	return &OpenOracleAdaptor{}
 }
 
 // Normalise normalises an Open Oracle / Open Price Feed payload into an oracles.OracleData.
@@ -41,10 +38,4 @@ func (a *OpenOracleAdaptor) Normalise(_ crypto.PublicKey, data []byte) (*oracles
 		PubKeys: pubKeys,
 		Data:    kvs,
 	}, nil
-}
-
-// Validate checks the data using the validators that are passed when the adapter is instantiated
-// to ensure the data complies with the rules of each validator
-func (a *OpenOracleAdaptor) Validate(data *oracles.OracleData) error {
-	return runValidation(data, a.validators)
 }
