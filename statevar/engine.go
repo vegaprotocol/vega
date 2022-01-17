@@ -98,7 +98,7 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 	return e
 }
 
-// generate an id for the variable
+// generate an id for the variable.
 func (e *Engine) generateID(asset, market, name string) string {
 	return asset + "_" + market + "_" + name
 }
