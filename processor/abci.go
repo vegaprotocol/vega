@@ -248,6 +248,10 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
 		HandleDeliverTx(txn.LiquidityProvisionCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverLiquidityProvision))).
+		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
+			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
+		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
+			app.SendEventOnError(app.DeliverAmendLiquidityProvision)).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -725,7 +729,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			// we haven't reloaded the collateral data, withdrawals are going to fail
 			return ErrAwaitingCheckpointRestore
 		}
-	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
+	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand, txn.AmendLiquidityProvisionCommand, txn.CancelLiquidityProvisionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
 		}
@@ -1012,6 +1016,62 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 
 	partyID := tx.Party()
 	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
+}
+
+func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.LiquidityProvisionCancellation{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a CANCEL Liquidity Provision request", logging.String("liquidity-provision-market-id", cancel.MarketId))
+
+	lpc, err := types.LiquidityProvisionCancellationFromProto(cancel)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert LiquidityProvisionCancellation protobuf message to domain type",
+				logging.LiquidityProvisionCancellationProto(cancel), logging.Error(err))
+		}
+		return err
+	}
+
+	err = app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
+	if err != nil {
+		app.log.Error("error on cancelling order", logging.String("liquidity-provision-market-id", lpc.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderCancelDebug {
+		app.log.Debug("Liquidity provision cancelled", logging.LiquidityProvisionCancellation(*lpc))
+	}
+
+	return nil
+}
+
+func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	lp := &commandspb.LiquidityProvisionAmendment{}
+	if err := tx.Unmarshal(lp); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a AMEND Liquidity Provision request", logging.String("liquidity-provision-market-id", lp.MarketId))
+
+	// Convert protobuf into local domain type
+	lpa, err := types.LiquidityProvisionAmendmentFromProto(lp)
+	if err != nil {
+		return err
+	}
+
+	// Submit the amend liquidity provision request to the Vega trading core
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party())
+	if err != nil {
+		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderAmendDebug {
+		app.log.Debug("Liquidity Provision amended", logging.LiquidityProvisionAmendment(*lpa))
+	}
+
+	return nil
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
