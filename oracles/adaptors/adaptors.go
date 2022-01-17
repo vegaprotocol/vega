@@ -44,14 +44,15 @@ func (a *Adaptors) Normalise(txPubKey crypto.PublicKey, data commandspb.OracleDa
 		return nil, ErrUnknownOracleSource
 	}
 
-	return adaptor.Normalise(txPubKey, data.Payload)
-}
+	oracleData, err := adaptor.Normalise(txPubKey, data.Payload)
 
-func (a *Adaptors) Validate(source commandspb.OracleDataSubmission_OracleSource, data *oracles.OracleData) error {
-	adaptor, ok := a.Adaptors[source]
-	if !ok {
-		return ErrUnknownOracleSource
+	if err != nil {
+		return nil, err
 	}
 
-	return adaptor.Validate(data)
+	if err = adaptor.Validate(oracleData); err != nil {
+		return nil, err
+	}
+
+	return oracleData, nil
 }
