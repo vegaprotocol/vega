@@ -415,19 +415,39 @@ func LiquidityProvisionAmendmentFromProto(p *commandspb.LiquidityProvisionAmendm
 	}
 
 	for _, sell := range p.Sells {
+		offset := num.Zero()
+
+		if len(p.CommitmentAmount) > 0 {
+			var overflowed bool
+			offset, overflowed = num.UintFromString(sell.Offset, 10)
+			if overflowed {
+				return nil, errors.New("invalid sell side offset")
+			}
+		}
+
 		order := &LiquidityOrder{
 			Reference:  sell.Reference,
 			Proportion: sell.Proportion,
-			Offset:     sell.Offset,
+			Offset:     offset,
 		}
 		l.Sells = append(l.Sells, order)
 	}
 
 	for _, buy := range p.Buys {
+		offset := num.Zero()
+
+		if len(p.CommitmentAmount) > 0 {
+			var overflowed bool
+			offset, overflowed = num.UintFromString(buy.Offset, 10)
+			if overflowed {
+				return nil, errors.New("invalid buy side offset")
+			}
+		}
+
 		order := &LiquidityOrder{
 			Reference:  buy.Reference,
 			Proportion: buy.Proportion,
-			Offset:     buy.Offset,
+			Offset:     offset,
 		}
 		l.Buys = append(l.Buys, order)
 	}
@@ -448,7 +468,7 @@ func (l LiquidityProvisionAmendment) IntoProto() *commandspb.LiquidityProvisionA
 		order := &proto.LiquidityOrder{
 			Reference:  sell.Reference,
 			Proportion: sell.Proportion,
-			Offset:     sell.Offset,
+			Offset:     sell.Offset.String(),
 		}
 		lps.Sells = append(lps.Sells, order)
 	}
@@ -457,7 +477,7 @@ func (l LiquidityProvisionAmendment) IntoProto() *commandspb.LiquidityProvisionA
 		order := &proto.LiquidityOrder{
 			Reference:  buy.Reference,
 			Proportion: buy.Proportion,
-			Offset:     buy.Offset,
+			Offset:     buy.Offset.String(),
 		}
 		lps.Buys = append(lps.Buys, order)
 	}
