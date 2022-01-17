@@ -1,12 +1,12 @@
 package validators
 
 import (
-	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"sort"
+
+	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
 )
 
 func (vp *validatorPerformance) deserialize(proto *v1.ValidatorPerformance) {
-
 	if proto != nil {
 		for _, stats := range proto.ValidatorPerfStats {
 			vp.performance[stats.ValidatorAddress] = &performanceStats{
@@ -22,7 +22,6 @@ func (vp *validatorPerformance) deserialize(proto *v1.ValidatorPerformance) {
 }
 
 func (vp *validatorPerformance) serialize() *v1.ValidatorPerformance {
-
 	keys := make([]string, 0, len(vp.performance))
 	for k := range vp.performance {
 		keys = append(keys, k)
