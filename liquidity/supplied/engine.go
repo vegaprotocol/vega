@@ -147,6 +147,9 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 		if o.Side == types.SideBuy {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
+			if e.log.GetLevel() <= logging.DebugLevel {
+				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()))
+			}
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			bLiq = bLiq.Add(d)
@@ -154,6 +157,9 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 		if o.Side == types.SideSell {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
+			if e.log.GetLevel() <= logging.DebugLevel {
+				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()))
+			}
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			sLiq = sLiq.Add(d)
@@ -183,6 +189,9 @@ func (e *Engine) updateSizes(
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
 		prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskprice.ToDecimal(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
+		if e.log.GetLevel() <= logging.DebugLevel {
+			e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()))
+		}
 		if prob.IsZero() || prob.IsNegative() {
 			proportion = num.DecimalZero()
 		}

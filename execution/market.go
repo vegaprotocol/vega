@@ -831,6 +831,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 // OnOpeningAuctionFirstUncrossingPrice is triggered when the opening auction sees an uncrossing price for the first time and emits
 // an event to the state variable engine.
 func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
+	m.log.Info("OnOpeningAuctionFirstUncrossingPrice event fired", logging.String("market", m.mkt.ID))
 	asset, _ := m.mkt.GetAsset()
 	m.stateVarEngine.ReadyForTimeTrigger(asset, m.mkt.ID)
 	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice)
@@ -838,6 +839,7 @@ func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
 
 // OnAuctionEnded is called whenever an auction is ended and emits an event to the state var engine.
 func (m *Market) OnAuctionEnded() {
+	m.log.Info("OnAuctionEnded event fired", logging.String("market", m.mkt.ID))
 	asset, _ := m.mkt.GetAsset()
 	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeAuctionEnded)
 }
