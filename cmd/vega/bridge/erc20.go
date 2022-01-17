@@ -42,7 +42,6 @@ func (e *ERC20Cmd) GetSigner() (bridges.Signer, error) {
 
 	var s bridges.Signer
 	if len(e.PrivateKey) <= 0 {
-
 		pass, err := erc20Cmd.PassphraseFile.Get("node wallet", false)
 		if err != nil {
 			return nil, err

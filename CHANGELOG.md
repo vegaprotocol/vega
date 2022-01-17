@@ -27,6 +27,7 @@
 - [4571](https://github.com/vegaprotocol/vega/pull/4571) - Update `CHANGELOG.md` for `0.47.x`
 - [4573](https://github.com/vegaprotocol/vega/pull/4573) - Remove execution configuration duplication from configuration root
 - [4592](https://github.com/vegaprotocol/vega/pull/4592) - Update instructions on how to use docker without `sudo`
+- [4599](https://github.com/vegaprotocol/vega/pull/4599) - Allow raw private keys for bridges functions
 
 
 ### 🐛 Fixes
