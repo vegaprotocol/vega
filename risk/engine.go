@@ -18,6 +18,8 @@ var (
 	ErrRiskFactorsNotAvailableForAsset       = errors.New("risk factors not available for the specified asset")
 )
 
+const RiskFactorStateVarName = "risk-factors"
+
 // Orderbook represent an abstraction over the orderbook
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/orderbook_mock.go -package mocks code.vegaprotocol.io/vega/risk Orderbook
 type Orderbook interface {
@@ -40,7 +42,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/risk StateVarEngine
 type StateVarEngine interface {
-	RegisterStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 }
 
@@ -82,6 +84,8 @@ func NewEngine(
 	mktID string,
 	asset string,
 	stateVarEngine StateVarEngine,
+	factors *types.RiskFactor,
+	riskFactorsInitialised bool,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -93,7 +97,7 @@ func NewEngine(
 		Config:                 config,
 		marginCalculator:       marginCalculator,
 		scalingFactorsUint:     sfUint,
-		factors:                model.DefaultRiskFactors(),
+		factors:                factors,
 		model:                  model,
 		waiting:                false,
 		ob:                     ob,
@@ -102,10 +106,10 @@ func NewEngine(
 		currTime:               initialTime,
 		mktID:                  mktID,
 		asset:                  asset,
-		riskFactorsInitialised: false,
+		riskFactorsInitialised: riskFactorsInitialised,
 	}
 
-	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
+	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorStateVarName, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
 	// trigger the calculation of risk factors for the market
 	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	return e
@@ -142,7 +146,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 // GetRiskFactors returns risk factors per specified asset if available and an error otherwise.
-func (e *Engine) GetRiskFactors(asset string) (*types.RiskFactor, error) {
+func (e *Engine) GetRiskFactors() (*types.RiskFactor, error) {
 	return e.factors, nil
 }
 

@@ -181,6 +181,10 @@ type Topology struct {
 	PendingPubKeyRotations []*snapshot.PendingKeyRotation
 }
 
+type PayloadFloatingPointConsensus struct {
+	ConsensusData []*snapshot.NextTimeTrigger
+}
+
 type Witness struct {
 	NeedResendResources []string
 	Resources           []*Resource
@@ -262,20 +266,24 @@ type ExecMarket struct {
 	LastEquityShareDistributed int64
 	EquityShare                *EquityShare
 	CurrentMarkPrice           *num.Uint
+	ShortRiskFactor            num.Decimal
+	LongRiskFactor             num.Decimal
+	RiskFactorConsensusReached bool
 }
 
 type PriceMonitor struct {
-	Initialised         bool
-	FPHorizons          []*KeyDecimalPair
-	Now                 time.Time
-	Update              time.Time
-	Bounds              []*PriceBound
-	PriceRangeCache     []*PriceRangeCache
-	PriceRangeCacheTime time.Time
-	PricesNow           []*CurrentPrice
-	PricesPast          []*PastPrice
-	RefPriceCache       []*KeyDecimalPair
-	RefPriceCacheTime   time.Time
+	Initialised                 bool
+	FPHorizons                  []*KeyDecimalPair
+	Now                         time.Time
+	Update                      time.Time
+	Bounds                      []*PriceBound
+	PriceRangeCache             []*PriceRangeCache
+	PriceRangeCacheTime         time.Time
+	PricesNow                   []*CurrentPrice
+	PricesPast                  []*PastPrice
+	RefPriceCache               []*KeyDecimalPair
+	RefPriceCacheTime           time.Time
+	PriceBoundsConsensusReached bool
 }
 
 type CurrentPrice struct {
@@ -716,6 +724,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityTargetFromProto(dt)
 	case *snapshot.Payload_FutureState:
 		ret.Data = PayloadFutureStateFromProto(dt)
+	case *snapshot.Payload_FloatingPointConsensus:
+		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
 	}
 
 	return ret
@@ -832,6 +842,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_NetworkParameters:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityTarget:
+		ret.Data = dt
+	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = dt
 	}
 	return &ret
@@ -2404,17 +2416,18 @@ func (pp PastPrice) IntoProto() *snapshot.PastPrice {
 
 func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 	ret := PriceMonitor{
-		Initialised:         pm.Initialised,
-		FPHorizons:          make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
-		Now:                 time.Unix(pm.Now, 0).UTC(),
-		Update:              time.Unix(pm.Update, 0).UTC(),
-		Bounds:              make([]*PriceBound, 0, len(pm.Bounds)),
-		PriceRangeCacheTime: time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
-		PriceRangeCache:     make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
-		PricesNow:           make([]*CurrentPrice, 0, len(pm.PricesNow)),
-		PricesPast:          make([]*PastPrice, 0, len(pm.PricesPast)),
-		RefPriceCacheTime:   time.Unix(pm.RefPriceCacheTime, 0).UTC(),
-		RefPriceCache:       make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
+		Initialised:                 pm.Initialised,
+		FPHorizons:                  make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
+		Now:                         time.Unix(pm.Now, 0).UTC(),
+		Update:                      time.Unix(pm.Update, 0).UTC(),
+		Bounds:                      make([]*PriceBound, 0, len(pm.Bounds)),
+		PriceRangeCacheTime:         time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
+		PriceRangeCache:             make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
+		PricesNow:                   make([]*CurrentPrice, 0, len(pm.PricesNow)),
+		PricesPast:                  make([]*PastPrice, 0, len(pm.PricesPast)),
+		RefPriceCacheTime:           time.Unix(pm.RefPriceCacheTime, 0).UTC(),
+		RefPriceCache:               make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
+		PriceBoundsConsensusReached: pm.ConsensusReached,
 	}
 	for _, d := range pm.FpHorizons {
 		ret.FPHorizons = append(ret.FPHorizons, KeyDecimalPairFromProto(d))
@@ -2450,6 +2463,7 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 		PricesPast:          make([]*snapshot.PastPrice, 0, len(p.PricesPast)),
 		RefPriceCacheTime:   p.RefPriceCacheTime.Unix(),
 		RefPriceCache:       make([]*snapshot.DecimalMap, 0, len(p.RefPriceCache)),
+		ConsensusReached:    p.PriceBoundsConsensusReached,
 	}
 	for _, d := range p.FPHorizons {
 		ret.FpHorizons = append(ret.FpHorizons, d.IntoProto())
@@ -2483,6 +2497,10 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	lastMB, _ = num.UintFromString(em.LastMidBid, 10)
 	lastMA, _ = num.UintFromString(em.LastMidAsk, 10)
 	markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
+
+	shortRF, _ := num.DecimalFromString(em.RiskFactorShort)
+	longRF, _ := num.DecimalFromString(em.RiskFactorLong)
+
 	if len(em.LastMarketValueProxy) > 0 {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
@@ -2500,6 +2518,9 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		LastMidBid:                 lastMB,
 		LastMarketValueProxy:       lastMVP,
 		CurrentMarkPrice:           markPrice,
+		ShortRiskFactor:            shortRF,
+		LongRiskFactor:             longRF,
+		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 	}
 	for _, o := range em.PeggedOrders {
 		or, _ := OrderFromProto(o)
@@ -2527,6 +2548,9 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		LastMidBid:                 e.LastMidBid.String(),
 		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
 		CurrentMarkPrice:           e.CurrentMarkPrice.String(),
+		RiskFactorShort:            e.ShortRiskFactor.String(),
+		RiskFactorLong:             e.LongRiskFactor.String(),
+		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 	}
 	for _, o := range e.PeggedOrders {
 		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())
@@ -3316,6 +3340,34 @@ func (*PayloadWitness) Key() string {
 
 func (*PayloadWitness) Namespace() SnapshotNamespace {
 	return WitnessSnapshot
+}
+
+func (*PayloadFloatingPointConsensus) isPayload() {}
+
+func PayloadFloatingPointConsensusFromProto(t *snapshot.Payload_FloatingPointConsensus) *PayloadFloatingPointConsensus {
+	return &PayloadFloatingPointConsensus{
+		ConsensusData: t.FloatingPointConsensus.NextTimeTrigger,
+	}
+}
+
+func (p *PayloadFloatingPointConsensus) IntoProto() *snapshot.Payload_FloatingPointConsensus {
+	return &snapshot.Payload_FloatingPointConsensus{
+		FloatingPointConsensus: &snapshot.FloatingPointConsensus{
+			NextTimeTrigger: p.ConsensusData,
+		},
+	}
+}
+
+func (p *PayloadFloatingPointConsensus) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadFloatingPointConsensus) Key() string {
+	return "floatingPointConsensus"
+}
+
+func (*PayloadFloatingPointConsensus) Namespace() SnapshotNamespace {
+	return FloatingPointConsensusSnapshot
 }
 
 func (*PayloadTopology) isPayload() {}

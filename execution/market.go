@@ -312,6 +312,8 @@ func NewMarket(
 		mkt.ID,
 		asset,
 		stateVarEngine,
+		tradableInstrument.RiskModel.DefaultRiskFactors(),
+		false,
 	)
 
 	settleEngine := settlement.New(
@@ -2874,11 +2876,7 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 }
 
 func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
-	a, err := m.mkt.GetAsset()
-	if err != nil {
-		return nil, err
-	}
-	rf, err := m.risk.GetRiskFactors(a)
+	rf, err := m.risk.GetRiskFactors()
 	if err != nil {
 		return nil, err
 	}

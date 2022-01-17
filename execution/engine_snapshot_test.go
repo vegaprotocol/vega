@@ -38,7 +38,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
 	statevar := mocks.NewMockStateVarEngine(ctrl)
-	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar), ctrl
 }

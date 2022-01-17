@@ -5,7 +5,6 @@ import (
 	"errors"
 	"math/rand"
 	"sort"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/vega/events"
@@ -21,8 +20,9 @@ import (
 
 var (
 	// ErrUnknownStateVar is returned when we get a request (vote, result) for a state variable we don't have.
-	ErrUnknownStateVar = errors.New("unknown state variable")
-	chars              = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	ErrUnknownStateVar  = errors.New("unknown state variable")
+	ErrNameAlreadyExist = errors.New("state variable already exists with the same name")
+	chars               = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 )
 
 // go:generate go run github.com/golang/mock/mockgen -destination -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/statevar Commander.
@@ -71,6 +71,7 @@ type Engine struct {
 	updateFrequency        time.Duration
 	readyForTimeTrigger    map[string]struct{}
 	stateVarToNextCalc     map[string]time.Time
+	ss                     *snapshotState
 }
 
 // New instantiates the state variable engine.
@@ -88,26 +89,30 @@ func New(log *logging.Logger, config Config, broker Broker, top Topology, cmd Co
 		seq:                 0,
 		readyForTimeTrigger: map[string]struct{}{},
 		stateVarToNextCalc:  map[string]time.Time{},
+		ss: &snapshotState{
+			changed: true,
+		},
 	}
 	ts.NotifyOnTick(e.OnTimeTick)
 
 	return e
 }
 
-// generate a random 32 chars identifier.
-func (e *Engine) generateID(asset, market string) string {
-	b := make([]rune, 32)
-	for i := range b {
-		b[i] = chars[e.rng.Intn(len(chars))]
-	}
-	return asset + "_" + market + "_" + string(b)
+// generate an id for the variable
+func (e *Engine) generateID(asset, market, name string) string {
+	return asset + "_" + market + "_" + name
 }
 
 // generate a random event identifier.
 func (e *Engine) generateEventID(asset, market string) string {
-	prefix := e.generateID(asset, market)
+	// using the pseudorandomness here to avoid saving a sequence number to the snapshot
+	b := make([]rune, 32)
+	for i := range b {
+		b[i] = chars[e.rng.Intn(len(chars))]
+	}
+	prefix := asset + "_" + market
 	e.seq++
-	suffix := strconv.Itoa(e.seq)
+	suffix := string(b)
 	return prefix + "_" + suffix
 }
 
@@ -191,7 +196,7 @@ func (e *Engine) OnTimeTick(ctx context.Context, t time.Time) {
 func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 	e.log.Info("ReadyForTimeTrigger", logging.String("asset", asset), logging.String("market-id", mktID))
 	if _, ok := e.readyForTimeTrigger[asset+mktID]; !ok {
-		e.readyForTimeTrigger[mktID] = struct{}{}
+		e.readyForTimeTrigger[asset+mktID] = struct{}{}
 		for _, sv := range e.eventTypeToStateVar[statevar.StateVarEventTypeTimeTrigger] {
 			if sv.asset == asset && sv.market == mktID {
 				e.stateVarToNextCalc[sv.ID] = e.currentTime.Add(e.updateFrequency)
@@ -206,8 +211,11 @@ func (e *Engine) ReadyForTimeTrigger(asset, mktID string) {
 // trigger - a slice of events that should trigger the calculation of the state variable
 // frequency - if time based triggering the frequency to trigger, Duration(0) for no time based trigger
 // result - a callback for returning the result converted to the native structure.
-func (e *Engine) RegisterStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error {
-	ID := e.generateID(asset, market)
+func (e *Engine) RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error {
+	ID := e.generateID(asset, market, name)
+	if _, ok := e.stateVars[ID]; ok {
+		return ErrNameAlreadyExist
+	}
 
 	e.log.Info("added state variable", logging.String("id", ID), logging.String("asset", asset), logging.String("market", market))
 

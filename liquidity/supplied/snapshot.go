@@ -26,9 +26,10 @@ func (e *Engine) Payload() *snapshotpb.Payload {
 	return &snapshotpb.Payload{
 		Data: &snapshotpb.Payload_LiquiditySupplied{
 			LiquiditySupplied: &snapshotpb.LiquiditySupplied{
-				MarketId: e.marketID,
-				BidCache: bidCache,
-				AskCache: askCache,
+				MarketId:         e.marketID,
+				BidCache:         bidCache,
+				AskCache:         askCache,
+				ConsensusReached: e.potInitialised,
 			},
 		},
 	}
@@ -54,9 +55,7 @@ func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
 		askPrice:       askPrices,
 		askProbability: askProbs,
 	}
-	if len(e.pot.bidPrice) > 0 || len(e.pot.askPrice) > 0 {
-		e.potInitialised = true
-	}
+	e.potInitialised = ls.ConsensusReached
 	e.changed = true
 	return nil
 }
