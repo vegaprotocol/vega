@@ -54,6 +54,9 @@ func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
 		askPrice:       askPrices,
 		askProbability: askProbs,
 	}
+	if len(e.pot.bidPrice) > 0 || len(e.pot.askPrice) > 0 {
+		e.potInitialised = true
+	}
 	e.changed = true
 	return nil
 }

@@ -40,7 +40,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/risk StateVarEngine
 type StateVarEngine interface {
-	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RegisterStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 }
 
@@ -105,7 +105,7 @@ func NewEngine(
 		riskFactorsInitialised: false,
 	}
 
-	stateVarEngine.AddStateVariable(asset, mktID, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
+	stateVarEngine.RegisterStateVariable(asset, mktID, RiskFactorConverter{}, e.startRiskFactorsCalculation, []statevar.StateVarEventType{statevar.StateVarEventTypeMarketEnactment}, e.updateRiskFactor)
 	// trigger the calculation of risk factors for the market
 	stateVarEngine.NewEvent(asset, mktID, statevar.StateVarEventTypeMarketEnactment)
 	return e
