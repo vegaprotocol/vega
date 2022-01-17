@@ -386,12 +386,12 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.buildLiquidityProvisionShapesReferences(lp, lps.Buys, lps.Sells)
+	e.setLiquidityProvisionShapesReferences(lp, lps.Buys, lps.Sells)
 
 	return nil
 }
 
-func (e *Engine) buildLiquidityProvisionShapesReferences(
+func (e *Engine) setLiquidityProvisionShapesReferences(
 	lp *types.LiquidityProvision,
 	buys []*types.LiquidityOrder,
 	sells []*types.LiquidityOrder,
