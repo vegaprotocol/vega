@@ -15,6 +15,8 @@ import (
 type nodeScore struct {
 	score           string
 	normalisedScore string
+	rawScore        string
+	performance     string
 }
 
 type node struct {
@@ -82,7 +84,7 @@ func (ns *Node) AddNode(n pb.Node) {
 	ns.nodes[n.GetId()] = nd
 }
 
-func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore string) {
+func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore, rawScore, performance string) {
 	ns.mut.Lock()
 	defer ns.mut.Unlock()
 
@@ -95,6 +97,8 @@ func (ns *Node) AddNodeScore(nodeID, epochID, score, normalisedScore string) {
 	node.scoresPerEpoch[epochID] = nodeScore{
 		score:           score,
 		normalisedScore: normalisedScore,
+		rawScore:        rawScore,
+		performance:     performance,
 	}
 }
 
@@ -356,6 +360,8 @@ func (ns *Node) nodeProtoFromInternal(n node, epochID string) *pb.Node {
 	if sc, ok := n.scoresPerEpoch[epochID]; ok {
 		node.Score = sc.score
 		node.NormalisedScore = sc.normalisedScore
+		node.RawScore = sc.rawScore
+		node.Performance = sc.performance
 	}
 
 	return node
