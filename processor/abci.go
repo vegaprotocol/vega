@@ -232,6 +232,8 @@ func NewApp(
 		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey)
 
 	app.abci.
+		HandleDeliverTx(txn.TransferFundsCommand,
+			app.SendEventOnError(app.DeliverTransferFunds)).
 		HandleDeliverTx(txn.SubmitOrderCommand,
 			app.SendEventOnError(app.DeliverSubmitOrder)).
 		HandleDeliverTx(txn.CancelOrderCommand,
@@ -798,6 +800,30 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
+}
+
+func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx) error {
+	tfr := &commandspb.TransferFunds{}
+	if err := tx.Unmarshal(tfr); err != nil {
+		return err
+	}
+
+	party := tx.Party()
+
+	amount, overflow := num.UintFromString(tfr.Amount, 10)
+	if overflow {
+		return fmt.Errorf("invalid transfer amount: %s", tfr.Amount)
+	}
+
+	var t *time.Time
+	if tfr.DeliverOn > 0 {
+		tmpt := time.Unix(tfr.DeliverOn, 0)
+		t = &tmpt
+	}
+
+	return app.banking.TransferFunds(
+		ctx, party, tfr.To, tfr.Asset, tfr.FromAccountType, tfr.ToAccountType, amount, tfr.Reference, t,
+	)
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {

@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	vega "code.vegaprotocol.io/protos/vega"
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
 	context "context"
@@ -33,6 +34,21 @@ func NewMockCollateral(ctrl *gomock.Controller) *MockCollateral {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 	return m.recorder
+}
+
+// CreatePartyGeneralAccount mocks base method
+func (m *MockCollateral) CreatePartyGeneralAccount(arg0 context.Context, arg1, arg2 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePartyGeneralAccount", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePartyGeneralAccount indicates an expected call of CreatePartyGeneralAccount
+func (mr *MockCollateralMockRecorder) CreatePartyGeneralAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).CreatePartyGeneralAccount), arg0, arg1, arg2)
 }
 
 // Deposit mocks base method
@@ -77,6 +93,21 @@ func (m *MockCollateral) GetPartyGeneralAccount(arg0, arg1 string) (*types.Accou
 func (mr *MockCollateralMockRecorder) GetPartyGeneralAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyGeneralAccount), arg0, arg1)
+}
+
+// TransferFunds mocks base method
+func (m *MockCollateral) TransferFunds(arg0 context.Context, arg1 []*types.Transfer, arg2 []vega.AccountType, arg3 []string, arg4 []*types.Transfer, arg5 []vega.AccountType) ([]*types.TransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TransferFunds", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret0, _ := ret[0].([]*types.TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TransferFunds indicates an expected call of TransferFunds
+func (mr *MockCollateralMockRecorder) TransferFunds(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFunds", reflect.TypeOf((*MockCollateral)(nil).TransferFunds), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // Withdraw mocks base method

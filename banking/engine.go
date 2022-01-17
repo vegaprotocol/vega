@@ -33,6 +33,9 @@ var (
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
 	ErrWithdrawalNotReady                         = errors.New("withdrawal not ready")
+	ErrCannotTransferZeroFunds                    = errors.New("cannot transfer zero funds")
+	ErrNoGeneralAccountForAsset                   = errors.New("no general account for asset")
+	ErrNotEnoughFundsToTransfer                   = errors.New("not enough funds to transfer")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
@@ -56,6 +59,14 @@ type Collateral interface {
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
+	TransferFunds(ctx context.Context,
+		transfers []*types.Transfer,
+		accountTypes []types.AccountType,
+		references []string,
+		feeTransfers []*types.Transfer,
+		feeTransfersAccountTypes []types.AccountType,
+	) ([]*types.TransferResponse, error)
 }
 
 // Witness provide foreign chain resources validations
@@ -110,6 +121,10 @@ type Engine struct {
 	mu              sync.RWMutex
 	bss             *bankingSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
+
+	// transfer fee related stuff
+	scheduledTransfers map[time.Time][]scheduledTransfer
+	transferFeeFactor  num.Decimal
 }
 
 type withdrawalRef struct {
@@ -151,7 +166,8 @@ func New(
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
+		keyToSerialiser:    map[string]func() ([]byte, error){},
+		scheduledTransfers: map[time.Time][]scheduledTransfer{},
 	}
 
 	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
@@ -238,6 +254,13 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	// this will be restarting the signatures aggregates
 	e.notary.OfferSignatures(
 		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
+
+	// then process all scheduledTransfers
+	if err := e.distributeScheduledTransfers(ctx); err != nil {
+		e.log.Error("could not process scheduled transfers",
+			logging.Error(err),
+		)
+	}
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {

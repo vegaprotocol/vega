@@ -177,7 +177,7 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 // HashBytes returns the data contained in the checkpoint as a []byte for hashing
 // the order in which the data is added to the slice matters.
 func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.KeyRotations))
+	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.Rewards)+len(c.KeyRotations))
 	// the order in which we append is quite important
 	ret = append(ret, c.NetworkParameters...)
 	ret = append(ret, c.Assets...)
