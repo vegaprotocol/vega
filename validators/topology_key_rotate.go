@@ -9,6 +9,8 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -150,14 +152,16 @@ func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
 	return pkrs
 }
 
-func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
+func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
+	t.validatorPerformance.BeginBlock(ctx, req, vd)
+
 	t.mu.Lock()
 	defer t.mu.Unlock()
-
+	blockHeight := uint64(req.Header.Height)
 	t.currentBlockHeight = blockHeight
 
 	// key swaps should run in deterministic order
-	nodeIDs := t.pendingPubKeyRotations.getSortedNodeIDsPerHeight(blockHeight)
+	nodeIDs := t.pendingPubKeyRotations.getSortedNodeIDsPerHeight(t.currentBlockHeight)
 	if len(nodeIDs) == 0 {
 		return
 	}

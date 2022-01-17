@@ -62,6 +62,11 @@ type TimeService interface {
 	GetTimeNow() time.Time
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/rewards ValidatorPerformance
+type ValidatorPerformance interface {
+	ValidatorPerformanceScore(address string) num.Decimal
+}
+
 // Engine is the reward engine handling reward payouts.
 type Engine struct {
 	log                                *logging.Logger
@@ -69,6 +74,7 @@ type Engine struct {
 	broker                             Broker
 	delegation                         Delegation
 	collateral                         Collateral
+	valPerformance                     ValidatorPerformance
 	rewardSchemes                      map[string]*types.RewardScheme // reward scheme id -> reward scheme
 	pendingPayouts                     map[time.Time][]*payout
 	assetForStakingAndDelegationReward string
@@ -101,7 +107,7 @@ type payout struct {
 }
 
 // New instantiate a new rewards engine.
-func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, valPerformance ValidatorPerformance) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -119,6 +125,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 		},
 		global:          &globalRewardParams{},
 		newEpochStarted: false,
+		valPerformance:  valPerformance,
 	}
 
 	// register for epoch end notifications
@@ -440,7 +447,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	}
 
 	// calculate the validator score for each validator and the total score for all
-	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, e.broker, num.NewUint(epoch.Seq).String(), validatorData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng)
+	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, e.broker, num.NewUint(epoch.Seq).String(), validatorData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng, e.valPerformance)
 	for node, score := range validatorNormalisedScores {
 		e.log.Info("Rewards: calculated normalised score", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
@@ -539,10 +546,10 @@ func (e *Engine) EndOfBlock(blockHeight int64) []types.ValidatorVotingPower {
 	}
 
 	validatorsData := e.delegation.GetValidatorData()
-	normalisedScores, _, _ := calcNormalisedScore(e.epochSeq, validatorsData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng)
+	scoreData := calcNormalisedScore(e.epochSeq, validatorsData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng, e.valPerformance)
 	votingPower := make([]types.ValidatorVotingPower, 0, len(validatorsData))
 	for _, v := range validatorsData {
-		ns, ok := normalisedScores[v.NodeID]
+		ns, ok := scoreData.normalisedScores[v.NodeID]
 		power := int64(10)
 
 		if ok {

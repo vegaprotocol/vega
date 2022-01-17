@@ -139,10 +139,10 @@ func (c *Client) Health(ctx context.Context) (*tmctypes.ResultHealth, error) {
 	return c.tmclt.Health(ctx)
 }
 
-func (c *Client) Validators(ctx context.Context) ([]*tmtypes.Validator, error) {
+func (c *Client) Validators(ctx context.Context, height *int64) ([]*tmtypes.Validator, error) {
 	page := 0
-	perPage := 100
-	res, err := c.tmclt.Validators(ctx, nil, &page, &perPage)
+	perPage := 500
+	res, err := c.tmclt.Validators(ctx, height, &page, &perPage)
 	if err != nil {
 		return nil, err
 	}

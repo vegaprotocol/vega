@@ -32,6 +32,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypesint "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -77,6 +78,10 @@ type StateVarEngine interface {
 	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
 }
 
+type BlockchainClient interface {
+	Validators(height *int64) ([]*tmtypesint.Validator, error)
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -88,6 +93,7 @@ type App struct {
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
 	version           string
+	blockchainClient  BlockchainClient
 
 	vegaPaths paths.Paths
 	cfg       Config
@@ -154,6 +160,7 @@ func NewApp(
 	rewards RewardEngine,
 	snapshot Snapshot,
 	stateVarEngine StateVarEngine,
+	blockchainClient BlockchainClient,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -170,33 +177,34 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:        checkpoint.AwaitingRestore(),
-		assets:          assets,
-		banking:         banking,
-		broker:          broker,
-		cmd:             cmd,
-		witness:         witness,
-		evtfwd:          evtfwd,
-		exec:            exec,
-		ghandler:        ghandler,
-		gov:             gov,
-		notary:          notary,
-		stats:           stats,
-		time:            time,
-		top:             top,
-		netp:            netp,
-		oracles:         oracles,
-		delegation:      delegation,
-		limits:          limits,
-		stake:           stake,
-		checkpoint:      checkpoint,
-		spam:            spam,
-		stakingAccounts: stakingAccounts,
-		epoch:           epoch,
-		rewards:         rewards,
-		snapshot:        snapshot,
-		stateVar:        stateVarEngine,
-		version:         version,
+		reloadCP:         checkpoint.AwaitingRestore(),
+		assets:           assets,
+		banking:          banking,
+		broker:           broker,
+		cmd:              cmd,
+		witness:          witness,
+		evtfwd:           evtfwd,
+		exec:             exec,
+		ghandler:         ghandler,
+		gov:              gov,
+		notary:           notary,
+		stats:            stats,
+		time:             time,
+		top:              top,
+		netp:             netp,
+		oracles:          oracles,
+		delegation:       delegation,
+		limits:           limits,
+		stake:            stake,
+		checkpoint:       checkpoint,
+		spam:             spam,
+		stakingAccounts:  stakingAccounts,
+		epoch:            epoch,
+		rewards:          rewards,
+		snapshot:         snapshot,
+		stateVar:         stateVarEngine,
+		version:          version,
+		blockchainClient: blockchainClient,
 	}
 
 	// register replay protection if needed:
@@ -533,7 +541,13 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
-	app.top.BeginBlock(ctx, uint64(req.Header.Height))
+	// read the state of validator set from the previous end of block
+	var vd []*tmtypesint.Validator
+	if app.blockchainClient != nil && req.Header.Height > 0 {
+		h := req.Header.Height - 1
+		vd, _ = app.blockchainClient.Validators(&h)
+	}
+	app.top.BeginBlock(ctx, req, vd)
 
 	return ctx, resp
 }

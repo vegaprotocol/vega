@@ -135,7 +135,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	}
 
 	// setup rewards engine
-	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService)
+	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology)
 
 	// checkpoint engine
 	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.rewards, n.topology)
@@ -188,6 +188,16 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 }
 
 func (n *NodeCommand) startBlockchain() (*processor.App, error) {
+	// if tm chain, setup the client
+	switch n.conf.Blockchain.ChainProvider {
+	case blockchain.ProviderTendermint:
+		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
+		if err != nil {
+			return nil, err
+		}
+		n.blockchainClient = blockchain.NewClient(a)
+	}
+
 	app := processor.NewApp(
 		n.Log,
 		n.vegaPaths,
@@ -221,6 +231,7 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.rewards,
 		n.snapshot,
 		n.statevar,
+		n.blockchainClient,
 		n.Version,
 	)
 
@@ -231,12 +242,6 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
-		if err != nil {
-			return nil, err
-		}
-		n.blockchainClient = blockchain.NewClient(a)
 	case blockchain.ProviderNullChain:
 		abciApp := app.Abci()
 		null := nullchain.NewClient(n.Log, n.conf.Blockchain.Null, abciApp)
