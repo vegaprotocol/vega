@@ -100,13 +100,16 @@ func calculateRange(best, from, to *num.Uint, min, max, tauScaled num.Decimal, i
 	probabilities := make([]num.Decimal, 0, int(numberOfPricePoints.Uint64()))
 
 	p := from.Clone()
-	for p.LTE(to) {
+	for p.LT(to) {
 		prices = append(prices, p.ToDecimal())
 		prob := probabilityFunc(best, p, min, max, tauScaled, isBid, true)
 		probabilities = append(probabilities, prob)
+		if p.EQ(to) {
+			break
+		}
 		p.AddSum(cappedTickSize)
 	}
-	if p.LT(to) {
+	if p.GTE(to) {
 		p = to
 		prices = append(prices, p.ToDecimal())
 		prob := probabilityFunc(best, p, min, max, tauScaled, isBid, true)
