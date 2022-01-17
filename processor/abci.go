@@ -1040,12 +1040,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 	}
 
 	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
-	normalisedData, err := app.oracles.Adaptors.Normalise(pubKey, *data)
-	if err != nil {
-		return err
-	}
-
-	err = app.oracles.Adaptors.Validate(data.Source, normalisedData)
+	_, err := app.oracles.Adaptors.Normalise(pubKey, *data)
 
 	return err
 }

@@ -156,12 +156,9 @@ func testAdaptorValidationSuccess(t *testing.T) {
 			adaptor := stubbedAdaptors(passValidation, passValidation, passValidation)
 			normalisedData, err := adaptor.Normalise(pubKey, rawData)
 
-			validationErr := adaptor.Validate(tc.source, normalisedData)
-
 			// then
 			require.NoError(t, err)
 			assert.NotNil(t, normalisedData)
-			assert.NoError(tt, validationErr)
 		})
 	}
 }
@@ -194,12 +191,9 @@ func testAdaptorValidationFails(t *testing.T) {
 			adaptor := stubbedAdaptors(passValidation, failValidation, passValidation)
 			normalisedData, err := adaptor.Normalise(pubKey, rawData)
 
-			validationErr := adaptor.Validate(tc.source, normalisedData)
-
 			// then
-			require.NoError(t, err)
-			assert.NotNil(t, normalisedData)
-			assert.Error(tt, validationErr)
+			require.Error(t, err)
+			assert.Nil(t, normalisedData)
 		})
 	}
 
