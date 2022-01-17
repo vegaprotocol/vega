@@ -17,6 +17,12 @@ import (
 )
 
 func TestSubmit(t *testing.T) {
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
@@ -160,7 +166,13 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test liquidity provision fee validation", func(t *testing.T) {
 		// auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		pMonitorSettings := &types.PriceMonitoringSettings{
+			Parameters: &types.PriceMonitoringParameters{
+				Triggers: []*types.PriceMonitoringTrigger{},
+			},
+			UpdateFrequency: 0,
+		}
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -657,7 +669,8 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("check that LP cannot get closed out when deploying order for the first time", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -748,7 +761,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test close out LP party cont issue 3086", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -949,7 +962,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test liquidity order generated sizes", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1097,7 +1110,7 @@ func TestSubmit(t *testing.T) {
 				"V0000000000-0000000002": 2,
 				"V0000000000-0000000003": 2,
 				"V0000000000-0000000004": 3,
-				"V0000000000-0000000005": 114,
+				"V0000000000-0000000005": 113,
 			}
 
 			for id, v := range found {
@@ -1134,7 +1147,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("check that rejected market stops liquidity provision", func(t *testing.T) {
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1577,7 +1590,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("check that Market Value Proxy is updated with trades", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1686,15 +1699,6 @@ func TestSubmit(t *testing.T) {
 			},
 		}
 
-	pMonitorSettings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{},
-		},
-		UpdateFrequency: 0,
-	}
-	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
-		Duration: 10000,
 		// now we have place our trade just after the end of the auction
 		// period, and the wwindow is of 2 seconds
 		tm.WithSubmittedOrders(t, orders...)
@@ -1716,7 +1720,7 @@ func TestSubmit(t *testing.T) {
 		// so the mvp is again the total stake submitted in the market
 		tm.market.OnChainTimeUpdate(ctx, auctionEnd.Add(3*time.Second))
 		md = tm.market.GetMarketData()
-		assert.Equal(t, "10000", md.MarketValueProxy
+		assert.Equal(t, "10000", md.MarketValueProxy)
 	})
 
 	t.Run("check that fees are not paid for undeployed LPs", func(t *testing.T) {
@@ -1852,7 +1856,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test LP provider submit limit order which expires LPO order are redeployed", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -2019,30 +2023,6 @@ func TestAmend(t *testing.T) {
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
 
-	auctionEnd := now.Add(10001 * time.Second)
-	pMonitorSettings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{},
-		},
-		UpdateFrequency: 0,
-	}
-	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
-		Duration: 10000,
-	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
-	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
-		LogNormalRiskModel: &types.LogNormalRiskModel{
-			RiskAversionParameter: num.DecimalFromFloat(0.001),
-			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
-			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalZero(),
-				R:     num.DecimalFromFloat(0.016),
-				Sigma: num.DecimalFromFloat(2),
 	t.Run("check that fee is selected properly after changes", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
 		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
@@ -2111,6 +2091,7 @@ func TestAmend(t *testing.T) {
 					found = evt.Market()
 				}
 			}
+
 			assert.Equal(t, found.Fees.Factors.LiquidityFee, "0.5")
 		})
 
@@ -2542,78 +2523,6 @@ func TestAmend(t *testing.T) {
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 		require.NoError(t, err)
 
-	pMonitorSettings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{},
-		},
-		UpdateFrequency: 0,
-	}
-	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
-		Duration: 10000,
-	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
-	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
-		LogNormalRiskModel: &types.LogNormalRiskModel{
-			RiskAversionParameter: num.DecimalFromFloat(0.001),
-			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
-			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalZero(),
-				R:     num.DecimalFromFloat(0.016),
-				Sigma: num.DecimalFromFloat(2),
-			},
-		},
-	}
-
-	lpparty := "lp-party-1"
-
-	tm := newTestMarket(t, now).Run(ctx, mktCfg)
-	tm.StartOpeningAuction().
-		WithAccountAndAmount(lpparty, 100000000000000)
-
-	tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-	tm.market.OnChainTimeUpdate(ctx, now)
-
-	// Add a LPSubmission
-	// this is a log of stake, enough to cover all
-	// the required stake for the market
-	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(10000),
-		Fee:              num.DecimalFromFloat(0.5),
-		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 99, Offset: -201},
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -200},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 100},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 2, Offset: 101},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 98, Offset: 102},
-		},
-	}
-
-	// submit our lp
-	tm.events = nil
-	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
-	)
-
-	t.Run("lp submission is pending", func(t *testing.T) {
-		// First collect all the orders events
-		var found *proto.LiquidityProvision
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.LiquidityProvision:
-				found = evt.LiquidityProvision()
-			}
 		// Now attempt to amend the LP submission with empty fee and commitment amount
 		lpa = &types.LiquidityProvisionAmendment{
 			MarketID: lps.MarketID,
@@ -2648,80 +2557,6 @@ func TestAmend(t *testing.T) {
 		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A")
 		require.EqualError(t, err, "empty liquidity provision amendment content")
 
-	pMonitorSettings := &types.PriceMonitoringSettings{
-		Parameters: &types.PriceMonitoringParameters{
-			Triggers: []*types.PriceMonitoringTrigger{},
-		},
-		UpdateFrequency: 0,
-	}
-
-	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
-		Duration: 10000,
-	})
-	mktCfg.Fees = &types.Fees{
-		Factors: &types.FeeFactors{
-			InfrastructureFee: num.DecimalFromFloat(0.0005),
-			MakerFee:          num.DecimalFromFloat(0.00025),
-		},
-	}
-	mktCfg.TradableInstrument.RiskModel = &types.TradableInstrumentLogNormalRiskModel{
-		LogNormalRiskModel: &types.LogNormalRiskModel{
-			RiskAversionParameter: num.DecimalFromFloat(0.001),
-			Tau:                   num.DecimalFromFloat(0.00011407711613050422),
-			Params: &types.LogNormalModelParams{
-				Mu:    num.DecimalZero(),
-				R:     num.DecimalFromFloat(0.016),
-				Sigma: num.DecimalFromFloat(5),
-			},
-		},
-	}
-
-	lpparty := "lp-party-1"
-
-	tm := newTestMarket(t, now).Run(ctx, mktCfg)
-	tm.StartOpeningAuction().
-		WithAccountAndAmount(lpparty, 100000000000000)
-
-	tm.market.OnMarketValueWindowLengthUpdate(2 * time.Second)
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(0.7))
-	tm.market.OnChainTimeUpdate(ctx, now)
-
-	lpSubmission := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.NewUint(10000),
-		Fee:              num.DecimalFromFloat(0.5),
-		Reference:        "ref-lp-submission-1",
-		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 100, Offset: -10},
-		},
-		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 100, Offset: 10},
-		},
-	}
-
-	// submit our lp
-	tm.events = nil
-	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
-	)
-
-	// we end the auction
-	// This will also generate trades which are included in the MVP.
-	tm.EndOpeningAuction(t, auctionEnd, false)
-
-	t.Run("lp submission is active", func(t *testing.T) {
-		// First collect all the orders events
-		var found *proto.LiquidityProvision
-		var ord *proto.Order
-		for _, e := range tm.events {
-			switch evt := e.(type) {
-			case *events.LiquidityProvision:
-				found = evt.LiquidityProvision()
-			case *events.Order:
-				ord = evt.Order()
-			}
 		// Now attempt to amend the LP submission with no changes with sells and buys empty lists
 		lpa = &types.LiquidityProvisionAmendment{
 			Fee:              num.DecimalZero(),
