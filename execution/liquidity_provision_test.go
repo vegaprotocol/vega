@@ -916,7 +916,7 @@ func TestSubmit(t *testing.T) {
 			Fee:              num.DecimalFromFloat(0.01),
 			Reference:        "ref-lp-submission-2",
 			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 10),
+				newLiquidityOrder(types.PeggedReferenceMid, 10, 10),
 				newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 			},
 			Sells: []*types.LiquidityOrder{
@@ -1179,7 +1179,7 @@ func TestSubmit(t *testing.T) {
 			Fee:              num.DecimalFromFloat(0.5),
 			Reference:        "ref-lp-submission-1",
 			Buys: []*types.LiquidityOrder{
-				newLiquidityOrder(types.PeggedReferenceBestAsk, 200, 1),
+				newLiquidityOrder(types.PeggedReferenceBestBid, 200, 1),
 			},
 			Sells: []*types.LiquidityOrder{
 				newLiquidityOrder(types.PeggedReferenceBestAsk, 102, 98),
