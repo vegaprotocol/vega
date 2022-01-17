@@ -76,7 +76,10 @@ var (
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
 	// ErrNotEnoughStake is returned when a LP update results in not enough commitment.
 	ErrNotEnoughStake = errors.New("commitment submission rejected, not enough stake")
-
+	// ErrPartyNotLiquidityProvider is returned when a LP update or cancel does not match an LP party.
+	ErrPartyNotLiquidityProvider = errors.New("party is not a liquidity provider")
+	// ErrPartyAlreadyLiquidityProvider is returned when a LP is submitted by a party which is already LP.
+	ErrPartyAlreadyLiquidityProvider = errors.New("party is already a liquidity provider")
 	// ErrCannotRejectMarketNotInProposedState.
 	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
 	// ErrCannotStateOpeningAuctionForMarketNotInProposedState.

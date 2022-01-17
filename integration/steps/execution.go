@@ -14,6 +14,8 @@ type Execution interface {
 	AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error)
 	CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
 	SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error)
-	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party string, lpID string) error
+	SubmitLiquidityProvision(ctx context.Context, submission *types.LiquidityProvisionSubmission, party string, lpID string) error
+	AmendLiquidityProvision(ctx context.Context, amendment *types.LiquidityProvisionAmendment, party string) error
+	CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) error
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
 }
