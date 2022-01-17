@@ -16,6 +16,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -136,7 +138,7 @@ type ValidatorTopology interface {
 	AllVegaPubKeys() []string
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
-	BeginBlock(ctx context.Context, blockHeight uint64)
+	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator)
 }
 
 // Broker - the event bus.

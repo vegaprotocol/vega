@@ -89,6 +89,7 @@ func (t *Topology) serialise() ([]byte, error) {
 				ChainValidators:        t.chainValidators[:],
 				ValidatorData:          t.serialiseNodes(),
 				PendingPubKeyRotations: t.serialisePendingKeyRotation(),
+				ValidatorPerformance:   t.validatorPerformance.serialize(),
 			},
 		},
 	}
@@ -183,6 +184,7 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 	}
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
+	t.validatorPerformance.deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil
 }
