@@ -7,14 +7,16 @@ import (
 
 func (vp *validatorPerformance) deserialize(proto *v1.ValidatorPerformance) {
 
-	for _, stats := range proto.ValidatorPerfStats {
-		vp.performance[stats.ValidatorAddress] = &performanceStats{
-			proposed:           stats.Proposed,
-			elected:            stats.Elected,
-			voted:              stats.Voted,
-			lastHeightVoted:    stats.LastHeightVoted,
-			lastHeightProposed: stats.LastHeightProposed,
-			lastHeightElected:  stats.LastHeightElected,
+	if proto != nil {
+		for _, stats := range proto.ValidatorPerfStats {
+			vp.performance[stats.ValidatorAddress] = &performanceStats{
+				proposed:           stats.Proposed,
+				elected:            stats.Elected,
+				voted:              stats.Voted,
+				lastHeightVoted:    stats.LastHeightVoted,
+				lastHeightProposed: stats.LastHeightProposed,
+				lastHeightElected:  stats.LastHeightElected,
+			}
 		}
 	}
 }

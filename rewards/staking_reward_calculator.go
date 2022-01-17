@@ -250,7 +250,8 @@ func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq 
 	}
 	validatorScoreEventSlice := make([]events.Event, 0, len(scoreData.normalisedScores))
 	for _, k := range scoreData.nodeIDSlice {
-		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, scoreData.valScores[k], scoreData.normalisedScores[k]))
+		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, scoreData.valScores[k], scoreData.normalisedScores[k],
+			scoreData.rawValScores[k], scoreData.performanceScores[k]))
 	}
 
 	broker.SendBatch(validatorScoreEventSlice)
