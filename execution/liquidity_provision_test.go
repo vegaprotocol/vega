@@ -404,7 +404,7 @@ func TestSubmit(t *testing.T) {
 		})
 	})
 
-	t.Run("check we dan submit LP during price auction", func(t *testing.T) {
+	t.Run("check we can submit LP during price auction", func(t *testing.T) {
 		hdec := num.DecimalFromFloat(60)
 		pMonitorSettings := &types.PriceMonitoringSettings{
 			Parameters: &types.PriceMonitoringParameters{
@@ -655,7 +655,7 @@ func TestSubmit(t *testing.T) {
 		assert.Equal(t, totalFunds, tm.market.GetTotalAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 	})
 
-	t.Run("check that Lp cannot get closed out when deploying order for the first time", func(t *testing.T) {
+	t.Run("check that LP cannot get closed out when deploying order for the first time", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
 		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
@@ -1133,7 +1133,7 @@ func TestSubmit(t *testing.T) {
 		tm.WithSubmittedOrders(t, newOrders...)
 	})
 
-	t.Run("check that rejected market stop liquidity provision", func(t *testing.T) {
+	t.Run("check that rejected market stops liquidity provision", func(t *testing.T) {
 		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
@@ -2157,7 +2157,7 @@ func TestAmend(t *testing.T) {
 
 	// Liquidity fee must be updated when new LP submissions are added or existing ones
 	// removed.
-	t.Run("check that fee is correct after changes", func(t *testing.T) {
+	t.Run("check that LP fee is correct after changes", func(t *testing.T) {
 		now := time.Unix(10, 0)
 		closingAt := time.Unix(1000000000, 0)
 		tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -2203,7 +2203,7 @@ func TestAmend(t *testing.T) {
 		// TODO	assert.Equal(t, 0.5, tm.market.GetLiquidityFee())
 	})
 
-	t.Run("check that commitment reduction is prevented correctly", func(t *testing.T) {
+	t.Run("check that LP commitment reduction is prevented correctly", func(t *testing.T) {
 		now := time.Unix(10, 0)
 		closingAt := time.Unix(1000000000, 0)
 		tm := getTestMarket(t, now, closingAt, nil, nil)
