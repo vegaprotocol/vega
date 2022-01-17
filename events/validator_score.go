@@ -31,7 +31,6 @@ func NewValidatorScore(ctx context.Context, nodeID, epochSeq string, score, norm
 }
 
 func (vd ValidatorScore) Proto() eventspb.ValidatorScoreEvent {
-
 	return eventspb.ValidatorScoreEvent{
 		NodeId:               vd.NodeID,
 		EpochSeq:             vd.EpochSeq,
