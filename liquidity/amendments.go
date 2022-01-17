@@ -71,7 +71,7 @@ func (e *Engine) AmendLiquidityProvision(
 		lp.Status = types.LiquidityProvisionStatusUndeployed
 	}
 
-	e.setLiquidityProvisionShapesReferences(lp, lpa.Buys, lpa.Sells)
+	e.setShapesReferencesOnLiquidityProvision(lp, lpa.Buys, lpa.Sells)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	e.provisions.Set(party, lp)
 	return cancels, nil
