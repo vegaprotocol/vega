@@ -16,6 +16,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -68,7 +70,8 @@ type ExecutionEngine interface {
 
 	// LP stuff
 	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
-
+	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
+	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string) error
 	Hash() []byte
 }
 
@@ -135,7 +138,7 @@ type ValidatorTopology interface {
 	AllVegaPubKeys() []string
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
-	BeginBlock(ctx context.Context, blockHeight uint64)
+	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator)
 }
 
 // Broker - the event bus.
@@ -169,7 +172,6 @@ type Banking interface {
 	EnableBuiltinAsset(context.Context, string) error
 	DepositBuiltinAsset(context.Context, *types.BuiltinAssetDeposit, string, uint64) error
 	WithdrawBuiltinAsset(context.Context, string, string, string, *num.Uint) error
-
 	EnableERC20(context.Context, *types.ERC20AssetList, string, uint64, uint64, string) error
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
@@ -215,4 +217,5 @@ type StakeVerifier interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/staking_accounts_mock.go -package mocks code.vegaprotocol.io/vega/processor StakingAccounts
 type StakingAccounts interface {
 	Hash() []byte
+	ProcessStakeTotalSupply(ctx context.Context, event *types.StakeTotalSupply) error
 }

@@ -28,9 +28,11 @@ import (
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypesint "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -72,6 +74,14 @@ type Snapshot interface {
 	Snapshot(ctx context.Context) ([]byte, error)
 }
 
+type StateVarEngine interface {
+	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
+}
+
+type BlockchainClient interface {
+	Validators(height *int64) ([]*tmtypesint.Validator, error)
+}
+
 type App struct {
 	abci              *abci.App
 	currentTimestamp  time.Time
@@ -83,6 +93,7 @@ type App struct {
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
 	version           string
+	blockchainClient  BlockchainClient
 
 	vegaPaths paths.Paths
 	cfg       Config
@@ -115,8 +126,8 @@ type App struct {
 	spam            SpamEngine
 	epoch           EpochService
 	snapshot        Snapshot
-
-	cpt abci.Tx
+	stateVar        StateVarEngine
+	cpt             abci.Tx
 }
 
 func NewApp(
@@ -148,6 +159,8 @@ func NewApp(
 	stakingAccounts StakingAccounts,
 	rewards RewardEngine,
 	snapshot Snapshot,
+	stateVarEngine StateVarEngine,
+	blockchainClient BlockchainClient,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -164,32 +177,34 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:        checkpoint.AwaitingRestore(),
-		assets:          assets,
-		banking:         banking,
-		broker:          broker,
-		cmd:             cmd,
-		witness:         witness,
-		evtfwd:          evtfwd,
-		exec:            exec,
-		ghandler:        ghandler,
-		gov:             gov,
-		notary:          notary,
-		stats:           stats,
-		time:            time,
-		top:             top,
-		netp:            netp,
-		oracles:         oracles,
-		delegation:      delegation,
-		limits:          limits,
-		stake:           stake,
-		checkpoint:      checkpoint,
-		spam:            spam,
-		stakingAccounts: stakingAccounts,
-		epoch:           epoch,
-		rewards:         rewards,
-		snapshot:        snapshot,
-		version:         version,
+		reloadCP:         checkpoint.AwaitingRestore(),
+		assets:           assets,
+		banking:          banking,
+		broker:           broker,
+		cmd:              cmd,
+		witness:          witness,
+		evtfwd:           evtfwd,
+		exec:             exec,
+		ghandler:         ghandler,
+		gov:              gov,
+		notary:           notary,
+		stats:            stats,
+		time:             time,
+		top:              top,
+		netp:             netp,
+		oracles:          oracles,
+		delegation:       delegation,
+		limits:           limits,
+		stake:            stake,
+		checkpoint:       checkpoint,
+		spam:             spam,
+		stakingAccounts:  stakingAccounts,
+		epoch:            epoch,
+		rewards:          rewards,
+		snapshot:         snapshot,
+		stateVar:         stateVarEngine,
+		version:          version,
+		blockchainClient: blockchainClient,
 	}
 
 	// register replay protection if needed:
@@ -202,13 +217,19 @@ func NewApp(
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
 	app.abci.OnInfo = app.Info
+	// snapshot specific handlers.
+	app.abci.OnListSnapshots = app.ListSnapshots
+	app.abci.OnOfferSnapshot = app.OfferSnapshot
+	app.abci.OnApplySnapshotChunk = app.ApplySnapshotChunk
+	app.abci.OnLoadSnapshotChunk = app.LoadSnapshotChunk
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
-		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey)
+		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
+		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey)
 
 	app.abci.
 		HandleDeliverTx(txn.SubmitOrderCommand,
@@ -227,6 +248,10 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
 		HandleDeliverTx(txn.LiquidityProvisionCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverLiquidityProvision))).
+		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
+			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
+		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
+			app.SendEventOnError(app.DeliverAmendLiquidityProvision)).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -239,7 +264,9 @@ func NewApp(
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
 			app.SendEventOnError(app.DeliverReloadCheckpoint)).
 		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
-			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission))
+			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
+		HandleDeliverTx(txn.StateVariableProposalCommand,
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -411,7 +438,7 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 	return resp
 }
 
-func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		return tmtypes.ResponseLoadSnapshotChunk{}
@@ -514,7 +541,13 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
-	app.top.BeginBlock(ctx, uint64(req.Header.Height))
+	// read the state of validator set from the previous end of block
+	var vd []*tmtypesint.Validator
+	if app.blockchainClient != nil && req.Header.Height > 0 {
+		h := req.Header.Height - 1
+		vd, _ = app.blockchainClient.Validators(&h)
+	}
+	app.top.BeginBlock(ctx, req, vd)
 
 	return ctx, resp
 }
@@ -696,7 +729,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			// we haven't reloaded the collateral data, withdrawals are going to fail
 			return ErrAwaitingCheckpointRestore
 		}
-	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
+	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand, txn.AmendLiquidityProvisionCommand, txn.CancelLiquidityProvisionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
 		}
@@ -983,6 +1016,62 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 
 	partyID := tx.Party()
 	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
+}
+
+func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.LiquidityProvisionCancellation{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a CANCEL Liquidity Provision request", logging.String("liquidity-provision-market-id", cancel.MarketId))
+
+	lpc, err := types.LiquidityProvisionCancellationFromProto(cancel)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert LiquidityProvisionCancellation protobuf message to domain type",
+				logging.LiquidityProvisionCancellationProto(cancel), logging.Error(err))
+		}
+		return err
+	}
+
+	err = app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
+	if err != nil {
+		app.log.Error("error on cancelling order", logging.String("liquidity-provision-market-id", lpc.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderCancelDebug {
+		app.log.Debug("Liquidity provision cancelled", logging.LiquidityProvisionCancellation(*lpc))
+	}
+
+	return nil
+}
+
+func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	lp := &commandspb.LiquidityProvisionAmendment{}
+	if err := tx.Unmarshal(lp); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a AMEND Liquidity Provision request", logging.String("liquidity-provision-market-id", lp.MarketId))
+
+	// Convert protobuf into local domain type
+	lpa, err := types.LiquidityProvisionAmendmentFromProto(lp)
+	if err != nil {
+		return err
+	}
+
+	// Submit the amend liquidity provision request to the Vega trading core
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party())
+	if err != nil {
+		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderAmendDebug {
+		app.log.Debug("Liquidity Provision amended", logging.LiquidityProvisionAmendment(*lpa))
+	}
+
+	return nil
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
@@ -1273,4 +1362,22 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 		uint64(currentBlockHeight),
 		kr,
 	)
+}
+
+func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
+	proposal := &commandspb.StateVariableProposal{}
+	if err := tx.Unmarshal(proposal); err != nil {
+		app.log.Error("failed to unmarshal StateVariableProposal", logging.Error(err), logging.String("pub-key", tx.PubKeyHex()))
+		return err
+	}
+
+	stateVarID := proposal.Proposal.StateVarId
+	node := tx.PubKeyHex()
+	eventID := proposal.Proposal.EventId
+	bundle, err := statevar.KeyValueBundleFromProto(proposal.Proposal.Kvb)
+	if err != nil {
+		app.log.Error("failed to propose value", logging.Error(err))
+		return err
+	}
+	return app.stateVar.ProposedValueReceived(ctx, stateVarID, node, eventID, bundle)
 }

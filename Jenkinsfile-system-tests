@@ -35,7 +35,7 @@ pipeline {
         // Reason: it is used by system-tests for hostnames in dockerised vega, and
         //         there is a limit of 64 characters for hostname
         DOCKER_IMAGE_TAG_LOCAL = "v-st-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
-        DOCKER_IMAGE_NAME_LOCAL = "docker.pkg.github.com/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
+        DOCKER_IMAGE_NAME_LOCAL = "ghcr.io/vegaprotocol/vega/vega:${DOCKER_IMAGE_TAG_LOCAL}"
 
         // Used by system-tests/scripts/Makefile
         SYSTEM_TESTS_PORTBASE = "${ Integer.parseInt(env.EXECUTOR_NUMBER) * 1000 + 1000}"
@@ -143,7 +143,7 @@ pipeline {
                         cp -a "${LINUX_BINARY}" "docker/bin/vega"
                     '''
                     // Note: This docker image is used by system-tests
-                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
                         sh label: 'Build docker image', script: '''
                             docker build -t "${DOCKER_IMAGE_NAME_LOCAL}" docker/
                         '''
@@ -172,7 +172,7 @@ pipeline {
             options { retry(3) }
             steps {
                 dir('system-tests/scripts') {
-                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
                         sh 'make prepare-docker-pull'
                     }
                 }
@@ -203,7 +203,7 @@ pipeline {
                     sh label: 'make sure dockerised-vega is not running', script: '''
                         make stop-dockerised-vega
                     '''
-                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                    withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
                         sh label: 'start dockerised-vega', script: '''
                             make start-dockerised-vega
                         '''

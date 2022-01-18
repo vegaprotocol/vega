@@ -2,6 +2,7 @@
 cmd/*/*-dbg
 cmd/vega/vega*
 cmd/vegabenchmark/vegabenchmark*
+cmd/examples/nullchain/nullchain*
 data/
 .DS_Store
 .envrc
@@ -22,4 +23,5 @@ proto/**.orig
 gomock_reflect_*
 integration.test
 *.patch
+.metals
 

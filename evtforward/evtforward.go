@@ -213,6 +213,40 @@ func (e *EvtForwarder) Forward(ctx context.Context, evt *commandspb.ChainEvent, 
 	return nil
 }
 
+// ForwardFromSelf will forward event seen by the node itself, not from
+// an external service like the eef for example.
+func (e *EvtForwarder) ForwardFromSelf(evt *commandspb.ChainEvent) {
+	if e.log.GetLevel() <= logging.DebugLevel {
+		e.log.Debug("new event received to be forwarded",
+			logging.String("event", evt.String()),
+		)
+	}
+
+	e.evtsmu.Lock()
+	defer e.evtsmu.Unlock()
+
+	key, err := e.getEvtKey(evt)
+	if err != nil {
+		// no way this event would be badly formatted
+		// it is sent by the node, a badly formatted event
+		// would mean a code bug
+		e.log.Panic("invalid event to be forwarded",
+			logging.String("event", evt.String()),
+			logging.Error(err),
+		)
+	}
+
+	_, ok, ack := e.getEvt(key)
+	if ok {
+		e.log.Error("event already processed",
+			logging.String("evt", evt.String()),
+			logging.Bool("acknowledged", ack),
+		)
+	}
+
+	e.evts[key] = tsEvt{ts: e.currentTime, evt: evt}
+}
+
 func (e *EvtForwarder) updateValidatorsList() {
 	e.mu.Lock()
 	defer e.mu.Unlock()

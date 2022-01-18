@@ -128,8 +128,10 @@ const (
 )
 
 type RawChunk struct {
-	Nr   uint32
-	Data []byte
+	Nr     uint32
+	Data   []byte
+	Height uint64
+	Format SnapshotFormat
 }
 
 func SnapshotFromTM(tms *tmtypes.Snapshot) (*Snapshot, error) {
@@ -303,6 +305,8 @@ func (s *Snapshot) LoadChunk(chunk *RawChunk) error {
 	s.ByteChunks[i] = chunk.Data
 	s.byteLen += len(chunk.Data)
 	s.ChunksSeen += 1
+	chunk.Height = s.Height
+	chunk.Format = s.Format
 	if s.Chunks == s.ChunksSeen {
 		return s.unmarshalChunks()
 	}

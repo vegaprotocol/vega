@@ -26,6 +26,7 @@ var (
 	ErrUnsupported = errors.New("registering a reward scheme is unsupported")
 
 	votingPowerScalingFactor, _ = num.DecimalFromString("10000")
+	decimal1, _                 = num.DecimalFromString("1")
 )
 
 // Broker for sending events.
@@ -61,6 +62,11 @@ type TimeService interface {
 	GetTimeNow() time.Time
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/rewards ValidatorPerformance
+type ValidatorPerformance interface {
+	ValidatorPerformanceScore(address string) num.Decimal
+}
+
 // Engine is the reward engine handling reward payouts.
 type Engine struct {
 	log                                *logging.Logger
@@ -68,6 +74,7 @@ type Engine struct {
 	broker                             Broker
 	delegation                         Delegation
 	collateral                         Collateral
+	valPerformance                     ValidatorPerformance
 	rewardSchemes                      map[string]*types.RewardScheme // reward scheme id -> reward scheme
 	pendingPayouts                     map[time.Time][]*payout
 	assetForStakingAndDelegationReward string
@@ -100,7 +107,7 @@ type payout struct {
 }
 
 // New instantiate a new rewards engine.
-func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, valPerformance ValidatorPerformance) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -118,6 +125,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 		},
 		global:          &globalRewardParams{},
 		newEpochStarted: false,
+		valPerformance:  valPerformance,
 	}
 
 	// register for epoch end notifications
@@ -187,8 +195,8 @@ func (e *Engine) UpdateOptimalStakeMultiplierStakingRewardScheme(ctx context.Con
 }
 
 // UpdateCompetitionLevelForStakingRewardScheme is called when the competition level has changed.
-func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel float64) error {
-	e.global.compLevel = num.DecimalFromFloat(compLevel)
+func (e *Engine) UpdateCompetitionLevelForStakingRewardScheme(ctx context.Context, compLevel num.Decimal) error {
+	e.global.compLevel = compLevel
 	return nil
 }
 
@@ -230,11 +238,10 @@ func (e *Engine) UpdateMaxPayoutPerParticipantForStakingRewardScheme(ctx context
 }
 
 // UpdatePayoutFractionForStakingRewardScheme is a callback for changes in the network param for payout fraction.
-func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context, payoutFraction float64) error {
-	poFractionD := num.DecimalFromFloat(payoutFraction)
+func (e *Engine) UpdatePayoutFractionForStakingRewardScheme(ctx context.Context, payoutFraction num.Decimal) error {
 	for _, rs := range e.rewardSchemes {
 		if rs.PayoutType == types.PayoutFractional {
-			rs.PayoutFraction = poFractionD
+			rs.PayoutFraction = payoutFraction
 		}
 	}
 	return nil
@@ -247,8 +254,8 @@ func (e *Engine) UpdatePayoutDelayForStakingRewardScheme(ctx context.Context, pa
 }
 
 // UpdateDelegatorShareForStakingRewardScheme is a callback for changes in the network param for delegator share.
-func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare float64) error {
-	e.global.delegatorShare = num.NewDecimalFromFloat(delegatorShare)
+func (e *Engine) UpdateDelegatorShareForStakingRewardScheme(ctx context.Context, delegatorShare num.Decimal) error {
+	e.global.delegatorShare = delegatorShare
 	return nil
 }
 
@@ -264,6 +271,10 @@ func (e *Engine) UpdateRewardScheme(rs *types.RewardScheme) error {
 
 // whenever we have a time update, check if there are pending payouts ready to be sent.
 func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
+	// resetting the seed every block, to both get some more unpredictability and still deterministic
+	// and play nicely with snapshot
+	e.rng = rand.New(rand.NewSource(t.Unix()))
+
 	// check if we have any outstanding payouts that need to be distributed
 	payTimes := make([]time.Time, 0, len(e.pendingPayouts))
 	for payTime := range e.pendingPayouts {
@@ -317,7 +328,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 		e.log.Info("Rewards: total pending reward payouts", logging.Uint64("epoch", epoch.Seq), logging.String("totalPendingPayouts", totalPendingPayouts.String()))
 
 		rewardAccountBalance = num.Zero().Sub(rewardAccountBalance, totalPendingPayouts)
-		e.log.Info("Rewards: effective reward account balance for for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("effectiveRewardBalance", rewardAccountBalance.String()))
+		e.log.Info("Rewards: effective reward account balance for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("effectiveRewardBalance", rewardAccountBalance.String()))
 
 		// get how much reward needs to be distributed based on the current balance and the reward scheme
 		rewardAmt, err := rewardScheme.GetReward(rewardAccountBalance, epoch)
@@ -325,7 +336,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			e.log.Panic("reward scheme misconfiguration", logging.Error(err))
 		}
 
-		e.log.Info("Rewards: reward account pot for for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardAmt", rewardAmt.String()))
+		e.log.Info("Rewards: reward account pot for epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardAmt", rewardAmt.String()))
 
 		maxPayoutPerParticipant := num.Zero()
 		if onChainTreasury {
@@ -333,7 +344,7 @@ func (e *Engine) processRewards(ctx context.Context, rewardScheme *types.RewardS
 			maxPayoutPerParticipant = e.global.maxPayoutPerParticipant
 		}
 
-		e.log.Info("Rewards: reward pot for for epoch with max payout per epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardBalance", rewardAmt.String()))
+		e.log.Info("Rewards: reward pot for epoch with max payout per epoch", logging.Uint64("epoch", epoch.Seq), logging.String("rewardBalance", rewardAmt.String()))
 
 		// no point in doing anything after this point if the reward balance is 0
 		if rewardAmt.IsZero() {
@@ -408,9 +419,6 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.log.Debug("OnEpochEvent")
 
 	if (epoch.EndTime == time.Time{}) {
-		// resetting the seed every epoch, to both get some more unpredictability and still deterministic
-		// and play nicely with snapshot
-		e.rng = rand.New(rand.NewSource(epoch.StartTime.Unix()))
 		e.epochSeq = num.NewUint(epoch.Seq).String()
 		e.newEpochStarted = true
 		return
@@ -439,7 +447,7 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	}
 
 	// calculate the validator score for each validator and the total score for all
-	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, e.broker, num.NewUint(epoch.Seq).String(), validatorData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng)
+	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, e.broker, num.NewUint(epoch.Seq).String(), validatorData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng, e.valPerformance)
 	for node, score := range validatorNormalisedScores {
 		e.log.Info("Rewards: calculated normalised score", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
@@ -483,11 +491,12 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		})
 	}
 
-	_, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
+	responses, err := e.collateral.TransferRewards(ctx, po.fromAccount, transfers)
 	if err != nil {
 		e.log.Error("error in transfer rewards", logging.Error(err))
 		return
 	}
+	e.broker.Send(events.NewTransferResponse(ctx, responses))
 }
 
 // ValidatorKeyChanged is called when the validator public key (aka party) is changed we need to update all pending information to use the new key.
@@ -537,13 +546,14 @@ func (e *Engine) EndOfBlock(blockHeight int64) []types.ValidatorVotingPower {
 	}
 
 	validatorsData := e.delegation.GetValidatorData()
-	normalisedScores, _, _ := calcNormalisedScore(e.epochSeq, validatorsData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng)
+	scoreData := calcNormalisedScore(e.epochSeq, validatorsData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng, e.valPerformance)
 	votingPower := make([]types.ValidatorVotingPower, 0, len(validatorsData))
 	for _, v := range validatorsData {
-		ns, ok := normalisedScores[v.NodeID]
+		ns, ok := scoreData.normalisedScores[v.NodeID]
 		power := int64(10)
+
 		if ok {
-			power = ns.Mul(votingPowerScalingFactor).IntPart()
+			power = num.MaxD(decimal1, ns.Mul(votingPowerScalingFactor)).IntPart()
 		}
 		votingPower = append(votingPower, types.ValidatorVotingPower{
 			VotingPower: power,

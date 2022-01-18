@@ -3,16 +3,80 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/vega/pull/) -
+- [4581](https://github.com/vegaprotocol/vega/issues/4561) - Separate endpoints for liquidity provision submissions, amendment and cancellation
+- [4390](https://github.com/vegaprotocol/vega/pull/4390) - Introduce node mode, `vega init` now require a mode: full or validator
+- [4383](https://github.com/vegaprotocol/vega/pull/4383) - Rename flag `--tm-root` to `--tm-home`
+- [4588](https://github.com/vegaprotocol/vega/pull/4588) - Remove the outdated `--network` flag on `vega genesis generate` and `vega genesis update`
 
 ### 🗑️ Deprecation
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
-- [4480](https://github.com/vegaprotocol/vega/pull/4439) - Update `CHANGELOG.md` since GH Action implemented
+- [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
+- [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
+- [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
+- [4514](https://github.com/vegaprotocol/vega/pull/4514) - Add network limits service and events
+- [4516](https://github.com/vegaprotocol/vega/pull/4516) - Add a command to cleanup all vega node state
+- [4531](https://github.com/vegaprotocol/vega/pull/4531) - Remove Float from network parameters, use `num.Decimal` instead
+- [4537](https://github.com/vegaprotocol/vega/pull/4537) - Send staking asset total supply through consensus
+- [4540](https://github.com/vegaprotocol/vega/pull/4540) - Require Go minimum version 1.17
+- [4530](https://github.com/vegaprotocol/vega/pull/4530) - Integrate risk factors with floating point consensus engine
+- [4485](https://github.com/vegaprotocol/vega/pull/4485) - Change snapshot interval default to 1000 blocks
+- [4554](https://github.com/vegaprotocol/vega/pull/4554) - Integrate price ranges with floating point consensus engine
+- [4544](https://github.com/vegaprotocol/vega/pull/4544) - Ensure validators are started with the right set of keys
+- [4569](https://github.com/vegaprotocol/vega/pull/4569) - Move to `ghcr.io` docker container registry
+- [4571](https://github.com/vegaprotocol/vega/pull/4571) - Update `CHANGELOG.md` for `0.47.x`
+- [4573](https://github.com/vegaprotocol/vega/pull/4573) - Remove execution configuration duplication from configuration root
+- [4491](https://github.com/vegaprotocol/vega/issues/4491) - Measure validator performance and use to penalise rewards
+- [4592](https://github.com/vegaprotocol/vega/pull/4592) - Update instructions on how to use docker without `sudo`
+- [4588](https://github.com/vegaprotocol/vega/pull/4588) - Add `--update` and `--replace` flags on `vega genesis new validator`
+
+### 🐛 Fixes
+- [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
+- [4516](https://github.com/vegaprotocol/vega/pull/4516) - Fix release number title typo - 0.46.1 > 0.46.2
+- [4524](https://github.com/vegaprotocol/vega/pull/4524) - Updated `vega verify genesis` to understand new `app_state` layout
+- [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
+- [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
+- [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
+- [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
+- [4588](https://github.com/vegaprotocol/vega/pull/4588) - Fail when missing tendermint home and public key in `nodewallet import` command
+
+## 0.47.4
+*2022-01-05*
+
+### 🐛 Fixes
+- [4563](https://github.com/vegaprotocol/vega/pull/4563) - Send an epoch event when loaded from checkpoint
+
+## 0.47.3
+*2021-12-24*
+
+### 🐛 Fixes
+- [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
+
+## 0.47.2
+*2021-12-17*
+
+### 🐛 Fixes
+- [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum for validator power to avoid accidentally removing them
+- [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit delegation epochs in core API
+- [4504](https://github.com/vegaprotocol/vega/pull/4504) - Fix premature ending of epoch when loading from checkpoint
+- [4506](https://github.com/vegaprotocol/vega/pull/4506) - Wire network parameters to time service to flush out pending changes
+
+## 0.47.1
+*2021-11-24*
+
+### 🐛 Fixes
+- [4488](https://github.com/vegaprotocol/vega/pull/4488) - Disable snapshots
+- [4536](https://github.com/vegaprotocol/vega/pull/4536) - Fixed non determinism in topology checkpoint
+- [4550](https://github.com/vegaprotocol/vega/pull/4550) - Do not validate assets when loading checkpoint from non-validators
+
+## 0.47.0
+*2021-11-24*
+
+### 🛠 Improvements
+- [4480](https://github.com/vegaprotocol/vega/pull/4480) - Update `CHANGELOG.md` since GH Action implemented
 - [4439](https://github.com/vegaprotocol/vega/pull/4439) - Create `release_ticket.md` issue template
 - [4456](https://github.com/vegaprotocol/vega/pull/4456) - Return 400 on bad mint amounts sent via the faucet
-- [4409](https://github.com/vegaprotocol/vega/pull/4409) - Add chain id to bus messages
 - [4434](https://github.com/vegaprotocol/vega/pull/4434) - Add free form governance net parameters to `allKeys` map
 - [4436](https://github.com/vegaprotocol/vega/pull/4436) - Add ability for the null-blockchain to deliver transactions
 - [4455](https://github.com/vegaprotocol/vega/pull/4455) - Introduce API to allow time-forwarding in the null-blockchain
@@ -20,16 +84,17 @@
 - [4463](https://github.com/vegaprotocol/vega/pull/4463) - Remove the need for an Ethereum connection when using the null-blockchain
 - [4477](https://github.com/vegaprotocol/vega/pull/4477) - Allow reloading of null-blockchain configuration while core is running
 - [4468](https://github.com/vegaprotocol/vega/pull/4468) - Change validator weights to be based on validator score
-
+- [4484](https://github.com/vegaprotocol/vega/pull/4484) - Add checkpoint validator key rotation
+- [4459](https://github.com/vegaprotocol/vega/pull/4459) - Add network parameters overwrite from checkpoints
+- [4070](https://github.com/vegaprotocol/vega/pull/4070) - Add calls to enable state-sync via tendermint
 
 ### 🐛 Fixes
-
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot
 - [4418](https://github.com/vegaprotocol/vega/pull/4418) - Add some logging + height/version handling fixes
 - [4461](https://github.com/vegaprotocol/vega/pull/4461) - Fix problem where chain id was not present on event bus during checkpoint loading
 - [4475](https://github.com/vegaprotocol/vega/pull/4475) - Fix rewards checkpoint not assigned to its correct place
 
-## 0.46.1
+## 0.46.2
 *2021-11-24*
 
 ### 🐛 Fixes

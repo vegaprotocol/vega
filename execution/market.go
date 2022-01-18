@@ -29,6 +29,7 @@ import (
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 
 	"github.com/golang/protobuf/proto"
 )
@@ -75,7 +76,10 @@ var (
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
 	// ErrNotEnoughStake is returned when a LP update results in not enough commitment.
 	ErrNotEnoughStake = errors.New("commitment submission rejected, not enough stake")
-
+	// ErrPartyNotLiquidityProvider is returned when a LP update or cancel does not match an LP party.
+	ErrPartyNotLiquidityProvider = errors.New("party is not a liquidity provider")
+	// ErrPartyAlreadyLiquidityProvider is returned when a LP is submitted by a party which is already LP.
+	ErrPartyAlreadyLiquidityProvider = errors.New("party is already a liquidity provider")
 	// ErrCannotRejectMarketNotInProposedState.
 	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
 	// ErrCannotStateOpeningAuctionForMarketNotInProposedState.
@@ -232,7 +236,8 @@ type Market struct {
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
 
-	stateChanged bool
+	stateVarEngine StateVarEngine
+	stateChanged   bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -276,6 +281,7 @@ func NewMarket(
 	broker Broker,
 	idgen *IDgenerator,
 	as *monitor.AuctionState,
+	stateVarEngine StateVarEngine,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
@@ -307,6 +313,7 @@ func NewMarket(
 		now.UnixNano(),
 		mkt.ID,
 		asset,
+		stateVarEngine,
 	)
 
 	settleEngine := settlement.New(
@@ -325,7 +332,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
-	pMonitor, err := price.NewMonitor(tradableInstrument.RiskModel, mkt.PriceMonitoringSettings)
+	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
@@ -385,6 +392,7 @@ func NewMarket(
 		lastMidBuyPrice:    num.Zero(),
 		lastBestBidPrice:   num.Zero(),
 		stateChanged:       true,
+		stateVarEngine:     stateVarEngine,
 	}
 
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
@@ -398,6 +406,12 @@ func appendBytes(bz ...[]byte) []byte {
 		out = append(out, b...)
 	}
 	return out
+}
+
+// UpdateRiskFactorsForTest is a hack for setting the risk factors for tests directly rather than through the consensus engine.
+// Never use this for anything functional.
+func (m *Market) UpdateRiskFactorsForTest() {
+	m.risk.CalculateRiskFactorsForTest()
 }
 
 func (m *Market) Hash() []byte {
@@ -618,10 +632,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 
 	// check auction, if any
 	m.checkAuction(ctx, t)
-
-	// TODO(): handle market start time
-
-	m.risk.CalculateFactors(ctx, t)
 	timer.EngineTimeCounterAdd()
 
 	m.updateMarketValueProxy()
@@ -803,6 +813,20 @@ func (m *Market) EnterAuction(ctx context.Context) {
 		m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 		m.stateChanged = true
 	}
+}
+
+// OnOpeningAuctionFirstUncrossingPrice is triggered when the opening auction sees an uncrossing price for the first time and emits
+// an event to the state variable engine.
+func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
+	asset, _ := m.mkt.GetAsset()
+	m.stateVarEngine.ReadyForTimeTrigger(asset, m.mkt.ID)
+	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice)
+}
+
+// OnAuctionEnded is called whenever an auction is ended and emits an event to the state var engine.
+func (m *Market) OnAuctionEnded() {
+	asset, _ := m.mkt.GetAsset()
+	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeAuctionEnded)
 }
 
 // LeaveAuction : Return the orderbook and market to continuous trading.

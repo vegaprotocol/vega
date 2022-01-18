@@ -10,7 +10,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
 	reflect "reflect"
-	time "time"
 )
 
 // MockModel is a mock of Model interface
@@ -37,32 +36,31 @@ func (m *MockModel) EXPECT() *MockModelMockRecorder {
 }
 
 // CalculateRiskFactors mocks base method
-func (m *MockModel) CalculateRiskFactors(arg0 *types.RiskResult) (bool, *types.RiskResult) {
+func (m *MockModel) CalculateRiskFactors() *types.RiskFactor {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CalculateRiskFactors", arg0)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(*types.RiskResult)
-	return ret0, ret1
-}
-
-// CalculateRiskFactors indicates an expected call of CalculateRiskFactors
-func (mr *MockModelMockRecorder) CalculateRiskFactors(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateRiskFactors", reflect.TypeOf((*MockModel)(nil).CalculateRiskFactors), arg0)
-}
-
-// CalculationInterval mocks base method
-func (m *MockModel) CalculationInterval() time.Duration {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CalculationInterval")
-	ret0, _ := ret[0].(time.Duration)
+	ret := m.ctrl.Call(m, "CalculateRiskFactors")
+	ret0, _ := ret[0].(*types.RiskFactor)
 	return ret0
 }
 
-// CalculationInterval indicates an expected call of CalculationInterval
-func (mr *MockModelMockRecorder) CalculationInterval() *gomock.Call {
+// CalculateRiskFactors indicates an expected call of CalculateRiskFactors
+func (mr *MockModelMockRecorder) CalculateRiskFactors() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculationInterval", reflect.TypeOf((*MockModel)(nil).CalculationInterval))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CalculateRiskFactors", reflect.TypeOf((*MockModel)(nil).CalculateRiskFactors))
+}
+
+// DefaultRiskFactors mocks base method
+func (m *MockModel) DefaultRiskFactors() *types.RiskFactor {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DefaultRiskFactors")
+	ret0, _ := ret[0].(*types.RiskFactor)
+	return ret0
+}
+
+// DefaultRiskFactors indicates an expected call of DefaultRiskFactors
+func (mr *MockModelMockRecorder) DefaultRiskFactors() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DefaultRiskFactors", reflect.TypeOf((*MockModel)(nil).DefaultRiskFactors))
 }
 
 // GetProjectionHorizon mocks base method

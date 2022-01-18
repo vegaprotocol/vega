@@ -66,8 +66,8 @@ func (t *Topology) serialisePendingKeyRotation() []*snapshot.PendingKeyRotation 
 			pkrs = append(pkrs, &snapshot.PendingKeyRotation{
 				BlockHeight:    blockHeight,
 				NodeId:         nodeID,
-				NewPubKey:      pr.NewPubKey,
-				NewPubKeyIndex: pr.NewKeyIndex,
+				NewPubKey:      pr.newPubKey,
+				NewPubKeyIndex: pr.newKeyIndex,
 			})
 		}
 	}
@@ -89,6 +89,7 @@ func (t *Topology) serialise() ([]byte, error) {
 				ChainValidators:        t.chainValidators[:],
 				ValidatorData:          t.serialiseNodes(),
 				PendingPubKeyRotations: t.serialisePendingKeyRotation(),
+				ValidatorPerformance:   t.validatorPerformance.serialize(),
 			},
 		},
 	}
@@ -147,12 +148,12 @@ func (t *Topology) LoadState(ctx context.Context, p *types.Payload) ([]types.Sta
 func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotation) {
 	for _, pkr := range pkrs {
 		if _, ok := t.pendingPubKeyRotations[pkr.BlockHeight]; !ok {
-			t.pendingPubKeyRotations[pkr.BlockHeight] = map[string]PendingKeyRotation{}
+			t.pendingPubKeyRotations[pkr.BlockHeight] = map[string]pendingKeyRotation{}
 		}
 
-		t.pendingPubKeyRotations[pkr.BlockHeight][pkr.NodeId] = PendingKeyRotation{
-			NewPubKey:   pkr.NewPubKey,
-			NewKeyIndex: pkr.NewPubKeyIndex,
+		t.pendingPubKeyRotations[pkr.BlockHeight][pkr.NodeId] = pendingKeyRotation{
+			newPubKey:   pkr.NewPubKey,
+			newKeyIndex: pkr.NewPubKeyIndex,
 		}
 	}
 }
@@ -160,8 +161,6 @@ func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotatio
 func (t *Topology) restore(ctx context.Context, topology *types.Topology) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-
-	walletID := t.wallet.ID().Hex()
 
 	for _, node := range topology.ValidatorData {
 		t.validators[node.NodeId] = ValidatorData{
@@ -176,12 +175,16 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 			AvatarURL:       node.AvatarUrl,
 		}
 
-		if walletID == node.NodeId {
-			t.isValidator = true
+		// this node is started and expect to be a validator
+		// but so far we haven't seen ourselve as validators for
+		// this network.
+		if t.isValidatorSetup && !t.isValidator {
+			t.checkValidatorDataWithSelfWallets(t.validators[node.NodeId])
 		}
 	}
 	t.chainValidators = topology.ChainValidators[:]
 	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
+	t.validatorPerformance.deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil
 }

@@ -174,19 +174,19 @@ func createMarket(
 		definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters == nil {
 		// get target stake parameters
 		tsTimeWindow, _ := netp.GetDuration(netparams.MarketTargetStakeTimeWindow)
-		tsScalingFactor, _ := netp.GetFloat(netparams.MarketTargetStakeScalingFactor)
+		tsScalingFactor, _ := netp.GetDecimal(netparams.MarketTargetStakeScalingFactor)
 		// get triggering ratio
-		triggeringRatio, _ := netp.GetFloat(netparams.MarketLiquidityTargetStakeTriggeringRatio)
+		triggeringRatio, _ := netp.GetDecimal(netparams.MarketLiquidityTargetStakeTriggeringRatio)
 
 		params := &types.TargetStakeParameters{
 			TimeWindow:    int64(tsTimeWindow.Seconds()),
-			ScalingFactor: num.DecimalFromFloat(tsScalingFactor),
+			ScalingFactor: tsScalingFactor,
 		}
 
 		if definition.Changes.LiquidityMonitoringParameters == nil {
 			definition.Changes.LiquidityMonitoringParameters = &types.LiquidityMonitoringParameters{
 				TargetStakeParameters: params,
-				TriggeringRatio:       num.DecimalFromFloat(triggeringRatio),
+				TriggeringRatio:       triggeringRatio,
 			}
 		} else {
 			definition.Changes.LiquidityMonitoringParameters.TargetStakeParameters = params
@@ -353,8 +353,7 @@ func validateCommitment(
 	netp NetParams,
 ) (types.ProposalError, error) {
 	maxShapesSize, _ := netp.GetInt(netparams.MarketLiquidityProvisionShapesMaxSize)
-	maxFee, _ := netp.GetFloat(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
-	maxFeeDec := num.DecimalFromFloat(maxFee)
+	maxFee, _ := netp.GetDecimal(netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel)
 
 	if commitment == nil {
 		return types.ProposalError_PROPOSAL_ERROR_MARKET_MISSING_LIQUIDITY_COMMITMENT, errors.New("market proposal is missing liquidity commitment")
@@ -363,7 +362,7 @@ func validateCommitment(
 		return proto.ProposalError_PROPOSAL_ERROR_MISSING_COMMITMENT_AMOUNT,
 			fmt.Errorf("proposal commitment amount is 0 or missing")
 	}
-	if commitment.Fee.LessThanOrEqual(num.DecimalZero()) || commitment.Fee.GreaterThan(maxFeeDec) {
+	if commitment.Fee.LessThanOrEqual(num.DecimalZero()) || commitment.Fee.GreaterThan(maxFee) {
 		return proto.ProposalError_PROPOSAL_ERROR_INVALID_FEE_AMOUNT,
 			errors.New("invalid liquidity provision fee")
 	}

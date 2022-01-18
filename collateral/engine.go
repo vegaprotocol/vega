@@ -443,6 +443,7 @@ func (e *Engine) GetInfraFeeAccountIDs() []string {
 	for asset := range e.enabledAssets {
 		accountIDs = append(accountIDs, e.accountID(noMarket, systemOwner, asset, types.AccountTypeFeesInfrastructure))
 	}
+	sort.Strings(accountIDs)
 	return accountIDs
 }
 

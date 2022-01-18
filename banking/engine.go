@@ -259,6 +259,7 @@ func (e *Engine) getWithdrawalFromRef(ref *big.Int) (*types.Withdrawal, error) {
 	for k := range e.withdrawals {
 		withdrawalsK = append(withdrawalsK, k)
 	}
+	sort.Strings(withdrawalsK)
 
 	for _, k := range withdrawalsK {
 		v := e.withdrawals[k]
@@ -303,7 +304,11 @@ func (e *Engine) finalizeAssetList(ctx context.Context, assetID string) error {
 }
 
 func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
-	defer func() { e.broker.Send(events.NewDepositEvent(ctx, *d)) }()
+	defer func() {
+		e.broker.Send(events.NewDepositEvent(ctx, *d))
+		// whatever happens, the deposit is in its final state (cancelled or finalized)
+		delete(e.deposits, d.ID)
+	}()
 	res, err := e.col.Deposit(ctx, d.PartyID, d.Asset, d.Amount)
 	if err != nil {
 		d.Status = types.DepositStatusCancelled
@@ -319,12 +324,15 @@ func (e *Engine) finalizeDeposit(ctx context.Context, d *types.Deposit) error {
 
 func (e *Engine) finalizeWithdraw(
 	ctx context.Context, w *types.Withdrawal) error {
-	// always send the withdrawal event
-	defer func() { e.broker.Send(events.NewWithdrawalEvent(ctx, *w)) }()
+	// always send the withdrawal event, don't delete it from the map because we
+	// may still receive events
+	defer func() {
+		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
+	}()
 
 	res, err := e.col.Withdraw(ctx, w.PartyID, w.Asset, w.Amount.Clone())
 	if err != nil {
-		w.Status = types.WithdrawalStatusCancelled
+		w.Status = types.WithdrawalStatusRejected
 		return err
 	}
 

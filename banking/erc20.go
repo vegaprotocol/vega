@@ -126,7 +126,7 @@ func (e *Engine) WithdrawERC20(
 
 	asset, err := e.assets.Get(assetID)
 	if err != nil {
-		w.Status = types.WithdrawalStatusCancelled
+		w.Status = types.WithdrawalStatusRejected
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		e.log.Debug("unable to get asset by id",
 			logging.AssetID(assetID),
@@ -135,7 +135,7 @@ func (e *Engine) WithdrawERC20(
 	}
 
 	if !asset.IsERC20() {
-		w.Status = types.WithdrawalStatusCancelled
+		w.Status = types.WithdrawalStatusRejected
 		e.broker.Send(events.NewWithdrawalEvent(ctx, *w))
 		return ErrWrongAssetUsedForERC20Withdraw
 	}

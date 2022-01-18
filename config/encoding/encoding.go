@@ -94,3 +94,34 @@ func (b *Base64) UnmarshalFlag(s string) error {
 func (b Base64) MarshalFlag() (string, error) {
 	return base64.StdEncoding.EncodeToString(b), nil
 }
+
+type NodeMode string
+
+const (
+	NodeModeValidator   NodeMode = "validator"
+	NodeModeFull        NodeMode = "full"
+	NodeModeUnsupported NodeMode = "unsupported"
+)
+
+func NodeModeFromString(s string) (NodeMode, error) {
+	switch NodeMode(s) {
+	case NodeModeValidator:
+		return NodeModeValidator, nil
+	case NodeModeFull:
+		return NodeModeFull, nil
+	default:
+		return NodeModeUnsupported, fmt.Errorf("%s is not a valid node mode, expected [validator, full]", s)
+	}
+}
+
+// UnmarshalText unmarshal a loglevel from bytes.
+func (n *NodeMode) UnmarshalText(text []byte) error {
+	var err error
+	*n, err = NodeModeFromString(string(text))
+	return err
+}
+
+// MarshalText marshal a loglevel into bytes.
+func (n NodeMode) MarshalText() ([]byte, error) {
+	return []byte(n), nil
+}

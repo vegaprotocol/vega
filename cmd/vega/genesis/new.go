@@ -10,10 +10,10 @@ type newCmd struct {
 	Validator newValidatorCmd `command:"validator" description:"Show information to become validator"`
 }
 
-func initNewCmd(ctx context.Context, parentCmd *flags.Command) error {
+func initNewCmd(_ context.Context, parentCmd *flags.Command) error {
 	cmd := newCmd{
 		Validator: newValidatorCmd{
-			TmRoot: "$HOME/.tendermint",
+			TmHome: "$HOME/.tendermint",
 		},
 	}
 

@@ -32,3 +32,19 @@ func LoadGenesisState(bytes []byte) (GenesisState, error) {
 	}
 	return *state.NetParams, nil
 }
+
+type GenesisStateOverwrite []string
+
+func LoadGenesisStateOverwrite(bytes []byte) (GenesisStateOverwrite, error) {
+	state := struct {
+		NetParamsOverwrite *GenesisStateOverwrite `json:"network_parameters_checkpoint_overwrite"`
+	}{}
+	err := json.Unmarshal(bytes, &state)
+	if err != nil {
+		return nil, err
+	}
+	if state.NetParamsOverwrite == nil {
+		return nil, nil // not an error, not mandatory to have overwrite list
+	}
+	return *state.NetParamsOverwrite, nil
+}
