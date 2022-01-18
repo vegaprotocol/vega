@@ -31,10 +31,9 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return err
 	}
 
-	// if the party is amending an existing LP
-	// we go done the path of amending
+	// if the party is alrready an LP we reject the new submission
 	if m.liquidity.IsLiquidityProvider(party) {
-		return m.amendOrCancelLiquidityProvision(ctx, sub, party)
+		return ErrPartyAlreadyLiquidityProvider
 	}
 
 	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
@@ -202,6 +201,105 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	m.liquidity.RemovePending(party)
 
 	return nil
+}
+
+// AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
+func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) (err error) {
+	if !m.canSubmitCommitment() {
+		return ErrCommitmentSubmissionNotAllowed
+	}
+
+	if err := m.liquidity.ValidateLiquidityProvisionAmendment(lpa); err != nil {
+		return err
+	}
+
+	if !m.liquidity.IsLiquidityProvider(party) {
+		return ErrPartyNotLiquidityProvider
+	}
+
+	lp := m.liquidity.LiquidityProvisionByPartyID(party)
+	if lp == nil {
+		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	}
+
+	// If commitment amount is not provided we keep the same
+	if lpa.CommitmentAmount == nil || lpa.CommitmentAmount.IsZero() {
+		lpa.CommitmentAmount = lp.CommitmentAmount
+	}
+
+	// If commitment amount is not provided we keep the same
+	if lpa.Fee.IsZero() {
+		lpa.Fee = lp.Fee
+	}
+
+	// If commitment amount is not provided we keep the same
+	if lpa.Reference == "" {
+		lpa.Reference = lp.Reference
+	}
+
+	// If orders shapes are not provided, keep the current LP orders
+	if lpa.Sells == nil {
+		lpa.Sells = make([]*types.LiquidityOrder, 0, len(lp.Sells))
+	}
+	if len(lpa.Sells) == 0 {
+		for _, sell := range lp.Sells {
+			lpa.Sells = append(lpa.Sells, sell.LiquidityOrder)
+		}
+	}
+	if lpa.Buys == nil {
+		lpa.Buys = make([]*types.LiquidityOrder, 0, len(lp.Buys))
+	}
+	if len(lpa.Buys) == 0 {
+		for _, buy := range lp.Buys {
+			lpa.Buys = append(lpa.Buys, buy.LiquidityOrder)
+		}
+	}
+
+	// Increasing the commitment should always be allowed, but decreasing is
+	// only valid if the resulting amount still allows the market as a whole
+	// to reach it's commitment level. Otherwise the commitment reduction is
+	// rejected.
+	if lpa.CommitmentAmount.LT(lp.CommitmentAmount) {
+		// first - does the market have enough stake
+		supplied := m.getSuppliedStake()
+		if m.getTargetStake().GTE(supplied) {
+			return ErrNotEnoughStake
+		}
+
+		// now if the stake surplus is > than the change we are OK
+		surplus := supplied.Sub(supplied, m.getTargetStake())
+		diff := num.Zero().Sub(lp.CommitmentAmount, lpa.CommitmentAmount)
+		if surplus.LT(diff) {
+			return ErrNotEnoughStake
+		}
+	}
+
+	return m.amendLiquidityProvision(ctx, lpa, party)
+}
+
+// CancelLiquidityProvision forwards a LiquidityProvisionCancel to the Liquidity Engine.
+func (m *Market) CancelLiquidityProvision(ctx context.Context, cancel *types.LiquidityProvisionCancellation, party string) (err error) {
+	if !m.liquidity.IsLiquidityProvider(party) {
+		return ErrPartyNotLiquidityProvider
+	}
+
+	lp := m.liquidity.LiquidityProvisionByPartyID(party)
+	if lp == nil {
+		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
+	}
+
+	supplied := m.getSuppliedStake()
+	if m.getTargetStake().GTE(supplied) {
+		return ErrNotEnoughStake
+	}
+
+	// now if the stake surplus is > than the change we are OK
+	surplus := supplied.Sub(supplied, m.getTargetStake())
+	if surplus.LT(lp.CommitmentAmount) {
+		return ErrNotEnoughStake
+	}
+
+	return m.cancelLiquidityProvision(ctx, party, false)
 }
 
 // this is a function to be called when orders already exists
@@ -591,7 +689,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// this is handling bestAsk / mid for ASK.
 	if side == types.SideSell {
 		// that's our initial price with our offset
-		basePrice := num.Sum(price, num.NewUint(uint64(po.Offset)))
+		basePrice := num.Sum(price, po.Offset)
 		// now if this price+offset is < to maxPrice,
 		// nothing needs to be changed. we return
 		// both the current price, and the offset
@@ -607,14 +705,14 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			// bestAsk/Mid
 			switch po.Reference {
 			case types.PeggedReferenceBestAsk:
-				po.Offset = 0
+				po.Offset = num.Zero()
 			case types.PeggedReferenceMid:
-				po.Offset = 1
+				po.Offset.SetUint64(1)
 				if m.as.InAuction() {
-					po.Offset = 0
+					po.Offset = num.Zero()
 				}
 			}
-			return num.Sum(price, num.NewUint(uint64(po.Offset))), po, nil
+			return num.Sum(price, po.Offset), po, nil
 		}
 
 		// now our basePrice is outside range.
@@ -624,8 +722,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		if price.LT(maxP) {
 			// this is the case where maxPrice is > to price,
 			// then we need to adapt the offset
-			off := num.Zero().Sub(maxP, price)
-			po.Offset = int64(off.Uint64())
+			po.Offset = num.Zero().Sub(maxP, price)
 			// and our price is the maxPrice
 			return maxP, po, nil
 		}
@@ -636,24 +733,20 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// and the offset to 0 or 1 dependingof the reference.
 		switch po.Reference {
 		case types.PeggedReferenceBestAsk:
-			po.Offset = 0
+			po.Offset = num.Zero()
 		case types.PeggedReferenceMid:
-			po.Offset = 1
+			po.Offset.SetUint64(1)
 			if m.as.InAuction() {
-				po.Offset = 0
+				po.Offset = num.Zero()
 			}
 		}
-		return num.Sum(price, num.NewUint(uint64(po.Offset))), po, nil
+		return num.Sum(price, po.Offset), po, nil
 	}
 
 	// This is handling bestBid / mid for BID
-	// At this stage offset is negative so we change
-	// it's sign to cast it to an unsigned type
-	offset := num.NewUint(uint64(-po.Offset))
-
 	// first the case where we are sure to be able to price
-	if price.GT(offset) {
-		basePrice := num.Zero().Sub(price, offset)
+	if price.GT(po.Offset) {
+		basePrice := num.Zero().Sub(price, po.Offset)
 
 		// this is the case where our price is correct
 		// at this point our basePrice should not be 0
@@ -671,22 +764,22 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 			// at bestBid/Mid
 			switch po.Reference {
 			case types.PeggedReferenceBestBid:
-				po.Offset = 0
+				po.Offset = num.Zero()
 			case types.PeggedReferenceMid:
-				po.Offset = -1
+				po.Offset.SetUint64(1)
 				if m.as.InAuction() {
-					po.Offset = 0
+					po.Offset = num.Zero()
 				}
 			}
-			return price.Sub(price, num.NewUint(uint64(-po.Offset))), po, nil
+			return price.Sub(price, po.Offset), po, nil
 		}
 
 		// now this is the case where basePrice is < minPrice
 		// and minPrice is non-negative + inferior to bestBid
 		if !minP.IsZero() && minP.LT(price) {
-			off := num.Zero().Sub(price, minP)
-			po.Offset = -int64(off.Uint64())
-			return price.Sub(price, off), po, nil
+			po.Offset = po.Offset.Sub(price, minP)
+
+			return price.Sub(price, po.Offset), po, nil
 		}
 
 		// now we are going to handle the case where
@@ -694,17 +787,17 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// in that case we will just assign the offset
 		// to the price
 		// we also know the price here cannot be 0
-		// so it's safe to have a -1 offset
+		// so it's safe to have a 1 offset
 		switch po.Reference {
 		case types.PeggedReferenceBestBid:
-			po.Offset = 0
+			po.Offset = num.Zero()
 		case types.PeggedReferenceMid:
-			po.Offset = -1
+			po.Offset.SetUint64(1)
 			if m.as.InAuction() {
-				po.Offset = 0
+				po.Offset = num.Zero()
 			}
 		}
-		return price.Sub(price, num.NewUint(uint64(-po.Offset))), po, nil
+		return price.Sub(price, po.Offset), po, nil
 	}
 
 	// now at this point we know that price - offset
@@ -716,16 +809,16 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		// for using minPrice
 		switch po.Reference {
 		case types.PeggedReferenceBestBid:
-			po.Offset = 0
+			po.Offset = num.Zero()
 		case types.PeggedReferenceMid:
-			po.Offset = -1
+			po.Offset.SetUint64(1)
 		}
-		return price.Sub(price, num.NewUint(uint64(-po.Offset))), po, nil
+		return price.Sub(price, po.Offset), po, nil
 	}
 
 	// this is the last case where we can use the minPrice
 	off := num.Zero().Sub(price, minP)
-	po.Offset = -int64(off.Uint64())
+	po.Offset = off.Clone()
 	return price.Sub(price, off), po, nil
 }
 
@@ -808,46 +901,8 @@ func (m *Market) cancelLiquidityProvision(
 	return nil
 }
 
-func (m *Market) amendOrCancelLiquidityProvision(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
-) error {
-	lp := m.liquidity.LiquidityProvisionByPartyID(party)
-	if lp == nil {
-		return fmt.Errorf("cannot edit liquidity provision from a non liquidity provider party (%v)", party)
-	}
-
-	// Increasing the commitment should always be allowed, but decreasing is
-	// only valid if the resulting amount still allows the market as a whole
-	// to reach it's commitment level. Otherwise the commitment reduction is
-	// rejected.
-	if sub.CommitmentAmount.LT(lp.CommitmentAmount) {
-		// first - does the market have enough stake
-		supplied := m.getSuppliedStake()
-		if m.getTargetStake().GTE(supplied) {
-			return ErrNotEnoughStake
-		}
-
-		// now if the stake surplus is > than the change we are OK
-		surplus := supplied.Sub(supplied, m.getTargetStake())
-		diff := num.Zero().Sub(lp.CommitmentAmount, sub.CommitmentAmount)
-		if surplus.LT(diff) {
-			return ErrNotEnoughStake
-		}
-	}
-
-	// here, we now we have a amendment
-	// if this amendment is to reduce the stake to 0, then we'll want to
-	// cancel this lp submission
-	if sub.CommitmentAmount.IsZero() {
-		return m.cancelLiquidityProvision(ctx, party, false)
-	}
-
-	// if commitment != 0, then it's an amend
-	return m.amendLiquidityProvision(ctx, sub, party)
-}
-
 func (m *Market) amendLiquidityProvision(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) (err error) {
 	bondRollback, err := m.ensureLiquidityProvisionBond(ctx, sub, party)
 	if err != nil {
@@ -895,7 +950,7 @@ func (m *Market) amendLiquidityProvision(
 // - third, none of them are available, which just accept the change, all
 // hel may break loose when coming out of auction, but we know this.
 func (m *Market) amendLiquidityProvisionAuction(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	// first try to get the indicative uncrossing price from the book
 	price := m.matching.GetIndicativePrice()
@@ -924,7 +979,7 @@ func (m *Market) amendLiquidityProvisionAuction(
 // from there, then move the funds in the party margin account.
 func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 	ctx context.Context,
-	sub *types.LiquidityProvisionSubmission,
+	sub *types.LiquidityProvisionAmendment,
 	party string,
 	price *num.Uint,
 ) error {
@@ -984,7 +1039,7 @@ func (m *Market) calcLiquidityProvisionPotentialMarginsAuction(
 }
 
 func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
@@ -1009,7 +1064,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 }
 
 func (m *Market) amendLiquidityProvisionContinuous(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	bestBidPrice, bestAskPrice, err := m.getBestStaticPrices()
 	if err != nil {
@@ -1068,7 +1123,7 @@ func (m *Market) amendLiquidityProvisionContinuous(
 }
 
 func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
@@ -1111,7 +1166,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 
 // returns the rollback transfer in case of error.
 func (m *Market) ensureLiquidityProvisionBond(
-	ctx context.Context, sub *types.LiquidityProvisionSubmission, party string,
+	ctx context.Context, sub *types.LiquidityProvisionAmendment, party string,
 ) (*types.Transfer, error) {
 	asset, _ := m.mkt.GetAsset()
 	bondAcc, err := m.collateral.GetOrCreatePartyBondAccount(

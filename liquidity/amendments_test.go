@@ -36,56 +36,68 @@ func testCanAmend(t *testing.T) {
 		liquidity.ErrPartyHaveNoLiquidityProvision.Error(),
 	)
 
-	sub := getTestAmendSimpleSubmission()
+	lps := getTestSubmitSimpleSubmission()
 
 	// initially submit our provision to be amended, does not matter what's in
 	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	assert.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, sub, party, "some-id-1"),
-	)
+	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1")
+	assert.NoError(t, err)
 
+	lpa := getTestAmendSimpleSubmission()
 	// now we can do a OK can amend
-	assert.NoError(t, tng.engine.CanAmend(sub, party))
+	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 
-	sub = getTestAmendSimpleSubmission()
 	// previously, this tested for an empty string, this is impossible now with the decimal type
 	// so let's check for negatives instead
-	sub.Fee = num.DecimalFromFloat(-1)
+	lpa.Fee = num.DecimalFromFloat(-1)
 	assert.EqualError(t,
-		tng.engine.CanAmend(sub, party),
+		tng.engine.CanAmend(lpa, party),
 		"invalid liquidity provision fee",
 	)
 
-	sub = getTestAmendSimpleSubmission()
-	sub.Buys = nil
-	assert.EqualError(t,
-		tng.engine.CanAmend(sub, party),
-		"empty SIDE_BUY shape",
-	)
+	lpa = getTestAmendSimpleSubmission()
+	lpa.Buys = nil
+	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 
-	sub = getTestAmendSimpleSubmission()
-	sub.Sells = nil
-	assert.EqualError(t,
-		tng.engine.CanAmend(sub, party),
-		"empty SIDE_SELL shape",
-	)
+	lpa = getTestAmendSimpleSubmission()
+	lpa.Sells = nil
+	assert.NoError(t, tng.engine.CanAmend(lpa, party))
 }
 
-func getTestAmendSimpleSubmission() *types.LiquidityProvisionSubmission {
+func getTestSubmitSimpleSubmission() *types.LiquidityProvisionSubmission {
 	pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId:         market,
 		CommitmentAmount: "10000",
 		Fee:              "0.5",
 		Reference:        "ref-lp-submission-1",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 7, Offset: -10},
-			{Reference: types.PeggedReferenceMid, Proportion: 3, Offset: -15},
+			{Reference: types.PeggedReferenceBestBid, Proportion: 7, Offset: "10"},
+			{Reference: types.PeggedReferenceMid, Proportion: 3, Offset: "15"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 8, Offset: 10},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: 15},
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 8, Offset: "10"},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: "15"},
 		},
 	}
 	t, _ := types.LiquidityProvisionSubmissionFromProto(pb)
+	return t
+}
+
+func getTestAmendSimpleSubmission() *types.LiquidityProvisionAmendment {
+	pb := &commandspb.LiquidityProvisionAmendment{
+		MarketId:         market,
+		CommitmentAmount: "10000",
+		Fee:              "0.5",
+		Reference:        "ref-lp-submission-1",
+		Buys: []*proto.LiquidityOrder{
+			{Reference: types.PeggedReferenceBestBid, Proportion: 7, Offset: "10"},
+			{Reference: types.PeggedReferenceMid, Proportion: 3, Offset: "15"},
+		},
+		Sells: []*proto.LiquidityOrder{
+			{Reference: types.PeggedReferenceBestAsk, Proportion: 8, Offset: "10"},
+			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: "15"},
+		},
+	}
+	t, _ := types.LiquidityProvisionAmendmentFromProto(pb)
 	return t
 }

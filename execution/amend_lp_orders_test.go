@@ -60,12 +60,12 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
@@ -85,26 +85,24 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpSmallerCommitment := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+	lpSmallerCommitment := &types.LiquidityProvisionAmendment{
 		CommitmentAmount: num.NewUint(60000),
-		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSmallerCommitment, lpparty, "liquidity-submission-2"),
+		tm.market.AmendLiquidityProvision(
+			ctx, lpSmallerCommitment, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -175,26 +173,24 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpHigherCommitment := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
+	lpHigherCommitment := &types.LiquidityProvisionAmendment{
 		CommitmentAmount: num.NewUint(80000),
-		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-3",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpHigherCommitment, lpparty, "liquidity-submission-3"),
+		tm.market.AmendLiquidityProvision(
+			ctx, lpHigherCommitment, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -265,28 +261,28 @@ func TestAmendDeployedCommitment(t *testing.T) {
 
 	// now we will reduce our commitment
 	// we will still be higher than the required stake
-	lpDifferentShapeCommitment := &types.LiquidityProvisionSubmission{
+	lpDifferentShapeCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(80000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-3-bis",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -4},
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -3},
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -2},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 4, 2),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 3, 2),
+			newLiquidityOrder(types.PeggedReferenceBestBid, 2, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpDifferentShapeCommitment, lpparty, "liquidity-submission-3-bis"),
+		tm.market.AmendLiquidityProvision(
+			ctx, lpDifferentShapeCommitment, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -359,26 +355,26 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// the expected stake.
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpTooSmallCommitment := &types.LiquidityProvisionSubmission{
+	lpTooSmallCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(30000), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-4",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpTooSmallCommitment, lpparty, "liquidity-submission-4"),
+		tm.market.AmendLiquidityProvision(
+			ctx, lpTooSmallCommitment, lpparty),
 		"commitment submission rejected, not enough stake",
 	)
 
@@ -386,26 +382,26 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// at a point where we cannot fill the bond requirement
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpTooHighCommitment := &types.LiquidityProvisionSubmission{
+	lpTooHighCommitment := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(600000000000), // required commitment is 50000
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-5",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpTooHighCommitment, lpparty, "liquidity-submission-5"),
+		tm.market.AmendLiquidityProvision(
+			ctx, lpTooHighCommitment, lpparty),
 		"commitment submission not allowed",
 	)
 
@@ -413,20 +409,15 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// at a point where we cannot fill the bond requirement
 	// this should result into an error, and the commitment staying
 	// untouched
-	lpCancelCommitment := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.Zero(), // required commitment is 50000
-		Fee:              num.DecimalFromFloat(0.01),
-		Reference:        "ref-lp-submission-6",
-		Buys:             []*types.LiquidityOrder{},
-		Sells:            []*types.LiquidityOrder{},
+	lpCancelCommitment := &types.LiquidityProvisionCancellation{
+		MarketID: tm.market.GetID(),
 	}
 
 	tm.events = nil
 	// submit our lp
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpCancelCommitment, lpparty, "liquidity-submission-6"),
+		tm.market.CancelLiquidityProvision(
+			ctx, lpCancelCommitment, lpparty),
 		"commitment submission rejected, not enough stake",
 	)
 }
@@ -478,12 +469,12 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
@@ -499,22 +490,15 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 		assert.Equal(t, num.NewUint(70000), acc.Balance)
 	})
 
-	// Add a LPSubmission
-	// this is a log of stake, enough to cover all
-	// the required stake for the market
-	lpSubmissionCancel := &types.LiquidityProvisionSubmission{
-		MarketID:         tm.market.GetID(),
-		CommitmentAmount: num.Zero(),
-		Fee:              num.DecimalFromFloat(0.01),
-		Reference:        "ref-lp-submission-2",
-		Buys:             []*types.LiquidityOrder{},
-		Sells:            []*types.LiquidityOrder{},
+	// Cancel our lp
+	lpSubmissionCancel := &types.LiquidityProvisionCancellation{
+		MarketID: tm.market.GetID(),
 	}
 
 	// submit our lp
 	require.NoError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmissionCancel, lpparty, "liquidity-submission-2"),
+		tm.market.CancelLiquidityProvision(
+			ctx, lpSubmissionCancel, lpparty),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -571,12 +555,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
@@ -703,12 +687,12 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
@@ -766,26 +750,25 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	})
 
 	// commitment is being updated during auction
-	lpSubmissionUpdate := &types.LiquidityProvisionSubmission{
+	lpSubmissionUpdate := &types.LiquidityProvisionAmendment{
 		MarketID:         tm.market.GetID(),
 		CommitmentAmount: num.NewUint(200000),
-		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-2",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
 	// the submission should be all OK
 	// order are not deployed while still in auction
 	require.EqualError(t,
-		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmissionUpdate, lpparty, "liquidity-submission-2"),
+		tm.market.AmendLiquidityProvision(
+			ctx, lpSubmissionUpdate, lpparty),
 		"margin would be below maintenance: insufficient margin",
 	)
 }

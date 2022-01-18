@@ -34,6 +34,20 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 	return m.recorder
 }
 
+// AmendLiquidityProvision mocks base method
+func (m *MockExecutionEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AmendLiquidityProvision indicates an expected call of AmendLiquidityProvision
+func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2)
+}
+
 // AmendOrder mocks base method
 func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
@@ -47,6 +61,20 @@ func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.Order
 func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockExecutionEngine)(nil).AmendOrder), arg0, arg1, arg2)
+}
+
+// CancelLiquidityProvision mocks base method
+func (m *MockExecutionEngine) CancelLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionCancellation, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CancelLiquidityProvision", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CancelLiquidityProvision indicates an expected call of CancelLiquidityProvision
+func (mr *MockExecutionEngineMockRecorder) CancelLiquidityProvision(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).CancelLiquidityProvision), arg0, arg1, arg2)
 }
 
 // CancelOrder mocks base method

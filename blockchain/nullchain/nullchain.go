@@ -326,7 +326,7 @@ func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (
 	return "", ErrNotImplemented
 }
 
-func (n *NullBlockchain) Validators(_ context.Context) ([]*tmtypes.Validator, error) {
+func (n *NullBlockchain) Validators(_ context.Context, _ *int64) ([]*tmtypes.Validator, error) {
 	n.log.Error("not implemented")
 	return nil, ErrNotImplemented
 }

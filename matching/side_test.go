@@ -204,7 +204,7 @@ func getPopulatedTestSideWithPegs(side types.Side) *OrderBookSide {
 		ID     string
 		Price  uint64
 		Size   uint64
-		Offset int64
+		Offset uint64
 	}
 
 	testOrders := []testOrder{
@@ -230,7 +230,7 @@ func getPopulatedTestSideWithPegs(side types.Side) *OrderBookSide {
 		if order.Offset != 0 {
 			o.PeggedOrder = &types.PeggedOrder{
 				Reference: types.PeggedReferenceMid,
-				Offset:    order.Offset,
+				Offset:    num.NewUint(order.Offset),
 			}
 		}
 		// add the order to the side
@@ -246,7 +246,7 @@ func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
 		ID     string
 		Price  uint64
 		Size   uint64
-		Offset int64
+		Offset uint64
 	}
 
 	testOrders := []testOrder{
@@ -268,7 +268,7 @@ func getPopulatedTestSideWithOnlyPegs(side types.Side) *OrderBookSide {
 			TimeInForce: types.OrderTimeInForceGTC,
 			PeggedOrder: &types.PeggedOrder{
 				Reference: types.PeggedReferenceMid,
-				Offset:    order.Offset,
+				Offset:    num.NewUint(order.Offset),
 			},
 		}
 		// add the order to the side

@@ -3,6 +3,8 @@ package stubs
 import (
 	"sort"
 
+	"code.vegaprotocol.io/vega/types/num"
+
 	"code.vegaprotocol.io/vega/validators"
 )
 
@@ -16,6 +18,10 @@ func NewTopologyStub(nodeID string) *TopologyStub {
 		validators: map[string]string{},
 		nodeID:     nodeID,
 	}
+}
+
+func (ts *TopologyStub) ValidatorPerformanceScore(nodeID string) num.Decimal {
+	return num.DecimalFromFloat(1)
 }
 
 func (ts *TopologyStub) SelfNodeID() string {

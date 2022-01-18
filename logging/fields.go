@@ -226,6 +226,26 @@ func LiquidityProvisionSubmission(
 	return zap.String("liquidity-provision-submission", lp.String())
 }
 
+func LiquidityProvisionCancellationProto(
+	lp *commandspb.LiquidityProvisionCancellation) zap.Field {
+	return zap.String("liquidity-provision-cancellation", lp.String())
+}
+
+func LiquidityProvisionCancellation(
+	lp types.LiquidityProvisionCancellation) zap.Field {
+	return zap.String("liquidity-provision-cancellation", lp.String())
+}
+
+func LiquidityProvisionAmendmentProto(
+	lp *commandspb.LiquidityProvisionAmendment) zap.Field {
+	return zap.String("liquidity-provision-amendment", lp.String())
+}
+
+func LiquidityProvisionAmendment(
+	lp types.LiquidityProvisionAmendment) zap.Field {
+	return zap.String("liquidity-provision-amendment", lp.String())
+}
+
 func WithdrawSubmissionProto(
 	lp *commandspb.WithdrawSubmission) zap.Field {
 	return zap.String("withdraw-submission", lp.String())

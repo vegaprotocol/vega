@@ -384,6 +384,7 @@ func validateShape(
 	if len(sh) > int(maxSize) {
 		return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
 	}
+
 	for _, lo := range sh {
 		if lo.Reference == proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED {
 			// We must specify a valid reference
@@ -398,24 +399,18 @@ func validateShape(
 			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
 				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape with best ask price reference")
 			case proto.PeggedReference_PEGGED_REFERENCE_BEST_BID:
-				if lo.Offset > 0 {
-					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be <= 0")
-				}
 			case proto.PeggedReference_PEGGED_REFERENCE_MID:
-				if lo.Offset >= 0 {
-					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be < 0")
+				if lo.Offset.IsZero() {
+					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in buy side shape offset must be > 0")
 				}
 			}
 		} else {
 			switch lo.Reference {
 			case proto.PeggedReference_PEGGED_REFERENCE_BEST_ASK:
-				if lo.Offset < 0 {
-					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be >= 0")
-				}
 			case proto.PeggedReference_PEGGED_REFERENCE_BEST_BID:
 				return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell side shape with best bid price reference")
 			case proto.PeggedReference_PEGGED_REFERENCE_MID:
-				if lo.Offset <= 0 {
+				if lo.Offset.IsZero() {
 					return proto.ProposalError_PROPOSAL_ERROR_INVALID_SHAPE, errors.New("order in sell shape offset must be > 0")
 				}
 			}
