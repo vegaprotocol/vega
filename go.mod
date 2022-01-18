@@ -6,7 +6,7 @@ require (
 	code.vegaprotocol.io/protos v0.47.1-0.20220118110318-7b90b251de07
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vega v0.47.1-0.20220110150749-92e3207b9f2f
+	code.vegaprotocol.io/vega v0.47.1-0.20220118134353-24c6f0a69e55
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fsnotify/fsnotify v1.4.9
