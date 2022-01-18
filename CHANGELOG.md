@@ -9,7 +9,6 @@
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
 ### 🛠  Improvements
-- [228](https://github.com/vegaprotocol/data-node/pull/228) - Add Raw Score and Performance to the Node definition  
 - [244](https://github.com/vegaprotocol/data-node/pull/244) - Constrain the number of epochs for which we keep delegations in memory
 - [250](https://github.com/vegaprotocol/data-node/pull/250) - Update go requirement to 1.17
 - [251](https://github.com/vegaprotocol/data-node/pull/251) - Updated proto and core and added support for the new events (state var and network limits)
