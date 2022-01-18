@@ -137,20 +137,24 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 // if the price is worse than the min bid and is a bid price or is worse than the max ask and is an ask price it returns <minProbabilityOfTrading>
 // if it matches a price point - the corresponding probability is returned (scaled by <defaultInRangeProbabilityOfTrading>)
 // otherwise it finds the first price point that is greater than the given price and returns the interpolation of the probabilities of this price point and the preceding one rescaled by <defaultInRangeProbabilityOfTrading>.
-func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal) num.Decimal {
+func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal, log *logging.Logger) num.Decimal {
 	// if the price is between the *current* bid and ask, return the default in range probability
 	if price.GreaterThanOrEqual(bestBid) && price.LessThanOrEqual(bestAsk) {
+		log.Info("getProbabilityOfTrading price is greater than best bid and smaller than best ask", logging.Decimal("price", price), logging.Decimal("best-bid", bestBid), logging.Decimal("best-ask", bestAsk), logging.Decimal("prob", defaultInRangeProbabilityOfTrading))
 		return defaultInRangeProbabilityOfTrading
 	}
 
 	// no consensus yet
 	if (len(pot.bidPrice) == 0 && isBid) || (len(pot.askPrice) == 0 && !isBid) {
 		if isBid && bestBid.Sub(price).Abs().LessThanOrEqual(defaultTickDistance) {
+			log.Info("getProbabilityOfTrading no first consensus yet, price is within 100 ticks from best bid", logging.Decimal("price", price), logging.Decimal("best-bid", bestBid), logging.Decimal("prob", defaultProbability))
 			return defaultProbability
 		}
 		if !isBid && bestAsk.Sub(price).Abs().LessThanOrEqual(defaultTickDistance) {
+			log.Info("getProbabilityOfTrading no first consensus yet, price is within 100 ticks from best ask", logging.Decimal("price", price), logging.Decimal("best-ask", bestAsk), logging.Decimal("prob", defaultProbability))
 			return defaultProbability
 		}
+		log.Info("getProbabilityOfTrading no first consensus yet, price is more than 100 ticks away from best bid/ask", logging.Decimal("price", price), logging.Decimal("best-Bid", bestBid), logging.Decimal("best-ask", bestAsk), logging.Decimal("prob", minProbabilityOfTrading))
 		return minProbabilityOfTrading
 	}
 
@@ -166,18 +170,31 @@ func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTra
 	// or the price is an ask order and it's better than the best ask at the time the probabilities were calculated
 	// we return the <defaultInRangeProbabilityOfTrading>
 	if (isBid && price.GreaterThanOrEqual(prices[len(prices)-1])) || (!isBid && price.LessThanOrEqual(prices[0])) {
+		if isBid {
+			log.Info("getProbabilityOfTrading bid price is better than the best consensus bid", logging.Decimal("price", price), logging.Decimal("cons-best-bid", prices[len(prices)-1]), logging.Decimal("prob", defaultInRangeProbabilityOfTrading))
+		} else {
+			log.Info("getProbabilityOfTrading ask price is better than the best consensus ask", logging.Decimal("price", price), logging.Decimal("cons-best-ask", prices[0]), logging.Decimal("prob", defaultInRangeProbabilityOfTrading))
+		}
 		return defaultInRangeProbabilityOfTrading
 	}
 
 	// check out of bounds
 	if isBid && price.LessThan(prices[0]) || !isBid && price.GreaterThan(prices[len(prices)-1]) {
+		if isBid {
+			log.Info("getProbabilityOfTrading bid price is worse than the worst consensus bid", logging.Decimal("price", price), logging.Decimal("cons-worst-bid", prices[0]), logging.Decimal("prob", minProbabilityOfTrading))
+		} else {
+			log.Info("getProbabilityOfTrading ask price is worse than the worst consensus ask", logging.Decimal("price", price), logging.Decimal("cons-worst-ask", prices[len(prices)-1]), logging.Decimal("prob", minProbabilityOfTrading))
+		}
 		return minProbabilityOfTrading
 	}
 
 	// find the first price >= price
 	i := sort.Search(len(prices), func(i int) bool { return prices[i].GreaterThanOrEqual(price) })
 	if prices[i].Equals(price) {
-		return num.MaxD(minProbabilityOfTrading, rescaleProbability(probabilities[i]))
+		prob := rescaleProbability(probabilities[i])
+		cappedProb := num.MaxD(minProbabilityOfTrading, prob)
+		log.Info("getProbabilityOfTrading probability from price level", logging.Decimal("price", price), logging.Decimal("best-bid", bestBid), logging.Decimal("best-ask", bestAsk), logging.Decimal("prob", prob), logging.Decimal("capped-prob", cappedProb))
+		return cappedProb
 	}
 
 	// linear interpolation
@@ -186,7 +203,10 @@ func getProbabilityOfTrading(bestBid, bestAsk num.Decimal, pot *probabilityOfTra
 	ratio := price.Sub(prev).Div(size)
 	cRatio := num.DecimalFromInt64(1).Sub(ratio)
 	prob := ratio.Mul(probabilities[i]).Add(cRatio.Mul(probabilities[i-1]))
-	return num.MaxD(minProbabilityOfTrading, rescaleProbability(prob))
+	scaled := rescaleProbability(prob)
+	capped := num.MaxD(minProbabilityOfTrading, scaled)
+	log.Info("getProbabilityOfTrading probability interpolated levels", logging.Decimal("price", price), logging.Decimal("best-bid", bestBid), logging.Decimal("best-ask", bestAsk), logging.Decimal("price-level-1", prices[i-1]), logging.Decimal("price-level-2", prices[i]), logging.Decimal("prob-level-1", probabilities[i-1]), logging.Decimal("prob-level-2", probabilities[i]), logging.Decimal("prob", probabilities[i]), logging.Decimal("scaled", scaled), logging.Decimal("capped-prob", capped))
+	return capped
 }
 
 // rescaleProbability rescales probability so that it's at most the value returned between bid and ask.

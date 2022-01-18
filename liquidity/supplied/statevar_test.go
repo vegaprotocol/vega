@@ -3,6 +3,7 @@ package supplied
 import (
 	"testing"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/require"
 )
@@ -32,24 +33,25 @@ func pOfT(best, p *num.Uint, min, max, tauScaled num.Decimal, isBid bool, applyM
 }
 
 func TestGetProbability(t *testing.T) {
+	log := logging.NewTestLogger()
 	minProb := num.DecimalFromFloat(0.021)
 	// no consensus - price within 100 ticks from the best bid - use default probability
-	require.Equal(t, defaultProbability, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(20), true, minProb))
+	require.Equal(t, defaultProbability, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(20), true, minProb, log))
 
 	// no consensus - price within 100 ticks from the best ask - use default probability
-	require.Equal(t, defaultProbability, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(320), false, minProb))
+	require.Equal(t, defaultProbability, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(320), false, minProb, log))
 
 	// no consensus - price further than 100 ticks from the best bid - use min probability
-	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(19), true, minProb))
+	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(19), true, minProb, log))
 
 	// no consensus - price further than 100 ticks from the best ask - use min probability
-	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(321), false, minProb))
+	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(321), false, minProb, log))
 
 	// price is GTE best bid and LTE best ask - use defaultInRangeProbabilityOfTrading
-	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(120), true, minProb))
-	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(121), true, minProb))
-	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(220), false, minProb))
-	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(219), false, minProb))
+	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(120), true, minProb, log))
+	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(121), true, minProb, log))
+	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(220), false, minProb, log))
+	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(219), false, minProb, log))
 
 	bidPrices := make([]num.Decimal, 0, 51)
 	askPrices := make([]num.Decimal, 0, 51)
@@ -72,36 +74,36 @@ func TestGetProbability(t *testing.T) {
 	}
 
 	// find exact match - bid of 20 has probability of 0.01 scaled by 0.5 => 0.005 but minProb > 0.005 => minProb
-	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(20), true, minProb))
+	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(20), true, minProb, log))
 
 	// find exact match - bid of 20 has probability of 0.05 scaled by 0.5 => 0.025
-	require.Equal(t, "0.025", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(24), true, minProb).String())
+	require.Equal(t, "0.025", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(24), true, minProb, log).String())
 
 	// find exact match - bid of 116 has probability of 0.97 scaled by 0.5 => 0.485
-	require.Equal(t, "0.485", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(116), true, minProb).String())
+	require.Equal(t, "0.485", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(116), true, minProb, log).String())
 
 	// find exact match - ask of 316 has probability of 0.04 scaled by 0.5 => 0.02 but minProb > 0.02 => minProb
-	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(316), false, minProb))
+	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(316), false, minProb, log))
 
 	// find exact match - ask of 280 has probability of 0.4 scaled by 0.5 => 0.2
-	require.Equal(t, "0.2", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(280), false, minProb).String())
+	require.Equal(t, "0.2", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(280), false, minProb, log).String())
 
 	// find exact match - ask of 224 has probability of 0.96 scaled by 0.5 => 0.48
-	require.Equal(t, "0.48", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(224), false, minProb).String())
+	require.Equal(t, "0.48", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(224), false, minProb, log).String())
 
 	// bid linear interpolation
 	// 0.75*0.09 + 0.25*0.13 = 0.1 => scaled by 0.5 = 0.05 > minProb => 0.05
-	require.Equal(t, "0.05", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(29), true, minProb).String())
+	require.Equal(t, "0.05", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(29), true, minProb, log).String())
 	// 0.5*0.09 + 0.5*0.13 = 0.11 => scaled by 0.5 => 0.055
-	require.Equal(t, "0.055", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(30), true, minProb).String())
+	require.Equal(t, "0.055", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(30), true, minProb, log).String())
 	// 0.25*0.09 + 0.75*0.13 = 0.12 => scaled by 0.5 => 0.06
-	require.Equal(t, "0.06", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(31), true, minProb).String())
+	require.Equal(t, "0.06", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(31), true, minProb, log).String())
 
 	// ask linear interpolation
 	// 0.75*0.8 + 0.25*0.76 = 0.79 => scaled by 0.5 = 0.395 > minProb => 0.395
-	require.Equal(t, "0.395", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(241), false, minProb).String())
+	require.Equal(t, "0.395", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(241), false, minProb, log).String())
 	// 0.5*0.8 + 0.5*0.76 = 0.78 => scaled by 0.5 => 0.39
-	require.Equal(t, "0.39", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(242), false, minProb).String())
+	require.Equal(t, "0.39", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(242), false, minProb, log).String())
 	// 0.25*0.8 + 0.75*0.76 = 0.77 => scaled by 0.5 => 0.385
-	require.Equal(t, "0.385", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(243), false, minProb).String())
+	require.Equal(t, "0.385", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(243), false, minProb, log).String())
 }
