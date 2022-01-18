@@ -568,10 +568,6 @@ func convertOrderRejectionReasonFromProto(x types.OrderError) (OrderRejectionRea
 		return OrderRejectionReasonPeggedOrderWithoutReferencePrice, nil
 	case types.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE:
 		return OrderRejectionReasonPeggedOrderBuyCannotReferenceBestAskPrice, nil
-	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO:
-		return OrderRejectionReasonPeggedOrderOffsetMustBeLessOrEqualToZero, nil
-	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO:
-		return OrderRejectionReasonPeggedOrderOffsetMustBeLessThanZero, nil
 	case types.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO:
 		return OrderRejectionReasonPeggedOrderOffsetMustBeGreaterOrEqualToZero, nil
 	case types.OrderError_ORDER_ERROR_SELL_CANNOT_REFERENCE_BEST_BID_PRICE:
