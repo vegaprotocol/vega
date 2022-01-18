@@ -15,9 +15,6 @@ type Assets interface {
 func MarginScalingFactor() func(interface{}) error {
 	return func(v interface{}) error {
 		sf := v.(*types.ScalingFactors)
-		if err := sf.Validate(); err != nil {
-			return err
-		}
 		if sf.SearchLevel >= sf.InitialMargin || sf.InitialMargin >= sf.CollateralRelease {
 			return errors.New("invalid scaling factors (searchLevel < initialMargin < collateralRelease)")
 		}

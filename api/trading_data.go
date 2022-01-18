@@ -821,11 +821,6 @@ func (t *tradingDataService) OrdersByMarket(ctx context.Context,
 	request *protoapi.OrdersByMarketRequest) (*protoapi.OrdersByMarketResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrdersByMarket")()
 
-	err := request.Validate()
-	if err != nil {
-		return nil, err
-	}
-
 	p := defaultPagination
 	if request.Pagination != nil {
 		p = *request.Pagination
@@ -850,11 +845,6 @@ func (t *tradingDataService) OrdersByMarket(ctx context.Context,
 func (t *tradingDataService) OrdersByParty(ctx context.Context,
 	request *protoapi.OrdersByPartyRequest) (*protoapi.OrdersByPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrdersByParty")()
-
-	err := request.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	p := defaultPagination
 	if request.Pagination != nil {
@@ -891,11 +881,6 @@ func (t *tradingDataService) OrderByMarketAndID(ctx context.Context,
 	request *protoapi.OrderByMarketAndIDRequest) (*protoapi.OrderByMarketAndIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrderByMarketAndID")()
 
-	err := request.Validate()
-	if err != nil {
-		return nil, err
-	}
-
 	order, err := t.OrderService.GetByMarketAndID(ctx, request.MarketId, request.OrderId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrOrderServiceGetByMarketAndID, err)
@@ -909,11 +894,6 @@ func (t *tradingDataService) OrderByMarketAndID(ctx context.Context,
 // OrderByReference provides the (possibly not yet accepted/rejected) order.
 func (t *tradingDataService) OrderByReference(ctx context.Context, req *protoapi.OrderByReferenceRequest) (*protoapi.OrderByReferenceResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrderByReference")()
-
-	err := req.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	order, err := t.OrderService.GetByReference(ctx, req.Reference)
 	if err != nil {
@@ -930,11 +910,6 @@ func (t *tradingDataService) OrderByReference(ctx context.Context, req *protoapi
 func (t *tradingDataService) Candles(ctx context.Context,
 	request *protoapi.CandlesRequest) (*protoapi.CandlesResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("Candles")()
-
-	err := request.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	if request.Interval == pbtypes.Interval_INTERVAL_UNSPECIFIED {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
@@ -954,11 +929,6 @@ func (t *tradingDataService) Candles(ctx context.Context,
 // for the given market.
 func (t *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.MarketDepthRequest) (*protoapi.MarketDepthResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketDepth")()
-
-	err := req.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	// Query market depth statistics
 	depth, err := t.MarketService.GetDepth(ctx, req.MarketId, req.MaxDepth)
@@ -988,11 +958,6 @@ func (t *tradingDataService) MarketDepth(ctx context.Context, req *protoapi.Mark
 func (t *tradingDataService) TradesByMarket(ctx context.Context, request *protoapi.TradesByMarketRequest) (*protoapi.TradesByMarketResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("TradesByMarket")()
 
-	err := request.Validate()
-	if err != nil {
-		return nil, err
-	}
-
 	p := defaultPagination
 	if request.Pagination != nil {
 		p = *request.Pagination
@@ -1010,11 +975,6 @@ func (t *tradingDataService) TradesByMarket(ctx context.Context, request *protoa
 // PositionsByParty provides a list of positions for a given party.
 func (t *tradingDataService) PositionsByParty(ctx context.Context, request *protoapi.PositionsByPartyRequest) (*protoapi.PositionsByPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("PositionsByParty")()
-
-	err := request.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	// Check here for a valid marketID so we don't fail later
 	if request.MarketId != "" {
@@ -1037,11 +997,6 @@ func (t *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 func (t *tradingDataService) MarginLevels(_ context.Context, req *protoapi.MarginLevelsRequest) (*protoapi.MarginLevelsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarginLevels")()
 
-	err := req.Validate()
-	if err != nil {
-		return nil, err
-	}
-
 	mls, err := t.RiskService.GetMarginLevelsByID(req.PartyId, req.MarketId)
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrRiskServiceGetMarginLevelsByID, err)
@@ -1059,11 +1014,6 @@ func (t *tradingDataService) MarginLevels(_ context.Context, req *protoapi.Margi
 // MarketDataByID provides market data for the given ID.
 func (t *tradingDataService) MarketDataByID(ctx context.Context, req *protoapi.MarketDataByIDRequest) (*protoapi.MarketDataByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("MarketDataByID")()
-
-	err := req.Validate()
-	if err != nil {
-		return nil, err
-	}
 
 	// validate the market exist
 	if req.MarketId != "" {
@@ -1246,17 +1196,13 @@ func (t *tradingDataService) MarginLevelsSubscribe(req *protoapi.MarginLevelsSub
 	ctx, cancel := context.WithCancel(srv.Context())
 	defer cancel()
 
-	err := req.Validate()
-	if err != nil {
-		return err
-	}
-
 	marginLevelsChan, ref := t.RiskService.ObserveMarginLevels(ctx, t.Config.StreamRetries, req.PartyId, req.MarketId)
 
 	if t.log.GetLevel() == logging.DebugLevel {
 		t.log.Debug("Margin levels subscriber - new rpc stream", logging.Uint64("ref", ref))
 	}
 
+	var err error
 	for {
 		select {
 		case mls := <-marginLevelsChan:
@@ -1954,10 +1900,6 @@ func (t *tradingDataService) OrderVersionsByID(
 ) (*protoapi.OrderVersionsByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("OrderVersionsByID")()
 
-	err := in.Validate()
-	if err != nil {
-		return nil, err
-	}
 	p := defaultPagination
 	if in.Pagination != nil {
 		p = *in.Pagination
@@ -1980,9 +1922,6 @@ func (t *tradingDataService) GetProposals(_ context.Context,
 ) (*protoapi.GetProposalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposals")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 	var inState *pbtypes.Proposal_State
 	if in.SelectInState != nil {
 		inState = &in.SelectInState.Value
@@ -1997,9 +1936,6 @@ func (t *tradingDataService) GetProposalsByParty(_ context.Context,
 ) (*protoapi.GetProposalsByPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalsByParty")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 	var inState *pbtypes.Proposal_State
 	if in.SelectInState != nil {
 		inState = &in.SelectInState.Value
@@ -2014,9 +1950,6 @@ func (t *tradingDataService) GetVotesByParty(_ context.Context,
 ) (*protoapi.GetVotesByPartyResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetVotesByParty")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 	return &protoapi.GetVotesByPartyResponse{
 		Votes: t.governanceService.GetVotesByParty(in.PartyId),
 	}, nil
@@ -2026,10 +1959,6 @@ func (t *tradingDataService) GetNewMarketProposals(_ context.Context,
 	in *protoapi.GetNewMarketProposalsRequest,
 ) (*protoapi.GetNewMarketProposalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNewMarketProposals")()
-
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 
 	var inState *pbtypes.Proposal_State
 	if in.SelectInState != nil {
@@ -2045,10 +1974,6 @@ func (t *tradingDataService) GetUpdateMarketProposals(_ context.Context,
 ) (*protoapi.GetUpdateMarketProposalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetUpdateMarketProposals")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-
 	var inState *pbtypes.Proposal_State
 	if in.SelectInState != nil {
 		inState = &in.SelectInState.Value
@@ -2063,9 +1988,6 @@ func (t *tradingDataService) GetNetworkParametersProposals(_ context.Context,
 ) (*protoapi.GetNetworkParametersProposalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNetworkParametersProposals")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 	var inState *pbtypes.Proposal_State
 	if in.SelectInState != nil {
 		inState = &in.SelectInState.Value
@@ -2080,9 +2002,6 @@ func (t *tradingDataService) GetNewAssetProposals(_ context.Context,
 ) (*protoapi.GetNewAssetProposalsResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetNewAssetProposals")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 	var inState *pbtypes.Proposal_State
 	if in.SelectInState != nil {
 		inState = &in.SelectInState.Value
@@ -2097,9 +2016,6 @@ func (t *tradingDataService) GetProposalByID(_ context.Context,
 ) (*protoapi.GetProposalByIDResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByID")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 	proposal, err := t.governanceService.GetProposalByID(in.ProposalId)
 	if errors.Is(err, governance.ErrProposalNotFound) {
 		return nil, apiError(codes.NotFound, ErrMissingProposalID, err)
@@ -2115,9 +2031,6 @@ func (t *tradingDataService) GetProposalByReference(_ context.Context,
 ) (*protoapi.GetProposalByReferenceResponse, error) {
 	defer metrics.StartAPIRequestAndTimeGRPC("GetProposalByReference")()
 
-	if err := in.Validate(); err != nil {
-		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 	proposal, err := t.governanceService.GetProposalByReference(in.Reference)
 	if errors.Is(err, governance.ErrProposalNotFound) {
 		return nil, apiError(codes.NotFound, ErrMissingProposalReference, err)
@@ -2167,10 +2080,6 @@ func (t *tradingDataService) ObservePartyProposals(
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObservePartyProposals")()
 
-	if err := in.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -2206,10 +2115,6 @@ func (t *tradingDataService) ObservePartyVotes(
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObservePartyVotes")()
 
-	if err := in.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
 	if t.log.GetLevel() == logging.DebugLevel {
@@ -2244,10 +2149,6 @@ func (t *tradingDataService) ObserveProposalVotes(
 	stream protoapi.TradingDataService_ObserveProposalVotesServer,
 ) error {
 	defer metrics.StartAPIRequestAndTimeGRPC("ObserveProposalVotes")()
-
-	if err := in.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
 
 	ctx, cfunc := context.WithCancel(stream.Context())
 	defer cfunc()
@@ -2293,10 +2194,6 @@ func (t *tradingDataService) ObserveEventBus(
 	if err != nil {
 		// client exited, nothing to do
 		return nil
-	}
-
-	if err := req.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
 	}
 
 	// now we will aggregate filter out of the initial request
