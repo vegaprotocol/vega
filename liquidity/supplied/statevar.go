@@ -68,15 +68,20 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 	// NB: to clip the range we're calculating for in case max is max uint or min is zero so that we're calculating for a small enough range
 	// we're confining the range to 0.25/4 times the current best bid/ask. This is primarily for testing, in reality the bounds could probably be much tighter.
 	if maxPrice.Representation().EQ(num.MaxUint()) {
-		mn, _ := num.UintFromDecimal(bestBid.ToDecimal().Mul(num.DecimalFromFloat(0.25)))
-		mx, _ := num.UintFromDecimal(bestAsk.ToDecimal().Mul(num.DecimalFromFloat(4)))
-		bidTo = mn
-		askTo = mx
+		bidTo, _ = num.UintFromDecimal(bestBid.ToDecimal().Mul(num.DecimalFromFloat(0.25)))
+		askTo, _ = num.UintFromDecimal(bestAsk.ToDecimal().Mul(num.DecimalFromFloat(4)))
+	}
+
+	if bidTo.GTE(bestBid) {
+		bidTo, _ = num.UintFromDecimal(bestBid.ToDecimal().Mul(num.DecimalFromFloat(0.25)))
+	}
+	if askTo.LTE(bestAsk) {
+		askTo, _ = num.UintFromDecimal(bestAsk.ToDecimal().Mul(num.DecimalFromFloat(4)))
 	}
 
 	// calculate offset and probabilities between the best bid/ask and the [bid|ask]To
-	bidOffsets, bidProbabilities := calculateBidRange(bestBid, bidTo, minPrice.Original(), bestBid.ToDecimal(), tauScaled, e.rm.ProbabilityOfTrading)
-	askOffsets, askProbabilities := calculateAskRange(bestAsk, askTo, bestAsk.ToDecimal(), maxPrice.Original(), tauScaled, e.rm.ProbabilityOfTrading)
+	bidOffsets, bidProbabilities := calculateBidRange(bestBid, bidTo, bidTo.ToDecimal(), bestBid.ToDecimal(), tauScaled, e.rm.ProbabilityOfTrading)
+	askOffsets, askProbabilities := calculateAskRange(bestAsk, askTo, bestAsk.ToDecimal(), askTo.ToDecimal(), tauScaled, e.rm.ProbabilityOfTrading)
 
 	res := &probabilityOfTrading{
 		bidOffset:      bidOffsets,
