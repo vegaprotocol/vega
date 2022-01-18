@@ -35,7 +35,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     Given the parties submit the following liquidity provision:
       | id          | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | -100   | submission |
+      | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | buy  | BID              | 500        | 100    | submission |
       | commitment1 | lp1   | ETH/DEC21 | 78000000          | 0.001 | sell | ASK              | 500        | 100    | amendment |
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -59,7 +59,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     # at this point what's left on the book is the buy @ 900 and sell @ 1100
     # so the best bid/ask coincides with the price monitoring bounds.
-    # Since the lp1 offset is +/- 100 the lp1 volume "should" go to 800 and 1200
+    # Since the lp1 offset is +/- 100 (depending on side) the lp1 volume "should" go to 800 and 1200
     # but because the price monitoring bounds are 900 and 1100 the volume gets pushed to these
     # i.e. it's placed at 900 / 1100.
     # As these are the best bid / best ask the probability of trading used is 1/2.
@@ -119,7 +119,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     And the parties submit the following liquidity provision:
       | id          | party | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | -100   | submission |
+      | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | buy  | BID              | 500        | 100    | submission |
       | commitment1 | lp1   | ETH2/MAR22 | 50000000          | 0.001 | sell | ASK              | 500        | 100    | amendment |
     And the parties place the following orders:
       | party  | market id  | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -149,7 +149,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     # at this point what's left on the book is the buy @ 900 and sell @ 1109
     # so the best bid/ask coincides with the price monitoring bounds.
-    # Since the lp1 offset is +/- 100 the lp1 volume "should" go to 800 and 1209
+    # Since the lp1 offset is +/- 100 (depending on side) the lp1 volume "should" go to 800 and 1209
     # but because the price monitoring bounds are 900 and 1109 the volume gets pushed to these
     # i.e. it's placed at 900 / 1109.
     # As these are the best bid / best ask the probability of trading used is 1/2.

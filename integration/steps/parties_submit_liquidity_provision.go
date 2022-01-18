@@ -164,8 +164,8 @@ func (r submitLiquidityProvisionRow) Fee() num.Decimal {
 	return r.row.MustDecimal("fee")
 }
 
-func (r submitLiquidityProvisionRow) Offset() int64 {
-	return r.row.MustI64("offset")
+func (r submitLiquidityProvisionRow) Offset() *num.Uint {
+	return r.row.MustUint("offset")
 }
 
 func (r submitLiquidityProvisionRow) LpType() string {

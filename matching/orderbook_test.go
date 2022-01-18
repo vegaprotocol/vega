@@ -3133,14 +3133,14 @@ func TestOrderBook_PeggedOrders(t *testing.T) {
 	bp1 := getOrder(t, book, market, "BuyPeg1", types.SideBuy, 100, "party01", 5)
 	bp1.PeggedOrder = &types.PeggedOrder{
 		Reference: types.PeggedReferenceMid,
-		Offset:    -3,
+		Offset:    num.NewUint(3),
 	}
 	book.ob.SubmitOrder(bp1)
 
 	sp1 := getOrder(t, book, market, "SellPeg1", types.SideSell, 100, "party01", 5)
 	sp1.PeggedOrder = &types.PeggedOrder{
 		Reference: types.PeggedReferenceMid,
-		Offset:    +3,
+		Offset:    num.NewUint(3),
 	}
 	book.ob.SubmitOrder(sp1)
 

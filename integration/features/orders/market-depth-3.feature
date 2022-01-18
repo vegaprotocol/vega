@@ -24,16 +24,16 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
 # setup pegged orders
     Then the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
-      | pegged1 | ETH/DEC19 | sell | 5      | ASK              | 10     |
-      | pegged2 | ETH/DEC19 | sell | 5      | MID              | 15     |
-      | pegged3 | ETH/DEC19 | buy  | 5      | BID              | -10    |
-      | pegged4 | ETH/DEC19 | buy  | 5      | MID              | -10    |
+      | pegged1 | ETH/DEC19 | sell | 5      | ASK              | 10    |
+      | pegged2 | ETH/DEC19 | sell | 5      | MID              | 15    |
+      | pegged3 | ETH/DEC19 | buy  | 5      | BID              | 10    |
+      | pegged4 | ETH/DEC19 | buy  | 5      | MID              | 10    |
     Then the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 5      | ASK       | 10     | 0     | STATUS_PARKED |
       | pegged2 | ETH/DEC19 | sell | 5      | MID       | 15     | 0     | STATUS_PARKED |
-      | pegged3 | ETH/DEC19 | buy  | 5      | BID       | -10    | 0     | STATUS_PARKED |
-      | pegged4 | ETH/DEC19 | buy  | 5      | MID       | -10    | 0     | STATUS_PARKED |
+      | pegged3 | ETH/DEC19 | buy  | 5      | BID       | 10     | 0     | STATUS_PARKED |
+      | pegged4 | ETH/DEC19 | buy  | 5      | MID       | 10     | 0     | STATUS_PARKED |
     When the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
       | sellSideProvider | ETH/DEC19 | sell | 1000   | 120   | 0                | TYPE_LIMIT | TIF_GTC | sell-provider-1 |
@@ -49,9 +49,9 @@ Feature: Test market depth events for pegged orders (with BID and ASK price)
 # Now check what happened to our pegged orders
     Then the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status        |
-      | pegged1 | ETH/DEC19 | sell | 5      | ASK       | 10     | 130   | STATUS_ACTIVE |
-      | pegged1 | ETH/DEC19 | sell | 5      | ASK       | 10     | 130   | STATUS_ACTIVE |
-      | pegged1 | ETH/DEC19 | sell | 5      | ASK       | 10     | 130   | STATUS_ACTIVE |
-      | pegged2 | ETH/DEC19 | sell | 5      | MID       | 15     | 115   | STATUS_ACTIVE |
-      | pegged3 | ETH/DEC19 | buy  | 5      | BID       | -10    | 70    | STATUS_ACTIVE |
-      | pegged4 | ETH/DEC19 | buy  | 5      | MID       | -10    | 90    | STATUS_ACTIVE |
+      | pegged1 | ETH/DEC19 | sell | 5      | ASK       | 10    | 130   | STATUS_ACTIVE |
+      | pegged1 | ETH/DEC19 | sell | 5      | ASK       | 10    | 130   | STATUS_ACTIVE |
+      | pegged1 | ETH/DEC19 | sell | 5      | ASK       | 10    | 130   | STATUS_ACTIVE |
+      | pegged2 | ETH/DEC19 | sell | 5      | MID       | 15    | 115   | STATUS_ACTIVE |
+      | pegged3 | ETH/DEC19 | buy  | 5      | BID       | 10    | 70    | STATUS_ACTIVE |
+      | pegged4 | ETH/DEC19 | buy  | 5      | MID       | 10    | 90    | STATUS_ACTIVE |

@@ -104,14 +104,14 @@ func testSubmissionCRUD(t *testing.T) {
 	buyShape := []*types.LiquidityOrder{
 		{
 			Reference:  types.PeggedReferenceMid,
-			Offset:     -1,
+			Offset:     num.NewUint(1),
 			Proportion: 1,
 		},
 	}
 	sellShape := []*types.LiquidityOrder{
 		{
 			Reference:  types.PeggedReferenceMid,
-			Offset:     1,
+			Offset:     num.NewUint(1),
 			Proportion: 1,
 		},
 	}
@@ -187,11 +187,11 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	lpspb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: "2"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
 		},
 	}
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
@@ -206,12 +206,12 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	markPrice := num.NewUint(10)
 
 	// Now repriceFn works as expected, so initial orders should get created now
-	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
+	fn := func(order *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
 		retPrice := markPrice.Clone()
-		if order.Offset > 0 {
-			return retPrice.Add(retPrice, num.NewUint(uint64(order.Offset))), order, nil
+		if side == types.SideSell {
+			return retPrice.Add(retPrice, order.Offset), order, nil
 		}
-		return retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset))), order, nil
+		return retPrice.Sub(retPrice, order.Offset), order, nil
 	}
 
 	// Expectations
@@ -258,7 +258,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		Buys: []*proto.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -1,
+				Offset:     "1",
 				Proportion: 1,
 			},
 		},
@@ -279,7 +279,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 			{
 				LiquidityOrder: &types.LiquidityOrder{
 					Reference:  types.PeggedReferenceMid,
-					Offset:     -1,
+					Offset:     num.NewUint(1),
 					Proportion: 1,
 				},
 			},
@@ -299,7 +299,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 		Sells: []*proto.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -1,
+				Offset:     "1",
 				Proportion: 1,
 			},
 		},
@@ -320,7 +320,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 			{
 				LiquidityOrder: &types.LiquidityOrder{
 					Reference:  types.PeggedReferenceMid,
-					Offset:     -1,
+					Offset:     num.NewUint(1),
 					Proportion: 1,
 				},
 			},
@@ -376,11 +376,11 @@ func TestUpdate(t *testing.T) {
 	lpspb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: "2"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
 		},
 	}
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
@@ -392,12 +392,12 @@ func TestUpdate(t *testing.T) {
 
 	markPrice := num.NewUint(10)
 
-	fn := func(order *types.PeggedOrder, _ types.Side) (*num.Uint, *types.PeggedOrder, error) {
+	fn := func(order *types.PeggedOrder, side types.Side) (*num.Uint, *types.PeggedOrder, error) {
 		retPrice := markPrice.Clone()
-		if order.Offset > 0 {
-			retPrice.Add(retPrice, num.NewUint(uint64(order.Offset)))
+		if side == types.SideSell {
+			retPrice.Add(retPrice, order.Offset)
 		} else {
-			retPrice.Sub(retPrice, num.NewUint(uint64(-order.Offset)))
+			retPrice.Sub(retPrice, order.Offset)
 		}
 		return retPrice, order, nil
 	}
@@ -451,11 +451,11 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp1pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "100", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: -2},
+			{Reference: types.PeggedReferenceMid, Proportion: 20, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 10, Offset: "2"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
 		},
 	}
 	lp1, err := types.LiquidityProvisionSubmissionFromProto(lp1pb)
@@ -470,10 +470,10 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp2pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "500", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: -3},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "3"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 3},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "3"},
 		},
 	}
 	lp2, err := types.LiquidityProvisionSubmissionFromProto(lp2pb)
@@ -488,11 +488,11 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp3pb := &commandspb.LiquidityProvisionSubmission{
 		MarketId: tng.marketID, CommitmentAmount: "962", Fee: "0.5",
 		Buys: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: -5},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "5"},
 		},
 		Sells: []*proto.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 1},
-			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: 10},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "1"},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: "10"},
 		},
 	}
 	lp3, err := types.LiquidityProvisionSubmissionFromProto(lp3pb)
