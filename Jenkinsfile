@@ -43,7 +43,7 @@ pipeline {
         GO111MODULE = 'on'
         CGO_ENABLED  = '0'
         DOCKER_IMAGE_TAG_LOCAL = "j-${ env.JOB_BASE_NAME.replaceAll('[^A-Za-z0-9\\._]','-') }-${BUILD_NUMBER}-${EXECUTOR_NUMBER}"
-        DOCKER_IMAGE_NAME_LOCAL = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_LOCAL}"
+        DOCKER_IMAGE_NAME_LOCAL = "ghcr.io/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_LOCAL}"
     }
 
     stages {
@@ -144,7 +144,7 @@ pipeline {
                     mkdir -p docker/bin
                     cp -a "${LINUX_BINARY}" "docker/bin/data-node"
                 '''
-                withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
                     sh label: 'Build docker image', script: '''
                         docker build -t "${DOCKER_IMAGE_NAME_LOCAL}" docker/
                     '''
@@ -278,9 +278,9 @@ pipeline {
                     }
                     environment {
                         DOCKER_IMAGE_TAG_VERSIONED = "${ env.TAG_NAME ? env.TAG_NAME : env.BRANCH_NAME }"
-                        DOCKER_IMAGE_NAME_VERSIONED = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_VERSIONED}"
+                        DOCKER_IMAGE_NAME_VERSIONED = "ghcr.io/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_VERSIONED}"
                         DOCKER_IMAGE_TAG_ALIAS = "${ env.TAG_NAME ? 'latest' : 'edge' }"
-                        DOCKER_IMAGE_NAME_ALIAS = "docker.pkg.github.com/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_ALIAS}"
+                        DOCKER_IMAGE_NAME_ALIAS = "ghcr.io/vegaprotocol/data-node/data-node:${DOCKER_IMAGE_TAG_ALIAS}"
                     }
                     options { retry(3) }
                     steps {
@@ -289,7 +289,7 @@ pipeline {
                             docker image tag "${DOCKER_IMAGE_NAME_LOCAL}" "${DOCKER_IMAGE_NAME_ALIAS}"
                         '''
 
-                        withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://docker.pkg.github.com"]) {
+                        withDockerRegistry([credentialsId: 'github-vega-ci-bot-artifacts', url: "https://ghcr.io"]) {
                             sh label: 'Push docker images', script: '''
                                 docker push "${DOCKER_IMAGE_NAME_VERSIONED}"
                                 docker push "${DOCKER_IMAGE_NAME_ALIAS}"

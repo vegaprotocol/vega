@@ -192,7 +192,7 @@ type ComplexityRoot struct {
 	}
 
 	Epoch struct {
-		Delegations func(childComplexity int) int
+		Delegations func(childComplexity int, partyID *string, nodeID *string, skip *int, first *int, last *int) int
 		ID          func(childComplexity int) int
 		Timestamps  func(childComplexity int) int
 		Validators  func(childComplexity int) int
@@ -495,7 +495,7 @@ type ComplexityRoot struct {
 
 	Node struct {
 		AvatarUrl         func(childComplexity int) int
-		Delegations       func(childComplexity int, partyID *string) int
+		Delegations       func(childComplexity int, partyID *string, skip *int, first *int, last *int) int
 		EpochData         func(childComplexity int) int
 		EthereumAdddress  func(childComplexity int) int
 		Id                func(childComplexity int) int
@@ -582,7 +582,7 @@ type ComplexityRoot struct {
 
 	Party struct {
 		Accounts            func(childComplexity int, marketID *string, asset *string, typeArg *AccountType) int
-		Delegations         func(childComplexity int, nodeID *string) int
+		Delegations         func(childComplexity int, nodeID *string, skip *int, first *int, last *int) int
 		Deposits            func(childComplexity int) int
 		Id                  func(childComplexity int) int
 		LiquidityProvisions func(childComplexity int, market *string, reference *string) int
@@ -745,6 +745,7 @@ type ComplexityRoot struct {
 
 	RewardPerAssetDetail struct {
 		Asset       func(childComplexity int) int
+		AssetId     func(childComplexity int) int
 		Rewards     func(childComplexity int) int
 		TotalAmount func(childComplexity int) int
 	}
@@ -984,6 +985,8 @@ type DepositResolver interface {
 }
 type EpochResolver interface {
 	ID(ctx context.Context, obj *vega.Epoch) (string, error)
+
+	Delegations(ctx context.Context, obj *vega.Epoch, partyID *string, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 }
 type EpochTimestampsResolver interface {
 	Start(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
@@ -1110,7 +1113,7 @@ type NewMarketResolver interface {
 }
 type NodeResolver interface {
 	Status(ctx context.Context, obj *vega.Node) (NodeStatus, error)
-	Delegations(ctx context.Context, obj *vega.Node, partyID *string) ([]*vega.Delegation, error)
+	Delegations(ctx context.Context, obj *vega.Node, partyID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 }
 type NodeDataResolver interface {
 	TotalNodes(ctx context.Context, obj *vega.NodeData) (int, error)
@@ -1159,7 +1162,7 @@ type PartyResolver interface {
 	Withdrawals(ctx context.Context, obj *vega.Party) ([]*vega.Withdrawal, error)
 	Deposits(ctx context.Context, obj *vega.Party) ([]*vega.Deposit, error)
 	LiquidityProvisions(ctx context.Context, obj *vega.Party, market *string, reference *string) ([]*vega.LiquidityProvision, error)
-	Delegations(ctx context.Context, obj *vega.Party, nodeID *string) ([]*vega.Delegation, error)
+	Delegations(ctx context.Context, obj *vega.Party, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 	Stake(ctx context.Context, obj *vega.Party) (*v12.PartyStakeResponse, error)
 	Rewards(ctx context.Context, obj *vega.Party, asset *string, skip *int, first *int, last *int) ([]*vega.Reward, error)
 	RewardSummaries(ctx context.Context, obj *vega.Party, asset *string) ([]*vega.RewardSummary, error)
@@ -1170,7 +1173,6 @@ type PartyStakeResolver interface {
 }
 type PeggedOrderResolver interface {
 	Reference(ctx context.Context, obj *vega.PeggedOrder) (PeggedReference, error)
-	Offset(ctx context.Context, obj *vega.PeggedOrder) (string, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *vega.Position) (*vega.Market, error)
@@ -1245,6 +1247,7 @@ type RewardResolver interface {
 }
 type RewardPerAssetDetailResolver interface {
 	Asset(ctx context.Context, obj *vega.RewardSummary) (*vega.Asset, error)
+
 	Rewards(ctx context.Context, obj *vega.RewardSummary) ([]*vega.Reward, error)
 	TotalAmount(ctx context.Context, obj *vega.RewardSummary) (string, error)
 }
@@ -1733,7 +1736,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Epoch.Delegations(childComplexity), true
+		args, err := ec.field_Epoch_delegations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Epoch.Delegations(childComplexity, args["partyId"].(*string), args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Epoch.id":
 		if e.complexity.Epoch.ID == nil {
@@ -3070,7 +3078,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Node.Delegations(childComplexity, args["partyId"].(*string)), true
+		return e.complexity.Node.Delegations(childComplexity, args["partyId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Node.epochData":
 		if e.complexity.Node.EpochData == nil {
@@ -3500,7 +3508,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Party.Delegations(childComplexity, args["nodeId"].(*string)), true
+		return e.complexity.Party.Delegations(childComplexity, args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int)), true
 
 	case "Party.deposits":
 		if e.complexity.Party.Deposits == nil {
@@ -4391,6 +4399,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.RewardPerAssetDetail.Asset(childComplexity), true
+
+	case "RewardPerAssetDetail.assetId":
+		if e.complexity.RewardPerAssetDetail.AssetId == nil {
+			break
+		}
+
+		return e.complexity.RewardPerAssetDetail.AssetId(childComplexity), true
 
 	case "RewardPerAssetDetail.rewards":
 		if e.complexity.RewardPerAssetDetail.Rewards == nil {
@@ -5814,7 +5829,17 @@ type Epoch {
   "Validators that participated in this epoch"
   validators: [Node!]!
 
-  delegations: [Delegation!]!
+  delegations(
+    # Optional party id to filter on
+    partyId: String,
+    # Optional node id to filter on
+    nodeId: String,
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]!
 }
 
 type NodeData {
@@ -5901,7 +5926,13 @@ type Node {
   status: NodeStatus!
 
   # All delegation for a node by a given party if specified, or all delegations.
-  delegations(partyId: String): [Delegation!]
+  delegations(partyId: String,
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]
 
   score: String!
 
@@ -6691,7 +6722,15 @@ type Party {
   ): [LiquidityProvision!]
 
   # All delegations for a party to a given node if node is specified, or all delegations if not
-  delegations(nodeId: String): [Delegation!]
+  delegations (
+    "Optional node"
+    nodeId: String
+    "Pagination skip"
+    skip: Int
+    "Pagination first element"
+    first: Int
+    "Pagination last element"
+    last: Int): [Delegation!]
 
   "The staking information for this Party"
   stake: PartyStake!
@@ -7017,7 +7056,7 @@ enum WithdrawalStatus {
   "The withdrawal is open and being processed by the network"
   Open
   "The withdrawal have been cancelled by the network, either because it expired, or something went wrong with the foreign chain"
-  Cancelled
+  Rejected
   "The withdrawal was finalized, it was first valid, the foreign chain have executed it and the network updated all accounts"
   Finalized
 }
@@ -7298,12 +7337,6 @@ enum OrderRejectionReason {
 
   "Buy pegged order cannot reference best ask price"
   PeggedOrderBuyCannotReferenceBestAskPrice
-
-  "Pegged order offset must be <= 0"
-  PeggedOrderOffsetMustBeLessOrEqualToZero
-
-  "Pegged order offset must be < 0"
-  PeggedOrderOffsetMustBeLessThanZero
 
   "Pegged order offset must be >= 0"
   PeggedOrderOffsetMustBeGreaterOrEqualToZero
@@ -7914,9 +7947,9 @@ type RiskFactor {
   "market the risk factor was emitted for"
   market: String!
   "short factor"
-  short: Float!
+  short: String!
   "long factor"
-  long: Float!
+  long: String!
 }
 
 "A special order type for liquidity providers"
@@ -7926,7 +7959,7 @@ type LiquidityOrder {
   "The proportion of the commitment allocated to this order"
   proportion: Int!
   "Offset from the pegged reference"
-  offset: Int!
+  offset: String!
 }
 
 "Status of a liquidity provision order"
@@ -8019,6 +8052,8 @@ type RewardSummary {
 type RewardPerAssetDetail {
   "Asset in which the reward was paid"
   asset: Asset!
+  "Id of asset in which the reward was paid"
+  assetId: String! @deprecated(reason: "Use asset{id} instead")
   "A list of rewards received for this asset"
   rewards: [Reward]
   "The total amount of rewards received for this asset."
@@ -8031,6 +8066,57 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Epoch_delegations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["partyId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partyId"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partyId"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["nodeId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeId"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["nodeId"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg3
+	var arg4 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg4, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg4
+	return args, nil
+}
 
 func (ec *executionContext) field_Market_accounts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -8179,6 +8265,33 @@ func (ec *executionContext) field_Node_delegations_args(ctx context.Context, raw
 		}
 	}
 	args["partyId"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
 	return args, nil
 }
 
@@ -8227,6 +8340,33 @@ func (ec *executionContext) field_Party_delegations_args(ctx context.Context, ra
 		}
 	}
 	args["nodeId"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["skip"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("skip"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["skip"] = arg1
+	var arg2 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg2, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg2
+	var arg3 *int
+	if tmp, ok := rawArgs["last"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["last"] = arg3
 	return args, nil
 }
 
@@ -11268,14 +11408,21 @@ func (ec *executionContext) _Epoch_delegations(ctx context.Context, field graphq
 		Object:     "Epoch",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Epoch_delegations_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Delegations, nil
+		return ec.resolvers.Epoch().Delegations(rctx, obj, args["partyId"].(*string), args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13392,9 +13539,9 @@ func (ec *executionContext) _LiquidityOrder_offset(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityOrderReference_order(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityOrderReference) (ret graphql.Marshaler) {
@@ -17982,7 +18129,7 @@ func (ec *executionContext) _Node_delegations(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Node().Delegations(rctx, obj, args["partyId"].(*string))
+		return ec.resolvers.Node().Delegations(rctx, obj, args["partyId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20006,7 +20153,7 @@ func (ec *executionContext) _Party_delegations(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Party().Delegations(rctx, obj, args["nodeId"].(*string))
+		return ec.resolvers.Party().Delegations(rctx, obj, args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -20278,14 +20425,14 @@ func (ec *executionContext) _PeggedOrder_offset(ctx context.Context, field graph
 		Object:     "PeggedOrder",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PeggedOrder().Offset(rctx, obj)
+		return obj.Offset, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -23487,6 +23634,41 @@ func (ec *executionContext) _RewardPerAssetDetail_asset(ctx context.Context, fie
 	return ec.marshalNAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _RewardPerAssetDetail_assetId(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RewardPerAssetDetail",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AssetId, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _RewardPerAssetDetail_rewards(ctx context.Context, field graphql.CollectedField, obj *vega.RewardSummary) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23728,9 +23910,9 @@ func (ec *executionContext) _RiskFactor_short(ctx context.Context, field graphql
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RiskFactor_long(ctx context.Context, field graphql.CollectedField, obj *vega.RiskFactor) (ret graphql.Marshaler) {
@@ -23763,9 +23945,9 @@ func (ec *executionContext) _RiskFactor_long(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.(float64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNFloat2float64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ScalingFactors_searchLevel(ctx context.Context, field graphql.CollectedField, obj *vega.ScalingFactors) (ret graphql.Marshaler) {
@@ -30094,10 +30276,19 @@ func (ec *executionContext) _Epoch(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "delegations":
-			out.Values[i] = ec._Epoch_delegations(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Epoch_delegations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -33333,19 +33524,10 @@ func (ec *executionContext) _PeggedOrder(ctx context.Context, sel ast.SelectionS
 				return res
 			})
 		case "offset":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PeggedOrder_offset(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._PeggedOrder_offset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -34568,6 +34750,11 @@ func (ec *executionContext) _RewardPerAssetDetail(ctx context.Context, sel ast.S
 				}
 				return res
 			})
+		case "assetId":
+			out.Values[i] = ec._RewardPerAssetDetail_assetId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "rewards":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -36750,21 +36937,6 @@ func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
 	res := graphql.MarshalInt32(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
-	res, err := graphql.UnmarshalInt64(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

@@ -1155,9 +1155,16 @@ func (r *myPartyResolver) Votes(ctx context.Context, party *types.Party) ([]*Pro
 	return result, nil
 }
 
-func (r *myPartyResolver) Delegations(ctx context.Context, obj *types.Party, nodeID *string) ([]*types.Delegation, error) {
+func (r *myPartyResolver) Delegations(
+	ctx context.Context,
+	obj *types.Party,
+	nodeID *string,
+	skip, first, last *int,
+) ([]*types.Delegation, error) {
+
 	req := &protoapi.DelegationsRequest{
-		Party: obj.Id,
+		Party:      obj.Id,
+		Pagination: makePagination(skip, first, last),
 	}
 
 	if nodeID != nil {
@@ -1714,10 +1721,6 @@ type myPeggedOrderResolver VegaResolverRoot
 
 func (r *myPeggedOrderResolver) Reference(ctx context.Context, obj *types.PeggedOrder) (PeggedReference, error) {
 	return convertPeggedReferenceFromProto(obj.Reference)
-}
-
-func (r *myPeggedOrderResolver) Offset(ctx context.Context, obj *types.PeggedOrder) (string, error) {
-	return strconv.FormatInt(obj.Offset, 10), nil
 }
 
 // END: PeggedOrder Resolver

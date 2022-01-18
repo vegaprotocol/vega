@@ -117,7 +117,7 @@ spellcheck: ## Run markdown spellcheck container
 	@docker run --rm -ti \
 		--entrypoint mdspell \
 		-v "$(PWD):/src" \
-		docker.pkg.github.com/vegaprotocol/devops-infra/markdownspellcheck:latest \
+		ghcr.io/vegaprotocol/devops-infra/markdownspellcheck:latest \
 			--en-gb \
 			--ignore-acronyms \
 			--ignore-numbers \
