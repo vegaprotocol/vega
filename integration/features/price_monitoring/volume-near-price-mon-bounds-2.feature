@@ -37,7 +37,7 @@ Feature: Test margin for lp near price monitoring boundaries
 
     Given the parties submit the following liquidity provision:
       | id          | party   | market id  | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | commitment1 | lp1     | ETH2/MAR22 | 3000000           | 0.001 | buy  | BID              | 500        | -100   | submission |
+      | commitment1 | lp1     | ETH2/MAR22 | 3000000           | 0.001 | buy  | BID              | 500        |  100   | submission |
       | commitment1 | lp1     | ETH2/MAR22 | 3000000           | 0.001 | sell | ASK              | 500        |  100   | amendment |
   
     And the parties place the following orders:

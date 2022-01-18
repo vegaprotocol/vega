@@ -785,6 +785,7 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 	if len(sh) > int(maxSize) {
 		return fmt.Errorf("%v shape size exceed max (%v)", side, maxSize)
 	}
+
 	for _, lo := range sh {
 		if lo.Reference == types.PeggedReferenceUnspecified {
 			// We must specify a valid reference
@@ -799,24 +800,18 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 			case types.PeggedReferenceBestAsk:
 				return errors.New("order in buy side shape with best ask price reference")
 			case types.PeggedReferenceBestBid:
-				if lo.Offset > 0 {
-					return errors.New("order in buy side shape offset must be <= 0")
-				}
 			case types.PeggedReferenceMid:
-				if lo.Offset >= 0 {
-					return errors.New("order in buy side shape offset must be < 0")
+				if lo.Offset.IsZero() {
+					return errors.New("order in buy side shape offset must be > 0")
 				}
 			}
 		} else {
 			switch lo.Reference {
 			case types.PeggedReferenceBestAsk:
-				if lo.Offset < 0 {
-					return errors.New("order in sell shape offset must be >= 0")
-				}
 			case types.PeggedReferenceBestBid:
 				return errors.New("order in buy side shape with best ask price reference")
 			case types.PeggedReferenceMid:
-				if lo.Offset <= 0 {
+				if lo.Offset.IsZero() {
 					return errors.New("order in sell shape offset must be > 0")
 				}
 			}

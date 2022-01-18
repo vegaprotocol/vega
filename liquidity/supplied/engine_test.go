@@ -211,7 +211,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	}
 
 	validBuy2 := &supplied.LiquidityOrder{
-		Price:      num.NewUint(0).Add(minPrice.Representation(), num.NewUint(1)),
+		Price:      num.Sum(minPrice.Representation(), num.NewUint(1)),
 		Proportion: 30,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
@@ -219,7 +219,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 		validBuy2,
 	}
 	validSell1 := &supplied.LiquidityOrder{
-		Price:      num.NewUint(0).Sub(maxPrice.Representation(), num.NewUint(1)),
+		Price:      num.Zero().Sub(maxPrice.Representation(), num.NewUint(1)),
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
@@ -340,7 +340,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		Proportion: 20,
 	}
 	validBuy2 := &supplied.LiquidityOrder{
-		Price:      num.NewUint(0).Add(minPrice.Representation(), num.NewUint(1)),
+		Price:      num.Sum(minPrice.Representation(), num.NewUint(1)),
 		Proportion: 30,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
@@ -348,7 +348,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 		validBuy2,
 	}
 	validSell1 := &supplied.LiquidityOrder{
-		Price:      num.NewUint(0).Sub(maxPrice.Representation(), num.NewUint(1)),
+		Price:      num.Zero().Sub(maxPrice.Representation(), num.NewUint(1)),
 		Proportion: 11,
 	}
 	validSell2 := &supplied.LiquidityOrder{
@@ -566,14 +566,14 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	limitOrders := []*types.Order{}
 
 	invalidBuy := &supplied.LiquidityOrder{
-		Price:      num.NewUint(0).Sub(minPrice.Representation(), num.NewUint(1)),
+		Price:      num.Zero().Sub(minPrice.Representation(), num.NewUint(1)),
 		Proportion: 10,
 	}
 	buyShapes := []*supplied.LiquidityOrder{
 		invalidBuy,
 	}
 	invalidSell := &supplied.LiquidityOrder{
-		Price:      num.NewUint(0).Add(maxPrice.Representation(), num.NewUint(1)),
+		Price:      num.Sum(maxPrice.Representation(), num.NewUint(1)),
 		Proportion: 33,
 	}
 	sellShapes := []*supplied.LiquidityOrder{

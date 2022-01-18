@@ -42,7 +42,7 @@ Feature: Test LP orders
     When the network moves ahead "301" blocks
     Then the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | -10    | submission |
+      | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | buy  | BID              | 500        | 10     | submission |
       | lp1 | party1 | ETH/DEC19 | 50000             | 0.1 | sell | ASK              | 500        | 10     | amendment |
     Then the liquidity provisions should have the following states:
       | id  | party   | market    | commitment amount | status        |

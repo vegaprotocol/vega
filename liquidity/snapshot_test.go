@@ -44,14 +44,14 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -1,
+				Offset:     num.NewUint(1),
 				Proportion: 1,
 			},
 		},
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     1,
+				Offset:     num.NewUint(1),
 				Proportion: 1,
 			},
 		},
@@ -63,14 +63,14 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -10,
+				Offset:     num.NewUint(10),
 				Proportion: 42,
 			},
 		},
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     42,
+				Offset:     num.NewUint(42),
 				Proportion: 58,
 			},
 		},
@@ -105,7 +105,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		kToS[key] = s
 
 		// compare hashes to the expected ones
-		assert.Equal(t, hex.EncodeToString(h), expectedHashes[key])
+		assert.Equalf(t, expectedHashes[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 	}
 
 	// now we reload the keys / state
@@ -141,14 +141,14 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		Buys: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     -10,
+				Offset:     num.NewUint(10),
 				Proportion: 42,
 			},
 		},
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceMid,
-				Offset:     42,
+				Offset:     num.NewUint(42),
 				Proportion: 58,
 			},
 		},
@@ -196,7 +196,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		assert.NoError(t, err)
 
 		// compare hashes to the expected ones
-		assert.Equal(t, hex.EncodeToString(h), expectedHashes2[key], key)
+		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 
 		pl := snapshotpb.Payload{}
 		assert.NoError(t, proto.Unmarshal(s, &pl))
@@ -208,6 +208,6 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		h, err := e3.engine.GetHash(key)
 		assert.NoError(t, err)
 		// compare hashes to the expected ones
-		assert.Equal(t, hex.EncodeToString(h), expectedHashes2[key], key)
+		assert.Equalf(t, expectedHashes2[key], hex.EncodeToString(h), "hashes for key %q does not match", key)
 	}
 }
