@@ -46,6 +46,7 @@ func TestAskRange(t *testing.T) {
 		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob2[i].String())
 	}
 }
+
 func pOfT(best, p *num.Uint, min, max, tauScaled num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
 	return num.DecimalFromFloat(1).Sub(best.ToDecimal().Sub(p.ToDecimal()).Abs().Div(max.Sub(min)))
 }

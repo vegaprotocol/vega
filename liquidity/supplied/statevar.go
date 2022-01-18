@@ -173,7 +173,7 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 }
 
 // getProbabilityOfTrading returns the probability of trading for the given price
-// if the price is beween the best bid and ask it returns <defaultInRangeProbabilityOfTrading>
+// if the price is between the best bid and ask it returns <defaultInRangeProbabilityOfTrading>
 // otherwise if we've not seen a consensus value and the price is within 100 ticks from the best (by side)
 // it returns <defaultProbability> else if there is not yet consensus value it returns <minProbabilityOfTrading>.
 // If there is consensus value and the price is worse than the best price for the relevant side worsened by the maximal
