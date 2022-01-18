@@ -148,7 +148,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
 			// if e.log.GetLevel() <= logging.DebugLevel {
-			e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()))
+			e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 			// }
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
@@ -158,7 +158,7 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
 			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
 			// if e.log.GetLevel() <= logging.DebugLevel {
-			e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()))
+			e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 			// }
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
@@ -190,7 +190,7 @@ func (e *Engine) updateSizes(
 
 		prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskprice.ToDecimal(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
 		// if e.log.GetLevel() <= logging.DebugLevel {
-		e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()))
+		e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 		// }
 		if prob.IsZero() || prob.IsNegative() {
 			proportion = num.DecimalZero()
