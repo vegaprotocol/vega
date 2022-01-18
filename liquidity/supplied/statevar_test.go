@@ -1,6 +1,7 @@
 package supplied
 
 import (
+	"strconv"
 	"testing"
 
 	"code.vegaprotocol.io/vega/logging"
@@ -8,28 +9,45 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRange(t *testing.T) {
-	price, prob := calculateRange(num.NewUint(99), num.NewUint(99), num.NewUint(100), num.DecimalFromFloat(99), num.DecimalFromFloat(100), num.DecimalFromInt64(1), false, pOfT)
-	for _, p := range price {
-		println(p.String())
-	}
-	require.Equal(t, 2, len(price))
-	require.Equal(t, num.DecimalFromInt64(99), price[0])
-	require.Equal(t, num.DecimalFromInt64(100), price[1])
-	require.Equal(t, 2, len(prob))
-
-	price, prob = calculateRange(num.NewUint(100), num.NewUint(100), num.NewUint(300), num.DecimalFromFloat(100), num.DecimalFromFloat(300), num.DecimalFromInt64(1), false, pOfT)
-	for _, p := range price {
-		println(p.String())
-	}
-	require.Equal(t, 101, len(price))
-	require.Equal(t, num.DecimalFromInt64(100), price[0])
-	require.Equal(t, num.DecimalFromInt64(300), price[100])
+func TestBidRange(t *testing.T) {
+	offsets, prob := calculateBidRange(num.NewUint(100), num.NewUint(0), num.DecimalFromFloat(0), num.DecimalFromFloat(100), num.DecimalFromInt64(1), pOfT)
+	require.Equal(t, 101, len(offsets))
 	require.Equal(t, 101, len(prob))
+	for i, o := range offsets {
+		println(i, o.String(), prob[i].String())
+		require.Equal(t, strconv.Itoa(i), o.String())
+		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob[i].String())
+	}
+
+	offsets2, prob2 := calculateBidRange(num.NewUint(200), num.NewUint(0), num.DecimalFromFloat(0), num.DecimalFromFloat(200), num.DecimalFromInt64(1), pOfT)
+	require.Equal(t, 101, len(offsets2))
+	require.Equal(t, 101, len(prob2))
+	for i, o := range offsets2 {
+		require.Equal(t, strconv.Itoa(2*i), o.String())
+		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob2[i].String())
+		println(i, o.String(), prob2[i].String())
+	}
 }
 
+func TestAskRange(t *testing.T) {
+	offsets, prob := calculateAskRange(num.NewUint(100), num.NewUint(200), num.DecimalFromFloat(100), num.DecimalFromFloat(200), num.DecimalFromInt64(1), pOfT)
+	require.Equal(t, 101, len(offsets))
+	require.Equal(t, 101, len(prob))
+	for i, o := range offsets {
+		require.Equal(t, strconv.Itoa(i), o.String())
+		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob[i].String())
+	}
+
+	offsets2, prob2 := calculateAskRange(num.NewUint(100), num.NewUint(300), num.DecimalFromFloat(100), num.DecimalFromFloat(300), num.DecimalFromInt64(1), pOfT)
+	require.Equal(t, 101, len(offsets2))
+	require.Equal(t, 101, len(prob2))
+	for i, o := range offsets2 {
+		require.Equal(t, strconv.Itoa(2*i), o.String())
+		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob2[i].String())
+	}
+}
 func pOfT(best, p *num.Uint, min, max, tauScaled num.Decimal, isBid bool, applyMinMax bool) num.Decimal {
-	return num.DecimalFromFloat(0.005)
+	return num.DecimalFromFloat(1).Sub(best.ToDecimal().Sub(p.ToDecimal()).Abs().Div(max.Sub(min)))
 }
 
 func TestGetProbability(t *testing.T) {
@@ -53,57 +71,53 @@ func TestGetProbability(t *testing.T) {
 	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(220), false, minProb, log))
 	require.Equal(t, defaultInRangeProbabilityOfTrading, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), &probabilityOfTrading{}, num.DecimalFromInt64(219), false, minProb, log))
 
-	bidPrices := make([]num.Decimal, 0, 51)
-	askPrices := make([]num.Decimal, 0, 51)
-	bidProb := make([]num.Decimal, 0, 51)
-	askProb := make([]num.Decimal, 0, 51)
-
-	// make the price points skip by 4 so we can test linear interpolation meaninfully
-	for i := uint64(0); i < 101; i += 4 {
-		bidPrices = append(bidPrices, num.Sum(num.NewUint(20), num.NewUint(i)).ToDecimal())
-		bidProb = append(bidProb, num.DecimalFromFloat(0.01).Mul(num.DecimalFromInt64(int64(i+1))))
-		askPrices = append(askPrices, num.Sum(num.NewUint(220), num.NewUint(i)).ToDecimal())
-		askProb = append(askProb, num.DecimalFromInt64(1).Sub(num.DecimalFromFloat(0.01).Mul(num.DecimalFromInt64(int64(i)))))
-	}
+	bOffsets, bProb := calculateBidRange(num.NewUint(400), num.NewUint(0), num.DecimalFromFloat(0), num.DecimalFromFloat(400), num.DecimalFromInt64(1), pOfT)
+	aOffsets, aProb := calculateAskRange(num.NewUint(600), num.NewUint(1000), num.DecimalFromFloat(600), num.DecimalFromFloat(1000), num.DecimalFromInt64(1), pOfT)
 
 	pot := &probabilityOfTrading{
-		bidPrice:       bidPrices,
-		bidProbability: bidProb,
-		askPrice:       askPrices,
-		askProbability: askProb,
+		bidOffset:      bOffsets,
+		bidProbability: bProb,
+		askOffset:      aOffsets,
+		askProbability: aProb,
 	}
 
-	// find exact match - bid of 20 has probability of 0.01 scaled by 0.5 => 0.005 but minProb > 0.005 => minProb
-	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(20), true, minProb, log))
+	// find exact match bid side - offset of 200 is the middle point of the probabilities so should have probability of 0.5 scaled by 0.5
+	require.Equal(t, "0.25", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(200), true, minProb, log).String())
+	// linterp bid => (0.75*0.5+0.25*0.51)/2
+	require.Equal(t, "0.25125", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(201), true, minProb, log).String())
+	// linterp bid => (0.5*0.5+0.5*0.51)/2
+	require.Equal(t, "0.2525", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(202), true, minProb, log).String())
+	// linterp bid => (0.25*0.5+0.75*0.51)/2
+	require.Equal(t, "0.25375", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(203), true, minProb, log).String())
+	// linterp bid => (0*0.5+1*0.51)/2
+	require.Equal(t, "0.255", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(204), true, minProb, log).String())
 
-	// find exact match - bid of 20 has probability of 0.05 scaled by 0.5 => 0.025
-	require.Equal(t, "0.025", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(24), true, minProb, log).String())
+	// linterp bid => max(0, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(100), true, minProb, log).String())
+	// linterp bid => max(0.75*0 + 0.5*0.01, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(101), true, minProb, log).String())
+	// linterp bid => max(0.5*0 + 0.5*0.01, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(102), true, minProb, log).String())
+	// linterp bid => max(0.25*0 + 0.5*0.01, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(103), true, minProb, log).String())
 
-	// find exact match - bid of 116 has probability of 0.97 scaled by 0.5 => 0.485
-	require.Equal(t, "0.485", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(116), true, minProb, log).String())
+	// find exact match bid side - offset of 200 is the middle point of the probabilities so should have probability of 0.5 scaled by 0.5
+	require.Equal(t, "0.25", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(800), false, minProb, log).String())
+	// linterp ask => (0.75*0.5+0.25*0.51)/2
+	require.Equal(t, "0.25125", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(799), false, minProb, log).String())
+	// linterp ask => (0.5*0.5+0.5*0.51)/2
+	require.Equal(t, "0.2525", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(798), false, minProb, log).String())
+	// linterp ask => (0.25*0.5+0.75*0.51)/2
+	require.Equal(t, "0.25375", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(797), false, minProb, log).String())
+	// linterp ask => (0*0.5+1*0.51)/2
+	require.Equal(t, "0.255", getProbabilityOfTrading(num.DecimalFromFloat(400), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(796), false, minProb, log).String())
 
-	// find exact match - ask of 316 has probability of 0.04 scaled by 0.5 => 0.02 but minProb > 0.02 => minProb
-	require.Equal(t, minProb, getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(316), false, minProb, log))
-
-	// find exact match - ask of 280 has probability of 0.4 scaled by 0.5 => 0.2
-	require.Equal(t, "0.2", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(280), false, minProb, log).String())
-
-	// find exact match - ask of 224 has probability of 0.96 scaled by 0.5 => 0.48
-	require.Equal(t, "0.48", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(224), false, minProb, log).String())
-
-	// bid linear interpolation
-	// 0.75*0.09 + 0.25*0.13 = 0.1 => scaled by 0.5 = 0.05 > minProb => 0.05
-	require.Equal(t, "0.05", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(29), true, minProb, log).String())
-	// 0.5*0.09 + 0.5*0.13 = 0.11 => scaled by 0.5 => 0.055
-	require.Equal(t, "0.055", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(30), true, minProb, log).String())
-	// 0.25*0.09 + 0.75*0.13 = 0.12 => scaled by 0.5 => 0.06
-	require.Equal(t, "0.06", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(31), true, minProb, log).String())
-
-	// ask linear interpolation
-	// 0.75*0.8 + 0.25*0.76 = 0.79 => scaled by 0.5 = 0.395 > minProb => 0.395
-	require.Equal(t, "0.395", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(241), false, minProb, log).String())
-	// 0.5*0.8 + 0.5*0.76 = 0.78 => scaled by 0.5 => 0.39
-	require.Equal(t, "0.39", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(242), false, minProb, log).String())
-	// 0.25*0.8 + 0.75*0.76 = 0.77 => scaled by 0.5 => 0.385
-	require.Equal(t, "0.385", getProbabilityOfTrading(num.DecimalFromFloat(120), num.DecimalFromFloat(220), pot, num.DecimalFromInt64(243), false, minProb, log).String())
+	// linterp ask => max(0, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(1000), false, minProb, log).String())
+	// linterp ask => max(0.75*0 + 0.5*0.01, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(999), false, minProb, log).String())
+	// linterp ask => max(0.5*0 + 0.5*0.01, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(998), false, minProb, log).String())
+	// linterp ask => max(0.25*0 + 0.5*0.01, minProb) = 0.021
+	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), pot, num.DecimalFromInt64(997), false, minProb, log).String())
 }

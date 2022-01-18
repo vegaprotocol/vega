@@ -14,13 +14,13 @@ func (e *Engine) ResetUpdated() {
 }
 
 func (e *Engine) Payload() *snapshotpb.Payload {
-	bidCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.bidPrice))
-	for i := 0; i < len(e.pot.bidPrice); i++ {
-		bidCache = append(bidCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.bidPrice[i].String(), Probability: e.pot.bidProbability[i].String()})
+	bidCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.bidOffset))
+	for i := 0; i < len(e.pot.bidOffset); i++ {
+		bidCache = append(bidCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.bidOffset[i].String(), Probability: e.pot.bidProbability[i].String()})
 	}
-	askCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.askPrice))
-	for i := 0; i < len(e.pot.askPrice); i++ {
-		askCache = append(askCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.askPrice[i].String(), Probability: e.pot.askProbability[i].String()})
+	askCache := make([]*snapshotpb.LiquidityPriceProbabilityPair, 0, len(e.pot.askOffset))
+	for i := 0; i < len(e.pot.askOffset); i++ {
+		askCache = append(askCache, &snapshotpb.LiquidityPriceProbabilityPair{Price: e.pot.askOffset[i].String(), Probability: e.pot.askProbability[i].String()})
 	}
 
 	return &snapshotpb.Payload{
@@ -36,23 +36,23 @@ func (e *Engine) Payload() *snapshotpb.Payload {
 }
 
 func (e *Engine) Reload(ls *snapshotpb.LiquiditySupplied) error {
-	bidPrices := make([]num.Decimal, 0, len(ls.BidCache))
+	bidOffsets := make([]num.Decimal, 0, len(ls.BidCache))
 	bidProbs := make([]num.Decimal, 0, len(ls.BidCache))
 	for _, bid := range ls.BidCache {
-		bidPrices = append(bidPrices, num.MustDecimalFromString(bid.Price))
+		bidOffsets = append(bidOffsets, num.MustDecimalFromString(bid.Price))
 		bidProbs = append(bidProbs, num.MustDecimalFromString(bid.Probability))
 	}
-	askPrices := make([]num.Decimal, 0, len(ls.AskCache))
+	askOffsets := make([]num.Decimal, 0, len(ls.AskCache))
 	askProbs := make([]num.Decimal, 0, len(ls.AskCache))
 	for _, ask := range ls.AskCache {
-		askPrices = append(askPrices, num.MustDecimalFromString(ask.Price))
+		askOffsets = append(askOffsets, num.MustDecimalFromString(ask.Price))
 		askProbs = append(askProbs, num.MustDecimalFromString(ask.Probability))
 	}
 
 	e.pot = &probabilityOfTrading{
-		bidPrice:       bidPrices,
+		bidOffset:      bidOffsets,
 		bidProbability: bidProbs,
-		askPrice:       askPrices,
+		askOffset:      askOffsets,
 		askProbability: askProbs,
 	}
 	e.potInitialised = ls.ConsensusReached
