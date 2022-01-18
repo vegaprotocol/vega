@@ -34,7 +34,7 @@ func TestOrderDeepClone(t *testing.T) {
 		BatchID:     8000,
 		PeggedOrder: &types.PeggedOrder{
 			Reference: proto.PeggedReference_PEGGED_REFERENCE_MID,
-			Offset:    9000,
+			Offset:    num.NewUint(9000),
 		},
 		LiquidityProvisionID: "LiqProvId",
 	}
@@ -61,7 +61,7 @@ func TestOrderDeepClone(t *testing.T) {
 	o.Version = 999
 	o.BatchID = 999
 	o.PeggedOrder.Reference = proto.PeggedReference_PEGGED_REFERENCE_UNSPECIFIED
-	o.PeggedOrder.Offset = 999
+	o.PeggedOrder.Offset = num.NewUint(999)
 	o.LiquidityProvisionID = "Changed"
 
 	// Check things have changed

@@ -21,7 +21,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 # submit our LP
     Then the parties submit the following liquidity provision:
       | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
-      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | -10    | submission |
+      | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
       | lp1 | partylp | ETH/DEC19 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment |
 
 # get out of auction
@@ -68,7 +68,7 @@ Feature: Leave a monitoring auction, enter a liquidity auction
 
     Then the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
-      | party3 | ETH/DEC19 | buy  | 3      | BID              | -900   |
+      | party3 | ETH/DEC19 | buy  | 3      | BID              | 900   |
 
     Then the market state should be "STATE_SUSPENDED" for the market "ETH/DEC19"
     And the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC19"

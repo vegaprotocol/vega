@@ -18,7 +18,7 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 		LiquidityOrder: &types.LiquidityOrder{
 			Reference:  types.PeggedReferenceMid,
 			Proportion: 10,
-			Offset:     -5,
+			Offset:     num.NewUint(5),
 		},
 	}
 
@@ -27,7 +27,7 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 		LiquidityOrder: &types.LiquidityOrder{
 			Reference:  types.PeggedReferenceMid,
 			Proportion: 20,
-			Offset:     5,
+			Offset:     num.NewUint(5),
 		},
 	}
 
@@ -62,11 +62,11 @@ func TestLiquidityProvisionDeepClone(t *testing.T) {
 	lp.Status = types.LiquidityProvisionUnspecified
 	lp.Reference = "Changed"
 	sellOrder.OrderID = "Changed"
-	sellOrder.LiquidityOrder.Offset = -999
+	sellOrder.LiquidityOrder.Offset = num.NewUint(999)
 	sellOrder.LiquidityOrder.Proportion = 999
 	sellOrder.LiquidityOrder.Reference = types.PeggedReferenceBestAsk
 	buyOrder.OrderID = "Changed"
-	buyOrder.LiquidityOrder.Offset = 999
+	buyOrder.LiquidityOrder.Offset = num.NewUint(999)
 	buyOrder.LiquidityOrder.Proportion = 999
 	buyOrder.LiquidityOrder.Reference = types.PeggedReferenceBestBid
 

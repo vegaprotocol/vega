@@ -354,13 +354,13 @@ func TestEvents_CloseOutPartyWithPeggedOrder(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 1, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
 
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order07", types.SideBuy, "party-A", 1, 0)
-	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -110}
+	o7.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)
@@ -406,7 +406,7 @@ func TestEvents_PeggedOrderNotAbleToRepriceDueToMargin(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 50, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -468,7 +468,7 @@ func TestEvents_EnteringAuctionParksAllPegs(t *testing.T) {
 	require.NoError(t, err)
 
 	o4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order04", types.SideBuy, "party-B", 1, 0)
-	o4.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o4.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -630,7 +630,7 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 	require.NoError(t, err)
 
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideBuy, "party-A", 1, 0)
-	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -698,7 +698,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 	require.NoError(t, err)
 
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideBuy, "party-A", 1, 0)
-	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -887,7 +887,7 @@ func TestEvents_CloseOutPartyWithNotEnoughLiquidity(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 1, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -932,10 +932,10 @@ func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
 	require.NoError(t, err)
 
 	buys := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestBid, Offset: -1, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestBid, 1, 50),
 	}
 	sells := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestAsk, Offset: 1, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50),
 	}
 
 	lps := &types.LiquidityProvisionSubmission{
@@ -1014,13 +1014,13 @@ func TestEvents_PeggedOrders(t *testing.T) {
 
 	// Place the pegged order
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "party-A", 1, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
 
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order07", types.SideBuy, "party-A", 1, 0)
-	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -99}
+	o7.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 99)
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)

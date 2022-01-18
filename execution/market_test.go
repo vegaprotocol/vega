@@ -2284,10 +2284,10 @@ func TestHandleLPCommitmentChange(t *testing.T) {
 		CommitmentAmount: num.NewUint(2000),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -2384,10 +2384,10 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -2399,10 +2399,10 @@ func TestSuppliedStakeReturnedAndCorrect(t *testing.T) {
 		CommitmentAmount: num.NewUint(100),
 		Fee:              num.DecimalFromFloat(0.06),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -2440,10 +2440,10 @@ func TestSubmitLiquidityProvisionWithNoOrdersOnBook(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -2497,10 +2497,10 @@ func TestSubmitLiquidityProvisionInOpeningAuction(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -2613,10 +2613,10 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 		CommitmentAmount: num.NewUint(2000),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -2707,7 +2707,7 @@ func TestLimitOrderChangesAffectLiquidityOrders(t *testing.T) {
 	lpOrderVolumeBidPrev = lpOrderVolumeBid
 	// Submit another limit order that fills partially on submission
 	// Modify LP order so it's not on the best offer
-	lp1.Sells[0].Offset = +1
+	lp1.Sells[0].Offset.AddSum(num.NewUint(1))
 	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
 	require.NoError(t, err)
 
@@ -2801,6 +2801,13 @@ func getMarketOrder(tm *testMarket,
 	return order
 }
 
+func newPeggedOrder(reference types.PeggedReference, offset uint64) *types.PeggedOrder {
+	return &types.PeggedOrder{
+		Reference: reference,
+		Offset:    num.NewUint(offset),
+	}
+}
+
 func TestOrderBook_Crash2651(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
@@ -2849,7 +2856,7 @@ func TestOrderBook_Crash2651(t *testing.T) {
 	require.NoError(t, err)
 
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order07", types.SideSell, "f9e7", 20, 0)
-	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 1000}
+	o7.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 1000)
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
 	require.NoError(t, err)
@@ -2865,13 +2872,13 @@ func TestOrderBook_Crash2651(t *testing.T) {
 	require.NoError(t, err)
 
 	o10 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order10", types.SideBuy, "f9e7", 12, 0)
-	o10.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -1000}
+	o10.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 1000)
 	o10conf, err := tm.market.SubmitOrder(ctx, o10)
 	require.NotNil(t, o10conf)
 	require.NoError(t, err)
 
 	o11 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order11", types.SideBuy, "613f", 21, 0)
-	o11.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -2000}
+	o11.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 2000)
 	o11conf, err := tm.market.SubmitOrder(ctx, o11)
 	require.NotNil(t, o11conf)
 	require.NoError(t, err)
@@ -2976,7 +2983,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o5 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order05", types.SideBuy, "C", 35, 0)
-	o5.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -500}
+	o5.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 500)
 	o5conf, err := tm.market.SubmitOrder(ctx, o5)
 	require.NotNil(t, o5conf)
 	require.NoError(t, err)
@@ -2984,7 +2991,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o6 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order06", types.SideBuy, "D", 16, 0)
-	o6.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -2000}
+	o6.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 2000)
 	o6conf, err := tm.market.SubmitOrder(ctx, o6)
 	require.NotNil(t, o6conf)
 	require.NoError(t, err)
@@ -2992,7 +2999,7 @@ func TestOrderBook_Crash2599(t *testing.T) {
 	tm.market.OnChainTimeUpdate(context.Background(), now)
 
 	o7 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order07", types.SideSell, "E", 19, 0)
-	o7.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: +3000}
+	o7.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 3000)
 	o7.ExpiresAt = now.Add(time.Second * 60).UnixNano()
 	o7conf, err := tm.market.SubmitOrder(ctx, o7)
 	require.NotNil(t, o7conf)
@@ -3278,7 +3285,7 @@ func TestOrderBook_Crash2718(t *testing.T) {
 
 	// Now the pegged order which will be live
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideBuy, "bbb", 1, 0)
-	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
+	o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
@@ -3325,7 +3332,7 @@ func TestOrderBook_AmendPriceInParkedOrder(t *testing.T) {
 
 	// Create a parked pegged order
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "aaa", 1, 0)
-	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -10}
+	o1.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 	require.NotNil(t, o1conf)
@@ -3365,7 +3372,7 @@ func TestOrderBook_ExpiredOrderTriggersReprice(t *testing.T) {
 
 	// Create a pegged order that references it's price
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideBuy, "aaa", 1, 0)
-	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -2}
+	o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 2)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
@@ -3461,7 +3468,7 @@ func TestOrderBook_CrashWithDistressedPartyPeggedOrderNotRemovedFromPeggedList27
 	require.NoError(t, err)
 
 	o4 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order04", types.SideSell, "party-D", 3, 0)
-	o4.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: +1}
+	o4.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 1)
 	o4conf, err := tm.market.SubmitOrder(ctx, o4)
 	require.NotNil(t, o4conf)
 	require.NoError(t, err)
@@ -3497,19 +3504,19 @@ func TestOrderBook_Crash2733(t *testing.T) {
 
 	for i := 1; i <= 10; i += 1 {
 		o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, fmt.Sprintf("Order1%v", i), types.SideBuy, "party-A", uint64(i), 0)
-		o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -int64(i * 15)}
+		o1.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, uint64(i*15))
 		o1conf, err := tm.market.SubmitOrder(ctx, o1)
 		require.NotNil(t, o1conf)
 		require.NoError(t, err)
 
 		o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, fmt.Sprintf("Order2%v", i), types.SideSell, "party-A", uint64(i), 0)
-		o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: int64(i * 10)}
+		o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, uint64(i*10))
 		o2conf, err := tm.market.SubmitOrder(ctx, o2)
 		require.NotNil(t, o2conf)
 		require.NoError(t, err)
 
 		o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, fmt.Sprintf("Order3%v", i), types.SideBuy, "party-A", uint64(i), 0)
-		o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -int64(i * 5)}
+		o3.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, uint64(i*5))
 		o3conf, err := tm.market.SubmitOrder(ctx, o3)
 		require.NotNil(t, o3conf)
 		require.NoError(t, err)
@@ -3545,17 +3552,16 @@ func TestOrderBook_Bug2747(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-A", 100, 0)
-	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -15}
+	o1.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 15)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
 
-	offset := int64(20)
 	// Try to amend the price
 	amendment := &types.OrderAmendment{
 		OrderID:         o1.ID,
-		PeggedOffset:    &offset,
+		PeggedOffset:    num.NewUint(20),
 		PeggedReference: types.PeggedReferenceBestAsk,
 	}
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, "party-A")
@@ -3612,7 +3618,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder(t *testing.T) {
 
 	// Create a pegged order that references the BB price with an expiry time
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTT, "Order02", types.SideBuy, "aaa", 1, 0)
-	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -2}
+	o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 2)
 	o2.ExpiresAt = now.Add(5 * time.Second).UnixNano()
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
@@ -3692,7 +3698,7 @@ func TestOrderBook_AmendTIME_IN_FORCEForPeggedOrder2(t *testing.T) {
 
 	// Create a pegged order that references the BB price
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideBuy, "aaa", 1, 0)
-	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestBid, Offset: -2}
+	o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestBid, 2)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
@@ -3837,7 +3843,7 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 
 	// then place pegged order
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order03", types.SideBuy, "party-C", 100, 0)
-	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -15}
+	o3.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 15)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -3847,10 +3853,9 @@ func TestOrderBook_PeggedOrderReprice2748(t *testing.T) {
 
 	// then amend
 	// Amend the pegged order so that is has an expiry
-	offset := int64(-6500)
 	amendment := &types.OrderAmendment{
 		OrderID:      o3.ID,
-		PeggedOffset: &offset,
+		PeggedOffset: num.NewUint(6500),
 	}
 
 	amendConf, err := tm.market.AmendOrder(ctx, amendment, "party-C")
@@ -3932,7 +3937,7 @@ func TestOrderBook_CancelAll2771(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideSell, "party-A", 1, 0)
-	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 10}
+	o1.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	require.NotNil(t, o1conf)
 	require.NoError(t, err)
@@ -3940,7 +3945,7 @@ func TestOrderBook_CancelAll2771(t *testing.T) {
 	assert.Equal(t, o1conf.Order.Status, types.OrderStatusParked)
 
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideSell, "party-A", 1, 0)
-	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 10}
+	o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)
 	require.NoError(t, err)
@@ -3961,7 +3966,7 @@ func TestOrderBook_RejectAmendPriceOnPeggedOrder2658(t *testing.T) {
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-A", 5, 5000)
-	o1.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceMid, Offset: -10}
+	o1.PeggedOrder = newPeggedOrder(types.PeggedReferenceMid, 10)
 	o1conf, err := tm.market.SubmitOrder(ctx, o1)
 	assert.NotNil(t, o1conf)
 	assert.NoError(t, err)
@@ -3997,7 +4002,7 @@ func TestOrderBook_AmendToCancelForceReprice(t *testing.T) {
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideSell, "party-A", 1, 0)
-	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 10}
+	o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 10)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	assert.NotNil(t, o2conf)
 	assert.NoError(t, err)
@@ -4033,7 +4038,7 @@ func TestOrderBook_AmendExpPersistParkPeggedOrder(t *testing.T) {
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // enter auction
 
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideSell, "party-A", 105, 0)
-	o2.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 100}
+	o2.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 100)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	assert.NotNil(t, o2conf)
 	assert.NoError(t, err)
@@ -4109,7 +4114,7 @@ func TestOrderBook_ParkPeggedOrderWhenMovingToAuction(t *testing.T) {
 	require.NoError(t, err)
 
 	o3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "PeggyWeggy", types.SideSell, "party-A", 10, 0)
-	o3.PeggedOrder = &types.PeggedOrder{Reference: types.PeggedReferenceBestAsk, Offset: 100}
+	o3.PeggedOrder = newPeggedOrder(types.PeggedReferenceBestAsk, 100)
 	o3conf, err := tm.market.SubmitOrder(ctx, o3)
 	require.NotNil(t, o3conf)
 	require.NoError(t, err)
@@ -4141,12 +4146,12 @@ func TestMarket_LeaveAuctionRepricePeggedOrdersShouldFailIfNoMargin(t *testing.T
 	tm.market.EnterAuction(ctx)
 
 	buys := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestBid, Offset: -10, Proportion: 50},
-		{Reference: types.PeggedReferenceBestBid, Offset: -20, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
 	}
 	sells := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestAsk, Offset: 10, Proportion: 50},
-		{Reference: types.PeggedReferenceBestAsk, Offset: 20, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
 	}
 
 	lps := &types.LiquidityProvisionSubmission{
@@ -4197,12 +4202,12 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	require.Equal(t, int64(2), tm.market.GetOrdersOnBookCount())
 
 	buys := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestBid, Offset: -10, Proportion: 50},
-		{Reference: types.PeggedReferenceBestBid, Offset: -20, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestBid, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestBid, 20, 50),
 	}
 	sells := []*types.LiquidityOrder{
-		{Reference: types.PeggedReferenceBestAsk, Offset: 10, Proportion: 50},
-		{Reference: types.PeggedReferenceBestAsk, Offset: 20, Proportion: 50},
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 10, 50),
+		newLiquidityOrder(types.PeggedReferenceBestAsk, 20, 50),
 	}
 
 	lps := &types.LiquidityProvisionSubmission{
@@ -4254,12 +4259,12 @@ func TestOrderBook_ParkLiquidityProvisionOrders(t *testing.T) {
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2000},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1000},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2000, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1000, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1000},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -1500},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1000, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 1500, 13),
 		},
 	}
 
@@ -4290,12 +4295,12 @@ func TestOrderBook_RemovingLiquidityProvisionOrders(t *testing.T) {
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2000},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1000},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2000, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1000, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1000},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -1500},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1000, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 1500, 13),
 		},
 	}
 
@@ -4369,12 +4374,12 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 		CommitmentAmount: num.NewUint(500),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 25, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 25, Offset: 3},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 25),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 3, 25),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 25, Offset: -2},
-			{Reference: types.PeggedReferenceMid, Proportion: 25, Offset: -3},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 2, 25),
+			newLiquidityOrder(types.PeggedReferenceMid, 3, 25),
 		},
 	}
 
@@ -4683,9 +4688,9 @@ func TestLPOrdersRollback(t *testing.T) {
 		side      types.Side
 		tif       types.OrderTimeInForce
 		pegRef    types.PeggedReference
-		pegOffset int64
+		pegOffset uint64
 	}{
-		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, -2000},
+		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, 2000},
 		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, 1000},
 	}
 	partyA, partyB := orderParams[0], orderParams[1]
@@ -4698,7 +4703,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5500 + partyA.pegOffset)), // 3500
+			Price:       num.NewUint(5500 + partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -4706,7 +4711,7 @@ func TestLPOrdersRollback(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5000 - partyB.pegOffset)), // 4000
+			Price:       num.NewUint(5000 - partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -4751,10 +4756,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			Size:        partyA.size,
 			Remaining:   partyA.size,
 			TimeInForce: partyA.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyA.pegRef,
-				Offset:    partyA.pegOffset,
-			},
+			PeggedOrder: newPeggedOrder(partyA.pegRef, partyA.pegOffset),
 		}),
 		tpl.New(types.Order{
 			Party:       partyB.id,
@@ -4762,10 +4764,7 @@ func TestLPOrdersRollback(t *testing.T) {
 			Size:        partyB.size,
 			Remaining:   partyB.size,
 			TimeInForce: partyB.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyB.pegRef,
-				Offset:    partyB.pegOffset,
-			},
+			PeggedOrder: newPeggedOrder(partyB.pegRef, partyB.pegOffset),
 		}),
 	}
 
@@ -4776,12 +4775,12 @@ func TestLPOrdersRollback(t *testing.T) {
 		CommitmentAmount: num.NewUint(995000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 22, Offset: -800},
-			{Reference: types.PeggedReferenceMid, Proportion: 64, Offset: -900},
+			newLiquidityOrder(types.PeggedReferenceMid, 800, 22),
+			newLiquidityOrder(types.PeggedReferenceMid, 900, 64),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceMid, Proportion: 45, Offset: 1200},
-			{Reference: types.PeggedReferenceMid, Proportion: 66, Offset: 1300},
+			newLiquidityOrder(types.PeggedReferenceMid, 1200, 45),
+			newLiquidityOrder(types.PeggedReferenceMid, 1300, 66),
 		},
 	}
 
@@ -4902,10 +4901,10 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 		side      types.Side
 		tif       types.OrderTimeInForce
 		pegRef    types.PeggedReference
-		pegOffset int64
+		pegOffset *num.Uint
 	}{
-		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, -2000},
-		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, 1000},
+		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, num.NewUint(2000)},
+		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, num.NewUint(1000)},
 	}
 	partyA, partyB := orderParams[0], orderParams[1]
 
@@ -4917,7 +4916,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5500 + partyA.pegOffset)), // 3500
+			Price:       num.Sum(num.NewUint(5500), partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -4925,7 +4924,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5000 - partyB.pegOffset)), // 4000
+			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -4970,10 +4969,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 			Size:        partyA.size,
 			Remaining:   partyA.size,
 			TimeInForce: partyA.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyA.pegRef,
-				Offset:    partyA.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyA.pegRef, Offset: partyA.pegOffset},
 		}),
 		tpl.New(types.Order{
 			Party:       partyB.id,
@@ -4981,10 +4977,7 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 			Size:        partyB.size,
 			Remaining:   partyB.size,
 			TimeInForce: partyB.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyB.pegRef,
-				Offset:    partyB.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyB.pegRef, Offset: partyB.pegOffset},
 		}),
 	}
 
@@ -4996,12 +4989,12 @@ func Test3008CancelLiquidityProvisionWhenTargetStakeNotReached(t *testing.T) {
 		CommitmentAmount: num.NewUint(200000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -5067,10 +5060,10 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		side      types.Side
 		tif       types.OrderTimeInForce
 		pegRef    types.PeggedReference
-		pegOffset int64
+		pegOffset *num.Uint
 	}{
-		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, -2000},
-		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, 1000},
+		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, num.NewUint(2000)},
+		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, num.NewUint(1000)},
 	}
 	partyA, partyB := orderParams[0], orderParams[1]
 
@@ -5082,7 +5075,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5500 + partyA.pegOffset)), // 3500
+			Price:       num.Zero().Sub(num.NewUint(5500), partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5090,7 +5083,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5000 - partyB.pegOffset)), // 4000
+			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5135,10 +5128,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 			Size:        partyA.size,
 			Remaining:   partyA.size,
 			TimeInForce: partyA.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyA.pegRef,
-				Offset:    partyA.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyA.pegRef, Offset: partyA.pegOffset},
 		}),
 		tpl.New(types.Order{
 			Party:       partyB.id,
@@ -5146,10 +5136,7 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 			Size:        partyB.size,
 			Remaining:   partyB.size,
 			TimeInForce: partyB.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyB.pegRef,
-				Offset:    partyB.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyB.pegRef, Offset: partyB.pegOffset},
 		}),
 	}
 
@@ -5163,12 +5150,12 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -5185,12 +5172,12 @@ func Test3008And3007CancelLiquidityProvision(t *testing.T) {
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -5376,10 +5363,10 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 		side      types.Side
 		tif       types.OrderTimeInForce
 		pegRef    types.PeggedReference
-		pegOffset int64
+		pegOffset *num.Uint
 	}{
-		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, -2000},
-		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, 1000},
+		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, num.NewUint(2000)},
+		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, num.NewUint(1000)},
 	}
 	partyA, partyB := orderParams[0], orderParams[1]
 
@@ -5391,7 +5378,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5500 + partyA.pegOffset)), // 3500
+			Price:       num.Sum(num.NewUint(5500), partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5399,7 +5386,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5000 - partyB.pegOffset)), // 4000
+			Price:       num.Sum(num.NewUint(5000), partyA.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5444,10 +5431,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 			Size:        partyA.size,
 			Remaining:   partyA.size,
 			TimeInForce: partyA.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyA.pegRef,
-				Offset:    partyA.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyA.pegRef, Offset: partyA.pegOffset},
 		}),
 		tpl.New(types.Order{
 			Party:       partyB.id,
@@ -5455,10 +5439,7 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 			Size:        partyB.size,
 			Remaining:   partyB.size,
 			TimeInForce: partyB.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyB.pegRef,
-				Offset:    partyB.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyB.pegRef, Offset: partyB.pegOffset},
 		}),
 	}
 
@@ -5472,12 +5453,12 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -5494,12 +5475,12 @@ func Test2963EnsureMarketValueProxyAndEquitityShareAreInMarketData(t *testing.T)
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -5563,10 +5544,10 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		side      types.Side
 		tif       types.OrderTimeInForce
 		pegRef    types.PeggedReference
-		pegOffset int64
+		pegOffset *num.Uint
 	}{
-		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, -2000},
-		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, 1000},
+		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, num.NewUint(2000)},
+		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, num.NewUint(1000)},
 	}
 	partyA, partyB := orderParams[0], orderParams[1]
 
@@ -5578,7 +5559,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5500 + partyA.pegOffset)), // 3500
+			Price:       num.Sum(num.NewUint(5500), partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5586,7 +5567,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.NewUint(uint64(5000 - partyB.pegOffset)), // 4000
+			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -5631,10 +5612,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 			Size:        partyA.size,
 			Remaining:   partyA.size,
 			TimeInForce: partyA.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyA.pegRef,
-				Offset:    partyA.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyA.pegRef, Offset: partyA.pegOffset},
 		}),
 		tpl.New(types.Order{
 			Party:       partyB.id,
@@ -5642,10 +5620,7 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 			Size:        partyB.size,
 			Remaining:   partyB.size,
 			TimeInForce: partyB.tif,
-			PeggedOrder: &types.PeggedOrder{
-				Reference: partyB.pegRef,
-				Offset:    partyB.pegOffset,
-			},
+			PeggedOrder: &types.PeggedOrder{Reference: partyB.pegRef, Offset: partyB.pegOffset},
 		}),
 	}
 
@@ -5659,12 +5634,12 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -5681,12 +5656,12 @@ func Test3045DistributeFeesToManyProviders(t *testing.T) {
 		CommitmentAmount: num.NewUint(1000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
@@ -5817,12 +5792,12 @@ func TestAverageEntryValuation(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
@@ -5918,12 +5893,12 @@ func TestBondAccountIsReleasedItMarketRejected(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -5},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -5},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 5, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 5, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 5},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 5, 13),
 		},
 	}
 
@@ -6017,10 +5992,10 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 		CommitmentAmount: lp1Commitment,
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -6029,10 +6004,10 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 		CommitmentAmount: lp2Commitment,
 		Fee:              num.DecimalFromFloat(0.1),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: -1},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: +1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
 		},
 	}
 
@@ -6327,10 +6302,10 @@ func TestLiquidityMonitoring_BestBidAskExistAfterAuction(t *testing.T) {
 		CommitmentAmount: num.NewUint(lp1Commitment),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 

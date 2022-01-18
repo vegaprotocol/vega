@@ -24,13 +24,13 @@ Feature: Test market depth events for pegged orders
     Then the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
       | pegged1 | ETH/DEC19 | sell | 1000   | MID              | 10     |
-      | pegged2 | ETH/DEC19 | buy  | 500    | MID              | -15    |
-      | pegged3 | ETH/DEC19 | buy  | 500    | MID              | -10    |
+      | pegged2 | ETH/DEC19 | buy  | 500    | MID              | 15     |
+      | pegged3 | ETH/DEC19 | buy  | 500    | MID              | 10     |
     Then the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     | 0     | STATUS_PARKED |
-      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    | 0     | STATUS_PARKED |
-      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    | 0     | STATUS_PARKED |
+      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | 15     | 0     | STATUS_PARKED |
+      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | 10     | 0     | STATUS_PARKED |
 # setup orderbook
     When the parties place the following orders:
       | party           | market id | side | volume | price | resulting trades | type       | tif     | reference       |
@@ -49,5 +49,5 @@ Feature: Test market depth events for pegged orders
     Then the pegged orders should have the following states:
       | party  | market id | side | volume | reference | offset | price | status        |
       | pegged1 | ETH/DEC19 | sell | 1000   | MID       | 10     | 110   | STATUS_ACTIVE |
-      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | -15    | 85    | STATUS_ACTIVE |
-      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | -10    | 90    | STATUS_ACTIVE |
+      | pegged2 | ETH/DEC19 | buy  | 500    | MID       | 15     | 85    | STATUS_ACTIVE |
+      | pegged3 | ETH/DEC19 | buy  | 500    | MID       | 10     | 90    | STATUS_ACTIVE |
