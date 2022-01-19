@@ -245,12 +245,25 @@ Scenario: A party qualifies to auto delegation by delegating all of their associ
     | party  | node id  | amount | 
     | party1 |  node10  |  100   | 
 
-    #by now we qualify again to auto delegation but we don't in this epoch due to the manual delegation 
-    #end epoch3 - start and end epoch4
+    #by now we qualify again to auto delegation but we don't in this epoch due to the manual delegation & checking the delegation balances
+    #end epoch3 - start and end epoch3
     When the network moves ahead "7" blocks
-    #end epoch4 - start and end epoch5
+    Then the parties should have the following delegation balances for epoch 3:
+    | party  | node id  | amount |
+    | party1 |  node1   |  1900  |
+    | party1 |  node2   |  2000  |
+    | party1 |  node3   |  1000  |
+    | party1 |  node4   |  1000  |
+    | party1 |  node5   |  1000  |
+    | party1 |  node6   |  1000  |
+    | party1 |  node7   |  500   |
+    | party1 |  node8   |  500   |
+    | party1 |  node9   |  500   |
+    | party1 |  node10  |  500   |
+
+    #end epoch4 - start and end epoch4
     When the network moves ahead "7" blocks
-    Then the parties should have the following delegation balances for epoch 5:
+    Then the parties should have the following delegation balances for epoch 4:
     | party  | node id  | amount |
     | party1 |  node1   |  2090  |
     | party1 |  node2   |  2200  |
