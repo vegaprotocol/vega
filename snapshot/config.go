@@ -12,12 +12,12 @@ const (
 )
 
 type Config struct {
-	Level       encoding.LogLevel `long:"log-level"`
-	Versions    int               `long:"versions"`
-	RetryLimit  int               `long:"max-retries"`
-	Storage     string            `long:"storage"`
-	DBPath      string            `long:"db-path"`
-	StartHeight int64             `long:"block-height"` // -1 for last snapshot, 0 for no reload
+	Level       encoding.LogLevel `long:"log-level" choice:"-1" choice:"0" choice:"1" choice:"2" choice:"4" choice:"5" description:"Logging level (default: 0 [info])"`
+	Versions    int               `long:"versions" description:"Snapshot versions to use"`
+	RetryLimit  int               `long:"max-retries" description:"Maximum number of times to try and apply snapshot chunk"`
+	Storage     string            `long:"storage" choice:"GOLevelDB" choice:"memory" description:"Storage type to use"`
+	DBPath      string            `long:"db-path" description:"Path to database"`
+	StartHeight int64             `long:"block-height" description:"Start height of the application state to use. -1 for last snapshot, 0 for no reload (default: 0)"` // -1 for last snapshot, 0 for no reload
 }
 
 // NewDefaultConfig creates an instance of the package specific configuration, given a
