@@ -101,8 +101,7 @@ func testValidateProposalCommitment(t *testing.T) {
 	party := eng.newValidPartyTimes("a-valid-party", 1, 8)
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+	eng.expectAnyAsset()
 
 	now := time.Now()
 	prop := eng.newOpenProposal(party.Id, now)
@@ -1495,7 +1494,7 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 					},
 				},
 				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces: 5,
+				DecimalPlaces: 0,
 				TradingMode: &types.NewMarketConfiguration_Continuous{
 					Continuous: &types.ContinuousTrading{
 						TickSize: "0.1",
@@ -1588,12 +1587,20 @@ func (e *tstEngine) newOpenFreeformProposal(partyID string, now time.Time) types
 }
 
 func (e *tstEngine) expectAnyAsset() {
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	details := newValidAssetTerms()
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, details.NewAsset.Changes))
+		return ret, nil
+	})
 	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 }
 
 func (e *tstEngine) expectAnyAssetTimes(times int) {
-	e.assets.EXPECT().Get(gomock.Any()).Times(times).Return(nil, nil)
+	details := newValidAssetTerms()
+	e.assets.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, details.NewAsset.Changes))
+		return ret, nil
+	})
 	e.assets.EXPECT().IsEnabled(gomock.Any()).Times(times).Return(true)
 }
 
