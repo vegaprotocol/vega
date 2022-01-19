@@ -200,11 +200,15 @@ func (e *Engine) ReloadConfig(cfg Config) {
 }
 
 func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
-	if conf.Storage == memDB {
+	switch conf.Storage {
+	case memDB:
 		return db.NewMemDB(), nil
+	case goLevelDB:
+		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
+		return db.NewGoLevelDB("snapshot", dbPath)
+	default:
+		return nil, types.ErrInvalidSnapshotStorage
 	}
-	dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
-	return db.NewGoLevelDB("snapshot", dbPath)
 }
 
 // List returns all snapshots available.

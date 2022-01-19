@@ -116,6 +116,7 @@ var (
 	ErrNodeHashMismatch           = errors.New("hash of a node does not match the hash from the snapshot meta")
 	ErrNoSnapshot                 = errors.New("no snapshot found")
 	ErrMissingSnapshotVersion     = errors.New("unknown snapshot version")
+	ErrInvalidSnapshotStorage     = errors.New("invalid snapshot storage")
 )
 
 type SnapshotFormat = snapshot.Format
