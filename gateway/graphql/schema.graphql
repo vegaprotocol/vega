@@ -554,6 +554,12 @@ type Node {
 
   normalisedScore: String!
 
+  # The score prior to being adjusted to account for the performance
+  rawScore: String!
+
+  # Expressed as a fraction between 0 and 1, 1 being the best performance possible
+  performance: String!
+
   # The name of the node
   name: String!
 
@@ -1954,12 +1960,6 @@ enum OrderRejectionReason {
   "Buy pegged order cannot reference best ask price"
   PeggedOrderBuyCannotReferenceBestAskPrice
 
-  "Pegged order offset must be <= 0"
-  PeggedOrderOffsetMustBeLessOrEqualToZero
-
-  "Pegged order offset must be < 0"
-  PeggedOrderOffsetMustBeLessThanZero
-
   "Pegged order offset must be >= 0"
   PeggedOrderOffsetMustBeGreaterOrEqualToZero
 
@@ -2581,7 +2581,7 @@ type LiquidityOrder {
   "The proportion of the commitment allocated to this order"
   proportion: Int!
   "Offset from the pegged reference"
-  offset: Int!
+  offset: String!
 }
 
 "Status of a liquidity provision order"

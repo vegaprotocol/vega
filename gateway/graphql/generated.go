@@ -504,7 +504,9 @@ type ComplexityRoot struct {
 		Name              func(childComplexity int) int
 		NormalisedScore   func(childComplexity int) int
 		PendingStake      func(childComplexity int) int
+		Performance       func(childComplexity int) int
 		PubKey            func(childComplexity int) int
+		RawScore          func(childComplexity int) int
 		Score             func(childComplexity int) int
 		StakedByDelegates func(childComplexity int) int
 		StakedByOperator  func(childComplexity int) int
@@ -985,8 +987,6 @@ type DepositResolver interface {
 }
 type EpochResolver interface {
 	ID(ctx context.Context, obj *vega.Epoch) (string, error)
-
-	Delegations(ctx context.Context, obj *vega.Epoch, partyID *string, nodeID *string, skip *int, first *int, last *int) ([]*vega.Delegation, error)
 }
 type EpochTimestampsResolver interface {
 	Start(ctx context.Context, obj *vega.EpochTimestamps) (*string, error)
@@ -1173,7 +1173,6 @@ type PartyStakeResolver interface {
 }
 type PeggedOrderResolver interface {
 	Reference(ctx context.Context, obj *vega.PeggedOrder) (PeggedReference, error)
-	Offset(ctx context.Context, obj *vega.PeggedOrder) (string, error)
 }
 type PositionResolver interface {
 	Market(ctx context.Context, obj *vega.Position) (*vega.Market, error)
@@ -3137,12 +3136,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Node.PendingStake(childComplexity), true
 
+	case "Node.performance":
+		if e.complexity.Node.Performance == nil {
+			break
+		}
+
+		return e.complexity.Node.Performance(childComplexity), true
+
 	case "Node.pubkey":
 		if e.complexity.Node.PubKey == nil {
 			break
 		}
 
 		return e.complexity.Node.PubKey(childComplexity), true
+
+	case "Node.rawScore":
+		if e.complexity.Node.RawScore == nil {
+			break
+		}
+
+		return e.complexity.Node.RawScore(childComplexity), true
 
 	case "Node.score":
 		if e.complexity.Node.Score == nil {
@@ -5778,7 +5791,7 @@ type Query {
   "query for historic key rotations"
   keyRotations(id: String): [KeyRotation!]
 
-  "get data for a specific epoch, if id omitted it gets the current epoch"
+  "get data for a specific epoch, if id omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
   "get statistics about the vega node"
@@ -5938,6 +5951,12 @@ type Node {
   score: String!
 
   normalisedScore: String!
+
+  # The score prior to being adjusted to account for the performance
+  rawScore: String!
+
+  # Expressed as a fraction between 0 and 1, 1 being the best performance possible
+  performance: String!
 
   # The name of the node
   name: String!
@@ -7339,12 +7358,6 @@ enum OrderRejectionReason {
   "Buy pegged order cannot reference best ask price"
   PeggedOrderBuyCannotReferenceBestAskPrice
 
-  "Pegged order offset must be <= 0"
-  PeggedOrderOffsetMustBeLessOrEqualToZero
-
-  "Pegged order offset must be < 0"
-  PeggedOrderOffsetMustBeLessThanZero
-
   "Pegged order offset must be >= 0"
   PeggedOrderOffsetMustBeGreaterOrEqualToZero
 
@@ -7966,7 +7979,7 @@ type LiquidityOrder {
   "The proportion of the commitment allocated to this order"
   proportion: Int!
   "Offset from the pegged reference"
-  offset: Int!
+  offset: String!
 }
 
 "Status of a liquidity provision order"
@@ -11415,8 +11428,8 @@ func (ec *executionContext) _Epoch_delegations(ctx context.Context, field graphq
 		Object:     "Epoch",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
@@ -11429,7 +11442,7 @@ func (ec *executionContext) _Epoch_delegations(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Epoch().Delegations(rctx, obj, args["partyId"].(*string), args["nodeId"].(*string), args["skip"].(*int), args["first"].(*int), args["last"].(*int))
+		return obj.Delegations, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -13546,9 +13559,9 @@ func (ec *executionContext) _LiquidityOrder_offset(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNInt2int64(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LiquidityOrderReference_order(ctx context.Context, field graphql.CollectedField, obj *vega.LiquidityOrderReference) (ret graphql.Marshaler) {
@@ -18220,6 +18233,76 @@ func (ec *executionContext) _Node_normalisedScore(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Node_rawScore(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RawScore, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Node_performance(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Node",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Performance, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Node_name(ctx context.Context, field graphql.CollectedField, obj *vega.Node) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -20432,14 +20515,14 @@ func (ec *executionContext) _PeggedOrder_offset(ctx context.Context, field graph
 		Object:     "PeggedOrder",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PeggedOrder().Offset(rctx, obj)
+		return obj.Offset, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -30283,19 +30366,10 @@ func (ec *executionContext) _Epoch(ctx context.Context, sel ast.SelectionSet, ob
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "delegations":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Epoch_delegations(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Epoch_delegations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -32692,6 +32766,16 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "rawScore":
+			out.Values[i] = ec._Node_rawScore(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "performance":
+			out.Values[i] = ec._Node_performance(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "name":
 			out.Values[i] = ec._Node_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -33531,19 +33615,10 @@ func (ec *executionContext) _PeggedOrder(ctx context.Context, sel ast.SelectionS
 				return res
 			})
 		case "offset":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PeggedOrder_offset(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._PeggedOrder_offset(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36953,21 +37028,6 @@ func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
 	res := graphql.MarshalInt32(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
-	res, err := graphql.UnmarshalInt64(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	res := graphql.MarshalInt64(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
