@@ -195,6 +195,7 @@ type Market struct {
 
 	markPrice   *num.Uint
 	priceFactor *num.Uint
+	one         *num.Uint
 
 	// own engines
 	matching           *matching.CachedOrderBook
@@ -407,6 +408,7 @@ func NewMarket(
 		stateVarEngine:     stateVarEngine,
 		feesTracker:        feesTracker,
 		priceFactor:        priceFactor,
+		one:                num.NewUint(1), // this is just some optimisation when checking price factor == 1
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
@@ -492,12 +494,13 @@ func (m *Market) GetMarketData() types.MarketData {
 	} else {
 		targetStake = m.getTargetStake().String()
 	}
-	one := num.NewUint(1) // for min price bounds
 	bounds := m.pMonitor.GetCurrentBounds()
 	for _, b := range bounds {
 		m.priceToMarketPrecision(b.MaxValidPrice) // effictively floors this
 		m.priceToMarketPrecision(b.MinValidPrice)
-		b.MinValidPrice.AddSum(one) // ceil
+		if m.priceFactor.NEQ(m.one) {
+			b.MinValidPrice.AddSum(m.one) // ceil
+		}
 	}
 
 	return types.MarketData{

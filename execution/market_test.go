@@ -623,19 +623,20 @@ func TestMarketNotActive(t *testing.T) {
 	tm.WithAccountAndAmount(party1, 1000000)
 
 	order := &types.Order{
-		Type:        types.OrderTypeLimit,
-		TimeInForce: types.OrderTimeInForceGTT,
-		Status:      types.OrderStatusActive,
-		ID:          "",
-		Side:        types.SideBuy,
-		Party:       party1,
-		MarketID:    tm.market.GetID(),
-		Size:        100,
-		Price:       num.NewUint(100),
-		Remaining:   100,
-		CreatedAt:   now.UnixNano(),
-		ExpiresAt:   closingAt.UnixNano(),
-		Reference:   "party1-buy-order",
+		Type:          types.OrderTypeLimit,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Status:        types.OrderStatusActive,
+		ID:            "",
+		Side:          types.SideBuy,
+		Party:         party1,
+		MarketID:      tm.market.GetID(),
+		Size:          100,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Remaining:     100,
+		CreatedAt:     now.UnixNano(),
+		ExpiresAt:     closingAt.UnixNano(),
+		Reference:     "party1-buy-order",
 	}
 
 	tm.events = nil

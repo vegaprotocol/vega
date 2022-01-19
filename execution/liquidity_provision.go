@@ -694,12 +694,15 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	minP := minPrice.Representation()
 	maxP := maxPrice.Representation()
 	// now we have to ensure that the min price is ceil'ed, and max price is floored
-	minP.Div(minP, m.priceFactor)
-	minP.Add(minP, num.NewUint(1)) // ceil
-	minP.Mul(minP, m.priceFactor)
-	// floor max price: divide and multiply back
-	maxP.Div(maxP, m.priceFactor)
-	maxP.Mul(maxP, m.priceFactor)
+	// if the market decimal places != asset decimals (indicated by priceFactor == 1)
+	if m.priceFactor.NEQ(m.one) {
+		minP.Div(minP, m.priceFactor)
+		minP.Add(minP, num.NewUint(1)) // ceil
+		minP.Mul(minP, m.priceFactor)
+		// floor max price: divide and multiply back
+		maxP.Div(maxP, m.priceFactor)
+		maxP.Mul(maxP, m.priceFactor)
+	}
 
 	// this is handling bestAsk / mid for ASK.
 	if side == types.SideSell {
