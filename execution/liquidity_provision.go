@@ -792,7 +792,7 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 					po.Offset = num.Zero()
 				}
 			}
-			offset := num.Zero().Mul(-po.Offset, m.priceFactor)
+			offset := num.Zero().Mul(po.Offset, m.priceFactor)
 			return price.Sub(price, offset), po, nil
 		}
 
