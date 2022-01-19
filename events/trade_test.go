@@ -15,17 +15,18 @@ func TestTradeDeepClone(t *testing.T) {
 	ctx := context.Background()
 
 	trade := &types.Trade{
-		ID:        "Id",
-		MarketID:  "MarketId",
-		Price:     num.NewUint(1000),
-		Size:      2000,
-		Buyer:     "Buyer",
-		Seller:    "Seller",
-		Aggressor: proto.Side_SIDE_BUY,
-		BuyOrder:  "BuyOrder",
-		SellOrder: "SellOrder",
-		Timestamp: 3000,
-		Type:      proto.Trade_TYPE_DEFAULT,
+		ID:          "Id",
+		MarketID:    "MarketId",
+		Price:       num.NewUint(1000),
+		MarketPrice: num.NewUint(1000),
+		Size:        2000,
+		Buyer:       "Buyer",
+		Seller:      "Seller",
+		Aggressor:   proto.Side_SIDE_BUY,
+		BuyOrder:    "BuyOrder",
+		SellOrder:   "SellOrder",
+		Timestamp:   3000,
+		Type:        proto.Trade_TYPE_DEFAULT,
 		BuyerFee: &types.Fee{
 			MakerFee:          num.NewUint(4000),
 			InfrastructureFee: num.NewUint(5000),
@@ -47,6 +48,7 @@ func TestTradeDeepClone(t *testing.T) {
 	trade.ID = "Changed"
 	trade.MarketID = "Changed"
 	trade.Price = num.NewUint(999)
+	trade.MarketPrice = num.NewUint(999)
 	trade.Size = 999
 	trade.Buyer = "Changed"
 	trade.Seller = "Changed"

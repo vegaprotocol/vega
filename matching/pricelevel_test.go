@@ -27,14 +27,15 @@ func TestAddAndRemoveOrdersToPriceLevel(t *testing.T) {
 	side := &OrderBookSide{side: types.SideSell}
 	l := side.getPriceLevel(num.NewUint(100))
 	order := &types.Order{
-		MarketID:    "testOrderBook",
-		Party:       "A",
-		Side:        types.SideSell,
-		Price:       num.NewUint(101),
-		Size:        100,
-		Remaining:   100,
-		TimeInForce: types.OrderTimeInForceGTC,
-		CreatedAt:   0,
+		MarketID:      "testOrderBook",
+		Party:         "A",
+		Side:          types.SideSell,
+		Price:         num.NewUint(101),
+		OriginalPrice: num.NewUint(101),
+		Size:          100,
+		Remaining:     100,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		CreatedAt:     0,
 	}
 
 	// add orders
@@ -58,26 +59,28 @@ func TestUncross(t *testing.T) {
 	side := &OrderBookSide{side: types.SideSell}
 	l := side.getPriceLevel(num.NewUint(100))
 	passiveOrder := &types.Order{
-		MarketID:    "testOrderBook",
-		Party:       "A",
-		Side:        types.SideSell,
-		Price:       num.NewUint(101),
-		Size:        100,
-		Remaining:   100,
-		TimeInForce: types.OrderTimeInForceGTC,
-		CreatedAt:   0,
+		MarketID:      "testOrderBook",
+		Party:         "A",
+		Side:          types.SideSell,
+		Price:         num.NewUint(101),
+		OriginalPrice: num.NewUint(101),
+		Size:          100,
+		Remaining:     100,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		CreatedAt:     0,
 	}
 	l.addOrder(passiveOrder)
 
 	aggresiveOrder := &types.Order{
-		MarketID:    "testOrderBook",
-		Party:       "B",
-		Side:        types.SideBuy,
-		Price:       num.NewUint(101),
-		Size:        100,
-		Remaining:   100,
-		TimeInForce: types.OrderTimeInForceGTC,
-		CreatedAt:   0,
+		MarketID:      "testOrderBook",
+		Party:         "B",
+		Side:          types.SideBuy,
+		Price:         num.NewUint(101),
+		OriginalPrice: num.NewUint(101),
+		Size:          100,
+		Remaining:     100,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		CreatedAt:     0,
 	}
 	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)
 	assert.Equal(t, true, filled)
