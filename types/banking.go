@@ -2,7 +2,6 @@ package types
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -10,8 +9,12 @@ import (
 )
 
 var (
-	ErrMissingTransferKind     = errors.New("missing transfer kind")
-	ErrCannotTransferZeroFunds = errors.New("cannot transfer zero funds")
+	ErrMissingTransferKind        = errors.New("missing transfer kind")
+	ErrCannotTransferZeroFunds    = errors.New("cannot transfer zero funds")
+	ErrInvalidFromAccount         = errors.New("invalid from account")
+	ErrInvalidToAccount           = errors.New("invalid to account")
+	ErrUnsupportedFromAccountType = errors.New("unsupported from account type")
+	ErrUnsupportedToAccountType   = errors.New("unsupported to account type")
 )
 
 type TransferCommandKind int
@@ -21,7 +24,7 @@ const (
 	TransferCommandKindRecurring
 )
 
-type transferBase struct {
+type TransferBase struct {
 	From            string
 	FromAccountType AccountType
 	To              string
@@ -31,7 +34,14 @@ type transferBase struct {
 	Reference       string
 }
 
-func (t *transferBase) IsValid(okZeroAmount bool) error {
+func (t *TransferBase) IsValid(okZeroAmount bool) error {
+	if len(t.From) <= 0 {
+		return ErrInvalidFromAccount
+	}
+	if len(t.To) <= 0 {
+		return ErrInvalidToAccount
+	}
+
 	// ensure amount makes senses
 	if !okZeroAmount && t.Amount.IsZero() {
 		return ErrCannotTransferZeroFunds
@@ -41,33 +51,33 @@ func (t *transferBase) IsValid(okZeroAmount bool) error {
 	case AccountTypeGeneral /*, AccountTypeLockedForStaking*/ :
 		break
 	default:
-		return fmt.Errorf("unsupported from account type: %v", t.FromAccountType)
+		return ErrUnsupportedFromAccountType
 	}
 
 	switch t.ToAccountType {
 	case AccountTypeGeneral, AccountTypeGlobalReward /*, AccountTypeLockedForStaking*/ :
 		break
 	default:
-		return fmt.Errorf("unsupported to account type: %v", t.ToAccountType)
+		return ErrUnsupportedToAccountType
 	}
 
 	return nil
 }
 
 type OneOffTransfer struct {
-	*transferBase
+	*TransferBase
 	DeliverOn *time.Time
 }
 
 type RecurringTransfer struct {
-	*transferBase
+	*TransferBase
 	StartEpoch uint64
 	EndEpoch   uint64
 	Factor     num.Decimal
 }
 
 // Just a wrapper, use the Kind on a
-// switch to access the proper value
+// switch to access the proper value.
 type TransferFunds struct {
 	Kind      TransferCommandKind
 	OneOff    *OneOffTransfer
@@ -89,13 +99,13 @@ func NewTransferFromProto(from string, tf *commandspb.Transfer) (*TransferFunds,
 	}
 }
 
-func newTransferBase(from string, tf *commandspb.Transfer) (*transferBase, error) {
+func newTransferBase(from string, tf *commandspb.Transfer) (*TransferBase, error) {
 	amount, overflowed := num.UintFromString(tf.Amount, 10)
 	if overflowed {
 		return nil, errors.New("invalid transfer amount")
 	}
 
-	return &transferBase{
+	return &TransferBase{
 		From:            from,
 		FromAccountType: tf.FromAccountType,
 		To:              tf.To,
@@ -106,7 +116,7 @@ func newTransferBase(from string, tf *commandspb.Transfer) (*transferBase, error
 	}, nil
 }
 
-func newOneOffTransfer(base *transferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
+func newOneOffTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
 	var t *time.Time
 	if tf.GetOneOff().GetDeliverOn() > 0 {
 		tmpt := time.Unix(tf.GetOneOff().GetDeliverOn(), 0)
@@ -116,12 +126,12 @@ func newOneOffTransfer(base *transferBase, tf *commandspb.Transfer) (*TransferFu
 	return &TransferFunds{
 		Kind: TransferCommandKindOneOff,
 		OneOff: &OneOffTransfer{
-			transferBase: base,
+			TransferBase: base,
 			DeliverOn:    t,
 		},
 	}, nil
 }
 
-func newRecurringTransfer(base *transferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
+func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
 	return nil, nil
 }

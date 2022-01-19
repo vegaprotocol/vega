@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.47.1-0.20220119191224-7bf7c156facb
+	code.vegaprotocol.io/protos v0.47.1-0.20220120110732-c522857dc645
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
 	code.vegaprotocol.io/vegawallet v0.11.1-0.20220118134126-26f681c98f91
@@ -166,4 +166,3 @@ require (
 )
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
-replace code.vegaprotocol.io/protos => ../protos

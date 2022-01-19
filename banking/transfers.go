@@ -13,9 +13,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrUnsupportedTransferKind = errors.New("unsupported transfer kind")
-)
+var ErrUnsupportedTransferKind = errors.New("unsupported transfer kind")
 
 type scheduledTransfer struct {
 	transfer    *types.Transfer
@@ -179,11 +177,11 @@ type timesToTransfers struct {
 }
 
 func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
-	var ttfs = []timesToTransfers{}
+	ttfs := []timesToTransfers{}
 
 	// iterate over those scheduled transfers to sort them by time
 	for k, v := range e.scheduledTransfers {
-		if k.Before(e.currentTime) {
+		if e.currentTime.After(k) || e.currentTime.Equal(k) {
 			ttfs = append(ttfs, timesToTransfers{k, v})
 			delete(e.scheduledTransfers, k)
 		}
@@ -244,5 +242,5 @@ func (e *Engine) recurringTransfer(
 	ctx context.Context,
 	transfer *types.RecurringTransfer,
 ) error {
-	return nil
+	return errors.New("unimplemented")
 }

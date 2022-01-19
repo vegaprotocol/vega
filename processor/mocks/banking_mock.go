@@ -11,7 +11,6 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
-	time "time"
 )
 
 // MockBanking is a mock of Banking interface
@@ -108,17 +107,17 @@ func (mr *MockBankingMockRecorder) EnableERC20(arg0, arg1, arg2, arg3, arg4, arg
 }
 
 // TransferFunds mocks base method
-func (m *MockBanking) TransferFunds(arg0 context.Context, arg1, arg2, arg3 string, arg4, arg5 vega.AccountType, arg6 *num.Uint, arg7 string, arg8 *time.Time) error {
+func (m *MockBanking) TransferFunds(arg0 context.Context, arg1 *types.TransferFunds) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TransferFunds", arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+	ret := m.ctrl.Call(m, "TransferFunds", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // TransferFunds indicates an expected call of TransferFunds
-func (mr *MockBankingMockRecorder) TransferFunds(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 interface{}) *gomock.Call {
+func (mr *MockBankingMockRecorder) TransferFunds(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFunds", reflect.TypeOf((*MockBanking)(nil).TransferFunds), arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFunds", reflect.TypeOf((*MockBanking)(nil).TransferFunds), arg0, arg1)
 }
 
 // WithdrawBuiltinAsset mocks base method

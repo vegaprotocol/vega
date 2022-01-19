@@ -1182,7 +1182,6 @@ func (e *Engine) TransferFunds(
 	}
 
 	return resps, nil
-
 }
 
 // BondUpdate is to be used for any bond account transfers.
