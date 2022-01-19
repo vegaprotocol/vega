@@ -771,15 +771,16 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.Zero(), ErrUnableToReprice
 	}
 
+	offset := num.Zero().Mul(order.PeggedOrder.Offset, m.priceFactor)
 	if order.Side == types.SideSell {
-		return price.AddSum(order.PeggedOrder.Offset), nil
+		return price.AddSum(offset), nil
 	}
 
-	if price.LTE(order.PeggedOrder.Offset) {
+	if price.LTE(offset) {
 		return num.Zero(), ErrUnableToReprice
 	}
 
-	return num.Zero().Sub(price, order.PeggedOrder.Offset), nil
+	return num.Zero().Sub(price, offset), nil
 }
 
 // Reprice a pegged order. This only updates the price on the order.
@@ -789,6 +790,8 @@ func (m *Market) repricePeggedOrder(order *types.Order) error {
 	if err != nil {
 		return err
 	}
+	original := price.Clone()
+	order.OriginalPrice = original.Div(original, m.priceFactor) // set original price in market precision
 	order.Price = price
 	return nil
 }
