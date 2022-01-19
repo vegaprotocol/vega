@@ -349,10 +349,6 @@ func (s *coreService) ObserveEventBus(
 		return nil //nolint
 	}
 
-	if err := req.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-
 	// now we will aggregate filter out of the initial request
 	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
