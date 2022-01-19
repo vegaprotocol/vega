@@ -12,7 +12,7 @@ const (
 )
 
 type Config struct {
-	Level       encoding.LogLevel `long:"log-level" choice:"-1" choice:"0" choice:"1" choice:"2" choice:"4" choice:"5" description:"Logging level (default: 0 [info])"`
+	Level       encoding.LogLevel `long:"log-level" choice:"debug" choice:"info" choice:"warning" choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)"`
 	Versions    int               `long:"versions" description:"Snapshot versions to use"`
 	RetryLimit  int               `long:"max-retries" description:"Maximum number of times to try and apply snapshot chunk"`
 	Storage     string            `long:"storage" choice:"GOLevelDB" choice:"memory" description:"Storage type to use"`
