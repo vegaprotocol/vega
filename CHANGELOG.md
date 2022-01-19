@@ -9,6 +9,8 @@
 - [](https://github.com/vegaprotocol/data-node/pull/) -
 
 ### 🛠  Improvements
+- [251](https://github.com/vegaprotocol/data-node/pull/251) - Updated proto and core and added support for the new events (state var and network limits)
+- [285](https://github.com/vegaprotocol/data-node/pull/285) - Update changelog for `47.1`
 - [244](https://github.com/vegaprotocol/data-node/pull/244) - Constrain the number of epochs for which we keep delegations in memory
 - [250](https://github.com/vegaprotocol/data-node/pull/250) - Update go requirement to 1.17
 - [251](https://github.com/vegaprotocol/data-node/pull/251) - Updated proto and core and added support for the new events (state var and network limits)
@@ -18,10 +20,15 @@
 
 
 ### 🐛 Fixes
-- [](https://github.com/vegaprotocol/data-node/pull/) -
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
 - [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens
 - [288](https://github.com/vegaprotocol/data-node/pull/288) - Add back `assetId` GraphQL resolver for `RewardPerAssetDetail`, change `RiskFactor` fields to strings.
+
+## 0.47.1
+*`2021-12-20`*
+
+### 🐛 Fixes
+- [244](https://github.com/vegaprotocol/data-node/pull/244) - Constrain the number of epochs for which we keep delegations in memory
 
 
 ## 0.47.0
