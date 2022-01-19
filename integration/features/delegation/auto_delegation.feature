@@ -81,7 +81,7 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
 
     # move to the end of the epoch for auto delegation to take place for party1
     When the network moves ahead "7" blocks
-    Then the parties should have the following delegation balances for epoch 3:
+    Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
     | party1 |  node1   | 1100   | 
     | party1 |  node2   | 1100   | 
@@ -122,10 +122,10 @@ Scenario: A party dissociates VEGA token leading to undelegation propotionally t
     | party  | node id  | amount |
     | party1 |  node1   |  1000  |
     | party1 |  node2   |  1000  |
-    | party1 |  node3   |  500  |
-    | party1 |  node4   |  500  |
-    | party1 |  node5   |  500  |
-    | party1 |  node6   |  500  |
+    | party1 |  node3   |  500   |
+    | party1 |  node4   |  500   |
+    | party1 |  node5   |  500   |
+    | party1 |  node6   |  500   |
     | party1 |  node7   |  250   |
     | party1 |  node8   |  250   |
     | party1 |  node9   |  250   |
@@ -155,20 +155,20 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
 
     And the parties submit the following delegations:
     | party  | node id  | amount |
-    | party1 |  node1   |  50  |
-    | party1 |  node2   |  50  |
-    | party1 |  node3   |  50  |
-    | party1 |  node4   |  50  |
-    | party1 |  node5   |  50  |
-    | party1 |  node6   |  50  |
-    | party1 |  node7   |  50  |
-    | party1 |  node8   |  50  |
-    | party1 |  node9   |  50  |
-    | party1 |  node10  |  50  |
+    | party1 |  node1   |  50    |
+    | party1 |  node2   |  50    |
+    | party1 |  node3   |  50    |
+    | party1 |  node4   |  50    |
+    | party1 |  node5   |  50    |
+    | party1 |  node6   |  50    |
+    | party1 |  node7   |  50    |
+    | party1 |  node8   |  50    |
+    | party1 |  node9   |  50    |
+    | party1 |  node10  |  50    |
 
     # move to the end of the epoch - auto delegation will not take place party1 because they requested to manually delegate
     When the network moves ahead "7" blocks
-    Then the parties should have the following delegation balances for epoch 3:
+    Then the parties should have the following delegation balances for epoch 2:
     | party  | node id  | amount |
     | party1 |  node1   | 1050   | 
     | party1 |  node2   | 1050   | 
@@ -183,7 +183,7 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
 
     #on the end of the next epoch however the remaining 1000 tokens will get auto delegated 
     When the network moves ahead "7" blocks
-    Then the parties should have the following delegation balances for epoch 4:
+    Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   | 1150   | 
     | party1 |  node2   | 1150   | 
