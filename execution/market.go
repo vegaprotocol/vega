@@ -928,7 +928,12 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 	// now that we're left the auction, we can mark all positions
 	// in case any party is distressed (Which shouldn't be possible)
 	// we'll fall back to the a network order at the new mark price (mid-price)
-	m.confirmMTM(ctx, &types.Order{Price: m.getCurrentMarkPrice()})
+	cmp := m.getCurrentMarkPrice()
+	mcmp := num.Zero().Div(cmp, m.priceFactor) // create the market representation of the price
+	m.confirmMTM(ctx, &types.Order{
+		Price:         cmp,
+		OriginalPrice: mcmp,
+	})
 
 	// keep var to see if we're leaving opening auction
 	isOpening := m.as.IsOpeningAuction()
@@ -1930,16 +1935,21 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "zeroOutNetwork")
 	defer timer.EngineTimeCounterAdd()
 
+	// ensure an original price is set
+	if settleOrder.OriginalPrice == nil {
+		settleOrder.OriginalPrice = num.Zero().Div(settleOrder.Price, m.priceFactor)
+	}
 	marketID := m.GetID()
 	order := types.Order{
-		MarketID:    marketID,
-		Status:      types.OrderStatusFilled,
-		Party:       types.NetworkParty,
-		Price:       settleOrder.Price.Clone(),
-		CreatedAt:   m.currentTime.UnixNano(),
-		Reference:   "close-out distressed",
-		TimeInForce: types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
-		Type:        types.OrderTypeNetwork,
+		MarketID:      marketID,
+		Status:        types.OrderStatusFilled,
+		Party:         types.NetworkParty,
+		Price:         settleOrder.Price.Clone(),
+		OriginalPrice: settleOrder.OriginalPrice.Clone(),
+		CreatedAt:     m.currentTime.UnixNano(),
+		Reference:     "close-out distressed",
+		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
+		Type:          types.OrderTypeNetwork,
 	}
 
 	asset, _ := m.mkt.GetAsset()
@@ -1971,17 +1981,18 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 
 		// this is the party order
 		partyOrder := types.Order{
-			MarketID:    marketID,
-			Size:        order.Size,
-			Remaining:   0,
-			Status:      types.OrderStatusFilled,
-			Party:       party.Party(),
-			Side:        tSide,                     // assume sell, price is zero in that case anyway
-			Price:       settleOrder.Price.Clone(), // average price
-			CreatedAt:   m.currentTime.UnixNano(),
-			Reference:   fmt.Sprintf("distressed-%d-%s", i, initial.ID),
-			TimeInForce: types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
-			Type:        types.OrderTypeNetwork,
+			MarketID:      marketID,
+			Size:          order.Size,
+			Remaining:     0,
+			Status:        types.OrderStatusFilled,
+			Party:         party.Party(),
+			Side:          tSide,                     // assume sell, price is zero in that case anyway
+			Price:         settleOrder.Price.Clone(), // average price
+			OriginalPrice: settleOrder.OriginalPrice.Clone(),
+			CreatedAt:     m.currentTime.UnixNano(),
+			Reference:     fmt.Sprintf("distressed-%d-%s", i, initial.ID),
+			TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
+			Type:          types.OrderTypeNetwork,
 		}
 		m.idgen.SetID(&partyOrder)
 
@@ -2005,19 +2016,20 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		}
 
 		trade := types.Trade{
-			ID:        fmt.Sprintf("%s-%010d", partyOrder.ID, 1),
-			MarketID:  partyOrder.MarketID,
-			Price:     partyOrder.Price.Clone(),
-			Size:      partyOrder.Size,
-			Aggressor: order.Side, // we consider network to be aggressor
-			BuyOrder:  buyOrder.ID,
-			SellOrder: sellOrder.ID,
-			Buyer:     buyOrder.Party,
-			Seller:    sellOrder.Party,
-			Timestamp: partyOrder.CreatedAt,
-			Type:      types.TradeTypeNetworkCloseOutBad,
-			SellerFee: sellSideFee,
-			BuyerFee:  buySideFee,
+			ID:          fmt.Sprintf("%s-%010d", partyOrder.ID, 1),
+			MarketID:    partyOrder.MarketID,
+			Price:       partyOrder.Price.Clone(),
+			MarketPrice: partyOrder.OriginalPrice.Clone(),
+			Size:        partyOrder.Size,
+			Aggressor:   order.Side, // we consider network to be aggressor
+			BuyOrder:    buyOrder.ID,
+			SellOrder:   sellOrder.ID,
+			Buyer:       buyOrder.Party,
+			Seller:      sellOrder.Party,
+			Timestamp:   partyOrder.CreatedAt,
+			Type:        types.TradeTypeNetworkCloseOutBad,
+			SellerFee:   sellSideFee,
+			BuyerFee:    buySideFee,
 		}
 		tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, trade))
 
