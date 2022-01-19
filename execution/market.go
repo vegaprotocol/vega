@@ -345,8 +345,10 @@ func NewMarket(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
-	exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces
-	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
+	priceFactor := num.NewUint(1)
+	if exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces; exp != 0 {
+		priceFactor.Exp(num.NewUint(10), num.NewUint(exp))
+	}
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
@@ -1157,7 +1159,10 @@ func (m *Market) SubmitOrder(
 	party string,
 ) (*types.OrderConfirmation, error) {
 	order := orderSubmission.IntoOrder(party)
-	order.Price.Mul(order.Price, m.priceFactor)
+	if order.Price != nil {
+		order.OriginalPrice = order.Price.Clone()
+		order.Price.Mul(order.Price, m.priceFactor)
+	}
 	order.CreatedAt = m.currentTime.UnixNano()
 
 	if !m.canTrade() {

@@ -367,6 +367,10 @@ func (m *Market) updateAndCreateLPOrders(
 			// be patient...
 			continue
 		}
+		if order.OriginalPrice == nil {
+			order.OriginalPrice = order.Price.Clone()
+			order.Price.Mul(order.Price, m.priceFactor)
+		}
 		conf, orderUpdts, err := m.submitOrder(ctx, order, false)
 		if err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
@@ -571,6 +575,10 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 		// ignoring updated orders as we expect
 		// no updates there as the party should ever be able to
 		// submit without issues or not at all.
+		if order.OriginalPrice == nil {
+			order.OriginalPrice = order.Price.Clone()
+			order.Price.Mul(order.Price, m.priceFactor)
+		}
 		if conf, _, err := m.submitOrder(ctx, order, false); err != nil {
 			failedOnID = order.ID
 			m.log.Debug("unable to submit liquidity provision order",
