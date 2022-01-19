@@ -803,27 +803,18 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 }
 
 func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx) error {
-	tfr := &commandspb.TransferFunds{}
+	tfr := &commandspb.Transfer{}
 	if err := tx.Unmarshal(tfr); err != nil {
 		return err
 	}
 
 	party := tx.Party()
-
-	amount, overflow := num.UintFromString(tfr.Amount, 10)
-	if overflow {
-		return fmt.Errorf("invalid transfer amount: %s", tfr.Amount)
+	transferFunds, err := types.NewTransferFromProto(party, tfr)
+	if err != nil {
+		return err
 	}
 
-	var t *time.Time
-	if tfr.DeliverOn > 0 {
-		tmpt := time.Unix(tfr.DeliverOn, 0)
-		t = &tmpt
-	}
-
-	return app.banking.TransferFunds(
-		ctx, party, tfr.To, tfr.Asset, tfr.FromAccountType, tfr.ToAccountType, amount, tfr.Reference, t,
-	)
+	return app.banking.TransferFunds(ctx, transferFunds)
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {

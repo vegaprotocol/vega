@@ -33,7 +33,6 @@ var (
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
 	ErrWithdrawalNotReady                         = errors.New("withdrawal not ready")
-	ErrCannotTransferZeroFunds                    = errors.New("cannot transfer zero funds")
 	ErrNoGeneralAccountForAsset                   = errors.New("no general account for asset")
 	ErrNotEnoughFundsToTransfer                   = errors.New("not enough funds to transfer")
 )
@@ -168,6 +167,7 @@ func New(
 		},
 		keyToSerialiser:    map[string]func() ([]byte, error){},
 		scheduledTransfers: map[time.Time][]scheduledTransfer{},
+		transferFeeFactor:  num.DecimalZero(),
 	}
 
 	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals

@@ -440,6 +440,10 @@ func (n *NodeCommand) setupNetParameters() error {
 			Param:   netparams.FloatingPointUpdatesDuration,
 			Watcher: n.statevar.OnFloatingPointUpdatesDurationUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeFactor,
+			Watcher: n.banking.OnTransferFeeFactorUpdate,
+		},
 	)
 }
 

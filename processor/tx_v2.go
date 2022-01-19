@@ -118,7 +118,7 @@ func (t TxV2) Command() txn.Command {
 		return txn.KeyRotateSubmissionCommand
 	case *commandspb.InputData_StateVariableProposal:
 		return txn.StateVariableProposalCommand
-	case *commandspb.InputData_TransferFunds:
+	case *commandspb.InputData_Transfer:
 		return txn.TransferFundsCommand
 	default:
 		panic("unsupported command")
@@ -165,8 +165,8 @@ func (t TxV2) GetCmd() interface{} {
 		return cmd.KeyRotateSubmission
 	case *commandspb.InputData_StateVariableProposal:
 		return cmd.StateVariableProposal
-	case *commandspb.InputData_TransferFunds:
-		return cmd.TransferFunds
+	case *commandspb.InputData_Transfer:
+		return cmd.Transfer
 	default:
 		return errors.New("unsupported command")
 	}
@@ -288,12 +288,12 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshal StateVariableProposal")
 		}
 		*underlyingCmd = *cmd.StateVariableProposal
-	case *commandspb.InputData_TransferFunds:
-		underlyingCmd, ok := i.(*commandspb.TransferFunds)
+	case *commandspb.InputData_Transfer:
+		underlyingCmd, ok := i.(*commandspb.Transfer)
 		if !ok {
 			return errors.New("failed to unmarshal TransferFunds")
 		}
-		*underlyingCmd = *cmd.TransferFunds
+		*underlyingCmd = *cmd.Transfer
 	default:
 		return errors.New("unsupported command")
 	}
