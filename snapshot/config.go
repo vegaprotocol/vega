@@ -13,7 +13,7 @@ const (
 
 type Config struct {
 	Level       encoding.LogLevel `long:"log-level" choice:"debug" choice:"info" choice:"warning" choice:"error" choice:"panic" choice:"fatal" description:"Logging level (default: info)"`
-	Versions    int               `long:"versions" description:"Snapshot versions to use"`
+	KeepRecent  int               `long:"snapshot-keep-recent" description:"Number of historic snapshots to keep on disk. Limited to the 10 most recent ones"`
 	RetryLimit  int               `long:"max-retries" description:"Maximum number of times to try and apply snapshot chunk"`
 	Storage     string            `long:"storage" choice:"GOLevelDB" choice:"memory" description:"Storage type to use"`
 	DBPath      string            `long:"db-path" description:"Path to database"`
@@ -25,7 +25,7 @@ type Config struct {
 func NewDefaultConfig() Config {
 	return Config{
 		Level:       encoding.LogLevel{Level: logging.InfoLevel},
-		Versions:    10,
+		KeepRecent:  10,
 		RetryLimit:  5,
 		Storage:     goLevelDB,
 		StartHeight: 0,
