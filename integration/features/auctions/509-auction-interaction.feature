@@ -49,9 +49,9 @@ Feature: Test interactions between different auction types
     When the opening auction period ends for market "ETH/DEC21"
     Then the auction ends with a traded volume of "10" at a price of "1000"
     # target_stake = mark_price x max_oi x target_stake_scaling_factor x rf = 1000 x 10 x 1 x 0.1
-    # And the market data for the market "ETH/DEC21" should be:
-    #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1000       | TRADING_MODE_CONTINUOUS | 1       | 990       | 1010      | 1000         | 10000          | 10            |
 
   Scenario: When trying to exit opening auction liquidity monitoring is triggered due to missing best bid, hence the opening auction gets extended, the markets trading mode is TRADING_MODE_MONITORING_AUCTION and the trigger is AUCTION_TRIGGER_LIQUIDITY.
 
@@ -302,9 +302,9 @@ Feature: Test interactions between different auction types
     # price monitoring extension ends
     # End price auction extension
     When the network moves ahead "301" blocks
-    # Then the market data for the market "ETH/DEC21" should be:
-    #   | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
+    Then the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | auction trigger             | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1020       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED | 1       | 1010      | 1030      | 3060         | 4080           | 30            |
 
   Scenario: Once market is in continuous trading mode: enter liquidity monitoring auction -> extend with price monitoring auction -> extend with liquidity monitoring -> leave auction mode
     Given the following network parameters are set:
@@ -392,12 +392,12 @@ Feature: Test interactions between different auction types
 
     # jump ahead to the end of the auction
     When the network moves ahead "291" blocks
-    # Then the market data for the market "ETH/DEC21" should be:
-    #   | trading mode            | auction trigger             |
-    #   | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
-    # And the market data for the market "ETH/DEC21" should be:
-    #   | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
-    #   | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 4080         | 5100           | 40            |
+    Then the market data for the market "ETH/DEC21" should be:
+      | trading mode            | auction trigger             |
+      | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
+    And the market data for the market "ETH/DEC21" should be:
+      | mark price | trading mode            | horizon | min bound | max bound | target stake | supplied stake | open interest |
+      | 1020       | TRADING_MODE_CONTINUOUS | 1       | 1010      | 1030      | 4080         | 5100           | 40            |
 
 
       #Scenario: Once market is in continuous trading mode: enter price monitoring auction -> extend with liquidity monitoring auction -> leave auction mode
