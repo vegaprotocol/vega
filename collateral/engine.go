@@ -233,7 +233,6 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 			Type:     types.AccountTypeExternal,
 		}
 		e.accs[externalID] = externalAcc
-		// e.addAccountToHashableSlice(externalAcc)
 	}
 
 	// when an asset is enabled a global insurance account is created for it
@@ -250,6 +249,23 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.accs[globalInsuranceID] = insuranceAcc
 		e.addAccountToHashableSlice(insuranceAcc)
 		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
+	}
+
+	// pending transfers account
+	pendingTransfersID := e.accountID("", "", asset.ID, types.AccountTypePendingTransfers)
+	if _, ok := e.accs[pendingTransfersID]; !ok {
+		pendingTransfersAcc := &types.Account{
+			ID:       pendingTransfersID,
+			Asset:    asset.ID,
+			Owner:    systemOwner,
+			Balance:  num.Zero(),
+			MarketID: noMarket,
+			Type:     types.AccountTypePendingTransfers,
+		}
+
+		e.accs[pendingTransfersID] = pendingTransfersAcc
+		e.addAccountToHashableSlice(pendingTransfersAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *pendingTransfersAcc))
 	}
 
 	e.log.Info("new asset added successfully",
@@ -445,6 +461,18 @@ func (e *Engine) GetInfraFeeAccountIDs() []string {
 	}
 	sort.Strings(accountIDs)
 	return accountIDs
+}
+
+// GetPendingTransferAccount return the pending transfers account for the asset.
+func (e *Engine) GetPendingTransfersAccount(asset string) *types.Account {
+	acc, err := e.GetAccountByID(e.accountID(noMarket, systemOwner, asset, types.AccountTypePendingTransfers))
+	if err != nil {
+		e.log.Panic("no pending transfers account for asset, this should never happen",
+			logging.AssetID(asset),
+		)
+	}
+
+	return acc
 }
 
 // this func uses named returns because it makes body of the func look clearer.
@@ -1449,6 +1477,9 @@ func (e *Engine) getTransferFundsTransferRequest(
 				)
 			}
 
+			// we always pay onto the pending transfers accounts
+			toAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
+
 		default:
 			return nil, fmt.Errorf("unsupported from account for TransferFunds: %v", accountType.String())
 		}
@@ -1488,6 +1519,9 @@ func (e *Engine) getTransferFundsTransferRequest(
 		default:
 			return nil, fmt.Errorf("unsupported to account for TransferFunds: %v", accountType.String())
 		}
+
+		// from account will always be the pending for transfers
+		fromAcc = e.GetPendingTransfersAccount(t.Amount.Asset)
 
 	default:
 		return nil, fmt.Errorf("unsupported transfer type for TransferFund: %v", t.Type.String())
