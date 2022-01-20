@@ -397,7 +397,8 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 			return err
 		}
 	}
-	// we're done, we can clear the snapshot state
+	// we're done, we can clear the snapshot state, and set engine hash
+	e.hash = e.snapshot.Hash
 	e.snapshot = nil
 	// no need to save, return here
 	if !cas {
