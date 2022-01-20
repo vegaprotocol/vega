@@ -145,7 +145,6 @@ func (s *Store) LoadState(ctx context.Context, pl *types.Payload) ([]types.State
 		}
 	}
 
-	// TODO this still doesn't fix the netparam propagation issue :(
 	for k := range s.store {
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			return nil, fmt.Errorf("could not propagate netparams update to listener, %v: %v", k, err)
