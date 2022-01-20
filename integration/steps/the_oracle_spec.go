@@ -1,6 +1,9 @@
 package steps
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/cucumber/godog"
 
 	types "code.vegaprotocol.io/protos/vega"
@@ -24,6 +27,21 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 			},
 			Conditions: []*oraclesv1.Condition{},
 		}
+
+		if condition := row.condition(); condition != "" {
+			expiry, err := time.Parse(time.RFC3339, condition)
+			if err != nil {
+				panic(fmt.Errorf("cannot parse expiry condition: %w", err))
+			}
+
+			filter.Conditions = append(filter.Conditions,
+				&oraclesv1.Condition{
+					Operator: oraclesv1.Condition_OPERATOR_GREATER_THAN_OR_EQUAL,
+					Value:    fmt.Sprintf("%d", expiry.UnixNano()),
+				},
+			)
+		}
+
 		filters = append(filters, filter)
 
 		if row.destination() == "settlement price" {
@@ -51,7 +69,9 @@ func parseOracleSpecTable(table *godog.Table) []RowWrapper {
 		"property",
 		"type",
 		"binding",
-	}, []string{})
+	}, []string{
+		"condition",
+	})
 }
 
 type oracleSpecRow struct {
@@ -68,4 +88,12 @@ func (r oracleSpecRow) propertyType() oraclesv1.PropertyKey_Type {
 
 func (r oracleSpecRow) destination() string {
 	return r.row.MustStr("binding")
+}
+
+func (r oracleSpecRow) condition() string {
+	if !r.row.HasColumn("condition") {
+		return ""
+	}
+
+	return r.row.Str("condition")
 }
