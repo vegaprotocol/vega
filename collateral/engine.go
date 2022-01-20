@@ -1151,6 +1151,12 @@ func (e *Engine) TransferFunds(
 			logging.Int("reference", len(references)),
 		)
 	}
+	if len(feeTransfers) != len(feeTransfersAccountType) {
+		e.log.Panic("not the same amount of fee transfers and accounts types to process",
+			logging.Int("fee-transfers", len(feeTransfers)),
+			logging.Int("fee-accounts-types", len(feeTransfersAccountType)),
+		)
+	}
 
 	resps := make([]*types.TransferResponse, 0, len(transfers))
 	for i := range transfers {
@@ -1545,7 +1551,7 @@ func (e *Engine) getTransferFundsFeesTransferRequest(
 	accountType types.AccountType,
 ) (*types.TransferRequest, error) {
 	// only type supported here
-	if t.Type != types.TransferTypeInfrastructureFeeDistribute {
+	if t.Type != types.TransferTypeInfrastructureFeePay {
 		return nil, errors.New("only infrastructure fee distribute type supported")
 	}
 

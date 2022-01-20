@@ -171,7 +171,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 	// now we get the total amount and ensure we have enough funds
 	// if the source account
 	var (
-		totalAmount = num.Zero().Add(feeAmount, amount)
+		totalAmount = num.Sum(feeAmount, amount)
 		account     *types.Account
 		err         error
 	)
@@ -210,7 +210,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 			Asset:  asset,
 		},
 		Type:      types.TransferTypeInfrastructureFeePay,
-		MinAmount: feeAmount.Clone(),
+		MinAmount: feeAmount,
 	}, nil
 }
 

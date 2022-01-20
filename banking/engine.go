@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -58,7 +59,6 @@ type Collateral interface {
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
-	CreatePartyGeneralAccount(ctx context.Context, partyID, asset string) (string, error)
 	TransferFunds(ctx context.Context,
 		transfers []*types.Transfer,
 		accountTypes []types.AccountType,
@@ -87,12 +87,6 @@ type Topology interface {
 	IsValidator() bool
 }
 
-// Broker - the event bus.
-type Broker interface {
-	Send(e events.Event)
-	SendBatch(evts []events.Event)
-}
-
 const (
 	pendingState uint32 = iota
 	okState
@@ -104,7 +98,7 @@ var defaultValidationDuration = 2 * time.Hour
 type Engine struct {
 	cfg     Config
 	log     *logging.Logger
-	broker  Broker
+	broker  broker.BrokerI
 	col     Collateral
 	witness Witness
 	notary  Notary
@@ -140,7 +134,7 @@ func New(
 	tsvc TimeService,
 	assets Assets,
 	notary Notary,
-	broker Broker,
+	broker broker.BrokerI,
 	top Topology,
 ) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
