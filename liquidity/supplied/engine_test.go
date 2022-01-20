@@ -19,6 +19,7 @@ var (
 	MarkPrice                          = num.NewUint(103)
 	Horizon                            = num.DecimalFromFloat(0.001)
 	DefaultInRangeProbabilityOfTrading = num.DecimalFromFloat(.5)
+	TickSize                           = num.NewUint(1)
 )
 
 func TestCalculateSuppliedLiquidity(t *testing.T) {
@@ -34,7 +35,7 @@ func TestCalculateSuppliedLiquidity(t *testing.T) {
 	// No orders
 	priceMonitor.EXPECT().GetValidPriceRange().Return(minPrice, maxPrice).AnyTimes()
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger())
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger())
 	require.NotNil(t, engine)
 
 	f := func() (*num.Uint, *num.Uint, error) { return MarkPrice.Clone(), MarkPrice.Clone(), nil }
@@ -172,7 +173,7 @@ func Test_InteralConsistency(t *testing.T) {
 	})
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger())
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger())
 	require.NotNil(t, engine)
 	f := func() (*num.Uint, *num.Uint, error) { return MarkPrice.Clone(), MarkPrice.Clone(), nil }
 	engine.SetGetStaticPricesFunc(f)
@@ -252,7 +253,7 @@ func TestCalculateLiquidityImpliedSizes_NoLimitOrders(t *testing.T) {
 	})
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger())
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger())
 	require.NotNil(t, engine)
 	f := func() (*num.Uint, *num.Uint, error) { return MarkPrice.Clone(), MarkPrice.Clone(), nil }
 	engine.SetGetStaticPricesFunc(f)
@@ -361,7 +362,7 @@ func TestCalculateLiquidityImpliedSizes_WithLimitOrders(t *testing.T) {
 	}
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger())
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger())
 	require.NotNil(t, engine)
 	f := func() (*num.Uint, *num.Uint, error) { return MarkPrice.Clone(), MarkPrice.Clone(), nil }
 	engine.SetGetStaticPricesFunc(f)
@@ -592,7 +593,7 @@ func TestCalculateLiquidityImpliedSizes_NoValidOrders(t *testing.T) {
 	})
 
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger())
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger())
 	require.NotNil(t, engine)
 	f := func() (*num.Uint, *num.Uint, error) { return MarkPrice.Clone(), MarkPrice.Clone(), nil }
 	engine.SetGetStaticPricesFunc(f)
@@ -647,7 +648,7 @@ func TestProbabilityOfTradingRecomputedAfterPriceRangeChange(t *testing.T) {
 		return num.DecimalZero()
 	})
 	statevarEngine := stubs.NewStateVar()
-	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, logging.NewTestLogger())
+	engine := supplied.NewEngine(riskModel, priceMonitor, "asset1", "market1", statevarEngine, TickSize, logging.NewTestLogger())
 	require.NotNil(t, engine)
 	f := func() (*num.Uint, *num.Uint, error) { return MarkPrice.Clone(), MarkPrice.Clone(), nil }
 	engine.SetGetStaticPricesFunc(f)

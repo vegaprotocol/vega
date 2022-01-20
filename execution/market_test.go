@@ -246,6 +246,17 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 	return getTestMarket2(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true)
 }
 
+func getTestMarketWithDP(
+	t *testing.T,
+	now time.Time,
+	closingAt time.Time,
+	pMonitorSettings *types.PriceMonitoringSettings,
+	openingAuctionDuration *types.AuctionDuration,
+	decimalPlaces uint64) *testMarket {
+	t.Helper()
+	return getTestMarket2WithDP(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true, decimalPlaces)
+}
+
 func getTestMarket2(
 	t *testing.T,
 	now time.Time,
@@ -253,6 +264,18 @@ func getTestMarket2(
 	pMonitorSettings *types.PriceMonitoringSettings,
 	openingAuctionDuration *types.AuctionDuration,
 	startOpeningAuction bool,
+) *testMarket {
+	return getTestMarket2WithDP(t, now, closingAt, pMonitorSettings, openingAuctionDuration, startOpeningAuction, 1)
+}
+
+func getTestMarket2WithDP(
+	t *testing.T,
+	now time.Time,
+	closingAt time.Time,
+	pMonitorSettings *types.PriceMonitoringSettings,
+	openingAuctionDuration *types.AuctionDuration,
+	startOpeningAuction bool,
+	decimalPlaces uint64,
 ) *testMarket {
 	t.Helper()
 	ctrl := gomock.NewController(t)
@@ -333,7 +356,7 @@ func getTestMarket2(
 			UpdateFrequency: 0,
 		}
 	}
-	mkt := getMarket(closingAt, pMonitorSettings, openingAuctionDuration)
+	mkt := getMarketWithDP(closingAt, pMonitorSettings, openingAuctionDuration, decimalPlaces)
 	mktCfg := &mkt
 
 	mas := monitor.NewAuctionState(mktCfg, now)
@@ -375,7 +398,12 @@ func getTestMarket2(
 }
 
 func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) types.Market {
+	return getMarketWithDP(closingAt, pMonitorSettings, openingAuctionDuration, 1)
+}
+
+func getMarketWithDP(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, decimalPlaces uint64) types.Market {
 	mkt := types.Market{
+		DecimalPlaces: decimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				LiquidityFee:      num.DecimalFromFloat(0.3),

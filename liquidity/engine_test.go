@@ -66,7 +66,7 @@ func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *test
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, broker, idGen, risk, monitor, asset, market, stateVarEngine,
+		log, broker, idGen, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000),
 	)
 	engine.OnChainTimeUpdate(context.Background(), now)
 

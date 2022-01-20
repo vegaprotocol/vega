@@ -58,12 +58,13 @@ type Engine struct {
 
 	pot                 *probabilityOfTrading
 	potInitialised      bool
+	tickSize            *num.Uint
 	getBestStaticPrices func() (*num.Uint, *num.Uint, error)
 	log                 *logging.Logger
 }
 
 // NewEngine returns a reference to a new supplied liquidity calculation engine.
-func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine, log *logging.Logger) *Engine {
+func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID string, stateVarEngine StateVarEngine, tickSize *num.Uint, log *logging.Logger) *Engine {
 	e := &Engine{
 		rm:                             riskModel,
 		pm:                             priceMonitor,
@@ -74,6 +75,7 @@ func NewEngine(riskModel RiskModel, priceMonitor PriceMonitor, asset, marketID s
 		changed:                        true,
 		pot:                            &probabilityOfTrading{},
 		potInitialised:                 false,
+		tickSize:                       tickSize,
 		log:                            log,
 	}
 
@@ -143,23 +145,24 @@ func (e *Engine) calculateBuySellLiquidityWithMinMax(
 ) (*num.Uint, *num.Uint) {
 	bLiq := num.DecimalZero()
 	sLiq := num.DecimalZero()
+	min, max := e.pm.GetValidPriceRange()
 	for _, o := range orders {
 		if o.Side == types.SideBuy {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading, e.log)
-			// if e.log.GetLevel() <= logging.DebugLevel {
-			e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
-			// }
+			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), true, e.minProbabilityOfTrading)
+			if e.log.GetLevel() <= logging.DebugLevel {
+				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
+			}
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			bLiq = bLiq.Add(d)
 		}
 		if o.Side == types.SideSell {
 			// float64(o.Price.Uint64()) * float64(o.Remaining) * prob
-			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading, e.log)
-			// if e.log.GetLevel() <= logging.DebugLevel {
-			e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
-			// }
+			prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskPrice.ToDecimal(), min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), false, e.minProbabilityOfTrading)
+			if e.log.GetLevel() <= logging.DebugLevel {
+				e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
+			}
 			d := prob.Mul(num.DecimalFromUint(num.NewUint(o.Remaining)))
 			d = d.Mul(num.DecimalFromUint(o.Price))
 			sLiq = sLiq.Add(d)
@@ -181,17 +184,17 @@ func (e *Engine) updateSizes(
 		setSizesTo0(orders)
 		return nil
 	}
-
+	min, max := e.pm.GetValidPriceRange()
 	sum := num.DecimalZero()
 	probs := make([]num.Decimal, 0, len(orders))
 	validatedProportions := make([]num.Decimal, 0, len(orders))
 	for _, o := range orders {
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
-		prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskprice.ToDecimal(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading, e.log)
-		// if e.log.GetLevel() <= logging.DebugLevel {
-		e.log.Info("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
-		// }
+		prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskprice.ToDecimal(), min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
+		if e.log.GetLevel() <= logging.DebugLevel {
+			e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
+		}
 		if prob.IsZero() || prob.IsNegative() {
 			proportion = num.DecimalZero()
 		}

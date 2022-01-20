@@ -970,9 +970,9 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test liquidity order generated sizes", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarketWithDP(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
-		})
+		}, 4)
 		mktCfg.Fees = &types.Fees{
 			Factors: &types.FeeFactors{
 				InfrastructureFee: num.DecimalFromFloat(0.0005),
@@ -1118,13 +1118,13 @@ func TestSubmit(t *testing.T) {
 				"V0000000000-0000000002": 2,
 				"V0000000000-0000000003": 2,
 				"V0000000000-0000000004": 3,
-				"V0000000000-0000000005": 113,
+				"V0000000000-0000000005": 114,
 			}
 
 			for id, v := range found {
 				size, ok := expect[id]
 				assert.True(t, ok, "unexpected order id")
-				assert.Equal(t, v.Size, size, id)
+				assert.Equal(t, size, v.Size, id)
 			}
 		})
 
