@@ -173,6 +173,7 @@ func NewApp(
 		vegaPaths: vegaPaths,
 		cfg:       config,
 		cancelFn:  cancelFn,
+		chainCtx:  context.Background(), // TODO we need to store the chainid in the appstate snapshot
 		rates: ratelimit.New(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
@@ -449,6 +450,7 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+	app.log.Debug("ABCI service INIT CHAIN started")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)

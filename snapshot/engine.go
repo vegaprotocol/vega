@@ -178,12 +178,6 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		}
 		return eng, nil
 	}
-	if err := eng.loadHeight(ctx, conf.StartHeight); err != nil {
-		return nil, err
-	}
-	eng.log.Debug("Loaded snapshot",
-		logging.Int64("loaded height", conf.StartHeight),
-	)
 	return eng, nil
 }
 
@@ -235,7 +229,7 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return trees, nil
 }
 
-func (e *Engine) loadHeight(ctx context.Context, h int64) error {
+func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
 	err := e.loadTree()
 	if h < 0 {
 		return e.load(ctx)
@@ -388,6 +382,7 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 			if !ok {
 				return types.ErrUnknownSnapshotNamespace
 			}
+			e.log.Info("Loading provider", logging.String("tree-key", n.GetTreeKey()))
 			nps, err := p.LoadState(ctx, n)
 			if err != nil {
 				return err

@@ -173,27 +173,22 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
 		n.notary, n.spam, n.rewards, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine)
 
-	// now instantiate the blockchain layer
-	if n.app, err = n.startBlockchain(); err != nil {
-		return err
-	}
-
 	// setup config reloads for all engines / services /etc
 	n.setupConfigWatchers()
 	n.timeService.NotifyOnTick(n.confWatcher.OnTimeUpdate)
 
 	// setup some network parameters runtime validations
 	// and network parameters updates dispatches
-	return n.setupNetParameters()
-}
+	if err := n.setupNetParameters(); err != nil {
+		return err
+	}
 
-func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 	// if tm chain, setup the client
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
 		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		n.blockchainClient = blockchain.NewClient(a)
 	}
@@ -235,6 +230,22 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.Version,
 	)
 
+	// LoadHeight *must* come after we've added all the providers
+	// the replayprotection provider is added during initalisation of the app
+	// so it must be after that. And also probably after setting up the netparam watchers
+	if n.conf.Snapshot.StartHeight != 0 {
+		n.snapshot.LoadHeight(n.ctx, n.conf.Snapshot.StartHeight)
+	}
+
+	// now instantiate the blockchain layer
+	if n.app, err = n.startBlockchain(app); err != nil {
+		return err
+	}
+
+	return
+}
+
+func (n *NodeCommand) startBlockchain(app *processor.App) (*processor.App, error) {
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
 		srv, err := n.startABCI(n.ctx, app)
