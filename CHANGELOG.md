@@ -18,6 +18,7 @@
 - [254](https://github.com/vegaprotocol/data-node/pull/254) - Move to `ghcr.io` container registry
 - [290](https://github.com/vegaprotocol/data-node/pull/290) - Update pegged orders offset
 - [296](https://github.com/vegaprotocol/data-node/pull/296) - Expose validator performance score attributes on Node object 
+- [298](https://github.com/vegaprotocol/data-node/pull/298) - Remove creation of vendor directory
 
 
 ### 🐛 Fixes
