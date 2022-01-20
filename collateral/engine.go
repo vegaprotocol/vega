@@ -1158,10 +1158,30 @@ func (e *Engine) TransferFunds(
 		)
 	}
 
-	resps := make([]*types.TransferResponse, 0, len(transfers))
-	for i := range transfers {
-		req, err := e.getTransferFundsTransferRequest(
-			ctx, transfers[i], accountTypes[i], references[i])
+	var (
+		resps           = make([]*types.TransferResponse, 0, len(transfers)+len(feeTransfers))
+		err             error
+		req             *types.TransferRequest
+		allTransfers    = append(transfers, feeTransfers...)
+		allAccountTypes = append(accountTypes, feeTransfersAccountType...)
+	)
+
+	for i := range allTransfers {
+		transfer, accType := allTransfers[i], allAccountTypes[i]
+		switch allTransfers[i].Type {
+		case types.TransferTypeInfrastructureFeePay:
+			req, err = e.getTransferFundsFeesTransferRequest(ctx, transfer, accType)
+
+		case types.TransferTypeTransferFundsDistribute,
+			types.TransferTypeTransferFundsSend:
+			req, err = e.getTransferFundsTransferRequest(
+				ctx, transfer, accType, references[i])
+
+		default:
+			e.log.Panic("unsupported transfer type",
+				logging.String("types", accType.String()))
+		}
+
 		if err != nil {
 			return nil, err
 		}
@@ -1184,35 +1204,6 @@ func (e *Engine) TransferFunds(
 		}
 
 		resps = append(resps, res)
-	}
-
-	if len(feeTransfers) > 0 {
-		for i := range feeTransfers {
-			req, err := e.getTransferFundsFeesTransferRequest(
-				ctx, feeTransfers[i], feeTransfersAccountType[i])
-			if err != nil {
-				return nil, err
-			}
-
-			res, err := e.getLedgerEntries(ctx, req)
-			if err != nil {
-				return nil, err
-			}
-
-			for _, v := range res.Transfers {
-				// increment the to account
-				if err := e.IncrementBalance(ctx, v.ToAccount, v.Amount); err != nil {
-					e.log.Error(
-						"Failed to increment balance for account",
-						logging.String("account-id", v.ToAccount),
-						logging.BigUint("amount", v.Amount),
-						logging.Error(err),
-					)
-				}
-			}
-
-			resps = append(resps, res)
-		}
 	}
 
 	return resps, nil
@@ -2505,6 +2496,7 @@ func (e *Engine) UpdateBalance(ctx context.Context, id string, balance *num.Uint
 		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
+
 	return nil
 }
 
@@ -2520,6 +2512,7 @@ func (e *Engine) IncrementBalance(ctx context.Context, id string, inc *num.Uint)
 		e.state.updateAccs(e.hashableAccs)
 		e.broker.Send(events.NewAccountEvent(ctx, *acc))
 	}
+
 	return nil
 }
 

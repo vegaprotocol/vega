@@ -109,7 +109,7 @@ func testTakeFromGeneralDoNotDistribute(t *testing.T) {
 				MinAmount: num.NewUint(90),
 			},
 		},
-		// 2 general accounts
+		// 1 general accounts
 		[]types.AccountType{
 			types.AccountTypeGeneral,
 		},
