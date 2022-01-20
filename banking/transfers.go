@@ -81,7 +81,7 @@ func (e *Engine) oneOffTransfer(
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
-	if err := transfer.IsValid(false); err != nil {
+	if err := transfer.IsValid(); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
@@ -159,18 +159,46 @@ func (e *Engine) makeTransfers(
 		}
 }
 
+func (e *Engine) makeFeeTransferForTransferFunds(
+	amount *num.Uint,
+	from, asset string,
+	fromAccountType types.AccountType,
+) *types.Transfer {
+	// first we calculate the fee
+	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+
+	switch fromAccountType {
+	case types.AccountTypeGeneral:
+	default:
+		e.log.Panic("from account not supported",
+			logging.String("account-type", fromAccountType.String()),
+			logging.String("asset", asset),
+			logging.String("from", from),
+		)
+	}
+
+	return &types.Transfer{
+		Owner: from,
+		Amount: &types.FinancialAmount{
+			Amount: feeAmount.Clone(),
+			Asset:  asset,
+		},
+		Type:      types.TransferTypeInfrastructureFeePay,
+		MinAmount: feeAmount,
+	}
+}
+
 func (e *Engine) ensureFeeForTransferFunds(
 	amount *num.Uint,
 	from, asset string,
 	fromAccountType types.AccountType,
 ) (*types.Transfer, error) {
-	// first we calculate the fee
-	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+	transfer := e.makeFeeTransferForTransferFunds(
+		amount, from, asset, fromAccountType,
+	)
 
-	// now we get the total amount and ensure we have enough funds
-	// if the source account
 	var (
-		totalAmount = num.Sum(feeAmount, amount)
+		totalAmount = num.Sum(transfer.Amount.Amount, amount)
 		account     *types.Account
 		err         error
 	)
@@ -192,7 +220,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 	if account.Balance.LT(totalAmount) {
 		e.log.Debug("not enough funds to transfer",
 			logging.BigUint("amount", amount),
-			logging.BigUint("fee", feeAmount),
+			logging.BigUint("fee", transfer.Amount.Amount),
 			logging.BigUint("total-amount", totalAmount),
 			logging.BigUint("account-balance", account.Balance),
 			logging.String("account-type", fromAccountType.String()),
@@ -202,15 +230,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 		return nil, ErrNotEnoughFundsToTransfer
 	}
 
-	return &types.Transfer{
-		Owner: from,
-		Amount: &types.FinancialAmount{
-			Amount: feeAmount.Clone(),
-			Asset:  asset,
-		},
-		Type:      types.TransferTypeInfrastructureFeePay,
-		MinAmount: feeAmount,
-	}, nil
+	return transfer, nil
 }
 
 type timesToTransfers struct {
@@ -287,11 +307,4 @@ func (e *Engine) scheduleTransfer(
 		reference:   reference,
 	})
 	e.scheduledTransfers[deliverOn] = sts
-}
-
-func (e *Engine) recurringTransfer(
-	ctx context.Context,
-	transfer *types.RecurringTransfer,
-) error {
-	return errors.New("unimplemented")
 }

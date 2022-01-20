@@ -81,6 +81,12 @@ type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
+// Epochervice ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/banking EpochService
+type EpochService interface {
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
+}
+
 // Topology ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/banking Topology
 type Topology interface {
@@ -111,6 +117,7 @@ type Engine struct {
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
 
+	currentEpoch    uint64
 	currentTime     time.Time
 	mu              sync.RWMutex
 	bss             *bankingSnapshotState
@@ -119,6 +126,10 @@ type Engine struct {
 	// transfer fee related stuff
 	scheduledTransfers map[time.Time][]scheduledTransfer
 	transferFeeFactor  num.Decimal
+
+	// recurring transfers
+	// transfer id to recurringTransfers
+	recurringTransfers map[string]*recurringTransfer
 }
 
 type withdrawalRef struct {
@@ -136,8 +147,12 @@ func New(
 	notary Notary,
 	broker broker.BrokerI,
 	top Topology,
+	epoch EpochService,
 ) (e *Engine) {
-	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
+	defer func() {
+		tsvc.NotifyOnTick(e.OnTick)
+		epoch.NotifyOnEpoch(e.OnEpoch)
+	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -162,6 +177,7 @@ func New(
 		},
 		keyToSerialiser:    map[string]func() ([]byte, error){},
 		scheduledTransfers: map[time.Time][]scheduledTransfer{},
+		recurringTransfers: map[string]*recurringTransfer{},
 		transferFeeFactor:  num.DecimalZero(),
 	}
 
@@ -184,6 +200,10 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.cfg = cfg
+}
+
+func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
+	e.currentEpoch = ep.Seq
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {

@@ -29,6 +29,10 @@ var (
 	ErrInvalidToAccount           = errors.New("invalid to account")
 	ErrUnsupportedFromAccountType = errors.New("unsupported from account type")
 	ErrUnsupportedToAccountType   = errors.New("unsupported to account type")
+	ErrEndEpochIsZero             = errors.New("end epoch is zero")
+	ErrStartEpochIsZero           = errors.New("start epoch is zero")
+	ErrInvalidFactor              = errors.New("invalid factor")
+	ErrStartEpochAfterEndEpoch    = errors.New("start epoch after end epoch")
 )
 
 type TransferCommandKind int
@@ -50,7 +54,7 @@ type TransferBase struct {
 	Status          TransferStatus
 }
 
-func (t *TransferBase) IsValid(okZeroAmount bool) error {
+func (t *TransferBase) IsValid() error {
 	if len(t.From) <= 0 {
 		return ErrInvalidFromAccount
 	}
@@ -59,7 +63,7 @@ func (t *TransferBase) IsValid(okZeroAmount bool) error {
 	}
 
 	// ensure amount makes senses
-	if !okZeroAmount && t.Amount.IsZero() {
+	if t.Amount.IsZero() {
 		return ErrCannotTransferZeroFunds
 	}
 
@@ -83,6 +87,14 @@ func (t *TransferBase) IsValid(okZeroAmount bool) error {
 type OneOffTransfer struct {
 	*TransferBase
 	DeliverOn *time.Time
+}
+
+func (o *OneOffTransfer) IsValid() error {
+	if err := o.TransferBase.IsValid(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
@@ -145,6 +157,29 @@ type RecurringTransfer struct {
 	StartEpoch uint64
 	EndEpoch   uint64
 	Factor     num.Decimal
+}
+
+func (o *RecurringTransfer) IsValid() error {
+	if err := o.TransferBase.IsValid(); err != nil {
+		return err
+	}
+
+	if o.EndEpoch == 0 {
+		return ErrEndEpochIsZero
+	}
+	if o.StartEpoch == 0 {
+		return ErrStartEpochIsZero
+	}
+
+	if o.StartEpoch > o.EndEpoch {
+		return ErrStartEpochAfterEndEpoch
+	}
+
+	if o.Factor.Cmp(num.DecimalFromFloat(0)) <= 0 {
+		return ErrInvalidFactor
+	}
+
+	return nil
 }
 
 func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
@@ -238,5 +273,18 @@ func newOneOffTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFu
 }
 
 func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
-	return nil, nil
+	factor, err := num.DecimalFromString(tf.GetRecurring().GetFactor())
+	if err != nil {
+		return nil, err
+	}
+	return &TransferFunds{
+		Kind: TransferCommandKindRecurring,
+		Recurring: &RecurringTransfer{
+			TransferBase: base,
+			StartEpoch:   tf.GetRecurring().GetStartEpoch(),
+			EndEpoch:     tf.GetRecurring().GetEndEpoch(),
+			Factor:       factor,
+		},
+	}, nil
+
 }
