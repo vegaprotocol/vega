@@ -137,6 +137,10 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	// setup rewards engine
 	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology)
 
+	n.notary = notary.NewWithSnapshot(
+		n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
+	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology)
+
 	// checkpoint engine
 	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.rewards, n.topology, n.banking)
 	if err != nil {
@@ -159,9 +163,6 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		n.checkpoint.UponGenesis,
 	)
 
-	n.notary = notary.NewWithSnapshot(
-		n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
-	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology)
 	n.spam = spam.New(n.Log, n.conf.Spam, n.epochService, n.stakingAccounts)
 	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService)
 	if err != nil {
