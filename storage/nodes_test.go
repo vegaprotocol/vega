@@ -170,7 +170,7 @@ func TestNodes(t *testing.T) {
 
 	actualNode, err = nodeStore.GetByID("pub_key_1", "1")
 	a.NoError(err)
-	assertNode(a, actualNode, delegations, "10", "25", "35", "", "")
+	assertNode(a, actualNode, delegations, "10", "25", "35", "", "", "", "")
 
 	nodeStore.AddNode(pb.Node{
 		Id:               "pub_key_2",
@@ -182,8 +182,8 @@ func TestNodes(t *testing.T) {
 		Status:           pb.NodeStatus_NODE_STATUS_VALIDATOR,
 	})
 
-	nodeStore.AddNodeScore("pub_key_2", "1", "20", "0.89")
-	nodeStore.AddNodeScore("pub_key_2", "2", "30", "0.9")
+	nodeStore.AddNodeScore("pub_key_2", "1", "20", "0.89", "25", "0.8")
+	nodeStore.AddNodeScore("pub_key_2", "2", "30", "0.9", "40", "0.75")
 
 	delegations = []*pb.Delegation{
 		{
@@ -224,12 +224,12 @@ func TestNodes(t *testing.T) {
 	// Get node in first epoch
 	node, err := nodeStore.GetByID("pub_key_2", "1")
 	a.NoError(err)
-	assertNode(a, node, delegations[0:2], "0", "70", "70", "20", "0.89")
+	assertNode(a, node, delegations[0:2], "0", "70", "70", "20", "0.89", "25", "0.8")
 
 	// Get node in second epoch
 	node, err = nodeStore.GetByID("pub_key_2", "2")
 	a.NoError(err)
-	assertNode(a, node, delegations[2:], "0", "60", "60", "30", "0.9")
+	assertNode(a, node, delegations[2:], "0", "60", "60", "30", "0.9", "40", "0.75")
 
 	nodes := nodeStore.GetAll("1")
 	a.Equal(2, len(nodes))
@@ -266,13 +266,15 @@ func assertNode(
 	node *pb.Node,
 	delegations []*pb.Delegation,
 	stakedByOperator, stakedByDelegates, stakedTotal string,
-	score, normalisedScore string,
+	score, normalisedScore, rawScore, performance string,
 ) {
 	a.Equal(stakedByOperator, node.StakedByOperator)
 	a.Equal(stakedByDelegates, node.StakedByDelegates)
 	a.Equal(stakedTotal, node.StakedTotal)
 	a.Equal(score, node.Score)
 	a.Equal(normalisedScore, node.NormalisedScore)
+	a.Equal(rawScore, node.RawScore)
+	a.Equal(performance, node.Performance)
 
 	sort.Sort(ByXY(delegations))
 	sort.Sort(ByXY(node.Delegations))
