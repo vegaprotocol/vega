@@ -207,7 +207,7 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
 		return db.NewGoLevelDB("snapshot", dbPath)
 	default:
-		return nil, types.ErrInvalidSnapshotStorage
+		return nil, types.ErrInvalidSnapshotStorageMethod
 	}
 }
 
