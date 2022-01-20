@@ -60,15 +60,6 @@ check_golang_version() {
 	fi
 }
 
-deps() {
-	mkdir -p "$GOPATH/pkg/mod/##@explicit" "$GOPATH/pkg/mod/@indirect" && \
-	go mod download && \
-	go mod vendor && \
-	grep 'google/protobuf' go.mod | awk '{print "# " $1 " " $2 "\n"$1"/src";}' >> vendor/modules.txt && \
-	grep 'tendermint/tendermint' go.mod | awk '{print "# " $1 " " $2 "\n"$1"/crypto/secp256k1/internal/secp256k1/libsecp256k1";}' >> vendor/modules.txt && \
-	modvendor -copy="**/*.c **/*.h **/*.proto"
-}
-
 
 set_version() {
 	version="${DRONE_TAG:-$(git describe --tags 2>/dev/null)}"
@@ -140,7 +131,6 @@ set_go_flags() {
 	local target
 	target="$1" ; shift
 	cc=""
-	cgo_cflags="-I$PWD/vendor/github.com/tendermint/tendermint/crypto/secp256k1/internal/secp256k1 -I$PWD/vendor/github.com/tendermint/tendermint/crypto/secp256k1/internal/secp256k1/libsecp256k1"
 	cgo_ldflags=""
 	cgo_cxxflags=""
 	cxx=""
@@ -257,10 +247,6 @@ run() {
 			go tool cover -func="$c" && \
 			go tool cover -html="$c" -o .testCoverage.html
 		return $?
-		;;
-	deps) ## Get dependencies
-		deps
-		return "$?"
 		;;
 	gqlgen) ## Run gqlgen
 		pushd ./gateway/graphql/ 1>/dev/null || return 1
