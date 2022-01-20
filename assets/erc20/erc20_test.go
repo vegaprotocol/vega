@@ -105,9 +105,13 @@ type testEthClient struct {
 func (testEthClient) HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error) {
 	return nil, nil
 }
-func (testEthClient) BridgeAddress() ethcommon.Address              { return ethcommon.HexToAddress(bridgeAddress) }
+
+func (testEthClient) CollateralBridgeAddress() ethcommon.Address {
+	return ethcommon.HexToAddress(bridgeAddress)
+}
+
 func (testEthClient) CurrentHeight(context.Context) (uint64, error) { return 100, nil }
-func (testEthClient) ConfirmationsRequired() uint32                 { return 1 }
+func (testEthClient) ConfirmationsRequired() uint64                 { return 1 }
 
 type testWallet struct{}
 
