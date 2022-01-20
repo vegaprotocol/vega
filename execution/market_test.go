@@ -265,6 +265,7 @@ func getTestMarket2(
 	openingAuctionDuration *types.AuctionDuration,
 	startOpeningAuction bool,
 ) *testMarket {
+	t.Helper()
 	return getTestMarket2WithDP(t, now, closingAt, pMonitorSettings, openingAuctionDuration, startOpeningAuction, 1)
 }
 

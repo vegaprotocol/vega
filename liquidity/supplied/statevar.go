@@ -62,7 +62,7 @@ func (e *Engine) startCalcProbOfTrading(eventID string, endOfCalcCallback statev
 		return
 	}
 
-	// calculate how far from the best we want to calcualte
+	// calculate how far from the best we want to calculate
 	distanceFromBest := e.tickSize.ToDecimal().Mul(numberOfPricePoints.ToDecimal())
 
 	// we're calculating between the best ask up to ask+distanceFromBest
@@ -246,7 +246,6 @@ func lexterp(offsets, probabilities []num.Decimal, offset, minProbabilityOfTradi
 	prob := probLast2.Add(probLast.Sub(probLast2).Mul(slope))
 	prob = num.MinD(num.DecimalFromInt64(1), num.MaxD(minProbabilityOfTrading, prob))
 	return prob
-
 }
 
 func linterp(offsets, probabilities []num.Decimal, priceOffset num.Decimal, searchFunc func(i int) bool, minProbabilityOfTrading num.Decimal) num.Decimal {
