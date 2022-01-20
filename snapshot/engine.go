@@ -119,8 +119,8 @@ var nodeOrder = []types.SnapshotNamespace{
 func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
 	// default to min 1 version, just so we don't have to account for negative cap or nil slice.
 	// A single version kept in memory is pretty harmless.
-	if conf.Versions < 1 {
-		conf.Versions = 1
+	if conf.KeepRecent < 1 {
+		conf.KeepRecent = 1
 	}
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -164,7 +164,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		hashes:        map[string][]byte{},
 		providers:     map[string]types.StateProvider{},
 		providersNS:   map[types.SnapshotNamespace][]types.StateProvider{},
-		versions:      make([]int64, 0, conf.Versions), // cap determines how many versions we keep
+		versions:      make([]int64, 0, conf.KeepRecent), // cap determines how many versions we keep
 		versionHeight: map[uint64]int64{},
 		wrap:          appPL,
 		app:           appPL.AppState,
@@ -200,11 +200,15 @@ func (e *Engine) ReloadConfig(cfg Config) {
 }
 
 func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
-	if conf.Storage == memDB {
+	switch conf.Storage {
+	case memDB:
 		return db.NewMemDB(), nil
+	case goLevelDB:
+		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
+		return db.NewGoLevelDB("snapshot", dbPath)
+	default:
+		return nil, types.ErrInvalidSnapshotStorageMethod
 	}
-	dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
-	return db.NewGoLevelDB("snapshot", dbPath)
 }
 
 // List returns all snapshots available.
