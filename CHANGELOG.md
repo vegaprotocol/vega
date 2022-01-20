@@ -46,7 +46,7 @@
 - [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Fail when missing tendermint home and public key in `nodewallet import` command
 - [4617](https://github.com/vegaprotocol/vega/pull/4617) - Bug fix for incorrectly reporting auto delegation 
-- [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for snapshot.db-path parameter not being used if it is set
+- [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
 
 ## 0.47.4
 *2022-01-05*
