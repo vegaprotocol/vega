@@ -3,13 +3,14 @@
 ## Unreleased
 
 ### 🚨 Breaking changes
+- [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
 - [4581](https://github.com/vegaprotocol/vega/issues/4561) - Separate endpoints for liquidity provision submissions, amendment and cancellation
 - [4390](https://github.com/vegaprotocol/vega/pull/4390) - Introduce node mode, `vega init` now require a mode: full or validator
 - [4383](https://github.com/vegaprotocol/vega/pull/4383) - Rename flag `--tm-root` to `--tm-home`
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Remove the outdated `--network` flag on `vega genesis generate` and `vega genesis update`
+- [4605](https://github.com/vegaprotocol/vega/pull/4605) - Use new format for `EthereumConfig` in network parameters.
 
 ### 🗑️ Deprecation
-- [](https://github.com/vegaprotocol/vega/pull/) -
 
 ### 🛠 Improvements
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
@@ -26,6 +27,7 @@
 - [4544](https://github.com/vegaprotocol/vega/pull/4544) - Ensure validators are started with the right set of keys
 - [4569](https://github.com/vegaprotocol/vega/pull/4569) - Move to `ghcr.io` docker container registry
 - [4571](https://github.com/vegaprotocol/vega/pull/4571) - Update `CHANGELOG.md` for `0.47.x`
+- [4577](https://github.com/vegaprotocol/vega/pull/4577) - Update `CHANGELOG.md` for `0.45.6` patch
 - [4573](https://github.com/vegaprotocol/vega/pull/4573) - Remove execution configuration duplication from configuration root
 - [4555](https://github.com/vegaprotocol/vega/issues/4555) - Probability of trading integrated into floating point consensus engine
 - [4592](https://github.com/vegaprotocol/vega/pull/4592) - Update instructions on how to use docker without `sudo`
@@ -33,6 +35,7 @@
 - [4599](https://github.com/vegaprotocol/vega/pull/4599) - Allow raw private keys for bridges functions
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Add `--update` and `--replace` flags on `vega genesis new validator`
 - [4508](https://github.com/vegaprotocol/vega/pull/4508) - Disallow negative offset for pegged orders
+- [4522](https://github.com/vegaprotocol/vega/pull/4522) - Add `--network-url` option to `vega tm`
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -43,7 +46,7 @@
 - [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
 - [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Fail when missing tendermint home and public key in `nodewallet import` command
-
+- [4617](https://github.com/vegaprotocol/vega/pull/4617) - Bug fix for incorrectly reporting auto delegation 
 ## 0.47.4
 *2022-01-05*
 
@@ -63,7 +66,6 @@
 - [4500](https://github.com/vegaprotocol/vega/pull/4500) - Set minimum for validator power to avoid accidentally removing them
 - [4503](https://github.com/vegaprotocol/vega/pull/4503) - Limit delegation epochs in core API
 - [4504](https://github.com/vegaprotocol/vega/pull/4504) - Fix premature ending of epoch when loading from checkpoint
-- [4506](https://github.com/vegaprotocol/vega/pull/4506) - Wire network parameters to time service to flush out pending changes
 
 ## 0.47.1
 *2021-11-24*
@@ -161,6 +163,12 @@
 - [4444](https://github.com/vegaprotocol/vega/pull/4444) - Fix division by zero when all validator scores are 0
 - [4467](https://github.com/vegaprotocol/vega/pull/4467) - Fix reward account balance not being saved/loaded to/from checkpoint
 - [4474](https://github.com/vegaprotocol/vega/pull/4474) - Wire rewards checkpoint to checkpoint engine and store infrastructure fee accounts in collateral checkpoint
+
+## 0.45.6
+*2021-11-16*
+
+### 🐛 Fixes
+- [4506](https://github.com/vegaprotocol/vega/pull/4506) - Wire network parameters to time service to flush out pending changes
 
 ## 0.45.5
 *2021-11-16*
