@@ -204,6 +204,11 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 		return db.NewMemDB(), nil
 	}
 	dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
+
+	if conf.DBPath != "" {
+		dbPath = conf.DBPath
+	}
+
 	return db.NewGoLevelDB("snapshot", dbPath)
 }
 
