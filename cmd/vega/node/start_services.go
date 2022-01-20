@@ -138,7 +138,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology)
 
 	// checkpoint engine
-	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.rewards, n.topology)
+	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.rewards, n.topology, n.banking)
 	if err != nil {
 		panic(err)
 	}

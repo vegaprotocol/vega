@@ -28,6 +28,7 @@ var (
 		types.DelegationCheckpoint,     // so delegation sequence ID's make sense
 		types.PendingRewardsCheckpoint, // pending rewards can basically be reloaded any time
 		types.KeyRotationsCheckpoint,   // key rotations can be reloaded any time
+		types.BankingCheckpoint,        // key rotations can be reloaded any time
 	}
 )
 

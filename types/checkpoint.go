@@ -29,6 +29,7 @@ const (
 	BlockCheckpoint          CheckpointName = "block" // pseudo-checkpoint, really...
 	PendingRewardsCheckpoint CheckpointName = "rewards"
 	KeyRotationsCheckpoint   CheckpointName = "key-rotations"
+	BankingCheckpoint        CheckpointName = "banking"
 )
 
 type Block struct {

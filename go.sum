@@ -17,6 +17,10 @@ code.vegaprotocol.io/protos v0.47.1-0.20220120110732-c522857dc645 h1:CNFPhxo3gsL
 code.vegaprotocol.io/protos v0.47.1-0.20220120110732-c522857dc645/go.mod h1:KqJcg62sUHV0qEhlZIZojEypzk3V1ZE3tBS+wdqjddU=
 code.vegaprotocol.io/protos v0.47.1-0.20220120111721-e332535f918e h1:iucZEESyxXcV9WMelVQii+2fzti79qgwYFCWZ8rC7Nk=
 code.vegaprotocol.io/protos v0.47.1-0.20220120111721-e332535f918e/go.mod h1:KqJcg62sUHV0qEhlZIZojEypzk3V1ZE3tBS+wdqjddU=
+code.vegaprotocol.io/protos v0.47.1-0.20220120113701-f7ca27cba35a h1:MV71RHhNK0klqStwH15WNsr1g6Zns6qRb2ao7mZ+eNI=
+code.vegaprotocol.io/protos v0.47.1-0.20220120113701-f7ca27cba35a/go.mod h1:KqJcg62sUHV0qEhlZIZojEypzk3V1ZE3tBS+wdqjddU=
+code.vegaprotocol.io/protos v0.47.1-0.20220120114214-d3f38a8f1b9d h1:ZNVDaUs+bS3bPbb2z2UpKrD1p92PSIy2+BacSd5I4Hw=
+code.vegaprotocol.io/protos v0.47.1-0.20220120114214-d3f38a8f1b9d/go.mod h1:KqJcg62sUHV0qEhlZIZojEypzk3V1ZE3tBS+wdqjddU=
 code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E=
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090 h1:SF7ZRvZ/JASJNEQigbuUwk1rQuugLy6gqbOFs8D8VXI=

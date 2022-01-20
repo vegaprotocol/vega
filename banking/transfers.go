@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -19,6 +20,27 @@ type scheduledTransfer struct {
 	transfer    *types.Transfer
 	accountType types.AccountType
 	reference   string
+}
+
+func (s *scheduledTransfer) ToProto() *checkpoint.ScheduledTransfer {
+	return &checkpoint.ScheduledTransfer{
+		Transfer:    s.transfer.IntoProto(),
+		AccountType: s.accountType,
+		Reference:   s.reference,
+	}
+}
+
+func scheduledTransferFromProto(p *checkpoint.ScheduledTransfer) (scheduledTransfer, error) {
+	transfer, err := types.TransferFromProto(p.Transfer)
+	if err != nil {
+		return scheduledTransfer{}, err
+	}
+
+	return scheduledTransfer{
+		transfer:    transfer,
+		accountType: p.AccountType,
+		reference:   p.Reference,
+	}, nil
 }
 
 func (e *Engine) OnTransferFeeFactorUpdate(ctx context.Context, f num.Decimal) error {
