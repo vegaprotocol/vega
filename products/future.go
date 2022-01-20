@@ -2,6 +2,7 @@ package products
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -115,7 +116,18 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
-	tradingTerminated, err := data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
+	var tradingTerminated bool
+	var err error
+
+	if f.oracle.binding.tradingTerminationProperty == fmt.Sprintf("%s.timestamp", oracles.InternalOraclePrefix) {
+		if _, err = data.GetTimestamp(fmt.Sprintf("%s.timestamp", oracles.InternalOraclePrefix)); err == nil {
+			// we have received a trading termination timestamp from the internal vega time oracle
+			tradingTerminated = true
+		}
+	} else {
+		tradingTerminated, err = data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
+	}
+
 	if err != nil {
 		f.log.Error(
 			"could not parse the property acting as trading Terminated",
