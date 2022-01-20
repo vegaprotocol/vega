@@ -207,7 +207,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	e.state.enableAsset(asset)
 	// then creat a new infrastructure fee account for the asset
 	// these are fee related account only
-	infraFeeID := e.accountID("", "", asset.ID, types.AccountTypeFeesInfrastructure)
+	infraFeeID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeFeesInfrastructure)
 	_, ok := e.accs[infraFeeID]
 	if !ok {
 		infraFeeAcc := &types.Account{
@@ -252,7 +252,7 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 	}
 
 	// pending transfers account
-	pendingTransfersID := e.accountID("", "", asset.ID, types.AccountTypePendingTransfers)
+	pendingTransfersID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypePendingTransfers)
 	if _, ok := e.accs[pendingTransfersID]; !ok {
 		pendingTransfersAcc := &types.Account{
 			ID:       pendingTransfersID,
@@ -972,7 +972,7 @@ func (e *Engine) MarkToMarket(ctx context.Context, marketID string, transfers []
 
 // GetPartyMargin will return the current margin for a given party.
 func (e *Engine) GetPartyMargin(pos events.MarketPosition, asset, marketID string) (events.Margin, error) {
-	genID := e.accountID("", pos.Party(), asset, types.AccountTypeGeneral)
+	genID := e.accountID(noMarket, pos.Party(), asset, types.AccountTypeGeneral)
 	marginID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeMargin)
 	bondID := e.accountID(marketID, pos.Party(), asset, types.AccountTypeBond)
 	genAcc, err := e.GetAccountByID(genID)
@@ -1920,7 +1920,7 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 	resps := make([]*types.TransferResponse, 0, len(parties))
 
 	for _, v := range parties {
-		generalAcc, err := e.GetAccountByID(e.accountID("", v, asset, types.AccountTypeGeneral))
+		generalAcc, err := e.GetAccountByID(e.accountID(noMarket, v, asset, types.AccountTypeGeneral))
 		if err != nil {
 			e.log.Debug(
 				"Failed to get the general account",
@@ -2393,7 +2393,7 @@ func (e *Engine) CreateMarketAccounts(ctx context.Context, marketID, asset strin
 
 func (e *Engine) HasGeneralAccount(party, asset string) bool {
 	_, err := e.GetAccountByID(
-		e.accountID("", party, asset, types.AccountTypeGeneral))
+		e.accountID(noMarket, party, asset, types.AccountTypeGeneral))
 	return err == nil
 }
 
@@ -2403,7 +2403,7 @@ func (e *Engine) Withdraw(ctx context.Context, partyID, asset string, amount *nu
 	if !e.AssetExists(asset) {
 		return nil, ErrInvalidAssetID
 	}
-	acc, err := e.GetAccountByID(e.accountID("", partyID, asset, types.AccountTypeGeneral))
+	acc, err := e.GetAccountByID(e.accountID(noMarket, partyID, asset, types.AccountTypeGeneral))
 	if err != nil {
 		return nil, ErrAccountDoesNotExist
 	}
