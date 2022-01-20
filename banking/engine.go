@@ -90,6 +90,7 @@ type Topology interface {
 // Broker - the event bus.
 type Broker interface {
 	Send(e events.Event)
+	SendBatch(evts []events.Event)
 }
 
 const (

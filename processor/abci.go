@@ -233,7 +233,7 @@ func NewApp(
 
 	app.abci.
 		HandleDeliverTx(txn.TransferFundsCommand,
-			app.SendEventOnError(app.DeliverTransferFunds)).
+			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
 		HandleDeliverTx(txn.SubmitOrderCommand,
 			app.SendEventOnError(app.DeliverSubmitOrder)).
 		HandleDeliverTx(txn.CancelOrderCommand,
@@ -802,14 +802,14 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 	return nil
 }
 
-func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {
 	tfr := &commandspb.Transfer{}
 	if err := tx.Unmarshal(tfr); err != nil {
 		return err
 	}
 
 	party := tx.Party()
-	transferFunds, err := types.NewTransferFromProto(party, tfr)
+	transferFunds, err := types.NewTransferFromProto(id, party, tfr)
 	if err != nil {
 		return err
 	}

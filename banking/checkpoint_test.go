@@ -16,7 +16,6 @@ func TestCheckpoint(t *testing.T) {
 }
 
 func testSimpledScheduledTransfer(t *testing.T) {
-
 	e := getTestEngine(t)
 	defer e.ctrl.Finish()
 
@@ -85,7 +84,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -129,6 +128,6 @@ func testSimpledScheduledTransfer(t *testing.T) {
 			return nil, nil
 		})
 
+	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	e2.OnTick(context.Background(), time.Unix(12, 0))
-
 }

@@ -64,6 +64,7 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	// asset exists
 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
 	assert.EqualError(t,
 		e.TransferFunds(ctx, transfer),
@@ -97,6 +98,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	var baseCpy types.TransferBase
 
 	t.Run("invalid from account", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy := transferBase
 		transfer.OneOff.TransferBase = &baseCpy
 		transfer.OneOff.From = ""
@@ -107,6 +109,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("invalid to account", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
 		transfer.OneOff.To = ""
@@ -117,6 +120,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsupported from account type", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
 		transfer.OneOff.FromAccountType = types.AccountTypeBond
@@ -127,6 +131,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("unsuported to account type", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
 		transfer.OneOff.ToAccountType = types.AccountTypeBond
@@ -137,6 +142,7 @@ func testOneOffTransferInvalidTransfers(t *testing.T) {
 	})
 
 	t.Run("zero funds transfer", func(t *testing.T) {
+		e.broker.EXPECT().Send(gomock.Any()).Times(1)
 		baseCpy = transferBase
 		transfer.OneOff.TransferBase = &baseCpy
 		transfer.OneOff.Amount = num.Zero()
@@ -217,7 +223,7 @@ func testValidOneOffTransfer(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 }
@@ -295,7 +301,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 }
@@ -369,7 +375,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 			return nil, nil
 		})
 
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	e.broker.EXPECT().Send(gomock.Any()).Times(2)
 
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -406,5 +412,6 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 			return nil, nil
 		})
 
+	e.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	e.OnTick(context.Background(), time.Unix(12, 0))
 }

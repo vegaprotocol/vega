@@ -17,6 +17,8 @@ import (
 var ErrUnsupportedTransferKind = errors.New("unsupported transfer kind")
 
 type scheduledTransfer struct {
+	// to send events
+	oneoff      *types.OneOffTransfer
 	transfer    *types.Transfer
 	accountType types.AccountType
 	reference   string
@@ -24,9 +26,10 @@ type scheduledTransfer struct {
 
 func (s *scheduledTransfer) ToProto() *checkpoint.ScheduledTransfer {
 	return &checkpoint.ScheduledTransfer{
-		Transfer:    s.transfer.IntoProto(),
-		AccountType: s.accountType,
-		Reference:   s.reference,
+		OneoffTransfer: s.oneoff.IntoEvent(),
+		Transfer:       s.transfer.IntoProto(),
+		AccountType:    s.accountType,
+		Reference:      s.reference,
 	}
 }
 
@@ -37,6 +40,7 @@ func scheduledTransferFromProto(p *checkpoint.ScheduledTransfer) (scheduledTrans
 	}
 
 	return scheduledTransfer{
+		oneoff:      types.OneOffTransferFromEvent(p.OneoffTransfer),
 		transfer:    transfer,
 		accountType: p.AccountType,
 		reference:   p.Reference,
@@ -66,13 +70,19 @@ func (e *Engine) oneOffTransfer(
 	ctx context.Context,
 	transfer *types.OneOffTransfer,
 ) error {
+	defer func() {
+		e.broker.Send(events.NewOneOffTransferFundsEvent(ctx, transfer))
+	}()
+
 	// ensure asset exists
 	if _, err := e.assets.Get(transfer.Asset); err != nil {
+		transfer.Status = types.TransferStatusRejected
 		e.log.Debug("cannot transfer funds, invalid asset", logging.Error(err))
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
 	if err := transfer.IsValid(false); err != nil {
+		transfer.Status = types.TransferStatusRejected
 		return err
 	}
 
@@ -81,6 +91,7 @@ func (e *Engine) oneOffTransfer(
 	feeTransfer, err := e.ensureFeeForTransferFunds(
 		transfer.Amount, transfer.From, transfer.Asset, transfer.FromAccountType)
 	if err != nil {
+		transfer.Status = types.TransferStatusRejected
 		return fmt.Errorf("could not pay the fee for transfer: %w", err)
 	}
 	feeTransferAccountType := []types.AccountType{transfer.FromAccountType}
@@ -97,10 +108,19 @@ func (e *Engine) oneOffTransfer(
 		transfers = append(transfers, toTransfer)
 		accountTypes = append(accountTypes, transfer.ToAccountType)
 		references = append(references, transfer.Reference)
+
+		// if this goes well the whole transfer will be done
+		// so we can set it to the proper status
+		transfer.Status = types.TransferStatusDone
 	} else {
 		// schedule the transfer
 		e.scheduleTransfer(
-			toTransfer, transfer.ToAccountType, transfer.Reference, *transfer.DeliverOn)
+			transfer,
+			toTransfer,
+			transfer.ToAccountType,
+			transfer.Reference,
+			*transfer.DeliverOn,
+		)
 	}
 
 	// process the transfer
@@ -108,6 +128,7 @@ func (e *Engine) oneOffTransfer(
 		ctx, transfers, accountTypes, references, []*types.Transfer{feeTransfer}, feeTransferAccountType,
 	)
 	if err != nil {
+		transfer.Status = types.TransferStatusRejected
 		return err
 	}
 
@@ -218,8 +239,11 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 	transfers := []*types.Transfer{}
 	accountTypes := []types.AccountType{}
 	references := []string{}
+	evts := []events.Event{}
 	for _, v := range ttfs {
 		for _, t := range v.transfer {
+			t.oneoff.Status = types.TransferStatusDone
+			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, t.oneoff))
 			transfers = append(transfers, t.transfer)
 			accountTypes = append(accountTypes, t.accountType)
 			references = append(references, t.reference)
@@ -239,12 +263,17 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 	}
 
 	e.broker.Send(events.NewTransferResponse(ctx, tresps))
+	e.broker.SendBatch(evts)
 
 	return nil
 }
 
 func (e *Engine) scheduleTransfer(
-	t *types.Transfer, ty types.AccountType, reference string, deliverOn time.Time,
+	oneoff *types.OneOffTransfer,
+	t *types.Transfer,
+	ty types.AccountType,
+	reference string,
+	deliverOn time.Time,
 ) {
 	sts, ok := e.scheduledTransfers[deliverOn]
 	if !ok {
@@ -253,6 +282,7 @@ func (e *Engine) scheduleTransfer(
 	}
 
 	sts = append(sts, scheduledTransfer{
+		oneoff:      oneoff,
 		transfer:    t,
 		accountType: ty,
 		reference:   reference,

@@ -5,7 +5,21 @@ import (
 	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types/num"
+)
+
+type TransferStatus = eventspb.Transfer_Status
+
+const (
+	// Default value.
+	TransferStatsUnspecified TransferStatus = eventspb.Transfer_STATUS_UNSPECIFIED
+	// A pending transfer.
+	TransferStatusPending TransferStatus = eventspb.Transfer_STATUS_PENDING
+	// A finished transfer.
+	TransferStatusDone TransferStatus = eventspb.Transfer_STATUS_DONE
+	// A rejected transfer.
+	TransferStatusRejected TransferStatus = eventspb.Transfer_STATUS_REJECTED
 )
 
 var (
@@ -25,6 +39,7 @@ const (
 )
 
 type TransferBase struct {
+	ID              string
 	From            string
 	FromAccountType AccountType
 	To              string
@@ -32,6 +47,7 @@ type TransferBase struct {
 	Asset           string
 	Amount          *num.Uint
 	Reference       string
+	Status          TransferStatus
 }
 
 func (t *TransferBase) IsValid(okZeroAmount bool) error {
@@ -69,11 +85,87 @@ type OneOffTransfer struct {
 	DeliverOn *time.Time
 }
 
+func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
+	var deliverOn *time.Time
+	if t := p.GetOneOff().GetDeliverOn(); t > 0 {
+		d := time.Unix(t, 0)
+		deliverOn = &d
+	}
+
+	amount, overflow := num.UintFromString(p.Amount, 10)
+	if overflow {
+		// panic is alright here, this should come only from
+		// a checkpoint, and it would mean the checkpoint is fucked
+		// so executions is not possible.
+		panic("invalid transfer amount")
+	}
+
+	return &OneOffTransfer{
+		TransferBase: &TransferBase{
+			ID:              p.Id,
+			From:            p.From,
+			FromAccountType: p.FromAccountType,
+			To:              p.To,
+			ToAccountType:   p.ToAccountType,
+			Asset:           p.Asset,
+			Amount:          amount,
+			Reference:       p.Reference,
+			Status:          p.Status,
+		},
+		DeliverOn: deliverOn,
+	}
+}
+
+func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
+	out := &eventspb.Transfer{
+		Id:              t.ID,
+		From:            t.From,
+		FromAccountType: t.FromAccountType,
+		To:              t.To,
+		ToAccountType:   t.ToAccountType,
+		Asset:           t.Asset,
+		Amount:          t.Amount.String(),
+		Reference:       t.Reference,
+		Status:          t.Status,
+	}
+
+	if t.DeliverOn != nil {
+		out.Kind = &eventspb.Transfer_OneOff{
+			OneOff: &eventspb.OneOffTransfer{
+				DeliverOn: t.DeliverOn.Unix(),
+			},
+		}
+	}
+
+	return out
+}
+
 type RecurringTransfer struct {
 	*TransferBase
 	StartEpoch uint64
 	EndEpoch   uint64
 	Factor     num.Decimal
+}
+
+func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
+	return &eventspb.Transfer{
+		Id:              t.ID,
+		From:            t.From,
+		FromAccountType: t.FromAccountType,
+		To:              t.To,
+		ToAccountType:   t.ToAccountType,
+		Asset:           t.Asset,
+		Amount:          t.Amount.String(),
+		Reference:       t.Reference,
+		Status:          t.Status,
+		Kind: &eventspb.Transfer_Recurring{
+			Recurring: &eventspb.RecurringTransfer{
+				StartEpoch: int64(t.StartEpoch),
+				EndEpoch:   int64(t.EndEpoch),
+				Factor:     t.Factor.String(),
+			},
+		},
+	}
 }
 
 // Just a wrapper, use the Kind on a
@@ -84,8 +176,8 @@ type TransferFunds struct {
 	Recurring *RecurringTransfer
 }
 
-func NewTransferFromProto(from string, tf *commandspb.Transfer) (*TransferFunds, error) {
-	base, err := newTransferBase(from, tf)
+func NewTransferFromProto(id, from string, tf *commandspb.Transfer) (*TransferFunds, error) {
+	base, err := newTransferBase(id, from, tf)
 	if err != nil {
 		return nil, err
 	}
@@ -99,13 +191,25 @@ func NewTransferFromProto(from string, tf *commandspb.Transfer) (*TransferFunds,
 	}
 }
 
-func newTransferBase(from string, tf *commandspb.Transfer) (*TransferBase, error) {
+func (t *TransferFunds) IntoEvent() *eventspb.Transfer {
+	switch t.Kind {
+	case TransferCommandKindOneOff:
+		return t.OneOff.IntoEvent()
+	case TransferCommandKindRecurring:
+		return t.Recurring.IntoEvent()
+	default:
+		panic("invalid transfer kind")
+	}
+}
+
+func newTransferBase(id, from string, tf *commandspb.Transfer) (*TransferBase, error) {
 	amount, overflowed := num.UintFromString(tf.Amount, 10)
 	if overflowed {
 		return nil, errors.New("invalid transfer amount")
 	}
 
 	return &TransferBase{
+		ID:              id,
 		From:            from,
 		FromAccountType: tf.FromAccountType,
 		To:              tf.To,
@@ -113,6 +217,7 @@ func newTransferBase(from string, tf *commandspb.Transfer) (*TransferBase, error
 		Asset:           tf.Asset,
 		Amount:          amount,
 		Reference:       tf.Reference,
+		Status:          TransferStatusPending,
 	}, nil
 }
 
