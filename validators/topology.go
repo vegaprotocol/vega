@@ -14,6 +14,7 @@ import (
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var (
@@ -62,10 +63,11 @@ func (v ValidatorData) HashVegaPubKey() string {
 type ValidatorMapping map[string]ValidatorData
 
 type Topology struct {
-	log     *logging.Logger
-	cfg     Config
-	wallets NodeWallets
-	broker  Broker
+	log                  *logging.Logger
+	cfg                  Config
+	wallets              NodeWallets
+	broker               Broker
+	validatorPerformance *validatorPerformance
 
 	// vega pubkey to validator data
 	validators ValidatorMapping
@@ -106,6 +108,7 @@ func NewTopology(
 		tss:                    &topologySnapshotState{changed: true},
 		pendingPubKeyRotations: pendingKeyRotationMapping{},
 		isValidatorSetup:       isValidatorSetup,
+		validatorPerformance:   NewValidatorPerformance(log),
 	}
 
 	return t
@@ -368,4 +371,8 @@ func (t *Topology) checkValidatorDataWithSelfWallets(data ValidatorData) {
 	}
 
 	t.isValidator = true
+}
+
+func (t *Topology) ValidatorPerformanceScore(address string) num.Decimal {
+	return t.validatorPerformance.ValidatorPerformanceScore(address)
 }

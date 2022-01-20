@@ -83,9 +83,9 @@ Feature: Test settlement at expiry
     And the cumulated balance for all accounts should be worth "100236000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -207,9 +207,9 @@ Feature: Test settlement at expiry
     And the cumulated balance for all accounts should be worth "100236000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -320,9 +320,9 @@ Feature: Test settlement at expiry
       | aux2     | ETH   | 100000    |
       | party-lp | ETH   | 100000000 |
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         |  10    |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         |  10    | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         |  10    | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -387,9 +387,9 @@ Feature: Test settlement at expiry
     And the cumulated balance for all accounts should be worth "102012000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -449,9 +449,9 @@ Feature: Test settlement at expiry
     And the cumulated balance for all accounts should be worth "102012000"
     
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |

@@ -25,7 +25,7 @@ type ChainClientImpl interface {
 	SendTransactionSync(context.Context, []byte) (string, error)
 	SendTransactionCommit(context.Context, []byte) (string, error)
 	GenesisValidators(context.Context) ([]*tmtypes.Validator, error)
-	Validators(context.Context) ([]*tmtypes.Validator, error)
+	Validators(context.Context, *int64) ([]*tmtypes.Validator, error)
 	Subscribe(context.Context, func(tmctypes.ResultEvent) error, ...string) error
 	Start() error
 }
@@ -127,11 +127,11 @@ func (c *Client) GenesisValidators() ([]*tmtypes.Validator, error) {
 	return c.clt.GenesisValidators(ctx)
 }
 
-func (c *Client) Validators() ([]*tmtypes.Validator, error) {
+func (c *Client) Validators(height *int64) ([]*tmtypes.Validator, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	return c.clt.Validators(ctx)
+	return c.clt.Validators(ctx, height)
 }
 
 func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {

@@ -76,7 +76,10 @@ var (
 	ErrCommitmentSubmissionNotAllowed = errors.New("commitment submission not allowed")
 	// ErrNotEnoughStake is returned when a LP update results in not enough commitment.
 	ErrNotEnoughStake = errors.New("commitment submission rejected, not enough stake")
-
+	// ErrPartyNotLiquidityProvider is returned when a LP update or cancel does not match an LP party.
+	ErrPartyNotLiquidityProvider = errors.New("party is not a liquidity provider")
+	// ErrPartyAlreadyLiquidityProvider is returned when a LP is submitted by a party which is already LP.
+	ErrPartyAlreadyLiquidityProvider = errors.New("party is already a liquidity provider")
 	// ErrCannotRejectMarketNotInProposedState.
 	ErrCannotRejectMarketNotInProposedState = errors.New("cannot reject a market not in proposed state")
 	// ErrCannotStateOpeningAuctionForMarketNotInProposedState.
@@ -743,18 +746,15 @@ func (m *Market) getNewPeggedPrice(order *types.Order) (*num.Uint, error) {
 		return num.Zero(), ErrUnableToReprice
 	}
 
-	if order.PeggedOrder.Offset >= 0 {
-		return num.Sum(price, num.NewUint(uint64(order.PeggedOrder.Offset))), nil
+	if order.Side == types.SideSell {
+		return price.AddSum(order.PeggedOrder.Offset), nil
 	}
 
-	// At this stage offset is negative so we change it's sign to cast it to an
-	// unsigned type
-	offset := num.NewUint(uint64(-order.PeggedOrder.Offset))
-	if price.LTE(offset) {
+	if price.LTE(order.PeggedOrder.Offset) {
 		return num.Zero(), ErrUnableToReprice
 	}
 
-	return num.Zero().Sub(price, offset), nil
+	return num.Zero().Sub(price, order.PeggedOrder.Offset), nil
 }
 
 // Reprice a pegged order. This only updates the price on the order.
@@ -941,25 +941,17 @@ func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
 		switch order.PeggedOrder.Reference {
 		case types.PeggedReferenceBestAsk:
 			return types.ErrPeggedOrderBuyCannotReferenceBestAskPrice
-		case types.PeggedReferenceBestBid:
-			if order.PeggedOrder.Offset > 0 {
-				return types.ErrPeggedOrderOffsetMustBeLessOrEqualToZero
-			}
 		case types.PeggedReferenceMid:
-			if order.PeggedOrder.Offset >= 0 {
-				return types.ErrPeggedOrderOffsetMustBeLessThanZero
+			if order.PeggedOrder.Offset.IsZero() {
+				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
 			}
 		}
 	} else {
 		switch order.PeggedOrder.Reference {
-		case types.PeggedReferenceBestAsk:
-			if order.PeggedOrder.Offset < 0 {
-				return types.ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero
-			}
 		case types.PeggedReferenceBestBid:
 			return types.ErrPeggedOrderSellCannotReferenceBestBidPrice
 		case types.PeggedReferenceMid:
-			if order.PeggedOrder.Offset <= 0 {
+			if order.PeggedOrder.Offset.IsZero() {
 				return types.ErrPeggedOrderOffsetMustBeGreaterThanZero
 			}
 		}
@@ -2619,7 +2611,7 @@ func (m *Market) applyOrderAmendment(
 	// apply pegged order values
 	if order.PeggedOrder != nil {
 		if amendment.PeggedOffset != nil {
-			order.PeggedOrder.Offset = *amendment.PeggedOffset
+			order.PeggedOrder.Offset = amendment.PeggedOffset.Clone()
 		}
 
 		if amendment.PeggedReference != types.PeggedReferenceUnspecified {

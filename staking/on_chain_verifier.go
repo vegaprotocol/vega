@@ -3,12 +3,10 @@ package staking
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
@@ -25,9 +23,8 @@ type OnChainVerifier struct {
 	ethClient        EthereumClient
 	ethConfirmations EthConfirmations
 
-	mu                sync.RWMutex
-	ethCfg            vgproto.EthereumConfig
-	contractAddresses []ethcmn.Address
+	mu                     sync.RWMutex
+	stakingBridgeAddresses []ethcmn.Address
 }
 
 func NewOnChainVerifier(
@@ -45,34 +42,20 @@ func NewOnChainVerifier(
 	}
 }
 
-func (o *OnChainVerifier) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
-	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
-	if !ok {
-		o.log.Error("invalid ethereum config",
-			logging.String("parameter", fmt.Sprintf("%#v", rawcfg)))
-		return ErrNotAnEthereumConfig
-	}
-
+func (o *OnChainVerifier) UpdateStakingBridgeAddresses(stakingBridgeAddresses []ethcmn.Address) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	o.ethCfg = *cfg
-	o.contractAddresses = nil
-	for _, address := range o.ethCfg.StakingBridgeAddresses {
-		o.contractAddresses = append(
-			o.contractAddresses, ethcmn.HexToAddress(address))
-	}
+	o.stakingBridgeAddresses = stakingBridgeAddresses
 
 	if o.log.GetLevel() <= logging.DebugLevel {
-		addresses := []string{}
-		for _, v := range o.contractAddresses {
+		var addresses []string
+		for _, v := range o.stakingBridgeAddresses {
 			addresses = append(addresses, v.Hex())
 		}
 		o.log.Debug("staking bridge addresses updated",
 			logging.Strings("addresses", addresses))
 	}
-
-	return nil
 }
 
 func (o *OnChainVerifier) CheckStakeDeposited(
@@ -94,15 +77,14 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 	var decodedPubKey [32]byte
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
-	for _, address := range o.contractAddresses {
+	for _, address := range o.stakingBridgeAddresses {
 		if o.log.GetLevel() <= logging.DebugLevel {
 			o.log.Debug("checking stake deposited event on chain",
 				logging.String("bridge-address", address.Hex()),
 				logging.String("event", event.String()),
 			)
 		}
-		filterer, err := NewStakingFilterer(
-			address, o.ethClient)
+		filterer, err := NewStakingFilterer(address, o.ethClient)
 		if err != nil {
 			o.log.Error("could not instantiate staking bridge filterer",
 				logging.String("address", address.Hex()))
@@ -171,15 +153,14 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 	var decodedPubKey [32]byte
 	copy(decodedPubKey[:], decodedPubKeySlice[0:32])
 
-	for _, address := range o.contractAddresses {
+	for _, address := range o.stakingBridgeAddresses {
 		if o.log.GetLevel() <= logging.DebugLevel {
 			o.log.Debug("checking stake removed event on chain",
 				logging.String("bridge-address", address.Hex()),
 				logging.String("event", event.String()),
 			)
 		}
-		filterer, err := NewStakingFilterer(
-			address, o.ethClient)
+		filterer, err := NewStakingFilterer(address, o.ethClient)
 		if err != nil {
 			o.log.Error("could not instantiate staking bridge filterer",
 				logging.String("address", address.Hex()))

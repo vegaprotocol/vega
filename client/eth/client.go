@@ -2,13 +2,12 @@ package eth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"sync"
 	"time"
 
-	types "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -30,78 +29,84 @@ type Client struct {
 
 	// this is all just to prevent spamming the infura just
 	// to get the last height of the blockchain
-	mu                  sync.Mutex
-	curHeightLastUpdate time.Time
-	curHeight           uint64
+	mu                      sync.Mutex
+	currentHeightLastUpdate time.Time
+	currentHeight           uint64
 }
 
 func Dial(ctx context.Context, rawURL string) (*Client, error) {
 	ethClient, err := ethclient.DialContext(ctx, rawURL)
 	if err != nil {
-		return nil, fmt.Errorf("could not instantiate ethereum client: %w", err)
+		return nil, fmt.Errorf("couldn't instantiate Ethereum client: %w", err)
 	}
 
 	return &Client{ETHClient: ethClient}, nil
 }
 
-func (c *Client) OnEthereumConfigUpdate(ctx context.Context, v interface{}) error {
+func (c *Client) OnEthereumConfigUpdate(_ context.Context, v interface{}) error {
 	if c == nil {
 		return nil
 	}
-	ecfg, ok := v.(*types.EthereumConfig)
-	if !ok {
-		return errors.New("invalid types for Ethereum config")
+
+	ethConfig, err := types.EthereumConfigFromUntypedProto(v)
+	if err != nil {
+		return err
 	}
-	return c.setEthereumConfig(ecfg)
+
+	return c.setEthereumConfig(ethConfig)
 }
 
 func (c *Client) setEthereumConfig(ethConfig *types.EthereumConfig) error {
-	nid, err := c.NetworkID(context.Background())
+	netID, err := c.NetworkID(context.Background())
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't retrieve the network ID form the ethereum client: %w", err)
 	}
-	chid, err := c.ChainID(context.Background())
+
+	chainID, err := c.ChainID(context.Background())
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't retrieve the chain ID form the ethereum client: %w", err)
 	}
-	if nid.String() != ethConfig.NetworkId {
-		return fmt.Errorf("ethereum network id does not match, expected %v got %v", ethConfig.NetworkId, nid)
+
+	if netID.String() != ethConfig.NetworkID() {
+		return fmt.Errorf("updated network ID does not match the one set during start up, expected %s got %v", ethConfig.NetworkID(), netID)
 	}
-	if chid.String() != ethConfig.ChainId {
-		return fmt.Errorf("ethereum chain id does not match, expected %v got %v", ethConfig.ChainId, chid)
+
+	if chainID.String() != ethConfig.ChainID() {
+		return fmt.Errorf("updated chain ID does not matchthe one set during start up, expected %v got %v", ethConfig.ChainID(), chainID)
 	}
+
 	c.ethConfig = ethConfig
+
 	return nil
 }
 
-func (c *Client) BridgeAddress() ethcommon.Address {
-	return ethcommon.HexToAddress(c.ethConfig.BridgeAddress)
+func (c *Client) CollateralBridgeAddress() ethcommon.Address {
+	return c.ethConfig.CollateralBridge().Address()
 }
 
-func (c *Client) BridgeAddressHex() string {
-	return c.ethConfig.BridgeAddress
+func (c *Client) CollateralBridgeAddressHex() string {
+	return c.ethConfig.CollateralBridge().HexAddress()
 }
 
 func (c *Client) CurrentHeight(ctx context.Context) (uint64, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// if last update of the heigh was more that 15 seconds
-	// ago, we try to update, we assume an eth block takes
-	// ~15 seconds
-	if now := time.Now(); c.curHeightLastUpdate.Add(15).Before(now) {
-		// get the last block header
-		h, err := c.HeaderByNumber(ctx, nil)
+	// If last update of the height was more than 15 seconds
+	// ago, we try to update, as we assume an Ethereum block takes
+	// ~15 seconds.
+	if now := time.Now(); c.currentHeightLastUpdate.Add(15).Before(now) {
+		lastBlockHeader, err := c.HeaderByNumber(ctx, nil)
 		if err != nil {
-			return c.curHeight, err
+			return c.currentHeight, err
 		}
-		c.curHeightLastUpdate = now
-		c.curHeight = h.Number.Uint64()
+		c.currentHeightLastUpdate = now
+		c.currentHeight = lastBlockHeader.Number.Uint64()
 	}
 
-	return c.curHeight, nil
+	return c.currentHeight, nil
 }
 
-func (c *Client) ConfirmationsRequired() uint32 {
-	return c.ethConfig.Confirmations
+func (c *Client) ConfirmationsRequired() uint64 {
+	return c.ethConfig.Confirmations()
 }

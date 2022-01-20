@@ -2,31 +2,22 @@ package genesis
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"os"
 
-	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/genesis"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallets"
+	vgtm "code.vegaprotocol.io/vega/tendermint"
 	"code.vegaprotocol.io/vega/validators"
-
 	"github.com/jessevdk/go-flags"
-	tmconfig "github.com/tendermint/tendermint/config"
-	tmjson "github.com/tendermint/tendermint/libs/json"
-	"github.com/tendermint/tendermint/types"
 )
 
 type updateCmd struct {
 	Config nodewallets.Config
 
-	DryRun  bool   `long:"dry-run" description:"Display the genesis file without writing it"`
-	Network string `short:"n" long:"network" choice:"mainnet" choice:"testnet"`
-	TmHome  string `short:"t" long:"tm-home" description:"The home path of tendermint"`
+	DryRun bool   `long:"dry-run" description:"Display the genesis file without writing it"`
+	TmHome string `short:"t" long:"tm-home" description:"The home path of tendermint"`
 }
 
 func (opts *updateCmd) Execute(_ []string) error {
@@ -51,17 +42,16 @@ func (opts *updateCmd) Execute(_ []string) error {
 		return err
 	}
 
-	// genesis file
-	tmConfig := tmconfig.DefaultConfig()
-	tmConfig.SetRoot(os.ExpandEnv(opts.TmHome))
+	tmConfig := vgtm.NewConfig(opts.TmHome)
 
-	pubKey, err := loadTendermintPrivateValidatorKey(tmConfig)
+	pubKey, err := tmConfig.PublicValidatorKey()
 	if err != nil {
 		return err
 	}
+
 	b64TmPubKey := base64.StdEncoding.EncodeToString(pubKey.Bytes())
 	genesisState := genesis.DefaultGenesisState()
-	genesisState.Validators[base64.StdEncoding.EncodeToString(pubKey.Bytes())] = validators.ValidatorData{
+	genesisState.Validators[b64TmPubKey] = validators.ValidatorData{
 		ID:              walletID,
 		VegaPubKey:      vegaKey.value,
 		VegaPubKeyIndex: vegaKey.index,
@@ -69,55 +59,25 @@ func (opts *updateCmd) Execute(_ []string) error {
 		TmPubKey:        b64TmPubKey,
 	}
 
-	if len(opts.Network) != 0 {
-		ethConfig := `{"network_id": "%s", "chain_id": "%s", "bridge_address": "%s", "confirmations": %d,  "staking_bridge_addresses": %s}`
-		switch opts.Network {
-		case "mainnet":
-			delete(genesisState.Assets, "VOTE")
-			genesisState.Assets["VEGA"] = assets.VegaTokenMainNet
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
-		case "testnet":
-			genesisState.Assets["VEGA"] = assets.VegaTokenTestNet
-			delete(genesisState.Assets, "VOTE")
-			marshalledBridgeAddresses, _ := json.Marshal([]string{"0xfc9Ad8fE9E0b168999Ee7547797BC39D55d607AA", "0x1B57E5393d949242a9AD6E029E2f8A684BFbBC08"})
-			ethConfig = fmt.Sprintf(ethConfig, "3", "3", "0x898b9F9f9Cab971d9Ceb809F93799109Abbe2D10", 3, marshalledBridgeAddresses)
-		default:
-			return fmt.Errorf("network %s is not supported", opts.Network)
-		}
-		genesisState.NetParams[netparams.BlockchainsEthereumConfig] = ethConfig
-	}
-
-	rawGenesisState, err := json.Marshal(genesisState)
+	genesisDoc, _, err := tmConfig.Genesis()
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't get genesis file: %w", err)
 	}
 
-	genesisFilePath := tmConfig.GenesisFile()
-	data, err := vgfs.ReadFile(genesisFilePath)
-	if err != nil {
-		return err
+	if err := vgtm.AddAppStateToGenesis(genesisDoc, &genesisState); err != nil {
+		return fmt.Errorf("couldn't add app_state to genesis: %w", err)
 	}
-
-	genesisDoc := &types.GenesisDoc{}
-	err = tmjson.Unmarshal(data, genesisDoc)
-	if err != nil {
-		return err
-	}
-
-	genesisDoc.AppState = rawGenesisState
 
 	if !opts.DryRun {
-		log.Infof("Saving genesis doc at %s", genesisFilePath)
-		if err := genesisDoc.SaveAs(genesisFilePath); err != nil {
-			return err
+		if err := tmConfig.SaveGenesis(genesisDoc); err != nil {
+			return fmt.Errorf("couldn't save genesis: %w", err)
 		}
 	}
 
-	marshalledGenesisDoc, err := tmjson.MarshalIndent(genesisDoc, "", "  ")
+	prettifiedDoc, err := vgtm.Prettify(genesisDoc)
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(marshalledGenesisDoc))
-	return err
+	fmt.Println(prettifiedDoc)
+	return nil
 }
