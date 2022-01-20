@@ -14,6 +14,12 @@
 ### 🐛 Fixes
 - [](https://github.com/vegaprotocol/vega/pull/) -
 
+## 0.47.5
+*2022-01-20*
+
+### 🐛 Fixes
+- [4617](https://github.com/vegaprotocol/vega/pull/4617) - Bug fix for incorrectly reporting auto delegation
+
 ## 0.47.4
 *2022-01-05*
 
@@ -26,7 +32,6 @@
 
 ### 🐛 Fixes
 - [4529](https://github.com/vegaprotocol/vega/pull/4529) - Non determinism in checkpoint fixed
-
 
 ## 0.47.2
 *2021-12-17*
