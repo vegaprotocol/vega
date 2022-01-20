@@ -20,6 +20,8 @@ const (
 	TransferStatusDone TransferStatus = eventspb.Transfer_STATUS_DONE
 	// A rejected transfer.
 	TransferStatusRejected TransferStatus = eventspb.Transfer_STATUS_REJECTED
+	// A stopped transfer.
+	TransferStatusStopped TransferStatus = eventspb.Transfer_STATUS_STOPPED
 )
 
 var (
@@ -29,6 +31,10 @@ var (
 	ErrInvalidToAccount           = errors.New("invalid to account")
 	ErrUnsupportedFromAccountType = errors.New("unsupported from account type")
 	ErrUnsupportedToAccountType   = errors.New("unsupported to account type")
+	ErrEndEpochIsZero             = errors.New("end epoch is zero")
+	ErrStartEpochIsZero           = errors.New("start epoch is zero")
+	ErrInvalidFactor              = errors.New("invalid factor")
+	ErrStartEpochAfterEndEpoch    = errors.New("start epoch after end epoch")
 )
 
 type TransferCommandKind int
@@ -50,7 +56,7 @@ type TransferBase struct {
 	Status          TransferStatus
 }
 
-func (t *TransferBase) IsValid(okZeroAmount bool) error {
+func (t *TransferBase) IsValid() error {
 	if len(t.From) <= 0 {
 		return ErrInvalidFromAccount
 	}
@@ -59,7 +65,7 @@ func (t *TransferBase) IsValid(okZeroAmount bool) error {
 	}
 
 	// ensure amount makes senses
-	if !okZeroAmount && t.Amount.IsZero() {
+	if t.Amount.IsZero() {
 		return ErrCannotTransferZeroFunds
 	}
 
@@ -83,6 +89,14 @@ func (t *TransferBase) IsValid(okZeroAmount bool) error {
 type OneOffTransfer struct {
 	*TransferBase
 	DeliverOn *time.Time
+}
+
+func (o *OneOffTransfer) IsValid() error {
+	if err := o.TransferBase.IsValid(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
@@ -143,11 +157,41 @@ func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 type RecurringTransfer struct {
 	*TransferBase
 	StartEpoch uint64
-	EndEpoch   uint64
+	EndEpoch   *uint64
 	Factor     num.Decimal
 }
 
+func (r *RecurringTransfer) IsValid() error {
+	if err := r.TransferBase.IsValid(); err != nil {
+		return err
+	}
+
+	if r.EndEpoch != nil && *r.EndEpoch == 0 {
+		return ErrEndEpochIsZero
+	}
+	if r.StartEpoch == 0 {
+		return ErrStartEpochIsZero
+	}
+
+	if r.EndEpoch != nil && r.StartEpoch > *r.EndEpoch {
+		return ErrStartEpochAfterEndEpoch
+	}
+
+	if r.Factor.Cmp(num.DecimalFromFloat(0)) <= 0 {
+		return ErrInvalidFactor
+	}
+
+	return nil
+}
+
 func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
+	var endEpoch *eventspb.RecurringTransfer_EndEpoch
+	if t.EndEpoch != nil {
+		endEpoch = &eventspb.RecurringTransfer_EndEpoch{
+			EndEpoch: *t.EndEpoch,
+		}
+	}
+
 	return &eventspb.Transfer{
 		Id:              t.ID,
 		From:            t.From,
@@ -160,8 +204,8 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Status:          t.Status,
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
-				StartEpoch: int64(t.StartEpoch),
-				EndEpoch:   int64(t.EndEpoch),
+				StartEpoch: t.StartEpoch,
+				EndEpoch_:  endEpoch,
 				Factor:     t.Factor.String(),
 			},
 		},
@@ -238,5 +282,23 @@ func newOneOffTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFu
 }
 
 func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
-	return nil, nil
+	factor, err := num.DecimalFromString(tf.GetRecurring().GetFactor())
+	if err != nil {
+		return nil, err
+	}
+	var endEpoch *uint64
+	if tf.GetRecurring().EndEpoch_ != nil {
+		ee := tf.GetRecurring().GetEndEpoch()
+		endEpoch = &ee
+	}
+
+	return &TransferFunds{
+		Kind: TransferCommandKindRecurring,
+		Recurring: &RecurringTransfer{
+			TransferBase: base,
+			StartEpoch:   tf.GetRecurring().GetStartEpoch(),
+			EndEpoch:     endEpoch,
+			Factor:       factor,
+		},
+	}, nil
 }

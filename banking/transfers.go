@@ -81,44 +81,65 @@ func (e *Engine) oneOffTransfer(
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
-	if err := transfer.IsValid(false); err != nil {
+	if err := transfer.IsValid(); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
 
-	// ensure the party have enough funds for both the
-	// amount and the fee for the transfer
-	feeTransfer, err := e.ensureFeeForTransferFunds(
-		transfer.Amount, transfer.From, transfer.Asset, transfer.FromAccountType)
+	tresps, err := e.processTransfer(
+		ctx, transfer.From, transfer.To, transfer.Asset, transfer.FromAccountType,
+		transfer.ToAccountType, transfer.Amount, transfer.Reference, transfer,
+	)
 	if err != nil {
 		transfer.Status = types.TransferStatusRejected
-		return fmt.Errorf("could not pay the fee for transfer: %w", err)
+		return err
 	}
-	feeTransferAccountType := []types.AccountType{transfer.FromAccountType}
 
-	fromTransfer, toTransfer := e.makeTransfers(
-		transfer.From, transfer.To, transfer.Asset, transfer.Amount)
+	// all was OK
+	transfer.Status = types.TransferStatusDone
+	e.broker.Send(events.NewTransferResponse(ctx, tresps))
+
+	return nil
+}
+
+func (e *Engine) processTransfer(
+	ctx context.Context,
+	from, to, asset string,
+	fromAcc, toAcc types.AccountType,
+	amount *num.Uint,
+	reference string,
+	// optional oneoff transfer
+	// in case we need to schedule the delivery
+	oneoff *types.OneOffTransfer,
+) ([]*types.TransferResponse, error) {
+	// ensure the party have enough funds for both the
+	// amount and the fee for the transfer
+	feeTransfer, err := e.ensureFeeForTransferFunds(amount, from, asset, fromAcc)
+	if err != nil {
+		return nil, fmt.Errorf("could not pay the fee for transfer: %w", err)
+	}
+	feeTransferAccountType := []types.AccountType{fromAcc}
+
+	fromTransfer, toTransfer := e.makeTransfers(from, to, asset, amount)
 	transfers := []*types.Transfer{fromTransfer}
-	accountTypes := []types.AccountType{transfer.FromAccountType}
-	references := []string{transfer.Reference}
+	accountTypes := []types.AccountType{fromAcc}
+	references := []string{reference}
 
 	// does the transfer needs to be finalized now?
-	if transfer.DeliverOn == nil || transfer.DeliverOn.Before(e.currentTime) {
+	if oneoff == nil || (oneoff.DeliverOn == nil || oneoff.DeliverOn.Before(e.currentTime)) {
 		transfers = append(transfers, toTransfer)
-		accountTypes = append(accountTypes, transfer.ToAccountType)
-		references = append(references, transfer.Reference)
-
+		accountTypes = append(accountTypes, toAcc)
+		references = append(references, reference)
 		// if this goes well the whole transfer will be done
 		// so we can set it to the proper status
-		transfer.Status = types.TransferStatusDone
 	} else {
 		// schedule the transfer
 		e.scheduleTransfer(
-			transfer,
+			oneoff,
 			toTransfer,
-			transfer.ToAccountType,
-			transfer.Reference,
-			*transfer.DeliverOn,
+			toAcc,
+			reference,
+			*oneoff.DeliverOn,
 		)
 	}
 
@@ -127,13 +148,10 @@ func (e *Engine) oneOffTransfer(
 		ctx, transfers, accountTypes, references, []*types.Transfer{feeTransfer}, feeTransferAccountType,
 	)
 	if err != nil {
-		transfer.Status = types.TransferStatusRejected
-		return err
+		return nil, err
 	}
 
-	e.broker.Send(events.NewTransferResponse(ctx, tresps))
-
-	return nil
+	return tresps, nil
 }
 
 func (e *Engine) makeTransfers(
@@ -159,18 +177,46 @@ func (e *Engine) makeTransfers(
 		}
 }
 
+func (e *Engine) makeFeeTransferForTransferFunds(
+	amount *num.Uint,
+	from, asset string,
+	fromAccountType types.AccountType,
+) *types.Transfer {
+	// first we calculate the fee
+	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+
+	switch fromAccountType {
+	case types.AccountTypeGeneral:
+	default:
+		e.log.Panic("from account not supported",
+			logging.String("account-type", fromAccountType.String()),
+			logging.String("asset", asset),
+			logging.String("from", from),
+		)
+	}
+
+	return &types.Transfer{
+		Owner: from,
+		Amount: &types.FinancialAmount{
+			Amount: feeAmount.Clone(),
+			Asset:  asset,
+		},
+		Type:      types.TransferTypeInfrastructureFeePay,
+		MinAmount: feeAmount,
+	}
+}
+
 func (e *Engine) ensureFeeForTransferFunds(
 	amount *num.Uint,
 	from, asset string,
 	fromAccountType types.AccountType,
 ) (*types.Transfer, error) {
-	// first we calculate the fee
-	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+	transfer := e.makeFeeTransferForTransferFunds(
+		amount, from, asset, fromAccountType,
+	)
 
-	// now we get the total amount and ensure we have enough funds
-	// if the source account
 	var (
-		totalAmount = num.Sum(feeAmount, amount)
+		totalAmount = num.Sum(transfer.Amount.Amount, amount)
 		account     *types.Account
 		err         error
 	)
@@ -192,7 +238,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 	if account.Balance.LT(totalAmount) {
 		e.log.Debug("not enough funds to transfer",
 			logging.BigUint("amount", amount),
-			logging.BigUint("fee", feeAmount),
+			logging.BigUint("fee", transfer.Amount.Amount),
 			logging.BigUint("total-amount", totalAmount),
 			logging.BigUint("account-balance", account.Balance),
 			logging.String("account-type", fromAccountType.String()),
@@ -202,15 +248,7 @@ func (e *Engine) ensureFeeForTransferFunds(
 		return nil, ErrNotEnoughFundsToTransfer
 	}
 
-	return &types.Transfer{
-		Owner: from,
-		Amount: &types.FinancialAmount{
-			Amount: feeAmount.Clone(),
-			Asset:  asset,
-		},
-		Type:      types.TransferTypeInfrastructureFeePay,
-		MinAmount: feeAmount,
-	}, nil
+	return transfer, nil
 }
 
 type timesToTransfers struct {
@@ -287,11 +325,4 @@ func (e *Engine) scheduleTransfer(
 		reference:   reference,
 	})
 	e.scheduledTransfers[deliverOn] = sts
-}
-
-func (e *Engine) recurringTransfer(
-	ctx context.Context,
-	transfer *types.RecurringTransfer,
-) error {
-	return errors.New("unimplemented")
 }
