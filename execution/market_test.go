@@ -170,9 +170,13 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
 
+	epochEngine := mocks.NewMockEpochEngine(tm.ctrl)
+	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
+	feeTracker := execution.NewFeesTracker(epochEngine)
+
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevar,
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevar, feeTracker,
 	)
 	require.NoError(tm.t, err)
 
@@ -335,9 +339,14 @@ func getTestMarket2(
 
 	mas := monitor.NewAuctionState(mktCfg, now)
 	statevar := stubs.NewStateVar()
+
+	epoch := mocks.NewMockEpochEngine(ctrl)
+	epoch.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
+	feeTracker := execution.NewFeesTracker(epoch)
+
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas, statevar)
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas, statevar, feeTracker)
 	assert.NoError(t, err)
 	mktEngine.UpdateRiskFactorsForTest()
 

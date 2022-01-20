@@ -153,7 +153,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	bstats := stats.NewBlockchain()
 
 	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
-
+	feesTracker := execution.NewFeesTracker(epochService)
 	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, timeService)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.ValidatorsVoteRequired,
@@ -172,6 +172,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		oraclesM,
 		broker,
 		stateVarEngine,
+		feesTracker,
 	)
 
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
@@ -186,7 +187,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
 
-	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService, topology)
+	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService, topology, feesTracker)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)

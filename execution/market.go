@@ -238,6 +238,7 @@ type Market struct {
 
 	stateVarEngine StateVarEngine
 	stateChanged   bool
+	feesTracker    *FeesTracker
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -282,6 +283,7 @@ func NewMarket(
 	idgen *IDgenerator,
 	as *monitor.AuctionState,
 	stateVarEngine StateVarEngine,
+	feesTracker *FeesTracker,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
@@ -393,6 +395,7 @@ func NewMarket(
 		lastBestBidPrice:   num.Zero(),
 		stateChanged:       true,
 		stateVarEngine:     stateVarEngine,
+		feesTracker:        feesTracker,
 	}
 
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
@@ -1398,6 +1401,8 @@ func (m *Market) applyFees(ctx context.Context, order *types.Order, trades []*ty
 		evt := events.NewTransferResponse(ctx, transfers)
 		m.broker.Send(evt)
 	}
+
+	m.feesTracker.UpdateFeesFromTransfers(fees.Transfers())
 
 	return nil
 }

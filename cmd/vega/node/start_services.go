@@ -118,10 +118,11 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 
 	n.statevar = statevar.New(n.Log, n.conf.StateVar, n.broker, n.topology, n.commander, n.timeService)
+	n.feesTracker = execution.NewFeesTracker(n.epochService)
 
 	// instantiate the execution engine
 	n.executionEngine = execution.NewEngine(
-		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar,
+		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker,
 	)
 
 	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
@@ -135,7 +136,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	}
 
 	// setup rewards engine
-	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology)
+	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology, n.feesTracker)
 
 	// checkpoint engine
 	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.rewards, n.topology)

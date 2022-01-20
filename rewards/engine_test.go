@@ -941,7 +941,9 @@ func getEngine(t *testing.T) *testEngine {
 	collateral.EnableAsset(context.Background(), asset)
 	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
 	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
-	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, valPerformance)
+
+	feesTracker := mocks.NewMockFeesTracker(ctrl)
+	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, valPerformance, feesTracker)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 

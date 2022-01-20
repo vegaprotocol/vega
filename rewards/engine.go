@@ -35,6 +35,11 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/fees_tracker_mock.go -package mocks code.vegaprotocol.io/vega/rewards FeesTracker
+type FeesTracker interface {
+	GetFeePartyScores(asset string, feeType types.TransferType) []*types.FeePartyScore
+}
+
 // EpochEngine notifies the reward engine at the end of an epoch.
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
@@ -75,6 +80,7 @@ type Engine struct {
 	delegation                         Delegation
 	collateral                         Collateral
 	valPerformance                     ValidatorPerformance
+	feesTracker                        FeesTracker
 	rewardSchemes                      map[string]*types.RewardScheme // reward scheme id -> reward scheme
 	pendingPayouts                     map[time.Time][]*payout
 	assetForStakingAndDelegationReward string
@@ -107,7 +113,7 @@ type payout struct {
 }
 
 // New instantiate a new rewards engine.
-func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, valPerformance ValidatorPerformance) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, valPerformance ValidatorPerformance, feesTracker FeesTracker) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -126,6 +132,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 		global:          &globalRewardParams{},
 		newEpochStarted: false,
 		valPerformance:  valPerformance,
+		feesTracker:     feesTracker,
 	}
 
 	// register for epoch end notifications

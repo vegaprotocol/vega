@@ -76,6 +76,7 @@ type Engine struct {
 	broker         Broker
 	time           TimeService
 	stateVarEngine StateVarEngine
+	feesTracker    *FeesTracker
 
 	oracle OracleEngine
 
@@ -136,6 +137,7 @@ func NewEngine(
 	oracle OracleEngine,
 	broker Broker,
 	stateVarEngine StateVarEngine,
+	feesTracker *FeesTracker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -152,6 +154,7 @@ func NewEngine(
 		npv:                          defaultNetParamsValues(),
 		previouslySnapshottedMarkets: map[string]struct{}{},
 		stateVarEngine:               stateVarEngine,
+		feesTracker:                  feesTracker,
 	}
 
 	// Add time change event handler
@@ -344,6 +347,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.idgen,
 		mas,
 		e.stateVarEngine,
+		e.feesTracker,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
