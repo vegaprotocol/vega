@@ -52,7 +52,7 @@ Background:
       | party1 | VEGA   | 10000  |
       | party2 | VEGA   | 20000  |
 
-    #complete the first epoch for the self delegation to take effect
+    #complete the first epoch (epoch 0)for the self delegation to take effect
     Then the network moves ahead "7" blocks
 
 Scenario: A party enters auto delegation mode by nominating all of its associated stake 
