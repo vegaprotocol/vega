@@ -248,7 +248,8 @@ func lexterp(offsets, probabilities []num.Decimal, offset, minProbabilityOfTradi
 	slopeDenom := last.Sub(last2)
 	slope := slopeNum.Div(slopeDenom)
 	prob := probLast2.Add(probLast.Sub(probLast2).Mul(slope))
-	prob = num.MinD(num.DecimalFromInt64(1), num.MaxD(minProbabilityOfTrading, prob))
+	scaled := rescaleProbability(prob)
+	prob = num.MinD(num.DecimalFromInt64(1), num.MaxD(minProbabilityOfTrading, scaled))
 	return prob
 }
 

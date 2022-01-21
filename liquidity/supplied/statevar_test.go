@@ -166,12 +166,12 @@ func TestGetProbability(t *testing.T) {
 		askProbability: []num.Decimal{num.DecimalFromFloat(0.9), num.DecimalFromFloat(0.5)},
 	}
 	// bid
-	require.Equal(t, "0.1", getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), min, max, potForExtrapolation, num.DecimalFromInt64(480), true, minProb, num.DecimalZero()).String())
+	require.Equal(t, "0.05", getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), min, max, potForExtrapolation, num.DecimalFromInt64(480), true, minProb, num.DecimalZero()).String())
 	// too far, floored at min prob
 	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), min, max, potForExtrapolation, num.DecimalFromInt64(100), true, minProb, num.DecimalZero()).String())
 
 	// ask
-	require.Equal(t, "0.1", getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), min, max, potForExtrapolation, num.DecimalFromInt64(620), false, minProb, num.DecimalZero()).String())
+	require.Equal(t, "0.05", getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), min, max, potForExtrapolation, num.DecimalFromInt64(620), false, minProb, num.DecimalZero()).String())
 	// too far, floored at min prob
 	require.Equal(t, minProb.String(), getProbabilityOfTrading(num.DecimalFromFloat(500), num.DecimalFromFloat(600), min, max, potForExtrapolation, num.DecimalFromInt64(1000), false, minProb, num.DecimalZero()).String())
 }
