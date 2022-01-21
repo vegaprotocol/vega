@@ -286,5 +286,4 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 			Factor:       factor,
 		},
 	}, nil
-
 }

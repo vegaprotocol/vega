@@ -11,9 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var (
-	ErrStartEpochInThePast = errors.New("start epoch in the past")
-)
+var ErrStartEpochInThePast = errors.New("start epoch in the past")
 
 type transferForEpoch struct {
 	// transfers using the same account type
@@ -77,9 +75,10 @@ func (e *Engine) recurringTransfer(
 			payTransfer = payTransfer.Merge(fromTransfer)
 		} else {
 			payTransfer = fromTransfer
-
 		}
 
+		// build the fee, we ensure the party have the
+		// amount down the line
 		feeTransfer := e.makeFeeTransferForTransferFunds(
 			amount.Clone(), transfer.From, transfer.Asset, transfer.FromAccountType,
 		)
@@ -88,16 +87,93 @@ func (e *Engine) recurringTransfer(
 		totalFee.Add(totalFee, feeTransfer.Amount.Amount)
 
 		// add the map
-		tfe[i] = transferForEpoch{
+		tfe[i] = &transferForEpoch{
 			transfer:              toTransfer,
 			accountType:           transfer.ToAccountType,
 			feeTransfer:           feeTransfer,
 			feeTransferAccounType: transfer.FromAccountType,
 		}
-
 	}
 
-	return errors.New("unimplemented")
+	// now all our epoch are processed, we can
+	err := e.ensureRecurringTransferFee(
+		payTransfer.Amount.Amount.Clone(),
+		totalFee,
+		transfer.From,
+		transfer.Asset,
+		transfer.FromAccountType,
+	)
+	if err != nil {
+		transfer.Status = types.TransferStatusRejected
+		return err
+	}
+
+	// now pay the funds in the pool
+	tresps, err := e.col.TransferFunds(
+		ctx,
+		[]*types.Transfer{payTransfer},
+		[]types.AccountType{transfer.FromAccountType},
+		[]string{transfer.Reference},
+		nil,
+		nil,
+	)
+	if err != nil {
+		transfer.Status = types.TransferStatusRejected
+		return err
+	}
+
+	// now all is good, we can just save this transfer, and send events
+	e.recurringTransfers[transfer.ID] = &recurringTransfer{
+		recurring: transfer,
+		transfers: tfe,
+		reference: transfer.Reference,
+	}
+
+	// send events
+	e.broker.Send(events.NewTransferResponse(ctx, tresps))
+
+	return nil
+}
+
+func (e *Engine) ensureRecurringTransferFee(
+	amount, feeAmount *num.Uint,
+	from, asset string,
+	fromAccountType types.AccountType,
+) error {
+	var (
+		totalAmount = num.Sum(amount, feeAmount)
+		account     *types.Account
+		err         error
+	)
+	switch fromAccountType {
+	case types.AccountTypeGeneral:
+		account, err = e.col.GetPartyGeneralAccount(from, asset)
+		if err != nil {
+			return err
+		}
+
+	default:
+		e.log.Panic("from account not supported",
+			logging.String("account-type", fromAccountType.String()),
+			logging.String("asset", asset),
+			logging.String("from", from),
+		)
+	}
+
+	if account.Balance.LT(totalAmount) {
+		e.log.Debug("not enough funds to transfer",
+			logging.BigUint("amount", amount),
+			logging.BigUint("fee", feeAmount),
+			logging.BigUint("total-amount", totalAmount),
+			logging.BigUint("account-balance", account.Balance),
+			logging.String("account-type", fromAccountType.String()),
+			logging.String("asset", asset),
+			logging.String("from", from),
+		)
+		return ErrNotEnoughFundsToTransfer
+	}
+
+	return nil
 }
 
 func (e *Engine) distributeRecurringTransfers(
@@ -112,8 +188,14 @@ func (e *Engine) distributeRecurringTransfers(
 		references   = []string{}
 	)
 
+	allIDs := make([]string, 0, len(e.recurringTransfers))
+	for k := range e.recurringTransfers {
+		allIDs = append(allIDs, k)
+	}
+
 	// iterate over all transfers
-	for k, v := range e.recurringTransfers {
+	for _, k := range allIDs {
+		v := e.recurringTransfers[k]
 		tfe, ok := v.transfers[newEpoch]
 		if !ok {
 			// no transfer for this epoch

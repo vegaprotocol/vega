@@ -204,6 +204,9 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
 	e.currentEpoch = ep.Seq
+	if err := e.distributeRecurringTransfers(ctx, e.currentEpoch); err != nil {
+		e.log.Error("could not distribute recurring transfers", logging.Error(err))
+	}
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {

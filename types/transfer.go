@@ -20,7 +20,7 @@ type Transfer struct {
 	MinAmount *num.Uint
 }
 
-// Merge creates a new Transfer
+// Merge creates a new Transfer.
 func (t *Transfer) Merge(oth *Transfer) *Transfer {
 	if t.Owner != oth.Owner {
 		panic(fmt.Sprintf("invalid transfer merge, different owner specified, this should never happen: %v, %v", t.String(), oth.String()))
