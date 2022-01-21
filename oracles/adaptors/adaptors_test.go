@@ -105,8 +105,7 @@ func dummyOraclePayload() []byte {
 	return payload
 }
 
-type dummyOracleAdaptor struct {
-}
+type dummyOracleAdaptor struct{}
 
 func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	data := &oracles.OracleData{}
@@ -182,7 +181,6 @@ func testAdaptorValidationFails(t *testing.T) {
 			assert.Nil(t, normalisedData)
 		})
 	}
-
 }
 
 func passValidation(map[string]string) error {

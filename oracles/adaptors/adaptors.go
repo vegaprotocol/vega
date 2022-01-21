@@ -45,7 +45,6 @@ func (a *Adaptors) Normalise(txPubKey crypto.PublicKey, data commandspb.OracleDa
 	}
 
 	oracleData, err := adaptor.Normalise(txPubKey, data.Payload)
-
 	if err != nil {
 		return nil, err
 	}
