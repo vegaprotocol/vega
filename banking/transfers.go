@@ -103,8 +103,7 @@ func (e *Engine) oneOffTransfer(
 	references := []string{transfer.Reference}
 
 	// does the transfer needs to be finalized now?
-	if transfer.DeliverOn == nil ||
-		(transfer.DeliverOn != nil && transfer.DeliverOn.Before(e.currentTime)) {
+	if transfer.DeliverOn == nil || transfer.DeliverOn.Before(e.currentTime) {
 		transfers = append(transfers, toTransfer)
 		accountTypes = append(accountTypes, transfer.ToAccountType)
 		references = append(references, transfer.Reference)
