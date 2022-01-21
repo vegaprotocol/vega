@@ -129,5 +129,7 @@ func defaultNetParams() map[string]value {
 		SnapshotIntervalLength: NewInt(IntGTE(0)).Mutable(true).MustUpdate("1000"),
 
 		FloatingPointUpdatesDuration: NewDuration().Mutable(true).MustUpdate("5m"),
+
+		TransferFeeFactor: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.01"),
 	}
 }

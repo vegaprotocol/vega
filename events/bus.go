@@ -103,6 +103,7 @@ const (
 	KeyRotationEvent
 	StateVarEvent
 	NetworkLimitsEvent
+	TransferEvent
 )
 
 var (
@@ -155,6 +156,7 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:        KeyRotationEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:           StateVarEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:      NetworkLimitsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:            TransferEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -197,6 +199,7 @@ var (
 		KeyRotationEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION,
 		StateVarEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR,
 		NetworkLimitsEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS,
+		TransferEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER,
 	}
 
 	eventStrings = map[Type]string{
@@ -240,6 +243,7 @@ var (
 		KeyRotationEvent:        "KeyRotationEvent",
 		StateVarEvent:           "StateVarEvent",
 		NetworkLimitsEvent:      "NetworkLimitsEvent",
+		TransferEvent:           "TransferEvent",
 	}
 )
 

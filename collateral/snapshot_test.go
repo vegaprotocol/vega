@@ -41,6 +41,12 @@ func TestCheckpoint(t *testing.T) {
 	err = eng.Engine.UpdateBalance(ctx, mktInsAcc.ID, insBal)
 	assert.Nil(t, err)
 
+	pendingTransfersAcc := eng.GetPendingTransfersAccount(testMarketAsset)
+	assert.NoError(t, eng.UpdateBalance(ctx, pendingTransfersAcc.ID, num.NewUint(1789)))
+
+	pendingTransfersAcc = eng.GetPendingTransfersAccount(testMarketAsset)
+	assert.NoError(t, eng.UpdateBalance(ctx, pendingTransfersAcc.ID, num.NewUint(1789)))
+
 	// topup the global reward account
 	rewardAccount, err := eng.CreateOrGetAssetRewardPoolAccount(ctx, "VOTE")
 	assert.Nil(t, err)
@@ -89,6 +95,9 @@ func TestCheckpoint(t *testing.T) {
 	loadedReward, err := loadEng.GetGlobalRewardAccount("VOTE")
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(10000), loadedReward.Balance)
+
+	loadedPendingTransfers := loadEng.GetPendingTransfersAccount(testMarketAsset)
+	require.Equal(t, num.NewUint(1789), loadedPendingTransfers.Balance)
 
 	for _, feeAcc := range loadEng.GetInfraFeeAccountIDs() {
 		if strings.Contains(feeAcc, testMarketAsset) {

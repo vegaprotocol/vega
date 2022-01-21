@@ -1,6 +1,8 @@
 package types
 
 import (
+	"errors"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -28,6 +30,18 @@ func (f *FinancialAmount) IntoProto() *proto.FinancialAmount {
 	}
 }
 
+func FinancialAmountFromProto(p *proto.FinancialAmount) (*FinancialAmount, error) {
+	amount, overflow := num.UintFromString(p.Amount, 10)
+	if overflow {
+		return nil, errors.New("invalid amount")
+	}
+
+	return &FinancialAmount{
+		Asset:  p.Asset,
+		Amount: amount,
+	}, nil
+}
+
 func (t *Transfer) IntoProto() *proto.Transfer {
 	return &proto.Transfer{
 		Owner:     t.Owner,
@@ -35,6 +49,25 @@ func (t *Transfer) IntoProto() *proto.Transfer {
 		Type:      t.Type,
 		MinAmount: num.UintToString(t.MinAmount),
 	}
+}
+
+func TransferFromProto(p *proto.Transfer) (*Transfer, error) {
+	amount, err := FinancialAmountFromProto(p.Amount)
+	if err != nil {
+		return nil, err
+	}
+
+	minAmount, overflow := num.UintFromString(p.MinAmount, 10)
+	if overflow {
+		return nil, errors.New("invalid min amount")
+	}
+
+	return &Transfer{
+		Owner:     p.Owner,
+		Amount:    amount,
+		Type:      p.Type,
+		MinAmount: minAmount,
+	}, nil
 }
 
 func (t *Transfer) String() string {
@@ -87,5 +120,7 @@ const (
 	// Bond slashing.
 	TransferTypeBondSlashing TransferType = proto.TransferType_TRANSFER_TYPE_BOND_SLASHING
 	// Stake reward.
-	TransferTypeRewardPayout TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
+	TransferTypeRewardPayout            TransferType = proto.TransferType_TRANSFER_TYPE_STAKE_REWARD
+	TransferTypeTransferFundsSend       TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_SEND
+	TransferTypeTransferFundsDistribute TransferType = proto.TransferType_TRANSFER_TYPE_TRANSFER_FUNDS_DISTRIBUTE
 )
