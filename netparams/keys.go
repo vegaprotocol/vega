@@ -109,6 +109,8 @@ const (
 	SnapshotIntervalLength = "snapshot.interval.length"
 
 	FloatingPointUpdatesDuration = "network.floatingPointUpdates.delay"
+
+	TransferFeeFactor = "transfer.fee.factor"
 )
 
 var AllKeys = map[string]struct{}{
@@ -193,4 +195,5 @@ var AllKeys = map[string]struct{}{
 	StakingAndDelegationRewardOptimalStakeMultiplier:      {},
 	SnapshotIntervalLength:                                {},
 	FloatingPointUpdatesDuration:                          {},
+	TransferFeeFactor:                                     {},
 }
