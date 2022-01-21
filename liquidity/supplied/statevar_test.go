@@ -36,7 +36,7 @@ func TestBidRange(t *testing.T) {
 func TestBidRangeAtTheEdge(t *testing.T) {
 	params := &types.LogNormalRiskModel{
 		RiskAversionParameter: num.DecimalFromFloat(0.001),
-		Tau:                   num.DecimalFromFloat(00011407711613050422),
+		Tau:                   num.DecimalFromFloat(0o0011407711613050422),
 		Params: &types.LogNormalModelParams{
 			R:     num.DecimalFromFloat(0.016),
 			Sigma: num.DecimalFromFloat(1.5),
