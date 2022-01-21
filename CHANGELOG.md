@@ -29,8 +29,9 @@
 - [4571](https://github.com/vegaprotocol/vega/pull/4571) - Update `CHANGELOG.md` for `0.47.x`
 - [4577](https://github.com/vegaprotocol/vega/pull/4577) - Update `CHANGELOG.md` for `0.45.6` patch
 - [4573](https://github.com/vegaprotocol/vega/pull/4573) - Remove execution configuration duplication from configuration root
-- [4491](https://github.com/vegaprotocol/vega/issues/4491) - Measure validator performance and use to penalise rewards
+- [4555](https://github.com/vegaprotocol/vega/issues/4555) - Probability of trading integrated into floating point consensus engine
 - [4592](https://github.com/vegaprotocol/vega/pull/4592) - Update instructions on how to use docker without `sudo`
+- [4491](https://github.com/vegaprotocol/vega/issues/4491) - Measure validator performance and use to penalise rewards
 - [4599](https://github.com/vegaprotocol/vega/pull/4599) - Allow raw private keys for bridges functions
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Add `--update` and `--replace` flags on `vega genesis new validator`
 - [4508](https://github.com/vegaprotocol/vega/pull/4508) - Disallow negative offset for pegged orders

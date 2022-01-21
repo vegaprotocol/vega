@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -58,7 +59,7 @@ type Collateral interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
 type StateVarEngine interface {
-	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
 }
@@ -199,13 +200,7 @@ func (e *Engine) Hash() []byte {
 }
 
 func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
-	tickSize := "0."
-	for decimalPlaces > 1 {
-		tickSize += "0"
-		decimalPlaces--
-	}
-	tickSize += "1"
-	return tickSize
+	return num.MustDecimalFromString("1e-" + strconv.Itoa(int(decimalPlaces))).String()
 }
 
 // RejectMarket will stop the execution of the market
