@@ -97,6 +97,7 @@ func testSimpledScheduledTransfer(t *testing.T) {
 	defer e2.ctrl.Finish()
 
 	// load the checkpoint
+	e2.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	assert.NoError(t, e2.Load(ctx, checkp))
 
 	// then trigger the time update, and see the transfer

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/protobuf/proto"
 )
@@ -31,6 +32,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
+	evts := []events.Event{}
 	for _, v := range b.TransfersAtTime {
 		transfers := make([]scheduledTransfer, 0, len(v.Transfers))
 		for _, v := range v.Transfers {
@@ -38,10 +40,16 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			if err != nil {
 				return err
 			}
+			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff))
 			transfers = append(transfers, transfer)
 		}
 		e.scheduledTransfers[time.Unix(v.DeliverOn, 0)] = transfers
 	}
+
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
+	}
+
 	return nil
 }
 
