@@ -23,7 +23,7 @@ var (
 	defaultMinimumProbabilityOfTrading = num.DecimalFromFloat(1e-8)
 	tolerance                          = num.DecimalFromFloat(1e-6)
 	numberOfPricePoints                = num.NewUint(500)
-	defaultProbability                 = num.DecimalFromFloat(0.05) //@witold should it be 0.05 or 0.005?
+	defaultProbability                 = num.DecimalFromFloat(0.05)
 	defaultTickDistance                = num.DecimalFromFloat(100)
 )
 
@@ -170,27 +170,31 @@ func (e *Engine) updateProbabilities(ctx context.Context, res statevar.StateVari
 // it returns <defaultProbability> else if there is not yet consensus value it returns <minProbabilityOfTrading>.
 // If there is consensus value and the price is worse than the worse price, we extrapolate using the last 2 price points
 // If the price is within the range, the corresponding probability implied by the offset is returned, scaled, with lower bound of <minProbabilityOfTrading>.
-func getProbabilityOfTrading(bestBid, bestAsk, minPrice, maxPrice num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal) num.Decimal {
+func getProbabilityOfTrading(bestBid, bestAsk, minPrice, maxPrice num.Decimal, pot *probabilityOfTrading, price num.Decimal, isBid bool, minProbabilityOfTrading num.Decimal, tickSize num.Decimal) num.Decimal {
 	if (isBid && price.GreaterThanOrEqual(bestBid)) || (!isBid && price.LessThanOrEqual(bestAsk)) {
 		return defaultInRangeProbabilityOfTrading
 	}
+
+	// when we don't have consensus yet we'll allow prices that are within
+	// tickSize * defaultTickDistance from the best
+	maxDistanceWhenNoConsensus := defaultTickDistance.Mul(tickSize)
 
 	if isBid {
 		if price.LessThan(minPrice) {
 			return minProbabilityOfTrading
 		}
-		return getBidProbabilityOfTrading(bestBid, bestAsk, pot.bidOffset, pot.bidProbability, price, minProbabilityOfTrading)
+		return getBidProbabilityOfTrading(bestBid, bestAsk, pot.bidOffset, pot.bidProbability, price, minProbabilityOfTrading, maxDistanceWhenNoConsensus)
 	}
 	if price.GreaterThan(maxPrice) {
 		return minProbabilityOfTrading
 	}
-	return getAskProbabilityOfTrading(bestBid, bestAsk, pot.askOffset, pot.askProbability, price, minProbabilityOfTrading)
+	return getAskProbabilityOfTrading(bestBid, bestAsk, pot.askOffset, pot.askProbability, price, minProbabilityOfTrading, maxDistanceWhenNoConsensus)
 }
 
-func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal) num.Decimal {
+func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal, maxDistance num.Decimal) num.Decimal {
 	// no consensus yet
 	if len(offsets) == 0 {
-		if bestAsk.Sub(price).Abs().LessThanOrEqual(defaultTickDistance) {
+		if bestAsk.Sub(price).Abs().LessThanOrEqual(maxDistance) {
 			return defaultProbability
 		}
 		return minProbabilityOfTrading
@@ -209,10 +213,10 @@ func getAskProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabili
 	return interpolatedProbability
 }
 
-func getBidProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading num.Decimal) num.Decimal {
+func getBidProbabilityOfTrading(bestBid, bestAsk num.Decimal, offsets, probabilities []num.Decimal, price num.Decimal, minProbabilityOfTrading, maxDistance num.Decimal) num.Decimal {
 	// no consensus yet
 	if len(offsets) == 0 {
-		if bestBid.Sub(price).Abs().LessThanOrEqual(defaultTickDistance) {
+		if bestBid.Sub(price).Abs().LessThanOrEqual(maxDistance) {
 			return defaultProbability
 		}
 		return minProbabilityOfTrading
