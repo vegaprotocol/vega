@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"testing"
 
+	"code.vegaprotocol.io/vega/risk/models"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/stretchr/testify/require"
 )
@@ -29,6 +31,36 @@ func TestBidRange(t *testing.T) {
 		require.Equal(t, strconv.Itoa(2*i), o.String())
 		require.Equal(t, num.DecimalFromFloat(1.0).Sub(num.DecimalFromInt64(int64(i)).Div(num.DecimalFromFloat(100))).String(), prob2[i].String())
 	}
+}
+
+func TestBidRangeAtTheEdge(t *testing.T) {
+	params := &types.LogNormalRiskModel{
+		RiskAversionParameter: num.DecimalFromFloat(0.001),
+		Tau:                   num.DecimalFromFloat(00011407711613050422),
+		Params: &types.LogNormalModelParams{
+			R:     num.DecimalFromFloat(0.016),
+			Sigma: num.DecimalFromFloat(1.5),
+		},
+	}
+	risk, _ := models.NewBuiltinFutures(params, "asset")
+
+	o, p := calculateBidRange(num.NewUint(900), num.Zero(), num.NewUint(10000), num.DecimalFromFloat(0.00012345), risk.ProbabilityOfTrading)
+
+	require.Equal(t, 2, len(o))
+	require.Equal(t, 2, len(p))
+
+	pot := &probabilityOfTrading{
+		bidOffset:      o,
+		bidProbability: p,
+	}
+	minProb := num.DecimalFromFloat(0.021)
+
+	// order price 899, best bid 900
+	// we have offset 0 and offset 10000
+	// so we're interpolating between the probability 1 at offset 0 (with weight 1-1e-4)
+	// and probability of 0 at offset 10000 with weight 1e-4
+	// so expecting scaled probability to be
+	require.Equal(t, "0.49995", getProbabilityOfTrading(num.DecimalFromFloat(900), num.DecimalFromFloat(900), num.DecimalZero(), num.MaxDecimal(), pot, num.DecimalFromFloat(899), true, minProb).String())
 }
 
 func TestAskRange(t *testing.T) {

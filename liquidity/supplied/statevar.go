@@ -109,7 +109,7 @@ func calculateBidRange(bestBid, minBid, tickSize *num.Uint, tauScaled num.Decima
 		offset.AddSum(tickSize)
 		p = p.Sub(p, tickSize)
 	}
-	if p.LTE(minBid) {
+	if p.LTE(minBid) || p.IsNegative() {
 		p = minBid
 		offsets = append(offsets, offset.ToDecimal())
 		prob := probabilityFunc(bestBid, p, mbDecimal, bbDecimal, tauScaled, true, true)
