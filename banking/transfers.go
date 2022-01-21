@@ -223,7 +223,7 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 
 	// iterate over those scheduled transfers to sort them by time
 	for k, v := range e.scheduledTransfers {
-		if e.currentTime.After(k) || e.currentTime.Equal(k) {
+		if !e.currentTime.Before(k) {
 			ttfs = append(ttfs, timesToTransfers{k, v})
 			delete(e.scheduledTransfers, k)
 		}
