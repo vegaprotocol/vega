@@ -88,3 +88,43 @@ func TestUncross(t *testing.T) {
 	assert.Equal(t, 1, len(impactedOrders))
 	assert.NoError(t, err)
 }
+
+func TestUncrossDecimals(t *testing.T) {
+	logger := logging.NewTestLogger()
+	defer logger.Sync()
+
+	side := &OrderBookSide{side: types.SideSell}
+	l := side.getPriceLevel(num.NewUint(100))
+	passiveOrder := &types.Order{
+		MarketID:      "testOrderBook",
+		Party:         "A",
+		Side:          types.SideSell,
+		Price:         num.NewUint(101),
+		OriginalPrice: num.NewUint(101000),
+		Size:          100,
+		Remaining:     100,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		CreatedAt:     0,
+	}
+	l.addOrder(passiveOrder)
+
+	aggresiveOrder := &types.Order{
+		MarketID:      "testOrderBook",
+		Party:         "B",
+		Side:          types.SideBuy,
+		Price:         num.NewUint(101),
+		OriginalPrice: num.NewUint(101000),
+		Size:          100,
+		Remaining:     100,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		CreatedAt:     0,
+	}
+	filled, trades, impactedOrders, err := l.uncross(aggresiveOrder, true)
+	assert.Equal(t, true, filled)
+	assert.Equal(t, 1, len(trades))
+	assert.Equal(t, 1, len(impactedOrders))
+	assert.NoError(t, err)
+	// ensure the price fields are set correctly
+	assert.Equal(t, passiveOrder.OriginalPrice.String(), trades[0].MarketPrice.String())
+	assert.Equal(t, passiveOrder.Price.String(), trades[0].Price.String())
+}
