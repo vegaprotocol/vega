@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"os"
 	"time"
 
 	"code.vegaprotocol.io/shared/paths"
@@ -206,6 +207,10 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 	case goLevelDB:
 		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
 		if conf.DBPath != "" {
+			if _, err := os.Stat(conf.DBPath); err != nil {
+				return nil, err
+			}
+
 			dbPath = conf.DBPath
 		}
 
