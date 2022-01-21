@@ -202,6 +202,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"auction duration",
 	}, []string{
 		"maturity date",
+		"decimal places",
 	})
 }
 
