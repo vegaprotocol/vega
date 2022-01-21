@@ -192,6 +192,15 @@ func (e *Engine) updateSizes(
 		proportion := num.DecimalFromUint(num.NewUint(o.Proportion))
 
 		prob := getProbabilityOfTrading(bestBidPrice.ToDecimal(), bestAskprice.ToDecimal(), min.Original(), max.Original(), e.pot, o.Price.ToDecimal(), isBid, e.minProbabilityOfTrading)
+		e.log.Info("$probability of trading$",
+			logging.String("best-bid", bestBidPrice.String()),
+			logging.String("best-ask", bestBidPrice.String()),
+			logging.String("min", min.Original().String()),
+			logging.String("max", max.Original().String()),
+			logging.String("order-price", o.Price.String()),
+			logging.Bool("is-bid", isBid),
+			logging.String("tickSize", e.tickSize.String()),
+			logging.String("probability", prob.String()))
 		if e.log.GetLevel() <= logging.DebugLevel {
 			e.log.Debug("probability of trading", logging.Decimal("order-price", o.Price.ToDecimal()), logging.Decimal("prob", prob))
 		}
