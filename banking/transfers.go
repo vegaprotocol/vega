@@ -232,7 +232,7 @@ func (e *Engine) distributeScheduledTransfers(ctx context.Context) error {
 
 	// sort slice by time.
 	// no need to sort transfers they are going out as first in first out.
-	sort.Slice(ttfs, func(i, j int) bool {
+	sort.SliceStable(ttfs, func(i, j int) bool {
 		return ttfs[i].deliverOn.Before(ttfs[j].deliverOn)
 	})
 

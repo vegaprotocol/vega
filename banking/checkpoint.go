@@ -65,7 +65,7 @@ func (e *Engine) getScheduledTransfers() []*checkpoint.ScheduledTransferAtTime {
 		out = append(out, &checkpoint.ScheduledTransferAtTime{DeliverOn: k.Unix(), Transfers: transfers})
 	}
 
-	sort.Slice(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
+	sort.SliceStable(out, func(i, j int) bool { return out[i].DeliverOn < out[j].DeliverOn })
 
 	return out
 }
