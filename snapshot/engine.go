@@ -400,13 +400,16 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	// we're done, we can clear the snapshot state, and set engine hash
 	e.hash = e.snapshot.Hash
 	e.snapshot = nil
+	e.log.Debug("thing", logging.Int64("current", e.current))
+	e.current = e.interval
+	e.log.Debug("thing", logging.Int64("interval", e.interval))
 	// no need to save, return here
 	if !cas {
 		return nil
 	}
-	if _, err := e.saveCurrentTree(); err != nil {
-		return err
-	}
+	//if _, err := e.saveCurrentTree(); err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -500,6 +503,7 @@ func (e *Engine) Info() ([]byte, int64) {
 }
 
 func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
+	e.log.Debug("In snapshot", logging.Int64("height", e.current))
 	e.current--
 	// no snapshot to be taken yet
 	if e.current > 0 {
@@ -525,6 +529,8 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	}
 	appUpdate := false
 	height, err := vegactx.BlockHeightFromContext(ctx)
+	e.log.Debug("snapshot at", logging.Int64("height", height))
+	e.log.Debug("snapshot at", logging.Uint64("appheight", e.app.Height))
 	if err != nil {
 		return nil, err
 	}
@@ -560,6 +566,7 @@ func (e *Engine) saveCurrentTree() ([]byte, error) {
 	}
 	e.hash = h
 	e.version = v
+	e.log.Debug("saved tree", logging.Int64("version", v))
 	if len(e.versions) >= cap(e.versions) {
 		if err := e.avl.DeleteVersion(e.versions[0]); err != nil {
 			// this is not a fatal error, but still we should be paying attention.

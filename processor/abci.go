@@ -346,6 +346,7 @@ func (app *App) cancel() {
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
+	app.log.Debug("", logging.Int64("height", height))
 	return tmtypes.ResponseInfo{
 		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
@@ -482,6 +483,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+		logging.Int64("height", req.Height),
 	)
 
 	app.epoch.OnBlockEnd(ctx)
@@ -531,6 +533,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+		logging.Int64("previous-datetime", req.Header.Height),
 	)
 
 	// will be true only the first time we get out of the bootstrap period
@@ -566,9 +569,15 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 	if len(snapHash) == 0 {
 		resp.Data = app.exec.Hash()
+		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.exec.Hash())))
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
+		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.delegation.Hash())))
 		resp.Data = append(resp.Data, app.gov.Hash()...)
+		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.gov.Hash())))
 		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
+		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.stakingAccounts.Hash())))
+	} else {
+		app.log.Debug("snapshash", logging.String("hash", hex.EncodeToString(snapHash)))
 	}
 
 	// Checkpoint can be nil if it wasn't time to create a checkpoint
