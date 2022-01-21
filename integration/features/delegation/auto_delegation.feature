@@ -278,3 +278,21 @@ Scenario: A party qualifies to auto delegation by delegating all of their associ
     | party1 |  node9   |  550   |
     | party1 |  node10  |  660   |
   
+   #verifying auto delegation works on recurring delegations  
+    Then the parties deposit on staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 1000   |
+    #end epoch5 - start and end epoch5
+    When the network moves ahead "7" blocks
+    Then the parties should have the following delegation balances for epoch 5:
+    | party  | node id  | amount |
+    | party1 |  node1   |  2280  |
+    | party1 |  node2   |  2400  |
+    | party1 |  node3   |  1200  |
+    | party1 |  node4   |  1200  |
+    | party1 |  node5   |  1200  |
+    | party1 |  node6   |  1200  |
+    | party1 |  node7   |  600   |
+    | party1 |  node8   |  600   |
+    | party1 |  node9   |  600   |
+    | party1 |  node10  |  720   |
