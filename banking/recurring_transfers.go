@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
@@ -58,6 +59,8 @@ func (e *Engine) distributeRecurringTransfers(
 	for k := range e.recurringTransfers {
 		allIDs = append(allIDs, k)
 	}
+
+	sort.SliceStable(allIDs, func(i, j int) bool { return allIDs[i] < allIDs[j] })
 
 	// iterate over all transfers
 	for _, k := range allIDs {
