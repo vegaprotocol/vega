@@ -8,7 +8,6 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
-	"code.vegaprotocol.io/vega/types/num"
 )
 
 var ErrStartEpochInThePast = errors.New("start epoch in the past")
@@ -42,76 +41,6 @@ func (e *Engine) recurringTransfer(
 	// from here all sounds OK, we can add the transfer
 	// in the recurringTransfer map
 	e.recurringTransfers[transfer.ID] = transfer
-
-	return nil
-}
-
-func (e *Engine) makeRecurringFeeTransfer(
-	amount *num.Uint,
-	from, asset string,
-	fromAccountType types.AccountType,
-) *types.Transfer {
-	// first we calculate the fee
-	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
-
-	switch fromAccountType {
-	case types.AccountTypeGeneral:
-	default:
-		e.log.Panic("from account not supported",
-			logging.String("account-type", fromAccountType.String()),
-			logging.String("asset", asset),
-			logging.String("from", from),
-		)
-	}
-
-	return &types.Transfer{
-		Owner: from,
-		Amount: &types.FinancialAmount{
-			Amount: feeAmount.Clone(),
-			Asset:  asset,
-		},
-		Type:      types.TransferTypeInfrastructureFeePay,
-		MinAmount: feeAmount,
-	}
-}
-
-func (e *Engine) ensureRecurringTransferFee(
-	amount, feeAmount *num.Uint,
-	from, asset string,
-	fromAccountType types.AccountType,
-) error {
-	var (
-		totalAmount = num.Sum(amount, feeAmount)
-		account     *types.Account
-		err         error
-	)
-	switch fromAccountType {
-	case types.AccountTypeGeneral:
-		account, err = e.col.GetPartyGeneralAccount(from, asset)
-		if err != nil {
-			return err
-		}
-
-	default:
-		e.log.Panic("from account not supported",
-			logging.String("account-type", fromAccountType.String()),
-			logging.String("asset", asset),
-			logging.String("from", from),
-		)
-	}
-
-	if account.Balance.LT(totalAmount) {
-		e.log.Debug("not enough funds to transfer",
-			logging.BigUint("amount", amount),
-			logging.BigUint("fee", feeAmount),
-			logging.BigUint("total-amount", totalAmount),
-			logging.BigUint("account-balance", account.Balance),
-			logging.String("account-type", fromAccountType.String()),
-			logging.String("asset", asset),
-			logging.String("from", from),
-		)
-		return ErrNotEnoughFundsToTransfer
-	}
 
 	return nil
 }
@@ -158,7 +87,6 @@ func (e *Engine) distributeRecurringTransfers(
 			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
 			delete(e.recurringTransfers, k)
 		}
-
 	}
 
 	// send events
