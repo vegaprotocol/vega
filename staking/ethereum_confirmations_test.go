@@ -1,12 +1,10 @@
 package staking_test
 
 import (
-	"context"
 	"math/big"
 	"testing"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/staking/mocks"
 
@@ -22,9 +20,7 @@ func TestEthereumConfirmations(t *testing.T) {
 	ethCfns := staking.NewEthereumConfirmations(ethClient, tim)
 	defer ctrl.Finish()
 
-	ethCfns.OnEthereumConfigUpdate(context.Background(), &vgproto.EthereumConfig{
-		Confirmations: 30,
-	})
+	ethCfns.UpdateConfirmations(30)
 
 	tim.EXPECT().Now().Times(1).Return(time.Unix(10, 0))
 	// start a block 10
@@ -32,20 +28,14 @@ func TestEthereumConfirmations(t *testing.T) {
 		Return(&ethtypes.Header{Number: big.NewInt(10)}, nil)
 
 	// block 10, request 50, we are in the past, return err
-	assert.EqualError(t,
-		ethCfns.Check(50),
-		staking.ErrMissingConfirmations.Error(),
-	)
+	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth
 	tim.EXPECT().Now().Times(1).Return(time.Unix(15, 0))
 
 	// block 10, request 50, we are in the past, return err
-	assert.EqualError(t,
-		ethCfns.Check(50),
-		staking.ErrMissingConfirmations.Error(),
-	)
+	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth
@@ -55,10 +45,7 @@ func TestEthereumConfirmations(t *testing.T) {
 		Return(&ethtypes.Header{Number: big.NewInt(50)}, nil)
 
 	// block 10, request 50, we are in the past, return err
-	assert.EqualError(t,
-		ethCfns.Check(50),
-		staking.ErrMissingConfirmations.Error(),
-	)
+	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth
@@ -68,10 +55,7 @@ func TestEthereumConfirmations(t *testing.T) {
 		Return(&ethtypes.Header{Number: big.NewInt(79)}, nil)
 
 	// block 10, request 50, we are in the past, return err
-	assert.EqualError(t,
-		ethCfns.Check(50),
-		staking.ErrMissingConfirmations.Error(),
-	)
+	assert.ErrorIs(t, ethCfns.Check(50), staking.ErrMissingConfirmations)
 
 	// request again but before buf size
 	// no request to eth

@@ -39,9 +39,9 @@ var (
 type ETHClient interface {
 	bind.ContractBackend
 	HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error)
-	BridgeAddress() ethcommon.Address
+	CollateralBridgeAddress() ethcommon.Address
 	CurrentHeight(context.Context) (uint64, error)
-	ConfirmationsRequired() uint32
+	ConfirmationsRequired() uint64
 }
 
 type ERC20 struct {
@@ -155,7 +155,7 @@ func maybeError(err error, format string, a ...interface{}) error {
 // be sent to the bridge to whitelist the asset
 // return the generated message and the signature for this message.
 func (e *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
-	bridgeAddress := e.ethClient.BridgeAddress().Hex()
+	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
 	// use the asset ID converted into a uint256
 	nonce, err := num.UintFromHex("0x" + e.asset.ID)
 	if err != nil {
@@ -171,7 +171,7 @@ func (e *ERC20) SignBridgeListing() (msg []byte, sig []byte, err error) {
 }
 
 func (e *ERC20) ValidateAssetList(w *types.ERC20AssetList, blockNumber, txIndex uint64) error {
-	bf, err := bridge.NewBridgeFilterer(e.ethClient.BridgeAddress(), e.ethClient)
+	bf, err := bridge.NewBridgeFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
 	if err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func (e *ERC20) SignWithdrawal(
 	withdrawRef *big.Int,
 ) (msg []byte, sig []byte, err error) {
 	nonce, _ := num.UintFromBig(withdrawRef)
-	bridgeAddress := e.ethClient.BridgeAddress().Hex()
+	bridgeAddress := e.ethClient.CollateralBridgeAddress().Hex()
 	bundle, err := bridges.NewERC20Logic(e.wallet, bridgeAddress).
 		WithdrawAsset(e.address, amount, ethPartyAddress, nonce)
 	if err != nil {
@@ -237,7 +237,7 @@ func (e *ERC20) SignWithdrawal(
 }
 
 func (e *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txIndex uint64) (*big.Int, string, uint, error) {
-	bf, err := bridge.NewBridgeFilterer(e.ethClient.BridgeAddress(), e.ethClient)
+	bf, err := bridge.NewBridgeFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
 	if err != nil {
 		return nil, "", 0, err
 	}
@@ -293,7 +293,7 @@ func (e *ERC20) ValidateWithdrawal(w *types.ERC20Withdrawal, blockNumber, txInde
 }
 
 func (e *ERC20) ValidateDeposit(d *types.ERC20Deposit, blockNumber, txIndex uint64) error {
-	bf, err := bridge.NewBridgeFilterer(e.ethClient.BridgeAddress(), e.ethClient)
+	bf, err := bridge.NewBridgeFilterer(e.ethClient.CollateralBridgeAddress(), e.ethClient)
 	if err != nil {
 		return err
 	}
@@ -354,8 +354,7 @@ func (e *ERC20) checkConfirmations(txBlock uint64) error {
 		return err
 	}
 
-	if curBlock < txBlock ||
-		(curBlock-txBlock) < uint64(e.ethClient.ConfirmationsRequired()) {
+	if curBlock < txBlock || (curBlock-txBlock) < e.ethClient.ConfirmationsRequired() {
 		return ErrMissingConfirmations
 	}
 

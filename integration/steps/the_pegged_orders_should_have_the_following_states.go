@@ -3,6 +3,7 @@ package steps
 import (
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cucumber/godog"
 )
@@ -30,7 +31,7 @@ func ThePeggedOrdersShouldHaveTheFollowingStates(broker *stubs.BrokerStub, table
 			if o.PeggedOrder == nil {
 				continue
 			}
-			if o.PeggedOrder.Offset != offset || o.PeggedOrder.Reference != reference {
+			if o.PeggedOrder.Offset != offset.String() || o.PeggedOrder.Reference != reference {
 				continue
 			}
 			match = true
@@ -80,8 +81,8 @@ func (r peggedOrdersStatusAssertionRow) reference() proto.PeggedReference {
 	return r.row.MustPeggedReference("reference")
 }
 
-func (r peggedOrdersStatusAssertionRow) offset() int64 {
-	return r.row.MustI64("offset")
+func (r peggedOrdersStatusAssertionRow) offset() *num.Uint {
+	return r.row.MustUint("offset")
 }
 
 func (r peggedOrdersStatusAssertionRow) price() uint64 {

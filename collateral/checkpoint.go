@@ -35,12 +35,14 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
 		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
-		if balance.Party == systemOwner || balance.Party == systemOwner+types.AccountTypeGlobalReward.String() || balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() {
+		if balance.Party == systemOwner || balance.Party == systemOwner+types.AccountTypeGlobalReward.String() || balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() || balance.Party == systemOwner+types.AccountTypePendingTransfers.String() {
 			tp := types.AccountTypeGlobalInsurance
 			if balance.Party == systemOwner+types.AccountTypeGlobalReward.String() {
 				tp = types.AccountTypeGlobalReward
 			} else if balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() {
 				tp = types.AccountTypeFeesInfrastructure
+			} else if balance.Party == systemOwner+types.AccountTypePendingTransfers.String() {
+				tp = types.AccountTypePendingTransfers
 			}
 
 			accID := e.accountID(noMarket, systemOwner, balance.Asset, tp)
@@ -71,10 +73,11 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		}
 		switch acc.Type {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
-			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure:
+			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward,
+			types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
 			owner := acc.Owner
 			// handle reward accounts separately.
-			if owner == systemOwner && (acc.Type == types.AccountTypeGlobalReward || acc.Type == types.AccountTypeFeesInfrastructure) {
+			if owner == systemOwner && (acc.Type == types.AccountTypeGlobalReward || acc.Type == types.AccountTypeFeesInfrastructure || acc.Type == types.AccountTypePendingTransfers) {
 				owner = owner + acc.Type.String()
 			}
 

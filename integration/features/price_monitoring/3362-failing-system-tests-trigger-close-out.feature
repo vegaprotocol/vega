@@ -37,7 +37,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | party2 | ETH/DEC20 | sell | 1      | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties submit the following liquidity provision:
       | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
-      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | -10    | submission |
+      | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | buy  | BID              | 2          | 10     | submission |
       | lp1 | party1 | ETH/DEC20 | 16000000          | 0.3 | sell | ASK              | 13         | 10     | amendment |
     Then the mark price should be "0" for the market "ETH/DEC20"
     And the trading mode should be "TRADING_MODE_OPENING_AUCTION" for the market "ETH/DEC20"
@@ -80,7 +80,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | party3 | ETH/DEC20 | buy  | 70     | 106000 | 0                | TYPE_LIMIT | TIF_GFA |
     And the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
-      | party4 | ETH/DEC20 | buy  | 35     | BID              | -1000  |
+      | party4 | ETH/DEC20 | buy  | 35     | BID              | 1000   |
       | party4 | ETH/DEC20 | sell | 35     | ASK              | 3000   |
     And the parties place the following orders:
       | party  | market id | side | volume | price  | resulting trades | type       | tif     |
@@ -89,7 +89,7 @@ Feature: Replicate failing system tests after changes to price monitoring (not t
       | party3 | ETH/DEC20 | buy  | 86     | 107000 | 0                | TYPE_LIMIT | TIF_GTC |
     And the parties place the following pegged orders:
       | party  | market id | side | volume | pegged reference | offset |
-      | party1 | ETH/DEC20 | buy  | 100    | BID              | -5000  |
+      | party1 | ETH/DEC20 | buy  | 100    | BID              | 5000   |
       | party2 | ETH/DEC20 | sell | 95     | ASK              | 1000   |
     Then the trading mode should be "TRADING_MODE_MONITORING_AUCTION" for the market "ETH/DEC20"
     And the mark price should be "107100" for the market "ETH/DEC20"

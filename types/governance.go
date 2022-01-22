@@ -307,20 +307,20 @@ func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommi
 	}
 
 	for _, sell := range p.Sells {
-		order := &LiquidityOrder{
-			Reference:  sell.Reference,
-			Proportion: sell.Proportion,
-			Offset:     sell.Offset,
+		order, err := LiquidityOrderFromProto(sell)
+		if err != nil {
+			return nil, err
 		}
+
 		l.Sells = append(l.Sells, order)
 	}
 
 	for _, buy := range p.Buys {
-		order := &LiquidityOrder{
-			Reference:  buy.Reference,
-			Proportion: buy.Proportion,
-			Offset:     buy.Offset,
+		order, err := LiquidityOrderFromProto(buy)
+		if err != nil {
+			return nil, err
 		}
+
 		l.Buys = append(l.Buys, order)
 	}
 

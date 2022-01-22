@@ -15,10 +15,10 @@ import (
 
 func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTransactionRequest, string) {
 	buys := []*vega.LiquidityOrder{
-		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: -1600, Proportion: 25},
+		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_BID, Offset: "1600", Proportion: 25},
 	}
 	sells := []*vega.LiquidityOrder{
-		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: 1600, Proportion: 25},
+		{Reference: vega.PeggedReference_PEGGED_REFERENCE_BEST_ASK, Offset: "1600", Proportion: 25},
 	}
 
 	reference := "ref-" + vgrand.RandomStr(10)

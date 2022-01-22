@@ -51,7 +51,7 @@ type Accounting struct {
 	isValidator      bool
 
 	stakingAssetTotalSupply *num.Uint
-	ethCfg                  vgproto.EthereumConfig
+	stakingBridgeAddress    ethcmn.Address
 
 	// snapshot bits
 	accState accountingSnapshotState
@@ -155,16 +155,11 @@ func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
 	return balances
 }
 
-func (a *Accounting) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
-	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
-	if !ok {
-		return ErrNotAnEthereumConfig
-	}
-
-	a.ethCfg = *cfg
+func (a *Accounting) UpdateStakingBridgeAddress(stakingBridgeAddress ethcmn.Address) error {
+	a.stakingBridgeAddress = stakingBridgeAddress
 
 	if err := a.updateStakingAssetTotalSupply(); err != nil {
-		return fmt.Errorf("failed to update staking asset total supply: %w", err)
+		return fmt.Errorf("couldn't update the total supply of the staking asset: %w", err)
 	}
 
 	return nil
@@ -184,12 +179,7 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 	a.pendingStakeTotalSupply = &pendingStakeTotalSupply{
 		sts: evt,
 		check: func() error {
-			address, err := a.getStakingBridgeAddress()
-			if err != nil {
-				return err
-			}
-
-			totalSupply, err := a.getStakeAssetTotalSupply(address)
+			totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
 			if err != nil {
 				return err
 			}
@@ -229,13 +219,8 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 		// nothing to do here if we are not a validator
 		return nil
 	}
-	address, err := a.getStakingBridgeAddress()
-	if err != nil {
-		a.log.Error("could not get bridge address", logging.Error(err))
-		return nil
-	}
 
-	totalSupply, err := a.getStakeAssetTotalSupply(address)
+	totalSupply, err := a.getStakeAssetTotalSupply(a.stakingBridgeAddress)
 	if err != nil {
 		return err
 	}
@@ -247,7 +232,7 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 			StakingEvent: &vgproto.StakingEvent{
 				Action: &vgproto.StakingEvent_TotalSupply{
 					TotalSupply: &vgproto.StakeTotalSupply{
-						TokenAddress: address.Hex(),
+						TokenAddress: a.stakingBridgeAddress.Hex(),
 						TotalSupply:  totalSupply.String(),
 					},
 				},
@@ -256,16 +241,6 @@ func (a *Accounting) updateStakingAssetTotalSupply() error {
 	})
 
 	return nil
-}
-
-func (a *Accounting) getStakingBridgeAddress() (ethcmn.Address, error) {
-	if len(a.ethCfg.StakingBridgeAddresses) <= 0 {
-		a.log.Error("no staking bridge address setup",
-			logging.String("eth-cfg", a.ethCfg.String()),
-		)
-		return ethcmn.Address{}, errors.New("not staking bridge address setup")
-	}
-	return ethcmn.HexToAddress(a.ethCfg.StakingBridgeAddresses[0]), nil
 }
 
 func (a *Accounting) getStakeAssetTotalSupply(address ethcmn.Address) (*num.Uint, error) {

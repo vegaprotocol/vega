@@ -29,7 +29,7 @@ Feature: Verify the order size is correctly cumulated.
 
     When the parties submit the following liquidity provision:
       | id  | party       | market id | commitment amount | fee | side | pegged reference | proportion | offset | reference | lp type |
-      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | -10    | lp-1-ref  | submission |
+      | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | buy  | MID              | 1          | 10     | lp-1-ref  | submission |
       | lp1 | party-lp-1 | ETH/DEC19 | 1000000000        | 0.1 | sell | MID              | 1          | 10     | lp-1-ref  | amendment |
     Then the liquidity provisions should have the following states:
       | id  | party       | market    | commitment amount | status        |
