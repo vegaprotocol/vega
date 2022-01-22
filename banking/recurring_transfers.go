@@ -57,16 +57,18 @@ func (e *Engine) recurringTransfer(
 
 	// now calculate the transfers
 	var (
-		tfe         = map[uint64]*transferForEpoch{}
-		startAmount = transfer.Amount.ToDecimal()
-		startEpoch  = num.NewUint(transfer.StartEpoch).ToDecimal()
-		payTransfer *types.Transfer
-		totalFee    = num.Zero()
+		tfe            = map[uint64]*transferForEpoch{}
+		startAmount    = transfer.Amount.ToDecimal()
+		startEpoch     = num.NewUint(transfer.StartEpoch).ToDecimal()
+		payTransfer    *types.Transfer
+		payFeeTransfer *types.Transfer
 	)
 
 	for i := transfer.StartEpoch; transfer.EndEpoch > i; i++ {
 		currentEpoch := num.NewUint(i).ToDecimal()
 		amount, _ := num.UintFromDecimal(startAmount.Mul(transfer.Factor.Pow(currentEpoch.Sub(startEpoch))))
+
+		fmt.Printf("AMOUNT: %v\n", amount.String())
 
 		fromTransfer, toTransfer := e.makeTransfers(
 			transfer.From, transfer.To, transfer.Asset, amount)
@@ -82,6 +84,12 @@ func (e *Engine) recurringTransfer(
 		feeTransfer := e.makeFeeTransferForTransferFunds(
 			amount.Clone(), transfer.From, transfer.Asset, transfer.FromAccountType,
 		)
+
+		if payFeeTransfer != nil {
+			payFeeTransfer = payFeeTransfer.Merge(feeTransfer)
+		} else {
+			payFeeTransfer = payFeeTransfer.Clone()
+		}
 
 		// add the new fee to the total amount
 		totalFee.Add(totalFee, feeTransfer.Amount.Amount)
@@ -133,6 +141,35 @@ func (e *Engine) recurringTransfer(
 	e.broker.Send(events.NewTransferResponse(ctx, tresps))
 
 	return nil
+}
+
+func (e *Engine) makeRecurringFeeTransfer(
+	amount *num.Uint,
+	from, asset string,
+	fromAccountType types.AccountType,
+) *types.Transfer {
+	// first we calculate the fee
+	feeAmount, _ := num.UintFromDecimal(amount.ToDecimal().Mul(e.transferFeeFactor))
+
+	switch fromAccountType {
+	case types.AccountTypeGeneral:
+	default:
+		e.log.Panic("from account not supported",
+			logging.String("account-type", fromAccountType.String()),
+			logging.String("asset", asset),
+			logging.String("from", from),
+		)
+	}
+
+	return &types.Transfer{
+		Owner: from,
+		Amount: &types.FinancialAmount{
+			Amount: feeAmount.Clone(),
+			Asset:  asset,
+		},
+		Type:      types.TransferTypeInfrastructureFeePay,
+		MinAmount: feeAmount,
+	}
 }
 
 func (e *Engine) ensureRecurringTransferFee(
@@ -218,6 +255,10 @@ func (e *Engine) distributeRecurringTransfers(
 		feeTransfers = append(feeTransfers, tfe.feeTransfer)
 		accountTypes = append(accountTypes, tfe.accountType)
 		references = append(references, reference)
+	}
+
+	if len(transfers) <= 0 {
+		return nil
 	}
 
 	// call collateral

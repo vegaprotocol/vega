@@ -13,11 +13,24 @@ type FinancialAmount struct {
 	Amount *num.Uint
 }
 
+func (f *FinancialAmount) Clone() *FinancialAmount {
+	cpy := *f
+	cpy.Amount = f.Amount.Clone()
+	return &cpy
+}
+
 type Transfer struct {
 	Owner     string
 	Amount    *FinancialAmount
 	Type      TransferType
 	MinAmount *num.Uint
+}
+
+func (t *Transfer) Clone() *Transfer {
+	cpy := *t
+	cpy.Amount = t.Amount.Clone()
+	cpy.MinAmount = t.MinAmount.Clone()
+	return &cpy
 }
 
 // Merge creates a new Transfer.
