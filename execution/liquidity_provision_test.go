@@ -25,6 +25,12 @@ func newLiquidityOrder(reference types.PeggedReference, offset uint64, proportio
 }
 
 func TestSubmit(t *testing.T) {
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
@@ -168,7 +174,13 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test liquidity provision fee validation", func(t *testing.T) {
 		// auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		pMonitorSettings := &types.PriceMonitoringSettings{
+			Parameters: &types.PriceMonitoringParameters{
+				Triggers: []*types.PriceMonitoringTrigger{},
+			},
+			UpdateFrequency: 0,
+		}
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -665,7 +677,8 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("check that LP cannot get closed out when deploying order for the first time", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -756,7 +769,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test close out LP party cont issue 3086", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -957,9 +970,9 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test liquidity order generated sizes", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarketWithDP(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
-		})
+		}, 4)
 		mktCfg.Fees = &types.Fees{
 			Factors: &types.FeeFactors{
 				InfrastructureFee: num.DecimalFromFloat(0.0005),
@@ -1111,7 +1124,7 @@ func TestSubmit(t *testing.T) {
 			for id, v := range found {
 				size, ok := expect[id]
 				assert.True(t, ok, "unexpected order id")
-				assert.Equal(t, v.Size, size, id)
+				assert.Equal(t, size, v.Size, id)
 			}
 		})
 
@@ -1142,7 +1155,7 @@ func TestSubmit(t *testing.T) {
 	})
 
 	t.Run("check that rejected market stops liquidity provision", func(t *testing.T) {
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1585,7 +1598,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("check that Market Value Proxy is updated with trades", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{
@@ -1851,7 +1864,7 @@ func TestSubmit(t *testing.T) {
 
 	t.Run("test LP provider submit limit order which expires LPO order are redeployed", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
-		mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,
 		})
 		mktCfg.Fees = &types.Fees{

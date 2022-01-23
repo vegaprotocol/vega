@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
@@ -33,6 +34,8 @@ var (
 	ErrInvalidWithdrawalState                     = errors.New("invalid withdrawal state")
 	ErrNotMatchingWithdrawalForReference          = errors.New("invalid reference for withdrawal chain event")
 	ErrWithdrawalNotReady                         = errors.New("withdrawal not ready")
+	ErrNoGeneralAccountForAsset                   = errors.New("no general account for asset")
+	ErrNotEnoughFundsToTransfer                   = errors.New("not enough funds to transfer")
 )
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/banking Assets
@@ -56,6 +59,13 @@ type Collateral interface {
 	Withdraw(ctx context.Context, party, asset string, amount *num.Uint) (*types.TransferResponse, error)
 	EnableAsset(ctx context.Context, asset types.Asset) error
 	GetPartyGeneralAccount(party, asset string) (*types.Account, error)
+	TransferFunds(ctx context.Context,
+		transfers []*types.Transfer,
+		accountTypes []types.AccountType,
+		references []string,
+		feeTransfers []*types.Transfer,
+		feeTransfersAccountTypes []types.AccountType,
+	) ([]*types.TransferResponse, error)
 }
 
 // Witness provide foreign chain resources validations
@@ -77,11 +87,6 @@ type Topology interface {
 	IsValidator() bool
 }
 
-// Broker - the event bus.
-type Broker interface {
-	Send(e events.Event)
-}
-
 const (
 	pendingState uint32 = iota
 	okState
@@ -93,7 +98,7 @@ var defaultValidationDuration = 2 * time.Hour
 type Engine struct {
 	cfg     Config
 	log     *logging.Logger
-	broker  Broker
+	broker  broker.BrokerI
 	col     Collateral
 	witness Witness
 	notary  Notary
@@ -110,6 +115,10 @@ type Engine struct {
 	mu              sync.RWMutex
 	bss             *bankingSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
+
+	// transfer fee related stuff
+	scheduledTransfers map[time.Time][]scheduledTransfer
+	transferFeeFactor  num.Decimal
 }
 
 type withdrawalRef struct {
@@ -125,7 +134,7 @@ func New(
 	tsvc TimeService,
 	assets Assets,
 	notary Notary,
-	broker Broker,
+	broker broker.BrokerI,
 	top Topology,
 ) (e *Engine) {
 	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
@@ -151,7 +160,9 @@ func New(
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
-		keyToSerialiser: map[string]func() ([]byte, error){},
+		keyToSerialiser:    map[string]func() ([]byte, error){},
+		scheduledTransfers: map[time.Time][]scheduledTransfer{},
+		transferFeeFactor:  num.DecimalZero(),
 	}
 
 	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
@@ -238,6 +249,13 @@ func (e *Engine) OnTick(ctx context.Context, t time.Time) {
 	// this will be restarting the signatures aggregates
 	e.notary.OfferSignatures(
 		types.NodeSignatureKindAssetWithdrawal, e.offerERC20NotarySignatures)
+
+	// then process all scheduledTransfers
+	if err := e.distributeScheduledTransfers(ctx); err != nil {
+		e.log.Error("could not process scheduled transfers",
+			logging.Error(err),
+		)
+	}
 }
 
 func (e *Engine) onCheckDone(i interface{}, valid bool) {

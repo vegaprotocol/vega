@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -27,7 +28,10 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var networkSelect string
+var (
+	networkSelect        string
+	networkSelectFromURL string
+)
 
 type tmCmd struct{}
 
@@ -69,6 +73,10 @@ func defaultNewNode(config *cfg.Config, logger tmlog.Logger) (*nm.Node, error) {
 		return nil, fmt.Errorf("failed to load or gen node key %s: %w", config.NodeKeyFile(), err)
 	}
 
+	if len(networkSelect) > 0 && len(networkSelectFromURL) > 0 {
+		return nil, errors.New("flags --network and --network-url are mutualy exclusive")
+	}
+
 	return nm.NewNode(config,
 		privval.LoadOrGenFilePV(config.PrivValidatorKeyFile(), config.PrivValidatorStateFile()),
 		nodeKey,
@@ -83,6 +91,8 @@ func defaultNewNode(config *cfg.Config, logger tmlog.Logger) (*nm.Node, error) {
 func selectGenesisDocProviderFunc(config *cfg.Config) nm.GenesisDocProvider {
 	if len(networkSelect) > 0 {
 		return httpGenesisDocProvider
+	} else if len(networkSelectFromURL) > 0 {
+		return httpFromURLGenesisDocProvider
 	}
 
 	return nm.DefaultGenesisDocProviderFunc(config)
@@ -107,6 +117,33 @@ func httpGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
 	}
 	if !validSignature {
 		return nil, fmt.Errorf("genesis state doesn't match the signature: %s", sig)
+	}
+
+	return doc, nil
+}
+
+func httpFromURLGenesisDocProvider() (*tmtypes.GenesisDoc, error) {
+	genesisFilePath := networkSelectFromURL
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", genesisFilePath, nil)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
+	}
+	defer resp.Body.Close()
+	jsonGenesis, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, _, err := genesis.GenesisFromJSON(jsonGenesis)
+	if err != nil {
+		return nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
 	}
 
 	return doc, nil
@@ -214,7 +251,12 @@ func newRunNodeCmd(nodeProvider nm.Provider) *cobra.Command {
 		&networkSelect,
 		"network",
 		"",
-		"The network to start this node with")
+		"The name of the network to start this node with")
+	cobraCmd.Flags().StringVar(
+		&networkSelectFromURL,
+		"network-url",
+		"",
+		"The URL to a genesis file to start this node with")
 
 	tmcmd.AddNodeFlags(cobraCmd)
 	return cobraCmd

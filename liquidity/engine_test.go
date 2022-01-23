@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/integration/stubs"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
@@ -58,12 +60,13 @@ func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *test
 	risk := mocks.NewMockRiskModel(ctrl)
 	monitor := mocks.NewMockPriceMonitor(ctrl)
 	market := "market-id"
+	asset := "asset-id"
 	liquidityConfig := liquidity.NewDefaultConfig()
-
+	stateVarEngine := stubs.NewStateVar()
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, broker, idGen, risk, monitor, market,
+		log, broker, idGen, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000),
 	)
 	engine.OnChainTimeUpdate(context.Background(), now)
 

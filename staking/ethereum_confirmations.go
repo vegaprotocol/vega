@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	vgproto "code.vegaprotocol.io/protos/vega"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -48,18 +47,7 @@ func NewEthereumConfirmations(
 	}
 }
 
-func (e *EthereumConfirmations) OnEthereumConfigUpdate(_ context.Context, rawcfg interface{}) error {
-	cfg, ok := rawcfg.(*vgproto.EthereumConfig)
-	if !ok {
-		return ErrNotAnEthereumConfig
-	}
-
-	e.set(uint64(cfg.Confirmations))
-
-	return nil
-}
-
-func (e *EthereumConfirmations) set(confirmations uint64) {
+func (e *EthereumConfirmations) UpdateConfirmations(confirmations uint64) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.required = confirmations
@@ -71,8 +59,7 @@ func (e *EthereumConfirmations) Check(block uint64) error {
 		return err
 	}
 
-	if curBlock < block ||
-		(curBlock-block) < e.required {
+	if curBlock < block || (curBlock-block) < e.required {
 		return ErrMissingConfirmations
 	}
 

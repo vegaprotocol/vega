@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 )
 
 var (
@@ -44,6 +45,10 @@ type PriceMonitor interface {
 // IDGen is an id generator for orders.
 type IDGen interface {
 	SetID(*types.Order)
+}
+
+type StateVarEngine interface {
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 }
 
 // RepricePeggedOrder reprices a pegged order.
@@ -93,16 +98,19 @@ func NewEngine(config Config,
 	idGen IDGen,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
+	asset string,
 	marketID string,
+	stateVarEngine StateVarEngine,
+	tickSize *num.Uint,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
-	return &Engine{
+	e := &Engine{
 		marketID:       marketID,
 		log:            log,
 		broker:         broker,
 		idGen:          idGen,
-		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, marketID),
+		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, tickSize, log),
 
 		// parameters
 		stakeToObligationFactor: num.DecimalFromInt64(1),
@@ -115,6 +123,12 @@ func NewEngine(config Config,
 		orders:          newSnapshotablePartiesOrders(),
 		liquidityOrders: newSnapshotablePartiesOrders(),
 	}
+
+	return e
+}
+
+func (e *Engine) SetGetStaticPricesFunc(f func() (*num.Uint, *num.Uint, error)) {
+	e.suppliedEngine.SetGetStaticPricesFunc(f)
 }
 
 // OnChainTimeUpdate updates the internal engine current time.
@@ -805,4 +819,8 @@ func validateShape(sh []*types.LiquidityOrder, side types.Side, maxSize int64) e
 		}
 	}
 	return nil
+}
+
+func (e *Engine) IsPoTInitialised() bool {
+	return e.suppliedEngine.IsPoTInitialised()
 }

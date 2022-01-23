@@ -62,9 +62,16 @@ var defaultCollateralAssets = []types.Asset{
 
 var defaultPriceMonitorSettings = &types.PriceMonitoringSettings{
 	Parameters: &types.PriceMonitoringParameters{
-		Triggers: []*types.PriceMonitoringTrigger{},
+		Triggers: []*types.PriceMonitoringTrigger{
+			{
+				Horizon:          600,
+				HorizonDec:       num.MustDecimalFromString("600"),
+				Probability:      num.DecimalFromFloat(0.99),
+				AuctionExtension: 120,
+			},
+		},
 	},
-	UpdateFrequency: 0,
+	UpdateFrequency: 300,
 }
 
 type marketW struct {
@@ -100,6 +107,7 @@ type testMarket struct {
 	orderEvents      []events.Event
 	mktCfg           *types.Market
 	oracleEngine     *oracles.Engine
+	stateVar         *stubs.StateVarStub
 
 	// Options
 	Assets []types.Asset
@@ -165,18 +173,14 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
-	statevar := mocks.NewMockStateVarEngine(tm.ctrl)
-	statevar.EXPECT().AddStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
-	statevar.EXPECT().ReadyForTimeTrigger(gomock.Any(), gomock.Any()).AnyTimes()
 
+	statevarEngine := stubs.NewStateVar()
 	epochEngine := mocks.NewMockEpochEngine(tm.ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
 	feeTracker := execution.NewFeesTracker(epochEngine)
-
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevar, feeTracker,
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevarEngine,feeTracker
 	)
 	require.NoError(tm.t, err)
 
@@ -192,6 +196,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	tm.asset = asset
 	tm.mas = mas
 	tm.mktCfg = &mktCfg
+	tm.stateVar = statevarEngine
 
 	// Reset event counters
 	tm.eventCount = 0
@@ -245,6 +250,17 @@ func getTestMarket(t *testing.T, now time.Time, closingAt time.Time, pMonitorSet
 	return getTestMarket2(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true)
 }
 
+func getTestMarketWithDP(
+	t *testing.T,
+	now time.Time,
+	closingAt time.Time,
+	pMonitorSettings *types.PriceMonitoringSettings,
+	openingAuctionDuration *types.AuctionDuration,
+	decimalPlaces uint64) *testMarket {
+	t.Helper()
+	return getTestMarket2WithDP(t, now, closingAt, pMonitorSettings, openingAuctionDuration, true, decimalPlaces)
+}
+
 func getTestMarket2(
 	t *testing.T,
 	now time.Time,
@@ -252,6 +268,19 @@ func getTestMarket2(
 	pMonitorSettings *types.PriceMonitoringSettings,
 	openingAuctionDuration *types.AuctionDuration,
 	startOpeningAuction bool,
+) *testMarket {
+	t.Helper()
+	return getTestMarket2WithDP(t, now, closingAt, pMonitorSettings, openingAuctionDuration, startOpeningAuction, 1)
+}
+
+func getTestMarket2WithDP(
+	t *testing.T,
+	now time.Time,
+	closingAt time.Time,
+	pMonitorSettings *types.PriceMonitoringSettings,
+	openingAuctionDuration *types.AuctionDuration,
+	startOpeningAuction bool,
+	decimalPlaces uint64,
 ) *testMarket {
 	t.Helper()
 	ctrl := gomock.NewController(t)
@@ -324,7 +353,6 @@ func getTestMarket2(
 	}
 
 	collateralEngine.EnableAsset(context.Background(), tokAsset)
-
 	if pMonitorSettings == nil {
 		pMonitorSettings = &types.PriceMonitoringSettings{
 			Parameters: &types.PriceMonitoringParameters{
@@ -333,8 +361,7 @@ func getTestMarket2(
 			UpdateFrequency: 0,
 		}
 	}
-
-	mkt := getMarket(closingAt, pMonitorSettings, openingAuctionDuration)
+	mkt := getMarketWithDP(closingAt, pMonitorSettings, openingAuctionDuration, decimalPlaces)
 	mktCfg := &mkt
 
 	mas := monitor.NewAuctionState(mktCfg, now)
@@ -371,6 +398,7 @@ func getTestMarket2(
 	tm.asset = asset
 	tm.mas = mas
 	tm.mktCfg = mktCfg
+	tm.stateVar = statevar
 
 	// Reset event counters
 	tm.eventCount = 0
@@ -380,7 +408,12 @@ func getTestMarket2(
 }
 
 func getMarket(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration) types.Market {
+	return getMarketWithDP(closingAt, pMonitorSettings, openingAuctionDuration, 1)
+}
+
+func getMarketWithDP(closingAt time.Time, pMonitorSettings *types.PriceMonitoringSettings, openingAuctionDuration *types.AuctionDuration, decimalPlaces uint64) types.Market {
 	mkt := types.Market{
+		DecimalPlaces: decimalPlaces,
 		Fees: &types.Fees{
 			Factors: &types.FeeFactors{
 				LiquidityFee:      num.DecimalFromFloat(0.3),
@@ -4392,6 +4425,9 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 		},
 	}
 
+	tm.stateVar.ReadyForTimeTrigger(tm.asset, tm.market.GetID())
+	tm.stateVar.OnTimeTick(context.Background(), now.Add(6*time.Minute))
+
 	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-A", "id-lp"))
 	require.Equal(t, 0, tm.market.GetParkedOrderCount())
 	require.Equal(t, int64(9), tm.market.GetOrdersOnBookCount())
@@ -6050,6 +6086,8 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	now = now.Add(2 * time.Second)
 	closed := tm.market.OnChainTimeUpdate(ctx, now)
 	require.False(t, closed)
+	tm.stateVar.ReadyForTimeTrigger(tm.asset, tm.market.GetID())
+	tm.stateVar.OnTimeTick(context.Background(), now.Add(6*time.Minute))
 
 	totalCommitment := num.Sum(lp1Commitment, lp2Commitment)
 	currentStake := num.DecimalFromUint(totalCommitment)
@@ -6081,6 +6119,8 @@ func TestLiquidityMonitoring_GoIntoAndOutOfAuction(t *testing.T) {
 	require.True(t, maxOrderSizeFp.GreaterThan(num.DecimalFromFloat(1)))
 	maxOSize, _ := num.UintFromDecimal(maxOrderSizeFp.Floor())
 	maxOrderSize := maxOSize.Uint64()
+
+	tm.stateVar.OnTimeTick(context.Background(), now.Add(11*time.Minute))
 
 	// Add orders that will trade (no auction triggered yet)
 	buyOrder3 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "buyOrder3", types.SideBuy, party1, maxOrderSize, matchingPrice)

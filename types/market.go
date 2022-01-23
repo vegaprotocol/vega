@@ -4,6 +4,7 @@ package types
 
 import (
 	"errors"
+	"strconv"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	v1 "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -642,6 +643,12 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		m.tmc = m.TradingModeConfig.tmcType()
 	}
 	return m
+}
+
+// tick size as implied by the decimal places for the market.
+func (m Market) TickSize() *num.Uint {
+	tickSize, _ := num.UintFromDecimal(num.MustDecimalFromString("1e" + strconv.Itoa(int(m.DecimalPlaces-1))))
+	return num.Max(num.NewUint(1), tickSize)
 }
 
 func (m Market) IntoProto() *proto.Market {
