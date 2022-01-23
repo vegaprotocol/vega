@@ -186,6 +186,10 @@ type PayloadFloatingPointConsensus struct {
 	ConsensusData []*snapshot.NextTimeTrigger
 }
 
+type PayloadFeeTracker struct {
+	FeeTrackerData *snapshot.FeesTracker
+}
+
 type Witness struct {
 	NeedResendResources []string
 	Resources           []*Resource
@@ -727,6 +731,8 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadFutureStateFromProto(dt)
 	case *snapshot.Payload_FloatingPointConsensus:
 		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
+	case *snapshot.Payload_FeesTracker:
+		ret.Data = PayloadFeeTrackerFromProto(dt)
 	}
 
 	return ret
@@ -845,6 +851,8 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_LiquidityTarget:
 		ret.Data = dt
 	case *snapshot.Payload_FloatingPointConsensus:
+		ret.Data = dt
+	case *snapshot.Payload_FeesTracker:
 		ret.Data = dt
 	}
 	return &ret
@@ -3369,6 +3377,32 @@ func (*PayloadFloatingPointConsensus) Key() string {
 
 func (*PayloadFloatingPointConsensus) Namespace() SnapshotNamespace {
 	return FloatingPointConsensusSnapshot
+}
+
+func (*PayloadFeeTracker) isPayload() {}
+
+func PayloadFeeTrackerFromProto(t *snapshot.Payload_FeesTracker) *PayloadFeeTracker {
+	return &PayloadFeeTracker{
+		FeeTrackerData: t.FeesTracker,
+	}
+}
+
+func (p *PayloadFeeTracker) IntoProto() *snapshot.Payload_FeesTracker {
+	return &snapshot.Payload_FeesTracker{
+		FeesTracker: p.FeeTrackerData,
+	}
+}
+
+func (p *PayloadFeeTracker) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadFeeTracker) Key() string {
+	return "feesTracker"
+}
+
+func (*PayloadFeeTracker) Namespace() SnapshotNamespace {
+	return FeeTrackerSnapshot
 }
 
 func (*PayloadTopology) isPayload() {}

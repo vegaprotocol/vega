@@ -173,7 +173,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.rewards.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
 
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
-		n.notary, n.spam, n.rewards, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine)
+		n.notary, n.spam, n.rewards, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker)
 
 	// now instantiate the blockchain layer
 	if n.app, err = n.startBlockchain(); err != nil {

@@ -1,12 +1,15 @@
 package execution_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
+	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 )
 
@@ -84,4 +87,25 @@ func TestFeesTracker(t *testing.T) {
 	require.Equal(t, "1", scores[0].Score.String())
 	require.Equal(t, "party2", scores[0].Party)
 
+	key := (&types.PayloadFeeTracker{}).Key()
+	hash1, err := feesTracker.GetHash(key)
+	require.NoError(t, err)
+	state1, _, err := feesTracker.GetState(key)
+	require.NoError(t, err)
+
+	epochEngineLoad := &TestEpochEngine{}
+	feesTrackerLoad := execution.NewFeesTracker(epochEngineLoad)
+	epochEngineLoad.target(context.Background(), types.Epoch{Seq: 1})
+
+	pl := snapshotpb.Payload{}
+	require.NoError(t, proto.Unmarshal(state1, &pl))
+	feesTrackerLoad.LoadState(context.Background(), types.PayloadFromProto(&pl))
+
+	hash2, err := feesTrackerLoad.GetHash(key)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(hash1, hash2))
+
+	state2, _, err := feesTrackerLoad.GetState(key)
+	require.NoError(t, err)
+	require.True(t, bytes.Equal(state1, state2))
 }

@@ -180,7 +180,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	feeTracker := execution.NewFeesTracker(epochEngine)
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevarEngine,feeTracker
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevarEngine, feeTracker,
 	)
 	require.NoError(tm.t, err)
 

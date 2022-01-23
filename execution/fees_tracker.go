@@ -44,12 +44,14 @@ func (aft *assetFeesTracker) addFees(m map[string]*num.Uint, party string, amoun
 type FeesTracker struct {
 	assetToTracker map[string]*assetFeesTracker
 	currentEpoch   uint64
+	ss             *snapshotState
 }
 
 // NewFeesTracker instantiates the fees tracker.
 func NewFeesTracker(epochEngine EpochEngine) *FeesTracker {
 	ft := &FeesTracker{
 		assetToTracker: map[string]*assetFeesTracker{},
+		ss:             &snapshotState{changed: true},
 	}
 	epochEngine.NotifyOnEpoch(ft.onEpochEvent)
 	return ft
