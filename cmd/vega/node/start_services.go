@@ -367,6 +367,10 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
+			Param:   netparams.RewardAsset,
+			Watcher: n.rewards.UpdateAssetForStakingAndDelegation,
+		},
+		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
 			Watcher: n.rewards.UpdateCompetitionLevelForStakingRewardScheme,
 		},

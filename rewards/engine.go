@@ -89,6 +89,7 @@ type globalRewardParams struct {
 	minValidators           num.Decimal
 	maxPayoutPerParticipant *num.Uint
 	delegatorShare          num.Decimal
+	asset                   string
 }
 
 type payout struct {
@@ -122,6 +123,11 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 	// register for time tick updates
 	ts.NotifyOnTick(e.onChainTimeUpdate)
 	return e
+}
+
+func (e *Engine) UpdateAssetForStakingAndDelegation(ctx context.Context, asset string) error {
+	e.global.asset = asset
+	return nil
 }
 
 // UpdateMinimumValidatorStakeForStakingRewardScheme updaates the value of minimum validator stake for being considered for rewards.
@@ -223,7 +229,10 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
-		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, e.global.maxPayoutPerParticipant, e.global.minValStakeUInt, e.rng, e.log)
+		if asset == e.global.asset {
+			return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, e.global.maxPayoutPerParticipant, e.global.minValStakeUInt, e.rng, e.log)
+		}
+		return nil
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
 		return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, num.Zero(), e.global.minValStakeUInt, e.rng, e.log)
 	case types.AccountTypeMakerFeeReward: // given to receivers of maker fee in the asset based on their total received fee proportion

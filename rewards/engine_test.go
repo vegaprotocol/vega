@@ -29,6 +29,7 @@ func Test(t *testing.T) {
 func testShouldUpdateVotingPower(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
+	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
@@ -52,6 +53,7 @@ func testShouldUpdateVotingPower(t *testing.T) {
 func testVotingPowerCalculation(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
+	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
@@ -127,6 +129,7 @@ func testUpdateMaxPayoutPerParticipantForStakingRewardScheme(t *testing.T) {
 func testCalculateRewards(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
+	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
@@ -159,6 +162,7 @@ func testCalculateRewards(t *testing.T) {
 func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
+	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
@@ -190,8 +194,7 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 func testDistributePayout(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
-
-	// setup reward account
+	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateMinValidatorsStakingRewardScheme(context.Background(), 5)
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
@@ -226,6 +229,7 @@ func testDistributePayout(t *testing.T) {
 func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	testEngine := getEngine(t)
 	engine := testEngine.engine
+	engine.UpdateAssetForStakingAndDelegation(context.Background(), "VEGA")
 	engine.UpdateDelegatorShareForStakingRewardScheme(context.Background(), num.DecimalFromFloat(0.3))
 	engine.UpdateMinimumValidatorStakeForStakingRewardScheme(context.Background(), num.NewDecimalFromFloat(0))
 	engine.UpdateCompetitionLevelForStakingRewardScheme(context.Background(), num.DecimalFromFloat(1.1))
