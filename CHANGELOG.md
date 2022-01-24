@@ -49,6 +49,7 @@
 - [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
 - [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Fail when missing tendermint home and public key in `nodewallet import` command
+- [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
 
 ## 0.47.5
 *2022-01-20*
