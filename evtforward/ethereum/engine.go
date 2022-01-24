@@ -20,10 +20,7 @@ type Forwarder interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/filterer_mock.go -package mocks code.vegaprotocol.io/vega/evtforward/ethereum Filterer
 type Filterer interface {
-	AssetWithdrawnEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
-	AssetDepositedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
-	AssetListEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
-	AssetDelistEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
+	FilterCollateralEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
 	StakeDepositedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
 	StakeRemovedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
 	CurrentHeight(context.Context) uint64
@@ -36,28 +33,6 @@ type Engine struct {
 	filterer  Filterer
 	forwarder Forwarder
 
-	// We save the smallest block number of the last matched events because the
-	// overall filtering is synchronous, each type being filtered independently.
-	// This means the first filtering step might have stopped earlier than the
-	// last step. Starting from the highest block number would make the
-	// processing skip blocks for the first type being filtered.
-	//
-	// Example:
-	//
-	// - S:  Starting block number for filtering for a given type
-	// - Ln: Last matched event block number for a given type.
-	// - Hn: Block number at which the filtering stopped, that should match the
-	// 		 current height of Ethereum.
-	//
-	// Withdraw   S----L1---H1
-	// Deposit    S-------------L2-----H2
-	//
-	// While processing the Deposit, the current height (Hn) of Ethereum might
-	// have move forward, reaching H2. So, when re-filtering Withdraw events,
-	// we don't want to skip the events between H1 and H2. As a result, we could
-	// save H1, however, due to some API limitations, we don't know about H1, we
-	// only know about L1, so we have to save L1, meaning the block number of
-	// the last matched event from the first step, only.
 	nextCollateralBlockNumber uint64
 	nextStakingBlockNumber    uint64
 
@@ -121,25 +96,10 @@ func (e *Engine) Start() {
 func (e *Engine) gatherEvents(ctx context.Context) {
 	// Collateral bridge
 	nextCollateralBlockNumber := e.nextCollateralBlockNumber
-	lastBlockMatched := e.filterer.AssetWithdrawnEvents(ctx, nextCollateralBlockNumber, func(event *commandspb.ChainEvent) {
+	lastBlockMatched := e.filterer.FilterCollateralEvents(ctx, nextCollateralBlockNumber, func(event *commandspb.ChainEvent) {
 		e.forwarder.ForwardFromSelf(event)
 	})
-	// We update nextCollateralBlockNumber with lastBlockMatched coming from the
-	// first step of the collateral bridge filtering only.
-	// More details in the property comment.
 	e.nextCollateralBlockNumber = lastBlockMatched + 1
-
-	_ = e.filterer.AssetDepositedEvents(ctx, nextCollateralBlockNumber, func(event *commandspb.ChainEvent) {
-		e.forwarder.ForwardFromSelf(event)
-	})
-
-	_ = e.filterer.AssetListEvents(ctx, nextCollateralBlockNumber, func(event *commandspb.ChainEvent) {
-		e.forwarder.ForwardFromSelf(event)
-	})
-
-	_ = e.filterer.AssetDelistEvents(ctx, nextCollateralBlockNumber, func(event *commandspb.ChainEvent) {
-		e.forwarder.ForwardFromSelf(event)
-	})
 
 	// Staking bridge
 	nextStakingBlockNumber := e.nextStakingBlockNumber

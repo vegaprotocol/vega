@@ -77,6 +77,7 @@ func (e *Engine) StartEthereumEngine(
 	e.ethEngine = ethereum.NewEngine(ethLogger, filterer, forwarder, stakingBridge.DeploymentBlockHeight())
 
 	go func() {
+		e.log.Info("Starting the Ethereum Event Forwarder")
 		e.ethEngine.Start()
 	}()
 

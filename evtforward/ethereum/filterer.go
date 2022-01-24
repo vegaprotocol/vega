@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strings"
 
 	vgproto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -12,11 +13,13 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/types"
-	"github.com/cenkalti/backoff"
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
+	"github.com/cenkalti/backoff"
+	eth "github.com/ethereum/go-ethereum"
+	ethabi "github.com/ethereum/go-ethereum/accounts/abi"
 	ethbind "github.com/ethereum/go-ethereum/accounts/abi/bind"
 	ethcmn "github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 const logFiltererLogger = "log-filterer"
@@ -43,11 +46,14 @@ type Client interface {
 type LogFilterer struct {
 	log *logging.Logger
 
-	client                   Client
+	client Client
+
 	collateralBridgeFilterer *bridge.BridgeFilterer
 	collateralBridge         types.EthereumContract
-	stakingBridgeFilterer    *staking.StakingFilterer
-	stakingBridge            types.EthereumContract
+
+	stakingBridgeFilterer *staking.StakingFilterer
+	stakingBridge         types.EthereumContract
+	collateralBridgeABI   ethabi.ABI
 }
 
 func NewLogFilterer(log *logging.Logger, ethClient Client, collateralBridge types.EthereumContract, stakingBridge types.EthereumContract) (*LogFilterer, error) {
@@ -58,6 +64,11 @@ func NewLogFilterer(log *logging.Logger, ethClient Client, collateralBridge type
 		return nil, fmt.Errorf("couldn't create log filterer for ERC20 brigde: %w", err)
 	}
 
+	collateralBridgeABI, err := ethabi.JSON(strings.NewReader(bridge.BridgeABI))
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load collateral bridge ABI: %w", err)
+	}
+
 	stakingBridgeFilterer, err := staking.NewStakingFilterer(stakingBridge.Address(), ethClient)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create log filterer for ERC20 brigde: %w", err)
@@ -66,6 +77,7 @@ func NewLogFilterer(log *logging.Logger, ethClient Client, collateralBridge type
 	return &LogFilterer{
 		log:                      l,
 		client:                   ethClient,
+		collateralBridgeABI:      collateralBridgeABI,
 		collateralBridgeFilterer: collateralBridgeFilterer,
 		collateralBridge:         collateralBridge,
 		stakingBridgeFilterer:    stakingBridgeFilterer,
@@ -94,44 +106,126 @@ func (f *LogFilterer) CurrentHeight(ctx context.Context) uint64 {
 	return *currentHeight
 }
 
-// AssetWithdrawnEvents retrieves the AssetWithdrawn events on Ethereum starting
-// from startAt, transform them into ERC20Withdrawal, and pass it to the
-// OnEventFound callback.
-// It returns block number from the last event matched.
-func (f *LogFilterer) AssetWithdrawnEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
-	var iter *bridge.BridgeAssetWithdrawnIterator
+// FilterCollateralEvents retrieves the events from the collateral bridge on
+// Ethereum starting at startAt, transform them into ChainEvent, and pass it to
+// the OnEventFound callback.
+// It returns the block number from the last block that has been entirely
+// processed. If the filtering fails in the middle of the block, the previous
+// block number is returned.
+func (f *LogFilterer) FilterCollateralEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
+	logs, sub := f.subscribeToFilterLogs(ctx, startAt)
+	defer func() {
+		close(logs)
+		sub.Unsubscribe()
+	}()
 
-	infiniteRetry(func() error {
-		i, err := f.collateralBridgeFilterer.FilterAssetWithdrawn(
-			&ethbind.FilterOpts{
-				Start:   startAt,
-				Context: ctx,
-			},
-			[]ethcmn.Address{},
-			[]ethcmn.Address{},
-		)
-		if err != nil {
-			f.log.Error("Couldn't retrieve AssetWithdrawn event from collateral bridge", logging.Error(err))
-			return fmt.Errorf("couldn't retrieve AssetWithdrawn event from collateral bridge: %w", err)
+	var event *types.ChainEvent
+	var previousBlockChecked uint64
+	var blockNumber uint64
+	currentBlockNumber := startAt
+	for {
+		select {
+		case log := <-logs:
+			event, blockNumber = f.toChainEvent(log)
+		case err := <-sub.Err():
+			if err != nil {
+				f.log.Error("Subscription to Ethereum log filterer encountered an issue, will retry from previous block number", logging.Error(err))
+				return previousBlockChecked
+			}
+			// No more log to process, exiting the filtering, it's safe to
+			// return the current block number.
+			return currentBlockNumber
 		}
-		iter = i
+
+		// In case of error, we don't want to return the block number of the
+		// block being processed as we may still have events to process for that
+		// block. So, we have to keep the number of the last block that has been
+		// entirely processed.
+		if previousBlockChecked != currentBlockNumber && currentBlockNumber != blockNumber {
+			previousBlockChecked = currentBlockNumber
+			currentBlockNumber = blockNumber
+		}
+
+		cb(event)
+	}
+}
+
+func (f *LogFilterer) subscribeToFilterLogs(ctx context.Context, startAt uint64) (chan ethtypes.Log, eth.Subscription) {
+	query := eth.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(startAt),
+		Addresses: []ethcmn.Address{
+			f.collateralBridge.Address(),
+		},
+		Topics: [][]ethcmn.Hash{{
+			f.collateralBridgeABI.Events["Asset_Deposited"].ID,
+			f.collateralBridgeABI.Events["Asset_Withdrawn"].ID,
+			f.collateralBridgeABI.Events["Asset_Listed"].ID,
+			f.collateralBridgeABI.Events["Asset_Removed"].ID,
+		}},
+	}
+
+	// This has been taken from the go-ethereum library. I don't know why it has
+	// a size of 128.
+	logs := make(chan ethtypes.Log, 128)
+
+	var sub eth.Subscription
+	infiniteRetry(func() error {
+		s, err := f.client.SubscribeFilterLogs(ctx, query, logs)
+		if err != nil {
+			f.log.Error("Couldn't subscribe to the Ethereum log filterer", logging.Error(err))
+			return fmt.Errorf("couldn't subscribe to the Ethereum log filterer: %w", err)
+		}
+		sub = s
 		return nil
 	})
 
-	defer func() {
-		if err := iter.Close(); err != nil {
-			f.log.Error("Couldn't close AssetWithdrawn iterator, meaning subscription to Ethereum might still be alive", logging.Error(err))
+	return logs, sub
+}
+
+// toChainEvent transform a log to a ChainEvent. It must succeed, otherwise
+// it raises a fatal error. At this point, if we can't parse the log, it means:
+// - a new event type as been added to the query without being adding support in
+//   this method,
+// - or, the log doesn't have a backward or forward compatible format.
+// Either way, this is a programming error.
+func (f *LogFilterer) toChainEvent(log ethtypes.Log) (*types.ChainEvent, uint64) {
+	switch log.Topics[0] {
+	case f.collateralBridgeABI.Events["Asset_Deposited"].ID:
+		event, err := f.collateralBridgeFilterer.ParseAssetDeposited(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse AssetDeposited event", logging.Error(err))
+			return nil, 0
 		}
-	}()
-
-	lastBlockChecked := uint64(0)
-	for iter.Next() {
-		f.debugAssetWithdrawn(iter.Event)
-		cb(toERC20Withdraw(iter.Event))
-		lastBlockChecked = iter.Event.Raw.BlockNumber
+		f.debugAssetDeposited(event)
+		return toERC20Deposit(event), event.Raw.BlockNumber
+	case f.collateralBridgeABI.Events["Asset_Withdrawn"].ID:
+		event, err := f.collateralBridgeFilterer.ParseAssetWithdrawn(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse AssetWithdrawn event", logging.Error(err))
+			return nil, 0
+		}
+		f.debugAssetWithdrawn(event)
+		return toERC20Withdraw(event), event.Raw.BlockNumber
+	case f.collateralBridgeABI.Events["Asset_Listed"].ID:
+		event, err := f.collateralBridgeFilterer.ParseAssetListed(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse AssetListed event", logging.Error(err))
+			return nil, 0
+		}
+		f.debugAssetListed(event)
+		return toERC20AssetList(event), event.Raw.BlockNumber
+	case f.collateralBridgeABI.Events["Asset_Removed"].ID:
+		event, err := f.collateralBridgeFilterer.ParseAssetRemoved(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse AssetRemoved event", logging.Error(err))
+			return nil, 0
+		}
+		f.debugAssetRemoved(event)
+		return toERC20AssetDelist(event), event.Raw.BlockNumber
+	default:
+		f.log.Fatal("Unsupported Ethereum log event", logging.String("event-id", log.Topics[0].String()))
+		return nil, 0
 	}
-
-	return lastBlockChecked
 }
 
 func (f *LogFilterer) debugAssetWithdrawn(event *bridge.BridgeAssetWithdrawn) {
@@ -161,46 +255,6 @@ func toERC20Withdraw(event *bridge.BridgeAssetWithdrawn) *commandspb.ChainEvent 
 			},
 		},
 	}
-}
-
-// AssetDepositedEvents retrieves the AssetDeposited events on Ethereum starting
-// from startAt, transform them into ERC20Deposit, and pass it to the
-// OnEventFound callback.
-// It returns block number from the last event matched.
-func (f *LogFilterer) AssetDepositedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
-	var iter *bridge.BridgeAssetDepositedIterator
-
-	infiniteRetry(func() error {
-		i, err := f.collateralBridgeFilterer.FilterAssetDeposited(
-			&ethbind.FilterOpts{
-				Start:   startAt,
-				Context: ctx,
-			},
-			[]ethcmn.Address{},
-			[]ethcmn.Address{},
-		)
-		if err != nil {
-			f.log.Error("Couldn't retrieve AssetDeposited event from collateral bridge", logging.Error(err))
-			return fmt.Errorf("couldn't retrieve AssetDeposited event from collateral bridge: %w", err)
-		}
-		iter = i
-		return nil
-	})
-
-	defer func() {
-		if err := iter.Close(); err != nil {
-			f.log.Error("Couldn't close AssetDeposited iterator, meaning subscription to Ethereum might still be alive", logging.Error(err))
-		}
-	}()
-
-	lastBlockChecked := uint64(0)
-	for iter.Next() {
-		f.debugAssetDeposited(iter.Event)
-		cb(toERC20Deposit(iter.Event))
-		lastBlockChecked = iter.Event.Raw.BlockNumber
-	}
-
-	return lastBlockChecked
 }
 
 func (f *LogFilterer) debugAssetDeposited(event *bridge.BridgeAssetDeposited) {
@@ -234,45 +288,6 @@ func toERC20Deposit(event *bridge.BridgeAssetDeposited) *commandspb.ChainEvent {
 	}
 }
 
-// AssetListEvents retrieves the AssetListed events on Ethereum starting
-// from startAt, transform them into ERC20AssetList, and pass it to the
-// OnEventFound callback.
-// It returns block number from the last event matched.
-func (f *LogFilterer) AssetListEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
-	var iter *bridge.BridgeAssetListedIterator
-
-	infiniteRetry(func() error {
-		i, err := f.collateralBridgeFilterer.FilterAssetListed(
-			&ethbind.FilterOpts{
-				Start:   startAt,
-				Context: ctx,
-			},
-			[]ethcmn.Address{},
-			[][32]byte{},
-		)
-		if err != nil {
-			f.log.Error("Couldn't retrieve AssetListed event from collateral bridge", logging.Error(err))
-			return fmt.Errorf("couldn't retrieve AssetListed event from collateral bridge: %w", err)
-		}
-		iter = i
-		return nil
-	})
-
-	defer func() {
-		if err := iter.Close(); err != nil {
-			f.log.Error("Couldn't close AssetListed iterator, meaning subscription to Ethereum might still be alive", logging.Error(err))
-		}
-	}()
-
-	lastBlockChecked := uint64(0)
-	for iter.Next() {
-		f.debugAssetListed(iter.Event)
-		cb(toERC20AssetList(iter.Event))
-		lastBlockChecked = iter.Event.Raw.BlockNumber
-	}
-	return lastBlockChecked
-}
-
 func (f *LogFilterer) debugAssetListed(event *bridge.BridgeAssetListed) {
 	if f.log.IsDebug() {
 		f.log.Debug("Found AssetListed event",
@@ -297,44 +312,6 @@ func toERC20AssetList(event *bridge.BridgeAssetListed) *commandspb.ChainEvent {
 			},
 		},
 	}
-}
-
-// AssetDelistEvents retrieves the AssetRemoved events on Ethereum starting
-// from startAt, transform them into ERC20AssetDelist, and pass it to the
-// OnEventFound callback.
-// It returns block number from the last event matched.
-func (f *LogFilterer) AssetDelistEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
-	var iter *bridge.BridgeAssetRemovedIterator
-
-	infiniteRetry(func() error {
-		i, err := f.collateralBridgeFilterer.FilterAssetRemoved(
-			&ethbind.FilterOpts{
-				Start:   startAt,
-				Context: ctx,
-			},
-			[]ethcmn.Address{},
-		)
-		if err != nil {
-			f.log.Error("Couldn't retrieve AssetRemoved event from collateral bridge", logging.Error(err))
-			return fmt.Errorf("couldn't retrieve AssetRemoved event from collateral bridge: %w", err)
-		}
-		iter = i
-		return nil
-	})
-
-	defer func() {
-		if err := iter.Close(); err != nil {
-			f.log.Error("Couldn't close AssetRemoved iterator, meaning subscription to Ethereum might still be alive", logging.Error(err))
-		}
-	}()
-
-	lastBlockChecked := uint64(0)
-	for iter.Next() {
-		f.debugAssetRemoved(iter.Event)
-		cb(toERC20AssetDelist(iter.Event))
-		lastBlockChecked = iter.Event.Raw.BlockNumber
-	}
-	return lastBlockChecked
 }
 
 func (f *LogFilterer) debugAssetRemoved(event *bridge.BridgeAssetRemoved) {
