@@ -421,9 +421,6 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 		case types.ErrMissingChunks:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
 			resp.RefetchChunks = app.snapshot.GetMissingChunks()
-		case types.ErrSnapshotRetryLimit:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-			defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
 		default:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
 			// @TODO panic?
