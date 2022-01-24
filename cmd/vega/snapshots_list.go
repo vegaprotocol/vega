@@ -48,15 +48,15 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 	if err != nil {
 		return err
 	}
-	found, err := snapshotEngine.List()
+	found, err := snapshotEngine.AvailableSnapshotsHeights()
 	if err != nil {
 		return err
 	}
 
 	if len(found) > 0 {
 		fmt.Printf("Snapshots available: %d", len(found))
-		for _, snap := range found {
-			fmt.Printf("\tVersion: %d, chunks: %s\n", snap.Meta.Version, snap.Meta.ChunkHashes)
+		for height, snap := range found {
+			fmt.Printf("\tHeight %d, version: %d, chunks: %s\n", height, snap.Meta.Version, snap.Meta.ChunkHashes)
 		}
 	}
 	return nil

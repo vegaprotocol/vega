@@ -251,6 +251,40 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return trees, nil
 }
 
+func (e *Engine) AvailableSnapshotsHeights() (map[uint64]*types.Snapshot, error) {
+	err := e.loadTree()
+	if err != nil {
+		e.log.Error("Failed to load AVL version", logging.Error(err))
+	}
+
+	trees := make(map[uint64]*types.Snapshot)
+
+	versions := e.avl.AvailableVersions()
+	for i := len(versions) - 1; i > -1; i-- {
+		version := int64(versions[i])
+		if _, err := e.avl.LoadVersion(version); err != nil {
+			return nil, err
+		}
+		app, err := types.AppStateFromTree(e.avl.ImmutableTree)
+		if err != nil {
+			e.log.Error("Failed to get app state data from snapshot",
+				logging.Error(err),
+				logging.Int64("snapshot-version", version),
+			)
+			continue
+		}
+		stateHeight := app.AppState.Height
+
+		snap, err := types.SnapshotFromTree(e.avl.ImmutableTree)
+		if err != nil {
+			return nil, err
+		}
+		trees[stateHeight] = snap
+
+	}
+	return trees, nil
+}
+
 func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 	err := e.loadTree()
 	if h < 0 {
