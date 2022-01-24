@@ -22,6 +22,8 @@ const (
 	TransferStatusRejected TransferStatus = eventspb.Transfer_STATUS_REJECTED
 	// A stopped transfer.
 	TransferStatusStopped TransferStatus = eventspb.Transfer_STATUS_STOPPED
+	// A cancelled transfer.
+	TransferStatusCancelled TransferStatus = eventspb.Transfer_STATUS_CANCELLED
 )
 
 var (
@@ -338,5 +340,17 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 		StartEpoch: p.GetRecurring().GetStartEpoch(),
 		EndEpoch:   endEpoch,
 		Factor:     factor,
+	}
+}
+
+type CancelTransferFunds struct {
+	Party      string
+	TransferID string
+}
+
+func NewCancelTransferFromProto(party string, p *commandspb.CancelTransfer) *CancelTransferFunds {
+	return &CancelTransferFunds{
+		Party:      party,
+		TransferID: p.TransferId,
 	}
 }
