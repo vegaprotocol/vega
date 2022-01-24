@@ -56,7 +56,7 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 	if len(found) > 0 {
 		fmt.Printf("Snapshots available: %d", len(found))
 		for height, snap := range found {
-			fmt.Printf("\tHeight %d, version: %d, chunks: %s\n", height, snap.Meta.Version, snap.Meta.ChunkHashes)
+			fmt.Printf("\tHeight %d, version: %d\n", height, snap.Meta.Version)
 		}
 	}
 	return nil
