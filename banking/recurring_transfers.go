@@ -101,7 +101,6 @@ func (e *Engine) distributeRecurringTransfers(
 			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
 			delete(e.recurringTransfers, k)
 		}
-
 	}
 
 	// send events
