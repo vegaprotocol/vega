@@ -235,6 +235,9 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	// so it must be after that. And also probably after setting up the netparam watchers
 	if n.conf.Snapshot.StartHeight != 0 {
 		n.snapshot.LoadHeight(n.ctx, n.conf.Snapshot.StartHeight)
+
+		// replace replay protector
+		app.Abci().ReplaceReplayProtector(0)
 	}
 
 	// now instantiate the blockchain layer

@@ -3,6 +3,7 @@ package abci
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/types"
 )
@@ -45,6 +46,7 @@ func (*ReplayProtector) GetReplacement() *ReplayProtector {
 
 // SetHeight tells the ReplayProtector to clear the oldest cached Tx in the internal ring buffer.
 func (rp *ReplayProtector) SetHeight(h uint64) {
+	fmt.Println("WWW snapshot set height", h)
 	rp.height = h
 
 	if l := uint64(len(rp.txs)); h >= l {
@@ -171,6 +173,6 @@ func (rp *replayProtectorNoop) GetReplacement() *ReplayProtector {
 	return rp.replacement
 }
 
-func (*replayProtectorNoop) SetHeight(uint64)   {}
+func (*replayProtectorNoop) SetHeight(uint64)   { fmt.Println("WWW snapshot HASNT BEEN REPLACED") }
 func (*replayProtectorNoop) DeliverTx(Tx) error { return nil }
 func (*replayProtectorNoop) CheckTx(Tx) error   { return nil }

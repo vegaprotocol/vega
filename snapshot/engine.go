@@ -337,6 +337,7 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
+	e.log.Debug("WWW Applying snapshot")
 	// we need the versions of the snapshot to match
 	e.avl.SetInitialVersion(uint64(e.snapshot.Meta.Version))
 	// iterate over all payloads, add them to the tree
@@ -358,6 +359,12 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 		}
 		if cas {
 			if err := e.nodeCAS(i, pl); err != nil {
+				return err
+			}
+		} else {
+			// just to set e.hash[k] so that we don't go and update everything next snapshot we take
+			// obviously needs a refactor
+			if _, err := e.setNodeHash(pl); err != nil {
 				return err
 			}
 		}
@@ -400,16 +407,15 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	// we're done, we can clear the snapshot state, and set engine hash
 	e.hash = e.snapshot.Hash
 	e.snapshot = nil
-	e.log.Debug("thing", logging.Int64("current", e.current))
-	e.current = e.interval
-	e.log.Debug("thing", logging.Int64("interval", e.interval))
+	e.current = e.interval // set current to interval so that we do not attempt to create this snapshot again when we hit commit
+	e.log.Debug("WWW Done application", logging.Int64("current", e.current), logging.String("hash", (hex.EncodeToString(e.hash))))
 	// no need to save, return here
 	if !cas {
 		return nil
 	}
-	//if _, err := e.saveCurrentTree(); err != nil {
-	//	return err
-	//}
+	if _, err := e.saveCurrentTree(); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -427,6 +433,18 @@ func (e *Engine) nodeCAS(i int, p *types.Payload) error {
 		return types.ErrNodeHashMismatch
 	}
 	return nil
+}
+
+// setNodeHash shameless copy of setTreeNode, but needs must!
+func (e *Engine) setNodeHash(p *types.Payload) ([]byte, error) {
+	data, err := proto.Marshal(p.IntoProto())
+	if err != nil {
+		return nil, err
+	}
+	hash := crypto.Hash(data)
+	key := p.GetTreeKey()
+	e.hashes[key] = hash
+	return hash, nil
 }
 
 func (e *Engine) setTreeNode(p *types.Payload) ([]byte, error) {
@@ -503,7 +521,7 @@ func (e *Engine) Info() ([]byte, int64) {
 }
 
 func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
-	e.log.Debug("In snapshot", logging.Int64("height", e.current))
+	e.log.Debug("WWW In snapshot", logging.Int64("height", e.current))
 	e.current--
 	// no snapshot to be taken yet
 	if e.current > 0 {
@@ -556,6 +574,8 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	if !updated {
 		return e.hash, nil
 	}
+
+	e.log.Debug("WWW Saved snapshot", logging.Int64("height", e.current))
 	return e.saveCurrentTree()
 }
 
@@ -604,6 +624,7 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		if err != nil {
 			return update, err
 		}
+
 		// nothing has changed (or both values were nil)
 		if bytes.Equal(ch, h) {
 			continue
@@ -618,6 +639,7 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 		}
 		e.log.Debug("State updated",
 			logging.String("node-key", k),
+			logging.String("prev-hash", hex.EncodeToString(ch)),
 			logging.String("state-hash", hex.EncodeToString(h)),
 		)
 		e.hashes[k] = h

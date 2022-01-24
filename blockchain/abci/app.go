@@ -2,6 +2,7 @@ package abci
 
 import (
 	"context"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
@@ -78,6 +79,12 @@ func (app *App) ReplaceReplayProtector(tolerance uint) {
 		app.replayProtector = NewReplayProtector(tolerance)
 		return
 	}
+
+	/// Just used restored height??? why would it not be complete
+	fmt.Println("WWW snapshot RPP replaced")
+	app.replayProtector = rpl
+	return
+
 	rplLen, ti := len(rpl.txs), int(tolerance)
 	if rplLen == ti {
 		// perfect fit, nothign to do

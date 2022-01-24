@@ -2,6 +2,7 @@ package abci
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/tendermint/tendermint/abci/types"
 )
@@ -53,7 +54,10 @@ func (app *App) InitChain(req types.RequestInitChain) (resp types.ResponseInitCh
 func (app *App) BeginBlock(req types.RequestBeginBlock) (resp types.ResponseBeginBlock) {
 	height := uint64(req.Header.Height)
 	if app.replayProtector != nil {
+		fmt.Println("WWW snapshot SETTING HEIGHT")
 		app.replayProtector.SetHeight(height)
+	} else {
+		fmt.Println("WWW snapshot NOT NOT setting height")
 	}
 
 	if fn := app.OnBeginBlock; fn != nil {

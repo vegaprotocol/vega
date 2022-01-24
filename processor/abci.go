@@ -29,7 +29,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
-	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 	tmtypesint "github.com/tendermint/tendermint/types"
@@ -346,7 +345,7 @@ func (app *App) cancel() {
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
-	app.log.Debug("", logging.Int64("height", height))
+	app.log.Debug("WWW Calling ABCI INFO", logging.Int64("height", height))
 	return tmtypes.ResponseInfo{
 		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
@@ -451,7 +450,7 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
-	app.log.Debug("ABCI service INIT CHAIN started")
+	app.log.Debug("WWW ABCI service INIT CHAIN started")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
@@ -478,11 +477,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 }
 
 func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {
-	app.log.Debug("ABCI service END block completed",
-		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
-		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
-		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
-		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+	app.log.Debug("WWW ABCI service END block completed",
 		logging.Int64("height", req.Height),
 	)
 
@@ -528,11 +523,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 	app.currentTimestamp = app.time.GetTimeNow()
 	app.previousTimestamp = app.time.GetTimeLastBatch()
 
-	app.log.Debug("ABCI service BEGIN completed",
-		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
-		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
-		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
-		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+	app.log.Debug("WWW ABCI service BEGIN BLOCK completed",
 		logging.Int64("previous-datetime", req.Header.Height),
 	)
 
@@ -558,8 +549,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 }
 
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
-	app.log.Debug("Processor COMMIT starting")
-	defer app.log.Debug("Processor COMMIT completed")
+	app.log.Debug("WWW Processor COMMIT starting")
+	defer app.log.Debug("WWW Processor COMMIT completed", logging.String("data", hex.EncodeToString(resp.Data)))
 
 	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
 	if err != nil {
@@ -569,27 +560,27 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	resp.Data = snapHash
 	if len(snapHash) == 0 {
 		resp.Data = app.exec.Hash()
-		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.exec.Hash())))
+		app.log.Debug("WWW hash", logging.String("hash", hex.EncodeToString(app.exec.Hash())))
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
-		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.delegation.Hash())))
+		app.log.Debug("WWW hash", logging.String("hash", hex.EncodeToString(app.delegation.Hash())))
 		resp.Data = append(resp.Data, app.gov.Hash()...)
-		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.gov.Hash())))
+		app.log.Debug("WWW hash", logging.String("hash", hex.EncodeToString(app.gov.Hash())))
 		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
-		app.log.Debug("hash", logging.String("hash", hex.EncodeToString(app.stakingAccounts.Hash())))
+		app.log.Debug("WWW hash", logging.String("hash", hex.EncodeToString(app.stakingAccounts.Hash())))
 	} else {
-		app.log.Debug("snapshash", logging.String("hash", hex.EncodeToString(snapHash)))
+		app.log.Debug("WWW snapshash", logging.String("hash", hex.EncodeToString(snapHash)))
 	}
 
 	// Checkpoint can be nil if it wasn't time to create a checkpoint
-	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
-		resp.Data = append(resp.Data, cpt.Hash...)
-		_ = app.handleCheckpoint(cpt)
-	}
+	//if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
+	//	resp.Data = append(resp.Data, cpt.Hash...)
+	//	_ = app.handleCheckpoint(cpt)
+	//}
 	// Compute the AppHash and update the response
 
 	app.updateStats()
 	app.setBatchStats()
-
+	app.log.Debug("WWW PRE Processor COMMIT completed", logging.String("data", hex.EncodeToString(resp.Data)))
 	return resp
 }
 
