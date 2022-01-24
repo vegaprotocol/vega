@@ -22,7 +22,7 @@ The difference between a Definition of Done and Acceptance Criteria...
 - All acceptance criteria confirmed to be met, or, reasons why not discussed with the engineering leadership team
 - All Unit, Integration and BVT tests are passing
 - Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
-- Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when staring the work if dependancies known i.e. API changes)
+- Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when starting the work if dependencies known i.e. API changes)
 
 > ℹ️ In most cases the person that raised the PR should be the one to squash branch history to string of passing, sensible commits, and merge the PR.
 
