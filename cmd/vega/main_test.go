@@ -71,5 +71,4 @@ func TestSuite(t *testing.T) {
 
 	// t.Run("Wallet", s.TestWallet)
 	t.Run("Faucet", s.TestFaucet)
-	t.Run("Snaps", s.TestListSnapshots)
 }
