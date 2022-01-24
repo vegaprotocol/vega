@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -23,7 +24,8 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 7})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	ctx := context.Background()
 	transfer := &types.TransferFunds{
@@ -51,8 +53,10 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 
 	// now let's move epochs to see the others transfers
 	// first 2 epochs nothing happen
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 8})
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 9})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8, Action: vega.EpochAction_EPOCH_ACTION_END})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9, Action: vega.EpochAction_EPOCH_ACTION_END})
 	// now we are in business
 
 	fromAcc := types.Account{
@@ -98,7 +102,8 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 			return nil, nil
 		})
 
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 10})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	fromAcc = types.Account{
 		Balance: num.NewUint(10), // not enough for the second transfer
@@ -119,10 +124,12 @@ func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
 	// ensure it's not called
 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 11})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	// then nothing happen, we are done
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 11})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_END})
 }
 
 func testValidRecurringTransfer(t *testing.T) {
@@ -131,7 +138,8 @@ func testValidRecurringTransfer(t *testing.T) {
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 7})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	var endEpoch13 uint64 = 11
 	ctx := context.Background()
@@ -160,8 +168,10 @@ func testValidRecurringTransfer(t *testing.T) {
 
 	// now let's move epochs to see the others transfers
 	// first 2 epochs nothing happen
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 8})
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 9})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8, Action: vega.EpochAction_EPOCH_ACTION_END})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9, Action: vega.EpochAction_EPOCH_ACTION_END})
 	// now we are in business
 
 	fromAcc := types.Account{
@@ -207,7 +217,8 @@ func testValidRecurringTransfer(t *testing.T) {
 			return nil, nil
 		})
 
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 10})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	// asset exists
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
@@ -257,10 +268,12 @@ func testValidRecurringTransfer(t *testing.T) {
 		})
 	})
 
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 11})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	// then nothing happen, we are done
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 12})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 12, Action: vega.EpochAction_EPOCH_ACTION_END})
 }
 
 func testRecurringTransferInvalidTransfers(t *testing.T) {
