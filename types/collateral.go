@@ -196,4 +196,6 @@ const (
 	AccountTypeGlobalInsurance AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_INSURANCE
 	// Global reward accounts contain rewards per asset.
 	AccountTypeGlobalReward AccountType = proto.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD
+	// Global account to hold pending transfers.
+	AccountTypePendingTransfers AccountType = proto.AccountType_ACCOUNT_TYPE_PENDING_TRANSFERS
 )

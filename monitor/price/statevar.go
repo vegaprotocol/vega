@@ -3,6 +3,7 @@ package price
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
 )
@@ -26,10 +27,23 @@ func (boundFactorsConverter) InterfaceToBundle(res statevar.StateVariableResult)
 	}
 }
 
+func (e *Engine) IsBoundFactorsInitialised() bool {
+	return e.boundFactorsInitialised
+}
+
 // startCalcPriceRanges kicks off the bounds factors factors calculation, done asynchronously for illustration.
 func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar.FinaliseCalculation) {
+	e.log.Info("price range factors calculation started", logging.String("event-id", eventID))
+
 	down := make([]num.Decimal, 0, len(e.bounds))
 	up := make([]num.Decimal, 0, len(e.bounds))
+
+	// if we have no reference price, just abort and wait for the next round
+	if len(e.pricesPast) < 1 && len(e.pricesNow) < 1 {
+		e.log.Info("no reference price available for market - cannot calculate price ranges", logging.String("event-id", eventID))
+		return
+	}
+
 	for _, b := range e.bounds {
 		ref := e.getRefPrice(b.Trigger.Horizon)
 		minPrice, maxPrice := e.riskModel.PriceRange(ref, e.fpHorizons[b.Trigger.Horizon], b.Trigger.Probability)
@@ -40,6 +54,8 @@ func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar
 		down: down,
 		up:   up,
 	}
+
+	e.log.Info("price range factors calculation completed", logging.String("event-id", eventID), logging.String("asset", e.asset), logging.String("market", e.market))
 	endOfCalcCallback.CalculationFinished(eventID, res, nil)
 }
 
@@ -47,6 +63,7 @@ func (e *Engine) startCalcPriceRanges(eventID string, endOfCalcCallback statevar
 func (e *Engine) updatePriceBounds(ctx context.Context, res statevar.StateVariableResult) error {
 	bRes := res.(*boundFactors)
 	e.updateFactors(bRes.down, bRes.up)
+	e.log.Info("consensus reached for price ranges", logging.String("asset", e.asset), logging.String("market", e.market))
 	return nil
 }
 
@@ -59,7 +76,7 @@ func (e *Engine) updateFactors(down, up []num.Decimal) {
 		b.DownFactor = down[i]
 		b.UpFactor = up[i]
 	}
-	e.boundFactorsConsensusDone = true
+	e.boundFactorsInitialised = true
 	// force invalidation of the price range cache
 	if len(e.pricesNow) > 0 {
 		e.getCurrentPriceRanges(true)

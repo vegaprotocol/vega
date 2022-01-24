@@ -98,6 +98,7 @@ type PriceMonitor interface {
 	// Snapshot
 	GetState() *types.PriceMonitor
 	Changed() bool
+	IsBoundFactorsInitialised() bool
 }
 
 // LiquidityMonitor.
@@ -314,6 +315,8 @@ func NewMarket(
 		mkt.ID,
 		asset,
 		stateVarEngine,
+		tradableInstrument.RiskModel.DefaultRiskFactors(),
+		false,
 	)
 
 	settleEngine := settlement.New(
@@ -332,7 +335,7 @@ func NewMarket(
 
 	tsCalc := liquiditytarget.NewSnapshotEngine(*mkt.LiquidityMonitoringParameters.TargetStakeParameters, positionEngine, mkt.ID)
 
-	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine)
+	pMonitor, err := price.NewMonitor(asset, mkt.ID, tradableInstrument.RiskModel, mkt.PriceMonitoringSettings, stateVarEngine, log)
 	if err != nil {
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
@@ -340,7 +343,7 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
+		liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize())
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -395,6 +398,7 @@ func NewMarket(
 		stateVarEngine:     stateVarEngine,
 	}
 
+	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
 	market.tradableInstrument.Instrument.Product.NotifyOnTradingTerminated(market.tradingTerminated)
 	market.tradableInstrument.Instrument.Product.NotifyOnSettlementPrice(market.settlementPrice)
 	return market, nil
@@ -532,6 +536,18 @@ func (m *Market) Reject(ctx context.Context) error {
 	m.stateChanged = true
 
 	return nil
+}
+
+// CanLeaveOpeningAuction checks if the market can leave the opening auction based on whether floating point consensus has been reached on all 3 vars.
+func (m *Market) CanLeaveOpeningAuction() bool {
+	boundFactorsInitialised := m.pMonitor.IsBoundFactorsInitialised()
+	potInitialised := m.liquidity.IsPoTInitialised()
+	riskFactorsInitialised := m.risk.IsRiskFactorInitialised()
+	canLeave := boundFactorsInitialised && potInitialised && riskFactorsInitialised
+	if !canLeave {
+		m.log.Info("Cannot leave opening auction", logging.String("market", m.mkt.ID), logging.Bool("bound-factors-initialised", boundFactorsInitialised), logging.Bool("pot-initialised", potInitialised), logging.Bool("risk-factors-initialised", riskFactorsInitialised))
+	}
+	return canLeave
 }
 
 func (m *Market) StartOpeningAuction(ctx context.Context) error {
@@ -815,6 +831,7 @@ func (m *Market) EnterAuction(ctx context.Context) {
 // OnOpeningAuctionFirstUncrossingPrice is triggered when the opening auction sees an uncrossing price for the first time and emits
 // an event to the state variable engine.
 func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
+	m.log.Info("OnOpeningAuctionFirstUncrossingPrice event fired", logging.String("market", m.mkt.ID))
 	asset, _ := m.mkt.GetAsset()
 	m.stateVarEngine.ReadyForTimeTrigger(asset, m.mkt.ID)
 	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice)
@@ -822,6 +839,7 @@ func (m *Market) OnOpeningAuctionFirstUncrossingPrice() {
 
 // OnAuctionEnded is called whenever an auction is ended and emits an event to the state var engine.
 func (m *Market) OnAuctionEnded() {
+	m.log.Info("OnAuctionEnded event fired", logging.String("market", m.mkt.ID))
 	asset, _ := m.mkt.GetAsset()
 	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeAuctionEnded)
 }
@@ -913,12 +931,11 @@ func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
 
 	// Send an event bus update
 	m.broker.Send(endEvt)
-
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
 	m.checkLiquidity(ctx, nil)
 	m.commandLiquidityAuction(ctx)
-
 	m.updateLiquidityFee(ctx)
+	m.OnAuctionEnded()
 }
 
 func (m *Market) validatePeggedOrder(order *types.Order) types.OrderError {
@@ -2852,11 +2869,7 @@ func (m *Market) getOrderByID(orderID string) (*types.Order, bool, error) {
 }
 
 func (m *Market) getRiskFactors() (*types.RiskFactor, error) {
-	a, err := m.mkt.GetAsset()
-	if err != nil {
-		return nil, err
-	}
-	rf, err := m.risk.GetRiskFactors(a)
+	rf, err := m.risk.GetRiskFactors()
 	if err != nil {
 		return nil, err
 	}
