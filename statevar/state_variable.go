@@ -1,6 +1,3 @@
-//go:build !qa
-// +build !qa
-
 package statevar
 
 import (
@@ -22,8 +19,6 @@ import (
 // StateVarConsensusState trakcs the state transitions of a state variable.
 type StateVarConsensusState int
 
-const withNoise = false
-
 const (
 	StateVarConsensusStateUnspecified StateVarConsensusState = iota
 	StateVarConsensusStateCalculationStarted
@@ -44,8 +39,6 @@ var stateToName = map[StateVarConsensusState]string{
 	StateVarConsensusStateCalculationAborted:     "consensus_calc_aborted",
 	StateVarConsensusStateError:                  "error",
 }
-
-var withEntropy = false
 
 type StateVariable struct {
 	log              *logging.Logger
@@ -188,9 +181,7 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 
 	// this is a test feature that adds noise up to the tolerance to the state variable
 	// it should be excluded by build tag for production
-	if withNoise {
-		kvb = AddNoise(kvb)
-	}
+	kvb = AddNoise(kvb)
 
 	svp := &commandspb.StateVariableProposal{
 		Proposal: &vegapb.StateValueProposal{
@@ -367,8 +358,4 @@ func (sv *StateVariable) addEventLocked() {
 type pendingEvent struct {
 	eventID string
 	state   string
-}
-
-func AddNoise(kvb []*vegapb.KeyValueBundle) []*vegapb.KeyValueBundle {
-	return kvb
 }

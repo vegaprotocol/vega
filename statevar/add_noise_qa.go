@@ -11,8 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-const withNoise = true
-
+// AddNoise is a function used in qa build to add noise to the state variables within their tolerance to instrument consensus seeking.
 func AddNoise(kvb []*vegapb.KeyValueBundle) []*vegapb.KeyValueBundle {
 	for _, kvt := range kvb {
 		tol, _ := num.DecimalFromString(kvt.Tolerance)
