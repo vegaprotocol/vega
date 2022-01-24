@@ -429,7 +429,11 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 			// @TODO panic?
 		}
 		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
-			_ = app.snapshot.RejectSnapshot()
+			if err := app.snapshot.RejectSnapshot(); err == types.ErrSnapshotRetryLimit {
+				app.log.Error("Applying snapshot chunk has reaching the retry limit, aborting")
+				resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+				defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
+			}
 		}
 		return resp
 	}
