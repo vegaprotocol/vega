@@ -12,6 +12,7 @@ import (
 	"code.vegaprotocol.io/vega/snapshot/mocks"
 	"code.vegaprotocol.io/vega/types"
 	tmocks "code.vegaprotocol.io/vega/types/mocks"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
@@ -48,6 +49,7 @@ func TestEngine(t *testing.T) {
 	t.Run("Adding a provider calls what we expect on the state provider", testAddProviders)
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)
 	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
+	t.Run("Rejecting a snapshot should return a Snapshot Retry Limit error if rejected too many times", testRejectSnapshot)
 }
 
 func TestRestore(t *testing.T) {
@@ -388,4 +390,17 @@ func (t *tstEngine) getRestoreMock() *tmocks.MockPostRestore {
 func (t *tstEngine) Finish() {
 	t.cfunc()
 	t.ctrl.Finish()
+}
+
+func testRejectSnapshot(t *testing.T) {
+	engine := getTestEngine(t)
+	defer engine.Finish()
+
+	for i := 0; i < engine.RetryLimit; i++ {
+		err := engine.RejectSnapshot()
+		assert.ErrorIs(t, types.ErrUnknownSnapshot, err)
+	}
+
+	err := engine.RejectSnapshot()
+	assert.ErrorIs(t, types.ErrSnapshotRetryLimit, err)
 }
