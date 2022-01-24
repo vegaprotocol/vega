@@ -33,8 +33,9 @@ func NewOnChainVerifier(
 	ethClient EthereumClient,
 	ethConfirmations EthConfirmations,
 ) *OnChainVerifier {
-	log = log.Named(namedLogger)
+	log = log.Named("on-chain-verifier")
 	log.SetLevel(cfg.Level.Get())
+
 	return &OnChainVerifier{
 		log:              log,
 		ethClient:        ethClient,
@@ -169,6 +170,7 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+
 		iter, err := filterer.FilterStakeRemoved(
 			&bind.FilterOpts{
 				Start:   event.BlockNumber - 1,

@@ -26,6 +26,8 @@ func New(
 	evtFwd EvtForwarder,
 	isValidator bool,
 ) (*Accounting, *StakeVerifier) {
+	log = log.Named(namedLogger)
+	log.SetLevel(cfg.Level.Get())
 	accs := NewAccounting(log, cfg, broker, ethClient, evtFwd, witness, tt, isValidator)
 	ethCfns := NewEthereumConfirmations(ethClient, nil)
 	ocv := NewOnChainVerifier(cfg, log, ethClient, ethCfns)

@@ -49,7 +49,6 @@ import (
 
 var (
 	ErrUnknownChainProvider    = errors.New("unknown chain provider")
-	ErrNotAnEthereumConfig     = errors.New("not an ethereum config")
 	ErrERC20AssetWithNullChain = errors.New("cannot use ERC20 asset with nullchain")
 )
 

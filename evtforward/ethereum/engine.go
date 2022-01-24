@@ -21,8 +21,7 @@ type Forwarder interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/filterer_mock.go -package mocks code.vegaprotocol.io/vega/evtforward/ethereum Filterer
 type Filterer interface {
 	FilterCollateralEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
-	StakeDepositedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
-	StakeRemovedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
+	FilterStakingEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64
 	CurrentHeight(context.Context) uint64
 }
 
@@ -94,26 +93,17 @@ func (e *Engine) Start() {
 }
 
 func (e *Engine) gatherEvents(ctx context.Context) {
-	// Collateral bridge
 	nextCollateralBlockNumber := e.nextCollateralBlockNumber
 	lastBlockMatched := e.filterer.FilterCollateralEvents(ctx, nextCollateralBlockNumber, func(event *commandspb.ChainEvent) {
 		e.forwarder.ForwardFromSelf(event)
 	})
 	e.nextCollateralBlockNumber = lastBlockMatched + 1
 
-	// Staking bridge
 	nextStakingBlockNumber := e.nextStakingBlockNumber
-	lastBlockMatched = e.filterer.StakeDepositedEvents(ctx, nextStakingBlockNumber, func(event *commandspb.ChainEvent) {
+	lastBlockMatched = e.filterer.FilterStakingEvents(ctx, nextStakingBlockNumber, func(event *commandspb.ChainEvent) {
 		e.forwarder.ForwardFromSelf(event)
 	})
-	// We update nextStakingBlockNumber with lastBlockMatched coming from the
-	// first step of the staking bridge filtering only.
-	// More details in the property comment.
 	e.nextStakingBlockNumber = lastBlockMatched + 1
-
-	_ = e.filterer.StakeRemovedEvents(ctx, nextStakingBlockNumber, func(event *commandspb.ChainEvent) {
-		e.forwarder.ForwardFromSelf(event)
-	})
 }
 
 // Stop stops the engine, its polling and event forwarding.

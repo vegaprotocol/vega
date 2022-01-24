@@ -48,12 +48,13 @@ type LogFilterer struct {
 
 	client Client
 
+	collateralBridgeABI      ethabi.ABI
 	collateralBridgeFilterer *bridge.BridgeFilterer
 	collateralBridge         types.EthereumContract
 
+	stakingBridgeABI      ethabi.ABI
 	stakingBridgeFilterer *staking.StakingFilterer
 	stakingBridge         types.EthereumContract
-	collateralBridgeABI   ethabi.ABI
 }
 
 func NewLogFilterer(log *logging.Logger, ethClient Client, collateralBridge types.EthereumContract, stakingBridge types.EthereumContract) (*LogFilterer, error) {
@@ -74,12 +75,18 @@ func NewLogFilterer(log *logging.Logger, ethClient Client, collateralBridge type
 		return nil, fmt.Errorf("couldn't create log filterer for ERC20 brigde: %w", err)
 	}
 
+	stakingBridgeABI, err := ethabi.JSON(strings.NewReader(staking.StakingABI))
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load staking bridge ABI: %w", err)
+	}
+
 	return &LogFilterer{
 		log:                      l,
 		client:                   ethClient,
 		collateralBridgeABI:      collateralBridgeABI,
 		collateralBridgeFilterer: collateralBridgeFilterer,
 		collateralBridge:         collateralBridge,
+		stakingBridgeABI:         stakingBridgeABI,
 		stakingBridgeFilterer:    stakingBridgeFilterer,
 		stakingBridge:            stakingBridge,
 	}, nil
@@ -110,47 +117,59 @@ func (f *LogFilterer) CurrentHeight(ctx context.Context) uint64 {
 // Ethereum starting at startAt, transform them into ChainEvent, and pass it to
 // the OnEventFound callback.
 // It returns the block number from the last block that has been entirely
-// processed. If the filtering fails in the middle of the block, the previous
-// block number is returned.
+// processed.
 func (f *LogFilterer) FilterCollateralEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
-	logs, sub := f.subscribeToFilterLogs(ctx, startAt)
-	defer func() {
-		close(logs)
-		sub.Unsubscribe()
-	}()
+	query := f.newCollateralBridgeQuery(startAt)
+	logs := f.filterLogs(ctx, query)
 
 	var event *types.ChainEvent
-	var previousBlockChecked uint64
-	var blockNumber uint64
 	currentBlockNumber := startAt
-	for {
-		select {
-		case log := <-logs:
-			event, blockNumber = f.toChainEvent(log)
-		case err := <-sub.Err():
-			if err != nil {
-				f.log.Error("Subscription to Ethereum log filterer encountered an issue, will retry from previous block number", logging.Error(err))
-				return previousBlockChecked
-			}
-			// No more log to process, exiting the filtering, it's safe to
-			// return the current block number.
-			return currentBlockNumber
-		}
-
-		// In case of error, we don't want to return the block number of the
-		// block being processed as we may still have events to process for that
-		// block. So, we have to keep the number of the last block that has been
-		// entirely processed.
-		if previousBlockChecked != currentBlockNumber && currentBlockNumber != blockNumber {
-			previousBlockChecked = currentBlockNumber
-			currentBlockNumber = blockNumber
-		}
-
+	for _, log := range logs {
+		event, currentBlockNumber = f.toCollateralChainEvent(log)
 		cb(event)
 	}
+
+	return currentBlockNumber
 }
 
-func (f *LogFilterer) subscribeToFilterLogs(ctx context.Context, startAt uint64) (chan ethtypes.Log, eth.Subscription) {
+// FilterStakingEvents retrieves the events from the staking bridge on
+// Ethereum starting at startAt, transform them into ChainEvent, and pass it to
+// the OnEventFound callback.
+// It returns the block number from the last block that has been entirely
+// processed.
+func (f *LogFilterer) FilterStakingEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
+	query := f.newStakingBridgeQuery(startAt)
+	logs := f.filterLogs(ctx, query)
+
+	var event *types.ChainEvent
+	blockTimesFetcher := NewBlockTimeFetcher(f.log, f.client)
+	currentBlockNumber := startAt
+	for _, log := range logs {
+		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
+		event, currentBlockNumber = f.toStakingChainEvent(log, blockTime)
+		cb(event)
+	}
+
+	return currentBlockNumber
+}
+
+func (f *LogFilterer) filterLogs(ctx context.Context, query eth.FilterQuery) []ethtypes.Log {
+	var logs []ethtypes.Log
+
+	infiniteRetry(func() error {
+		l, err := f.client.FilterLogs(ctx, query)
+		if err != nil {
+			f.log.Error("Couldn't subscribe to the Ethereum log filterer", logging.Error(err))
+			return fmt.Errorf("couldn't subscribe to the Ethereum log filterer: %w", err)
+		}
+		logs = l
+		return nil
+	})
+
+	return logs
+}
+
+func (f *LogFilterer) newCollateralBridgeQuery(startAt uint64) eth.FilterQuery {
 	query := eth.FilterQuery{
 		FromBlock: new(big.Int).SetUint64(startAt),
 		Addresses: []ethcmn.Address{
@@ -163,32 +182,30 @@ func (f *LogFilterer) subscribeToFilterLogs(ctx context.Context, startAt uint64)
 			f.collateralBridgeABI.Events["Asset_Removed"].ID,
 		}},
 	}
-
-	// This has been taken from the go-ethereum library. I don't know why it has
-	// a size of 128.
-	logs := make(chan ethtypes.Log, 128)
-
-	var sub eth.Subscription
-	infiniteRetry(func() error {
-		s, err := f.client.SubscribeFilterLogs(ctx, query, logs)
-		if err != nil {
-			f.log.Error("Couldn't subscribe to the Ethereum log filterer", logging.Error(err))
-			return fmt.Errorf("couldn't subscribe to the Ethereum log filterer: %w", err)
-		}
-		sub = s
-		return nil
-	})
-
-	return logs, sub
+	return query
 }
 
-// toChainEvent transform a log to a ChainEvent. It must succeed, otherwise
+func (f *LogFilterer) newStakingBridgeQuery(startAt uint64) eth.FilterQuery {
+	query := eth.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(startAt),
+		Addresses: []ethcmn.Address{
+			f.stakingBridge.Address(),
+		},
+		Topics: [][]ethcmn.Hash{{
+			f.stakingBridgeABI.Events["Stake_Deposited"].ID,
+			f.stakingBridgeABI.Events["Stake_Removed"].ID,
+		}},
+	}
+	return query
+}
+
+// toCollateralChainEvent transform a log to a ChainEvent. It must succeed, otherwise
 // it raises a fatal error. At this point, if we can't parse the log, it means:
 // - a new event type as been added to the query without being adding support in
 //   this method,
 // - or, the log doesn't have a backward or forward compatible format.
 // Either way, this is a programming error.
-func (f *LogFilterer) toChainEvent(log ethtypes.Log) (*types.ChainEvent, uint64) {
+func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) (*types.ChainEvent, uint64) {
 	switch log.Topics[0] {
 	case f.collateralBridgeABI.Events["Asset_Deposited"].ID:
 		event, err := f.collateralBridgeFilterer.ParseAssetDeposited(log)
@@ -340,47 +357,35 @@ func toERC20AssetDelist(event *bridge.BridgeAssetRemoved) *commandspb.ChainEvent
 	}
 }
 
-// StakeDepositedEvents retrieves the StakeDeposited events on Ethereum starting
-// from startAt, transform them into StakeDeposited, and pass it to the
-// OnEventFound callback.
-// It returns block number from the last event matched.
-func (f *LogFilterer) StakeDepositedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
-	var iter *staking.StakingStakeDepositedIterator
-
-	infiniteRetry(func() error {
-		i, err := f.stakingBridgeFilterer.FilterStakeDeposited(
-			&ethbind.FilterOpts{
-				Start:   startAt,
-				Context: ctx,
-			},
-			[]ethcmn.Address{},
-			[][32]byte{},
-		)
+// toStakingChainEvent transform a log to a ChainEvent. It must succeed, otherwise
+// it raises a fatal error. At this point, if we can't parse the log, it means:
+// - a new event type as been added to the query without being adding support in
+//   this method,
+// - or, the log doesn't have a backward or forward compatible format.
+// Either way, this is a programming error.
+func (f *LogFilterer) toStakingChainEvent(log ethtypes.Log, blockTime uint64) (*types.ChainEvent, uint64) {
+	switch log.Topics[0] {
+	case f.stakingBridgeABI.Events["Stake_Deposited"].ID:
+		event, err := f.stakingBridgeFilterer.ParseStakeDeposited(log)
 		if err != nil {
-			f.log.Error("Couldn't retrieve StakeDeposited event from staking bridge", logging.Error(err))
-			return fmt.Errorf("couldn't retrieve StakeDeposited event from staking bridge: %w", err)
+			f.log.Fatal("Couldn't parse StakeDeposited event", logging.Error(err))
+			return nil, 0
 		}
-		iter = i
-		return nil
-	})
+		f.debugStakeDeposited(event)
 
-	defer func() {
-		if err := iter.Close(); err != nil {
-			f.log.Error("Couldn't close StakeDeposited iterator, meaning subscription to Ethereum might still be alive", logging.Error(err))
+		return toStakeDeposited(event, blockTime), event.Raw.BlockNumber
+	case f.stakingBridgeABI.Events["Stake_Removed"].ID:
+		event, err := f.stakingBridgeFilterer.ParseStakeRemoved(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse StakeRemoved event", logging.Error(err))
+			return nil, 0
 		}
-	}()
-
-	blockTimesFetcher := NewBlockTimeFetcher(nil, f.client)
-	lastBlockChecked := uint64(0)
-	for iter.Next() {
-		f.debugStakeDeposited(iter.Event)
-
-		blockTime := blockTimesFetcher.TimeForBlock(ctx, iter.Event.Raw.BlockNumber)
-		cb(toStakeDeposited(iter.Event, blockTime))
-		lastBlockChecked = iter.Event.Raw.BlockNumber
+		f.debugStakeRemoved(event)
+		return toStakeRemoved(event, blockTime), event.Raw.BlockNumber
+	default:
+		f.log.Fatal("Unsupported Ethereum log event", logging.String("event-id", log.Topics[0].String()))
+		return nil, 0
 	}
-
-	return lastBlockChecked
 }
 
 func (f *LogFilterer) debugStakeDeposited(event *staking.StakingStakeDeposited) {
@@ -412,49 +417,6 @@ func toStakeDeposited(event *staking.StakingStakeDeposited, blockTime uint64) *c
 			},
 		},
 	}
-}
-
-// StakeRemovedEvents retrieves the StakeRemoved events on Ethereum starting
-// from startAt, transform them into StakeRemoved, and pass it to the
-// OnEventFound callback.
-// It returns block number from the last event matched.
-func (f *LogFilterer) StakeRemovedEvents(ctx context.Context, startAt uint64, cb OnEventFound) uint64 {
-	var iter *staking.StakingStakeRemovedIterator
-
-	infiniteRetry(func() error {
-		i, err := f.stakingBridgeFilterer.FilterStakeRemoved(
-			&ethbind.FilterOpts{
-				Start:   startAt,
-				Context: ctx,
-			},
-			[]ethcmn.Address{},
-			[][32]byte{},
-		)
-		if err != nil {
-			f.log.Error("Couldn't retrieve StakeRemoved event from staking bridge", logging.Error(err))
-			return fmt.Errorf("couldn't retrieve StakeRemoved event from staking bridge: %w", err)
-		}
-		iter = i
-		return nil
-	})
-
-	defer func() {
-		if err := iter.Close(); err != nil {
-			f.log.Error("Couldn't close StakeRemoved iterator, meaning subscription to Ethereum might still be alive", logging.Error(err))
-		}
-	}()
-
-	blockTimesFetcher := NewBlockTimeFetcher(f.log, f.client)
-	lastBlockChecked := uint64(0)
-	for iter.Next() {
-		f.debugStakeRemoved(iter.Event)
-
-		blockTime := blockTimesFetcher.TimeForBlock(ctx, iter.Event.Raw.BlockNumber)
-		cb(toStakeRemoved(iter.Event, blockTime))
-		lastBlockChecked = iter.Event.Raw.BlockNumber
-	}
-
-	return lastBlockChecked
 }
 
 func (f *LogFilterer) debugStakeRemoved(event *staking.StakingStakeRemoved) {
