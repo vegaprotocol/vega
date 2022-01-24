@@ -34,6 +34,7 @@ func NewMonitorFromSnapshot(
 		pricesPast:          pricesPastToInternal(pm.PricesPast),
 		stateChanged:        true,
 	}
+	e.boundFactorsInitialised = pm.PriceBoundsConsensusReached
 	return e, nil
 }
 
@@ -208,17 +209,18 @@ func (e Engine) serialisePricesPast() []*types.PastPrice {
 
 func (e *Engine) GetState() *types.PriceMonitor {
 	pm := &types.PriceMonitor{
-		Initialised:         e.initialised,
-		FPHorizons:          mapToKeyDecimalPair(e.fpHorizons),
-		Now:                 e.now,
-		Update:              e.update,
-		Bounds:              e.serialiseBounds(),
-		PriceRangeCache:     e.serialisePriceRanges(),
-		PricesNow:           e.serialisePricesNow(),
-		PricesPast:          e.serialisePricesPast(),
-		PriceRangeCacheTime: e.priceRangeCacheTime,
-		RefPriceCache:       mapToKeyDecimalPair(e.refPriceCache),
-		RefPriceCacheTime:   e.refPriceCacheTime,
+		Initialised:                 e.initialised,
+		FPHorizons:                  mapToKeyDecimalPair(e.fpHorizons),
+		Now:                         e.now,
+		Update:                      e.update,
+		Bounds:                      e.serialiseBounds(),
+		PriceRangeCache:             e.serialisePriceRanges(),
+		PricesNow:                   e.serialisePricesNow(),
+		PricesPast:                  e.serialisePricesPast(),
+		PriceRangeCacheTime:         e.priceRangeCacheTime,
+		RefPriceCache:               mapToKeyDecimalPair(e.refPriceCache),
+		RefPriceCacheTime:           e.refPriceCacheTime,
+		PriceBoundsConsensusReached: e.boundFactorsInitialised,
 	}
 
 	e.stateChanged = false
