@@ -130,6 +130,8 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		timeService,
 	)
 
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+
 	banking := banking.New(
 		log,
 		banking.NewDefaultConfig(),
@@ -140,6 +142,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		notary,
 		broker,
 		topology,
+		epochService,
 	)
 
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
@@ -151,8 +154,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	)
 	timeService.NotifyOnTick(netp.OnChainTimeUpdate)
 	bstats := stats.NewBlockchain()
-
-	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
 	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, timeService)
 	netp.Watch(netparams.WatchParam{

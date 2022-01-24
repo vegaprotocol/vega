@@ -34,6 +34,7 @@ func (m *MockStateVarEngine) EXPECT() *MockStateVarEngineMockRecorder {
 	return m.recorder
 }
 
+// NewEvent mocks base method
 func (m *MockStateVarEngine) NewEvent(arg0, arg1 string, arg2 statevar.StateVarEventType) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "NewEvent", arg0, arg1, arg2)
@@ -45,7 +46,7 @@ func (mr *MockStateVarEngineMockRecorder) NewEvent(arg0, arg1, arg2 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NewEvent", reflect.TypeOf((*MockStateVarEngine)(nil).NewEvent), arg0, arg1, arg2)
 }
 
-// RegisterStateVariable mocks base method.
+// RegisterStateVariable mocks base method
 func (m *MockStateVarEngine) RegisterStateVariable(arg0, arg1, arg2 string, arg3 statevar.Converter, arg4 func(string, statevar.FinaliseCalculation), arg5 []statevar.StateVarEventType, arg6 func(context.Context, statevar.StateVariableResult) error) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterStateVariable", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
@@ -53,7 +54,7 @@ func (m *MockStateVarEngine) RegisterStateVariable(arg0, arg1, arg2 string, arg3
 	return ret0
 }
 
-// RegisterStateVariable indicates an expected call of RegisterStateVariable.
+// RegisterStateVariable indicates an expected call of RegisterStateVariable
 func (mr *MockStateVarEngineMockRecorder) RegisterStateVariable(arg0, arg1, arg2, arg3, arg4, arg5, arg6 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterStateVariable", reflect.TypeOf((*MockStateVarEngine)(nil).RegisterStateVariable), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
