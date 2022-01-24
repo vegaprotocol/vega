@@ -176,6 +176,7 @@ type Banking interface {
 	DepositERC20(context.Context, *types.ERC20Deposit, string, uint64, uint64, string) error
 	WithdrawERC20(context.Context, string, string, string, *num.Uint, *types.Erc20WithdrawExt) error
 	ERC20WithdrawalEvent(context.Context, *types.ERC20Withdrawal, uint64, uint64, string) error
+	TransferFunds(context.Context, *types.TransferFunds) error
 }
 
 // NetworkParameters ...

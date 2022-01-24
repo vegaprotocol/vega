@@ -103,9 +103,10 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.NetParamsSnapshot,
 	types.CheckpointSnapshot,
 	types.DelegationSnapshot,
-	types.ExecutionSnapshot, // creates the markets, returns matching and positions engines for state providers
-	types.MatchingSnapshot,  // this requires a market
-	types.PositionsSnapshot, // again, needs a market
+	types.FloatingPointConsensusSnapshot, // shouldn't matter but maybe best before the markets are restored
+	types.ExecutionSnapshot,              // creates the markets, returns matching and positions engines for state providers
+	types.MatchingSnapshot,               // this requires a market
+	types.PositionsSnapshot,              // again, needs a market
 	types.EpochSnapshot,
 	types.StakingSnapshot,
 	types.StakeVerifierSnapshot,

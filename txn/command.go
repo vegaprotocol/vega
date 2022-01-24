@@ -43,6 +43,8 @@ const (
 	KeyRotateSubmissionCommand Command = 0x50
 	// StateVariableProposalCommand ...
 	StateVariableProposalCommand Command = 0x51
+	// StateVariableProposalCommand ...
+	TransferFundsCommand Command = 0x2
 )
 
 var commandName = map[Command]string{
@@ -65,6 +67,7 @@ var commandName = map[Command]string{
 	CheckpointRestoreCommand:        "Checkpoint Restore",
 	KeyRotateSubmissionCommand:      "Key Rotate Submission",
 	StateVariableProposalCommand:    "State Variable Proposal",
+	TransferFundsCommand:            "Transfer Funds",
 }
 
 func (cmd Command) IsValidatorCommand() bool {
