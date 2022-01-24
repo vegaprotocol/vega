@@ -43,6 +43,7 @@ type Base struct {
 	ctx     context.Context
 	traceID string
 	chainID string
+	tranxID string
 	blockNr int64
 	seq     uint64
 	et      Type
@@ -54,6 +55,7 @@ type Event interface {
 	Type() Type
 	Context() context.Context
 	TraceID() string
+	TranxID() string
 	ChainID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
@@ -252,10 +254,12 @@ func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := vgcontext.TraceIDFromContext(ctx)
 	cID, _ := vgcontext.ChainIDFromContext(ctx)
 	h, _ := vgcontext.BlockHeightFromContext(ctx)
+	tranxID, _ := vgcontext.TranxIDFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
 		chainID: cID,
+		tranxID: tranxID,
 		blockNr: h,
 		et:      t,
 	}
@@ -268,6 +272,10 @@ func (b Base) TraceID() string {
 
 func (b Base) ChainID() string {
 	return b.chainID
+}
+
+func (b Base) TranxID() string {
+	return b.tranxID
 }
 
 func (b *Base) SetSequenceID(s uint64) {

@@ -12,6 +12,7 @@ type (
 	traceIDT        int
 	blockHeight     int
 	chainID         int
+	tranxID         int
 )
 
 var (
@@ -19,9 +20,11 @@ var (
 	traceIDKey            traceIDT
 	blockHeightKey        blockHeight
 	chainIDKey            chainID
+	tranxIDKey            tranxID
 
 	ErrBlockHeightMissing = errors.New("no or invalid block height set on context")
 	ErrChainIDMissing     = errors.New("no or invalid chain id set on context")
+	ErrTranxIDMissing     = errors.New("no or invalid tranx id set on context")
 )
 
 // WithRemoteIPAddr wrap the context into a new context
@@ -80,6 +83,18 @@ func ChainIDFromContext(ctx context.Context) (string, error) {
 	return c, nil
 }
 
+func TranxIDFromContext(ctx context.Context) (string, error) {
+	cv := ctx.Value(tranxIDKey)
+	if cv == nil {
+		return "", ErrTranxIDMissing
+	}
+	c, ok := cv.(string)
+	if !ok {
+		return "", ErrTranxIDMissing
+	}
+	return c, nil
+}
+
 // WithTraceID returns a context with a traceID value.
 func WithTraceID(ctx context.Context, tID string) context.Context {
 	return context.WithValue(ctx, traceIDKey, tID)
@@ -91,4 +106,8 @@ func WithBlockHeight(ctx context.Context, h int64) context.Context {
 
 func WithChainID(ctx context.Context, chainID string) context.Context {
 	return context.WithValue(ctx, chainIDKey, chainID)
+}
+
+func WithTranxID(ctx context.Context, tranxID string) context.Context {
+	return context.WithValue(ctx, tranxIDKey, tranxID)
 }
