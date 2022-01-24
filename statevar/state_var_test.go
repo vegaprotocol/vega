@@ -98,7 +98,7 @@ func generateStateVariableForValidator(t *testing.T, testEngine *testEngine, sta
 		Tolerance: num.DecimalFromInt64(1),
 	})
 
-	return testEngine.engine.AddStateVariable("asset", "market", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, resultCallback)
+	return testEngine.engine.RegisterStateVariable("asset", "market", "name", converter{}, startCalc, []types.StateVarEventType{types.StateVarEventTypeMarketEnactment, types.StateVarEventTypeTimeTrigger}, resultCallback)
 }
 
 func defaultStartCalc() func(string, types.FinaliseCalculation) {
@@ -130,7 +130,7 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 }
 
 func TestStateVar(t *testing.T) {
-	for i := 1; i < 100; i++ {
+	for i := 0; i < 100; i++ {
 		now = time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
 		t.Run("test converters from/to native data type/key value bundle", testConverters)
 		t.Run("new event comes in, no previous active event - triggers calculation", testEventTriggeredNoPreviousEvent)
@@ -189,7 +189,7 @@ func testEventTriggeredNoPreviousEvent(t *testing.T) {
 	require.Equal(t, len(validators), len(brokerEvents))
 	for _, bes := range brokerEvents {
 		evt := events.StateVarEventFromStream(context.Background(), bes.StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
 }
@@ -216,7 +216,7 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 	require.Equal(t, len(validators), len(brokerEvents))
 	for _, bes := range brokerEvents {
 		evt := events.StateVarEventFromStream(context.Background(), bes.StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
 
@@ -233,11 +233,11 @@ func testEventTriggeredWithPreviousEvent(t *testing.T) {
 
 	for i := 4; i < 3*len(validators); i += 2 {
 		evt1 := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt1.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt1.EventID)
 		require.Equal(t, "consensus_calc_aborted", evt1.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+1].StreamMessage())
-		require.Equal(t, "asset_market_G8FFe2zipFM1jPoS3X31grPi7QrcJ1QF_2", evt2.EventID)
+		require.Equal(t, "asset_market_G8FFe2zipFM1jPoS3X31grPi7QrcJ1QF", evt2.EventID)
 		require.Equal(t, "consensus_calc_started", evt2.State)
 	}
 }
@@ -267,11 +267,11 @@ func testEventTriggeredCalculationError(t *testing.T) {
 	require.Equal(t, 2*len(validators), len(brokerEvents))
 	for i := 0; i < 2*len(validators); i += 2 {
 		evt1 := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt1.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt1.EventID)
 		require.Equal(t, "consensus_calc_started", evt1.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[i+1].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt2.EventID)
 		require.Equal(t, "error", evt2.State)
 	}
 }
@@ -313,7 +313,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "eventID2", bundle)
+			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_name", iAsString, "eventID2", bundle)
 		}
 	}
 	require.Equal(t, 0, counter)
@@ -323,7 +323,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", bundle)
+			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_name", iAsString, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", bundle)
 		}
 	}
 	require.Equal(t, 0, counter)
@@ -333,7 +333,7 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", bundle)
+			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_name", iAsString, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", bundle)
 		}
 	}
 	// this means that the result callback has been called with the same result for all of them
@@ -348,11 +348,11 @@ func testBundleReceivedPerfectMatchOfQuorum(t *testing.T) {
 	require.Equal(t, 10, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
 		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i+1].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt2.EventID)
 		require.Equal(t, "perfect_match", evt2.State)
 	}
 }
@@ -378,7 +378,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	counter := 0
 	resultCallback := func(_ context.Context, r types.StateVariableResult) error {
 		counter++
-		require.Equal(t, validatorResults[1], r)
+		require.Equal(t, validatorResults[0], r)
 		return nil
 	}
 
@@ -405,7 +405,7 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", c.InterfaceToBundle(validatorResults[i]))
+			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_name", iAsString, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", c.InterfaceToBundle(validatorResults[i]))
 		}
 	}
 	// this means that the result callback has been called with the same result for all of them
@@ -420,11 +420,11 @@ func testBundleReceivedReachingConsensusSuccessfuly(t *testing.T) {
 	require.Equal(t, 10, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
 		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 
 		evt2 := events.StateVarEventFromStream(context.Background(), brokerEvents[2*i+1].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt2.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt2.EventID)
 		require.Equal(t, "consensus_reached", evt2.State)
 	}
 }
@@ -488,7 +488,7 @@ func testBundleReceivedReachingConsensusNotSuccessful(t *testing.T) {
 	require.Equal(t, 5, len(brokerEvents))
 	for i := 0; i < len(validators); i++ {
 		evt := events.StateVarEventFromStream(context.Background(), brokerEvents[i].StreamMessage())
-		require.Equal(t, "asset_market_OcskiC47WpCBO63KYKtLbEUctsTRRkwF_1", evt.EventID)
+		require.Equal(t, "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", evt.EventID)
 		require.Equal(t, "consensus_calc_started", evt.State)
 	}
 }
@@ -549,7 +549,7 @@ func testTimeBasedEvent(t *testing.T) {
 		iAsString := strconv.Itoa(i)
 
 		for j := 0; j < len(validators); j++ {
-			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_8SQcDlWbkRMBvCoawjhbLStINMoO9wwo", iAsString, "20210221_011040", c.InterfaceToBundle(validatorResults[i]))
+			validators[j].engine.ProposedValueReceived(context.Background(), "asset_market_name", iAsString, "20210221_011040", c.InterfaceToBundle(validatorResults[i]))
 		}
 	}
 

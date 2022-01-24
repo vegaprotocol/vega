@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
+	"os"
 	"time"
 
 	"code.vegaprotocol.io/shared/paths"
@@ -101,9 +103,10 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.NetParamsSnapshot,
 	types.CheckpointSnapshot,
 	types.DelegationSnapshot,
-	types.ExecutionSnapshot, // creates the markets, returns matching and positions engines for state providers
-	types.MatchingSnapshot,  // this requires a market
-	types.PositionsSnapshot, // again, needs a market
+	types.FloatingPointConsensusSnapshot, // shouldn't matter but maybe best before the markets are restored
+	types.ExecutionSnapshot,              // creates the markets, returns matching and positions engines for state providers
+	types.MatchingSnapshot,               // this requires a market
+	types.PositionsSnapshot,              // again, needs a market
 	types.EpochSnapshot,
 	types.StakingSnapshot,
 	types.StakeVerifierSnapshot,
@@ -205,6 +208,19 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 		return db.NewMemDB(), nil
 	case goLevelDB:
 		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
+		if conf.DBPath != "" {
+			stat, err := os.Stat(conf.DBPath)
+			if err != nil {
+				return nil, err
+			}
+
+			if !stat.IsDir() {
+				return nil, errors.New("snapshot DB path is not a directory")
+			}
+
+			dbPath = conf.DBPath
+		}
+
 		return db.NewGoLevelDB("snapshot", dbPath)
 	default:
 		return nil, types.ErrInvalidSnapshotStorageMethod

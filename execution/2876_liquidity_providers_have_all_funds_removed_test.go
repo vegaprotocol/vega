@@ -15,7 +15,7 @@ import (
 func TestIssue2876(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 30})
+	tm := getTestMarketWithDP(t, now, closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30}, 3)
 	ctx := context.Background()
 
 	tm.market.OnChainTimeUpdate(ctx, now)
@@ -121,12 +121,13 @@ func TestIssue2876(t *testing.T) {
 	// but also some margin to cover the orders
 	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "party-2", tm.asset)
 	assert.NoError(t, err)
-	expMargin := num.NewUint(30622560)
-	// expMargin := num.NewUint(13200)
+
+	expMargin := num.NewUint(24001200)
+	// expMargin := num.NewUint(30622560)
 	assert.True(t, marginAccount.Balance.EQ(expMargin), "Expected: "+expMargin.String()+" got "+marginAccount.Balance.String())
 
-	expGeneral := num.NewUint(68377440)
-	// expGeneral := num.NewUint(98986800)
+	expGeneral := num.NewUint(74998800)
+	// expGeneral := num.NewUint(68377440)
 	// but also some funds left in the genearal
 	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
 	assert.NoError(t, err)
