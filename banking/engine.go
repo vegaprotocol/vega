@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
@@ -203,9 +204,15 @@ func (e *Engine) ReloadConf(cfg Config) {
 }
 
 func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
-	e.currentEpoch = ep.Seq
-	if err := e.distributeRecurringTransfers(ctx, e.currentEpoch); err != nil {
-		e.log.Error("could not distribute recurring transfers", logging.Error(err))
+	switch ep.Action {
+	case proto.EpochAction_EPOCH_ACTION_START:
+		e.currentEpoch = ep.Seq
+	case proto.EpochAction_EPOCH_ACTION_END:
+		if err := e.distributeRecurringTransfers(ctx, e.currentEpoch); err != nil {
+			e.log.Error("could not distribute recurring transfers", logging.Error(err))
+		}
+	default:
+		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
 	}
 }
 
