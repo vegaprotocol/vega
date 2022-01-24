@@ -49,7 +49,7 @@ Add any other context about the problem here including; system version numbers, 
 - [ ] All bug recreation steps can be followed without presenting the original error/bug
 - [ ] All Unit, Integration and BVT tests are passing
 - [ ] Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
-- [ ] Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when staring the work if dependancies known i.e. API changes)
+- [ ] Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when starting the work if dependencies known i.e. API changes)
 
 **After Merging**
 - [ ] Move development ticket to `Done` if there is **NO** requirement for new [system-tests](https://github.com/vegaprotocol/system-tests/issues)
