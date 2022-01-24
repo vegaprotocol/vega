@@ -30,13 +30,13 @@ THEN (assertion)
 See [here](https://github.com/vegaprotocol/vega/tree/develop/integration/) for more format information and examples.
 
 # Dependencies
-Links to any tickets that have a dependant relationship witht his task.
+Links to any tickets that have a dependent relationship with this task.
 
 # Additional Details (optional)
-Any additional information including known dependacies, impacted components.
+Any additional information including known dependencies, impacted components.
 
 # Examples (optional)
-Code snippets, API calls that could be used on dependant tasks.
+Code snippets, API calls that could be used on dependent tasks.
 
 # Definition of Done
 >ℹ️ Not every issue will need every item checked, however, every item on this list should be properly considered and actioned to meet the [DoD](https://github.com/vegaprotocol/vega/blob/develop/DEFINITION_OF_DONE.md).

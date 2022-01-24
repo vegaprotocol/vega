@@ -8,7 +8,7 @@ assignees: ''
 
 # Feature Overview
 
-**In order to** (context - overcome a problem or meet a requirerment)
+**In order to** (context - overcome a problem or meet a requirement)
 **We will** (what - carry out this piece of work / action)
 **So that** (why - we create these outcomes)
 
@@ -16,7 +16,7 @@ assignees: ''
 - [Link](xyz) to spec or section within a spec
 
 # Tasks
-A checklist of the tasks that are needed to develop the feature and meet the accceptance criteria and feature test scenarios. Ideally, tasks would reflect the issues/pull requests likely to be created when developing the feature. 
+A checklist of the tasks that are needed to develop the feature and meet the acceptance criteria and feature test scenarios. Ideally, tasks would reflect the issues/pull requests likely to be created when developing the feature. 
 - [ ]
 - [ ]
 

@@ -15,7 +15,7 @@ The difference between a Definition of Done and Acceptance Criteria...
 ## Vega Core Team Definition of Done
 
 **Before merging**
-- Create relevant for [system-test](https://github.com/vegaprotocol/system-tests/issues) tickets with feature labels (should be done when staring the work)
+- Create relevant for [system-test](https://github.com/vegaprotocol/system-tests/issues) tickets with feature labels (should be done when starting the work)
 - Code refactored to meet SOLID and other code design principles
 - Code is compilation error, warning, and hint free
 - Carry out a basic happy path end-to-end check of the new code

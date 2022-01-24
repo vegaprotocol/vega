@@ -8,7 +8,7 @@ assignees: ''
 
 # Task Overview
 
-**In order to** (context - overcome a problem or meet a requirerment)
+**In order to** (context - overcome a problem or meet a requirement)
 **We will** (what - carry out this piece of work / action)
 **So that** (why - we create these outcomes)
 

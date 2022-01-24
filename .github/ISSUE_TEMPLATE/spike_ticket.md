@@ -19,16 +19,10 @@ assignees: ''
 How do we know when this spike is ready to either drop or move into technical tasks:
 - [ ] We understand that...
 - [ ] Scope of the spike is covered; reasons why not discussed with the engineering leadership team
-- [ ] Spike findings presented in order to determin the next steps for the work
+- [ ] Spike findings presented in order to determine the next steps for the work
 
 # Additional Details (optional)
-Any additional information including known dependacies, impacted components.
+Any additional information including known dependencies, impacted components.
 
 # Examples (optional)
 Code snippets, links to prototypes.
-
-
-
-
-
-

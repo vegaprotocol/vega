@@ -54,4 +54,4 @@ Add any other context about the problem here including; system version numbers, 
 **After Merging**
 - [ ] Move development ticket to `Done` if there is **NO** requirement for new [system-tests](https://github.com/vegaprotocol/system-tests/issues)
 - [ ] Resolve any issues with broken system-tests
-- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionallity has changed
+- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed
