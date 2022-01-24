@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"os"
 	"time"
 
@@ -207,8 +208,13 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 	case goLevelDB:
 		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
 		if conf.DBPath != "" {
-			if _, err := os.Stat(conf.DBPath); err != nil {
+			stat, err := os.Stat(conf.DBPath)
+			if err != nil {
 				return nil, err
+			}
+
+			if !stat.IsDir() {
+				return nil, errors.New("snapshot DB path is not a directory")
 			}
 
 			dbPath = conf.DBPath
