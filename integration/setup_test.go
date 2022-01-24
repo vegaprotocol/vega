@@ -214,19 +214,6 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.DelegationMinAmount,
 			Watcher: e.delegationEngine.OnMinAmountChanged,
 		},
-
-		netparams.WatchParam{
-			Param:   netparams.RewardAsset,
-			Watcher: e.rewardsEngine.UpdateAssetForStakingAndDelegationRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutFraction,
-			Watcher: e.rewardsEngine.UpdatePayoutFractionForStakingRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutDelay,
-			Watcher: e.rewardsEngine.UpdatePayoutDelayForStakingRewardScheme,
-		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerParticipant,
 			Watcher: e.rewardsEngine.UpdateMaxPayoutPerParticipantForStakingRewardScheme,
@@ -238,10 +225,6 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
 			Watcher: e.rewardsEngine.UpdateMinimumValidatorStakeForStakingRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerEpoch,
-			Watcher: e.rewardsEngine.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,

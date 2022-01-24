@@ -143,7 +143,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology)
 
 	// checkpoint engine
-	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.rewards, n.topology, n.banking)
+	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.topology, n.banking)
 	if err != nil {
 		panic(err)
 	}
@@ -170,10 +170,10 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		panic(err)
 	}
 	// notify delegation, rewards, and accounting on changes in the validator pub key
-	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.rewards.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
+	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
 
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
-		n.notary, n.spam, n.rewards, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker)
+		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker)
 
 	// now instantiate the blockchain layer
 	if n.app, err = n.startBlockchain(); err != nil {
@@ -355,18 +355,6 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.epochService.OnEpochLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.RewardAsset,
-			Watcher: n.rewards.UpdateAssetForStakingAndDelegationRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutFraction,
-			Watcher: n.rewards.UpdatePayoutFractionForStakingRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutDelay,
-			Watcher: n.rewards.UpdatePayoutDelayForStakingRewardScheme,
-		},
-		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerParticipant,
 			Watcher: n.rewards.UpdateMaxPayoutPerParticipantForStakingRewardScheme,
 		},
@@ -377,10 +365,6 @@ func (n *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
 			Watcher: n.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerEpoch,
-			Watcher: n.rewards.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
