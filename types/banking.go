@@ -302,3 +302,41 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 		},
 	}, nil
 }
+
+func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
+	var endEpoch *uint64
+	if p.GetRecurring().EndEpoch_ != nil {
+		ee := p.GetRecurring().GetEndEpoch()
+		endEpoch = &ee
+	}
+
+	factor, err := num.DecimalFromString(p.GetRecurring().GetFactor())
+	if err != nil {
+		panic("invalid decimal, should never happen")
+	}
+
+	amount, overflow := num.UintFromString(p.Amount, 10)
+	if overflow {
+		// panic is alright here, this should come only from
+		// a checkpoint, and it would mean the checkpoint is fucked
+		// so executions is not possible.
+		panic("invalid transfer amount")
+	}
+
+	return &RecurringTransfer{
+		TransferBase: &TransferBase{
+			ID:              p.Id,
+			From:            p.From,
+			FromAccountType: p.FromAccountType,
+			To:              p.To,
+			ToAccountType:   p.ToAccountType,
+			Asset:           p.Asset,
+			Amount:          amount,
+			Reference:       p.Reference,
+			Status:          p.Status,
+		},
+		StartEpoch: p.GetRecurring().GetStartEpoch(),
+		EndEpoch:   endEpoch,
+		Factor:     factor,
+	}
+}
