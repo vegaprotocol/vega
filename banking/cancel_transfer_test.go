@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
@@ -18,7 +19,8 @@ func TestCancelTransfer(t *testing.T) {
 
 	// let's do a massive fee, easy to test
 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 7})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	var endEpoch13 uint64 = 11
 	transferID := "TRANSFERID"
@@ -108,7 +110,8 @@ func TestCancelTransfer(t *testing.T) {
 			return nil, nil
 		})
 
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 10})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10, Action: vega.EpochAction_EPOCH_ACTION_END})
 
 	// now we cancel it, we should get no error and and event
 	e.broker.EXPECT().Send(gomock.Any()).DoAndReturn(func(evt events.Event) {
@@ -128,6 +131,6 @@ func TestCancelTransfer(t *testing.T) {
 
 	// now we move in time, the recurring transfer was suppose to go
 	// 'til epoch 11, but it's not cancelled, and nothing should happen
-
-	e.OnEpoch(context.Background(), types.Epoch{Seq: 11})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_START})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_END})
 }
