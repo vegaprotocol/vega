@@ -7,6 +7,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"code.vegaprotocol.io/vega/types/statevar"
@@ -94,11 +95,12 @@ type RangeProvider interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_mock.go -package mocks code.vegaprotocol.io/vega/monitor/price StateVarEngine
 type StateVarEngine interface {
-	AddStateVariable(asset, market string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
+	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 }
 
 // Engine allows tracking price changes and verifying them against the theoretical levels implied by the RangeProvider (risk model).
 type Engine struct {
+	log         *logging.Logger
 	riskModel   RangeProvider
 	minDuration time.Duration
 
@@ -116,14 +118,16 @@ type Engine struct {
 	refPriceCacheTime time.Time
 	refPriceCache     map[int64]num.Decimal
 
-	boundFactorsConsensusDone bool
+	boundFactorsInitialised bool
 
 	stateChanged   bool
 	stateVarEngine StateVarEngine
+	market         string
+	asset          string
 }
 
 // NewMonitor returns a new instance of PriceMonitoring.
-func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine) (*Engine, error) {
+func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.PriceMonitoringSettings, stateVarEngine StateVarEngine, log *logging.Logger) (*Engine, error) {
 	if riskModel == nil {
 		return nil, ErrNilRangeProvider
 	}
@@ -157,15 +161,18 @@ func NewMonitor(asset, mktID string, riskModel RangeProvider, settings *types.Pr
 	}
 
 	e := &Engine{
-		riskModel:                 riskModel,
-		fpHorizons:                h,
-		bounds:                    bounds,
-		stateChanged:              true,
-		stateVarEngine:            stateVarEngine,
-		boundFactorsConsensusDone: false,
+		riskModel:               riskModel,
+		fpHorizons:              h,
+		bounds:                  bounds,
+		stateChanged:            true,
+		stateVarEngine:          stateVarEngine,
+		boundFactorsInitialised: false,
+		log:                     log,
+		market:                  mktID,
+		asset:                   asset,
 	}
 
-	stateVarEngine.AddStateVariable(asset, mktID, boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
+	stateVarEngine.RegisterStateVariable(asset, mktID, "bound-factors", boundFactorsConverter{}, e.startCalcPriceRanges, []statevar.StateVarEventType{statevar.StateVarEventTypeTimeTrigger, statevar.StateVarEventTypeAuctionEnded, statevar.StateVarEventTypeOpeningAuctionFirstUncrossingPrice}, e.updatePriceBounds)
 	return e, nil
 }
 
@@ -197,6 +204,9 @@ func (e *Engine) GetValidPriceRange() (num.WrappedDecimal, num.WrappedDecimal) {
 		if !pr.MaxPrice.Representation().IsZero() && pr.MaxPrice.Representation().LT(max.Representation()) {
 			max = pr.MaxPrice
 		}
+	}
+	if min.Original().LessThan(num.DecimalZero()) {
+		min = num.NewWrappedDecimal(num.Zero(), num.DecimalZero())
 	}
 	return min, max
 }
@@ -436,7 +446,8 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 		}
 		ref := e.getRefPrice(b.Trigger.Horizon)
 		var min, max num.Decimal
-		if e.boundFactorsConsensusDone {
+
+		if e.boundFactorsInitialised {
 			min = ref.Mul(b.DownFactor)
 			max = ref.Mul(b.UpFactor)
 		} else {
@@ -446,6 +457,7 @@ func (e *Engine) getCurrentPriceRanges(force bool) map[*bound]priceRange {
 
 		minUint, _ := num.UintFromDecimal(min.Ceil())
 		maxUint, _ := num.UintFromDecimal(max.Floor())
+
 		e.priceRangesCache[b] = priceRange{
 			MinPrice:       num.NewWrappedDecimal(minUint, min),
 			MaxPrice:       num.NewWrappedDecimal(maxUint, max),

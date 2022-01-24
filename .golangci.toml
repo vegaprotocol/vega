@@ -57,6 +57,10 @@ linters = ["staticcheck"]
 text = "SA1019:"
 
 [[issues.exclude-rules]]
+linters = ["staticcheck"]
+text = "SA5008:"
+
+[[issues.exclude-rules]]
 path = "_test\\.go"
 linters = ["forbidigo"]
 

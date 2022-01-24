@@ -36,32 +36,33 @@ type PostRestore interface {
 type SnapshotNamespace string
 
 const (
-	undefinedSnapshot        SnapshotNamespace = ""
-	AppSnapshot              SnapshotNamespace = "app"
-	AssetsSnapshot           SnapshotNamespace = "assets"
-	BankingSnapshot          SnapshotNamespace = "banking"
-	CheckpointSnapshot       SnapshotNamespace = "checkpoint"
-	CollateralSnapshot       SnapshotNamespace = "collateral"
-	NetParamsSnapshot        SnapshotNamespace = "netparams"
-	DelegationSnapshot       SnapshotNamespace = "delegation"
-	GovernanceSnapshot       SnapshotNamespace = "governance"
-	PositionsSnapshot        SnapshotNamespace = "positions"
-	MatchingSnapshot         SnapshotNamespace = "matching"
-	ExecutionSnapshot        SnapshotNamespace = "execution"
-	EpochSnapshot            SnapshotNamespace = "epoch"
-	StakingSnapshot          SnapshotNamespace = "staking"
-	IDGenSnapshot            SnapshotNamespace = "idgenerator"
-	RewardSnapshot           SnapshotNamespace = "rewards"
-	SpamSnapshot             SnapshotNamespace = "spam"
-	LimitSnapshot            SnapshotNamespace = "limits"
-	NotarySnapshot           SnapshotNamespace = "notary"
-	StakeVerifierSnapshot    SnapshotNamespace = "stakeverifier"
-	ReplayProtectionSnapshot SnapshotNamespace = "replay"
-	EventForwarderSnapshot   SnapshotNamespace = "eventforwarder"
-	WitnessSnapshot          SnapshotNamespace = "witness"
-	TopologySnapshot         SnapshotNamespace = "topology"
-	LiquiditySnapshot        SnapshotNamespace = "liquidity"
-	FutureStateSnapshot      SnapshotNamespace = "futureState"
+	undefinedSnapshot              SnapshotNamespace = ""
+	AppSnapshot                    SnapshotNamespace = "app"
+	AssetsSnapshot                 SnapshotNamespace = "assets"
+	BankingSnapshot                SnapshotNamespace = "banking"
+	CheckpointSnapshot             SnapshotNamespace = "checkpoint"
+	CollateralSnapshot             SnapshotNamespace = "collateral"
+	NetParamsSnapshot              SnapshotNamespace = "netparams"
+	DelegationSnapshot             SnapshotNamespace = "delegation"
+	GovernanceSnapshot             SnapshotNamespace = "governance"
+	PositionsSnapshot              SnapshotNamespace = "positions"
+	MatchingSnapshot               SnapshotNamespace = "matching"
+	ExecutionSnapshot              SnapshotNamespace = "execution"
+	EpochSnapshot                  SnapshotNamespace = "epoch"
+	StakingSnapshot                SnapshotNamespace = "staking"
+	IDGenSnapshot                  SnapshotNamespace = "idgenerator"
+	RewardSnapshot                 SnapshotNamespace = "rewards"
+	SpamSnapshot                   SnapshotNamespace = "spam"
+	LimitSnapshot                  SnapshotNamespace = "limits"
+	NotarySnapshot                 SnapshotNamespace = "notary"
+	StakeVerifierSnapshot          SnapshotNamespace = "stakeverifier"
+	ReplayProtectionSnapshot       SnapshotNamespace = "replay"
+	EventForwarderSnapshot         SnapshotNamespace = "eventforwarder"
+	WitnessSnapshot                SnapshotNamespace = "witness"
+	TopologySnapshot               SnapshotNamespace = "topology"
+	LiquiditySnapshot              SnapshotNamespace = "liquidity"
+	FutureStateSnapshot            SnapshotNamespace = "futureState"
+	FloatingPointConsensusSnapshot SnapshotNamespace = "floatingpoint"
 
 	MaxChunkSize   = 16 * 1000 * 1000 // technically 16 * 1024 * 1024, but you know
 	IdealChunkSize = 10 * 1000 * 1000 // aim for 10MB
@@ -94,28 +95,30 @@ var (
 		"stakeverifier":  StakeVerifierSnapshot,
 		"liquidity":      LiquiditySnapshot,
 		"futureState":    FutureStateSnapshot,
+		"floatingpoint":  FloatingPointConsensusSnapshot,
 	}
 
-	ErrSnapshotHashMismatch       = errors.New("snapshot hashes do not match")
-	ErrSnapshotMetaMismatch       = errors.New("snapshot metadata does not match")
-	ErrUnknownSnapshotNamespace   = errors.New("unknown snapshot namespace")
-	ErrNoPrefixFound              = errors.New("no prefix in chunk keys")
-	ErrInconsistentNamespaceKeys  = errors.New("chunk contains several namespace keys")
-	ErrChunkHashMismatch          = errors.New("loaded chunk hash does not match metadata")
-	ErrChunkOutOfRange            = errors.New("chunk number out of range")
-	ErrUnknownSnapshot            = errors.New("no shapshot to reject")
-	ErrMissingChunks              = errors.New("missing previous chunks")
-	ErrSnapshotRetryLimit         = errors.New("could not load snapshot, retry limit reached")
-	ErrSnapshotKeyDoesNotExist    = errors.New("unknown key for snapshot")
-	ErrInvalidSnapshotNamespace   = errors.New("invalid snapshot namespace")
-	ErrUnknownSnapshotType        = errors.New("snapshot data type not known")
-	ErrUnknownSnapshotChunkHeight = errors.New("no snapshot or chunk found for given height")
-	ErrInvalidSnapshotFormat      = errors.New("invalid snapshot format")
-	ErrSnapshotFormatMismatch     = errors.New("snapshot formats do not match")
-	ErrUnexpectedKey              = errors.New("snapshot namespace has unknown/unexpected key(s)")
-	ErrNodeHashMismatch           = errors.New("hash of a node does not match the hash from the snapshot meta")
-	ErrNoSnapshot                 = errors.New("no snapshot found")
-	ErrMissingSnapshotVersion     = errors.New("unknown snapshot version")
+	ErrSnapshotHashMismatch         = errors.New("snapshot hashes do not match")
+	ErrSnapshotMetaMismatch         = errors.New("snapshot metadata does not match")
+	ErrUnknownSnapshotNamespace     = errors.New("unknown snapshot namespace")
+	ErrNoPrefixFound                = errors.New("no prefix in chunk keys")
+	ErrInconsistentNamespaceKeys    = errors.New("chunk contains several namespace keys")
+	ErrChunkHashMismatch            = errors.New("loaded chunk hash does not match metadata")
+	ErrChunkOutOfRange              = errors.New("chunk number out of range")
+	ErrUnknownSnapshot              = errors.New("no shapshot to reject")
+	ErrMissingChunks                = errors.New("missing previous chunks")
+	ErrSnapshotRetryLimit           = errors.New("could not load snapshot, retry limit reached")
+	ErrSnapshotKeyDoesNotExist      = errors.New("unknown key for snapshot")
+	ErrInvalidSnapshotNamespace     = errors.New("invalid snapshot namespace")
+	ErrUnknownSnapshotType          = errors.New("snapshot data type not known")
+	ErrUnknownSnapshotChunkHeight   = errors.New("no snapshot or chunk found for given height")
+	ErrInvalidSnapshotFormat        = errors.New("invalid snapshot format")
+	ErrSnapshotFormatMismatch       = errors.New("snapshot formats do not match")
+	ErrUnexpectedKey                = errors.New("snapshot namespace has unknown/unexpected key(s)")
+	ErrNodeHashMismatch             = errors.New("hash of a node does not match the hash from the snapshot meta")
+	ErrNoSnapshot                   = errors.New("no snapshot found")
+	ErrMissingSnapshotVersion       = errors.New("unknown snapshot version")
+	ErrInvalidSnapshotStorageMethod = errors.New("invalid snapshot storage method")
 )
 
 type SnapshotFormat = snapshot.Format

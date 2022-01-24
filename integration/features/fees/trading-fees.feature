@@ -221,7 +221,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     Then the opening auction period ends for market "ETH/DEC21"
@@ -640,7 +640,7 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     Then the opening auction period ends for market "ETH/DEC21"
@@ -740,7 +740,7 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    | amendment |
    
     Then the opening auction period ends for market "ETH/DEC21"
@@ -770,7 +770,7 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     When the network moves ahead "1" blocks
@@ -888,7 +888,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    | amendment |
    
     Then the opening auction period ends for market "ETH/DEC21"
@@ -907,7 +907,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     When the network moves ahead "1" blocks
@@ -991,14 +991,14 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    | amendment |
    
     Then the opening auction period ends for market "ETH/DEC21"
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
@@ -1093,7 +1093,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    | amendment |
    
     Then the opening auction period ends for market "ETH/DEC21"
@@ -1112,7 +1112,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     When the network moves ahead "1" blocks
@@ -1196,14 +1196,14 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    | amendment |
    
     Then the opening auction period ends for market "ETH/DEC21"
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
@@ -1303,14 +1303,14 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | buy  | BID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 200               | 0.001 | sell | ASK              | 1          |  10    | amendment |
    
     Then the opening auction period ends for market "ETH/DEC21"
     
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          | -10    | amendment |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | BID              | 1          |  10    | amendment |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | ASK              | 1          |  10    | amendment |
 
     #TODO: Raise a bug: mark price is not being checked, any value results in a pass.
@@ -1597,7 +1597,7 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
 
     Given the parties submit the following liquidity provision:
       | id  | party | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
-      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 1          | -10    | submission |
+      | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | buy  | MID              | 1          |  10    | submission |
       | lp1 | aux1  | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 1          |  10    | amendment |
 
     Then the opening auction period ends for market "ETH/DEC21"

@@ -5,36 +5,35 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
+	reflect "reflect"
 )
 
-// MockValidatorPerformance is a mock of ValidatorPerformance interface.
+// MockValidatorPerformance is a mock of ValidatorPerformance interface
 type MockValidatorPerformance struct {
 	ctrl     *gomock.Controller
 	recorder *MockValidatorPerformanceMockRecorder
 }
 
-// MockValidatorPerformanceMockRecorder is the mock recorder for MockValidatorPerformance.
+// MockValidatorPerformanceMockRecorder is the mock recorder for MockValidatorPerformance
 type MockValidatorPerformanceMockRecorder struct {
 	mock *MockValidatorPerformance
 }
 
-// NewMockValidatorPerformance creates a new mock instance.
+// NewMockValidatorPerformance creates a new mock instance
 func NewMockValidatorPerformance(ctrl *gomock.Controller) *MockValidatorPerformance {
 	mock := &MockValidatorPerformance{ctrl: ctrl}
 	mock.recorder = &MockValidatorPerformanceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use.
+// EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockValidatorPerformance) EXPECT() *MockValidatorPerformanceMockRecorder {
 	return m.recorder
 }
 
-// ValidatorPerformanceScore mocks base method.
+// ValidatorPerformanceScore mocks base method
 func (m *MockValidatorPerformance) ValidatorPerformanceScore(arg0 string) decimal.Decimal {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidatorPerformanceScore", arg0)
@@ -42,7 +41,7 @@ func (m *MockValidatorPerformance) ValidatorPerformanceScore(arg0 string) decima
 	return ret0
 }
 
-// ValidatorPerformanceScore indicates an expected call of ValidatorPerformanceScore.
+// ValidatorPerformanceScore indicates an expected call of ValidatorPerformanceScore
 func (mr *MockValidatorPerformanceMockRecorder) ValidatorPerformanceScore(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorPerformanceScore", reflect.TypeOf((*MockValidatorPerformance)(nil).ValidatorPerformanceScore), arg0)

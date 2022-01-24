@@ -113,7 +113,11 @@ func (o *Order) IntoProto() *proto.Order {
 func OrderFromProto(o *proto.Order) (*Order, error) {
 	var pegged *PeggedOrder
 	if o.PeggedOrder != nil {
-		pegged = NewPeggedOrderFromProto(o.PeggedOrder)
+		var err error
+		pegged, err = NewPeggedOrderFromProto(o.PeggedOrder)
+		if err != nil {
+			return nil, err
+		}
 	}
 	price := num.Zero()
 	if len(o.Price) > 0 {
@@ -193,7 +197,7 @@ func (o *Order) HasTraded() bool {
 
 type PeggedOrder struct {
 	Reference PeggedReference
-	Offset    int64
+	Offset    *num.Uint
 }
 
 func (p PeggedOrder) Clone() *PeggedOrder {
@@ -201,20 +205,26 @@ func (p PeggedOrder) Clone() *PeggedOrder {
 	return &cpy
 }
 
-func NewPeggedOrderFromProto(p *proto.PeggedOrder) *PeggedOrder {
+func NewPeggedOrderFromProto(p *proto.PeggedOrder) (*PeggedOrder, error) {
 	if p == nil {
-		return nil
+		return nil, nil
 	}
+
+	offset, overflowed := num.UintFromString(p.Offset, 10)
+	if overflowed {
+		return nil, errors.New("invalid offset")
+	}
+
 	return &PeggedOrder{
 		Reference: p.Reference,
-		Offset:    p.Offset,
-	}
+		Offset:    offset,
+	}, nil
 }
 
 func (p PeggedOrder) IntoProto() *proto.PeggedOrder {
 	return &proto.PeggedOrder{
 		Reference: p.Reference,
-		Offset:    p.Offset,
+		Offset:    p.Offset.String(),
 	}
 }
 
@@ -486,10 +496,6 @@ const (
 	OrderErrorWithoutReferencePrice OrderError = proto.OrderError_ORDER_ERROR_WITHOUT_REFERENCE_PRICE
 	// Buy pegged order cannot reference best ask price.
 	OrderErrorBuyCannotReferenceBestAskPrice OrderError = proto.OrderError_ORDER_ERROR_BUY_CANNOT_REFERENCE_BEST_ASK_PRICE
-	// Pegged order offset must be <= 0.
-	OrderErrorOffsetMustBeLessOrEqualToZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_OR_EQUAL_TO_ZERO
-	// Pegged order offset must be < 0.
-	OrderErrorOffsetMustBeLessThanZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_LESS_THAN_ZERO
 	// Pegged order offset must be >= 0.
 	OrderErrorOffsetMustBeGreaterOrEqualToZero OrderError = proto.OrderError_ORDER_ERROR_OFFSET_MUST_BE_GREATER_OR_EQUAL_TO_ZERO
 	// Sell pegged order cannot reference best bid price.
@@ -529,8 +535,6 @@ var (
 	ErrPeggedOrderMustBeGTTOrGTC                   = OrderErrorMustBeGTTOrGTC
 	ErrPeggedOrderWithoutReferencePrice            = OrderErrorWithoutReferencePrice
 	ErrPeggedOrderBuyCannotReferenceBestAskPrice   = OrderErrorBuyCannotReferenceBestAskPrice
-	ErrPeggedOrderOffsetMustBeLessOrEqualToZero    = OrderErrorOffsetMustBeLessOrEqualToZero
-	ErrPeggedOrderOffsetMustBeLessThanZero         = OrderErrorOffsetMustBeLessThanZero
 	ErrPeggedOrderOffsetMustBeGreaterOrEqualToZero = OrderErrorOffsetMustBeGreaterOrEqualToZero
 	ErrPeggedOrderSellCannotReferenceBestBidPrice  = OrderErrorSellCannotReferenceBestBidPrice
 	ErrPeggedOrderOffsetMustBeGreaterThanZero      = OrderErrorOffsetMustBeGreaterThanZero

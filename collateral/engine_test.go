@@ -591,7 +591,7 @@ func testEnableAssetSuccess(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -608,7 +608,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -2418,7 +2418,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	// 2 new assets
 	// 3 asset insurance accounts
 	// 1 reward account
-	broker.EXPECT().Send(gomock.Any()).Times(14)
+	broker.EXPECT().Send(gomock.Any()).Times(17)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
@@ -2574,27 +2574,27 @@ func TestHash(t *testing.T) {
 
 	// Create the accounts
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	id1, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t1", testMarketAsset)
+	id1, err := eng.CreatePartyGeneralAccount(context.Background(), "t1", testMarketAsset)
 	require.NoError(t, err)
 
-	id2, err := eng.Engine.CreatePartyGeneralAccount(context.Background(), "t2", testMarketAsset)
+	id2, err := eng.CreatePartyGeneralAccount(context.Background(), "t2", testMarketAsset)
 	require.NoError(t, err)
 
-	_, err = eng.Engine.CreatePartyMarginAccount(context.Background(), "t1", testMarketID, testMarketAsset)
+	_, err = eng.CreatePartyMarginAccount(context.Background(), "t1", testMarketID, testMarketAsset)
 	require.NoError(t, err)
 
 	// Add balances
 	require.NoError(t,
-		eng.Engine.UpdateBalance(context.Background(), id1, num.NewUint(100)),
+		eng.UpdateBalance(context.Background(), id1, num.NewUint(100)),
 	)
 
 	require.NoError(t,
-		eng.Engine.UpdateBalance(context.Background(), id2, num.NewUint(500)),
+		eng.UpdateBalance(context.Background(), id2, num.NewUint(500)),
 	)
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"f98893cf460f1401f25b606be0740dde890c7913b4d98966964335bcfd1390b8",
+		"5761f3e3f1fa279b0197c292b86874e2b8b84f128cbb469ea1822d918c394ac7",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)

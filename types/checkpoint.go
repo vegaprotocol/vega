@@ -29,6 +29,7 @@ const (
 	BlockCheckpoint          CheckpointName = "block" // pseudo-checkpoint, really...
 	PendingRewardsCheckpoint CheckpointName = "rewards"
 	KeyRotationsCheckpoint   CheckpointName = "key-rotations"
+	BankingCheckpoint        CheckpointName = "banking"
 )
 
 type Block struct {
@@ -50,6 +51,7 @@ type Checkpoint struct {
 	Block             []byte
 	Rewards           []byte
 	KeyRotations      []byte
+	Banking           []byte
 }
 
 type DelegationEntry struct {
@@ -145,6 +147,7 @@ func NewCheckpointFromProto(pc *checkpoint.Checkpoint) *Checkpoint {
 		Block:             pc.Block,
 		Rewards:           pc.Rewards,
 		KeyRotations:      pc.KeyRotations,
+		Banking:           pc.Banking,
 	}
 }
 
@@ -159,6 +162,7 @@ func (c Checkpoint) IntoProto() *checkpoint.Checkpoint {
 		Block:             c.Block,
 		Rewards:           c.Rewards,
 		KeyRotations:      c.KeyRotations,
+		Banking:           c.Banking,
 	}
 }
 
@@ -177,7 +181,7 @@ func (c *Checkpoint) SetBlockHeight(height int64) error {
 // HashBytes returns the data contained in the checkpoint as a []byte for hashing
 // the order in which the data is added to the slice matters.
 func (c Checkpoint) HashBytes() []byte {
-	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.KeyRotations))
+	ret := make([]byte, 0, len(c.Governance)+len(c.Assets)+len(c.Collateral)+len(c.NetworkParameters)+len(c.Delegation)+len(c.Epoch)+len(c.Block)+len(c.Rewards)+len(c.KeyRotations)+len(c.Banking))
 	// the order in which we append is quite important
 	ret = append(ret, c.NetworkParameters...)
 	ret = append(ret, c.Assets...)
@@ -187,6 +191,7 @@ func (c Checkpoint) HashBytes() []byte {
 	ret = append(ret, c.Block...)
 	ret = append(ret, c.Governance...)
 	ret = append(ret, c.Rewards...)
+	ret = append(ret, c.Banking...)
 	return append(ret, c.KeyRotations...)
 }
 
@@ -211,6 +216,8 @@ func (c *Checkpoint) Set(name CheckpointName, val []byte) {
 		c.Rewards = val
 	case KeyRotationsCheckpoint:
 		c.KeyRotations = val
+	case BankingCheckpoint:
+		c.Banking = val
 	}
 }
 
@@ -235,6 +242,8 @@ func (c Checkpoint) Get(name CheckpointName) []byte {
 		return c.Rewards
 	case KeyRotationsCheckpoint:
 		return c.KeyRotations
+	case BankingCheckpoint:
+		return c.Banking
 	}
 	return nil
 }
