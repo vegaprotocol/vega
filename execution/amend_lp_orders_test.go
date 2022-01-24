@@ -514,7 +514,13 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 	ctx := context.Background()
 
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
+	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
@@ -644,7 +650,13 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	ctx := context.Background()
 
 	auctionEnd := now.Add(10001 * time.Second)
-	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
+	pMonitorSettings := &types.PriceMonitoringSettings{
+		Parameters: &types.PriceMonitoringParameters{
+			Triggers: []*types.PriceMonitoringTrigger{},
+		},
+		UpdateFrequency: 0,
+	}
+	mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
 	})
 	mktCfg.Fees = &types.Fees{
