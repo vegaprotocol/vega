@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
@@ -12,79 +13,255 @@ import (
 
 func TestRecurringTransfers(t *testing.T) {
 	t.Run("recurring invalid transfers", testRecurringTransferInvalidTransfers)
-	// t.Run("valid recurring transfers", testValidRecurringTransfer)
+	t.Run("valid recurring transfers", testValidRecurringTransfer)
+	t.Run("valid forever transfers, cancelled not enough funds", testForeverTransferCancelledNotEnoughFunds)
 }
 
-// func testValidRecurringTransfer(t *testing.T) {
-// 	e := getTestEngine(t)
-// 	defer e.ctrl.Finish()
+func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
 
-// 	// let's do a massive fee, easy to test
-// 	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
-// 	e.OnEpoch(context.Background(), types.Epoch{Seq: 7})
+	// let's do a massive fee, easy to test
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7})
 
-// 	ctx := context.Background()
-// 	transfer := &types.TransferFunds{
-// 		Kind: types.TransferCommandKindRecurring,
-// 		Recurring: &types.RecurringTransfer{
-// 			TransferBase: &types.TransferBase{
-// 				From:            "from",
-// 				FromAccountType: types.AccountTypeGeneral,
-// 				To:              "to",
-// 				ToAccountType:   types.AccountTypeGlobalReward,
-// 				Asset:           "eth",
-// 				Amount:          num.NewUint(100),
-// 				Reference:       "someref",
-// 			},
-// 			StartEpoch: 10,
-// 			EndEpoch:   13,
-// 			Factor:     num.MustDecimalFromString("0.9"),
-// 		},
-// 	}
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID",
+				From:            "from",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "to",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "eth",
+				Amount:          num.NewUint(100),
+				Reference:       "someref",
+			},
+			StartEpoch: 10,
+			EndEpoch:   nil, // forever
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
 
-// 	fromAcc := types.Account{
-// 		Balance: num.NewUint(1000),
-// 	}
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
-// 	// asset exists
-// 	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
-// 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+	// now let's move epochs to see the others transfers
+	// first 2 epochs nothing happen
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9})
+	// now we are in business
 
-// 	// assert the calculation of fees and transfer request are correct
-// 	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-// 		func(ctx context.Context,
-// 			transfers []*types.Transfer,
-// 			accountTypes []types.AccountType,
-// 			references []string,
-// 			feeTransfers []*types.Transfer,
-// 			feeTransfersAccountTypes []types.AccountType,
-// 		) ([]*types.TransferResponse, error,
-// 		) {
-// 			t.Run("ensure transfers are correct", func(t *testing.T) {
-// 				// transfer is done fully instantly, we should have 2 transfer
-// 				assert.Len(t, transfers, 1)
-// 				assert.Equal(t, transfers[0].Owner, "from")
-// 				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(271))
-// 				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+	fromAcc := types.Account{
+		Balance: num.NewUint(160), // enough for the first transfer
+	}
 
-// 				// 1 account types too
-// 				assert.Len(t, accountTypes, 1)
-// 				assert.Equal(t, accountTypes[0], types.AccountTypeGeneral)
-// 			})
+	// asset exists
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
-// 			return nil, nil
-// 		})
+	// assert the calculation of fees and transfer request are correct
+	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context,
+			transfers []*types.Transfer,
+			accountTypes []types.AccountType,
+			references []string,
+			feeTransfers []*types.Transfer,
+			feeTransfersAccountTypes []types.AccountType,
+		) ([]*types.TransferResponse, error,
+		) {
+			t.Run("ensure transfers are correct", func(t *testing.T) {
+				// transfer is done fully instantly, we should have 2 transfer
+				assert.Len(t, transfers, 2)
+				assert.Equal(t, transfers[0].Owner, "from")
+				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(100))
+				assert.Equal(t, transfers[0].Amount.Asset, "eth")
 
-// 	e.broker.EXPECT().Send(gomock.Any()).Times(2)
-// 	assert.NoError(t, e.TransferFunds(ctx, transfer))
+				// 1 account types too
+				assert.Len(t, accountTypes, 2)
+				assert.Equal(t, accountTypes[0], types.AccountTypeGeneral)
+			})
 
-// 	// now let's move epochs to see the others transfers
-// 	// first 2 epochs nothing happen
-// 	e.OnEpoch(context.Background(), types.Epoch{Seq: 8})
-// 	e.OnEpoch(context.Background(), types.Epoch{Seq: 9})
+			t.Run("ensure fee transfers are correct", func(t *testing.T) {
+				assert.Len(t, feeTransfers, 1)
+				assert.Equal(t, feeTransfers[0].Owner, "from")
+				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(50))
+				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
 
-// 	// now we are in business
-// }
+				// then the fees account types
+				assert.Len(t, feeTransfersAccountTypes, 1)
+				assert.Equal(t, accountTypes[0], types.AccountTypeGeneral)
+			})
+
+			return nil, nil
+		})
+
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10})
+
+	fromAcc = types.Account{
+		Balance: num.NewUint(10), // not enough for the second transfer
+	}
+
+	// asset exists
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+
+	e.broker.EXPECT().SendBatch(gomock.Any()).DoAndReturn(func(evts []events.Event) {
+		t.Run("ensure transfer is stopped", func(t *testing.T) {
+			assert.Len(t, evts, 1)
+			e, ok := evts[0].(*events.TransferFunds)
+			assert.True(t, ok, "unexpected event from the bus")
+			assert.Equal(t, e.Proto().Status, types.TransferStatusStopped)
+		})
+	})
+
+	// ensure it's not called
+	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11})
+
+	// then nothing happen, we are done
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11})
+}
+
+func testValidRecurringTransfer(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+
+	// let's do a massive fee, easy to test
+	e.OnTransferFeeFactorUpdate(context.Background(), num.NewDecimalFromFloat(0.5))
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 7})
+
+	var endEpoch13 uint64 = 11
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindRecurring,
+		Recurring: &types.RecurringTransfer{
+			TransferBase: &types.TransferBase{
+				ID:              "TRANSFERID",
+				From:            "from",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "to",
+				ToAccountType:   types.AccountTypeGlobalReward,
+				Asset:           "eth",
+				Amount:          num.NewUint(100),
+				Reference:       "someref",
+			},
+			StartEpoch: 10,
+			EndEpoch:   &endEpoch13,
+			Factor:     num.MustDecimalFromString("0.9"),
+		},
+	}
+
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+	assert.NoError(t, e.TransferFunds(ctx, transfer))
+
+	// now let's move epochs to see the others transfers
+	// first 2 epochs nothing happen
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 8})
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 9})
+	// now we are in business
+
+	fromAcc := types.Account{
+		Balance: num.NewUint(1000),
+	}
+
+	// asset exists
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+
+	// assert the calculation of fees and transfer request are correct
+	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context,
+			transfers []*types.Transfer,
+			accountTypes []types.AccountType,
+			references []string,
+			feeTransfers []*types.Transfer,
+			feeTransfersAccountTypes []types.AccountType,
+		) ([]*types.TransferResponse, error,
+		) {
+			t.Run("ensure transfers are correct", func(t *testing.T) {
+				// transfer is done fully instantly, we should have 2 transfer
+				assert.Len(t, transfers, 2)
+				assert.Equal(t, transfers[0].Owner, "from")
+				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(100))
+				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+
+				// 1 account types too
+				assert.Len(t, accountTypes, 2)
+				assert.Equal(t, accountTypes[0], types.AccountTypeGeneral)
+			})
+
+			t.Run("ensure fee transfers are correct", func(t *testing.T) {
+				assert.Len(t, feeTransfers, 1)
+				assert.Equal(t, feeTransfers[0].Owner, "from")
+				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(50))
+				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+
+				// then the fees account types
+				assert.Len(t, feeTransfersAccountTypes, 1)
+				assert.Equal(t, accountTypes[0], types.AccountTypeGeneral)
+			})
+
+			return nil, nil
+		})
+
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 10})
+
+	// asset exists
+	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
+
+	// assert the calculation of fees and transfer request are correct
+	e.col.EXPECT().TransferFunds(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
+		func(ctx context.Context,
+			transfers []*types.Transfer,
+			accountTypes []types.AccountType,
+			references []string,
+			feeTransfers []*types.Transfer,
+			feeTransfersAccountTypes []types.AccountType,
+		) ([]*types.TransferResponse, error,
+		) {
+			t.Run("ensure transfers are correct", func(t *testing.T) {
+				// transfer is done fully instantly, we should have 2 transfer
+				assert.Len(t, transfers, 2)
+				assert.Equal(t, transfers[0].Owner, "from")
+				assert.Equal(t, transfers[0].Amount.Amount, num.NewUint(90))
+				assert.Equal(t, transfers[0].Amount.Asset, "eth")
+
+				// 1 account types too
+				assert.Len(t, accountTypes, 2)
+				assert.Equal(t, accountTypes[0], types.AccountTypeGeneral)
+			})
+
+			t.Run("ensure fee transfers are correct", func(t *testing.T) {
+				assert.Len(t, feeTransfers, 1)
+				assert.Equal(t, feeTransfers[0].Owner, "from")
+				assert.Equal(t, feeTransfers[0].Amount.Amount, num.NewUint(45))
+				assert.Equal(t, feeTransfers[0].Amount.Asset, "eth")
+
+				// then the fees account types
+				assert.Len(t, feeTransfersAccountTypes, 1)
+				assert.Equal(t, accountTypes[0], types.AccountTypeGeneral)
+			})
+
+			return nil, nil
+		})
+
+	e.broker.EXPECT().SendBatch(gomock.Any()).DoAndReturn(func(evts []events.Event) {
+		t.Run("ensure transfer is done", func(t *testing.T) {
+			assert.Len(t, evts, 1)
+			e, ok := evts[0].(*events.TransferFunds)
+			assert.True(t, ok, "unexpected event from the bus")
+			assert.Equal(t, e.Proto().Status, types.TransferStatusDone)
+		})
+	})
+
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 11})
+
+	// then nothing happen, we are done
+	e.OnEpoch(context.Background(), types.Epoch{Seq: 12})
+}
 
 func testRecurringTransferInvalidTransfers(t *testing.T) {
 	e := getTestEngine(t)

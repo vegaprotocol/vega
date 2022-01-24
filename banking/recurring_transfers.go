@@ -9,6 +9,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 var ErrStartEpochInThePast = errors.New("start epoch in the past")
@@ -53,6 +54,7 @@ func (e *Engine) distributeRecurringTransfers(
 	var (
 		transfersDone = []events.Event{}
 		tresps        = []*types.TransferResponse{}
+		currentEpoch  = num.NewUint(newEpoch).ToDecimal()
 	)
 
 	allIDs := make([]string, 0, len(e.recurringTransfers))
@@ -65,14 +67,23 @@ func (e *Engine) distributeRecurringTransfers(
 	// iterate over all transfers
 	for _, k := range allIDs {
 		v := e.recurringTransfers[k]
-		if v.StartEpoch < newEpoch {
+		if v.StartEpoch > newEpoch {
 			// not started
 			continue
 		}
 
-		// call collateral
+		var (
+			startEpoch  = num.NewUint(v.StartEpoch).ToDecimal()
+			startAmount = v.Amount.ToDecimal()
+			amount, _   = num.UintFromDecimal(
+				startAmount.Mul(
+					v.Factor.Pow(currentEpoch.Sub(startEpoch)),
+				),
+			)
+		)
+
 		resps, err := e.processTransfer(
-			ctx, v.From, v.To, v.Asset, v.ToAccountType, v.ToAccountType, v.Amount.Clone(), v.Reference, nil, // last is eventual oneoff, which this is not
+			ctx, v.From, v.To, v.Asset, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not
 		)
 		if err != nil {
 			v.Status = types.TransferStatusStopped
@@ -90,6 +101,7 @@ func (e *Engine) distributeRecurringTransfers(
 			transfersDone = append(transfersDone, events.NewRecurringTransferFundsEvent(ctx, v))
 			delete(e.recurringTransfers, k)
 		}
+
 	}
 
 	// send events
