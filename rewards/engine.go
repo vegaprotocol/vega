@@ -66,22 +66,20 @@ type ValidatorPerformance interface {
 
 // Engine is the reward engine handling reward payouts.
 type Engine struct {
-	log                                *logging.Logger
-	config                             Config
-	broker                             Broker
-	delegation                         Delegation
-	collateral                         Collateral
-	valPerformance                     ValidatorPerformance
-	feesTracker                        FeesTracker
-	assetForStakingAndDelegationReward string
-	rng                                *rand.Rand
-	global                             *globalRewardParams
-	newEpochStarted                    bool // flag to signal new epoch so we can update the voting power at the end of the block
-	epochSeq                           string
+	log             *logging.Logger
+	config          Config
+	broker          Broker
+	delegation      Delegation
+	collateral      Collateral
+	valPerformance  ValidatorPerformance
+	feesTracker     FeesTracker
+	rng             *rand.Rand
+	global          *globalRewardParams
+	newEpochStarted bool // flag to signal new epoch so we can update the voting power at the end of the block
+	epochSeq        string
 }
 
 type globalRewardParams struct {
-	maxPerEpoch             *num.Uint
 	minValStakeD            num.Decimal
 	minValStakeUInt         *num.Uint
 	optimalStakeMultiplier  num.Decimal
@@ -241,7 +239,7 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewa
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(asset, types.TransferTypeMakerFeePay), timestamp)
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(asset, types.TransferTypeLiquidityFeeDistribute), timestamp)
-		//TODO add market proposers fee
+		// TODO add market proposers fee
 	}
 	return nil
 }

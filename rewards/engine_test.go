@@ -173,6 +173,7 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	rewardAccount, err := testEngine.collateral.CreateOrGetAssetRewardPoolAccount(context.Background(), "VEGA")
 	require.Nil(t, err)
 	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount, num.NewUint(1000000))
+	require.NoError(t, err)
 	epoch := types.Epoch{}
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)

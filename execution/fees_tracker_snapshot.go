@@ -70,7 +70,6 @@ func (f *FeesTracker) serialiseFeesTracker() *snapshot.FeesTracker {
 	return &snapshot.FeesTracker{
 		AssetFees: assetFees,
 	}
-
 }
 
 func (f *FeesTracker) serialise() ([]byte, error) {
