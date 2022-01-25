@@ -311,7 +311,8 @@ func getEngine(t *testing.T) *testEngine {
 	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	feesTracker := mocks.NewMockFeesTracker(ctrl)
-	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, valPerformance, feesTracker)
+	MarketTracker := mocks.NewMockMarketTracker(ctrl)
+	engine := New(logger, conf, broker, delegation, epochEngine, collateral, ts, valPerformance, feesTracker, MarketTracker)
 
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 

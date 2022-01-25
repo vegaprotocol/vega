@@ -43,7 +43,7 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewFeesTracker(epochEngine)), ctrl
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewFeesTracker(epochEngine), execution.NewMarketTracker()), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {

@@ -27,6 +27,17 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return ret, nil
 }
 
+var partyOverrides = map[string]types.AccountType{
+	systemOwner: types.AccountTypeGlobalInsurance,
+	systemOwner + types.AccountTypeGlobalReward.String():                   types.AccountTypeGlobalReward,
+	systemOwner + types.AccountTypeMakerFeeReward.String():                 types.AccountTypeMakerFeeReward,
+	systemOwner + types.AccountTypeTakerFeeReward.String():                 types.AccountTypeTakerFeeReward,
+	systemOwner + types.AccountTypeLPFeeReward.String():                    types.AccountTypeLPFeeReward,
+	systemOwner + types.AccountTypeMarketProposerReward.String():           types.AccountTypeMarketProposerReward,
+	systemOwner + types.AccountTypeFeesInfrastructure.String():             types.AccountTypeFeesInfrastructure,
+	systemOwner + systemOwner + types.AccountTypePendingTransfers.String(): types.AccountTypePendingTransfers,
+}
+
 func (e *Engine) Load(ctx context.Context, data []byte) error {
 	msg := checkpoint.Collateral{}
 	if err := proto.Unmarshal(data, &msg); err != nil {
@@ -35,28 +46,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
 		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
-		if balance.Party == systemOwner ||
-			balance.Party == systemOwner+types.AccountTypeGlobalReward.String() ||
-			balance.Party == systemOwner+types.AccountTypeMakerFeeReward.String() ||
-			balance.Party == systemOwner+types.AccountTypeTakerFeeReward.String() ||
-			balance.Party == systemOwner+types.AccountTypeLPFeeReward.String() ||
-			balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() ||
-			balance.Party == systemOwner+types.AccountTypePendingTransfers.String() {
-			tp := types.AccountTypeGlobalInsurance
-			if balance.Party == systemOwner+types.AccountTypeGlobalReward.String() {
-				tp = types.AccountTypeGlobalReward
-			} else if balance.Party == systemOwner+types.AccountTypeMakerFeeReward.String() {
-				tp = types.AccountTypeMakerFeeReward
-			} else if balance.Party == systemOwner+types.AccountTypeTakerFeeReward.String() {
-				tp = types.AccountTypeTakerFeeReward
-			} else if balance.Party == systemOwner+types.AccountTypeLPFeeReward.String() {
-				tp = types.AccountTypeLPFeeReward
-			} else if balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() {
-				tp = types.AccountTypeFeesInfrastructure
-			} else if balance.Party == systemOwner+types.AccountTypePendingTransfers.String() {
-				tp = types.AccountTypePendingTransfers
-			}
-
+		if tp, ok := partyOverrides[balance.Party]; ok {
 			accID := e.accountID(noMarket, systemOwner, balance.Asset, tp)
 			if _, err := e.GetAccountByID(accID); err != nil {
 				// this account is created when the asset is enabled. If we can't get this account,
@@ -87,16 +77,15 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
 			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward,
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward,
-			types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
+			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
 			owner := acc.Owner
-			// handle reward accounts separately.
-			if owner == systemOwner && (acc.Type == types.AccountTypeGlobalReward ||
-				acc.Type == types.AccountTypeFeesInfrastructure ||
-				acc.Type == types.AccountTypeMakerFeeReward ||
-				acc.Type == types.AccountTypeTakerFeeReward ||
-				acc.Type == types.AccountTypeLPFeeReward ||
-				acc.Type == types.AccountTypePendingTransfers) {
-				owner = owner + acc.Type.String()
+			// handle special accounts separately.
+			if owner == systemOwner {
+				for k, v := range partyOverrides {
+					if acc.Type == v {
+						owner = k
+					}
+				}
 			}
 
 			assets, ok := balances[owner]

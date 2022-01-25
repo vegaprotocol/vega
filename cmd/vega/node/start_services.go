@@ -119,10 +119,11 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	n.statevar = statevar.New(n.Log, n.conf.StateVar, n.broker, n.topology, n.commander, n.timeService)
 	n.feesTracker = execution.NewFeesTracker(n.epochService)
+	marketTracker := execution.NewMarketTracker()
 
 	// instantiate the execution engine
 	n.executionEngine = execution.NewEngine(
-		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker,
+		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker, marketTracker,
 	)
 
 	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
@@ -136,7 +137,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	}
 
 	// setup rewards engine
-	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology, n.feesTracker)
+	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology, n.feesTracker, marketTracker)
 
 	n.notary = notary.NewWithSnapshot(
 		n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
@@ -173,7 +174,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
 
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
-		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker)
+		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker, marketTracker)
 
 	// now instantiate the blockchain layer
 	if n.app, err = n.startBlockchain(); err != nil {
@@ -325,6 +326,10 @@ func (n *NodeCommand) setupNetParameters() error {
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
 			Watcher: n.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinLpStakeQuantumMultiple,
+			Watcher: n.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,

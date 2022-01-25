@@ -30,6 +30,11 @@ type FeesTracker interface {
 	GetFeePartyScores(asset string, feeType types.TransferType) []*types.FeePartyScore
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/market_tracker_mock.go -package mocks code.vegaprotocol.io/vega/rewards MarketTracker
+type MarketTracker interface {
+	GetAndResetEligibleProposers() []string
+}
+
 // EpochEngine notifies the reward engine at the end of an epoch.
 type EpochEngine interface {
 	NotifyOnEpoch(f func(context.Context, types.Epoch))
@@ -73,6 +78,7 @@ type Engine struct {
 	collateral      Collateral
 	valPerformance  ValidatorPerformance
 	feesTracker     FeesTracker
+	marketTracker   MarketTracker
 	rng             *rand.Rand
 	global          *globalRewardParams
 	newEpochStarted bool // flag to signal new epoch so we can update the voting power at the end of the block
@@ -100,7 +106,7 @@ type payout struct {
 }
 
 // New instantiate a new rewards engine.
-func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, valPerformance ValidatorPerformance, feesTracker FeesTracker) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, valPerformance ValidatorPerformance, feesTracker FeesTracker, marketTracker MarketTracker) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -113,6 +119,7 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 		newEpochStarted: false,
 		valPerformance:  valPerformance,
 		feesTracker:     feesTracker,
+		marketTracker:   marketTracker,
 	}
 
 	// register for epoch end notifications
@@ -239,7 +246,8 @@ func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewa
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(asset, types.TransferTypeMakerFeePay), timestamp)
 	case types.AccountTypeLPFeeReward: // given to LP fee receivers in the asset based on their total received fee
 		return calculateRewardsByContribution(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.feesTracker.GetFeePartyScores(asset, types.TransferTypeLiquidityFeeDistribute), timestamp)
-		// TODO add market proposers fee
+	case types.AccountTypeMarketProposerReward:
+		return calculateRewardForProposers(epochSeq, account.Asset, account.ID, rewardType, account.Balance, e.marketTracker.GetAndResetEligibleProposers(), timestamp)
 	}
 	return nil
 }

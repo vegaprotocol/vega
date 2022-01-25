@@ -65,7 +65,7 @@ func (f *FeesTracker) onEpochEvent(_ context.Context, epoch types.Epoch) {
 	f.currentEpoch = epoch.Seq
 }
 
-// GetFeePartyScores retrurns the fraction each of the participants paid/received in the given fee of the asset in the relevant period.
+// GetFeePartyScores returns the fraction each of the participants paid/received in the given fee of the asset in the relevant period.
 func (f *FeesTracker) GetFeePartyScores(asset string, feeType types.TransferType) []*types.FeePartyScore {
 	if _, ok := f.assetToTracker[asset]; !ok {
 		return []*types.FeePartyScore{}
@@ -100,8 +100,8 @@ func (f *FeesTracker) GetFeePartyScores(asset string, feeType types.TransferType
 	return scores
 }
 
-// getOrCreateAssetFeesTracker returns the asset tracker for the given asset if it exists or creates a new one and saves it if it doesn't.
-func (f *FeesTracker) getOrCreateAssetFeesTracker(asset string) *assetFeesTracker {
+// ensureAssetFeesTracker returns the asset tracker for the given asset if it exists or creates a new one and saves it if it doesn't.
+func (f *FeesTracker) ensureAssetFeesTracker(asset string) *assetFeesTracker {
 	if aft, ok := f.assetToTracker[asset]; ok {
 		return aft
 	}
@@ -121,11 +121,11 @@ func (f *FeesTracker) UpdateFeesFromTransfers(transfers []*types.Transfer) {
 
 		switch t.Type {
 		case types.TransferTypeMakerFeePay:
-			f.getOrCreateAssetFeesTracker(asset).addPaidTakerFees(t.Owner, t.Amount.Amount)
+			f.ensureAssetFeesTracker(asset).addPaidTakerFees(t.Owner, t.Amount.Amount)
 		case types.TransferTypeMakerFeeReceive:
-			f.getOrCreateAssetFeesTracker(asset).addReceivedMakerFees(t.Owner, t.Amount.Amount)
+			f.ensureAssetFeesTracker(asset).addReceivedMakerFees(t.Owner, t.Amount.Amount)
 		case types.TransferTypeLiquidityFeeDistribute:
-			f.getOrCreateAssetFeesTracker(asset).addReceivedLPFees(t.Owner, t.Amount.Amount)
+			f.ensureAssetFeesTracker(asset).addReceivedLPFees(t.Owner, t.Amount.Amount)
 		default:
 		}
 	}

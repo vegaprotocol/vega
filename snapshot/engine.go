@@ -117,6 +117,7 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.TopologySnapshot,
 	types.EventForwarderSnapshot,
 	types.FeeTrackerSnapshot,
+	types.MarketTrackerSnapshot,
 }
 
 // New returns a new snapshot engine.
