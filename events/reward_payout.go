@@ -48,16 +48,12 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 
 func (rp RewardPayout) StreamMessage() *eventspb.BusEvent {
 	p := rp.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      rp.eventID(),
-		Block:   rp.TraceID(),
-		ChainId: rp.ChainID(),
-		Type:    rp.et.ToProto(),
-		Event: &eventspb.BusEvent_RewardPayout{
-			RewardPayout: &p,
-		},
+	busEvent := newBusEventFromBase(rp.Base)
+	busEvent.Event = &eventspb.BusEvent_RewardPayout{
+		RewardPayout: &p,
 	}
+
+	return busEvent
 }
 
 func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *RewardPayout {
@@ -68,7 +64,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 
 	amount, _ := num.UintFromString(rp.Amount, 10)
 	return &RewardPayout{
-		Base:                    newBaseFromStream(ctx, RewardPayoutEvent, be),
+		Base:                    newBaseFromBusEvent(ctx, RewardPayoutEvent, be),
 		Party:                   rp.Party,
 		EpochSeq:                rp.EpochSeq,
 		Asset:                   rp.Asset,

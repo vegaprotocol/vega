@@ -62,21 +62,18 @@ func (v Vote) Proto() proto.Vote {
 }
 
 func (v Vote) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      v.eventID(),
-		Block:   v.TraceID(),
-		ChainId: v.ChainID(),
-		Type:    v.et.ToProto(),
-		Event: &eventspb.BusEvent_Vote{
-			Vote: &v.v,
-		},
+	busEvent := newBusEventFromBase(v.Base)
+	busEvent.Event = &eventspb.BusEvent_Vote{
+		Vote: &v.v,
 	}
+
+	return busEvent
+
 }
 
 func VoteEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Vote {
 	return &Vote{
-		Base: newBaseFromStream(ctx, VoteEvent, be),
+		Base: newBaseFromBusEvent(ctx, VoteEvent, be),
 		v:    *be.GetVote(),
 	}
 }

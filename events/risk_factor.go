@@ -33,21 +33,18 @@ func (r RiskFactor) Proto() proto.RiskFactor {
 }
 
 func (r RiskFactor) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      r.eventID(),
-		Block:   r.TraceID(),
-		ChainId: r.ChainID(),
-		Type:    r.et.ToProto(),
-		Event: &eventspb.BusEvent_RiskFactor{
-			RiskFactor: &r.r,
-		},
+
+	busEvent := newBusEventFromBase(r.Base)
+	busEvent.Event = &eventspb.BusEvent_RiskFactor{
+		RiskFactor: &r.r,
 	}
+
+	return busEvent
 }
 
 func RiskFactorEventFromStream(ctx context.Context, be *eventspb.BusEvent) *RiskFactor {
 	return &RiskFactor{
-		Base: newBaseFromStream(ctx, RiskFactorEvent, be),
+		Base: newBaseFromBusEvent(ctx, RiskFactorEvent, be),
 		r:    *be.GetRiskFactor(),
 	}
 }

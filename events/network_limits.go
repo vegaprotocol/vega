@@ -29,21 +29,17 @@ func (n NetworkLimits) Proto() *proto.NetworkLimits {
 }
 
 func (n NetworkLimits) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      n.eventID(),
-		Block:   n.TraceID(),
-		ChainId: n.ChainID(),
-		Type:    n.et.ToProto(),
-		Event: &eventspb.BusEvent_NetworkLimits{
-			NetworkLimits: n.nl,
-		},
+	busEvent := newBusEventFromBase(n.Base)
+	busEvent.Event = &eventspb.BusEvent_NetworkLimits{
+		NetworkLimits: n.nl,
 	}
+
+	return busEvent
 }
 
 func NetworkLimitsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *NetworkLimits {
 	return &NetworkLimits{
-		Base: newBaseFromStream(ctx, NetworkLimitsEvent, be),
+		Base: newBaseFromBusEvent(ctx, NetworkLimitsEvent, be),
 		nl:   be.GetNetworkLimits(),
 	}
 }

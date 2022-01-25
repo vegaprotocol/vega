@@ -380,14 +380,28 @@ func (t Type) ToProto() eventspb.BusEventType {
 	return pt
 }
 
-func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
+func newBusEventFromBase(a *Base) *eventspb.BusEvent {
+	return &eventspb.BusEvent{
+		Version: eventspb.Version,
+		Id:      a.eventID(),
+		Type:    a.Type().ToProto(),
+		Block:   a.TraceID(),
+		ChainId: a.ChainID(),
+		TranxId: a.TranxID(),
+	}
+
+}
+
+func newBaseFromBusEvent(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
 	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
 	evtCtx = vgcontext.WithChainID(evtCtx, be.ChainId)
+	evtCtx = vgcontext.WithTranxID(evtCtx, be.TranxId)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
 		traceID: be.Block,
 		chainID: be.ChainId,
+		tranxID: be.TranxId,
 		blockNr: blockNr,
 		seq:     seq,
 		et:      t,
