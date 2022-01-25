@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockStakingAccounts is a mock of StakingAccounts interface
+// MockStakingAccounts is a mock of StakingAccounts interface.
 type MockStakingAccounts struct {
 	ctrl     *gomock.Controller
 	recorder *MockStakingAccountsMockRecorder
 }
 
-// MockStakingAccountsMockRecorder is the mock recorder for MockStakingAccounts
+// MockStakingAccountsMockRecorder is the mock recorder for MockStakingAccounts.
 type MockStakingAccountsMockRecorder struct {
 	mock *MockStakingAccounts
 }
 
-// NewMockStakingAccounts creates a new mock instance
+// NewMockStakingAccounts creates a new mock instance.
 func NewMockStakingAccounts(ctrl *gomock.Controller) *MockStakingAccounts {
 	mock := &MockStakingAccounts{ctrl: ctrl}
 	mock.recorder = &MockStakingAccountsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStakingAccounts) EXPECT() *MockStakingAccountsMockRecorder {
 	return m.recorder
 }
 
-// GetAvailableBalance mocks base method
+// GetAvailableBalance mocks base method.
 func (m *MockStakingAccounts) GetAvailableBalance(arg0 string) (*num.Uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAvailableBalance", arg0)
@@ -42,13 +43,13 @@ func (m *MockStakingAccounts) GetAvailableBalance(arg0 string) (*num.Uint, error
 	return ret0, ret1
 }
 
-// GetAvailableBalance indicates an expected call of GetAvailableBalance
+// GetAvailableBalance indicates an expected call of GetAvailableBalance.
 func (mr *MockStakingAccountsMockRecorder) GetAvailableBalance(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAvailableBalance", reflect.TypeOf((*MockStakingAccounts)(nil).GetAvailableBalance), arg0)
 }
 
-// GetStakingAssetTotalSupply mocks base method
+// GetStakingAssetTotalSupply mocks base method.
 func (m *MockStakingAccounts) GetStakingAssetTotalSupply() *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStakingAssetTotalSupply")
@@ -56,7 +57,7 @@ func (m *MockStakingAccounts) GetStakingAssetTotalSupply() *num.Uint {
 	return ret0
 }
 
-// GetStakingAssetTotalSupply indicates an expected call of GetStakingAssetTotalSupply
+// GetStakingAssetTotalSupply indicates an expected call of GetStakingAssetTotalSupply.
 func (mr *MockStakingAccountsMockRecorder) GetStakingAssetTotalSupply() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStakingAssetTotalSupply", reflect.TypeOf((*MockStakingAccounts)(nil).GetStakingAssetTotalSupply))

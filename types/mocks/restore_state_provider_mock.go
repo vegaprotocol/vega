@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	types "code.vegaprotocol.io/vega/types"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	types "code.vegaprotocol.io/vega/types"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockPostRestore is a mock of PostRestore interface
+// MockPostRestore is a mock of PostRestore interface.
 type MockPostRestore struct {
 	ctrl     *gomock.Controller
 	recorder *MockPostRestoreMockRecorder
 }
 
-// MockPostRestoreMockRecorder is the mock recorder for MockPostRestore
+// MockPostRestoreMockRecorder is the mock recorder for MockPostRestore.
 type MockPostRestoreMockRecorder struct {
 	mock *MockPostRestore
 }
 
-// NewMockPostRestore creates a new mock instance
+// NewMockPostRestore creates a new mock instance.
 func NewMockPostRestore(ctrl *gomock.Controller) *MockPostRestore {
 	mock := &MockPostRestore{ctrl: ctrl}
 	mock.recorder = &MockPostRestoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPostRestore) EXPECT() *MockPostRestoreMockRecorder {
 	return m.recorder
 }
 
-// GetHash mocks base method
+// GetHash mocks base method.
 func (m *MockPostRestore) GetHash(arg0 string) ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHash", arg0)
@@ -43,13 +44,13 @@ func (m *MockPostRestore) GetHash(arg0 string) ([]byte, error) {
 	return ret0, ret1
 }
 
-// GetHash indicates an expected call of GetHash
+// GetHash indicates an expected call of GetHash.
 func (mr *MockPostRestoreMockRecorder) GetHash(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHash", reflect.TypeOf((*MockPostRestore)(nil).GetHash), arg0)
 }
 
-// GetState mocks base method
+// GetState mocks base method.
 func (m *MockPostRestore) GetState(arg0 string) ([]byte, []types.StateProvider, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetState", arg0)
@@ -59,13 +60,13 @@ func (m *MockPostRestore) GetState(arg0 string) ([]byte, []types.StateProvider, 
 	return ret0, ret1, ret2
 }
 
-// GetState indicates an expected call of GetState
+// GetState indicates an expected call of GetState.
 func (mr *MockPostRestoreMockRecorder) GetState(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockPostRestore)(nil).GetState), arg0)
 }
 
-// Keys mocks base method
+// Keys mocks base method.
 func (m *MockPostRestore) Keys() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Keys")
@@ -73,13 +74,13 @@ func (m *MockPostRestore) Keys() []string {
 	return ret0
 }
 
-// Keys indicates an expected call of Keys
+// Keys indicates an expected call of Keys.
 func (mr *MockPostRestoreMockRecorder) Keys() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Keys", reflect.TypeOf((*MockPostRestore)(nil).Keys))
 }
 
-// LoadState mocks base method
+// LoadState mocks base method.
 func (m *MockPostRestore) LoadState(arg0 context.Context, arg1 *types.Payload) ([]types.StateProvider, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LoadState", arg0, arg1)
@@ -88,13 +89,13 @@ func (m *MockPostRestore) LoadState(arg0 context.Context, arg1 *types.Payload) (
 	return ret0, ret1
 }
 
-// LoadState indicates an expected call of LoadState
+// LoadState indicates an expected call of LoadState.
 func (mr *MockPostRestoreMockRecorder) LoadState(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadState", reflect.TypeOf((*MockPostRestore)(nil).LoadState), arg0, arg1)
 }
 
-// Namespace mocks base method
+// Namespace mocks base method.
 func (m *MockPostRestore) Namespace() types.SnapshotNamespace {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Namespace")
@@ -102,13 +103,13 @@ func (m *MockPostRestore) Namespace() types.SnapshotNamespace {
 	return ret0
 }
 
-// Namespace indicates an expected call of Namespace
+// Namespace indicates an expected call of Namespace.
 func (mr *MockPostRestoreMockRecorder) Namespace() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Namespace", reflect.TypeOf((*MockPostRestore)(nil).Namespace))
 }
 
-// OnStateLoaded mocks base method
+// OnStateLoaded mocks base method.
 func (m *MockPostRestore) OnStateLoaded(arg0 context.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnStateLoaded", arg0)
@@ -116,7 +117,7 @@ func (m *MockPostRestore) OnStateLoaded(arg0 context.Context) error {
 	return ret0
 }
 
-// OnStateLoaded indicates an expected call of OnStateLoaded
+// OnStateLoaded indicates an expected call of OnStateLoaded.
 func (mr *MockPostRestoreMockRecorder) OnStateLoaded(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnStateLoaded", reflect.TypeOf((*MockPostRestore)(nil).OnStateLoaded), arg0)
