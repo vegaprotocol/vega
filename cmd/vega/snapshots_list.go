@@ -7,10 +7,9 @@ import (
 	"code.vegaprotocol.io/shared/paths"
 	"github.com/jessevdk/go-flags"
 
+	"code.vegaprotocol.io/vega/cmd/vega/snapshots"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/snapshot"
-	"code.vegaprotocol.io/vega/vegatime"
 )
 
 type SnapshotListCmd struct {
@@ -41,22 +40,18 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 	conf := confWatcher.Get()
 
 	log = logging.NewLoggerFromConfig(conf.Logging)
-	timeService := vegatime.New(conf.Time)
-	ctx, _ := context.WithCancel(context.Background())
 
-	snapshotEngine, err := snapshot.New(ctx, vegaPaths, conf.Snapshot, log, timeService)
+	dbPath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
+	found, err := snapshots.AvailableSnapshotsHeights(dbPath)
 	if err != nil {
-		return err
-	}
-	found, err := snapshotEngine.AvailableSnapshotsHeights()
-	if err != nil {
+		log.Error("Faile to get snapshots heights", logging.Error(err))
 		return err
 	}
 
 	if len(found) > 0 {
 		fmt.Printf("Snapshots available: %d", len(found))
 		for height, snap := range found {
-			fmt.Printf("\tHeight %d, version: %d\n", height, snap.Meta.Version)
+			fmt.Printf("\tHeight %d, version: %d, hash: %d\n", height, snap.Version, snap.Hash)
 		}
 	}
 	return nil

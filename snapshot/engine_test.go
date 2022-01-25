@@ -48,7 +48,6 @@ func TestEngine(t *testing.T) {
 	t.Run("Adding a provider calls what we expect on the state provider", testAddProviders)
 	t.Run("Adding provider with duplicate key in same namespace: first come, first serve", testAddProvidersDuplicateKeys)
 	t.Run("Create a snapshot, if nothing changes, we don't get the data and the hash remains unchanged", testTakeSnapshot)
-	t.Run("Fill DB with fake snapshots, check that listing snapshots works", testListSnapshot)
 }
 
 func TestRestore(t *testing.T) {
@@ -147,49 +146,6 @@ func testTakeSnapshot(t *testing.T) {
 	secondHash, err := engine.Snapshot(engine.ctx)
 	require.NoError(t, err)
 	require.EqualValues(t, hash, secondHash)
-}
-
-func getDummyData() *types.Chunk {
-	all := types.Chunk{
-		Data: make([]*types.Payload, 0, 42),
-	}
-	all.Data = append(all.Data, &types.Payload{
-		Data: &types.PayloadAppState{
-			AppState: &types.AppState{
-				Height: 2,
-				Block:  "abcdef123456889",
-				Time:   1000010,
-			},
-		},
-	},
-	)
-	return &all
-}
-
-func testListSnapshot(t *testing.T) {
-	engine := getTestEngine(t)
-	defer engine.Finish()
-
-	t.Parallel()
-
-	data := getDummyData()
-
-	for _, n := range data.Data {
-		_, err := engine.Engine.SetTreeNode(n)
-		require.NoError(t, err)
-	}
-
-	hash, err := engine.Engine.SaveCurrentTree()
-	require.NoError(t, err)
-	require.NotEmpty(t, hash)
-
-	listed, err := engine.Engine.AvailableSnapshotsHeights()
-	require.Equal(t, 1, len(listed))
-	require.NoError(t, err)
-
-	height := data.Data[0].GetAppState().AppState.Height
-	require.Equal(t, hash, listed[height].Hash)
-	require.Equal(t, int64(1), listed[height].Meta.Version)
 }
 
 func testReloadSnapshot(t *testing.T) {
