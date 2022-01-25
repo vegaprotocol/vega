@@ -209,7 +209,6 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.witness,
 		n.evtfwd,
 		n.executionEngine,
-		n.commander,
 		n.genesisHandler,
 		n.governance,
 		n.notary,
@@ -502,7 +501,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.
 
 		go func() {
 			if err := rec.Replay(abciApp); err != nil {
-				l.Log.Fatalf("replay: %v", err)
+				l.Log.Fatal("replay error", logging.Error(err))
 			}
 		}()
 	}
