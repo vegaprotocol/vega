@@ -44,7 +44,10 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 		for _, snap := range found {
 			fmt.Printf("\tHeight %d, version: %d, hash: %x\n", snap.Height, snap.Version, snap.Hash)
 		}
+	} else {
+		fmt.Println("No snapshots available")
 	}
+
 	return nil
 }
 
