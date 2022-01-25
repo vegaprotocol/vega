@@ -39,6 +39,9 @@
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Add `--network-url` option to `vega tm`
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (one off transfers)
 - [4629](https://github.com/vegaprotocol/vega/pull/4629) - Update `CHANGELOG.md` to include `0.47.5` changes
+- [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
+- [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
+
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -50,6 +53,7 @@
 - [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Fail when missing tendermint home and public key in `nodewallet import` command
 - [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
+- [4634](https://github.com/vegaprotocol/vega/pull/4634) - Bug fix for `--snapshot.max-retries` parameter not working correctly
 
 ## 0.47.5
 *2022-01-20*

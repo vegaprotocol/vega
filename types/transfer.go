@@ -2,6 +2,7 @@ package types
 
 import (
 	"errors"
+	"fmt"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types/num"
@@ -12,11 +13,49 @@ type FinancialAmount struct {
 	Amount *num.Uint
 }
 
+func (f *FinancialAmount) Clone() *FinancialAmount {
+	cpy := *f
+	cpy.Amount = f.Amount.Clone()
+	return &cpy
+}
+
 type Transfer struct {
 	Owner     string
 	Amount    *FinancialAmount
 	Type      TransferType
 	MinAmount *num.Uint
+}
+
+func (t *Transfer) Clone() *Transfer {
+	cpy := *t
+	cpy.Amount = t.Amount.Clone()
+	cpy.MinAmount = t.MinAmount.Clone()
+	return &cpy
+}
+
+// Merge creates a new Transfer.
+func (t *Transfer) Merge(oth *Transfer) *Transfer {
+	if t.Owner != oth.Owner {
+		panic(fmt.Sprintf("invalid transfer merge, different owner specified, this should never happen: %v, %v", t.String(), oth.String()))
+	}
+
+	if t.Amount.Asset != oth.Amount.Asset {
+		panic(fmt.Sprintf("invalid transfer merge, different assets specified, this should never happen: %v, %v", t.String(), oth.String()))
+	}
+
+	if t.Type != oth.Type {
+		panic(fmt.Sprintf("invalid transfer merge, different types specified, this should never happen: %v, %v", t.String(), oth.String()))
+	}
+
+	return &Transfer{
+		Owner: t.Owner,
+		Amount: &FinancialAmount{
+			Asset:  t.Amount.Asset,
+			Amount: num.Sum(t.Amount.Amount, oth.Amount.Amount),
+		},
+		Type:      t.Type,
+		MinAmount: num.Sum(t.MinAmount, t.MinAmount),
+	}
 }
 
 func (f FinancialAmount) String() string {
