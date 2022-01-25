@@ -12,8 +12,12 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
+type Config struct {
+	DBPath string `long:"db-path" description:"Path to database"`
+}
+
 type SnapshotListCmd struct {
-	config.Config
+	Config
 	config.VegaHomeFlag
 }
 
@@ -25,33 +29,20 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 	)
 	defer log.AtExit()
 
-	parseFlagOpt := func(cfg *config.Config) error {
-		_, err := flags.NewParser(cfg, flags.Default|flags.IgnoreUnknown).Parse()
+	if _, err := flags.NewParser(cmd, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
 		return err
 	}
 
-	vegaPaths := paths.New(cmd.VegaHome)
-
-	confWatcher, err := config.NewWatcher(context.Background(), log, vegaPaths, config.Use(parseFlagOpt))
-	if err != nil {
-		return err
-	}
-
-	conf := confWatcher.Get()
-
-	log = logging.NewLoggerFromConfig(conf.Logging)
-
-	dbPath := vegaPaths.StatePathFor(paths.SnapshotStateHome)
+	dbPath := paths.StatePath(cmd.DBPath).String()
 	found, err := snapshots.AvailableSnapshotsHeights(dbPath)
 	if err != nil {
-		log.Error("Faile to get snapshots heights", logging.Error(err))
 		return err
 	}
 
 	if len(found) > 0 {
-		fmt.Printf("Snapshots available: %d", len(found))
-		for height, snap := range found {
-			fmt.Printf("\tHeight %d, version: %d, hash: %d\n", height, snap.Version, snap.Hash)
+		fmt.Println("Snapshots available:", len(found))
+		for _, snap := range found {
+			fmt.Printf("\tHeight %d, version: %d, hash: %x\n", snap.Height, snap.Version, snap.Hash)
 		}
 	}
 	return nil
@@ -59,7 +50,7 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 
 func SnapshotList(ctx context.Context, parser *flags.Parser) error {
 	snapshotListCmd = SnapshotListCmd{
-		Config: config.NewDefaultConfig(),
+		Config: Config{},
 	}
 	cmd, err := parser.AddCommand("snapshots", "Lists snapshots", "List the block-heights of the snapshots saved to disk", &snapshotListCmd)
 	if err != nil {

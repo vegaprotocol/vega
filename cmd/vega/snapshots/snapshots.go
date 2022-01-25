@@ -2,6 +2,7 @@ package snapshots
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/cosmos/iavl"
 	"github.com/syndtr/goleveldb/leveldb/opt"
@@ -15,11 +16,12 @@ import (
 type SnapshotData struct {
 	Version int64  `json:"version"`
 	Hash    []byte `json:"hash"`
+	Height  uint64 `json:"height"`
 	Size    int64  `json:"size"`
 }
 
-func SnapshotsHeightsFromTree(tree *iavl.MutableTree) (map[uint64]SnapshotData, error) {
-	trees := make(map[uint64]SnapshotData)
+func SnapshotsHeightsFromTree(tree *iavl.MutableTree) ([]SnapshotData, error) {
+	trees := make([]SnapshotData, 0, 4)
 	versions := tree.AvailableVersions()
 
 	for _, version := range versions {
@@ -42,17 +44,21 @@ func SnapshotsHeightsFromTree(tree *iavl.MutableTree) (map[uint64]SnapshotData, 
 			return nil, err
 		}
 
-		trees[app.AppState.Height] = SnapshotData{
+		trees = append(trees, SnapshotData{
 			Version: v,
+			Height:  app.AppState.Height,
 			Hash:    snap.Hash,
 			Size:    tree.Size(),
-		}
+		})
 	}
+	sort.SliceStable(trees, func(i, j int) bool {
+		return trees[i].Height > trees[j].Height
+	})
 
 	return trees, nil
 }
 
-func AvailableSnapshotsHeights(dbpath string) (map[uint64]SnapshotData, error) {
+func AvailableSnapshotsHeights(dbpath string) ([]SnapshotData, error) {
 	options := &opt.Options{
 		ErrorIfMissing: true,
 		ReadOnly:       true,
