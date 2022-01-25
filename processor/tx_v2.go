@@ -120,6 +120,8 @@ func (t TxV2) Command() txn.Command {
 		return txn.StateVariableProposalCommand
 	case *commandspb.InputData_Transfer:
 		return txn.TransferFundsCommand
+	case *commandspb.InputData_CancelTransfer:
+		return txn.CancelTransferFundsCommand
 	default:
 		panic("unsupported command")
 	}
@@ -167,6 +169,8 @@ func (t TxV2) GetCmd() interface{} {
 		return cmd.StateVariableProposal
 	case *commandspb.InputData_Transfer:
 		return cmd.Transfer
+	case *commandspb.InputData_CancelTransfer:
+		return cmd.CancelTransfer
 	default:
 		return errors.New("unsupported command")
 	}
@@ -294,6 +298,12 @@ func (t TxV2) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshal TransferFunds")
 		}
 		*underlyingCmd = *cmd.Transfer
+	case *commandspb.InputData_CancelTransfer:
+		underlyingCmd, ok := i.(*commandspb.CancelTransfer)
+		if !ok {
+			return errors.New("failed to unmarshal CancelTransferFunds")
+		}
+		*underlyingCmd = *cmd.CancelTransfer
 	default:
 		return errors.New("unsupported command")
 	}

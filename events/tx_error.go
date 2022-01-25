@@ -66,6 +66,10 @@ func NewTxErrEvent(ctx context.Context, err error, partyID string, tx interface{
 		evt.evt.Transaction = &eventspb.TxErrorEvent_Transfer{
 			Transfer: tv,
 		}
+	case *commandspb.CancelTransfer:
+		evt.evt.Transaction = &eventspb.TxErrorEvent_CancelTransfer{
+			CancelTransfer: tv,
+		}
 	case error: // unsupported command error
 		evt.evt.ErrMsg = fmt.Sprintf("%v - %v", err, tv)
 	}
