@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -22,6 +23,8 @@ const (
 	TransferStatusRejected TransferStatus = eventspb.Transfer_STATUS_REJECTED
 	// A stopped transfer.
 	TransferStatusStopped TransferStatus = eventspb.Transfer_STATUS_STOPPED
+	// A cancelled transfer.
+	TransferStatusCancelled TransferStatus = eventspb.Transfer_STATUS_CANCELLED
 )
 
 var (
@@ -185,10 +188,10 @@ func (r *RecurringTransfer) IsValid() error {
 }
 
 func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
-	var endEpoch *eventspb.RecurringTransfer_EndEpoch
+	var endEpoch *vegapb.Uint64Value
 	if t.EndEpoch != nil {
-		endEpoch = &eventspb.RecurringTransfer_EndEpoch{
-			EndEpoch: *t.EndEpoch,
+		endEpoch = &vegapb.Uint64Value{
+			Value: *t.EndEpoch,
 		}
 	}
 
@@ -205,7 +208,7 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
 				StartEpoch: t.StartEpoch,
-				EndEpoch_:  endEpoch,
+				EndEpoch:   endEpoch,
 				Factor:     t.Factor.String(),
 			},
 		},
@@ -287,8 +290,8 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 		return nil, err
 	}
 	var endEpoch *uint64
-	if tf.GetRecurring().EndEpoch_ != nil {
-		ee := tf.GetRecurring().GetEndEpoch()
+	if tf.GetRecurring().GetEndEpoch() != nil {
+		ee := tf.GetRecurring().GetEndEpoch().GetValue()
 		endEpoch = &ee
 	}
 
@@ -305,8 +308,8 @@ func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*Transfe
 
 func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 	var endEpoch *uint64
-	if p.GetRecurring().EndEpoch_ != nil {
-		ee := p.GetRecurring().GetEndEpoch()
+	if p.GetRecurring().GetEndEpoch() != nil {
+		ee := p.GetRecurring().GetEndEpoch().GetValue()
 		endEpoch = &ee
 	}
 
@@ -338,5 +341,17 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 		StartEpoch: p.GetRecurring().GetStartEpoch(),
 		EndEpoch:   endEpoch,
 		Factor:     factor,
+	}
+}
+
+type CancelTransferFunds struct {
+	Party      string
+	TransferID string
+}
+
+func NewCancelTransferFromProto(party string, p *commandspb.CancelTransfer) *CancelTransferFunds {
+	return &CancelTransferFunds{
+		Party:      party,
+		TransferID: p.TransferId,
 	}
 }
