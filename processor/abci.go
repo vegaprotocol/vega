@@ -346,6 +346,7 @@ func (app *App) cancel() {
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
+	app.log.Debug("ABCI service INFO")
 	return tmtypes.ResponseInfo{
 		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
@@ -516,6 +517,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
+
+	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
+	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
+	app.chainCtx = vgcontext.WithChainID(context.Background(), req.Header.GetChainID())
+
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 

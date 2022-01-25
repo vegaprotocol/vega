@@ -74,33 +74,15 @@ func New(codec Codec) *App {
 func (app *App) ReplaceReplayProtector(tolerance uint) {
 	rpl := app.replayProtector.GetReplacement()
 	if rpl == nil {
-		// no replacement to consider
+		// no replacement to consider since we haven't loaded from a snapshot
+		// tolerance comes directly from the appstate in this instance
 		app.replayProtector = NewReplayProtector(tolerance)
 		return
 	}
-	rplLen, ti := len(rpl.txs), int(tolerance)
-	if rplLen == ti {
-		// perfect fit, nothign to do
-		app.replayProtector = rpl
-		return
-	}
-	if rplLen > ti {
-		// snapshot contains too much data for the given tolerance
-		// only get N last elements
-		rpl.txs = rpl.txs[rplLen-ti:]
-		app.replayProtector = rpl
-		return
-	}
-	// restored transactions slice is too small for the given tolerance
-	// create a larger slice, and copy the data, then initialise the rest
-	// of the indexes to an empty map
-	txs := make([]map[string]struct{}, ti)
-	for i := copy(txs, rpl.txs); i < ti; i++ {
-		txs[i] = map[string]struct{}{}
-	}
-	// update the replacement replay protector
-	rpl.txs = txs
-	// assign to app
+
+	// We have loaded from the snapshot and so the tolerance i.e the length of the ring buffer
+	// has been restore based on the length of the save data, so the tolerance passed in here is irrelevant
+	// since we've already handled it when we loaded it.
 	app.replayProtector = rpl
 }
 
