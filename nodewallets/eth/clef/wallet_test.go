@@ -1,6 +1,7 @@
 package clef_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -26,9 +27,9 @@ func testNewWalletSuccess(t *testing.T) {
 	clientMock := mocks.NewMockClient(ctrl)
 
 	clientMock.EXPECT().
-		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
 		Times(1).
-		DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
+		DoAndReturn(func(_ context.Context, accs *[]ethCommon.Address, s string, _ ...interface{}) error {
 			*accs = append(*accs, testAddress)
 
 			return nil
@@ -46,7 +47,7 @@ func testNewWalletAccountNotFound(t *testing.T) {
 	clientMock := mocks.NewMockClient(ctrl)
 
 	clientMock.EXPECT().
-		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
 		Times(1).
 		Return(nil)
 
@@ -62,7 +63,7 @@ func testNewWalletRPCError(t *testing.T) {
 	clientMock := mocks.NewMockClient(ctrl)
 
 	clientMock.EXPECT().
-		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
 		Times(1).
 		Return(fmt.Errorf("something went wrong"))
 
@@ -83,9 +84,9 @@ func testGenerateNewWalletSuccess(t *testing.T) {
 	clientMock := mocks.NewMockClient(ctrl)
 
 	clientMock.EXPECT().
-		CallContext(gomock.Any(), gomock.Any(), "account_new").
+		CallContext(gomock.Any(), gomock.Any(), "account_new", gomock.Any()).
 		Times(1).
-		DoAndReturn(func(_ interface{}, addr *string, _ interface{}) error {
+		DoAndReturn(func(_ context.Context, addr *string, _ interface{}, _ ...interface{}) error {
 			*addr = testAddress.String()
 
 			return nil
@@ -103,7 +104,7 @@ func testGenerateRPCError(t *testing.T) {
 	clientMock := mocks.NewMockClient(ctrl)
 
 	clientMock.EXPECT().
-		CallContext(gomock.Any(), gomock.Any(), "account_new").
+		CallContext(gomock.Any(), gomock.Any(), "account_new", gomock.Any()).
 		Times(1).
 		Return(fmt.Errorf("something went wrong"))
 
@@ -125,18 +126,18 @@ func testVersionSuccess(t *testing.T) {
 	testVersion := "v1.0.1"
 
 	clientMock.EXPECT().
-		CallContext(gomock.Any(), gomock.Any(), "account_list").
+		CallContext(gomock.Any(), gomock.Any(), "account_list", gomock.Any()).
 		Times(1).
-		DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}) error {
+		DoAndReturn(func(_ interface{}, accs *[]ethCommon.Address, _ interface{}, _ ...interface{}) error {
 			*accs = append(*accs, testAddress)
 
 			return nil
 		})
 
 	clientMock.EXPECT().
-		CallContext(gomock.Any(), gomock.Any(), "account_version").
+		CallContext(gomock.Any(), gomock.Any(), "account_version", gomock.Any()).
 		Times(1).
-		DoAndReturn(func(_ interface{}, version *string, _ interface{}) error {
+		DoAndReturn(func(_ context.Context, version *string, _ interface{}, _ ...interface{}) error {
 			*version = testVersion
 
 			return nil

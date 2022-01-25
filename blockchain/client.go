@@ -10,7 +10,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"github.com/golang/protobuf/proto"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
