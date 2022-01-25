@@ -21,6 +21,10 @@ const (
 	TransferStatusDone TransferStatus = eventspb.Transfer_STATUS_DONE
 	// A rejected transfer.
 	TransferStatusRejected TransferStatus = eventspb.Transfer_STATUS_REJECTED
+	// A stopped transfer.
+	TransferStatusStopped TransferStatus = eventspb.Transfer_STATUS_STOPPED
+	// A cancelled transfer.
+	TransferStatusCancelled TransferStatus = eventspb.Transfer_STATUS_CANCELLED
 )
 
 var (
@@ -30,6 +34,10 @@ var (
 	ErrInvalidToAccount           = errors.New("invalid to account")
 	ErrUnsupportedFromAccountType = errors.New("unsupported from account type")
 	ErrUnsupportedToAccountType   = errors.New("unsupported to account type")
+	ErrEndEpochIsZero             = errors.New("end epoch is zero")
+	ErrStartEpochIsZero           = errors.New("start epoch is zero")
+	ErrInvalidFactor              = errors.New("invalid factor")
+	ErrStartEpochAfterEndEpoch    = errors.New("start epoch after end epoch")
 )
 
 type TransferCommandKind int
@@ -51,7 +59,7 @@ type TransferBase struct {
 	Status          TransferStatus
 }
 
-func (t *TransferBase) IsValid(okZeroAmount bool) error {
+func (t *TransferBase) IsValid() error {
 	if len(t.From) <= 0 {
 		return ErrInvalidFromAccount
 	}
@@ -60,7 +68,7 @@ func (t *TransferBase) IsValid(okZeroAmount bool) error {
 	}
 
 	// ensure amount makes senses
-	if !okZeroAmount && t.Amount.IsZero() {
+	if t.Amount.IsZero() {
 		return ErrCannotTransferZeroFunds
 	}
 
@@ -84,6 +92,14 @@ func (t *TransferBase) IsValid(okZeroAmount bool) error {
 type OneOffTransfer struct {
 	*TransferBase
 	DeliverOn *time.Time
+}
+
+func (o *OneOffTransfer) IsValid() error {
+	if err := o.TransferBase.IsValid(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
@@ -144,11 +160,41 @@ func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 type RecurringTransfer struct {
 	*TransferBase
 	StartEpoch uint64
-	EndEpoch   uint64
+	EndEpoch   *uint64
 	Factor     num.Decimal
 }
 
+func (r *RecurringTransfer) IsValid() error {
+	if err := r.TransferBase.IsValid(); err != nil {
+		return err
+	}
+
+	if r.EndEpoch != nil && *r.EndEpoch == 0 {
+		return ErrEndEpochIsZero
+	}
+	if r.StartEpoch == 0 {
+		return ErrStartEpochIsZero
+	}
+
+	if r.EndEpoch != nil && r.StartEpoch > *r.EndEpoch {
+		return ErrStartEpochAfterEndEpoch
+	}
+
+	if r.Factor.Cmp(num.DecimalFromFloat(0)) <= 0 {
+		return ErrInvalidFactor
+	}
+
+	return nil
+}
+
 func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
+	var endEpoch *vegapb.Uint64Value
+	if t.EndEpoch != nil {
+		endEpoch = &vegapb.Uint64Value{
+			Value: *t.EndEpoch,
+		}
+	}
+
 	return &eventspb.Transfer{
 		Id:              t.ID,
 		From:            t.From,
@@ -162,7 +208,7 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
 				StartEpoch: t.StartEpoch,
-				EndEpoch:   &vegapb.Uint64Value{Value: t.EndEpoch},
+				EndEpoch:   endEpoch,
 				Factor:     t.Factor.String(),
 			},
 		},
@@ -239,5 +285,73 @@ func newOneOffTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFu
 }
 
 func newRecurringTransfer(base *TransferBase, tf *commandspb.Transfer) (*TransferFunds, error) {
-	return nil, nil
+	factor, err := num.DecimalFromString(tf.GetRecurring().GetFactor())
+	if err != nil {
+		return nil, err
+	}
+	var endEpoch *uint64
+	if tf.GetRecurring().GetEndEpoch() != nil {
+		ee := tf.GetRecurring().GetEndEpoch().GetValue()
+		endEpoch = &ee
+	}
+
+	return &TransferFunds{
+		Kind: TransferCommandKindRecurring,
+		Recurring: &RecurringTransfer{
+			TransferBase: base,
+			StartEpoch:   tf.GetRecurring().GetStartEpoch(),
+			EndEpoch:     endEpoch,
+			Factor:       factor,
+		},
+	}, nil
+}
+
+func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
+	var endEpoch *uint64
+	if p.GetRecurring().GetEndEpoch() != nil {
+		ee := p.GetRecurring().GetEndEpoch().GetValue()
+		endEpoch = &ee
+	}
+
+	factor, err := num.DecimalFromString(p.GetRecurring().GetFactor())
+	if err != nil {
+		panic("invalid decimal, should never happen")
+	}
+
+	amount, overflow := num.UintFromString(p.Amount, 10)
+	if overflow {
+		// panic is alright here, this should come only from
+		// a checkpoint, and it would mean the checkpoint is fucked
+		// so executions is not possible.
+		panic("invalid transfer amount")
+	}
+
+	return &RecurringTransfer{
+		TransferBase: &TransferBase{
+			ID:              p.Id,
+			From:            p.From,
+			FromAccountType: p.FromAccountType,
+			To:              p.To,
+			ToAccountType:   p.ToAccountType,
+			Asset:           p.Asset,
+			Amount:          amount,
+			Reference:       p.Reference,
+			Status:          p.Status,
+		},
+		StartEpoch: p.GetRecurring().GetStartEpoch(),
+		EndEpoch:   endEpoch,
+		Factor:     factor,
+	}
+}
+
+type CancelTransferFunds struct {
+	Party      string
+	TransferID string
+}
+
+func NewCancelTransferFromProto(party string, p *commandspb.CancelTransfer) *CancelTransferFunds {
+	return &CancelTransferFunds{
+		Party:      party,
+		TransferID: p.TransferId,
+	}
 }

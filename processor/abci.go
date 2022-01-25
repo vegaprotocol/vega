@@ -234,6 +234,8 @@ func NewApp(
 	app.abci.
 		HandleDeliverTx(txn.TransferFundsCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
+		HandleDeliverTx(txn.CancelTransferFundsCommand,
+			app.SendEventOnError(app.DeliverCancelTransferFunds)).
 		HandleDeliverTx(txn.SubmitOrderCommand,
 			app.SendEventOnError(app.DeliverSubmitOrder)).
 		HandleDeliverTx(txn.CancelOrderCommand,
@@ -421,15 +423,16 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 		case types.ErrMissingChunks:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
 			resp.RefetchChunks = app.snapshot.GetMissingChunks()
-		case types.ErrSnapshotRetryLimit:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-			defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
 		default:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
 			// @TODO panic?
 		}
 		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
-			_ = app.snapshot.RejectSnapshot()
+			if err := app.snapshot.RejectSnapshot(); err == types.ErrSnapshotRetryLimit {
+				app.log.Error("Applying snapshot chunk has reaching the retry limit, aborting")
+				resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+				defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
+			}
 		}
 		return resp
 	}
@@ -815,6 +818,15 @@ func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string)
 	}
 
 	return app.banking.TransferFunds(ctx, transferFunds)
+}
+
+func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.CancelTransfer{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
