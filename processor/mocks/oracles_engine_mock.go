@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	oracles "code.vegaprotocol.io/vega/oracles"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	oracles "code.vegaprotocol.io/vega/oracles"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockOraclesEngine is a mock of OraclesEngine interface
+// MockOraclesEngine is a mock of OraclesEngine interface.
 type MockOraclesEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockOraclesEngineMockRecorder
 }
 
-// MockOraclesEngineMockRecorder is the mock recorder for MockOraclesEngine
+// MockOraclesEngineMockRecorder is the mock recorder for MockOraclesEngine.
 type MockOraclesEngineMockRecorder struct {
 	mock *MockOraclesEngine
 }
 
-// NewMockOraclesEngine creates a new mock instance
+// NewMockOraclesEngine creates a new mock instance.
 func NewMockOraclesEngine(ctrl *gomock.Controller) *MockOraclesEngine {
 	mock := &MockOraclesEngine{ctrl: ctrl}
 	mock.recorder = &MockOraclesEngineMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOraclesEngine) EXPECT() *MockOraclesEngineMockRecorder {
 	return m.recorder
 }
 
-// BroadcastData mocks base method
+// BroadcastData mocks base method.
 func (m *MockOraclesEngine) BroadcastData(arg0 context.Context, arg1 oracles.OracleData) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BroadcastData", arg0, arg1)
@@ -42,7 +43,7 @@ func (m *MockOraclesEngine) BroadcastData(arg0 context.Context, arg1 oracles.Ora
 	return ret0
 }
 
-// BroadcastData indicates an expected call of BroadcastData
+// BroadcastData indicates an expected call of BroadcastData.
 func (mr *MockOraclesEngineMockRecorder) BroadcastData(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastData", reflect.TypeOf((*MockOraclesEngine)(nil).BroadcastData), arg0, arg1)

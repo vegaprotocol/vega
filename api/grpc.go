@@ -17,7 +17,7 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/vegatime"
 
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -50,6 +50,7 @@ type Blockchain interface {
 	GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error)
 	GetUnconfirmedTxCount(ctx context.Context) (count int, err error)
 	Health() (*tmctypes.ResultHealth, error)
+	SubmitRawTransaction(ctx context.Context, tx []byte, ty protoapi.SubmitRawTransactionRequest_Type) (string, error)
 }
 
 // GRPCServer represent the grpc api provided by the vega node.

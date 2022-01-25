@@ -410,7 +410,6 @@ func testMultipleEpochsWithPendingPayouts(t *testing.T) {
 	// there is remaining 1000000 to distribute as payout
 	now := time.Now()
 	epoch1 := types.Epoch{StartTime: now, EndTime: now, Seq: 1}
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch1)
 
@@ -422,7 +421,6 @@ func testMultipleEpochsWithPendingPayouts(t *testing.T) {
 	// now add reward for epoch 2
 	now2 := now.Add(10 * time.Second)
 	epoch2 := types.Epoch{StartTime: now2, EndTime: now2, Seq: 2}
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch2)
 
@@ -463,7 +461,6 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 	// there is remaining 1000000 to distribute as payout
 	now := time.Now()
 	epoch := types.Epoch{StartTime: now, EndTime: now, Seq: 1}
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch)
 
@@ -499,7 +496,6 @@ func testRewardSnapshotRoundTrip(t *testing.T) {
 
 	// add another pending payout
 	epoch = types.Epoch{StartTime: now.Add(10 * time.Second), EndTime: now.Add(10 * time.Second), Seq: 2}
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch)
 
@@ -742,7 +738,7 @@ func testDistributePayout(t *testing.T) {
 		asset:         "ETH",
 	}
 
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	// testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.distributePayout(context.Background(), payout)
 
 	rewardAccount, _ := engine.collateral.GetAccountByID(rs.RewardPoolAccountIDs[0])
@@ -775,7 +771,6 @@ func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 
 	// there is remaining 1000000 to distribute as payout
 	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now(), Seq: 1}
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 	engine.OnEpochEvent(context.Background(), epoch)
 
@@ -783,7 +778,6 @@ func testOnEpochEventFullPayoutWithPayoutDelay(t *testing.T) {
 	err = testEngine.collateral.IncrementBalance(context.Background(), rs.RewardPoolAccountIDs[0], num.NewUint(999999))
 	require.Nil(t, err)
 
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
 
 	// setup another pending reward at a later time to observe that it remains pending after the current payout is made
@@ -861,7 +855,6 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now()}
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.OnEpochEvent(context.Background(), epoch)
 	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(120*time.Second))
 

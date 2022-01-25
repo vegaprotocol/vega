@@ -66,7 +66,7 @@ func TestErrorWithNilRiskModel(t *testing.T) {
 	settings := types.PriceMonitoringSettingsFromProto(pSet)
 	ctrl := gomock.NewController(t)
 	statevar := mocks.NewMockStateVarEngine(ctrl)
-	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+	// statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 	pm, err := price.NewMonitor("asset", "market", nil, settings, statevar, logging.NewTestLogger())
 	require.Error(t, err)
 	require.Nil(t, pm)
@@ -599,7 +599,7 @@ func TestAuctionStartedAndEndendBy2Triggers(t *testing.T) {
 
 	end := types.AuctionDuration{Duration: t1.AuctionExtension + t2.AuctionExtension}
 	pm.SetMinDuration(time.Duration(end.Duration) * time.Second)
-	auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
+	// auctionStateMock.EXPECT().StartPriceAuction(now, &end).Times(1)
 
 	cPrice := num.Sum(price1, maxUp2, maxUp1)
 	// decPrice, pMin1, pMax1, _, _ := getPriceBounds(cPrice, 1, 2)
