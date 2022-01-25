@@ -40,7 +40,6 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
@@ -210,7 +209,6 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.witness,
 		n.evtfwd,
 		n.executionEngine,
-		n.commander,
 		n.genesisHandler,
 		n.governance,
 		n.notary,
@@ -503,7 +501,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.
 
 		go func() {
 			if err := rec.Replay(abciApp); err != nil {
-				log.Fatalf("replay: %v", err)
+				l.Log.Fatal("replay error", logging.Error(err))
 			}
 		}()
 	}
