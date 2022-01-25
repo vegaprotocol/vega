@@ -234,6 +234,8 @@ func NewApp(
 	app.abci.
 		HandleDeliverTx(txn.TransferFundsCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
+		HandleDeliverTx(txn.CancelTransferFundsCommand,
+			app.SendEventOnError(app.DeliverCancelTransferFunds)).
 		HandleDeliverTx(txn.SubmitOrderCommand,
 			app.SendEventOnError(app.DeliverSubmitOrder)).
 		HandleDeliverTx(txn.CancelOrderCommand,
@@ -816,6 +818,15 @@ func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string)
 	}
 
 	return app.banking.TransferFunds(ctx, transferFunds)
+}
+
+func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.CancelTransfer{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
