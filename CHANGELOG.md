@@ -60,6 +60,7 @@
 - [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add integration test ensuring positions plug-in calculates P&L accurately.
 - [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
+- [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
 
 
 ### 🐛 Fixes
