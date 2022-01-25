@@ -91,10 +91,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | buy  | 89943    | 0      |
       | buy  | 89942    | 69     |
 
-
     And the parties should have the following margin levels:
       | party    | market id  | maintenance | search   | initial  | release  |
-      | lp1       | ETH2/MAR22 | 1986563     | 2185219  | 2383875  | 2781188  |
+      | lp1      | ETH2/MAR22 | 1986563     | 2185219  | 2383875  | 2781188  |
 
     # # now we place an order which makes the best bid 89943.
     Then the parties place the following orders:
@@ -110,13 +109,12 @@ Feature: Test margin for lp near price monitoring boundaries
     # # but 89942 is no longer the best bid, so the risk model is used to get prob of trading. This now given by the log-normal model
     # # Hence a bit volume is required to meet commitment and thus the margin requirement moves but not much.
 
-    # And the order book should have the following volumes for market "ETH2/MAR22":
-    #   | side | price    | volume |
-    #   | sell | 110965   | 56     |
-    #   | buy  | 89943    | 1      |
-    #   | buy  | 89942    | 136    |
+    And the order book should have the following volumes for market "ETH2/MAR22":
+      | side | price    | volume |
+      | sell | 110965   | 56     |
+      | buy  | 89943    | 1      |
+      | buy  | 89942    | 69    |
 
-
-    # And the parties should have the following margin levels:
-    #   | party    | market id  | maintenance | search   | initial  | release |
-    #   | lp1       | ETH2/MAR22 | 3592950     | 3952245  | 4311540  | 5030130 |
+    And the parties should have the following margin levels:
+      | party    | market id  | maintenance | search   | initial  | release |
+      | lp1      | ETH2/MAR22 | 1986563     | 2185219  | 2383875  | 2781188 |
