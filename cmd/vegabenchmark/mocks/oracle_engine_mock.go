@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	oracles "code.vegaprotocol.io/vega/oracles"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	oracles "code.vegaprotocol.io/vega/oracles"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockOracleEngine is a mock of OracleEngine interface
+// MockOracleEngine is a mock of OracleEngine interface.
 type MockOracleEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockOracleEngineMockRecorder
 }
 
-// MockOracleEngineMockRecorder is the mock recorder for MockOracleEngine
+// MockOracleEngineMockRecorder is the mock recorder for MockOracleEngine.
 type MockOracleEngineMockRecorder struct {
 	mock *MockOracleEngine
 }
 
-// NewMockOracleEngine creates a new mock instance
+// NewMockOracleEngine creates a new mock instance.
 func NewMockOracleEngine(ctrl *gomock.Controller) *MockOracleEngine {
 	mock := &MockOracleEngine{ctrl: ctrl}
 	mock.recorder = &MockOracleEngineMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOracleEngine) EXPECT() *MockOracleEngineMockRecorder {
 	return m.recorder
 }
 
-// BroadcastData mocks base method
+// BroadcastData mocks base method.
 func (m *MockOracleEngine) BroadcastData(arg0 context.Context, arg1 oracles.OracleData) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BroadcastData", arg0, arg1)
@@ -42,13 +43,13 @@ func (m *MockOracleEngine) BroadcastData(arg0 context.Context, arg1 oracles.Orac
 	return ret0
 }
 
-// BroadcastData indicates an expected call of BroadcastData
+// BroadcastData indicates an expected call of BroadcastData.
 func (mr *MockOracleEngineMockRecorder) BroadcastData(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastData", reflect.TypeOf((*MockOracleEngine)(nil).BroadcastData), arg0, arg1)
 }
 
-// Subscribe mocks base method
+// Subscribe mocks base method.
 func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 oracles.OracleSpec, arg2 oracles.OnMatchedOracleData) oracles.SubscriptionID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0, arg1, arg2)
@@ -56,19 +57,19 @@ func (m *MockOracleEngine) Subscribe(arg0 context.Context, arg1 oracles.OracleSp
 	return ret0
 }
 
-// Subscribe indicates an expected call of Subscribe
+// Subscribe indicates an expected call of Subscribe.
 func (mr *MockOracleEngineMockRecorder) Subscribe(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockOracleEngine)(nil).Subscribe), arg0, arg1, arg2)
 }
 
-// Unsubscribe mocks base method
+// Unsubscribe mocks base method.
 func (m *MockOracleEngine) Unsubscribe(arg0 context.Context, arg1 oracles.SubscriptionID) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Unsubscribe", arg0, arg1)
 }
 
-// Unsubscribe indicates an expected call of Unsubscribe
+// Unsubscribe indicates an expected call of Unsubscribe.
 func (mr *MockOracleEngineMockRecorder) Unsubscribe(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockOracleEngine)(nil).Unsubscribe), arg0, arg1)

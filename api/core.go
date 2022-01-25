@@ -24,7 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"google.golang.org/grpc/codes"
 )
 
@@ -88,7 +88,7 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txHash, err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC)
+	txHash, err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_SYNC)
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {

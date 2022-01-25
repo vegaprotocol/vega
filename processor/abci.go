@@ -105,7 +105,6 @@ type App struct {
 	assets          Assets
 	banking         Banking
 	broker          Broker
-	cmd             Commander
 	witness         Witness
 	evtfwd          EvtForwarder
 	exec            ExecutionEngine
@@ -141,7 +140,6 @@ func NewApp(
 	witness Witness,
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
-	cmd Commander,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
 	notary Notary,
@@ -181,7 +179,6 @@ func NewApp(
 		assets:           assets,
 		banking:          banking,
 		broker:           broker,
-		cmd:              cmd,
 		witness:          witness,
 		evtfwd:           evtfwd,
 		exec:             exec,
@@ -473,7 +470,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
-		app.log.Panic("something happened when initializing vega with the genesis block", logging.Error(err))
+		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
 	}
 
 	return tmtypes.ResponseInitChain{}

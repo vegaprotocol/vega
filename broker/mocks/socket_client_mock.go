@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	events "code.vegaprotocol.io/vega/events"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockSocketClient is a mock of SocketClient interface
+// MockSocketClient is a mock of SocketClient interface.
 type MockSocketClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockSocketClientMockRecorder
 }
 
-// MockSocketClientMockRecorder is the mock recorder for MockSocketClient
+// MockSocketClientMockRecorder is the mock recorder for MockSocketClient.
 type MockSocketClientMockRecorder struct {
 	mock *MockSocketClient
 }
 
-// NewMockSocketClient creates a new mock instance
+// NewMockSocketClient creates a new mock instance.
 func NewMockSocketClient(ctrl *gomock.Controller) *MockSocketClient {
 	mock := &MockSocketClient{ctrl: ctrl}
 	mock.recorder = &MockSocketClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockSocketClient) EXPECT() *MockSocketClientMockRecorder {
 	return m.recorder
 }
 
-// SendBatch mocks base method
+// SendBatch mocks base method.
 func (m *MockSocketClient) SendBatch(arg0 []events.Event) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SendBatch", arg0)
@@ -41,7 +42,7 @@ func (m *MockSocketClient) SendBatch(arg0 []events.Event) error {
 	return ret0
 }
 
-// SendBatch indicates an expected call of SendBatch
+// SendBatch indicates an expected call of SendBatch.
 func (mr *MockSocketClientMockRecorder) SendBatch(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBatch", reflect.TypeOf((*MockSocketClient)(nil).SendBatch), arg0)

@@ -215,7 +215,7 @@ func testDistributePayout(t *testing.T) {
 		asset:         "VEGA",
 	}
 
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
+	// testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.distributePayout(context.Background(), payout)
 
 	rewardAccount, _ := engine.collateral.GetAccountByID(rewardAccountID)
@@ -255,7 +255,6 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	epoch := types.Epoch{StartTime: time.Now(), EndTime: time.Now()}
 
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.OnEpochEvent(context.Background(), epoch)
 	engine.onChainTimeUpdate(context.Background(), epoch.EndTime.Add(120*time.Second))
 

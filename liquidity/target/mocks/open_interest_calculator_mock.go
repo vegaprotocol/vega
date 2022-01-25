@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockOpenInterestCalculator is a mock of OpenInterestCalculator interface
+// MockOpenInterestCalculator is a mock of OpenInterestCalculator interface.
 type MockOpenInterestCalculator struct {
 	ctrl     *gomock.Controller
 	recorder *MockOpenInterestCalculatorMockRecorder
 }
 
-// MockOpenInterestCalculatorMockRecorder is the mock recorder for MockOpenInterestCalculator
+// MockOpenInterestCalculatorMockRecorder is the mock recorder for MockOpenInterestCalculator.
 type MockOpenInterestCalculatorMockRecorder struct {
 	mock *MockOpenInterestCalculator
 }
 
-// NewMockOpenInterestCalculator creates a new mock instance
+// NewMockOpenInterestCalculator creates a new mock instance.
 func NewMockOpenInterestCalculator(ctrl *gomock.Controller) *MockOpenInterestCalculator {
 	mock := &MockOpenInterestCalculator{ctrl: ctrl}
 	mock.recorder = &MockOpenInterestCalculatorMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOpenInterestCalculator) EXPECT() *MockOpenInterestCalculatorMockRecorder {
 	return m.recorder
 }
 
-// GetOpenInterestGivenTrades mocks base method
+// GetOpenInterestGivenTrades mocks base method.
 func (m *MockOpenInterestCalculator) GetOpenInterestGivenTrades(arg0 []*types.Trade) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOpenInterestGivenTrades", arg0)
@@ -41,7 +42,7 @@ func (m *MockOpenInterestCalculator) GetOpenInterestGivenTrades(arg0 []*types.Tr
 	return ret0
 }
 
-// GetOpenInterestGivenTrades indicates an expected call of GetOpenInterestGivenTrades
+// GetOpenInterestGivenTrades indicates an expected call of GetOpenInterestGivenTrades.
 func (mr *MockOpenInterestCalculatorMockRecorder) GetOpenInterestGivenTrades(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOpenInterestGivenTrades", reflect.TypeOf((*MockOpenInterestCalculator)(nil).GetOpenInterestGivenTrades), arg0)
