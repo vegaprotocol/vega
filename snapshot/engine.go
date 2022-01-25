@@ -424,14 +424,14 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	if !cas {
 		return nil
 	}
-	if _, err := e.SaveCurrentTree(); err != nil {
+	if _, err := e.saveCurrentTree(); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (e *Engine) nodeCAS(i int, p *types.Payload) error {
-	h, err := e.SetTreeNode(p)
+	h, err := e.setTreeNode(p)
 	if err != nil {
 		return err
 	}
@@ -446,7 +446,7 @@ func (e *Engine) nodeCAS(i int, p *types.Payload) error {
 	return nil
 }
 
-func (e *Engine) SetTreeNode(p *types.Payload) ([]byte, error) {
+func (e *Engine) setTreeNode(p *types.Payload) ([]byte, error) {
 	data, err := proto.Marshal(p.IntoProto())
 	if err != nil {
 		return nil, err
@@ -570,10 +570,10 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 	if !updated {
 		return e.hash, nil
 	}
-	return e.SaveCurrentTree()
+	return e.saveCurrentTree()
 }
 
-func (e *Engine) SaveCurrentTree() ([]byte, error) {
+func (e *Engine) saveCurrentTree() ([]byte, error) {
 	h, v, err := e.avl.SaveVersion()
 	if err != nil {
 		return nil, err
