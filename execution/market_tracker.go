@@ -9,6 +9,7 @@ type marketTracker struct {
 	proposersPaid bool
 	proposer      string
 }
+
 type MarketTracker struct {
 	marketIDMarketTracker map[string]*marketTracker
 }

@@ -204,6 +204,6 @@ const (
 	AccountTypeMakerFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES
 	// Asset account for received LP fees.
 	AccountTypeLPFeeReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES
-	// Asset account for market proposers
+	// Asset account for market proposers.
 	AccountTypeMarketProposerReward AccountType = proto.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
 )
