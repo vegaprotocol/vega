@@ -20,11 +20,9 @@ type SnapshotData struct {
 
 func SnapshotsHeightsFromTree(tree *iavl.MutableTree) (map[uint64]SnapshotData, error) {
 	trees := make(map[uint64]SnapshotData)
-
 	versions := tree.AvailableVersions()
 
 	for _, version := range versions {
-
 		v, err := tree.LazyLoadVersion(int64(version))
 		if err != nil {
 			return nil, err

@@ -171,7 +171,6 @@ func (n *NodeCommand) ListSnapshots(confWatcher *config.Watcher, vegaPaths paths
 		panic(err)
 	}
 	return n.snapshot.List()
-
 }
 
 // runNode is the entry of node command.

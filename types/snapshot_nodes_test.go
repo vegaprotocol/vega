@@ -772,7 +772,6 @@ func TestListSnapFromTree(t *testing.T) {
 	require.Equal(t, 1, len(snapshotsHeights))
 	require.Equal(t, v, snapshotsHeights[expectedHeight].Version)
 	require.Equal(t, hash, snapshotsHeights[expectedHeight].Hash)
-
 }
 
 func createTree(t *testing.T) *iavl.MutableTree {
