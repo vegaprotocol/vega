@@ -1,24 +1,9 @@
 package events
 
 import (
-	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
-
-type eventCtx interface {
-	TraceID() string
-	ChainID() string
-	TranxID() string
-}
-
-func setCtxOnEvent(event *eventspb.BusEvent,
-	eventCtx eventCtx) *eventspb.BusEvent {
-	event.Block = eventCtx.TraceID()
-	event.ChainId = eventCtx.ChainID()
-	event.TranxId = eventCtx.TranxID()
-	return event
-}
 
 // MarketPosition is an event with a change to a position.
 type MarketPosition interface {
