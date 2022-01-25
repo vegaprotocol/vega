@@ -46,8 +46,8 @@ func EthereumConfig() func(interface{}) error {
 		if len(ecfg.ChainId) <= 0 {
 			return errors.New("missing ethereum config chain id")
 		}
-		if len(ecfg.BridgeAddress) <= 0 {
-			return errors.New("missing ethereum config bridge address")
+		if len(ecfg.CollateralBridgeContract.Address) <= 0 {
+			return errors.New("missing ethereum collateral config bridge address")
 		}
 		if ecfg.Confirmations == 0 {
 			return errors.New("ethereum config confirmation must be > 0")

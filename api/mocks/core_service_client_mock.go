@@ -135,6 +135,26 @@ func (mr *MockCoreServiceClientMockRecorder) Statistics(arg0, arg1 interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockCoreServiceClient)(nil).Statistics), varargs...)
 }
 
+// SubmitRawTransaction mocks base method
+func (m *MockCoreServiceClient) SubmitRawTransaction(arg0 context.Context, arg1 *v1.SubmitRawTransactionRequest, arg2 ...grpc.CallOption) (*v1.SubmitRawTransactionResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "SubmitRawTransaction", varargs...)
+	ret0, _ := ret[0].(*v1.SubmitRawTransactionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitRawTransaction indicates an expected call of SubmitRawTransaction
+func (mr *MockCoreServiceClientMockRecorder) SubmitRawTransaction(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransaction", reflect.TypeOf((*MockCoreServiceClient)(nil).SubmitRawTransaction), varargs...)
+}
+
 // SubmitTransaction mocks base method
 func (m *MockCoreServiceClient) SubmitTransaction(arg0 context.Context, arg1 *v1.SubmitTransactionRequest, arg2 ...grpc.CallOption) (*v1.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()
