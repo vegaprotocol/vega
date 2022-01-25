@@ -389,7 +389,6 @@ func newBusEventFromBase(a *Base) *eventspb.BusEvent {
 		ChainId: a.ChainID(),
 		TranxId: a.TranxID(),
 	}
-
 }
 
 func newBaseFromBusEvent(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {

@@ -42,7 +42,6 @@ func (o Order) Proto() ptypes.Order {
 }
 
 func (o Order) StreamMessage() *eventspb.BusEvent {
-
 	busEvent := newBusEventFromBase(o.Base)
 	busEvent.Event = &eventspb.BusEvent_Order{
 		Order: o.o,

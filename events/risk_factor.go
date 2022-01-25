@@ -33,7 +33,6 @@ func (r RiskFactor) Proto() proto.RiskFactor {
 }
 
 func (r RiskFactor) StreamMessage() *eventspb.BusEvent {
-
 	busEvent := newBusEventFromBase(r.Base)
 	busEvent.Event = &eventspb.BusEvent_RiskFactor{
 		RiskFactor: &r.r,

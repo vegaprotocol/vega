@@ -81,7 +81,6 @@ func (t TxErr) Proto() eventspb.TxErrorEvent {
 }
 
 func (t TxErr) StreamMessage() *eventspb.BusEvent {
-
 	busEvent := newBusEventFromBase(t.Base)
 	busEvent.Event = &eventspb.BusEvent_TxErrEvent{
 		TxErrEvent: t.evt,

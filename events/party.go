@@ -33,7 +33,6 @@ func (p Party) Proto() proto.Party {
 }
 
 func (p Party) StreamMessage() *eventspb.BusEvent {
-
 	busEvent := newBusEventFromBase(p.Base)
 	busEvent.Event = &eventspb.BusEvent_Party{
 		Party: &p.p,

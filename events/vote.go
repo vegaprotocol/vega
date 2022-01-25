@@ -68,7 +68,6 @@ func (v Vote) StreamMessage() *eventspb.BusEvent {
 	}
 
 	return busEvent
-
 }
 
 func VoteEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Vote {

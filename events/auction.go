@@ -119,7 +119,6 @@ func (a Auction) StreamMessage() *eventspb.BusEvent {
 // StreamMarketMessage - allows for this event to be streamed as just a market event
 // containing just market ID and a string akin to a log message.
 func (a Auction) StreamMarketMessage() *eventspb.BusEvent {
-
 	busEvent := newBusEventFromBase(a.Base)
 	busEvent.Type = eventspb.BusEventType_BUS_EVENT_TYPE_MARKET
 	busEvent.Event = &eventspb.BusEvent_Market{

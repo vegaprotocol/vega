@@ -1,19 +1,20 @@
 package events_test
 
 import (
+	"context"
+	"testing"
+
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/events"
 	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/types/num"
-	"context"
+
 	"github.com/stretchr/testify/assert"
-	"testing"
 
 	"code.vegaprotocol.io/vega/types"
 )
 
 func TestEventCtxIsSet(t *testing.T) {
-
 	account := types.Account{
 		ID:       "testId",
 		Owner:    "testOwner",
@@ -44,5 +45,4 @@ func TestEventCtxIsSet(t *testing.T) {
 	assert.Equal(t, "testTraceID", traceID)
 	tranxID, _ := vgcontext.TranxIDFromContext(acc.Context())
 	assert.Equal(t, "testTranxID", tranxID)
-
 }
