@@ -2642,6 +2642,6 @@ func (e *Engine) GetAssetQuantum(asset string) (*num.Uint, error) {
 	if !e.AssetExists(asset) {
 		return num.Zero(), ErrInvalidAssetID
 	}
-	//TODO this needs to be the quantum when quantum is added
+	// TODO this needs to be the quantum when quantum is added
 	return e.enabledAssets[asset].Details.MinLpStake, nil
 }
