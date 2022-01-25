@@ -166,6 +166,8 @@ replace (
 	// so we can use our own updates
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
 
+	github.com/tendermint/tendermint => github.com/vegaprotocol/tendermint v0.35.1
+
 	// // so we can work with tendermint 0.35
 	gopkg.in/cheggaaa/pb.v1 => github.com/cheggaaa/pb v1.0.28
 	gopkg.in/go-playground/assert.v1 => github.com/go-playground/assert v1.2.1
