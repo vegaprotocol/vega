@@ -40,7 +40,7 @@
 - [4629](https://github.com/vegaprotocol/vega/pull/4629) - Update `CHANGELOG.md` to include `0.47.5` changes
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
-- [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint SubmitRawTransaction to provide support for v1 and v2 transactions
+- [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
