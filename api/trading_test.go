@@ -37,6 +37,7 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/require"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
@@ -415,6 +416,98 @@ func TestSubmitTransaction(t *testing.T) {
 		assert.NotNil(t, proxyClient)
 
 		actualResp, err := proxyClient.SubmitTransaction(ctx, req)
+		assert.Error(t, err)
+		assert.Nil(t, actualResp)
+		assert.Contains(t, err.Error(), "Critical error")
+	})
+}
+
+func TestSubmitRawTransaction(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	t.Run("proxy call is successful", func(t *testing.T) {
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
+
+		tx := &commandspb.Transaction{
+			InputData: []byte("input data"),
+			Signature: &commandspb.Signature{
+				Value:   "value",
+				Algo:    "algo",
+				Version: 1,
+			},
+		}
+
+		bs, err := proto.Marshal(tx)
+		assert.NoError(t, err)
+
+		req := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_UNSPECIFIED,
+			Tx:   bs,
+		}
+
+		expectedRes := &vegaprotoapi.SubmitRawTransactionResponse{Success: true}
+
+		vegaReq := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_UNSPECIFIED,
+			Tx:   bs,
+		}
+
+		mockTradingServiceClient.EXPECT().
+			SubmitRawTransaction(gomock.Any(), vegaReq).
+			Return(&vegaprotoapi.SubmitRawTransactionResponse{Success: true}, nil).Times(1)
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.SubmitRawTransaction(ctx, req)
+		assert.NoError(t, err)
+		assert.Equal(t, expectedRes, actualResp)
+	})
+
+	t.Run("proxy propagates an error", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		tidy, conn, mockTradingServiceClient, err := getTestGRPCServer(t, ctx, 64201, true)
+		if err != nil {
+			t.Fatalf("Failed to get test gRPC server: %s", err.Error())
+		}
+		defer tidy()
+		tx := &commandspb.Transaction{
+			InputData: []byte("input data"),
+			Signature: &commandspb.Signature{
+				Value:   "value",
+				Algo:    "algo",
+				Version: 1,
+			},
+		}
+
+		bs, err := proto.Marshal(tx)
+		assert.NoError(t, err)
+
+		req := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_COMMIT,
+			Tx:   bs,
+		}
+
+		vegaReq := &vegaprotoapi.SubmitRawTransactionRequest{
+			Type: vegaprotoapi.SubmitRawTransactionRequest_TYPE_COMMIT,
+			Tx:   bs,
+		}
+
+		mockTradingServiceClient.EXPECT().
+			SubmitRawTransaction(gomock.Any(), vegaReq).
+			Return(nil, errors.New("Critical error"))
+
+		proxyClient := vegaprotoapi.NewCoreServiceClient(conn)
+		assert.NotNil(t, proxyClient)
+
+		actualResp, err := proxyClient.SubmitRawTransaction(ctx, req)
 		assert.Error(t, err)
 		assert.Nil(t, actualResp)
 		assert.Contains(t, err.Error(), "Critical error")

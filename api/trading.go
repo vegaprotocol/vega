@@ -34,6 +34,13 @@ func (t *coreProxyService) SubmitTransaction(ctx context.Context, req *protoapi.
 	return t.coreServiceClient.SubmitTransaction(ctx, req)
 }
 
+func (t *coreProxyService) SubmitRawTransaction(ctx context.Context, req *protoapi.SubmitRawTransactionRequest) (*protoapi.SubmitRawTransactionResponse, error) {
+	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
+	defer cancel()
+
+	return t.coreServiceClient.SubmitRawTransaction(ctx, req)
+}
+
 func (t *coreProxyService) LastBlockHeight(ctx context.Context, req *protoapi.LastBlockHeightRequest) (*protoapi.LastBlockHeightResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, defaultRequestTimeout)
 	defer cancel()

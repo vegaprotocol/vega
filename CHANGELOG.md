@@ -19,7 +19,7 @@
 - [290](https://github.com/vegaprotocol/data-node/pull/290) - Update pegged orders offset
 - [296](https://github.com/vegaprotocol/data-node/pull/296) - Expose validator performance score attributes on Node object 
 - [298](https://github.com/vegaprotocol/data-node/pull/298) - Remove creation of vendor directory
-
+- [304](https://github.com/vegaprotocol/data-node/pull/304) - Added endpoint to support multiple versions of transaction request
 
 ### 🐛 Fixes
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
