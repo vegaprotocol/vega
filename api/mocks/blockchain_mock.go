@@ -127,6 +127,21 @@ func (mr *MockBlockchainMockRecorder) Health() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Health", reflect.TypeOf((*MockBlockchain)(nil).Health))
 }
 
+// SubmitRawTransaction mocks base method
+func (m *MockBlockchain) SubmitRawTransaction(arg0 context.Context, arg1 []byte, arg2 v1.SubmitRawTransactionRequest_Type) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitRawTransaction", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitRawTransaction indicates an expected call of SubmitRawTransaction
+func (mr *MockBlockchainMockRecorder) SubmitRawTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransaction", reflect.TypeOf((*MockBlockchain)(nil).SubmitRawTransaction), arg0, arg1, arg2)
+}
+
 // SubmitTransactionV2 mocks base method
 func (m *MockBlockchain) SubmitTransactionV2(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) (string, error) {
 	m.ctrl.T.Helper()

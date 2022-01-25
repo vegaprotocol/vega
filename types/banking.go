@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types/num"
@@ -160,8 +161,8 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Status:          t.Status,
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
-				StartEpoch: int64(t.StartEpoch),
-				EndEpoch:   int64(t.EndEpoch),
+				StartEpoch: t.StartEpoch,
+				EndEpoch:   &vegapb.Uint64Value{Value: t.EndEpoch},
 				Factor:     t.Factor.String(),
 			},
 		},

@@ -60,6 +60,13 @@ func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transac
 	return c.sendTxV2(ctx, marshalledTx, ty)
 }
 
+func (c *Client) SubmitRawTransaction(ctx context.Context, tx []byte, ty api.SubmitRawTransactionRequest_Type) (string, error) {
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	return c.sendRawTx(timeoutCtx, tx, ty)
+}
+
 func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) (string, error) {
 	switch ty {
 	case api.SubmitTransactionRequest_TYPE_ASYNC:
@@ -67,6 +74,19 @@ func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransact
 	case api.SubmitTransactionRequest_TYPE_SYNC:
 		return c.clt.SendTransactionSync(ctx, msg)
 	case api.SubmitTransactionRequest_TYPE_COMMIT:
+		return c.clt.SendTransactionCommit(ctx, msg)
+	default:
+		return "", errors.New("invalid submit transaction request type")
+	}
+}
+
+func (c *Client) sendRawTx(ctx context.Context, msg []byte, ty api.SubmitRawTransactionRequest_Type) (string, error) {
+	switch ty {
+	case api.SubmitRawTransactionRequest_TYPE_ASYNC:
+		return c.clt.SendTransactionAsync(ctx, msg)
+	case api.SubmitRawTransactionRequest_TYPE_SYNC:
+		return c.clt.SendTransactionSync(ctx, msg)
+	case api.SubmitRawTransactionRequest_TYPE_COMMIT:
 		return c.clt.SendTransactionCommit(ctx, msg)
 	default:
 		return "", errors.New("invalid submit transaction request type")
