@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
+	"os"
 	"time"
 
 	"code.vegaprotocol.io/shared/paths"
@@ -207,6 +209,19 @@ func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
 		return db.NewMemDB(), nil
 	case goLevelDB:
 		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
+		if conf.DBPath != "" {
+			stat, err := os.Stat(conf.DBPath)
+			if err != nil {
+				return nil, err
+			}
+
+			if !stat.IsDir() {
+				return nil, errors.New("snapshot DB path is not a directory")
+			}
+
+			dbPath = conf.DBPath
+		}
+
 		return db.NewGoLevelDB("snapshot", dbPath)
 	default:
 		return nil, types.ErrInvalidSnapshotStorageMethod

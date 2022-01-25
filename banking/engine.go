@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/events"
@@ -81,6 +82,12 @@ type TimeService interface {
 	NotifyOnTick(func(context.Context, time.Time))
 }
 
+// Epochervice ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/epoch_service_mock.go -package mocks code.vegaprotocol.io/vega/banking EpochService
+type EpochService interface {
+	NotifyOnEpoch(f func(context.Context, types.Epoch))
+}
+
 // Topology ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/banking Topology
 type Topology interface {
@@ -111,6 +118,7 @@ type Engine struct {
 	withdrawalCnt *big.Int
 	deposits      map[string]*types.Deposit
 
+	currentEpoch    uint64
 	currentTime     time.Time
 	mu              sync.RWMutex
 	bss             *bankingSnapshotState
@@ -119,6 +127,10 @@ type Engine struct {
 	// transfer fee related stuff
 	scheduledTransfers map[time.Time][]scheduledTransfer
 	transferFeeFactor  num.Decimal
+
+	// recurring transfers
+	// transfer id to recurringTransfers
+	recurringTransfers map[string]*types.RecurringTransfer
 }
 
 type withdrawalRef struct {
@@ -136,8 +148,12 @@ func New(
 	notary Notary,
 	broker broker.BrokerI,
 	top Topology,
+	epoch EpochService,
 ) (e *Engine) {
-	defer func() { tsvc.NotifyOnTick(e.OnTick) }()
+	defer func() {
+		tsvc.NotifyOnTick(e.OnTick)
+		epoch.NotifyOnEpoch(e.OnEpoch)
+	}()
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
@@ -162,6 +178,7 @@ func New(
 		},
 		keyToSerialiser:    map[string]func() ([]byte, error){},
 		scheduledTransfers: map[time.Time][]scheduledTransfer{},
+		recurringTransfers: map[string]*types.RecurringTransfer{},
 		transferFeeFactor:  num.DecimalZero(),
 	}
 
@@ -184,6 +201,19 @@ func (e *Engine) ReloadConf(cfg Config) {
 	}
 
 	e.cfg = cfg
+}
+
+func (e *Engine) OnEpoch(ctx context.Context, ep types.Epoch) {
+	switch ep.Action {
+	case proto.EpochAction_EPOCH_ACTION_START:
+		e.currentEpoch = ep.Seq
+	case proto.EpochAction_EPOCH_ACTION_END:
+		if err := e.distributeRecurringTransfers(ctx, e.currentEpoch); err != nil {
+			e.log.Error("could not distribute recurring transfers", logging.Error(err))
+		}
+	default:
+		e.log.Panic("epoch action should never be UNSPECIFIED", logging.String("epoch", ep.String()))
+	}
 }
 
 func (e *Engine) OnTick(ctx context.Context, t time.Time) {
