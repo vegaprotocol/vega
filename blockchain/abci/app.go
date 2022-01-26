@@ -81,8 +81,8 @@ func (app *App) ReplaceReplayProtector(tolerance uint) {
 	}
 
 	// We have loaded from the snapshot and so the tolerance i.e the length of the ring buffer
-	// has been restore based on the length of the save data, so the tolerance passed in here is irrelevant
-	// since we've already handled it when we loaded it.
+	// has been restored based on the length in the snapshot data, so the tolerance passed in here is irrelevant
+	// since we've already handled it when we loaded.
 	app.replayProtector = rpl
 }
 
