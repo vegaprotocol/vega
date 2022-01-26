@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/cosmos/iavl"
-	"github.com/syndtr/goleveldb/leveldb/opt"
-
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
+
+	"github.com/cosmos/iavl"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 	db "github.com/tendermint/tm-db"
 )
 

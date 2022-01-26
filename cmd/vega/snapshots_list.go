@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/shared/paths"
-	"github.com/jessevdk/go-flags"
-
 	"code.vegaprotocol.io/vega/cmd/vega/snapshots"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jessevdk/go-flags"
 )
 
 type Config struct {
