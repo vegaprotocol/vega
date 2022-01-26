@@ -19,12 +19,21 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-var networkSelect string
+var (
+	networkSelect        string
+	networkSelectFromURL string
+)
 
 func NewRunNodeCmd() *cobra.Command {
 	cmd := tmcmd.NewRunNodeCmd(customNewNode)
 
-	cmd.Flags().StringVar(&networkSelect,
+	cmd.Flags().StringVar(
+		&networkSelectFromURL,
+		"network-url",
+		"",
+		"The URL to a genesis file to start this node with")
+	cmd.Flags().StringVar(
+		&networkSelect,
 		"network",
 		"",
 		"The network to start this node with",
@@ -39,13 +48,15 @@ func customNewNode(config *tmcfg.Config, logger tmlog.Logger) (tmservice.Service
 		return nil, fmt.Errorf("couldn't get genesis document: %w", err)
 	}
 	// We are using tendermint as an external app, so remote create it is.
-	remoteCreator := tmabciclient.NewRemoteCreator(config.ProxyApp, config.ABCI, true)
+	remoteCreator := tmabciclient.NewRemoteCreator(config.ProxyApp, config.ABCI, false)
 	return tmnode.New(config, logger, remoteCreator, doc)
 }
 
 func getGenesisDoc(config *tmcfg.Config) (*tmtypes.GenesisDoc, error) {
 	if len(networkSelect) > 0 {
 		return genesisDocFromHTTP()
+	} else if len(networkSelectFromURL) > 0 {
+		return genesisDocHTTPFromURL()
 	}
 
 	return tmtypes.GenesisDocFromFile(config.GenesisFile())
@@ -70,6 +81,33 @@ func genesisDocFromHTTP() (*tmtypes.GenesisDoc, error) {
 	}
 	if !validSignature {
 		return nil, fmt.Errorf("genesis state doesn't match the signature: %s", sig)
+	}
+
+	return doc, nil
+}
+
+func genesisDocHTTPFromURL() (*tmtypes.GenesisDoc, error) {
+	genesisFilePath := networkSelectFromURL
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(ctx, "GET", genesisFilePath, nil)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load genesis file from %s: %w", genesisFilePath, err)
+	}
+	defer resp.Body.Close()
+	jsonGenesis, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	doc, _, err := genesis.GenesisFromJSON(jsonGenesis)
+	if err != nil {
+		return nil, fmt.Errorf("invalid genesis file from %s: %w", genesisFilePath, err)
 	}
 
 	return doc, nil

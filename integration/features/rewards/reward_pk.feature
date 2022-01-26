@@ -1,4 +1,4 @@
-Feature: Staking & Delegation with delay
+Feature: Staking & Delegation
 
   Background:
     Given the following network parameters are set:
@@ -6,13 +6,10 @@ Feature: Staking & Delegation with delay
       | reward.asset                                      |  VEGA                    |
       | validators.epoch.length                           |  10s                     |
       | validators.delegation.minAmount                   |  10                      |
-      | reward.staking.delegation.payoutDelay             |  30s                     |
       | reward.staking.delegation.delegatorShare          |  0.883                   |
       | reward.staking.delegation.minimumValidatorStake   |  100                     |
-      | reward.staking.delegation.payoutFraction          |  0.5                     |
       | reward.staking.delegation.maxPayoutPerParticipant | 100000                   |
       | reward.staking.delegation.competitionLevel        |  1.1                     |
-      | reward.staking.delegation.maxPayoutPerEpoch       |  50000                   |
       | reward.staking.delegation.minValidators           |  5                       |
       | reward.staking.delegation.optimalStakeMultiplier  |  5.0                     |
 
@@ -70,7 +67,7 @@ Feature: Staking & Delegation with delay
     
     And the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  | 100000 |   
+      | VEGA  | 50000 |   
 
     #advance to the end of the epoch
     Then the network moves ahead "7" blocks
@@ -83,7 +80,7 @@ Feature: Staking & Delegation with delay
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
 
-    #out of the reward balance of 100k, with payoutFraction of 0.5 and maxPayoutPerEpoch of 50k -> 50k are being distributed
+    #50k are being distributed
     And the parties receive the following reward for epoch 1:
     | party  | asset | amount |
     | party1 | VEGA  |  201   | 
@@ -101,14 +98,33 @@ Feature: Staking & Delegation with delay
     | pk12   | VEGA  |  3828  | 
     | pk13   | VEGA  |  3828  | 
 
-    #out of the reward balance of 50009, with payoutFraction of 0.5 and maxPayoutPerEpoch of 50k -> 25004 are being distributed
+    Then "party1" should have general account balance of "201" for asset "VEGA"
+    And "pk1" should have general account balance of "3832" for asset "VEGA"
+    And "pk2" should have general account balance of "3837" for asset "VEGA"
+    And "pk3" should have general account balance of "3841" for asset "VEGA"
+    And "pk4" should have general account balance of "3828" for asset "VEGA"
+    And "pk5" should have general account balance of "3828" for asset "VEGA"
+    And "pk6" should have general account balance of "3828" for asset "VEGA"
+    And "pk7" should have general account balance of "3828" for asset "VEGA"
+    And "pk8" should have general account balance of "3828" for asset "VEGA"
+    And "pk9" should have general account balance of "3828" for asset "VEGA"
+    And "pk10" should have general account balance of "3828" for asset "VEGA"
+    And "pk11" should have general account balance of "3828" for asset "VEGA"
+    And "pk12" should have general account balance of "3828" for asset "VEGA"
+    And "pk13" should have general account balance of "3828" for asset "VEGA"
+
+    #top up to 25000
+    And the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 24991  |  
+
     Then the network moves ahead "7" blocks
     And the parties receive the following reward for epoch 2:
     | party  | asset | amount |
     | party1 | VEGA  |  99    | 
     | pk1    | VEGA  |  1916  | 
-    | pk2    | VEGA  |  1919  | 
-    | pk3    | VEGA  |  1921  | 
+    | pk2    | VEGA  |  1918  | 
+    | pk3    | VEGA  |  1920  | 
     | pk4    | VEGA  |  1914  | 
     | pk5    | VEGA  |  1914  | 
     | pk6    | VEGA  |  1914  | 
@@ -120,7 +136,26 @@ Feature: Staking & Delegation with delay
     | pk12   | VEGA  |  1914  | 
     | pk13   | VEGA  |  1914  | 
 
-    #out of reward balanace of 25014, with payoutFraction of 0.5 and maxPayoutPerEpoch of 50k -> 12507 are being distributed
+    Then "party1" should have general account balance of "300" for asset "VEGA"
+    And "pk1" should have general account balance of "5748" for asset "VEGA"
+    And "pk2" should have general account balance of "5755" for asset "VEGA"
+    And "pk3" should have general account balance of "5761" for asset "VEGA"
+    And "pk4" should have general account balance of "5742" for asset "VEGA"
+    And "pk5" should have general account balance of "5742" for asset "VEGA"
+    And "pk6" should have general account balance of "5742" for asset "VEGA"
+    And "pk7" should have general account balance of "5742" for asset "VEGA"
+    And "pk8" should have general account balance of "5742" for asset "VEGA"
+    And "pk9" should have general account balance of "5742" for asset "VEGA"
+    And "pk10" should have general account balance of "5742" for asset "VEGA"
+    And "pk11" should have general account balance of "5742" for asset "VEGA"
+    And "pk12" should have general account balance of "5742" for asset "VEGA"
+    And "pk13" should have general account balance of "5742" for asset "VEGA"
+
+    # top up to 12507
+    When the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 12500  |  
+
     Then the network moves ahead "7" blocks
     And the parties receive the following reward for epoch 3:
     | party  | asset | amount |
@@ -139,49 +174,11 @@ Feature: Staking & Delegation with delay
     | pk12   | VEGA  |  957   | 
     | pk13   | VEGA  |  957   | 
 
-    #we are now 3 epochs after the reward for epoch 1 was announced - now it should be paid out to the general accounts of the parties
-    Then the network moves ahead "7" blocks
-
-    Then "party1" should have general account balance of "201" for asset "VEGA"
-    And "pk1" should have general account balance of "3832" for asset "VEGA"
-    And "pk2" should have general account balance of "3837" for asset "VEGA"
-    And "pk3" should have general account balance of "3841" for asset "VEGA"
-    And "pk4" should have general account balance of "3828" for asset "VEGA"
-    And "pk5" should have general account balance of "3828" for asset "VEGA"
-    And "pk6" should have general account balance of "3828" for asset "VEGA"
-    And "pk7" should have general account balance of "3828" for asset "VEGA"
-    And "pk8" should have general account balance of "3828" for asset "VEGA"
-    And "pk9" should have general account balance of "3828" for asset "VEGA"
-    And "pk10" should have general account balance of "3828" for asset "VEGA"
-    And "pk11" should have general account balance of "3828" for asset "VEGA"
-    And "pk12" should have general account balance of "3828" for asset "VEGA"
-    And "pk13" should have general account balance of "3828" for asset "VEGA"
-
-    #move forward another epoch, expect another payout
-    #we are now 3 epochs after the reward for epoch 2 was announced - now it should be paid out to the general accounts of the parties
-    Then the network moves ahead "7" blocks
-    Then "party1" should have general account balance of "300" for asset "VEGA"
-    And "pk1" should have general account balance of "5748" for asset "VEGA"
-    And "pk2" should have general account balance of "5756" for asset "VEGA"
-    And "pk3" should have general account balance of "5762" for asset "VEGA"
-    And "pk4" should have general account balance of "5742" for asset "VEGA"
-    And "pk5" should have general account balance of "5742" for asset "VEGA"
-    And "pk6" should have general account balance of "5742" for asset "VEGA"
-    And "pk7" should have general account balance of "5742" for asset "VEGA"
-    And "pk8" should have general account balance of "5742" for asset "VEGA"
-    And "pk9" should have general account balance of "5742" for asset "VEGA"
-    And "pk10" should have general account balance of "5742" for asset "VEGA"
-    And "pk11" should have general account balance of "5742" for asset "VEGA"
-    And "pk12" should have general account balance of "5742" for asset "VEGA"
-    And "pk13" should have general account balance of "5742" for asset "VEGA"
-
-    #move forward another epoch, expect another payout
-    #we are now 3 epochs after the reward for epoch 3 was announced - now it should be paid out to the general accounts of the parties
     Then the network moves ahead "7" blocks
     Then "party1" should have general account balance of "349" for asset "VEGA"
     And "pk1" should have general account balance of "6706" for asset "VEGA"
-    And "pk2" should have general account balance of "6715" for asset "VEGA"
-    And "pk3" should have general account balance of "6723" for asset "VEGA"
+    And "pk2" should have general account balance of "6714" for asset "VEGA"
+    And "pk3" should have general account balance of "6722" for asset "VEGA"
     And "pk4" should have general account balance of "6699" for asset "VEGA"
     And "pk5" should have general account balance of "6699" for asset "VEGA"
     And "pk6" should have general account balance of "6699" for asset "VEGA"
