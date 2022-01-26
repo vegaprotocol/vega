@@ -52,6 +52,7 @@
 - [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
 - [4650](https://github.com/vegaprotocol/vega/pull/4650) - Restore code from rebase and ensure node retries connection with application
 - [4570](https://github.com/vegaprotocol/vega/pull/4570) - Internalize Ethereum Event Forwarder
+- [4663](https://github.com/vegaprotocol/vega/issues/4663) - CI set qa build tag when running system tests
 
 
 ### 🐛 Fixes
