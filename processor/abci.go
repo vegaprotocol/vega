@@ -470,7 +470,10 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	// Start the snapshot engine letting it clear any pre-existing state so that if we are
 	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
 	// them
-	app.snapshot.Start()
+	if err := app.snapshot.Start(); err != nil {
+		app.cancel()
+		app.log.Fatal("couldn't start snapshot engine", logging.Error(err))
+	}
 
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
@@ -563,7 +566,10 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	// read the state of validator set from the previous end of block
 	var vd []*tmtypesint.Validator
-
+	if app.blockchainClient != nil && req.Header.Height > 0 {
+		h := req.Header.Height - 1
+		vd, _ = app.blockchainClient.Validators(&h)
+	}
 	app.top.BeginBlock(ctx, req, vd)
 
 	return ctx, resp

@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -221,8 +222,18 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 // and ensuring any pre-existing snapshot database is removed first. It is to be called
 // by a chain that is starting from block 0
 func (e *Engine) Start() error {
-	if err := os.RemoveAll(filepath.Join(e.dbPath, SnapshotDBName+".db")); err != nil {
-		return err
+	p := filepath.Join(e.dbPath, SnapshotDBName+".db")
+
+	exists, err := vgfs.PathExists(p)
+	if err != nil {
+		return nil
+	}
+
+	if exists {
+		e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
+		if err := os.RemoveAll(p); err != nil {
+			return err
+		}
 	}
 
 	return e.initialiseTree()
