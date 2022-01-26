@@ -220,13 +220,13 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 
 // Start kicks the snapshot engine into its initial state setting up the DB connections
 // and ensuring any pre-existing snapshot database is removed first. It is to be called
-// by a chain that is starting from block 0
+// by a chain that is starting from block 0.
 func (e *Engine) Start() error {
 	p := filepath.Join(e.dbPath, SnapshotDBName+".db")
 
 	exists, err := vgfs.PathExists(p)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	if exists {
@@ -294,7 +294,7 @@ func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
 }
 
 // initialiseTree connects to the snapshotdb and sets the engine's state to
-// point to the latest version of the tree
+// point to the latest version of the tree.
 func (e *Engine) initialiseTree() error {
 	switch e.Config.Storage {
 	case memDB:
