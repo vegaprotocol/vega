@@ -767,7 +767,7 @@ func TestListSnapFromTree(t *testing.T) {
 	snapshotsHeights, invalidVersions, err := snapshot.SnapshotsHeightsFromTree(tree)
 
 	require.NoError(t, err)
-	require.NotEmpty(t, invalidVersions)
+	require.Empty(t, invalidVersions)
 
 	var expectedHeight uint64 = 2
 
