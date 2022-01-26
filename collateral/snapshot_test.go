@@ -48,9 +48,9 @@ func TestCheckpoint(t *testing.T) {
 	assert.NoError(t, eng.UpdateBalance(ctx, pendingTransfersAcc.ID, num.NewUint(1789)))
 
 	// topup the global reward account
-	rewardAccount, err := eng.CreateOrGetAssetRewardPoolAccount(ctx, "VOTE")
+	rewardAccount, err := eng.GetGlobalRewardAccount("VOTE")
 	assert.Nil(t, err)
-	err = eng.Engine.UpdateBalance(ctx, rewardAccount, num.NewUint(10000))
+	err = eng.Engine.UpdateBalance(ctx, rewardAccount.ID, num.NewUint(10000))
 	assert.Nil(t, err)
 
 	// topup the infra fee account for the test asset
@@ -88,10 +88,9 @@ func TestCheckpoint(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, bal, loadedPartyAcc.Balance)
 
-	loadedGlobInsPool, err := loadEng.GetAssetInsurancePoolAccount(testMarketAsset)
+	loadedGlobRewardPool, err := loadEng.GetGlobalRewardAccount(testMarketAsset)
 	require.NoError(t, err)
-	require.Equal(t, insBal, loadedGlobInsPool.Balance)
-
+	require.Equal(t, insBal, loadedGlobRewardPool.Balance)
 	loadedReward, err := loadEng.GetGlobalRewardAccount("VOTE")
 	require.NoError(t, err)
 	require.Equal(t, num.NewUint(10000), loadedReward.Balance)

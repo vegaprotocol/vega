@@ -33,8 +33,9 @@ func NewOnChainVerifier(
 	ethClient EthereumClient,
 	ethConfirmations EthConfirmations,
 ) *OnChainVerifier {
-	log = log.Named(namedLogger)
+	log = log.Named("on-chain-verifier")
 	log.SetLevel(cfg.Level.Get())
+
 	return &OnChainVerifier{
 		log:              log,
 		ethClient:        ethClient,
@@ -95,7 +96,8 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 		defer cancel()
 		iter, err := filterer.FilterStakeDeposited(
 			&bind.FilterOpts{
-				Start:   event.BlockNumber - 1,
+				Start:   event.BlockNumber,
+				End:     &event.BlockNumber,
 				Context: ctx,
 			},
 			// user
@@ -103,8 +105,7 @@ func (o *OnChainVerifier) CheckStakeDeposited(
 			// vega_public_key
 			[][32]byte{decodedPubKey})
 		if err != nil {
-			o.log.Error("could not start stake deposited filter",
-				logging.Error(err))
+			o.log.Error("Couldn't start filtering on stake deposited event", logging.Error(err))
 			continue
 		}
 		defer iter.Close()
@@ -169,9 +170,11 @@ func (o *OnChainVerifier) CheckStakeRemoved(event *types.StakeRemoved) error {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
+
 		iter, err := filterer.FilterStakeRemoved(
 			&bind.FilterOpts{
-				Start:   event.BlockNumber - 1,
+				Start:   event.BlockNumber,
+				End:     &event.BlockNumber,
 				Context: ctx,
 			},
 			// user

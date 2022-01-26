@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
 	"code.vegaprotocol.io/vega/bridges"
+	vgerrors "code.vegaprotocol.io/vega/libs/errors"
 	"code.vegaprotocol.io/vega/metrics"
 	ethnw "code.vegaprotocol.io/vega/nodewallets/eth"
 	"code.vegaprotocol.io/vega/types"
@@ -25,8 +26,6 @@ import (
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
-
-const MaxNonce = 100000000
 
 var (
 	ErrUnableToFindDeposit        = errors.New("unable to find erc20 deposit event")
@@ -103,24 +102,24 @@ func (e *ERC20) Validate() error {
 		return err
 	}
 
-	var carryErr error
+	validationErrs := vgerrors.NewCumulatedErrors()
 
 	if name, err := t.Name(&bind.CallOpts{}); err != nil {
-		carryErr = fmt.Errorf("couldn't get name %v: %w", err, carryErr)
+		validationErrs.Add(fmt.Errorf("couldn't get name: %w", err))
 	} else if name != e.asset.Details.Name {
-		carryErr = maybeError(err, "invalid name, expected(%s), got(%s)", e.asset.Details.Name, name)
+		validationErrs.Add(fmt.Errorf("invalid name, expected(%s), got(%s)", e.asset.Details.Name, name))
 	}
 
 	if symbol, err := t.Symbol(&bind.CallOpts{}); err != nil {
-		carryErr = fmt.Errorf("couldn't get symbol %v: %w", err, carryErr)
+		validationErrs.Add(fmt.Errorf("couldn't get symbol: %w", err))
 	} else if symbol != e.asset.Details.Symbol {
-		carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", e.asset.Details.Symbol, symbol)
+		validationErrs.Add(fmt.Errorf("invalid symbol, expected(%s), got(%s)", e.asset.Details.Symbol, symbol))
 	}
 
 	if decimals, err := t.Decimals(&bind.CallOpts{}); err != nil {
-		carryErr = fmt.Errorf("couldn't get decimals %v: %w", err, carryErr)
+		validationErrs.Add(fmt.Errorf("couldn't get decimals: %w", err))
 	} else if uint64(decimals) != e.asset.Details.Decimals {
-		carryErr = maybeError(carryErr, "invalid decimals, expected(%d), got(%d)", e.asset.Details.Decimals, decimals)
+		validationErrs.Add(fmt.Errorf("invalid decimals, expected(%d), got(%d)", e.asset.Details.Decimals, decimals))
 	}
 
 	// FIXME: We do not check the total supply for now.
@@ -132,23 +131,12 @@ func (e *ERC20) Validate() error {
 	// 	carryErr = maybeError(carryErr, "invalid symbol, expected(%s), got(%s)", b.asset.Details.TotalSupply, totalSupply)
 	// }
 
-	if carryErr != nil {
-		return carryErr
+	if validationErrs.HasAny() {
+		return validationErrs
 	}
 
 	e.ok = true
 	return nil
-}
-
-func maybeError(err error, format string, a ...interface{}) error {
-	if err != nil {
-		format = format + ": %w"
-		args := []interface{}{}
-		args = append(args, a...)
-		args = append(args, err)
-		return fmt.Errorf(format, args...)
-	}
-	return fmt.Errorf(format, a...)
 }
 
 // SignBridgeListing create and sign the message to
