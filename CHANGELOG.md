@@ -42,6 +42,7 @@
 - [4636](https://github.com/vegaprotocol/vega/pull/4636) - Update the Core Team DoD and issue templates
 - [4629](https://github.com/vegaprotocol/vega/pull/4629) - Update `CHANGELOG.md` to include `0.47.5` changes
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
+- [4643](https://github.com/vegaprotocol/vega/issues/4643) - Add noise to floating point consensus variables in QA
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
 - [4823](https://github.com/vegaprotocol/vega/pull/4283) - Reward refactoring for network treasury
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
