@@ -46,6 +46,7 @@ Add any other context about the problem here including; system version numbers, 
 - [ ] Code refactored to meet SOLID and other code design principles
 - [ ] Code is compilation error, warning, and hint free
 - [ ] Carry out a basic happy path end-to-end check of the new code
+- [ ] All APIs are documented so auto-generate documentation is created
 - [ ] All bug recreation steps can be followed without presenting the original error/bug
 - [ ] All Unit, Integration and BVT tests are passing
 - [ ] Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
@@ -54,4 +55,4 @@ Add any other context about the problem here including; system version numbers, 
 **After Merging**
 - [ ] Move development ticket to `Done` if there is **NO** requirement for new [system-tests](https://github.com/vegaprotocol/system-tests/issues)
 - [ ] Resolve any issues with broken system-tests
-- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed
+- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed, or is a new feature
