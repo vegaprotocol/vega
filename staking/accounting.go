@@ -87,8 +87,7 @@ func NewAccounting(
 	defer func() {
 		tt.NotifyOnTick(acc.onTick)
 	}()
-	log = log.Named(namedLogger)
-	log.SetLevel(cfg.Level.Get())
+	log = log.Named("accounting")
 
 	return &Accounting{
 		log:                     log,

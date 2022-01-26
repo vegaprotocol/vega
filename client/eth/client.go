@@ -43,20 +43,11 @@ func Dial(ctx context.Context, rawURL string) (*Client, error) {
 	return &Client{ETHClient: ethClient}, nil
 }
 
-func (c *Client) OnEthereumConfigUpdate(_ context.Context, v interface{}) error {
+func (c *Client) UpdateEthereumConfig(ethConfig *types.EthereumConfig) error {
 	if c == nil {
 		return nil
 	}
 
-	ethConfig, err := types.EthereumConfigFromUntypedProto(v)
-	if err != nil {
-		return err
-	}
-
-	return c.setEthereumConfig(ethConfig)
-}
-
-func (c *Client) setEthereumConfig(ethConfig *types.EthereumConfig) error {
 	netID, err := c.NetworkID(context.Background())
 	if err != nil {
 		return fmt.Errorf("couldn't retrieve the network ID form the ethereum client: %w", err)

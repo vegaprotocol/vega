@@ -1,18 +1,12 @@
 package logging
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
-
-// ErrInvalidLogLevel signal that the log level used is not valid
-// as cannot be unmarshal from a string, or not one of the level
-// provided in this package.
-var ErrInvalidLogLevel = errors.New("invalid log level")
 
 // A Level is a logging priority. Higher levels are more important.
 type Level int8
@@ -53,7 +47,7 @@ func ParseLevel(l string) (Level, error) {
 	case "fatal":
 		return FatalLevel, nil
 	default:
-		return Level(100), ErrInvalidLogLevel
+		return Level(100), fmt.Errorf("log level \"%s\" is not supported", l)
 	}
 }
 
