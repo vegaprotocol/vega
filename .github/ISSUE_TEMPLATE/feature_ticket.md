@@ -6,50 +6,24 @@ labels: "feature"
 assignees: ''
 ---
 
-_Ensure the ticket title clearly communicates what this feature ticket makes possible_
-
-_Add the **milestone** and **project** of the Major Release this feature is part of i.e. Oregon Trail_
-
-_Add a **label** for the feature that this ticket is part of i.e. Data Sourcing_
-
 # Feature Overview
-A simple overview that describes **what** this feature (or sub feature) needs to do and **why** it's valuable. 
-This should be brief, understandable by anyone in the business and use one of the following the formats: 
 
-**As a** (who - the type of user/actor the feature serves)
-**I want** (what - the action to be performed / made possible)
-**So that** (why - the goal/result/value it achieves to the user/actor or the business)
-
-or
-
-**In order to** (context - overcome a problem or meet a requirerment)
+**In order to** (context - overcome a problem or meet a requirement)
 **We will** (what - carry out this piece of work / action)
 **So that** (why - we create these outcomes)
 
 ## Specs
-
 - [Link](xyz) to spec or section within a spec
-- [Link](xyz) to another spec or section
 
 # Tasks
-A checklist of the tasks that are needed to develop the feature and meet the accceptance criteria and feature test scenarios. Ideally, tasks would reflect the pull requests likely to be created when developing the feature. 
-
+A checklist of the tasks that are needed to develop the feature and meet the acceptance criteria and feature test scenarios. Ideally, tasks would reflect the issues/pull requests likely to be created when developing the feature. 
 - [ ]
 - [ ]
-- [ ]
-
-# Product Owner
-The name of the person in the Product team that is responsible for this feature. This will be the go-to person for the engineer working on this ticket for any questions / clarifications, to get feedback on work in progress and who will ultimately accept the feature ticket as 'done'.
-
-_**Assign** the named product owner to the ticket_
 
 # Acceptance Criteria
-A list of criteria (aim for 3!) that have to be met for this feature to be accepted as 'done' by the product owner. Acceptance criteria should be simple, single sentence, statements written from the perspective of the work already having been done. Each statement should be able to be objectively determined to be true or false. For example:
+A list of criteria (aim for 3!) that have to be met for this feature to be accepted as 'done' by the product owner.
 
 - It is possible to
-- It is possible to
-- Vega does
-- Vega does
 
 Acceptance Criteria and Feature Test Scenarios can, in some cases, be closely related. If acceptance criteria become fully covered by feature test scenarios they can be removed leaving on acceptance criteria that can't be directly or fully proven with tests.
 
@@ -57,66 +31,31 @@ Acceptance Criteria and Feature Test Scenarios can, in some cases, be closely re
 Detailed scenarios (1-3!) that can be executed as feature tests to verify that the feature has been implemented as expected. We use the follow format:
 
 GIVEN (setup/context) 
-
 WHEN (action) 
-
-THEN (assertion) 
-
-For example...
-
-```gherkin
-    Feature: Account Holder withdraws cash
-    Scenario: Account has sufficient funds
-    Given the account balance is $100
-      And the card is valid
-      And the machine contains enough money  
-    When the Account Holder requests $20
-    Then the ATM should dispense $20
-      And the account balance should be $80
-      And the card should be returned
-```     
-
-See https://github.com/vegaprotocol/vega/tree/develop/integration/ for more format information and examples.
-
-_TBC whether these should be separate files  - will come back to this_
-
-# Impacted Systems / Engines
-A list of the engines that we believe will be impacted by the development of this feature. _Delete as appropriate_
-
-- Core - banking
-- Core - collateral
-- Core - execution
-- Core - fee
-- Core - governance
-- Core - liquidity
-- Core - oracles
-- Core - positions
-- Core - risk
-- Core - settlement
-- Core - monitor
-- API
-- Wallet
-- Liquidity bot
-- Trader bot
-
-# API Calls
-A list of the API calls that are needed for this feature, written in an implementation-agnostic format i.e. "Get a list of widgets, categorised by X", rather than "GET /widgets?category=X":
-
-- Get a list of widgets, categorised by X
-- Get x
-- Get y
-
-# Dependencies
-Links to the tickets that represent work that this feature ticket is dependent on to be able to start / finish development. This could be another feature ticket, an important refactoring task, some infrastructure work etc. For each dependency please add a categorisation of the type of dependency (hard or soft) and whether it is internal or external to the team.
-
-- #Link to ticket + Dependency ticket name | hard/soft | internal/external 
-- #Link to ticket + Dependency ticket name | hard/soft | internal/external
-- #Link to ticket + Dependency ticket name | hard/soft | internal/external 
-
-_Add a **label(s)** to represent the types of dependency this feature ticket has (soft_internal_dependency, soft_external_dependency, hard_internal_dependency, hard_external_dependency)_
+THEN (assertion) For example...
+See [here](https://github.com/vegaprotocol/vega/tree/develop/integration/) for more format information and examples.
 
 # Additional Details (optional)
 Any additional information that provides context or gives information that will help us develop the feature. 
 
 # Examples (optional)
 Code snippets from the spec for reference
+
+# Definition of Done
+>ℹ️ Not every issue will need every item checked, however, every item on this list should be properly considered and actioned to meet the [DoD](https://github.com/vegaprotocol/vega/blob/develop/DEFINITION_OF_DONE.md).
+
+**Before Merging**
+- [ ] Create relevant for [system-test](https://github.com/vegaprotocol/system-tests/issues) tickets with feature labels
+- [ ] Code refactored to meet SOLID and other code design principles
+- [ ] Code is compilation error, warning, and hint free
+- [ ] Carry out a basic happy path end-to-end check of the new code
+- [ ] All APIs are documented so auto-generated documentation is created
+- [ ] All acceptance criteria confirmed to be met, or, reasons why not discussed with the engineering leadership team
+- [ ] All Unit, Integration and BVT tests are passing
+- [ ] Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
+- [ ] Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when starting the work if dependencies known i.e. API changes)
+
+**After Merging**
+- [ ] Move development ticket to `Done` if there is **NO** requirement for new system-tests
+- [ ] Resolve any issues with broken system-tests
+- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed, or is a new feature
