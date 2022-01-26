@@ -7,9 +7,10 @@ import (
 	"code.vegaprotocol.io/protos/vega"
 	ov1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
-	"code.vegaprotocol.io/vega/cmd/vega/snapshots"
+	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+
 	"github.com/cosmos/iavl"
 	"github.com/golang/protobuf/proto"
 	"github.com/shopspring/decimal"
@@ -763,7 +764,7 @@ func TestListSnapFromTree(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, hash) // @TODO see if storing it again produces the same hash
 
-	snapshotsHeights, err := snapshots.SnapshotsHeightsFromTree(tree)
+	snapshotsHeights, err := snapshot.SnapshotsHeightsFromTree(tree)
 
 	require.NoError(t, err)
 

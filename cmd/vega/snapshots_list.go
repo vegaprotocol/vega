@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/shared/paths"
-	"code.vegaprotocol.io/vega/cmd/vega/snapshots"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/snapshot"
 
 	"github.com/jessevdk/go-flags"
 )
@@ -42,7 +42,7 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 		dbPath = paths.StatePath(cmd.DBPath).String()
 	}
 
-	found, err := snapshots.AvailableSnapshotsHeights(dbPath)
+	found, err := snapshot.AvailableSnapshotsHeights(dbPath)
 	if err != nil {
 		return err
 	}
