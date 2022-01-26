@@ -32,7 +32,7 @@ var (
 )
 
 type testEvtFwd struct {
-	*evtforward.EvtForwarder
+	*evtforward.Forwarder
 	ctrl *gomock.Controller
 	time *mocks.MockTimeService
 	top  *mocks.MockValidatorTopology
@@ -64,12 +64,12 @@ func getTestEvtFwd(t *testing.T) *testEvtFwd {
 		cmd, tim, top)
 
 	return &testEvtFwd{
-		EvtForwarder: evtfwd,
-		ctrl:         ctrl,
-		time:         tim,
-		top:          top,
-		cmd:          cmd,
-		cb:           cb,
+		Forwarder: evtfwd,
+		ctrl:      ctrl,
+		time:      tim,
+		top:       top,
+		cmd:       cmd,
+		cb:        cb,
 	}
 }
 

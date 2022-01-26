@@ -253,11 +253,6 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 	err = e.UpdateBalance(context.Background(), p1AccID, initialBalance)
 	assert.Nil(t, err)
 
-	// create the pool
-	e.broker.EXPECT().Send(gomock.Any()).Times(1)
-	rewardAccID, err := e.CreateOrGetAssetRewardPoolAccount(context.Background(), testMarketAsset)
-	assert.NoError(t, err)
-
 	e.broker.EXPECT().Send(gomock.Any()).Times(6)
 
 	// now we create the transfers:
@@ -317,7 +312,7 @@ func testTransferFundsFromGeneralToRewardPool(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, acc1.Balance, num.Zero())
 
-	rewardAcc, err := e.GetAccountByID(rewardAccID)
+	rewardAcc, err := e.GetGlobalRewardAccount(testMarketAsset)
 	assert.NoError(t, err)
 	assert.Equal(t, rewardAcc.Balance, num.NewUint(90))
 

@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
@@ -38,6 +39,7 @@ import (
 	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 	"github.com/spf13/afero"
@@ -107,11 +109,16 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.witness = validators.NewWitness(n.Log, n.conf.Validators, n.topology, n.commander, n.timeService)
 	n.netParams = netparams.New(n.Log, n.conf.NetworkParameters, n.broker)
 	n.timeService.NotifyOnTick(n.netParams.OnChainTimeUpdate)
-	n.evtfwd = evtforward.New(
-		n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
+	n.eventForwarder = evtforward.New(n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
+
+	if n.conf.IsValidator() {
+		n.eventForwarderEngine = evtforward.NewEngine(n.Log, n.conf.EvtForward)
+	} else {
+		n.eventForwarderEngine = evtforward.NewNoopEngine(n.Log, n.conf.EvtForward)
+	}
 
 	n.stakingAccounts, n.stakeVerifier = staking.New(
-		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.evtfwd, n.conf.IsValidator(),
+		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.IsValidator(),
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 
@@ -134,11 +141,9 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		n.delegation = delegation.New(n.Log, delegation.NewDefaultConfig(), n.broker, n.topology, n.stakingAccounts, n.epochService, n.timeService)
 	}
 
-	// setup rewards engine
 	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology, n.feesTracker, marketTracker)
 
-	n.notary = notary.NewWithSnapshot(
-		n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
+	n.notary = notary.NewWithSnapshot(n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
 	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology, n.epochService)
 
 	// checkpoint engine
@@ -172,7 +177,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
 
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
-		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker, marketTracker)
+		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.eventForwarder, n.executionEngine, n.feesTracker, marketTracker)
 
 	// setup config reloads for all engines / services /etc
 	n.setupConfigWatchers()
@@ -189,6 +194,11 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		return err
 	}
 
+	return nil
+}
+
+func (n *NodeCommand) stopServices(_ []string) error {
+	n.eventForwarderEngine.Stop()
 	return nil
 }
 
@@ -212,7 +222,7 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.banking,
 		n.broker,
 		n.witness,
-		n.evtfwd,
+		n.eventForwarder,
 		n.executionEngine,
 		n.genesisHandler,
 		n.governance,
@@ -274,6 +284,7 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 	if n.conf.IsValidator() {
 		n.commander.SetChain(n.blockchainClient)
 	}
+
 	return app, nil
 }
 
@@ -330,8 +341,19 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.executionEngine.OnMarketTargetStakeTimeWindowUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.BlockchainsEthereumConfig,
-			Watcher: n.ethClient.OnEthereumConfigUpdate,
+			Param: netparams.BlockchainsEthereumConfig,
+			Watcher: func(ctx context.Context, cfg interface{}) error {
+				ethCfg, err := types.EthereumConfigFromUntypedProto(cfg)
+				if err != nil {
+					return fmt.Errorf("invalid Ethereum configuration: %w", err)
+				}
+
+				if err := n.ethClient.UpdateEthereumConfig(ethCfg); err != nil {
+					return err
+				}
+
+				return n.eventForwarderEngine.StartEthereumEngine(n.ethClient, n.eventForwarder, n.conf.EvtForward.Ethereum, ethCfg)
+			},
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvidersFeeDistribitionTimeStep,
@@ -460,7 +482,8 @@ func (n *NodeCommand) setupConfigWatchers() {
 	n.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { n.executionEngine.ReloadConf(cfg.Execution) },
 		func(cfg config.Config) { n.notary.ReloadConf(cfg.Notary) },
-		func(cfg config.Config) { n.evtfwd.ReloadConf(cfg.EvtForward) },
+		func(cfg config.Config) { n.eventForwarderEngine.ReloadConf(cfg.EvtForward) },
+		func(cfg config.Config) { n.eventForwarder.ReloadConf(cfg.EvtForward) },
 		func(cfg config.Config) { n.blockchainServer.ReloadConf(cfg.Blockchain) },
 		func(cfg config.Config) { n.topology.ReloadConf(cfg.Validators) },
 		func(cfg config.Config) { n.witness.ReloadConf(cfg.Validators) },
