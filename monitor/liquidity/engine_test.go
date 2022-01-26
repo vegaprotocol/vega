@@ -59,17 +59,17 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 	})
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			if test.auctionShouldEnd {
-				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)
-				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&exp)
-			} else {
-				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&keep)
-			}
 			var trades []*types.Trade = nil
 			rf := types.RiskFactor{}
 			markPrice := num.NewUint(100)
+			if test.auctionShouldEnd {
+				h.AuctionState.EXPECT().SetReadyToLeave().Times(1)
+				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&exp)
+				h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Times(1).Return(test.target)
+			} else {
+				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&keep)
+			}
 
-			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(test.target)
 			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice.Clone(), test.bestStaticBidVolume, test.bestStaticAskVolume)
 		})
 	}
@@ -100,7 +100,6 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 	mon := liquidity.NewMonitor(h.TargetStakeCalculator, &types.LiquidityMonitoringParameters{
 		TriggeringRatio: num.DecimalFromFloat(.5),
 	})
-	h.AuctionState.EXPECT().InAuction().Return(false).Times(len(tests))
 	h.AuctionState.EXPECT().ExpiresAt().Times(len(tests)).Return(nil)
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {

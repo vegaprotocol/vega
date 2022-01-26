@@ -95,7 +95,7 @@ func testEngineReset(t *testing.T) {
 
 	proposalHash, err := engine.GetHash("proposal")
 	require.Nil(t, err)
-	voteHash, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
+	voteHash, err := engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
 
 	keys := engine.Keys()
@@ -116,7 +116,7 @@ func testEngineReset(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(proposalHash, proposalHash2))
 
-	voteHash2, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
+	voteHash2, err := engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(voteHash, voteHash2))
 
@@ -144,7 +144,7 @@ func testEngineReset(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(proposalHash3, proposalHash2))
 
-	voteHash3, err := engine.GetHash((&types.PayloadDelegationActive{}).Key())
+	voteHash3, err := engine.GetHash((&types.PayloadVoteSpamPolicy{}).Key())
 	require.Nil(t, err)
 	require.False(t, bytes.Equal(voteHash3, voteHash2))
 }

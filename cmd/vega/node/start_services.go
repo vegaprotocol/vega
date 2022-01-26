@@ -40,7 +40,6 @@ import (
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"github.com/prometheus/common/log"
 	"github.com/spf13/afero"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
@@ -118,10 +117,12 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 
 	n.statevar = statevar.New(n.Log, n.conf.StateVar, n.broker, n.topology, n.commander, n.timeService)
+	n.feesTracker = execution.NewFeesTracker(n.epochService)
+	marketTracker := execution.NewMarketTracker()
 
 	// instantiate the execution engine
 	n.executionEngine = execution.NewEngine(
-		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar,
+		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker, marketTracker,
 	)
 
 	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
@@ -135,14 +136,14 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	}
 
 	// setup rewards engine
-	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology)
+	n.rewards = rewards.New(n.Log, n.conf.Rewards, n.broker, n.delegation, n.epochService, n.collateral, n.timeService, n.topology, n.feesTracker, marketTracker)
 
 	n.notary = notary.NewWithSnapshot(
 		n.Log, n.conf.Notary, n.topology, n.broker, n.commander, n.timeService)
-	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology)
+	n.banking = banking.New(n.Log, n.conf.Banking, n.collateral, n.witness, n.timeService, n.assets, n.notary, n.broker, n.topology, n.epochService)
 
 	// checkpoint engine
-	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.rewards, n.topology, n.banking)
+	n.checkpoint, err = checkpoint.New(n.Log, n.conf.Checkpoint, n.assets, n.collateral, n.governance, n.netParams, n.delegation, n.epochService, n.topology, n.banking)
 	if err != nil {
 		panic(err)
 	}
@@ -169,23 +170,27 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 		panic(err)
 	}
 	// notify delegation, rewards, and accounting on changes in the validator pub key
-	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.rewards.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
+	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
 
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
-		n.notary, n.spam, n.rewards, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine)
+		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker, marketTracker)
+
+	// setup config reloads for all engines / services /etc
+	n.setupConfigWatchers()
+	n.timeService.NotifyOnTick(n.confWatcher.OnTimeUpdate)
+
+	// setup some network parameters runtime validations and network parameters updates dispatches
+	// this must come before we try to load from a snapshot, which happens in startBlockchain
+	if err := n.setupNetParameters(); err != nil {
+		return err
+	}
 
 	// now instantiate the blockchain layer
 	if n.app, err = n.startBlockchain(); err != nil {
 		return err
 	}
 
-	// setup config reloads for all engines / services /etc
-	n.setupConfigWatchers()
-	n.timeService.NotifyOnTick(n.confWatcher.OnTimeUpdate)
-
-	// setup some network parameters runtime validations
-	// and network parameters updates dispatches
-	return n.setupNetParameters()
+	return nil
 }
 
 func (n *NodeCommand) startBlockchain() (*processor.App, error) {
@@ -210,7 +215,6 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.witness,
 		n.evtfwd,
 		n.executionEngine,
-		n.commander,
 		n.genesisHandler,
 		n.governance,
 		n.notary,
@@ -235,6 +239,19 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.blockchainClient,
 		n.Version,
 	)
+
+	// Load from a snapshot if that has been requested
+	// This has to happen after creating the application since that is where we add the
+	// replay-protector to the provider list
+	if n.conf.Snapshot.StartHeight != 0 {
+		err := n.snapshot.LoadHeight(n.ctx, n.conf.Snapshot.StartHeight)
+		if err != nil {
+			return nil, err
+		}
+
+		// Replace the restore replay-protector, the tolerance value here doesn't matter so is set to zero
+		app.Abci().ReplaceReplayProtector(0)
+	}
 
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
@@ -326,6 +343,10 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.executionEngine.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
 		},
 		netparams.WatchParam{
+			Param:   netparams.MarketMinLpStakeQuantumMultiple,
+			Watcher: n.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
+		},
+		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,
 			Watcher: n.executionEngine.OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate,
 		},
@@ -354,18 +375,6 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.epochService.OnEpochLengthUpdate,
 		},
 		netparams.WatchParam{
-			Param:   netparams.RewardAsset,
-			Watcher: n.rewards.UpdateAssetForStakingAndDelegationRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutFraction,
-			Watcher: n.rewards.UpdatePayoutFractionForStakingRewardScheme,
-		},
-		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardPayoutDelay,
-			Watcher: n.rewards.UpdatePayoutDelayForStakingRewardScheme,
-		},
-		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerParticipant,
 			Watcher: n.rewards.UpdateMaxPayoutPerParticipantForStakingRewardScheme,
 		},
@@ -378,8 +387,8 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.rewards.UpdateMinimumValidatorStakeForStakingRewardScheme,
 		},
 		netparams.WatchParam{
-			Param:   netparams.StakingAndDelegationRewardMaxPayoutPerEpoch,
-			Watcher: n.rewards.UpdateMaxPayoutPerEpochStakeForStakingRewardScheme,
+			Param:   netparams.RewardAsset,
+			Watcher: n.rewards.UpdateAssetForStakingAndDelegation,
 		},
 		netparams.WatchParam{
 			Param:   netparams.StakingAndDelegationRewardCompetitionLevel,
@@ -503,7 +512,7 @@ func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.
 
 		go func() {
 			if err := rec.Replay(abciApp); err != nil {
-				log.Fatalf("replay: %v", err)
+				l.Log.Fatal("replay error", logging.Error(err))
 			}
 		}()
 	}

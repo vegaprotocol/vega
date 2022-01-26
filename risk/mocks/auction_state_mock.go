@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockAuctionState is a mock of AuctionState interface
+// MockAuctionState is a mock of AuctionState interface.
 type MockAuctionState struct {
 	ctrl     *gomock.Controller
 	recorder *MockAuctionStateMockRecorder
 }
 
-// MockAuctionStateMockRecorder is the mock recorder for MockAuctionState
+// MockAuctionStateMockRecorder is the mock recorder for MockAuctionState.
 type MockAuctionStateMockRecorder struct {
 	mock *MockAuctionState
 }
 
-// NewMockAuctionState creates a new mock instance
+// NewMockAuctionState creates a new mock instance.
 func NewMockAuctionState(ctrl *gomock.Controller) *MockAuctionState {
 	mock := &MockAuctionState{ctrl: ctrl}
 	mock.recorder = &MockAuctionStateMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAuctionState) EXPECT() *MockAuctionStateMockRecorder {
 	return m.recorder
 }
 
-// CanLeave mocks base method
+// CanLeave mocks base method.
 func (m *MockAuctionState) CanLeave() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanLeave")
@@ -40,13 +41,13 @@ func (m *MockAuctionState) CanLeave() bool {
 	return ret0
 }
 
-// CanLeave indicates an expected call of CanLeave
+// CanLeave indicates an expected call of CanLeave.
 func (mr *MockAuctionStateMockRecorder) CanLeave() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanLeave", reflect.TypeOf((*MockAuctionState)(nil).CanLeave))
 }
 
-// InAuction mocks base method
+// InAuction mocks base method.
 func (m *MockAuctionState) InAuction() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InAuction")
@@ -54,7 +55,7 @@ func (m *MockAuctionState) InAuction() bool {
 	return ret0
 }
 
-// InAuction indicates an expected call of InAuction
+// InAuction indicates an expected call of InAuction.
 func (mr *MockAuctionStateMockRecorder) InAuction() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InAuction", reflect.TypeOf((*MockAuctionState)(nil).InAuction))

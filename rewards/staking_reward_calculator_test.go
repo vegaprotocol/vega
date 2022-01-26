@@ -190,7 +190,7 @@ func testCalcValidatorsScore(t *testing.T) {
 
 func testCalcRewardNoBalance(t *testing.T) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -203,7 +203,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	scores["node3"] = num.DecimalZero()
 	scores["node4"] = num.DecimalZero()
 
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -258,7 +258,7 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.25
@@ -350,7 +350,7 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -433,7 +433,7 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.25
@@ -528,7 +528,7 @@ func testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
 	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), num.Zero(), rng, logging.NewTestLogger())
 
 	// 0.1% of 1000000000 = 1000000 - this test is demonstrating that regardless of the remaining balance to give to delegators is less than 0.1% of the max
 	// payout per participant, we still run one round and then stop.

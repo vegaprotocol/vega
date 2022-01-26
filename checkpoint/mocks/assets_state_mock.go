@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	types "code.vegaprotocol.io/vega/types"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	types "code.vegaprotocol.io/vega/types"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockAssetsState is a mock of AssetsState interface
+// MockAssetsState is a mock of AssetsState interface.
 type MockAssetsState struct {
 	ctrl     *gomock.Controller
 	recorder *MockAssetsStateMockRecorder
 }
 
-// MockAssetsStateMockRecorder is the mock recorder for MockAssetsState
+// MockAssetsStateMockRecorder is the mock recorder for MockAssetsState.
 type MockAssetsStateMockRecorder struct {
 	mock *MockAssetsState
 }
 
-// NewMockAssetsState creates a new mock instance
+// NewMockAssetsState creates a new mock instance.
 func NewMockAssetsState(ctrl *gomock.Controller) *MockAssetsState {
 	mock := &MockAssetsState{ctrl: ctrl}
 	mock.recorder = &MockAssetsStateMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAssetsState) EXPECT() *MockAssetsStateMockRecorder {
 	return m.recorder
 }
 
-// Checkpoint mocks base method
+// Checkpoint mocks base method.
 func (m *MockAssetsState) Checkpoint() ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Checkpoint")
@@ -43,13 +44,13 @@ func (m *MockAssetsState) Checkpoint() ([]byte, error) {
 	return ret0, ret1
 }
 
-// Checkpoint indicates an expected call of Checkpoint
+// Checkpoint indicates an expected call of Checkpoint.
 func (mr *MockAssetsStateMockRecorder) Checkpoint() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkpoint", reflect.TypeOf((*MockAssetsState)(nil).Checkpoint))
 }
 
-// GetEnabledAssets mocks base method
+// GetEnabledAssets mocks base method.
 func (m *MockAssetsState) GetEnabledAssets() []*types.Asset {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEnabledAssets")
@@ -57,13 +58,13 @@ func (m *MockAssetsState) GetEnabledAssets() []*types.Asset {
 	return ret0
 }
 
-// GetEnabledAssets indicates an expected call of GetEnabledAssets
+// GetEnabledAssets indicates an expected call of GetEnabledAssets.
 func (mr *MockAssetsStateMockRecorder) GetEnabledAssets() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnabledAssets", reflect.TypeOf((*MockAssetsState)(nil).GetEnabledAssets))
 }
 
-// Load mocks base method
+// Load mocks base method.
 func (m *MockAssetsState) Load(arg0 context.Context, arg1 []byte) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Load", arg0, arg1)
@@ -71,13 +72,13 @@ func (m *MockAssetsState) Load(arg0 context.Context, arg1 []byte) error {
 	return ret0
 }
 
-// Load indicates an expected call of Load
+// Load indicates an expected call of Load.
 func (mr *MockAssetsStateMockRecorder) Load(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockAssetsState)(nil).Load), arg0, arg1)
 }
 
-// Name mocks base method
+// Name mocks base method.
 func (m *MockAssetsState) Name() types.CheckpointName {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
@@ -85,7 +86,7 @@ func (m *MockAssetsState) Name() types.CheckpointName {
 	return ret0
 }
 
-// Name indicates an expected call of Name
+// Name indicates an expected call of Name.
 func (mr *MockAssetsStateMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockAssetsState)(nil).Name))

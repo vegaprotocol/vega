@@ -6,41 +6,42 @@ package mocks
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockTimeTicker is a mock of TimeTicker interface
+// MockTimeTicker is a mock of TimeTicker interface.
 type MockTimeTicker struct {
 	ctrl     *gomock.Controller
 	recorder *MockTimeTickerMockRecorder
 }
 
-// MockTimeTickerMockRecorder is the mock recorder for MockTimeTicker
+// MockTimeTickerMockRecorder is the mock recorder for MockTimeTicker.
 type MockTimeTickerMockRecorder struct {
 	mock *MockTimeTicker
 }
 
-// NewMockTimeTicker creates a new mock instance
+// NewMockTimeTicker creates a new mock instance.
 func NewMockTimeTicker(ctrl *gomock.Controller) *MockTimeTicker {
 	mock := &MockTimeTicker{ctrl: ctrl}
 	mock.recorder = &MockTimeTickerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTimeTicker) EXPECT() *MockTimeTickerMockRecorder {
 	return m.recorder
 }
 
-// NotifyOnTick mocks base method
+// NotifyOnTick mocks base method.
 func (m *MockTimeTicker) NotifyOnTick(arg0 func(context.Context, time.Time)) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "NotifyOnTick", arg0)
 }
 
-// NotifyOnTick indicates an expected call of NotifyOnTick
+// NotifyOnTick indicates an expected call of NotifyOnTick.
 func (mr *MockTimeTickerMockRecorder) NotifyOnTick(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyOnTick", reflect.TypeOf((*MockTimeTicker)(nil).NotifyOnTick), arg0)

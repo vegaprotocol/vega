@@ -5,34 +5,35 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockEthConfirmations is a mock of EthConfirmations interface
+// MockEthConfirmations is a mock of EthConfirmations interface.
 type MockEthConfirmations struct {
 	ctrl     *gomock.Controller
 	recorder *MockEthConfirmationsMockRecorder
 }
 
-// MockEthConfirmationsMockRecorder is the mock recorder for MockEthConfirmations
+// MockEthConfirmationsMockRecorder is the mock recorder for MockEthConfirmations.
 type MockEthConfirmationsMockRecorder struct {
 	mock *MockEthConfirmations
 }
 
-// NewMockEthConfirmations creates a new mock instance
+// NewMockEthConfirmations creates a new mock instance.
 func NewMockEthConfirmations(ctrl *gomock.Controller) *MockEthConfirmations {
 	mock := &MockEthConfirmations{ctrl: ctrl}
 	mock.recorder = &MockEthConfirmationsMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEthConfirmations) EXPECT() *MockEthConfirmationsMockRecorder {
 	return m.recorder
 }
 
-// Check mocks base method
+// Check mocks base method.
 func (m *MockEthConfirmations) Check(arg0 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Check", arg0)
@@ -40,7 +41,7 @@ func (m *MockEthConfirmations) Check(arg0 uint64) error {
 	return ret0
 }
 
-// Check indicates an expected call of Check
+// Check indicates an expected call of Check.
 func (mr *MockEthConfirmationsMockRecorder) Check(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Check", reflect.TypeOf((*MockEthConfirmations)(nil).Check), arg0)

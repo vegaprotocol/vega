@@ -5,37 +5,38 @@
 package mocks
 
 import (
+	context "context"
+	reflect "reflect"
+
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
-	context "context"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockDelegationEngine is a mock of DelegationEngine interface
+// MockDelegationEngine is a mock of DelegationEngine interface.
 type MockDelegationEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockDelegationEngineMockRecorder
 }
 
-// MockDelegationEngineMockRecorder is the mock recorder for MockDelegationEngine
+// MockDelegationEngineMockRecorder is the mock recorder for MockDelegationEngine.
 type MockDelegationEngineMockRecorder struct {
 	mock *MockDelegationEngine
 }
 
-// NewMockDelegationEngine creates a new mock instance
+// NewMockDelegationEngine creates a new mock instance.
 func NewMockDelegationEngine(ctrl *gomock.Controller) *MockDelegationEngine {
 	mock := &MockDelegationEngine{ctrl: ctrl}
 	mock.recorder = &MockDelegationEngineMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDelegationEngine) EXPECT() *MockDelegationEngineMockRecorder {
 	return m.recorder
 }
 
-// Delegate mocks base method
+// Delegate mocks base method.
 func (m *MockDelegationEngine) Delegate(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delegate", arg0, arg1, arg2, arg3)
@@ -43,13 +44,13 @@ func (m *MockDelegationEngine) Delegate(arg0 context.Context, arg1, arg2 string,
 	return ret0
 }
 
-// Delegate indicates an expected call of Delegate
+// Delegate indicates an expected call of Delegate.
 func (mr *MockDelegationEngineMockRecorder) Delegate(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delegate", reflect.TypeOf((*MockDelegationEngine)(nil).Delegate), arg0, arg1, arg2, arg3)
 }
 
-// Hash mocks base method
+// Hash mocks base method.
 func (m *MockDelegationEngine) Hash() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Hash")
@@ -57,13 +58,13 @@ func (m *MockDelegationEngine) Hash() []byte {
 	return ret0
 }
 
-// Hash indicates an expected call of Hash
+// Hash indicates an expected call of Hash.
 func (mr *MockDelegationEngineMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockDelegationEngine)(nil).Hash))
 }
 
-// ProcessEpochDelegations mocks base method
+// ProcessEpochDelegations mocks base method.
 func (m *MockDelegationEngine) ProcessEpochDelegations(arg0 context.Context, arg1 types.Epoch) []*types.ValidatorData {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessEpochDelegations", arg0, arg1)
@@ -71,13 +72,13 @@ func (m *MockDelegationEngine) ProcessEpochDelegations(arg0 context.Context, arg
 	return ret0
 }
 
-// ProcessEpochDelegations indicates an expected call of ProcessEpochDelegations
+// ProcessEpochDelegations indicates an expected call of ProcessEpochDelegations.
 func (mr *MockDelegationEngineMockRecorder) ProcessEpochDelegations(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessEpochDelegations", reflect.TypeOf((*MockDelegationEngine)(nil).ProcessEpochDelegations), arg0, arg1)
 }
 
-// UndelegateAtEndOfEpoch mocks base method
+// UndelegateAtEndOfEpoch mocks base method.
 func (m *MockDelegationEngine) UndelegateAtEndOfEpoch(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UndelegateAtEndOfEpoch", arg0, arg1, arg2, arg3)
@@ -85,13 +86,13 @@ func (m *MockDelegationEngine) UndelegateAtEndOfEpoch(arg0 context.Context, arg1
 	return ret0
 }
 
-// UndelegateAtEndOfEpoch indicates an expected call of UndelegateAtEndOfEpoch
+// UndelegateAtEndOfEpoch indicates an expected call of UndelegateAtEndOfEpoch.
 func (mr *MockDelegationEngineMockRecorder) UndelegateAtEndOfEpoch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UndelegateAtEndOfEpoch", reflect.TypeOf((*MockDelegationEngine)(nil).UndelegateAtEndOfEpoch), arg0, arg1, arg2, arg3)
 }
 
-// UndelegateNow mocks base method
+// UndelegateNow mocks base method.
 func (m *MockDelegationEngine) UndelegateNow(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UndelegateNow", arg0, arg1, arg2, arg3)
@@ -99,7 +100,7 @@ func (m *MockDelegationEngine) UndelegateNow(arg0 context.Context, arg1, arg2 st
 	return ret0
 }
 
-// UndelegateNow indicates an expected call of UndelegateNow
+// UndelegateNow indicates an expected call of UndelegateNow.
 func (mr *MockDelegationEngineMockRecorder) UndelegateNow(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UndelegateNow", reflect.TypeOf((*MockDelegationEngine)(nil).UndelegateNow), arg0, arg1, arg2, arg3)

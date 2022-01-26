@@ -5,39 +5,40 @@
 package mocks
 
 import (
-	v1 "code.vegaprotocol.io/protos/vega/api/v1"
-	v10 "code.vegaprotocol.io/protos/vega/commands/v1"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
 	reflect "reflect"
 	time "time"
+
+	v1 "code.vegaprotocol.io/protos/vega/api/v1"
+	v10 "code.vegaprotocol.io/protos/vega/commands/v1"
+	gomock "github.com/golang/mock/gomock"
+	coretypes "github.com/tendermint/tendermint/rpc/coretypes"
 )
 
-// MockBlockchain is a mock of Blockchain interface
+// MockBlockchain is a mock of Blockchain interface.
 type MockBlockchain struct {
 	ctrl     *gomock.Controller
 	recorder *MockBlockchainMockRecorder
 }
 
-// MockBlockchainMockRecorder is the mock recorder for MockBlockchain
+// MockBlockchainMockRecorder is the mock recorder for MockBlockchain.
 type MockBlockchainMockRecorder struct {
 	mock *MockBlockchain
 }
 
-// NewMockBlockchain creates a new mock instance
+// NewMockBlockchain creates a new mock instance.
 func NewMockBlockchain(ctrl *gomock.Controller) *MockBlockchain {
 	mock := &MockBlockchain{ctrl: ctrl}
 	mock.recorder = &MockBlockchainMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBlockchain) EXPECT() *MockBlockchainMockRecorder {
 	return m.recorder
 }
 
-// GetChainID mocks base method
+// GetChainID mocks base method.
 func (m *MockBlockchain) GetChainID(arg0 context.Context) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChainID", arg0)
@@ -46,13 +47,13 @@ func (m *MockBlockchain) GetChainID(arg0 context.Context) (string, error) {
 	return ret0, ret1
 }
 
-// GetChainID indicates an expected call of GetChainID
+// GetChainID indicates an expected call of GetChainID.
 func (mr *MockBlockchainMockRecorder) GetChainID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainID", reflect.TypeOf((*MockBlockchain)(nil).GetChainID), arg0)
 }
 
-// GetGenesisTime mocks base method
+// GetGenesisTime mocks base method.
 func (m *MockBlockchain) GetGenesisTime(arg0 context.Context) (time.Time, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGenesisTime", arg0)
@@ -61,13 +62,13 @@ func (m *MockBlockchain) GetGenesisTime(arg0 context.Context) (time.Time, error)
 	return ret0, ret1
 }
 
-// GetGenesisTime indicates an expected call of GetGenesisTime
+// GetGenesisTime indicates an expected call of GetGenesisTime.
 func (mr *MockBlockchainMockRecorder) GetGenesisTime(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGenesisTime", reflect.TypeOf((*MockBlockchain)(nil).GetGenesisTime), arg0)
 }
 
-// GetNetworkInfo mocks base method
+// GetNetworkInfo mocks base method.
 func (m *MockBlockchain) GetNetworkInfo(arg0 context.Context) (*coretypes.ResultNetInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNetworkInfo", arg0)
@@ -76,13 +77,13 @@ func (m *MockBlockchain) GetNetworkInfo(arg0 context.Context) (*coretypes.Result
 	return ret0, ret1
 }
 
-// GetNetworkInfo indicates an expected call of GetNetworkInfo
+// GetNetworkInfo indicates an expected call of GetNetworkInfo.
 func (mr *MockBlockchainMockRecorder) GetNetworkInfo(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkInfo", reflect.TypeOf((*MockBlockchain)(nil).GetNetworkInfo), arg0)
 }
 
-// GetStatus mocks base method
+// GetStatus mocks base method.
 func (m *MockBlockchain) GetStatus(arg0 context.Context) (*coretypes.ResultStatus, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStatus", arg0)
@@ -91,13 +92,13 @@ func (m *MockBlockchain) GetStatus(arg0 context.Context) (*coretypes.ResultStatu
 	return ret0, ret1
 }
 
-// GetStatus indicates an expected call of GetStatus
+// GetStatus indicates an expected call of GetStatus.
 func (mr *MockBlockchainMockRecorder) GetStatus(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockBlockchain)(nil).GetStatus), arg0)
 }
 
-// GetUnconfirmedTxCount mocks base method
+// GetUnconfirmedTxCount mocks base method.
 func (m *MockBlockchain) GetUnconfirmedTxCount(arg0 context.Context) (int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUnconfirmedTxCount", arg0)
@@ -106,13 +107,13 @@ func (m *MockBlockchain) GetUnconfirmedTxCount(arg0 context.Context) (int, error
 	return ret0, ret1
 }
 
-// GetUnconfirmedTxCount indicates an expected call of GetUnconfirmedTxCount
+// GetUnconfirmedTxCount indicates an expected call of GetUnconfirmedTxCount.
 func (mr *MockBlockchainMockRecorder) GetUnconfirmedTxCount(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUnconfirmedTxCount", reflect.TypeOf((*MockBlockchain)(nil).GetUnconfirmedTxCount), arg0)
 }
 
-// Health mocks base method
+// Health mocks base method.
 func (m *MockBlockchain) Health() (*coretypes.ResultHealth, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Health")
@@ -121,13 +122,13 @@ func (m *MockBlockchain) Health() (*coretypes.ResultHealth, error) {
 	return ret0, ret1
 }
 
-// Health indicates an expected call of Health
+// Health indicates an expected call of Health.
 func (mr *MockBlockchainMockRecorder) Health() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Health", reflect.TypeOf((*MockBlockchain)(nil).Health))
 }
 
-// SubmitTransactionV2 mocks base method
+// SubmitTransactionV2 mocks base method.
 func (m *MockBlockchain) SubmitTransactionV2(arg0 context.Context, arg1 *v10.Transaction, arg2 v1.SubmitTransactionRequest_Type) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SubmitTransactionV2", arg0, arg1, arg2)
@@ -136,8 +137,23 @@ func (m *MockBlockchain) SubmitTransactionV2(arg0 context.Context, arg1 *v10.Tra
 	return ret0, ret1
 }
 
-// SubmitTransactionV2 indicates an expected call of SubmitTransactionV2
+// SubmitTransactionV2 indicates an expected call of SubmitTransactionV2.
 func (mr *MockBlockchainMockRecorder) SubmitTransactionV2(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitTransactionV2", reflect.TypeOf((*MockBlockchain)(nil).SubmitTransactionV2), arg0, arg1, arg2)
+}
+
+// SubmitRawTransaction mocks base method
+func (m *MockBlockchain) SubmitRawTransaction(arg0 context.Context, arg1 []byte, arg2 v1.SubmitRawTransactionRequest_Type) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubmitRawTransaction", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubmitRawTransaction indicates an expected call of SubmitRawTransaction
+func (mr *MockBlockchainMockRecorder) SubmitRawTransaction(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransaction", reflect.TypeOf((*MockBlockchain)(nil).SubmitRawTransaction), arg0, arg1, arg2)
 }

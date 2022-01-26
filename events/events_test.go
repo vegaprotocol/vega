@@ -41,8 +41,8 @@ func TestEventCtxIsSet(t *testing.T) {
 
 	chainID, _ := vgcontext.ChainIDFromContext(acc.Context())
 	assert.Equal(t, "testChainID", chainID)
-	traceID, _ := vgcontext.TraceIDFromContext(acc.Context())
+	_, traceID := vgcontext.TraceIDFromContext(acc.Context())
 	assert.Equal(t, "testTraceID", traceID)
-	transactionHash, _ := vgcontext.TxHashFromContext(acc.Context())
-	assert.Equal(t, "textTxHash", transactionHash)
+	txHash, _ := vgcontext.TxHashFromContext(acc.Context())
+	assert.Equal(t, "textTxHash", txHash)
 }
