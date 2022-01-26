@@ -490,9 +490,9 @@ func (m *Market) GetMarketData() types.MarketData {
 
 	var targetStake string
 	if m.as.InAuction() {
-		targetStake = m.getTheoreticalTargetStake().String()
+		targetStake = m.priceToMarketPrecision(m.getTheoreticalTargetStake()).String()
 	} else {
-		targetStake = m.getTargetStake().String()
+		targetStake = m.priceToMarketPrecision(m.getTargetStake()).String()
 	}
 	bounds := m.pMonitor.GetCurrentBounds()
 	for _, b := range bounds {
