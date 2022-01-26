@@ -33,7 +33,15 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 		return err
 	}
 
-	dbPath := paths.StatePath(cmd.DBPath).String()
+	var dbPath string
+
+	if cmd.DBPath == "" {
+		vegaPaths := paths.New(cmd.VegaHome)
+		dbPath = vegaPaths.StatePathFor(paths.SnapshotStateHome)
+	} else {
+		dbPath = paths.StatePath(cmd.DBPath).String()
+	}
+
 	found, err := snapshots.AvailableSnapshotsHeights(dbPath)
 	if err != nil {
 		return err

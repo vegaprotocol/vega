@@ -47,7 +47,6 @@ import (
 	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
-	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
 
@@ -153,24 +152,6 @@ func (n *NodeCommand) Run(
 	}
 
 	return nil
-}
-
-func (n *NodeCommand) ListSnapshots(confWatcher *config.Watcher, vegaPaths paths.Paths, args []string) (snapshots []*types.Snapshot, err error) {
-	n.confWatcher = confWatcher
-
-	n.conf = confWatcher.Get()
-	n.vegaPaths = vegaPaths
-
-	err = n.setupCommon(args)
-	if err != nil {
-		return nil, err
-	}
-
-	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService)
-	if err != nil {
-		panic(err)
-	}
-	return n.snapshot.List()
 }
 
 // runNode is the entry of node command.
