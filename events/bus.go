@@ -43,7 +43,7 @@ type Base struct {
 	ctx     context.Context
 	traceID string
 	chainID string
-	tranxID string
+	txHash  string
 	blockNr int64
 	seq     uint64
 	et      Type
@@ -55,7 +55,7 @@ type Event interface {
 	Type() Type
 	Context() context.Context
 	TraceID() string
-	TranxID() string
+	TxHash() string
 	ChainID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
@@ -254,12 +254,12 @@ func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := vgcontext.TraceIDFromContext(ctx)
 	cID, _ := vgcontext.ChainIDFromContext(ctx)
 	h, _ := vgcontext.BlockHeightFromContext(ctx)
-	tranxID, _ := vgcontext.TranxIDFromContext(ctx)
+	txHash, _ := vgcontext.TxHashFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
 		chainID: cID,
-		tranxID: tranxID,
+		txHash:  txHash,
 		blockNr: h,
 		et:      t,
 	}
@@ -274,8 +274,8 @@ func (b Base) ChainID() string {
 	return b.chainID
 }
 
-func (b Base) TranxID() string {
-	return b.tranxID
+func (b Base) TxHash() string {
+	return b.txHash
 }
 
 func (b *Base) SetSequenceID(s uint64) {
@@ -380,27 +380,34 @@ func (t Type) ToProto() eventspb.BusEventType {
 	return pt
 }
 
-func newBusEventFromBase(a *Base) *eventspb.BusEvent {
-	return &eventspb.BusEvent{
+func newBusEventFromBase(base *Base) *eventspb.BusEvent {
+
+	fmt.Printf("EVENT FOR TRANX: %s", base.TxHash())
+
+	event := &eventspb.BusEvent{
 		Version: eventspb.Version,
-		Id:      a.eventID(),
-		Type:    a.Type().ToProto(),
-		Block:   a.TraceID(),
-		ChainId: a.ChainID(),
-		TranxId: a.TranxID(),
+		Id:      base.eventID(),
+		Type:    base.Type().ToProto(),
+		Block:   base.TraceID(),
+		ChainId: base.ChainID(),
+		TxHash:  base.TxHash(),
 	}
+
+	fmt.Printf("THE EVENT IS: %s", event)
+
+	return event
 }
 
 func newBaseFromBusEvent(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
 	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
 	evtCtx = vgcontext.WithChainID(evtCtx, be.ChainId)
-	evtCtx = vgcontext.WithTranxID(evtCtx, be.TranxId)
+	evtCtx = vgcontext.WithTxHash(evtCtx, be.TxHash)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
 		traceID: be.Block,
 		chainID: be.ChainId,
-		tranxID: be.TranxId,
+		txHash:  be.TxHash,
 		blockNr: blockNr,
 		seq:     seq,
 		et:      t,

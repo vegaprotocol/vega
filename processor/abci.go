@@ -604,7 +604,6 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 
 // OnCheckTx performs soft validations.
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
-	vgcontext.WithTranxID(ctx, string(tx.Hash()))
 
 	resp := tmtypes.ResponseCheckTx{}
 	if app.spam != nil {
@@ -769,7 +768,6 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 // OnDeliverTx increments the internal tx counter and decorates the context with tracing information.
 func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, tx abci.Tx) (context.Context, tmtypes.ResponseDeliverTx) {
 	app.setTxStats(len(req.Tx))
-	ctx = vgcontext.WithTranxID(ctx, string(tx.Hash()))
 
 	var resp tmtypes.ResponseDeliverTx
 

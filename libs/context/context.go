@@ -12,7 +12,7 @@ type (
 	traceIDT        int
 	blockHeight     int
 	chainID         int
-	tranxID         int
+	txHash          int
 )
 
 var (
@@ -20,11 +20,11 @@ var (
 	traceIDKey            traceIDT
 	blockHeightKey        blockHeight
 	chainIDKey            chainID
-	tranxIDKey            tranxID
+	txHashKey             txHash
 
 	ErrBlockHeightMissing = errors.New("no or invalid block height set on context")
 	ErrChainIDMissing     = errors.New("no or invalid chain id set on context")
-	ErrTranxIDMissing     = errors.New("no or invalid tranx id set on context")
+	ErrTxHashMissing      = errors.New("no or invalid transaction hash set on context")
 )
 
 // WithRemoteIPAddr wrap the context into a new context
@@ -83,14 +83,14 @@ func ChainIDFromContext(ctx context.Context) (string, error) {
 	return c, nil
 }
 
-func TranxIDFromContext(ctx context.Context) (string, error) {
-	cv := ctx.Value(tranxIDKey)
+func TxHashFromContext(ctx context.Context) (string, error) {
+	cv := ctx.Value(txHashKey)
 	if cv == nil {
-		return "", ErrTranxIDMissing
+		return "", ErrTxHashMissing
 	}
 	c, ok := cv.(string)
 	if !ok {
-		return "", ErrTranxIDMissing
+		return "", ErrTxHashMissing
 	}
 	return c, nil
 }
@@ -108,6 +108,6 @@ func WithChainID(ctx context.Context, chainID string) context.Context {
 	return context.WithValue(ctx, chainIDKey, chainID)
 }
 
-func WithTranxID(ctx context.Context, tranxID string) context.Context {
-	return context.WithValue(ctx, tranxIDKey, tranxID)
+func WithTxHash(ctx context.Context, txHash string) context.Context {
+	return context.WithValue(ctx, txHashKey, txHash)
 }
