@@ -17,8 +17,8 @@ func DepositToRewardAccount(
 	for _, r := range parseRewardDepositTable(table) {
 		row := rewardDeposit{row: r}
 
-		rewardAccount, _ := collateralEngine.CreateOrGetAssetRewardPoolAccount(context.Background(), row.Asset())
-		collateralEngine.IncrementBalance(context.Background(), rewardAccount, row.Amount())
+		rewardAccount, _ := collateralEngine.GetGlobalRewardAccount(row.Asset())
+		collateralEngine.IncrementBalance(context.Background(), rewardAccount.ID, row.Amount())
 		netDeposits.Add(netDeposits, row.Amount())
 	}
 	return nil
