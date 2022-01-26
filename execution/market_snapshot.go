@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/liquidity/target"
@@ -19,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func NewMarketFromSnapshot(
@@ -37,6 +39,7 @@ func NewMarketFromSnapshot(
 	broker Broker,
 	idgen *IDgenerator,
 	stateVarEngine StateVarEngine,
+	assetDetails *assets.Asset,
 ) (*Market, error) {
 	mkt := em.Market
 
@@ -99,6 +102,8 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
+	exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces
+	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize())
@@ -136,6 +141,7 @@ func NewMarketFromSnapshot(
 		lastMidSellPrice:   em.LastMidAsk.Clone(),
 		markPrice:          em.CurrentMarkPrice.Clone(),
 		stateChanged:       true,
+		priceFactor:        priceFactor,
 	}
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
 	return market, nil

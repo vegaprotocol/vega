@@ -361,6 +361,15 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	// create market auction state
 	mas := monitor.NewAuctionState(marketConfig, now)
+	ad, err := e.assets.Get(asset)
+	if err != nil {
+		e.log.Error("Failed to create a new market, unknown asset",
+			logging.MarketID(marketConfig.ID),
+			logging.String("asset-id", asset),
+			logging.Error(err),
+		)
+		return err
+	}
 	mkt, err := NewMarket(
 		ctx,
 		e.log,
@@ -379,7 +388,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		mas,
 		e.stateVarEngine,
 		e.feesTracker,
-		e.assets.Get(asset),
+		ad,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

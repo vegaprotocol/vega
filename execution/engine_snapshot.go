@@ -54,6 +54,15 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 			asset,
 		)
 	}
+	ad, err := e.assets.Get(asset)
+	if err != nil {
+		e.log.Error("Failed to restore a market, unknown asset",
+			logging.MarketID(marketConfig.ID),
+			logging.String("asset-id", asset),
+			logging.Error(err),
+		)
+		return nil, err
+	}
 
 	// create market auction state
 	mkt, err := NewMarketFromSnapshot(
@@ -72,6 +81,7 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.broker,
 		e.idgen,
 		e.stateVarEngine,
+		ad,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",

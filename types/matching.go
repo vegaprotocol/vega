@@ -258,6 +258,7 @@ type Trade struct {
 	ID                 string
 	MarketID           string
 	Price              *num.Uint
+	MarketPrice        *num.Uint
 	Size               uint64
 	Buyer              string
 	Seller             string

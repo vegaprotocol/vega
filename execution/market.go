@@ -2626,8 +2626,11 @@ func (m *Market) applyOrderAmendment(
 		}
 	}
 
-	amendPrice := amendment.Price.Clone()
-	amendPrice.Mul(amendPrice, m.priceFactor)
+	var amendPrice *num.Uint
+	if amendment.Price != nil {
+		amendPrice = amendment.Price.Clone()
+		amendPrice.Mul(amendPrice, m.priceFactor)
+	}
 	// apply price changes
 	if amendment.Price != nil && existingOrder.Price.NEQ(amendPrice) {
 		order.Price = amendPrice.Clone()

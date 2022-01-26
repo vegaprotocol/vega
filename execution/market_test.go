@@ -152,6 +152,9 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 
 func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket {
 	collateralEngine := collateral.New(tm.log, collateral.NewDefaultConfig(), tm.broker, tm.now)
+	// create asset with same decimal places as the market asset
+	mktAsset, _ := mktCfg.GetAsset()
+	cfgAsset := NewAssetStub(mktAsset, mktCfg.DecimalPlaces)
 	assets := tm.Assets
 	if len(assets) == 0 {
 		assets = defaultCollateralAssets
@@ -180,7 +183,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 	feeTracker := execution.NewFeesTracker(epochEngine)
 	mktEngine, err := execution.NewMarket(ctx,
 		tm.log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevarEngine, feeTracker,
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, &mktCfg, tm.now, tm.broker, execution.NewIDGen(), mas, statevarEngine, feeTracker, cfgAsset,
 	)
 	require.NoError(tm.t, err)
 
@@ -331,8 +334,11 @@ func getTestMarket2WithDP(
 			Symbol:      "ETH",
 			TotalSupply: num.Zero(),
 			MinLpStake:  num.Zero(),
+			Decimals:    0, // no decimals
 		},
 	})
+	// create asset stub to match the test asset:
+	cfgAsset := NewAssetStub("ETH", 0)
 
 	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker, timeService)
 	tm.oracleEngine = oracleEngine
@@ -363,6 +369,7 @@ func getTestMarket2WithDP(
 	}
 	mkt := getMarketWithDP(closingAt, pMonitorSettings, openingAuctionDuration, decimalPlaces)
 	mktCfg := &mkt
+	mktCfg.DecimalPlaces = cfgAsset.DecimalPlaces()
 
 	mas := monitor.NewAuctionState(mktCfg, now)
 	statevar := stubs.NewStateVar()
@@ -373,7 +380,7 @@ func getTestMarket2WithDP(
 
 	mktEngine, err := execution.NewMarket(context.Background(),
 		log, riskConfig, positionConfig, settlementConfig, matchingConfig,
-		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas, statevar, feeTracker)
+		feeConfig, liquidityConfig, collateralEngine, oracleEngine, mktCfg, now, broker, execution.NewIDGen(), mas, statevar, feeTracker, cfgAsset)
 	assert.NoError(t, err)
 	mktEngine.UpdateRiskFactorsForTest()
 
