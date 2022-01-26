@@ -84,7 +84,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log, accounting)
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
-	voteKey := (&types.PayloadDelegationActive{}).Key()
+	voteKey := (&types.PayloadVoteSpamPolicy{}).Key()
 	e.policyNameToPolicy = map[string]SpamPolicy{voteKey: votePolicy, proposalPolicy.policyName: proposalPolicy, delegationPolicy.policyName: delegationPolicy}
 	e.hashKeys = []string{voteKey, proposalPolicy.policyName, delegationPolicy.policyName}
 
