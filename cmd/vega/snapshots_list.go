@@ -38,7 +38,7 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 		dbPath = paths.StatePath(cmd.DBPath).String()
 	}
 
-	found, err := snapshot.AvailableSnapshotsHeights(dbPath)
+	found, invalidVersions, err := snapshot.AvailableSnapshotsHeights(dbPath)
 	if err != nil {
 		return err
 	}
@@ -50,6 +50,13 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 		}
 	} else {
 		fmt.Println("No snapshots available")
+	}
+
+	if len(invalidVersions) > 0 {
+		fmt.Println("Invalid versions:", len(invalidVersions))
+		for _, snap := range found {
+			fmt.Printf("\tVersion: %d, hash: %x\n", snap.Version, snap.Hash)
+		}
 	}
 
 	return nil
