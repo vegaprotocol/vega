@@ -235,20 +235,20 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.accs[externalID] = externalAcc
 	}
 
-	// when an asset is enabled a global insurance account is created for it
-	globalInsuranceID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeGlobalInsurance)
-	if _, ok := e.accs[globalInsuranceID]; !ok {
-		insuranceAcc := &types.Account{
-			ID:       globalInsuranceID,
+	// when an asset is enabled a global reward account (aka network treasury) is created for it
+	globalRewardID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeGlobalReward)
+	if _, ok := e.accs[globalRewardID]; !ok {
+		rewardAcc := &types.Account{
+			ID:       globalRewardID,
 			Asset:    asset.ID,
 			Owner:    systemOwner,
 			Balance:  num.Zero(),
 			MarketID: noMarket,
-			Type:     types.AccountTypeGlobalInsurance,
+			Type:     types.AccountTypeGlobalReward,
 		}
-		e.accs[globalInsuranceID] = insuranceAcc
-		e.addAccountToHashableSlice(insuranceAcc)
-		e.broker.Send(events.NewAccountEvent(ctx, *insuranceAcc))
+		e.accs[globalRewardID] = rewardAcc
+		e.addAccountToHashableSlice(rewardAcc)
+		e.broker.Send(events.NewAccountEvent(ctx, *rewardAcc))
 	}
 
 	// pending transfers account
@@ -1503,11 +1503,7 @@ func (e *Engine) getTransferFundsTransferRequest(
 
 		// this could not exists as well, let's just create in this case
 		case types.AccountTypeGlobalReward:
-			id, err := e.CreateOrGetAssetRewardPoolAccount(ctx, t.Amount.Asset)
-			if err != nil {
-				return nil, err
-			}
-			toAcc, err = e.GetAccountByID(id)
+			toAcc, err = e.GetGlobalRewardAccount(t.Amount.Asset)
 			if err != nil {
 				// shouldn't happen, we just created it...
 				return nil, err
@@ -1725,12 +1721,7 @@ func (e *Engine) getTransferRequest(ctx context.Context, p *types.Transfer, sett
 
 		// Look for the special case where we are topping up the reward account
 		if p.Owner == rewardPartyID {
-			rewardAcctID, err := e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
-			if err != nil {
-				return nil, errors.New("unable to get the global reward account")
-			}
-			rewardAcct, _ := e.GetAccountByID(rewardAcctID)
-
+			rewardAcct, _ := e.GetGlobalRewardAccount(p.Amount.Asset)
 			req.ToAccount = []*types.Account{
 				rewardAcct,
 			}
@@ -2004,11 +1995,9 @@ func (e *Engine) ClearMarket(ctx context.Context, mktID, asset string, parties [
 		}
 	}
 
-	// add the global account
-	// can't fail at this point, if the market exists, the asset exists,
-	// so this exists too
-	globalInsurancePool, _ := e.GetAssetInsurancePoolAccount(asset)
-	insuranceAccounts = append(insuranceAccounts, globalInsurancePool)
+	// add the network treasury, if it doesn't exist yet, create it
+	globalRewardPool, _ := e.GetGlobalRewardAccount(asset)
+	insuranceAccounts = append(insuranceAccounts, globalRewardPool)
 
 	// redistribute market insurance funds between the global and other markets equally
 	req.FromAccount[0] = marketInsuranceAcc
@@ -2442,10 +2431,11 @@ func (e *Engine) Deposit(ctx context.Context, partyID, asset string, amount *num
 	var err error
 	// Look for the special reward party
 	if partyID == rewardPartyID {
-		accID, err = e.CreateOrGetAssetRewardPoolAccount(ctx, asset)
+		acc, err := e.GetGlobalRewardAccount(asset)
 		if err != nil {
 			return nil, err
 		}
+		accID = acc.ID
 	} else {
 		// this will get or create the account basically
 		accID, err = e.CreatePartyGeneralAccount(ctx, partyID, asset)
@@ -2597,34 +2587,6 @@ func (e *Engine) GetMarketLiquidityFeeAccount(market, asset string) (*types.Acco
 func (e *Engine) GetMarketInsurancePoolAccount(market, asset string) (*types.Account, error) {
 	insuranceAccID := e.accountID(market, systemOwner, asset, types.AccountTypeInsurance)
 	return e.GetAccountByID(insuranceAccID)
-}
-
-// GetAssetInsurancePoolAccount returns the global insurance account for the asset.
-func (e *Engine) GetAssetInsurancePoolAccount(asset string) (*types.Account, error) {
-	globalInsuranceID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalInsurance)
-	return e.GetAccountByID(globalInsuranceID)
-}
-
-func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset string) (string, error) {
-	if !e.AssetExists(asset) {
-		return "", ErrInvalidAssetID
-	}
-
-	accountID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalReward)
-	if _, ok := e.accs[accountID]; !ok {
-		acc := types.Account{
-			ID:       accountID,
-			Asset:    asset,
-			MarketID: noMarket,
-			Balance:  num.Zero(),
-			Owner:    systemOwner,
-			Type:     types.AccountTypeGlobalReward,
-		}
-		e.accs[accountID] = &acc
-		e.addAccountToHashableSlice(&acc)
-		e.broker.Send(events.NewAccountEvent(ctx, acc))
-	}
-	return accountID, nil
 }
 
 func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {

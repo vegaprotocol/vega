@@ -340,7 +340,7 @@ func loadAsset(
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
+		return fmt.Errorf("unable to instantiate asset \"%s\": %w", v.Name, err)
 	}
 	if err := assets.Enable(aid); err != nil {
 		return fmt.Errorf("unable to enable asset: %v", err)
