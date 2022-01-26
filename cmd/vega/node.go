@@ -4,11 +4,11 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/shared/paths"
-	"github.com/jessevdk/go-flags"
-
 	"code.vegaprotocol.io/vega/cmd/vega/node"
 	"code.vegaprotocol.io/vega/config"
 	"code.vegaprotocol.io/vega/logging"
+
+	"github.com/jessevdk/go-flags"
 )
 
 type NodeCmd struct {

@@ -12,10 +12,10 @@ import (
 	"code.vegaprotocol.io/vega/snapshot/mocks"
 	"code.vegaprotocol.io/vega/types"
 	tmocks "code.vegaprotocol.io/vega/types/mocks"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 

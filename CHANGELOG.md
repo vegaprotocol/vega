@@ -16,6 +16,7 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+- [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
