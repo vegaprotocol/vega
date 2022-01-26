@@ -6,7 +6,6 @@ import (
 	"time"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 )
@@ -25,14 +24,13 @@ type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
 }
 
-// Engine is responsible for broadcasting the OracleData to products and risk
+// Engine is responsible of broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
 	log           *logging.Logger
 	broker        Broker
 	CurrentTime   time.Time
 	subscriptions specSubscriptions
-	publicKey     crypto.PublicKey
 }
 
 // NewEngine creates a new oracle Engine.
@@ -42,7 +40,6 @@ func NewEngine(
 	currentTime time.Time,
 	broker Broker,
 	ts TimeService,
-	publicKey crypto.PublicKey,
 ) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
@@ -52,30 +49,15 @@ func NewEngine(
 		broker:        broker,
 		CurrentTime:   currentTime,
 		subscriptions: newSpecSubscriptions(),
-		publicKey:     publicKey,
 	}
 
 	ts.NotifyOnTick(e.UpdateCurrentTime)
-
 	return e
 }
 
 // UpdateCurrentTime listens to update of the current Vega time.
 func (e *Engine) UpdateCurrentTime(ctx context.Context, ts time.Time) {
 	e.CurrentTime = ts
-	e.broadcastVegaTime(ctx, ts)
-}
-
-func (e *Engine) broadcastVegaTime(ctx context.Context, ts time.Time) {
-	data := OracleData{
-		PubKeys: []string{string(e.publicKey.Bytes())},
-		Data:    map[string]string{InternalOraclePrefix + ".timestamp": fmt.Sprintf("%d", ts.UnixNano())},
-	}
-
-	err := e.sendOracleUpdate(ctx, data)
-	if err != nil {
-		e.log.Debug("broadcasting Vega time", logging.Error(err))
-	}
 }
 
 func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {

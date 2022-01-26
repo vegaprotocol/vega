@@ -83,7 +83,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	now := n.timeService.GetTimeNow()
 	n.assets = assets.New(n.Log, n.conf.Assets, n.nodeWallets, n.ethClient, n.timeService, n.conf.IsValidator())
 	n.collateral = collateral.New(n.Log, n.conf.Collateral, n.broker, now)
-	n.oracle = oracles.NewEngine(n.Log, n.conf.Oracles, now, n.broker, n.timeService, n.nodeWallets.Vega.PubKey())
+	n.oracle = oracles.NewEngine(n.Log, n.conf.Oracles, now, n.broker, n.timeService)
 	n.oracleAdaptors = oracleAdaptors.New(validation.CheckForInternalOracle)
 
 	// if we are not a validator, no need to instantiate the commander

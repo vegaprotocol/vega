@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"code.vegaprotocol.io/vega/collateral"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
@@ -111,9 +110,8 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 	marketTracker := execution.NewMarketTracker()
 	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.topology, feesTracker, marketTracker)
-	pk := crypto.NewPublicKey("0xDEADBEEF", []byte("0xDEADBEEF"))
 	execsetup.oracleEngine = oracles.NewEngine(
-		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService, pk,
+		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
 
 	stateVarEngine := stubs.NewStateVar()
