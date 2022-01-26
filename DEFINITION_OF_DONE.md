@@ -20,6 +20,7 @@ The difference between a Definition of Done and Acceptance Criteria...
 - Code is compilation error, warning, and hint free
 - Carry out a basic happy path end-to-end check of the new code
 - All acceptance criteria confirmed to be met, or, reasons why not discussed with the engineering leadership team
+- All APIs are documented so auto-generated documentation is created
 - All Unit, Integration and BVT tests are passing
 - Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
 - Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when starting the work if dependencies known i.e. API changes)
@@ -29,7 +30,7 @@ The difference between a Definition of Done and Acceptance Criteria...
 **After merging**
 - Move development ticket to `Done` if there is **NO** requirement for new system-tests
 - Resolve any issues with broken system-tests
-- Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels
+- Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed, or is a new feature
 
 **Before Testnet**
 - Acceptance (feature) tests passing (end to end / black-box testing)

@@ -49,6 +49,7 @@ Code snippets from the spec for reference
 - [ ] Code refactored to meet SOLID and other code design principles
 - [ ] Code is compilation error, warning, and hint free
 - [ ] Carry out a basic happy path end-to-end check of the new code
+- [ ] All APIs are documented so auto-generated documentation is created
 - [ ] All acceptance criteria confirmed to be met, or, reasons why not discussed with the engineering leadership team
 - [ ] All Unit, Integration and BVT tests are passing
 - [ ] Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
@@ -57,4 +58,4 @@ Code snippets from the spec for reference
 **After Merging**
 - [ ] Move development ticket to `Done` if there is **NO** requirement for new system-tests
 - [ ] Resolve any issues with broken system-tests
-- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels
+- [ ] Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed, or is a new feature
