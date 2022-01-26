@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockEpochStore is a mock of EpochStore interface
+// MockEpochStore is a mock of EpochStore interface.
 type MockEpochStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockEpochStoreMockRecorder
 }
 
-// MockEpochStoreMockRecorder is the mock recorder for MockEpochStore
+// MockEpochStoreMockRecorder is the mock recorder for MockEpochStore.
 type MockEpochStoreMockRecorder struct {
 	mock *MockEpochStore
 }
 
-// NewMockEpochStore creates a new mock instance
+// NewMockEpochStore creates a new mock instance.
 func NewMockEpochStore(ctrl *gomock.Controller) *MockEpochStore {
 	mock := &MockEpochStore{ctrl: ctrl}
 	mock.recorder = &MockEpochStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEpochStore) EXPECT() *MockEpochStoreMockRecorder {
 	return m.recorder
 }
 
-// GetEpoch mocks base method
+// GetEpoch mocks base method.
 func (m *MockEpochStore) GetEpoch() (*vega.Epoch, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEpoch")
@@ -43,13 +44,13 @@ func (m *MockEpochStore) GetEpoch() (*vega.Epoch, error) {
 	return ret0, ret1
 }
 
-// GetEpoch indicates an expected call of GetEpoch
+// GetEpoch indicates an expected call of GetEpoch.
 func (mr *MockEpochStoreMockRecorder) GetEpoch() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockEpochStore)(nil).GetEpoch))
 }
 
-// GetEpochByID mocks base method
+// GetEpochByID mocks base method.
 func (m *MockEpochStore) GetEpochByID(arg0 string) (*vega.Epoch, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEpochByID", arg0)
@@ -58,13 +59,13 @@ func (m *MockEpochStore) GetEpochByID(arg0 string) (*vega.Epoch, error) {
 	return ret0, ret1
 }
 
-// GetEpochByID indicates an expected call of GetEpochByID
+// GetEpochByID indicates an expected call of GetEpochByID.
 func (mr *MockEpochStoreMockRecorder) GetEpochByID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpochByID", reflect.TypeOf((*MockEpochStore)(nil).GetEpochByID), arg0)
 }
 
-// GetEpochSeq mocks base method
+// GetEpochSeq mocks base method.
 func (m *MockEpochStore) GetEpochSeq() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEpochSeq")
@@ -72,13 +73,13 @@ func (m *MockEpochStore) GetEpochSeq() string {
 	return ret0
 }
 
-// GetEpochSeq indicates an expected call of GetEpochSeq
+// GetEpochSeq indicates an expected call of GetEpochSeq.
 func (mr *MockEpochStoreMockRecorder) GetEpochSeq() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpochSeq", reflect.TypeOf((*MockEpochStore)(nil).GetEpochSeq))
 }
 
-// GetTotalNodesUptime mocks base method
+// GetTotalNodesUptime mocks base method.
 func (m *MockEpochStore) GetTotalNodesUptime() time.Duration {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTotalNodesUptime")
@@ -86,7 +87,7 @@ func (m *MockEpochStore) GetTotalNodesUptime() time.Duration {
 	return ret0
 }
 
-// GetTotalNodesUptime indicates an expected call of GetTotalNodesUptime
+// GetTotalNodesUptime indicates an expected call of GetTotalNodesUptime.
 func (mr *MockEpochStoreMockRecorder) GetTotalNodesUptime() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalNodesUptime", reflect.TypeOf((*MockEpochStore)(nil).GetTotalNodesUptime))

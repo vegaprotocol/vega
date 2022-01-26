@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	broker "code.vegaprotocol.io/data-node/broker"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockEventBus is a mock of EventBus interface
+// MockEventBus is a mock of EventBus interface.
 type MockEventBus struct {
 	ctrl     *gomock.Controller
 	recorder *MockEventBusMockRecorder
 }
 
-// MockEventBusMockRecorder is the mock recorder for MockEventBus
+// MockEventBusMockRecorder is the mock recorder for MockEventBus.
 type MockEventBusMockRecorder struct {
 	mock *MockEventBus
 }
 
-// NewMockEventBus creates a new mock instance
+// NewMockEventBus creates a new mock instance.
 func NewMockEventBus(ctrl *gomock.Controller) *MockEventBus {
 	mock := &MockEventBus{ctrl: ctrl}
 	mock.recorder = &MockEventBusMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEventBus) EXPECT() *MockEventBusMockRecorder {
 	return m.recorder
 }
 
-// Subscribe mocks base method
+// Subscribe mocks base method.
 func (m *MockEventBus) Subscribe(arg0 broker.Subscriber) int {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
@@ -41,19 +42,19 @@ func (m *MockEventBus) Subscribe(arg0 broker.Subscriber) int {
 	return ret0
 }
 
-// Subscribe indicates an expected call of Subscribe
+// Subscribe indicates an expected call of Subscribe.
 func (mr *MockEventBusMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockEventBus)(nil).Subscribe), arg0)
 }
 
-// Unsubscribe mocks base method
+// Unsubscribe mocks base method.
 func (m *MockEventBus) Unsubscribe(arg0 int) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Unsubscribe", arg0)
 }
 
-// Unsubscribe indicates an expected call of Unsubscribe
+// Unsubscribe indicates an expected call of Unsubscribe.
 func (mr *MockEventBusMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockEventBus)(nil).Unsubscribe), arg0)

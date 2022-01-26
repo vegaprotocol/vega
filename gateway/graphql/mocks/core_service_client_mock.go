@@ -5,37 +5,38 @@
 package mocks
 
 import (
-	v1 "code.vegaprotocol.io/protos/vega/api/v1"
 	context "context"
+	reflect "reflect"
+
+	v1 "code.vegaprotocol.io/protos/vega/api/v1"
 	gomock "github.com/golang/mock/gomock"
 	grpc "google.golang.org/grpc"
-	reflect "reflect"
 )
 
-// MockCoreProxyServiceClient is a mock of CoreProxyServiceClient interface
+// MockCoreProxyServiceClient is a mock of CoreProxyServiceClient interface.
 type MockCoreProxyServiceClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockCoreProxyServiceClientMockRecorder
 }
 
-// MockCoreProxyServiceClientMockRecorder is the mock recorder for MockCoreProxyServiceClient
+// MockCoreProxyServiceClientMockRecorder is the mock recorder for MockCoreProxyServiceClient.
 type MockCoreProxyServiceClientMockRecorder struct {
 	mock *MockCoreProxyServiceClient
 }
 
-// NewMockCoreProxyServiceClient creates a new mock instance
+// NewMockCoreProxyServiceClient creates a new mock instance.
 func NewMockCoreProxyServiceClient(ctrl *gomock.Controller) *MockCoreProxyServiceClient {
 	mock := &MockCoreProxyServiceClient{ctrl: ctrl}
 	mock.recorder = &MockCoreProxyServiceClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCoreProxyServiceClient) EXPECT() *MockCoreProxyServiceClientMockRecorder {
 	return m.recorder
 }
 
-// GetVegaTime mocks base method
+// GetVegaTime mocks base method.
 func (m *MockCoreProxyServiceClient) GetVegaTime(arg0 context.Context, arg1 *v1.GetVegaTimeRequest, arg2 ...grpc.CallOption) (*v1.GetVegaTimeResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -48,14 +49,14 @@ func (m *MockCoreProxyServiceClient) GetVegaTime(arg0 context.Context, arg1 *v1.
 	return ret0, ret1
 }
 
-// GetVegaTime indicates an expected call of GetVegaTime
+// GetVegaTime indicates an expected call of GetVegaTime.
 func (mr *MockCoreProxyServiceClientMockRecorder) GetVegaTime(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVegaTime", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).GetVegaTime), varargs...)
 }
 
-// LastBlockHeight mocks base method
+// LastBlockHeight mocks base method.
 func (m *MockCoreProxyServiceClient) LastBlockHeight(arg0 context.Context, arg1 *v1.LastBlockHeightRequest, arg2 ...grpc.CallOption) (*v1.LastBlockHeightResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -68,14 +69,14 @@ func (m *MockCoreProxyServiceClient) LastBlockHeight(arg0 context.Context, arg1 
 	return ret0, ret1
 }
 
-// LastBlockHeight indicates an expected call of LastBlockHeight
+// LastBlockHeight indicates an expected call of LastBlockHeight.
 func (mr *MockCoreProxyServiceClientMockRecorder) LastBlockHeight(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LastBlockHeight", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).LastBlockHeight), varargs...)
 }
 
-// ObserveEventBus mocks base method
+// ObserveEventBus mocks base method.
 func (m *MockCoreProxyServiceClient) ObserveEventBus(arg0 context.Context, arg1 ...grpc.CallOption) (v1.CoreService_ObserveEventBusClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -88,14 +89,14 @@ func (m *MockCoreProxyServiceClient) ObserveEventBus(arg0 context.Context, arg1 
 	return ret0, ret1
 }
 
-// ObserveEventBus indicates an expected call of ObserveEventBus
+// ObserveEventBus indicates an expected call of ObserveEventBus.
 func (mr *MockCoreProxyServiceClientMockRecorder) ObserveEventBus(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveEventBus", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).ObserveEventBus), varargs...)
 }
 
-// PropagateChainEvent mocks base method
+// PropagateChainEvent mocks base method.
 func (m *MockCoreProxyServiceClient) PropagateChainEvent(arg0 context.Context, arg1 *v1.PropagateChainEventRequest, arg2 ...grpc.CallOption) (*v1.PropagateChainEventResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -108,14 +109,14 @@ func (m *MockCoreProxyServiceClient) PropagateChainEvent(arg0 context.Context, a
 	return ret0, ret1
 }
 
-// PropagateChainEvent indicates an expected call of PropagateChainEvent
+// PropagateChainEvent indicates an expected call of PropagateChainEvent.
 func (mr *MockCoreProxyServiceClientMockRecorder) PropagateChainEvent(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PropagateChainEvent", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).PropagateChainEvent), varargs...)
 }
 
-// Statistics mocks base method
+// Statistics mocks base method.
 func (m *MockCoreProxyServiceClient) Statistics(arg0 context.Context, arg1 *v1.StatisticsRequest, arg2 ...grpc.CallOption) (*v1.StatisticsResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -128,14 +129,14 @@ func (m *MockCoreProxyServiceClient) Statistics(arg0 context.Context, arg1 *v1.S
 	return ret0, ret1
 }
 
-// Statistics indicates an expected call of Statistics
+// Statistics indicates an expected call of Statistics.
 func (mr *MockCoreProxyServiceClientMockRecorder) Statistics(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Statistics", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).Statistics), varargs...)
 }
 
-// SubmitRawTransaction mocks base method
+// SubmitRawTransaction mocks base method.
 func (m *MockCoreProxyServiceClient) SubmitRawTransaction(arg0 context.Context, arg1 *v1.SubmitRawTransactionRequest, arg2 ...grpc.CallOption) (*v1.SubmitRawTransactionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -148,14 +149,14 @@ func (m *MockCoreProxyServiceClient) SubmitRawTransaction(arg0 context.Context, 
 	return ret0, ret1
 }
 
-// SubmitRawTransaction indicates an expected call of SubmitRawTransaction
+// SubmitRawTransaction indicates an expected call of SubmitRawTransaction.
 func (mr *MockCoreProxyServiceClientMockRecorder) SubmitRawTransaction(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitRawTransaction", reflect.TypeOf((*MockCoreProxyServiceClient)(nil).SubmitRawTransaction), varargs...)
 }
 
-// SubmitTransaction mocks base method
+// SubmitTransaction mocks base method.
 func (m *MockCoreProxyServiceClient) SubmitTransaction(arg0 context.Context, arg1 *v1.SubmitTransactionRequest, arg2 ...grpc.CallOption) (*v1.SubmitTransactionResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
@@ -168,7 +169,7 @@ func (m *MockCoreProxyServiceClient) SubmitTransaction(arg0 context.Context, arg
 	return ret0, ret1
 }
 
-// SubmitTransaction indicates an expected call of SubmitTransaction
+// SubmitTransaction indicates an expected call of SubmitTransaction.
 func (mr *MockCoreProxyServiceClientMockRecorder) SubmitTransaction(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)

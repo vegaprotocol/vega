@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockEpochService is a mock of EpochService interface
+// MockEpochService is a mock of EpochService interface.
 type MockEpochService struct {
 	ctrl     *gomock.Controller
 	recorder *MockEpochServiceMockRecorder
 }
 
-// MockEpochServiceMockRecorder is the mock recorder for MockEpochService
+// MockEpochServiceMockRecorder is the mock recorder for MockEpochService.
 type MockEpochServiceMockRecorder struct {
 	mock *MockEpochService
 }
 
-// NewMockEpochService creates a new mock instance
+// NewMockEpochService creates a new mock instance.
 func NewMockEpochService(ctrl *gomock.Controller) *MockEpochService {
 	mock := &MockEpochService{ctrl: ctrl}
 	mock.recorder = &MockEpochServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEpochService) EXPECT() *MockEpochServiceMockRecorder {
 	return m.recorder
 }
 
-// GetEpoch mocks base method
+// GetEpoch mocks base method.
 func (m *MockEpochService) GetEpoch(arg0 context.Context) (*vega.Epoch, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEpoch", arg0)
@@ -43,13 +44,13 @@ func (m *MockEpochService) GetEpoch(arg0 context.Context) (*vega.Epoch, error) {
 	return ret0, ret1
 }
 
-// GetEpoch indicates an expected call of GetEpoch
+// GetEpoch indicates an expected call of GetEpoch.
 func (mr *MockEpochServiceMockRecorder) GetEpoch(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockEpochService)(nil).GetEpoch), arg0)
 }
 
-// GetEpochByID mocks base method
+// GetEpochByID mocks base method.
 func (m *MockEpochService) GetEpochByID(arg0 context.Context, arg1 string) (*vega.Epoch, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetEpochByID", arg0, arg1)
@@ -58,7 +59,7 @@ func (m *MockEpochService) GetEpochByID(arg0 context.Context, arg1 string) (*veg
 	return ret0, ret1
 }
 
-// GetEpochByID indicates an expected call of GetEpochByID
+// GetEpochByID indicates an expected call of GetEpochByID.
 func (mr *MockEpochServiceMockRecorder) GetEpochByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpochByID", reflect.TypeOf((*MockEpochService)(nil).GetEpochByID), arg0, arg1)
