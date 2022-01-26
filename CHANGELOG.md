@@ -64,6 +64,7 @@
 - [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
 - [4634](https://github.com/vegaprotocol/vega/pull/4634) - Bug fix for `--snapshot.max-retries` parameter not working correctly
 - [4651](https://github.com/vegaprotocol/vega/pull/4651) - An array of fixes in the snapshot code path
+- [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
 
 ## 0.47.5
 *2022-01-20*
