@@ -28,7 +28,7 @@ type TimeService interface {
 	NotifyInternalOracleTimestamp(f func(context.Context, OracleData))
 }
 
-// Engine is responsible of broadcasting the OracleData to products and risk
+// Engine is responsible for broadcasting the OracleData to products and risk
 // models interested in it.
 type Engine struct {
 	log           *logging.Logger

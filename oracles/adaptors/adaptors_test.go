@@ -85,13 +85,12 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 }
 
 func stubbedAdaptors() *adaptors.Adaptors {
-	as := adaptors.New()
-	as.Adaptors = map[commandspb.OracleDataSubmission_OracleSource]adaptors.Adaptor{
-		commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
-		commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        &dummyOracleAdaptor{},
+	return &adaptors.Adaptors{
+		Adaptors: map[commandspb.OracleDataSubmission_OracleSource]adaptors.Adaptor{
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
+			commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        &dummyOracleAdaptor{},
+		},
 	}
-
-	return as
 }
 
 func dummyOraclePayload() []byte {
