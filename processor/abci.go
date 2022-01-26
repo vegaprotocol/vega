@@ -346,6 +346,7 @@ func (app *App) cancel() {
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
+	app.log.Debug("ABCI service INFO requested", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(hash)))
 	return tmtypes.ResponseInfo{
 		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
@@ -355,6 +356,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 }
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
+	app.log.Debug("ABCI service ListSnapshots requested")
 	snapshots, err := app.snapshot.List()
 	resp := tmtypes.ResponseListSnapshots{}
 	if err != nil {
@@ -369,6 +371,7 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 }
 
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
+	app.log.Debug("ABCI service OfferSnapshot start")
 	snap, err := types.SnapshotFromTM(req.Snapshot)
 	// invalid hash?
 	if err != nil {
@@ -401,6 +404,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 }
 
 func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+	app.log.Debug("ABCI service ApplySnapshotChunk start")
 	chunk := types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
@@ -441,6 +445,7 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 }
 
 func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+	app.log.Debug("ABCI service LoadSnapshotChunk start")
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		return tmtypes.ResponseLoadSnapshotChunk{}
@@ -516,6 +521,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
+
+	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
+	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
+	app.chainCtx = vgcontext.WithChainID(context.Background(), req.Header.GetChainID())
+
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 

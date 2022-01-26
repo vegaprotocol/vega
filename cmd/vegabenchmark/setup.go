@@ -154,6 +154,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	timeService.NotifyOnTick(netp.OnChainTimeUpdate)
 	bstats := stats.NewBlockchain()
 
+	feesTracker := execution.NewFeesTracker(epochService)
 	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, timeService)
 	netp.Watch(netparams.WatchParam{
 		Param:   netparams.ValidatorsVoteRequired,
@@ -164,6 +165,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
 	})
 
+	marketTracker := execution.NewMarketTracker()
 	exec := execution.NewEngine(
 		log,
 		execution.NewDefaultConfig(),
@@ -172,6 +174,8 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		oraclesM,
 		broker,
 		stateVarEngine,
+		feesTracker,
+		marketTracker,
 	)
 
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
@@ -186,7 +190,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
 
-	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService, topology)
+	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService, topology, feesTracker, marketTracker)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
@@ -425,6 +429,10 @@ func registerExecutionCallbacks(
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
 			Watcher: exec.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinLpStakeQuantumMultiple,
+			Watcher: exec.OnMinLpStakeQuantumMultipleUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,

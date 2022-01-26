@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
@@ -19,13 +18,13 @@ type RewardPayout struct {
 	Timestamp               int64
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward float64) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		Party:                   party,
 		EpochSeq:                epochSeq,
 		Asset:                   asset,
-		PercentageOfTotalReward: fmt.Sprintf("%f", percentageOfTotalReward),
+		PercentageOfTotalReward: percentageOfTotalReward.String(),
 		Amount:                  amount,
 		Timestamp:               timestamp,
 	}

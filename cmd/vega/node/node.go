@@ -75,6 +75,7 @@ type NodeCommand struct {
 	conf        config.Config
 	confWatcher *config.Watcher
 
+	feesTracker          *execution.FeesTracker
 	statevar             *statevar.Engine
 	snapshot             *snapshot.Engine
 	executionEngine      *execution.Engine
