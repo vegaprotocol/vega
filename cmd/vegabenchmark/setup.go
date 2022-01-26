@@ -176,6 +176,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		stateVarEngine,
 		feesTracker,
 		marketTracker,
+		assets,
 	)
 
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)

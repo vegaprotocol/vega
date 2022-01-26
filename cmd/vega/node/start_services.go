@@ -129,7 +129,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	// instantiate the execution engine
 	n.executionEngine = execution.NewEngine(
-		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker, marketTracker,
+		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker, marketTracker, n.assets,
 	)
 
 	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {

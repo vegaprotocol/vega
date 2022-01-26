@@ -18,15 +18,16 @@ func getTestMDB(t *testing.T, ctx context.Context, ack bool) *subscribers.Market
 
 func buildOrder(id string, side types.Side, orderType types.OrderType, price uint64, size uint64, remaining uint64) *types.Order {
 	order := &types.Order{
-		ID:          id,
-		Side:        side,
-		Type:        orderType,
-		Price:       num.NewUint(price),
-		Size:        size,
-		Remaining:   remaining,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Status:      types.OrderStatusActive,
-		MarketID:    "M",
+		ID:            id,
+		Side:          side,
+		Type:          orderType,
+		Price:         num.NewUint(price),
+		OriginalPrice: num.NewUint(price),
+		Size:          size,
+		Remaining:     remaining,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Status:        types.OrderStatusActive,
+		MarketID:      "M",
 	}
 	return order
 }
@@ -206,6 +207,7 @@ func TestAmendOrderPrice(t *testing.T) {
 	// Amend the price to force a change in price level
 	amendorder := *order
 	amendorder.Price = num.NewUint(90)
+	amendorder.OriginalPrice = num.NewUint(90)
 	event3 := events.NewOrderEvent(ctx, &amendorder)
 	mdb.Push(event3)
 
