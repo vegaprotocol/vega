@@ -2,6 +2,7 @@ package execution
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -12,6 +13,8 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
+
+var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
@@ -28,6 +31,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 	)
 
 	if err := m.liquidity.ValidateLiquidityProvisionSubmission(sub, true); err != nil {
+		return err
+	}
+
+	if err := m.ensureLPCommitmentAmount(sub.CommitmentAmount); err != nil {
 		return err
 	}
 
@@ -211,6 +218,12 @@ func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.Liquidi
 
 	if err := m.liquidity.ValidateLiquidityProvisionAmendment(lpa); err != nil {
 		return err
+	}
+
+	if lpa.CommitmentAmount != nil {
+		if err := m.ensureLPCommitmentAmount(lpa.CommitmentAmount); err != nil {
+			return err
+		}
 	}
 
 	if !m.liquidity.IsLiquidityProvider(party) {
@@ -1241,4 +1254,21 @@ func (m *Market) ensureLiquidityProvisionBond(
 	}
 
 	return transfer, nil
+}
+
+func (m *Market) ensureLPCommitmentAmount(amount *num.Uint) error {
+	asset, _ := m.mkt.GetAsset()
+	quantum, err := m.collateral.GetAssetQuantum(asset)
+	if err != nil {
+		m.log.Panic("could not get quantum for asset, this should never happen",
+			logging.AssetID(asset),
+			logging.Error(err),
+		)
+	}
+	minStake := quantum.ToDecimal().Mul(m.minLPStakeQuantumMultiple)
+	if amount.ToDecimal().LessThan(minStake) {
+		return ErrCommitmentAmountTooLow
+	}
+
+	return nil
 }

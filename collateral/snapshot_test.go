@@ -122,7 +122,7 @@ func testSnapshotConsistentHash(t *testing.T) {
 			Symbol:      "FOO",
 			TotalSupply: num.NewUint(100000000),
 			Decimals:    5,
-			MinLpStake:  num.NewUint(1),
+			Quantum:     num.NewUint(1),
 			Source: types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.NewUint(100000000),
@@ -233,7 +233,7 @@ func testSnapshotRestore(t *testing.T) {
 			Symbol:      "FOO",
 			TotalSupply: num.NewUint(100000000),
 			Decimals:    5,
-			MinLpStake:  num.NewUint(1),
+			Quantum:     num.NewUint(1),
 			Source:      erc20,
 		},
 	}

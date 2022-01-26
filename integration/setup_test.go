@@ -252,5 +252,9 @@ func (e *executionTestSetup) registerNetParamsCallbacks() error {
 			Param:   netparams.ValidatorsEpochLength,
 			Watcher: e.epochEngine.OnEpochLengthUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinLpStakeQuantumMultiple,
+			Watcher: e.executionEngine.OnMinLpStakeQuantumMultipleUpdate,
+		},
 	)
 }
