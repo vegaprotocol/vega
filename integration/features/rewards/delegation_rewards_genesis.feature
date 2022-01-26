@@ -6,13 +6,10 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | reward.asset                                      |  VEGA   |
       | validators.epoch.length                           |  24h    |
       | validators.delegation.minAmount                   |  10     |
-      | reward.staking.delegation.payoutDelay             |  0s     |
       | reward.staking.delegation.delegatorShare          |  0.883  |
       | reward.staking.delegation.minimumValidatorStake   |  100    |
-      | reward.staking.delegation.payoutFraction          |  0.5    |
       | reward.staking.delegation.maxPayoutPerParticipant |  100000 |
       | reward.staking.delegation.competitionLevel        |  1.1    |
-      | reward.staking.delegation.maxPayoutPerEpoch       |  50000  |
       | reward.staking.delegation.minValidators           |  5      |
       | reward.staking.delegation.optimalStakeMultiplier  |  5.0    |
   
@@ -37,9 +34,6 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
 
   Scenario: No delegation in the first epoch
 
-    And the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
     
     Then the network moves ahead "172804" blocks
 
@@ -98,6 +92,9 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
       | node4  |  node4   |     99 |  
       | party1 |  node4   | 111000 |  
 
+    And the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 50000  | 
     Then the network moves ahead "172804" blocks
 
     And the parties should have the following delegation balances for epoch 4:
@@ -161,7 +158,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
 
     And the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  | 100000 | 
+      | VEGA  | 50000 | 
     
     #complete the initial epoch for delegation to take effect
     Then the network moves ahead "172804" blocks
@@ -235,7 +232,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
 
     And the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  | 100000 | 
+      | VEGA  | 50000 | 
     
     #complete the initial epoch for delegation to take effect
     Then the network moves ahead "172804" blocks
@@ -361,7 +358,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
   
     And the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  | 100000 | 
+      | VEGA  | 50000 | 
     
     #complete the initial epoch for delegation to take effect
     Then the network moves ahead "172804" blocks
@@ -475,7 +472,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
 
       And the global reward account gets the following deposits:
         | asset | amount |
-        | VEGA  | 100000 | 
+        | VEGA  | 50000 | 
       
       #complete the initial epoch for delegation to take effect
       Then the network moves ahead "172804" blocks
@@ -624,7 +621,7 @@ Feature: Staking & Delegation - scenarios focusing on initial epoch
 
       And the global reward account gets the following deposits:
         | asset | amount |
-        | VEGA  | 100000 | 
+        | VEGA  | 50000 | 
       
       #complete the initial epoch for delegation to take effect
       Then the network moves ahead "172802" blocks

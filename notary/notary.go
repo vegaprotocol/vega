@@ -43,9 +43,10 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/processor Commander
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/notary Commander
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_ticker_mock.go -package mocks code.vegaprotocol.io/vega/notary TimeTicker
@@ -237,7 +238,7 @@ func (n *Notary) send(id string, kind commandspb.NodeSignatureKind, signature []
 	nsig := &commandspb.NodeSignature{Id: id, Sig: signature, Kind: kind}
 	// we send a background context here because the actual context is ignore by the commander
 	// which use a timeout of 5 seconds, this API may need to be addressed another day
-	n.cmd.Command(context.Background(), txn.NodeSignatureCommand, nsig, func(err error) {
+	n.cmd.CommandSync(context.Background(), txn.NodeSignatureCommand, nsig, func(err error) {
 		// just a log is enough here, the transaction will be retried
 		// later
 		n.log.Error("could not send the transaction to tendermint", logging.Error(err))

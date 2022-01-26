@@ -2540,6 +2540,16 @@ func (e *Engine) GetAccountByID(id string) (*types.Account, error) {
 	return acc.Clone(), nil
 }
 
+// GetEnabledAssets returns the asset IDs of all enabled assets.
+func (e *Engine) GetEnabledAssets() []string {
+	assets := make([]string, 0, len(e.enabledAssets))
+	for _, asset := range e.enabledAssets {
+		assets = append(assets, asset.ID)
+	}
+	sort.Strings(assets)
+	return assets
+}
+
 // GetAssetTotalSupply - return the total supply of the asset if it's known
 // from the collateral engine.
 func (e *Engine) GetAssetTotalSupply(asset string) (*num.Uint, error) {
@@ -2620,4 +2630,18 @@ func (e *Engine) CreateOrGetAssetRewardPoolAccount(ctx context.Context, asset st
 func (e *Engine) GetGlobalRewardAccount(asset string) (*types.Account, error) {
 	rewardAccID := e.accountID(noMarket, systemOwner, asset, types.AccountTypeGlobalReward)
 	return e.GetAccountByID(rewardAccID)
+}
+
+// GetRewardAccount returns a reward accound by asset and type.
+func (e *Engine) GetRewardAccount(asset string, rewardAcccountType types.AccountType) (*types.Account, error) {
+	rewardAccID := e.accountID(noMarket, systemOwner, asset, rewardAcccountType)
+	return e.GetAccountByID(rewardAccID)
+}
+
+func (e *Engine) GetAssetQuantum(asset string) (*num.Uint, error) {
+	if !e.AssetExists(asset) {
+		return num.Zero(), ErrInvalidAssetID
+	}
+	// TODO this needs to be the quantum when quantum is added
+	return e.enabledAssets[asset].Details.MinLpStake, nil
 }

@@ -285,9 +285,9 @@ func testAutoSnapshotRoundTrip(t *testing.T) {
 	var auto snapshot.Payload
 	proto.Unmarshal(statePostUndelegate, &auto)
 	payload := types.PayloadFromProto(&auto)
-	testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 
-	testEngine.engine.LoadState(context.Background(), payload)
+	_, err = testEngine.engine.LoadState(context.Background(), payload)
+	require.NoError(t, err)
 	hashPostReload, _ := testEngine.engine.GetHash(autoKey)
 	require.True(t, bytes.Equal(hashPostUndelegate, hashPostReload))
 	statePostReload, _, _ := testEngine.engine.GetState(autoKey)
@@ -1853,7 +1853,7 @@ func testCheckpointRoundtripOnlyPending(t *testing.T) {
 	ctx := context.Background()
 	for i := 0; i < 100; i++ {
 		testEngine := getEngine(t)
-		testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(4)
+		testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 
 		testEngine.topology.nodeToIsValidator["node1"] = true
 		testEngine.topology.nodeToIsValidator["node2"] = true
