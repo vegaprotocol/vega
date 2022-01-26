@@ -144,11 +144,10 @@ func testTransferRewardsSuccess(t *testing.T) {
 	eng := getTestEngine(t, "test-market")
 	defer eng.Finish()
 
-	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	rewardAccID, _ := eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "ETH")
+	rewardAcc, _ := eng.GetGlobalRewardAccount("ETH")
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	eng.Engine.IncrementBalance(context.Background(), rewardAccID, num.NewUint(1000))
+	eng.Engine.IncrementBalance(context.Background(), rewardAcc.ID, num.NewUint(1000))
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(3)
 	partyAccountID, _ := eng.CreatePartyGeneralAccount(context.Background(), "party1", "ETH")
@@ -166,7 +165,7 @@ func testTransferRewardsSuccess(t *testing.T) {
 	}
 
 	eng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	_, err := eng.Engine.TransferRewards(context.Background(), rewardAccID, transfers)
+	_, err := eng.Engine.TransferRewards(context.Background(), rewardAcc.ID, transfers)
 	require.Nil(t, err)
 	partyAccount, _ := eng.Engine.GetAccountByID(partyAccountID)
 	require.Equal(t, num.NewUint(1000), partyAccount.Balance)
@@ -595,7 +594,7 @@ func testEnableAssetSuccess(t *testing.T) {
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
-	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(asset.ID)
+	assetInsuranceAcc, _ := eng.Engine.GetGlobalRewardAccount(asset.ID)
 	assert.True(t, assetInsuranceAcc.Balance.IsZero())
 }
 
@@ -2156,10 +2155,6 @@ func TestClearMarket(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(responses))
-
-	// as there's only one market and it's being cleared we expect all the balance to go to the global account
-	assetInsuranceAcc, _ := eng.Engine.GetAssetInsurancePoolAccount(testMarketAsset)
-	assert.Equal(t, num.NewUint(1000), assetInsuranceAcc.Balance)
 }
 
 func TestClearMarketNoMargin(t *testing.T) {
@@ -2214,10 +2209,6 @@ func TestNonRewardDepositOK(t *testing.T) {
 	// Attempt to deposit collateral that should go into the global asset reward account
 	_, err := eng.Engine.Deposit(ctx, "OtherParty", testMarketAsset, num.NewUint(100))
 	assert.NoError(t, err)
-
-	rewardAcct, err := eng.Engine.GetGlobalRewardAccount(testMarketAsset)
-	assert.Nil(t, rewardAcct)
-	assert.Error(t, err)
 }
 
 func TestRewardDepositBadAssetOK(t *testing.T) {
@@ -2403,8 +2394,6 @@ func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 	}
 	err := eng.EnableAsset(context.Background(), tokAsset)
 	assert.NoError(t, err)
-	eng.CreateOrGetAssetRewardPoolAccount(context.Background(), "VOTE")
-	assert.NoError(t, err)
 }
 
 func getTestEngine(t *testing.T, market string) *testEngine {
@@ -2418,7 +2407,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	// 2 new assets
 	// 3 asset insurance accounts
 	// 1 reward account
-	broker.EXPECT().Send(gomock.Any()).Times(17)
+	broker.EXPECT().Send(gomock.Any()).Times(16)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
@@ -2594,7 +2583,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"5761f3e3f1fa279b0197c292b86874e2b8b84f128cbb469ea1822d918c394ac7",
+		"b6b01540747491155d56267a6c5f7627d6719c73cf58889c0869375bd7853978",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)

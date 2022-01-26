@@ -138,10 +138,10 @@ func testCalculateRewards(t *testing.T) {
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 
 	epoch := types.Epoch{EndTime: time.Now()}
-	rewardAccount, err := testEngine.collateral.CreateOrGetAssetRewardPoolAccount(context.Background(), "VEGA")
+	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
 	require.NoError(t, err)
 	testEngine.delegation.EXPECT().ProcessEpochDelegations(gomock.Any(), gomock.Any()).Return(testEngine.validatorData)
-	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount, num.NewUint(1000000))
+	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000))
 	require.Nil(t, err)
 
 	payouts := engine.calculateRewardPayouts(context.Background(), epoch)
@@ -170,9 +170,9 @@ func testCalculateRewardsCappedByMaxPerEpoch(t *testing.T) {
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 	engine.UpdateMaxPayoutPerParticipantForStakingRewardScheme(context.Background(), num.DecimalZero())
 
-	rewardAccount, err := testEngine.collateral.CreateOrGetAssetRewardPoolAccount(context.Background(), "VEGA")
+	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
 	require.Nil(t, err)
-	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount, num.NewUint(1000000))
+	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000))
 	require.NoError(t, err)
 	epoch := types.Epoch{}
 
@@ -201,15 +201,15 @@ func testDistributePayout(t *testing.T) {
 	engine.UpdateOptimalStakeMultiplierStakingRewardScheme(context.Background(), num.DecimalFromFloat(5))
 
 	// setup balance of reward account
-	rewardAccountID, err := testEngine.collateral.CreateOrGetAssetRewardPoolAccount(context.Background(), "VEGA")
+	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
 	require.NoError(t, err)
-	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccountID, num.NewUint(1000000))
+	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000))
 	require.Nil(t, err)
 	partyToAmount := map[string]*num.Uint{}
 	partyToAmount["party1"] = num.NewUint(5000)
 
 	payout := &payout{
-		fromAccount:   rewardAccountID,
+		fromAccount:   rewardAccount.ID,
 		totalReward:   num.NewUint(5000),
 		partyToAmount: partyToAmount,
 		asset:         "VEGA",
@@ -218,7 +218,7 @@ func testDistributePayout(t *testing.T) {
 	// testEngine.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	engine.distributePayout(context.Background(), payout)
 
-	rewardAccount, _ := engine.collateral.GetAccountByID(rewardAccountID)
+	rewardAccount, _ = engine.collateral.GetAccountByID(rewardAccount.ID)
 	partyAccount, err := testEngine.collateral.GetPartyGeneralAccount("party1", "VEGA")
 	require.Nil(t, err)
 
@@ -246,9 +246,9 @@ func testOnEpochEventNoPayoutDelay(t *testing.T) {
 	testEngine.collateral.CreatePartyGeneralAccount(context.Background(), "node3", "VEGA")
 
 	// setup reward account balance
-	rewardAccountID, err := testEngine.collateral.CreateOrGetAssetRewardPoolAccount(context.Background(), "VEGA")
+	rewardAccount, err := testEngine.collateral.GetGlobalRewardAccount("VEGA")
 	require.NoError(t, err)
-	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccountID, num.NewUint(1000000))
+	err = testEngine.collateral.IncrementBalance(context.Background(), rewardAccount.ID, num.NewUint(1000000))
 	require.Nil(t, err)
 
 	// there is remaining 1000000 to distribute as payout

@@ -104,7 +104,7 @@ func NewStakeVerifier(
 	defer func() {
 		tt.NotifyOnTick(sv.onTick)
 	}()
-
+	log = log.Named("stake-verifier")
 	s := &StakeVerifier{
 		log:     log,
 		cfg:     cfg,
