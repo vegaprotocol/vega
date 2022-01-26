@@ -2,7 +2,6 @@ package products
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
 	"github.com/pkg/errors"
 )
 
@@ -116,24 +114,35 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
+
+	tradingTerminated, err := data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
+
+	return f.setTradingTerminated(ctx, tradingTerminated, err)
+}
+
+func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data oracles.OracleData) error {
+	if f.log.GetLevel() == logging.DebugLevel {
+		f.log.Debug("new oracle data received", data.Debug()...)
+	}
+
 	var tradingTerminated bool
 	var err error
 
-	if f.oracle.binding.tradingTerminationProperty == fmt.Sprintf("%s.timestamp", oracles.InternalOraclePrefix) {
-		if _, err = data.GetTimestamp(fmt.Sprintf("%s.timestamp", oracles.InternalOraclePrefix)); err == nil {
-			// we have received a trading termination timestamp from the internal vega time oracle
-			tradingTerminated = true
-		}
-	} else {
-		tradingTerminated, err = data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
+	if _, err = data.GetTimestamp(oracles.InternalOracleTimestamp); err == nil {
+		// we have received a trading termination timestamp from the internal vega time oracle
+		tradingTerminated = true
 	}
 
-	if err != nil {
+	return f.setTradingTerminated(ctx, tradingTerminated, err)
+}
+
+func (f *Future) setTradingTerminated(ctx context.Context, tradingTerminated bool, dataErr error) error {
+	if dataErr != nil {
 		f.log.Error(
 			"could not parse the property acting as trading Terminated",
-			logging.Error(err),
+			logging.Error(dataErr),
 		)
-		return err
+		return dataErr
 	}
 
 	f.oracle.data.tradingTerminated = tradingTerminated
@@ -216,7 +225,12 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
-	future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)
+
+	if oracleSpecForTerminatedMarket.CanBindProperty(oracles.InternalOracleTimestamp) {
+		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminatedByTimestamp)
+	} else {
+		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)
+	}
 
 	if log.GetLevel() == logging.DebugLevel {
 		log.Debug(

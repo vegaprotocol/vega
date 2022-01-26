@@ -127,6 +127,7 @@ func newTestMarket(t *testing.T, now time.Time) *testMarket {
 	tm.broker = bmock.NewMockBroker(ctrl)
 	tm.timeService = mocks.NewMockTimeService(ctrl)
 	tm.timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	tm.timeService.EXPECT().NotifyInternalOracleTimestamp(gomock.Any()).Times(1)
 
 	// eventFn records and count events and orderEvents
 	eventFn := func(evt events.Event) {
@@ -294,6 +295,7 @@ func getTestMarket2WithDP(
 	broker := bmock.NewMockBroker(ctrl)
 	timeService := mocks.NewMockTimeService(ctrl)
 	timeService.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
+	timeService.EXPECT().NotifyInternalOracleTimestamp(gomock.Any()).Times(1)
 
 	tm := &testMarket{
 		log:         log,

@@ -8,7 +8,7 @@ Feature: Test settlement at expiry time from internal oracle
       | property         | type         | binding          |
       | prices.ETH.value | TYPE_INTEGER | settlement price |
 
-    And the oracle spec for trading termination filtering data from "0xDEADBEEF" named "ethDec20Oracle":
+    And the oracle spec for trading termination filtering data from "vegaprotocol.internal" named "ethDec20Oracle":
       | property                        | type           | binding             | condition            |
       | vegaprotocol.internal.timestamp | TYPE_TIMESTAMP | trading termination | 2019-12-31T23:59:59Z |
 
@@ -17,8 +17,8 @@ Feature: Test settlement at expiry time from internal oracle
       | prices.ETH.value | TYPE_INTEGER | settlement price |
 
     And the oracle spec for trading termination filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
-      | property           | type         | binding             | condition |
-      | trading.terminated | TYPE_BOOLEAN | trading termination |           |
+      | property           | type         | binding             |
+      | trading.terminated | TYPE_BOOLEAN | trading termination |
 
     And the following network parameters are set:
       | name                           | value |
@@ -80,9 +80,9 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "100236000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -200,9 +200,9 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "100236000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -309,9 +309,9 @@ Feature: Test settlement at expiry time from internal oracle
       | aux2     | ETH   | 100000    |
       | party-lp | ETH   | 100000000 |
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -373,9 +373,9 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "102012000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC19 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |
@@ -431,9 +431,9 @@ Feature: Test settlement at expiry time from internal oracle
     And the cumulated balance for all accounts should be worth "102012000"
 
     And the parties submit the following liquidity provision:
-      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | -10    |
-      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     |
+      | id  | party    | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type    |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party-lp | ETH/DEC21 | 30000000          | 0   | sell | ASK              | 50         | 10     | amendment  |
 
     When the parties place the following orders:
       | party | market id | side | volume | price | resulting trades | type       | tif     | reference |

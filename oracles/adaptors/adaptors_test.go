@@ -3,8 +3,9 @@ package adaptors_test
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"testing"
+	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
@@ -83,8 +84,8 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 	}
 }
 
-func stubbedAdaptors(validators ...adaptors.ValidatorFunc) *adaptors.Adaptors {
-	as := adaptors.New(validators...)
+func stubbedAdaptors() *adaptors.Adaptors {
+	as := adaptors.New()
 	as.Adaptors = map[commandspb.OracleDataSubmission_OracleSource]adaptors.Adaptor{
 		commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE: &dummyOracleAdaptor{},
 		commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON:        &dummyOracleAdaptor{},
@@ -105,12 +106,32 @@ func dummyOraclePayload() []byte {
 	return payload
 }
 
+func internalOraclePayload() []byte {
+	payload, err := json.Marshal(map[string]string{
+		oracles.InternalOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
+	})
+
+	if err != nil {
+		panic("failed to generate internal oracle payload in tests")
+	}
+
+	return payload
+}
+
 type dummyOracleAdaptor struct{}
 
-func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
-	data := &oracles.OracleData{}
-	err := json.Unmarshal(payload, data)
-	return data, err
+func (d *dummyOracleAdaptor) Normalise(pk crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
+	var data map[string]string
+	err := json.Unmarshal(payload, &data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &oracles.OracleData{
+		PubKeys: []string{pk.Hex()},
+		Data:    data,
+	}, nil
 }
 
 func testAdaptorValidationSuccess(t *testing.T) {
@@ -138,7 +159,7 @@ func testAdaptorValidationSuccess(t *testing.T) {
 			}
 
 			// when
-			adaptor := stubbedAdaptors(passValidation, passValidation, passValidation)
+			adaptor := stubbedAdaptors()
 			normalisedData, err := adaptor.Normalise(pubKey, rawData)
 
 			// then
@@ -169,11 +190,11 @@ func testAdaptorValidationFails(t *testing.T) {
 			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 			rawData := commandspb.OracleDataSubmission{
 				Source:  tc.source,
-				Payload: dummyOraclePayload(),
+				Payload: internalOraclePayload(),
 			}
 
 			// when
-			adaptor := stubbedAdaptors(passValidation, failValidation, passValidation)
+			adaptor := stubbedAdaptors()
 			normalisedData, err := adaptor.Normalise(pubKey, rawData)
 
 			// then
@@ -181,12 +202,4 @@ func testAdaptorValidationFails(t *testing.T) {
 			assert.Nil(t, normalisedData)
 		})
 	}
-}
-
-func passValidation(map[string]string) error {
-	return nil
-}
-
-func failValidation(map[string]string) error {
-	return errors.New("some error")
 }

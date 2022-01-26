@@ -113,8 +113,12 @@ func (s OracleSpec) CanBindProperty(property string) bool {
 
 // MatchData indicates if a given OracleData matches the spec or not.
 func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
-	if !containsRequiredPubKeys(data.PubKeys, s.pubKeys) {
-		return false, nil
+	// if the data contains the internal oracle timestamp key, and only that key,
+	// then we do not need to verify the public keys as there will not be one
+	if _, ok := data.Data[InternalOracleTimestamp]; !ok || (ok && len(data.Data) > 1) {
+		if !containsRequiredPubKeys(data.PubKeys, s.pubKeys) {
+			return false, nil
+		}
 	}
 
 	for propertyName, filter := range s.filters {

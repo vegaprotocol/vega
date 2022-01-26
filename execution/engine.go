@@ -35,6 +35,7 @@ var (
 type TimeService interface {
 	GetTimeNow() time.Time
 	NotifyOnTick(f func(context.Context, time.Time))
+	NotifyInternalOracleTimestamp(f func(context.Context, oracles.OracleData))
 }
 
 // OracleEngine ...

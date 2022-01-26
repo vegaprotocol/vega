@@ -2,8 +2,11 @@ package vegatime
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
+
+	"code.vegaprotocol.io/vega/oracles"
 )
 
 // Svc represents the Service managing time inside Vega.
@@ -14,8 +17,9 @@ type Svc struct {
 	previousTimestamp time.Time
 	currentTimestamp  time.Time
 
-	listeners []func(context.Context, time.Time)
-	mu        sync.Mutex
+	listeners       []func(context.Context, time.Time)
+	oracleListeners []func(context.Context, oracles.OracleData)
+	mu              sync.Mutex
 }
 
 // New instantiates a new vegatime service.
@@ -46,6 +50,7 @@ func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 	}
 
 	s.notify(ctx, t)
+	s.publishOracleData(ctx, t)
 }
 
 // GetTimeNow returns the current time in vega.
@@ -72,4 +77,25 @@ func (s *Svc) notify(ctx context.Context, t time.Time) {
 	for _, f := range s.listeners {
 		f(ctx, t)
 	}
+}
+
+func (s *Svc) publishOracleData(ctx context.Context, t time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, f := range s.oracleListeners {
+		data := oracles.OracleData{
+			PubKeys: nil,
+			Data: map[string]string{
+				oracles.InternalOracleTimestamp: fmt.Sprintf("%d", t.UnixNano()),
+			},
+		}
+
+		f(ctx, data)
+	}
+}
+
+func (s *Svc) NotifyInternalOracleTimestamp(f func(context.Context, oracles.OracleData)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.oracleListeners = append(s.oracleListeners, f)
 }
