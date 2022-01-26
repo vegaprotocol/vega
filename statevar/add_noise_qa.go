@@ -19,7 +19,9 @@ func (sv *StateVariable) AddNoise(kvb []*vegapb.KeyValueBundle) []*vegapb.KeyVal
 		switch v := kvt.Value.Value.(type) {
 		case *vega.StateVarValue_ScalarVal:
 			random := rand.Float64() * tol.InexactFloat64() / 2.0
-			sv.log.Info("adding random noise", logging.String("key-name", kvt.Key), logging.Float64("randomness", random))
+			if sv.log.GetLevel() <= logging.DebugLevel {
+				sv.log.Debug("adding random noise", logging.String("key-name", kvt.Key), logging.Float64("randomness", random))
+			}
 			val, _ := num.DecimalFromString(v.ScalarVal.Value)
 			val = val.Add(num.DecimalFromFloat(random))
 			kvt.Value.Value = &vegapb.StateVarValue_ScalarVal{
@@ -32,7 +34,9 @@ func (sv *StateVariable) AddNoise(kvb []*vegapb.KeyValueBundle) []*vegapb.KeyVal
 			vec := make([]num.Decimal, 0, len(v.VectorVal.Value))
 			for i, entry := range v.VectorVal.Value {
 				random := rand.Float64() * tol.InexactFloat64() / 2.0
-				sv.log.Info("adding random noise", logging.String("key-name", kvt.Key), logging.Int("index", i), logging.Float64("randomness", random))
+				if sv.log.GetLevel() <= logging.DebugLevel {
+					sv.log.Debug("adding random noise", logging.String("key-name", kvt.Key), logging.Int("index", i), logging.Float64("randomness", random))
+				}
 				value, _ := num.DecimalFromString(entry)
 				vec = append(vec, value.Add(num.DecimalFromFloat(random)))
 			}
