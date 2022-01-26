@@ -5,39 +5,40 @@
 package mocks
 
 import (
+	context "context"
+	reflect "reflect"
+	time "time"
+
 	events "code.vegaprotocol.io/vega/events"
 	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
-	context "context"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
-	time "time"
 )
 
-// MockCollateral is a mock of Collateral interface
+// MockCollateral is a mock of Collateral interface.
 type MockCollateral struct {
 	ctrl     *gomock.Controller
 	recorder *MockCollateralMockRecorder
 }
 
-// MockCollateralMockRecorder is the mock recorder for MockCollateral
+// MockCollateralMockRecorder is the mock recorder for MockCollateral.
 type MockCollateralMockRecorder struct {
 	mock *MockCollateral
 }
 
-// NewMockCollateral creates a new mock instance
+// NewMockCollateral creates a new mock instance.
 func NewMockCollateral(ctrl *gomock.Controller) *MockCollateral {
 	mock := &MockCollateral{ctrl: ctrl}
 	mock.recorder = &MockCollateralMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCollateral) EXPECT() *MockCollateralMockRecorder {
 	return m.recorder
 }
 
-// AssetExists mocks base method
+// AssetExists mocks base method.
 func (m *MockCollateral) AssetExists(arg0 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AssetExists", arg0)
@@ -45,13 +46,13 @@ func (m *MockCollateral) AssetExists(arg0 string) bool {
 	return ret0
 }
 
-// AssetExists indicates an expected call of AssetExists
+// AssetExists indicates an expected call of AssetExists.
 func (mr *MockCollateralMockRecorder) AssetExists(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssetExists", reflect.TypeOf((*MockCollateral)(nil).AssetExists), arg0)
 }
 
-// BondUpdate mocks base method
+// BondUpdate mocks base method.
 func (m *MockCollateral) BondUpdate(arg0 context.Context, arg1 string, arg2 *types.Transfer) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BondUpdate", arg0, arg1, arg2)
@@ -60,13 +61,13 @@ func (m *MockCollateral) BondUpdate(arg0 context.Context, arg1 string, arg2 *typ
 	return ret0, ret1
 }
 
-// BondUpdate indicates an expected call of BondUpdate
+// BondUpdate indicates an expected call of BondUpdate.
 func (mr *MockCollateralMockRecorder) BondUpdate(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BondUpdate", reflect.TypeOf((*MockCollateral)(nil).BondUpdate), arg0, arg1, arg2)
 }
 
-// CanCoverBond mocks base method
+// CanCoverBond mocks base method.
 func (m *MockCollateral) CanCoverBond(arg0, arg1, arg2 string, arg3 *num.Uint) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanCoverBond", arg0, arg1, arg2, arg3)
@@ -74,13 +75,13 @@ func (m *MockCollateral) CanCoverBond(arg0, arg1, arg2 string, arg3 *num.Uint) b
 	return ret0
 }
 
-// CanCoverBond indicates an expected call of CanCoverBond
+// CanCoverBond indicates an expected call of CanCoverBond.
 func (mr *MockCollateralMockRecorder) CanCoverBond(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanCoverBond", reflect.TypeOf((*MockCollateral)(nil).CanCoverBond), arg0, arg1, arg2, arg3)
 }
 
-// ClearMarket mocks base method
+// ClearMarket mocks base method.
 func (m *MockCollateral) ClearMarket(arg0 context.Context, arg1, arg2 string, arg3 []string) ([]*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearMarket", arg0, arg1, arg2, arg3)
@@ -89,13 +90,13 @@ func (m *MockCollateral) ClearMarket(arg0 context.Context, arg1, arg2 string, ar
 	return ret0, ret1
 }
 
-// ClearMarket indicates an expected call of ClearMarket
+// ClearMarket indicates an expected call of ClearMarket.
 func (mr *MockCollateralMockRecorder) ClearMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearMarket", reflect.TypeOf((*MockCollateral)(nil).ClearMarket), arg0, arg1, arg2, arg3)
 }
 
-// ClearPartyMarginAccount mocks base method
+// ClearPartyMarginAccount mocks base method.
 func (m *MockCollateral) ClearPartyMarginAccount(arg0 context.Context, arg1, arg2, arg3 string) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ClearPartyMarginAccount", arg0, arg1, arg2, arg3)
@@ -104,13 +105,13 @@ func (m *MockCollateral) ClearPartyMarginAccount(arg0 context.Context, arg1, arg
 	return ret0, ret1
 }
 
-// ClearPartyMarginAccount indicates an expected call of ClearPartyMarginAccount
+// ClearPartyMarginAccount indicates an expected call of ClearPartyMarginAccount.
 func (mr *MockCollateralMockRecorder) ClearPartyMarginAccount(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearPartyMarginAccount", reflect.TypeOf((*MockCollateral)(nil).ClearPartyMarginAccount), arg0, arg1, arg2, arg3)
 }
 
-// CreateMarketAccounts mocks base method
+// CreateMarketAccounts mocks base method.
 func (m *MockCollateral) CreateMarketAccounts(arg0 context.Context, arg1, arg2 string) (string, string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateMarketAccounts", arg0, arg1, arg2)
@@ -120,13 +121,13 @@ func (m *MockCollateral) CreateMarketAccounts(arg0 context.Context, arg1, arg2 s
 	return ret0, ret1, ret2
 }
 
-// CreateMarketAccounts indicates an expected call of CreateMarketAccounts
+// CreateMarketAccounts indicates an expected call of CreateMarketAccounts.
 func (mr *MockCollateralMockRecorder) CreateMarketAccounts(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMarketAccounts", reflect.TypeOf((*MockCollateral)(nil).CreateMarketAccounts), arg0, arg1, arg2)
 }
 
-// CreatePartyMarginAccount mocks base method
+// CreatePartyMarginAccount mocks base method.
 func (m *MockCollateral) CreatePartyMarginAccount(arg0 context.Context, arg1, arg2, arg3 string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreatePartyMarginAccount", arg0, arg1, arg2, arg3)
@@ -135,13 +136,13 @@ func (m *MockCollateral) CreatePartyMarginAccount(arg0 context.Context, arg1, ar
 	return ret0, ret1
 }
 
-// CreatePartyMarginAccount indicates an expected call of CreatePartyMarginAccount
+// CreatePartyMarginAccount indicates an expected call of CreatePartyMarginAccount.
 func (mr *MockCollateralMockRecorder) CreatePartyMarginAccount(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePartyMarginAccount", reflect.TypeOf((*MockCollateral)(nil).CreatePartyMarginAccount), arg0, arg1, arg2, arg3)
 }
 
-// Deposit mocks base method
+// Deposit mocks base method.
 func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Deposit", arg0, arg1, arg2, arg3)
@@ -150,13 +151,13 @@ func (m *MockCollateral) Deposit(arg0 context.Context, arg1, arg2 string, arg3 *
 	return ret0, ret1
 }
 
-// Deposit indicates an expected call of Deposit
+// Deposit indicates an expected call of Deposit.
 func (mr *MockCollateralMockRecorder) Deposit(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Deposit", reflect.TypeOf((*MockCollateral)(nil).Deposit), arg0, arg1, arg2, arg3)
 }
 
-// EnableAsset mocks base method
+// EnableAsset mocks base method.
 func (m *MockCollateral) EnableAsset(arg0 context.Context, arg1 types.Asset) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EnableAsset", arg0, arg1)
@@ -164,13 +165,13 @@ func (m *MockCollateral) EnableAsset(arg0 context.Context, arg1 types.Asset) err
 	return ret0
 }
 
-// EnableAsset indicates an expected call of EnableAsset
+// EnableAsset indicates an expected call of EnableAsset.
 func (mr *MockCollateralMockRecorder) EnableAsset(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableAsset", reflect.TypeOf((*MockCollateral)(nil).EnableAsset), arg0, arg1)
 }
 
-// FinalSettlement mocks base method
+// FinalSettlement mocks base method.
 func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2 []*types.Transfer) ([]*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FinalSettlement", arg0, arg1, arg2)
@@ -179,13 +180,28 @@ func (m *MockCollateral) FinalSettlement(arg0 context.Context, arg1 string, arg2
 	return ret0, ret1
 }
 
-// FinalSettlement indicates an expected call of FinalSettlement
+// FinalSettlement indicates an expected call of FinalSettlement.
 func (mr *MockCollateralMockRecorder) FinalSettlement(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinalSettlement", reflect.TypeOf((*MockCollateral)(nil).FinalSettlement), arg0, arg1, arg2)
 }
 
-// GetMarketLiquidityFeeAccount mocks base method
+// GetAssetQuantum mocks base method.
+func (m *MockCollateral) GetAssetQuantum(arg0 string) (*num.Uint, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAssetQuantum", arg0)
+	ret0, _ := ret[0].(*num.Uint)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAssetQuantum indicates an expected call of GetAssetQuantum.
+func (mr *MockCollateralMockRecorder) GetAssetQuantum(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAssetQuantum", reflect.TypeOf((*MockCollateral)(nil).GetAssetQuantum), arg0)
+}
+
+// GetMarketLiquidityFeeAccount mocks base method.
 func (m *MockCollateral) GetMarketLiquidityFeeAccount(arg0, arg1 string) (*types.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketLiquidityFeeAccount", arg0, arg1)
@@ -194,13 +210,13 @@ func (m *MockCollateral) GetMarketLiquidityFeeAccount(arg0, arg1 string) (*types
 	return ret0, ret1
 }
 
-// GetMarketLiquidityFeeAccount indicates an expected call of GetMarketLiquidityFeeAccount
+// GetMarketLiquidityFeeAccount indicates an expected call of GetMarketLiquidityFeeAccount.
 func (mr *MockCollateralMockRecorder) GetMarketLiquidityFeeAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketLiquidityFeeAccount", reflect.TypeOf((*MockCollateral)(nil).GetMarketLiquidityFeeAccount), arg0, arg1)
 }
 
-// GetOrCreatePartyBondAccount mocks base method
+// GetOrCreatePartyBondAccount mocks base method.
 func (m *MockCollateral) GetOrCreatePartyBondAccount(arg0 context.Context, arg1, arg2, arg3 string) (*types.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetOrCreatePartyBondAccount", arg0, arg1, arg2, arg3)
@@ -209,13 +225,13 @@ func (m *MockCollateral) GetOrCreatePartyBondAccount(arg0 context.Context, arg1,
 	return ret0, ret1
 }
 
-// GetOrCreatePartyBondAccount indicates an expected call of GetOrCreatePartyBondAccount
+// GetOrCreatePartyBondAccount indicates an expected call of GetOrCreatePartyBondAccount.
 func (mr *MockCollateralMockRecorder) GetOrCreatePartyBondAccount(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreatePartyBondAccount", reflect.TypeOf((*MockCollateral)(nil).GetOrCreatePartyBondAccount), arg0, arg1, arg2, arg3)
 }
 
-// GetPartyBondAccount mocks base method
+// GetPartyBondAccount mocks base method.
 func (m *MockCollateral) GetPartyBondAccount(arg0, arg1, arg2 string) (*types.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartyBondAccount", arg0, arg1, arg2)
@@ -224,13 +240,13 @@ func (m *MockCollateral) GetPartyBondAccount(arg0, arg1, arg2 string) (*types.Ac
 	return ret0, ret1
 }
 
-// GetPartyBondAccount indicates an expected call of GetPartyBondAccount
+// GetPartyBondAccount indicates an expected call of GetPartyBondAccount.
 func (mr *MockCollateralMockRecorder) GetPartyBondAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyBondAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyBondAccount), arg0, arg1, arg2)
 }
 
-// GetPartyGeneralAccount mocks base method
+// GetPartyGeneralAccount mocks base method.
 func (m *MockCollateral) GetPartyGeneralAccount(arg0, arg1 string) (*types.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartyGeneralAccount", arg0, arg1)
@@ -239,13 +255,13 @@ func (m *MockCollateral) GetPartyGeneralAccount(arg0, arg1 string) (*types.Accou
 	return ret0, ret1
 }
 
-// GetPartyGeneralAccount indicates an expected call of GetPartyGeneralAccount
+// GetPartyGeneralAccount indicates an expected call of GetPartyGeneralAccount.
 func (mr *MockCollateralMockRecorder) GetPartyGeneralAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyGeneralAccount), arg0, arg1)
 }
 
-// GetPartyMargin mocks base method
+// GetPartyMargin mocks base method.
 func (m *MockCollateral) GetPartyMargin(arg0 events.MarketPosition, arg1, arg2 string) (events.Margin, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartyMargin", arg0, arg1, arg2)
@@ -254,13 +270,13 @@ func (m *MockCollateral) GetPartyMargin(arg0 events.MarketPosition, arg1, arg2 s
 	return ret0, ret1
 }
 
-// GetPartyMargin indicates an expected call of GetPartyMargin
+// GetPartyMargin indicates an expected call of GetPartyMargin.
 func (mr *MockCollateralMockRecorder) GetPartyMargin(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyMargin", reflect.TypeOf((*MockCollateral)(nil).GetPartyMargin), arg0, arg1, arg2)
 }
 
-// GetPartyMarginAccount mocks base method
+// GetPartyMarginAccount mocks base method.
 func (m *MockCollateral) GetPartyMarginAccount(arg0, arg1, arg2 string) (*types.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartyMarginAccount", arg0, arg1, arg2)
@@ -269,13 +285,13 @@ func (m *MockCollateral) GetPartyMarginAccount(arg0, arg1, arg2 string) (*types.
 	return ret0, ret1
 }
 
-// GetPartyMarginAccount indicates an expected call of GetPartyMarginAccount
+// GetPartyMarginAccount indicates an expected call of GetPartyMarginAccount.
 func (mr *MockCollateralMockRecorder) GetPartyMarginAccount(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyMarginAccount", reflect.TypeOf((*MockCollateral)(nil).GetPartyMarginAccount), arg0, arg1, arg2)
 }
 
-// HasGeneralAccount mocks base method
+// HasGeneralAccount mocks base method.
 func (m *MockCollateral) HasGeneralAccount(arg0, arg1 string) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "HasGeneralAccount", arg0, arg1)
@@ -283,13 +299,13 @@ func (m *MockCollateral) HasGeneralAccount(arg0, arg1 string) bool {
 	return ret0
 }
 
-// HasGeneralAccount indicates an expected call of HasGeneralAccount
+// HasGeneralAccount indicates an expected call of HasGeneralAccount.
 func (mr *MockCollateralMockRecorder) HasGeneralAccount(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasGeneralAccount", reflect.TypeOf((*MockCollateral)(nil).HasGeneralAccount), arg0, arg1)
 }
 
-// Hash mocks base method
+// Hash mocks base method.
 func (m *MockCollateral) Hash() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Hash")
@@ -297,13 +313,13 @@ func (m *MockCollateral) Hash() []byte {
 	return ret0
 }
 
-// Hash indicates an expected call of Hash
+// Hash indicates an expected call of Hash.
 func (mr *MockCollateralMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockCollateral)(nil).Hash))
 }
 
-// MarginUpdate mocks base method
+// MarginUpdate mocks base method.
 func (m *MockCollateral) MarginUpdate(arg0 context.Context, arg1 string, arg2 []events.Risk) ([]*types.TransferResponse, []events.Margin, []events.Margin, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarginUpdate", arg0, arg1, arg2)
@@ -314,13 +330,13 @@ func (m *MockCollateral) MarginUpdate(arg0 context.Context, arg1 string, arg2 []
 	return ret0, ret1, ret2, ret3
 }
 
-// MarginUpdate indicates an expected call of MarginUpdate
+// MarginUpdate indicates an expected call of MarginUpdate.
 func (mr *MockCollateralMockRecorder) MarginUpdate(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarginUpdate", reflect.TypeOf((*MockCollateral)(nil).MarginUpdate), arg0, arg1, arg2)
 }
 
-// MarginUpdateOnOrder mocks base method
+// MarginUpdateOnOrder mocks base method.
 func (m *MockCollateral) MarginUpdateOnOrder(arg0 context.Context, arg1 string, arg2 events.Risk) (*types.TransferResponse, events.Margin, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarginUpdateOnOrder", arg0, arg1, arg2)
@@ -330,13 +346,13 @@ func (m *MockCollateral) MarginUpdateOnOrder(arg0 context.Context, arg1 string, 
 	return ret0, ret1, ret2
 }
 
-// MarginUpdateOnOrder indicates an expected call of MarginUpdateOnOrder
+// MarginUpdateOnOrder indicates an expected call of MarginUpdateOnOrder.
 func (mr *MockCollateralMockRecorder) MarginUpdateOnOrder(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarginUpdateOnOrder", reflect.TypeOf((*MockCollateral)(nil).MarginUpdateOnOrder), arg0, arg1, arg2)
 }
 
-// MarkToMarket mocks base method
+// MarkToMarket mocks base method.
 func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []events.Transfer, arg3 string) ([]events.Margin, []*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "MarkToMarket", arg0, arg1, arg2, arg3)
@@ -346,25 +362,25 @@ func (m *MockCollateral) MarkToMarket(arg0 context.Context, arg1 string, arg2 []
 	return ret0, ret1, ret2
 }
 
-// MarkToMarket indicates an expected call of MarkToMarket
+// MarkToMarket indicates an expected call of MarkToMarket.
 func (mr *MockCollateralMockRecorder) MarkToMarket(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkToMarket", reflect.TypeOf((*MockCollateral)(nil).MarkToMarket), arg0, arg1, arg2, arg3)
 }
 
-// OnChainTimeUpdate mocks base method
+// OnChainTimeUpdate mocks base method.
 func (m *MockCollateral) OnChainTimeUpdate(arg0 context.Context, arg1 time.Time) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "OnChainTimeUpdate", arg0, arg1)
 }
 
-// OnChainTimeUpdate indicates an expected call of OnChainTimeUpdate
+// OnChainTimeUpdate indicates an expected call of OnChainTimeUpdate.
 func (mr *MockCollateralMockRecorder) OnChainTimeUpdate(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnChainTimeUpdate", reflect.TypeOf((*MockCollateral)(nil).OnChainTimeUpdate), arg0, arg1)
 }
 
-// RemoveDistressed mocks base method
+// RemoveDistressed mocks base method.
 func (m *MockCollateral) RemoveDistressed(arg0 context.Context, arg1 []events.MarketPosition, arg2, arg3 string) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveDistressed", arg0, arg1, arg2, arg3)
@@ -373,13 +389,13 @@ func (m *MockCollateral) RemoveDistressed(arg0 context.Context, arg1 []events.Ma
 	return ret0, ret1
 }
 
-// RemoveDistressed indicates an expected call of RemoveDistressed
+// RemoveDistressed indicates an expected call of RemoveDistressed.
 func (mr *MockCollateralMockRecorder) RemoveDistressed(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveDistressed", reflect.TypeOf((*MockCollateral)(nil).RemoveDistressed), arg0, arg1, arg2, arg3)
 }
 
-// RollbackMarginUpdateOnOrder mocks base method
+// RollbackMarginUpdateOnOrder mocks base method.
 func (m *MockCollateral) RollbackMarginUpdateOnOrder(arg0 context.Context, arg1, arg2 string, arg3 *types.Transfer) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RollbackMarginUpdateOnOrder", arg0, arg1, arg2, arg3)
@@ -388,13 +404,13 @@ func (m *MockCollateral) RollbackMarginUpdateOnOrder(arg0 context.Context, arg1,
 	return ret0, ret1
 }
 
-// RollbackMarginUpdateOnOrder indicates an expected call of RollbackMarginUpdateOnOrder
+// RollbackMarginUpdateOnOrder indicates an expected call of RollbackMarginUpdateOnOrder.
 func (mr *MockCollateralMockRecorder) RollbackMarginUpdateOnOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RollbackMarginUpdateOnOrder", reflect.TypeOf((*MockCollateral)(nil).RollbackMarginUpdateOnOrder), arg0, arg1, arg2, arg3)
 }
 
-// TransferFees mocks base method
+// TransferFees mocks base method.
 func (m *MockCollateral) TransferFees(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransferFees", arg0, arg1, arg2, arg3)
@@ -403,13 +419,13 @@ func (m *MockCollateral) TransferFees(arg0 context.Context, arg1, arg2 string, a
 	return ret0, ret1
 }
 
-// TransferFees indicates an expected call of TransferFees
+// TransferFees indicates an expected call of TransferFees.
 func (mr *MockCollateralMockRecorder) TransferFees(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFees", reflect.TypeOf((*MockCollateral)(nil).TransferFees), arg0, arg1, arg2, arg3)
 }
 
-// TransferFeesContinuousTrading mocks base method
+// TransferFeesContinuousTrading mocks base method.
 func (m *MockCollateral) TransferFeesContinuousTrading(arg0 context.Context, arg1, arg2 string, arg3 events.FeesTransfer) ([]*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TransferFeesContinuousTrading", arg0, arg1, arg2, arg3)
@@ -418,13 +434,13 @@ func (m *MockCollateral) TransferFeesContinuousTrading(arg0 context.Context, arg
 	return ret0, ret1
 }
 
-// TransferFeesContinuousTrading indicates an expected call of TransferFeesContinuousTrading
+// TransferFeesContinuousTrading indicates an expected call of TransferFeesContinuousTrading.
 func (mr *MockCollateralMockRecorder) TransferFeesContinuousTrading(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferFeesContinuousTrading", reflect.TypeOf((*MockCollateral)(nil).TransferFeesContinuousTrading), arg0, arg1, arg2, arg3)
 }
 
-// Withdraw mocks base method
+// Withdraw mocks base method.
 func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 *num.Uint) (*types.TransferResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Withdraw", arg0, arg1, arg2, arg3)
@@ -433,7 +449,7 @@ func (m *MockCollateral) Withdraw(arg0 context.Context, arg1, arg2 string, arg3 
 	return ret0, ret1
 }
 
-// Withdraw indicates an expected call of Withdraw
+// Withdraw indicates an expected call of Withdraw.
 func (mr *MockCollateralMockRecorder) Withdraw(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Withdraw", reflect.TypeOf((*MockCollateral)(nil).Withdraw), arg0, arg1, arg2, arg3)

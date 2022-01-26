@@ -35,6 +35,7 @@ func defaultNetParams() map[string]value {
 		MarketPriceMonitoringDefaultParameters:          NewJSON(&proto.PriceMonitoringParameters{}, JSONProtoValidator()).Mutable(true).MustUpdate(`{"triggers": []}`),
 		MarketPriceMonitoringUpdateFrequency:            NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("1m0s"),
 		MarketLiquidityProvisionShapesMaxSize:           NewInt(IntGT(0)).Mutable(true).MustUpdate("100"),
+		MarketMinLpStakeQuantumMultiple:                 NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("1"),
 
 		// governance market proposal
 		GovernanceProposalMarketMinClose:              NewDuration(DurationGT(0 * time.Second)).Mutable(true).MustUpdate("48h0m0s"),
