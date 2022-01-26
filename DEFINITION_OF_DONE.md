@@ -9,60 +9,36 @@ In more concrete terms, it lists the criteria we’ll meet before you claim a fe
 The difference between a Definition of Done and Acceptance Criteria...
 
 - The Definition of Done applies to all your work. Acceptance Criteria only ever apply to a single item on your backlog
-- The Definition of Done clarifies what you do as a team. Acceptance Criteria clarify what the product does — its functionality
-- The Definition of Done can contain criteria for “non-functional” aspects and cross-cutting concerns. Acceptance Criteria talk of functional aspects of a single item of work. You’ll only rarely find non-functional aspects in them. And when you do, they just list the exceptions to the general non-functional requirements, making these more strict or lenient for that work item
-
-## What are the benefits of creating and using a good Definition of Done?
-
-**Transparency of responsibilities** - You know what you need to do and understand what you do not need to do. For example, you know it’s your job to implement correct behaviour, but creating training videos is not. You’ll become more predictable in what you deliver.
-
-**Realistic Sprint Commitment** - With an itemized list of exactly what you need to do to get to done, you’re better able to assess how much you can realistically take on in a Sprint. You’ll become more reliable.
-
-**Reduced risk of rework** - Checklists work. Aviation wouldn’t be as safe without them. When you reduce the work left undone when you declare something done, it means less (risk of) rework later. You’ll become more efficient.
-
-**Higher quality, less effort everywhere** - As you mature in your development practices, you’ll raise the bar on the quality you deliver and reduce other staff’s workload. For example, fewer escaped bugs mean lower demands on support staff. You’ll deliver better quality and help your company become more efficient.
-
-**Predictability and Sustainable Pace** - Fewer escaped defects means you can create value with the whole team instead of having to divert some of you to resolve bugs. You’ll become more productive and predictable, and get to work at a constant sustainable pace.
-
-All this helps raise the confidence a team feels in delivering valuable software and grow the trust other teams and stakeholders will place in a team.
-
+- The Definition of Done clarifies what you do as a team. Acceptance Criteria clarify what the protocol does — its functionality
+- The Definition of Done can contain criteria for “non-functional” aspects and cross-cutting concerns.
 
 ## Vega Core Team Definition of Done
 
-**The Very Basic Basics**
-
-- Implementation peer reviewed
-- All Acceptance Criteria confirmed to be met by Product Owner
-- Unit tests written, running and passing
-- No known or undocumented defects
-- Code integrated (merged)
-- API changes documented
-
-**Code Quality**
-
-- Compilation error, warning, and hint free
-- Coding standards followed
-- Static analysis metrics at or above target
-- Dependencies minimized
+**Before merging**
+- Create relevant for [system-test](https://github.com/vegaprotocol/system-tests/issues) tickets with feature labels (should be done when starting the work)
 - Code refactored to meet SOLID and other code design principles
+- Code is compilation error, warning, and hint free
+- Carry out a basic happy path end-to-end check of the new code
+- All acceptance criteria confirmed to be met, or, reasons why not discussed with the engineering leadership team
+- All APIs are documented so auto-generated documentation is created
+- All Unit, Integration and BVT tests are passing
+- Implementation is peer reviewed (coding standards, meeting acceptance criteria, code/design quality)
+- Create [front end](https://github.com/vegaprotocol/token-frontend/issues) or [console](https://github.com/vegaprotocol/console/issues) tickets with feature labels (should be done when starting the work if dependencies known i.e. API changes)
 
-**Ready for release**
+> ℹ️ In most cases the person that raised the PR should be the one to squash branch history to string of passing, sensible commits, and merge the PR.
 
-- No build errors, warnings, or linting changes
-- BVT tests passing?
-- Package creation error, warning, and hint free?
-- Deployed to the test environment
+**After merging**
+- Move development ticket to `Done` if there is **NO** requirement for new system-tests
+- Resolve any issues with broken system-tests
+- Create [documentation](https://github.com/vegaprotocol/documentation/issues) tickets with feature labels if functionality has changed, or is a new feature
 
-**Functional Regression Tests**
-
-- Every item in Acceptance Criteria covered by at least one acceptance test
-- Unit tests passing (test Golang files within the package)
-- Integration tests passing (feature tests in the core repo)
-- System tests passing (API tests covering mostly what we do with integration tests + API)
+**Before Testnet**
 - Acceptance (feature) tests passing (end to end / black-box testing)
-- Tests executed on all supported platforms
+- Full set of functional regression tests passing
+- Incentives (where applicable) have been planned with the community team
 
-**For all automated tests:**
+**Before Mainnet**
+- Incentives (where applicable) have been run successfully in testnet
 
-- Coverage on or above the norm? (For example, 85%.)
-- All new units / integrations / functionality covered by tests?
+> ℹ️ In most cases the person that raised the PR should be the one to squash branch history to string of passing, sensible commits, and merge the PR.
+
