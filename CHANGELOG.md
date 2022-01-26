@@ -11,6 +11,7 @@
 - [4605](https://github.com/vegaprotocol/vega/pull/4605) - Use new format for `EthereumConfig` in network parameters.
 - [4508](https://github.com/vegaprotocol/vega/pull/4508) - Disallow negative offset for pegged orders
 - [4465](https://github.com/vegaprotocol/vega/pull/4465) - Update to tendermint `v0.35.0`
+- [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events  
 
 ### 🗑️ Deprecation
 
