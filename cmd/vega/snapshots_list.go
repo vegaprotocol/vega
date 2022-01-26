@@ -12,12 +12,8 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-type Config struct {
-	DBPath string `long:"db-path" description:"Path to database"`
-}
-
 type SnapshotListCmd struct {
-	Config
+	DBPath string `long:"db-path" description:"Path to database"`
 	config.VegaHomeFlag
 }
 
@@ -60,9 +56,7 @@ func (cmd *SnapshotListCmd) Execute(args []string) error {
 }
 
 func SnapshotList(ctx context.Context, parser *flags.Parser) error {
-	snapshotListCmd = SnapshotListCmd{
-		Config: Config{},
-	}
+	snapshotListCmd = SnapshotListCmd{}
 	cmd, err := parser.AddCommand("snapshots", "Lists snapshots", "List the block-heights of the snapshots saved to disk", &snapshotListCmd)
 	if err != nil {
 		return err
