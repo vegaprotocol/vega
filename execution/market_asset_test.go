@@ -22,6 +22,7 @@ func (a isAssetStub) Type() *types.Asset {
 	return &types.Asset{
 		ID: a.ID,
 		Details: &types.AssetDetails{
+			Symbol:   a.ID,
 			Decimals: a.DecimalPlaces,
 		},
 	}
