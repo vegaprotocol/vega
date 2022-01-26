@@ -15,6 +15,7 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+- [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
 - [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
@@ -42,6 +43,8 @@
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
 - [4643](https://github.com/vegaprotocol/vega/issues/4643) - Add noise to floating point consensus variables in QA
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
+- [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
+- [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset

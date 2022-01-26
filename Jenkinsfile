@@ -54,6 +54,10 @@ pipeline {
                 sh 'printenv'
                 echo "params=${params}"
                 echo "isPRBuild=${isPRBuild()}"
+                script {
+                    params = pr.injectPRParams()
+                }
+                echo "params (after injection)=${params}"
             }
         }
 
