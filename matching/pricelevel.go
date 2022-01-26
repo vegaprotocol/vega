@@ -199,14 +199,15 @@ func newTrade(agg, pass *types.Order, size uint64) *types.Trade {
 	}
 
 	return &types.Trade{
-		Type:      types.TradeTypeDefault,
-		MarketID:  agg.MarketID,
-		Price:     pass.Price.Clone(),
-		Size:      size,
-		Aggressor: agg.Side,
-		Buyer:     buyer.Party,
-		Seller:    seller.Party,
-		Timestamp: agg.CreatedAt,
+		Type:        types.TradeTypeDefault,
+		MarketID:    agg.MarketID,
+		Price:       pass.Price.Clone(),
+		MarketPrice: pass.OriginalPrice.Clone(),
+		Size:        size,
+		Aggressor:   agg.Side,
+		Buyer:       buyer.Party,
+		Seller:      seller.Party,
+		Timestamp:   agg.CreatedAt,
 	}
 }
 

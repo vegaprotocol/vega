@@ -14,9 +14,11 @@ type Trade struct {
 }
 
 func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
+	p := t.IntoProto()
+	p.Price = t.MarketPrice.String()
 	return &Trade{
 		Base: newBase(ctx, TradeEvent),
-		t:    *(t.IntoProto()),
+		t:    *p,
 	}
 }
 

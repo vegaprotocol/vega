@@ -6,6 +6,7 @@ import (
 	ptypes "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type Order struct {
@@ -18,6 +19,8 @@ func NewOrderEvent(ctx context.Context, o *types.Order) *Order {
 		Base: newBase(ctx, OrderEvent),
 		o:    o.IntoProto(),
 	}
+	// set to original order price
+	order.o.Price = num.UintToString(o.OriginalPrice)
 	return order
 }
 
