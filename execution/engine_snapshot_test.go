@@ -43,7 +43,8 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 
 	epochEngine := mocks.NewMockEpochEngine(ctrl)
 	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewFeesTracker(epochEngine), execution.NewMarketTracker()), ctrl
+	// @TODO create assets mock, and pass it in to the constructor below
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewFeesTracker(epochEngine), execution.NewMarketTracker(), nil), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {

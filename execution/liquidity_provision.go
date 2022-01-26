@@ -685,6 +685,13 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// minPrice can't be negative anymore
 	minP := minPrice.Representation()
 	maxP := maxPrice.Representation()
+	// now we have to ensure that the min price is ceil'ed, and max price is floored
+	minP.Div(minP, e.priceFactor)
+	minP.Add(minP, num.NewUint(1)) // ceil
+	minP.Mul(minP, e.priceFactor)
+	// floor max price: divide and multiply back
+	maxP.Div(maxP, e.priceFactor)
+	maxP.Mul(maxP, e.priceFactor)
 
 	// this is handling bestAsk / mid for ASK.
 	if side == types.SideSell {
@@ -712,7 +719,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 					po.Offset = num.Zero()
 				}
 			}
-			return num.Sum(price, po.Offset), po, nil
+			// ensure the offset takes into account the decimal places
+			offset := num.Zero().Mul(po.Offset, m.priceFactor)
+			return num.Sum(price, offset), po, nil
 		}
 
 		// now our basePrice is outside range.
@@ -740,7 +749,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				po.Offset = num.Zero()
 			}
 		}
-		return num.Sum(price, po.Offset), po, nil
+		offset := num.Zero().Mul(po.Offset, m.priceFactor)
+		return num.Sum(price, offset), po, nil
 	}
 
 	// This is handling bestBid / mid for BID
@@ -771,7 +781,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 					po.Offset = num.Zero()
 				}
 			}
-			return price.Sub(price, po.Offset), po, nil
+			offset := num.Zero().Mul(-po.Offset, m.priceFactor)
+			return price.Sub(price, offset), po, nil
 		}
 
 		// now this is the case where basePrice is < minPrice
@@ -797,7 +808,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				po.Offset = num.Zero()
 			}
 		}
-		return price.Sub(price, po.Offset), po, nil
+		offset := num.Zero().Mul(po.Offset, m.priceFactor)
+		return price.Sub(price, offset), po, nil
 	}
 
 	// now at this point we know that price - offset
@@ -813,7 +825,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		case types.PeggedReferenceMid:
 			po.Offset.SetUint64(1)
 		}
-		return price.Sub(price, po.Offset), po, nil
+		offset := num.Zero().Mul(po.Offset, m.priceFactor)
+		return price.Sub(price, offset), po, nil
 	}
 
 	// this is the last case where we can use the minPrice

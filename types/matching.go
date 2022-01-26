@@ -15,6 +15,7 @@ type Order struct {
 	Party                string
 	Side                 Side
 	Price                *num.Uint
+	OriginalPrice        *num.Uint
 	Size                 uint64
 	Remaining            uint64
 	TimeInForce          OrderTimeInForce
@@ -133,6 +134,7 @@ func OrderFromProto(o *proto.Order) (*Order, error) {
 		Party:                o.PartyId,
 		Side:                 o.Side,
 		Price:                price,
+		OriginalPrice:        price.Clone(),
 		Size:                 o.Size,
 		Remaining:            o.Remaining,
 		TimeInForce:          o.TimeInForce,

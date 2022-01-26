@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -192,7 +193,8 @@ type Market struct {
 
 	mu sync.Mutex
 
-	markPrice *num.Uint
+	markPrice   *num.Uint
+	priceFactor *num.Uint
 
 	// own engines
 	matching           *matching.CachedOrderBook
@@ -285,6 +287,7 @@ func NewMarket(
 	as *monitor.AuctionState,
 	stateVarEngine StateVarEngine,
 	feesTracker *FeesTracker,
+	assetDetails *assets.Asset,
 ) (*Market, error) {
 	if len(mkt.ID) == 0 {
 		return nil, ErrEmptyMarketID
@@ -342,6 +345,8 @@ func NewMarket(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
+	exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces
+	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
@@ -399,6 +404,7 @@ func NewMarket(
 		stateChanged:       true,
 		stateVarEngine:     stateVarEngine,
 		feesTracker:        feesTracker,
+		priceFactor:        priceFactor,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
@@ -1136,6 +1142,7 @@ func (m *Market) SubmitOrder(
 	party string,
 ) (*types.OrderConfirmation, error) {
 	order := orderSubmission.IntoOrder(party)
+	order.Price.Mul(order.Price, m.priceFactor)
 	order.CreatedAt = m.currentTime.UnixNano()
 
 	if !m.canTrade() {
@@ -2604,9 +2611,12 @@ func (m *Market) applyOrderAmendment(
 		}
 	}
 
+	amendPrice := amendment.Price.Clone()
+	amendPrice.Mul(amendPrice, m.priceFactor)
 	// apply price changes
-	if amendment.Price != nil && existingOrder.Price.NEQ(amendment.Price) {
-		order.Price = amendment.Price.Clone()
+	if amendment.Price != nil && existingOrder.Price.NEQ(amendPrice) {
+		order.Price = amendPrice.Clone()
+		order.OriginalPrice = amendment.Price.Clone()
 	}
 
 	// apply size changes
