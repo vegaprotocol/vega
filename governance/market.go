@@ -228,7 +228,7 @@ func createMarket(
 	return market, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateAsset(assetID string, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	if len(assetID) <= 0 {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
 			errors.New("missing asset ID")
@@ -238,18 +238,24 @@ func validateAsset(assetID string, assets Assets, deepCheck bool) (types.Proposa
 		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 	}
 
-	if _, err := assets.Get(assetID); err != nil {
+	asset, err := assets.Get(assetID)
+	if err != nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, err
 	}
 	if !assets.IsEnabled(assetID) {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET,
 			fmt.Errorf("assets is not enabled %v", assetID)
 	}
+	// decimal places asset less than market -> invalid.
+	// @TODO add a specific error for this validation?
+	if asset.DecimalPlaces() < decimals {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_ASSET, err
+	}
 
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
-func validateFuture(currentTime time.Time, future *types.FutureProduct, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateFuture(currentTime time.Time, future *types.FutureProduct, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	maturity, err := time.Parse(time.RFC3339, future.Maturity)
 	if err != nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, fmt.Errorf("invalid future product maturity timestamp: %v", err)
@@ -291,15 +297,15 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, assets A
 			ErrInvalidOracleSpecBinding
 	}
 
-	return validateAsset(future.SettlementAsset, assets, deepCheck)
+	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
 }
 
-func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, assets Assets, deepCheck bool) (types.ProposalError, error) {
+func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfiguration, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
 	switch product := instrument.Product.(type) {
 	case nil:
 		return types.ProposalError_PROPOSAL_ERROR_NO_PRODUCT, ErrNoProduct
 	case *types.InstrumentConfiguration_Future:
-		return validateFuture(currentTime, product.Future, assets, deepCheck)
+		return validateFuture(currentTime, product.Future, decimals, assets, deepCheck)
 	default:
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductInvalid
 	}
@@ -428,7 +434,7 @@ func validateNewMarket(
 	netp NetParams,
 	openingAuctionDuration time.Duration,
 ) (types.ProposalError, error) {
-	if perr, err := validateInstrument(currentTime, terms.Changes.Instrument, assets, deepCheck); err != nil {
+	if perr, err := validateInstrument(currentTime, terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, deepCheck); err != nil {
 		return perr, err
 	}
 	if perr, err := validateTradingMode(terms.Changes); err != nil {

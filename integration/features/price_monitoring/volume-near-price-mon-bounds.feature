@@ -195,9 +195,9 @@ Feature: Test margin for lp near price monitoring boundaries
       | side | price    | volume |
       | sell | 1109     | 90173  |
       | buy  | 901      | 1      |
-      | buy  | 900      | 112672 |
+      | buy  | 900      | 112668 |
       | buy  | 899      | 0      |
 
     And the parties should have the following margin levels:
-      | party | market id  | maintenance | search   | initial  | release   |
+      | party | market id  | maintenance | search   | initial  | release  |
       | lp1   | ETH2/MAR22 | 32569511    | 35826462 | 39083413 | 45597315 |

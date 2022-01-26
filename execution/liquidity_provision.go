@@ -367,6 +367,10 @@ func (m *Market) updateAndCreateLPOrders(
 			// be patient...
 			continue
 		}
+		if order.OriginalPrice == nil {
+			order.OriginalPrice = order.Price.Clone()
+			order.Price.Mul(order.Price, m.priceFactor)
+		}
 		conf, orderUpdts, err := m.submitOrder(ctx, order, false)
 		if err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
@@ -571,6 +575,10 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 		// ignoring updated orders as we expect
 		// no updates there as the party should ever be able to
 		// submit without issues or not at all.
+		if order.OriginalPrice == nil {
+			order.OriginalPrice = order.Price.Clone()
+			order.Price.Mul(order.Price, m.priceFactor)
+		}
 		if conf, _, err := m.submitOrder(ctx, order, false); err != nil {
 			failedOnID = order.ID
 			m.log.Debug("unable to submit liquidity provision order",
@@ -685,6 +693,19 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 	// minPrice can't be negative anymore
 	minP := minPrice.Representation()
 	maxP := maxPrice.Representation()
+	// now we have to ensure that the min price is ceil'ed, and max price is floored
+	// if the market decimal places != asset decimals (indicated by priceFactor == 1)
+	if m.priceFactor.NEQ(m.one) {
+		// if min == 0, don't add 1
+		if !minP.IsZero() {
+			minP.Div(minP, m.priceFactor)
+			minP.Add(minP, num.NewUint(1)) // ceil
+			minP.Mul(minP, m.priceFactor)
+		}
+		// floor max price: divide and multiply back
+		maxP.Div(maxP, m.priceFactor)
+		maxP.Mul(maxP, m.priceFactor)
+	}
 
 	// this is handling bestAsk / mid for ASK.
 	if side == types.SideSell {
@@ -712,7 +733,9 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 					po.Offset = num.Zero()
 				}
 			}
-			return num.Sum(price, po.Offset), po, nil
+			// ensure the offset takes into account the decimal places
+			offset := num.Zero().Mul(po.Offset, m.priceFactor)
+			return num.Sum(price, offset), po, nil
 		}
 
 		// now our basePrice is outside range.
@@ -740,7 +763,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				po.Offset = num.Zero()
 			}
 		}
-		return num.Sum(price, po.Offset), po, nil
+		offset := num.Zero().Mul(po.Offset, m.priceFactor)
+		return num.Sum(price, offset), po, nil
 	}
 
 	// This is handling bestBid / mid for BID
@@ -771,7 +795,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 					po.Offset = num.Zero()
 				}
 			}
-			return price.Sub(price, po.Offset), po, nil
+			offset := num.Zero().Mul(po.Offset, m.priceFactor)
+			return price.Sub(price, offset), po, nil
 		}
 
 		// now this is the case where basePrice is < minPrice
@@ -797,7 +822,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 				po.Offset = num.Zero()
 			}
 		}
-		return price.Sub(price, po.Offset), po, nil
+		offset := num.Zero().Mul(po.Offset, m.priceFactor)
+		return price.Sub(price, offset), po, nil
 	}
 
 	// now at this point we know that price - offset
@@ -813,7 +839,8 @@ func (m *Market) adjustPriceRange(po *types.PeggedOrder, side types.Side, price 
 		case types.PeggedReferenceMid:
 			po.Offset.SetUint64(1)
 		}
-		return price.Sub(price, po.Offset), po, nil
+		offset := num.Zero().Mul(po.Offset, m.priceFactor)
+		return price.Sub(price, offset), po, nil
 	}
 
 	// this is the last case where we can use the minPrice

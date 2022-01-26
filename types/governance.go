@@ -1000,6 +1000,7 @@ type InstrumentConfiguration struct {
 type icProd interface {
 	isInstrumentConfiguration_Product()
 	icpIntoProto() interface{}
+	Asset() string
 	DeepClone() icProd
 }
 
@@ -1023,6 +1024,10 @@ func (i InstrumentConfiguration_Future) DeepClone() icProd {
 	return &InstrumentConfiguration_Future{
 		Future: i.Future.DeepClone(),
 	}
+}
+
+func (i InstrumentConfiguration_Future) Asset() string {
+	return i.Future.SettlementAsset
 }
 
 func (i InstrumentConfiguration) DeepClone() *InstrumentConfiguration {
@@ -1111,6 +1116,10 @@ func (f FutureProduct) DeepClone() *FutureProduct {
 
 func (f FutureProduct) String() string {
 	return f.IntoProto().String()
+}
+
+func (f FutureProduct) Asset() string {
+	return f.SettlementAsset
 }
 
 type ContinuousTrading struct {

@@ -51,6 +51,7 @@ func (p *PeggedOrders) Park(o *types.Order) {
 	o.UpdatedAt = p.currentTime
 	o.Status = types.OrderStatusParked
 	o.Price = num.Zero()
+	o.OriginalPrice = num.Zero()
 
 	p.ordersChanged = true
 }

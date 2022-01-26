@@ -60,6 +60,7 @@ type executionTestSetup struct {
 	topology         *stubs.TopologyStub
 	stakingAccount   *stubs.StakingAccountStub
 	rewardsEngine    *rewards.Engine
+	assetsEngine     *stubs.AssetStub
 
 	// save party accounts state
 	markets []types.Market
@@ -113,9 +114,11 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
+	execsetup.assetsEngine = stubs.NewAssetStub()
 
 	stateVarEngine := stubs.NewStateVar()
 	execsetup.timeService.NotifyOnTick(stateVarEngine.OnTimeTick)
+	// @TODO stub assets engine and pass it in
 
 	execsetup.executionEngine = newExEng(
 		execution.NewEngine(
@@ -128,6 +131,7 @@ func newExecutionTestSetup() *executionTestSetup {
 			stateVarEngine,
 			feesTracker,
 			marketTracker,
+			execsetup.assetsEngine, // assets
 		),
 		execsetup.broker,
 	)
