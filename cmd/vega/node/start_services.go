@@ -175,18 +175,22 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.snapshot.AddProviders(n.checkpoint, n.collateral, n.governance, n.delegation, n.netParams, n.epochService, n.assets, n.banking,
 		n.notary, n.spam, n.stakingAccounts, n.stakeVerifier, n.limits, n.topology, n.evtfwd, n.executionEngine, n.feesTracker, marketTracker)
 
+	// setup config reloads for all engines / services /etc
+	n.setupConfigWatchers()
+	n.timeService.NotifyOnTick(n.confWatcher.OnTimeUpdate)
+
+	// setup some network parameters runtime validations and network parameters updates dispatches
+	// this must come before we try to load from a snapshot, which happens in startBlockchain
+	if err := n.setupNetParameters(); err != nil {
+		return err
+	}
+
 	// now instantiate the blockchain layer
 	if n.app, err = n.startBlockchain(); err != nil {
 		return err
 	}
 
-	// setup config reloads for all engines / services /etc
-	n.setupConfigWatchers()
-	n.timeService.NotifyOnTick(n.confWatcher.OnTimeUpdate)
-
-	// setup some network parameters runtime validations
-	// and network parameters updates dispatches
-	return n.setupNetParameters()
+	return nil
 }
 
 func (n *NodeCommand) startBlockchain() (*processor.App, error) {
@@ -235,6 +239,19 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 		n.blockchainClient,
 		n.Version,
 	)
+
+	// Load from a snapshot if that has been requested
+	// This has to happen after creating the application since that is where we add the
+	// replay-protector to the provider list
+	if n.conf.Snapshot.StartHeight != 0 {
+		err := n.snapshot.LoadHeight(n.ctx, n.conf.Snapshot.StartHeight)
+		if err != nil {
+			return nil, err
+		}
+
+		// Replace the restore replay-protector, the tolerance value here doesn't matter so is set to zero
+		app.Abci().ReplaceReplayProtector(0)
+	}
 
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -19,6 +20,13 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
+)
+
+type SnapshotSource int
+
+const (
+	SnapshotSourceLocal SnapshotSource = iota
+	SnapshotSourceTendermint
 )
 
 type StateProviderT interface {
@@ -176,19 +184,12 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		interval:      1, // default to every block
 		current:       1,
 	}
-	if conf.StartHeight == 0 {
-		if err := eng.loadTree(); err != nil {
-			log.Error("Failed to load AVL version", logging.Error(err))
-			// do not return error, this could simply indicate we've created a new DB
-		}
-		return eng, nil
+
+	// Either create the first empty tree, or load the latest tree we have in the store
+	if err := eng.loadTree(); err != nil {
+		log.Error("Failed to load AVL version", logging.Error(err))
+		// do not return error, this could simply indicate we've created a new DB
 	}
-	if err := eng.loadHeight(ctx, conf.StartHeight); err != nil {
-		return nil, err
-	}
-	eng.log.Debug("Loaded snapshot",
-		logging.Int64("loaded height", conf.StartHeight),
-	)
 	return eng, nil
 }
 
@@ -253,17 +254,11 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return trees, nil
 }
 
-func (e *Engine) loadHeight(ctx context.Context, h int64) error {
-	err := e.loadTree()
+func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
 	if h < 0 {
 		return e.load(ctx)
 	}
-	// not loading last, now we have to load the most recent version
-	if err != nil {
-		e.log.Error("Failed to load AVL version", logging.Error(err))
-		// perhaps we should return this error here, if load fails
-		// then we're unlikely to find the requested height anyway
-	}
+
 	height := uint64(h)
 	versions := e.avl.AvailableVersions()
 	// descending order, because that makes most sense
@@ -325,7 +320,7 @@ func (e *Engine) load(ctx context.Context) error {
 	}
 	e.snapshot = snap
 	// apply, no need to set the tree, it's coming from local store
-	return e.applySnap(ctx, false)
+	return e.applySnap(ctx, SnapshotSourceLocal)
 }
 
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
@@ -354,10 +349,10 @@ func (e *Engine) RejectSnapshot() error {
 }
 
 func (e *Engine) ApplySnapshot(ctx context.Context) error {
-	return e.applySnap(ctx, true)
+	return e.applySnap(ctx, SnapshotSourceTendermint)
 }
 
-func (e *Engine) applySnap(ctx context.Context, cas bool) error {
+func (e *Engine) applySnap(ctx context.Context, source SnapshotSource) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
@@ -380,10 +375,9 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 				ordered[ns] = []*types.Payload{}
 			}
 		}
-		if cas {
-			if err := e.nodeCAS(i, pl); err != nil {
-				return err
-			}
+
+		if err := e.setTreeNode(i, pl, source); err != nil {
+			return err
 		}
 		// node was verified and set on tree
 		ordered[ns] = append(ordered[ns], pl)
@@ -404,8 +398,9 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 		for _, n := range ordered[ns] {
 			p, ok := e.providers[n.GetTreeKey()]
 			if !ok {
-				return types.ErrUnknownSnapshotNamespace
+				return fmt.Errorf("%w %s", types.ErrUnknownSnapshotNamespace, n.GetTreeKey())
 			}
+			e.log.Debug("Loading provider", logging.String("tree-key", n.GetTreeKey()))
 			nps, err := p.LoadState(ctx, n)
 			if err != nil {
 				return err
@@ -420,10 +415,13 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 			return err
 		}
 	}
-	// we're done, we can clear the snapshot state
-	e.snapshot = nil
-	// no need to save, return here
-	if !cas {
+
+	e.current = e.interval   // set the snapshot counter to the interval so that we do not create a duplicate snapshot on commit
+	e.hash = e.snapshot.Hash // set the engine's "last snapshot hash" field to the hash of the snapshot we've just loaded
+	e.snapshot = nil         // we're done, we can clear the snapshot state
+
+	// no need to save the tree, we already have it from when loaded it locally
+	if source == SnapshotSourceLocal {
 		return nil
 	}
 	if _, err := e.saveCurrentTree(); err != nil {
@@ -432,12 +430,26 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	return nil
 }
 
-func (e *Engine) nodeCAS(i int, p *types.Payload) error {
-	h, err := e.setTreeNode(p)
+func (e *Engine) setTreeNode(i int, p *types.Payload, source SnapshotSource) error {
+	// unpack payload
+	data, err := proto.Marshal(p.IntoProto())
 	if err != nil {
 		return err
 	}
-	if exp := e.snapshot.Meta.NodeHashes[i].Hash; exp != hex.EncodeToString(h) {
+
+	// hash the node and save it into our cache of node hashes for comparison at the next snapshot
+	hash := crypto.Hash(data)
+	key := p.GetTreeKey()
+	e.hashes[key] = hash
+
+	if source == SnapshotSourceLocal {
+		// we've loaded from local store and so we don't need to fiddle with the AVL tree
+		// since we've just loaded from it!
+		return nil
+	}
+
+	_ = e.avl.Set([]byte(key), data)
+	if exp := e.snapshot.Meta.NodeHashes[i].Hash; exp != hex.EncodeToString(hash) {
 		key := p.GetTreeKey()
 		e.log.Error("Snapshot node not restored - hash mismatch",
 			logging.String("node-key", key),
@@ -446,18 +458,6 @@ func (e *Engine) nodeCAS(i int, p *types.Payload) error {
 		return types.ErrNodeHashMismatch
 	}
 	return nil
-}
-
-func (e *Engine) setTreeNode(p *types.Payload) ([]byte, error) {
-	data, err := proto.Marshal(p.IntoProto())
-	if err != nil {
-		return nil, err
-	}
-	hash := crypto.Hash(data)
-	key := p.GetTreeKey()
-	e.hashes[key] = hash
-	_ = e.avl.Set([]byte(key), data)
-	return hash, nil
 }
 
 func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
