@@ -1,8 +1,13 @@
 package snapshot
 
 import (
+	"errors"
+	"os"
+
+	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 )
 
 const (
@@ -36,4 +41,35 @@ func NewTestConfig() Config {
 	cfg := NewDefaultConfig()
 	cfg.Storage = memDB
 	return cfg
+}
+
+// validate checks the values in the config file are sensible, and returns the path
+// which is create/load the snapshots from.
+func (c *Config) validate(vegapath paths.Paths) (string, error) {
+	if len(c.DBPath) != 0 && c.Storage == memDB {
+		return "", errors.New("dbpath cannot be set when storage method is in-memory")
+	}
+
+	switch c.Storage {
+	case memDB:
+		return "", nil
+	case goLevelDB:
+
+		if len(c.DBPath) == 0 {
+			return vegapath.StatePathFor(paths.SnapshotStateHome), nil
+		}
+
+		stat, err := os.Stat(c.DBPath)
+		if err != nil {
+			return "", err
+		}
+
+		if !stat.IsDir() {
+			return "", errors.New("snapshot DB path is not a directory")
+		}
+
+		return c.DBPath, nil
+	default:
+		return "", types.ErrInvalidSnapshotStorageMethod
+	}
 }

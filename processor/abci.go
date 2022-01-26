@@ -62,6 +62,7 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
+	Start() error
 	Info() ([]byte, int64)
 	List() ([]*types.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
@@ -456,6 +457,7 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
@@ -464,6 +466,12 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.blockCtx = ctx
 
 	app.abci.RegisterSnapshot(app.snapshot)
+
+	// Start the snapshot engine letting it clear any pre-existing state so that if we are
+	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
+	// them
+	app.snapshot.Start()
+
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -555,10 +563,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	// read the state of validator set from the previous end of block
 	var vd []*tmtypesint.Validator
-	if app.blockchainClient != nil && req.Header.Height > 0 {
-		h := req.Header.Height - 1
-		vd, _ = app.blockchainClient.Validators(&h)
-	}
+
 	app.top.BeginBlock(ctx, req, vd)
 
 	return ctx, resp
