@@ -45,9 +45,10 @@
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
 - [4823](https://github.com/vegaprotocol/vega/pull/4283) - Reward refactoring for network treasury
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
+- [4653](https://github.com/vegaprotocol/vega/issues/4653) - Replace asset insurance pool with network treasury
 - [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
 - [4650](https://github.com/vegaprotocol/vega/pull/4650) - Restore code from rebase and ensure node retries connection with application
-
+- [4570](https://github.com/vegaprotocol/vega/pull/4570) - Internalize Ethereum Event Forwarder
 
 
 ### 🐛 Fixes
