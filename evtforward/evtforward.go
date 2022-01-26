@@ -35,6 +35,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/evtforward Commander
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/evtforward ValidatorTopology
@@ -279,7 +280,11 @@ func (e *EvtForwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {
 	}
 
 	// error doesn't matter here
-	e.cmd.Command(ctx, txn.ChainEventCommand, evt, nil)
+	e.cmd.CommandSync(ctx, txn.ChainEventCommand, evt, func(err error) {
+		if err != nil {
+			e.log.Error("could not send command", logging.String("tx-id", evt.TxId), logging.Error(err))
+		}
+	})
 }
 
 func (e *EvtForwarder) isSender(evt *commandspb.ChainEvent) bool {

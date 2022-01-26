@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	types "code.vegaprotocol.io/vega/types"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockEthOnChainVerifier is a mock of EthOnChainVerifier interface
+// MockEthOnChainVerifier is a mock of EthOnChainVerifier interface.
 type MockEthOnChainVerifier struct {
 	ctrl     *gomock.Controller
 	recorder *MockEthOnChainVerifierMockRecorder
 }
 
-// MockEthOnChainVerifierMockRecorder is the mock recorder for MockEthOnChainVerifier
+// MockEthOnChainVerifierMockRecorder is the mock recorder for MockEthOnChainVerifier.
 type MockEthOnChainVerifierMockRecorder struct {
 	mock *MockEthOnChainVerifier
 }
 
-// NewMockEthOnChainVerifier creates a new mock instance
+// NewMockEthOnChainVerifier creates a new mock instance.
 func NewMockEthOnChainVerifier(ctrl *gomock.Controller) *MockEthOnChainVerifier {
 	mock := &MockEthOnChainVerifier{ctrl: ctrl}
 	mock.recorder = &MockEthOnChainVerifierMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEthOnChainVerifier) EXPECT() *MockEthOnChainVerifierMockRecorder {
 	return m.recorder
 }
 
-// CheckStakeDeposited mocks base method
+// CheckStakeDeposited mocks base method.
 func (m *MockEthOnChainVerifier) CheckStakeDeposited(arg0 *types.StakeDeposited) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckStakeDeposited", arg0)
@@ -41,13 +42,13 @@ func (m *MockEthOnChainVerifier) CheckStakeDeposited(arg0 *types.StakeDeposited)
 	return ret0
 }
 
-// CheckStakeDeposited indicates an expected call of CheckStakeDeposited
+// CheckStakeDeposited indicates an expected call of CheckStakeDeposited.
 func (mr *MockEthOnChainVerifierMockRecorder) CheckStakeDeposited(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckStakeDeposited", reflect.TypeOf((*MockEthOnChainVerifier)(nil).CheckStakeDeposited), arg0)
 }
 
-// CheckStakeRemoved mocks base method
+// CheckStakeRemoved mocks base method.
 func (m *MockEthOnChainVerifier) CheckStakeRemoved(arg0 *types.StakeRemoved) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckStakeRemoved", arg0)
@@ -55,7 +56,7 @@ func (m *MockEthOnChainVerifier) CheckStakeRemoved(arg0 *types.StakeRemoved) err
 	return ret0
 }
 
-// CheckStakeRemoved indicates an expected call of CheckStakeRemoved
+// CheckStakeRemoved indicates an expected call of CheckStakeRemoved.
 func (mr *MockEthOnChainVerifierMockRecorder) CheckStakeRemoved(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckStakeRemoved", reflect.TypeOf((*MockEthOnChainVerifier)(nil).CheckStakeRemoved), arg0)
