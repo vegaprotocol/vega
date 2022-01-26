@@ -181,7 +181,7 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 
 	// this is a test feature that adds noise up to the tolerance to the state variable
 	// it should be excluded by build tag for production
-	kvb = AddNoise(kvb)
+	kvb = sv.AddNoise(kvb)
 
 	svp := &commandspb.StateVariableProposal{
 		Proposal: &vegapb.StateValueProposal{
