@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.47.1-0.20220125164047-0a0f72cf4330
+	code.vegaprotocol.io/protos v0.47.1-0.20220126140846-6dc5a995bc6c
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
 	code.vegaprotocol.io/vegawallet v0.11.1-0.20220118134126-26f681c98f91
@@ -150,9 +150,9 @@ require (
 )
 
 replace (
+	github.com/ethereum/go-ethereum => github.com/vegaprotocol/go-ethereum v0.0.0-20220125130820-eb1d3928a97e
 	// so we can use our own updates
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
-	github.com/ethereum/go-ethereum => github.com/vegaprotocol/go-ethereum v0.0.0-20220125130820-eb1d3928a97e
 	github.com/tendermint/tendermint => github.com/vegaprotocol/tendermint v0.35.1
 
 	// so we can work with tendermint 0.35

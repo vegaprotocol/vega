@@ -43,6 +43,7 @@
 - [4636](https://github.com/vegaprotocol/vega/pull/4636) - Update the Core Team DoD and issue templates
 - [4629](https://github.com/vegaprotocol/vega/pull/4629) - Update `CHANGELOG.md` to include `0.47.5` changes
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
+- [4643](https://github.com/vegaprotocol/vega/issues/4643) - Add noise to floating point consensus variables in QA
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
 - [4823](https://github.com/vegaprotocol/vega/pull/4283) - Reward refactoring for network treasury
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
@@ -64,6 +65,7 @@
 - [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
 - [4634](https://github.com/vegaprotocol/vega/pull/4634) - Bug fix for `--snapshot.max-retries` parameter not working correctly
 - [4651](https://github.com/vegaprotocol/vega/pull/4651) - An array of fixes in the snapshot code path
+- [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
 
 ## 0.47.5
 *2022-01-20*
