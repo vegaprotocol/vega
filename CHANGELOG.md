@@ -43,6 +43,7 @@
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
+- [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
