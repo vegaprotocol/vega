@@ -301,7 +301,7 @@ pipeline {
                 stage('LNL System Tests') {
                     steps {
                         script {
-                            systemTestsLNL ignoreFailure: true,
+                            systemTestsLNL ignoreFailure: !isPRBuild(),
                                 timeout: 30,
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
