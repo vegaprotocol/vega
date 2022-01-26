@@ -78,7 +78,6 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward,
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
 			owner := acc.Owner
-			// handle special accounts separately.
 			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
 			if owner == systemOwner {
 				for k, v := range partyOverrides {

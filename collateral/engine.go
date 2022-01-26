@@ -2607,3 +2607,17 @@ func (e *Engine) GetAssetQuantum(asset string) (*num.Uint, error) {
 	// TODO this needs to be the quantum when quantum is added
 	return e.enabledAssets[asset].Details.MinLpStake, nil
 }
+
+// GetRewardAccount returns a reward accound by asset and type.
+func (e *Engine) GetRewardAccount(asset string, rewardAcccountType types.AccountType) (*types.Account, error) {
+	rewardAccID := e.accountID(noMarket, systemOwner, asset, rewardAcccountType)
+	return e.GetAccountByID(rewardAccID)
+}
+
+func (e *Engine) GetAssetQuantum(asset string) (*num.Uint, error) {
+	if !e.AssetExists(asset) {
+		return num.Zero(), ErrInvalidAssetID
+	}
+	// TODO this needs to be the quantum when quantum is added
+	return e.enabledAssets[asset].Details.MinLpStake, nil
+}
