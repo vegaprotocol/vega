@@ -381,9 +381,6 @@ func (t Type) ToProto() eventspb.BusEventType {
 }
 
 func newBusEventFromBase(base *Base) *eventspb.BusEvent {
-
-	fmt.Printf("EVENT FOR TRANX: %s", base.TxHash())
-
 	event := &eventspb.BusEvent{
 		Version: eventspb.Version,
 		Id:      base.eventID(),
@@ -392,8 +389,6 @@ func newBusEventFromBase(base *Base) *eventspb.BusEvent {
 		ChainId: base.ChainID(),
 		TxHash:  base.TxHash(),
 	}
-
-	fmt.Printf("THE EVENT IS: %s", event)
 
 	return event
 }
