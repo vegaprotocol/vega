@@ -38,7 +38,7 @@ type TimeService interface {
 }
 
 // OracleEngine ...
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/products OracleEngine
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/oracle_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution OracleEngine
 type OracleEngine interface {
 	Subscribe(context.Context, oracles.OracleSpec, oracles.OnMatchedOracleData) oracles.SubscriptionID
 	Unsubscribe(context.Context, oracles.SubscriptionID)
@@ -50,11 +50,13 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
 	MarketCollateral
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
 	OnChainTimeUpdate(context.Context, time.Time)
+	GetAssetQuantum(asset string) (*num.Uint, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
@@ -77,6 +79,8 @@ type Engine struct {
 	broker         Broker
 	time           TimeService
 	stateVarEngine StateVarEngine
+	feesTracker    *FeesTracker
+	marketTracker  *MarketTracker
 
 	oracle OracleEngine
 
@@ -105,6 +109,7 @@ type netParamsValues struct {
 	auctionMinDuration              time.Duration
 	probabilityOfTradingTauScaling  num.Decimal
 	minProbabilityOfTradingLPOrders num.Decimal
+	minLpStakeQuantumMultiple       num.Decimal
 }
 
 func defaultNetParamsValues() netParamsValues {
@@ -137,6 +142,8 @@ func NewEngine(
 	oracle OracleEngine,
 	broker Broker,
 	stateVarEngine StateVarEngine,
+	feesTracker *FeesTracker,
+	marketTracker *MarketTracker,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -153,10 +160,15 @@ func NewEngine(
 		npv:                          defaultNetParamsValues(),
 		previouslySnapshottedMarkets: map[string]struct{}{},
 		stateVarEngine:               stateVarEngine,
+		feesTracker:                  feesTracker,
+		marketTracker:                marketTracker,
 	}
 
 	// Add time change event handler
 	e.time.NotifyOnTick(e.onChainTimeUpdate)
+
+	// set the eligibility for proposer bonus checker
+	marketTracker.SetEligibilityChecker(e)
 
 	return e
 }
@@ -239,6 +251,22 @@ func (e *Engine) StartOpeningAuction(ctx context.Context, marketID string) error
 	return mkt.StartOpeningAuction(ctx)
 }
 
+// IsEligibleForProposerBonus checks if the given value is greater than that market quantum * quantum_multiplier.
+func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bool {
+	if _, ok := e.markets[marketID]; !ok {
+		return false
+	}
+	asset, err := e.markets[marketID].mkt.GetAsset()
+	if err != nil {
+		return false
+	}
+	quantum, err := e.collateral.GetAssetQuantum(asset)
+	if err != nil {
+		return false
+	}
+	return value.ToDecimal().GreaterThan(quantum.ToDecimal().Mul(e.npv.minLpStakeQuantumMultiple))
+}
+
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process.
 func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID string) error {
@@ -256,6 +284,8 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	}
 
 	mkt := e.markets[marketConfig.ID]
+	e.marketTracker.MarketProposed(marketConfig.ID, party)
+
 	// publish market data anyway initially
 	e.publishMarketInfos(ctx, mkt)
 
@@ -339,6 +369,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.idgen,
 		mas,
 		e.stateVarEngine,
+		e.feesTracker,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -436,6 +467,7 @@ func (e *Engine) removeMarket(mktID string) {
 			copy(e.marketsCpy[i:], e.marketsCpy[i+1:])
 			e.marketsCpy[len(e.marketsCpy)-1] = nil
 			e.marketsCpy = e.marketsCpy[:len(e.marketsCpy)-1]
+			e.marketTracker.removeMarket(mktID)
 			return
 		}
 	}
@@ -995,5 +1027,10 @@ func (e *Engine) OnMarketMinProbabilityOfTradingForLPOrdersUpdate(ctx context.Co
 
 	e.npv.minProbabilityOfTradingLPOrders = d
 
+	return nil
+}
+
+func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(_ context.Context, d num.Decimal) error {
+	e.npv.minLpStakeQuantumMultiple = d
 	return nil
 }

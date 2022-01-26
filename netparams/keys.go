@@ -20,6 +20,7 @@ const (
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
+	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
 
 	RewardAsset = "reward.asset"
 
@@ -128,6 +129,7 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
 	MarketPriceMonitoringUpdateFrequency:                  {},
+	MarketMinLpStakeQuantumMultiple:                       {},
 	RewardAsset:                                           {},
 	GovernanceProposalMarketMinClose:                      {},
 	GovernanceProposalMarketMaxClose:                      {},

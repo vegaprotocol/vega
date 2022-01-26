@@ -10,10 +10,12 @@
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Remove the outdated `--network` flag on `vega genesis generate` and `vega genesis update`
 - [4605](https://github.com/vegaprotocol/vega/pull/4605) - Use new format for `EthereumConfig` in network parameters.
 - [4508](https://github.com/vegaprotocol/vega/pull/4508) - Disallow negative offset for pegged orders
+- [4465](https://github.com/vegaprotocol/vega/pull/4465) - Update to tendermint `v0.35.0`
 
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+- [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
 - [4481](https://github.com/vegaprotocol/vega/pull/4481) - Add an example client application that uses the null-blockchain
@@ -38,6 +40,13 @@
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Add `--network-url` option to `vega tm`
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (one off transfers)
 - [4629](https://github.com/vegaprotocol/vega/pull/4629) - Update `CHANGELOG.md` to include `0.47.5` changes
+- [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
+- [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
+- [4823](https://github.com/vegaprotocol/vega/pull/4283) - Reward refactoring for network treasury
+- [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
+- [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
+- [4650](https://github.com/vegaprotocol/vega/pull/4650) - Restore code from rebase and ensure node retries connection with application
+
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -49,6 +58,8 @@
 - [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Fail when missing tendermint home and public key in `nodewallet import` command
 - [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
+- [4634](https://github.com/vegaprotocol/vega/pull/4634) - Bug fix for `--snapshot.max-retries` parameter not working correctly
+- [4651](https://github.com/vegaprotocol/vega/pull/4651) - An array of fixes in the snapshot code path
 
 ## 0.47.5
 *2022-01-20*
@@ -101,6 +112,7 @@
 - [4484](https://github.com/vegaprotocol/vega/pull/4484) - Add checkpoint validator key rotation
 - [4459](https://github.com/vegaprotocol/vega/pull/4459) - Add network parameters overwrite from checkpoints
 - [4070](https://github.com/vegaprotocol/vega/pull/4070) - Add calls to enable state-sync via tendermint
+- [4465](https://github.com/vegaprotocol/vega/pull/4465) - Add events tags to the `ResponseDeliverTx`
 
 ### 🐛 Fixes
 - [4435](https://github.com/vegaprotocol/vega/pull/4435) - Fix non determinism in deposits snapshot

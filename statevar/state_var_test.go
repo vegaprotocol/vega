@@ -113,11 +113,9 @@ func setupValidators(t *testing.T, offset int, numValidators int, startCalc func
 	t.Helper()
 	validators := getValidators(t, now, numValidators)
 	allNodeIds := []string{"0", "1", "2", "3", "4"}
-	for i, v := range validators {
+	for _, v := range validators {
 		err := generateStateVariableForValidator(t, v, now, startCalc, resultCallback)
 		require.NoError(t, err)
-		name := strconv.Itoa(i + offset)
-		v.topology.EXPECT().SelfNodeID().Return(name).Times(2)
 		v.topology.EXPECT().IsValidator().Return(true).AnyTimes()
 		v.topology.EXPECT().IsValidatorVegaPubKey(gomock.Any()).DoAndReturn(func(nodeID string) bool {
 			ID, err := strconv.Atoi(nodeID)

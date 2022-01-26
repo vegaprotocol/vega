@@ -105,7 +105,6 @@ type App struct {
 	assets          Assets
 	banking         Banking
 	broker          Broker
-	cmd             Commander
 	witness         Witness
 	evtfwd          EvtForwarder
 	exec            ExecutionEngine
@@ -141,7 +140,6 @@ func NewApp(
 	witness Witness,
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
-	cmd Commander,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
 	notary Notary,
@@ -181,7 +179,6 @@ func NewApp(
 		assets:           assets,
 		banking:          banking,
 		broker:           broker,
-		cmd:              cmd,
 		witness:          witness,
 		evtfwd:           evtfwd,
 		exec:             exec,
@@ -234,6 +231,8 @@ func NewApp(
 	app.abci.
 		HandleDeliverTx(txn.TransferFundsCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
+		HandleDeliverTx(txn.CancelTransferFundsCommand,
+			app.SendEventOnError(app.DeliverCancelTransferFunds)).
 		HandleDeliverTx(txn.SubmitOrderCommand,
 			app.SendEventOnError(app.DeliverSubmitOrder)).
 		HandleDeliverTx(txn.CancelOrderCommand,
@@ -347,6 +346,7 @@ func (app *App) cancel() {
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
+	app.log.Debug("ABCI service INFO requested", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(hash)))
 	return tmtypes.ResponseInfo{
 		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
@@ -356,6 +356,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 }
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
+	app.log.Debug("ABCI service ListSnapshots requested")
 	snapshots, err := app.snapshot.List()
 	resp := tmtypes.ResponseListSnapshots{}
 	if err != nil {
@@ -370,6 +371,7 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 }
 
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
+	app.log.Debug("ABCI service OfferSnapshot start")
 	snap, err := types.SnapshotFromTM(req.Snapshot)
 	// invalid hash?
 	if err != nil {
@@ -402,6 +404,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 }
 
 func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+	app.log.Debug("ABCI service ApplySnapshotChunk start")
 	chunk := types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
@@ -421,15 +424,16 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 		case types.ErrMissingChunks:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
 			resp.RefetchChunks = app.snapshot.GetMissingChunks()
-		case types.ErrSnapshotRetryLimit:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-			defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
 		default:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
 			// @TODO panic?
 		}
 		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
-			_ = app.snapshot.RejectSnapshot()
+			if err := app.snapshot.RejectSnapshot(); err == types.ErrSnapshotRetryLimit {
+				app.log.Error("Applying snapshot chunk has reaching the retry limit, aborting")
+				resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+				defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
+			}
 		}
 		return resp
 	}
@@ -441,6 +445,7 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 }
 
 func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+	app.log.Debug("ABCI service LoadSnapshotChunk start")
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
 		return tmtypes.ResponseLoadSnapshotChunk{}
@@ -470,7 +475,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
-		app.log.Panic("something happened when initializing vega with the genesis block", logging.Error(err))
+		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
 	}
 
 	return tmtypes.ResponseInitChain{}
@@ -516,6 +521,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
+
+	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
+	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
+	app.chainCtx = vgcontext.WithChainID(context.Background(), req.Header.GetChainID())
+
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
@@ -815,6 +825,15 @@ func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string)
 	}
 
 	return app.banking.TransferFunds(ctx, transferFunds)
+}
+
+func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.CancelTransfer{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
 func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
