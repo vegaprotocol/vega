@@ -145,17 +145,6 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		}
 		return nil
 	})
-	s.Step(`^the initial insurance pool balance is "([^"]*)" for the asset:$`, func(amountstr string) error {
-		amount, _ := num.UintFromString(amountstr, 10)
-		for _, mkt := range execsetup.markets {
-			asset, _ := mkt.GetAsset()
-			assetInsuranceAccount, _ := execsetup.collateralEngine.GetAssetInsurancePoolAccount(asset)
-			if err := execsetup.collateralEngine.IncrementBalance(context.Background(), assetInsuranceAccount.ID, amount); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
 
 	s.Step(`^the market state should be "([^"]*)" for the market "([^"]*)"$`, func(marketState, marketID string) error {
 		return steps.TheMarketStateShouldBeForMarket(execsetup.executionEngine, marketID, marketState)
@@ -286,8 +275,8 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the insurance pool balance should be "([^"]*)" for the market "([^"]*)"$`, func(rawAmount, marketID string) error {
 		return steps.TheInsurancePoolBalanceShouldBeForTheMarket(execsetup.broker, rawAmount, marketID)
 	})
-	s.Step(`^the insurance pool balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
-		return steps.TheInsurancePoolBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
+	s.Step(`^the network treasury balance should be "([^"]*)" for the asset "([^"]*)"$`, func(rawAmount, asset string) error {
+		return steps.TheNetworkTreasuryBalanceShouldBeForTheAsset(execsetup.broker, rawAmount, asset)
 	})
 	s.Step(`^the following transfers should happen:$`, func(table *godog.Table) error {
 		return steps.TheFollowingTransfersShouldHappen(execsetup.broker, table)

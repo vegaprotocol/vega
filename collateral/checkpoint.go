@@ -28,8 +28,7 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 }
 
 var partyOverrides = map[string]types.AccountType{
-	systemOwner: types.AccountTypeGlobalInsurance,
-	systemOwner + types.AccountTypeGlobalReward.String():                   types.AccountTypeGlobalReward,
+	systemOwner: types.AccountTypeGlobalReward,
 	systemOwner + types.AccountTypeMakerFeeReward.String():                 types.AccountTypeMakerFeeReward,
 	systemOwner + types.AccountTypeTakerFeeReward.String():                 types.AccountTypeTakerFeeReward,
 	systemOwner + types.AccountTypeLPFeeReward.String():                    types.AccountTypeLPFeeReward,
@@ -75,11 +74,12 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		}
 		switch acc.Type {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
-			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward,
+			types.AccountTypeInsurance, types.AccountTypeGlobalReward,
 			types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward,
 			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
 			owner := acc.Owner
 			// handle special accounts separately.
+			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
 			if owner == systemOwner {
 				for k, v := range partyOverrides {
 					if acc.Type == v {
