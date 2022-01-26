@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/integration/stubs"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -171,8 +170,7 @@ func (tm *testMarket) Run(ctx context.Context, mktCfg types.Market) *testMarket 
 		liquidityConfig  = liquidity.NewDefaultConfig()
 	)
 
-	pk := crypto.NewPublicKey("0xDEADBEEF", []byte("0xDEADBEEF"))
-	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.now, tm.broker, tm.timeService, pk)
+	oracleEngine := oracles.NewEngine(tm.log, oracles.NewDefaultConfig(), tm.now, tm.broker, tm.timeService)
 
 	mas := monitor.NewAuctionState(&mktCfg, tm.now)
 	monitor.NewAuctionState(&mktCfg, tm.now)
@@ -338,8 +336,7 @@ func getTestMarket2WithDP(
 		},
 	})
 
-	pk := crypto.NewPublicKey("0xDEADBEEF", []byte("0xDEADBEEF"))
-	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker, timeService, pk)
+	oracleEngine := oracles.NewEngine(log, oracles.NewDefaultConfig(), now, broker, timeService)
 	tm.oracleEngine = oracleEngine
 
 	// add the token asset

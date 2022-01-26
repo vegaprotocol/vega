@@ -8,7 +8,6 @@ import (
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	bmok "code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
@@ -25,7 +24,6 @@ func TestOracleEngine(t *testing.T) {
 	t.Run("Unsubscribing known ID from oracle engine succeeds", testOracleEngineUnsubscribingKnownIDSucceeds)
 	t.Run("Unsubscribing unknown ID from oracle engine panics", testOracleEngineUnsubscribingUnknownIDPanics)
 	t.Run("Updating current time succeeds", testOracleEngineUpdatingCurrentTimeSucceeds)
-	t.Run("Updating current time notifies subscribers", testOracleEngineUpdatingCurrentTimeNotifiesSubscribers)
 }
 
 func testOracleEngineSubscribingSucceeds(t *testing.T) {
@@ -170,24 +168,6 @@ func testOracleEngineUpdatingCurrentTimeSucceeds(t *testing.T) {
 	assert.Equal(t, time60, engine.CurrentTime)
 }
 
-func testOracleEngineUpdatingCurrentTimeNotifiesSubscribers(t *testing.T) {
-	tsSpec := internalTimestampSpec(oraclespb.Condition_OPERATOR_GREATER_THAN_OR_EQUAL, time.Now())
-
-	ctx := context.Background()
-	currentTime := time.Now()
-	engine := newEngine(ctx, t, currentTime)
-	engine.broker.mockNewOracleSpecSubscription(currentTime, tsSpec.spec.Proto)
-
-	engine.Subscribe(ctx, tsSpec.spec, tsSpec.subscriber.Cb)
-	time.Sleep(time.Second)
-	ts := time.Now()
-	dataTs := dataWithTimestamp(ts)
-	engine.broker.mockOracleDataBroadcast(ts, dataTs.proto, []string{tsSpec.spec.Proto.Id})
-
-	engine.UpdateCurrentTime(ctx, ts)
-	assert.Equal(t, &dataTs.data, tsSpec.subscriber.ReceivedData)
-}
-
 type testEngine struct {
 	*oracles.Engine
 	broker *testBroker
@@ -201,8 +181,6 @@ func newEngine(ctx context.Context, t *testing.T, currentTime time.Time) *testEn
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	ts.EXPECT().NotifyInternalOracleTimestamp(gomock.Any()).Times(1)
 
-	pk := crypto.NewPublicKey("0xCAFED00D", []byte("0xCAFED00D"))
-
 	return &testEngine{
 		Engine: oracles.NewEngine(
 			logging.NewTestLogger(),
@@ -210,7 +188,6 @@ func newEngine(ctx context.Context, t *testing.T, currentTime time.Time) *testEn
 			currentTime,
 			broker,
 			ts,
-			pk,
 		),
 		broker: broker,
 	}

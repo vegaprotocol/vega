@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/broker/mocks"
-	"code.vegaprotocol.io/vega/crypto"
 	emock "code.vegaprotocol.io/vega/execution/mocks"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/markets"
@@ -149,15 +148,12 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
 	ts.EXPECT().NotifyInternalOracleTimestamp(gomock.Any()).Times(1)
 
-	pk := crypto.NewPublicKey("0xDEADBEEF", []byte("0xDEADBEEF"))
-
 	return oracles.NewEngine(
 		logging.NewTestLogger(),
 		oracles.NewDefaultConfig(),
 		time.Now(),
 		broker,
 		ts,
-		pk,
 	)
 }
 
