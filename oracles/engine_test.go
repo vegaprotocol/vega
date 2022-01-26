@@ -223,31 +223,6 @@ func dataWithPrice(currency, price string) dataBundle {
 	}
 }
 
-func dataWithTimestamp(ts time.Time) dataBundle {
-	key := fmt.Sprintf("%s.timestamp", oracles.InternalOraclePrefix)
-	return dataBundle{
-		data: oracles.OracleData{
-			Data: map[string]string{
-				key: fmt.Sprintf("%d", ts.UnixNano()),
-			},
-			PubKeys: []string{
-				"0xCAFED00D",
-			},
-		},
-		proto: oraclespb.OracleData{
-			PubKeys: []string{
-				"0xCAFED00D",
-			},
-			Data: []*oraclespb.Property{
-				{
-					Name:  key,
-					Value: fmt.Sprintf("%d", ts.UnixNano()),
-				},
-			},
-		},
-	}
-}
-
 type specBundle struct {
 	spec       oracles.OracleSpec
 	subscriber dummySubscriber

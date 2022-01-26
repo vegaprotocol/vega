@@ -109,7 +109,6 @@ func internalOraclePayload() []byte {
 	payload, err := json.Marshal(map[string]string{
 		oracles.InternalOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
 	})
-
 	if err != nil {
 		panic("failed to generate internal oracle payload in tests")
 	}
@@ -122,7 +121,6 @@ type dummyOracleAdaptor struct{}
 func (d *dummyOracleAdaptor) Normalise(pk crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	var data map[string]string
 	err := json.Unmarshal(payload, &data)
-
 	if err != nil {
 		return nil, err
 	}
