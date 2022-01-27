@@ -71,6 +71,7 @@ func Main(ctx context.Context) error {
 		Bridge,
 		paths.Paths,
 		UnsafeResetAll,
+		SnapshotList,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err

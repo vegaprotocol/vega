@@ -82,13 +82,13 @@ func (s *coreService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRe
 
 func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("SubmitTransactionV2", startTime)
+	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
 
 	if req == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txHash, err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_SYNC)
+	txHash, err := s.blockchain.SubmitTransaction(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_SYNC)
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
@@ -469,7 +469,7 @@ func (s *coreService) observeEventsWithAck(
 
 func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.SubmitRawTransactionRequest) (*protoapi.SubmitRawTransactionResponse, error) {
 	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("SubmitTransactionV2", startTime)
+	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
 
 	if req == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)

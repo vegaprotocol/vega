@@ -145,6 +145,7 @@ type MarketCollateral interface {
 	MarkToMarket(ctx context.Context, marketID string, transfers []events.Transfer, asset string) ([]events.Margin, []*types.TransferResponse, error)
 	RemoveDistressed(ctx context.Context, parties []events.MarketPosition, marketID, asset string) (*types.TransferResponse, error)
 	GetMarketLiquidityFeeAccount(market, asset string) (*types.Account, error)
+	GetAssetQuantum(asset string) (*num.Uint, error)
 }
 
 // AuctionState ...
@@ -239,6 +240,7 @@ type Market struct {
 	lpFeeDistributionTimeStep  time.Duration
 	lastEquityShareDistributed time.Time
 	equityShares               *EquityShares
+	minLPStakeQuantumMultiple  num.Decimal
 
 	stateVarEngine StateVarEngine
 	stateChanged   bool
@@ -377,38 +379,39 @@ func NewMarket(
 	mkt.MarketTimestamps = ts
 
 	market := &Market{
-		log:                log,
-		idgen:              idgen,
-		mkt:                mkt,
-		closingAt:          closingAt,
-		currentTime:        now,
-		matching:           book,
-		tradableInstrument: tradableInstrument,
-		risk:               riskEngine,
-		position:           positionEngine,
-		settlement:         settleEngine,
-		collateral:         collateralEngine,
-		broker:             broker,
-		fee:                feeEngine,
-		liquidity:          liqEngine,
-		parties:            map[string]struct{}{},
-		as:                 as,
-		pMonitor:           pMonitor,
-		lMonitor:           lMonitor,
-		tsCalc:             tsCalc,
-		peggedOrders:       NewPeggedOrders(),
-		expiringOrders:     NewExpiringOrders(),
-		feeSplitter:        NewFeeSplitter(),
-		equityShares:       NewEquityShares(num.DecimalZero()),
-		lastBestAskPrice:   num.Zero(),
-		lastMidSellPrice:   num.Zero(),
-		lastMidBuyPrice:    num.Zero(),
-		lastBestBidPrice:   num.Zero(),
-		stateChanged:       true,
-		stateVarEngine:     stateVarEngine,
-		feesTracker:        feesTracker,
-		priceFactor:        priceFactor,
-		one:                num.NewUint(1), // this is just some optimisation when checking price factor == 1
+		log:                       log,
+		idgen:                     idgen,
+		mkt:                       mkt,
+		closingAt:                 closingAt,
+		currentTime:               now,
+		matching:                  book,
+		tradableInstrument:        tradableInstrument,
+		risk:                      riskEngine,
+		position:                  positionEngine,
+		settlement:                settleEngine,
+		collateral:                collateralEngine,
+		broker:                    broker,
+		fee:                       feeEngine,
+		liquidity:                 liqEngine,
+		parties:                   map[string]struct{}{},
+		as:                        as,
+		pMonitor:                  pMonitor,
+		lMonitor:                  lMonitor,
+		tsCalc:                    tsCalc,
+		peggedOrders:              NewPeggedOrders(),
+		expiringOrders:            NewExpiringOrders(),
+		feeSplitter:               NewFeeSplitter(),
+		equityShares:              NewEquityShares(num.DecimalZero()),
+		lastBestAskPrice:          num.Zero(),
+		lastMidSellPrice:          num.Zero(),
+		lastMidBuyPrice:           num.Zero(),
+		lastBestBidPrice:          num.Zero(),
+		stateChanged:              true,
+		stateVarEngine:            stateVarEngine,
+		feesTracker:               feesTracker,
+		priceFactor:               priceFactor,
+		one:                       num.NewUint(1), // this is just some optimisation when checking price factor == 1
+		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)

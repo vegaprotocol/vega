@@ -42,7 +42,8 @@ var defaultCollateralAssets = []types.Asset{
 	{
 		ID: "ETH",
 		Details: &types.AssetDetails{
-			Symbol: "ETH",
+			Symbol:  "ETH",
+			Quantum: num.Zero(),
 		},
 	},
 	{
@@ -52,7 +53,7 @@ var defaultCollateralAssets = []types.Asset{
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},
@@ -333,8 +334,8 @@ func getTestMarket2WithDP(
 		Details: &types.AssetDetails{
 			Symbol:      "ETH",
 			TotalSupply: num.Zero(),
-			MinLpStake:  num.Zero(),
 			Decimals:    0, // no decimals
+			Quantum:     num.Zero(),
 		},
 	})
 	// create asset stub to match the test asset:
@@ -351,7 +352,7 @@ func getTestMarket2WithDP(
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{},
 			},

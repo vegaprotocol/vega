@@ -16,7 +16,7 @@ var (
 	ErrInvalidAssetSymbolEmpty       = errors.New("invalid asset, symbol must not be empty")
 	ErrInvalidAssetDecimalPlacesZero = errors.New("invalid asset, decimal places must not be zero")
 	ErrInvalidAssetTotalSupplyZero   = errors.New("invalid asset, total supply must not be zero")
-	ErrInvalidAssetMinLPStakeZero    = errors.New("invalid asset, min lp stake must not be zero")
+	ErrInvalidAssetQuantumZero       = errors.New("invalid asset, quantum must not be zero")
 )
 
 type Asset struct {
@@ -31,7 +31,7 @@ type AssetDetails struct {
 	Symbol      string
 	TotalSupply *num.Uint
 	Decimals    uint64
-	MinLpStake  *num.Uint
+	Quantum     *num.Uint
 	//	*AssetDetailsBuiltinAsset
 	//	*AssetDetailsErc20
 	Source isAssetDetails
@@ -94,7 +94,7 @@ func (a AssetDetails) IntoProto() *proto.AssetDetails {
 		Symbol:      a.Symbol,
 		TotalSupply: num.UintToString(a.TotalSupply),
 		Decimals:    a.Decimals,
-		MinLpStake:  num.UintToString(a.MinLpStake),
+		Quantum:     num.UintToString(a.Quantum),
 	}
 	if a.Source == nil {
 		return r
@@ -122,15 +122,15 @@ func AssetDetailsFromProto(p *proto.AssetDetails) *AssetDetails {
 	if len(p.TotalSupply) > 0 {
 		total, _ = num.UintFromString(p.TotalSupply, 10)
 	}
-	if len(p.MinLpStake) > 0 {
-		min, _ = num.UintFromString(p.MinLpStake, 10)
+	if len(p.Quantum) > 0 {
+		min, _ = num.UintFromString(p.Quantum, 10)
 	}
 	return &AssetDetails{
 		Name:        p.Name,
 		Symbol:      p.Symbol,
 		TotalSupply: total,
 		Decimals:    p.Decimals,
-		MinLpStake:  min,
+		Quantum:     min,
 		Source:      src,
 	}
 }
@@ -228,8 +228,8 @@ func (a Asset) DeepClone() *Asset {
 	if a.Details.TotalSupply != nil {
 		cpy.Details.TotalSupply = a.Details.TotalSupply.Clone()
 	}
-	if a.Details.MinLpStake != nil {
-		cpy.Details.MinLpStake = a.Details.MinLpStake.Clone()
+	if a.Details.Quantum != nil {
+		cpy.Details.Quantum = a.Details.Quantum.Clone()
 	}
 	if a.Details.Source != nil {
 		cpy.Details.Source = a.Details.Source.DeepClone()
@@ -269,10 +269,10 @@ func (a AssetDetails) DeepClone() *AssetDetails {
 	} else {
 		cpy.TotalSupply = num.Zero()
 	}
-	if a.MinLpStake != nil {
-		cpy.MinLpStake = a.MinLpStake.Clone()
+	if a.Quantum != nil {
+		cpy.Quantum = a.Quantum.Clone()
 	} else {
-		cpy.MinLpStake = num.Zero()
+		cpy.Quantum = num.Zero()
 	}
 	return cpy
 }

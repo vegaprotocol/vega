@@ -61,7 +61,8 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 			ID: assetToEnable,
 			Details: &types.AssetDetails{
-				Symbol: assetToEnable,
+				Quantum: num.Zero(),
+				Symbol:  assetToEnable,
 			},
 		})
 		if err != nil {

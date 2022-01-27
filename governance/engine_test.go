@@ -1428,7 +1428,7 @@ func newValidAssetTerms() *types.ProposalTerms_NewAsset {
 				Symbol:      "TKN",
 				TotalSupply: num.NewUint(10000),
 				Decimals:    18,
-				MinLpStake:  num.NewUint(1),
+				Quantum:     num.NewUint(1),
 				Source: &types.AssetDetailsBuiltinAsset{
 					BuiltinAsset: &types.BuiltinAsset{
 						MaxFaucetAmountMint: num.NewUint(1),

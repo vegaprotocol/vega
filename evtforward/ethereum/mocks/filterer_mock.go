@@ -5,94 +5,70 @@
 package mocks
 
 import (
-	ethereum "code.vegaprotocol.io/vega/evtforward/ethereum"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	ethereum "code.vegaprotocol.io/vega/evtforward/ethereum"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockFilterer is a mock of Filterer interface
+// MockFilterer is a mock of Filterer interface.
 type MockFilterer struct {
 	ctrl     *gomock.Controller
 	recorder *MockFiltererMockRecorder
 }
 
-// MockFiltererMockRecorder is the mock recorder for MockFilterer
+// MockFiltererMockRecorder is the mock recorder for MockFilterer.
 type MockFiltererMockRecorder struct {
 	mock *MockFilterer
 }
 
-// NewMockFilterer creates a new mock instance
+// NewMockFilterer creates a new mock instance.
 func NewMockFilterer(ctrl *gomock.Controller) *MockFilterer {
 	mock := &MockFilterer{ctrl: ctrl}
 	mock.recorder = &MockFiltererMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFilterer) EXPECT() *MockFiltererMockRecorder {
 	return m.recorder
 }
 
-// AssetDelistEvents mocks base method
-func (m *MockFilterer) AssetDelistEvents(arg0 context.Context, arg1 uint64, arg2 ethereum.OnEventFound) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AssetDelistEvents", arg0, arg1, arg2)
-}
-
-// AssetDelistEvents indicates an expected call of AssetDelistEvents
-func (mr *MockFiltererMockRecorder) AssetDelistEvents(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssetDelistEvents", reflect.TypeOf((*MockFilterer)(nil).AssetDelistEvents), arg0, arg1, arg2)
-}
-
-// AssetDepositedEvents mocks base method
-func (m *MockFilterer) AssetDepositedEvents(arg0 context.Context, arg1 uint64, arg2 ethereum.OnEventFound) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AssetDepositedEvents", arg0, arg1, arg2)
-}
-
-// AssetDepositedEvents indicates an expected call of AssetDepositedEvents
-func (mr *MockFiltererMockRecorder) AssetDepositedEvents(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssetDepositedEvents", reflect.TypeOf((*MockFilterer)(nil).AssetDepositedEvents), arg0, arg1, arg2)
-}
-
-// AssetListEvents mocks base method
-func (m *MockFilterer) AssetListEvents(arg0 context.Context, arg1 uint64, arg2 ethereum.OnEventFound) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AssetListEvents", arg0, arg1, arg2)
-}
-
-// AssetListEvents indicates an expected call of AssetListEvents
-func (mr *MockFiltererMockRecorder) AssetListEvents(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssetListEvents", reflect.TypeOf((*MockFilterer)(nil).AssetListEvents), arg0, arg1, arg2)
-}
-
-// AssetWithdrawnEvents mocks base method
-func (m *MockFilterer) AssetWithdrawnEvents(arg0 context.Context, arg1 uint64, arg2 ethereum.OnEventFound) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AssetWithdrawnEvents", arg0, arg1, arg2)
-}
-
-// AssetWithdrawnEvents indicates an expected call of AssetWithdrawnEvents
-func (mr *MockFiltererMockRecorder) AssetWithdrawnEvents(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AssetWithdrawnEvents", reflect.TypeOf((*MockFilterer)(nil).AssetWithdrawnEvents), arg0, arg1, arg2)
-}
-
-// CurrentHeight mocks base method
-func (m *MockFilterer) CurrentHeight(arg0 context.Context) (uint64, error) {
+// CurrentHeight mocks base method.
+func (m *MockFilterer) CurrentHeight(arg0 context.Context) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CurrentHeight", arg0)
 	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
-// CurrentHeight indicates an expected call of CurrentHeight
+// CurrentHeight indicates an expected call of CurrentHeight.
 func (mr *MockFiltererMockRecorder) CurrentHeight(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CurrentHeight", reflect.TypeOf((*MockFilterer)(nil).CurrentHeight), arg0)
+}
+
+// FilterCollateralEvents mocks base method.
+func (m *MockFilterer) FilterCollateralEvents(arg0 context.Context, arg1, arg2 uint64, arg3 ethereum.OnEventFound) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "FilterCollateralEvents", arg0, arg1, arg2, arg3)
+}
+
+// FilterCollateralEvents indicates an expected call of FilterCollateralEvents.
+func (mr *MockFiltererMockRecorder) FilterCollateralEvents(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterCollateralEvents", reflect.TypeOf((*MockFilterer)(nil).FilterCollateralEvents), arg0, arg1, arg2, arg3)
+}
+
+// FilterStakingEvents mocks base method.
+func (m *MockFilterer) FilterStakingEvents(arg0 context.Context, arg1, arg2 uint64, arg3 ethereum.OnEventFound) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "FilterStakingEvents", arg0, arg1, arg2, arg3)
+}
+
+// FilterStakingEvents indicates an expected call of FilterStakingEvents.
+func (mr *MockFiltererMockRecorder) FilterStakingEvents(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterStakingEvents", reflect.TypeOf((*MockFilterer)(nil).FilterStakingEvents), arg0, arg1, arg2, arg3)
 }

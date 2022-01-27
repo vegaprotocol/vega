@@ -5,9 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 
+	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
 
-	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"github.com/cosmos/iavl"
 	"github.com/golang/protobuf/proto"
 	tmtypes "github.com/tendermint/tendermint/abci/types"
@@ -174,7 +174,7 @@ func (s Snapshot) ToTM() *tmtypes.Snapshot {
 
 func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
 	appState := &Payload{
-		Data: &PayloadAppState{},
+		Data: &PayloadAppState{AppState: &AppState{}},
 	}
 	key := appState.GetTreeKey()
 	_, data := tree.Get([]byte(key))

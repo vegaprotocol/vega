@@ -17,14 +17,14 @@ import (
 
 var ErrUnsupportedFromValueInTransaction = errors.New("unsupported value from `from` field in transaction")
 
-type TxV2 struct {
+type Tx struct {
 	originalTx []byte
 	tx         *commandspb.Transaction
 	inputData  *commandspb.InputData
 	err        error
 }
 
-func DecodeTxV2(payload []byte) (*TxV2, error) {
+func DecodeTx(payload []byte) (*Tx, error) {
 	tx := &commandspb.Transaction{}
 	if err := proto.Unmarshal(payload, tx); err != nil {
 		return nil, fmt.Errorf("unable to unmarshal transaction: %w", err)
@@ -40,7 +40,7 @@ func DecodeTxV2(payload []byte) (*TxV2, error) {
 		return nil, err
 	}
 
-	return &TxV2{
+	return &Tx{
 		originalTx: payload,
 		tx:         tx,
 		inputData:  inputData,
@@ -79,7 +79,7 @@ func checkSignature(tx *commandspb.Transaction) error {
 	return nil
 }
 
-func (t TxV2) Command() txn.Command {
+func (t Tx) Command() txn.Command {
 	switch t.inputData.Command.(type) {
 	case *commandspb.InputData_OrderSubmission:
 		return txn.SubmitOrderCommand
@@ -128,7 +128,7 @@ func (t TxV2) Command() txn.Command {
 	}
 }
 
-func (t TxV2) GetCmd() interface{} {
+func (t Tx) GetCmd() interface{} {
 	switch cmd := t.inputData.Command.(type) {
 	case *commandspb.InputData_OrderSubmission:
 		return cmd.OrderSubmission
@@ -177,7 +177,7 @@ func (t TxV2) GetCmd() interface{} {
 	}
 }
 
-func (t TxV2) Unmarshal(i interface{}) error {
+func (t Tx) Unmarshal(i interface{}) error {
 	switch cmd := t.inputData.Command.(type) {
 	case *commandspb.InputData_OrderSubmission:
 		underlyingCmd, ok := i.(*commandspb.OrderSubmission)
@@ -311,7 +311,7 @@ func (t TxV2) Unmarshal(i interface{}) error {
 	return nil
 }
 
-func (t TxV2) PubKey() []byte {
+func (t Tx) PubKey() []byte {
 	decodedPubKey, err := hex.DecodeString(t.tx.GetPubKey())
 	if err != nil {
 		panic("pub key should be hex encoded")
@@ -319,19 +319,19 @@ func (t TxV2) PubKey() []byte {
 	return decodedPubKey
 }
 
-func (t TxV2) PubKeyHex() string {
+func (t Tx) PubKeyHex() string {
 	return t.tx.GetPubKey()
 }
 
-func (t TxV2) Party() string {
+func (t Tx) Party() string {
 	return t.tx.GetPubKey()
 }
 
-func (t TxV2) Hash() []byte {
+func (t Tx) Hash() []byte {
 	return tmhash.Sum(t.originalTx)
 }
 
-func (t TxV2) Signature() []byte {
+func (t Tx) Signature() []byte {
 	decodedSig, err := hex.DecodeString(t.tx.Signature.Value)
 	if err != nil {
 		panic("signature should be hex encoded")
@@ -339,10 +339,10 @@ func (t TxV2) Signature() []byte {
 	return decodedSig
 }
 
-func (t TxV2) Validate() error {
+func (t Tx) Validate() error {
 	return t.err
 }
 
-func (t TxV2) BlockHeight() uint64 {
+func (t Tx) BlockHeight() uint64 {
 	return t.inputData.BlockHeight
 }
