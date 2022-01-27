@@ -353,7 +353,7 @@ func (n *NodeCommand) setupNetParameters() error {
 					return err
 				}
 
-				return n.eventForwarderEngine.StartEthereumEngine(n.ethClient, n.eventForwarder, n.conf.EvtForward.Ethereum, ethCfg)
+				return n.eventForwarderEngine.StartEthereumEngine(n.ethClient, n.eventForwarder, n.conf.EvtForward.Ethereum, ethCfg, n.assets)
 			},
 		},
 		netparams.WatchParam{
