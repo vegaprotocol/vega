@@ -45,21 +45,17 @@ func (o Order) Proto() ptypes.Order {
 }
 
 func (o Order) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      o.eventID(),
-		Block:   o.TraceID(),
-		ChainId: o.ChainID(),
-		Type:    o.et.ToProto(),
-		Event: &eventspb.BusEvent_Order{
-			Order: o.o,
-		},
+	busEvent := newBusEventFromBase(o.Base)
+	busEvent.Event = &eventspb.BusEvent_Order{
+		Order: o.o,
 	}
+
+	return busEvent
 }
 
 func OrderEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Order {
 	order := &Order{
-		Base: newBaseFromStream(ctx, OrderEvent, be),
+		Base: newBaseFromBusEvent(ctx, OrderEvent, be),
 		o:    be.GetOrder(),
 	}
 	return order

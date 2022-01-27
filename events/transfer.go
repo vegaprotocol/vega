@@ -48,16 +48,12 @@ func (t TransferFunds) Proto() eventspb.Transfer {
 func (t TransferFunds) StreamMessage() *eventspb.BusEvent {
 	p := t.Proto()
 
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      t.eventID(),
-		Block:   t.TraceID(),
-		ChainId: t.ChainID(),
-		Type:    t.et.ToProto(),
-		Event: &eventspb.BusEvent_Transfer{
-			Transfer: &p,
-		},
+	busEvent := newBusEventFromBase(t.Base)
+	busEvent.Event = &eventspb.BusEvent_Transfer{
+		Transfer: &p,
 	}
+
+	return busEvent
 }
 
 func TransferFundsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TransferFunds {
@@ -67,7 +63,7 @@ func TransferFundsEventFromStream(ctx context.Context, be *eventspb.BusEvent) *T
 	}
 
 	return &TransferFunds{
-		Base:     newBaseFromStream(ctx, TransferEvent, be),
+		Base:     newBaseFromBusEvent(ctx, TransferEvent, be),
 		transfer: event,
 	}
 }
