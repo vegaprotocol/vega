@@ -385,9 +385,9 @@ pipeline {
                     when {
                         branch 'develop'
                     }
-                    options { retry(3) }
                     steps {
-                        devnetDeploy vegaCore: commitHash
+                        devnetDeploy vegaCore: commitHash,
+                            wait: false
                     }
                 }
             }
