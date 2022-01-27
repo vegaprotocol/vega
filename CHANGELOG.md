@@ -70,6 +70,7 @@
 - [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
 - [4634](https://github.com/vegaprotocol/vega/pull/4634) - Bug fix for `--snapshot.max-retries` parameter not working correctly
 - [4651](https://github.com/vegaprotocol/vega/pull/4651) - An array of fixes in the snapshot code path
+- [4658](https://github.com/vegaprotocol/vega/pull/4658) - Allow replaying a chain from zero when old snapshots exist
 - [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
 - [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
 

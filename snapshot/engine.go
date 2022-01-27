@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -28,6 +29,8 @@ const (
 	SnapshotSourceLocal SnapshotSource = iota
 	SnapshotSourceTendermint
 )
+
+const SnapshotDBName = "snapshot"
 
 type StateProviderT interface {
 	// Namespace this provider operates in, basically a prefix for the keys
@@ -68,6 +71,7 @@ type Engine struct {
 	cfunc      context.CancelFunc
 	time       TimeService
 	db         db.DB
+	dbPath     string
 	log        *logging.Logger
 	avl        *iavl.MutableTree
 	namespaces []types.SnapshotNamespace
@@ -137,20 +141,12 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 	}
 	log = log.Named(namedLogger)
 	log.SetLevel(conf.Level.Get())
-	dbConn, err := getDB(conf, vegapath)
+
+	dbPath, err := conf.validate(vegapath)
 	if err != nil {
-		log.Error("Failed to open DB connection", logging.Error(err))
 		return nil, err
 	}
-	tree, err := iavl.NewMutableTree(dbConn, 0)
-	if err != nil {
-		log.Error("Could not create AVL tree", logging.Error(err))
-		return nil, err
-	}
-	if _, err := tree.Load(); err != nil {
-		log.Error("Could not load AVL tree versions", logging.Error(err))
-		// no return, this could indicate that we've just created the snapshot DB
-	}
+
 	sctx, cfunc := context.WithCancel(ctx)
 	appPL := &types.PayloadAppState{
 		AppState: &types.AppState{},
@@ -161,9 +157,8 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		ctx:        sctx,
 		cfunc:      cfunc,
 		time:       tm,
-		db:         dbConn,
+		dbPath:     dbPath,
 		log:        log,
-		avl:        tree,
 		namespaces: []types.SnapshotNamespace{},
 		nsKeys: map[types.SnapshotNamespace][]string{
 			app: {appPL.Key()},
@@ -184,12 +179,6 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		interval:      1, // default to every block
 		current:       1,
 	}
-
-	// Either create the first empty tree, or load the latest tree we have in the store
-	if err := eng.loadTree(); err != nil {
-		log.Error("Failed to load AVL version", logging.Error(err))
-		// do not return error, this could simply indicate we've created a new DB
-	}
 	return eng, nil
 }
 
@@ -203,31 +192,6 @@ func (e *Engine) ReloadConfig(cfg Config) {
 		e.log.SetLevel(cfg.Level.Get())
 	}
 	e.Config = cfg
-}
-
-func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
-	switch conf.Storage {
-	case memDB:
-		return db.NewMemDB(), nil
-	case goLevelDB:
-		dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
-		if conf.DBPath != "" {
-			stat, err := os.Stat(conf.DBPath)
-			if err != nil {
-				return nil, err
-			}
-
-			if !stat.IsDir() {
-				return nil, errors.New("snapshot DB path is not a directory")
-			}
-
-			dbPath = conf.DBPath
-		}
-
-		return db.NewGoLevelDB("snapshot", dbPath)
-	default:
-		return nil, types.ErrInvalidSnapshotStorageMethod
-	}
 }
 
 // List returns all snapshots available.
@@ -254,7 +218,33 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 	return trees, nil
 }
 
+// Start kicks the snapshot engine into its initial state setting up the DB connections
+// and ensuring any pre-existing snapshot database is removed first. It is to be called
+// by a chain that is starting from block 0.
+func (e *Engine) Start() error {
+	p := filepath.Join(e.dbPath, SnapshotDBName+".db")
+
+	exists, err := vgfs.PathExists(p)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
+		if err := os.RemoveAll(p); err != nil {
+			return err
+		}
+	}
+
+	return e.initialiseTree()
+}
+
+// LoadHeight will restore the vega node to it's state at block height `h`
+// from a snapshots stored locally. It is an error if a snapshot is not found
+// for this height.
 func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
+	// setup AVL tree from local store
+	e.initialiseTree()
 	if h < 0 {
 		return e.load(ctx)
 	}
@@ -301,6 +291,34 @@ func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
 		logging.Uint64("minimum-height", last),
 	)
 	return types.ErrNoSnapshot
+}
+
+// initialiseTree connects to the snapshotdb and sets the engine's state to
+// point to the latest version of the tree.
+func (e *Engine) initialiseTree() error {
+	switch e.Config.Storage {
+	case memDB:
+		e.db = db.NewMemDB()
+	case goLevelDB:
+		conn, _ := db.NewGoLevelDB(SnapshotDBName, e.dbPath)
+		e.db = conn
+	default:
+		return types.ErrInvalidSnapshotStorageMethod
+	}
+
+	tree, err := iavl.NewMutableTree(e.db, 0)
+	if err != nil {
+		e.log.Error("Could not create AVL tree", logging.Error(err))
+		return err
+	}
+
+	e.avl = tree
+	// Either create the first empty tree, or load the latest tree we have in the store
+	if err := e.loadTree(); err != nil {
+		e.log.Error("Failed to load AVL version", logging.Error(err))
+		return err
+	}
+	return nil
 }
 
 func (e *Engine) loadTree() error {
@@ -565,9 +583,10 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		appUpdate = true
 	}
 	if appUpdate {
-		if updated, err = e.updateAppState(); err != nil {
+		if err = e.updateAppState(); err != nil {
 			return nil, err
 		}
+		updated = true
 	}
 	if !updated {
 		return e.hash, nil
@@ -653,14 +672,14 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 	return update, nil
 }
 
-func (e *Engine) updateAppState() (bool, error) {
+func (e *Engine) updateAppState() error {
 	keys, ok := e.nsTreeKeys[e.wrap.Namespace()]
 	if !ok {
-		return false, types.ErrNoPrefixFound
+		return types.ErrNoPrefixFound
 	}
 	// there should be only 1 entry here
 	if len(keys) > 1 || len(keys) == 0 {
-		return false, types.ErrUnexpectedKey
+		return types.ErrUnexpectedKey
 	}
 	// we only have 1 key
 	pl := types.Payload{
@@ -668,10 +687,10 @@ func (e *Engine) updateAppState() (bool, error) {
 	}
 	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return false, err
+		return err
 	}
 	_ = e.avl.Set(keys[0], data)
-	return true, nil
+	return nil
 }
 
 func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
