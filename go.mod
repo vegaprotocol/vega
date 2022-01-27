@@ -3,10 +3,10 @@ module code.vegaprotocol.io/data-node
 go 1.17
 
 require (
-	code.vegaprotocol.io/protos v0.47.1-0.20220126105716-45227664d1b8
+	code.vegaprotocol.io/protos v0.47.1-0.20220127091045-ae512d598ee6
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vega v0.47.1-0.20220126153910-988c90d5b444
+	code.vegaprotocol.io/vega v0.47.1-0.20220127091406-d74feb2a5a37
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fsnotify/fsnotify v1.5.1
@@ -49,15 +49,14 @@ require (
 	github.com/elastic/go-licenser v0.3.1 // indirect
 	github.com/elastic/go-sysinfo v1.1.1 // indirect
 	github.com/elastic/go-windows v1.0.0 // indirect
-	github.com/ethereum/go-ethereum v1.9.25 // indirect
+	github.com/ethereum/go-ethereum v1.10.15 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.0 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 // indirect
@@ -75,7 +74,7 @@ require (
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/tendermint/tendermint v0.35.0 // indirect
 	github.com/tendermint/tm-db v0.6.4 // indirect
-	github.com/urfave/cli/v2 v2.1.1 // indirect
+	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/zannen/toml v0.3.2 // indirect
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
@@ -94,7 +93,6 @@ require (
 	gonum.org/v1/gonum v0.9.1 // indirect
 	google.golang.org/genproto v0.0.0-20210917145530-b395a37504d4 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
