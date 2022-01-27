@@ -45,13 +45,9 @@ func (t *TimeStub) publishOracleData(ctx context.Context, ts time.Time) {
 	for _, s := range t.internalOracleSubscribers {
 		data := oracles.OracleData{
 			Data: map[string]string{
-				oracles.InternalOracleTimestamp: fmt.Sprintf("%d", ts.UnixNano()),
+				oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", ts.UnixNano()),
 			},
 		}
 		s(ctx, data)
 	}
-}
-
-func (t *TimeStub) NotifyInternalOracleTimestamp(f func(context.Context, oracles.OracleData)) {
-	t.internalOracleSubscribers = append(t.internalOracleSubscribers, f)
 }

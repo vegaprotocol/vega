@@ -9,7 +9,6 @@ import (
 	reflect "reflect"
 	time "time"
 
-	oracles "code.vegaprotocol.io/vega/oracles"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -34,18 +33,6 @@ func NewMockTimeService(ctrl *gomock.Controller) *MockTimeService {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockTimeService) EXPECT() *MockTimeServiceMockRecorder {
 	return m.recorder
-}
-
-// NotifyInternalOracleTimestamp mocks base method.
-func (m *MockTimeService) NotifyInternalOracleTimestamp(arg0 func(context.Context, oracles.OracleData)) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "NotifyInternalOracleTimestamp", arg0)
-}
-
-// NotifyInternalOracleTimestamp indicates an expected call of NotifyInternalOracleTimestamp.
-func (mr *MockTimeServiceMockRecorder) NotifyInternalOracleTimestamp(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NotifyInternalOracleTimestamp", reflect.TypeOf((*MockTimeService)(nil).NotifyInternalOracleTimestamp), arg0)
 }
 
 // NotifyOnTick mocks base method.

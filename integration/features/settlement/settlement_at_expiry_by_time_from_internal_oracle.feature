@@ -8,9 +8,9 @@ Feature: Test settlement at expiry time from internal oracle
       | property         | type         | binding          |
       | prices.ETH.value | TYPE_INTEGER | settlement price |
 
-    And the oracle spec for trading termination filtering data from "vegaprotocol.internal" named "ethDec20Oracle":
-      | property                        | type           | binding             | condition            |
-      | vegaprotocol.internal.timestamp | TYPE_TIMESTAMP | trading termination | 2019-12-31T23:59:59Z |
+    And the oracle spec for trading termination filtering data from "vegaprotocol.builtin" named "ethDec20Oracle":
+      | property                       | type           | binding             | condition            |
+      | vegaprotocol.builtin.timestamp | TYPE_TIMESTAMP | trading termination | 2019-12-31T23:59:59Z |
 
     And the oracle spec for settlement price filtering data from "0xCAFECAFE1" named "ethDec21Oracle":
       | property         | type         | binding          |

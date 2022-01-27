@@ -107,7 +107,7 @@ func dummyOraclePayload() []byte {
 
 func internalOraclePayload() []byte {
 	payload, err := json.Marshal(map[string]string{
-		oracles.InternalOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
+		oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
 	})
 	if err != nil {
 		panic("failed to generate internal oracle payload in tests")

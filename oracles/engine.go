@@ -10,11 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 )
 
-const (
-	InternalOraclePrefix    = "vegaprotocol.internal"
-	InternalOracleTimestamp = InternalOraclePrefix + ".timestamp"
-)
-
 // Broker no need to mock (use broker package mock).
 type Broker interface {
 	Send(event events.Event)
@@ -25,7 +20,6 @@ type Broker interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_service_mock.go -package mocks code.vegaprotocol.io/vega/oracles TimeService
 type TimeService interface {
 	NotifyOnTick(f func(context.Context, time.Time))
-	NotifyInternalOracleTimestamp(f func(context.Context, OracleData))
 }
 
 // Engine is responsible for broadcasting the OracleData to products and risk
@@ -56,20 +50,12 @@ func NewEngine(
 	}
 
 	ts.NotifyOnTick(e.UpdateCurrentTime)
-	ts.NotifyInternalOracleTimestamp(e.BroadcastVegaTime)
 	return e
 }
 
 // UpdateCurrentTime listens to update of the current Vega time.
 func (e *Engine) UpdateCurrentTime(ctx context.Context, ts time.Time) {
 	e.CurrentTime = ts
-}
-
-func (e *Engine) BroadcastVegaTime(ctx context.Context, data OracleData) {
-	err := e.sendOracleUpdate(ctx, data)
-	if err != nil {
-		e.log.Debug("broadcasting internal vega timestamp", logging.Error(err))
-	}
 }
 
 func (e *Engine) sendOracleUpdate(ctx context.Context, data OracleData) error {

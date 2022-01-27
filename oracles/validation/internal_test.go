@@ -19,10 +19,10 @@ func TestCheckForInternalOracle(t *testing.T) {
 			name: "Should return an error if there is any data that contains reserved prefix",
 			args: args{
 				data: map[string]string{
-					"aaaa":                       "aaaa",
-					"bbbb":                       "bbbb",
-					"cccc":                       "cccc",
-					"vegaprotocol.internal.dddd": "dddd",
+					"aaaa":                      "aaaa",
+					"bbbb":                      "bbbb",
+					"cccc":                      "cccc",
+					"vegaprotocol.builtin.dddd": "dddd",
 				},
 			},
 			wantErr: true,
@@ -43,10 +43,10 @@ func TestCheckForInternalOracle(t *testing.T) {
 			name: "Should pass validation if reserved prefix is contained in key, but key doesn't start with the prefix",
 			args: args{
 				data: map[string]string{
-					"aaaa":                       "aaaa",
-					"bbbb":                       "bbbb",
-					"cccc":                       "cccc",
-					"dddd.vegaprotocol.internal": "dddd",
+					"aaaa":                      "aaaa",
+					"bbbb":                      "bbbb",
+					"cccc":                      "cccc",
+					"dddd.vegaprotocol.builtin": "dddd",
 				},
 			},
 			wantErr: false,

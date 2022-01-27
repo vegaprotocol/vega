@@ -128,7 +128,7 @@ func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data or
 	var tradingTerminated bool
 	var err error
 
-	if _, err = data.GetTimestamp(oracles.InternalOracleTimestamp); err == nil {
+	if _, err = data.GetTimestamp(oracles.BuiltinOracleTimestamp); err == nil {
 		// we have received a trading termination timestamp from the internal vega time oracle
 		tradingTerminated = true
 	}
@@ -226,7 +226,7 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 
 	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
 
-	if oracleSpecForTerminatedMarket.CanBindProperty(oracles.InternalOracleTimestamp) {
+	if oracleSpecForTerminatedMarket.CanBindProperty(oracles.BuiltinOracleTimestamp) {
 		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminatedByTimestamp)
 	} else {
 		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)

@@ -179,7 +179,6 @@ func newEngine(ctx context.Context, t *testing.T, currentTime time.Time) *testEn
 	ts := newTimeService(ctx, t)
 
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	ts.EXPECT().NotifyInternalOracleTimestamp(gomock.Any()).Times(1)
 
 	return &testEngine{
 		Engine: oracles.NewEngine(

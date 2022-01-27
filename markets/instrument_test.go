@@ -146,7 +146,6 @@ func newOracleEngine(t *testing.T) products.OracleEngine {
 
 	ts := emock.NewMockTimeService(ctrl)
 	ts.EXPECT().NotifyOnTick(gomock.Any()).Times(1)
-	ts.EXPECT().NotifyInternalOracleTimestamp(gomock.Any()).Times(1)
 
 	return oracles.NewEngine(
 		logging.NewTestLogger(),
