@@ -52,6 +52,10 @@ pipeline {
                 cleanWs()
                 sh 'printenv'
                 echo "${params}"
+		script {
+                    params = pr.injectPRParams()
+                }
+                echo "params (after injection)=${params}"
             }
         }
         stage('Git Clone') {
