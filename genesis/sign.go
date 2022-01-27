@@ -77,7 +77,7 @@ func extractAssets(genesisState *GenesisState, sps *SignedParameters) {
 			Symbol:      details.Symbol,
 			TotalSupply: details.TotalSupply,
 			Decimals:    details.Decimals,
-			MinLpStake:  details.MinLpStake,
+			MinLpStake:  details.Quantum,
 			Source:      src,
 		}
 		i += 1

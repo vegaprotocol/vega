@@ -12,7 +12,7 @@ type AssetDetails struct {
 	Symbol      string  `json:"symbol"`
 	TotalSupply string  `json:"total_supply"`
 	Decimals    uint64  `json:"decimals"`
-	MinLpStake  string  `json:"min_lp_stake"`
+	Quantum     string  `json:"quantum"`
 	Source      *Source `json:"source"`
 }
 
@@ -43,7 +43,7 @@ func (a *AssetDetails) IntoProto() (*types.AssetDetails, error) {
 		Symbol:      a.Symbol,
 		TotalSupply: a.TotalSupply,
 		Decimals:    a.Decimals,
-		MinLpStake:  a.MinLpStake,
+		Quantum:     a.Quantum,
 	}
 
 	if a.Source.BuiltinAsset != nil {
@@ -72,7 +72,7 @@ var governanceAsset = AssetDetails{
 	Symbol:      "VOTE",
 	TotalSupply: "0",
 	Decimals:    5,
-	MinLpStake:  "1",
+	Quantum:     "1",
 	Source: &Source{
 		BuiltinAsset: &BuiltinAsset{
 			MaxFaucetAmountMint: "10000",

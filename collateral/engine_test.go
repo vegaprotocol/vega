@@ -2384,7 +2384,7 @@ func enableGovernanceAsset(t *testing.T, eng *collateral.Engine) {
 			Symbol:      "VOTE",
 			Decimals:    5,
 			TotalSupply: num.NewUint(1000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.Zero(),
@@ -2422,7 +2422,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			Name:        testMarketAsset,
 			Decimals:    0,
 			TotalSupply: num.NewUint(10000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.Zero(),
@@ -2440,7 +2440,7 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 			Name:        "ETH",
 			Decimals:    18,
 			TotalSupply: num.NewUint(1000000000),
-			MinLpStake:  num.Zero(),
+			Quantum:     num.Zero(),
 			Source: &types.AssetDetailsBuiltinAsset{
 				BuiltinAsset: &types.BuiltinAsset{
 					MaxFaucetAmountMint: num.Zero(),

@@ -53,6 +53,7 @@
 - [4650](https://github.com/vegaprotocol/vega/pull/4650) - Restore code from rebase and ensure node retries connection with application
 - [4570](https://github.com/vegaprotocol/vega/pull/4570) - Internalize Ethereum Event Forwarder
 - [4663](https://github.com/vegaprotocol/vega/issues/4663) - CI set `qa` build tag when running system tests
+- [4657](https://github.com/vegaprotocol/vega/pull/4657) - Rename `min_lp_stake` to quantum + use it in liquidity provisions
 
 
 ### 🐛 Fixes
