@@ -25,7 +25,7 @@ func TestEventCtxIsSet(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx = vgcontext.WithTxHash(ctx, "textTxHash")
+	ctx = vgcontext.WithTxHash(ctx, "testTxHash")
 	ctx = vgcontext.WithTraceID(ctx, "testTraceID")
 	ctx = vgcontext.WithChainID(ctx, "testChainID")
 
@@ -35,14 +35,14 @@ func TestEventCtxIsSet(t *testing.T) {
 
 	acc := events.AccountEventFromStream(context.Background(), busEvent)
 	assert.Equal(t, "testId", acc.Account().Id)
-	assert.Equal(t, "textTxHash", acc.TxHash())
-	assert.Equal(t, "testTraceID", acc.TraceID())
+	assert.Equal(t, "TESTTXHASH", acc.TxHash())
+	assert.Equal(t, "TESTTRACEID", acc.TraceID())
 	assert.Equal(t, "testChainID", acc.ChainID())
 
 	chainID, _ := vgcontext.ChainIDFromContext(acc.Context())
 	assert.Equal(t, "testChainID", chainID)
 	_, traceID := vgcontext.TraceIDFromContext(acc.Context())
-	assert.Equal(t, "testTraceID", traceID)
+	assert.Equal(t, "TESTTRACEID", traceID)
 	txHash, _ := vgcontext.TxHashFromContext(acc.Context())
-	assert.Equal(t, "textTxHash", txHash)
+	assert.Equal(t, "TESTTXHASH", txHash)
 }

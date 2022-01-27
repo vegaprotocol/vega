@@ -3,6 +3,7 @@ package context
 import (
 	"context"
 	"errors"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -97,6 +98,7 @@ func TxHashFromContext(ctx context.Context) (string, error) {
 
 // WithTraceID returns a context with a traceID value.
 func WithTraceID(ctx context.Context, tID string) context.Context {
+	tID = strings.ToUpper(tID)
 	return context.WithValue(ctx, traceIDKey, tID)
 }
 
@@ -109,5 +111,6 @@ func WithChainID(ctx context.Context, chainID string) context.Context {
 }
 
 func WithTxHash(ctx context.Context, txHash string) context.Context {
+	txHash = strings.ToUpper(txHash)
 	return context.WithValue(ctx, txHashKey, txHash)
 }

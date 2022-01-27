@@ -1,11 +1,9 @@
 package abci
 
 import (
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 	"encoding/hex"
 	"errors"
-
-	vgcontext "code.vegaprotocol.io/vega/libs/context"
-
 	"github.com/tendermint/tendermint/abci/types"
 )
 
