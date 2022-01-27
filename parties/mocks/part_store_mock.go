@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockPartyStore is a mock of PartyStore interface
+// MockPartyStore is a mock of PartyStore interface.
 type MockPartyStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockPartyStoreMockRecorder
 }
 
-// MockPartyStoreMockRecorder is the mock recorder for MockPartyStore
+// MockPartyStoreMockRecorder is the mock recorder for MockPartyStore.
 type MockPartyStoreMockRecorder struct {
 	mock *MockPartyStore
 }
 
-// NewMockPartyStore creates a new mock instance
+// NewMockPartyStore creates a new mock instance.
 func NewMockPartyStore(ctrl *gomock.Controller) *MockPartyStore {
 	mock := &MockPartyStore{ctrl: ctrl}
 	mock.recorder = &MockPartyStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPartyStore) EXPECT() *MockPartyStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
+// GetAll mocks base method.
 func (m *MockPartyStore) GetAll() ([]*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
@@ -42,13 +43,13 @@ func (m *MockPartyStore) GetAll() ([]*vega.Party, error) {
 	return ret0, ret1
 }
 
-// GetAll indicates an expected call of GetAll
+// GetAll indicates an expected call of GetAll.
 func (mr *MockPartyStoreMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockPartyStore)(nil).GetAll))
 }
 
-// GetByID mocks base method
+// GetByID mocks base method.
 func (m *MockPartyStore) GetByID(arg0 string) (*vega.Party, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
@@ -57,13 +58,13 @@ func (m *MockPartyStore) GetByID(arg0 string) (*vega.Party, error) {
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID
+// GetByID indicates an expected call of GetByID.
 func (mr *MockPartyStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockPartyStore)(nil).GetByID), arg0)
 }
 
-// Post mocks base method
+// Post mocks base method.
 func (m *MockPartyStore) Post(arg0 *vega.Party) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
@@ -71,7 +72,7 @@ func (m *MockPartyStore) Post(arg0 *vega.Party) error {
 	return ret0
 }
 
-// Post indicates an expected call of Post
+// Post indicates an expected call of Post.
 func (mr *MockPartyStoreMockRecorder) Post(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockPartyStore)(nil).Post), arg0)

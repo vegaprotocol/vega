@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockAccountStore is a mock of AccountStore interface
+// MockAccountStore is a mock of AccountStore interface.
 type MockAccountStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockAccountStoreMockRecorder
 }
 
-// MockAccountStoreMockRecorder is the mock recorder for MockAccountStore
+// MockAccountStoreMockRecorder is the mock recorder for MockAccountStore.
 type MockAccountStoreMockRecorder struct {
 	mock *MockAccountStore
 }
 
-// NewMockAccountStore creates a new mock instance
+// NewMockAccountStore creates a new mock instance.
 func NewMockAccountStore(ctrl *gomock.Controller) *MockAccountStore {
 	mock := &MockAccountStore{ctrl: ctrl}
 	mock.recorder = &MockAccountStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockAccountStore) EXPECT() *MockAccountStoreMockRecorder {
 	return m.recorder
 }
 
-// GetFeeInfrastructureAccounts mocks base method
+// GetFeeInfrastructureAccounts mocks base method.
 func (m *MockAccountStore) GetFeeInfrastructureAccounts(arg0 string) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFeeInfrastructureAccounts", arg0)
@@ -42,13 +43,13 @@ func (m *MockAccountStore) GetFeeInfrastructureAccounts(arg0 string) ([]*vega.Ac
 	return ret0, ret1
 }
 
-// GetFeeInfrastructureAccounts indicates an expected call of GetFeeInfrastructureAccounts
+// GetFeeInfrastructureAccounts indicates an expected call of GetFeeInfrastructureAccounts.
 func (mr *MockAccountStoreMockRecorder) GetFeeInfrastructureAccounts(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFeeInfrastructureAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetFeeInfrastructureAccounts), arg0)
 }
 
-// GetGlobalRewardPoolAccounts mocks base method
+// GetGlobalRewardPoolAccounts mocks base method.
 func (m *MockAccountStore) GetGlobalRewardPoolAccounts(arg0 string) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGlobalRewardPoolAccounts", arg0)
@@ -57,13 +58,13 @@ func (m *MockAccountStore) GetGlobalRewardPoolAccounts(arg0 string) ([]*vega.Acc
 	return ret0, ret1
 }
 
-// GetGlobalRewardPoolAccounts indicates an expected call of GetGlobalRewardPoolAccounts
+// GetGlobalRewardPoolAccounts indicates an expected call of GetGlobalRewardPoolAccounts.
 func (mr *MockAccountStoreMockRecorder) GetGlobalRewardPoolAccounts(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGlobalRewardPoolAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetGlobalRewardPoolAccounts), arg0)
 }
 
-// GetMarketAccounts mocks base method
+// GetMarketAccounts mocks base method.
 func (m *MockAccountStore) GetMarketAccounts(arg0, arg1 string) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketAccounts", arg0, arg1)
@@ -72,13 +73,13 @@ func (m *MockAccountStore) GetMarketAccounts(arg0, arg1 string) ([]*vega.Account
 	return ret0, ret1
 }
 
-// GetMarketAccounts indicates an expected call of GetMarketAccounts
+// GetMarketAccounts indicates an expected call of GetMarketAccounts.
 func (mr *MockAccountStoreMockRecorder) GetMarketAccounts(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetMarketAccounts), arg0, arg1)
 }
 
-// GetPartyAccounts mocks base method
+// GetPartyAccounts mocks base method.
 func (m *MockAccountStore) GetPartyAccounts(arg0, arg1, arg2 string, arg3 vega.AccountType) ([]*vega.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPartyAccounts", arg0, arg1, arg2, arg3)
@@ -87,13 +88,13 @@ func (m *MockAccountStore) GetPartyAccounts(arg0, arg1, arg2 string, arg3 vega.A
 	return ret0, ret1
 }
 
-// GetPartyAccounts indicates an expected call of GetPartyAccounts
+// GetPartyAccounts indicates an expected call of GetPartyAccounts.
 func (mr *MockAccountStoreMockRecorder) GetPartyAccounts(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPartyAccounts", reflect.TypeOf((*MockAccountStore)(nil).GetPartyAccounts), arg0, arg1, arg2, arg3)
 }
 
-// Subscribe mocks base method
+// Subscribe mocks base method.
 func (m *MockAccountStore) Subscribe(arg0 chan []*vega.Account) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
@@ -101,13 +102,13 @@ func (m *MockAccountStore) Subscribe(arg0 chan []*vega.Account) uint64 {
 	return ret0
 }
 
-// Subscribe indicates an expected call of Subscribe
+// Subscribe indicates an expected call of Subscribe.
 func (mr *MockAccountStoreMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockAccountStore)(nil).Subscribe), arg0)
 }
 
-// Unsubscribe mocks base method
+// Unsubscribe mocks base method.
 func (m *MockAccountStore) Unsubscribe(arg0 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unsubscribe", arg0)
@@ -115,7 +116,7 @@ func (m *MockAccountStore) Unsubscribe(arg0 uint64) error {
 	return ret0
 }
 
-// Unsubscribe indicates an expected call of Unsubscribe
+// Unsubscribe indicates an expected call of Unsubscribe.
 func (mr *MockAccountStoreMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockAccountStore)(nil).Unsubscribe), arg0)

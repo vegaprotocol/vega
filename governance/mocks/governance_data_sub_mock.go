@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	subscribers "code.vegaprotocol.io/data-node/subscribers"
 	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockGovernanceDataSub is a mock of GovernanceDataSub interface
+// MockGovernanceDataSub is a mock of GovernanceDataSub interface.
 type MockGovernanceDataSub struct {
 	ctrl     *gomock.Controller
 	recorder *MockGovernanceDataSubMockRecorder
 }
 
-// MockGovernanceDataSubMockRecorder is the mock recorder for MockGovernanceDataSub
+// MockGovernanceDataSubMockRecorder is the mock recorder for MockGovernanceDataSub.
 type MockGovernanceDataSubMockRecorder struct {
 	mock *MockGovernanceDataSub
 }
 
-// NewMockGovernanceDataSub creates a new mock instance
+// NewMockGovernanceDataSub creates a new mock instance.
 func NewMockGovernanceDataSub(ctrl *gomock.Controller) *MockGovernanceDataSub {
 	mock := &MockGovernanceDataSub{ctrl: ctrl}
 	mock.recorder = &MockGovernanceDataSubMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockGovernanceDataSub) EXPECT() *MockGovernanceDataSubMockRecorder {
 	return m.recorder
 }
 
-// Filter mocks base method
+// Filter mocks base method.
 func (m *MockGovernanceDataSub) Filter(arg0 bool, arg1 ...subscribers.ProposalFilter) []*vega.GovernanceData {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -46,7 +47,7 @@ func (m *MockGovernanceDataSub) Filter(arg0 bool, arg1 ...subscribers.ProposalFi
 	return ret0
 }
 
-// Filter indicates an expected call of Filter
+// Filter indicates an expected call of Filter.
 func (mr *MockGovernanceDataSubMockRecorder) Filter(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)

@@ -5,37 +5,38 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockCandleService is a mock of CandleService interface
+// MockCandleService is a mock of CandleService interface.
 type MockCandleService struct {
 	ctrl     *gomock.Controller
 	recorder *MockCandleServiceMockRecorder
 }
 
-// MockCandleServiceMockRecorder is the mock recorder for MockCandleService
+// MockCandleServiceMockRecorder is the mock recorder for MockCandleService.
 type MockCandleServiceMockRecorder struct {
 	mock *MockCandleService
 }
 
-// NewMockCandleService creates a new mock instance
+// NewMockCandleService creates a new mock instance.
 func NewMockCandleService(ctrl *gomock.Controller) *MockCandleService {
 	mock := &MockCandleService{ctrl: ctrl}
 	mock.recorder = &MockCandleServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCandleService) EXPECT() *MockCandleServiceMockRecorder {
 	return m.recorder
 }
 
-// GetCandleSubscribersCount mocks base method
+// GetCandleSubscribersCount mocks base method.
 func (m *MockCandleService) GetCandleSubscribersCount() int32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCandleSubscribersCount")
@@ -43,13 +44,13 @@ func (m *MockCandleService) GetCandleSubscribersCount() int32 {
 	return ret0
 }
 
-// GetCandleSubscribersCount indicates an expected call of GetCandleSubscribersCount
+// GetCandleSubscribersCount indicates an expected call of GetCandleSubscribersCount.
 func (mr *MockCandleServiceMockRecorder) GetCandleSubscribersCount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandleSubscribersCount", reflect.TypeOf((*MockCandleService)(nil).GetCandleSubscribersCount))
 }
 
-// GetCandles mocks base method
+// GetCandles mocks base method.
 func (m *MockCandleService) GetCandles(arg0 context.Context, arg1 string, arg2 time.Time, arg3 vega.Interval) ([]*vega.Candle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCandles", arg0, arg1, arg2, arg3)
@@ -58,13 +59,13 @@ func (m *MockCandleService) GetCandles(arg0 context.Context, arg1 string, arg2 t
 	return ret0, ret1
 }
 
-// GetCandles indicates an expected call of GetCandles
+// GetCandles indicates an expected call of GetCandles.
 func (mr *MockCandleServiceMockRecorder) GetCandles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandles", reflect.TypeOf((*MockCandleService)(nil).GetCandles), arg0, arg1, arg2, arg3)
 }
 
-// ObserveCandles mocks base method
+// ObserveCandles mocks base method.
 func (m *MockCandleService) ObserveCandles(arg0 context.Context, arg1 int, arg2 *string, arg3 *vega.Interval) (<-chan *vega.Candle, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveCandles", arg0, arg1, arg2, arg3)
@@ -73,7 +74,7 @@ func (m *MockCandleService) ObserveCandles(arg0 context.Context, arg1 int, arg2 
 	return ret0, ret1
 }
 
-// ObserveCandles indicates an expected call of ObserveCandles
+// ObserveCandles indicates an expected call of ObserveCandles.
 func (mr *MockCandleServiceMockRecorder) ObserveCandles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveCandles", reflect.TypeOf((*MockCandleService)(nil).ObserveCandles), arg0, arg1, arg2, arg3)

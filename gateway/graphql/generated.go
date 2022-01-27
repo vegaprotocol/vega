@@ -111,8 +111,8 @@ type ComplexityRoot struct {
 		GlobalRewardPoolAccount  func(childComplexity int) int
 		Id                       func(childComplexity int) int
 		InfrastructureFeeAccount func(childComplexity int) int
-		MinLpStake               func(childComplexity int) int
 		Name                     func(childComplexity int) int
+		Quantum                  func(childComplexity int) int
 		Source                   func(childComplexity int) int
 		Symbol                   func(childComplexity int) int
 		TotalSupply              func(childComplexity int) int
@@ -952,7 +952,7 @@ type AssetResolver interface {
 	Symbol(ctx context.Context, obj *vega.Asset) (string, error)
 	TotalSupply(ctx context.Context, obj *vega.Asset) (string, error)
 	Decimals(ctx context.Context, obj *vega.Asset) (int, error)
-	MinLpStake(ctx context.Context, obj *vega.Asset) (string, error)
+	Quantum(ctx context.Context, obj *vega.Asset) (string, error)
 	Source(ctx context.Context, obj *vega.Asset) (AssetSource, error)
 	InfrastructureFeeAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
 	GlobalRewardPoolAccount(ctx context.Context, obj *vega.Asset) (*vega.Account, error)
@@ -1416,19 +1416,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Asset.InfrastructureFeeAccount(childComplexity), true
 
-	case "Asset.minLpStake":
-		if e.complexity.Asset.MinLpStake == nil {
-			break
-		}
-
-		return e.complexity.Asset.MinLpStake(childComplexity), true
-
 	case "Asset.name":
 		if e.complexity.Asset.Name == nil {
 			break
 		}
 
 		return e.complexity.Asset.Name(childComplexity), true
+
+	case "Asset.quantum":
+		if e.complexity.Asset.Quantum == nil {
+			break
+		}
+
+		return e.complexity.Asset.Quantum(childComplexity), true
 
 	case "Asset.source":
 		if e.complexity.Asset.Source == nil {
@@ -5515,7 +5515,7 @@ type Subscription {
     "the party to subscribe for, empty if all"
     party: ID
     "the node to subscribe for, empty if all"
-    nodeID: ID 
+    nodeID: ID
   ): Delegation!
 
   "Subscribe to reward details data"
@@ -5996,8 +5996,8 @@ type Asset {
   "The precision of the asset"
   decimals: Int!
 
-  "The min stake to become an lp for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount in the asset"
+  quantum: String!
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!
@@ -9787,7 +9787,7 @@ func (ec *executionContext) _Asset_decimals(ctx context.Context, field graphql.C
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Asset_minLpStake(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
+func (ec *executionContext) _Asset_quantum(ctx context.Context, field graphql.CollectedField, obj *vega.Asset) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -9805,7 +9805,7 @@ func (ec *executionContext) _Asset_minLpStake(ctx context.Context, field graphql
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Asset().MinLpStake(rctx, obj)
+		return ec.resolvers.Asset().Quantum(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29692,7 +29692,7 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 				}
 				return res
 			})
-		case "minLpStake":
+		case "quantum":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -29700,7 +29700,7 @@ func (ec *executionContext) _Asset(ctx context.Context, sel ast.SelectionSet, ob
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Asset_minLpStake(ctx, field, obj)
+				res = ec._Asset_quantum(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

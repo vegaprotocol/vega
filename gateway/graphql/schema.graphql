@@ -117,7 +117,7 @@ type Subscription {
     "the party to subscribe for, empty if all"
     party: ID
     "the node to subscribe for, empty if all"
-    nodeID: ID 
+    nodeID: ID
   ): Delegation!
 
   "Subscribe to reward details data"
@@ -598,8 +598,8 @@ type Asset {
   "The precision of the asset"
   decimals: Int!
 
-  "The min stake to become an lp for any market using this asset for settlement"
-  minLpStake: String!
+  "The minimum economically meaningful amount in the asset"
+  quantum: String!
 
   "The origin source of the asset (e.g: an erc20 asset)"
   source: AssetSource!

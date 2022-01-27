@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockOrderStore is a mock of OrderStore interface
+// MockOrderStore is a mock of OrderStore interface.
 type MockOrderStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockOrderStoreMockRecorder
 }
 
-// MockOrderStoreMockRecorder is the mock recorder for MockOrderStore
+// MockOrderStoreMockRecorder is the mock recorder for MockOrderStore.
 type MockOrderStoreMockRecorder struct {
 	mock *MockOrderStore
 }
 
-// NewMockOrderStore creates a new mock instance
+// NewMockOrderStore creates a new mock instance.
 func NewMockOrderStore(ctrl *gomock.Controller) *MockOrderStore {
 	mock := &MockOrderStore{ctrl: ctrl}
 	mock.recorder = &MockOrderStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOrderStore) EXPECT() *MockOrderStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAllVersionsByOrderID mocks base method
+// GetAllVersionsByOrderID mocks base method.
 func (m *MockOrderStore) GetAllVersionsByOrderID(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllVersionsByOrderID", arg0, arg1, arg2, arg3, arg4)
@@ -43,13 +44,13 @@ func (m *MockOrderStore) GetAllVersionsByOrderID(arg0 context.Context, arg1 stri
 	return ret0, ret1
 }
 
-// GetAllVersionsByOrderID indicates an expected call of GetAllVersionsByOrderID
+// GetAllVersionsByOrderID indicates an expected call of GetAllVersionsByOrderID.
 func (mr *MockOrderStoreMockRecorder) GetAllVersionsByOrderID(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllVersionsByOrderID", reflect.TypeOf((*MockOrderStore)(nil).GetAllVersionsByOrderID), arg0, arg1, arg2, arg3, arg4)
 }
 
-// GetByMarket mocks base method
+// GetByMarket mocks base method.
 func (m *MockOrderStore) GetByMarket(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarket", arg0, arg1, arg2, arg3, arg4)
@@ -58,13 +59,13 @@ func (m *MockOrderStore) GetByMarket(arg0 context.Context, arg1 string, arg2, ar
 	return ret0, ret1
 }
 
-// GetByMarket indicates an expected call of GetByMarket
+// GetByMarket indicates an expected call of GetByMarket.
 func (mr *MockOrderStoreMockRecorder) GetByMarket(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarket", reflect.TypeOf((*MockOrderStore)(nil).GetByMarket), arg0, arg1, arg2, arg3, arg4)
 }
 
-// GetByMarketAndID mocks base method
+// GetByMarketAndID mocks base method.
 func (m *MockOrderStore) GetByMarketAndID(arg0 context.Context, arg1, arg2 string) (*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByMarketAndID", arg0, arg1, arg2)
@@ -73,13 +74,13 @@ func (m *MockOrderStore) GetByMarketAndID(arg0 context.Context, arg1, arg2 strin
 	return ret0, ret1
 }
 
-// GetByMarketAndID indicates an expected call of GetByMarketAndID
+// GetByMarketAndID indicates an expected call of GetByMarketAndID.
 func (mr *MockOrderStoreMockRecorder) GetByMarketAndID(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByMarketAndID", reflect.TypeOf((*MockOrderStore)(nil).GetByMarketAndID), arg0, arg1, arg2)
 }
 
-// GetByOrderID mocks base method
+// GetByOrderID mocks base method.
 func (m *MockOrderStore) GetByOrderID(arg0 context.Context, arg1 string, arg2 *uint64) (*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByOrderID", arg0, arg1, arg2)
@@ -88,13 +89,13 @@ func (m *MockOrderStore) GetByOrderID(arg0 context.Context, arg1 string, arg2 *u
 	return ret0, ret1
 }
 
-// GetByOrderID indicates an expected call of GetByOrderID
+// GetByOrderID indicates an expected call of GetByOrderID.
 func (mr *MockOrderStoreMockRecorder) GetByOrderID(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByOrderID", reflect.TypeOf((*MockOrderStore)(nil).GetByOrderID), arg0, arg1, arg2)
 }
 
-// GetByParty mocks base method
+// GetByParty mocks base method.
 func (m *MockOrderStore) GetByParty(arg0 context.Context, arg1 string, arg2, arg3 uint64, arg4 bool) ([]*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByParty", arg0, arg1, arg2, arg3, arg4)
@@ -103,13 +104,13 @@ func (m *MockOrderStore) GetByParty(arg0 context.Context, arg1 string, arg2, arg
 	return ret0, ret1
 }
 
-// GetByParty indicates an expected call of GetByParty
+// GetByParty indicates an expected call of GetByParty.
 func (mr *MockOrderStoreMockRecorder) GetByParty(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByParty", reflect.TypeOf((*MockOrderStore)(nil).GetByParty), arg0, arg1, arg2, arg3, arg4)
 }
 
-// GetByPartyAndID mocks base method
+// GetByPartyAndID mocks base method.
 func (m *MockOrderStore) GetByPartyAndID(arg0 context.Context, arg1, arg2 string) (*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByPartyAndID", arg0, arg1, arg2)
@@ -118,13 +119,13 @@ func (m *MockOrderStore) GetByPartyAndID(arg0 context.Context, arg1, arg2 string
 	return ret0, ret1
 }
 
-// GetByPartyAndID indicates an expected call of GetByPartyAndID
+// GetByPartyAndID indicates an expected call of GetByPartyAndID.
 func (mr *MockOrderStoreMockRecorder) GetByPartyAndID(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPartyAndID", reflect.TypeOf((*MockOrderStore)(nil).GetByPartyAndID), arg0, arg1, arg2)
 }
 
-// GetByReference mocks base method
+// GetByReference mocks base method.
 func (m *MockOrderStore) GetByReference(arg0 context.Context, arg1 string) (*vega.Order, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByReference", arg0, arg1)
@@ -133,13 +134,13 @@ func (m *MockOrderStore) GetByReference(arg0 context.Context, arg1 string) (*veg
 	return ret0, ret1
 }
 
-// GetByReference indicates an expected call of GetByReference
+// GetByReference indicates an expected call of GetByReference.
 func (mr *MockOrderStoreMockRecorder) GetByReference(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByReference", reflect.TypeOf((*MockOrderStore)(nil).GetByReference), arg0, arg1)
 }
 
-// Subscribe mocks base method
+// Subscribe mocks base method.
 func (m *MockOrderStore) Subscribe(arg0 chan<- []vega.Order) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
@@ -147,13 +148,13 @@ func (m *MockOrderStore) Subscribe(arg0 chan<- []vega.Order) uint64 {
 	return ret0
 }
 
-// Subscribe indicates an expected call of Subscribe
+// Subscribe indicates an expected call of Subscribe.
 func (mr *MockOrderStoreMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockOrderStore)(nil).Subscribe), arg0)
 }
 
-// Unsubscribe mocks base method
+// Unsubscribe mocks base method.
 func (m *MockOrderStore) Unsubscribe(arg0 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unsubscribe", arg0)
@@ -161,7 +162,7 @@ func (m *MockOrderStore) Unsubscribe(arg0 uint64) error {
 	return ret0
 }
 
-// Unsubscribe indicates an expected call of Unsubscribe
+// Unsubscribe indicates an expected call of Unsubscribe.
 func (mr *MockOrderStoreMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockOrderStore)(nil).Unsubscribe), arg0)

@@ -5,38 +5,39 @@
 package mocks
 
 import (
-	storage "code.vegaprotocol.io/data-node/storage"
-	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 	time "time"
+
+	storage "code.vegaprotocol.io/data-node/storage"
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockCandleStore is a mock of CandleStore interface
+// MockCandleStore is a mock of CandleStore interface.
 type MockCandleStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockCandleStoreMockRecorder
 }
 
-// MockCandleStoreMockRecorder is the mock recorder for MockCandleStore
+// MockCandleStoreMockRecorder is the mock recorder for MockCandleStore.
 type MockCandleStoreMockRecorder struct {
 	mock *MockCandleStore
 }
 
-// NewMockCandleStore creates a new mock instance
+// NewMockCandleStore creates a new mock instance.
 func NewMockCandleStore(ctrl *gomock.Controller) *MockCandleStore {
 	mock := &MockCandleStore{ctrl: ctrl}
 	mock.recorder = &MockCandleStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCandleStore) EXPECT() *MockCandleStoreMockRecorder {
 	return m.recorder
 }
 
-// GetCandles mocks base method
+// GetCandles mocks base method.
 func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 time.Time, arg3 vega.Interval) ([]*vega.Candle, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCandles", arg0, arg1, arg2, arg3)
@@ -45,13 +46,13 @@ func (m *MockCandleStore) GetCandles(arg0 context.Context, arg1 string, arg2 tim
 	return ret0, ret1
 }
 
-// GetCandles indicates an expected call of GetCandles
+// GetCandles indicates an expected call of GetCandles.
 func (mr *MockCandleStoreMockRecorder) GetCandles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCandles", reflect.TypeOf((*MockCandleStore)(nil).GetCandles), arg0, arg1, arg2, arg3)
 }
 
-// Subscribe mocks base method
+// Subscribe mocks base method.
 func (m *MockCandleStore) Subscribe(arg0 *storage.InternalTransport) uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Subscribe", arg0)
@@ -59,13 +60,13 @@ func (m *MockCandleStore) Subscribe(arg0 *storage.InternalTransport) uint64 {
 	return ret0
 }
 
-// Subscribe indicates an expected call of Subscribe
+// Subscribe indicates an expected call of Subscribe.
 func (mr *MockCandleStoreMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockCandleStore)(nil).Subscribe), arg0)
 }
 
-// Unsubscribe mocks base method
+// Unsubscribe mocks base method.
 func (m *MockCandleStore) Unsubscribe(arg0 uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Unsubscribe", arg0)
@@ -73,7 +74,7 @@ func (m *MockCandleStore) Unsubscribe(arg0 uint64) error {
 	return ret0
 }
 
-// Unsubscribe indicates an expected call of Unsubscribe
+// Unsubscribe indicates an expected call of Unsubscribe.
 func (mr *MockCandleStoreMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockCandleStore)(nil).Unsubscribe), arg0)

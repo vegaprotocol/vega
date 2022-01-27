@@ -12,6 +12,7 @@ import (
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
 	types "code.vegaprotocol.io/protos/vega"
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
+	"google.golang.org/grpc"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -149,7 +150,7 @@ func TestNewResolverRoot_Resolver(t *testing.T) {
 
 	root.tradingDataClient.EXPECT().AssetByID(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&protoapi.AssetByIDResponse{Asset: &types.Asset{}}, nil)
 
-	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest) (*protoapi.MarketByIDResponse, error) {
+	root.tradingDataClient.EXPECT().MarketByID(gomock.Any(), gomock.Any()).Times(len(markets)).DoAndReturn(func(_ context.Context, req *protoapi.MarketByIDRequest, _ ...grpc.CallOption) (*protoapi.MarketByIDResponse, error) {
 		m, ok := markets[req.MarketId]
 		assert.True(t, ok)
 		if m == nil {

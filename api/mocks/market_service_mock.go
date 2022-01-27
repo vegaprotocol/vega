@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockMarketService is a mock of MarketService interface
+// MockMarketService is a mock of MarketService interface.
 type MockMarketService struct {
 	ctrl     *gomock.Controller
 	recorder *MockMarketServiceMockRecorder
 }
 
-// MockMarketServiceMockRecorder is the mock recorder for MockMarketService
+// MockMarketServiceMockRecorder is the mock recorder for MockMarketService.
 type MockMarketServiceMockRecorder struct {
 	mock *MockMarketService
 }
 
-// NewMockMarketService creates a new mock instance
+// NewMockMarketService creates a new mock instance.
 func NewMockMarketService(ctrl *gomock.Controller) *MockMarketService {
 	mock := &MockMarketService{ctrl: ctrl}
 	mock.recorder = &MockMarketServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockMarketService) EXPECT() *MockMarketServiceMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
+// GetAll mocks base method.
 func (m *MockMarketService) GetAll(arg0 context.Context) ([]*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
@@ -43,13 +44,13 @@ func (m *MockMarketService) GetAll(arg0 context.Context) ([]*vega.Market, error)
 	return ret0, ret1
 }
 
-// GetAll indicates an expected call of GetAll
+// GetAll indicates an expected call of GetAll.
 func (mr *MockMarketServiceMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketService)(nil).GetAll), arg0)
 }
 
-// GetByID mocks base method
+// GetByID mocks base method.
 func (m *MockMarketService) GetByID(arg0 context.Context, arg1 string) (*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
@@ -58,13 +59,13 @@ func (m *MockMarketService) GetByID(arg0 context.Context, arg1 string) (*vega.Ma
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID
+// GetByID indicates an expected call of GetByID.
 func (mr *MockMarketServiceMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketService)(nil).GetByID), arg0, arg1)
 }
 
-// GetDepth mocks base method
+// GetDepth mocks base method.
 func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string, arg2 uint64) (*vega.MarketDepth, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDepth", arg0, arg1, arg2)
@@ -73,13 +74,13 @@ func (m *MockMarketService) GetDepth(arg0 context.Context, arg1 string, arg2 uin
 	return ret0, ret1
 }
 
-// GetDepth indicates an expected call of GetDepth
+// GetDepth indicates an expected call of GetDepth.
 func (mr *MockMarketServiceMockRecorder) GetDepth(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDepth", reflect.TypeOf((*MockMarketService)(nil).GetDepth), arg0, arg1, arg2)
 }
 
-// GetMarketDataByID mocks base method
+// GetMarketDataByID mocks base method.
 func (m *MockMarketService) GetMarketDataByID(arg0 string) (vega.MarketData, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketDataByID", arg0)
@@ -88,13 +89,13 @@ func (m *MockMarketService) GetMarketDataByID(arg0 string) (vega.MarketData, err
 	return ret0, ret1
 }
 
-// GetMarketDataByID indicates an expected call of GetMarketDataByID
+// GetMarketDataByID indicates an expected call of GetMarketDataByID.
 func (mr *MockMarketServiceMockRecorder) GetMarketDataByID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDataByID", reflect.TypeOf((*MockMarketService)(nil).GetMarketDataByID), arg0)
 }
 
-// GetMarketDataSubscribersCount mocks base method
+// GetMarketDataSubscribersCount mocks base method.
 func (m *MockMarketService) GetMarketDataSubscribersCount() int32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketDataSubscribersCount")
@@ -102,13 +103,13 @@ func (m *MockMarketService) GetMarketDataSubscribersCount() int32 {
 	return ret0
 }
 
-// GetMarketDataSubscribersCount indicates an expected call of GetMarketDataSubscribersCount
+// GetMarketDataSubscribersCount indicates an expected call of GetMarketDataSubscribersCount.
 func (mr *MockMarketServiceMockRecorder) GetMarketDataSubscribersCount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDataSubscribersCount", reflect.TypeOf((*MockMarketService)(nil).GetMarketDataSubscribersCount))
 }
 
-// GetMarketDepthSubscribersCount mocks base method
+// GetMarketDepthSubscribersCount mocks base method.
 func (m *MockMarketService) GetMarketDepthSubscribersCount() int32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketDepthSubscribersCount")
@@ -116,13 +117,13 @@ func (m *MockMarketService) GetMarketDepthSubscribersCount() int32 {
 	return ret0
 }
 
-// GetMarketDepthSubscribersCount indicates an expected call of GetMarketDepthSubscribersCount
+// GetMarketDepthSubscribersCount indicates an expected call of GetMarketDepthSubscribersCount.
 func (mr *MockMarketServiceMockRecorder) GetMarketDepthSubscribersCount() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketDepthSubscribersCount", reflect.TypeOf((*MockMarketService)(nil).GetMarketDepthSubscribersCount))
 }
 
-// GetMarketsData mocks base method
+// GetMarketsData mocks base method.
 func (m *MockMarketService) GetMarketsData() []vega.MarketData {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMarketsData")
@@ -130,13 +131,13 @@ func (m *MockMarketService) GetMarketsData() []vega.MarketData {
 	return ret0
 }
 
-// GetMarketsData indicates an expected call of GetMarketsData
+// GetMarketsData indicates an expected call of GetMarketsData.
 func (mr *MockMarketServiceMockRecorder) GetMarketsData() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMarketsData", reflect.TypeOf((*MockMarketService)(nil).GetMarketsData))
 }
 
-// ObserveDepth mocks base method
+// ObserveDepth mocks base method.
 func (m *MockMarketService) ObserveDepth(arg0 context.Context, arg1 int, arg2 string) (<-chan *vega.MarketDepth, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveDepth", arg0, arg1, arg2)
@@ -145,13 +146,13 @@ func (m *MockMarketService) ObserveDepth(arg0 context.Context, arg1 int, arg2 st
 	return ret0, ret1
 }
 
-// ObserveDepth indicates an expected call of ObserveDepth
+// ObserveDepth indicates an expected call of ObserveDepth.
 func (mr *MockMarketServiceMockRecorder) ObserveDepth(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDepth", reflect.TypeOf((*MockMarketService)(nil).ObserveDepth), arg0, arg1, arg2)
 }
 
-// ObserveDepthUpdates mocks base method
+// ObserveDepthUpdates mocks base method.
 func (m *MockMarketService) ObserveDepthUpdates(arg0 context.Context, arg1 int, arg2 string) (<-chan *vega.MarketDepthUpdate, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveDepthUpdates", arg0, arg1, arg2)
@@ -160,13 +161,13 @@ func (m *MockMarketService) ObserveDepthUpdates(arg0 context.Context, arg1 int, 
 	return ret0, ret1
 }
 
-// ObserveDepthUpdates indicates an expected call of ObserveDepthUpdates
+// ObserveDepthUpdates indicates an expected call of ObserveDepthUpdates.
 func (mr *MockMarketServiceMockRecorder) ObserveDepthUpdates(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveDepthUpdates", reflect.TypeOf((*MockMarketService)(nil).ObserveDepthUpdates), arg0, arg1, arg2)
 }
 
-// ObserveMarketsData mocks base method
+// ObserveMarketsData mocks base method.
 func (m *MockMarketService) ObserveMarketsData(arg0 context.Context, arg1 int, arg2 string) (<-chan []vega.MarketData, uint64) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ObserveMarketsData", arg0, arg1, arg2)
@@ -175,7 +176,7 @@ func (m *MockMarketService) ObserveMarketsData(arg0 context.Context, arg1 int, a
 	return ret0, ret1
 }
 
-// ObserveMarketsData indicates an expected call of ObserveMarketsData
+// ObserveMarketsData indicates an expected call of ObserveMarketsData.
 func (mr *MockMarketServiceMockRecorder) ObserveMarketsData(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObserveMarketsData", reflect.TypeOf((*MockMarketService)(nil).ObserveMarketsData), arg0, arg1, arg2)

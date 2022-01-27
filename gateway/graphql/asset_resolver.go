@@ -65,8 +65,8 @@ func (r *myAssetResolver) Decimals(ctx context.Context, obj *types.Asset) (int, 
 	return int(obj.Details.Decimals), nil
 }
 
-func (r *myAssetResolver) MinLpStake(ctx context.Context, obj *types.Asset) (string, error) {
-	return obj.Details.MinLpStake, nil
+func (r *myAssetResolver) Quantum(ctx context.Context, obj *types.Asset) (string, error) {
+	return obj.Details.Quantum, nil
 }
 
 func (r *myAssetResolver) Source(ctx context.Context, obj *types.Asset) (AssetSource, error) {

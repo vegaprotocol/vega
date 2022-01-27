@@ -5,35 +5,36 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockMarketStore is a mock of MarketStore interface
+// MockMarketStore is a mock of MarketStore interface.
 type MockMarketStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockMarketStoreMockRecorder
 }
 
-// MockMarketStoreMockRecorder is the mock recorder for MockMarketStore
+// MockMarketStoreMockRecorder is the mock recorder for MockMarketStore.
 type MockMarketStoreMockRecorder struct {
 	mock *MockMarketStore
 }
 
-// NewMockMarketStore creates a new mock instance
+// NewMockMarketStore creates a new mock instance.
 func NewMockMarketStore(ctrl *gomock.Controller) *MockMarketStore {
 	mock := &MockMarketStore{ctrl: ctrl}
 	mock.recorder = &MockMarketStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockMarketStore) EXPECT() *MockMarketStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
+// GetAll mocks base method.
 func (m *MockMarketStore) GetAll() ([]*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll")
@@ -42,13 +43,13 @@ func (m *MockMarketStore) GetAll() ([]*vega.Market, error) {
 	return ret0, ret1
 }
 
-// GetAll indicates an expected call of GetAll
+// GetAll indicates an expected call of GetAll.
 func (mr *MockMarketStoreMockRecorder) GetAll() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockMarketStore)(nil).GetAll))
 }
 
-// GetByID mocks base method
+// GetByID mocks base method.
 func (m *MockMarketStore) GetByID(arg0 string) (*vega.Market, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0)
@@ -57,13 +58,13 @@ func (m *MockMarketStore) GetByID(arg0 string) (*vega.Market, error) {
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID
+// GetByID indicates an expected call of GetByID.
 func (mr *MockMarketStoreMockRecorder) GetByID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockMarketStore)(nil).GetByID), arg0)
 }
 
-// Post mocks base method
+// Post mocks base method.
 func (m *MockMarketStore) Post(arg0 *vega.Market) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Post", arg0)
@@ -71,7 +72,7 @@ func (m *MockMarketStore) Post(arg0 *vega.Market) error {
 	return ret0
 }
 
-// Post indicates an expected call of Post
+// Post indicates an expected call of Post.
 func (mr *MockMarketStoreMockRecorder) Post(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Post", reflect.TypeOf((*MockMarketStore)(nil).Post), arg0)

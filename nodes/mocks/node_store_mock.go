@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	v1 "code.vegaprotocol.io/protos/data-node/api/v1"
 	vega "code.vegaprotocol.io/protos/vega"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockNodeStore is a mock of NodeStore interface
+// MockNodeStore is a mock of NodeStore interface.
 type MockNodeStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeStoreMockRecorder
 }
 
-// MockNodeStoreMockRecorder is the mock recorder for MockNodeStore
+// MockNodeStoreMockRecorder is the mock recorder for MockNodeStore.
 type MockNodeStoreMockRecorder struct {
 	mock *MockNodeStore
 }
 
-// NewMockNodeStore creates a new mock instance
+// NewMockNodeStore creates a new mock instance.
 func NewMockNodeStore(ctrl *gomock.Controller) *MockNodeStore {
 	mock := &MockNodeStore{ctrl: ctrl}
 	mock.recorder = &MockNodeStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockNodeStore) EXPECT() *MockNodeStoreMockRecorder {
 	return m.recorder
 }
 
-// GetAll mocks base method
+// GetAll mocks base method.
 func (m *MockNodeStore) GetAll(arg0 string) []*vega.Node {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAll", arg0)
@@ -42,13 +43,13 @@ func (m *MockNodeStore) GetAll(arg0 string) []*vega.Node {
 	return ret0
 }
 
-// GetAll indicates an expected call of GetAll
+// GetAll indicates an expected call of GetAll.
 func (mr *MockNodeStoreMockRecorder) GetAll(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockNodeStore)(nil).GetAll), arg0)
 }
 
-// GetAllPubKeyRotations mocks base method
+// GetAllPubKeyRotations mocks base method.
 func (m *MockNodeStore) GetAllPubKeyRotations() []*v1.KeyRotation {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllPubKeyRotations")
@@ -56,13 +57,13 @@ func (m *MockNodeStore) GetAllPubKeyRotations() []*v1.KeyRotation {
 	return ret0
 }
 
-// GetAllPubKeyRotations indicates an expected call of GetAllPubKeyRotations
+// GetAllPubKeyRotations indicates an expected call of GetAllPubKeyRotations.
 func (mr *MockNodeStoreMockRecorder) GetAllPubKeyRotations() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPubKeyRotations", reflect.TypeOf((*MockNodeStore)(nil).GetAllPubKeyRotations))
 }
 
-// GetByID mocks base method
+// GetByID mocks base method.
 func (m *MockNodeStore) GetByID(arg0, arg1 string) (*vega.Node, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByID", arg0, arg1)
@@ -71,13 +72,13 @@ func (m *MockNodeStore) GetByID(arg0, arg1 string) (*vega.Node, error) {
 	return ret0, ret1
 }
 
-// GetByID indicates an expected call of GetByID
+// GetByID indicates an expected call of GetByID.
 func (mr *MockNodeStoreMockRecorder) GetByID(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockNodeStore)(nil).GetByID), arg0, arg1)
 }
 
-// GetPubKeyRotationsPerNode mocks base method
+// GetPubKeyRotationsPerNode mocks base method.
 func (m *MockNodeStore) GetPubKeyRotationsPerNode(arg0 string) []*v1.KeyRotation {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPubKeyRotationsPerNode", arg0)
@@ -85,13 +86,13 @@ func (m *MockNodeStore) GetPubKeyRotationsPerNode(arg0 string) []*v1.KeyRotation
 	return ret0
 }
 
-// GetPubKeyRotationsPerNode indicates an expected call of GetPubKeyRotationsPerNode
+// GetPubKeyRotationsPerNode indicates an expected call of GetPubKeyRotationsPerNode.
 func (mr *MockNodeStoreMockRecorder) GetPubKeyRotationsPerNode(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyRotationsPerNode", reflect.TypeOf((*MockNodeStore)(nil).GetPubKeyRotationsPerNode), arg0)
 }
 
-// GetStakedTotal mocks base method
+// GetStakedTotal mocks base method.
 func (m *MockNodeStore) GetStakedTotal(arg0 string) string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStakedTotal", arg0)
@@ -99,13 +100,13 @@ func (m *MockNodeStore) GetStakedTotal(arg0 string) string {
 	return ret0
 }
 
-// GetStakedTotal indicates an expected call of GetStakedTotal
+// GetStakedTotal indicates an expected call of GetStakedTotal.
 func (mr *MockNodeStoreMockRecorder) GetStakedTotal(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStakedTotal", reflect.TypeOf((*MockNodeStore)(nil).GetStakedTotal), arg0)
 }
 
-// GetTotalNodesNumber mocks base method
+// GetTotalNodesNumber mocks base method.
 func (m *MockNodeStore) GetTotalNodesNumber() int {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTotalNodesNumber")
@@ -113,13 +114,13 @@ func (m *MockNodeStore) GetTotalNodesNumber() int {
 	return ret0
 }
 
-// GetTotalNodesNumber indicates an expected call of GetTotalNodesNumber
+// GetTotalNodesNumber indicates an expected call of GetTotalNodesNumber.
 func (mr *MockNodeStoreMockRecorder) GetTotalNodesNumber() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalNodesNumber", reflect.TypeOf((*MockNodeStore)(nil).GetTotalNodesNumber))
 }
 
-// GetValidatingNodesNumber mocks base method
+// GetValidatingNodesNumber mocks base method.
 func (m *MockNodeStore) GetValidatingNodesNumber() int {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetValidatingNodesNumber")
@@ -127,7 +128,7 @@ func (m *MockNodeStore) GetValidatingNodesNumber() int {
 	return ret0
 }
 
-// GetValidatingNodesNumber indicates an expected call of GetValidatingNodesNumber
+// GetValidatingNodesNumber indicates an expected call of GetValidatingNodesNumber.
 func (mr *MockNodeStoreMockRecorder) GetValidatingNodesNumber() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatingNodesNumber", reflect.TypeOf((*MockNodeStore)(nil).GetValidatingNodesNumber))

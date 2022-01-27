@@ -5,36 +5,37 @@
 package mocks
 
 import (
-	vega "code.vegaprotocol.io/protos/vega"
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	vega "code.vegaprotocol.io/protos/vega"
+	gomock "github.com/golang/mock/gomock"
 )
 
-// MockFeeService is a mock of FeeService interface
+// MockFeeService is a mock of FeeService interface.
 type MockFeeService struct {
 	ctrl     *gomock.Controller
 	recorder *MockFeeServiceMockRecorder
 }
 
-// MockFeeServiceMockRecorder is the mock recorder for MockFeeService
+// MockFeeServiceMockRecorder is the mock recorder for MockFeeService.
 type MockFeeServiceMockRecorder struct {
 	mock *MockFeeService
 }
 
-// NewMockFeeService creates a new mock instance
+// NewMockFeeService creates a new mock instance.
 func NewMockFeeService(ctrl *gomock.Controller) *MockFeeService {
 	mock := &MockFeeService{ctrl: ctrl}
 	mock.recorder = &MockFeeServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFeeService) EXPECT() *MockFeeServiceMockRecorder {
 	return m.recorder
 }
 
-// EstimateFee mocks base method
+// EstimateFee mocks base method.
 func (m *MockFeeService) EstimateFee(arg0 context.Context, arg1 *vega.Order) (*vega.Fee, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EstimateFee", arg0, arg1)
@@ -43,7 +44,7 @@ func (m *MockFeeService) EstimateFee(arg0 context.Context, arg1 *vega.Order) (*v
 	return ret0, ret1
 }
 
-// EstimateFee indicates an expected call of EstimateFee
+// EstimateFee indicates an expected call of EstimateFee.
 func (mr *MockFeeServiceMockRecorder) EstimateFee(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EstimateFee", reflect.TypeOf((*MockFeeService)(nil).EstimateFee), arg0, arg1)
