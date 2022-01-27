@@ -316,8 +316,7 @@ func (e *Engine) initialiseTree() error {
 	// Either create the first empty tree, or load the latest tree we have in the store
 	if err := e.loadTree(); err != nil {
 		e.log.Error("Failed to load AVL version", logging.Error(err))
-		// do not return error, this could simply indicate we've created a new DB
-		// TODO is the above true, I don't think it is
+		return err
 	}
 	return nil
 }
