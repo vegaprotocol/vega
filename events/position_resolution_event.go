@@ -65,32 +65,29 @@ func (p PosRes) MarketProto() eventspb.MarketEvent {
 
 func (p PosRes) StreamMessage() *eventspb.BusEvent {
 	pr := p.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      p.eventID(),
-		Block:   p.TraceID(),
-		ChainId: p.ChainID(),
-		Type:    p.et.ToProto(),
-		Event: &eventspb.BusEvent_PositionResolution{
-			PositionResolution: &pr,
-		},
+
+	busEvent := newBusEventFromBase(p.Base)
+	busEvent.Event = &eventspb.BusEvent_PositionResolution{
+		PositionResolution: &pr,
 	}
+
+	return busEvent
 }
 
 func (p PosRes) StreamMarketMessage() *eventspb.BusEvent {
 	msg := p.MarketProto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      p.eventID(),
-		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
-		Event: &eventspb.BusEvent_Market{
-			Market: &msg,
-		},
+
+	busEvent := newBusEventFromBase(p.Base)
+	busEvent.Type = eventspb.BusEventType_BUS_EVENT_TYPE_MARKET
+	busEvent.Event = &eventspb.BusEvent_Market{
+		Market: &msg,
 	}
+
+	return busEvent
 }
 
 func PositionResolutionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *PosRes {
-	base := newBaseFromStream(ctx, PositionResolution, be)
+	base := newBaseFromBusEvent(ctx, PositionResolution, be)
 	mp, _ := num.UintFromString(be.GetPositionResolution().GetMarkPrice(), 10)
 	return &PosRes{
 		Base:       base,

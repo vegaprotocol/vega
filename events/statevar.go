@@ -33,16 +33,12 @@ func (sv StateVar) Proto() eventspb.StateVar {
 
 func (sv StateVar) StreamMessage() *eventspb.BusEvent {
 	p := sv.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      sv.eventID(),
-		Block:   sv.TraceID(),
-		ChainId: sv.ChainID(),
-		Type:    sv.et.ToProto(),
-		Event: &eventspb.BusEvent_StateVar{
-			StateVar: &p,
-		},
+	busEvent := newBusEventFromBase(sv.Base)
+	busEvent.Event = &eventspb.BusEvent_StateVar{
+		StateVar: &p,
 	}
+
+	return busEvent
 }
 
 func StateVarEventFromStream(ctx context.Context, be *eventspb.BusEvent) *StateVar {
@@ -52,7 +48,7 @@ func StateVarEventFromStream(ctx context.Context, be *eventspb.BusEvent) *StateV
 	}
 
 	return &StateVar{
-		Base:    newBaseFromStream(ctx, StateVarEvent, be),
+		Base:    newBaseFromBusEvent(ctx, StateVarEvent, be),
 		ID:      event.GetId(),
 		EventID: event.GetEventId(),
 		State:   event.GetState(),

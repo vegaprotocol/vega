@@ -45,6 +45,8 @@ type Service struct {
 	ass             *assetsSnapshotState
 	keyToSerialiser map[string]func() ([]byte, error)
 
+	ethToVega map[string]string
+
 	isValidator bool
 }
 
@@ -73,6 +75,7 @@ func New(
 		},
 		keyToSerialiser: map[string]func() ([]byte, error){},
 		isValidator:     isValidator,
+		ethToVega:       map[string]string{},
 	}
 
 	s.keyToSerialiser[activeKey] = s.serialiseActive
@@ -109,12 +112,22 @@ func (s *Service) Enable(assetID string) error {
 		s.amu.Lock()
 		defer s.amu.Unlock()
 		s.assets[assetID] = asset
+		if asset.IsERC20() {
+			eth, _ := asset.ERC20()
+			s.ethToVega[eth.ProtoAsset().GetDetails().GetErc20().GetContractAddress()] = assetID
+		}
 		delete(s.pendingAssets, assetID)
 		s.ass.changed[activeKey] = true
 		s.ass.changed[pendingKey] = true
 		return nil
 	}
 	return ErrAssetInvalid
+}
+
+func (s *Service) GetVegaIDFromEthereumAddress(address string) string {
+	s.amu.Lock()
+	defer s.amu.Unlock()
+	return s.ethToVega[address]
 }
 
 func (s *Service) IsEnabled(assetID string) bool {

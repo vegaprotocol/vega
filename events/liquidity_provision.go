@@ -42,21 +42,17 @@ func (p LiquidityProvision) Proto() *proto.LiquidityProvision {
 }
 
 func (p LiquidityProvision) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      p.eventID(),
-		Block:   p.TraceID(),
-		ChainId: p.ChainID(),
-		Type:    p.et.ToProto(),
-		Event: &eventspb.BusEvent_LiquidityProvision{
-			LiquidityProvision: p.p,
-		},
+	busEvent := newBusEventFromBase(p.Base)
+	busEvent.Event = &eventspb.BusEvent_LiquidityProvision{
+		LiquidityProvision: p.p,
 	}
+
+	return busEvent
 }
 
 func LiquidityProvisionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *LiquidityProvision {
 	order := &LiquidityProvision{
-		Base: newBaseFromStream(ctx, LiquidityProvisionEvent, be),
+		Base: newBaseFromBusEvent(ctx, LiquidityProvisionEvent, be),
 		p:    be.GetLiquidityProvision(),
 	}
 	return order

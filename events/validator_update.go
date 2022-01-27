@@ -112,16 +112,12 @@ func (vu ValidatorUpdate) Proto() eventspb.ValidatorUpdate {
 func (vu ValidatorUpdate) StreamMessage() *eventspb.BusEvent {
 	vuproto := vu.Proto()
 
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      vu.eventID(),
-		Block:   vu.TraceID(),
-		ChainId: vu.ChainID(),
-		Type:    vu.et.ToProto(),
-		Event: &eventspb.BusEvent_ValidatorUpdate{
-			ValidatorUpdate: &vuproto,
-		},
+	busEvent := newBusEventFromBase(vu.Base)
+	busEvent.Event = &eventspb.BusEvent_ValidatorUpdate{
+		ValidatorUpdate: &vuproto,
 	}
+
+	return busEvent
 }
 
 func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) *ValidatorUpdate {
@@ -131,7 +127,7 @@ func ValidatorUpdateEventFromStream(ctx context.Context, be *eventspb.BusEvent) 
 	}
 
 	return &ValidatorUpdate{
-		Base:            newBaseFromStream(ctx, ValidatorUpdateEvent, be),
+		Base:            newBaseFromBusEvent(ctx, ValidatorUpdateEvent, be),
 		nodeID:          event.GetNodeId(),
 		vegaPubKey:      event.GetVegaPubKey(),
 		vegaPubKeyIndex: event.GetVegaPubKeyIndex(),

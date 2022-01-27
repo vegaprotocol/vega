@@ -36,16 +36,11 @@ func (db DelegationBalance) Proto() eventspb.DelegationBalanceEvent {
 
 func (db DelegationBalance) StreamMessage() *eventspb.BusEvent {
 	p := db.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      db.eventID(),
-		Block:   db.TraceID(),
-		ChainId: db.ChainID(),
-		Type:    db.et.ToProto(),
-		Event: &eventspb.BusEvent_DelegationBalance{
-			DelegationBalance: &p,
-		},
+	busEvent := newBusEventFromBase(db.Base)
+	busEvent.Event = &eventspb.BusEvent_DelegationBalance{
+		DelegationBalance: &p,
 	}
+	return busEvent
 }
 
 func DelegationBalanceEventFromStream(ctx context.Context, be *eventspb.BusEvent) *DelegationBalance {
@@ -60,7 +55,7 @@ func DelegationBalanceEventFromStream(ctx context.Context, be *eventspb.BusEvent
 	}
 
 	return &DelegationBalance{
-		Base:     newBaseFromStream(ctx, DelegationBalanceEvent, be),
+		Base:     newBaseFromBusEvent(ctx, DelegationBalanceEvent, be),
 		Party:    event.GetParty(),
 		NodeID:   event.GetNodeId(),
 		Amount:   amt,

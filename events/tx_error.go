@@ -85,21 +85,17 @@ func (t TxErr) Proto() eventspb.TxErrorEvent {
 }
 
 func (t TxErr) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      t.eventID(),
-		Block:   t.TraceID(),
-		ChainId: t.ChainID(),
-		Type:    t.et.ToProto(),
-		Event: &eventspb.BusEvent_TxErrEvent{
-			TxErrEvent: t.evt,
-		},
+	busEvent := newBusEventFromBase(t.Base)
+	busEvent.Event = &eventspb.BusEvent_TxErrEvent{
+		TxErrEvent: t.evt,
 	}
+
+	return busEvent
 }
 
 func TxErrEventFromStream(ctx context.Context, be *eventspb.BusEvent) *TxErr {
 	return &TxErr{
-		Base: newBaseFromStream(ctx, TxErrEvent, be),
+		Base: newBaseFromBusEvent(ctx, TxErrEvent, be),
 		evt:  be.GetTxErrEvent(),
 	}
 }

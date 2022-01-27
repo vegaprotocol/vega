@@ -43,6 +43,7 @@ type Base struct {
 	ctx     context.Context
 	traceID string
 	chainID string
+	txHash  string
 	blockNr int64
 	seq     uint64
 	et      Type
@@ -54,6 +55,7 @@ type Event interface {
 	Type() Type
 	Context() context.Context
 	TraceID() string
+	TxHash() string
 	ChainID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
@@ -252,10 +254,12 @@ func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := vgcontext.TraceIDFromContext(ctx)
 	cID, _ := vgcontext.ChainIDFromContext(ctx)
 	h, _ := vgcontext.BlockHeightFromContext(ctx)
+	txHash, _ := vgcontext.TxHashFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
 		chainID: cID,
+		txHash:  txHash,
 		blockNr: h,
 		et:      t,
 	}
@@ -268,6 +272,10 @@ func (b Base) TraceID() string {
 
 func (b Base) ChainID() string {
 	return b.chainID
+}
+
+func (b Base) TxHash() string {
+	return b.txHash
 }
 
 func (b *Base) SetSequenceID(s uint64) {
@@ -372,14 +380,29 @@ func (t Type) ToProto() eventspb.BusEventType {
 	return pt
 }
 
-func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
+func newBusEventFromBase(base *Base) *eventspb.BusEvent {
+	event := &eventspb.BusEvent{
+		Version: eventspb.Version,
+		Id:      base.eventID(),
+		Type:    base.Type().ToProto(),
+		Block:   base.TraceID(),
+		ChainId: base.ChainID(),
+		TxHash:  base.TxHash(),
+	}
+
+	return event
+}
+
+func newBaseFromBusEvent(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
 	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
 	evtCtx = vgcontext.WithChainID(evtCtx, be.ChainId)
+	evtCtx = vgcontext.WithTxHash(evtCtx, be.TxHash)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
 		traceID: be.Block,
 		chainID: be.ChainId,
+		txHash:  be.TxHash,
 		blockNr: blockNr,
 		seq:     seq,
 		et:      t,

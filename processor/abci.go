@@ -806,6 +806,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	}
 
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
+
 	return ctx, resp
 }
 

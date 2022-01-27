@@ -12,6 +12,8 @@
 - [4508](https://github.com/vegaprotocol/vega/pull/4508) - Disallow negative offset for pegged orders
 - [4465](https://github.com/vegaprotocol/vega/pull/4465) - Update to tendermint `v0.35.0`
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add support for decimal places specific to markets. This means market price values and position events can have different values. Positions will be expressed in asset decimal places, market specific data events will list prices in market precision.
+- [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events  
+
 
 ### 🗑️ Deprecation
 
@@ -70,6 +72,7 @@
 - [4651](https://github.com/vegaprotocol/vega/pull/4651) - An array of fixes in the snapshot code path
 - [4658](https://github.com/vegaprotocol/vega/pull/4658) - Allow replaying a chain from zero when old snapshots exist
 - [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
+- [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
 
 ## 0.47.5
 *2022-01-20*

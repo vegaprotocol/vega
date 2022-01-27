@@ -1,7 +1,10 @@
 package abci
 
 import (
+	"encoding/hex"
 	"errors"
+
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/tendermint/tendermint/abci/types"
 )
@@ -141,6 +144,9 @@ func (app *App) DeliverTx(req types.RequestDeliverTx) (resp types.ResponseDelive
 			NewResponseDeliverTxError(AbciUnknownCommandError, errors.New("invalid vega command")), tx,
 		)
 	}
+
+	txHash := hex.EncodeToString(tx.Hash())
+	ctx = vgcontext.WithTxHash(ctx, txHash)
 
 	if err := fn(ctx, tx); err != nil {
 		return AddCommonDeliverTxEvents(
