@@ -89,7 +89,6 @@ func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.Submi
 	}
 
 	txHash, err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_SYNC)
-
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+
 	"github.com/tendermint/tendermint/crypto/tmhash"
 
 	"code.vegaprotocol.io/protos/commands"
