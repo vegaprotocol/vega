@@ -48,6 +48,7 @@ func (e *Engine) StartEthereumEngine(
 	forwarder ethereum.Forwarder,
 	config ethereum.Config,
 	ethCfg *types.EthereumConfig,
+	assets ethereum.Assets,
 ) error {
 	if e.log.IsDebug() {
 		e.log.Debug("Ethereum configuration has been loaded")
@@ -69,7 +70,7 @@ func (e *Engine) StartEthereumEngine(
 
 	// We just need one staking bridge.
 	stakingBridge := ethCfg.StakingBridges()[0]
-	filterer, err := ethereum.NewLogFilterer(ethLogger, client, ethCfg.CollateralBridge(), stakingBridge)
+	filterer, err := ethereum.NewLogFilterer(ethLogger, client, ethCfg.CollateralBridge(), stakingBridge, assets)
 	if err != nil {
 		return fmt.Errorf("couldn't create the log filterer: %w", err)
 	}
@@ -117,6 +118,7 @@ func (e *NoopEngine) StartEthereumEngine(
 	_ ethereum.Forwarder,
 	_ ethereum.Config,
 	_ *types.EthereumConfig,
+	_ ethereum.Assets,
 ) error {
 	if e.log.IsDebug() {
 		e.log.Debug("Starting Ethereum configuration is a no-op")

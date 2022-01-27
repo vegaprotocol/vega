@@ -22,7 +22,22 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 )
 
-const logFiltererLogger = "log-filterer"
+const (
+	logFiltererLogger = "log-filterer"
+
+	eventAssetListed    = "Asset_Listed"
+	eventAssetRemoved   = "Asset_Removed"
+	eventAssetDeposited = "Asset_Deposited"
+	eventAssetWithdrawn = "Asset_Withdrawn"
+	eventStakeDeposited = "Stake_Deposited"
+	eventStakeRemoved   = "Stake_Removed"
+)
+
+// Assets ...
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/evtforward/ethereum Assets
+type Assets interface {
+	GetVegaIDFromEthereumAddress(string) string
+}
 
 type OnEventFound func(*commandspb.ChainEvent)
 
@@ -46,9 +61,17 @@ type LogFilterer struct {
 	stakingBridgeABI      ethabi.ABI
 	stakingBridgeFilterer *staking.StakingFilterer
 	stakingBridge         types.EthereumContract
+
+	assets Assets
 }
 
-func NewLogFilterer(log *logging.Logger, ethClient Client, collateralBridge types.EthereumContract, stakingBridge types.EthereumContract) (*LogFilterer, error) {
+func NewLogFilterer(
+	log *logging.Logger,
+	ethClient Client,
+	collateralBridge types.EthereumContract,
+	stakingBridge types.EthereumContract,
+	assets Assets,
+) (*LogFilterer, error) {
 	l := log.Named(logFiltererLogger)
 
 	collateralBridgeFilterer, err := bridge.NewBridgeFilterer(collateralBridge.Address(), ethClient)
@@ -80,6 +103,7 @@ func NewLogFilterer(log *logging.Logger, ethClient Client, collateralBridge type
 		stakingBridgeABI:         stakingBridgeABI,
 		stakingBridgeFilterer:    stakingBridgeFilterer,
 		stakingBridge:            stakingBridge,
+		assets:                   assets,
 	}, nil
 }
 
@@ -162,10 +186,10 @@ func (f *LogFilterer) newCollateralBridgeQuery(startAt uint64, stopAt uint64) et
 			f.collateralBridge.Address(),
 		},
 		Topics: [][]ethcmn.Hash{{
-			f.collateralBridgeABI.Events["Asset_Deposited"].ID,
-			f.collateralBridgeABI.Events["Asset_Withdrawn"].ID,
-			f.collateralBridgeABI.Events["Asset_Listed"].ID,
-			f.collateralBridgeABI.Events["Asset_Removed"].ID,
+			f.collateralBridgeABI.Events[eventAssetDeposited].ID,
+			f.collateralBridgeABI.Events[eventAssetWithdrawn].ID,
+			f.collateralBridgeABI.Events[eventAssetListed].ID,
+			f.collateralBridgeABI.Events[eventAssetRemoved].ID,
 		}},
 	}
 	return query
@@ -179,8 +203,8 @@ func (f *LogFilterer) newStakingBridgeQuery(startAt uint64, stopAt uint64) eth.F
 			f.stakingBridge.Address(),
 		},
 		Topics: [][]ethcmn.Hash{{
-			f.stakingBridgeABI.Events["Stake_Deposited"].ID,
-			f.stakingBridgeABI.Events["Stake_Removed"].ID,
+			f.stakingBridgeABI.Events[eventStakeDeposited].ID,
+			f.stakingBridgeABI.Events[eventStakeRemoved].ID,
 		}},
 	}
 	return query
@@ -194,23 +218,23 @@ func (f *LogFilterer) newStakingBridgeQuery(startAt uint64, stopAt uint64) eth.F
 // Either way, this is a programming error.
 func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) *types.ChainEvent {
 	switch log.Topics[0] {
-	case f.collateralBridgeABI.Events["Asset_Deposited"].ID:
+	case f.collateralBridgeABI.Events[eventAssetDeposited].ID:
 		event, err := f.collateralBridgeFilterer.ParseAssetDeposited(log)
 		if err != nil {
 			f.log.Fatal("Couldn't parse AssetDeposited event", logging.Error(err))
 			return nil
 		}
 		f.debugAssetDeposited(event)
-		return toERC20Deposit(event)
-	case f.collateralBridgeABI.Events["Asset_Withdrawn"].ID:
+		return f.toERC20Deposit(event)
+	case f.collateralBridgeABI.Events[eventAssetWithdrawn].ID:
 		event, err := f.collateralBridgeFilterer.ParseAssetWithdrawn(log)
 		if err != nil {
 			f.log.Fatal("Couldn't parse AssetWithdrawn event", logging.Error(err))
 			return nil
 		}
 		f.debugAssetWithdrawn(event)
-		return toERC20Withdraw(event)
-	case f.collateralBridgeABI.Events["Asset_Listed"].ID:
+		return f.toERC20Withdraw(event)
+	case f.collateralBridgeABI.Events[eventAssetListed].ID:
 		event, err := f.collateralBridgeFilterer.ParseAssetListed(log)
 		if err != nil {
 			f.log.Fatal("Couldn't parse AssetListed event", logging.Error(err))
@@ -218,7 +242,7 @@ func (f *LogFilterer) toCollateralChainEvent(log ethtypes.Log) *types.ChainEvent
 		}
 		f.debugAssetListed(event)
 		return toERC20AssetList(event)
-	case f.collateralBridgeABI.Events["Asset_Removed"].ID:
+	case f.collateralBridgeABI.Events[eventAssetRemoved].ID:
 		event, err := f.collateralBridgeFilterer.ParseAssetRemoved(log)
 		if err != nil {
 			f.log.Fatal("Couldn't parse AssetRemoved event", logging.Error(err))
@@ -242,7 +266,7 @@ func (f *LogFilterer) debugAssetWithdrawn(event *bridge.BridgeAssetWithdrawn) {
 	}
 }
 
-func toERC20Withdraw(event *bridge.BridgeAssetWithdrawn) *commandspb.ChainEvent {
+func (f *LogFilterer) toERC20Withdraw(event *bridge.BridgeAssetWithdrawn) *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
 		TxId: event.Raw.TxHash.Hex(),
 		Event: &commandspb.ChainEvent_Erc20{
@@ -251,7 +275,7 @@ func toERC20Withdraw(event *bridge.BridgeAssetWithdrawn) *commandspb.ChainEvent 
 				Block: event.Raw.BlockNumber,
 				Action: &vgproto.ERC20Event_Withdrawal{
 					Withdrawal: &vgproto.ERC20Withdrawal{
-						VegaAssetId:           event.AssetSource.Hex(),
+						VegaAssetId:           f.assets.GetVegaIDFromEthereumAddress(event.AssetSource.Hex()),
 						TargetEthereumAddress: event.UserAddress.Hex(),
 						ReferenceNonce:        event.Nonce.String(),
 					},
@@ -272,7 +296,7 @@ func (f *LogFilterer) debugAssetDeposited(event *bridge.BridgeAssetDeposited) {
 	}
 }
 
-func toERC20Deposit(event *bridge.BridgeAssetDeposited) *commandspb.ChainEvent {
+func (f *LogFilterer) toERC20Deposit(event *bridge.BridgeAssetDeposited) *commandspb.ChainEvent {
 	return &commandspb.ChainEvent{
 		TxId: event.Raw.TxHash.Hex(),
 		Event: &commandspb.ChainEvent_Erc20{
@@ -281,7 +305,7 @@ func toERC20Deposit(event *bridge.BridgeAssetDeposited) *commandspb.ChainEvent {
 				Block: event.Raw.BlockNumber,
 				Action: &vgproto.ERC20Event_Deposit{
 					Deposit: &vgproto.ERC20Deposit{
-						VegaAssetId:           event.AssetSource.Hex(),
+						VegaAssetId:           f.assets.GetVegaIDFromEthereumAddress(event.AssetSource.Hex()),
 						SourceEthereumAddress: event.UserAddress.Hex(),
 						TargetPartyId:         hex.EncodeToString(event.VegaPublicKey[:]),
 						Amount:                event.Amount.String(),
@@ -352,7 +376,7 @@ func toERC20AssetDelist(event *bridge.BridgeAssetRemoved) *commandspb.ChainEvent
 // Either way, this is a programming error.
 func (f *LogFilterer) toStakingChainEvent(log ethtypes.Log, blockTime uint64) *types.ChainEvent {
 	switch log.Topics[0] {
-	case f.stakingBridgeABI.Events["Stake_Deposited"].ID:
+	case f.stakingBridgeABI.Events[eventStakeDeposited].ID:
 		event, err := f.stakingBridgeFilterer.ParseStakeDeposited(log)
 		if err != nil {
 			f.log.Fatal("Couldn't parse StakeDeposited event", logging.Error(err))
@@ -361,7 +385,7 @@ func (f *LogFilterer) toStakingChainEvent(log ethtypes.Log, blockTime uint64) *t
 		f.debugStakeDeposited(event)
 
 		return toStakeDeposited(event, blockTime)
-	case f.stakingBridgeABI.Events["Stake_Removed"].ID:
+	case f.stakingBridgeABI.Events[eventStakeRemoved].ID:
 		event, err := f.stakingBridgeFilterer.ParseStakeRemoved(log)
 		if err != nil {
 			f.log.Fatal("Couldn't parse StakeRemoved event", logging.Error(err))

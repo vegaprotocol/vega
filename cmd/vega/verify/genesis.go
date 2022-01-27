@@ -30,7 +30,7 @@ type asset struct {
 	Symbol      string
 	Decimals    uint64
 	TotalSupply string `json:"total_supply"`
-	MinLPStake  string `json:"min_lp_stake"`
+	Quantum     string `json:"quantum"`
 	Source      *struct {
 		BuiltInAsset *struct {
 			MaxFaucetAmountMint string `json:"max_faucet_amount_mint"`
@@ -75,8 +75,8 @@ func verifyAssets(r *reporter, assets map[string]asset) {
 			r.Err("app_state.assets[%s].total_supply not a valid number: %s", k, v.TotalSupply)
 		}
 
-		if _, failed := num.UintFromString(v.MinLPStake, 10); failed {
-			r.Err("app_state.assets[%s].min_lp_stake not a valid number: %s", k, v.TotalSupply)
+		if _, failed := num.UintFromString(v.Quantum, 10); failed {
+			r.Err("app_state.assets[%s].quantum not a valid number: %s", k, v.TotalSupply)
 		}
 
 		switch {

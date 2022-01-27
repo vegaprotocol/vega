@@ -8,6 +8,6 @@ import (
 
 type EventForwarderEngine interface {
 	ReloadConf(evtforward.Config)
-	StartEthereumEngine(evtfwdeth.Client, evtfwdeth.Forwarder, evtfwdeth.Config, *types.EthereumConfig) error
+	StartEthereumEngine(evtfwdeth.Client, evtfwdeth.Forwarder, evtfwdeth.Config, *types.EthereumConfig, evtfwdeth.Assets) error
 	Stop()
 }

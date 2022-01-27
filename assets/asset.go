@@ -55,3 +55,7 @@ func (a *Asset) BuiltinAsset() (*builtin.Builtin, bool) {
 func (a *Asset) ToAssetType() *types.Asset {
 	return a.Type()
 }
+
+func (a *Asset) DecimalPlaces() uint64 {
+	return a.ToAssetType().Details.Decimals
+}

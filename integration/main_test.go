@@ -355,6 +355,9 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.DebugLPs(execsetup.broker, execsetup.log)
 		return nil
 	})
+	s.Step(`^debug orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
+		return steps.DebugVolumesForMarket(execsetup.log, execsetup.broker, mkt)
+	})
 
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
@@ -366,5 +369,18 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	})
 	s.Step(`^a total of "([0-9]+)" events should be emitted"$`, func(eventCounter int) error {
 		return steps.TotalOfEventsShouldBeEmitted(execsetup.broker, eventCounter)
+	})
+
+	// Decimal places steps
+	s.Step(`^the following assets are registered:$`, func(table *godog.Table) error {
+		return steps.RegisterAsset(table, execsetup.assetsEngine)
+	})
+	s.Step(`^set assets to strict$`, func() error {
+		execsetup.assetsEngine.SetStrict()
+		return nil
+	})
+	s.Step(`^set assets to permissive$`, func() error {
+		execsetup.assetsEngine.SetPermissive()
+		return nil
 	})
 }

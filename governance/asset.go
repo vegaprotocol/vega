@@ -36,9 +36,9 @@ func validateCommonAssetDetails(ad *types.AssetDetails) (proto.ProposalError, er
 			types.ErrInvalidAssetTotalSupplyZero
 	}
 
-	if ad.MinLpStake.IsZero() {
+	if ad.Quantum.IsZero() {
 		return proto.ProposalError_PROPOSAL_ERROR_INVALID_ASSET_DETAILS,
-			types.ErrInvalidAssetMinLPStakeZero
+			types.ErrInvalidAssetQuantumZero
 	}
 
 	return proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
