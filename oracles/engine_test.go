@@ -253,33 +253,6 @@ func spec(currency string, op oraclespb.Condition_Operator, price string) specBu
 	}
 }
 
-func internalTimestampSpec(op oraclespb.Condition_Operator, ts time.Time) specBundle {
-	spec, _ := oracles.NewOracleSpec(*oraclespb.NewOracleSpec(
-		[]string{
-			"0xCAFED00D",
-		},
-		[]*oraclespb.Filter{
-			{
-				Key: &oraclespb.PropertyKey{
-					Name: fmt.Sprintf("%s.timestamp", oracles.InternalOraclePrefix),
-					Type: oraclespb.PropertyKey_TYPE_TIMESTAMP,
-				},
-				Conditions: []*oraclespb.Condition{
-					{
-						Value:    fmt.Sprintf("%d", ts.UnixNano()),
-						Operator: op,
-					},
-				},
-			},
-		}),
-	)
-
-	return specBundle{
-		spec:       *spec,
-		subscriber: dummySubscriber{},
-	}
-}
-
 type dummySubscriber struct {
 	ReceivedData *oracles.OracleData
 }
