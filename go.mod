@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.47.1-0.20220128111949-392d892ef4b1
+	code.vegaprotocol.io/protos v0.47.1-0.20220128170212-3e19bdb23c3b
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220128163854-7eab67fa60d2
 	code.vegaprotocol.io/vegawallet v0.11.2-0.20220128170319-bd1b750459bb
