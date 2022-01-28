@@ -1362,9 +1362,11 @@ func testInvalidFreeformProposal(t *testing.T) {
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change: &types.ProposalTerms_NewFreeform{
 				NewFreeform: &types.NewFreeform{
-					URL:         "https://example.com",
-					Description: d + d + d,
-					Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+					Changes: &types.NewFreeformDetails{
+						URL:         "https://example.com",
+						Description: d + d + d,
+						Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+					},
 				},
 			},
 		},
@@ -1413,9 +1415,11 @@ func getTestEngine(t *testing.T) *tstEngine {
 func newValidFreeformTerms() *types.ProposalTerms_NewFreeform {
 	return &types.ProposalTerms_NewFreeform{
 		NewFreeform: &types.NewFreeform{
-			URL:         "https://example.com",
-			Description: "Test my freeform proposal",
-			Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+			Changes: &types.NewFreeformDetails{
+				URL:         "https://example.com",
+				Description: "Test my freeform proposal",
+				Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+			},
 		},
 	}
 }

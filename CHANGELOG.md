@@ -13,6 +13,7 @@
 - [4465](https://github.com/vegaprotocol/vega/pull/4465) - Update to tendermint `v0.35.0`
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add support for decimal places specific to markets. This means market price values and position events can have different values. Positions will be expressed in asset decimal places, market specific data events will list prices in market precision.
 - [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events  
+- [4670](https://github.com/vegaprotocol/vega/pull/4670) - Rework `freeform proposal` structure so that they align with other proposals
 
 
 ### 🗑️ Deprecation

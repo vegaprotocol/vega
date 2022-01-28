@@ -425,10 +425,14 @@ type ProposalTerms_NewAsset struct {
 	NewAsset *NewAsset
 }
 
-type NewFreeform struct {
+type NewFreeformDetails struct {
 	URL         string
 	Description string
 	Hash        string
+}
+
+type NewFreeform struct {
+	Changes *NewFreeformDetails
 }
 
 type ProposalTerms_NewFreeform struct {
@@ -680,11 +684,13 @@ func NewNewAssetFromProto(p *proto.ProposalTerms_NewAsset) *ProposalTerms_NewAss
 
 func NewNewFreeformFromProto(p *proto.ProposalTerms_NewFreeform) *ProposalTerms_NewFreeform {
 	var newFreeform *NewFreeform
-	if p.NewFreeform != nil {
+	if p.NewFreeform != nil && p.NewFreeform.Changes != nil {
 		newFreeform = &NewFreeform{
-			URL:         p.NewFreeform.Url,
-			Description: p.NewFreeform.Description,
-			Hash:        p.NewFreeform.Hash,
+			Changes: &NewFreeformDetails{
+				URL:         p.NewFreeform.Changes.Url,
+				Description: p.NewFreeform.Changes.Description,
+				Hash:        p.NewFreeform.Changes.Hash,
+			},
 		}
 	}
 
@@ -1271,9 +1277,11 @@ func (f ProposalTerms_NewFreeform) DeepClone() pterms {
 
 func (n NewFreeform) IntoProto() *proto.NewFreeform {
 	return &proto.NewFreeform{
-		Url:         n.URL,
-		Description: n.Description,
-		Hash:        n.Hash,
+		Changes: &proto.NewFreeformDetails{
+			Url:         n.Changes.URL,
+			Description: n.Changes.Description,
+			Hash:        n.Changes.Hash,
+		},
 	}
 }
 
@@ -1283,8 +1291,10 @@ func (n NewFreeform) String() string {
 
 func (n NewFreeform) DeepClone() *NewFreeform {
 	return &NewFreeform{
-		URL:         n.URL,
-		Description: n.Description,
-		Hash:        n.Hash,
+		Changes: &NewFreeformDetails{
+			URL:         n.Changes.URL,
+			Description: n.Changes.Description,
+			Hash:        n.Changes.Hash,
+		},
 	}
 }
