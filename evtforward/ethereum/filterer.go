@@ -10,6 +10,7 @@ import (
 	vgproto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/assets/erc20/bridge"
+	"code.vegaprotocol.io/vega/bridges/multisig"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/staking"
 	"code.vegaprotocol.io/vega/types"
@@ -31,6 +32,9 @@ const (
 	eventAssetWithdrawn = "Asset_Withdrawn"
 	eventStakeDeposited = "Stake_Deposited"
 	eventStakeRemoved   = "Stake_Removed"
+	eventSignerAdded    = "SignerAdded"
+	eventSignerRemoved  = "SignerRemoved"
+	eventThresholdSet   = "ThresholdSet"
 )
 
 // Assets ...
@@ -65,6 +69,10 @@ type LogFilterer struct {
 	vestingBridgeFilterer *staking.StakingFilterer
 	vestingBridge         types.EthereumContract
 
+	multiSigControlABI      ethabi.ABI
+	multiSigControlFilterer *multisig.MultiSigControlFilterer
+	multiSigControl         types.EthereumContract
+
 	assets Assets
 }
 
@@ -74,6 +82,7 @@ func NewLogFilterer(
 	collateralBridge types.EthereumContract,
 	stakingBridge types.EthereumContract,
 	vestingBridge types.EthereumContract,
+	multiSigControl types.EthereumContract,
 	assets Assets,
 ) (*LogFilterer, error) {
 	l := log.Named(logFiltererLogger)
@@ -103,6 +112,16 @@ func NewLogFilterer(
 		return nil, fmt.Errorf("couldn't create log filterer for vesting brigde: %w", err)
 	}
 
+	multiSigControlFilterer, err := multisig.NewMultiSigControlFilterer(multiSigControl.Address(), ethClient)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create log filterer for multisig control: %w", err)
+	}
+
+	multiSigControlABI, err := ethabi.JSON(strings.NewReader(multisig.MultiSigControlABI))
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load multisig control ABI: %w", err)
+	}
+
 	return &LogFilterer{
 		log:                      l,
 		client:                   ethClient,
@@ -115,6 +134,8 @@ func NewLogFilterer(
 		vestingBridgeFilterer:    vestingBridgeFilterer,
 		vestingBridge:            vestingBridge,
 		assets:                   assets,
+		multiSigControlFilterer:  multiSigControlFilterer,
+		multiSigControlABI:       multiSigControlABI,
 	}, nil
 }
 
@@ -190,6 +211,19 @@ func (f *LogFilterer) FilterVestingEvents(ctx context.Context, startAt, stopAt u
 	}
 }
 
+func (f *LogFilterer) FilterMultiSigControlEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound) {
+	query := f.newMultiSigControlQuery(startAt, stopAt)
+	logs := f.filterLogs(ctx, query)
+
+	var event *types.ChainEvent
+	blockTimesFetcher := NewBlockTimeFetcher(f.log, f.client)
+	for _, log := range logs {
+		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
+		event = f.toMultiSigControlChainEvent(log, blockTime)
+		cb(event)
+	}
+}
+
 func (f *LogFilterer) filterLogs(ctx context.Context, query eth.FilterQuery) []ethtypes.Log {
 	var logs []ethtypes.Log
 
@@ -250,6 +284,22 @@ func (f *LogFilterer) newVestingBridgeQuery(startAt uint64, stopAt uint64) eth.F
 			// the same ABI.
 			f.stakingBridgeABI.Events[eventStakeDeposited].ID,
 			f.stakingBridgeABI.Events[eventStakeRemoved].ID,
+		}},
+	}
+	return query
+}
+
+func (f *LogFilterer) newMultiSigControlQuery(startAt uint64, stopAt uint64) eth.FilterQuery {
+	query := eth.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(startAt),
+		ToBlock:   new(big.Int).SetUint64(stopAt),
+		Addresses: []ethcmn.Address{
+			f.multiSigControl.Address(),
+		},
+		Topics: [][]ethcmn.Hash{{
+			f.multiSigControlABI.Events[eventSignerAdded].ID,
+			f.multiSigControlABI.Events[eventSignerRemoved].ID,
+			f.multiSigControlABI.Events[eventThresholdSet].ID,
 		}},
 	}
 	return query
@@ -499,6 +549,126 @@ func toStakeRemoved(event *staking.StakingStakeRemoved, blockTime uint64) *comma
 						VegaPublicKey:   hex.EncodeToString(event.VegaPublicKey[:]),
 						Amount:          event.Amount.String(),
 						BlockTime:       int64(blockTime),
+					},
+				},
+			},
+		},
+	}
+}
+
+func (f *LogFilterer) toMultiSigControlChainEvent(log ethtypes.Log, blockTime uint64) *types.ChainEvent {
+	switch log.Topics[0] {
+	case f.multiSigControlABI.Events[eventSignerAdded].ID:
+		event, err := f.multiSigControlFilterer.ParseSignerAdded(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse SignerAdded event", logging.Error(err))
+			return nil
+		}
+		f.debugSignerAdded(event)
+
+		return toSignerAdded(event, blockTime)
+	case f.multiSigControlABI.Events[eventSignerRemoved].ID:
+		event, err := f.multiSigControlFilterer.ParseSignerRemoved(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse SignerRemoved event", logging.Error(err))
+			return nil
+		}
+		f.debugSignerRemoved(event)
+		return toSignerRemoved(event, blockTime)
+	case f.multiSigControlABI.Events[eventThresholdSet].ID:
+		event, err := f.multiSigControlFilterer.ParseThresholdSet(log)
+		if err != nil {
+			f.log.Fatal("Couldn't parse ThresholdSet event", logging.Error(err))
+			return nil
+		}
+		f.debugThresholdSet(event)
+		return toThresholdSet(event, blockTime)
+	default:
+		f.log.Fatal("Unsupported Ethereum log event", logging.String("event-id", log.Topics[0].String()))
+		return nil
+	}
+}
+
+func (f *LogFilterer) debugSignerAdded(event *multisig.MultiSigControlSignerAdded) {
+	if f.log.IsDebug() {
+		f.log.Debug("Found SignerAdded event",
+			logging.String("multisig-control-address", f.multiSigControl.HexAddress()),
+			logging.String("new-signer", event.NewSigner.Hex()),
+			logging.String("nonce", event.Nonce.String()),
+		)
+	}
+}
+
+func toSignerAdded(event *multisig.MultiSigControlSignerAdded, blockTime uint64) *commandspb.ChainEvent {
+	return &commandspb.ChainEvent{
+		TxId: event.Raw.TxHash.Hex(),
+		Event: &commandspb.ChainEvent_Erc20{
+			Erc20: &vgproto.ERC20Event{
+				Index: uint64(event.Raw.Index),
+				Block: event.Raw.BlockNumber,
+				Action: &vgproto.ERC20Event_SignerAdded{
+					SignerAdded: &vgproto.ERC20SignerAdded{
+						NewSigner: event.NewSigner.Hex(),
+						Nonce:     event.Nonce.String(),
+						BlockTime: int64(blockTime),
+					},
+				},
+			},
+		},
+	}
+}
+
+func (f *LogFilterer) debugSignerRemoved(event *multisig.MultiSigControlSignerRemoved) {
+	if f.log.IsDebug() {
+		f.log.Debug("Found SignerRemoved event",
+			logging.String("multisig-control-address", f.multiSigControl.HexAddress()),
+			logging.String("oldsigner", event.OldSigner.Hex()),
+			logging.String("nonce", event.Nonce.String()),
+		)
+	}
+}
+
+func toSignerRemoved(event *multisig.MultiSigControlSignerRemoved, blockTime uint64) *commandspb.ChainEvent {
+	return &commandspb.ChainEvent{
+		TxId: event.Raw.TxHash.Hex(),
+		Event: &commandspb.ChainEvent_Erc20{
+			Erc20: &vgproto.ERC20Event{
+				Index: uint64(event.Raw.Index),
+				Block: event.Raw.BlockNumber,
+				Action: &vgproto.ERC20Event_SignerRemoved{
+					SignerRemoved: &vgproto.ERC20SignerRemoved{
+						OldSigner: event.OldSigner.Hex(),
+						Nonce:     event.Nonce.String(),
+						BlockTime: int64(blockTime),
+					},
+				},
+			},
+		},
+	}
+}
+
+func (f *LogFilterer) debugThresholdSet(event *multisig.MultiSigControlThresholdSet) {
+	if f.log.IsDebug() {
+		f.log.Debug("Found SignerRemoved event",
+			logging.String("multisig-control-address", f.multiSigControl.HexAddress()),
+			logging.Uint16("new-threshold", event.NewThreshold),
+			logging.String("nonce", event.Nonce.String()),
+		)
+	}
+}
+
+func toThresholdSet(event *multisig.MultiSigControlThresholdSet, blockTime uint64) *commandspb.ChainEvent {
+	return &commandspb.ChainEvent{
+		TxId: event.Raw.TxHash.Hex(),
+		Event: &commandspb.ChainEvent_Erc20{
+			Erc20: &vgproto.ERC20Event{
+				Index: uint64(event.Raw.Index),
+				Block: event.Raw.BlockNumber,
+				Action: &vgproto.ERC20Event_ThresholdSet{
+					ThresholdSet: &vgproto.ERC20ThresholdSet{
+						NewThreshold: uint32(event.NewThreshold),
+						Nonce:        event.Nonce.String(),
+						BlockTime:    int64(blockTime),
 					},
 				},
 			},

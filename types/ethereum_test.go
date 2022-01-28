@@ -201,6 +201,10 @@ func validEthereumConfig() *proto.EthereumConfig {
 		CollateralBridgeContract: &proto.EthereumContractConfig{
 			Address: "0x1234",
 		},
+		MultisigControlContract: &proto.EthereumContractConfig{
+			Address:               "0x1234",
+			DeploymentBlockHeight: 789,
+		},
 		Confirmations: 3,
 		StakingBridgeContract: &proto.EthereumContractConfig{
 			Address:               "0x1234",

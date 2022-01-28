@@ -91,10 +91,6 @@ func (app *App) processChainEvent(
 			return err
 		}
 		return app.processChainEventERC20(ctx, ceErc, id, ce.TxId)
-	case *commandspb.ChainEvent_Btc:
-		return errors.New("BTC Event not implemented")
-	case *commandspb.ChainEvent_Validator:
-		return errors.New("validator Event not implemented")
 	default:
 		return ErrUnsupportedChainEvent
 	}
