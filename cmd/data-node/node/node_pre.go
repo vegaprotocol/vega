@@ -26,6 +26,7 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -129,6 +130,14 @@ func (l *NodeCommand) setupStorages() error {
 	}
 	if l.transferResponseStore, err = storage.NewTransferResponses(l.Log, l.conf.Storage); err != nil {
 		return err
+	}
+
+	if l.conf.SqlStore.Enabled {
+		sqls, err := sqlstore.InitialiseStorage(l.Log, l.conf.SqlStore)
+		if err != nil {
+			return fmt.Errorf("couldn't initialise sql storage: %w", err)
+		}
+		_ = sqls
 	}
 
 	st, err := storage.InitialiseStorage(l.vegaPaths)

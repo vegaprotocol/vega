@@ -14,9 +14,11 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/jackc/pgx/v4 v4.14.1
 	github.com/jessevdk/go-flags v1.4.0
 	github.com/mwitkow/go-proto-validators v0.3.2
 	github.com/pkg/errors v0.9.1
+	github.com/pressly/goose/v3 v3.5.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/cors v1.8.0
 	github.com/satori/go.uuid v1.2.0
@@ -55,6 +57,14 @@ require (
 	github.com/google/btree v1.0.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/holiman/uint256 v1.2.0 // indirect
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgconn v1.10.1 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.2.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/pgtype v1.9.1 // indirect
+	github.com/jackc/puddle v1.2.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
@@ -84,7 +94,7 @@ require (
 	golang.org/x/exp v0.0.0-20200331195152-e8c3332aa8e5 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.0 // indirect
-	golang.org/x/net v0.0.0-20211005001312-d4b1ae081e3b // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/sys v0.0.0-20211013075003-97ac67df715c // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/text v0.3.7 // indirect

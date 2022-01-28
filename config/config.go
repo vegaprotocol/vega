@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/data-node/parties"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/sqlstore"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
 	"code.vegaprotocol.io/data-node/trades"
@@ -52,6 +53,7 @@ type Config struct {
 	Parties           parties.Config     `group:"Parties" namespace:"parties"`
 	Risk              risk.Config        `group:"Risk" namespace:"risk"`
 	Storage           storage.Config     `group:"Storage" namespace:"storage"`
+	SqlStore          sqlstore.Config    `group:"Storage" namespace:"storage"`
 	Trades            trades.Config      `group:"Trades" namespace:"trades"`
 	Time              vegatime.Config    `group:"Time" namespace:"time"`
 	Gateway           gateway.Config     `group:"Gateway" namespace:"gateway"`
@@ -90,6 +92,7 @@ func NewDefaultConfig() Config {
 		Candles:           candles.NewDefaultConfig(),
 		Risk:              risk.NewDefaultConfig(),
 		Storage:           storage.NewDefaultConfig(),
+		SqlStore:          sqlstore.NewDefaultConfig(),
 		Pprof:             pprof.NewDefaultConfig(),
 		Logging:           logging.NewDefaultConfig(),
 		Gateway:           gateway.NewDefaultConfig(),
