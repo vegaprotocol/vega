@@ -9,6 +9,24 @@ import (
 	oraclesv1 "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
+func convertTransferStatusFromProto(x eventspb.Transfer_Status) (TransferStatus, error) {
+	switch x {
+	case eventspb.Transfer_STATUS_PENDING:
+		return TransferStatusPending, nil
+	case eventspb.Transfer_STATUS_DONE:
+		return TransferStatusDone, nil
+	case eventspb.Transfer_STATUS_STOPPED:
+		return TransferStatusStopped, nil
+	case eventspb.Transfer_STATUS_REJECTED:
+		return TransferStatusRejected, nil
+	case eventspb.Transfer_STATUS_CANCELLED:
+		return TransferStatusCancelled, nil
+	default:
+		err := fmt.Errorf("failed to convert TransferStatus from GraphQL to Proto: %v", x)
+		return TransferStatusDone, err
+	}
+}
+
 func convertStakeLinkingTypeFromProto(
 	s eventspb.StakeLinking_Type) (StakeLinkingType, error) {
 	switch s {
@@ -166,6 +184,20 @@ func convertAccountTypeToProto(x AccountType) (types.AccountType, error) {
 		return types.AccountType_ACCOUNT_TYPE_LOCK_WITHDRAW, nil
 	case AccountTypeBond:
 		return types.AccountType_ACCOUNT_TYPE_BOND, nil
+	case AccountTypeExternal:
+		return types.AccountType_ACCOUNT_TYPE_EXTERNAL, nil
+	case AccountTypeGlobalReward:
+		return types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD, nil
+	case AccountTypePendingTransfers:
+		return types.AccountType_ACCOUNT_TYPE_PENDING_TRANSFERS, nil
+	case AccountTypeRewardTakerPaidFees:
+		return types.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES, nil
+	case AccountTypeRewardMakerReceivedFees:
+		return types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES, nil
+	case AccountTypeRewardLpReceivedFees:
+		return types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES, nil
+	case AccountTypeRewardMarketProposers:
+		return types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS, nil
 	default:
 		err := fmt.Errorf("failed to convert AccountType from GraphQL to Proto: %v", x)
 		return types.AccountType_ACCOUNT_TYPE_UNSPECIFIED, err
@@ -191,6 +223,20 @@ func convertAccountTypeFromProto(x types.AccountType) (AccountType, error) {
 		return AccountTypeLockWithdraw, nil
 	case types.AccountType_ACCOUNT_TYPE_BOND:
 		return AccountTypeBond, nil
+	case types.AccountType_ACCOUNT_TYPE_EXTERNAL:
+		return AccountTypeExternal, nil
+	case types.AccountType_ACCOUNT_TYPE_GLOBAL_REWARD:
+		return AccountTypeGlobalReward, nil
+	case types.AccountType_ACCOUNT_TYPE_PENDING_TRANSFERS:
+		return AccountTypePendingTransfers, nil
+	case types.AccountType_ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES:
+		return AccountTypeRewardTakerPaidFees, nil
+	case types.AccountType_ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES:
+		return AccountTypeRewardMakerReceivedFees, nil
+	case types.AccountType_ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES:
+		return AccountTypeRewardLpReceivedFees, nil
+	case types.AccountType_ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS:
+		return AccountTypeRewardMarketProposers, nil
 	default:
 		err := fmt.Errorf("failed to convert AccountType from Proto to GraphQL: %v", x)
 		return AccountTypeGeneral, err

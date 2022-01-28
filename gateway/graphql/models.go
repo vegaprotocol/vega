@@ -40,6 +40,10 @@ type TradingMode interface {
 	IsTradingMode()
 }
 
+type TransferKind interface {
+	IsTransferKind()
+}
+
 type WithdrawalDetails interface {
 	IsWithdrawalDetails()
 }
@@ -408,6 +412,20 @@ const (
 	AccountTypeLockWithdraw AccountType = "LockWithdraw"
 	// Bond - an account use to maintain MM commitments
 	AccountTypeBond AccountType = "Bond"
+	// External - an account use to refer to external account
+	AccountTypeExternal AccountType = "External"
+	// GlobalReward - an global account for the reward pool
+	AccountTypeGlobalReward AccountType = "GlobalReward"
+	// PendingTransfers - an global account for the pending transfers pool
+	AccountTypePendingTransfers AccountType = "PendingTransfers"
+	// RewardTakerPaidFees - an account holding rewards for taker paid fees
+	AccountTypeRewardTakerPaidFees AccountType = "RewardTakerPaidFees"
+	// RewardMakerReceivedFees - an account holding rewards for maker received fees
+	AccountTypeRewardMakerReceivedFees AccountType = "RewardMakerReceivedFees"
+	// RewardLpReceivedFees - an account holding rewards for LP received fees
+	AccountTypeRewardLpReceivedFees AccountType = "RewardLpReceivedFees"
+	// RewardMarketProposers - an account holding rewards for market proposers
+	AccountTypeRewardMarketProposers AccountType = "RewardMarketProposers"
 )
 
 var AllAccountType = []AccountType{
@@ -420,11 +438,18 @@ var AllAccountType = []AccountType{
 	AccountTypeFeeLiquidity,
 	AccountTypeLockWithdraw,
 	AccountTypeBond,
+	AccountTypeExternal,
+	AccountTypeGlobalReward,
+	AccountTypePendingTransfers,
+	AccountTypeRewardTakerPaidFees,
+	AccountTypeRewardMakerReceivedFees,
+	AccountTypeRewardLpReceivedFees,
+	AccountTypeRewardMarketProposers,
 }
 
 func (e AccountType) IsValid() bool {
 	switch e {
-	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond:
+	case AccountTypeInsurance, AccountTypeGlobalInsurance, AccountTypeSettlement, AccountTypeMargin, AccountTypeGeneral, AccountTypeFeeInfrastructure, AccountTypeFeeLiquidity, AccountTypeLockWithdraw, AccountTypeBond, AccountTypeExternal, AccountTypeGlobalReward, AccountTypePendingTransfers, AccountTypeRewardTakerPaidFees, AccountTypeRewardMakerReceivedFees, AccountTypeRewardLpReceivedFees, AccountTypeRewardMarketProposers:
 		return true
 	}
 	return false
@@ -1908,6 +1933,59 @@ func (e *TradeType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e TradeType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type TransferStatus string
+
+const (
+	// Indicate a transfer still being processed
+	TransferStatusPending TransferStatus = "Pending"
+	// Indicate of an transfer accepted by the vega network
+	TransferStatusDone TransferStatus = "Done"
+	// Indicate of an transfer rejected by the vega network
+	TransferStatusRejected TransferStatus = "Rejected"
+	// Indicate of a transfer stopped by the vega network
+	// e.g: no funds left to cover the transfer
+	TransferStatusStopped TransferStatus = "Stopped"
+	// Indicate of a transfer cancel by the user
+	TransferStatusCancelled TransferStatus = "Cancelled"
+)
+
+var AllTransferStatus = []TransferStatus{
+	TransferStatusPending,
+	TransferStatusDone,
+	TransferStatusRejected,
+	TransferStatusStopped,
+	TransferStatusCancelled,
+}
+
+func (e TransferStatus) IsValid() bool {
+	switch e {
+	case TransferStatusPending, TransferStatusDone, TransferStatusRejected, TransferStatusStopped, TransferStatusCancelled:
+		return true
+	}
+	return false
+}
+
+func (e TransferStatus) String() string {
+	return string(e)
+}
+
+func (e *TransferStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TransferStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TransferStatus", str)
+	}
+	return nil
+}
+
+func (e TransferStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

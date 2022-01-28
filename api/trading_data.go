@@ -107,6 +107,7 @@ type AccountsService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/transfer_response_service_mock.go -package mocks code.vegaprotocol.io/data-node/api TransferResponseService
 type TransferResponseService interface {
 	ObserveTransferResponses(ctx context.Context, retries int) (<-chan []*pbtypes.TransferResponse, uint64)
+	GetAllTransfers(_ context.Context, pubkey string, isFrom, isTo bool) []*eventspb.Transfer
 }
 
 // GovernanceDataService ...
@@ -281,6 +282,16 @@ type tradingDataService struct {
 	rewardsService          RewardsService
 	stakingService          StakingService
 	checkpointService       CheckpointService
+}
+
+func (t *tradingDataService) Transfers(ctx context.Context, req *protoapi.TransfersRequest) (*protoapi.TransfersResponse, error) {
+	if len(req.Pubkey) <= 0 {
+		return nil, apiError(codes.InvalidArgument, errors.New("missing pubkey"))
+	}
+
+	return &protoapi.TransfersResponse{
+		Transfers: t.TransferResponseService.GetAllTransfers(ctx, req.Pubkey, req.IsFrom, req.IsTo),
+	}, nil
 }
 
 func (t *tradingDataService) PartyStake(ctx context.Context, req *protoapi.PartyStakeRequest) (*protoapi.PartyStakeResponse, error) {

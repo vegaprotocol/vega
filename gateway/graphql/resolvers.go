@@ -18,6 +18,7 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 	vegaprotoapi "code.vegaprotocol.io/protos/vega/api/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
 
@@ -299,6 +300,17 @@ func (r *VegaResolverRoot) Statistics() StatisticsResolver {
 	return (*statisticsResolver)(r)
 }
 
+func (r *VegaResolverRoot) Transfer() TransferResolver {
+	return (*transferResolver)(r)
+}
+
+func (r *VegaResolverRoot) OneOffTransfer() OneOffTransferResolver {
+	return (*oneoffTransferResolver)(r)
+}
+func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
+	return (*recurringTransferResolver)(r)
+}
+
 // LiquidityOrder resolver
 
 type myLiquidityOrderResolver VegaResolverRoot
@@ -392,6 +404,12 @@ func (r *myDepositResolver) Status(ctx context.Context, obj *types.Deposit) (Dep
 // BEGIN: Query Resolver
 
 type myQueryResolver VegaResolverRoot
+
+func (r *myQueryResolver) Transfers(
+	ctx context.Context, pubkey string, isFrom *bool, isTo *bool,
+) ([]*eventspb.Transfer, error) {
+	return nil, nil
+}
 
 func (r *myQueryResolver) LastBlockHeight(ctx context.Context) (string, error) {
 	resp, err := r.tradingProxyClient.LastBlockHeight(ctx, &vegaprotoapi.LastBlockHeightRequest{})

@@ -149,7 +149,7 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	if err != nil {
 		t.Fatalf("failed to create risk store: %v", err)
 	}
-	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)
+	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore, nil)
 	if err != nil {
 		t.Fatalf("failed to create trade service: %v", err)
 	}

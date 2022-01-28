@@ -184,5 +184,11 @@ models:
     model: code.vegaprotocol.io/protos/data-node/api/v1.PartyStakeResponse
   KeyRotation:
     model: code.vegaprotocol.io/protos/data-node/api/v1.KeyRotation
+  Transfer:
+    model: code.vegaprotocol.io/protos/vega/events/v1.Transfer
+  OneOffTransfer:
+    model: code.vegaprotocol.io/protos/vega/events/v1.OneOffTransfer
+  RecurringTransfer:
+    model: code.vegaprotocol.io/protos/vega/events/v1.RecurringTransfer
   Statistics:
     model: code.vegaprotocol.io/protos/vega/api/v1.Statistics

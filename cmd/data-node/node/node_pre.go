@@ -94,7 +94,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 
 func (l *NodeCommand) setupSubscribers() {
 	l.timeUpdateSub = subscribers.NewTimeSub(l.ctx, l.timeService, l.Log, true)
-	l.transferSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
+	l.transferRespSub = subscribers.NewTransferResponse(l.ctx, l.transferResponseStore, l.Log, true)
 	l.marketEventSub = subscribers.NewMarketEvent(l.ctx, l.conf.Subscribers, l.Log, false)
 	l.orderSub = subscribers.NewOrderEvent(l.ctx, l.conf.Subscribers, l.Log, l.orderStore, true)
 	l.accountSub = subscribers.NewAccountSub(l.ctx, l.accounts, l.Log, true)
@@ -114,6 +114,7 @@ func (l *NodeCommand) setupSubscribers() {
 	l.epochUpdateSub = subscribers.NewEpochUpdateSub(l.ctx, l.epochStore, l.Log, true)
 	l.rewardsSub = subscribers.NewRewards(l.ctx, l.Log, true)
 	l.checkpointSub = subscribers.NewCheckpointSub(l.ctx, l.Log, l.checkpointStore, true)
+	l.transferSub = subscribers.NewTransferSub(l.ctx, l.transferStore, l.Log, true)
 }
 
 func (l *NodeCommand) setupStorages() error {
@@ -124,6 +125,7 @@ func (l *NodeCommand) setupStorages() error {
 	l.nodeStore = storage.NewNode(l.Log, l.conf.Storage)
 	l.epochStore = storage.NewEpoch(l.Log, l.nodeStore, l.conf.Storage)
 	l.delegationStore = storage.NewDelegations(l.Log, l.conf.Storage)
+	l.transferStore = storage.NewTransfers(l.Log, l.conf.Storage)
 
 	if l.partyStore, err = storage.NewParties(l.conf.Storage); err != nil {
 		return err
@@ -180,6 +182,7 @@ func (l *NodeCommand) setupStorages() error {
 		func(cfg config.Config) { l.epochStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.delegationStore.ReloadConf(cfg.Storage) },
 		func(cfg config.Config) { l.chainInfoStore.ReloadConf(cfg.Storage) },
+		func(cfg config.Config) { l.transferStore.ReloadConf(cfg.Storage) },
 	)
 
 	return nil
@@ -221,7 +224,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.feeService = fee.NewService(l.Log, l.conf.Fee, l.marketStore, l.marketDataStore)
 	l.partyService, err = parties.NewService(l.Log, l.conf.Parties, l.partyStore)
 	l.accountsService = accounts.NewService(l.Log, l.conf.Accounts, l.accounts)
-	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore)
+	l.transfersService = transfers.NewService(l.Log, l.conf.Transfers, l.transferResponseStore, l.transferStore)
 	l.notaryService = notary.NewService(l.Log, l.conf.Notary, l.notaryPlugin)
 	l.assetService = assets.NewService(l.Log, l.conf.Assets, l.assetPlugin)
 	l.eventService = subscribers.NewService(l.broker)
@@ -230,14 +233,14 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	l.nodeService = nodes.NewService(l.Log, l.conf.Nodes, l.nodeStore, l.epochStore)
 
 	l.broker.SubscribeBatch(
-		l.marketEventSub, l.transferSub, l.orderSub, l.accountSub,
+		l.marketEventSub, l.transferRespSub, l.orderSub, l.accountSub,
 		l.partySub, l.tradeSub, l.marginLevelSub, l.governanceSub,
 		l.voteSub, l.marketDataSub, l.notaryPlugin, l.settlePlugin,
 		l.newMarketSub, l.assetPlugin, l.candleSub, l.withdrawalPlugin,
 		l.depositPlugin, l.marketDepthSub, l.riskFactorSub, l.netParamsService,
 		l.liquidityService, l.marketUpdatedSub, l.oracleService, l.timeUpdateSub,
 		l.nodesSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
-		l.stakingService, l.checkpointSub,
+		l.stakingService, l.checkpointSub, l.transferSub,
 	)
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
