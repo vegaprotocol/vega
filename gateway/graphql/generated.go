@@ -71,6 +71,7 @@ type ResolverRoot interface {
 	Node() NodeResolver
 	NodeData() NodeDataResolver
 	NodeSignature() NodeSignatureResolver
+	OneOffTransfer() OneOffTransferResolver
 	OracleSpec() OracleSpecResolver
 	Order() OrderResolver
 	Party() PartyResolver
@@ -82,6 +83,7 @@ type ResolverRoot interface {
 	Proposal() ProposalResolver
 	ProposalTerms() ProposalTermsResolver
 	Query() QueryResolver
+	RecurringTransfer() RecurringTransferResolver
 	Reward() RewardResolver
 	RewardPerAssetDetail() RewardPerAssetDetailResolver
 	RewardSummary() RewardSummaryResolver
@@ -90,6 +92,7 @@ type ResolverRoot interface {
 	Subscription() SubscriptionResolver
 	TradableInstrument() TradableInstrumentResolver
 	Trade() TradeResolver
+	Transfer() TransferResolver
 	UpdateMarket() UpdateMarketResolver
 	UpdateNetworkParameter() UpdateNetworkParameterResolver
 	Vote() VoteResolver
@@ -536,6 +539,10 @@ type ComplexityRoot struct {
 		Signature func(childComplexity int) int
 	}
 
+	OneOffTransfer struct {
+		DeliverOn func(childComplexity int) int
+	}
+
 	OracleData struct {
 		Data    func(childComplexity int) int
 		PubKeys func(childComplexity int) int
@@ -740,8 +747,15 @@ type ComplexityRoot struct {
 		Proposal                   func(childComplexity int, id *string, reference *string) int
 		Proposals                  func(childComplexity int, inState *ProposalState) int
 		Statistics                 func(childComplexity int) int
+		Transfers                  func(childComplexity int, pubkey string, isFrom *bool, isTo *bool) int
 		UpdateMarketProposals      func(childComplexity int, marketID *string, inState *ProposalState) int
 		Withdrawal                 func(childComplexity int, id string) int
+	}
+
+	RecurringTransfer struct {
+		EndEpoch   func(childComplexity int) int
+		Factor     func(childComplexity int) int
+		StartEpoch func(childComplexity int) int
 	}
 
 	Reward struct {
@@ -902,6 +916,20 @@ type ComplexityRoot struct {
 
 	TransactionSubmitted struct {
 		Success func(childComplexity int) int
+	}
+
+	Transfer struct {
+		Amount          func(childComplexity int) int
+		Asset           func(childComplexity int) int
+		From            func(childComplexity int) int
+		FromAccountType func(childComplexity int) int
+		Id              func(childComplexity int) int
+		Kind            func(childComplexity int) int
+		Reference       func(childComplexity int) int
+		Status          func(childComplexity int) int
+		Timestamp       func(childComplexity int) int
+		To              func(childComplexity int) int
+		ToAccountType   func(childComplexity int) int
 	}
 
 	TransferBalance struct {
@@ -1138,6 +1166,9 @@ type NodeSignatureResolver interface {
 	Signature(ctx context.Context, obj *v13.NodeSignature) (*string, error)
 	Kind(ctx context.Context, obj *v13.NodeSignature) (*NodeSignatureKind, error)
 }
+type OneOffTransferResolver interface {
+	DeliverOn(ctx context.Context, obj *v1.OneOffTransfer) (*string, error)
+}
 type OracleSpecResolver interface {
 	CreatedAt(ctx context.Context, obj *v11.OracleSpec) (string, error)
 	UpdatedAt(ctx context.Context, obj *v11.OracleSpec) (*string, error)
@@ -1250,7 +1281,12 @@ type QueryResolver interface {
 	Node(ctx context.Context, id string) (*vega.Node, error)
 	KeyRotations(ctx context.Context, id *string) ([]*v12.KeyRotation, error)
 	Epoch(ctx context.Context, id *string) (*vega.Epoch, error)
+	Transfers(ctx context.Context, pubkey string, isFrom *bool, isTo *bool) ([]*v1.Transfer, error)
 	Statistics(ctx context.Context) (*v14.Statistics, error)
+}
+type RecurringTransferResolver interface {
+	StartEpoch(ctx context.Context, obj *v1.RecurringTransfer) (int, error)
+	EndEpoch(ctx context.Context, obj *v1.RecurringTransfer) (*int, error)
 }
 type RewardResolver interface {
 	Asset(ctx context.Context, obj *vega.Reward) (*vega.Asset, error)
@@ -1331,6 +1367,16 @@ type TradeResolver interface {
 	SellerFee(ctx context.Context, obj *vega.Trade) (*TradeFee, error)
 	BuyerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
 	SellerAuctionBatch(ctx context.Context, obj *vega.Trade) (*int, error)
+}
+type TransferResolver interface {
+	FromAccountType(ctx context.Context, obj *v1.Transfer) (AccountType, error)
+
+	ToAccountType(ctx context.Context, obj *v1.Transfer) (AccountType, error)
+	Asset(ctx context.Context, obj *v1.Transfer) (*vega.Asset, error)
+
+	Status(ctx context.Context, obj *v1.Transfer) (TransferStatus, error)
+	Timestamp(ctx context.Context, obj *v1.Transfer) (string, error)
+	Kind(ctx context.Context, obj *v1.Transfer) (TransferKind, error)
 }
 type UpdateMarketResolver interface {
 	MarketID(ctx context.Context, obj *vega.UpdateMarket) (string, error)
@@ -3290,6 +3336,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NodeSignature.Signature(childComplexity), true
 
+	case "OneOffTransfer.deliverOn":
+		if e.complexity.OneOffTransfer.DeliverOn == nil {
+			break
+		}
+
+		return e.complexity.OneOffTransfer.DeliverOn(childComplexity), true
+
 	case "OracleData.data":
 		if e.complexity.OracleData.Data == nil {
 			break
@@ -4388,6 +4441,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Statistics(childComplexity), true
 
+	case "Query.transfers":
+		if e.complexity.Query.Transfers == nil {
+			break
+		}
+
+		args, err := ec.field_Query_transfers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Transfers(childComplexity, args["pubkey"].(string), args["isFrom"].(*bool), args["isTo"].(*bool)), true
+
 	case "Query.updateMarketProposals":
 		if e.complexity.Query.UpdateMarketProposals == nil {
 			break
@@ -4411,6 +4476,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Withdrawal(childComplexity, args["id"].(string)), true
+
+	case "RecurringTransfer.endEpoch":
+		if e.complexity.RecurringTransfer.EndEpoch == nil {
+			break
+		}
+
+		return e.complexity.RecurringTransfer.EndEpoch(childComplexity), true
+
+	case "RecurringTransfer.factor":
+		if e.complexity.RecurringTransfer.Factor == nil {
+			break
+		}
+
+		return e.complexity.RecurringTransfer.Factor(childComplexity), true
+
+	case "RecurringTransfer.startEpoch":
+		if e.complexity.RecurringTransfer.StartEpoch == nil {
+			break
+		}
+
+		return e.complexity.RecurringTransfer.StartEpoch(childComplexity), true
 
 	case "Reward.amount":
 		if e.complexity.Reward.Amount == nil {
@@ -5208,6 +5294,83 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.TransactionSubmitted.Success(childComplexity), true
 
+	case "Transfer.amount":
+		if e.complexity.Transfer.Amount == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Amount(childComplexity), true
+
+	case "Transfer.asset":
+		if e.complexity.Transfer.Asset == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Asset(childComplexity), true
+
+	case "Transfer.from":
+		if e.complexity.Transfer.From == nil {
+			break
+		}
+
+		return e.complexity.Transfer.From(childComplexity), true
+
+	case "Transfer.fromAccountType":
+		if e.complexity.Transfer.FromAccountType == nil {
+			break
+		}
+
+		return e.complexity.Transfer.FromAccountType(childComplexity), true
+
+	case "Transfer.id":
+		if e.complexity.Transfer.Id == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Id(childComplexity), true
+
+	case "Transfer.kind":
+		if e.complexity.Transfer.Kind == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Kind(childComplexity), true
+
+	case "Transfer.reference":
+		if e.complexity.Transfer.Reference == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Reference(childComplexity), true
+
+	case "Transfer.status":
+		if e.complexity.Transfer.Status == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Status(childComplexity), true
+
+	case "Transfer.timestamp":
+		if e.complexity.Transfer.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.Transfer.Timestamp(childComplexity), true
+
+	case "Transfer.to":
+		if e.complexity.Transfer.To == nil {
+			break
+		}
+
+		return e.complexity.Transfer.To(childComplexity), true
+
+	case "Transfer.toAccountType":
+		if e.complexity.Transfer.ToAccountType == nil {
+			break
+		}
+
+		return e.complexity.Transfer.ToAccountType(childComplexity), true
+
 	case "TransferBalance.account":
 		if e.complexity.TransferBalance.Account == nil {
 			break
@@ -5847,8 +6010,87 @@ type Query {
   "get data for a specific epoch, if id omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
+  "get a list of all transfers for a pubkey"
+  transfers(
+    "the pubkey to look for"
+    pubkey: String!
+    "is the pubkey on the sending part of the transfer"
+    isFrom: Boolean
+    "is the pubkey in the receiving part of the transfer"
+    isTo: Boolean
+  ): [Transfer!]
+
   "get statistics about the vega node"
   statistics: Statistics!
+}
+
+enum TransferStatus {
+  "Indicate a transfer still being processed"
+  Pending
+  "Indicate of an transfer accepted by the vega network"
+  Done
+  "Indicate of an transfer rejected by the vega network"
+  Rejected
+  """
+  Indicate of a transfer stopped by the vega network
+  e.g: no funds left to cover the transfer
+  """
+  Stopped
+  "Indicate of a transfer cancel by the user"
+  Cancelled
+}
+
+"A user initiated transfer"
+type Transfer {
+  "Identified of this transfer"
+  id: ID!
+
+  "The public key of the sender in this transfer"
+  from: String!
+
+  "The account type from which funds have been sent from"
+  fromAccountType: AccountType!
+
+  "The public key of the received of the funds"
+  to: String!
+
+  "The account type which has received the funds"
+  toAccountType: AccountType!
+
+  "The asset"
+  asset: Asset
+
+  "The amount sent"
+  amount: String!
+
+  "An optional reference"
+  reference: String
+
+  "The status of this transfer"
+  status: TransferStatus!
+
+  "The time at which the transfer was submitted"
+  timestamp: String!
+
+  kind: TransferKind!
+}
+
+union TransferKind = OneOffTransfer | RecurringTransfer
+
+"The specific details for a one off transfer"
+type OneOffTransfer {
+  "An optional time at which the transfer should be delivered"
+  deliverOn: String
+}
+
+"The specific details for a recurring transfer"
+type RecurringTransfer {
+  "The epoch at which this recurring transfer will start"
+  startEpoch: Int!
+  "An optional epoch at whihc this transfer will stop"
+  endEpoch: Int
+  "The factor of the initial amount to be distributed"
+  factor: String!
 }
 
 enum NodeStatus {
@@ -7543,6 +7785,20 @@ enum AccountType {
   LockWithdraw
   "Bond - an account use to maintain MM commitments"
   Bond
+  "External - an account use to refer to external account"
+  External
+  "GlobalReward - an global account for the reward pool"
+  GlobalReward
+  "PendingTransfers - an global account for the pending transfers pool"
+  PendingTransfers
+  "RewardTakerPaidFees - an account holding taker paid fees"
+  RewardTakerPaidFees
+  "RewardMakerReceivedFees - an account holding taker paid fees"
+  RewardMakerReceivedFees
+  "RewardLpReceivedFees - an account holding taker paid fees"
+  RewardLpReceivedFees
+  "RewardMarketProposers - an account holding taker paid fees"
+  RewardMarketProposers
 }
 
 type FutureProduct {
@@ -9107,6 +9363,39 @@ func (ec *executionContext) field_Query_proposals_args(ctx context.Context, rawA
 		}
 	}
 	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_transfers_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["pubkey"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pubkey"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["pubkey"] = arg0
+	var arg1 *bool
+	if tmp, ok := rawArgs["isFrom"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isFrom"))
+		arg1, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["isFrom"] = arg1
+	var arg2 *bool
+	if tmp, ok := rawArgs["isTo"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isTo"))
+		arg2, err = ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["isTo"] = arg2
 	return args, nil
 }
 
@@ -18830,6 +19119,38 @@ func (ec *executionContext) _NodeSignature_kind(ctx context.Context, field graph
 	return ec.marshalONodeSignatureKind2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐNodeSignatureKind(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _OneOffTransfer_deliverOn(ctx context.Context, field graphql.CollectedField, obj *v1.OneOffTransfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "OneOffTransfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OneOffTransfer().DeliverOn(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _OracleData_pubKeys(ctx context.Context, field graphql.CollectedField, obj *v11.OracleData) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23598,6 +23919,45 @@ func (ec *executionContext) _Query_epoch(ctx context.Context, field graphql.Coll
 	return ec.marshalNEpoch2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐEpoch(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Query_transfers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_transfers_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Transfers(rctx, args["pubkey"].(string), args["isFrom"].(*bool), args["isTo"].(*bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*v1.Transfer)
+	fc.Result = res
+	return ec.marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_statistics(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -23702,6 +24062,108 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RecurringTransfer_startEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RecurringTransfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecurringTransfer().StartEpoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RecurringTransfer_endEpoch(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RecurringTransfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.RecurringTransfer().EndEpoch(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RecurringTransfer_factor(ctx context.Context, field graphql.CollectedField, obj *v1.RecurringTransfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "RecurringTransfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Factor, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Reward_asset(ctx context.Context, field graphql.CollectedField, obj *vega.Reward) (ret graphql.Marshaler) {
@@ -27524,6 +27986,385 @@ func (ec *executionContext) _TransactionSubmitted_success(ctx context.Context, f
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Transfer_id(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Id, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_from(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.From, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_fromAccountType(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Transfer().FromAccountType(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AccountType)
+	fc.Result = res
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_to(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.To, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_toAccountType(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Transfer().ToAccountType(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AccountType)
+	fc.Result = res
+	return ec.marshalNAccountType2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAccountType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_asset(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Transfer().Asset(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*vega.Asset)
+	fc.Result = res
+	return ec.marshalOAsset2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐAsset(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_amount(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Amount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_reference(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reference, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_status(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Transfer().Status(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TransferStatus)
+	fc.Result = res
+	return ec.marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_timestamp(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Transfer().Timestamp(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Transfer_kind(ctx context.Context, field graphql.CollectedField, obj *v1.Transfer) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Transfer",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Transfer().Kind(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(TransferKind)
+	fc.Result = res
+	return ec.marshalNTransferKind2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferKind(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _TransferBalance_account(ctx context.Context, field graphql.CollectedField, obj *TransferBalance) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -29761,6 +30602,29 @@ func (ec *executionContext) _TradingMode(ctx context.Context, sel ast.SelectionS
 			return graphql.Null
 		}
 		return ec._DiscreteTrading(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _TransferKind(ctx context.Context, sel ast.SelectionSet, obj TransferKind) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case v1.OneOffTransfer:
+		return ec._OneOffTransfer(ctx, sel, &obj)
+	case *v1.OneOffTransfer:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._OneOffTransfer(ctx, sel, obj)
+	case v1.RecurringTransfer:
+		return ec._RecurringTransfer(ctx, sel, &obj)
+	case *v1.RecurringTransfer:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RecurringTransfer(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -33222,6 +34086,39 @@ func (ec *executionContext) _NodeSignature(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var oneOffTransferImplementors = []string{"OneOffTransfer", "TransferKind"}
+
+func (ec *executionContext) _OneOffTransfer(ctx context.Context, sel ast.SelectionSet, obj *v1.OneOffTransfer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, oneOffTransferImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("OneOffTransfer")
+		case "deliverOn":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OneOffTransfer_deliverOn(ctx, field, obj)
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var oracleDataImplementors = []string{"OracleData"}
 
 func (ec *executionContext) _OracleData(ctx context.Context, sel ast.SelectionSet, obj *v11.OracleData) graphql.Marshaler {
@@ -35006,6 +35903,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "transfers":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_transfers(ctx, field)
+				return res
+			})
 		case "statistics":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -35024,6 +35932,58 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
 			out.Values[i] = ec._Query___schema(ctx, field)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var recurringTransferImplementors = []string{"RecurringTransfer", "TransferKind"}
+
+func (ec *executionContext) _RecurringTransfer(ctx context.Context, sel ast.SelectionSet, obj *v1.RecurringTransfer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, recurringTransferImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RecurringTransfer")
+		case "startEpoch":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecurringTransfer_startEpoch(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "endEpoch":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._RecurringTransfer_endEpoch(ctx, field, obj)
+				return res
+			})
+		case "factor":
+			out.Values[i] = ec._RecurringTransfer_factor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -36268,6 +37228,131 @@ func (ec *executionContext) _TransactionSubmitted(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var transferImplementors = []string{"Transfer"}
+
+func (ec *executionContext) _Transfer(ctx context.Context, sel ast.SelectionSet, obj *v1.Transfer) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, transferImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Transfer")
+		case "id":
+			out.Values[i] = ec._Transfer_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "from":
+			out.Values[i] = ec._Transfer_from(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "fromAccountType":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Transfer_fromAccountType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "to":
+			out.Values[i] = ec._Transfer_to(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "toAccountType":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Transfer_toAccountType(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "asset":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Transfer_asset(ctx, field, obj)
+				return res
+			})
+		case "amount":
+			out.Values[i] = ec._Transfer_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "reference":
+			out.Values[i] = ec._Transfer_reference(ctx, field, obj)
+		case "status":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Transfer_status(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "timestamp":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Transfer_timestamp(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "kind":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Transfer_kind(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38200,6 +39285,16 @@ func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋdata�
 	return ec._TradingMode(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Transfer(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNTransferBalance2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferBalance(ctx context.Context, sel ast.SelectionSet, v *TransferBalance) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -38210,6 +39305,16 @@ func (ec *executionContext) marshalNTransferBalance2ᚖcodeᚗvegaprotocolᚗio�
 	return ec._TransferBalance(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNTransferKind2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferKind(ctx context.Context, sel ast.SelectionSet, v TransferKind) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._TransferKind(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNTransferResponse2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferResponse(ctx context.Context, sel ast.SelectionSet, v *TransferResponse) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -38218,6 +39323,16 @@ func (ec *executionContext) marshalNTransferResponse2ᚖcodeᚗvegaprotocolᚗio
 		return graphql.Null
 	}
 	return ec._TransferResponse(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTransferStatus2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx context.Context, v interface{}) (TransferStatus, error) {
+	var res TransferStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTransferStatus2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTransferStatus(ctx context.Context, sel ast.SelectionSet, v TransferStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNVote2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐVote(ctx context.Context, sel ast.SelectionSet, v *vega.Vote) graphql.Marshaler {
@@ -40389,6 +41504,46 @@ func (ec *executionContext) marshalOTradeSettlement2ᚕᚖcodeᚗvegaprotocolᚗ
 				defer wg.Done()
 			}
 			ret[i] = ec.marshalNTradeSettlement2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTradeSettlement(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalOTransfer2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransferᚄ(ctx context.Context, sel ast.SelectionSet, v []*v1.Transfer) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)

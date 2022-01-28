@@ -8,6 +8,7 @@ import (
 	"code.vegaprotocol.io/data-node/contextutil"
 	"code.vegaprotocol.io/data-node/logging"
 	types "code.vegaprotocol.io/protos/vega"
+	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 )
 
 // TransferResponseStore represent an abstraction over a transfer response storage
@@ -17,22 +18,35 @@ type TransferResponseStore interface {
 	Unsubscribe(id uint64) error
 }
 
+// TransfersStore represent an abstraction over a transfer response storage
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/transfers_store_mock.go -package mocks code.vegaprotocol.io/data-node/transfers TransfersStore
+type TransfersStore interface {
+	GetAll(pubkey string, isFrom, isTo bool) []*eventspb.Transfer
+}
+
 // Svc is the service handling all the transfer responses (leger movement)
 type Svc struct {
 	Config
-	log           *logging.Logger
-	store         TransferResponseStore
-	subscriberCnt int32
+	log            *logging.Logger
+	store          TransferResponseStore
+	transfersStore TransfersStore
+	subscriberCnt  int32
 }
 
 // NewService retunrs a new instance of the transfer response service
-func NewService(log *logging.Logger, cfg Config, store TransferResponseStore) *Svc {
+func NewService(
+	log *logging.Logger,
+	cfg Config,
+	store TransferResponseStore,
+	transfersStore TransfersStore,
+) *Svc {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 	return &Svc{
-		Config: cfg,
-		log:    log,
-		store:  store,
+		Config:         cfg,
+		log:            log,
+		store:          store,
+		transfersStore: transfersStore,
 	}
 }
 
@@ -48,6 +62,14 @@ func (s *Svc) ReloadConf(cfg Config) {
 	}
 
 	s.Config = cfg
+}
+
+func (s *Svc) GetAllTransfers(
+	_ context.Context,
+	pubkey string,
+	isFrom, isTo bool,
+) []*eventspb.Transfer {
+	return s.transfersStore.GetAll(pubkey, isFrom, isTo)
 }
 
 // ObserveTransferResponses start a new goroutine and return a channels

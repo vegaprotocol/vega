@@ -94,12 +94,13 @@ type NodeCommand struct {
 	delegationStore       *storage.Delegations
 	checkpointStore       *storage.Checkpoints
 	chainInfoStore        *storage.ChainInfo
+	transferStore         *storage.Transfers
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
 	broker *broker.Broker
 
-	transferSub          *subscribers.TransferResponse
+	transferRespSub      *subscribers.TransferResponse
 	marketEventSub       *subscribers.MarketEvent
 	orderSub             *subscribers.OrderEvent
 	accountSub           *subscribers.AccountSub
@@ -120,6 +121,7 @@ type NodeCommand struct {
 	timeUpdateSub        *subscribers.Time
 	rewardsSub           *subscribers.RewardCounters
 	checkpointSub        *subscribers.CheckpointSub
+	transferSub          *subscribers.TransferSub
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

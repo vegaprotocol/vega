@@ -402,8 +402,87 @@ type Query {
   "get data for a specific epoch, if id omitted it gets the current epoch. If the string is 'next', fetch the next epoch"
   epoch(id: String): Epoch!
 
+  "get a list of all transfers for a pubkey"
+  transfers(
+    "the pubkey to look for"
+    pubkey: String!
+    "is the pubkey on the sending part of the transfer"
+    isFrom: Boolean
+    "is the pubkey in the receiving part of the transfer"
+    isTo: Boolean
+  ): [Transfer!]
+
   "get statistics about the vega node"
   statistics: Statistics!
+}
+
+enum TransferStatus {
+  "Indicate a transfer still being processed"
+  Pending
+  "Indicate of an transfer accepted by the vega network"
+  Done
+  "Indicate of an transfer rejected by the vega network"
+  Rejected
+  """
+  Indicate of a transfer stopped by the vega network
+  e.g: no funds left to cover the transfer
+  """
+  Stopped
+  "Indicate of a transfer cancel by the user"
+  Cancelled
+}
+
+"A user initiated transfer"
+type Transfer {
+  "Identified of this transfer"
+  id: ID!
+
+  "The public key of the sender in this transfer"
+  from: String!
+
+  "The account type from which funds have been sent from"
+  fromAccountType: AccountType!
+
+  "The public key of the received of the funds"
+  to: String!
+
+  "The account type which has received the funds"
+  toAccountType: AccountType!
+
+  "The asset"
+  asset: Asset
+
+  "The amount sent"
+  amount: String!
+
+  "An optional reference"
+  reference: String
+
+  "The status of this transfer"
+  status: TransferStatus!
+
+  "The time at which the transfer was submitted"
+  timestamp: String!
+
+  kind: TransferKind!
+}
+
+union TransferKind = OneOffTransfer | RecurringTransfer
+
+"The specific details for a one off transfer"
+type OneOffTransfer {
+  "An optional time at which the transfer should be delivered"
+  deliverOn: String
+}
+
+"The specific details for a recurring transfer"
+type RecurringTransfer {
+  "The epoch at which this recurring transfer will start"
+  startEpoch: Int!
+  "An optional epoch at whihc this transfer will stop"
+  endEpoch: Int
+  "The factor of the initial amount to be distributed"
+  factor: String!
 }
 
 enum NodeStatus {
@@ -2098,6 +2177,20 @@ enum AccountType {
   LockWithdraw
   "Bond - an account use to maintain MM commitments"
   Bond
+  "External - an account use to refer to external account"
+  External
+  "GlobalReward - an global account for the reward pool"
+  GlobalReward
+  "PendingTransfers - an global account for the pending transfers pool"
+  PendingTransfers
+  "RewardTakerPaidFees - an account holding taker paid fees"
+  RewardTakerPaidFees
+  "RewardMakerReceivedFees - an account holding taker paid fees"
+  RewardMakerReceivedFees
+  "RewardLpReceivedFees - an account holding taker paid fees"
+  RewardLpReceivedFees
+  "RewardMarketProposers - an account holding taker paid fees"
+  RewardMarketProposers
 }
 
 type FutureProduct {
