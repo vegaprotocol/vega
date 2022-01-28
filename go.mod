@@ -6,8 +6,8 @@ require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
 	code.vegaprotocol.io/protos v0.47.1-0.20220128111949-392d892ef4b1
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vegawallet v0.11.1-0.20220118134126-26f681c98f91
+	code.vegaprotocol.io/shared v0.0.0-20220128163854-7eab67fa60d2
+	code.vegaprotocol.io/vegawallet v0.11.2-0.20220128170319-bd1b750459bb
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
@@ -50,6 +50,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
@@ -124,7 +125,6 @@ require (
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/vegaprotocol/go-slip10 v0.1.0 // indirect
-	github.com/zannen/toml v0.3.2 // indirect
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.5 // indirect
