@@ -7791,13 +7791,13 @@ enum AccountType {
   GlobalReward
   "PendingTransfers - an global account for the pending transfers pool"
   PendingTransfers
-  "RewardTakerPaidFees - an account holding taker paid fees"
+  "RewardTakerPaidFees - an account holding rewards for taker paid fees"
   RewardTakerPaidFees
-  "RewardMakerReceivedFees - an account holding taker paid fees"
+  "RewardMakerReceivedFees - an account holding rewards for maker received fees"
   RewardMakerReceivedFees
-  "RewardLpReceivedFees - an account holding taker paid fees"
+  "RewardLpReceivedFees - an account holding rewards for LP received fees"
   RewardLpReceivedFees
-  "RewardMarketProposers - an account holding taker paid fees"
+  "RewardMarketProposers - an account holding rewards for market proposers"
   RewardMarketProposers
 }
 

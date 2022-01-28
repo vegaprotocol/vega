@@ -418,13 +418,13 @@ const (
 	AccountTypeGlobalReward AccountType = "GlobalReward"
 	// PendingTransfers - an global account for the pending transfers pool
 	AccountTypePendingTransfers AccountType = "PendingTransfers"
-	// RewardTakerPaidFees - an account holding taker paid fees
+	// RewardTakerPaidFees - an account holding rewards for taker paid fees
 	AccountTypeRewardTakerPaidFees AccountType = "RewardTakerPaidFees"
-	// RewardMakerReceivedFees - an account holding taker paid fees
+	// RewardMakerReceivedFees - an account holding rewards for maker received fees
 	AccountTypeRewardMakerReceivedFees AccountType = "RewardMakerReceivedFees"
-	// RewardLpReceivedFees - an account holding taker paid fees
+	// RewardLpReceivedFees - an account holding rewards for LP received fees
 	AccountTypeRewardLpReceivedFees AccountType = "RewardLpReceivedFees"
-	// RewardMarketProposers - an account holding taker paid fees
+	// RewardMarketProposers - an account holding rewards for market proposers
 	AccountTypeRewardMarketProposers AccountType = "RewardMarketProposers"
 )
 
