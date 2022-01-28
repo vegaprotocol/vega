@@ -57,6 +57,7 @@ Ilya
 int
 init
 istake
+Jenkinsfile
 lifecycle
 linters
 MacOSX
@@ -102,4 +103,3 @@ vegawallet
 whitepaper
 XDG
 xor
-
