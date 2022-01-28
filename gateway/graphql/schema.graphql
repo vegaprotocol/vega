@@ -337,6 +337,12 @@ type Query {
     inState: ProposalState
   ): [Proposal!]
 
+  "Governance proposals that aim to create new assets in Vega"
+  newFreeformProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
   "Return a list of aggregated node signature for a given resource ID"
   nodeSignatures(resourceId: ID!): [NodeSignature!]
 
@@ -2204,6 +2210,18 @@ type NewAsset {
   source: AssetSource!
 }
 
+"A new freeform proposal change"
+type NewFreeform {
+  "The URL containing content that describes the proposal"
+  url: String!
+
+  "A short description of what is being proposed"
+  description: String!
+
+  "The hash on the content of the URL"
+  hash: String!
+}
+
 "Allows submitting a proposal for changing network parameters"
 type UpdateNetworkParameter {
   networkParameter: NetworkParameter!
@@ -2222,6 +2240,7 @@ union ProposalChange =
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
+  | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {

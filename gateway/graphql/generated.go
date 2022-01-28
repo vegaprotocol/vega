@@ -66,6 +66,7 @@ type ResolverRoot interface {
 	MarketDepthUpdate() MarketDepthUpdateResolver
 	MarketTimestamps() MarketTimestampsResolver
 	NewAsset() NewAssetResolver
+	NewFreeform() NewFreeformResolver
 	NewMarket() NewMarketResolver
 	Node() NodeResolver
 	NodeData() NodeDataResolver
@@ -476,6 +477,12 @@ type ComplexityRoot struct {
 		TotalSupply func(childComplexity int) int
 	}
 
+	NewFreeform struct {
+		Description func(childComplexity int) int
+		Hash        func(childComplexity int) int
+		URL         func(childComplexity int) int
+	}
+
 	NewMarket struct {
 		Commitment     func(childComplexity int) int
 		DecimalPlaces  func(childComplexity int) int
@@ -716,6 +723,7 @@ type ComplexityRoot struct {
 		NetworkParameters          func(childComplexity int) int
 		NetworkParametersProposals func(childComplexity int, inState *ProposalState) int
 		NewAssetProposals          func(childComplexity int, inState *ProposalState) int
+		NewFreeformProposals       func(childComplexity int, inState *ProposalState) int
 		NewMarketProposals         func(childComplexity int, inState *ProposalState) int
 		Node                       func(childComplexity int, id string) int
 		NodeData                   func(childComplexity int) int
@@ -1103,6 +1111,11 @@ type NewAssetResolver interface {
 	MinLpStake(ctx context.Context, obj *vega.NewAsset) (string, error)
 	Source(ctx context.Context, obj *vega.NewAsset) (AssetSource, error)
 }
+type NewFreeformResolver interface {
+	URL(ctx context.Context, obj *vega.NewFreeform) (string, error)
+	Description(ctx context.Context, obj *vega.NewFreeform) (string, error)
+	Hash(ctx context.Context, obj *vega.NewFreeform) (string, error)
+}
 type NewMarketResolver interface {
 	Instrument(ctx context.Context, obj *vega.NewMarket) (*vega.InstrumentConfiguration, error)
 	DecimalPlaces(ctx context.Context, obj *vega.NewMarket) (int, error)
@@ -1223,6 +1236,7 @@ type QueryResolver interface {
 	UpdateMarketProposals(ctx context.Context, marketID *string, inState *ProposalState) ([]*vega.GovernanceData, error)
 	NetworkParametersProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
 	NewAssetProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
+	NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*vega.GovernanceData, error)
 	NodeSignatures(ctx context.Context, resourceID string) ([]*v13.NodeSignature, error)
 	Asset(ctx context.Context, assetID string) (*vega.Asset, error)
 	Assets(ctx context.Context) ([]*vega.Asset, error)
@@ -2984,6 +2998,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NewAsset.TotalSupply(childComplexity), true
 
+	case "NewFreeform.description":
+		if e.complexity.NewFreeform.Description == nil {
+			break
+		}
+
+		return e.complexity.NewFreeform.Description(childComplexity), true
+
+	case "NewFreeform.hash":
+		if e.complexity.NewFreeform.Hash == nil {
+			break
+		}
+
+		return e.complexity.NewFreeform.Hash(childComplexity), true
+
+	case "NewFreeform.url":
+		if e.complexity.NewFreeform.URL == nil {
+			break
+		}
+
+		return e.complexity.NewFreeform.URL(childComplexity), true
+
 	case "NewMarket.commitment":
 		if e.complexity.NewMarket.Commitment == nil {
 			break
@@ -4168,6 +4203,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.NewAssetProposals(childComplexity, args["inState"].(*ProposalState)), true
+
+	case "Query.newFreeformProposals":
+		if e.complexity.Query.NewFreeformProposals == nil {
+			break
+		}
+
+		args, err := ec.field_Query_newFreeformProposals_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NewFreeformProposals(childComplexity, args["inState"].(*ProposalState)), true
 
 	case "Query.newMarketProposals":
 		if e.complexity.Query.NewMarketProposals == nil {
@@ -5731,6 +5778,12 @@ type Query {
 
   "Governance proposals that aim to create new assets in Vega"
   newAssetProposals(
+    "Returns only proposals in the specified state. Leave out to get all proposals"
+    inState: ProposalState
+  ): [Proposal!]
+
+  "Governance proposals that aim to create new assets in Vega"
+  newFreeformProposals(
     "Returns only proposals in the specified state. Leave out to get all proposals"
     inState: ProposalState
   ): [Proposal!]
@@ -7602,6 +7655,18 @@ type NewAsset {
   source: AssetSource!
 }
 
+"A new freeform proposal change"
+type NewFreeform {
+  "The URL containing content that describes the proposal"
+  url: String!
+
+  "A short description of what is being proposed"
+  description: String!
+
+  "The hash on the content of the URL"
+  hash: String!
+}
+
 "Allows submitting a proposal for changing network parameters"
 type UpdateNetworkParameter {
   networkParameter: NetworkParameter!
@@ -7620,6 +7685,7 @@ union ProposalChange =
   | UpdateMarket
   | UpdateNetworkParameter
   | NewAsset
+  | NewFreeform
 # there are no unions for input types as of today, see: https://github.com/graphql/graphql-spec/issues/488
 
 type ProposalTerms {
@@ -8790,6 +8856,21 @@ func (ec *executionContext) field_Query_networkParametersProposals_args(ctx cont
 }
 
 func (ec *executionContext) field_Query_newAssetProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *ProposalState
+	if tmp, ok := rawArgs["inState"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("inState"))
+		arg0, err = ec.unmarshalOProposalState2ᚖcodeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐProposalState(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["inState"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_newFreeformProposals_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 *ProposalState
@@ -17337,6 +17418,111 @@ func (ec *executionContext) _NewAsset_source(ctx context.Context, field graphql.
 	return ec.marshalNAssetSource2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐAssetSource(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _NewFreeform_url(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NewFreeform",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewFreeform().URL(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewFreeform_description(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NewFreeform",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewFreeform().Description(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _NewFreeform_hash(ctx context.Context, field graphql.CollectedField, obj *vega.NewFreeform) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "NewFreeform",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NewFreeform().Hash(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _NewMarket_instrument(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -22875,6 +23061,45 @@ func (ec *executionContext) _Query_newAssetProposals(ctx context.Context, field 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().NewAssetProposals(rctx, args["inState"].(*ProposalState))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*vega.GovernanceData)
+	fc.Result = res
+	return ec.marshalOProposal2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐGovernanceDataᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_newFreeformProposals(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_newFreeformProposals_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NewFreeformProposals(rctx, args["inState"].(*ProposalState))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -29483,6 +29708,13 @@ func (ec *executionContext) _ProposalChange(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._NewAsset(ctx, sel, obj)
+	case vega.NewFreeform:
+		return ec._NewFreeform(ctx, sel, &obj)
+	case *vega.NewFreeform:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NewFreeform(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -32530,6 +32762,70 @@ func (ec *executionContext) _NewAsset(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var newFreeformImplementors = []string{"NewFreeform", "ProposalChange"}
+
+func (ec *executionContext) _NewFreeform(ctx context.Context, sel ast.SelectionSet, obj *vega.NewFreeform) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, newFreeformImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NewFreeform")
+		case "url":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewFreeform_url(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "description":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewFreeform_description(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "hash":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NewFreeform_hash(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var newMarketImplementors = []string{"NewMarket", "ProposalChange"}
 
 func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet, obj *vega.NewMarket) graphql.Marshaler {
@@ -34548,6 +34844,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_newAssetProposals(ctx, field)
+				return res
+			})
+		case "newFreeformProposals":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_newFreeformProposals(ctx, field)
 				return res
 			})
 		case "nodeSignatures":

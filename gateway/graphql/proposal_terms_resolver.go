@@ -7,9 +7,7 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 )
 
-var (
-	ErrUnsupportedProposalTermsChanges = errors.New("unsupported proposal terms changes")
-)
+var ErrUnsupportedProposalTermsChanges = errors.New("unsupported proposal terms changes")
 
 type proposalTermsResolver VegaResolverRoot
 
@@ -31,6 +29,8 @@ func (r *proposalTermsResolver) Change(ctx context.Context, obj *types.ProposalT
 		return obj.GetNewMarket(), nil
 	case *types.ProposalTerms_NewAsset:
 		return obj.GetNewAsset(), nil
+	case *types.ProposalTerms_NewFreeform:
+		return obj.GetNewFreeform(), nil
 	default:
 		return nil, ErrUnsupportedProposalTermsChanges
 	}

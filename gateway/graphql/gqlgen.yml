@@ -103,6 +103,8 @@ models:
     model: code.vegaprotocol.io/protos/vega.NewMarketCommitment
   NewAsset:
     model: code.vegaprotocol.io/protos/vega.NewAsset
+  NewFreeform:
+    model: code.vegaprotocol.io/protos/vega.NewFreeform
   UpdateMarket:
     model: code.vegaprotocol.io/protos/vega.UpdateMarket
   UpdateNetworkParameter:

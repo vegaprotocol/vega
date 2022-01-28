@@ -171,6 +171,10 @@ func (t timeStub) TraceID() string {
 	return "test-trace-id"
 }
 
+func (t timeStub) TxHash() string {
+	return "test-tx-hash"
+}
+
 func (t timeStub) Type() events.Type {
 	return events.TimeUpdate
 }
@@ -185,6 +189,10 @@ func (t trStub) Type() events.Type {
 
 func (t trStub) TraceID() string {
 	return "test-trace-id"
+}
+
+func (t trStub) TxHash() string {
+	return "test-tx-hash"
 }
 
 func (t trStub) TransferResponses() []*types.TransferResponse {

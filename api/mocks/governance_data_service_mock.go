@@ -63,6 +63,20 @@ func (mr *MockGovernanceDataServiceMockRecorder) GetNewAssetProposals(arg0 inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewAssetProposals", reflect.TypeOf((*MockGovernanceDataService)(nil).GetNewAssetProposals), arg0)
 }
 
+// GetNewFreeformProposals mocks base method.
+func (m *MockGovernanceDataService) GetNewFreeformProposals(arg0 *vega.Proposal_State) []*vega.GovernanceData {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNewFreeformProposals", arg0)
+	ret0, _ := ret[0].([]*vega.GovernanceData)
+	return ret0
+}
+
+// GetNewFreeformProposals indicates an expected call of GetNewFreeformProposals.
+func (mr *MockGovernanceDataServiceMockRecorder) GetNewFreeformProposals(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewFreeformProposals", reflect.TypeOf((*MockGovernanceDataService)(nil).GetNewFreeformProposals), arg0)
+}
+
 // GetNewMarketProposals mocks base method.
 func (m *MockGovernanceDataService) GetNewMarketProposals(arg0 *vega.Proposal_State) []*vega.GovernanceData {
 	m.ctrl.T.Helper()

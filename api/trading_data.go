@@ -123,6 +123,7 @@ type GovernanceDataService interface {
 	GetUpdateMarketProposals(marketID string, inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetNetworkParametersProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 	GetNewAssetProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
+	GetNewFreeformProposals(inState *pbtypes.Proposal_State) []*pbtypes.GovernanceData
 
 	ObserveGovernance(ctx context.Context, retries int) <-chan []pbtypes.GovernanceData
 	ObservePartyProposals(ctx context.Context, retries int, partyID string) <-chan []pbtypes.GovernanceData
@@ -831,7 +832,7 @@ func (t *tradingDataService) OrdersByMarket(ctx context.Context,
 		return nil, apiError(codes.Internal, ErrOrderServiceGetByMarket, err)
 	}
 
-	var response = &protoapi.OrdersByMarketResponse{}
+	response := &protoapi.OrdersByMarketResponse{}
 	if len(o) > 0 {
 		response.Orders = o
 	}
@@ -856,7 +857,7 @@ func (t *tradingDataService) OrdersByParty(ctx context.Context,
 		return nil, apiError(codes.InvalidArgument, ErrOrderServiceGetByParty, err)
 	}
 
-	var response = &protoapi.OrdersByPartyResponse{}
+	response := &protoapi.OrdersByPartyResponse{}
 	if len(o) > 0 {
 		response.Orders = o
 	}
@@ -988,7 +989,7 @@ func (t *tradingDataService) PositionsByParty(ctx context.Context, request *prot
 	if err != nil {
 		return nil, apiError(codes.Internal, ErrTradeServiceGetPositionsByParty, err)
 	}
-	var response = &protoapi.PositionsByPartyResponse{}
+	response := &protoapi.PositionsByPartyResponse{}
 	response.Positions = positions
 	return response, nil
 }
@@ -1058,7 +1059,6 @@ func (t *tradingDataService) GetVegaTime(ctx context.Context, _ *protoapi.GetVeg
 	return &protoapi.GetVegaTimeResponse{
 		Timestamp: ts.UnixNano(),
 	}, nil
-
 }
 
 func (t *tradingDataService) Checkpoints(ctx context.Context, _ *protoapi.CheckpointsRequest) (*protoapi.CheckpointsResponse, error) {
@@ -1890,7 +1890,6 @@ func (t *tradingDataService) OrderByID(ctx context.Context, in *protoapi.OrderBy
 		Order: order,
 	}
 	return resp, nil
-
 }
 
 // OrderVersionsByID returns all versions of the order by its orderID
@@ -2011,6 +2010,20 @@ func (t *tradingDataService) GetNewAssetProposals(_ context.Context,
 	}, nil
 }
 
+func (t *tradingDataService) GetNewFreeformProposals(_ context.Context,
+	in *protoapi.GetNewFreeformProposalsRequest,
+) (*protoapi.GetNewFreeformProposalsResponse, error) {
+	defer metrics.StartAPIRequestAndTimeGRPC("GetNewFreeformProposals")()
+
+	var inState *pbtypes.Proposal_State
+	if in.SelectInState != nil {
+		inState = &in.SelectInState.Value
+	}
+	return &protoapi.GetNewFreeformProposalsResponse{
+		Data: t.governanceService.GetNewFreeformProposals(inState),
+	}, nil
+}
+
 func (t *tradingDataService) GetProposalByID(_ context.Context,
 	in *protoapi.GetProposalByIDRequest,
 ) (*protoapi.GetProposalByIDResponse, error) {
@@ -2074,6 +2087,7 @@ func (t *tradingDataService) ObserveGovernance(
 		}
 	}
 }
+
 func (t *tradingDataService) ObservePartyProposals(
 	in *protoapi.ObservePartyProposalsRequest,
 	stream protoapi.TradingDataService_ObservePartyProposalsServer,

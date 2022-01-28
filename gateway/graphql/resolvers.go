@@ -218,6 +218,10 @@ func (r *VegaResolverRoot) UpdateNetworkParameter() UpdateNetworkParameterResolv
 	return (*updateNetworkParameterResolver)(r)
 }
 
+func (r *VegaResolverRoot) NewFreeform() NewFreeformResolver {
+	return (*newFreeformResolver)(r)
+}
+
 func (r *VegaResolverRoot) PeggedOrder() PeggedOrderResolver {
 	return (*myPeggedOrderResolver)(r)
 }
@@ -749,6 +753,20 @@ func (r *myQueryResolver) NewAssetProposals(ctx context.Context, inState *Propos
 		return nil, err
 	}
 	resp, err := r.tradingDataClient.GetNewAssetProposals(ctx, &protoapi.GetNewAssetProposalsRequest{
+		SelectInState: filter,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Data, nil
+}
+
+func (r *myQueryResolver) NewFreeformProposals(ctx context.Context, inState *ProposalState) ([]*types.GovernanceData, error) {
+	filter, err := inState.ToOptionalProposalState()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.tradingDataClient.GetNewFreeformProposals(ctx, &protoapi.GetNewFreeformProposalsRequest{
 		SelectInState: filter,
 	})
 	if err != nil {

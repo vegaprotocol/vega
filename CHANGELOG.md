@@ -3,7 +3,7 @@
 ## Unreleased (0.48.0)
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+- [](https://github.com/vegaprotocol/data-node/pull/) - 
 
 ### 🗑️  Deprecation
 - [](https://github.com/vegaprotocol/data-node/pull/) -
@@ -25,6 +25,7 @@
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
 - [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens
 - [288](https://github.com/vegaprotocol/data-node/pull/288) - Add back `assetId` GraphQL resolver for `RewardPerAssetDetail`, change `RiskFactor` fields to strings.
+- [317](https://github.com/vegaprotocol/data-node/pull/317) - Fix `graphql` support for free-form governance proposals
 
 ## 0.47.1
 *`2021-12-20`*

@@ -1,78 +1,56 @@
-//go:build !race
-// +build !race
-
 package broker_test
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"net"
+	"os"
+	"os/exec"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
-	"code.vegaprotocol.io/data-node/broker"
-	"code.vegaprotocol.io/data-node/broker/mocks"
-	"code.vegaprotocol.io/data-node/logging"
-	mocksdn "code.vegaprotocol.io/data-node/mocks"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
+	"code.vegaprotocol.io/vega/broker"
+	"code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/events"
-	"go.nanomsg.org/mangos/v3/protocol"
-	"go.nanomsg.org/mangos/v3/protocol/push"
-
-	"github.com/golang/protobuf/proto"
-	mangosErr "go.nanomsg.org/mangos/v3/errors"
+	vgcontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/logging"
+	"go.nanomsg.org/mangos/v3/protocol/pull"
 
 	"github.com/golang/mock/gomock"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/sync/errgroup"
 )
-
-const testChainId = "test-chain"
 
 type brokerTst struct {
 	*broker.Broker
-	cfunc    context.CancelFunc
-	ctx      context.Context
-	ctrl     *gomock.Controller
-	sock     protocol.Socket
-	dialAddr string
+	cfunc context.CancelFunc
+	ctx   context.Context
+	ctrl  *gomock.Controller
 }
 
 type evt struct {
-	t   events.Type
-	ctx context.Context
-	sid uint64
-	id  string
-	cid string
+	t      events.Type
+	ctx    context.Context
+	sid    uint64
+	id     string
+	cid    string
+	txHash string
 }
 
 func getBroker(t *testing.T) *brokerTst {
+	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
-
-	// Use in process transport for testing
-	config := broker.NewDefaultConfig()
-	config.SocketConfig.TransportType = "inproc"
-	config.SocketConfig.IP = t.Name()
-	config.SocketConfig.Port = 8085
-
-	sock, err := push.NewSocket()
-	assert.NoError(t, err)
-	socketConfig := config.SocketConfig
-
-	chainInfo := mocksdn.NewMockChainInfoI(ctrl)
-	chainInfo.EXPECT().GetChainID().Return(testChainId, nil).AnyTimes()
-	broker, _ := broker.New(ctx, logging.NewTestLogger(), config, chainInfo)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), broker.NewDefaultConfig())
 	return &brokerTst{
-		Broker:   broker,
-		cfunc:    cfunc,
-		ctx:      ctx,
-		ctrl:     ctrl,
-		sock:     sock,
-		dialAddr: fmt.Sprintf("%s://%s:%d", socketConfig.TransportType, socketConfig.IP, socketConfig.Port),
+		Broker: broker,
+		cfunc:  cfunc,
+		ctx:    ctx,
+		ctrl:   ctrl,
 	}
 }
 
@@ -82,10 +60,11 @@ func (b brokerTst) randomEvt() *evt {
 		idString = ctxV
 	}
 	return &evt{
-		t:   events.All,
-		ctx: b.ctx,
-		id:  idString,
-		cid: "testchain",
+		t:      events.All,
+		ctx:    b.ctx,
+		id:     idString,
+		cid:    "testchain",
+		txHash: "testTxHash",
 	}
 }
 
@@ -94,29 +73,137 @@ func (b *brokerTst) Finish() {
 	b.ctrl.Finish()
 }
 
+func TestSequenceIDGen(t *testing.T) {
+	t.Parallel()
+	t.Run("Sequence ID is correctly - events dispatched per block (ordered)", testSequenceIDGenSeveralBlocksOrdered)
+	t.Run("Sequence ID is correctly - events dispatched for several blocks at the same time", testSequenceIDGenSeveralBlocksUnordered)
+}
+
 func TestSubscribe(t *testing.T) {
+	t.Parallel()
 	t.Run("Subscribe and unsubscribe required - success", testSubUnsubSuccess)
 	t.Run("Subscribe reuses keys", testSubReuseKey)
 	t.Run("Unsubscribe automatically if subscriber is closed", testAutoUnsubscribe)
 }
 
+func TestStream(t *testing.T) {
+	t.Parallel()
+	t.Run("Streams events over socket", testStreamsOverSocket)
+	t.Run("Stops process if can not send to socket", testStopsProcessOnStreamError)
+}
+
 func TestSendEvent(t *testing.T) {
+	t.Parallel()
 	t.Run("Skip optional subscribers", testSkipOptional)
+	t.Run("Skip optional subscribers in a batch send", testSendBatchChannel)
+	t.Run("Send batch to ack subscriber", testSendBatch)
 	t.Run("Stop sending if context is cancelled", testStopCtx)
+	t.Run("Stop sending if context is cancelled, even new events", testStopCtxSendAgain)
 	t.Run("Skip subscriber based on channel state", testSubscriberSkip)
 	t.Run("Send only to typed subscriber (also tests TxErrEvents are skipped)", testEventTypeSubscription)
 }
 
-func TestReceive(t *testing.T) {
-	t.Run("Receives events and sends them to broker", testSendsReceivedEvents)
-	t.Run("Returns an error on version mismatch", testErrorOnVersionMismatch)
+func testSequenceIDGenSeveralBlocksOrdered(t *testing.T) {
+	t.Parallel()
+	tstBroker := getBroker(t)
+	defer tstBroker.Finish()
+	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
+	dataH1 := []events.Event{
+		events.NewTime(ctxH1, time.Now()),
+		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
+	}
+	dataH2 := []events.Event{
+		events.NewTime(ctxH2, time.Now()),
+		events.NewPartyEvent(ctxH2, types.Party{Id: "test-party-h2"}),
+	}
+	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
+	done := make(chan struct{})
+	mu := sync.Mutex{}
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	sub.EXPECT().Types().Times(2).Return(nil)
+	sub.EXPECT().Ack().Times(1).Return(true)
+	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
+		// race detector complains about appending here, because data comes from
+		// different go routines, so we'll use a quick & dirty fix: mutex the slice
+		mu.Lock()
+		defer mu.Unlock()
+		allData = append(allData, evts...)
+		if len(allData) >= cap(allData) {
+			close(done)
+		}
+	})
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	k := tstBroker.Subscribe(sub)
+	// send batches for both events - hash 2 after hash 1
+	tstBroker.SendBatch(dataH1)
+	tstBroker.SendBatch(dataH2)
+	seqH1 := []uint64{}
+	seqH2 := []uint64{}
+	for i := range dataH1 {
+		seqH1 = append(seqH1, dataH1[i].Sequence())
+		seqH2 = append(seqH2, dataH2[i].Sequence())
+	}
+	assert.Equal(t, seqH1, seqH2)
+	<-done
+	tstBroker.Unsubscribe(k)
+	assert.NotEqual(t, seqH1[0], seqH2[1]) // the two are equal, we can compare X-slice
+	assert.Equal(t, len(allData), len(dataH1)+len(dataH2))
 }
 
-func TestTxErrEvents(t *testing.T) {
-	t.Run("Ensure TxErrEvents are hidden from ALL subscribers", testTxErrNotAll)
+func testSequenceIDGenSeveralBlocksUnordered(t *testing.T) {
+	t.Parallel()
+	tstBroker := getBroker(t)
+	defer tstBroker.Finish()
+	ctxH1, ctxH2 := vgcontext.WithTraceID(tstBroker.ctx, "hash-1"), vgcontext.WithTraceID(tstBroker.ctx, "hash-2")
+	dataH1 := []events.Event{
+		events.NewTime(ctxH1, time.Now()),
+		events.NewPartyEvent(ctxH1, types.Party{Id: "test-party-h1"}),
+	}
+	dataH2 := []events.Event{
+		events.NewTime(ctxH2, time.Now()),
+		events.NewPartyEvent(ctxH2, types.Party{Id: "test-party-h2"}),
+	}
+	allData := make([]events.Event, 0, len(dataH1)+len(dataH2))
+	mu := sync.Mutex{}
+	done := make(chan struct{})
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	sub.EXPECT().Types().Times(2).Return(nil)
+	sub.EXPECT().Ack().Times(1).Return(true)
+	sub.EXPECT().Skip().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Closed().AnyTimes().Return(tstBroker.ctx.Done())
+	sub.EXPECT().Push(gomock.Any()).AnyTimes().Do(func(evts ...events.Event) {
+		mu.Lock()
+		defer mu.Unlock()
+		allData = append(allData, evts...)
+		if len(allData) >= cap(allData) {
+			close(done)
+		}
+	})
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	k := tstBroker.Subscribe(sub)
+	// We can't use sendBatch here: we use the traceID of the first event in the batch to determine
+	// the hash (batch-sending events can only happen within a single block)
+	for i := range dataH1 {
+		tstBroker.Send(dataH1[i])
+		tstBroker.Send(dataH2[i])
+	}
+	seqH1 := []uint64{}
+	seqH2 := []uint64{}
+	for i := range dataH1 {
+		seqH1 = append(seqH1, dataH1[i].Sequence())
+		seqH2 = append(seqH2, dataH2[i].Sequence())
+	}
+	assert.Equal(t, seqH1, seqH2)
+	<-done
+	tstBroker.Unsubscribe(k)
+	assert.NotEqual(t, seqH1[0], seqH2[1]) // the two are equal, we can compare X-slice
+	assert.Equal(t, len(allData), len(dataH1)+len(dataH2))
 }
 
 func testSubUnsubSuccess(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -124,8 +211,10 @@ func testSubUnsubSuccess(t *testing.T) {
 	// subscribe + unsubscribe -> 2 calls
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	reqSub.EXPECT().Types().Times(2).Return(nil)
 	reqSub.EXPECT().Ack().Times(1).Return(true)
+	reqSub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub)    // not required
 	k2 := broker.Subscribe(reqSub) // required
 	assert.NotZero(t, k1)
@@ -138,11 +227,13 @@ func testSubUnsubSuccess(t *testing.T) {
 }
 
 func testSubReuseKey(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	sub.EXPECT().Types().Times(4).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(2)
 	k1 := broker.Subscribe(sub)
 	sub.EXPECT().Ack().Times(1).Return(true)
 	assert.NotZero(t, k1)
@@ -155,12 +246,14 @@ func testSubReuseKey(t *testing.T) {
 }
 
 func testAutoUnsubscribe(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
 	// sub, auto-unsub, sub again
 	sub.EXPECT().Types().Times(3).Return(nil)
 	sub.EXPECT().Ack().Times(1).Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(2)
 	k1 := broker.Subscribe(sub)
 	assert.NotZero(t, k1)
 	// set up sub to be closed
@@ -188,7 +281,42 @@ func testAutoUnsubscribe(t *testing.T) {
 	assert.Equal(t, k1, k2)
 }
 
-func testSkipOptional(t *testing.T) {
+func testSendBatch(t *testing.T) {
+	t.Parallel()
+	tstBroker := getBroker(t)
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	cancelCh := make(chan struct{})
+	defer func() {
+		tstBroker.Finish()
+		close(cancelCh)
+	}()
+	sub.EXPECT().Types().Times(1).Return(nil)
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	k1 := tstBroker.Subscribe(sub)
+	assert.NotZero(t, k1)
+	data := []events.Event{
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+	}
+	// ensure all 3 events are being sent (wait for routine to spawn)
+	sub.EXPECT().Closed().AnyTimes().Return(cancelCh)
+	sub.EXPECT().Skip().AnyTimes().Return(cancelCh)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	sub.EXPECT().Push(gomock.Any()).Times(1).Do(func(evts ...events.Event) {
+		assert.Equal(t, len(data), len(evts))
+		wg.Done()
+	})
+
+	// send events
+	tstBroker.SendBatch(data)
+	wg.Wait()
+}
+
+func testSendBatchChannel(t *testing.T) {
+	t.Parallel()
 	tstBroker := getBroker(t)
 	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
 	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
@@ -203,6 +331,89 @@ func testSkipOptional(t *testing.T) {
 		twg.Done()
 	})
 	sub.EXPECT().Ack().AnyTimes().Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	k1 := tstBroker.Subscribe(sub)
+	assert.NotZero(t, k1)
+	batch2 := []events.Event{
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+	}
+	evts := []events.Event{
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+		tstBroker.randomEvt(),
+	}
+	// ensure both batches are sent
+	wg := sync.WaitGroup{}
+	// 3 calls, only the first batch will be sent
+	// third call is routine that tries to send the second batch. This will of course fail
+	wg.Add(3)
+	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
+	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	// we try to get the channel 3 times, only 1 of the attempts will actually publish the events
+	sub.EXPECT().C().Times(3).Return(cCh).Do(func() {
+		// Done call each time we tried sending an event
+		wg.Done()
+	})
+
+	// send events
+	tstBroker.SendBatch(evts)
+	tstBroker.SendBatch(batch2)
+	wg.Wait()
+	// we've tried to send 2 batches of events, subscriber could only accept one. Check state of all the things
+	// we need to unsubscribe the subscriber, because we're closing the channels and race detector complains
+	// because there's a loop calling functions that are returning the channels we're closing here
+	tstBroker.Unsubscribe(k1)
+	// ensure unsubscribe has returned
+	twg.Wait()
+
+	// get our batches
+	batches := [][]events.Event{
+		<-cCh, <-cCh,
+	}
+
+	// assert we have all events now.
+	batchSizes := map[int]struct{}{}
+	evtSeq := map[uint64]struct{}{}
+	for _, batch := range batches {
+		batchSizes[len(batch)] = struct{}{}
+		for _, v := range batch {
+			evtSeq[v.Sequence()] = struct{}{}
+		}
+	}
+
+	// now ensure we have the batch with right sizes
+	_, ok := batchSizes[len(batch2)]
+	assert.True(t, ok, "missing batch of size ", len(batch2))
+	_, ok = batchSizes[len(evts)]
+	assert.True(t, ok, "missing batch of size ", len(evts))
+
+	// now ensure we got all sequence IDs
+	for _, v := range append(evts, batch2...) {
+		_, ok := evtSeq[v.Sequence()]
+		if !ok {
+			t.Fatalf("missing event sequence from batches %v", v.Sequence())
+		}
+	}
+}
+
+func testSkipOptional(t *testing.T) {
+	t.Parallel()
+	tstBroker := getBroker(t)
+	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
+	skipCh, closedCh, cCh := make(chan struct{}), make(chan struct{}), make(chan []events.Event, 1)
+	defer func() {
+		tstBroker.Finish()
+		close(closedCh)
+		close(skipCh)
+	}()
+	twg := sync.WaitGroup{}
+	twg.Add(2)
+	sub.EXPECT().Types().Times(2).Return(nil).Do(func() {
+		twg.Done()
+	})
+	sub.EXPECT().Ack().AnyTimes().Return(false)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := tstBroker.Subscribe(sub)
 	assert.NotZero(t, k1)
 
@@ -257,180 +468,8 @@ func testSkipOptional(t *testing.T) {
 	assert.Equal(t, 0, len(cCh))
 }
 
-func testSendsReceivedEvents(t *testing.T) {
-	tstBroker := getBroker(t)
-	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh := make(chan struct{}), make(chan struct{})
-	defer func() {
-		tstBroker.Finish()
-		close(closedCh)
-		close(skipCh)
-	}()
-
-	sub.EXPECT().Types().AnyTimes().Return(nil)
-	sub.EXPECT().Ack().AnyTimes().Return(true)
-
-	k1 := tstBroker.Subscribe(sub)
-	assert.NotZero(t, k1)
-
-	busEvts := []eventspb.BusEvent{
-		{
-			Version: 1,
-			Id:      "id-1",
-			Block:   "1",
-			ChainId: testChainId,
-			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-			Event: &eventspb.BusEvent_TimeUpdate{
-				TimeUpdate: &eventspb.TimeUpdate{
-					Timestamp: 1628173151,
-				},
-			},
-		},
-		{
-			Version: 1,
-			Id:      "id-2",
-			Block:   "2",
-			ChainId: testChainId,
-			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-			Event: &eventspb.BusEvent_TimeUpdate{
-				TimeUpdate: &eventspb.TimeUpdate{
-					Timestamp: 1628173152,
-				},
-			},
-		},
-		{
-			Version: 1,
-			Id:      "id-3",
-			Block:   "3",
-			ChainId: testChainId,
-			Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-			Event: &eventspb.BusEvent_TimeUpdate{
-				TimeUpdate: &eventspb.TimeUpdate{
-					Timestamp: 1628173152,
-				},
-			},
-		},
-	}
-
-	// ensure all 3 events are being sent
-	wg := sync.WaitGroup{}
-	wg.Add(3)
-	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
-	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	sub.EXPECT().Push(gomock.Any()).Times(3).Do(func(events ...interface{}) {
-		wg.Done()
-	})
-
-	ctx, cancel := context.WithCancel(context.Background())
-	go tstBroker.Receive(ctx)
-
-	var numOfRetries int
-	for {
-		err := tstBroker.sock.Dial(tstBroker.dialAddr)
-		if err == nil {
-			break
-		}
-
-		if err != mangosErr.ErrConnRefused {
-			continue
-		}
-
-		if numOfRetries < 5 {
-			numOfRetries++
-			time.Sleep(time.Microsecond * 500)
-			continue
-		}
-
-		t.Fatal(err)
-	}
-
-	for _, evnt := range busEvts {
-		b, err := proto.Marshal(&evnt)
-		assert.NoError(t, err)
-
-		err = tstBroker.sock.Send(b)
-		assert.NoError(t, err)
-	}
-
-	wg.Wait()
-	cancel()
-}
-
-func testErrorOnVersionMismatch(t *testing.T) {
-	tstBroker := getBroker(t)
-	sub := mocks.NewMockSubscriber(tstBroker.ctrl)
-	skipCh, closedCh := make(chan struct{}), make(chan struct{})
-	defer func() {
-		tstBroker.Finish()
-		close(closedCh)
-		close(skipCh)
-	}()
-
-	sub.EXPECT().Types().AnyTimes().Return(nil)
-	sub.EXPECT().Ack().AnyTimes().Return(true)
-
-	k1 := tstBroker.Subscribe(sub)
-	assert.NotZero(t, k1)
-
-	evnt := eventspb.BusEvent{
-		Version: 2,
-		Id:      "id-1",
-		Block:   "1",
-		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
-		Event: &eventspb.BusEvent_TimeUpdate{
-			TimeUpdate: &eventspb.TimeUpdate{
-				Timestamp: 1628173151,
-			},
-		},
-	}
-
-	sub.EXPECT().Closed().AnyTimes().Return(closedCh)
-	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-
-	eg, ctx := errgroup.WithContext(context.Background())
-	ctx, cancel := context.WithCancel(ctx)
-	eg.Go(func() error {
-		return tstBroker.Receive(ctx)
-	})
-
-	var numOfRetries int
-	for {
-		err := tstBroker.sock.Dial(tstBroker.dialAddr)
-		if err == nil {
-			break
-		}
-
-		if err != mangosErr.ErrConnRefused {
-			continue
-		}
-
-		if numOfRetries < 5 {
-			numOfRetries++
-			time.Sleep(time.Microsecond * 500)
-			continue
-		}
-
-		t.Fatal(err)
-	}
-
-	b, err := proto.Marshal(&evnt)
-	assert.NoError(t, err)
-
-	err = tstBroker.sock.Send(b)
-	assert.NoError(t, err)
-
-	eg.Go(func() error {
-		time.Sleep(time.Second * 2)
-		return fmt.Errorf("test has timed out")
-	})
-
-	err = eg.Wait()
-	assert.EqualError(t, err, "mismatched BusEvent version received: 2, want 1")
-
-	cancel()
-}
-
 func testStopCtx(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -441,6 +480,7 @@ func testStopCtx(t *testing.T) {
 	broker.cfunc()
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	broker.Send(broker.randomEvt())
@@ -449,7 +489,31 @@ func testStopCtx(t *testing.T) {
 	close(ch)
 }
 
+func testStopCtxSendAgain(t *testing.T) {
+	t.Parallel()
+	broker := getBroker(t)
+	defer broker.Finish()
+	sub := mocks.NewMockSubscriber(broker.ctrl)
+	ch := make(chan struct{})
+	sub.EXPECT().Closed().AnyTimes().Return(ch)
+	sub.EXPECT().Skip().AnyTimes().Return(ch)
+	// no calls sub are expected, we cancelled the context
+	broker.cfunc()
+	sub.EXPECT().Types().Times(2).Return(nil)
+	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	k1 := broker.Subscribe(sub) // required sub
+	assert.NotZero(t, k1)
+	broker.Send(broker.randomEvt())
+	broker.cfunc()
+	broker.Send(broker.randomEvt())
+	// calling unsubscribe acquires lock, so we can ensure the Send call has returned
+	broker.Unsubscribe(k1)
+	close(ch)
+}
+
 func testSubscriberSkip(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -479,6 +543,7 @@ func testSubscriberSkip(t *testing.T) {
 	sub.EXPECT().Push(events[1]).Times(1)
 	sub.EXPECT().Types().Times(2).Return(nil)
 	sub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub) // required sub
 	assert.NotZero(t, k1)
 	for _, e := range events {
@@ -491,8 +556,9 @@ func testSubscriberSkip(t *testing.T) {
 	close(closeCh)
 }
 
-// test making sure that events are sent only to subs that are interested in it
+// test making sure that events are sent only to subs that are interested in it.
 func testEventTypeSubscription(t *testing.T) {
+	t.Parallel()
 	broker := getBroker(t)
 	defer broker.Finish()
 	sub := mocks.NewMockSubscriber(broker.ctrl)
@@ -528,6 +594,9 @@ func testEventTypeSubscription(t *testing.T) {
 	sub.EXPECT().Ack().AnyTimes().Return(true)
 	diffSub.EXPECT().Ack().AnyTimes().Return(true)
 	allSub.EXPECT().Ack().AnyTimes().Return(true)
+	sub.EXPECT().SetID(gomock.Any()).Times(1)
+	diffSub.EXPECT().SetID(gomock.Any()).Times(1)
+	allSub.EXPECT().SetID(gomock.Any()).Times(1)
 	k1 := broker.Subscribe(sub)     // required sub
 	k2 := broker.Subscribe(diffSub) // required sub, but won't be used anyway
 	k3 := broker.Subscribe(allSub)
@@ -535,14 +604,8 @@ func testEventTypeSubscription(t *testing.T) {
 	assert.NotZero(t, k2)
 	assert.NotZero(t, k3)
 	assert.NotEqual(t, k1, k2)
-	// send the TxErrEvent, a special case none of the subscribers ought to ever receive
-	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("random err"), "party-1", types.Vote{
-		PartyId:    "party-1",
-		Value:      types.Vote_VALUE_YES,
-		ProposalId: "prop-1",
-	}))
-	// send the correct event
-	broker.Send(event)
+	// send a time event
+	broker.Send(events.NewTime(context.Background(), time.Now()))
 	// ensure the event was delivered
 	wg.Wait()
 	// unsubscribe the subscriber, now we're done
@@ -553,64 +616,93 @@ func testEventTypeSubscription(t *testing.T) {
 	close(closeCh)
 }
 
-func testTxErrNotAll(t *testing.T) {
-	broker := getBroker(t)
-	defer broker.Finish()
-	sub := mocks.NewMockSubscriber(broker.ctrl)
-	allSub := mocks.NewMockSubscriber(broker.ctrl)
-	skipCh, closeCh := make(chan struct{}), make(chan struct{})
+func testStreamsOverSocket(t *testing.T) {
+	t.Parallel()
+	ctx, cfunc := context.WithCancel(context.Background())
+	ctrl := gomock.NewController(t)
+	config := broker.NewDefaultConfig()
+	config.Socket.Enabled = true
+	config.Socket.Transport = "inproc"
 
-	// we'll send error events. Once both have been sent to the subscriber
-	// we're certain none of them were pushed to the ALL subscriber
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	// Closed check
-	sub.EXPECT().Closed().AnyTimes().Return(closeCh)
-	allSub.EXPECT().Closed().AnyTimes().Return(closeCh)
-	// skip check
-	sub.EXPECT().Skip().AnyTimes().Return(skipCh)
-	allSub.EXPECT().Skip().AnyTimes().Return(skipCh)
+	sock, err := pull.NewSocket()
+	assert.NoError(t, err)
 
-	// all subscriber ought to never receive anything, so don't specify an EXPECT
-	// allSub.EXPECT().Push(gomock.Any()).Times(0)
-	// actually push the event - diffSub expects nothing
-	sub.EXPECT().Push(gomock.Any()).Times(2).Do(func(_ interface{}) {
-		wg.Done()
-	})
-	// the event types this subscriber is interested in
-	sub.EXPECT().Types().AnyTimes().Return([]events.Type{events.TxErrEvent})
-	allSub.EXPECT().Types().AnyTimes().Return(nil) // subscribed to ALL events
+	addr := fmt.Sprintf(
+		"inproc://%s",
+		net.JoinHostPort(config.Socket.Address, fmt.Sprintf("%d", config.Socket.Port)),
+	)
+	err = sock.Listen(addr)
+	assert.NoError(t, err)
 
-	// both subscribers are ack'ing
-	sub.EXPECT().Ack().AnyTimes().Return(true)
-	allSub.EXPECT().Ack().AnyTimes().Return(true)
+	broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
 
-	// TxErrEvent
-	evt := events.NewTxErrEvent(broker.ctx, errors.New("some error"), "party-1", types.Vote{
-		PartyId:    "party-1",
-		Value:      types.Vote_VALUE_YES,
-		ProposalId: "prop-1",
-	})
-	k1 := broker.Subscribe(sub)
-	k2 := broker.Subscribe(allSub)
-	assert.NotZero(t, k1)
-	assert.NotZero(t, k2)
-	assert.NotEqual(t, k1, k2)
-	// send the correct event
-	broker.Send(evt)
-	// send a second event
-	broker.Send(events.NewTxErrEvent(broker.ctx, errors.New("some error 2"), "party-2", types.Vote{
-		PartyId:    "party-2",
-		Value:      types.Vote_VALUE_NO,
-		ProposalId: "prop-2",
-	}))
-	// ensure the event was delivered
-	wg.Wait()
-	// unsubscribe the subscriber, now we're done
-	broker.Unsubscribe(k1)
-	broker.Unsubscribe(k2)
-	close(skipCh)
-	close(closeCh)
+	defer func() {
+		cfunc()
+		ctrl.Finish()
+		sock.Close()
+	}()
+
+	sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 0o0, 0o1, 0o1, 0, time.UTC))
+
+	broker.Send(sentEvent)
+
+	receivedBytes, err := sock.Recv()
+	assert.NoError(t, err)
+
+	var receivedEvent eventspb.BusEvent
+	err = proto.Unmarshal(receivedBytes, &receivedEvent)
+	assert.NoError(t, err)
+	assert.Equal(t, *sentEvent.StreamMessage(), receivedEvent)
+}
+
+func testStopsProcessOnStreamError(t *testing.T) {
+	t.Parallel()
+	if os.Getenv("RUN_TEST") == "1" {
+		ctx, cfunc := context.WithCancel(context.Background())
+		ctrl := gomock.NewController(t)
+		config := broker.NewDefaultConfig()
+		config.Socket.Enabled = true
+		config.Socket.Transport = "inproc"
+
+		// Having such a small buffers will make the process fail
+		config.Socket.SocketChannelBufferSize = 0
+		config.Socket.EventChannelBufferSize = 0
+
+		sock, err := pull.NewSocket()
+		assert.NoError(t, err)
+
+		addr := fmt.Sprintf(
+			"inproc://%s",
+			net.JoinHostPort(config.Socket.Address, fmt.Sprintf("%d", config.Socket.Port)),
+		)
+		err = sock.Listen(addr)
+		assert.NoError(t, err)
+
+		broker, _ := broker.New(ctx, logging.NewTestLogger(), config)
+
+		defer func() {
+			cfunc()
+			ctrl.Finish()
+			sock.Close()
+		}()
+
+		sentEvent := events.NewTime(ctx, time.Date(2020, time.December, 25, 0o0, 0o1, 0o1, 0, time.UTC))
+
+		broker.Send(sentEvent)
+		// One of the next call should terminate the process
+		broker.Send(sentEvent)
+		broker.Send(sentEvent)
+		broker.Send(sentEvent)
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestStream/Stops_process_if_can_not_send_to_socket")
+	cmd.Env = append(os.Environ(), "RUN_TEST=1")
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	t.Fatalf("process ran with err %v, want exit status 1", err)
 }
 
 func (e evt) Type() events.Type {
@@ -633,10 +725,14 @@ func (e evt) TraceID() string {
 	return e.id
 }
 
-func (e evt) StreamMessage() *eventspb.BusEvent {
-	return nil
-}
-
 func (e evt) ChainID() string {
 	return e.cid
+}
+
+func (e evt) TxHash() string {
+	return e.txHash
+}
+
+func (e evt) StreamMessage() *eventspb.BusEvent {
+	return nil
 }

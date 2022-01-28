@@ -78,6 +78,10 @@ func (m meStub) TraceID() string {
 	return "trace-id-test"
 }
 
+func (m meStub) TxHash() string {
+	return "txhash-test"
+}
+
 func (m meStub) Type() events.Type {
 	return m.t
 }
