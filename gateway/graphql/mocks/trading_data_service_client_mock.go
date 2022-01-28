@@ -1556,6 +1556,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) TransferResponsesSubscribe(a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferResponsesSubscribe", reflect.TypeOf((*MockTradingDataServiceClient)(nil).TransferResponsesSubscribe), varargs...)
 }
 
+// Transfers mocks base method.
+func (m *MockTradingDataServiceClient) Transfers(arg0 context.Context, arg1 *v1.TransfersRequest, arg2 ...grpc.CallOption) (*v1.TransfersResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Transfers", varargs...)
+	ret0, _ := ret[0].(*v1.TransfersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Transfers indicates an expected call of Transfers.
+func (mr *MockTradingDataServiceClientMockRecorder) Transfers(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transfers", reflect.TypeOf((*MockTradingDataServiceClient)(nil).Transfers), varargs...)
+}
+
 // Withdrawal mocks base method.
 func (m *MockTradingDataServiceClient) Withdrawal(arg0 context.Context, arg1 *v1.WithdrawalRequest, arg2 ...grpc.CallOption) (*v1.WithdrawalResponse, error) {
 	m.ctrl.T.Helper()

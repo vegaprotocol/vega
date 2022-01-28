@@ -215,7 +215,7 @@ func getTestGRPCServer(
 	tradeService := trades.NewService(logger, conf.Trades, tradeStore, nil)
 
 	// TransferResponse Service
-	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore)
+	transferResponseService := transfers.NewService(logger, conf.Transfers, transferResponseStore, nil)
 	if err != nil {
 		err = errors.Wrap(err, "failed to create trade service")
 		return

@@ -52,6 +52,8 @@ func (s *Transfers) ReloadConf(cfg Config) {
 }
 
 func (t *Transfers) AddTransfer(tf eventspb.Transfer) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	_, ok := t.transfers[tf.Id]
 	if ok {
 		// this transfers already exists, no need to
@@ -83,6 +85,8 @@ func (t *Transfers) GetAll(
 	pubkey string,
 	isFrom, isTo bool,
 ) []*eventspb.Transfer {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	transferIDs := map[string]struct{}{}
 
 	if isFrom {
