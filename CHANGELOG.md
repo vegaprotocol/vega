@@ -58,6 +58,7 @@
 - [4663](https://github.com/vegaprotocol/vega/issues/4663) - CI set `qa` build tag when running system tests
 - [4657](https://github.com/vegaprotocol/vega/pull/4657) - Rename `min_lp_stake` to quantum + use it in liquidity provisions
 - [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
+- [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add integration test ensuring positions plug-in calculates P&L accurately.
 
 
 ### 🐛 Fixes
