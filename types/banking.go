@@ -57,6 +57,7 @@ type TransferBase struct {
 	Amount          *num.Uint
 	Reference       string
 	Status          TransferStatus
+	Timestamp       time.Time
 }
 
 func (t *TransferBase) IsValid() error {
@@ -128,6 +129,7 @@ func OneOffTransferFromEvent(p *eventspb.Transfer) *OneOffTransfer {
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,
+			Timestamp:       time.Unix(p.Timestamp/int64(time.Second), p.Timestamp%int64(time.Second)),
 		},
 		DeliverOn: deliverOn,
 	}
@@ -144,6 +146,7 @@ func (t *OneOffTransfer) IntoEvent() *eventspb.Transfer {
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          t.Status,
+		Timestamp:       t.Timestamp.UnixNano(),
 	}
 
 	if t.DeliverOn != nil {
@@ -205,6 +208,7 @@ func (t *RecurringTransfer) IntoEvent() *eventspb.Transfer {
 		Amount:          t.Amount.String(),
 		Reference:       t.Reference,
 		Status:          t.Status,
+		Timestamp:       t.Timestamp.UnixNano(),
 		Kind: &eventspb.Transfer_Recurring{
 			Recurring: &eventspb.RecurringTransfer{
 				StartEpoch: t.StartEpoch,
@@ -337,6 +341,7 @@ func RecurringTransferFromEvent(p *eventspb.Transfer) *RecurringTransfer {
 			Amount:          amount,
 			Reference:       p.Reference,
 			Status:          p.Status,
+			Timestamp:       time.Unix(p.Timestamp/int64(time.Second), p.Timestamp%int64(time.Second)),
 		},
 		StartEpoch: p.GetRecurring().GetStartEpoch(),
 		EndEpoch:   endEpoch,
