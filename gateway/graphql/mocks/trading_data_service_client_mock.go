@@ -396,6 +396,26 @@ func (mr *MockTradingDataServiceClientMockRecorder) GetNewAssetProposals(arg0, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewAssetProposals", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetNewAssetProposals), varargs...)
 }
 
+// GetNewFreeformProposals mocks base method.
+func (m *MockTradingDataServiceClient) GetNewFreeformProposals(arg0 context.Context, arg1 *v1.GetNewFreeformProposalsRequest, arg2 ...grpc.CallOption) (*v1.GetNewFreeformProposalsResponse, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNewFreeformProposals", varargs...)
+	ret0, _ := ret[0].(*v1.GetNewFreeformProposalsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNewFreeformProposals indicates an expected call of GetNewFreeformProposals.
+func (mr *MockTradingDataServiceClientMockRecorder) GetNewFreeformProposals(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNewFreeformProposals", reflect.TypeOf((*MockTradingDataServiceClient)(nil).GetNewFreeformProposals), varargs...)
+}
+
 // GetNewMarketProposals mocks base method.
 func (m *MockTradingDataServiceClient) GetNewMarketProposals(arg0 context.Context, arg1 *v1.GetNewMarketProposalsRequest, arg2 ...grpc.CallOption) (*v1.GetNewMarketProposalsResponse, error) {
 	m.ctrl.T.Helper()

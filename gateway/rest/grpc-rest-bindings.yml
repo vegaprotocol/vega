@@ -119,6 +119,8 @@ http:
       get: '/governance/market/proposals'
     - selector: api.v1.TradingDataService.GetNewAssetProposals
       get: '/governance/asset/proposals'
+    - selector: api.v1.TradingDataService.GetNewFreeformProposals
+      get: '/governance/freeform/proposals'
     - selector: api.v1.TradingDataService.GetProposals
       get: '/governance/proposals'
 

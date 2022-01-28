@@ -16,6 +16,7 @@ const (
 	NewAssetPropopsal
 	UpdateMarketProposal
 	UpdateNetworkParameterProposal
+	NewFreeformProposal
 )
 
 type ProposalFilteredSub struct {
@@ -68,6 +69,10 @@ func ProposalByChange(ptypes ...ProposalType) ProposalFilter {
 				}
 			case UpdateNetworkParameterProposal:
 				if un := p.Terms.GetUpdateNetworkParameter(); un != nil {
+					return true
+				}
+			case NewFreeformProposal:
+				if un := p.Terms.GetNewFreeform(); un != nil {
 					return true
 				}
 			}
