@@ -83,12 +83,13 @@ type Engine struct {
 	interval   int64
 	current    int64
 
-	providers    map[string]types.StateProvider
-	restoreProvs []types.PostRestore
-	providersNS  map[types.SnapshotNamespace][]types.StateProvider
-	providerTS   map[string]StateProviderT
-	pollCtx      context.Context
-	pollCfunc    context.CancelFunc
+	providers          map[string]types.StateProvider
+	restoreProvs       []types.PostRestore
+	beforeRestoreProvs []types.PreRestore
+	providersNS        map[types.SnapshotNamespace][]types.StateProvider
+	providerTS         map[string]StateProviderT
+	pollCtx            context.Context
+	pollCfunc          context.CancelFunc
 
 	last          *iavl.ImmutableTree
 	hash          []byte
@@ -411,6 +412,12 @@ func (e *Engine) applySnap(ctx context.Context, source SnapshotSource) error {
 	// restore app state
 	e.time.SetTimeNow(ctx, now)
 
+	// before we starts restoring the providers
+	for _, pp := range e.beforeRestoreProvs {
+		if err := pp.OnStateLoadStarts(ctx); err != nil {
+			return err
+		}
+	}
 	// now let's load the data in the correct order, skip app state, we've already handled that
 	for _, ns := range nodeOrder[1:] {
 		for _, n := range ordered[ns] {
@@ -720,6 +727,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			if pp, ok := p.(types.PostRestore); ok {
 				e.restoreProvs = append(e.restoreProvs, pp)
 			}
+			if pp, ok := p.(types.PreRestore); ok {
+				e.beforeRestoreProvs = append(e.beforeRestoreProvs, pp)
+			}
 			e.nsKeys[ns] = ks
 			continue
 		}
@@ -762,6 +772,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 		}
 		if pp, ok := p.(types.PostRestore); ok {
 			e.restoreProvs = append(e.restoreProvs, pp)
+		}
+		if pp, ok := p.(types.PreRestore); ok {
+			e.beforeRestoreProvs = append(e.beforeRestoreProvs, pp)
 		}
 	}
 }

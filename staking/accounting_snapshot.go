@@ -12,9 +12,10 @@ import (
 var accountsKey = (&types.PayloadStakingAccounts{}).Key()
 
 type accountingSnapshotState struct {
-	hash       []byte
-	serialised []byte
-	changed    bool
+	hash        []byte
+	serialised  []byte
+	changed     bool
+	isRestoring bool
 }
 
 func (a *Accounting) serialiseStakingAccounts() ([]byte, error) {
@@ -30,7 +31,10 @@ func (a *Accounting) serialiseStakingAccounts() ([]byte, error) {
 
 	pl := types.Payload{
 		Data: &types.PayloadStakingAccounts{
-			StakingAccounts: &types.StakingAccounts{Accounts: accounts},
+			StakingAccounts: &types.StakingAccounts{
+				Accounts:                accounts,
+				StakingAssetTotalSupply: a.stakingAssetTotalSupply.Clone(),
+			},
 		},
 	}
 
@@ -57,6 +61,16 @@ func (a *Accounting) getSerialisedAndHash(k string) ([]byte, []byte, error) {
 	a.accState.hash = hash
 	a.accState.changed = false
 	return data, hash, nil
+}
+
+func (a *Accounting) OnStateLoaded(_ context.Context) error {
+	a.accState.isRestoring = false
+	return nil
+}
+
+func (a *Accounting) OnStateLoadStarts(_ context.Context) error {
+	a.accState.isRestoring = true
+	return nil
 }
 
 func (a *Accounting) Namespace() types.SnapshotNamespace {
@@ -101,6 +115,8 @@ func (a *Accounting) restoreStakingAccounts(accounts *types.StakingAccounts) err
 		a.hashableAccounts = append(a.hashableAccounts, stakingAcc)
 		a.accounts[acc.Party] = stakingAcc
 	}
+
+	a.stakingAssetTotalSupply = accounts.StakingAssetTotalSupply.Clone()
 
 	a.accState.changed = true
 	return nil
