@@ -5,8 +5,8 @@ go 1.17
 require (
 	code.vegaprotocol.io/protos v0.47.1-0.20220128124824-b7012e202f8a
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vega v0.47.1-0.20220128101852-fcc6f458aa92
+	code.vegaprotocol.io/shared v0.0.0-20220128163854-7eab67fa60d2
+	code.vegaprotocol.io/vega v0.47.1-0.20220130113918-4ef385c88f40
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
 	github.com/fsnotify/fsnotify v1.5.1
@@ -33,6 +33,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/adrg/xdg v0.3.3 // indirect
 	github.com/agnivade/levenshtein v1.0.3 // indirect
@@ -85,7 +86,6 @@ require (
 	github.com/tendermint/tendermint v0.35.0 // indirect
 	github.com/tendermint/tm-db v0.6.4 // indirect
 	github.com/urfave/cli/v2 v2.3.0 // indirect
-	github.com/zannen/toml v0.3.2 // indirect
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.5 // indirect
