@@ -60,8 +60,8 @@ code.vegaprotocol.io/quant v0.2.5 h1:8h+TTHdz1LCO4oGXt8mbowXszd8CQP1MHlJOkthUp1E
 code.vegaprotocol.io/quant v0.2.5/go.mod h1:HEzOoPKj8OIP49r9AZYeo5281M5ygeGWxopwvt8k6Es=
 code.vegaprotocol.io/shared v0.0.0-20220128163854-7eab67fa60d2 h1:GKg+68ulAI0UPhru2FgGE+qGuqoTQbnNDF31LU8e+jA=
 code.vegaprotocol.io/shared v0.0.0-20220128163854-7eab67fa60d2/go.mod h1:pNHKwqRDkotUN0s6jErl7Eb2EpZa2HAf03lyPMTCUT0=
-code.vegaprotocol.io/vegawallet v0.11.2-0.20220128170319-bd1b750459bb h1:Pkya9cPZ2DiJmptxQVJf2GnP3aVnXfYhvUdxzpPXnOk=
-code.vegaprotocol.io/vegawallet v0.11.2-0.20220128170319-bd1b750459bb/go.mod h1:BkmeqUmVmiFmCxyuNNxXroCuMODdTkt5xAk419uGI3w=
+code.vegaprotocol.io/vegawallet v0.11.1-0.20220128170319-bd1b750459bb h1:RJjysWNH9OEBa/bFTkuLhuss3Imnwyd4pUgh+1A3uw0=
+code.vegaprotocol.io/vegawallet v0.11.1-0.20220128170319-bd1b750459bb/go.mod h1:BkmeqUmVmiFmCxyuNNxXroCuMODdTkt5xAk419uGI3w=
 collectd.org v0.3.0/go.mod h1:A/8DzQBkF6abtvrT2j/AU/4tiBgJWYyh0y/oB/4MlWE=
 contrib.go.opencensus.io/exporter/stackdriver v0.13.4/go.mod h1:aXENhDJ1Y4lIg4EUaVTwzvYETVNZk10Pu26tevFKLUc=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
