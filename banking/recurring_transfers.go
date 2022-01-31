@@ -17,8 +17,11 @@ var ErrStartEpochInThePast = errors.New("start epoch in the past")
 func (e *Engine) recurringTransfer(
 	ctx context.Context,
 	transfer *types.RecurringTransfer,
-) error {
+) (err error) {
 	defer func() {
+		if err != nil {
+			e.bss.changed[recurringTransfersKey] = true
+		}
 		e.broker.Send(events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}()
 
@@ -108,6 +111,8 @@ func (e *Engine) distributeRecurringTransfers(
 		e.broker.Send(events.NewTransferResponse(ctx, tresps))
 	}
 	if len(transfersDone) > 0 {
+		// also set the state change
+		e.bss.changed[recurringTransfersKey] = true
 		e.broker.SendBatch(transfersDone)
 	}
 

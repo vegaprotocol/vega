@@ -34,13 +34,30 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		return err
 	}
 
+	evts, err := e.loadScheduledTransfers(ctx, b.TransfersAtTime)
+	if err != nil {
+		return err
+	}
+
+	evts = append(evts, e.loadRecurringTransfers(ctx, b.RecurringTransfers)...)
+
+	if len(evts) > 0 {
+		e.broker.SendBatch(evts)
+	}
+
+	return nil
+}
+
+func (e *Engine) loadScheduledTransfers(
+	ctx context.Context, r []*checkpoint.ScheduledTransferAtTime,
+) ([]events.Event, error) {
 	evts := []events.Event{}
-	for _, v := range b.TransfersAtTime {
+	for _, v := range r {
 		transfers := make([]scheduledTransfer, 0, len(v.Transfers))
 		for _, v := range v.Transfers {
 			transfer, err := scheduledTransferFromProto(v)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			evts = append(evts, events.NewOneOffTransferFundsEvent(ctx, transfer.oneoff))
 			transfers = append(transfers, transfer)
@@ -48,17 +65,18 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 		e.scheduledTransfers[time.Unix(v.DeliverOn, 0)] = transfers
 	}
 
-	for _, v := range b.RecurringTransfers.RecurringTransfers {
+	return evts, nil
+}
+
+func (e *Engine) loadRecurringTransfers(
+	ctx context.Context, r *checkpoint.RecurringTransfers) []events.Event {
+	evts := []events.Event{}
+	for _, v := range r.RecurringTransfers {
 		transfer := types.RecurringTransferFromEvent(v)
 		e.recurringTransfers[transfer.ID] = transfer
 		evts = append(evts, events.NewRecurringTransferFundsEvent(ctx, transfer))
 	}
-
-	if len(evts) > 0 {
-		e.broker.SendBatch(evts)
-	}
-
-	return nil
+	return evts
 }
 
 func (e *Engine) getRecurringTransfers() *checkpoint.RecurringTransfers {
