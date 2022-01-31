@@ -1,6 +1,24 @@
 # Changelog
 
-## Unreleased
+## Unrelease (v0.49.0)
+
+### 🚨 Breaking changes
+- [XXXX](https://github.com/vegaprotocol/vega/issues/XXXX) -
+
+
+### 🗑️ Deprecation
+- [XXXX](https://github.com/vegaprotocol/vega/issues/XXXX) -
+
+
+### 🛠 Improvements
+- [XXXX](https://github.com/vegaprotocol/vega/issues/XXXX) -
+
+
+### 🐛 Fixes
+- [XXXX](https://github.com/vegaprotocol/vega/issues/XXXX) -
+
+
+## v0.48.0
 
 ### 🚨 Breaking changes
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
