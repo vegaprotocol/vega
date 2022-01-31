@@ -24,7 +24,7 @@ func addNodes(top *testTop, number int) {
 	ctx := context.Background()
 
 	for i := 0; i < number; i++ {
-		top.AddNodeRegistration(ctx, &commandspb.NodeRegistration{
+		top.AddNewNode(ctx, &commandspb.AnnounceNode{
 			Id:              fmt.Sprintf("vega-master-pubkey-%d", i),
 			ChainPubKey:     tmPubKeys[0],
 			VegaPubKey:      fmt.Sprintf("vega-key-%d", i),

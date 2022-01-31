@@ -4,10 +4,10 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.47.1-0.20220131091008-3391a9eb20de
+	code.vegaprotocol.io/protos v0.47.1-0.20220202113227-cf9faa4348f1
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220128163854-7eab67fa60d2
-	code.vegaprotocol.io/vegawallet v0.11.1-0.20220128170319-bd1b750459bb
+	code.vegaprotocol.io/vegawallet v0.11.1-0.20220201103542-8c75b89d3b96
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect

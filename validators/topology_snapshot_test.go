@@ -55,22 +55,22 @@ func TestTopologySnapshot(t *testing.T) {
 
 	ctx := context.Background()
 
-	nr1 := commandspb.NodeRegistration{
+	nr1 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKeys[0],
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
-	err = top.AddNodeRegistration(ctx, &nr1)
+	err = top.AddNewNode(ctx, &nr1)
 	assert.NoError(t, err)
 
-	nr2 := commandspb.NodeRegistration{
+	nr2 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey-2",
 		ChainPubKey:     tmPubKeys[1],
 		VegaPubKey:      "vega-key-2",
 		EthereumAddress: "eth-address-2",
 	}
-	err = top.AddNodeRegistration(ctx, &nr2)
+	err = top.AddNewNode(ctx, &nr2)
 	assert.NoError(t, err)
 
 	kr1 := &commandspb.KeyRotateSubmission{

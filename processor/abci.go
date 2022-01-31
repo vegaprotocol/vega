@@ -227,9 +227,14 @@ func NewApp(
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
 		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
-		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey)
+		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey).
+		HandleCheckTx(txn.ValidatorHeartbeatCommand, app.RequireValidatorPubKey)
 
 	app.abci.
+		HandleDeliverTx(txn.AnnounceNodeCommand,
+			app.SendEventOnError(app.DeliverAnnounceNode)).
+		HandleDeliverTx(txn.ValidatorHeartbeatCommand,
+			app.SendEventOnError(app.DeliverValidatorHeartbeat)).
 		HandleDeliverTx(txn.TransferFundsCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
 		HandleDeliverTx(txn.CancelTransferFundsCommand,
@@ -827,6 +832,24 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 		return ErrNodeSignatureWithNonValidatorMasterKey
 	}
 	return nil
+}
+
+func (app *App) DeliverAnnounceNode(ctx context.Context, tx abci.Tx) error {
+	an := &commandspb.AnnounceNode{}
+	if err := tx.Unmarshal(an); err != nil {
+		return err
+	}
+
+	return app.top.ProcessAnnounceNode(ctx, an)
+}
+
+func (app *App) DeliverValidatorHeartbeat(ctx context.Context, tx abci.Tx) error {
+	an := &commandspb.ValidatorHeartbeat{}
+	if err := tx.Unmarshal(an); err != nil {
+		return err
+	}
+
+	return app.top.ProcessValidatorHeartbeat(ctx, an)
 }
 
 func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {

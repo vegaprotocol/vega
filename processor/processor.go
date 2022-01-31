@@ -123,7 +123,8 @@ type Assets interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
+	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
+	ProcessValidatorHeartbeat(ctx context.Context, nr *commandspb.ValidatorHeartbeat) error
 	UpdateValidatorSet(keys []string)
 	Len() int
 	IsValidatorVegaPubKey(pk string) bool

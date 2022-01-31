@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 
@@ -30,6 +32,7 @@ type Broker interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/wallet_mock.go -package mocks code.vegaprotocol.io/vega/validators Wallet
 type Wallet interface {
+	Signer
 	PubKey() crypto.PublicKey
 	ID() crypto.PublicKey
 }
@@ -62,12 +65,24 @@ func (v ValidatorData) HashVegaPubKey() string {
 // ValidatorMapping maps a tendermint pubkey with a vega pubkey.
 type ValidatorMapping map[string]ValidatorData
 
+func (v ValidatorMapping) GetSortedListedINodeIDs() []string {
+	out := make([]string, 0, len(v))
+	for k := range v {
+		out = append(out, k)
+	}
+
+	sort.SliceStable(out, func(i, j int) bool { return out[i] < out[j] })
+
+	return out
+}
+
 type Topology struct {
 	log                  *logging.Logger
 	cfg                  Config
 	wallets              NodeWallets
 	broker               Broker
 	validatorPerformance *validatorPerformance
+	currentTime          time.Time
 
 	// vega pubkey to validator data
 	validators ValidatorMapping
@@ -87,9 +102,13 @@ type Topology struct {
 	pubKeyChangeListeners  []func(ctx context.Context, oldPubKey, newPubKey string)
 	currentBlockHeight     uint64
 
+	heartBeats map[string]*validatorHeartbeatTracker
+
 	mu sync.RWMutex
 
 	tss *topologySnapshotState
+
+	cmd Commander
 }
 
 func NewTopology(
@@ -109,9 +128,15 @@ func NewTopology(
 		pendingPubKeyRotations: pendingKeyRotationMapping{},
 		isValidatorSetup:       isValidatorSetup,
 		validatorPerformance:   NewValidatorPerformance(log),
+		heartBeats:             map[string]*validatorHeartbeatTracker{},
 	}
 
 	return t
+}
+
+func (t *Topology) OnTick(ctx context.Context, ct time.Time) {
+	t.currentTime = ct
+	t.checkHeartbeat(ctx)
 }
 
 // ReloadConf updates the internal configuration.
@@ -226,7 +251,8 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	return false
 }
 
-func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error {
+func (t *Topology) AddNewNode(
+	ctx context.Context, nr *commandspb.AnnounceNode) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -276,7 +302,8 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 	return nil
 }
 
-func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.NodeRegistration) {
+func (t *Topology) sendValidatorUpdateEvent(
+	ctx context.Context, nr *commandspb.AnnounceNode) {
 	t.broker.Send(events.NewValidatorUpdateEvent(
 		ctx,
 		nr.Id,
@@ -318,7 +345,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 			t.checkValidatorDataWithSelfWallets(data)
 		}
 
-		nr := &commandspb.NodeRegistration{
+		nr := &commandspb.AnnounceNode{
 			Id:              data.ID,
 			VegaPubKey:      data.VegaPubKey,
 			VegaPubKeyIndex: data.VegaPubKeyIndex,
@@ -329,7 +356,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 			Name:            data.Name,
 			AvatarUrl:       data.AvatarURL,
 		}
-		if err := t.AddNodeRegistration(ctx, nr); err != nil {
+		if err := t.AddNewNode(ctx, nr); err != nil {
 			return err
 		}
 	}
