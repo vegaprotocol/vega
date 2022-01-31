@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	checkpoint "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -15,16 +16,20 @@ import (
 )
 
 var (
-	withdrawalsKey  = (&types.PayloadBankingWithdrawals{}).Key()
-	depositsKey     = (&types.PayloadBankingDeposits{}).Key()
-	seenKey         = (&types.PayloadBankingSeen{}).Key()
-	assetActionsKey = (&types.PayloadBankingAssetActions{}).Key()
+	withdrawalsKey        = (&types.PayloadBankingWithdrawals{}).Key()
+	depositsKey           = (&types.PayloadBankingDeposits{}).Key()
+	seenKey               = (&types.PayloadBankingSeen{}).Key()
+	assetActionsKey       = (&types.PayloadBankingAssetActions{}).Key()
+	recurringTransfersKey = (&types.PayloadBankingRecurringTransfers{}).Key()
+	scheduledTransfersKey = (&types.PayloadBankingScheduledTransfers{}).Key()
 
 	hashKeys = []string{
 		withdrawalsKey,
 		depositsKey,
 		seenKey,
 		assetActionsKey,
+		recurringTransfersKey,
+		scheduledTransfersKey,
 	}
 
 	ErrSnapshotKeyDoesNotExist = errors.New("unknown key for banking snapshot")
@@ -42,6 +47,26 @@ func (e *Engine) Namespace() types.SnapshotNamespace {
 
 func (e *Engine) Keys() []string {
 	return hashKeys
+}
+
+func (e *Engine) serialiseRecurringTransfers() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingRecurringTransfers{
+			BankingRecurringTransfers: e.getRecurringTransfers(),
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
+}
+
+func (e *Engine) serialiseScheduledTransfers() ([]byte, error) {
+	payload := types.Payload{
+		Data: &types.PayloadBankingScheduledTransfers{
+			BankingScheduledTransfers: e.getScheduledTransfers(),
+		},
+	}
+
+	return proto.Marshal(payload.IntoProto())
 }
 
 func (e *Engine) serialiseAssetActions() ([]byte, error) {
@@ -200,9 +225,26 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 		return nil, e.restoreSeen(ctx, pl.BankingSeen)
 	case *types.PayloadBankingAssetActions:
 		return nil, e.restoreAssetActions(ctx, pl.BankingAssetActions)
+	case *types.PayloadBankingRecurringTransfers:
+		return nil, e.restoreRecurringTransfers(ctx, pl.BankingRecurringTransfers)
+	case *types.PayloadBankingScheduledTransfers:
+		return nil, e.restoreScheduledTransfers(ctx, pl.BankingScheduledTransfers)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
+}
+
+func (e *Engine) restoreRecurringTransfers(ctx context.Context, transfers *checkpoint.RecurringTransfers) error {
+	// ignore events here as we don't need to send them
+	_ = e.loadRecurringTransfers(ctx, transfers)
+
+	return nil
+}
+
+func (e *Engine) restoreScheduledTransfers(ctx context.Context, transfers []*checkpoint.ScheduledTransferAtTime) error {
+	// ignore events
+	_, err := e.loadScheduledTransfers(ctx, transfers)
+	return err
 }
 
 func (e *Engine) restoreDeposits(ctx context.Context, deposits *types.BankingDeposits) error {
