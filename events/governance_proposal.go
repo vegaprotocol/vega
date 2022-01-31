@@ -43,21 +43,16 @@ func (p Proposal) Proto() proto.Proposal {
 }
 
 func (p Proposal) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      p.eventID(),
-		Block:   p.TraceID(),
-		ChainId: p.ChainID(),
-		Type:    p.et.ToProto(),
-		Event: &eventspb.BusEvent_Proposal{
-			Proposal: &p.p,
-		},
+	busEvent := newBusEventFromBase(p.Base)
+	busEvent.Event = &eventspb.BusEvent_Proposal{
+		Proposal: &p.p,
 	}
+	return busEvent
 }
 
 func ProposalEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Proposal {
 	return &Proposal{
-		Base: newBaseFromStream(ctx, ProposalEvent, be),
+		Base: newBaseFromBusEvent(ctx, ProposalEvent, be),
 		p:    *be.GetProposal(),
 	}
 }

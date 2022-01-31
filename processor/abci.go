@@ -62,6 +62,7 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
+	Start() error
 	Info() ([]byte, int64)
 	List() ([]*types.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
@@ -456,6 +457,7 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
@@ -464,6 +466,15 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.blockCtx = ctx
 
 	app.abci.RegisterSnapshot(app.snapshot)
+
+	// Start the snapshot engine letting it clear any pre-existing state so that if we are
+	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
+	// them
+	if err := app.snapshot.Start(); err != nil {
+		app.cancel()
+		app.log.Fatal("couldn't start snapshot engine", logging.Error(err))
+	}
+
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -795,6 +806,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	}
 
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
+
 	return ctx, resp
 }
 

@@ -172,7 +172,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.spam = spam.New(n.Log, n.conf.Spam, n.epochService, n.stakingAccounts)
 	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to start snapshot engine: %w", err)
 	}
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)

@@ -490,7 +490,8 @@ type MarketPosition struct {
 }
 
 type StakingAccounts struct {
-	Accounts []*StakingAccount
+	Accounts                []*StakingAccount
+	StakingAssetTotalSupply *num.Uint
 }
 
 type StakingAccount struct {
@@ -2609,8 +2610,10 @@ func StakingAccountsFromProto(sa *snapshot.StakingAccounts) *StakingAccounts {
 	for _, a := range sa.Accounts {
 		accs = append(accs, StakingAccountFromProto(a))
 	}
+	bal, _ := num.UintFromString(sa.StakingAssetTotalSupply, 10)
 	return &StakingAccounts{
-		Accounts: accs,
+		Accounts:                accs,
+		StakingAssetTotalSupply: bal,
 	}
 }
 
@@ -2619,8 +2622,13 @@ func (s StakingAccounts) IntoProto() *snapshot.StakingAccounts {
 	for _, a := range s.Accounts {
 		accs = append(accs, a.IntoProto())
 	}
+	amount := "0"
+	if s.StakingAssetTotalSupply != nil {
+		amount = s.StakingAssetTotalSupply.String()
+	}
 	return &snapshot.StakingAccounts{
-		Accounts: accs,
+		Accounts:                accs,
+		StakingAssetTotalSupply: amount,
 	}
 }
 

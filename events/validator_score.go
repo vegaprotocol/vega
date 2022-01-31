@@ -47,16 +47,12 @@ func (vd ValidatorScore) ValidatorScoreEvent() eventspb.ValidatorScoreEvent {
 
 func (vd ValidatorScore) StreamMessage() *eventspb.BusEvent {
 	p := vd.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      vd.eventID(),
-		Block:   vd.TraceID(),
-		ChainId: vd.ChainID(),
-		Type:    vd.et.ToProto(),
-		Event: &eventspb.BusEvent_ValidatorScore{
-			ValidatorScore: &p,
-		},
+	busEvent := newBusEventFromBase(vd.Base)
+	busEvent.Event = &eventspb.BusEvent_ValidatorScore{
+		ValidatorScore: &p,
 	}
+
+	return busEvent
 }
 
 func ValidatorScoreEventFromStream(ctx context.Context, be *eventspb.BusEvent) *ValidatorScore {
@@ -66,7 +62,7 @@ func ValidatorScoreEventFromStream(ctx context.Context, be *eventspb.BusEvent) *
 	}
 
 	return &ValidatorScore{
-		Base:                 newBaseFromStream(ctx, ValidatorScoreEvent, be),
+		Base:                 newBaseFromBusEvent(ctx, ValidatorScoreEvent, be),
 		NodeID:               event.GetNodeId(),
 		EpochSeq:             event.GetEpochSeq(),
 		ValidatorScore:       event.ValidatorScore,

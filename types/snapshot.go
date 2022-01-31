@@ -33,6 +33,11 @@ type PostRestore interface {
 	OnStateLoaded(ctx context.Context) error
 }
 
+type PreRestore interface {
+	StateProvider
+	OnStateLoadStarts(ctx context.Context) error
+}
+
 type SnapshotNamespace string
 
 const (

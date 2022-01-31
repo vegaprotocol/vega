@@ -75,7 +75,7 @@ func getDummyData() *types.Chunk {
 						Withdrawal: &types.Withdrawal{
 							ID:      "RW1",
 							PartyID: "p1",
-							Amount:  num.NewUint(10),
+							Amount:  num.Zero(),
 							Asset:   "AST",
 							Status:  0,
 							Ref:     "rw1",
@@ -630,7 +630,9 @@ func TestPayloadConversion(t *testing.T) {
 		},
 	}, &types.Payload{
 		Data: &types.PayloadStakingAccounts{
-			StakingAccounts: &types.StakingAccounts{},
+			StakingAccounts: &types.StakingAccounts{
+				StakingAssetTotalSupply: num.NewUint(0),
+			},
 		},
 	}, &types.Payload{
 		Data: &types.PayloadStakeVerifierDeposited{},

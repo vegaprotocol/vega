@@ -33,6 +33,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
 	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time)
+	eng.Start()
 	require.NoError(t, err)
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 1), "0xDEADBEEF")
 	return &tstEngine{

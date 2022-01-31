@@ -12,6 +12,9 @@
 - [4508](https://github.com/vegaprotocol/vega/pull/4508) - Disallow negative offset for pegged orders
 - [4465](https://github.com/vegaprotocol/vega/pull/4465) - Update to tendermint `v0.35.0`
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add support for decimal places specific to markets. This means market price values and position events can have different values. Positions will be expressed in asset decimal places, market specific data events will list prices in market precision.
+- [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events
+- [4670](https://github.com/vegaprotocol/vega/pull/4670) - Rework `freeform proposal` structure so that they align with other proposals
+
 
 ### 🗑️ Deprecation
 
@@ -54,6 +57,9 @@
 - [4570](https://github.com/vegaprotocol/vega/pull/4570) - Internalize Ethereum Event Forwarder
 - [4663](https://github.com/vegaprotocol/vega/issues/4663) - CI set `qa` build tag when running system tests
 - [4657](https://github.com/vegaprotocol/vega/pull/4657) - Rename `min_lp_stake` to quantum + use it in liquidity provisions
+- [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
+- [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add integration test ensuring positions plug-in calculates P&L accurately.
+- [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
 - [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
 
 ### 🐛 Fixes
@@ -68,7 +74,9 @@
 - [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
 - [4634](https://github.com/vegaprotocol/vega/pull/4634) - Bug fix for `--snapshot.max-retries` parameter not working correctly
 - [4651](https://github.com/vegaprotocol/vega/pull/4651) - An array of fixes in the snapshot code path
+- [4658](https://github.com/vegaprotocol/vega/pull/4658) - Allow replaying a chain from zero when old snapshots exist
 - [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
+- [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
 
 ## 0.47.5
 *2022-01-20*

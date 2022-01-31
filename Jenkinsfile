@@ -27,9 +27,6 @@ pipeline {
         string( name: 'VEGAWALLET_BRANCH', defaultValue: '',
                 description: '''Git branch, tag or hash of the vegaprotocol/vegawallet repository.
                     e.g. "develop", "v0.9.0" or commit hash. Default empty: use latest published version.''')
-        string( name: 'ETHEREUM_EVENT_FORWARDER_BRANCH', defaultValue: '',
-                description: '''Git branch, tag or hash of the vegaprotocol/ethereum-event-forwarder repository.
-                    e.g. "main", "v0.44.0" or commit hash. Default empty: use latest published version.''')
         string( name: 'DEVOPS_INFRA_BRANCH', defaultValue: 'master',
                 description: 'Git branch, tag or hash of the vegaprotocol/devops-infra repository')
         string( name: 'VEGATOOLS_BRANCH', defaultValue: 'develop',
@@ -291,7 +288,6 @@ pipeline {
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 vegawallet: params.VEGAWALLET_BRANCH,
-                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
@@ -307,7 +303,6 @@ pipeline {
                                 vegaCore: commitHash,
                                 dataNode: params.DATA_NODE_BRANCH,
                                 vegawallet: params.VEGAWALLET_BRANCH,
-                                ethereumEventForwarder: params.ETHEREUM_EVENT_FORWARDER_BRANCH,
                                 devopsInfra: params.DEVOPS_INFRA_BRANCH,
                                 vegatools: params.VEGATOOLS_BRANCH,
                                 systemTests: params.SYSTEM_TESTS_BRANCH,
@@ -369,33 +364,19 @@ pipeline {
                     options { retry(3) }
                     steps {
                         dir('vega') {
-                            withCredentials([usernamePassword(credentialsId: 'github-vega-ci-bot-artifacts', passwordVariable: 'TOKEN', usernameVariable:'USER')]) {
-                                // Workaround for user input:
-                                //  - global configuration: 'gh config set prompt disabled'
-                                sh label: 'Log in to a Gihub with CI', script: '''
-                                    echo ${TOKEN} | gh auth login --with-token -h github.com
-                                '''
+                            script {
+                                withGHCLI('credentialsId': 'github-vega-ci-bot-artifacts') {
+                                    sh label: 'Upload artifacts', script: '''#!/bin/bash -e
+                                        [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
+                                        gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
+                                    '''
+                                }
                             }
-                            sh label: 'Upload artifacts', script: '''#!/bin/bash -e
-                                [[ $TAG_NAME =~ '-pre' ]] && prerelease='--prerelease' || prerelease=''
-                                gh release create $TAG_NAME $prerelease ./cmd/vega/vega-*
-                            '''
                             slackSend(
                                 channel: "#tradingcore-notify",
                                 color: "good",
                                 message: ":rocket: Vega Core » Published new version to GitHub <${RELEASE_URL}|${TAG_NAME}>",
                             )
-                        }
-                    }
-                    post {
-                        always  {
-                            retry(3) {
-                                script {
-                                    sh label: 'Log out from Github', script: '''
-                                        gh auth logout -h github.com
-                                    '''
-                                }
-                            }
                         }
                     }
                 }
@@ -404,9 +385,9 @@ pipeline {
                     when {
                         branch 'develop'
                     }
-                    options { retry(3) }
                     steps {
-                        devnetDeploy vegaCore: commitHash
+                        devnetDeploy vegaCore: commitHash,
+                            wait: false
                     }
                 }
             }

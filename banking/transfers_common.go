@@ -18,10 +18,13 @@ func (e *Engine) TransferFunds(
 	ctx context.Context,
 	transfer *types.TransferFunds,
 ) error {
+	// add timestamps straight away
 	switch transfer.Kind {
 	case types.TransferCommandKindOneOff:
+		transfer.OneOff.Timestamp = e.currentTime
 		return e.oneOffTransfer(ctx, transfer.OneOff)
 	case types.TransferCommandKindRecurring:
+		transfer.Recurring.Timestamp = e.currentTime
 		return e.recurringTransfer(ctx, transfer.Recurring)
 	default:
 		return ErrUnsupportedTransferKind

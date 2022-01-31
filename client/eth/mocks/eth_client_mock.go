@@ -216,3 +216,18 @@ func (mr *MockETHClientMockRecorder) SuggestGasPrice(arg0 interface{}) *gomock.C
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuggestGasPrice", reflect.TypeOf((*MockETHClient)(nil).SuggestGasPrice), arg0)
 }
+
+// SuggestGasTipCap mocks base method.
+func (m *MockETHClient) SuggestGasTipCap(arg0 context.Context) (*big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SuggestGasTipCap", arg0)
+	ret0, _ := ret[0].(*big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SuggestGasTipCap indicates an expected call of SuggestGasTipCap.
+func (mr *MockETHClientMockRecorder) SuggestGasTipCap(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SuggestGasTipCap", reflect.TypeOf((*MockETHClient)(nil).SuggestGasTipCap), arg0)
+}

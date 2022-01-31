@@ -108,39 +108,32 @@ func (a Auction) Proto() eventspb.AuctionEvent {
 func (a Auction) StreamMessage() *eventspb.BusEvent {
 	p := a.Proto()
 
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      a.eventID(),
-		Block:   a.TraceID(),
-		ChainId: a.ChainID(),
-		Type:    a.et.ToProto(),
-		Event: &eventspb.BusEvent_Auction{
-			Auction: &p,
-		},
+	busEvent := newBusEventFromBase(a.Base)
+	busEvent.Event = &eventspb.BusEvent_Auction{
+		Auction: &p,
 	}
+
+	return busEvent
 }
 
 // StreamMarketMessage - allows for this event to be streamed as just a market event
 // containing just market ID and a string akin to a log message.
 func (a Auction) StreamMarketMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      a.eventID(),
-		Block:   a.TraceID(),
-		ChainId: a.ChainID(),
-		Type:    eventspb.BusEventType_BUS_EVENT_TYPE_MARKET,
-		Event: &eventspb.BusEvent_Market{
-			Market: &eventspb.MarketEvent{
-				MarketId: a.marketID,
-				Payload:  a.MarketEvent(),
-			},
+	busEvent := newBusEventFromBase(a.Base)
+	busEvent.Type = eventspb.BusEventType_BUS_EVENT_TYPE_MARKET
+	busEvent.Event = &eventspb.BusEvent_Market{
+		Market: &eventspb.MarketEvent{
+			MarketId: a.marketID,
+			Payload:  a.MarketEvent(),
 		},
 	}
+
+	return busEvent
 }
 
 func AuctionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Auction {
 	e := &Auction{
-		Base:           newBaseFromStream(ctx, AuctionEvent, be),
+		Base:           newBaseFromBusEvent(ctx, AuctionEvent, be),
 		marketID:       be.GetAuction().MarketId,
 		auctionStart:   be.GetAuction().Start,
 		auctionStop:    be.GetAuction().End,
