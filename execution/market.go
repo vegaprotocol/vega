@@ -3065,8 +3065,12 @@ func (m *Market) getTheoreticalTargetStake() *num.Uint {
 		m.log.Debug("unable to get risk factors, can't calculate target")
 		return num.Zero()
 	}
+
+	// Ignoring the error as GetTheoreticalTargetStake handles trades==nil
+	trades, _ := m.matching.GetIndicativeTrades()
+
 	return m.tsCalc.GetTheoreticalTargetStake(
-		*rf, m.currentTime, m.getCurrentMarkPrice(), nil)
+		*rf, m.currentTime, m.getReferencePrice(), trades)
 }
 
 func (m *Market) getTargetStake() *num.Uint {
@@ -3103,19 +3107,12 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 			logging.Error(err))
 	}
 
-	var refPrice = num.Zero()
-	if m.as.InAuction() {
-		refPrice = m.matching.GetIndicativePrice()
-	} else {
-		refPrice = m.getCurrentMarkPrice()
-	}
-
 	m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
 		m.getSuppliedStake(),
 		trades,
 		*rf,
-		refPrice,
+		m.getReferencePrice(),
 		vBid, vAsk)
 }
 
@@ -3302,4 +3299,18 @@ func (m *Market) distributeLiquidityFees(ctx context.Context) error {
 
 	m.broker.Send(events.NewTransferResponse(ctx, resp))
 	return nil
+}
+
+// Mark price gets returned when market is not in auction, otherwise indicative uncrossing price gets returned
+func (m *Market) getReferencePrice() *num.Uint {
+	if m.as.InAuction() {
+		p, v, _ := m.matching.GetIndicativePriceAndVolume()
+		// If volume is 0 we want to rely on previous mark price (the indicative price is 0 in that case)
+		if v == 0 {
+			return m.getCurrentMarkPrice()
+		}
+		return p
+	} else {
+		return m.getCurrentMarkPrice()
+	}
 }
