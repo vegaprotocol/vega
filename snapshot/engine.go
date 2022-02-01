@@ -63,6 +63,11 @@ type TimeService interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/snapshot StatsService
+type StatsService interface {
+	SetHeight(uint64)
+}
+
 // Engine the snapshot engine.
 type Engine struct {
 	Config
@@ -70,6 +75,7 @@ type Engine struct {
 	ctx        context.Context
 	cfunc      context.CancelFunc
 	time       TimeService
+	stats      StatsService
 	db         db.DB
 	dbPath     string
 	log        *logging.Logger
@@ -134,7 +140,7 @@ var nodeOrder = []types.SnapshotNamespace{
 }
 
 // New returns a new snapshot engine.
-func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
+func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService, stats StatsService) (*Engine, error) {
 	// default to min 1 version, just so we don't have to account for negative cap or nil slice.
 	// A single version kept in memory is pretty harmless.
 	if conf.KeepRecent < 1 {
@@ -158,6 +164,7 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		ctx:        sctx,
 		cfunc:      cfunc,
 		time:       tm,
+		stats:      stats,
 		dbPath:     dbPath,
 		log:        log,
 		namespaces: []types.SnapshotNamespace{},
@@ -411,6 +418,7 @@ func (e *Engine) applySnap(ctx context.Context, source SnapshotSource) error {
 	now := time.Unix(e.app.Time, 0)
 	// restore app state
 	e.time.SetTimeNow(ctx, now)
+	e.stats.SetHeight(e.app.Height)
 
 	// before we starts restoring the providers
 	for _, pp := range e.beforeRestoreProvs {

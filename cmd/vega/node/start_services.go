@@ -170,7 +170,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	)
 
 	n.spam = spam.New(n.Log, n.conf.Spam, n.epochService, n.stakingAccounts)
-	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService)
+	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService, n.stats.Blockchain)
 	if err != nil {
 		return fmt.Errorf("failed to start snapshot engine: %w", err)
 	}
