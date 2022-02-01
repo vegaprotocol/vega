@@ -38,7 +38,7 @@ func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
 	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData := commandspb.OracleDataSubmission{
 		Source:  commandspb.OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED,
-		Payload: dummyOraclePayload(),
+		Payload: dummyOraclePayload(t),
 	}
 
 	// when
@@ -71,7 +71,7 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 			rawData := commandspb.OracleDataSubmission{
 				Source:  tc.source,
-				Payload: dummyOraclePayload(),
+				Payload: dummyOraclePayload(t),
 			}
 
 			// when
@@ -93,19 +93,21 @@ func stubbedAdaptors() *adaptors.Adaptors {
 	}
 }
 
-func dummyOraclePayload() []byte {
+func dummyOraclePayload(t *testing.T) []byte {
+	t.Helper()
 	payload, err := json.Marshal(map[string]string{
 		"field_1": "value_1",
 		"field_2": "value_2",
 	})
 	if err != nil {
-		panic("failed to generate random oracle payload in tests")
+		t.Fatal("failed to generate random oracle payload in tests")
 	}
 
 	return payload
 }
 
 func internalOraclePayload(t *testing.T) []byte {
+	t.Helper()
 	payload, err := json.Marshal(map[string]string{
 		oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
 	})
@@ -151,7 +153,7 @@ func testAdaptorValidationSuccess(t *testing.T) {
 			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 			rawData := commandspb.OracleDataSubmission{
 				Source:  tc.source,
-				Payload: dummyOraclePayload(),
+				Payload: dummyOraclePayload(t),
 			}
 
 			// when
