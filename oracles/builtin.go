@@ -38,6 +38,6 @@ func (b *Builtin) BroadcastInternalTimestamp(ctx context.Context, ts time.Time) 
 	}
 
 	if err := b.engine.BroadcastData(ctx, data); err != nil {
-		b.log.Error("Broadcasting Internal Timestamp", logging.Error(err))
+		b.log.Error("Could not broadcast timestamp from built-in oracle", logging.Error(err))
 	}
 }

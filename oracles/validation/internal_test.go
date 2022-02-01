@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/oracles/validation"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCheckForInternalOracle(t *testing.T) {
@@ -52,10 +53,12 @@ func TestCheckForInternalOracle(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := validation.CheckForInternalOracle(tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("CheckForInternalOracle() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tc := range tests {
+		t.Run(tc.name, func(tt *testing.T) {
+			if err := validation.CheckForInternalOracle(tc.args.data); tc.wantErr {
+				require.Error(tt, err)
+			} else {
+				require.NoError(tt, err)
 			}
 		})
 	}

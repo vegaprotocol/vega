@@ -48,11 +48,9 @@ func (a *Adaptors) Normalise(txPubKey crypto.PublicKey, data commandspb.OracleDa
 		return nil, err
 	}
 
-	err = validation.CheckForInternalOracle(oracleData.Data)
-
-	if err != nil {
+	if err = validation.CheckForInternalOracle(oracleData.Data); err != nil {
 		return nil, err
 	}
 
-	return oracleData, nil
+	return oracleData, err
 }

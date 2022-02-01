@@ -105,12 +105,12 @@ func dummyOraclePayload() []byte {
 	return payload
 }
 
-func internalOraclePayload() []byte {
+func internalOraclePayload(t *testing.T) []byte {
 	payload, err := json.Marshal(map[string]string{
 		oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
 	})
 	if err != nil {
-		panic("failed to generate internal oracle payload in tests")
+		t.Fatal("failed to generate internal oracle payload in tests")
 	}
 
 	return payload
@@ -120,8 +120,7 @@ type dummyOracleAdaptor struct{}
 
 func (d *dummyOracleAdaptor) Normalise(pk crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
 	var data map[string]string
-	err := json.Unmarshal(payload, &data)
-	if err != nil {
+	if err := json.Unmarshal(payload, &data); err != nil {
 		return nil, err
 	}
 
@@ -160,8 +159,8 @@ func testAdaptorValidationSuccess(t *testing.T) {
 			normalisedData, err := adaptor.Normalise(pubKey, rawData)
 
 			// then
-			require.NoError(t, err)
-			assert.NotNil(t, normalisedData)
+			require.NoError(tt, err)
+			assert.NotNil(tt, normalisedData)
 		})
 	}
 }
@@ -187,7 +186,7 @@ func testAdaptorValidationFails(t *testing.T) {
 			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 			rawData := commandspb.OracleDataSubmission{
 				Source:  tc.source,
-				Payload: internalOraclePayload(),
+				Payload: internalOraclePayload(tt),
 			}
 
 			// when
@@ -195,8 +194,8 @@ func testAdaptorValidationFails(t *testing.T) {
 			normalisedData, err := adaptor.Normalise(pubKey, rawData)
 
 			// then
-			require.Error(t, err)
-			assert.Nil(t, normalisedData)
+			require.Error(tt, err)
+			assert.Nil(tt, normalisedData)
 		})
 	}
 }
