@@ -96,6 +96,8 @@
 - [4658](https://github.com/vegaprotocol/vega/pull/4658) - Allow replaying a chain from zero when old snapshots exist
 - [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
 - [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
+- [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
+
 
 ## 0.47.5
 *2022-01-20*
