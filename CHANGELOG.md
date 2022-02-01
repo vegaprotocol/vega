@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Unreleased (0.49.0)
 
 ### 🚨 Breaking changes
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
@@ -79,6 +79,7 @@
 - [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
 - [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
 - [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
+- [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 
 ## 0.47.5
 *2022-01-20*

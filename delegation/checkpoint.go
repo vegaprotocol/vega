@@ -235,9 +235,11 @@ func (e *Engine) setPendingBackwardCompatible(ctx context.Context, entries []*ty
 				ps.nodeToAmount[de.Node].AddSum(de.Amount)
 			}
 		} else {
-			amt := num.Min(ps.nodeToAmount[de.Node], de.Amount)
-			ps.nodeToAmount[de.Node].Sub(ps.nodeToAmount[de.Node], amt)
-			ps.totalDelegated.Sub(ps.totalDelegated, amt)
+			if _, ok := ps.nodeToAmount[de.Node]; ok {
+				amt := num.Min(ps.nodeToAmount[de.Node], de.Amount)
+				ps.nodeToAmount[de.Node].Sub(ps.nodeToAmount[de.Node], amt)
+				ps.totalDelegated.Sub(ps.totalDelegated, amt)
+			}
 		}
 	}
 
