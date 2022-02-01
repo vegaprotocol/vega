@@ -28,7 +28,8 @@ func TheOracleSpec(config *market.Config, name string, specType string, rawPubKe
 			Conditions: []*oraclesv1.Condition{},
 		}
 
-		if condition := row.condition(); condition != "" {
+		if r.HasColumn("condition") {
+			condition := row.condition()
 			expiry, err := time.Parse(time.RFC3339, condition)
 			if err != nil {
 				panic(fmt.Errorf("cannot parse expiry condition: %w", err))
@@ -91,9 +92,5 @@ func (r oracleSpecRow) destination() string {
 }
 
 func (r oracleSpecRow) condition() string {
-	if !r.row.HasColumn("condition") {
-		return ""
-	}
-
-	return r.row.Str("condition")
+	return r.row.MustStr("condition")
 }
