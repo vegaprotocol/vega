@@ -8,7 +8,7 @@
 ### 🗑️  Deprecation
 
 ### 🛠  Improvements
-- [](https://github.com/vegaprotocol/data-node/pull/) - Update the definition of done and issue templates
+- [322](https://github.com/vegaprotocol/data-node/pull/322) - Update the definition of done and issue templates
 
 ### 🐛 Fixes
 
