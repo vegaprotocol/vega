@@ -100,7 +100,7 @@ func dummyOraclePayload(t *testing.T) []byte {
 		"field_2": "value_2",
 	})
 	if err != nil {
-		t.Fatal("failed to generate random oracle payload in tests")
+		t.Fatalf("failed to generate random oracle payload in tests: %s", err)
 	}
 
 	return payload
@@ -112,7 +112,7 @@ func internalOraclePayload(t *testing.T) []byte {
 		oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
 	})
 	if err != nil {
-		t.Fatal("failed to generate internal oracle payload in tests")
+		t.Fatalf("failed to generate internal oracle payload in tests: %s", err)
 	}
 
 	return payload
