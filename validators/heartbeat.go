@@ -41,7 +41,6 @@ func (v *validatorHeartbeatTracker) IsValid(currentTime time.Time) bool {
 
 func (t *Topology) ProcessValidatorHeartbeat(
 	ctx context.Context, vh *commandspb.ValidatorHeartbeat) error {
-
 	heartBeat, ok := t.heartBeats[vh.NodeId]
 	if !ok {
 		return fmt.Errorf("received an heartbeat from a non-validator node: %v", vh.NodeId)

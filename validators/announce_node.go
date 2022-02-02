@@ -34,7 +34,7 @@ type Verifier interface {
 }
 
 // SignAnnounceNode adds the signature for the ethereum and
-// Vega address / pubkeys
+// Vega address / pubkeys.
 func VerifyAnnounceNode(an *commandspb.AnnounceNode) error {
 	buf, err := makeAnnounceNodeSignableMessage(an)
 	if err != nil {
@@ -66,7 +66,7 @@ func VerifyAnnounceNode(an *commandspb.AnnounceNode) error {
 }
 
 // SignAnnounceNode adds the signature for the ethereum and
-// Vega address / pubkeys
+// Vega address / pubkeys.
 func SignAnnounceNode(
 	an *commandspb.AnnounceNode,
 	vegaSigner Signer,
