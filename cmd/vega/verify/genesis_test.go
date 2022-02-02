@@ -37,7 +37,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	gs := genesis.DefaultGenesisState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
 		TotalSupply: "100",
-		MinLpStake:  "FAILURE",
+		Quantum:     "FAILURE",
 		Source: &assets.Source{
 			BuiltinAsset: &assets.BuiltinAsset{
 				MaxFaucetAmountMint: "100",
@@ -51,7 +51,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
 		TotalSupply: "100",
-		MinLpStake:  "100",
+		Quantum:     "100",
 		Source: &assets.Source{
 			BuiltinAsset: &assets.BuiltinAsset{
 				MaxFaucetAmountMint: "FAILURE",
@@ -65,7 +65,7 @@ func testVerifyBuiltinAssets(t *testing.T) {
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["FAILURE"] = assets.AssetDetails{
 		TotalSupply: "100",
-		MinLpStake:  "100",
+		Quantum:     "100",
 		Source: &assets.Source{
 			BuiltinAsset: &assets.BuiltinAsset{
 				MaxFaucetAmountMint: "100",
@@ -83,7 +83,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	gs := genesis.DefaultGenesisState()
 	gs.Assets["tooshort"] = assets.AssetDetails{
 		TotalSupply: "100",
-		MinLpStake:  "100",
+		Quantum:     "100",
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "0xBC944ba38753A6fCAdd634Be98379330dbaB3Eb8",
@@ -96,7 +96,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"] = assets.AssetDetails{
 		TotalSupply: "100",
-		MinLpStake:  "100",
+		Quantum:     "100",
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "invalid",
@@ -109,7 +109,7 @@ func testVerifyERC20Assets(t *testing.T) {
 	gs = genesis.DefaultGenesisState()
 	gs.Assets["b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"] = assets.AssetDetails{
 		TotalSupply: "100",
-		MinLpStake:  "100",
+		Quantum:     "100",
 		Source: &assets.Source{
 			Erc20: &assets.Erc20{
 				ContractAddress: "0xF0a9b5d3a00b53362F9b73892124743BAaE526c4",

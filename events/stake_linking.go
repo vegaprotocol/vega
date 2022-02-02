@@ -29,21 +29,17 @@ func (s StakeLinking) Proto() eventspb.StakeLinking {
 }
 
 func (s StakeLinking) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      s.eventID(),
-		Block:   s.TraceID(),
-		ChainId: s.ChainID(),
-		Type:    s.et.ToProto(),
-		Event: &eventspb.BusEvent_StakeLinking{
-			StakeLinking: &s.evt,
-		},
+	busEvent := newBusEventFromBase(s.Base)
+	busEvent.Event = &eventspb.BusEvent_StakeLinking{
+		StakeLinking: &s.evt,
 	}
+
+	return busEvent
 }
 
 func StakeLinkingFromStream(ctx context.Context, be *eventspb.BusEvent) *StakeLinking {
 	return &StakeLinking{
-		Base: newBaseFromStream(ctx, StakeLinkingEvent, be),
+		Base: newBaseFromBusEvent(ctx, StakeLinkingEvent, be),
 		evt:  *be.GetStakeLinking(),
 	}
 }

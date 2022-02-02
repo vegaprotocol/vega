@@ -43,7 +43,7 @@ func NewClient(clt ChainClientImpl) *Client {
 	}
 }
 
-func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error) {
+func (c *Client) SubmitTransaction(ctx context.Context, tx *commandspb.Transaction, ty api.SubmitTransactionRequest_Type) (string, error) {
 	_, err := commands.CheckTransaction(tx)
 	if err != nil {
 		return "", err
@@ -57,7 +57,7 @@ func (c *Client) SubmitTransactionV2(ctx context.Context, tx *commandspb.Transac
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	return c.sendTxV2(ctx, marshalledTx, ty)
+	return c.sendTx(ctx, marshalledTx, ty)
 }
 
 func (c *Client) SubmitRawTransaction(ctx context.Context, tx []byte, ty api.SubmitRawTransactionRequest_Type) (string, error) {
@@ -67,7 +67,7 @@ func (c *Client) SubmitRawTransaction(ctx context.Context, tx []byte, ty api.Sub
 	return c.sendRawTx(timeoutCtx, tx, ty)
 }
 
-func (c *Client) sendTxV2(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) (string, error) {
+func (c *Client) sendTx(ctx context.Context, msg []byte, ty api.SubmitTransactionRequest_Type) (string, error) {
 	switch ty {
 	case api.SubmitTransactionRequest_TYPE_ASYNC:
 		return c.clt.SendTransactionAsync(ctx, msg)

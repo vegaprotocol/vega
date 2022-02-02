@@ -289,3 +289,24 @@ func testCheckpointBridgeMultiPartyMultiNode(t *testing.T) {
 	require.Equal(t, 1, len(testEngine.engine.nextPartyDelegationState["party5"].nodeToAmount))
 	require.Equal(t, num.NewUint(70), testEngine.engine.nextPartyDelegationState["party5"].nodeToAmount["node5"])
 }
+
+func TestCheckpointWithRedundantUndelegation(t *testing.T) {
+	testEngine := getEngine(t)
+
+	active := []*types.DelegationEntry{}
+	pending := []*types.DelegationEntry{{
+		Party:      "party1",
+		Node:       "node1",
+		Amount:     num.NewUint(50),
+		Undelegate: true,
+		EpochSeq:   101,
+	}}
+	data := &types.DelegateCP{
+		Active:  active,
+		Pending: pending,
+		Auto:    []string{},
+	}
+	cp, _ := proto.Marshal(data.IntoProto())
+	testEngine.engine.onEpochEvent(context.Background(), types.Epoch{Seq: 100})
+	testEngine.engine.Load(context.Background(), cp)
+}

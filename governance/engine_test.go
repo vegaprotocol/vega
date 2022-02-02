@@ -101,8 +101,7 @@ func testValidateProposalCommitment(t *testing.T) {
 	party := eng.newValidPartyTimes("a-valid-party", 1, 8)
 
 	eng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
-	eng.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
-	eng.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
+	eng.expectAnyAsset()
 
 	now := time.Now()
 	prop := eng.newOpenProposal(party.Id, now)
@@ -1363,9 +1362,11 @@ func testInvalidFreeformProposal(t *testing.T) {
 			ValidationTimestamp: now.Add(1 * time.Hour).Unix(),
 			Change: &types.ProposalTerms_NewFreeform{
 				NewFreeform: &types.NewFreeform{
-					URL:         "https://example.com",
-					Description: d + d + d,
-					Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+					Changes: &types.NewFreeformDetails{
+						URL:         "https://example.com",
+						Description: d + d + d,
+						Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+					},
 				},
 			},
 		},
@@ -1414,9 +1415,11 @@ func getTestEngine(t *testing.T) *tstEngine {
 func newValidFreeformTerms() *types.ProposalTerms_NewFreeform {
 	return &types.ProposalTerms_NewFreeform{
 		NewFreeform: &types.NewFreeform{
-			URL:         "https://example.com",
-			Description: "Test my freeform proposal",
-			Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+			Changes: &types.NewFreeformDetails{
+				URL:         "https://example.com",
+				Description: "Test my freeform proposal",
+				Hash:        "2fb572edea4af9154edeff680e23689ed076d08934c60f8a4c1f5743a614954e",
+			},
 		},
 	}
 }
@@ -1429,7 +1432,7 @@ func newValidAssetTerms() *types.ProposalTerms_NewAsset {
 				Symbol:      "TKN",
 				TotalSupply: num.NewUint(10000),
 				Decimals:    18,
-				MinLpStake:  num.NewUint(1),
+				Quantum:     num.NewUint(1),
 				Source: &types.AssetDetailsBuiltinAsset{
 					BuiltinAsset: &types.BuiltinAsset{
 						MaxFaucetAmountMint: num.NewUint(1),
@@ -1495,7 +1498,7 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 					},
 				},
 				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
-				DecimalPlaces: 5,
+				DecimalPlaces: 0,
 				TradingMode: &types.NewMarketConfiguration_Continuous{
 					Continuous: &types.ContinuousTrading{
 						TickSize: "0.1",
@@ -1588,12 +1591,20 @@ func (e *tstEngine) newOpenFreeformProposal(partyID string, now time.Time) types
 }
 
 func (e *tstEngine) expectAnyAsset() {
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	details := newValidAssetTerms()
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, details.NewAsset.Changes))
+		return ret, nil
+	})
 	e.assets.EXPECT().IsEnabled(gomock.Any()).AnyTimes().Return(true)
 }
 
 func (e *tstEngine) expectAnyAssetTimes(times int) {
-	e.assets.EXPECT().Get(gomock.Any()).Times(times).Return(nil, nil)
+	details := newValidAssetTerms()
+	e.assets.EXPECT().Get(gomock.Any()).Times(times).DoAndReturn(func(id string) (*assets.Asset, error) {
+		ret := assets.NewAsset(builtin.New(id, details.NewAsset.Changes))
+		return ret, nil
+	})
 	e.assets.EXPECT().IsEnabled(gomock.Any()).Times(times).Return(true)
 }
 

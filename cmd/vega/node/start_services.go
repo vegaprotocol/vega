@@ -129,7 +129,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 
 	// instantiate the execution engine
 	n.executionEngine = execution.NewEngine(
-		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker, marketTracker,
+		n.Log, n.conf.Execution, n.timeService, n.collateral, n.oracle, n.broker, n.statevar, n.feesTracker, marketTracker, n.assets,
 	)
 
 	if n.conf.Blockchain.ChainProvider == blockchain.ProviderNullChain {
@@ -170,9 +170,9 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	)
 
 	n.spam = spam.New(n.Log, n.conf.Spam, n.epochService, n.stakingAccounts)
-	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService)
+	n.snapshot, err = snapshot.New(n.ctx, n.vegaPaths, n.conf.Snapshot, n.Log, n.timeService, n.stats.Blockchain)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("failed to start snapshot engine: %w", err)
 	}
 	// notify delegation, rewards, and accounting on changes in the validator pub key
 	n.topology.NotifyOnKeyChange(n.delegation.ValidatorKeyChanged, n.stakingAccounts.ValidatorKeyChanged, n.governance.ValidatorKeyChanged)
@@ -353,7 +353,7 @@ func (n *NodeCommand) setupNetParameters() error {
 					return err
 				}
 
-				return n.eventForwarderEngine.StartEthereumEngine(n.ethClient, n.eventForwarder, n.conf.EvtForward.Ethereum, ethCfg)
+				return n.eventForwarderEngine.StartEthereumEngine(n.ethClient, n.eventForwarder, n.conf.EvtForward.Ethereum, ethCfg, n.assets)
 			},
 		},
 		netparams.WatchParam{

@@ -69,16 +69,13 @@ func (s SettlePos) Proto() eventspb.SettlePosition {
 
 func (s SettlePos) StreamMessage() *eventspb.BusEvent {
 	p := s.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      s.eventID(),
-		Block:   s.TraceID(),
-		ChainId: s.ChainID(),
-		Type:    s.et.ToProto(),
-		Event: &eventspb.BusEvent_SettlePosition{
-			SettlePosition: &p,
-		},
+
+	busEvent := newBusEventFromBase(s.Base)
+	busEvent.Event = &eventspb.BusEvent_SettlePosition{
+		SettlePosition: &p,
 	}
+
+	return busEvent
 }
 
 type settlement struct {
@@ -106,7 +103,7 @@ func SettlePositionEventFromStream(ctx context.Context, be *eventspb.BusEvent) *
 	}
 	spPrice, _ := num.UintFromString(sp.Price, 10)
 	return &SettlePos{
-		Base:     newBaseFromStream(ctx, SettlePositionEvent, be),
+		Base:     newBaseFromBusEvent(ctx, SettlePositionEvent, be),
 		partyID:  sp.PartyId,
 		marketID: sp.MarketId,
 		price:    spPrice,

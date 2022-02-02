@@ -4,10 +4,10 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.47.1-0.20220125164047-0a0f72cf4330
+	code.vegaprotocol.io/protos v0.47.1-0.20220131091008-3391a9eb20de
 	code.vegaprotocol.io/quant v0.2.5
-	code.vegaprotocol.io/shared v0.0.0-20211015074835-9ed837d93090
-	code.vegaprotocol.io/vegawallet v0.11.1-0.20220118134126-26f681c98f91
+	code.vegaprotocol.io/shared v0.0.0-20220128163854-7eab67fa60d2
+	code.vegaprotocol.io/vegawallet v0.11.1-0.20220128170319-bd1b750459bb
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
-	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
+	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 	github.com/tendermint/tendermint v0.35.0
 	github.com/tendermint/tm-db v0.6.4
 	go.elastic.co/apm/module/apmhttp v1.8.0
@@ -50,6 +50,7 @@ require (
 )
 
 require (
+	github.com/BurntSushi/toml v1.0.0 // indirect
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/Workiva/go-datastructures v1.0.53 // indirect
@@ -124,7 +125,6 @@ require (
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/vegaprotocol/go-slip10 v0.1.0 // indirect
-	github.com/zannen/toml v0.3.2 // indirect
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.5 // indirect
@@ -150,9 +150,9 @@ require (
 )
 
 replace (
+	github.com/ethereum/go-ethereum => github.com/vegaprotocol/go-ethereum v0.0.0-20220125130820-eb1d3928a97e
 	// so we can use our own updates
 	github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
-	github.com/ethereum/go-ethereum => github.com/vegaprotocol/go-ethereum v0.0.0-20220125130820-eb1d3928a97e
 	github.com/tendermint/tendermint => github.com/vegaprotocol/tendermint v0.35.1
 
 	// so we can work with tendermint 0.35

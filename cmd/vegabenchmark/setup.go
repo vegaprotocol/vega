@@ -176,6 +176,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		stateVarEngine,
 		feesTracker,
 		marketTracker,
+		assets,
 	)
 
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
@@ -200,7 +201,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
-	snapshot, err := snapshot.New(ctx, vegaPaths, snapshot.NewDefaultConfig(), log, timeService)
+	snapshot, err := snapshot.New(ctx, vegaPaths, snapshot.NewDefaultConfig(), log, timeService, bstats)
 	if err != nil {
 		panic(err)
 	}

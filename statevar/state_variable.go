@@ -177,11 +177,17 @@ func (sv *StateVariable) CalculationFinished(eventID string, result statevar.Sta
 	}
 
 	// save our result and send the result to vega to be updated by other nodes.
+	kvb := sv.converter.InterfaceToBundle(result).ToProto()
+
+	// this is a test feature that adds noise up to the tolerance to the state variable
+	// it should be excluded by build tag for production
+	kvb = sv.AddNoise(kvb)
+
 	svp := &commandspb.StateVariableProposal{
 		Proposal: &vegapb.StateValueProposal{
 			StateVarId: sv.ID,
 			EventId:    sv.eventID,
-			Kvb:        sv.converter.InterfaceToBundle(result).ToProto(),
+			Kvb:        kvb,
 		},
 	}
 

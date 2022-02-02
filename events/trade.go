@@ -14,9 +14,11 @@ type Trade struct {
 }
 
 func NewTradeEvent(ctx context.Context, t types.Trade) *Trade {
+	p := t.IntoProto()
+	p.Price = t.MarketPrice.String()
 	return &Trade{
 		Base: newBase(ctx, TradeEvent),
-		t:    *(t.IntoProto()),
+		t:    *p,
 	}
 }
 
@@ -37,21 +39,17 @@ func (t Trade) Proto() ptypes.Trade {
 }
 
 func (t Trade) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      t.eventID(),
-		Block:   t.TraceID(),
-		ChainId: t.ChainID(),
-		Type:    t.et.ToProto(),
-		Event: &eventspb.BusEvent_Trade{
-			Trade: &t.t,
-		},
+	busEvent := newBusEventFromBase(t.Base)
+	busEvent.Event = &eventspb.BusEvent_Trade{
+		Trade: &t.t,
 	}
+
+	return busEvent
 }
 
 func TradeEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Trade {
 	return &Trade{
-		Base: newBaseFromStream(ctx, TradeEvent, be),
+		Base: newBaseFromBusEvent(ctx, TradeEvent, be),
 		t:    *be.GetTrade(),
 	}
 }

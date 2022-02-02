@@ -9,6 +9,10 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+func (m *Market) OnMarketMinLpStakeQuantumMultipleUpdate(_ context.Context, d num.Decimal) {
+	m.minLPStakeQuantumMultiple = d
+}
+
 func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context, d num.Decimal) {
 	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(d)
 }

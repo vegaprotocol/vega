@@ -79,8 +79,8 @@ func verifyAssetTerms(r *reporter, prop *types.Proposal) {
 	if newAsset.Changes.Decimals == 0 {
 		r.Err("prop.terms.newAsset.changes.decimals is missing or empty")
 	}
-	if len(newAsset.Changes.MinLpStake) <= 0 {
-		r.Err("prop.terms.newAsset.changes.minLpStake is missing or empty")
+	if len(newAsset.Changes.Quantum) <= 0 {
+		r.Err("prop.terms.newAsset.changes.quantum is missing or empty")
 	}
 
 	switch source := newAsset.Changes.Source.(type) {

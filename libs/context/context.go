@@ -3,6 +3,7 @@ package context
 import (
 	"context"
 	"errors"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -12,6 +13,7 @@ type (
 	traceIDT        int
 	blockHeight     int
 	chainID         int
+	txHash          int
 )
 
 var (
@@ -19,9 +21,11 @@ var (
 	traceIDKey            traceIDT
 	blockHeightKey        blockHeight
 	chainIDKey            chainID
+	txHashKey             txHash
 
 	ErrBlockHeightMissing = errors.New("no or invalid block height set on context")
 	ErrChainIDMissing     = errors.New("no or invalid chain id set on context")
+	ErrTxHashMissing      = errors.New("no or invalid transaction hash set on context")
 )
 
 // WithRemoteIPAddr wrap the context into a new context
@@ -80,8 +84,21 @@ func ChainIDFromContext(ctx context.Context) (string, error) {
 	return c, nil
 }
 
+func TxHashFromContext(ctx context.Context) (string, error) {
+	cv := ctx.Value(txHashKey)
+	if cv == nil {
+		return "", ErrTxHashMissing
+	}
+	c, ok := cv.(string)
+	if !ok {
+		return "", ErrTxHashMissing
+	}
+	return c, nil
+}
+
 // WithTraceID returns a context with a traceID value.
 func WithTraceID(ctx context.Context, tID string) context.Context {
+	tID = strings.ToUpper(tID)
 	return context.WithValue(ctx, traceIDKey, tID)
 }
 
@@ -91,4 +108,9 @@ func WithBlockHeight(ctx context.Context, h int64) context.Context {
 
 func WithChainID(ctx context.Context, chainID string) context.Context {
 	return context.WithValue(ctx, chainIDKey, chainID)
+}
+
+func WithTxHash(ctx context.Context, txHash string) context.Context {
+	txHash = strings.ToUpper(txHash)
+	return context.WithValue(ctx, txHashKey, txHash)
 }

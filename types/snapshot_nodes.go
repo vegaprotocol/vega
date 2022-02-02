@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -81,6 +82,14 @@ type PayloadBankingSeen struct {
 
 type PayloadBankingAssetActions struct {
 	BankingAssetActions *BankingAssetActions
+}
+
+type PayloadBankingRecurringTransfers struct {
+	BankingRecurringTransfers *checkpointpb.RecurringTransfers
+}
+
+type PayloadBankingScheduledTransfers struct {
+	BankingScheduledTransfers []*checkpointpb.ScheduledTransferAtTime
 }
 
 type PayloadCheckpoint struct {
@@ -490,7 +499,8 @@ type MarketPosition struct {
 }
 
 type StakingAccounts struct {
-	Accounts []*StakingAccount
+	Accounts                []*StakingAccount
+	StakingAssetTotalSupply *num.Uint
 }
 
 type StakingAccount struct {
@@ -739,6 +749,10 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadFeeTrackerFromProto(dt)
 	case *snapshot.Payload_MarketTracker:
 		ret.Data = PayloadMarketTrackerFromProto(dt)
+	case *snapshot.Payload_BankingRecurringTransfers:
+		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
+	case *snapshot.Payload_BankingScheduledTransfers:
+		ret.Data = PayloadBankingScheduledTransfersFromProto(dt)
 	}
 
 	return ret
@@ -861,6 +875,10 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_FeesTracker:
 		ret.Data = dt
 	case *snapshot.Payload_MarketTracker:
+		ret.Data = dt
+	case *snapshot.Payload_BankingRecurringTransfers:
+		ret.Data = dt
+	case *snapshot.Payload_BankingScheduledTransfers:
 		ret.Data = dt
 	}
 	return &ret
@@ -1107,6 +1125,62 @@ func (*PayloadBankingDeposits) Key() string {
 }
 
 func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
+	return &PayloadBankingRecurringTransfers{
+		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTranfers,
+	}
+}
+
+func (p PayloadBankingRecurringTransfers) IntoProto() *snapshot.Payload_BankingRecurringTransfers {
+	return &snapshot.Payload_BankingRecurringTransfers{
+		BankingRecurringTransfers: &snapshot.BankingRecurringTransfers{
+			RecurringTranfers: p.BankingRecurringTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingRecurringTransfers) isPayload() {}
+
+func (p *PayloadBankingRecurringTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingRecurringTransfers) Key() string {
+	return "recurringTransfers"
+}
+
+func (*PayloadBankingRecurringTransfers) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingScheduledTransfersFromProto(pbd *snapshot.Payload_BankingScheduledTransfers) *PayloadBankingScheduledTransfers {
+	return &PayloadBankingScheduledTransfers{
+		BankingScheduledTransfers: pbd.BankingScheduledTransfers.TransfersAtTime,
+	}
+}
+
+func (p PayloadBankingScheduledTransfers) IntoProto() *snapshot.Payload_BankingScheduledTransfers {
+	return &snapshot.Payload_BankingScheduledTransfers{
+		BankingScheduledTransfers: &snapshot.BankingScheduledTransfers{
+			TransfersAtTime: p.BankingScheduledTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingScheduledTransfers) isPayload() {}
+
+func (p *PayloadBankingScheduledTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingScheduledTransfers) Key() string {
+	return "scheduledTransfers"
+}
+
+func (*PayloadBankingScheduledTransfers) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
@@ -2609,8 +2683,10 @@ func StakingAccountsFromProto(sa *snapshot.StakingAccounts) *StakingAccounts {
 	for _, a := range sa.Accounts {
 		accs = append(accs, StakingAccountFromProto(a))
 	}
+	bal, _ := num.UintFromString(sa.StakingAssetTotalSupply, 10)
 	return &StakingAccounts{
-		Accounts: accs,
+		Accounts:                accs,
+		StakingAssetTotalSupply: bal,
 	}
 }
 
@@ -2619,8 +2695,13 @@ func (s StakingAccounts) IntoProto() *snapshot.StakingAccounts {
 	for _, a := range s.Accounts {
 		accs = append(accs, a.IntoProto())
 	}
+	amount := "0"
+	if s.StakingAssetTotalSupply != nil {
+		amount = s.StakingAssetTotalSupply.String()
+	}
 	return &snapshot.StakingAccounts{
-		Accounts: accs,
+		Accounts:                accs,
+		StakingAssetTotalSupply: amount,
 	}
 }
 

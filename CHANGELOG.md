@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Unreleased (0.49.0)
 
 ### 🚨 Breaking changes
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
@@ -11,10 +11,15 @@
 - [4605](https://github.com/vegaprotocol/vega/pull/4605) - Use new format for `EthereumConfig` in network parameters.
 - [4508](https://github.com/vegaprotocol/vega/pull/4508) - Disallow negative offset for pegged orders
 - [4465](https://github.com/vegaprotocol/vega/pull/4465) - Update to tendermint `v0.35.0`
+- [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add support for decimal places specific to markets. This means market price values and position events can have different values. Positions will be expressed in asset decimal places, market specific data events will list prices in market precision.
+- [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events
+- [4670](https://github.com/vegaprotocol/vega/pull/4670) - Rework `freeform proposal` structure so that they align with other proposals
+
 
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+- [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
 - [4496](https://github.com/vegaprotocol/vega/pull/4496) - State variable engine for floating point consensus
@@ -39,8 +44,10 @@
 - [4588](https://github.com/vegaprotocol/vega/pull/4588) - Add `--update` and `--replace` flags on `vega genesis new validator`
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Add `--network-url` option to `vega tm`
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (one off transfers)
+- [4636](https://github.com/vegaprotocol/vega/pull/4636) - Update the Core Team DoD and issue templates
 - [4629](https://github.com/vegaprotocol/vega/pull/4629) - Update `CHANGELOG.md` to include `0.47.5` changes
 - [4580](https://github.com/vegaprotocol/vega/pull/4580) - Add transfer command support (recurring transfers)
+- [4643](https://github.com/vegaprotocol/vega/issues/4643) - Add noise to floating point consensus variables in QA
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
 - [4823](https://github.com/vegaprotocol/vega/pull/4283) - Reward refactoring for network treasury
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
@@ -48,9 +55,17 @@
 - [4638](https://github.com/vegaprotocol/vega/pull/4638) - CI add option to specify connected changes in other repos
 - [4650](https://github.com/vegaprotocol/vega/pull/4650) - Restore code from rebase and ensure node retries connection with application
 - [4570](https://github.com/vegaprotocol/vega/pull/4570) - Internalize Ethereum Event Forwarder
+- [4663](https://github.com/vegaprotocol/vega/issues/4663) - CI set `qa` build tag when running system tests
+- [4657](https://github.com/vegaprotocol/vega/pull/4657) - Rename `min_lp_stake` to quantum + use it in liquidity provisions
+- [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
+- [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add integration test ensuring positions plug-in calculates P&L accurately.
+- [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
+- [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
+
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
+- [4692](https://github.com/vegaprotocol/vega/pull/4692) - Set statistics block height after a snapshot reload
 - [4516](https://github.com/vegaprotocol/vega/pull/4516) - Fix release number title typo - 0.46.1 > 0.46.2
 - [4524](https://github.com/vegaprotocol/vega/pull/4524) - Updated `vega verify genesis` to understand new `app_state` layout
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
@@ -61,6 +76,11 @@
 - [4623](https://github.com/vegaprotocol/vega/pull/4623) - Bug fix for `--snapshot.db-path` parameter not being used if it is set
 - [4634](https://github.com/vegaprotocol/vega/pull/4634) - Bug fix for `--snapshot.max-retries` parameter not working correctly
 - [4651](https://github.com/vegaprotocol/vega/pull/4651) - An array of fixes in the snapshot code path
+- [4658](https://github.com/vegaprotocol/vega/pull/4658) - Allow replaying a chain from zero when old snapshots exist
+- [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
+- [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
+- [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
+- [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 
 ## 0.47.5
 *2022-01-20*

@@ -1114,14 +1114,15 @@ func TestSubmit(t *testing.T) {
 			}
 
 			expect := map[string]uint64{
-				"V0000000000-0000000001": 124,
+				"V0000000000-0000000001": 119,
 				"V0000000000-0000000002": 2,
 				"V0000000000-0000000003": 2,
 				"V0000000000-0000000004": 3,
-				"V0000000000-0000000005": 114,
+				"V0000000000-0000000005": 112,
 			}
 
 			for id, v := range found {
+				fmt.Printf("Found %s, size %v\n", id, v)
 				size, ok := expect[id]
 				assert.True(t, ok, "unexpected order id")
 				assert.Equal(t, size, v.Size, id)

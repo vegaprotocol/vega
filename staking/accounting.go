@@ -157,8 +157,10 @@ func (a *Accounting) GetAllAvailableBalances() map[string]*num.Uint {
 func (a *Accounting) UpdateStakingBridgeAddress(stakingBridgeAddress ethcmn.Address) error {
 	a.stakingBridgeAddress = stakingBridgeAddress
 
-	if err := a.updateStakingAssetTotalSupply(); err != nil {
-		return fmt.Errorf("couldn't update the total supply of the staking asset: %w", err)
+	if !a.accState.isRestoring {
+		if err := a.updateStakingAssetTotalSupply(); err != nil {
+			return fmt.Errorf("couldn't update the total supply of the staking asset: %w", err)
+		}
 	}
 
 	return nil
@@ -206,6 +208,7 @@ func (a *Accounting) ProcessStakeTotalSupply(_ context.Context, evt *types.Stake
 
 func (a *Accounting) onStakeTotalSupplyVerified(event interface{}, ok bool) {
 	if ok {
+		a.accState.changed = true
 		a.stakingAssetTotalSupply = a.pendingStakeTotalSupply.sts.TotalSupply
 		a.log.Info("stake total supply finalized",
 			logging.BigUint("total-supply", a.stakingAssetTotalSupply))

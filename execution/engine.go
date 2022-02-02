@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -50,13 +51,12 @@ type Broker interface {
 	SendBatch(events []events.Event)
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral.go -package mocks code.vegaprotocol.io/vega/execution Collateral
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/collateral_mock.go -package mocks code.vegaprotocol.io/vega/execution Collateral
 type Collateral interface {
 	MarketCollateral
 	AssetExists(string) bool
 	CreateMarketAccounts(context.Context, string, string) (string, string, error)
 	OnChainTimeUpdate(context.Context, time.Time)
-	GetAssetQuantum(asset string) (*num.Uint, error)
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/state_var_engine_mock.go -package mocks code.vegaprotocol.io/vega/execution StateVarEngine
@@ -64,6 +64,11 @@ type StateVarEngine interface {
 	RegisterStateVariable(asset, market, name string, converter statevar.Converter, startCalculation func(string, statevar.FinaliseCalculation), trigger []statevar.StateVarEventType, result func(context.Context, statevar.StateVariableResult) error) error
 	NewEvent(asset, market string, eventType statevar.StateVarEventType)
 	ReadyForTimeTrigger(asset, mktID string)
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/assets_mock.go -package mocks code.vegaprotocol.io/vega/execution Assets
+type Assets interface {
+	Get(assetID string) (*assets.Asset, error)
 }
 
 // Engine is the execution engine.
@@ -75,6 +80,7 @@ type Engine struct {
 	marketsCpy []*Market
 	collateral Collateral
 	idgen      *IDgenerator
+	assets     Assets
 
 	broker         Broker
 	time           TimeService
@@ -129,6 +135,7 @@ func defaultNetParamsValues() netParamsValues {
 		auctionMinDuration:              -1,
 		probabilityOfTradingTauScaling:  num.DecimalFromInt64(-1),
 		minProbabilityOfTradingLPOrders: num.DecimalFromInt64(-1),
+		minLpStakeQuantumMultiple:       num.DecimalFromInt64(-1),
 	}
 }
 
@@ -144,6 +151,7 @@ func NewEngine(
 	stateVarEngine StateVarEngine,
 	feesTracker *FeesTracker,
 	marketTracker *MarketTracker,
+	assets Assets,
 ) *Engine {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -154,6 +162,7 @@ func NewEngine(
 		markets:                      map[string]*Market{},
 		time:                         ts,
 		collateral:                   collateral,
+		assets:                       assets,
 		idgen:                        NewIDGen(),
 		broker:                       broker,
 		oracle:                       oracle,
@@ -188,8 +197,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 
 	e.Config = cfg
 	for _, mkt := range e.marketsCpy {
-		mkt.ReloadConf(e.Config.Matching, e.Config.Risk,
-			e.Config.Position, e.Config.Settlement, e.Config.Fee)
+		mkt.ReloadConf(e.Matching, e.Risk, e.Position, e.Settlement, e.Fee)
 	}
 }
 
@@ -352,15 +360,24 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 
 	// create market auction state
 	mas := monitor.NewAuctionState(marketConfig, now)
+	ad, err := e.assets.Get(asset)
+	if err != nil {
+		e.log.Error("Failed to create a new market, unknown asset",
+			logging.MarketID(marketConfig.ID),
+			logging.String("asset-id", asset),
+			logging.Error(err),
+		)
+		return err
+	}
 	mkt, err := NewMarket(
 		ctx,
 		e.log,
-		e.Config.Risk,
-		e.Config.Position,
-		e.Config.Settlement,
-		e.Config.Matching,
-		e.Config.Fee,
-		e.Config.Liquidity,
+		e.Risk,
+		e.Position,
+		e.Settlement,
+		e.Matching,
+		e.Fee,
+		e.Liquidity,
 		e.collateral,
 		e.oracle,
 		marketConfig,
@@ -370,6 +387,7 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		mas,
 		e.stateVarEngine,
 		e.feesTracker,
+		ad,
 	)
 	if err != nil {
 		e.log.Error("failed to instantiate market",
@@ -399,6 +417,9 @@ func (e *Engine) propagateInitialNetParams(ctx context.Context, mkt *Market) err
 	}
 	if !e.npv.minProbabilityOfTradingLPOrders.Equal(num.DecimalFromInt64(-1)) {
 		mkt.OnMarketMinProbabilityOfTradingLPOrdersUpdate(ctx, e.npv.minProbabilityOfTradingLPOrders)
+	}
+	if !e.npv.minLpStakeQuantumMultiple.Equal(num.DecimalFromInt64(-1)) {
+		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, e.npv.minLpStakeQuantumMultiple)
 	}
 	if e.npv.auctionMinDuration != -1 {
 		mkt.OnMarketAuctionMinimumDurationUpdate(ctx, e.npv.auctionMinDuration)
@@ -1030,7 +1051,16 @@ func (e *Engine) OnMarketMinProbabilityOfTradingForLPOrdersUpdate(ctx context.Co
 	return nil
 }
 
-func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(_ context.Context, d num.Decimal) error {
+func (e *Engine) OnMinLpStakeQuantumMultipleUpdate(ctx context.Context, d num.Decimal) error {
+	if e.log.IsDebug() {
+		e.log.Debug("update min lp stake quantum multiple",
+			logging.Decimal("min-lp-stake-quantum-multiple", d),
+		)
+	}
+
+	for _, mkt := range e.marketsCpy {
+		mkt.OnMarketMinLpStakeQuantumMultipleUpdate(ctx, d)
+	}
 	e.npv.minLpStakeQuantumMultiple = d
 	return nil
 }

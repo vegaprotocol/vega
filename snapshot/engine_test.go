@@ -12,10 +12,10 @@ import (
 	"code.vegaprotocol.io/vega/snapshot/mocks"
 	"code.vegaprotocol.io/vega/types"
 	tmocks "code.vegaprotocol.io/vega/types/mocks"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/proto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +25,7 @@ type tstEngine struct {
 	cfunc context.CancelFunc
 	ctrl  *gomock.Controller
 	time  *mocks.MockTimeService
+	stats *mocks.MockStatsService
 }
 
 func getTestEngine(t *testing.T) *tstEngine {
@@ -32,7 +33,9 @@ func getTestEngine(t *testing.T) *tstEngine {
 	ctx, cfunc := context.WithCancel(context.Background())
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
-	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time)
+	stats := mocks.NewMockStatsService(ctrl)
+	eng, err := snapshot.New(context.Background(), nil, snapshot.NewTestConfig(), logging.NewTestLogger(), time, stats)
+	eng.Start()
 	require.NoError(t, err)
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, 1), "0xDEADBEEF")
 	return &tstEngine{
@@ -41,6 +44,7 @@ func getTestEngine(t *testing.T) *tstEngine {
 		Engine: eng,
 		ctrl:   ctrl,
 		time:   time,
+		stats:  stats,
 	}
 }
 
@@ -202,6 +206,7 @@ func testReloadSnapshot(t *testing.T) {
 	eng2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
 		require.Equal(t, newT.Unix(), now.Unix())
 	})
+	eng2.stats.EXPECT().SetHeight(uint64(1)).Times(1)
 	// ensure we're passing the right state
 	p2.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil).Do(func(_ context.Context, pl *types.Payload) {
 		require.EqualValues(t, pl.Data, state[keys[0]].Data)
@@ -284,6 +289,7 @@ func testReloadReplayProtectors(t *testing.T) {
 	e2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
 		require.Equal(t, newT.Unix(), now.Unix())
 	})
+	e2.stats.EXPECT().SetHeight(uint64(1)).Times(1)
 	e2.AddProviders(old)
 	require.NoError(t, e2.ReceiveSnapshot(snap))
 	ready := false
@@ -357,6 +363,7 @@ func testReloadRestore(t *testing.T) {
 	eng2.time.EXPECT().SetTimeNow(gomock.Any(), gomock.Any()).Times(1).Do(func(_ context.Context, newT time.Time) {
 		require.Equal(t, newT.Unix(), now.Unix())
 	})
+	eng2.stats.EXPECT().SetHeight(uint64(1)).Times(1)
 	// ensure we're passing the right state
 	p2.EXPECT().LoadState(gomock.Any(), gomock.Any()).Times(1).Return(nil, nil).Do(func(_ context.Context, pl *types.Payload) {
 		require.EqualValues(t, pl.Data, state[keys[0]].Data)

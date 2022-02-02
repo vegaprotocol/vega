@@ -29,21 +29,16 @@ func (a Asset) Proto() proto.Asset {
 }
 
 func (a Asset) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      a.eventID(),
-		Block:   a.TraceID(),
-		ChainId: a.ChainID(),
-		Type:    a.et.ToProto(),
-		Event: &eventspb.BusEvent_Asset{
-			Asset: &a.a,
-		},
+	busEvent := newBusEventFromBase(a.Base)
+	busEvent.Event = &eventspb.BusEvent_Asset{
+		Asset: &a.a,
 	}
+	return busEvent
 }
 
 func AssetEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Asset {
 	return &Asset{
-		Base: newBaseFromStream(ctx, AssetEvent, be),
+		Base: newBaseFromBusEvent(ctx, AssetEvent, be),
 		a:    *be.GetAsset(),
 	}
 }

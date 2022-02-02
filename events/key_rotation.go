@@ -47,16 +47,11 @@ func (kr KeyRotation) Proto() eventspb.KeyRotation {
 func (kr KeyRotation) StreamMessage() *eventspb.BusEvent {
 	krproto := kr.Proto()
 
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      kr.eventID(),
-		Block:   kr.TraceID(),
-		ChainId: kr.ChainID(),
-		Type:    kr.et.ToProto(),
-		Event: &eventspb.BusEvent_KeyRotation{
-			KeyRotation: &krproto,
-		},
+	busEvent := newBusEventFromBase(kr.Base)
+	busEvent.Event = &eventspb.BusEvent_KeyRotation{
+		KeyRotation: &krproto,
 	}
+	return busEvent
 }
 
 func KeyRotationEventFromStream(ctx context.Context, be *eventspb.BusEvent) *KeyRotation {
@@ -66,7 +61,7 @@ func KeyRotationEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Key
 	}
 
 	return &KeyRotation{
-		Base:        newBaseFromStream(ctx, KeyRotationEvent, be),
+		Base:        newBaseFromBusEvent(ctx, KeyRotationEvent, be),
 		NodeID:      event.GetNodeId(),
 		OldPubKey:   event.GetOldPubKey(),
 		NewPubKey:   event.GetNewPubKey(),
