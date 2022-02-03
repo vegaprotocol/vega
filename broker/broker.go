@@ -80,14 +80,14 @@ func New(ctx context.Context, log *logging.Logger, config Config, chainInfo Chai
 	var err error
 	if config.UseEventFile {
 
-		absPath, err := filepath.Abs(config.FileEventSource.File)
+		absPath, err := filepath.Abs(config.FileEventSourceConfig.File)
 		if err != nil {
-			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSource.File, err)
+			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSourceConfig.File, err)
 		}
 
 		log.Infof("using file event source, event file: %s", absPath)
-		eventsource, err = NewFileEventSource(absPath, config.FileEventSource.TimeBetweenBlocks.Duration,
-			config.FileEventSource.SendChannelBufferSize)
+		eventsource, err = NewFileEventSource(absPath, config.FileEventSourceConfig.TimeBetweenBlocks.Duration,
+			config.FileEventSourceConfig.SendChannelBufferSize)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create file event source:%w", err)
