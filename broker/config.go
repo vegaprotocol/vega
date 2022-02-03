@@ -3,6 +3,7 @@ package broker
 import (
 	"code.vegaprotocol.io/data-node/config/encoding"
 	"code.vegaprotocol.io/data-node/logging"
+	"time"
 )
 
 const namedLogger = "broker"
@@ -27,7 +28,7 @@ func NewDefaultConfig() Config {
 		},
 		FileEventSource: FileEventSource{
 			File:                  "vega.evt",
-			TimeBetweenBlocks:     1000,
+			TimeBetweenBlocks:     encoding.Duration{Duration: 1 * time.Second},
 			SendChannelBufferSize: 1000,
 		},
 		UseEventFile: false,
@@ -35,9 +36,9 @@ func NewDefaultConfig() Config {
 }
 
 type FileEventSource struct {
-	File                  string `long:"file" description:"the event file"`
-	TimeBetweenBlocks     int    `long:"time-between-blocks" description:"the time between sending blocks in milliseconds "`
-	SendChannelBufferSize int    `long:"send-buffer-size" description:"size of channel buffer used to send events to broker "`
+	File                  string            `long:"file" description:"the event file"`
+	TimeBetweenBlocks     encoding.Duration `string:"time-between-blocks" description:"the time between sending blocks"`
+	SendChannelBufferSize int               `long:"send-buffer-size" description:"size of channel buffer used to send events to broker "`
 }
 
 type SocketConfig struct {

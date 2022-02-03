@@ -85,7 +85,7 @@ func New(ctx context.Context, log *logging.Logger, config Config, chainInfo Chai
 		}
 
 		log.Infof("using file event source, event file: %s", eventFile.AbsPath())
-		eventsource, err = NewFileEventSource(eventFile, time.Duration(config.FileEventSource.TimeBetweenBlocks)*time.Millisecond,
+		eventsource, err = NewFileEventSource(eventFile, config.FileEventSource.TimeBetweenBlocks.Duration,
 			config.FileEventSource.SendChannelBufferSize)
 
 		if err != nil {
