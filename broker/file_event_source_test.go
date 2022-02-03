@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"os"
 	"testing"
 
 	"code.vegaprotocol.io/data-node/broker"
@@ -16,6 +17,8 @@ import (
 )
 
 func TestReceiveEvents(t *testing.T) {
+	path := t.TempDir() + "/test.evt"
+
 	a1 := events.NewAssetEvent(context.Background(), types.Asset{ID: "1"})
 	a2 := events.NewAssetEvent(context.Background(), types.Asset{ID: "2"})
 	a3 := events.NewAssetEvent(context.Background(), types.Asset{ID: "3"})
@@ -25,10 +28,12 @@ func TestReceiveEvents(t *testing.T) {
 		a3.StreamMessage(),
 	}
 
-	file := &testEventFile{}
-	writeEventsToFile(evts, file)
+	err := writeEventsToFile(evts, path)
+	if err != nil {
+		t.Fatalf("failed to write events to %s: %s", path, err)
+	}
 
-	source, err := broker.NewFileEventSource(file, 0, 0)
+	source, err := broker.NewFileEventSource(path, 0, 0)
 	if err != nil {
 		t.Errorf("failed to create file event source:%s", err)
 	}
@@ -47,7 +52,12 @@ func TestReceiveEvents(t *testing.T) {
 	assert.Equal(t, "3", r3.Asset().Id)
 }
 
-func writeEventsToFile(events []*eventspb.BusEvent, fi *testEventFile) {
+func writeEventsToFile(events []*eventspb.BusEvent, path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
 	sizeBytes := make([]byte, 4)
 
 	for _, e := range events {
@@ -59,8 +69,10 @@ func writeEventsToFile(events []*eventspb.BusEvent, fi *testEventFile) {
 
 		binary.BigEndian.PutUint32(sizeBytes, size)
 		allBytes := append(sizeBytes, protoBytes...)
-		fi.Write(allBytes)
+		file.Write(allBytes)
 	}
+
+	return nil
 }
 
 type testEventFile struct {

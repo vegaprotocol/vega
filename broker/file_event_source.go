@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"syscall"
 	"time"
 
@@ -18,22 +17,16 @@ import (
 )
 
 type fileEventSource struct {
-	eventsFile            EventFile
+	eventsFile            string
 	timeBetweenBlocks     time.Duration
 	sendChannelBufferSize int
 }
 
-type EventFile interface {
-	Open() error
-	Close() error
-	ReadAt(b []byte, off int64) (n int, err error)
-}
-
-func NewFileEventSource(eventsFile EventFile, timeBetweenBlocks time.Duration,
+func NewFileEventSource(file string, timeBetweenBlocks time.Duration,
 	sendChannelBufferSize int) (*fileEventSource, error,
 ) {
 	return &fileEventSource{
-		eventsFile:            eventsFile,
+		eventsFile:            file,
 		timeBetweenBlocks:     timeBetweenBlocks,
 		sendChannelBufferSize: sendChannelBufferSize,
 	}, nil
@@ -52,10 +45,10 @@ func (e fileEventSource) Receive(ctx context.Context) (<-chan events.Event, <-ch
 	return eventsCh, errorCh
 }
 
-func sendAllEvents(ctx context.Context, out chan<- events.Event, eventFile EventFile,
+func sendAllEvents(ctx context.Context, out chan<- events.Event, file string,
 	timeBetweenBlocks time.Duration, errorCh chan<- error,
 ) {
-	err := eventFile.Open()
+	eventFile, err := os.Open(file)
 	defer eventFile.Close()
 
 	if err != nil {
@@ -132,46 +125,4 @@ func sendBlock(ctx context.Context, out chan<- events.Event, batch []*eventspb.B
 		evt := toEvent(ctx, busEvent)
 		out <- evt
 	}
-}
-
-type eventFile struct {
-	path    string
-	absPath string
-	file    *os.File
-}
-
-func newEventFile(path string) (*eventFile, error) {
-	filePath, err := filepath.Abs(path)
-	if err != nil {
-		return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", path, err)
-	}
-
-	return &eventFile{path: path, absPath: filePath}, nil
-}
-
-func (e *eventFile) AbsPath() string {
-	return e.absPath
-}
-
-func (e *eventFile) Open() error {
-	file, err := os.Open(e.path)
-	if err != nil {
-		return err
-	}
-	e.file = file
-	return nil
-}
-
-func (e *eventFile) Close() error {
-	if e.file == nil {
-		return fmt.Errorf("event file has not been opened")
-	}
-	return e.file.Close()
-}
-
-func (e *eventFile) ReadAt(b []byte, off int64) (n int, err error) {
-	if e.file == nil {
-		return 0, fmt.Errorf("event file has not been opened")
-	}
-	return e.file.ReadAt(b, off)
 }

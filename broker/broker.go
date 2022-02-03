@@ -3,6 +3,7 @@ package broker
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -79,13 +80,13 @@ func New(ctx context.Context, log *logging.Logger, config Config, chainInfo Chai
 	var err error
 	if config.UseEventFile {
 
-		eventFile, err := newEventFile(config.FileEventSource.File)
+		absPath, err := filepath.Abs(config.FileEventSource.File)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create event file for path %s:%w", config.FileEventSource.File, err)
+			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSource.File, err)
 		}
 
-		log.Infof("using file event source, event file: %s", eventFile.AbsPath())
-		eventsource, err = NewFileEventSource(eventFile, config.FileEventSource.TimeBetweenBlocks.Duration,
+		log.Infof("using file event source, event file: %s", absPath)
+		eventsource, err = NewFileEventSource(absPath, config.FileEventSource.TimeBetweenBlocks.Duration,
 			config.FileEventSource.SendChannelBufferSize)
 
 		if err != nil {
@@ -376,8 +377,6 @@ func (b *Broker) Receive(ctx context.Context) error {
 			return err
 		}
 		b.Send(e)
-		fmt.Printf("TYPE:  %s\n", e.StreamMessage().Type)
-
 	}
 
 	select {
