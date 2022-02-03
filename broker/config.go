@@ -35,14 +35,14 @@ func NewDefaultConfig() Config {
 }
 
 type FileEventSource struct {
-	File                  string
-	TimeBetweenBlocks     int `description:"the time between sending blocks in milliseconds "`
-	SendChannelBufferSize int `long:"send-buffer-size" description:" "`
+	File                  string `long:"file" description:"the event file"`
+	TimeBetweenBlocks     int    `long:"time-between-blocks" description:"the time between sending blocks in milliseconds "`
+	SendChannelBufferSize int    `long:"send-buffer-size" description:"size of channel buffer used to send events to broker "`
 }
 
 type SocketConfig struct {
 	IP                 string `long:"ip" description:" "`
 	Port               int    `long:"port" description:" "`
-	MaxReceiveTimeouts int    `long:"max-Receive-timeouts"`
+	MaxReceiveTimeouts int    `long:"max-receive-timeouts"`
 	TransportType      string `long:"transport-type"`
 }
