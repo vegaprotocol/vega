@@ -2,12 +2,16 @@ package stubs
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"code.vegaprotocol.io/vega/oracles"
 )
 
 type TimeStub struct {
-	now         time.Time
-	subscribers []func(context.Context, time.Time)
+	now                       time.Time
+	subscribers               []func(context.Context, time.Time)
+	internalOracleSubscribers []func(context.Context, oracles.OracleData)
 }
 
 func NewTimeStub() *TimeStub {
@@ -24,6 +28,7 @@ func (t *TimeStub) GetTimeNow() time.Time {
 func (t *TimeStub) SetTime(newNow time.Time) {
 	t.now = newNow
 	t.notify(context.Background(), t.now)
+	t.publishOracleData(context.Background(), t.now)
 }
 
 func (t *TimeStub) NotifyOnTick(f func(context.Context, time.Time)) {
@@ -33,5 +38,16 @@ func (t *TimeStub) NotifyOnTick(f func(context.Context, time.Time)) {
 func (t *TimeStub) notify(context context.Context, newTime time.Time) {
 	for _, subscriber := range t.subscribers {
 		subscriber(context, newTime)
+	}
+}
+
+func (t *TimeStub) publishOracleData(ctx context.Context, ts time.Time) {
+	for _, subscriber := range t.internalOracleSubscribers {
+		data := oracles.OracleData{
+			Data: map[string]string{
+				oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", ts.UnixNano()),
+			},
+		}
+		subscriber(ctx, data)
 	}
 }
