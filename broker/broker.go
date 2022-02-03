@@ -376,6 +376,8 @@ func (b *Broker) Receive(ctx context.Context) error {
 			return err
 		}
 		b.Send(e)
+		fmt.Printf("TYPE:  %s\n", e.StreamMessage().Type)
+
 	}
 
 	select {

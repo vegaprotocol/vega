@@ -45,7 +45,7 @@ func (e fileEventSource) listen() error {
 
 func (e fileEventSource) Receive(ctx context.Context) (<-chan events.Event, <-chan error) {
 	eventsCh := make(chan events.Event, e.sendChannelBufferSize)
-	errorCh := make(chan error)
+	errorCh := make(chan error, 1)
 
 	go sendAllEvents(ctx, eventsCh, e.eventsFile, e.timeBetweenBlocks, errorCh)
 
@@ -60,6 +60,7 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, eventFile Event
 
 	if err != nil {
 		errorCh <- err
+		close(out)
 		return
 	}
 
@@ -90,6 +91,7 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, eventFile Event
 
 			if err != nil {
 				errorCh <- fmt.Errorf("error whilst reading message size from events file:%w", err)
+				close(out)
 				return
 			}
 
@@ -99,6 +101,7 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, eventFile Event
 			read, err = eventFile.ReadAt(msgBytes, offset)
 			if err != nil {
 				errorCh <- fmt.Errorf("error whilst reading message bytes from events file:%w", err)
+				close(out)
 				return
 			}
 
@@ -108,6 +111,7 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, eventFile Event
 			err = proto.Unmarshal(msgBytes, event)
 			if err != nil {
 				errorCh <- fmt.Errorf("failed to unmarshal bus event: %w", err)
+				close(out)
 				return
 			}
 
