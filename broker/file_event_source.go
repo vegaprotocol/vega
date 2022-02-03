@@ -64,7 +64,6 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, eventFile Event
 	}
 
 	sizeBytes := make([]byte, 4)
-	msgBytes := make([]byte, 0, 10000)
 	eventBlock := make([]*eventspb.BusEvent, 0)
 	var offset int64 = 0
 	currentBlock := ""
@@ -96,7 +95,7 @@ func sendAllEvents(ctx context.Context, out chan<- events.Event, eventFile Event
 
 			offset += int64(read)
 			msgSize := binary.BigEndian.Uint32(sizeBytes)
-			msgBytes = msgBytes[:msgSize]
+			msgBytes := make([]byte, msgSize)
 			read, err = eventFile.ReadAt(msgBytes, offset)
 			if err != nil {
 				errorCh <- fmt.Errorf("error whilst reading message bytes from events file:%w", err)
