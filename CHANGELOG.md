@@ -82,6 +82,12 @@
 - [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
 - [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 
+## 0.47.6
+*2022-02-01*
+
+### 🐛 Fixes
+- [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
+
 ## 0.47.5
 *2022-01-20*
 
