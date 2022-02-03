@@ -36,6 +36,11 @@ type BrokerI interface {
 	Receive(ctx context.Context) error
 }
 
+type eventSource interface {
+	listen() error
+	Receive(ctx context.Context) (<-chan events.Event, <-chan error)
+}
+
 type subscription struct {
 	Subscriber
 	required bool
@@ -60,9 +65,9 @@ type Broker struct {
 	keys   []int
 	eChans map[events.Type]chan []events.Event
 
-	socketServer *socketServer
-	quit         chan struct{}
-	chainInfo    ChainInfoI
+	eventSource eventSource
+	quit        chan struct{}
+	chainInfo   ChainInfoI
 }
 
 // New creates a new base broker
@@ -70,20 +75,34 @@ func New(ctx context.Context, log *logging.Logger, config Config, chainInfo Chai
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 
-	socketServer, err := newSocketServer(log, &config.SocketConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
+	var eventsource eventSource
+	var err error
+	if config.UseEventFile {
+
+		eventFile, err := newEventFile(config.FileEventSource.File)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create event file for path %s:%w", config.FileEventSource.File, err)
+		}
+
+		log.Infof("using file event source, event file: %s", eventFile.AbsPath())
+		eventsource, err = NewFileEventSource(eventFile, time.Duration(config.FileEventSource.TimeBetweenBlocks)*time.Millisecond,
+			config.FileEventSource.SendChannelBufferSize)
+	} else {
+		eventsource, err = newSocketServer(log, &config.SocketConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
+		}
 	}
 
 	b := &Broker{
-		ctx:          ctx,
-		tSubs:        map[events.Type]map[int]*subscription{},
-		subs:         map[int]subscription{},
-		keys:         []int{},
-		eChans:       map[events.Type]chan []events.Event{},
-		socketServer: socketServer,
-		quit:         make(chan struct{}),
-		chainInfo:    chainInfo,
+		ctx:         ctx,
+		tSubs:       map[events.Type]map[int]*subscription{},
+		subs:        map[int]subscription{},
+		keys:        []int{},
+		eChans:      map[events.Type]chan []events.Event{},
+		eventSource: eventsource,
+		quit:        make(chan struct{}),
+		chainInfo:   chainInfo,
 	}
 
 	return b, nil
@@ -341,11 +360,11 @@ func (b *Broker) checkChainID(chainID string) error {
 }
 
 func (b *Broker) Receive(ctx context.Context) error {
-	if err := b.socketServer.listen(); err != nil {
+	if err := b.eventSource.listen(); err != nil {
 		return err
 	}
 
-	receiveCh, errCh := b.socketServer.receive(ctx)
+	receiveCh, errCh := b.eventSource.Receive(ctx)
 
 	for e := range receiveCh {
 		if err := b.checkChainID(e.ChainID()); err != nil {
