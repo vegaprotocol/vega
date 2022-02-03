@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"code.vegaprotocol.io/data-node/broker"
@@ -18,14 +16,6 @@ import (
 )
 
 func TestReceiveEvents(t *testing.T) {
-	f, err := os.CreateTemp("", "vega.evt")
-	filePath, err := filepath.Abs(filepath.Dir(f.Name()))
-	defer os.Remove(filePath)
-	defer f.Close()
-	if err != nil {
-		t.Errorf("failed to create temporary file for events:%s", err)
-	}
-
 	a1 := events.NewAssetEvent(context.Background(), types.Asset{ID: "1"})
 	a2 := events.NewAssetEvent(context.Background(), types.Asset{ID: "2"})
 	a3 := events.NewAssetEvent(context.Background(), types.Asset{ID: "3"})
@@ -36,9 +26,7 @@ func TestReceiveEvents(t *testing.T) {
 	}
 
 	file := &testEventFile{}
-
 	writeEventsToFile(evts, file)
-	f.Close()
 
 	source, err := broker.NewFileEventSource(file, 0, 0)
 	if err != nil {

@@ -87,6 +87,11 @@ func New(ctx context.Context, log *logging.Logger, config Config, chainInfo Chai
 		log.Infof("using file event source, event file: %s", eventFile.AbsPath())
 		eventsource, err = NewFileEventSource(eventFile, time.Duration(config.FileEventSource.TimeBetweenBlocks)*time.Millisecond,
 			config.FileEventSource.SendChannelBufferSize)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to create file event source:%w", err)
+		}
+
 	} else {
 		eventsource, err = newSocketServer(log, &config.SocketConfig)
 		if err != nil {
