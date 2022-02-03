@@ -3,7 +3,9 @@ package adaptors_test
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"testing"
+	"time"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/crypto"
@@ -18,6 +20,8 @@ func TestAdaptors(t *testing.T) {
 	t.Run("Creating adaptors succeeds", testCreatingAdaptorsSucceeds)
 	t.Run("Normalising data from unknown oracle fails", testAdaptorsNormalisingDataFromUnknownOracleFails)
 	t.Run("Normalising data from known oracle succeeds", testAdaptorsNormalisingDataFromKnownOracleSucceeds)
+	t.Run("Validating data should pass if validators return no errors", testAdaptorValidationSuccess)
+	t.Run("Validating data should fail if any validator returns an error", testAdaptorValidationFails)
 }
 
 func testCreatingAdaptorsSucceeds(t *testing.T) {
@@ -34,7 +38,7 @@ func testAdaptorsNormalisingDataFromUnknownOracleFails(t *testing.T) {
 	pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 	rawData := commandspb.OracleDataSubmission{
 		Source:  commandspb.OracleDataSubmission_ORACLE_SOURCE_UNSPECIFIED,
-		Payload: dummyOraclePayload(),
+		Payload: dummyOraclePayload(t),
 	}
 
 	// when
@@ -67,7 +71,7 @@ func testAdaptorsNormalisingDataFromKnownOracleSucceeds(t *testing.T) {
 			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
 			rawData := commandspb.OracleDataSubmission{
 				Source:  tc.source,
-				Payload: dummyOraclePayload(),
+				Payload: dummyOraclePayload(t),
 			}
 
 			// when
@@ -89,13 +93,26 @@ func stubbedAdaptors() *adaptors.Adaptors {
 	}
 }
 
-func dummyOraclePayload() []byte {
+func dummyOraclePayload(t *testing.T) []byte {
+	t.Helper()
 	payload, err := json.Marshal(map[string]string{
 		"field_1": "value_1",
 		"field_2": "value_2",
 	})
 	if err != nil {
-		panic("failed to generate random oracle payload in tests")
+		t.Fatalf("failed to generate random oracle payload in tests: %s", err)
+	}
+
+	return payload
+}
+
+func internalOraclePayload(t *testing.T) []byte {
+	t.Helper()
+	payload, err := json.Marshal(map[string]string{
+		oracles.BuiltinOracleTimestamp: fmt.Sprintf("%d", time.Now().UnixNano()),
+	})
+	if err != nil {
+		t.Fatalf("failed to generate internal oracle payload in tests: %s", err)
 	}
 
 	return payload
@@ -103,8 +120,84 @@ func dummyOraclePayload() []byte {
 
 type dummyOracleAdaptor struct{}
 
-func (d *dummyOracleAdaptor) Normalise(_ crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
-	data := &oracles.OracleData{}
-	err := json.Unmarshal(payload, data)
-	return data, err
+func (d *dummyOracleAdaptor) Normalise(pk crypto.PublicKey, payload []byte) (*oracles.OracleData, error) {
+	var data map[string]string
+	if err := json.Unmarshal(payload, &data); err != nil {
+		return nil, err
+	}
+
+	return &oracles.OracleData{
+		PubKeys: []string{pk.Hex()},
+		Data:    data,
+	}, nil
+}
+
+func testAdaptorValidationSuccess(t *testing.T) {
+	tcs := []struct {
+		name   string
+		source commandspb.OracleDataSubmission_OracleSource
+	}{
+		{
+			name:   "with Open Oracle source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
+		}, {
+			name:   "with JSON source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// given
+			pubKeyB := []byte("0xdeadbeef")
+			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
+			rawData := commandspb.OracleDataSubmission{
+				Source:  tc.source,
+				Payload: dummyOraclePayload(t),
+			}
+
+			// when
+			adaptor := stubbedAdaptors()
+			normalisedData, err := adaptor.Normalise(pubKey, rawData)
+
+			// then
+			require.NoError(tt, err)
+			assert.NotNil(tt, normalisedData)
+		})
+	}
+}
+
+func testAdaptorValidationFails(t *testing.T) {
+	tcs := []struct {
+		name   string
+		source commandspb.OracleDataSubmission_OracleSource
+	}{
+		{
+			name:   "with Open Oracle source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_OPEN_ORACLE,
+		}, {
+			name:   "with JSON source",
+			source: commandspb.OracleDataSubmission_ORACLE_SOURCE_JSON,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(tt *testing.T) {
+			// given
+			pubKeyB := []byte("0xdeadbeef")
+			pubKey := crypto.NewPublicKey(hex.EncodeToString(pubKeyB), pubKeyB)
+			rawData := commandspb.OracleDataSubmission{
+				Source:  tc.source,
+				Payload: internalOraclePayload(tt),
+			}
+
+			// when
+			adaptor := stubbedAdaptors()
+			normalisedData, err := adaptor.Normalise(pubKey, rawData)
+
+			// then
+			require.Error(tt, err)
+			assert.Nil(tt, normalisedData)
+		})
+	}
 }

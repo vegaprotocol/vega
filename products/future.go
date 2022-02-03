@@ -9,7 +9,6 @@ import (
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
-
 	"github.com/pkg/errors"
 )
 
@@ -29,8 +28,8 @@ type Future struct {
 	QuoteName                  string
 	Maturity                   time.Time
 	oracle                     oracle
-	tradingTerminationlistener func(context.Context, bool)
-	settlementPricelistener    func(context.Context, *num.Uint)
+	tradingTerminationListener func(context.Context, bool)
+	settlementPriceListener    func(context.Context, *num.Uint)
 }
 
 type oracle struct {
@@ -63,11 +62,11 @@ type oracleBinding struct {
 }
 
 func (f *Future) NotifyOnSettlementPrice(listener func(context.Context, *num.Uint)) {
-	f.settlementPricelistener = listener
+	f.settlementPriceListener = listener
 }
 
 func (f *Future) NotifyOnTradingTerminated(listener func(context.Context, bool)) {
-	f.tradingTerminationlistener = listener
+	f.tradingTerminationListener = listener
 }
 
 func (f *Future) SettlementPrice() (*num.Uint, error) {
@@ -115,18 +114,40 @@ func (f *Future) updateTradingTerminated(ctx context.Context, data oracles.Oracl
 	if f.log.GetLevel() == logging.DebugLevel {
 		f.log.Debug("new oracle data received", data.Debug()...)
 	}
+
 	tradingTerminated, err := data.GetBoolean(f.oracle.binding.tradingTerminationProperty)
-	if err != nil {
+
+	return f.setTradingTerminated(ctx, tradingTerminated, err)
+}
+
+func (f *Future) updateTradingTerminatedByTimestamp(ctx context.Context, data oracles.OracleData) error {
+	if f.log.GetLevel() == logging.DebugLevel {
+		f.log.Debug("new oracle data received", data.Debug()...)
+	}
+
+	var tradingTerminated bool
+	var err error
+
+	if _, err = data.GetTimestamp(oracles.BuiltinOracleTimestamp); err == nil {
+		// we have received a trading termination timestamp from the internal vega time oracle
+		tradingTerminated = true
+	}
+
+	return f.setTradingTerminated(ctx, tradingTerminated, err)
+}
+
+func (f *Future) setTradingTerminated(ctx context.Context, tradingTerminated bool, dataErr error) error {
+	if dataErr != nil {
 		f.log.Error(
 			"could not parse the property acting as trading Terminated",
-			logging.Error(err),
+			logging.Error(dataErr),
 		)
-		return err
+		return dataErr
 	}
 
 	f.oracle.data.tradingTerminated = tradingTerminated
-	if f.tradingTerminationlistener != nil {
-		f.tradingTerminationlistener(ctx, tradingTerminated)
+	if f.tradingTerminationListener != nil {
+		f.tradingTerminationListener(ctx, tradingTerminated)
 	}
 	return nil
 }
@@ -146,8 +167,8 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 	}
 
 	f.oracle.data.settlementPrice = settlementPrice
-	if f.settlementPricelistener != nil {
-		f.settlementPricelistener(ctx, settlementPrice)
+	if f.settlementPriceListener != nil {
+		f.settlementPriceListener(ctx, settlementPrice)
 	}
 
 	if f.log.GetLevel() == logging.DebugLevel {
@@ -204,7 +225,12 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 	}
 
 	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
-	future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)
+
+	if oracleSpecForTerminatedMarket.CanBindProperty(oracles.BuiltinOracleTimestamp) {
+		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminatedByTimestamp)
+	} else {
+		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)
+	}
 
 	if log.GetLevel() == logging.DebugLevel {
 		log.Debug(
