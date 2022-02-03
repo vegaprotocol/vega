@@ -493,6 +493,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 }
 
 func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {
+	fmt.Printf("\nEND BLOCK: %v\n\n", time.Now().Format(time.RFC3339))
 	app.log.Debug("ABCI service END block completed",
 		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
@@ -530,6 +531,7 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
+	fmt.Printf("\nBEGIN BLOCK: %v\n\n", time.Now().Format(time.RFC3339))
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
 
