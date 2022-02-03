@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## Unreleased (0.49.0)
 
 ### 🚨 Breaking changes
 - [4515](https://github.com/vegaprotocol/vega/issues/4615) - Add snapshot options description and check provided storage method
@@ -65,6 +65,7 @@
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
+- [4692](https://github.com/vegaprotocol/vega/pull/4692) - Set statistics block height after a snapshot reload
 - [4516](https://github.com/vegaprotocol/vega/pull/4516) - Fix release number title typo - 0.46.1 > 0.46.2
 - [4524](https://github.com/vegaprotocol/vega/pull/4524) - Updated `vega verify genesis` to understand new `app_state` layout
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
@@ -78,6 +79,8 @@
 - [4658](https://github.com/vegaprotocol/vega/pull/4658) - Allow replaying a chain from zero when old snapshots exist
 - [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
 - [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
+- [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
+- [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 
 ## 0.47.5
 *2022-01-20*
