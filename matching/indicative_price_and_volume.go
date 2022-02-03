@@ -237,7 +237,7 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		}
 
 		// always set the price
-		cumulativeVolumes[i].price = rangedLevels[i].price.Clone()
+		cumulativeVolumes[i].price = rangedLevels[i].price
 
 		// if we had a price level in the bug side, use it
 		if rangedLevels[j].buypl != nil {
