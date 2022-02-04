@@ -513,7 +513,8 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 }
 
 func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {
-	fmt.Printf("END   : %v\n", time.Now().Format(time.RFC3339Nano))
+	fmt.Printf("END       : %v\n", time.Now().Format(time.RFC3339Nano))
+	defer func() { fmt.Printf("END END   : %v\n", time.Now().Format(time.RFC3339Nano)) }()
 	app.log.Debug("ABCI service END block completed",
 		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
@@ -551,7 +552,8 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
-	fmt.Printf("BEGIN : %v\n", time.Now().Format(time.RFC3339Nano))
+	fmt.Printf("BEGIN     : %v\n", time.Now().Format(time.RFC3339Nano))
+	defer func() { fmt.Printf("BEGIN END : %v\n", time.Now().Format(time.RFC3339Nano)) }()
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
 
@@ -599,7 +601,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 }
 
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
-	fmt.Printf("COMMIT: %v\n", time.Now().Format(time.RFC3339Nano))
+	fmt.Printf("COMMIT    : %v\n", time.Now().Format(time.RFC3339Nano))
+	defer func() { fmt.Printf("COMMIT END: %v\n", time.Now().Format(time.RFC3339Nano)) }()
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
