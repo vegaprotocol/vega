@@ -1,11 +1,12 @@
 package node
 
 import (
-	"code.vegaprotocol.io/vega/broker"
-	"code.vegaprotocol.io/vega/vegatime"
 	"context"
 	"errors"
 	"fmt"
+
+	"code.vegaprotocol.io/vega/broker"
+	"code.vegaprotocol.io/vega/vegatime"
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"

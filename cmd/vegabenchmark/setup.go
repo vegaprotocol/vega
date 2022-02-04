@@ -78,7 +78,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
-	timeService := vegatime.New(vegatime.NewDefaultConfig())
+	timeService := vegatime.New(vegatime.NewDefaultConfig(), broker)
 
 	vegaPaths, _ := vgtesting.NewVegaPaths()
 	pass := vgrand.RandomStr(10)
