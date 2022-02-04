@@ -725,8 +725,6 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 		evts = append(evts, events.NewMarketDataEvent(ctx, v.GetMarketData()))
 	}
 	e.broker.SendBatch(evts)
-	evt := events.NewTime(ctx, t)
-	e.broker.Send(evt)
 
 	// update block time on id generator
 	e.idgen.NewBatch()
