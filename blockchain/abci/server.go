@@ -1,6 +1,7 @@
 package abci
 
 import (
+	"context"
 	"net"
 	"strconv"
 
@@ -16,9 +17,10 @@ import (
 // Server is an abstraction over the abci server.
 type Server struct {
 	blockchain.Config
-	log  *logging.Logger
-	abci types.Application
-	srv  service.Service
+	log    *logging.Logger
+	abci   types.Application
+	srv    service.Service
+	cancel func()
 }
 
 // NewServer instantiate a new server.
@@ -55,20 +57,21 @@ func (s *Server) ReloadConf(cfg blockchain.Config) {
 // server for the VEGA application.
 func (s *Server) Start() error {
 	addr := net.JoinHostPort(s.Tendermint.ServerAddr, strconv.Itoa(s.Tendermint.ServerPort))
-	srv, err := server.NewServer(addr, "socket", s.abci)
+	srv, err := server.NewServer(&abciLogger{s.log.Named("abci.socket-server")}, addr, "socket", s.abci)
 	if err != nil {
 		return err
 	}
-	srv.SetLogger(&abciLogger{s.log.Named("abci.socket-server")})
+	// srv.SetLogger(&abciLogger{s.log.Named("abci.socket-server")})
 
 	s.log.Info("Starting abci-blockchain socket server",
 		logging.String("addr", s.Tendermint.ServerAddr),
 		logging.Int("port", s.Tendermint.ServerPort))
 
-	if err := srv.Start(); err != nil {
+	var ctx context.Context
+	ctx, s.cancel = context.WithCancel(context.Background())
+	if err := srv.Start(ctx); err != nil {
 		return err
 	}
-
 	s.srv = srv
 
 	return nil
@@ -76,13 +79,14 @@ func (s *Server) Start() error {
 
 // Stop the abci server.
 func (s *Server) Stop() {
-	if s.srv != nil {
-		s.log.Info("Stopping abci-blockchain socket server")
-		if err := s.srv.Stop(); err != nil {
-			s.log.Error("Failed to stop abci-blockchain socket server cleanly",
-				logging.Error(err))
-		}
-	}
+	s.cancel()
+	// if s.srv != nil {
+	// 	s.log.Info("Stopping abci-blockchain socket server")
+	// 	if err := s.srv.Stop(); err != nil {
+	// 		s.log.Error("Failed to stop abci-blockchain socket server cleanly",
+	// 			logging.Error(err))
+	// 	}
+	// }
 }
 
 type abciLogger struct {

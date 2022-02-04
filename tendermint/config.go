@@ -10,7 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/genesis"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmcrypto "github.com/tendermint/tendermint/crypto"
-	tmjson "github.com/tendermint/tendermint/libs/json"
+
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/privval"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -56,7 +56,7 @@ func (c *Config) Genesis() (*tmtypes.GenesisDoc, *genesis.GenesisState, error) {
 	}
 
 	doc := &tmtypes.GenesisDoc{}
-	err = tmjson.Unmarshal(data, doc)
+	err = json.Unmarshal(data, doc)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't unmarshal the genesis document: %w", err)
 	}

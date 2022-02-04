@@ -2,6 +2,7 @@ package genesis
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -13,7 +14,6 @@ import (
 	"code.vegaprotocol.io/vega/validators"
 
 	"github.com/jessevdk/go-flags"
-	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -83,7 +83,7 @@ func (opts *newValidatorCmd) Execute(_ []string) error {
 	}
 
 	if !opts.ShouldAppend && !opts.ShouldReplace {
-		marshalledGenesisDoc, err := tmjson.MarshalIndent(validatorDataDoc, "", "  ")
+		marshalledGenesisDoc, err := json.MarshalIndent(validatorDataDoc, "", "  ")
 		if err != nil {
 			return err
 		}

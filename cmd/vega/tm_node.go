@@ -24,8 +24,8 @@ var (
 	networkSelectFromURL string
 )
 
-func NewRunNodeCmd() *cobra.Command {
-	cmd := tmcmd.NewRunNodeCmd(customNewNode)
+func NewRunNodeCmd(config *tmcfg.Config, logger tmlog.Logger) *cobra.Command {
+	cmd := tmcmd.NewRunNodeCmd(customNewNode, config, logger)
 
 	cmd.Flags().StringVar(
 		&networkSelectFromURL,
@@ -42,14 +42,14 @@ func NewRunNodeCmd() *cobra.Command {
 	return cmd
 }
 
-func customNewNode(config *tmcfg.Config, logger tmlog.Logger) (tmservice.Service, error) {
+func customNewNode(ctx context.Context, config *tmcfg.Config, logger tmlog.Logger) (tmservice.Service, error) {
 	doc, err := getGenesisDoc(config)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get genesis document: %w", err)
 	}
 	// We are using tendermint as an external app, so remote create it is.
-	remoteCreator := tmabciclient.NewRemoteCreator(config.ProxyApp, config.ABCI, false)
-	return tmnode.New(config, logger, remoteCreator, doc)
+	remoteCreator := tmabciclient.NewRemoteCreator(logger, config.ProxyApp, config.ABCI, false)
+	return tmnode.New(ctx, config, logger, remoteCreator, doc)
 }
 
 func getGenesisDoc(config *tmcfg.Config) (*tmtypes.GenesisDoc, error) {

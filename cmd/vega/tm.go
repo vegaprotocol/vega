@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"os"
-	"path/filepath"
 
 	"github.com/jessevdk/go-flags"
 	tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmdebug "github.com/tendermint/tendermint/cmd/tendermint/commands/debug"
 	tmcfg "github.com/tendermint/tendermint/config"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
+	tmlog "github.com/tendermint/tendermint/libs/log"
 )
 
 func Tm(_ context.Context, parser *flags.Parser) error {
@@ -27,32 +27,41 @@ type tmCmd struct{}
 
 func (opts *tmCmd) Execute(_ []string) error {
 	os.Args = os.Args[1:]
-	rootCmd := tmcmd.RootCmd
-	rootCmd.AddCommand(
-		tmcmd.GenValidatorCmd,
-		tmcmd.ReIndexEventCmd,
-		tmcmd.InitFilesCmd,
-		tmcmd.ProbeUpnpCmd,
-		tmcmd.LightCmd,
-		tmcmd.ReplayCmd,
-		tmcmd.ReplayConsoleCmd,
-		tmcmd.ResetAllCmd,
-		tmcmd.ResetPrivValidatorCmd,
-		tmcmd.ShowValidatorCmd,
-		tmcmd.TestnetFilesCmd,
-		tmcmd.ShowNodeIDCmd,
+	conf, err := tmcmd.ParseConfig(tmcfg.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+
+	logger, err := tmlog.NewDefaultLogger(conf.LogFormat, conf.LogLevel)
+	if err != nil {
+		panic(err)
+	}
+
+	rcmd := tmcmd.RootCommand(conf, logger)
+	rcmd.AddCommand(
+		tmcmd.MakeGenValidatorCommand(),
+		tmcmd.MakeReindexEventCommand(conf, logger),
+		tmcmd.MakeInitFilesCommand(conf, logger),
+		tmcmd.MakeLightCommand(conf, logger),
+		tmcmd.MakeReplayCommand(conf, logger),
+		tmcmd.MakeReplayConsoleCommand(conf, logger),
+		tmcmd.MakeResetAllCommand(conf, logger),
+		tmcmd.MakeResetPrivateValidatorCommand(conf, logger),
+		tmcmd.MakeShowValidatorCommand(conf, logger),
+		tmcmd.MakeTestnetFilesCommand(conf, logger),
+		tmcmd.MakeShowNodeIDCommand(conf),
 		tmcmd.GenNodeKeyCmd,
 		tmcmd.VersionCmd,
-		tmcmd.InspectCmd,
-		tmcmd.MakeKeyMigrateCommand(),
+		tmcmd.MakeInspectCommand(conf, logger),
+		tmcmd.MakeRollbackStateCommand(conf),
+		tmcmd.MakeKeyMigrateCommand(conf, logger),
 		tmdebug.DebugCmd,
-		tmcli.NewCompletionCmd(rootCmd, true),
+		tmcli.NewCompletionCmd(rcmd, true),
 	)
 
-	rootCmd.AddCommand(NewRunNodeCmd())
-
-	baseCmd := tmcli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", tmcfg.DefaultTendermintDir)))
-	if err := baseCmd.Execute(); err != nil {
+	// Create & start node
+	rcmd.AddCommand(NewRunNodeCmd(conf, logger))
+	if err := rcmd.Execute(); err != nil {
 		return err
 	}
 

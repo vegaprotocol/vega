@@ -3,11 +3,8 @@ package abci
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
-	tmlog "github.com/tendermint/tendermint/libs/log"
-	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
 	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -30,11 +27,11 @@ func NewClient(addr string) (*Client, error) {
 	}
 
 	// log errors only
-	logger, err := tmlog.NewDefaultLogger(tmlog.LogFormatJSON, "error", false)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't build tendermint logger: %w", err)
-	}
-	clt.SetLogger(logger)
+	// logger, err := tmlog.NewDefaultLogger(tmlog.LogFormatJSON, "error")
+	// if err != nil {
+	// 	return nil, fmt.Errorf("couldn't build tendermint logger: %w", err)
+	// }
+	// clt.SetLogger(logger)
 
 	return &Client{
 		tmclt: clt,
@@ -154,38 +151,39 @@ func (c *Client) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, e
 // Subscribe will call fn each time it receives an event from the node.
 // The function returns nil when the context is canceled or when fn returns an error.
 func (c *Client) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {
-	if err := c.tmclt.Start(); err != nil {
-		return err
-	}
-	defer c.tmclt.Stop()
+	return nil
+	// if err := c.tmclt.Start(); err != nil {
+	// 	return err
+	// }
+	// defer c.tmclt.Stop()
 
-	errCh := make(chan error)
+	// errCh := make(chan error)
 
-	for _, query := range queries {
-		q, err := tmquery.New(query)
-		if err != nil {
-			return err
-		}
+	// for _, query := range queries {
+	// 	q, err := tmquery.New(query)
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-		// For subscription we use "vega" as the client name but it's ignored by the implementation.
-		// 10 is the channel capacity which is absolutely arbitraty.
-		out, err := c.tmclt.Subscribe(ctx, "vega", q.String(), 10)
-		if err != nil {
-			return err
-		}
+	// 	// For subscription we use "vega" as the client name but it's ignored by the implementation.
+	// 	// 10 is the channel capacity which is absolutely arbitraty.
+	// 	out, err := c.tmclt.Subscribe(ctx, "vega", q.String(), 10)
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-		go func() {
-			for res := range out {
-				if err := fn(res); err != nil {
-					errCh <- err
-					return
-				}
-			}
-		}()
-	}
-	defer c.tmclt.UnsubscribeAll(context.Background(), "vega")
+	// 	go func() {
+	// 		for res := range out {
+	// 			if err := fn(res); err != nil {
+	// 				errCh <- err
+	// 				return
+	// 			}
+	// 		}
+	// 	}()
+	// }
+	// defer c.tmclt.UnsubscribeAll(context.Background(), "vega")
 
-	return <-errCh
+	// return <-errCh
 }
 
 func (c *Client) Start() error {

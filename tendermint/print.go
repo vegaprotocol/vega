@@ -1,13 +1,12 @@
 package tendermint
 
 import (
+	"encoding/json"
 	"fmt"
-
-	tmjson "github.com/tendermint/tendermint/libs/json"
 )
 
 func Prettify(v interface{}) (string, error) {
-	marshalledGenesisDoc, err := tmjson.MarshalIndent(v, "", "  ")
+	marshalledGenesisDoc, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("couldn't marshal tendermint data as JSON: %w", err)
 	}
