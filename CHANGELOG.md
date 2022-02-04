@@ -83,7 +83,7 @@
 - [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
 - [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 - [4716](https://github.com/vegaprotocol/vega/pull/4716) - Fix protobuf conversion in orders
-- [4732](https://github.com/vegaprotocol/vega/pull/4732) - TimeUpdate is now first event sent  
+- [4732](https://github.com/vegaprotocol/vega/pull/4732) - `TimeUpdate` is now first event sent  
 
 ## 0.47.6
 *2022-02-01*
