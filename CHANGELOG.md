@@ -58,10 +58,11 @@
 - [4663](https://github.com/vegaprotocol/vega/issues/4663) - CI set `qa` build tag when running system tests
 - [4657](https://github.com/vegaprotocol/vega/pull/4657) - Rename `min_lp_stake` to quantum + use it in liquidity provisions
 - [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
+- [4712](https://github.com/vegaprotocol/vega/issues/4712) - Check smart contract hash on startup to ensure the correct version is being used
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add integration test ensuring positions plug-in calculates P&L accurately.
 - [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
 - [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
-
+- [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -80,6 +81,13 @@
 - [4659](https://github.com/vegaprotocol/vega/pull/4659) - Fix liquidity provision commands decode
 - [4665](https://github.com/vegaprotocol/vega/pull/4665) - Remove all references to `TxV2`
 - [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
+- [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
+- [4716](https://github.com/vegaprotocol/vega/pull/4716) - Fix protobuf conversion in orders
+
+## 0.47.6
+*2022-02-01*
+
+### 🐛 Fixes
 - [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 
 ## 0.47.5

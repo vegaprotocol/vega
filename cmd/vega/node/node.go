@@ -91,6 +91,7 @@ type NodeCommand struct {
 	spam                 *spam.Engine
 	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
+	builtinOracle        *oracles.Builtin
 
 	assets               *assets.Service
 	topology             *validators.Topology

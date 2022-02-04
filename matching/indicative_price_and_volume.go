@@ -14,6 +14,14 @@ type IndicativePriceAndVolume struct {
 
 	// this is just used to avoid allocations
 	buf []CumulativeVolumeLevel
+
+	// keep track of previouses {min/max}Price
+	// and if orders has been add in the book
+	// with a price in the range
+	lastMinPrice, lastMaxPrice *num.Uint
+	lastMaxTradable            uint64
+	lastCumulativeVolumes      []CumulativeVolumeLevel
+	needsUpdate                bool
 }
 
 type ipvPriceLevel struct {
@@ -27,10 +35,23 @@ type ipvVolume struct {
 }
 
 func NewIndicativePriceAndVolume(log *logging.Logger, buy, sell *OrderBookSide) *IndicativePriceAndVolume {
-	ipv := IndicativePriceAndVolume{
-		levels: []ipvPriceLevel{},
-		log:    log,
+	bestBid, _, err := buy.BestPriceAndVolume()
+	if err != nil {
+		bestBid = num.Zero()
 	}
+	bestAsk, _, err := sell.BestPriceAndVolume()
+	if err != nil {
+		bestAsk = num.Zero()
+	}
+
+	ipv := IndicativePriceAndVolume{
+		levels:       []ipvPriceLevel{},
+		log:          log,
+		lastMinPrice: bestBid,
+		lastMaxPrice: bestAsk,
+		needsUpdate:  true,
+	}
+
 	ipv.buildInitialCumulativeLevels(buy, sell)
 	// initialize at the size of all levels at start, we most likely
 	// not gonna need any other allocation if we start an auction
@@ -88,6 +109,12 @@ func (ipv *IndicativePriceAndVolume) incrementLevelVolume(idx int, volume uint64
 }
 
 func (ipv *IndicativePriceAndVolume) AddVolumeAtPrice(price *num.Uint, volume uint64, side types.Side) {
+	if price.GTE(ipv.lastMinPrice) || price.LTE(ipv.lastMaxPrice) {
+		// the new price added is in the range, that will require
+		// to recompute the whole range when we call GetCumulativePriceLevels
+		// again
+		ipv.needsUpdate = true
+	}
 	i := sort.Search(len(ipv.levels), func(i int) bool {
 		return ipv.levels[i].price.LTE(price)
 	})
@@ -124,6 +151,12 @@ func (ipv *IndicativePriceAndVolume) decrementLevelVolume(idx int, volume uint64
 }
 
 func (ipv *IndicativePriceAndVolume) RemoveVolumeAtPrice(price *num.Uint, volume uint64, side types.Side) {
+	if price.GTE(ipv.lastMinPrice) || price.LTE(ipv.lastMaxPrice) {
+		// the new price added is in the range, that will require
+		// to recompute the whole range when we call GetCumulativePriceLevels
+		// again
+		ipv.needsUpdate = true
+	}
 	i := sort.Search(len(ipv.levels), func(i int) bool {
 		return ipv.levels[i].price.LTE(price)
 	})
@@ -162,6 +195,20 @@ func (ipv *IndicativePriceAndVolume) getLevelsWithinRange(maxPrice, minPrice *nu
 }
 
 func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice *num.Uint) ([]CumulativeVolumeLevel, uint64) {
+	needsUpdate := ipv.needsUpdate
+	if maxPrice.NEQ(ipv.lastMaxPrice) {
+		maxPrice = maxPrice.Clone()
+		needsUpdate = true
+	}
+	if minPrice.NEQ(ipv.lastMinPrice) {
+		minPrice = minPrice.Clone()
+		needsUpdate = true
+	}
+
+	if !needsUpdate {
+		return ipv.lastCumulativeVolumes, ipv.lastMaxTradable
+	}
+
 	rangedLevels := ipv.getLevelsWithinRange(maxPrice, minPrice)
 	// now re-allocate the slice only if needed
 	if ipv.buf == nil || cap(ipv.buf) < len(rangedLevels) {
@@ -190,7 +237,7 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		}
 
 		// always set the price
-		cumulativeVolumes[i].price = rangedLevels[i].price.Clone()
+		cumulativeVolumes[i].price = rangedLevels[i].price
 
 		// if we had a price level in the bug side, use it
 		if rangedLevels[j].buypl != nil {
@@ -228,5 +275,9 @@ func (ipv *IndicativePriceAndVolume) GetCumulativePriceLevels(maxPrice, minPrice
 		}
 	}
 
+	// reset those fields
+	ipv.needsUpdate = false
+	ipv.lastMaxTradable = maxTradable
+	ipv.lastCumulativeVolumes = cumulativeVolumes
 	return cumulativeVolumes, maxTradable
 }

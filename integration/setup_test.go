@@ -54,6 +54,7 @@ type executionTestSetup struct {
 	executionEngine  *exEng
 	collateralEngine *collateral.Engine
 	oracleEngine     *oracles.Engine
+	builtinOracle    *oracles.Builtin
 	epochEngine      *epochtime.Svc
 	delegationEngine *delegation.Engine
 	positionPlugin   *plugins.Positions
@@ -115,6 +116,7 @@ func newExecutionTestSetup() *executionTestSetup {
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
 	execsetup.assetsEngine = stubs.NewAssetStub()
+	execsetup.builtinOracle = oracles.NewBuiltinOracle(execsetup.oracleEngine, execsetup.timeService)
 
 	stateVarEngine := stubs.NewStateVar()
 	execsetup.timeService.NotifyOnTick(stateVarEngine.OnTimeTick)

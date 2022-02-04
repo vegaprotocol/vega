@@ -349,7 +349,7 @@ func (b *OrderBook) GetIndicativePriceAndVolume() (retprice *num.Uint, retvol ui
 	prices := make([]*num.Uint, 0, len(cumulativeVolumes))
 	for _, value := range cumulativeVolumes {
 		if value.maxTradableAmount == maxTradableAmount {
-			prices = append(prices, value.price.Clone())
+			prices = append(prices, value.price)
 		}
 	}
 
@@ -398,7 +398,7 @@ func (b *OrderBook) GetIndicativePrice() (retprice *num.Uint) {
 	prices := make([]*num.Uint, 0, len(cumulativeVolumes))
 	for _, value := range cumulativeVolumes {
 		if value.maxTradableAmount == maxTradableAmount {
-			prices = append(prices, value.price.Clone())
+			prices = append(prices, value.price)
 		}
 	}
 
