@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/jessevdk/go-flags"
 	tmcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -26,6 +27,9 @@ func Tm(_ context.Context, parser *flags.Parser) error {
 type tmCmd struct{}
 
 func (opts *tmCmd) Execute(_ []string) error {
+	runtime.SetBlockProfileRate(1)
+	runtime.SetMutexProfileFraction(1)
+
 	os.Args = os.Args[1:]
 	rootCmd := tmcmd.RootCmd
 	rootCmd.AddCommand(
