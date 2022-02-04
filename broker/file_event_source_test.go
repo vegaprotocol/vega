@@ -1,7 +1,6 @@
 package broker_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/binary"
 	"os"
@@ -73,26 +72,4 @@ func writeEventsToFile(events []*eventspb.BusEvent, path string) error {
 	}
 
 	return nil
-}
-
-type testEventFile struct {
-	bytes []byte
-}
-
-func (t *testEventFile) Open() error {
-	return nil
-}
-
-func (t *testEventFile) Close() error {
-	return nil
-}
-
-func (t *testEventFile) Write(b []byte) (n int, err error) {
-	t.bytes = append(t.bytes, b...)
-	return len(b), nil
-}
-
-func (t *testEventFile) ReadAt(b []byte, off int64) (n int, err error) {
-	r := bytes.NewReader(t.bytes)
-	return r.ReadAt(b, off)
 }
