@@ -63,7 +63,7 @@ func (c *Commander) Command(ctx context.Context, cmd txn.Command, payload proto.
 }
 
 func (c *Commander) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, done func(error)) {
-	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_SYNC)
+	c.command(ctx, cmd, payload, done, api.SubmitTransactionRequest_TYPE_ASYNC)
 }
 
 func (c *Commander) command(_ context.Context, cmd txn.Command, payload proto.Message, done func(error), ty api.SubmitTransactionRequest_Type) {
