@@ -1168,8 +1168,8 @@ github.com/vegaprotocol/go-ethereum v0.0.0-20220125130820-eb1d3928a97e h1:6Ml5Lt
 github.com/vegaprotocol/go-ethereum v0.0.0-20220125130820-eb1d3928a97e/go.mod h1:W3yfrFyL9C1pHcwY5hmRHVDaorTiQxhYBkKyu5mEDHw=
 github.com/vegaprotocol/go-slip10 v0.1.0 h1:pP3XF2gSKM6OuaAURobHZlXZ9AzZ5LgeWvXFudL7Mb4=
 github.com/vegaprotocol/go-slip10 v0.1.0/go.mod h1:zTjs9hXxElXfZvPRWWFMtEYSe7udGFP1iUM1ktJ72HI=
-github.com/vegaprotocol/tendermint v0.35.1 h1:eC1MfOcgQeONP5ao5zRYTBVJuHrRh6LFZpMFJAoUe+M=
-github.com/vegaprotocol/tendermint v0.35.1/go.mod h1:BEA2df6j2yFbETYq7IljixC1EqRTvRqJwyNcExddJ8U=
+github.com/vegaprotocol/tendermint v0.35.3 h1:kioFzP/pDCS8k4+TA85iSG4Vmx7qrYYS00vtgfko1GQ=
+github.com/vegaprotocol/tendermint v0.35.3/go.mod h1:BEA2df6j2yFbETYq7IljixC1EqRTvRqJwyNcExddJ8U=
 github.com/vektra/mockery/v2 v2.9.4/go.mod h1:2gU4Cf/f8YyC8oEaSXfCnZBMxMjMl/Ko205rlP0fO90=
 github.com/viki-org/dnscache v0.0.0-20130720023526-c70c1f23c5d8/go.mod h1:dniwbG03GafCjFohMDmz6Zc6oCuiqgH6tGNyXTkHzXE=
 github.com/vishvananda/netlink v1.1.0/go.mod h1:cTgwzPIzzgDAYoQrMm0EdrjRUBkTqKYppBueQtXaqoE=
