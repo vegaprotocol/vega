@@ -668,6 +668,8 @@ func (app *App) handleCheckpoint(cpt *types.CheckpointState) error {
 
 // OnCheckTx performs soft validations.
 func (app *App) OnCheckTx(ctx context.Context, _ tmtypes.RequestCheckTx, tx abci.Tx) (context.Context, tmtypes.ResponseCheckTx) {
+	fmt.Printf("START CHECK TX: %v\n", time.Now().Format(time.RFC3339Nano))
+	defer func() { fmt.Printf("END CHECK TX  : %v\n", time.Now().Format(time.RFC3339Nano)) }()
 	resp := tmtypes.ResponseCheckTx{}
 	if app.spam != nil {
 		if _, err := app.spam.PreBlockAccept(tx); err != nil {
