@@ -77,7 +77,7 @@ func NewOrderAmendmentFromProto(p *commandspb.OrderAmendment) (*OrderAmendment, 
 	}
 	if p.PeggedOffset != "" {
 		var overflowed bool
-		peggedOffset, overflowed = num.UintFromString(p.Price.Value, 10)
+		peggedOffset, overflowed = num.UintFromString(p.PeggedOffset, 10)
 		if overflowed {
 			return nil, errors.New("invalid offset")
 		}
