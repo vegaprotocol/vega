@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -22,7 +23,7 @@ func (e *Engine) Keys() []string {
 
 func (e *Engine) setNextCP(t time.Time) {
 	e.nextCP = t
-	e.state.Checkpoint.NextCp = t.Unix()
+	e.state.Checkpoint.NextCp = t.UnixNano()
 	// clear hash/data
 	e.hash = []byte{}
 	e.data = []byte{}
@@ -54,6 +55,7 @@ func (e *Engine) GetState(k string) ([]byte, []types.StateProvider, error) {
 }
 
 func (e *Engine) serialiseState() error {
+	e.log.Debug("serialising checkpoint", logging.Int64("nextcp", e.state.Checkpoint.NextCp))
 	pl := types.Payload{
 		Data: e.state,
 	}
@@ -61,6 +63,7 @@ func (e *Engine) serialiseState() error {
 	if err != nil {
 		return err
 	}
+
 	e.data = data
 	e.hash = crypto.Hash(data)
 	return nil
@@ -75,7 +78,8 @@ func (e *Engine) LoadState(_ context.Context, snap *types.Payload) ([]types.Stat
 	}
 	state := snap.Data.(*types.PayloadCheckpoint)
 	e.state = state
-	e.setNextCP(time.Unix(state.Checkpoint.NextCp, 0))
+	e.setNextCP(time.Unix(0, state.Checkpoint.NextCp))
+	e.log.Debug("loaded checkpoint snapshot", logging.Int64("nextcp", e.state.Checkpoint.NextCp))
 	return nil, nil
 }
 
@@ -98,7 +102,7 @@ func (e *Engine) PollChanges(ctx context.Context, k string, ch chan<- *types.Pay
 	pl := types.Payload{
 		Data: &types.PayloadCheckpoint{
 			Checkpoint: &types.CPState{
-				NextCp: e.nextCP.Unix(),
+				NextCp: e.nextCP.UnixNano(),
 			},
 		},
 	}

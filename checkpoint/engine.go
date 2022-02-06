@@ -168,6 +168,7 @@ func (e *Engine) BalanceCheckpoint(ctx context.Context) (*types.CheckpointState,
 // Checkpoint returns the overall checkpoint.
 func (e *Engine) Checkpoint(ctx context.Context, t time.Time) (*types.CheckpointState, error) {
 	// start time will be zero -> add delta to this time, and return
+
 	if e.nextCP.IsZero() {
 		e.setNextCP(t.Add(e.delta))
 		return nil, nil
@@ -199,13 +200,14 @@ func (e *Engine) makeCheckpoint(ctx context.Context) *types.CheckpointState {
 	if err := cp.SetBlockHeight(h); err != nil {
 		e.log.Panic("could not set block height", logging.Error(err))
 	}
-	snap := &types.CheckpointState{}
+	cpState := &types.CheckpointState{}
 	// setCheckpoint hides the vega type mess
-	if err := snap.SetCheckpoint(cp); err != nil {
+	if err := cpState.SetCheckpoint(cp); err != nil {
 		panic(fmt.Errorf("checkpoint could not be created: %w", err))
 	}
 
-	return snap
+	e.log.Debug("checkpoint taken", logging.Int64("block-height", h))
+	return cpState
 }
 
 // Load - loads checkpoint data for all components by name.
