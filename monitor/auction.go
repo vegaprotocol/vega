@@ -178,11 +178,11 @@ func (a AuctionState) IsOpeningAuction() bool {
 }
 
 func (a AuctionState) IsLiquidityAuction() bool {
-	return a.trigger == types.AuctionTriggerLiquidity
+	return a.trigger == types.AuctionTriggerLiquidity || (a.extension != nil && *a.extension == types.AuctionTriggerLiquidity)
 }
 
 func (a AuctionState) IsPriceAuction() bool {
-	return a.trigger == types.AuctionTriggerPrice
+	return a.trigger == types.AuctionTriggerPrice || (a.extension != nil && *a.extension == types.AuctionTriggerPrice)
 }
 
 func (a AuctionState) IsFBA() bool {

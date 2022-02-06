@@ -1592,7 +1592,8 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(10000000000, 0)
 	auctionExtensionSeconds := int64(45)
-	openEnd := now.Add(time.Duration(auctionExtensionSeconds)*time.Second + time.Second)
+	openingAuctionDuration := &types.AuctionDuration{Duration: auctionExtensionSeconds}
+	openEnd := now.Add(time.Duration(openingAuctionDuration.Duration)*time.Second + time.Second)
 	auctionEndTime := openEnd.Add(time.Duration(auctionExtensionSeconds) * time.Second)
 	initialAuctionEnd := auctionEndTime.Add(time.Second)
 	pMonitorSettings := &types.PriceMonitoringSettings{
@@ -1611,7 +1612,7 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	mmu, _ := num.UintFromDecimal(MAXMOVEUP)
 	initialPrice := uint64(600)
 	auctionTriggeringPrice := initialPrice + 1 + mmu.Uint64()
-	tm := getTestMarket(t, now, closingAt, pMonitorSettings, nil)
+	tm := getTestMarket(t, now, closingAt, pMonitorSettings, openingAuctionDuration)
 
 	addAccount(t, tm, party1)
 	addAccount(t, tm, party2)
@@ -1646,6 +1647,11 @@ func TestTriggerByPriceAuctionPriceOutsideBounds(t *testing.T) {
 	}
 	// increase time, so we can leave opening auction
 	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), openEnd)
+
+	md := tm.market.GetMarketData()
+
+	require.Nil(t, md.Trigger)
+
 	require.Equal(t, types.MarketStateActive, tm.market.State())
 	now = openEnd
 

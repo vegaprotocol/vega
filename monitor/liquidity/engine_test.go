@@ -70,7 +70,7 @@ func TestEngineWhenInLiquidityAuction(t *testing.T) {
 				h.AuctionState.EXPECT().ExpiresAt().Times(1).Return(&keep)
 			}
 
-			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice.Clone(), test.bestStaticBidVolume, test.bestStaticAskVolume)
+			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice.Clone(), test.bestStaticBidVolume, test.bestStaticAskVolume, true)
 		})
 	}
 }
@@ -110,7 +110,7 @@ func TestEngineWhenNotInLiquidityAuction(t *testing.T) {
 			rf := types.RiskFactor{}
 			markPrice := num.NewUint(100)
 			h.TargetStakeCalculator.EXPECT().GetTheoreticalTargetStake(rf, now, markPrice.Clone(), trades).Return(test.target)
-			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice.Clone(), test.bestStaticBidVolume, test.bestStaticAskVolume)
+			mon.CheckLiquidity(h.AuctionState, now, test.current, trades, rf, markPrice.Clone(), test.bestStaticBidVolume, test.bestStaticAskVolume, true)
 		})
 	}
 }
