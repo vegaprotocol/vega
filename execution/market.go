@@ -110,7 +110,7 @@ type PriceMonitor interface {
 
 // LiquidityMonitor.
 type LiquidityMonitor interface {
-	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64)
+	CheckLiquidity(as lmon.AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade, rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool) error
 	SetMinDuration(d time.Duration)
 	UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.Decimal)
 	UpdateParameters(*types.LiquidityMonitoringParameters)
@@ -256,6 +256,8 @@ type Market struct {
 	marketTracker  *MarketTracker
 	positionFactor num.Decimal // 10^pdp
 	assetDP        uint32
+
+	sawIndicativePrice bool
 }
 
 // SetMarketID assigns a deterministic pseudo-random ID to a Market.
@@ -421,6 +423,7 @@ func NewMarket(
 		minLPStakeQuantumMultiple: num.MustDecimalFromString("1"),
 		marketTracker:             marketTracker,
 		positionFactor:            positionFactor,
+		sawIndicativePrice:        false,
 	}
 
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPricesDecimal)
@@ -993,24 +996,24 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	})
 
 	// keep var to see if we're leaving opening auction
-	isOpening := m.as.IsOpeningAuction()
+	// isOpening := m.as.IsOpeningAuction()
 	// update auction state, so we know what the new tradeMode ought to be
 	endEvt := m.as.Left(ctx, now)
 
 	for _, uncrossedOrder := range uncrossedOrders {
-		if !isOpening {
-			// @TODO we should update this once
-			for _, trade := range uncrossedOrder.Trades {
-				err := m.pMonitor.CheckPrice(
-					ctx, m.as, trade.Price.Clone(), trade.Size, now, true,
-				)
-				if err != nil {
-					m.log.Panic("unable to run check price with price monitor",
-						logging.String("market-id", m.GetID()),
-						logging.Error(err))
-				}
-			}
-		}
+		// if !isOpening {
+		// 	// @TODO we should update this once
+		// 	for _, trade := range uncrossedOrder.Trades {
+		// 		err := m.pMonitor.CheckPrice(
+		// 			ctx, m.as, trade.Price.Clone(), trade.Size, now, true,
+		// 		)
+		// 		if err != nil {
+		// 			m.log.Panic("unable to run check price with price monitor",
+		// 				logging.String("market-id", m.GetID()),
+		// 				logging.Error(err))
+		// 		}
+		// 	}
+		// }
 
 		updatedOrders = append(updatedOrders, uncrossedOrder.Order)
 		updatedOrders = append(
@@ -1020,7 +1023,7 @@ func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	// Send an event bus update
 	m.broker.Send(endEvt)
 	m.checkForReferenceMoves(ctx, updatedOrders, true)
-	m.checkLiquidity(ctx, nil) // TODO (WG): Is this really needed?
+	m.checkLiquidity(ctx, nil, true) // TODO (WG): Is this really needed?
 	m.commandLiquidityAuction(ctx)
 	m.updateLiquidityFee(ctx)
 	m.OnAuctionEnded()
@@ -1250,7 +1253,7 @@ func (m *Market) SubmitOrder(
 
 	m.checkForReferenceMoves(
 		ctx, allUpdatedOrders, false)
-	m.checkLiquidity(ctx, nil)
+	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 
 	return conf, nil
@@ -1434,7 +1437,12 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 				logging.Error(merr))
 		}
 	}
-	m.checkLiquidity(ctx, trades)
+	if merr := m.checkLiquidity(ctx, trades, persistent); merr != nil {
+		// a specific order error
+		if err, ok := merr.(types.OrderError); ok {
+			return nil, err
+		}
+	}
 
 	if evt := m.as.AuctionExtended(ctx, m.currentTime); evt != nil {
 		m.broker.Send(evt)
@@ -2246,7 +2254,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	}
 
 	m.checkForReferenceMoves(ctx, cancelledOrders, false)
-	m.checkLiquidity(ctx, nil)
+	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 
 	return cancellations, nil
@@ -2271,7 +2279,7 @@ func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deter
 	}
 
 	m.checkForReferenceMoves(ctx, []*types.Order{conf.Order}, false)
-	m.checkLiquidity(ctx, nil)
+	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 
 	return conf, nil
@@ -2382,7 +2390,7 @@ func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmen
 		updatedOrders...,
 	)
 	m.checkForReferenceMoves(ctx, allUpdatedOrders, false)
-	m.checkLiquidity(ctx, nil)
+	m.checkLiquidity(ctx, nil, true)
 	m.commandLiquidityAuction(ctx)
 
 	return conf, nil
@@ -2946,7 +2954,7 @@ func (m *Market) RemoveExpiredOrders(
 	// or maybe notify the liquidity engine
 	if len(expired) > 0 {
 		m.checkForReferenceMoves(ctx, expired, false)
-		m.checkLiquidity(ctx, nil)
+		m.checkLiquidity(ctx, nil, true)
 		m.commandLiquidityAuction(ctx)
 	}
 
@@ -3072,7 +3080,7 @@ func (m *Market) getSuppliedStake() *num.Uint {
 	return m.liquidity.CalculateSuppliedStake()
 }
 
-func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
+func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade, persistentOrder bool) error {
 	// before we check liquidity, ensure we've moved all funds that can go towards
 	// provided stake to the bond accounts so we don't trigger liquidity auction for no reason
 	m.checkBondBalance(ctx)
@@ -3092,13 +3100,14 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 			logging.Error(err))
 	}
 
-	m.lMonitor.CheckLiquidity(
+	return m.lMonitor.CheckLiquidity(
 		m.as, m.currentTime,
 		m.getSuppliedStake(),
 		trades,
 		*rf,
 		m.getReferencePrice(),
-		vBid, vAsk)
+		vBid, vAsk,
+		persistentOrder)
 }
 
 // command liquidity auction checks if liquidity auction should be entered and if it can end.

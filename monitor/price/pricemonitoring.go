@@ -231,19 +231,9 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		if v == 0 {
 			return nil
 		}
-		e.reset(p, v, now)
+		e.resetPriceHistory(p, v, now)
 		e.initialised = true
-		e.stateChanged = true
 	}
-
-	last := currentPrice{
-		Price:  p.Clone(),
-		Volume: v,
-	}
-	if len(e.pricesNow) > 0 {
-		last = e.pricesNow[len(e.pricesNow)-1]
-	}
-
 	// market is not in auction, or in batch auction
 	if fba := as.IsFBA(); !as.InAuction() || fba {
 		if err := e.recordTimeChange(now); err != nil {
@@ -259,7 +249,7 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		}
 		if !persistent {
 			// we're going to stay in continuous trading, make sure we still have bounds
-			e.reset(last.Price, last.Volume, now)
+			e.reactivateBounds()
 			return proto.ErrNonPersistentOrderOutOfBounds
 		}
 		duration := types.AuctionDuration{}
@@ -280,9 +270,9 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 		return nil
 	}
 	// market is in auction
-
 	// opening auction -> ignore
 	if as.IsOpeningAuction() {
+		e.resetPriceHistory(p, v, now)
 		return nil
 	}
 
@@ -305,12 +295,13 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 			// auction can be terminated
 			as.SetReadyToLeave()
 			// reset the engine
-			e.reset(p, v, now)
+			e.resetPriceHistory(p, v, now)
+			e.reactivateBounds()
 			return nil
 		}
 		// liquidity auction, and it was safe to end -> book is OK, price was OK, reset the engine
 		if as.CanLeave() {
-			e.reset(p, v, now)
+			e.reactivateBounds()
 		}
 		return nil
 	}
@@ -328,8 +319,8 @@ func (e *Engine) CheckPrice(ctx context.Context, as AuctionState, p *num.Uint, v
 	return nil
 }
 
-// reset restarts price monitoring with a new price. All previously recorded prices and previously obtained bounds get deleted.
-func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
+//resetPriceHistory deletes existing price history and starts it afresh with the supplied value
+func (e *Engine) resetPriceHistory(price *num.Uint, volume uint64, now time.Time) {
 	e.now = now
 	e.update = now
 	if volume > 0 {
@@ -352,7 +343,7 @@ func (e *Engine) reset(price *num.Uint, volume uint64, now time.Time) {
 	e.stateChanged = true
 }
 
-// reactivateBounds reactivates all bounds.
+// reactivateBounds reactivates all bounds
 func (e *Engine) reactivateBounds() {
 	for _, b := range e.bounds {
 		if !b.Active {

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -68,45 +69,52 @@ func (e *Engine) UpdateTargetStakeTriggerRatio(ctx context.Context, ratio num.De
 // CheckLiquidity Starts or Ends a Liquidity auction given the current and target stakes along with best static bid and ask volumes.
 // The constant c1 represents the netparam `MarketLiquidityTargetStakeTriggeringRatio`.
 func (e *Engine) CheckLiquidity(as AuctionState, t time.Time, currentStake *num.Uint, trades []*types.Trade,
-	rf types.RiskFactor, markPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64,
-) {
+	rf types.RiskFactor, refPrice *num.Uint, bestStaticBidVolume, bestStaticAskVolume uint64, persistent bool) error {
 	exp := as.ExpiresAt()
 	if exp != nil && exp.After(t) {
 		// we're in auction, and the auction isn't expiring yet, so we don't have to do anything yet
-		return
+		return nil
 	}
 	e.mu.Lock()
 	c1 := e.params.TriggeringRatio
 	md := int64(e.minDuration / time.Second)
 	e.mu.Unlock()
-	targetStake := e.tsCalc.GetTheoreticalTargetStake(rf, t, markPrice.Clone(), trades)
+	targetStake := e.tsCalc.GetTheoreticalTargetStake(rf, t, refPrice.Clone(), trades)
 	ext := types.AuctionDuration{
 		Duration: e.params.AuctionExtension,
 	}
 	// if we're in liquidity auction already, the auction has expired, and we can end/extend the auction
 	// @TODO we don't have the ability to support volume limited auctions yet
+
 	if exp != nil && as.IsLiquidityAuction() {
 		if currentStake.GTE(targetStake) && bestStaticBidVolume > 0 && bestStaticAskVolume > 0 {
 			as.SetReadyToLeave()
-
-			return // all done
+			return nil // all done
 		}
 		// we're still in trouble, extend the auction
 		as.ExtendAuctionLiquidity(ext)
-
-		return
+		return nil
 	}
 	// multiply target stake by triggering ratio
 	scaledTargetStakeDec := targetStake.ToDecimal().Mul(c1)
 	scaledTargetStake, _ := num.UintFromDecimal(scaledTargetStakeDec)
-	if currentStake.LT(scaledTargetStake) || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
+	stakeUndersupplied := currentStake.LT(scaledTargetStake)
+	if stakeUndersupplied || bestStaticBidVolume == 0 || bestStaticAskVolume == 0 {
+		if stakeUndersupplied && trades != nil && !persistent {
+			// non-persistent order cannot trigger auction by raising target stake
+			// we're going to stay in continuous trading
+			return proto.OrderError_ORDER_ERROR_INVALID_PERSISTENCE
+		}
 		if exp != nil {
 			as.ExtendAuctionLiquidity(ext)
 
-			return
+			return nil
 		}
 		as.StartLiquidityAuction(t, &types.AuctionDuration{
 			Duration: md, // we multiply this by a second later on
 		})
 	}
+	return nil
+
+	//TODO: Don't leave ANY auction type if supplied < target, only
 }
