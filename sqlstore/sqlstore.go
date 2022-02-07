@@ -126,7 +126,7 @@ func (s *SqlStore) DeleteEverything() error {
 
 func (s *SqlStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
 	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "sqlstore")
-	embeddedPostgresDataPath := paths.JoinStatePath(embeddedPostgresRuntimePath, "data")
+	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "node-data")
 
 	dbConfig := embeddedpostgres.DefaultConfig().
 		RuntimePath(embeddedPostgresRuntimePath.String()).
@@ -139,4 +139,12 @@ func (s *SqlStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
 
 	s.db = embeddedpostgres.NewDatabase(dbConfig)
 	return s.db.Start()
+}
+
+func (s *SqlStore) Stop() error {
+	if !s.conf.Enabled || !s.conf.UseEmbedded || s.db == nil {
+		return nil
+	}
+
+	return s.db.Stop()
 }

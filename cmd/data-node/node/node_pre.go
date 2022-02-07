@@ -156,6 +156,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.partyStoreSql = sqlstore.NewParties(sqlStore)
 		l.accountStoreSql = sqlstore.NewAccounts(sqlStore)
 		l.ledgerSql = sqlstore.NewLedger(sqlStore)
+		l.sqlStore = sqlStore
 	}
 
 	st, err := storage.InitialiseStorage(l.vegaPaths)
