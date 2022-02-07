@@ -25,11 +25,6 @@ import (
 
 type SnapshotSource int
 
-const (
-	SnapshotSourceLocal SnapshotSource = iota
-	SnapshotSourceTendermint
-)
-
 const SnapshotDBName = "snapshot"
 
 type StateProviderT interface {
@@ -206,7 +201,7 @@ func (e *Engine) ReloadConfig(cfg Config) {
 
 // List returns all snapshots available.
 func (e *Engine) List() ([]*types.Snapshot, error) {
-	trees := make([]*types.Snapshot, 0, len(e.versions))
+	snapshots := make([]*types.Snapshot, 0, len(e.versions))
 	// TM list of snapshots is limited to the 10 most recent ones.
 	i := len(e.versions) - 11
 	if i < 0 {
@@ -220,12 +215,15 @@ func (e *Engine) List() ([]*types.Snapshot, error) {
 		}
 		snap, err := types.SnapshotFromTree(tree)
 		if err != nil {
-			return nil, err
+			e.log.Error("could not list snapshot",
+				logging.Int64("version", v),
+				logging.Error(err))
+			continue // if we have a borked snapshot we just won't list it
 		}
-		trees = append(trees, snap)
+		snapshots = append(snapshots, snap)
 		e.versionHeight[snap.Height] = snap.Meta.Version
 	}
-	return trees, nil
+	return snapshots, nil
 }
 
 // Start kicks the snapshot engine into its initial state setting up the DB connections
@@ -253,6 +251,7 @@ func (e *Engine) Start() error {
 // from a snapshots stored locally. It is an error if a snapshot is not found
 // for this height.
 func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
+	e.log.Debug("loading snapshot for height", logging.Int64("height", h))
 	// setup AVL tree from local store
 	e.initialiseTree()
 	if h < 0 {
@@ -348,7 +347,7 @@ func (e *Engine) load(ctx context.Context) error {
 	}
 	e.snapshot = snap
 	// apply, no need to set the tree, it's coming from local store
-	return e.applySnap(ctx, SnapshotSourceLocal)
+	return e.applySnap(ctx)
 }
 
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
@@ -377,10 +376,21 @@ func (e *Engine) RejectSnapshot() error {
 }
 
 func (e *Engine) ApplySnapshot(ctx context.Context) error {
-	return e.applySnap(ctx, SnapshotSourceTendermint)
+	// remove all existing snapshot and create an initial empty tree
+	e.Start()
+
+	// Import the AVL tree from the snapshot data so we have a working copy
+	// that is consistent with the other nodes
+	if err := e.snapshot.TreeFromSnapshot(e.avl); err != nil {
+		e.log.Error("failed to recreate tree", logging.Error(err))
+		return err
+	}
+
+	// Load the snapshot data into each provider
+	return e.applySnap(ctx)
 }
 
-func (e *Engine) applySnap(ctx context.Context, source SnapshotSource) error {
+func (e *Engine) applySnap(ctx context.Context) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
@@ -404,7 +414,7 @@ func (e *Engine) applySnap(ctx context.Context, source SnapshotSource) error {
 			}
 		}
 
-		if err := e.setTreeNode(i, pl, source); err != nil {
+		if err := e.setTreeNode(i, pl); err != nil {
 			return err
 		}
 		// node was verified and set on tree
@@ -455,17 +465,10 @@ func (e *Engine) applySnap(ctx context.Context, source SnapshotSource) error {
 	e.hash = e.snapshot.Hash // set the engine's "last snapshot hash" field to the hash of the snapshot we've just loaded
 	e.snapshot = nil         // we're done, we can clear the snapshot state
 
-	// no need to save the tree, we already have it from when loaded it locally
-	if source == SnapshotSourceLocal {
-		return nil
-	}
-	if _, err := e.saveCurrentTree(); err != nil {
-		return err
-	}
 	return nil
 }
 
-func (e *Engine) setTreeNode(i int, p *types.Payload, source SnapshotSource) error {
+func (e *Engine) setTreeNode(i int, p *types.Payload) error {
 	// unpack payload
 	data, err := proto.Marshal(p.IntoProto())
 	if err != nil {
@@ -477,21 +480,6 @@ func (e *Engine) setTreeNode(i int, p *types.Payload, source SnapshotSource) err
 	key := p.GetTreeKey()
 	e.hashes[key] = hash
 
-	if source == SnapshotSourceLocal {
-		// we've loaded from local store and so we don't need to fiddle with the AVL tree
-		// since we've just loaded from it!
-		return nil
-	}
-
-	_ = e.avl.Set([]byte(key), data)
-	if exp := e.snapshot.Meta.NodeHashes[i].Hash; exp != hex.EncodeToString(hash) {
-		key := p.GetTreeKey()
-		e.log.Error("Snapshot node not restored - hash mismatch",
-			logging.String("node-key", key),
-		)
-		_, _ = e.avl.Remove([]byte(key))
-		return types.ErrNodeHashMismatch
-	}
 	return nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -77,38 +78,6 @@ const (
 )
 
 var (
-	nsMap = map[string]SnapshotNamespace{
-		"collateral":      CollateralSnapshot,
-		"assets":          AssetsSnapshot,
-		"banking":         BankingSnapshot,
-		"checkpoint":      CheckpointSnapshot,
-		"app":             AppSnapshot,
-		"netparams":       NetParamsSnapshot,
-		"delegation":      DelegationSnapshot,
-		"governance":      GovernanceSnapshot,
-		"positions":       PositionsSnapshot,
-		"matching":        MatchingSnapshot,
-		"execution":       ExecutionSnapshot,
-		"epoch":           EpochSnapshot,
-		"staking":         StakingSnapshot,
-		"rewards":         RewardSnapshot,
-		"spam":            SpamSnapshot,
-		"eventforwarder":  EventForwarderSnapshot,
-		"replay":          ReplayProtectionSnapshot,
-		"notary":          NotarySnapshot,
-		"limits":          LimitSnapshot,
-		"witness":         WitnessSnapshot,
-		"topology":        TopologySnapshot,
-		"idgenerator":     IDGenSnapshot,
-		"stakeverifier":   StakeVerifierSnapshot,
-		"liquidity":       LiquiditySnapshot,
-		"liquiditytarget": LiquidityTargetSnapshot,
-		"futureState":     FutureStateSnapshot,
-		"floatingpoint":   FloatingPointConsensusSnapshot,
-		"feestracker":     FeeTrackerSnapshot,
-		"markettracker":   MarketTrackerSnapshot,
-	}
-
 	ErrSnapshotHashMismatch         = errors.New("snapshot hashes do not match")
 	ErrSnapshotMetaMismatch         = errors.New("snapshot metadata does not match")
 	ErrUnknownSnapshotNamespace     = errors.New("unknown snapshot namespace")
@@ -130,6 +99,8 @@ var (
 	ErrNoSnapshot                   = errors.New("no snapshot found")
 	ErrMissingSnapshotVersion       = errors.New("unknown snapshot version")
 	ErrInvalidSnapshotStorageMethod = errors.New("invalid snapshot storage method")
+	ErrMissingAppstateNode          = errors.New("appstate missing from tree")
+	ErrMissingPayload               = errors.New("payload missing from exported tree")
 )
 
 type SnapshotFormat = snapshot.Format
@@ -154,7 +125,6 @@ func SnapshotFromTM(tms *tmtypes.Snapshot) (*Snapshot, error) {
 		Format:     SnapshotFormat(tms.Format),
 		Chunks:     tms.Chunks,
 		Hash:       tms.Hash,
-		Metadata:   tms.Metadata,
 		ByteChunks: make([][]byte, int(tms.Chunks)), // have the chunk slice ready for loading
 	}
 	meta := &snapshot.Metadata{}
@@ -169,14 +139,18 @@ func SnapshotFromTM(tms *tmtypes.Snapshot) (*Snapshot, error) {
 	return &snap, nil
 }
 
-func (s Snapshot) ToTM() *tmtypes.Snapshot {
+func (s Snapshot) ToTM() (*tmtypes.Snapshot, error) {
+	md, err := proto.Marshal(s.Meta.IntoProto())
+	if err != nil {
+		return nil, err
+	}
 	return &tmtypes.Snapshot{
 		Height:   s.Height,
 		Format:   uint32(s.Format),
 		Chunks:   s.Chunks,
 		Hash:     s.Hash,
-		Metadata: s.Metadata,
-	}
+		Metadata: md,
+	}, nil
 }
 
 func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
@@ -196,39 +170,128 @@ func AppStateFromTree(tree *iavl.ImmutableTree) (*PayloadAppState, error) {
 	return appState.GetAppState(), nil
 }
 
+// TreeFromSnapshot takes the given snapshot data and creates a avl tree from it.
+func (s *Snapshot) TreeFromSnapshot(tree *iavl.MutableTree) error {
+	importer, err := tree.Import(s.Meta.Version)
+	if err != nil {
+		return fmt.Errorf("failed instantiate iavl tree importer: %w", err)
+	}
+	defer importer.Close()
+
+	// Convert slice into map for quick lookup
+	payloads := map[string]*Payload{}
+	for _, pl := range s.Nodes {
+		payloads[pl.GetTreeKey()] = pl
+	}
+
+	// Add the nodes in in the order they were exported in SnapshotFromTree
+	for _, n := range s.Meta.NodeHashes {
+		var value []byte
+		if n.IsLeaf {
+			// value is the snapshot payload
+			payload, ok := payloads[n.Key]
+			if !ok {
+				return ErrMissingPayload
+			}
+			value, err = proto.Marshal(payload.IntoProto())
+			if err != nil {
+				return err
+			}
+		} else {
+			// it is very important that this is a nil-slice and not an empty-non-nil slice for importer.Add()
+			// to work which is why I've made it explicit and left this comment. An empty slice means there is
+			// a node value but its empty, a nil slice means there is no value.
+			value = nil
+		}
+
+		// Reconstruct exported node and add it to the important
+		importer.Add(
+			&iavl.ExportNode{
+				Key:     []byte(n.Key),
+				Value:   value,
+				Height:  int8(n.Height), // this is the height of the node in thre tree
+				Version: n.Version,      // this is the version of the node in the tree (it is incremented if that node's value is updated)
+			})
+	}
+
+	// validate the import and commit it into the tree
+	err = importer.Commit()
+	if err != nil {
+		return fmt.Errorf("could not commit imported tree: %w", err)
+	}
+
+	return nil
+}
+
+// SnapshotFromTree traverses the given avl tree and represents it as a Snapshot.
 func SnapshotFromTree(tree *iavl.ImmutableTree) (*Snapshot, error) {
 	snap := Snapshot{
 		Hash: tree.Hash(),
 		Meta: &Metadata{
 			Version:     tree.Version(),
-			NodeHashes:  []*NodeHash{},
+			NodeHashes:  []*NodeHash{}, // a slice of the data for each node in the tree without the payload value, just its hash
 			ChunkHashes: []string{},
 		},
+
+		// a slice of payloads that correspond to the nodehashes. Note that len(NodeHashes) != len(Nodes) since
+		// only the leaf nodes of the tree contain payload data, the sub-tree roots only exist for the merkle-hash.
 		Nodes: []*Payload{},
 	}
-	var err error
-	stopped := tree.Iterate(func(key, val []byte) bool {
+
+	exporter := tree.Export()
+	defer exporter.Close()
+
+	exportedNode, err := exporter.Next()
+	for err == nil {
+		hash := hex.EncodeToString(crypto.Hash(exportedNode.Value))
+		node := &NodeHash{
+			Hash:    hash,
+			Height:  int32(exportedNode.Height),
+			Version: exportedNode.Version,
+			Key:     string(exportedNode.Key),
+			IsLeaf:  exportedNode.Value != nil,
+		}
+
+		snap.Meta.NodeHashes = append(snap.Meta.NodeHashes, node)
+
+		// its only the nodes at the end of the tree which have the payload data
+		// all intermediary nodes have empty values and just make up the merkle-tree
+		// if we are a payload-less node just step again
+		if !node.IsLeaf {
+			exportedNode, err = exporter.Next()
+			continue
+		}
+
+		// sort out the payload for this node
 		pl := &snapshot.Payload{}
-		if err = proto.Unmarshal(val, pl); err != nil {
-			return true // It appears that returning true stops the iterator
+		if perr := proto.Unmarshal(exportedNode.Value, pl); err != nil {
+			return nil, perr
 		}
+
 		payload := PayloadFromProto(pl)
-		payload.raw = val[:]
-		hash := hex.EncodeToString(crypto.Hash(val))
-		nh := &NodeHash{
-			FullKey:   payload.GetTreeKey(),
-			Namespace: payload.Namespace(),
-			Key:       payload.Key(),
-			Hash:      hash,
-		}
-		snap.Meta.NodeHashes = append(snap.Meta.NodeHashes, nh)
+		payload.raw = exportedNode.Value[:]
+
 		snap.Nodes = append(snap.Nodes, payload)
-		return false
-	})
-	// we had to abort, there was an error
-	if stopped && err != nil {
-		return nil, err
+
+		// if it happens to be the appstate payload grab the snapshot height while we're there
+		if payload.Namespace() == AppSnapshot {
+			p, _ := payload.Data.(*PayloadAppState)
+			snap.Height = p.AppState.Height
+		}
+
+		// move onto the next node
+		exportedNode, err = exporter.Next()
 	}
+
+	if err != iavl.ExportDone {
+		// either an error occurred while traversing, or we never reached the end
+		return nil, fmt.Errorf("failed to export iavl tree: %w", err)
+	}
+
+	if snap.Height == 0 {
+		return nil, fmt.Errorf("failed to export iavl tree: %w", ErrMissingAppstateNode)
+	}
+
 	// set chunks, ready to send in case we need it
 	snap.nodesToChunks()
 	return &snap, nil
@@ -363,14 +426,6 @@ func (s *Snapshot) unmarshalChunks() error {
 
 func (s Snapshot) Ready() bool {
 	return s.ChunksSeen == s.Chunks
-}
-
-func namespaceFromString(s string) (SnapshotNamespace, error) {
-	ns, ok := nsMap[s]
-	if !ok {
-		return undefinedSnapshot, ErrUnknownSnapshotNamespace
-	}
-	return ns, nil
 }
 
 func (n SnapshotNamespace) String() string {

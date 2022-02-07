@@ -11,35 +11,37 @@ import (
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type Snapshot struct {
-	Height     uint64
-	Format     SnapshotFormat
+	Format SnapshotFormat
+	Height uint64    // the block-height of the snapshot
+	Hash   []byte    // the hash of the snapshot (the root hash of the AVL tree)
+	Meta   *Metadata // the AVL tree metadata
+	// Metadata []byte     // the above metadata serialised
+	Nodes []*Payload // the snapshot payloads in the tree (always leaf nodes)
+
+	// Chunk stuff
 	Chunks     uint32
-	Hash       []byte
-	Metadata   []byte
-	Meta       *Metadata
 	DataChunks []*Chunk
-	Nodes      []*Payload
 	ByteChunks [][]byte
 	ChunksSeen uint32
 	byteLen    int
 }
 
 type Metadata struct {
-	Version     int64
+	Version     int64       // the version of the AVL tree
+	NodeHashes  []*NodeHash // he nodes of the AVL tree ordered such that it can be imported with identical shape
 	ChunkHashes []string
-	NodeHashes  []*NodeHash
 }
 
+// NodeHash contains the data for a node in the IAVL, without its value, but the values hash instead.
 type NodeHash struct {
-	FullKey   string
-	Namespace SnapshotNamespace
-	Key       string
-	Hash      string
+	Key     string // the node's key eg. epoch.all
+	Hash    string // the hash of the noes value
+	IsLeaf  bool   // whether or not the node contains a payload
+	Height  int32  // the height of the node in the tree
+	Version int64  // the version of that node i.e how many times its value has changed
 }
 
 type Chunk struct {
@@ -530,47 +532,6 @@ type PayloadLiquiditySupplied struct {
 	LiquiditySupplied *snapshot.LiquiditySupplied
 }
 
-func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
-	meta := &snapshot.Metadata{}
-	if err := proto.Unmarshal(s.Metadata, meta); err != nil {
-		return nil, err
-	}
-	m, err := MetadataFromProto(meta)
-	if err != nil {
-		return nil, err
-	}
-	return &Snapshot{
-		Height:     s.Height,
-		Format:     s.Format,
-		Chunks:     s.Chunks,
-		Hash:       s.Hash,
-		Metadata:   s.Metadata,
-		Meta:       m,
-		DataChunks: make([]*Chunk, 0, int(s.Chunks)),
-	}, nil
-}
-
-func (s Snapshot) IntoProto() (*snapshot.Snapshot, error) {
-	if len(s.Metadata) == 0 {
-		m, err := proto.Marshal(s.Meta.IntoProto())
-		if err != nil {
-			return nil, err
-		}
-		s.Metadata = m
-	}
-	// just make sure the number of chunks is set
-	if s.Chunks == 0 {
-		s.Chunks = uint32(len(s.DataChunks))
-	}
-	return &snapshot.Snapshot{
-		Height:   s.Height,
-		Format:   s.Format,
-		Chunks:   s.Chunks,
-		Hash:     s.Hash,
-		Metadata: s.Metadata,
-	}, nil
-}
-
 func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
 	if s.Chunks < idx {
 		return nil, ErrUnknownSnapshotChunkHeight
@@ -611,24 +572,22 @@ func (m Metadata) IntoProto() *snapshot.Metadata {
 }
 
 func NodeHashFromProto(nh *snapshot.NodeHash) (*NodeHash, error) {
-	ns, err := namespaceFromString(nh.Namespace)
-	if err != nil {
-		return nil, err
-	}
 	return &NodeHash{
-		FullKey:   nh.FullKey,
-		Namespace: ns,
-		Key:       nh.Key,
-		Hash:      nh.Hash,
+		Key:     nh.Key,
+		Hash:    nh.Hash,
+		Version: nh.Version,
+		Height:  nh.Height,
+		IsLeaf:  nh.IsLeaf,
 	}, nil
 }
 
 func (n NodeHash) IntoProto() *snapshot.NodeHash {
 	return &snapshot.NodeHash{
-		FullKey:   n.FullKey,
-		Namespace: n.Namespace.String(),
-		Key:       n.Key,
-		Hash:      n.Hash,
+		Key:     n.Key,
+		Hash:    n.Hash,
+		Height:  n.Height,
+		Version: n.Version,
+		IsLeaf:  n.IsLeaf,
 	}
 }
 
