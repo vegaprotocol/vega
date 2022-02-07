@@ -39,8 +39,9 @@ func NewReplayProtector(tolerance uint) *ReplayProtector {
 	return rp
 }
 
-func (*ReplayProtector) GetReplacement() *ReplayProtector {
-	return nil
+// GetReplacement if we've already replace it with a real one, replacing again gets itself.
+func (r *ReplayProtector) GetReplacement() *ReplayProtector {
+	return r
 }
 
 // SetHeight tells the ReplayProtector to clear the oldest cached Tx in the internal ring buffer.

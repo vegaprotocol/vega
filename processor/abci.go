@@ -348,6 +348,11 @@ func (app *App) cancel() {
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
 	app.log.Debug("ABCI service INFO requested", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(hash)))
+
+	// if we've restore from a snapshot replace the protector since we will have restored it
+	if height != 0 {
+		app.Abci().ReplaceReplayProtector(0)
+	}
 	return tmtypes.ResponseInfo{
 		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
@@ -366,7 +371,12 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 	}
 	resp.Snapshots = make([]*tmtypes.Snapshot, 0, len(snapshots))
 	for _, snap := range snapshots {
-		resp.Snapshots = append(resp.Snapshots, snap.ToTM())
+		tmSnap, err := snap.ToTM()
+		if err != nil {
+			app.log.Error("Failed to convert snapshot to TM form", logging.Error(err))
+			continue
+		}
+		resp.Snapshots = append(resp.Snapshots, tmSnap)
 	}
 	return resp
 }
@@ -377,6 +387,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 	// invalid hash?
 	if err != nil {
 		// sender provided an invalid snapshot, that's not exactly something we can trust
+		app.log.Error("failed to convert snapshot", logging.Error(err))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
 		}
@@ -384,6 +395,9 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 	// @TODO this is a placeholder for the actual check
 	// if this node produced the wrong hash, don't accept... earlier snapshots may still be valid
 	if !bytes.Equal(snap.Hash, req.AppHash) {
+		app.log.Error("hash mismatch",
+			logging.String("snap.Hash", hex.EncodeToString(snap.Hash)),
+			logging.String("rep.AppHash", hex.EncodeToString(req.AppHash)))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
 		}
@@ -396,6 +410,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 			// hashes match, but the meta doesn't, do not trust
 			ret.Result = tmtypes.ResponseOfferSnapshot_REJECT_SENDER
 		}
+		app.log.Error("snapshot rejected", logging.Error(err))
 		return ret
 	}
 	// @TODO initialise snapshot engine to restore snapshot?
@@ -440,7 +455,11 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 	}
 	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
 	if ready {
-		_ = app.snapshot.ApplySnapshot(ctx)
+		err = app.snapshot.ApplySnapshot(ctx)
+		if err != nil {
+			app.log.Error("failed to apply snapshot", logging.Error(err))
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+		}
 	}
 	return resp
 }
@@ -449,6 +468,7 @@ func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.
 	app.log.Debug("ABCI service LoadSnapshotChunk start")
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
+		app.log.Error("failed to load snapshot chunk", logging.Error(err))
 		return tmtypes.ResponseLoadSnapshotChunk{}
 	}
 	return tmtypes.ResponseLoadSnapshotChunk{
@@ -552,6 +572,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+		logging.Int64("height", req.Header.GetHeight()),
 	)
 
 	// will be true only the first time we get out of the bootstrap period
@@ -603,7 +624,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		_ = app.handleCheckpoint(cpt)
 	}
 	// Compute the AppHash and update the response
-
+	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
 	app.setBatchStats()
 
