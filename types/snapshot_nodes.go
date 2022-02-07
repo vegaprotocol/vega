@@ -1017,7 +1017,7 @@ func (p *PayloadLiquidityTarget) plToProto() interface{} {
 }
 
 func (*PayloadLiquidityTarget) Namespace() SnapshotNamespace {
-	return LiquiditySnapshot
+	return LiquidityTargetSnapshot
 }
 
 func (p *PayloadLiquidityTarget) Key() string {
