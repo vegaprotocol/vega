@@ -2,9 +2,11 @@ package products
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
@@ -196,24 +198,6 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		return nil, err
 	}
 
-	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementPrice)
-	if err != nil {
-		return nil, err
-	}
-
-	if !oracleSpecForSettlementPrice.CanBindProperty(oracleBinding.settlementPriceProperty) {
-		return nil, errors.New("bound settlement price property is not filtered by oracle spec")
-	}
-
-	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.OracleSpecForTradingTermination)
-	if err != nil {
-		return nil, err
-	}
-
-	if !oracleSpecForTerminatedMarket.CanBindProperty(oracleBinding.tradingTerminationProperty) {
-		return nil, errors.New("bound trading termination property is not filtered by oracle spec")
-	}
-
 	future := &Future{
 		log:             log,
 		SettlementAsset: f.SettlementAsset,
@@ -224,21 +208,54 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		},
 	}
 
-	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
-
-	if oracleSpecForTerminatedMarket.CanBindProperty(oracles.BuiltinOracleTimestamp) {
-		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminatedByTimestamp)
-	} else {
-		future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, future.updateTradingTerminated)
+	// Oracle spec for settlement price.
+	oracleSpecForSettlementPrice, err := oracles.NewOracleSpec(*f.OracleSpecForSettlementPrice)
+	if err != nil {
+		return nil, err
 	}
 
-	if log.GetLevel() == logging.DebugLevel {
-		log.Debug(
-			"future subscribed to oracle engine for settlement price",
+	if err := oracleSpecForSettlementPrice.EnsureBoundableProperty(
+		oracleBinding.settlementPriceProperty,
+		oraclespb.PropertyKey_TYPE_INTEGER,
+	); err != nil {
+		return nil, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
+	}
+
+	future.oracle.settlementPriceSubscriptionID = oe.Subscribe(ctx, *oracleSpecForSettlementPrice, future.updateSettlementPrice)
+
+	if log.IsDebug() {
+		log.Debug("future subscribed to oracle engine for settlement price",
 			logging.Uint64("subscription ID", uint64(future.oracle.settlementPriceSubscriptionID)),
 		)
-		log.Debug(
-			"future subscribed to oracle engine for market termination event",
+	}
+
+	// Oracle spec for trading termination.
+	oracleSpecForTerminatedMarket, err := oracles.NewOracleSpec(*f.OracleSpecForTradingTermination)
+	if err != nil {
+		return nil, err
+	}
+
+	var tradingTerminationPropType oraclespb.PropertyKey_Type
+	var tradingTerminationCb oracles.OnMatchedOracleData
+	if oracleBinding.tradingTerminationProperty == oracles.BuiltinOracleTimestamp {
+		tradingTerminationPropType = oraclespb.PropertyKey_TYPE_TIMESTAMP
+		tradingTerminationCb = future.updateTradingTerminatedByTimestamp
+	} else {
+		tradingTerminationPropType = oraclespb.PropertyKey_TYPE_BOOLEAN
+		tradingTerminationCb = future.updateTradingTerminated
+	}
+
+	if err = oracleSpecForTerminatedMarket.EnsureBoundableProperty(
+		oracleBinding.tradingTerminationProperty,
+		tradingTerminationPropType,
+	); err != nil {
+		return nil, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
+	}
+
+	future.oracle.tradingTerminatedSubscriptionID = oe.Subscribe(ctx, *oracleSpecForTerminatedMarket, tradingTerminationCb)
+
+	if log.IsDebug() {
+		log.Debug("future subscribed to oracle engine for market termination event",
 			logging.Uint64("subscription ID", uint64(future.oracle.tradingTerminatedSubscriptionID)),
 		)
 	}

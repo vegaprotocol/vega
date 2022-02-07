@@ -6,6 +6,7 @@ import (
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
+	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/oracles"
 	"code.vegaprotocol.io/vega/types"
@@ -45,8 +46,6 @@ var (
 	ErrMissingOracleSpecForTradingTermination = errors.New("missing oracle spec for trading termination")
 	// ErrMissingFutureProduct is returned when future product is absent from the instrument.
 	ErrMissingFutureProduct = errors.New("missing future product")
-	// ErrInvalidOracleSpecBinding ...
-	ErrInvalidOracleSpecBinding = errors.New("invalid oracle spec binding")
 	// ErrInvalidRiskParameter ...
 	ErrInvalidRiskParameter = errors.New("invalid risk parameter")
 )
@@ -282,9 +281,8 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, decimals
 	if err != nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, err
 	}
-	if !ospec.CanBindProperty(future.OracleSpecBinding.SettlementPriceProperty) {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT,
-			ErrInvalidOracleSpecBinding
+	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.SettlementPriceProperty, oraclespb.PropertyKey_TYPE_INTEGER); err != nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, fmt.Errorf("invalid oracle spec binding for settlement price: %w", err)
 	}
 
 	ospec, err = oracles.NewOracleSpec(*future.OracleSpecForTradingTermination.ToOracleSpec())
@@ -292,9 +290,8 @@ func validateFuture(currentTime time.Time, future *types.FutureProduct, decimals
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, err
 	}
 
-	if !ospec.CanBindProperty(future.OracleSpecBinding.TradingTerminationProperty) {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT,
-			ErrInvalidOracleSpecBinding
+	if err := ospec.EnsureBoundableProperty(future.OracleSpecBinding.TradingTerminationProperty, oraclespb.PropertyKey_TYPE_BOOLEAN); err != nil {
+		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, fmt.Errorf("invalid oracle spec binding for trading termination: %w", err)
 	}
 
 	return validateAsset(future.SettlementAsset, decimals, assets, deepCheck)
