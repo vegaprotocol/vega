@@ -155,10 +155,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 			},
 			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
 		},
-		OpeningAuction: openingAuction(row),
-		TradingModeConfig: &types.MarketContinuous{
-			Continuous: &types.ContinuousTrading{},
-		},
+		OpeningAuction:          openingAuction(row),
 		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{

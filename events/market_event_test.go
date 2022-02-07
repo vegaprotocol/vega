@@ -52,7 +52,6 @@ func TestMarketDeepClone(t *testing.T) {
 				},
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
-						Maturity:        "Maturity",
 						SettlementAsset: "Asset",
 						QuoteName:       "QuoteName",
 						OracleSpecForSettlementPrice: &v1.OracleSpec{
@@ -136,11 +135,6 @@ func TestMarketDeepClone(t *testing.T) {
 			Duration: 1000,
 			Volume:   2000,
 		},
-		TradingModeConfig: &proto.Market_Continuous{
-			Continuous: &proto.ContinuousTrading{
-				TickSize: "100000",
-			},
-		},
 		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
 			Parameters: &proto.PriceMonitoringParameters{
 				Triggers: []*proto.PriceMonitoringTrigger{
@@ -210,9 +204,6 @@ func TestMarketDeepClone(t *testing.T) {
 	me.OpeningAuction.Duration = 999
 	me.OpeningAuction.Volume = 999
 
-	tmc := me.TradingModeConfig.(*types.MarketContinuous)
-	tmc.Continuous.TickSize = "999"
-
 	me.PriceMonitoringSettings.Parameters.Triggers[0].Horizon = 999
 	me.PriceMonitoringSettings.Parameters.Triggers[0].Probability = num.DecimalFromFloat(99.9)
 	me.PriceMonitoringSettings.Parameters.Triggers[0].AuctionExtension = 999
@@ -240,7 +231,6 @@ func TestMarketDeepClone(t *testing.T) {
 
 	future2 := me2.TradableInstrument.Instrument.Product.(*proto.Instrument_Future)
 
-	assert.NotEqual(t, future.Future.Maturity, future2.Future.Maturity)
 	assert.NotEqual(t, future.Future.SettlementAsset, future2.Future.SettlementAsset)
 	assert.NotEqual(t, future.Future.QuoteName, future2.Future.QuoteName)
 	assertSpecsNotEqual(t, future.Future.OracleSpecForSettlementPrice, future2.Future.OracleSpecForSettlementPrice)
@@ -266,9 +256,6 @@ func TestMarketDeepClone(t *testing.T) {
 	assert.NotEqual(t, me.OpeningAuction.Duration, me2.OpeningAuction.Duration)
 	assert.NotEqual(t, me.OpeningAuction.Volume, me2.OpeningAuction.Volume)
 
-	tmc2 := me2.TradingModeConfig.(*proto.Market_Continuous)
-
-	assert.NotEqual(t, tmc.Continuous.TickSize, tmc2.Continuous.TickSize)
 	assert.NotEqual(t, me.PriceMonitoringSettings.Parameters.Triggers[0].Horizon, me2.PriceMonitoringSettings.Parameters.Triggers[0].Horizon)
 	assert.NotEqual(t, me.PriceMonitoringSettings.Parameters.Triggers[0].Probability, me2.PriceMonitoringSettings.Parameters.Triggers[0].Probability)
 	assert.NotEqual(t, me.PriceMonitoringSettings.Parameters.Triggers[0].AuctionExtension, me2.PriceMonitoringSettings.Parameters.Triggers[0].AuctionExtension)
