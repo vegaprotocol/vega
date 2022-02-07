@@ -33,6 +33,8 @@ import (
 	"code.vegaprotocol.io/data-node/plugins"
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
+	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -96,6 +98,12 @@ type NodeCommand struct {
 	chainInfoStore        *storage.ChainInfo
 	transferStore         *storage.Transfers
 
+	assetStoreSql   *sqlstore.Assets
+	blockStoreSql   *sqlstore.Blocks
+	accountStoreSql *sqlstore.Accounts
+	ledgerSql       *sqlstore.Ledger
+	partyStoreSql   *sqlstore.Parties
+
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
 	broker *broker.Broker
@@ -122,6 +130,10 @@ type NodeCommand struct {
 	rewardsSub           *subscribers.RewardCounters
 	checkpointSub        *subscribers.CheckpointSub
 	transferSub          *subscribers.TransferSub
+
+	assetSubSql            *sqlsubscribers.Asset
+	timeSubSql             *sqlsubscribers.Time
+	transferResponseSubSql *sqlsubscribers.TransferResponse
 
 	candleService     *candles.Svc
 	tradeService      *trades.Svc

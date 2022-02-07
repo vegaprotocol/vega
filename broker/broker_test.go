@@ -725,6 +725,10 @@ func (e evt) TraceID() string {
 	return e.id
 }
 
+func (e evt) BlockNr() int64 {
+	return 0
+}
+
 func (e evt) ChainID() string {
 	return e.cid
 }

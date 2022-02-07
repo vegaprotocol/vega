@@ -1,13 +1,18 @@
 package sqlstore
 
+import (
+	"code.vegaprotocol.io/data-node/config/encoding"
+)
+
 type Config struct {
-	Enabled       bool
-	Host          string
-	Port          int
-	Username      string
-	Password      string
-	Database      string
-	WipeOnStartup bool
+	Enabled       bool              `long:"enabled"`
+	Host          string            `long:"host"`
+	Port          int               `long:"port"`
+	Username      string            `long:"username"`
+	Password      string            `long:"password"`
+	Database      string            `long:"database"`
+	WipeOnStartup bool              `long:"wipe-on-startup"`
+	Level         encoding.LogLevel `long:"log-level"`
 }
 
 func NewDefaultConfig() Config {

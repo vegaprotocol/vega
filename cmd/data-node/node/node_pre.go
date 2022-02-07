@@ -27,6 +27,7 @@ import (
 	"code.vegaprotocol.io/data-node/pprof"
 	"code.vegaprotocol.io/data-node/risk"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/data-node/sqlsubscribers"
 	"code.vegaprotocol.io/data-node/staking"
 	"code.vegaprotocol.io/data-node/storage"
 	"code.vegaprotocol.io/data-node/subscribers"
@@ -88,7 +89,7 @@ func (l *NodeCommand) persistentPre(args []string) (err error) {
 		return err
 	}
 	l.setupSubscribers()
-
+	l.setupSqlSubscribers()
 	return nil
 }
 
@@ -117,6 +118,16 @@ func (l *NodeCommand) setupSubscribers() {
 	l.transferSub = subscribers.NewTransferSub(l.ctx, l.transferStore, l.Log, true)
 }
 
+func (l *NodeCommand) setupSqlSubscribers() {
+	if !l.conf.SqlStore.Enabled {
+		return
+	}
+
+	l.assetSubSql = sqlsubscribers.NewAsset(l.ctx, l.assetStoreSql, l.blockStoreSql, l.Log)
+	l.timeSubSql = sqlsubscribers.NewTimeSub(l.ctx, l.blockStoreSql, l.Log)
+	l.transferResponseSubSql = sqlsubscribers.NewTransferResponse(l.ctx, l.ledgerSql, l.accountStoreSql, l.partyStoreSql, l.blockStoreSql, l.Log)
+}
+
 func (l *NodeCommand) setupStorages() error {
 	var err error
 
@@ -135,11 +146,16 @@ func (l *NodeCommand) setupStorages() error {
 	}
 
 	if l.conf.SqlStore.Enabled {
-		sqls, err := sqlstore.InitialiseStorage(l.Log, l.conf.SqlStore)
+		sqlStore, err := sqlstore.InitialiseStorage(l.Log, l.conf.SqlStore)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise sql storage: %w", err)
 		}
-		_ = sqls
+
+		l.assetStoreSql = sqlstore.NewAssets(sqlStore)
+		l.blockStoreSql = sqlstore.NewBlocks(sqlStore)
+		l.partyStoreSql = sqlstore.NewParties(sqlStore)
+		l.accountStoreSql = sqlstore.NewAccounts(sqlStore)
+		l.ledgerSql = sqlstore.NewLedger(sqlStore)
 	}
 
 	st, err := storage.InitialiseStorage(l.vegaPaths)
@@ -242,6 +258,10 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.nodesSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
 		l.stakingService, l.checkpointSub, l.transferSub,
 	)
+
+	if l.conf.SqlStore.Enabled {
+		l.broker.SubscribeBatch(l.timeSubSql, l.assetSubSql, l.transferResponseSubSql)
+	}
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())

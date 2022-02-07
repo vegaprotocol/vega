@@ -53,7 +53,7 @@ type Config struct {
 	Parties           parties.Config     `group:"Parties" namespace:"parties"`
 	Risk              risk.Config        `group:"Risk" namespace:"risk"`
 	Storage           storage.Config     `group:"Storage" namespace:"storage"`
-	SqlStore          sqlstore.Config    `group:"Storage" namespace:"storage"`
+	SqlStore          sqlstore.Config    `group:"Sqlstore" namespace:"sqlstore"`
 	Trades            trades.Config      `group:"Trades" namespace:"trades"`
 	Time              vegatime.Config    `group:"Time" namespace:"time"`
 	Gateway           gateway.Config     `group:"Gateway" namespace:"gateway"`

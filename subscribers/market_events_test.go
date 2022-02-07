@@ -96,4 +96,5 @@ func (m meStub) StreamMessage() *eventspb.BusEvent {
 
 func (m meStub) SetSequenceID(s uint64) {}
 func (m meStub) Sequence() uint64       { return 0 }
+func (m meStub) BlockNr() int64         { return 0 }
 func (m meStub) ChainID() string        { return "testchain" }

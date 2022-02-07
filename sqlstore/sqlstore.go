@@ -3,12 +3,21 @@ package sqlstore
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/logging"
+	"github.com/jackc/pgtype"
+	shopspring "github.com/jackc/pgtype/ext/shopspring-numeric"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/pressly/goose/v3"
+)
+
+var (
+	ErrBadID   = errors.New("Bad ID (must be hex string)")
+	tableNames = [...]string{"ledger", "accounts", "parties", "assets", "blocks"}
 )
 
 //go:embed migrations/*.sql
@@ -61,6 +70,17 @@ func (s *SqlStore) migrateToLatestSchema() error {
 	return nil
 }
 
+func registerNumericType(poolConfig *pgxpool.Config) {
+	// Cause postgres numeric types to be loaded as shopspring decimals and vice-versa
+	poolConfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		conn.ConnInfo().RegisterDataType(pgtype.DataType{
+			Value: &shopspring.Numeric{},
+			Name:  "numeric",
+			OID:   pgtype.NumericOID,
+		})
+		return nil
+	}
+}
 func InitialiseStorage(log *logging.Logger, config Config) (*SqlStore, error) {
 	s := SqlStore{
 		conf: config,
@@ -68,16 +88,27 @@ func InitialiseStorage(log *logging.Logger, config Config) (*SqlStore, error) {
 
 	poolConfig, err := s.makePoolConfig()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error configuring database: %w", err)
 	}
 
+	registerNumericType(poolConfig)
+
 	if s.pool, err = pgxpool.ConnectConfig(context.Background(), poolConfig); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error connecting to database: %w", err)
 	}
 
 	if err = s.migrateToLatestSchema(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error migrating schema: %w", err)
 	}
 
 	return &s, nil
+}
+
+func (s *SqlStore) DeleteEverything() error {
+	for _, table := range tableNames {
+		if _, err := s.pool.Exec(context.Background(), "truncate table "+table+" CASCADE"); err != nil {
+			return fmt.Errorf("error truncating table: %s %w", table, err)
+		}
+	}
+	return nil
 }
