@@ -66,6 +66,7 @@ const (
 	WitnessSnapshot                SnapshotNamespace = "witness"
 	TopologySnapshot               SnapshotNamespace = "topology"
 	LiquiditySnapshot              SnapshotNamespace = "liquidity"
+	LiquidityTargetSnapshot        SnapshotNamespace = "liquiditytarget"
 	FutureStateSnapshot            SnapshotNamespace = "futureState"
 	FloatingPointConsensusSnapshot SnapshotNamespace = "floatingpoint"
 	FeeTrackerSnapshot             SnapshotNamespace = "feestracker"
@@ -77,34 +78,35 @@ const (
 
 var (
 	nsMap = map[string]SnapshotNamespace{
-		"collateral":     CollateralSnapshot,
-		"assets":         AssetsSnapshot,
-		"banking":        BankingSnapshot,
-		"checkpoint":     CheckpointSnapshot,
-		"app":            AppSnapshot,
-		"netparams":      NetParamsSnapshot,
-		"delegation":     DelegationSnapshot,
-		"governance":     GovernanceSnapshot,
-		"positions":      PositionsSnapshot,
-		"matching":       MatchingSnapshot,
-		"execution":      ExecutionSnapshot,
-		"epoch":          EpochSnapshot,
-		"staking":        StakingSnapshot,
-		"rewards":        RewardSnapshot,
-		"spam":           SpamSnapshot,
-		"eventforwarder": EventForwarderSnapshot,
-		"replay":         ReplayProtectionSnapshot,
-		"notary":         NotarySnapshot,
-		"limits":         LimitSnapshot,
-		"witness":        WitnessSnapshot,
-		"topology":       TopologySnapshot,
-		"idgenerator":    IDGenSnapshot,
-		"stakeverifier":  StakeVerifierSnapshot,
-		"liquidity":      LiquiditySnapshot,
-		"futureState":    FutureStateSnapshot,
-		"floatingpoint":  FloatingPointConsensusSnapshot,
-		"feestracker":    FeeTrackerSnapshot,
-		"markettracker":  MarketTrackerSnapshot,
+		"collateral":      CollateralSnapshot,
+		"assets":          AssetsSnapshot,
+		"banking":         BankingSnapshot,
+		"checkpoint":      CheckpointSnapshot,
+		"app":             AppSnapshot,
+		"netparams":       NetParamsSnapshot,
+		"delegation":      DelegationSnapshot,
+		"governance":      GovernanceSnapshot,
+		"positions":       PositionsSnapshot,
+		"matching":        MatchingSnapshot,
+		"execution":       ExecutionSnapshot,
+		"epoch":           EpochSnapshot,
+		"staking":         StakingSnapshot,
+		"rewards":         RewardSnapshot,
+		"spam":            SpamSnapshot,
+		"eventforwarder":  EventForwarderSnapshot,
+		"replay":          ReplayProtectionSnapshot,
+		"notary":          NotarySnapshot,
+		"limits":          LimitSnapshot,
+		"witness":         WitnessSnapshot,
+		"topology":        TopologySnapshot,
+		"idgenerator":     IDGenSnapshot,
+		"stakeverifier":   StakeVerifierSnapshot,
+		"liquidity":       LiquiditySnapshot,
+		"liquiditytarget": LiquidityTargetSnapshot,
+		"futureState":     FutureStateSnapshot,
+		"floatingpoint":   FloatingPointConsensusSnapshot,
+		"feestracker":     FeeTrackerSnapshot,
+		"markettracker":   MarketTrackerSnapshot,
 	}
 
 	ErrSnapshotHashMismatch         = errors.New("snapshot hashes do not match")

@@ -126,6 +126,8 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.ExecutionSnapshot,              // creates the markets, returns matching and positions engines for state providers
 	types.MatchingSnapshot,               // this requires a market
 	types.PositionsSnapshot,              // again, needs a market
+	types.LiquiditySnapshot,
+	types.LiquidityTargetSnapshot,
 	types.EpochSnapshot,
 	types.StakingSnapshot,
 	types.StakeVerifierSnapshot,
@@ -663,7 +665,15 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 			return update, err
 		}
 		if len(nsps) > 0 {
+			// The provider has generated new providers, register them with the engine
+			// add them to the AVL tree
 			e.AddProviders(nsps...)
+			for _, n := range nsps {
+				e.log.Debug("Provider generated",
+					logging.String("namespace", n.Namespace().String()),
+				)
+				e.update(n.Namespace())
+			}
 		}
 		e.log.Debug("State updated",
 			logging.String("node-key", k),

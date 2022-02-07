@@ -199,15 +199,18 @@ func TestValidMarketSnapshot(t *testing.T) {
 	keys := engine.Keys()
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
+
+	// The snapshot engine will call GetHash first so we keep that order
+	// to mimic the flow
+	hash1, err := engine.GetHash(key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash1)
+
 	// Take the snapshot and hash
 	bytes, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 	assert.Len(t, providers, 4)
-
-	hash1, err := engine.GetHash(key)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, hash1)
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)
