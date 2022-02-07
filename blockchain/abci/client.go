@@ -3,13 +3,13 @@ package abci
 import (
 	"context"
 	"errors"
-	"fmt"
+	"os"
 	"time"
 
 	tmlog "github.com/tendermint/tendermint/libs/log"
 	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
 	tmclihttp "github.com/tendermint/tendermint/rpc/client/http"
-	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
+	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -24,17 +24,16 @@ func NewClient(addr string) (*Client, error) {
 		return nil, ErrEmptyClientAddr
 	}
 
-	clt, err := tmclihttp.New(addr)
+	clt, err := tmclihttp.New(addr, "/websocket")
 	if err != nil {
 		return nil, err
 	}
 
 	// log errors only
-	logger, err := tmlog.NewDefaultLogger(tmlog.LogFormatJSON, "error", false)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't build tendermint logger: %w", err)
-	}
-	clt.SetLogger(logger)
+	clt.Logger = tmlog.NewFilter(
+		tmlog.NewTMLogger(os.Stdout),
+		tmlog.AllowError(),
+	)
 
 	return &Client{
 		tmclt: clt,

@@ -275,7 +275,7 @@ func (f *Forwarder) send(ctx context.Context, evt *commandspb.ChainEvent) {
 	}
 
 	// error doesn't matter here
-	f.cmd.CommandSync(ctx, txn.ChainEventCommand, evt, func(err error) {
+	f.cmd.Command(ctx, txn.ChainEventCommand, evt, func(err error) {
 		if err != nil {
 			f.log.Error("could not send command", logging.String("tx-id", evt.TxId), logging.Error(err))
 		}
