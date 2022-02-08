@@ -361,9 +361,9 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, deterministicId string) error {
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
-		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
+		e.rejectLiquidityProvisionSubmission(ctx, lps, party, deterministicId)
 		return err
 	}
 
@@ -374,7 +374,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	var (
 		now = e.currentTime.UnixNano()
 		lp  = &types.LiquidityProvision{
-			ID:        id,
+			ID:        deterministicId,
 			MarketID:  lps.MarketID,
 			Party:     party,
 			CreatedAt: now,

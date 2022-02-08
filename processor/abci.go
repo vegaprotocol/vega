@@ -237,9 +237,9 @@ func NewApp(
 		HandleDeliverTx(txn.SubmitOrderCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverSubmitOrder))).
 		HandleDeliverTx(txn.CancelOrderCommand,
-			app.SendEventOnError(app.DeliverCancelOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverCancelOrder))).
 		HandleDeliverTx(txn.AmendOrderCommand,
-			app.SendEventOnError(app.DeliverAmendOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverAmendOrder))).
 		HandleDeliverTx(txn.WithdrawCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
 		HandleDeliverTx(txn.ProposeCommand,
@@ -915,7 +915,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministi
 	return nil
 }
 
-func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	porder := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(porder); err != nil {
 		return err
@@ -926,7 +926,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order, tx.Party())
+	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -940,7 +940,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -956,7 +956,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -1072,7 +1072,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return app.notary.RegisterSignature(ctx, tx.PubKeyHex(), *ns)
 }
 
-func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, determiniticId string) error {
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -1089,7 +1089,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 	}
 
 	partyID := tx.Party()
-	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, determiniticId)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {

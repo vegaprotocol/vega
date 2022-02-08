@@ -57,8 +57,8 @@ type RewardEngine interface {
 type ExecutionEngine interface {
 	// orders stuff
 	SubmitOrder(ctx context.Context, orderSubmission *types.OrderSubmission, party string, deterministicId string) (*types.OrderConfirmation, error)
-	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error)
-	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string) (*types.OrderConfirmation, error)
+	CancelOrder(ctx context.Context, order *types.OrderCancellation, party string, deterministicId string) ([]*types.OrderCancellationConfirmation, error)
+	AmendOrder(ctx context.Context, order *types.OrderAmendment, party string, deterministicId string) (*types.OrderConfirmation, error)
 
 	// market stuff
 	SubmitMarket(ctx context.Context, marketConfig *types.Market) error
@@ -67,7 +67,7 @@ type ExecutionEngine interface {
 	StartOpeningAuction(ctx context.Context, marketid string) error
 
 	// LP stuff
-	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) error
+	SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, determiniticId string) error
 	CancelLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionCancellation, party string) error
 	AmendLiquidityProvision(ctx context.Context, order *types.LiquidityProvisionAmendment, party string) error
 	Hash() []byte

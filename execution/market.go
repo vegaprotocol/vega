@@ -1,6 +1,7 @@
 package execution
 
 import (
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"context"
 	"crypto/sha256"
 	"encoding/base32"
@@ -628,6 +629,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	m.idgen = NewDeterministicIDGenerator(blockHash)
+	defer func() { m.idgen = nil }()
+
 	if m.closed {
 		return true
 	}
@@ -657,7 +662,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	settlementPrice, _ := m.tradableInstrument.Instrument.Product.SettlementPrice()
 
 	if m.mkt.State == types.MarketStateTradingTerminated {
-		// if we now have settlement price - try to settle and closed the market
+		// if we now have settlement price - try to settle and close the market
 		if settlementPrice != nil {
 			m.closeMarket(ctx, t)
 		}
@@ -1170,12 +1175,8 @@ func (m *Market) SubmitOrder(
 	deterministicId string,
 ) (*types.OrderConfirmation, error) {
 
-	var err error
-	m.idgen, err = NewDeterministicIDGenerator(deterministicId)
+	m.idgen = NewDeterministicIDGenerator(deterministicId)
 	defer func() { m.idgen = nil }()
-	if err != nil {
-		return nil, err
-	}
 
 	order := orderSubmission.IntoOrder(party)
 	if order.Price != nil {
@@ -1958,7 +1959,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		Price:         settleOrder.Price.Clone(),
 		OriginalPrice: settleOrder.OriginalPrice.Clone(),
 		CreatedAt:     m.currentTime.UnixNano(),
-		Reference:     "closed-out distressed",
+		Reference:     "close-out distressed",
 		TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 		Type:          types.OrderTypeNetwork,
 	}
@@ -2173,7 +2174,10 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	return cancellations, nil
 }
 
-func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (*types.OrderCancellationConfirmation, error) {
+	m.idgen = NewDeterministicIDGenerator(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
@@ -2272,7 +2276,12 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 }
 
 // AmendOrder amend an existing order from the order book.
-func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
+	deterministicId string) (*types.OrderConfirmation, error) {
+
+	m.idgen = NewDeterministicIDGenerator(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}

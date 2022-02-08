@@ -531,7 +531,8 @@ func (e *Engine) SubmitOrder(
 
 // AmendOrder takes order amendment details and attempts to amend the order
 // if it exists and is in a editable state.
-func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (confirmation *types.OrderConfirmation, returnedErr error) {
+func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string,
+	deterministicId string) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(amendment.MarketID, "execution", "AmendOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -546,7 +547,7 @@ func (e *Engine) AmendOrder(ctx context.Context, amendment *types.OrderAmendment
 		return nil, types.ErrInvalidMarketID
 	}
 
-	conf, err := mkt.AmendOrder(ctx, amendment, party)
+	conf, err := mkt.AmendOrder(ctx, amendment, party, deterministicId)
 	if err != nil {
 		return nil, err
 	}
@@ -577,7 +578,7 @@ func (e *Engine) decrementOrderGaugeMetrics(
 }
 
 // CancelOrder takes order details and attempts to cancel if it exists in matching engine, stores etc.
-func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) (_ []*types.OrderCancellationConfirmation, returnedErr error) {
+func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string, deterministicId string) (_ []*types.OrderCancellationConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(cancel.MarketId, "execution", "CancelOrder")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -594,19 +595,19 @@ func (e *Engine) CancelOrder(ctx context.Context, cancel *types.OrderCancellatio
 
 	if len(cancel.MarketId) > 0 {
 		if len(cancel.OrderId) > 0 {
-			return e.cancelOrder(ctx, party, cancel.MarketId, cancel.OrderId)
+			return e.cancelOrder(ctx, party, cancel.MarketId, cancel.OrderId, deterministicId)
 		}
 		return e.cancelOrderByMarket(ctx, party, cancel.MarketId)
 	}
 	return e.cancelAllPartyOrders(ctx, party)
 }
 
-func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string) ([]*types.OrderCancellationConfirmation, error) {
+func (e *Engine) cancelOrder(ctx context.Context, party, market, orderID string, deterministicId string) ([]*types.OrderCancellationConfirmation, error) {
 	mkt, ok := e.markets[market]
 	if !ok {
 		return nil, types.ErrInvalidMarketID
 	}
-	conf, err := mkt.CancelOrder(ctx, party, orderID)
+	conf, err := mkt.CancelOrder(ctx, party, orderID, deterministicId)
 	if err != nil {
 		return nil, err
 	}
