@@ -60,7 +60,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	}()
 
 	// this doesn't fail
-	n.timeService = vegatime.New(n.conf.Time)
+
 	n.stats = stats.New(n.Log, n.conf.Stats, n.Version, n.VersionHash)
 
 	// plugins
@@ -71,13 +71,16 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.depositPlugin = plugins.NewDeposit(n.ctx)
 
 	n.genesisHandler = genesis.New(n.Log, n.conf.Genesis)
-	n.genesisHandler.OnGenesisTimeLoaded(n.timeService.SetTimeNow)
 
 	n.broker, err = broker.New(n.ctx, n.Log, n.conf.Broker)
 	if err != nil {
 		n.Log.Error("unable to initialise broker", logging.Error(err))
 		return err
 	}
+
+	n.timeService = vegatime.New(n.conf.Time, n.broker)
+
+	n.genesisHandler.OnGenesisTimeLoaded(n.timeService.SetTimeNow)
 
 	n.eventService = subscribers.NewService(n.broker)
 

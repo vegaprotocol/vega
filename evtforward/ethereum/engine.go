@@ -96,25 +96,21 @@ func (e *Engine) Start() {
 func (e *Engine) gatherEvents(ctx context.Context) {
 	currentHeight := e.filterer.CurrentHeight(ctx)
 
-	// Ensure we are not issuing request for non-existing block.
-	if e.nextCollateralBlockNumber > currentHeight {
-		e.nextCollateralBlockNumber = currentHeight
+	// Ensure we are not issuing a filtering request for non-existing block.
+	if e.nextCollateralBlockNumber <= currentHeight {
+		e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+			e.forwarder.ForwardFromSelf(event)
+		})
+		e.nextCollateralBlockNumber = currentHeight + 1
 	}
 
-	e.filterer.FilterCollateralEvents(ctx, e.nextCollateralBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
-		e.forwarder.ForwardFromSelf(event)
-	})
-	e.nextCollateralBlockNumber = currentHeight + 1
-
-	// Ensure we are not issuing request for non-existing block.
-	if e.nextStakingBlockNumber > currentHeight {
-		e.nextStakingBlockNumber = currentHeight
+	// Ensure we are not issuing a filtering request for non-existing block.
+	if e.nextStakingBlockNumber <= currentHeight {
+		e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+			e.forwarder.ForwardFromSelf(event)
+		})
+		e.nextStakingBlockNumber = currentHeight + 1
 	}
-
-	e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
-		e.forwarder.ForwardFromSelf(event)
-	})
-	e.nextStakingBlockNumber = currentHeight + 1
 }
 
 // Stop stops the engine, its polling and event forwarding.

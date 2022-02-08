@@ -107,9 +107,17 @@ func NewOracleSpec(proto oraclespb.OracleSpec) (*OracleSpec, error) {
 	}, nil
 }
 
-func (s OracleSpec) CanBindProperty(property string) bool {
-	_, ok := s.filters[property]
-	return ok
+func (s OracleSpec) EnsureBoundableProperty(property string, propType oraclespb.PropertyKey_Type) error {
+	filter, ok := s.filters[property]
+	if !ok {
+		return fmt.Errorf("bound property \"%s\" not filtered by oracle spec", property)
+	}
+
+	if filter.propertyType != propType {
+		return fmt.Errorf("bound type \"%v\" doesn't match filtered property type \"%s\"", propType, filter.propertyType)
+	}
+
+	return nil
 }
 
 func isInternalOracleData(data OracleData) bool {

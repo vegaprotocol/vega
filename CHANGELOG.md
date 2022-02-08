@@ -56,6 +56,7 @@
 - [4650](https://github.com/vegaprotocol/vega/pull/4650) - Restore code from rebase and ensure node retries connection with application
 - [4570](https://github.com/vegaprotocol/vega/pull/4570) - Internalize Ethereum Event Forwarder
 - [4663](https://github.com/vegaprotocol/vega/issues/4663) - CI set `qa` build tag when running system tests
+- [4709](https://github.com/vegaprotocol/vega/issues/4709) - Make `BlockNr` part of event interface
 - [4657](https://github.com/vegaprotocol/vega/pull/4657) - Rename `min_lp_stake` to quantum + use it in liquidity provisions
 - [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
 - [4712](https://github.com/vegaprotocol/vega/issues/4712) - Check smart contract hash on startup to ensure the correct version is being used
@@ -67,9 +68,12 @@
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
 - [4692](https://github.com/vegaprotocol/vega/pull/4692) - Set statistics block height after a snapshot reload
+- [4702](https://github.com/vegaprotocol/vega/pull/4702) - User tree importer and exporter to transfer snapshots via `statesync`
 - [4516](https://github.com/vegaprotocol/vega/pull/4516) - Fix release number title typo - 0.46.1 > 0.46.2
 - [4524](https://github.com/vegaprotocol/vega/pull/4524) - Updated `vega verify genesis` to understand new `app_state` layout
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
+- [4721](https://github.com/vegaprotocol/vega/pull/4721) - Save checkpoint with `UnixNano` when taking a snapshot
+- [4728](https://github.com/vegaprotocol/vega/pull/4728) - Fix restoring markets from snapshot by handling generated providers properly
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
 - [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
@@ -83,6 +87,9 @@
 - [4686](https://github.com/vegaprotocol/vega/pull/4686) - Fix commit hash problem when checkpoint and snapshot overlap. Ensure the snapshot contains the correct checkpoint state.
 - [4691](https://github.com/vegaprotocol/vega/pull/4691) - Handle undelegate stake with no balances gracefully
 - [4716](https://github.com/vegaprotocol/vega/pull/4716) - Fix protobuf conversion in orders
+- [4732](https://github.com/vegaprotocol/vega/pull/4732) - `TimeUpdate` is now first event sent
+- [4714](https://github.com/vegaprotocol/vega/pull/4714) - Ensure EEF doesn't process the current block multiple times
+- [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
 
 ## 0.47.6
 *2022-02-01*

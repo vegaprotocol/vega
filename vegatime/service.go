@@ -4,7 +4,14 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"code.vegaprotocol.io/vega/events"
 )
+
+type Broker interface {
+	Send(event events.Event)
+	SendBatch(events []events.Event)
+}
 
 // Svc represents the Service managing time inside Vega.
 // this is basically based on the time of the chain in use.
@@ -16,11 +23,13 @@ type Svc struct {
 
 	listeners []func(context.Context, time.Time)
 	mu        sync.Mutex
+
+	broker Broker
 }
 
 // New instantiates a new vegatime service.
-func New(conf Config) *Svc {
-	return &Svc{config: conf}
+func New(conf Config, broker Broker) *Svc {
+	return &Svc{config: conf, broker: broker}
 }
 
 // ReloadConf reload the configuration for the vegatime service.
@@ -45,6 +54,8 @@ func (s *Svc) SetTimeNow(ctx context.Context, t time.Time) {
 		s.previousTimestamp = s.currentTimestamp
 	}
 
+	evt := events.NewTime(ctx, t)
+	s.broker.Send(evt)
 	s.notify(ctx, t)
 }
 

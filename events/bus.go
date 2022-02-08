@@ -59,6 +59,7 @@ type Event interface {
 	ChainID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
+	BlockNr() int64
 	StreamMessage() *eventspb.BusEvent
 }
 
@@ -303,6 +304,11 @@ func (b Base) Type() Type {
 
 func (b Base) eventID() string {
 	return fmt.Sprintf("%d-%d", b.blockNr, b.seq)
+}
+
+// BlockNr returns the current block number.
+func (b Base) BlockNr() int64 {
+	return b.blockNr
 }
 
 // MarketEvents return all the possible market events.

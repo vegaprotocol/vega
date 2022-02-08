@@ -18,20 +18,20 @@ func (e *Engine) marketsStates() ([]*types.ExecMarket, []types.StateProvider, er
 		return nil, nil, nil
 	}
 	mks := make([]*types.ExecMarket, 0, mkts)
-	if prev := len(e.previouslySnapshottedMarkets); prev < mkts {
+	if prev := len(e.generatedProviders); prev < mkts {
 		mkts -= prev
 	}
-	e.marketsStateProviders = make([]types.StateProvider, 0, mkts*4)
+	e.newGeneratedProviders = make([]types.StateProvider, 0, mkts*4)
 	for _, m := range e.marketsCpy {
 		mks = append(mks, m.getState())
 
-		if _, ok := e.previouslySnapshottedMarkets[m.GetID()]; !ok {
-			e.marketsStateProviders = append(e.marketsStateProviders, m.position, m.matching, m.tsCalc, m.liquidity)
-			e.previouslySnapshottedMarkets[m.GetID()] = struct{}{}
+		if _, ok := e.generatedProviders[m.GetID()]; !ok {
+			e.newGeneratedProviders = append(e.newGeneratedProviders, m.position, m.matching, m.tsCalc, m.liquidity)
+			e.generatedProviders[m.GetID()] = struct{}{}
 		}
 	}
 
-	return mks, e.marketsStateProviders, nil
+	return mks, e.newGeneratedProviders, nil
 }
 
 func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Market, error) {
@@ -119,7 +119,7 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 
 func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers []types.StateProvider, err error) {
 	if !e.changed() {
-		return e.snapshotSerialised, e.snapshotHash, e.marketsStateProviders, nil
+		return e.snapshotSerialised, e.snapshotHash, e.newGeneratedProviders, nil
 	}
 
 	mkts, pvds, err := e.marketsStates()

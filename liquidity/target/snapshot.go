@@ -86,7 +86,7 @@ func (e *SnapshotEngine) GetTheoreticalTargetStake(rf types.RiskFactor, now time
 }
 
 func (e *SnapshotEngine) Namespace() types.SnapshotNamespace {
-	return types.LiquiditySnapshot
+	return types.LiquidityTargetSnapshot
 }
 
 func (e *SnapshotEngine) Keys() []string {
