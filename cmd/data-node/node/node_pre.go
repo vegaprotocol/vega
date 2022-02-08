@@ -146,7 +146,7 @@ func (l *NodeCommand) setupStorages() error {
 	}
 
 	if l.conf.SqlStore.Enabled {
-		sqlStore, err := sqlstore.InitialiseStorage(l.Log, l.conf.SqlStore)
+		sqlStore, err := sqlstore.InitialiseStorage(l.Log, l.conf.SqlStore, l.vegaPaths)
 		if err != nil {
 			return fmt.Errorf("couldn't initialise sql storage: %w", err)
 		}
@@ -156,6 +156,7 @@ func (l *NodeCommand) setupStorages() error {
 		l.partyStoreSql = sqlstore.NewParties(sqlStore)
 		l.accountStoreSql = sqlstore.NewAccounts(sqlStore)
 		l.ledgerSql = sqlstore.NewLedger(sqlStore)
+		l.sqlStore = sqlStore
 	}
 
 	st, err := storage.InitialiseStorage(l.vegaPaths)

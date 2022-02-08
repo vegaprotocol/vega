@@ -98,6 +98,7 @@ type NodeCommand struct {
 	chainInfoStore        *storage.ChainInfo
 	transferStore         *storage.Transfers
 
+	sqlStore        *sqlstore.SqlStore
 	assetStoreSql   *sqlstore.Assets
 	blockStoreSql   *sqlstore.Blocks
 	accountStoreSql *sqlstore.Accounts
@@ -258,7 +259,7 @@ func (l *NodeCommand) runNode(args []string) error {
 
 	// waitSig will wait for a sigterm or sigint interrupt.
 	eg.Go(func() error {
-		var gracefulStop = make(chan os.Signal, 1)
+		gracefulStop := make(chan os.Signal, 1)
 		signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 		select {

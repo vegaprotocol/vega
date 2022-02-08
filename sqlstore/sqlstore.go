@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"code.vegaprotocol.io/data-node/logging"
+	"code.vegaprotocol.io/shared/paths"
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jackc/pgtype"
 	shopspring "github.com/jackc/pgtype/ext/shopspring-numeric"
 	"github.com/jackc/pgx/v4"
@@ -27,6 +29,7 @@ type SqlStore struct {
 	conf Config
 	pool *pgxpool.Pool
 	log  *logging.Logger
+	db   *embeddedpostgres.EmbeddedPostgres
 }
 
 func (s *SqlStore) makeConnectionString() string {
@@ -81,14 +84,22 @@ func registerNumericType(poolConfig *pgxpool.Config) {
 		return nil
 	}
 }
-func InitialiseStorage(log *logging.Logger, config Config) (*SqlStore, error) {
+
+func InitialiseStorage(log *logging.Logger, config Config, paths paths.Paths) (*SqlStore, error) {
 	s := SqlStore{
 		conf: config,
-		log:  log.Named("sql_store")}
+		log:  log.Named("sql_store"),
+	}
 
 	poolConfig, err := s.makePoolConfig()
 	if err != nil {
 		return nil, fmt.Errorf("error configuring database: %w", err)
+	}
+
+	if s.conf.UseEmbedded {
+		if err := s.initializeEmbeddedPostgres(paths); err != nil {
+			return nil, fmt.Errorf("use embedded database was true, but failed to start: %w", err)
+		}
 	}
 
 	registerNumericType(poolConfig)
@@ -111,4 +122,29 @@ func (s *SqlStore) DeleteEverything() error {
 		}
 	}
 	return nil
+}
+
+func (s *SqlStore) initializeEmbeddedPostgres(vegapaths paths.Paths) error {
+	embeddedPostgresRuntimePath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "sqlstore")
+	embeddedPostgresDataPath := paths.JoinStatePath(paths.StatePath(vegapaths.StatePathFor(paths.DataNodeStorageHome)), "node-data")
+
+	dbConfig := embeddedpostgres.DefaultConfig().
+		RuntimePath(embeddedPostgresRuntimePath.String()).
+		DataPath(embeddedPostgresDataPath.String()).
+		BinariesPath(embeddedPostgresRuntimePath.String()).
+		Username(s.conf.Username).
+		Password(s.conf.Password).
+		Database(s.conf.Database).
+		Port(uint32(s.conf.Port))
+
+	s.db = embeddedpostgres.NewDatabase(dbConfig)
+	return s.db.Start()
+}
+
+func (s *SqlStore) Stop() error {
+	if !s.conf.Enabled || !s.conf.UseEmbedded || s.db == nil {
+		return nil
+	}
+
+	return s.db.Stop()
 }

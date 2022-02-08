@@ -9,6 +9,7 @@ require (
 	code.vegaprotocol.io/vega v0.47.1-0.20220206153536-409928126cd5
 	github.com/99designs/gqlgen v0.13.0
 	github.com/dgraph-io/badger/v2 v2.2007.3
+	github.com/fergusstrange/embedded-postgres v0.0.0-00010101000000-000000000000
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/georgysavva/scany v0.3.0
 	github.com/golang/mock v1.6.0
@@ -43,6 +44,7 @@ require (
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
+	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/confio/ics23/go v0.6.3 // indirect
@@ -70,6 +72,7 @@ require (
 	github.com/jackc/puddle v1.2.0 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
+	github.com/lib/pq v1.10.4 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20210716083614-f38f8e8b0b84 // indirect
@@ -87,6 +90,7 @@ require (
 	github.com/tendermint/tendermint v0.35.0 // indirect
 	github.com/tendermint/tm-db v0.6.4 // indirect
 	github.com/urfave/cli/v2 v2.3.0 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.elastic.co/apm v1.12.0 // indirect
 	go.elastic.co/fastjson v1.1.0 // indirect
 	go.etcd.io/bbolt v1.3.5 // indirect
@@ -110,3 +114,5 @@ require (
 )
 
 replace github.com/shopspring/decimal => github.com/vegaprotocol/decimal v1.2.1-0.20210705145732-aaa563729a0a
+
+replace github.com/fergusstrange/embedded-postgres => github.com/vegaprotocol/embedded-postgres v1.13.1-0.20220208131313-1961d3e9e8d2
