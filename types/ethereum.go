@@ -114,23 +114,6 @@ func (c *EthereumConfig) StakingBridgeAddresses() []ethcmn.Address {
 	return addresses
 }
 
-// StakingBridges returns the registered staking bridges. It might
-// return the staking bridge, or the token vesting, or both contract address.
-// The vesting contract can also be used to get information needed by the
-// staking engine.
-func (c *EthereumConfig) StakingBridges() []EthereumContract {
-	var bridges []EthereumContract
-
-	if c.stakingBridge.HasAddress() {
-		bridges = append(bridges, c.stakingBridge)
-	}
-	if c.vestingBridge.HasAddress() {
-		bridges = append(bridges, c.vestingBridge)
-	}
-
-	return bridges
-}
-
 type EthereumContract struct {
 	address               string
 	deploymentBlockHeight uint64
