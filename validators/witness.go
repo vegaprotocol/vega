@@ -369,7 +369,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 				PubKey:    pubKey,
 				Reference: v.res.GetID(),
 			}
-			w.cmd.CommandSync(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
+			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
 		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {
