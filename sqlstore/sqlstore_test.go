@@ -8,10 +8,13 @@ import (
 
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/data-node/sqlstore"
+	"code.vegaprotocol.io/shared/paths"
 )
 
-var testStore *sqlstore.SqlStore
-var sqlTestsEnabled bool = false
+var (
+	testStore       *sqlstore.SqlStore
+	sqlTestsEnabled bool = false
+)
 
 func TestMain(m *testing.M) {
 	var err error
@@ -19,7 +22,9 @@ func TestMain(m *testing.M) {
 	if sqlTestsEnabled {
 		testStore, err = sqlstore.InitialiseStorage(
 			logging.NewTestLogger(),
-			sqlstore.NewDefaultConfig())
+			sqlstore.NewDefaultConfig(),
+			&paths.DefaultPaths{},
+		)
 		if err != nil {
 			panic(err)
 		}
