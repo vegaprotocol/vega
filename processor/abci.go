@@ -645,6 +645,9 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.updateStats()
 	app.setBatchStats()
 
+	// re-hash
+	resp.Data = vgcrypto.Hash(resp.Data)
+
 	return resp
 }
 
