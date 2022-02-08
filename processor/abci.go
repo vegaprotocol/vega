@@ -235,7 +235,7 @@ func NewApp(
 		HandleDeliverTx(txn.CancelTransferFundsCommand,
 			app.SendEventOnError(app.DeliverCancelTransferFunds)).
 		HandleDeliverTx(txn.SubmitOrderCommand,
-			app.SendEventOnError(app.DeliverSubmitOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverSubmitOrder))).
 		HandleDeliverTx(txn.CancelOrderCommand,
 			app.SendEventOnError(app.DeliverCancelOrder)).
 		HandleDeliverTx(txn.AmendOrderCommand,
@@ -874,7 +874,7 @@ func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) erro
 	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
-func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
@@ -888,7 +888,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicId)
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",

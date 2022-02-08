@@ -767,7 +767,7 @@ func TestSubmit(t *testing.T) {
 		})
 	})
 
-	t.Run("test close out LP party cont issue 3086", func(t *testing.T) {
+	t.Run("test closed out LP party cont issue 3086", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
 		mktCfg := getMarket(closingAt, pMonitorSettings, &types.AuctionDuration{
 			Duration: 10000,

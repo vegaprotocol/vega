@@ -1,51 +1,33 @@
 package execution
 
 import (
-	"fmt"
-
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
+	"encoding/hex"
+	"fmt"
 )
 
-// IDgenerator no mutex required, markets work deterministically, and sequentially.
-type IDgenerator struct {
-	batches   uint64
-	orders    uint64
-	proposals uint64
-
-	changed bool
+// idGenerator no mutex required, markets work deterministically, and sequentially.
+type idGenerator struct {
+	rootId      string
+	nextIdBytes []byte
 }
 
-// NewIDGen returns an IDgenerator, and is used to abstract this type.
-func NewIDGen() *IDgenerator {
-	return &IDgenerator{
-		changed: true,
+// NewDeterministicIDGenerator returns an idGenerator, and is used to abstract this type.
+func NewDeterministicIDGenerator(rootId string) (*idGenerator, error) {
+
+	nextIdBytes, err := hex.DecodeString(rootId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new deterministic id generator:%w", err)
 	}
+
+	return &idGenerator{
+		rootId:      rootId,
+		nextIdBytes: nextIdBytes,
+	}, nil
 }
 
-// NewBatch ...
-func (i *IDgenerator) NewBatch() {
-	i.batches++
-	i.changed = true
-}
-
-// SetID sets the ID on an order, and increments total order count.
-func (i *IDgenerator) SetID(o *types.Order) {
-	i.orders++
-	o.ID = fmt.Sprintf("V%010d-%010d", i.batches, i.orders)
-	i.changed = true
-}
-
-// SetProposalID sets proposal ID and increments total proposal count.
-func (i *IDgenerator) SetProposalID(p *types.Proposal) {
-	i.proposals++
-	p.ID = fmt.Sprintf("P%010d-%010d", i.batches, i.proposals)
-	i.changed = true
-}
-
-func (i *IDgenerator) Changed() bool {
-	return i.changed
-}
-
-func (i *IDgenerator) SnapshotCreated() {
-	i.changed = false
+func (i *idGenerator) SetID(order *types.Order) {
+	order.ID = hex.EncodeToString(i.nextIdBytes)
+	i.nextIdBytes = crypto.Hash(i.nextIdBytes)
 }

@@ -275,7 +275,7 @@ func TestEvents_CloseOutParty(t *testing.T) {
 	// assert.Equal(t, int64(3), tm.market.GetOrdersOnBookCount())
 	assert.Equal(t, int64(4), tm.market.GetOrdersOnBookCount())
 
-	// Move price high to force a close out
+	// Move price high to force a closed out
 	o2 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order02", types.SideBuy, "party-B", 1, 100)
 	o2conf, err := tm.market.SubmitOrder(ctx, o2)
 	require.NotNil(t, o2conf)

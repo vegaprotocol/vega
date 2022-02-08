@@ -71,6 +71,10 @@ type Assets interface {
 	Get(assetID string) (*assets.Asset, error)
 }
 
+type IDGenerator interface {
+	SetID(*types.Order)
+}
+
 // Engine is the execution engine.
 type Engine struct {
 	Config
@@ -79,7 +83,6 @@ type Engine struct {
 	markets    map[string]*Market
 	marketsCpy []*Market
 	collateral Collateral
-	idgen      *IDgenerator
 	assets     Assets
 
 	broker         Broker
@@ -165,7 +168,6 @@ func NewEngine(
 		time:               ts,
 		collateral:         collateral,
 		assets:             assets,
-		idgen:              NewIDGen(),
 		broker:             broker,
 		oracle:             oracle,
 		npv:                defaultNetParamsValues(),
@@ -385,7 +387,6 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		marketConfig,
 		now,
 		e.broker,
-		e.idgen,
 		mas,
 		e.stateVarEngine,
 		e.feesTracker,
@@ -501,6 +502,7 @@ func (e *Engine) SubmitOrder(
 	ctx context.Context,
 	submission *types.OrderSubmission,
 	party string,
+	deterministicId string,
 ) (confirmation *types.OrderConfirmation, returnedErr error) {
 	timer := metrics.NewTimeCounter(submission.MarketId, "execution", "SubmitOrder")
 	defer func() {
@@ -517,7 +519,7 @@ func (e *Engine) SubmitOrder(
 	}
 
 	metrics.OrderGaugeAdd(1, submission.MarketId)
-	conf, err := mkt.SubmitOrder(ctx, submission, party)
+	conf, err := mkt.SubmitOrder(ctx, submission, party, deterministicId)
 	if err != nil {
 		return nil, err
 	}
@@ -727,9 +729,6 @@ func (e *Engine) onChainTimeUpdate(ctx context.Context, t time.Time) {
 		evts = append(evts, events.NewMarketDataEvent(ctx, v.GetMarketData()))
 	}
 	e.broker.SendBatch(evts)
-
-	// update block time on id generator
-	e.idgen.NewBatch()
 
 	e.log.Debug("updating engine on new time update")
 

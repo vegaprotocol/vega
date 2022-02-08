@@ -661,7 +661,7 @@ func TestMarketWithTradeClosing(t *testing.T) {
 	// add 2 partys to the party engine
 	// this will create 2 partys, credit their account
 	// and move some monies to the market
-	// this will also output the close accounts
+	// this will also output the closed accounts
 	addAccount(tm, party1)
 	addAccount(tm, party2)
 

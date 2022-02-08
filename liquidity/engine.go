@@ -95,7 +95,6 @@ type Engine struct {
 func NewEngine(config Config,
 	log *logging.Logger,
 	broker Broker,
-	idGen IDGen,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
 	asset string,
@@ -109,7 +108,6 @@ func NewEngine(config Config,
 		marketID:       marketID,
 		log:            log,
 		broker:         broker,
-		idGen:          idGen,
 		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, tickSize, log),
 
 		// parameters
