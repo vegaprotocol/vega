@@ -14,7 +14,7 @@
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add support for decimal places specific to markets. This means market price values and position events can have different values. Positions will be expressed in asset decimal places, market specific data events will list prices in market precision.
 - [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events
 - [4670](https://github.com/vegaprotocol/vega/pull/4670) - Rework `freeform proposal` structure so that they align with other proposals
-- [4681](https://github.com/vegaprotocol/vega/issues/4681) - Remove tick size from market 
+- [4681](https://github.com/vegaprotocol/vega/issues/4681) - Remove tick size from market
 - [4698](https://github.com/vegaprotocol/vega/issues/4698) - Remove maturity field from future
 - [4699](https://github.com/vegaprotocol/vega/issues/4699) - Remove trading mode one off from market proposal
 ### 🗑️ Deprecation
@@ -67,9 +67,9 @@
 - [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
 - [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
 - [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
-- [4737](https://github.com/vegaprotocol/vega/pull/4737) - Use a deterministic generator for order ids, set new order ids to the transaction hash of the Submit transaction 
+- [4737](https://github.com/vegaprotocol/vega/pull/4737) - Use a deterministic generator for order ids, set new order ids to the transaction hash of the Submit transaction
 - [4741](https://github.com/vegaprotocol/vega/pull/4741) - Hash again list of hash from engines
-- [4751](https://github.com/vegaprotocol/vega/pull/4751) - Make trade ids unique using the deterministic id generator 
+- [4751](https://github.com/vegaprotocol/vega/pull/4751) - Make trade ids unique using the deterministic id generator
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -98,7 +98,7 @@
 - [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
 - [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 - [4747](https://github.com/vegaprotocol/vega/pull/4747) - Dispatch network parameter updates at the same block when loaded from checkpoint
-
+- [4732](https://github.com/vegaprotocol/vega/pull/4732) - Revert tendermint to version 0.34.14
 
 ## 0.47.6
 *2022-02-01*
