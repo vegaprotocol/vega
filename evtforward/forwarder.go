@@ -238,6 +238,8 @@ func (f *Forwarder) ForwardFromSelf(evt *commandspb.ChainEvent) {
 			logging.String("evt", evt.String()),
 			logging.Bool("acknowledged", ack),
 		)
+		// nothing to do, just a log here.
+		return
 	}
 
 	f.evts[key] = tsEvt{ts: f.currentTime, evt: evt}
