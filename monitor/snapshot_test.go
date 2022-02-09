@@ -64,9 +64,6 @@ func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuratio
 			},
 		},
 		OpeningAuction: openingAuctionDuration,
-		TradingModeConfig: &types.MarketContinuous{
-			Continuous: &types.ContinuousTrading{},
-		},
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
 				TimeWindow:    3600, // seconds = 1h

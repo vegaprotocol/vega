@@ -165,9 +165,6 @@ func getMarketConfig() *types.Market {
 				},
 			},
 		},
-		TradingModeConfig: &types.MarketContinuous{
-			Continuous: &types.ContinuousTrading{},
-		},
 		State: types.MarketStateActive,
 	}
 }

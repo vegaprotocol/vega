@@ -144,9 +144,7 @@ func (f *Forwarder) Ack(evt *commandspb.ChainEvent) bool {
 	}
 	_, ok, acked := f.getEvt(key)
 	if ok && acked {
-		f.log.Error("event already acknowledged",
-			logging.String("evt", evt.String()),
-		)
+		f.log.Error("event already acknowledged", logging.String("event", evt.String()))
 		res = "alreadyacked"
 		// this was already acknowledged, nothing to be done, return false
 		return false
@@ -235,9 +233,11 @@ func (f *Forwarder) ForwardFromSelf(evt *commandspb.ChainEvent) {
 	_, ok, ack := f.getEvt(key)
 	if ok {
 		f.log.Error("event already processed",
-			logging.String("evt", evt.String()),
+			logging.String("event", evt.String()),
 			logging.Bool("acknowledged", ack),
 		)
+		// nothing to do, just a log here.
+		return
 	}
 
 	f.evts[key] = tsEvt{ts: f.currentTime, evt: evt}

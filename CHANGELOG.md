@@ -14,8 +14,9 @@
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add support for decimal places specific to markets. This means market price values and position events can have different values. Positions will be expressed in asset decimal places, market specific data events will list prices in market precision.
 - [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events
 - [4670](https://github.com/vegaprotocol/vega/pull/4670) - Rework `freeform proposal` structure so that they align with other proposals
-
-
+- [4681](https://github.com/vegaprotocol/vega/issues/4681) - Remove tick size from market 
+- [4698](https://github.com/vegaprotocol/vega/issues/4698) - Remove maturity field from future
+- [4699](https://github.com/vegaprotocol/vega/issues/4699) - Remove trading mode one off from market proposal
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
@@ -91,6 +92,7 @@
 - [4732](https://github.com/vegaprotocol/vega/pull/4732) - `TimeUpdate` is now first event sent
 - [4714](https://github.com/vegaprotocol/vega/pull/4714) - Ensure EEF doesn't process the current block multiple times
 - [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
+- [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 
 ## 0.47.6
 *2022-02-01*

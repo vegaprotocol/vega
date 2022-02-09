@@ -68,14 +68,25 @@ func (e *Engine) StartEthereumEngine(
 	ethLogger := e.log.Named(ethereumLogger)
 	ethLogger.SetLevel(config.Level.Get())
 
-	// We just need one staking bridge.
-	stakingBridge := ethCfg.StakingBridges()[0]
-	filterer, err := ethereum.NewLogFilterer(ethLogger, client, ethCfg.CollateralBridge(), stakingBridge, assets)
+	filterer, err := ethereum.NewLogFilterer(
+		ethLogger,
+		client,
+		ethCfg.CollateralBridge(),
+		ethCfg.StakingBridge(),
+		ethCfg.VestingBridge(),
+		assets,
+	)
 	if err != nil {
 		return fmt.Errorf("couldn't create the log filterer: %w", err)
 	}
 
-	e.ethEngine = ethereum.NewEngine(ethLogger, filterer, forwarder, stakingBridge.DeploymentBlockHeight())
+	e.ethEngine = ethereum.NewEngine(
+		ethLogger,
+		filterer,
+		forwarder,
+		ethCfg.StakingBridge(),
+		ethCfg.VestingBridge(),
+	)
 
 	go func() {
 		e.log.Info("Starting the Ethereum Event Forwarder")

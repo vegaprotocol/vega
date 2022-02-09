@@ -62,6 +62,9 @@ type LogFilterer struct {
 	stakingBridgeFilterer *staking.StakingFilterer
 	stakingBridge         types.EthereumContract
 
+	vestingBridgeFilterer *staking.StakingFilterer
+	vestingBridge         types.EthereumContract
+
 	assets Assets
 }
 
@@ -70,6 +73,7 @@ func NewLogFilterer(
 	ethClient Client,
 	collateralBridge types.EthereumContract,
 	stakingBridge types.EthereumContract,
+	vestingBridge types.EthereumContract,
 	assets Assets,
 ) (*LogFilterer, error) {
 	l := log.Named(logFiltererLogger)
@@ -79,19 +83,24 @@ func NewLogFilterer(
 		return nil, fmt.Errorf("couldn't create log filterer for ERC20 brigde: %w", err)
 	}
 
-	collateralBridgeABI, err := ethabi.JSON(strings.NewReader(bridge.BridgeABI))
+	collateralBridgeABI, err := ethabi.JSON(strings.NewReader(bridge.BridgeMetaData.ABI))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load collateral bridge ABI: %w", err)
 	}
 
 	stakingBridgeFilterer, err := staking.NewStakingFilterer(stakingBridge.Address(), ethClient)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't create log filterer for ERC20 brigde: %w", err)
+		return nil, fmt.Errorf("couldn't create log filterer for staking brigde: %w", err)
 	}
 
-	stakingBridgeABI, err := ethabi.JSON(strings.NewReader(staking.StakingABI))
+	stakingBridgeABI, err := ethabi.JSON(strings.NewReader(staking.StakingMetaData.ABI))
 	if err != nil {
 		return nil, fmt.Errorf("couldn't load staking bridge ABI: %w", err)
+	}
+
+	vestingBridgeFilterer, err := staking.NewStakingFilterer(vestingBridge.Address(), ethClient)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't create log filterer for vesting brigde: %w", err)
 	}
 
 	return &LogFilterer{
@@ -103,6 +112,8 @@ func NewLogFilterer(
 		stakingBridgeABI:         stakingBridgeABI,
 		stakingBridgeFilterer:    stakingBridgeFilterer,
 		stakingBridge:            stakingBridge,
+		vestingBridgeFilterer:    vestingBridgeFilterer,
+		vestingBridge:            vestingBridge,
 		assets:                   assets,
 	}, nil
 }
@@ -162,6 +173,23 @@ func (f *LogFilterer) FilterStakingEvents(ctx context.Context, startAt, stopAt u
 	}
 }
 
+// FilterVestingEvents retrieves the events from the vesting bridge on
+// Ethereum starting at startAt, transform them into ChainEvent, and pass it to
+// the OnEventFound callback.
+// The properties startAt and stopAt are inclusive.
+func (f *LogFilterer) FilterVestingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound) {
+	query := f.newVestingBridgeQuery(startAt, stopAt)
+	logs := f.filterLogs(ctx, query)
+
+	var event *types.ChainEvent
+	blockTimesFetcher := NewBlockTimeFetcher(f.log, f.client)
+	for _, log := range logs {
+		blockTime := blockTimesFetcher.TimeForBlock(ctx, log.BlockNumber)
+		event = f.toStakingChainEvent(log, blockTime)
+		cb(event)
+	}
+}
+
 func (f *LogFilterer) filterLogs(ctx context.Context, query eth.FilterQuery) []ethtypes.Log {
 	var logs []ethtypes.Log
 
@@ -203,6 +231,23 @@ func (f *LogFilterer) newStakingBridgeQuery(startAt uint64, stopAt uint64) eth.F
 			f.stakingBridge.Address(),
 		},
 		Topics: [][]ethcmn.Hash{{
+			f.stakingBridgeABI.Events[eventStakeDeposited].ID,
+			f.stakingBridgeABI.Events[eventStakeRemoved].ID,
+		}},
+	}
+	return query
+}
+
+func (f *LogFilterer) newVestingBridgeQuery(startAt uint64, stopAt uint64) eth.FilterQuery {
+	query := eth.FilterQuery{
+		FromBlock: new(big.Int).SetUint64(startAt),
+		ToBlock:   new(big.Int).SetUint64(stopAt),
+		Addresses: []ethcmn.Address{
+			f.vestingBridge.Address(),
+		},
+		Topics: [][]ethcmn.Hash{{
+			// We use staking bridge ABI as stacking and vesting bridge share
+			// the same ABI.
 			f.stakingBridgeABI.Events[eventStakeDeposited].ID,
 			f.stakingBridgeABI.Events[eventStakeRemoved].ID,
 		}},
