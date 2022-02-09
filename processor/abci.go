@@ -608,6 +608,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 			logging.Error(err))
 	}
 	resp.Data = snapHash
+
 	if len(snapHash) == 0 {
 		resp.Data = app.exec.Hash()
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
@@ -623,6 +624,16 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		}
 		_ = app.handleCheckpoint(cpt)
 	}
+
+	// the snapshot produce an actual hash, so no need
+	// to rehash if we have a snapshot hash.
+	// otherwise, it's a concatenation of hash that we get,
+	// so we just re-hash to have an output which is actually an
+	// hash and is consistent over all calls to Commit
+	if len(snapHash) <= 0 {
+		resp.Data = vgcrypto.Hash(resp.Data)
+	}
+
 	// Compute the AppHash and update the response
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
