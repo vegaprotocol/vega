@@ -72,13 +72,13 @@ Feature: Replicate unexpected margin issues.
     And clear transfer response events
 
     When the parties place the following orders:
-      | party  | market id | side | volume | price      | resulting trades | type       | tif     |
-      | party2 | DAI/DEC22 | buy  | 1      | 3500000015 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | DAI/DEC22 | buy  | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | DAI/DEC22 | buy  | 1      | 3499999960 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party2 | DAI/DEC22 | sell | 1      | 3500000010 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party3 | DAI/DEC22 | sell | 1      | 3500000040 | 0                | TYPE_LIMIT | TIF_GTC |
-      | party1 | DAI/DEC22 | sell | 1      | 3500000015 | 1                | TYPE_LIMIT | TIF_GTC |
+      | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
+      | party2 | DAI/DEC22 | buy  | 1      | 3500000015 | 0                | TYPE_LIMIT | TIF_GTC | p2-1      |
+      | party3 | DAI/DEC22 | buy  | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | p3-1      |
+      | party1 | DAI/DEC22 | buy  | 1      | 3499999960 | 0                | TYPE_LIMIT | TIF_GTC | p1-1      |
+      | party2 | DAI/DEC22 | sell | 1      | 3500000010 | 0                | TYPE_LIMIT | TIF_GTC | p2-2      |
+      | party3 | DAI/DEC22 | sell | 1      | 3500000040 | 0                | TYPE_LIMIT | TIF_GTC | p3-2      |
+      | party1 | DAI/DEC22 | sell | 1      | 3500000015 | 1                | TYPE_LIMIT | TIF_GTC | p1-2      |
     Then the mark price should be "3500000015" for the market "DAI/DEC22"
     And debug detailed orderbook volumes for market "DAI/DEC22"
     And debug market data for "DAI/DEC22"
@@ -115,3 +115,9 @@ Feature: Replicate unexpected margin issues.
     And debug transfers
     And debug orderbook volumes for market "DAI/DEC22"
     And debug detailed orderbook volumes for market "DAI/DEC22"
+
+    When the parties cancel the following orders:
+      | party  | reference |
+      | party1 | p1-1      |
+    Then debug detailed orderbook volumes for market "DAI/DEC22"
+    And debug market data for "DAI/DEC22"
