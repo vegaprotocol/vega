@@ -1,12 +1,18 @@
 # Changelog
 
-## Unreleased (0.48.0)
+## Unreleased
 
 ### 🚨 Breaking changes
-- [](https://github.com/vegaprotocol/data-node/pull/) - 
+
 
 ### 🗑️  Deprecation
-- [](https://github.com/vegaprotocol/data-node/pull/) -
+
+### 🛠  Improvements
+- [322](https://github.com/vegaprotocol/data-node/pull/322) - Update the definition of done and issue templates
+
+### 🐛 Fixes
+
+## 0.48.0
 
 ### 🛠  Improvements
 - [251](https://github.com/vegaprotocol/data-node/pull/251) - Updated proto and core and added support for the new events (state var and network limits)
