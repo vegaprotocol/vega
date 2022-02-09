@@ -111,7 +111,6 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, randomSha256Hash()); err != nil {
 				return errSubmittingLiquidityProvision(sub, party, id, err)
 			}
-
 		}
 	}
 	return nil
