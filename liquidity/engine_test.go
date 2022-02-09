@@ -2,7 +2,6 @@ package liquidity_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -512,13 +511,4 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)
-}
-
-type idGenStub struct {
-	id uint64
-}
-
-func (i *idGenStub) SetID(o *types.Order) {
-	i.id++
-	o.ID = fmt.Sprintf("liquidity-order-%d", i.id)
 }

@@ -202,7 +202,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	t.Run("ExpectedOrderStatus", func(t *testing.T) {
 		// First collect all the orders events
 		found := []*types.Order{}
-		allOrders := []*types.Order{}
 		for _, e := range tm.events {
 			switch evt := e.(type) {
 			case *events.Order:
@@ -210,7 +209,6 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 					evt.Order().Size == 534 { //"V0000000000-0000000010" {
 					found = append(found, mustOrderFromProto(evt.Order()))
 				}
-				allOrders = append(allOrders, mustOrderFromProto(evt.Order()))
 			}
 		}
 
