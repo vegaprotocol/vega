@@ -1,13 +1,14 @@
 package execution_test
 
 import (
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"context"
 	"encoding/hex"
 	"math/rand"
 	"testing"
 	"time"
+
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/types"
 	"github.com/golang/mock/gomock"

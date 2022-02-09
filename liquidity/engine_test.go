@@ -1,11 +1,12 @@
 package liquidity_test
 
 import (
-	"code.vegaprotocol.io/vega/idgeneration"
 	"context"
 	"fmt"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/idgeneration"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 

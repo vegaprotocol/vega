@@ -1,11 +1,12 @@
 package execution_test
 
 import (
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"context"
 	"fmt"
 	"testing"
 	"time"
+
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -1118,11 +1119,13 @@ func TestSubmit(t *testing.T) {
 			expectedQnts := []struct {
 				size  uint64
 				found bool
-			}{{119, false},
+			}{
+				{119, false},
 				{2, false},
 				{2, false},
 				{3, false},
-				{112, false}}
+				{112, false},
+			}
 
 			for _, v := range found {
 				for i, expectedQnt := range expectedQnts {
@@ -1137,7 +1140,6 @@ func TestSubmit(t *testing.T) {
 				allExpectedQntsFound = allExpectedQntsFound && exp.found
 			}
 			assert.True(t, allExpectedQntsFound, "missing expected order quantities")
-
 		})
 
 		newOrders := []*types.Order{
@@ -2008,7 +2010,6 @@ func TestSubmit(t *testing.T) {
 			}
 
 			assert.Equal(t, len(expected), matched, "matched quantites and statues do not match those expected")
-
 		})
 
 		// now the limit order expires, and the LP order size should increase again

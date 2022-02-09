@@ -1,8 +1,6 @@
 package execution
 
 import (
-	"code.vegaprotocol.io/vega/idgeneration"
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"context"
 	"crypto/sha256"
 	"encoding/base32"
@@ -12,6 +10,9 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"code.vegaprotocol.io/vega/idgeneration"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
 
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
@@ -1175,7 +1176,6 @@ func (m *Market) SubmitOrder(
 	party string,
 	deterministicId string,
 ) (*types.OrderConfirmation, error) {
-
 	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
 	defer func() { m.idgen = nil }()
 
@@ -2282,8 +2282,8 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 
 // AmendOrder amend an existing order from the order book.
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
-	deterministicId string) (*types.OrderConfirmation, error) {
-
+	deterministicId string) (*types.OrderConfirmation, error,
+) {
 	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
 	defer func() { m.idgen = nil }()
 

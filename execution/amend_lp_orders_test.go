@@ -1,10 +1,11 @@
 package execution_test
 
 import (
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"context"
 	"testing"
 	"time"
+
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"

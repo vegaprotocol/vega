@@ -2,7 +2,6 @@ package core_test
 
 import (
 	"context"
-
 	"encoding/hex"
 	"math/rand"
 

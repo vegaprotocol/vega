@@ -1,13 +1,14 @@
 package steps
 
 import (
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/rand"
 	"sort"
+
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"

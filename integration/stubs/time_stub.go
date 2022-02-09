@@ -1,13 +1,14 @@
 package stubs
 
 import (
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"context"
 	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"time"
+
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/oracles"
 )

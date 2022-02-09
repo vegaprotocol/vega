@@ -1,12 +1,13 @@
 package liquidity
 
 import (
-	"code.vegaprotocol.io/vega/idgeneration"
 	"context"
 	"errors"
 	"fmt"
 	"sort"
 	"time"
+
+	"code.vegaprotocol.io/vega/idgeneration"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"

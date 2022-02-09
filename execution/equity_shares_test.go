@@ -1,11 +1,12 @@
 package execution_test
 
 import (
-	vegacontext "code.vegaprotocol.io/vega/libs/context"
 	"context"
 	"fmt"
 	"testing"
 	"time"
+
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"

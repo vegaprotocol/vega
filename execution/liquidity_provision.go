@@ -1,11 +1,12 @@
 package execution
 
 import (
-	"code.vegaprotocol.io/vega/idgeneration"
 	"context"
 	"errors"
 	"fmt"
 	"sort"
+
+	"code.vegaprotocol.io/vega/idgeneration"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity"
@@ -19,8 +20,8 @@ var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
 func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpId,
-	deterministicId string) (err error) {
-
+	deterministicId string) (err error,
+) {
 	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
 	defer func() { m.idgen = nil }()
 

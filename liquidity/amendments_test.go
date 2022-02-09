@@ -1,12 +1,13 @@
 package liquidity_test
 
 import (
-	"code.vegaprotocol.io/vega/libs/crypto"
 	"context"
 	"encoding/hex"
 	"math/rand"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
