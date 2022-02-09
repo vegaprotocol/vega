@@ -40,9 +40,7 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 								Product: &vega.InstrumentConfiguration_Future{
 									Future: &vega.FutureProduct{
 										SettlementAsset: asset,
-										Maturity:        "2021-11-30T22:59:59Z",
 										QuoteName:       "BTCUSD",
-
 										OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
 											PubKeys: []string{oraclePubkey},
 											Filters: []*oraclesv1.Filter{
@@ -83,11 +81,6 @@ func MarketProposalTxn(now time.Time, oraclePubkey string) (*walletpb.SubmitTran
 									MaxMoveUp:            10,
 									MinMoveDown:          -5,
 									ProbabilityOfTrading: 0.1,
-								},
-							},
-							TradingMode: &vega.NewMarketConfiguration_Continuous{
-								Continuous: &vega.ContinuousTrading{
-									TickSize: "0.00001",
 								},
 							},
 						},

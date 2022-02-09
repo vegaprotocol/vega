@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"sort"
-	"strconv"
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
@@ -221,10 +220,6 @@ func (e *Engine) Hash() []byte {
 	return crypto.Hash(bytes)
 }
 
-func (e *Engine) getFakeTickSize(decimalPlaces uint64) string {
-	return num.MustDecimalFromString("1e-" + strconv.Itoa(int(decimalPlaces))).String()
-}
-
 // RejectMarket will stop the execution of the market
 // and refund into the general account any funds in margins accounts from any parties
 // This works only if the market is in a PROPOSED STATE.
@@ -349,15 +344,6 @@ func (e *Engine) submitMarket(ctx context.Context, marketConfig *types.Market) e
 		e.log.Error("unable to create a market with an invalid asset",
 			logging.MarketID(marketConfig.ID),
 			logging.AssetID(asset))
-	}
-
-	// @todo no need to set it
-	// set a fake tick size to the continuous trading if it's continuous
-	switch tmod := marketConfig.TradingModeConfig.(type) {
-	case *types.MarketContinuous:
-		tmod.Continuous.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
-	case *types.MarketDiscrete:
-		tmod.Discrete.TickSize = e.getFakeTickSize(marketConfig.DecimalPlaces)
 	}
 
 	// create market auction state

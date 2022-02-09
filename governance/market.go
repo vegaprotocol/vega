@@ -71,7 +71,6 @@ func assignProduct(
 
 		target.Product = &types.Instrument_Future{
 			Future: &types.Future{
-				Maturity:                        product.Future.Maturity,
 				SettlementAsset:                 product.Future.SettlementAsset,
 				QuoteName:                       product.Future.QuoteName,
 				OracleSpecForSettlementPrice:    product.Future.OracleSpecForSettlementPrice.ToOracleSpec(),
@@ -84,22 +83,6 @@ func assignProduct(
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductTypeNotSupported
 	}
 	return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
-}
-
-func assignTradingMode(definition *types.NewMarketConfiguration, target *types.Market) error {
-	switch mode := definition.TradingMode.(type) {
-	case *types.NewMarketConfiguration_Continuous:
-		target.TradingModeConfig = &types.MarketContinuous{
-			Continuous: mode.Continuous,
-		}
-	case *types.NewMarketConfiguration_Discrete:
-		target.TradingModeConfig = &types.MarketDiscrete{
-			Discrete: mode.Discrete,
-		}
-	default:
-		return ErrInvalidTradingMode
-	}
-	return nil
 }
 
 func createInstrument(
@@ -221,9 +204,6 @@ func createMarket(
 	if err := assignRiskModel(definition.Changes, market.TradableInstrument); err != nil {
 		return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
 	}
-	if err := assignTradingMode(definition.Changes, market); err != nil {
-		return nil, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, err
-	}
 	return market, proto.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
 }
 
@@ -255,15 +235,6 @@ func validateAsset(assetID string, decimals uint64, assets Assets, deepCheck boo
 }
 
 func validateFuture(currentTime time.Time, future *types.FutureProduct, decimals uint64, assets Assets, deepCheck bool) (types.ProposalError, error) {
-	maturity, err := time.Parse(time.RFC3339, future.Maturity)
-	if err != nil {
-		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP, fmt.Errorf("invalid future product maturity timestamp: %v", err)
-	}
-
-	if deepCheck && maturity.UnixNano() < currentTime.UnixNano() {
-		return types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED, ErrProductMaturityIsPast
-	}
-
 	if future.OracleSpecForSettlementPrice == nil {
 		return types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT, ErrMissingOracleSpecForSettlementPrice
 	}
@@ -305,17 +276,6 @@ func validateInstrument(currentTime time.Time, instrument *types.InstrumentConfi
 		return validateFuture(currentTime, product.Future, decimals, assets, deepCheck)
 	default:
 		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT, ErrProductInvalid
-	}
-}
-
-func validateTradingMode(terms *types.NewMarketConfiguration) (types.ProposalError, error) {
-	switch terms.TradingMode.(type) {
-	case nil:
-		return types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE, ErrNoTradingMode
-	case *types.NewMarketConfiguration_Continuous, *types.NewMarketConfiguration_Discrete:
-		return types.ProposalError_PROPOSAL_ERROR_UNSPECIFIED, nil
-	default:
-		return types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE, ErrTradingModeInvalid
 	}
 }
 
@@ -432,9 +392,6 @@ func validateNewMarket(
 	openingAuctionDuration time.Duration,
 ) (types.ProposalError, error) {
 	if perr, err := validateInstrument(currentTime, terms.Changes.Instrument, terms.Changes.DecimalPlaces, assets, deepCheck); err != nil {
-		return perr, err
-	}
-	if perr, err := validateTradingMode(terms.Changes); err != nil {
 		return perr, err
 	}
 	if perr, err := validateRiskParameters(terms.Changes.RiskParameters); err != nil {

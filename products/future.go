@@ -184,11 +184,6 @@ func (f *Future) updateSettlementPrice(ctx context.Context, data oracles.OracleD
 }
 
 func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe OracleEngine) (*Future, error) {
-	maturity, err := time.Parse(time.RFC3339, f.Maturity)
-	if err != nil {
-		return nil, errors.Wrap(err, "invalid maturity time format")
-	}
-
 	if f.OracleSpecForSettlementPrice == nil || f.OracleSpecForTradingTermination == nil || f.OracleSpecBinding == nil {
 		return nil, ErrOracleSpecAndBindingAreRequired
 	}
@@ -202,7 +197,6 @@ func newFuture(ctx context.Context, log *logging.Logger, f *types.Future, oe Ora
 		log:             log,
 		SettlementAsset: f.SettlementAsset,
 		QuoteName:       f.QuoteName,
-		Maturity:        maturity,
 		oracle: oracle{
 			binding: oracleBinding,
 		},
