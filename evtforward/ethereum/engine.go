@@ -6,6 +6,7 @@ import (
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 )
 
 const (
@@ -22,6 +23,7 @@ type Forwarder interface {
 type Filterer interface {
 	FilterCollateralEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	FilterStakingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
+	FilterVestingEvents(ctx context.Context, startAt, stopAt uint64, cb OnEventFound)
 	CurrentHeight(context.Context) uint64
 }
 
@@ -33,7 +35,12 @@ type Engine struct {
 	forwarder Forwarder
 
 	nextCollateralBlockNumber uint64
+
+	shouldFilterStakingBridge bool
 	nextStakingBlockNumber    uint64
+
+	shouldFilterVestingBridge bool
+	nextVestingBlockNumber    uint64
 
 	cancelEthereumQueries context.CancelFunc
 }
@@ -42,7 +49,8 @@ func NewEngine(
 	log *logging.Logger,
 	filterer Filterer,
 	forwarder Forwarder,
-	stakingDeploymentBlockHeight uint64,
+	stakingDeployment types.EthereumContract,
+	vestingDeployment types.EthereumContract,
 ) *Engine {
 	l := log.Named(engineLogger)
 
@@ -52,7 +60,11 @@ func NewEngine(
 		filterer:  filterer,
 		forwarder: forwarder,
 
-		nextStakingBlockNumber: stakingDeploymentBlockHeight,
+		shouldFilterStakingBridge: stakingDeployment.HasAddress(),
+		nextStakingBlockNumber:    stakingDeployment.DeploymentBlockHeight(),
+
+		shouldFilterVestingBridge: vestingDeployment.HasAddress(),
+		nextVestingBlockNumber:    vestingDeployment.DeploymentBlockHeight(),
 	}
 }
 
@@ -105,11 +117,19 @@ func (e *Engine) gatherEvents(ctx context.Context) {
 	}
 
 	// Ensure we are not issuing a filtering request for non-existing block.
-	if e.nextStakingBlockNumber <= currentHeight {
+	if e.shouldFilterStakingBridge && e.nextStakingBlockNumber <= currentHeight {
 		e.filterer.FilterStakingEvents(ctx, e.nextStakingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
 			e.forwarder.ForwardFromSelf(event)
 		})
 		e.nextStakingBlockNumber = currentHeight + 1
+	}
+
+	// Ensure we are not issuing a filtering request for non-existing block.
+	if e.shouldFilterVestingBridge && e.nextVestingBlockNumber <= currentHeight {
+		e.filterer.FilterVestingEvents(ctx, e.nextVestingBlockNumber, currentHeight, func(event *commandspb.ChainEvent) {
+			e.forwarder.ForwardFromSelf(event)
+		})
+		e.nextVestingBlockNumber = currentHeight + 1
 	}
 }
 
