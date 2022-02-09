@@ -363,6 +363,10 @@ func InitializeScenario(s *godog.ScenarioContext) {
 		steps.DebugLPs(execsetup.broker, execsetup.log)
 		return nil
 	})
+	s.Step(`^debug detailed liquidity provision events$`, func() error {
+		steps.DebugLPDetail(execsetup.log, execsetup.broker)
+		return nil
+	})
 	s.Step(`^debug orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugVolumesForMarket(execsetup.log, execsetup.broker, mkt)
 	})

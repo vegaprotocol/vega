@@ -85,6 +85,11 @@ Feature: Replicate unexpected margin issues.
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | DAI/DEC22 | 207868082   | 228654890 | 249441698 | 291015314 |
+    And debug detailed orderbook volumes for market "DAI/DEC22"
+
+    And the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status        |
+      | lp1 | party1 | DAI/DEC22 | 20000000          | STATUS_ACTIVE |
 
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     |
@@ -95,6 +100,10 @@ Feature: Replicate unexpected margin issues.
     And the parties should have the following margin levels:
       | party  | market id | maintenance | search    | initial   | release   |
       | party1 | DAI/DEC22 | 138578719   | 152436590 | 166294462 | 194010206 |
+    And the liquidity provisions should have the following states:
+      | id  | party  | market    | commitment amount | status        |
+      | lp1 | party1 | DAI/DEC22 | 20000000          | STATUS_ACTIVE |
+    And debug detailed liquidity provision events
 
     Then debug transfers
     And debug detailed orderbook volumes for market "DAI/DEC22"

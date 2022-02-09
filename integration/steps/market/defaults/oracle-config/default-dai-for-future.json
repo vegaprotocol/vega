@@ -1,5 +1,4 @@
 {
-  "maturity": "2022-12-31T23:59:59Z",
   "oracleSpecForSettlementPrice": {
     "id": "100",
     "pubKeys": ["0x0000"],
