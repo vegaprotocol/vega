@@ -35,9 +35,6 @@ func NewAuctionState(mkt *types.Market, now time.Time) *AuctionState {
 		m:            mkt,
 		stateChanged: true,
 	}
-	if mkt.GetContinuous() == nil {
-		s.defMode = types.MarketTradingModeBatchAuction
-	}
 	// no opening auction
 	if mkt.OpeningAuction == nil {
 		s.mode = s.defMode
