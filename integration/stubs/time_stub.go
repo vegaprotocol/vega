@@ -1,8 +1,12 @@
 package stubs
 
 import (
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"context"
+	"encoding/hex"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"code.vegaprotocol.io/vega/oracles"
@@ -27,7 +31,8 @@ func (t *TimeStub) GetTimeNow() time.Time {
 
 func (t *TimeStub) SetTime(newNow time.Time) {
 	t.now = newNow
-	t.notify(context.Background(), t.now)
+	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	t.notify(ctx, t.now)
 	t.publishOracleData(context.Background(), t.now)
 }
 
@@ -50,4 +55,10 @@ func (t *TimeStub) publishOracleData(ctx context.Context, ts time.Time) {
 		}
 		subscriber(ctx, data)
 	}
+}
+
+func randomSha256Hash() string {
+	data := make([]byte, 10)
+	rand.Read(data)
+	return hex.EncodeToString(crypto.Hash(data))
 }

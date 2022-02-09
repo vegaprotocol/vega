@@ -1,6 +1,7 @@
 package liquidity
 
 import (
+	"code.vegaprotocol.io/vega/idgeneration"
 	"context"
 	"errors"
 	"fmt"
@@ -123,6 +124,10 @@ func NewEngine(config Config,
 	}
 
 	return e
+}
+
+func (e *Engine) SetIdGen(gen IDGen) {
+	e.idGen = gen
 }
 
 func (e *Engine) SetGetStaticPricesFunc(f func() (*num.Uint, *num.Uint, error)) {
@@ -361,9 +366,13 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, deterministicId string) error {
+func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, lpId,
+	deterministicId string) error {
+	e.idGen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	defer func() { e.idGen = nil }()
+
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
-		e.rejectLiquidityProvisionSubmission(ctx, lps, party, deterministicId)
+		e.rejectLiquidityProvisionSubmission(ctx, lps, party, lpId)
 		return err
 	}
 
@@ -374,7 +383,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	var (
 		now = e.currentTime.UnixNano()
 		lp  = &types.LiquidityProvision{
-			ID:        deterministicId,
+			ID:        lpId,
 			MarketID:  lps.MarketID,
 			Party:     party,
 			CreatedAt: now,

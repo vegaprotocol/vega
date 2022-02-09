@@ -561,29 +561,29 @@ func TestEvents_Amending(t *testing.T) {
 		Price:    num.NewUint(11),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = num.NewUint(9)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = nil
 	amendment.SizeDelta = 3
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.SizeDelta = -2
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.SizeDelta = 1
 	amendment.Price = num.NewUint(10)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o1.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -641,17 +641,17 @@ func TestEvents_MovingPegsAround(t *testing.T) {
 		Price:    num.NewUint(8),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o2.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o2.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = num.NewUint(18)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
 	amendment.Price = num.NewUint(22)
-	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party)
+	amendConf, err = tm.market.AmendOrder(ctx, amendment, o2.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -709,7 +709,7 @@ func TestEvents_MovingPegsAround2(t *testing.T) {
 		Price:    num.NewUint(9),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o1.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -766,7 +766,7 @@ func TestEvents_AmendOrderToSelfTrade(t *testing.T) {
 		Price:    num.NewUint(10),
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -824,7 +824,7 @@ func TestEvents_AmendOrderToIncreaseSizeAndPartiallyFill(t *testing.T) {
 		SizeDelta: 5,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party)
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, o3.Party, randomSha256Hash())
 	assert.NotNil(t, amendConf)
 	assert.NoError(t, err)
 
@@ -946,7 +946,7 @@ func TestEvents_LPOrderRecalculationDueToFill(t *testing.T) {
 		Sells:            sells,
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01")
+	err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
 	require.NoError(t, err)
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 

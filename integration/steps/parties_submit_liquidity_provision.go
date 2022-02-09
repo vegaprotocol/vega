@@ -1,9 +1,12 @@
 package steps
 
 import (
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
 
 	"code.vegaprotocol.io/vega/types"
@@ -103,12 +106,20 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
-			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id); err != nil {
+
+			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, randomSha256Hash()); err != nil {
 				return errSubmittingLiquidityProvision(sub, party, id, err)
 			}
+
 		}
 	}
 	return nil
+}
+
+func randomSha256Hash() string {
+	data := make([]byte, 10)
+	rand.Read(data)
+	return hex.EncodeToString(crypto.Hash(data))
 }
 
 func errSubmittingLiquidityProvision(lp *types.LiquidityProvisionSubmission, party, id string, err error) error {

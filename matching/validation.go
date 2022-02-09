@@ -8,7 +8,7 @@ import (
 
 const (
 	minOrderIDLen = 22
-	maxOrderIDLen = 22
+	maxOrderIDLen = 64
 )
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {

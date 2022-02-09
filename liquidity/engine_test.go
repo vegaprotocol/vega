@@ -1,6 +1,7 @@
 package liquidity_test
 
 import (
+	"code.vegaprotocol.io/vega/idgeneration"
 	"context"
 	"fmt"
 	"testing"
@@ -48,10 +49,9 @@ type testEngine struct {
 	riskModel    *mocks.MockRiskModel
 	priceMonitor *mocks.MockPriceMonitor
 	engine       *liquidity.SnapshotEngine
-	idGen        *idGenStub
 }
 
-func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *testEngine {
+func newTestEngine(t *testing.T, now time.Time) *testEngine {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 
@@ -66,7 +66,7 @@ func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *test
 	risk.EXPECT().GetProjectionHorizon().AnyTimes()
 
 	engine := liquidity.NewSnapshotEngine(liquidityConfig,
-		log, broker, idGen, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000),
+		log, broker, risk, monitor, asset, market, stateVarEngine, num.NewUint(100000),
 	)
 	engine.OnChainTimeUpdate(context.Background(), now)
 
@@ -74,17 +74,10 @@ func newTestEngineWithIDGen(t *testing.T, now time.Time, idGen *idGenStub) *test
 		ctrl:         ctrl,
 		marketID:     market,
 		broker:       broker,
-		idGen:        idGen,
 		riskModel:    risk,
 		priceMonitor: monitor,
 		engine:       engine,
 	}
-}
-
-func newTestEngine(t *testing.T, now time.Time) *testEngine {
-	t.Helper()
-	idGen := &idGenStub{}
-	return newTestEngineWithIDGen(t, now, idGen)
 }
 
 func TestSubmissions(t *testing.T) {
@@ -135,6 +128,14 @@ func testSubmissionCRUD(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
 	require.NoError(t, err)
 
+	determisticId := randomSha256Hash()
+	idGen := idgeneration.NewDeterministicIDGenerator(determisticId)
+
+	order1 := &types.Order{}
+	order2 := &types.Order{}
+	idGen.SetID(order1)
+	idGen.SetID(order2)
+
 	expected := &types.LiquidityProvision{
 		ID:               "some-id-1",
 		MarketID:         tng.marketID,
@@ -145,11 +146,11 @@ func testSubmissionCRUD(t *testing.T) {
 		UpdatedAt:        now.UnixNano(),
 		Status:           types.LiquidityProvisionStatusPending,
 		Buys: []*types.LiquidityOrderReference{
-			{LiquidityOrder: buyShape[0], OrderID: "liquidity-order-1"},
+			{LiquidityOrder: buyShape[0], OrderID: order1.ID},
 		},
 
 		Sells: []*types.LiquidityOrderReference{
-			{LiquidityOrder: sellShape[0], OrderID: "liquidity-order-2"},
+			{LiquidityOrder: sellShape[0], OrderID: order2.ID},
 		},
 	}
 	// Create a submission should fire an event
@@ -157,8 +158,7 @@ func testSubmissionCRUD(t *testing.T) {
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1"),
-	)
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1", determisticId))
 	got := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, expected, got)
 
@@ -201,7 +201,7 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id", randomSha256Hash()),
 	)
 
 	require.True(t, tng.engine.IsLiquidityProvider(party))
@@ -292,7 +292,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id, randomSha256Hash()),
 	)
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
@@ -333,7 +333,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id, randomSha256Hash()),
 	)
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
@@ -358,7 +358,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id, randomSha256Hash()),
 	)
 }
 
@@ -390,7 +390,7 @@ func TestUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id"),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id", randomSha256Hash()),
 	)
 
 	markPrice := num.NewUint(10)
@@ -465,7 +465,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1"),
+		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1", randomSha256Hash()),
 	)
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
@@ -483,7 +483,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id2"),
+		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id2", randomSha256Hash()),
 	)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount), suppliedStake)
@@ -502,7 +502,7 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id3"),
+		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id3", randomSha256Hash()),
 	)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)

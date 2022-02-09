@@ -3,9 +3,13 @@ package core_test
 import (
 	"context"
 
+	"encoding/hex"
+	"math/rand"
+
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/integration/stubs"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 )
 
@@ -24,7 +28,7 @@ func newExEng(e *execution.Engine, broker *stubs.BrokerStub) *exEng {
 }
 
 func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmission, party string) (*types.OrderConfirmation, error) {
-	conf, err := e.Engine.SubmitOrder(ctx, submission, party)
+	conf, err := e.Engine.SubmitOrder(ctx, submission, party, randomSha256Hash())
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, submission.IntoProto()))
 	}
@@ -32,7 +36,7 @@ func (e *exEng) SubmitOrder(ctx context.Context, submission *types.OrderSubmissi
 }
 
 func (e *exEng) AmendOrder(ctx context.Context, amendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error) {
-	conf, err := e.Engine.AmendOrder(ctx, amendment, party)
+	conf, err := e.Engine.AmendOrder(ctx, amendment, party, randomSha256Hash())
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, amendment.IntoProto()))
 	}
@@ -40,15 +44,16 @@ func (e *exEng) AmendOrder(ctx context.Context, amendment *types.OrderAmendment,
 }
 
 func (e *exEng) CancelOrder(ctx context.Context, cancel *types.OrderCancellation, party string) ([]*types.OrderCancellationConfirmation, error) {
-	conf, err := e.Engine.CancelOrder(ctx, cancel, party)
+	conf, err := e.Engine.CancelOrder(ctx, cancel, party, randomSha256Hash())
 	if err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, cancel.IntoProto()))
 	}
 	return conf, err
 }
 
-func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID string) error {
-	if err := e.Engine.SubmitLiquidityProvision(ctx, sub, party, lpID); err != nil {
+func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpID,
+	deterministicId string) error {
+	if err := e.Engine.SubmitLiquidityProvision(ctx, sub, party, lpID, deterministicId); err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, sub.IntoProto()))
 		return err
 	}
@@ -56,7 +61,7 @@ func (e *exEng) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquidi
 }
 
 func (e *exEng) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) error {
-	if err := e.Engine.AmendLiquidityProvision(ctx, lpa, party); err != nil {
+	if err := e.Engine.AmendLiquidityProvision(ctx, lpa, party, randomSha256Hash()); err != nil {
 		e.broker.Send(events.NewTxErrEvent(ctx, err, party, lpa.IntoProto()))
 		return err
 	}
@@ -69,4 +74,10 @@ func (e *exEng) CancelLiquidityProvision(ctx context.Context, lpc *types.Liquidi
 		return err
 	}
 	return nil
+}
+
+func randomSha256Hash() string {
+	data := make([]byte, 10)
+	rand.Read(data)
+	return hex.EncodeToString(crypto.Hash(data))
 }

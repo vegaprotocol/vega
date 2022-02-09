@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"code.vegaprotocol.io/vega/idgeneration"
 	"context"
 	"errors"
 	"fmt"
@@ -17,7 +18,12 @@ import (
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
-func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
+func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, lpId,
+	deterministicId string) (err error) {
+
+	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
@@ -43,7 +49,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return ErrPartyAlreadyLiquidityProvider
 	}
 
-	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
+	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, lpId, deterministicId); err != nil {
 		return err
 	}
 
@@ -58,7 +64,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		if newerr := m.liquidity.RejectLiquidityProvision(ctx, party); newerr != nil {
 			m.log.Debug("unable to submit cancel liquidity provision submission",
 				logging.String("party", party),
-				logging.String("id", id),
+				logging.String("id", lpId),
 				logging.Error(newerr))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
@@ -211,7 +217,14 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 }
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
-func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) (err error) {
+func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicId string) (err error) {
+	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	m.liquidity.SetIdGen(m.idgen)
+	defer func() {
+		m.idgen = nil
+		m.liquidity.SetIdGen(nil)
+	}()
+
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}

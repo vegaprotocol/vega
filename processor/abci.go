@@ -253,7 +253,7 @@ func NewApp(
 		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
 			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
 		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
-			app.SendEventOnError(app.DeliverAmendLiquidityProvision)).
+			app.SendEventOnError(addDeterministicID(app.DeliverAmendLiquidityProvision))).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -990,7 +990,7 @@ func (app *App) DeliverWithdraw(
 	return app.handleCheckpoint(snap)
 }
 
-func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
+func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -1000,17 +1000,17 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 	if app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("submitting proposal",
-			logging.ProposalID(id),
+			logging.ProposalID(deterministicId),
 			logging.String("proposal-reference", prop.Reference),
 			logging.String("proposal-party", party),
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
 	propSubmission := types.NewProposalSubmissionFromProto(prop)
-	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, id, party)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicId, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
-			logging.ProposalID(id),
+			logging.ProposalID(deterministicId),
 			logging.Error(err))
 		return err
 	}
@@ -1022,7 +1022,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		// the lp provision ID (well it's still deterministic...)
 		lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
-			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
+			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid, deterministicId)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
@@ -1072,7 +1072,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return app.notary.RegisterSignature(ctx, tx.PubKeyHex(), *ns)
 }
 
-func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, determiniticId string) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -1088,8 +1088,16 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
+	idBytes, err := hex.DecodeString(deterministicId)
+	if err != nil {
+		return fmt.Errorf("failed to generated liquidity provision id:%w", err)
+	}
+
+	liquidityProvisionId := hex.EncodeToString(vgcrypto.Hash(append(idBytes, []byte("SALT")...)))
+
 	partyID := tx.Party()
-	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, determiniticId)
+
+	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, liquidityProvisionId, deterministicId)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
@@ -1121,7 +1129,7 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 	return nil
 }
 
-func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	lp := &commandspb.LiquidityProvisionAmendment{}
 	if err := tx.Unmarshal(lp); err != nil {
 		return err
@@ -1136,7 +1144,7 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) 
 	}
 
 	// Submit the amend liquidity provision request to the Vega trading core
-	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party())
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
 		return err

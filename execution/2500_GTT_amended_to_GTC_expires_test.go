@@ -1,7 +1,11 @@
 package execution_test
 
 import (
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	"code.vegaprotocol.io/vega/libs/crypto"
 	"context"
+	"encoding/hex"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -16,6 +20,7 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 	closingAt := time.Unix(10000000000, 0)
 	tm := getTestMarket(t, now, closingAt, nil, nil)
 	ctx := context.Background()
+	ctx = vegacontext.WithTraceID(ctx, randomSha256Hash())
 
 	addAccount(tm, "aaa")
 	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
@@ -32,15 +37,22 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa")
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa", randomSha256Hash())
 	require.NotNil(t, amendConf)
 	require.NoError(t, err)
 	assert.Equal(t, types.OrderStatusActive, amendConf.Order.Status)
 
 	// now expire, and nothing should be returned
-	tm.market.OnChainTimeUpdate(context.Background(), now.Add(10*time.Second))
+	ctx = vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	tm.market.OnChainTimeUpdate(ctx, now.Add(10*time.Second))
 	orders, err := tm.market.RemoveExpiredOrders(
 		context.Background(), now.UnixNano())
 	require.Equal(t, 0, len(orders))
 	require.NoError(t, err)
+}
+
+func randomSha256Hash() string {
+	data := make([]byte, 10)
+	rand.Read(data)
+	return hex.EncodeToString(crypto.Hash(data))
 }

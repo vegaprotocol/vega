@@ -1,9 +1,10 @@
-package execution
+package idgeneration
 
 import (
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"encoding/hex"
+	"strings"
 )
 
 // idGenerator no mutex required, markets work deterministically, and sequentially.
@@ -27,6 +28,6 @@ func NewDeterministicIDGenerator(rootId string) *idGenerator {
 }
 
 func (i *idGenerator) SetID(order *types.Order) {
-	order.ID = hex.EncodeToString(i.nextIdBytes)
+	order.ID = strings.ToUpper(hex.EncodeToString(i.nextIdBytes))
 	i.nextIdBytes = crypto.Hash(i.nextIdBytes)
 }
