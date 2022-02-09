@@ -90,6 +90,7 @@
 - [4732](https://github.com/vegaprotocol/vega/pull/4732) - `TimeUpdate` is now first event sent
 - [4714](https://github.com/vegaprotocol/vega/pull/4714) - Ensure EEF doesn't process the current block multiple times
 - [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
+- [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 
 ## 0.47.6
 *2022-02-01*
