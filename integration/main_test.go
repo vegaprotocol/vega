@@ -366,10 +366,17 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^debug orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
 		return steps.DebugVolumesForMarket(execsetup.log, execsetup.broker, mkt)
 	})
+	s.Step(`^debug detailed orderbook volumes for market "([^"]*)"$`, func(mkt string) error {
+		return steps.DebugVolumesForMarketDetail(execsetup.log, execsetup.broker, mkt)
+	})
 
 	// Event steps
 	s.Step(`^clear all events$`, func() error {
 		steps.ClearAllEvents(execsetup.broker)
+		return nil
+	})
+	s.Step(`^clear transfer response events$`, func() error {
+		steps.ClearTransferResponseEvents(execsetup.broker)
 		return nil
 	})
 	s.Step(`^the following events should be emitted"$`, func(table *godog.Table) error {
