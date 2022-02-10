@@ -129,7 +129,7 @@ func testSubmissionCRUD(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
 	require.NoError(t, err)
 
-	determisticId := randomSha256Hash()
+	determisticId := crypto.RandomHash()
 	idGen := idgeneration.New(determisticId)
 
 	lpID := idGen.NextID()
