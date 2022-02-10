@@ -7,7 +7,6 @@ package mocks
 import (
 	reflect "reflect"
 
-	types "code.vegaprotocol.io/vega/types"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
 	decimal "github.com/shopspring/decimal"
@@ -125,14 +124,16 @@ func (m *MockIDGen) EXPECT() *MockIDGenMockRecorder {
 	return m.recorder
 }
 
-// SetID mocks base method.
-func (m *MockIDGen) SetID(arg0 *types.Order) {
+// NextID mocks base method.
+func (m *MockIDGen) NextID() string {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetID", arg0)
+	ret := m.ctrl.Call(m, "NextID")
+	ret0, _ := ret[0].(string)
+	return ret0
 }
 
-// SetID indicates an expected call of SetID.
-func (mr *MockIDGenMockRecorder) SetID(arg0 interface{}) *gomock.Call {
+// NextID indicates an expected call of NextID.
+func (mr *MockIDGenMockRecorder) NextID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetID", reflect.TypeOf((*MockIDGen)(nil).SetID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NextID", reflect.TypeOf((*MockIDGen)(nil).NextID))
 }

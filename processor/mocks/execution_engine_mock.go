@@ -36,17 +36,17 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendLiquidityProvision mocks base method.
-func (m *MockExecutionEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2 string) error {
+func (m *MockExecutionEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AmendLiquidityProvision indicates an expected call of AmendLiquidityProvision.
-func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2, arg3)
 }
 
 // AmendOrder mocks base method.
@@ -136,17 +136,17 @@ func (mr *MockExecutionEngineMockRecorder) StartOpeningAuction(arg0, arg1 interf
 }
 
 // SubmitLiquidityProvision mocks base method.
-func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionSubmission, arg2, arg3, arg4 string) error {
+func (m *MockExecutionEngine) SubmitLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionSubmission, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitLiquidityProvision", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "SubmitLiquidityProvision", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitLiquidityProvision indicates an expected call of SubmitLiquidityProvision.
-func (mr *MockExecutionEngineMockRecorder) SubmitLiquidityProvision(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitLiquidityProvision(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitLiquidityProvision), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitLiquidityProvision), arg0, arg1, arg2, arg3)
 }
 
 // SubmitMarket mocks base method.

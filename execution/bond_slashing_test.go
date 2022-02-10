@@ -7,6 +7,7 @@ import (
 	"time"
 
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -81,7 +82,7 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	}
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
-	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 	mkt.market.OnChainTimeUpdate(ctx, now)
 
 	// opening auction ended, mark-price set
@@ -137,7 +138,7 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
@@ -194,7 +195,7 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
 	require.Error(t, err)
 
 	assert.Equal(t, 0, tm.market.GetLPSCount())
@@ -276,7 +277,7 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	require.Equal(t, 1, tm.market.GetLPSCount())
@@ -373,7 +374,7 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
@@ -471,7 +472,7 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
@@ -604,7 +605,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	marginAcc, err := tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
@@ -715,7 +716,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	genAccBalanceBeforeLPSubmission := genAcc.Balance.Clone()
 	require.False(t, genAcc.Balance.IsZero())
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)

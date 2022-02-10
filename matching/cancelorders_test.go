@@ -1,13 +1,9 @@
 package matching
 
 import (
-	"encoding/hex"
-	"math/rand"
-	"strings"
 	"testing"
 
-	"code.vegaprotocol.io/vega/libs/crypto"
-
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -163,7 +159,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	orderId := randomSha256Hash()
+	orderId := vgcrypto.RandomHash()
 	order := types.Order{
 		MarketID:    market,
 		Party:       "A",
@@ -194,10 +190,4 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, book.getNumberOfBuyLevels(), 0)
 	assert.Equal(t, book.getNumberOfSellLevels(), 0)
-}
-
-func randomSha256Hash() string {
-	data := make([]byte, 10)
-	rand.Read(data)
-	return strings.ToUpper(hex.EncodeToString(crypto.Hash(data)))
 }

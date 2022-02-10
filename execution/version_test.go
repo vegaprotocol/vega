@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -52,26 +53,26 @@ func TestVersioning(t *testing.T) {
 		Price:    num.NewUint(price + 1),
 	}
 
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
+	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend price down, check version moves to 3
 	amend.Price = num.NewUint(price - 1)
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend quantity up, check version moves to 4
 	amend.Price = nil
 	amend.SizeDelta = 1
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend quantity down, check version moves to 5
 	amend.SizeDelta = -2
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
@@ -80,21 +81,21 @@ func TestVersioning(t *testing.T) {
 	exp := now.UnixNano() + 100000000000
 	amend.ExpiresAt = &exp
 	amend.SizeDelta = 0
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Update expiry time, check version moves to 7
 	exp = now.UnixNano() + 100000000000
 	amend.ExpiresAt = &exp
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Flip back GTC, check version moves to 8
 	amend.TimeInForce = types.OrderTimeInForceGTC
 	amend.ExpiresAt = nil
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, vgcrypto.RandomHash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 }
