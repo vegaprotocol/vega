@@ -34,11 +34,12 @@ type Svc struct {
 	readyToEndEpoch      bool
 
 	// Snapshot state
-	state       *types.EpochState
-	pl          types.Payload
-	data        []byte
-	hash        []byte
-	currentTime time.Time
+	state            *types.EpochState
+	pl               types.Payload
+	data             []byte
+	hash             []byte
+	currentTime      time.Time
+	needsFastForward bool
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/time_mock.go -package mocks code.vegaprotocol.io/vega/epochtime VegaTime
@@ -93,6 +94,11 @@ func (s *Svc) onTick(ctx context.Context, t time.Time) {
 	if t.IsZero() {
 		// We haven't got a block time yet, ignore
 		return
+	}
+
+	if s.needsFastForward {
+		s.needsFastForward = false
+		s.fastForward(ctx)
 	}
 
 	s.currentTime = t
@@ -162,7 +168,22 @@ func (s *Svc) Load(ctx context.Context, data []byte) error {
 	s.readyToStartNewEpoch = false
 	s.readyToEndEpoch = false
 	s.notify(ctx, s.epoch)
+	s.needsFastForward = true
 	return nil
+}
+
+// fastForward advances time and expires/starts any epoch that would have expired/started during the time period. It would trigger the epoch events naturally
+// so will have a side effect of delegations getting promoted and rewards getting calculated and potentially paid.
+func (s *Svc) fastForward(ctx context.Context) {
+	tt := s.currentTime
+	for {
+		if !s.epoch.ExpireTime.Before(tt) {
+			break
+		}
+		s.OnBlockEnd(ctx)
+		s.onTick(ctx, s.epoch.ExpireTime.Add(1*time.Second))
+	}
+	s.onTick(ctx, tt)
 }
 
 // NotifyOnEpoch allows other services to register a callback function
