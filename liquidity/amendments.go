@@ -36,6 +36,7 @@ func (e *Engine) AmendLiquidityProvision(
 	ctx context.Context,
 	lpa *types.LiquidityProvisionAmendment,
 	party string,
+	idGen IDGen,
 ) ([]*types.Order, error) {
 	if err := e.CanAmend(lpa, party); err != nil {
 		return nil, err
@@ -71,7 +72,7 @@ func (e *Engine) AmendLiquidityProvision(
 		lp.Status = types.LiquidityProvisionStatusUndeployed
 	}
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lpa.Buys, lpa.Sells)
+	e.setShapesReferencesOnLiquidityProvision(lp, lpa.Buys, lpa.Sells, idGen)
 	e.broker.Send(events.NewLiquidityProvisionEvent(ctx, lp))
 	e.provisions.Set(party, lp)
 	return cancels, nil

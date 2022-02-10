@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -61,7 +63,8 @@ func TestMargins(t *testing.T) {
 
 	now = now.Add(2 * time.Second)
 	// leave opening auction
-	tm.market.OnChainTimeUpdate(context.Background(), now)
+	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	tm.market.OnChainTimeUpdate(ctx, now)
 	data := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, data.MarketTradingMode)
 
@@ -130,14 +133,14 @@ func TestMargins(t *testing.T) {
 		MarketID:  tm.market.GetID(),
 		SizeDelta: 10000,
 	}
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
+	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
 	assert.NotNil(t, amendment)
 	assert.NoError(t, err)
 
 	// Amend price and size up to breach margin
 	amend.SizeDelta = 1000000000
 	amend.Price = num.NewUint(1000000000)
-	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1)
+	amendment, err = tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }
@@ -188,7 +191,7 @@ func TestPartialFillMargins(t *testing.T) {
 		require.NoError(t, err)
 	}
 	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
-	tm.market.OnChainTimeUpdate(context.Background(), now)
+	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), randomSha256Hash()), now)
 
 	// use party 2+3 to set super high mark price
 	orderSell1 := &types.Order{
@@ -259,7 +262,7 @@ func TestPartialFillMargins(t *testing.T) {
 		MarketID:  tm.market.GetID(),
 		SizeDelta: 999,
 	}
-	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1)
+	amendment, err := tm.market.AmendOrder(context.TODO(), amend, party1, randomSha256Hash())
 	assert.Nil(t, amendment)
 	assert.Error(t, err)
 }

@@ -11,6 +11,9 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/vega/idgeneration"
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/fee"
@@ -185,7 +188,7 @@ type AuctionState interface {
 // the engines in order to process all transactions.
 type Market struct {
 	log   *logging.Logger
-	idgen *IDgenerator
+	idgen IDGenerator
 
 	mkt *types.Market
 
@@ -286,7 +289,6 @@ func NewMarket(
 	mkt *types.Market,
 	now time.Time,
 	broker Broker,
-	idgen *IDgenerator,
 	as *monitor.AuctionState,
 	stateVarEngine StateVarEngine,
 	feesTracker *FeesTracker,
@@ -355,7 +357,7 @@ func NewMarket(
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
 	liqEngine := liquidity.NewSnapshotEngine(
-		liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize())
+		liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize())
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
@@ -380,7 +382,7 @@ func NewMarket(
 
 	market := &Market{
 		log:                       log,
-		idgen:                     idgen,
+		idgen:                     nil,
 		mkt:                       mkt,
 		closingAt:                 closingAt,
 		currentTime:               now,
@@ -558,7 +560,7 @@ func (m *Market) Reject(ctx context.Context) error {
 		return ErrCannotRejectMarketNotInProposedState
 	}
 
-	// we close all parties accounts
+	// we closed all parties accounts
 	m.cleanupOnReject(ctx)
 	m.mkt.State = types.MarketStateRejected
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
@@ -628,6 +630,10 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "OnChainTimeUpdate")
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	_, blockHash := vegacontext.TraceIDFromContext(ctx)
+	m.idgen = idgeneration.NewDeterministicIDGenerator(blockHash)
+	defer func() { m.idgen = nil }()
 
 	if m.closed {
 		return true
@@ -705,7 +711,7 @@ func (m *Market) closeMarket(ctx context.Context, t time.Time) error {
 	// call settlement and stuff
 	positions, err := m.settlement.Settle(t)
 	if err != nil {
-		m.log.Error("Failed to get settle positions on market close",
+		m.log.Error("Failed to get settle positions on market closed",
 			logging.Error(err))
 
 		return err
@@ -1168,7 +1174,11 @@ func (m *Market) SubmitOrder(
 	ctx context.Context,
 	orderSubmission *types.OrderSubmission,
 	party string,
+	deterministicId string,
 ) (*types.OrderConfirmation, error) {
+	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	order := orderSubmission.IntoOrder(party)
 	if order.Price != nil {
 		order.OriginalPrice = order.Price.Clone()
@@ -1183,7 +1193,8 @@ func (m *Market) SubmitOrder(
 		return nil, ErrTradingNotAllowed
 	}
 
-	conf, orderUpdates, err := m.submitOrder(ctx, order, true)
+	order.ID = m.idgen.NextID()
+	conf, orderUpdates, err := m.submitOrder(ctx, order)
 	if err != nil {
 		return nil, err
 	}
@@ -1200,7 +1211,7 @@ func (m *Market) SubmitOrder(
 	return conf, nil
 }
 
-func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool) (*types.OrderConfirmation, []*types.Order, error) {
+func (m *Market) submitOrder(ctx context.Context, order *types.Order) (*types.OrderConfirmation, []*types.Order, error) {
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "SubmitOrder")
 	orderValidity := "invalid"
 	defer func() {
@@ -1209,9 +1220,6 @@ func (m *Market) submitOrder(ctx context.Context, order *types.Order, setID bool
 	}()
 
 	// set those at the beginning as even rejected order get through the buffers
-	if setID {
-		m.idgen.SetID(order)
-	}
 	order.Version = InitialOrderVersion
 	order.Status = types.OrderStatusActive
 
@@ -1575,7 +1583,7 @@ func (m *Market) confirmMTM(
 		if len(closed) > 0 {
 			orderUpdates, err = m.resolveClosedOutParties(ctx, closed, order)
 			if err != nil {
-				m.log.Error("unable to close out parties",
+				m.log.Error("unable to closed out parties",
 					logging.String("market-id", m.GetID()),
 					logging.Error(err))
 			}
@@ -1620,7 +1628,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	timer := metrics.NewTimeCounter(m.mkt.ID, "market", "resolveClosedOutParties")
 	defer timer.EngineTimeCounterAdd()
 
-	// this is going to be run after the the close out routines
+	// this is going to be run after the the closed out routines
 	// are finished, in order to notify the liquidity engine of
 	// any changes in the book / orders owned by the lp providers
 	orderUpdates := []*types.Order{}
@@ -1705,7 +1713,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	// send all orders which got stopped through the event bus
 	m.broker.SendBatch(evts)
 
-	closed := distressedMarginEvts // default behaviour (ie if rmorders is empty) is to close out all distressed positions we started out with
+	closed := distressedMarginEvts // default behaviour (ie if rmorders is empty) is to closed out all distressed positions we started out with
 
 	// we need to check margin requirements again, it's possible for parties to no longer be distressed now that their orders have been removed
 	if len(rmorders) != 0 {
@@ -1765,7 +1773,8 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		Type:        types.OrderTypeNetwork,
 	}
 	no.Size = no.Remaining
-	m.idgen.SetID(&no)
+
+	no.ID = m.idgen.NextID()
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.SideBuy
@@ -1983,7 +1992,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		order.Remaining = 0
 		order.Side = nSide
 		order.Status = types.OrderStatusFilled // An order with no remaining must be filled
-		m.idgen.SetID(&order)
+
+		order.ID = m.idgen.NextID()
 
 		// this is the party order
 		partyOrder := types.Order{
@@ -2000,7 +2010,8 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 			TimeInForce:   types.OrderTimeInForceFOK, // this is an all-or-nothing order, so TIME_IN_FORCE == FOK
 			Type:          types.OrderTypeNetwork,
 		}
-		m.idgen.SetID(&partyOrder)
+
+		partyOrder.ID = m.idgen.NextID()
 
 		// store the party order, too
 		m.broker.Send(events.NewOrderEvent(ctx, &partyOrder))
@@ -2168,7 +2179,10 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 	return cancellations, nil
 }
 
-func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string) (*types.OrderCancellationConfirmation, error) {
+func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (*types.OrderCancellationConfirmation, error) {
+	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}
@@ -2267,7 +2281,12 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 }
 
 // AmendOrder amend an existing order from the order book.
-func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string) (*types.OrderConfirmation, error) {
+func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
+	deterministicId string) (*types.OrderConfirmation, error,
+) {
+	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	if !m.canTrade() {
 		return nil, ErrTradingNotAllowed
 	}

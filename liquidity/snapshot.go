@@ -41,7 +41,6 @@ type SnapshotEngine struct {
 func NewSnapshotEngine(config Config,
 	log *logging.Logger,
 	broker Broker,
-	idGen IDGen,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
 	asset string,
@@ -50,7 +49,7 @@ func NewSnapshotEngine(config Config,
 	tickSize *num.Uint,
 ) *SnapshotEngine {
 	se := &SnapshotEngine{
-		Engine: NewEngine(config, log, broker, idGen, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize),
+		Engine: NewEngine(config, log, broker, riskModel, priceMonitor, asset, market, stateVarEngine, tickSize),
 		pl:     types.Payload{},
 		market: market,
 

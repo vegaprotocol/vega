@@ -36,7 +36,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		ExpiresAt:   &v10,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa")
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa", randomSha256Hash())
 	require.NotNil(t, amendConf)
 	require.NoError(t, err)
 	assert.Equal(t, types.OrderStatusActive, amendConf.Order.Status)
@@ -50,7 +50,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		ExpiresAt:   &v,
 	}
 
-	amendConf2, err := tm.market.AmendOrder(ctx, amendment2, "aaa")
+	amendConf2, err := tm.market.AmendOrder(ctx, amendment2, "aaa", randomSha256Hash())
 	require.NotNil(t, amendConf2)
 	require.NoError(t, err)
 	assert.Equal(t, types.OrderStatusActive, amendConf2.Order.Status)
@@ -62,7 +62,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
-	amendConf3, err := tm.market.AmendOrder(ctx, amendment3, "aaa")
+	amendConf3, err := tm.market.AmendOrder(ctx, amendment3, "aaa", randomSha256Hash())
 	require.NotNil(t, amendConf3)
 	require.NoError(t, err)
 	assert.Equal(t, types.OrderStatusActive, amendConf3.Order.Status)
