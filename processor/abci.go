@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.vegaprotocol.io/vega/idgeneration"
-
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
@@ -589,7 +587,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	// read the state of validator set from the previous end of block
 	var vd []*tmtypesint.Validator
-	if app.blockchainClient != nil && req.Header.Height > 0 {
+	if req.Header.Height > 0 {
 		h := req.Header.Height - 1
 		vd, _ = app.blockchainClient.Validators(&h)
 	}
@@ -1101,13 +1099,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
-	idGen := idgeneration.NewDeterministicIDGenerator(deterministicId)
-	liquidityProvisionId := idGen.NextID()
-	deterministicId = idGen.NextID()
-
-	partyID := tx.Party()
-
-	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, liquidityProvisionId, deterministicId)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicId)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {

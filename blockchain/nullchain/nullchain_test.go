@@ -181,7 +181,8 @@ func getTestNullChain(t *testing.T, txnPerBlock uint64, d time.Duration) *testNu
 	cfg.TransactionsPerBlock = txnPerBlock
 	cfg.Level = encoding.LogLevel{Level: logging.DebugLevel}
 
-	n := nullchain.NewClient(logging.NewTestLogger(), cfg, app)
+	n := nullchain.NewClient(logging.NewTestLogger(), cfg)
+	n.SetABCIApp(app)
 	require.NotNil(t, n)
 
 	app.EXPECT().InitChain(gomock.Any()).Times(1)

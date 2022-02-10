@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/idgeneration"
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/integration/stubs"
 
@@ -128,16 +129,17 @@ func testSubmissionCRUD(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lps1)
 	require.NoError(t, err)
 
-	determisticId := randomSha256Hash()
-	idGen := idgeneration.NewDeterministicIDGenerator(determisticId)
+	determisticId := crypto.RandomHash()
+	idGen := idgeneration.New(determisticId)
 
+	lpID := idGen.NextID()
 	order1 := &types.Order{}
 	order2 := &types.Order{}
 	order1.ID = idGen.NextID()
 	order2.ID = idGen.NextID()
 
 	expected := &types.LiquidityProvision{
-		ID:               "some-id-1",
+		ID:               lpID,
 		MarketID:         tng.marketID,
 		Party:            party,
 		Fee:              num.DecimalFromFloat(0.5),
@@ -157,8 +159,10 @@ func testSubmissionCRUD(t *testing.T) {
 	tng.broker.EXPECT().Send(
 		events.NewLiquidityProvisionEvent(ctx, expected),
 	).Times(1)
+
+	idgen := idgeneration.New(determisticId)
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1", determisticId))
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen))
 	got := tng.engine.LiquidityProvisionByPartyID(party)
 	require.Equal(t, expected, got)
 
@@ -200,8 +204,9 @@ func TestInitialDeployFailsWorksLater(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
 	require.NoError(t, err)
 
+	idgen := idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id", randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	require.True(t, tng.engine.IsLiquidityProvider(party))
@@ -246,7 +251,6 @@ func testCancelNonExistingSubmission(t *testing.T) {
 func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	var (
 		party = "party-1"
-		id    = "some-id"
 		ctx   = context.Background()
 		now   = time.Now()
 		tng   = newTestEngine(t, now)
@@ -269,8 +273,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
 	require.NoError(t, err)
 
+	lpID := crypto.RandomHash()
 	expected := events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		ID:               id,
+		ID:               lpID,
 		MarketID:         tng.marketID,
 		Party:            party,
 		CreatedAt:        now.UnixNano(),
@@ -291,8 +296,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
+	idgen := idgeneration.New(lpID)
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id, randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
@@ -311,7 +317,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	require.NoError(t, err)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		ID:               id,
+		ID:               lpID,
 		Fee:              num.DecimalFromFloat(0.2),
 		MarketID:         tng.marketID,
 		Party:            party,
@@ -332,8 +338,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
+	idgen = idgeneration.New(lpID)
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id, randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	lpspb = &commandspb.LiquidityProvisionSubmission{
@@ -344,7 +351,7 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 	lps, _ = types.LiquidityProvisionSubmissionFromProto(lpspb)
 
 	expected = events.NewLiquidityProvisionEvent(ctx, &types.LiquidityProvision{
-		ID:               id,
+		ID:               lpID,
 		MarketID:         tng.marketID,
 		Fee:              num.DecimalFromFloat(0.3),
 		Party:            party,
@@ -357,8 +364,9 @@ func testSubmissionFailWithoutBothShapes(t *testing.T) {
 
 	tng.broker.EXPECT().Send(eq(t, expected)).Times(1)
 
+	idgen = idgeneration.New(lpID)
 	require.Error(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, id, randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 }
 
@@ -389,8 +397,9 @@ func TestUpdate(t *testing.T) {
 	lps, err := types.LiquidityProvisionSubmissionFromProto(lpspb)
 	require.NoError(t, err)
 
+	idgen := idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id", randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen),
 	)
 
 	markPrice := num.NewUint(10)
@@ -464,8 +473,9 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp1, err := types.LiquidityProvisionSubmissionFromProto(lp1pb)
 	require.NoError(t, err)
 
+	idgen := idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id1", randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lp1, party1, idgen),
 	)
 	suppliedStake := tng.engine.CalculateSuppliedStake()
 	require.Equal(t, lp1.CommitmentAmount, suppliedStake)
@@ -482,8 +492,9 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp2, err := types.LiquidityProvisionSubmissionFromProto(lp2pb)
 	require.NoError(t, err)
 
+	idgen = idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id2", randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lp2, party2, idgen),
 	)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount), suppliedStake)
@@ -501,8 +512,9 @@ func TestCalculateSuppliedStake(t *testing.T) {
 	lp3, err := types.LiquidityProvisionSubmissionFromProto(lp3pb)
 	require.NoError(t, err)
 
+	idgen = idgeneration.New(crypto.RandomHash())
 	require.NoError(t,
-		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id3", randomSha256Hash()),
+		tng.engine.SubmitLiquidityProvision(ctx, lp3, party3, idgen),
 	)
 	suppliedStake = tng.engine.CalculateSuppliedStake()
 	require.Equal(t, num.Sum(lp1.CommitmentAmount, lp2.CommitmentAmount, lp3.CommitmentAmount), suppliedStake)

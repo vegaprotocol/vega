@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/idgeneration"
 
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -38,7 +39,7 @@ func TestSubmit(t *testing.T) {
 	}
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	t.Run("check that we reject LP submission If fee is incorrect", func(t *testing.T) {
 		tm := getTestMarket(t, now, closingAt, nil, nil)
@@ -70,7 +71,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder02", randomSha256Hash())
+		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.Error(t, err)
 		assert.Equal(t, 0, tm.market.GetLPSCount())
 
@@ -83,7 +84,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder03", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.Error(t, err)
 		assert.Equal(t, 0, tm.market.GetLPSCount())
 	})
@@ -120,7 +121,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.Error(t, err)
 		assert.Equal(t, 0, tm.market.GetLPSCount())
 
@@ -132,7 +133,7 @@ func TestSubmit(t *testing.T) {
 			Buys:             buys,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder02", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.Error(t, err)
 		assert.Equal(t, 0, tm.market.GetLPSCount())
 	})
@@ -172,7 +173,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.EqualError(t, err, "SIDE_BUY shape size exceed max (100)")
 		assert.Equal(t, 0, tm.market.GetLPSCount())
 	})
@@ -238,7 +239,7 @@ func TestSubmit(t *testing.T) {
 		// submit our lp
 		require.EqualError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 			"invalid liquidity provision fee",
 		)
 
@@ -247,7 +248,7 @@ func TestSubmit(t *testing.T) {
 		// submit our lp
 		require.EqualError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 			"invalid liquidity provision fee",
 		)
 
@@ -256,7 +257,7 @@ func TestSubmit(t *testing.T) {
 		// submit our lp
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 	})
 
@@ -309,7 +310,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Check we have the right amount of bond balance
@@ -382,7 +383,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Check we have the right amount of bond balance
@@ -514,7 +515,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())
 		// Only 3 pegged orders as one fails due to price monitoring
@@ -575,7 +576,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())
 		assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
@@ -650,7 +651,7 @@ func TestSubmit(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())
 
@@ -739,10 +740,11 @@ func TestSubmit(t *testing.T) {
 		}
 
 		// submit our lp
+		lpID := vgcrypto.RandomHash()
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, lpID),
 		)
 
 		tm.events = nil
@@ -761,7 +763,7 @@ func TestSubmit(t *testing.T) {
 			}
 
 			expectedStatus := map[string]types.LiquidityProvisionStatus{
-				"liquidity-submission-1": types.LiquidityProvisionStatusCancelled,
+				lpID: types.LiquidityProvisionStatusCancelled,
 			}
 
 			require.Len(t, found, len(expectedStatus))
@@ -829,9 +831,10 @@ func TestSubmit(t *testing.T) {
 
 		// submit our lp
 		tm.events = nil
+		lpID := vgcrypto.RandomHash()
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, ruser2, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, ruser2, lpID),
 		)
 
 		tm.events = nil
@@ -850,7 +853,7 @@ func TestSubmit(t *testing.T) {
 			}
 
 			expectedStatus := map[string]types.LiquidityProvisionStatus{
-				"liquidity-submission-1": types.LiquidityProvisionStatusActive,
+				lpID: types.LiquidityProvisionStatusActive,
 			}
 
 			require.Len(t, found, len(expectedStatus))
@@ -944,9 +947,10 @@ func TestSubmit(t *testing.T) {
 		}
 
 		tm.events = nil
+		lpID2 := vgcrypto.RandomHash()
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission2, ruser2, "liquidity-submission-2", randomSha256Hash()),
+				ctx, lpSubmission2, ruser2, lpID2),
 		)
 
 		// make sure LP order is deployed
@@ -962,7 +966,7 @@ func TestSubmit(t *testing.T) {
 			}
 
 			expectedStatus := map[string]types.LiquidityProvisionStatus{
-				"liquidity-submission-2": types.LiquidityProvisionStatusPending,
+				lpID2: types.LiquidityProvisionStatusPending,
 			}
 
 			require.Len(t, found, len(expectedStatus))
@@ -1032,7 +1036,7 @@ func TestSubmit(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		t.Run("lp submission is pending", func(t *testing.T) {
@@ -1104,7 +1108,7 @@ func TestSubmit(t *testing.T) {
 		tm.WithSubmittedOrders(t, auctionOrders...)
 
 		// update the time to get out of auction
-		ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+		ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 		tm.market.OnChainTimeUpdate(ctx, auctionEnd)
 
 		t.Run("verify LP orders sizes", func(t *testing.T) {
@@ -1220,7 +1224,7 @@ func TestSubmit(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		t.Run("lp submission is pending", func(t *testing.T) {
@@ -1314,7 +1318,7 @@ func TestSubmit(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		t.Run("lp submission is pending", func(t *testing.T) {
@@ -1500,7 +1504,7 @@ func TestSubmit(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		t.Run("lp submission is pending", func(t *testing.T) {
@@ -1669,7 +1673,7 @@ func TestSubmit(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		t.Run("lp submission is pending", func(t *testing.T) {
@@ -1804,7 +1808,7 @@ func TestSubmit(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		t.Run("lp submission is pending", func(t *testing.T) {
@@ -1929,7 +1933,7 @@ func TestSubmit(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		// we end the auction
@@ -2076,7 +2080,7 @@ func TestSubmit(t *testing.T) {
 func TestAmend(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	t.Run("check that fee is selected properly after changes", func(t *testing.T) {
 		auctionEnd := now.Add(10001 * time.Second)
@@ -2134,7 +2138,7 @@ func TestAmend(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+				ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 		)
 
 		t.Run("current liquidity fee is 0.5", func(t *testing.T) {
@@ -2174,7 +2178,7 @@ func TestAmend(t *testing.T) {
 		tm.events = nil
 		require.NoError(t,
 			tm.market.SubmitLiquidityProvision(
-				ctx, lpSubmission2, lpparty2, "liquidity-submission-2", randomSha256Hash()),
+				ctx, lpSubmission2, lpparty2, vgcrypto.RandomHash()),
 		)
 
 		t.Run("current liquidity fee is still 0.5", func(t *testing.T) {
@@ -2206,7 +2210,7 @@ func TestAmend(t *testing.T) {
 
 		require.NoError(t,
 			tm.market.AmendLiquidityProvision(
-				ctx, lpa, lpparty2, randomSha256Hash()),
+				ctx, lpa, lpparty2, vgcrypto.RandomHash()),
 		)
 
 		t.Run("current liquidity fee is again 0.1", func(t *testing.T) {
@@ -2254,7 +2258,7 @@ func TestAmend(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Check the fee is correct
@@ -2264,7 +2268,7 @@ func TestAmend(t *testing.T) {
 		lpa := &types.LiquidityProvisionAmendment{
 			Fee: num.DecimalFromFloat(0.5),
 		}
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Check the fee is correct
@@ -2331,7 +2335,7 @@ func TestAmend(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		assert.Equal(t, 1, tm.market.GetLPSCount())
 
@@ -2344,7 +2348,7 @@ func TestAmend(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.Error(t, err)
 		assert.Equal(t, 1, tm.market.GetLPSCount())
 	})
@@ -2402,7 +2406,7 @@ func TestAmend(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())
 		assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
@@ -2419,7 +2423,7 @@ func TestAmend(t *testing.T) {
 			Buys:             lps.Buys,
 			Sells:            lps.Sells,
 		}
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Check we have the right amount of bond balance
@@ -2427,7 +2431,7 @@ func TestAmend(t *testing.T) {
 
 		// Amend the commitment
 		lpa.CommitmentAmount = num.NewUint(500)
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Check we have the right amount of bond balance
@@ -2438,7 +2442,7 @@ func TestAmend(t *testing.T) {
 		sells = []*types.LiquidityOrder{newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 50)}
 		lpa.Buys = buys
 		lpa.Sells = sells
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
 		assert.Equal(t, 0, tm.market.GetParkedOrderCount())
@@ -2496,7 +2500,7 @@ func TestAmend(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err = tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Leave auction
@@ -2561,7 +2565,7 @@ func TestAmend(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 		require.Equal(t, types.LiquidityProvisionStatusPending.String(), tm.market.GetLPSState("party-A").String())
 		assert.Equal(t, 0, tm.market.GetPeggedOrderCount())
@@ -2575,7 +2579,7 @@ func TestAmend(t *testing.T) {
 			Sells:            lps.Sells,
 		}
 
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Now attempt to amend the LP submission with empty fee and commitment amount
@@ -2585,7 +2589,7 @@ func TestAmend(t *testing.T) {
 			Sells:    lps.Sells,
 		}
 
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Now attempt to amend the LP submission with empty buys
@@ -2597,7 +2601,7 @@ func TestAmend(t *testing.T) {
 			Sells:            lps.Sells,
 		}
 
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Now attempt to amend the LP submission with no changes with nil buys and nil sells
@@ -2609,7 +2613,7 @@ func TestAmend(t *testing.T) {
 			Sells:            nil,
 		}
 
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.EqualError(t, err, "empty liquidity provision amendment content")
 
 		// Now attempt to amend the LP submission with no changes with sells and buys empty lists
@@ -2621,7 +2625,7 @@ func TestAmend(t *testing.T) {
 			Sells:            []*types.LiquidityOrder{},
 		}
 
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.EqualError(t, err, "empty liquidity provision amendment content")
 
 		// Check that the original LP submission is still working fine
@@ -2653,14 +2657,14 @@ func TestAmend(t *testing.T) {
 			Sells:            sells,
 		}
 
-		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", "LPOrder01", randomSha256Hash())
+		err := tm.market.SubmitLiquidityProvision(ctx, lps, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Update the fee
 		lpa := &types.LiquidityProvisionAmendment{
 			Fee: num.DecimalFromFloat(0.2),
 		}
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		// Update the fee again with a new reference
@@ -2668,7 +2672,7 @@ func TestAmend(t *testing.T) {
 			Fee:       num.DecimalFromFloat(0.5),
 			Reference: "ref-lp-2",
 		}
-		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err = tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.NoError(t, err)
 
 		t.Run("expect LP references", func(t *testing.T) {
@@ -2708,7 +2712,7 @@ func TestAmend(t *testing.T) {
 		lpa := &types.LiquidityProvisionAmendment{
 			Fee: num.DecimalFromFloat(0.5),
 		}
-		err := tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", randomSha256Hash())
+		err := tm.market.AmendLiquidityProvision(ctx, lpa, "party-A", vgcrypto.RandomHash())
 		require.EqualError(t, err, "party is not a liquidity provider")
 	})
 

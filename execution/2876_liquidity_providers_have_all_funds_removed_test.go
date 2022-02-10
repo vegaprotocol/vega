@@ -6,6 +6,7 @@ import (
 	"time"
 
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -19,7 +20,7 @@ func TestIssue2876(t *testing.T) {
 	closingAt := time.Unix(1000000000, 0)
 	tm := getTestMarketWithDP(t, now, closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30}, 3)
 	ctx := context.Background()
-	ctx = vegacontext.WithTraceID(ctx, randomSha256Hash())
+	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
 	tm.market.OnChainTimeUpdate(ctx, now)
 
@@ -92,7 +93,7 @@ func TestIssue2876(t *testing.T) {
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, &lporder, "party-2", "lp-order-01", randomSha256Hash())
+	err = tm.market.SubmitLiquidityProvision(ctx, &lporder, "party-2", vgcrypto.RandomHash())
 	assert.NoError(t, err)
 
 	bondAccount, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "party-2", tm.market.GetID(), tm.asset)

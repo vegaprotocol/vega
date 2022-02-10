@@ -632,7 +632,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	defer m.mu.Unlock()
 
 	_, blockHash := vegacontext.TraceIDFromContext(ctx)
-	m.idgen = idgeneration.NewDeterministicIDGenerator(blockHash)
+	m.idgen = idgeneration.New(blockHash)
 	defer func() { m.idgen = nil }()
 
 	if m.closed {
@@ -1176,7 +1176,7 @@ func (m *Market) SubmitOrder(
 	party string,
 	deterministicId string,
 ) (*types.OrderConfirmation, error) {
-	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
 	order := orderSubmission.IntoOrder(party)
@@ -2180,7 +2180,7 @@ func (m *Market) CancelAllOrders(ctx context.Context, partyID string) ([]*types.
 }
 
 func (m *Market) CancelOrder(ctx context.Context, partyID, orderID string, deterministicId string) (*types.OrderCancellationConfirmation, error) {
-	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {
@@ -2284,7 +2284,7 @@ func (m *Market) parkOrder(ctx context.Context, order *types.Order) {
 func (m *Market) AmendOrder(ctx context.Context, orderAmendment *types.OrderAmendment, party string,
 	deterministicId string) (*types.OrderConfirmation, error,
 ) {
-	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
+	m.idgen = idgeneration.New(deterministicId)
 	defer func() { m.idgen = nil }()
 
 	if !m.canTrade() {

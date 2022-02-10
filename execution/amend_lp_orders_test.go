@@ -6,6 +6,7 @@ import (
 	"time"
 
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
@@ -18,7 +19,7 @@ import (
 func TestAmendDeployedCommitment(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
@@ -72,9 +73,10 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	}
 
 	// submit our lp
+	lpID := vgcrypto.RandomHash()
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+			ctx, lpSubmission, lpparty, lpID),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -104,7 +106,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpSmallerCommitment, lpparty, randomSha256Hash()),
+			ctx, lpSmallerCommitment, lpparty, lpID),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -125,7 +127,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvisionStatus{
-			"liquidity-submission-1": types.LiquidityProvisionStatusActive,
+			lpID: types.LiquidityProvisionStatusActive,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -192,7 +194,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpHigherCommitment, lpparty, randomSha256Hash()),
+			ctx, lpHigherCommitment, lpparty, vgcrypto.RandomHash()),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -213,7 +215,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvisionStatus{
-			"liquidity-submission-1": types.LiquidityProvisionStatusActive,
+			lpID: types.LiquidityProvisionStatusActive,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -284,7 +286,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpDifferentShapeCommitment, lpparty, randomSha256Hash()),
+			ctx, lpDifferentShapeCommitment, lpparty, vgcrypto.RandomHash()),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -305,7 +307,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 		}
 
 		expectedStatus := map[string]types.LiquidityProvisionStatus{
-			"liquidity-submission-1": types.LiquidityProvisionStatusActive,
+			lpID: types.LiquidityProvisionStatusActive,
 		}
 
 		require.Len(t, found, len(expectedStatus))
@@ -376,7 +378,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.EqualError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpTooSmallCommitment, lpparty, randomSha256Hash()),
+			ctx, lpTooSmallCommitment, lpparty, vgcrypto.RandomHash()),
 		"commitment submission rejected, not enough stake",
 	)
 
@@ -403,7 +405,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 	// submit our lp
 	require.EqualError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpTooHighCommitment, lpparty, randomSha256Hash()),
+			ctx, lpTooHighCommitment, lpparty, vgcrypto.RandomHash()),
 		"commitment submission not allowed",
 	)
 
@@ -427,7 +429,7 @@ func TestAmendDeployedCommitment(t *testing.T) {
 func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	// auctionEnd := now.Add(10001 * time.Second)
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
@@ -483,7 +485,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 	)
 
 	t.Run("bond account is updated with the new commitment", func(t *testing.T) {
@@ -513,7 +515,7 @@ func TestCancelUndeployedCommitmentDuringAuction(t *testing.T) {
 func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
 	pMonitorSettings := &types.PriceMonitoringSettings{
@@ -575,7 +577,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 	)
 
 	tm.events = nil
@@ -649,7 +651,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuction(t *testing.T) {
 func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuringAuction(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
 	pMonitorSettings := &types.PriceMonitoringSettings{
@@ -713,7 +715,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	// submit our lp
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1", randomSha256Hash()),
+			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 	)
 
 	tm.events = nil
@@ -782,7 +784,7 @@ func TestDeployedCommitmentIsUndeployedWhenEnteringAuctionAndMarginCheckFailDuri
 	// order are not deployed while still in auction
 	require.EqualError(t,
 		tm.market.AmendLiquidityProvision(
-			ctx, lpSubmissionUpdate, lpparty, randomSha256Hash()),
+			ctx, lpSubmissionUpdate, lpparty, vgcrypto.RandomHash()),
 		"margin would be below maintenance: insufficient margin",
 	)
 }
