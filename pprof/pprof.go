@@ -86,7 +86,7 @@ func New(log *logging.Logger, config Config) (*Pprofhandler, error) {
 
 	// start the pprof http server
 	go func() {
-		p.log.Error("pprof web server closed", logging.Error(http.ListenAndServe("localhost:6060", nil)))
+		p.log.Error("pprof web server closed", logging.Error(http.ListenAndServe(fmt.Sprintf("localhost:%d", config.Port), nil)))
 	}()
 
 	// start cpu and mem profilers
