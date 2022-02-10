@@ -366,10 +366,8 @@ func (e *Engine) SubmitLiquidityProvision(
 	party string,
 	idgen IDGen,
 ) error {
-	lpID := idgen.NextID()
-
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
-		e.rejectLiquidityProvisionSubmission(ctx, lps, party, lpID)
+		e.rejectLiquidityProvisionSubmission(ctx, lps, party, idgen.NextID())
 		return err
 	}
 
@@ -380,7 +378,7 @@ func (e *Engine) SubmitLiquidityProvision(
 	var (
 		now = e.currentTime.UnixNano()
 		lp  = &types.LiquidityProvision{
-			ID:        lpID,
+			ID:        idgen.NextID(),
 			MarketID:  lps.MarketID,
 			Party:     party,
 			CreatedAt: now,
