@@ -7,6 +7,7 @@ import (
 	"time"
 
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
@@ -206,7 +207,7 @@ func (esm *equityShareMarket) PartyMarginAccount(party string) *types.Account {
 
 func testWithinMarket(t *testing.T) {
 	var (
-		ctx = vegacontext.WithTraceID(context.Background(), randomSha256Hash())
+		ctx = vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 		// as we will split fees in 1/3 and 2/3
 		// we use 900000 cause we need this number to be divisible by 3
 		matchingPrice = uint64(900000)

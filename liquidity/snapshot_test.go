@@ -8,6 +8,7 @@ import (
 	"time"
 
 	snapshotpb "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/idgeneration"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -76,11 +77,13 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		},
 	}
 
+	idgen1 := idgeneration.New("f663375fd6843a0807d17b10ad8425a6ba45c8c2dd6339f400c5b2426f900c13")
 	require.NoError(t,
-		e1.engine.SubmitLiquidityProvision(ctx, lp1, party1, "some-id-1", "f663375fd6843a0807d17b10ad8425a6ba45c8c2dd6339f400c5b2426f900c13"),
+		e1.engine.SubmitLiquidityProvision(ctx, lp1, party1, idgen1),
 	)
+	idgen2 := idgeneration.New("0454d8b74441ca3bac8f9b141408502d9b1f297e8ef1054d45775566677a8072")
 	require.NoError(t,
-		e1.engine.SubmitLiquidityProvision(ctx, lp2, party2, "some-id-2", "0454d8b74441ca3bac8f9b141408502d9b1f297e8ef1054d45775566677a8072"),
+		e1.engine.SubmitLiquidityProvision(ctx, lp2, party2, idgen2),
 	)
 
 	keys := e1.engine.Keys()
@@ -92,7 +95,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		"partiesLiquidityOrders:market-id": "0254d8b74441ca3bac8f9b141408502d9b1f297e8ef1054d45775566677a8072",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "6cc4d407a2ea45e37e27993eb6f94134b3f906d080777d94bf99551aa82dc461",
-		"provisions:market-id":             "4e0a4047c29a61237323bb918e4dbb3933d5acbe06cda105bdff08869ab99f55",
+		"provisions:market-id":             "20b1f6850f633a7a304618dd9a85e6433af194757b8294e2566bd4bf5fb8423c",
 		"liquiditySupplied:market-id":      "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
 	}
 
@@ -127,10 +130,10 @@ func TestSnapshotRoundTrip(t *testing.T) {
 
 	expectedHashes2 := map[string]string{
 		"parameters:market-id":             "b5eec91c297baf1f06830350dbcb37d79937561ae605d2304eb12680e443775c",
-		"partiesLiquidityOrders:market-id": "c93b5c04bbaf7fac571500ee60caf223b69b0e32a42e23fc0578020e20a62eeb",
+		"partiesLiquidityOrders:market-id": "c92b7c102539b6c59b2b3d4be17cabbdf4b385fa85007f69e6092bbc68c186b6",
 		"partiesOrders:market-id":          "f9cb31b1c4c8df91f6a348d43978c302c8887336107c265259bc74fdddf00e19",
 		"pendingProvisions:market-id":      "627ef55af7f36bea0d09b0081b85d66531a01df060d8e9447e17049a4e152b12",
-		"provisions:market-id":             "bf26cd6140ac241665756f8a4e20b8207bad18f3386d3ff6862ec5525f42fffc",
+		"provisions:market-id":             "7f793b051cd4dc61c94f3193da156c09eb38ac206b0428eccca26a2d555b303b",
 		"liquiditySupplied:market-id":      "3276bba2a77778ba710ec29e3a6e59212452dbda69eaac8f9160930d1270da1d",
 	}
 
@@ -154,8 +157,9 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		},
 	}
 
+	idgen3 := idgeneration.New("59a8634e030ecf0548d3a77c74a9a251e6e2c90c65af32136e97dcb889e92774")
 	require.NoError(t,
-		e2.engine.SubmitLiquidityProvision(ctx, lp3, party3, "some-id-2", "59a8634e030ecf0548d3a77c74a9a251e6e2c90c65af32136e97dcb889e92774"),
+		e2.engine.SubmitLiquidityProvision(ctx, lp3, party3, idgen3),
 	)
 
 	require.NoError(t,

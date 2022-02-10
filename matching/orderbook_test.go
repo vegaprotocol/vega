@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/types"
@@ -143,10 +144,10 @@ func cancelAllOrderForAParty(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
-	orderId1 := randomSha256Hash()
-	orderId2 := randomSha256Hash()
-	orderId3 := randomSha256Hash()
-	orderId4 := randomSha256Hash()
+	orderId1 := vgcrypto.RandomHash()
+	orderId2 := vgcrypto.RandomHash()
+	orderId3 := vgcrypto.RandomHash()
+	orderId4 := vgcrypto.RandomHash()
 
 	orders := []*types.Order{
 		{
@@ -229,10 +230,10 @@ func getAllOrderForAParty(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 
-	orderId1 := randomSha256Hash()
-	orderId2 := randomSha256Hash()
-	orderId3 := randomSha256Hash()
-	orderId4 := randomSha256Hash()
+	orderId1 := vgcrypto.RandomHash()
+	orderId2 := vgcrypto.RandomHash()
+	orderId3 := vgcrypto.RandomHash()
+	orderId4 := vgcrypto.RandomHash()
 
 	orders := []*types.Order{
 		{
@@ -315,7 +316,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 	defer book.Finish()
 	orders := []*types.Order{
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -328,7 +329,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -341,7 +342,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -354,7 +355,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -383,7 +384,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -396,7 +397,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -409,7 +410,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -422,7 +423,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -457,7 +458,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -470,7 +471,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -483,7 +484,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -496,7 +497,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -531,7 +532,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -545,7 +546,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -590,7 +591,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -604,7 +605,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -649,7 +650,7 @@ func getClosePNLBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -663,7 +664,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -677,7 +678,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -720,7 +721,7 @@ func getClosePNLSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -734,7 +735,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -748,7 +749,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            randomSha256Hash(),
+			ID:            vgcrypto.RandomHash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -792,7 +793,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 	defer book.Finish()
 	currentTimestamp := getCurrentUtcTimestampNano()
 
-	orderId := randomSha256Hash()
+	orderId := vgcrypto.RandomHash()
 	order1 := types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -1178,7 +1179,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		Remaining:     100,
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     0,
-		ID:            randomSha256Hash(),
+		ID:            vgcrypto.RandomHash(),
 	}
 
 	trades, getErr := book.ob.GetTrades(newOrder)
@@ -1203,7 +1204,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	id := randomSha256Hash()
+	id := vgcrypto.RandomHash()
 	newOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -1250,7 +1251,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	id := randomSha256Hash()
+	id := vgcrypto.RandomHash()
 	newOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -1296,7 +1297,7 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN CANCELLING VALID ORDER BY ID")
 
-	id := randomSha256Hash()
+	id := vgcrypto.RandomHash()
 	newOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -1348,7 +1349,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 		Status:    types.OrderStatusActive,
 		Type:      types.OrderTypeLimit,
 		MarketID:  market,
-		ID:        randomSha256Hash(),
+		ID:        vgcrypto.RandomHash(),
 		Party:     "A",
 		Size:      100,
 		Remaining: 100,
@@ -2169,7 +2170,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
 
-	orderId := randomSha256Hash()
+	orderId := vgcrypto.RandomHash()
 	newOrder := &types.Order{
 		ID:            orderId,
 		Status:        types.OrderStatusActive,
@@ -2195,7 +2196,7 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
-	iocOrderID := randomSha256Hash()
+	iocOrderID := vgcrypto.RandomHash()
 	iocOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -3041,8 +3042,8 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 
 	orders := book.ob.EnterAuction()
 	assert.Equal(t, 0, len(orders))
-	order1Id := randomSha256Hash()
-	order2Id := randomSha256Hash()
+	order1Id := vgcrypto.RandomHash()
+	order2Id := vgcrypto.RandomHash()
 
 	order1 := &types.Order{
 		Status:        types.OrderStatusActive,
@@ -3269,22 +3270,22 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 	matchingPrice := uint64(100)
 	party1 := "party1"
 	party2 := "party2"
-	makeOrder(t, book, market, randomSha256Hash(), types.SideBuy, matchingPrice-1, party1, 1)
+	makeOrder(t, book, market, vgcrypto.RandomHash(), types.SideBuy, matchingPrice-1, party1, 1)
 
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, randomSha256Hash(), types.SideSell, matchingPrice+1, party2, 1)
+	makeOrder(t, book, market, vgcrypto.RandomHash(), types.SideSell, matchingPrice+1, party2, 1)
 
 	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, randomSha256Hash(), types.SideBuy, matchingPrice, party1, 1)
+	makeOrder(t, book, market, vgcrypto.RandomHash(), types.SideBuy, matchingPrice, party1, 1)
 
 	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, randomSha256Hash(), types.SideSell, matchingPrice, party2, 1)
+	makeOrder(t, book, market, vgcrypto.RandomHash(), types.SideSell, matchingPrice, party2, 1)
 
 	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, true, book.ob.CanUncross())
@@ -3296,12 +3297,12 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 
 	require.Equal(t, int64(0), book.ob.GetTotalNumberOfOrders())
 
-	makeOrder(t, book, market, randomSha256Hash(), types.SideBuy, matchingPrice, party1, 1)
+	makeOrder(t, book, market, vgcrypto.RandomHash(), types.SideBuy, matchingPrice, party1, 1)
 
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, randomSha256Hash(), types.SideSell, matchingPrice, party2, 1)
+	makeOrder(t, book, market, vgcrypto.RandomHash(), types.SideSell, matchingPrice, party2, 1)
 
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())

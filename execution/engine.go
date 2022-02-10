@@ -299,7 +299,7 @@ func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketC
 	e.publishMarketInfos(ctx, mkt)
 
 	// now we try to submit the liquidity
-	if err := mkt.SubmitLiquidityProvision(ctx, lp, party, lpID, deterministicId); err != nil {
+	if err := mkt.SubmitLiquidityProvision(ctx, lp, party, deterministicId); err != nil {
 		e.removeMarket(marketConfig.ID)
 		return err
 	}
@@ -644,8 +644,11 @@ func (e *Engine) cancelAllPartyOrders(ctx context.Context, party string) ([]*typ
 	return confirmations, nil
 }
 
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party,
-	lpId, deterministicId string) (returnedErr error) {
+func (e *Engine) SubmitLiquidityProvision(
+	ctx context.Context,
+	sub *types.LiquidityProvisionSubmission,
+	party, deterministicId string,
+) (returnedErr error) {
 	timer := metrics.NewTimeCounter(sub.MarketID, "execution", "LiquidityProvisionSubmission")
 	defer func() {
 		timer.EngineTimeCounterAdd()
@@ -664,7 +667,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return types.ErrInvalidMarketID
 	}
 
-	return mkt.SubmitLiquidityProvision(ctx, sub, party, lpId, deterministicId)
+	return mkt.SubmitLiquidityProvision(ctx, sub, party, deterministicId)
 }
 
 func (e *Engine) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string,

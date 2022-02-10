@@ -7,8 +7,6 @@ import (
 	"sort"
 	"time"
 
-	"code.vegaprotocol.io/vega/idgeneration"
-
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity/supplied"
 	"code.vegaprotocol.io/vega/logging"
@@ -362,12 +360,16 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, lpId,
-	deterministicId string) error {
-	idGen := idgeneration.NewDeterministicIDGenerator(deterministicId)
+func (e *Engine) SubmitLiquidityProvision(
+	ctx context.Context,
+	lps *types.LiquidityProvisionSubmission,
+	party string,
+	idgen IDGen,
+) error {
+	lpID := idgen.NextID()
 
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
-		e.rejectLiquidityProvisionSubmission(ctx, lps, party, lpId)
+		e.rejectLiquidityProvisionSubmission(ctx, lps, party, lpID)
 		return err
 	}
 
@@ -378,7 +380,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	var (
 		now = e.currentTime.UnixNano()
 		lp  = &types.LiquidityProvision{
-			ID:        lpId,
+			ID:        lpID,
 			MarketID:  lps.MarketID,
 			Party:     party,
 			CreatedAt: now,
@@ -402,7 +404,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells, idGen)
+	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells, idgen)
 
 	return nil
 }
