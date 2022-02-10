@@ -2,10 +2,8 @@ package steps
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/rand"
 	"sort"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -36,6 +34,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 		row := submitLiquidityProvisionRow{row: r}
 
 		id := row.ID()
+		ref := id
 
 		lp, ok := lps[id]
 		if !ok {
@@ -45,7 +44,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Fee:              row.Fee(),
 				Sells:            []*types.LiquidityOrder{},
 				Buys:             []*types.LiquidityOrder{},
-				Reference:        row.Reference(),
+				Reference:        ref,
 				LpType:           row.LpType(),
 			}
 			parties[id] = row.Party()
@@ -62,18 +61,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 		} else {
 			lp.Sells = append(lp.Sells, lo)
 		}
-		// if lp.CommitmentAmount.EQ(checkAmt) {
-		// clp = lp
-		// }
 	}
-	/*
-		if clp != nil {
-			return fmt.Errorf(
-				"Offset buy: %d\nOffset sell: %d\n",
-				clp.Buys[0].Offset,
-				clp.Sells[0].Offset,
-			)
-		}*/
 	// ensure we always submit in the same order
 	sort.Strings(keys)
 	for _, id := range keys {
@@ -108,18 +96,12 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Reference:        lp.Reference,
 			}
 
-			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, randomSha256Hash()); err != nil {
+			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, crypto.RandomHash()); err != nil {
 				return errSubmittingLiquidityProvision(sub, party, id, err)
 			}
 		}
 	}
 	return nil
-}
-
-func randomSha256Hash() string {
-	data := make([]byte, 10)
-	rand.Read(data)
-	return hex.EncodeToString(crypto.Hash(data))
 }
 
 func errSubmittingLiquidityProvision(lp *types.LiquidityProvisionSubmission, party, id string, err error) error {

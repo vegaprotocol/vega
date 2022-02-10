@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.vegaprotocol.io/vega/idgeneration"
-
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
@@ -1101,13 +1099,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
-	idGen := idgeneration.NewDeterministicIDGenerator(deterministicId)
-	liquidityProvisionId := idGen.NextID()
-	deterministicId = idGen.NextID()
-
-	partyID := tx.Party()
-
-	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, liquidityProvisionId, deterministicId)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicId)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {

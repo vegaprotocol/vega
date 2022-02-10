@@ -12,8 +12,8 @@ type idGenerator struct {
 	nextIdBytes []byte
 }
 
-// NewDeterministicIDGenerator returns an idGenerator, and is used to abstract this type.
-func NewDeterministicIDGenerator(rootId string) *idGenerator {
+// New returns an idGenerator, and is used to abstract this type.
+func New(rootId string) *idGenerator {
 	nextIdBytes, err := hex.DecodeString(rootId)
 	if err != nil {
 		panic("failed to create new deterministic id generator: " + err.Error())

@@ -72,3 +72,15 @@ func (mr *MockFiltererMockRecorder) FilterStakingEvents(arg0, arg1, arg2, arg3 i
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterStakingEvents", reflect.TypeOf((*MockFilterer)(nil).FilterStakingEvents), arg0, arg1, arg2, arg3)
 }
+
+// FilterVestingEvents mocks base method.
+func (m *MockFilterer) FilterVestingEvents(arg0 context.Context, arg1, arg2 uint64, arg3 ethereum.OnEventFound) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "FilterVestingEvents", arg0, arg1, arg2, arg3)
+}
+
+// FilterVestingEvents indicates an expected call of FilterVestingEvents.
+func (mr *MockFiltererMockRecorder) FilterVestingEvents(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterVestingEvents", reflect.TypeOf((*MockFilterer)(nil).FilterVestingEvents), arg0, arg1, arg2, arg3)
+}
