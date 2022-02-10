@@ -481,10 +481,10 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | buy  | 4490000000 | 5      |
       | buy  | 810000000  | 1      |
     And the mark price should be "3500000000" for the market "DAI/DEC22"
-    And debug detailed orderbook volumes for market "DAI/DEC22"
 
-  @MidPriceWIP
-  Scenario: Mid price should work even if LP has limit order on the book (LP high) - updating orders (manually move prices apart)
+
+  @MidPrice @LPWrong
+  Scenario: Changing orders copying the script (same as above, but LP low buy order)
     Given the parties deposit on asset's general account the following amount:
       | party           | asset | amount       |
       | party1          | DAI   | 110000000000 |
@@ -497,10 +497,10 @@ Feature: Replicate unexpected margin issues - no mid price pegs
 
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
-      | party2 | DAI/DEC22 | buy  | 1      | 800000000  | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
+      | party1 | DAI/DEC22 | buy  | 1      | 800000000  | 0                | TYPE_LIMIT | TIF_GTC | party2-1  |
       | party2 | DAI/DEC22 | buy  | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | party2-2  |
       | party1 | DAI/DEC22 | sell | 1      | 3500000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-1  |
-      | party1 | DAI/DEC22 | sell | 1      | 8200000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |
+      | party2 | DAI/DEC22 | sell | 1      | 8200000000 | 0                | TYPE_LIMIT | TIF_GTC | party3-2  |
 
     And the opening auction period ends for market "DAI/DEC22"
     Then the following trades should be executed:
@@ -517,27 +517,47 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     ## Now change our orders manually
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
-      | party2 | DAI/DEC22 | buy  | 1      | 790000000  | 0                | TYPE_LIMIT | TIF_GTC | party1-b  |
-      | party1 | DAI/DEC22 | sell | 1      | 8210000000 | 0                | TYPE_LIMIT | TIF_GTC | party2-b  |
+      | party1 | DAI/DEC22 | buy  | 1      | 810000000  | 0                | TYPE_LIMIT | TIF_GTC | party1-b  |
+    ## LP orders are gone! this is where things go wrong
+    ## THIS IS WRONG!!!
     Then the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4510000000 | 5      |
       | sell | 8200000000 | 1      |
-      | sell | 8210000000 | 1      |
-      | buy  | 4490000000 | 5      |
       | buy  | 800000000  | 1      |
-      | buy  | 790000000  | 1      |
+      | buy  | 810000000  | 1      |
+      #| sell | 4510000000 | 5      |
+      #| buy  | 4490000000 | 5      |
     And the mark price should be "3500000000" for the market "DAI/DEC22"
-
     When the parties cancel the following orders:
       | party  | reference |
-      | party2 | party2-1  |
-      | party1 | party3-2  |
+      | party1 | party2-1  |
+    Then the order book should have the following volumes for market "DAI/DEC22":
+      | side | price      | volume |
+      | sell | 4515000000 | 5      |
+      | sell | 8200000000 | 1      |
+      | buy  | 4495000000 | 5      |
+      | buy  | 810000000  | 1      |
+    When the parties place the following orders:
+      | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
+      | party2 | DAI/DEC22 | sell | 1      | 8190000000 | 0                | TYPE_LIMIT | TIF_GTC | party2-b  |
+    ## THIS IS EVEN MORE WRONG, some LP orders remain, others are gone
+    ## Sell orders are both party2 (so no LP orders), buy side is LP limit order, all LP orders are gone, still
+    Then the order book should have the following volumes for market "DAI/DEC22":
+      | side | price      | volume |
+      | sell | 8200000000 | 1      |
+      | sell | 8190000000 | 1      |
+      | buy  | 810000000  | 1      |
+      #| sell | 4510000000 | 3      |
+      #| buy  | 4490000000 | 5      |
+    When the parties cancel the following orders:
+      | party  | reference |
+      | party2 | party3-2  |
+    ## In this case, though, we end up with the correct volumes again (as opposed to non-LP having the buy order)
     Then the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
       | sell | 4510000000 | 5      |
-      | sell | 8210000000 | 1      |
+      | sell | 8190000000 | 1      |
       | buy  | 4490000000 | 5      |
-      | buy  | 790000000  | 1      |
+      | buy  | 810000000  | 1      |
     And the mark price should be "3500000000" for the market "DAI/DEC22"
 
