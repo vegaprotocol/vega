@@ -34,7 +34,6 @@ func TestMarketFromIntoProto(t *testing.T) {
 				},
 				Product: &proto.Instrument_Future{
 					Future: &proto.Future{
-						Maturity:        "very",
 						SettlementAsset: "GBP",
 						QuoteName:       "USD",
 						OracleSpecForSettlementPrice: &v1.OracleSpec{
@@ -89,11 +88,6 @@ func TestMarketFromIntoProto(t *testing.T) {
 		OpeningAuction: &proto.AuctionDuration{
 			Duration: 1,
 			Volume:   0,
-		},
-		TradingModeConfig: &proto.Market_Continuous{
-			Continuous: &proto.ContinuousTrading{
-				TickSize: "1",
-			},
 		},
 		PriceMonitoringSettings: &proto.PriceMonitoringSettings{
 			Parameters: &proto.PriceMonitoringParameters{

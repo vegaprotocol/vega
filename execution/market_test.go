@@ -497,10 +497,7 @@ func getMarketWithDP(closingAt time.Time, pMonitorSettings *types.PriceMonitorin
 				},
 			},
 		},
-		OpeningAuction: openingAuctionDuration,
-		TradingModeConfig: &types.MarketContinuous{
-			Continuous: &types.ContinuousTrading{},
-		},
+		OpeningAuction:          openingAuctionDuration,
 		PriceMonitoringSettings: pMonitorSettings,
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
@@ -1007,9 +1004,6 @@ func TestSetMarketID(t *testing.T) {
 						},
 					},
 				},
-			},
-			TradingModeConfig: &types.MarketContinuous{
-				Continuous: &types.ContinuousTrading{},
 			},
 		}
 
