@@ -1241,7 +1241,7 @@ func testPeggedOrderUnparkAfterLeavingAuction(t *testing.T) {
 	require.NotNil(t, confirmation)
 	assert.NoError(t, err)
 
-	tm.market.LeaveAuction(ctx, closingAt)
+	tm.market.LeaveAuctionWithIdGen(ctx, closingAt, newTestIdGenerator())
 	assert.Equal(t, 0, tm.market.GetParkedOrderCount())
 }
 
@@ -2413,7 +2413,7 @@ func TestPeggedOrderUnparkAfterLeavingAuctionWithNoFunds2772(t *testing.T) {
 	assert.NotNil(t, confirmation3)
 	assert.NoError(t, err)
 
-	tm.market.LeaveAuction(ctx, closingAt)
+	tm.market.LeaveAuctionWithIdGen(ctx, closingAt, newTestIdGenerator())
 
 	buyOrder1 := getOrder(t, tm, &now, types.OrderTypeLimit, types.OrderTimeInForceGTC, 0, types.SideBuy, "party3", 100, 6500)
 	confirmation4, err := tm.market.SubmitOrder(ctx, &buyOrder1)

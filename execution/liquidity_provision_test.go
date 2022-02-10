@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/idgeneration"
+
 	vegacontext "code.vegaprotocol.io/vega/libs/context"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -313,7 +316,7 @@ func TestSubmit(t *testing.T) {
 		assert.Equal(t, num.NewUint(1000), tm.market.GetBondAccountBalance(ctx, "party-A", tm.market.GetID(), tm.asset))
 
 		// Leave auction
-		tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+		tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 
 		// Check we have an accepted LP submission
 		assert.Equal(t, 1, tm.market.GetLPSCount())
@@ -388,7 +391,7 @@ func TestSubmit(t *testing.T) {
 		// Leave auction
 		now = now.Add(time.Second * 40)
 		tm.market.OnChainTimeUpdate(ctx, now)
-		tm.market.LeaveAuction(ctx, now)
+		tm.market.LeaveAuctionWithIdGen(ctx, now, newTestIdGenerator())
 
 		// Check we have an accepted LP submission
 		assert.Equal(t, 1, tm.market.GetLPSCount())
@@ -580,7 +583,7 @@ func TestSubmit(t *testing.T) {
 
 		// Leave the auction so we can uncross the book
 		now = now.Add(time.Second * 20)
-		tm.market.LeaveAuction(ctx, now)
+		tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 		tm.market.OnChainTimeUpdate(ctx, now)
 		assert.Equal(t, 1, tm.market.GetPeggedOrderCount())
 		assert.Equal(t, 0, tm.market.GetParkedOrderCount())
@@ -653,7 +656,7 @@ func TestSubmit(t *testing.T) {
 
 		// Leave the auction so we can uncross the book
 		now = now.Add(time.Second * 20)
-		tm.market.LeaveAuction(ctx, now)
+		tm.market.LeaveAuctionWithIdGen(ctx, now, newTestIdGenerator())
 		tm.market.OnChainTimeUpdate(ctx, now)
 
 		// Save the total amount of assets we have in general+margin+bond
@@ -2307,7 +2310,7 @@ func TestAmend(t *testing.T) {
 		require.NoError(t, err)
 
 		// Leave auction
-		tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+		tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 		// mark price is set at 10, orders on book
 
 		buys := []*types.LiquidityOrder{
@@ -2497,7 +2500,7 @@ func TestAmend(t *testing.T) {
 		require.NoError(t, err)
 
 		// Leave auction
-		tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+		tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 
 		// Check we have an accepted LP submission
 		assert.Equal(t, 1, tm.market.GetLPSCount())
@@ -2726,4 +2729,8 @@ func TestAmend(t *testing.T) {
 		err := tm.market.CancelLiquidityProvision(ctx, lpc, "party-A")
 		require.EqualError(t, err, "party is not a liquidity provider")
 	})
+}
+
+func newTestIdGenerator() execution.IDGenerator {
+	return idgeneration.NewDeterministicIDGenerator("2446F4AEFB505123E1EBE0AA160421E47A4B708F9227F440C100AB24503380BD")
 }

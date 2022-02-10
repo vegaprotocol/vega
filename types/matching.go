@@ -2,7 +2,6 @@ package types
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	proto "code.vegaprotocol.io/protos/vega"
@@ -273,8 +272,8 @@ type Trade struct {
 	SellerAuctionBatch uint64
 }
 
-func (t *Trade) SetIDs(aggressive, passive *Order, idx int) {
-	t.ID = fmt.Sprintf("%s-%010d", aggressive.ID, idx)
+func (t *Trade) SetIDs(tradeId string, aggressive, passive *Order) {
+	t.ID = tradeId
 	if aggressive.Side == SideBuy {
 		t.BuyOrder = aggressive.ID
 		t.SellOrder = passive.ID

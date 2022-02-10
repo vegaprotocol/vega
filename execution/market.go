@@ -591,7 +591,7 @@ func (m *Market) StartOpeningAuction(ctx context.Context) error {
 		// we are now in a pending state
 		m.mkt.State = types.MarketStatePending
 		m.mkt.MarketTimestamps.Pending = m.currentTime.UnixNano()
-		m.EnterAuction(ctx)
+		m.enterAuction(ctx)
 	} else {
 		// TODO(): to be removed once we don't have market starting
 		// without an opening auction
@@ -831,7 +831,7 @@ func (m *Market) parkAllPeggedOrders(ctx context.Context) []*types.Order {
 }
 
 // EnterAuction : Prepare the order book to be run as an auction.
-func (m *Market) EnterAuction(ctx context.Context) {
+func (m *Market) enterAuction(ctx context.Context) {
 	// Change market type to auction
 	ordersToCancel := m.matching.EnterAuction()
 
@@ -882,8 +882,8 @@ func (m *Market) OnAuctionEnded() {
 	m.stateVarEngine.NewEvent(asset, m.mkt.ID, statevar.StateVarEventTypeAuctionEnded)
 }
 
-// LeaveAuction : Return the orderbook and market to continuous trading.
-func (m *Market) LeaveAuction(ctx context.Context, now time.Time) {
+// leaveAuction : Return the orderbook and market to continuous trading.
+func (m *Market) leaveAuction(ctx context.Context, now time.Time) {
 	defer func() {
 		if !m.as.InAuction() && m.mkt.State == types.MarketStateSuspended {
 			m.mkt.State = types.MarketStateActive
@@ -1397,7 +1397,7 @@ func (m *Market) checkPriceAndGetTrades(ctx context.Context, order *types.Order)
 
 	// start the  monitoring auction if required?
 	if m.as.AuctionStart() {
-		m.EnterAuction(ctx)
+		m.enterAuction(ctx)
 		return nil, nil
 	}
 
@@ -1529,7 +1529,7 @@ func (m *Market) handleConfirmation(ctx context.Context, conf *types.OrderConfir
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(conf.Trades))
 		for idx, trade := range conf.Trades {
-			trade.SetIDs(conf.Order, conf.PassiveOrdersAffected[idx], idx)
+			trade.SetIDs(m.idgen.NextID(), conf.Order, conf.PassiveOrdersAffected[idx])
 
 			tradeEvts = append(tradeEvts, events.NewTradeEvent(ctx, *trade))
 
@@ -1832,7 +1832,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 		// Insert all trades resulted from the executed order
 		tradeEvts := make([]events.Event, 0, len(confirmation.Trades))
 		for idx, trade := range confirmation.Trades {
-			trade.SetIDs(&no, confirmation.PassiveOrdersAffected[idx], idx)
+			trade.SetIDs(m.idgen.NextID(), &no, confirmation.PassiveOrdersAffected[idx])
 
 			// setup the type of the trade to network
 			// this trade did happen with a GOOD trader to
@@ -2033,7 +2033,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		}
 
 		trade := types.Trade{
-			ID:          fmt.Sprintf("%s-%010d", partyOrder.ID, 1),
+			ID:          m.idgen.NextID(),
 			MarketID:    partyOrder.MarketID,
 			Price:       partyOrder.Price.Clone(),
 			MarketPrice: partyOrder.OriginalPrice.Clone(),
@@ -3006,7 +3006,7 @@ func (m *Market) checkLiquidity(ctx context.Context, trades []*types.Trade) {
 func (m *Market) commandLiquidityAuction(ctx context.Context) {
 	// start the liquidity monitoring auction if required
 	if !m.as.InAuction() && m.as.AuctionStart() {
-		m.EnterAuction(ctx)
+		m.enterAuction(ctx)
 	}
 	// end the liquidity monitoring auction if possible
 	if m.as.InAuction() && m.as.CanLeave() && !m.as.IsOpeningAuction() {

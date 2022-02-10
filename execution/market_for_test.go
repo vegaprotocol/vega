@@ -8,6 +8,16 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
+func (m *Market) EnterAuction(ctx context.Context) {
+	m.enterAuction(ctx)
+}
+
+func (m *Market) LeaveAuctionWithIdGen(ctx context.Context, now time.Time, generator IDGenerator) {
+	m.idgen = generator
+	defer func() { m.idgen = nil }()
+	m.leaveAuction(ctx, now)
+}
+
 // GetPeggedOrderCount returns the number of pegged orders in the market.
 func (m *Market) GetPeggedOrderCount() int {
 	return len(m.peggedOrders.orders)
