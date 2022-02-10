@@ -2736,5 +2736,5 @@ func TestAmend(t *testing.T) {
 }
 
 func newTestIdGenerator() execution.IDGenerator {
-	return idgeneration.NewDeterministicIDGenerator("2446F4AEFB505123E1EBE0AA160421E47A4B708F9227F440C100AB24503380BD")
+	return idgeneration.New(vgcrypto.RandomHash())
 }
