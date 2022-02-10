@@ -84,7 +84,7 @@ type Engine struct {
 	// not as easy to access them directly, but by doing this we can keep
 	// them in order of arrival, which makes their processing deterministic
 	activeProposals        []*proposal
-	enactedProposals       []*types.Proposal
+	enactedProposals       []*proposal
 	nodeProposalValidation *NodeValidation
 	broker                 Broker
 	assets                 Assets
@@ -114,7 +114,7 @@ func NewEngine(
 		log:                    log,
 		currentTime:            now,
 		activeProposals:        []*proposal{},
-		enactedProposals:       []*types.Proposal{},
+		enactedProposals:       []*proposal{},
 		nodeProposalValidation: NewNodeValidation(log, assets, now, witness),
 		broker:                 broker,
 		assets:                 assets,
@@ -186,7 +186,7 @@ func (e *Engine) ReloadConf(cfg Config) {
 	e.Config = cfg
 }
 
-func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.ProposalError, err error) {
+func (e *Engine) preEnactProposal(p *proposal) (te *ToEnact, perr types.ProposalError, err error) {
 	te = &ToEnact{
 		p: p,
 	}
@@ -217,9 +217,9 @@ func (e *Engine) preEnactProposal(p *types.Proposal) (te *ToEnact, perr types.Pr
 	return
 }
 
-func (e *Engine) preVoteClosedProposal(p *types.Proposal) *VoteClosed {
+func (e *Engine) preVoteClosedProposal(p *proposal) *VoteClosed {
 	vc := &VoteClosed{
-		p: p,
+		p: p.Proposal,
 	}
 	switch p.Terms.Change.GetTermType() {
 	case types.ProposalTerms_NEW_MARKET:
@@ -271,14 +271,14 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 			// or we would return many times the voteClosed eventually
 			if proposal.State == proto.Proposal_STATE_OPEN && proposal.Terms.ClosingTimestamp < now {
 				e.closeProposal(ctx, proposal)
-				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal.Proposal))
+				voteClosed = append(voteClosed, e.preVoteClosedProposal(proposal))
 			}
 
 			if proposal.State != proto.Proposal_STATE_OPEN && proposal.State != proto.Proposal_STATE_PASSED {
 				toBeRemoved = append(toBeRemoved, proposal.ID)
 			} else if proposal.State == proto.Proposal_STATE_PASSED &&
 				(e.isAutoEnactableProposal(proposal.Proposal) || proposal.Terms.EnactmentTimestamp < now) {
-				enact, _, err := e.preEnactProposal(proposal.Proposal)
+				enact, _, err := e.preEnactProposal(proposal)
 				if err != nil {
 					e.broker.Send(events.NewProposalEvent(ctx, *proposal.Proposal))
 					e.log.Error("proposal enactment has failed",
@@ -320,7 +320,7 @@ func (e *Engine) OnChainTimeUpdate(ctx context.Context, t time.Time) ([]*ToEnact
 
 	for _, ep := range toBeEnacted {
 		// this is the new market proposal, and should already be in the slice
-		prop := *ep.Proposal()
+		prop := *ep.ProposalData()
 		if prop.Terms.Change.GetTermType() == types.ProposalTerms_NEW_MARKET {
 			// just in case the proposal wasn't added for whatever reason (shouldn't be possible)
 			found := false
@@ -420,6 +420,20 @@ func (e *Engine) RejectProposal(
 	e.rejectProposal(p, r, errorDetails)
 	e.broker.Send(events.NewProposalEvent(ctx, *p))
 	return nil
+}
+
+// FinaliseEnactment receives the enact proposal and updates the state in out enactedProposal
+// list to have the current state of the proposals. This is entirely so that when we restore
+// from a snapshot we can propagate the proposal with the latest state back into the apiservice.
+func (e *Engine) FinaliseEnactment(ctx context.Context, prop *types.Proposal) {
+	// find the proposal so we can update the state after enactment
+	for _, enacted := range e.enactedProposals {
+		if enacted.ID == prop.ID {
+			enacted.State = prop.State
+			break
+		}
+	}
+	e.broker.Send(events.NewProposalEvent(ctx, *prop))
 }
 
 func (e *Engine) rejectProposal(p *types.Proposal, r types.ProposalError, errorDetails error) {

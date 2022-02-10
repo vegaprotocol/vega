@@ -62,9 +62,9 @@ func TestCheckpoint(t *testing.T) {
 		}
 	}
 
-	snapshot, err := eng.Checkpoint()
+	checkpoint, err := eng.Checkpoint()
 	require.NoError(t, err)
-	require.NotEmpty(t, snapshot)
+	require.NotEmpty(t, checkpoint)
 
 	conf := collateral.NewDefaultConfig()
 	conf.Level = encoding.LogLevel{Level: logging.DebugLevel}
@@ -82,7 +82,7 @@ func TestCheckpoint(t *testing.T) {
 	loadEng.EnableAsset(ctx, asset)
 	require.NoError(t, err)
 
-	err = loadEng.Load(ctx, snapshot)
+	err = loadEng.Load(ctx, checkpoint)
 	require.NoError(t, err)
 	loadedPartyAcc, err := loadEng.GetPartyGeneralAccount(party, testMarketAsset)
 	require.NoError(t, err)
@@ -304,6 +304,8 @@ func testSnapshotRestore(t *testing.T) {
 	newEng := getTestEngine(t, mkt)
 	defer newEng.ctrl.Finish()
 	// we expect 2 batches of events to be sent
+
+	newEng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	for k, pl := range payloads {
 		state := data[k]
 		ptype := pl.IntoProto()
@@ -331,7 +333,6 @@ func testSnapshotRestore(t *testing.T) {
 		}
 	}
 	require.Equal(t, 1, diff)
-	newEng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	require.NoError(t, newEng.IncrementBalance(ctx, last, inc))
 	// now the state should match up once again
 	for k := range hashes {

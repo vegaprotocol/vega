@@ -4,8 +4,10 @@ import (
 	"context"
 	"sort"
 
+	v1 "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
@@ -145,7 +147,7 @@ func (t *Topology) LoadState(ctx context.Context, p *types.Payload) ([]types.Sta
 	}
 }
 
-func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotation) {
+func (t *Topology) restorePendingKeyRotations(ctx context.Context, pkrs []*snapshot.PendingKeyRotation) {
 	for _, pkr := range pkrs {
 		if _, ok := t.pendingPubKeyRotations[pkr.BlockHeight]; !ok {
 			t.pendingPubKeyRotations[pkr.BlockHeight] = map[string]pendingKeyRotation{}
@@ -155,6 +157,8 @@ func (t *Topology) restorePendingKeyRotations(pkrs []*snapshot.PendingKeyRotatio
 			newPubKey:   pkr.NewPubKey,
 			newKeyIndex: pkr.NewPubKeyIndex,
 		}
+		data := t.validators[pkr.NodeId]
+		t.broker.Send(events.NewKeyRotationEvent(ctx, pkr.NodeId, data.VegaPubKey, pkr.NewPubKey, pkr.BlockHeight))
 	}
 }
 
@@ -181,9 +185,23 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		if t.isValidatorSetup && !t.isValidator {
 			t.checkValidatorDataWithSelfWallets(t.validators[node.NodeId])
 		}
+
+		t.sendValidatorUpdateEvent(ctx,
+			&v1.NodeRegistration{
+				VegaPubKey:      node.VegaPubKey,
+				EthereumAddress: node.EthereumAddress,
+				ChainPubKey:     node.TmPubKey,
+				InfoUrl:         node.InfoUrl,
+				Country:         node.Country,
+				Id:              node.NodeId,
+				Name:            node.Name,
+				AvatarUrl:       node.AvatarUrl,
+				VegaPubKeyIndex: node.VegaPubKeyIndex,
+			},
+		)
 	}
 	t.chainValidators = topology.ChainValidators[:]
-	t.restorePendingKeyRotations(topology.PendingPubKeyRotations)
+	t.restorePendingKeyRotations(ctx, topology.PendingPubKeyRotations)
 	t.validatorPerformance.deserialize(topology.ValidatorPerformance)
 	t.tss.changed = true
 	return nil

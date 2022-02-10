@@ -142,6 +142,7 @@ func NewMarketFromSnapshot(
 		priceFactor:        priceFactor,
 	}
 	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
+
 	return market, nil
 }
 

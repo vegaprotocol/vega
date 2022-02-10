@@ -60,6 +60,7 @@ func TestAccountsSnapshotRoundTrip(t *testing.T) {
 	defer snapAcc.ctrl.Finish()
 
 	// Load it in anc check that the accounts and their balances have returned
+	snapAcc.broker.EXPECT().Send(gomock.Any()).Times(2)
 	provs, err := snapAcc.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 	require.Nil(t, provs)

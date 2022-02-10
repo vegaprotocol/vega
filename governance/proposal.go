@@ -22,7 +22,7 @@ type ProposalParameters struct {
 // ToEnact wraps the proposal in a type that has a convenient interface
 // to quickly work out what change we're dealing with, and get the data.
 type ToEnact struct {
-	p  *types.Proposal
+	p  *proposal
 	m  *ToEnactMarket
 	a  *types.Asset
 	n  *types.NetworkParameter
@@ -89,8 +89,12 @@ func (t *ToEnact) NewFreeform() *ToEnactFreeform {
 	return t.f
 }
 
-func (t *ToEnact) Proposal() *types.Proposal {
+func (t *ToEnact) ProposalData() *proposal {
 	return t.p
+}
+
+func (t *ToEnact) Proposal() *types.Proposal {
+	return t.p.Proposal
 }
 
 // ToSubmit wraps the proposal in a type that has a convenient interface

@@ -161,6 +161,7 @@ func TestGovernanceSnapshotNodeProposal(t *testing.T) {
 	snapEng.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
 	// Load snapshot into a new engine
+	snapEng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	_, err = snapEng.LoadState(
 		context.Background(),
 		types.PayloadFromProto(snap),
@@ -205,6 +206,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
+	snapEng.broker.EXPECT().Send(gomock.Any()).Times(1)
 	_, err = snapEng.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 

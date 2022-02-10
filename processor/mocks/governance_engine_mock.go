@@ -52,6 +52,18 @@ func (mr *MockGovernanceEngineMockRecorder) AddVote(arg0, arg1, arg2 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddVote", reflect.TypeOf((*MockGovernanceEngine)(nil).AddVote), arg0, arg1, arg2)
 }
 
+// FinaliseEnactment mocks base method.
+func (m *MockGovernanceEngine) FinaliseEnactment(arg0 context.Context, arg1 *types.Proposal) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "FinaliseEnactment", arg0, arg1)
+}
+
+// FinaliseEnactment indicates an expected call of FinaliseEnactment.
+func (mr *MockGovernanceEngineMockRecorder) FinaliseEnactment(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FinaliseEnactment", reflect.TypeOf((*MockGovernanceEngine)(nil).FinaliseEnactment), arg0, arg1)
+}
+
 // Hash mocks base method.
 func (m *MockGovernanceEngine) Hash() []byte {
 	m.ctrl.T.Helper()

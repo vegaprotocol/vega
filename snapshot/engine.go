@@ -247,25 +247,39 @@ func (e *Engine) Start() error {
 	return e.initialiseTree()
 }
 
-// LoadHeight will restore the vega node to it's state at block height `h`
-// from a snapshots stored locally. It is an error if a snapshot is not found
-// for this height.
-func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
-	e.log.Debug("loading snapshot for height", logging.Int64("height", h))
-	// setup AVL tree from local store
-	e.initialiseTree()
-	if h < 0 {
-		return e.load(ctx)
+// Loaded will return whether we have loaded from a snapshot. If we have loaded
+// via stat-sync we will already know, if we are loading from local store then we do that
+// node.
+func (e *Engine) Loaded() (bool, error) {
+	if len(e.hash) != 0 || e.app.Height != 0 {
+		// must have already loaded by state-sync
+		// TODO could be worth delaying the application of the snapshot that we
+		// retrieve until so that exactly when/where a snapshot is loaded is the same
+		// for both local-store and state-sync
+		return true, nil
 	}
 
-	height := uint64(h)
+	startHeight := e.Config.StartHeight
+	if startHeight == 0 {
+		// starting a new chain or replaying, not loading snapshot
+		return false, nil
+	}
+
+	e.log.Debug("loading snapshot for height", logging.Int64("height", startHeight))
+	// setup AVL tree from local store
+	e.initialiseTree()
+	if startHeight < 0 {
+		return true, e.load(e.ctx)
+	}
+
+	height := uint64(startHeight)
 	versions := e.avl.AvailableVersions()
 	// descending order, because that makes most sense
 	var last, first uint64
 	for i := len(versions) - 1; i > -1; i-- {
 		version := int64(versions[i])
 		if _, err := e.avl.LoadVersion(version); err != nil {
-			return err
+			return false, err
 		}
 		app, err := types.AppStateFromTree(e.avl.ImmutableTree)
 		if err != nil {
@@ -278,7 +292,7 @@ func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
 		if app.AppState.Height == height {
 			e.version = version
 			e.last = e.avl.ImmutableTree
-			return e.load(ctx)
+			return true, e.load(e.ctx)
 		}
 		// we've gone past the specified height, we're not going to find the snapshot
 		// log and error
@@ -287,7 +301,7 @@ func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
 				logging.Uint64("snapshot-height", height),
 				logging.Uint64("max-height", first),
 			)
-			return types.ErrNoSnapshot
+			return false, types.ErrNoSnapshot
 		}
 		last = app.AppState.Height
 		if first == 0 {
@@ -299,7 +313,7 @@ func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
 		logging.Uint64("maximum-height", first),
 		logging.Uint64("minimum-height", last),
 	)
-	return types.ErrNoSnapshot
+	return false, types.ErrNoSnapshot
 }
 
 // initialiseTree connects to the snapshotdb and sets the engine's state to
@@ -424,8 +438,9 @@ func (e *Engine) applySnap(ctx context.Context) error {
 	// start with app state
 	e.wrap = ordered[types.AppSnapshot][0].GetAppState()
 	e.app = e.wrap.AppState
-	// set the context with the height + block
+	// set the context with the height + block + chainid
 	ctx = vegactx.WithTraceID(vegactx.WithBlockHeight(ctx, int64(e.app.Height)), e.app.Block)
+	ctx = vegactx.WithChainID(ctx, e.app.ChainID)
 	// we're done restoring, now save the snapshot locally, so we can provide it moving forwards
 	now := time.Unix(e.app.Time, 0)
 	// restore app state
@@ -568,6 +583,8 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 			updated = true
 		}
 	}
+
+	// update appstate separately
 	appUpdate := false
 	height, err := vegactx.BlockHeightFromContext(ctx)
 	if err != nil {
@@ -587,6 +604,16 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		e.app.Time = vNow
 		appUpdate = true
 	}
+
+	cid, err := vegactx.ChainIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if e.app.ChainID != cid {
+		e.app.ChainID = cid
+		appUpdate = true
+	}
+
 	if appUpdate {
 		if err = e.updateAppState(); err != nil {
 			return nil, err

@@ -3,7 +3,9 @@ package staking
 import (
 	"context"
 
+	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -91,20 +93,20 @@ func (a *Accounting) GetState(k string) ([]byte, []types.StateProvider, error) {
 	return data, nil, err
 }
 
-func (a *Accounting) LoadState(_ context.Context, payload *types.Payload) ([]types.StateProvider, error) {
+func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	if a.Namespace() != payload.Data.Namespace() {
 		return nil, types.ErrInvalidSnapshotNamespace
 	}
 
 	switch pl := payload.Data.(type) {
 	case *types.PayloadStakingAccounts:
-		return nil, a.restoreStakingAccounts(pl.StakingAccounts)
+		return nil, a.restoreStakingAccounts(ctx, pl.StakingAccounts)
 	default:
 		return nil, types.ErrUnknownSnapshotType
 	}
 }
 
-func (a *Accounting) restoreStakingAccounts(accounts *types.StakingAccounts) error {
+func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts) error {
 	a.hashableAccounts = make([]*StakingAccount, 0, len(accounts.Accounts))
 	for _, acc := range accounts.Accounts {
 		stakingAcc := &StakingAccount{
@@ -114,6 +116,15 @@ func (a *Accounting) restoreStakingAccounts(accounts *types.StakingAccounts) err
 		}
 		a.hashableAccounts = append(a.hashableAccounts, stakingAcc)
 		a.accounts[acc.Party] = stakingAcc
+
+		a.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: acc.Party}))
+		a.log.Debug("restoring staking account",
+			logging.String("party", acc.Party),
+			logging.Int("stakelinkings", len(acc.Events)),
+		)
+		for _, e := range acc.Events {
+			a.broker.Send(events.NewStakeLinking(ctx, *e))
+		}
 	}
 
 	a.stakingAssetTotalSupply = accounts.StakingAssetTotalSupply.Clone()

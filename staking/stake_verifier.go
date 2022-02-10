@@ -265,4 +265,5 @@ func (s *StakeVerifier) onTick(ctx context.Context, t time.Time) {
 	}
 
 	s.finalizedEvents = nil
+	s.currentTime = t
 }

@@ -33,6 +33,7 @@ type tstEngine struct {
 func getTestEngine(t *testing.T) *tstEngine {
 	t.Helper()
 	ctx, cfunc := context.WithCancel(context.Background())
+	ctx = vegactx.WithChainID(ctx, "chain-id")
 	ctrl := gomock.NewController(t)
 	time := mocks.NewMockTimeService(ctrl)
 	stats := mocks.NewMockStatsService(ctrl)
