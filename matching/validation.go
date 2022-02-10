@@ -1,14 +1,15 @@
 package matching
 
 import (
+	"encoding/hex"
+
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
 const (
-	minOrderIDLen = 22
-	maxOrderIDLen = 64
+	orderIdLen = 64
 )
 
 func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
@@ -53,8 +54,9 @@ func (b OrderBook) validateOrder(orderMessage *types.Order) (err error) {
 }
 
 func validateOrderID(orderID string) error {
+	_, err := hex.DecodeString(orderID)
 	idLen := len(orderID)
-	if idLen < minOrderIDLen || idLen > maxOrderIDLen {
+	if err != nil || idLen != orderIdLen {
 		return types.ErrInvalidOrderID
 	}
 	return nil
