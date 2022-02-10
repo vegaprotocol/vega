@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -59,7 +61,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.Nil(t, o2conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
-	o3conf, err := tm.market.CancelOrder(ctx, "someparty", "someorder")
+	o3conf, err := tm.market.CancelOrder(ctx, "someparty", "someorder", randomSha256Hash())
 	assert.Nil(t, o3conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
@@ -69,7 +71,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		SizeDelta: 10,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, "party-A")
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "party-A", randomSha256Hash())
 	assert.Nil(t, amendConf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
@@ -87,7 +89,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lpsub, "someparty", "lpid1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lpsub, "someparty", "lpid1", randomSha256Hash())
 
 	// we expect an error as this lp may be stupid
 	// but not equal to the trading not allowed one
@@ -157,7 +159,7 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
+	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), randomSha256Hash()), now.Add(40*time.Second))
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 }
 
@@ -192,7 +194,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
+	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), randomSha256Hash()), now.Add(40*time.Second))
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 
 	addAccountWithAmount(tm, "someparty", 100000000)

@@ -79,7 +79,6 @@ func (e *Engine) restoreMarket(ctx context.Context, em *types.ExecMarket) (*Mark
 		e.oracle,
 		now,
 		e.broker,
-		e.idgen,
 		e.stateVarEngine,
 		ad,
 	)
@@ -130,10 +129,7 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 	pl := types.Payload{
 		Data: &types.PayloadExecutionMarkets{
 			ExecutionMarkets: &types.ExecutionMarkets{
-				Markets:   mkts,
-				Batches:   e.idgen.batches,
-				Orders:    e.idgen.orders,
-				Proposals: e.idgen.proposals,
+				Markets: mkts,
 			},
 		},
 	}
@@ -143,7 +139,6 @@ func (e *Engine) getSerialiseSnapshotAndHash() (snapshot, hash []byte, providers
 		return nil, nil, nil, err
 	}
 
-	e.idgen.SnapshotCreated()
 	h := crypto.Hash(s)
 
 	e.snapshotSerialised = s
@@ -162,7 +157,7 @@ func (e *Engine) changed() bool {
 		}
 	}
 
-	return e.idgen.Changed()
+	return false
 }
 
 func (e *Engine) Namespace() types.SnapshotNamespace {
@@ -191,18 +186,9 @@ func (e *Engine) GetState(_ string) ([]byte, []types.StateProvider, error) {
 	return serialised, providers, nil
 }
 
-func (e *Engine) restoreIDGenerator(em *types.ExecutionMarkets) {
-	e.idgen.batches = em.Batches
-	e.idgen.proposals = em.Proposals
-	e.idgen.orders = em.Orders
-}
-
 func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types.StateProvider, error) {
 	switch pl := payload.Data.(type) {
 	case *types.PayloadExecutionMarkets:
-
-		e.restoreIDGenerator(pl.ExecutionMarkets)
-
 		providers, err := e.restoreMarketsStates(ctx, pl.ExecutionMarkets.Markets)
 		if err != nil {
 			return nil, fmt.Errorf("failed to restore markets states: %w", err)

@@ -1,7 +1,12 @@
 package matching_test
 
 import (
+	"encoding/hex"
+	"math/rand"
+	"strings"
 	"testing"
+
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
@@ -249,7 +254,7 @@ func testGTCActive(t *testing.T) {
 func testGTCStoppedNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -280,7 +285,7 @@ func testGTCStoppedNotFilled(t *testing.T) {
 func testGTCCancelledNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -311,7 +316,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -335,7 +340,7 @@ func testGTCActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:            "V0000000032-0000000010",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID2,
@@ -357,7 +362,7 @@ func testGTCCancelledPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -406,7 +411,7 @@ func testGTCStoppedPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -461,7 +466,7 @@ func testGTCFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		ID:            "V0000000032-0000000009",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID1,
@@ -478,7 +483,7 @@ func testGTCFilled(t *testing.T) {
 
 	// now place our GTC order to be filled
 	order := types.Order{
-		ID:            "V0000000032-0000000010",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID2,
@@ -499,7 +504,7 @@ func testGTCFilled(t *testing.T) {
 func testGTTActive(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -526,7 +531,7 @@ func testGTTActive(t *testing.T) {
 func testGTTStoppedNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -558,7 +563,7 @@ func testGTTStoppedNotFilled(t *testing.T) {
 func testGTTCancelledNotFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -590,7 +595,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -615,7 +620,7 @@ func testGTTActivePartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:            "V0000000032-0000000009",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID2,
@@ -638,7 +643,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -663,7 +668,7 @@ func testGTTCancelledPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:            "V0000000032-0000000009",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID2,
@@ -690,7 +695,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 	market := "testMarket"
 	partyID1 := "p1"
 	partyID2 := "p2"
-	orderID := "v0000000000000-0000001"
+	orderID := randomSha256Hash()
 
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
@@ -715,7 +720,7 @@ func testGTTStoppedPartiallyFilled(t *testing.T) {
 
 	// now place our order which will consume some of the first order
 	order := types.Order{
-		ID:            "V0000000032-0000000009",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID2,
@@ -748,7 +753,7 @@ func testGTTFilled(t *testing.T) {
 
 	// place a first order to sit in the book
 	order1 := types.Order{
-		ID:            "V0000000032-0000000009",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID1,
@@ -766,7 +771,7 @@ func testGTTFilled(t *testing.T) {
 
 	// now place our GTT order to be filled
 	order := types.Order{
-		ID:            "V0000000032-0000000010",
+		ID:            randomSha256Hash(),
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
 		Party:         partyID2,
@@ -783,6 +788,12 @@ func testGTTFilled(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(confirm.Trades))
 	assert.Equal(t, types.OrderStatusFilled, order.Status)
+}
+
+func randomSha256Hash() string {
+	data := make([]byte, 10)
+	rand.Read(data)
+	return strings.ToUpper(hex.EncodeToString(crypto.Hash(data)))
 }
 
 type marketPositionFake struct {

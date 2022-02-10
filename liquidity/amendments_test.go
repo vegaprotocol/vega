@@ -2,8 +2,12 @@ package liquidity_test
 
 import (
 	"context"
+	"encoding/hex"
+	"math/rand"
 	"testing"
 	"time"
+
+	"code.vegaprotocol.io/vega/libs/crypto"
 
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
@@ -40,7 +44,7 @@ func testCanAmend(t *testing.T) {
 
 	// initially submit our provision to be amended, does not matter what's in
 	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1")
+	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1", randomSha256Hash())
 	assert.NoError(t, err)
 
 	lpa := getTestAmendSimpleSubmission()
@@ -62,6 +66,12 @@ func testCanAmend(t *testing.T) {
 	lpa = getTestAmendSimpleSubmission()
 	lpa.Sells = nil
 	assert.NoError(t, tng.engine.CanAmend(lpa, party))
+}
+
+func randomSha256Hash() string {
+	data := make([]byte, 10)
+	rand.Read(data)
+	return hex.EncodeToString(crypto.Hash(data))
 }
 
 func getTestSubmitSimpleSubmission() *types.LiquidityProvisionSubmission {

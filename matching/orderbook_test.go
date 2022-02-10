@@ -143,9 +143,14 @@ func cancelAllOrderForAParty(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
+	orderId1 := randomSha256Hash()
+	orderId2 := randomSha256Hash()
+	orderId3 := randomSha256Hash()
+	orderId4 := randomSha256Hash()
+
 	orders := []*types.Order{
 		{
-			ID:            "1111111111111111111111",
+			ID:            orderId1,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -158,7 +163,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "2222222222222222222222",
+			ID:            orderId2,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -171,7 +176,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "3333333333333333333333",
+			ID:            orderId3,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -184,7 +189,7 @@ func cancelAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "4444444444444444444444",
+			ID:            orderId4,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -206,9 +211,9 @@ func cancelAllOrderForAParty(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, confs, 3)
 	expectedIDs := map[string]struct{}{
-		"1111111111111111111111": {},
-		"2222222222222222222222": {},
-		"4444444444444444444444": {},
+		orderId1: {},
+		orderId2: {},
+		orderId4: {},
 	}
 	for _, conf := range confs {
 		if _, ok := expectedIDs[conf.Order.ID]; ok {
@@ -223,9 +228,15 @@ func getAllOrderForAParty(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
+
+	orderId1 := randomSha256Hash()
+	orderId2 := randomSha256Hash()
+	orderId3 := randomSha256Hash()
+	orderId4 := randomSha256Hash()
+
 	orders := []*types.Order{
 		{
-			ID:            "1111111111111111111111",
+			ID:            orderId1,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -238,7 +249,7 @@ func getAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "2222222222222222222222",
+			ID:            orderId2,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -251,7 +262,7 @@ func getAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "3333333333333333333333",
+			ID:            orderId3,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -264,7 +275,7 @@ func getAllOrderForAParty(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "4444444444444444444444",
+			ID:            orderId4,
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -285,9 +296,9 @@ func getAllOrderForAParty(t *testing.T) {
 	ordersLs := book.ob.GetOrdersPerParty("A")
 	assert.Len(t, ordersLs, 3)
 	expectedIDs := map[string]struct{}{
-		"1111111111111111111111": {},
-		"2222222222222222222222": {},
-		"4444444444444444444444": {},
+		orderId1: {},
+		orderId2: {},
+		orderId4: {},
 	}
 	for _, o := range ordersLs {
 		if _, ok := expectedIDs[o.ID]; ok {
@@ -304,7 +315,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 	defer book.Finish()
 	orders := []*types.Order{
 		{
-			ID:            "1111111111111111111111",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -317,7 +328,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "2222222222222222222222",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -330,7 +341,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "3333333333333333333333",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -343,7 +354,7 @@ func partyWithNoOrderCancelNothing(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "4444444444444444444444",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -372,7 +383,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            "V0000000032-0000000009",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -385,7 +396,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "V0000000032-0000000010",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -398,7 +409,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "V0000000032-0000000011",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -411,7 +422,7 @@ func testBestBidPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "V0000000032-0000000012",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -446,7 +457,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            "V0000000032-0000000009",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -459,7 +470,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "V0000000032-0000000010",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -472,7 +483,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "V0000000032-0000000011",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -485,7 +496,7 @@ func testBestOfferPriceAndVolume(t *testing.T) {
 			TimeInForce:   types.OrderTimeInForceGTC,
 		},
 		{
-			ID:            "V0000000032-0000000012",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -520,7 +531,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            "V0000000032-0000000009",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -534,7 +545,7 @@ func getClosePNLIncompleteBuy(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            "V0000000032-0000000010",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -579,7 +590,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            "V0000000032-0000000009",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -593,7 +604,7 @@ func getClosePNLIncompleteSell(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            "V0000000032-0000000010",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -638,7 +649,7 @@ func getClosePNLBuy(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            "V0000000032-0000000009",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -652,7 +663,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            "V0000000032-0000000010",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -666,7 +677,7 @@ func getClosePNLBuy(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            "V0000000032-0000000011",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -709,7 +720,7 @@ func getClosePNLSell(t *testing.T) {
 	// 3 orders of size 1, 3 different prices
 	orders := []*types.Order{
 		{
-			ID:            "V0000000032-0000000009",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -723,7 +734,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            "V0000000032-0000000010",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -737,7 +748,7 @@ func getClosePNLSell(t *testing.T) {
 			CreatedAt:     0,
 		},
 		{
-			ID:            "V0000000032-0000000011",
+			ID:            randomSha256Hash(),
 			Status:        types.OrderStatusActive,
 			Type:          types.OrderTypeLimit,
 			MarketID:      market,
@@ -781,6 +792,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 	defer book.Finish()
 	currentTimestamp := getCurrentUtcTimestampNano()
 
+	orderId := randomSha256Hash()
 	order1 := types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -793,7 +805,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Remaining:     100,
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     currentTimestamp,
-		ID:            "v0000000000000-0000001",
+		ID:            orderId,
 	}
 	order2 := types.Order{
 		Status:        types.OrderStatusActive,
@@ -807,7 +819,7 @@ func TestOrderBook_CancelReturnsTheOrderFromTheBook(t *testing.T) {
 		Remaining:     1, // use a wrong remaining here to get the order from the book
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     currentTimestamp,
-		ID:            "v0000000000000-0000001",
+		ID:            orderId,
 	}
 
 	trades, getErr := book.ob.GetTrades(&order1)
@@ -1166,7 +1178,7 @@ func TestOrderBook_SubmitOrderInvalidMarket(t *testing.T) {
 		Remaining:     100,
 		TimeInForce:   types.OrderTimeInForceGTC,
 		CreatedAt:     0,
-		ID:            fmt.Sprintf("V%010d-%010d", 1, 1),
+		ID:            randomSha256Hash(),
 	}
 
 	trades, getErr := book.ob.GetTrades(newOrder)
@@ -1191,7 +1203,7 @@ func TestOrderBook_CancelSellOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	id := fmt.Sprintf("V%010d-%010d", 1, 1)
+	id := randomSha256Hash()
 	newOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -1238,7 +1250,7 @@ func TestOrderBook_CancelBuyOrder(t *testing.T) {
 	logger.Debug("BEGIN CANCELLING VALID ORDER")
 
 	// Arrange
-	id := fmt.Sprintf("V%010d-%010d", 1, 1)
+	id := randomSha256Hash()
 	newOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -1284,7 +1296,7 @@ func TestOrderBook_CancelOrderByID(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN CANCELLING VALID ORDER BY ID")
 
-	id := fmt.Sprintf("V%010d-%010d", 1, 1)
+	id := randomSha256Hash()
 	newOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -1336,7 +1348,7 @@ func TestOrderBook_CancelOrderMarketMismatch(t *testing.T) {
 		Status:    types.OrderStatusActive,
 		Type:      types.OrderTypeLimit,
 		MarketID:  market,
-		ID:        fmt.Sprintf("V%010d-%010d", 1, 1),
+		ID:        randomSha256Hash(),
 		Party:     "A",
 		Size:      100,
 		Remaining: 100,
@@ -2157,8 +2169,9 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 	defer logger.Sync()
 	logger.Debug("BEGIN PARTIAL FILL IOC ORDER")
 
+	orderId := randomSha256Hash()
 	newOrder := &types.Order{
-		ID:            "V0000000032-0000000009",
+		ID:            orderId,
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
 		MarketID:      market,
@@ -2178,11 +2191,11 @@ func TestOrderBook_PartialFillIOCOrder(t *testing.T) {
 
 	assert.Equal(t, nil, err)
 	assert.NotNil(t, confirmation)
-	assert.Equal(t, "V0000000032-0000000009", confirmation.Order.ID)
+	assert.Equal(t, orderId, confirmation.Order.ID)
 	assert.Equal(t, 0, len(confirmation.Trades))
 	assert.Equal(t, len(trades), len(confirmation.Trades))
 
-	iocOrderID := "1000000000000000000000" // Must be 22 characters
+	iocOrderID := randomSha256Hash()
 	iocOrder := &types.Order{
 		Status:        types.OrderStatusActive,
 		Type:          types.OrderTypeLimit,
@@ -3028,8 +3041,8 @@ func TestOrderBook_GetTradesInLineWithSubmitOrderDuringAuction(t *testing.T) {
 
 	orders := book.ob.EnterAuction()
 	assert.Equal(t, 0, len(orders))
-	order1Id := "1000000000000000000000" // Must be 22 characters
-	order2Id := "1000000000000000000001" // Must be 22 characters
+	order1Id := randomSha256Hash()
+	order2Id := randomSha256Hash()
 
 	order1 := &types.Order{
 		Status:        types.OrderStatusActive,
@@ -3256,22 +3269,22 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 	matchingPrice := uint64(100)
 	party1 := "party1"
 	party2 := "party2"
-	makeOrder(t, book, market, "needTwentyTwoCharacts1", types.SideBuy, matchingPrice-1, party1, 1)
+	makeOrder(t, book, market, randomSha256Hash(), types.SideBuy, matchingPrice-1, party1, 1)
 
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, "needTwentyTwoCharacts2", types.SideSell, matchingPrice+1, party2, 1)
+	makeOrder(t, book, market, randomSha256Hash(), types.SideSell, matchingPrice+1, party2, 1)
 
 	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, "needTwentyTwoCharacts3", types.SideBuy, matchingPrice, party1, 1)
+	makeOrder(t, book, market, randomSha256Hash(), types.SideBuy, matchingPrice, party1, 1)
 
 	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, "needTwentyTwoCharacts4", types.SideSell, matchingPrice, party2, 1)
+	makeOrder(t, book, market, randomSha256Hash(), types.SideSell, matchingPrice, party2, 1)
 
 	require.Equal(t, true, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, true, book.ob.CanUncross())
@@ -3283,12 +3296,12 @@ func TestOrderBook_BidAndAskPresentAfterAuction(t *testing.T) {
 
 	require.Equal(t, int64(0), book.ob.GetTotalNumberOfOrders())
 
-	makeOrder(t, book, market, "needTwentyTwoCharacts5", types.SideBuy, matchingPrice, party1, 1)
+	makeOrder(t, book, market, randomSha256Hash(), types.SideBuy, matchingPrice, party1, 1)
 
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
 
-	makeOrder(t, book, market, "needTwentyTwoCharacts6", types.SideSell, matchingPrice, party2, 1)
+	makeOrder(t, book, market, randomSha256Hash(), types.SideSell, matchingPrice, party2, 1)
 
 	require.Equal(t, false, book.ob.BidAndAskPresentAfterAuction())
 	require.Equal(t, false, book.ob.CanUncross())
