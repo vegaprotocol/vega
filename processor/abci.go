@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.vegaprotocol.io/vega/idgeneration"
+
 	"code.vegaprotocol.io/protos/commands"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	vgfs "code.vegaprotocol.io/shared/libs/fs"
@@ -1099,14 +1101,9 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deter
 		return err
 	}
 
-	liquidityProvisionId := deterministicId
-
-	idBytes, err := hex.DecodeString(deterministicId)
-	if err != nil {
-		return fmt.Errorf("failed to generated liquidity provision id:%w", err)
-	}
-
-	deterministicId = hex.EncodeToString(vgcrypto.Hash(append(idBytes, []byte("SALT")...)))
+	idGen := idgeneration.NewDeterministicIDGenerator(deterministicId)
+	liquidityProvisionId := idGen.NextID()
+	deterministicId = idGen.NextID()
 
 	partyID := tx.Party()
 

@@ -133,8 +133,8 @@ func testSubmissionCRUD(t *testing.T) {
 
 	order1 := &types.Order{}
 	order2 := &types.Order{}
-	idGen.SetID(order1)
-	idGen.SetID(order2)
+	order1.ID = idGen.NextID()
+	order2.ID = idGen.NextID()
 
 	expected := &types.LiquidityProvision{
 		ID:               "some-id-1",

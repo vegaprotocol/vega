@@ -5,12 +5,10 @@ import (
 	"strings"
 
 	"code.vegaprotocol.io/vega/libs/crypto"
-	"code.vegaprotocol.io/vega/types"
 )
 
 // idGenerator no mutex required, markets work deterministically, and sequentially.
 type idGenerator struct {
-	rootId      string
 	nextIdBytes []byte
 }
 
@@ -22,12 +20,16 @@ func NewDeterministicIDGenerator(rootId string) *idGenerator {
 	}
 
 	return &idGenerator{
-		rootId:      rootId,
 		nextIdBytes: nextIdBytes,
 	}
 }
 
-func (i *idGenerator) SetID(order *types.Order) {
-	order.ID = strings.ToUpper(hex.EncodeToString(i.nextIdBytes))
+func (i *idGenerator) NextID() string {
+	if i == nil {
+		panic("id generator instance is not initialised")
+	}
+
+	nextId := strings.ToUpper(hex.EncodeToString(i.nextIdBytes))
 	i.nextIdBytes = crypto.Hash(i.nextIdBytes)
+	return nextId
 }

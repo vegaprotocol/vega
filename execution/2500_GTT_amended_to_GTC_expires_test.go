@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"math/rand"
+	"strings"
 	"testing"
 	"time"
 
@@ -55,5 +56,5 @@ func TestGTTAmendToGTCAmendInPlace_OrderGetExpired(t *testing.T) {
 func randomSha256Hash() string {
 	data := make([]byte, 10)
 	rand.Read(data)
-	return hex.EncodeToString(crypto.Hash(data))
+	return strings.ToUpper(hex.EncodeToString(crypto.Hash(data)))
 }

@@ -220,11 +220,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
 func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicId string) (err error) {
 	m.idgen = idgeneration.NewDeterministicIDGenerator(deterministicId)
-	m.liquidity.SetIdGen(m.idgen)
-	defer func() {
-		m.idgen = nil
-		m.liquidity.SetIdGen(nil)
-	}()
+	defer func() { m.idgen = nil }()
 
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
@@ -1097,7 +1093,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
-	_, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party)
+	_, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party, m.idgen)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))
@@ -1181,7 +1177,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
-	cancels, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party)
+	cancels, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party, m.idgen)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))

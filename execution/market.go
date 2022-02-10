@@ -1193,7 +1193,7 @@ func (m *Market) SubmitOrder(
 		return nil, ErrTradingNotAllowed
 	}
 
-	m.idgen.SetID(order)
+	order.ID = m.idgen.NextID()
 	conf, orderUpdates, err := m.submitOrder(ctx, order)
 	if err != nil {
 		return nil, err
@@ -1774,7 +1774,7 @@ func (m *Market) resolveClosedOutParties(ctx context.Context, distressedMarginEv
 	}
 	no.Size = no.Remaining
 
-	m.idgen.SetID(&no)
+	no.ID = m.idgen.NextID()
 	// we need to buy, specify side + max price
 	if networkPos < 0 {
 		no.Side = types.SideBuy
@@ -1993,7 +1993,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 		order.Side = nSide
 		order.Status = types.OrderStatusFilled // An order with no remaining must be filled
 
-		m.idgen.SetID(&order)
+		order.ID = m.idgen.NextID()
 
 		// this is the party order
 		partyOrder := types.Order{
@@ -2011,7 +2011,7 @@ func (m *Market) zeroOutNetwork(ctx context.Context, parties []events.MarketPosi
 			Type:          types.OrderTypeNetwork,
 		}
 
-		m.idgen.SetID(&partyOrder)
+		partyOrder.ID = m.idgen.NextID()
 
 		// store the party order, too
 		m.broker.Send(events.NewOrderEvent(ctx, &partyOrder))

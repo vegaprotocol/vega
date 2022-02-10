@@ -71,7 +71,7 @@ type Assets interface {
 }
 
 type IDGenerator interface {
-	SetID(*types.Order)
+	NextID() string
 }
 
 // Engine is the execution engine.
@@ -276,7 +276,8 @@ func (e *Engine) IsEligibleForProposerBonus(marketID string, value *num.Uint) bo
 
 // SubmitMarketWithLiquidityProvision is submitting a market through
 // the usual governance process.
-func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party, lpID,
+func (e *Engine) SubmitMarketWithLiquidityProvision(ctx context.Context, marketConfig *types.Market, lp *types.LiquidityProvisionSubmission, party,
+	lpID,
 	deterministicId string) error {
 	if e.log.IsDebug() {
 		e.log.Debug("submit market with liquidity provision",

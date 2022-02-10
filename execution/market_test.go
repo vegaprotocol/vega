@@ -650,6 +650,43 @@ func TestMarketNotActive(t *testing.T) {
 	tm.EventHasBeenEmitted(t, expectedEvent)
 }
 
+func TestSubmittedOrderIdIsTheDeterministicId(t *testing.T) {
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(20, 0)
+	tm := getTestMarket(t, now, closingAt, nil, nil)
+	defer tm.ctrl.Finish()
+
+	party1 := "party1"
+	order := &types.Order{
+		Type:          types.OrderTypeLimit,
+		TimeInForce:   types.OrderTimeInForceGTT,
+		Status:        types.OrderStatusActive,
+		ID:            "",
+		Side:          types.SideBuy,
+		Party:         party1,
+		MarketID:      tm.market.GetID(),
+		Size:          100,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Remaining:     100,
+		CreatedAt:     now.UnixNano(),
+		ExpiresAt:     closingAt.UnixNano(),
+		Reference:     "party1-buy-order",
+	}
+	addAccount(tm, party1)
+
+	deterministicId := randomSha256Hash()
+	conf, err := tm.market.Market.SubmitOrder(context.Background(), order.IntoSubmission(), order.Party, deterministicId)
+	if err != nil {
+		t.Fatalf("failed to submit order:%s", err)
+	}
+
+	assert.Equal(t, deterministicId, conf.Order.ID)
+
+	event := tm.orderEvents[0].(*events.Order)
+	assert.Equal(t, event.Order().Id, deterministicId)
+}
+
 func TestMarketWithTradeClosing(t *testing.T) {
 	party1 := "party1"
 	party2 := "party2"

@@ -46,7 +46,7 @@ type PriceMonitor interface {
 
 // IDGen is an id generator for orders.
 type IDGen interface {
-	SetID(*types.Order)
+	NextID() string
 }
 
 type StateVarEngine interface {
@@ -64,7 +64,6 @@ type Engine struct {
 	marketID       string
 	log            *logging.Logger
 	broker         Broker
-	idGen          IDGen
 	suppliedEngine *supplied.Engine
 
 	currentTime             time.Time
@@ -125,10 +124,6 @@ func NewEngine(config Config,
 	}
 
 	return e
-}
-
-func (e *Engine) SetIdGen(gen IDGen) {
-	e.idGen = gen
 }
 
 func (e *Engine) SetGetStaticPricesFunc(f func() (*num.Uint, *num.Uint, error)) {
@@ -369,8 +364,7 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // the CommitmentAmount is set to 0.
 func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, lpId,
 	deterministicId string) error {
-	e.idGen = idgeneration.NewDeterministicIDGenerator(deterministicId)
-	defer func() { e.idGen = nil }()
+	idGen := idgeneration.NewDeterministicIDGenerator(deterministicId)
 
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
 		e.rejectLiquidityProvisionSubmission(ctx, lps, party, lpId)
@@ -408,7 +402,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells)
+	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells, idGen)
 
 	return nil
 }
@@ -417,13 +411,14 @@ func (e *Engine) setShapesReferencesOnLiquidityProvision(
 	lp *types.LiquidityProvision,
 	buys []*types.LiquidityOrder,
 	sells []*types.LiquidityOrder,
+	idGen IDGen,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
 	order := &types.Order{}
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
 	for _, buy := range buys {
-		e.idGen.SetID(order)
+		order.ID = idGen.NextID()
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: buy,
@@ -432,7 +427,7 @@ func (e *Engine) setShapesReferencesOnLiquidityProvision(
 
 	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(sells))
 	for _, sell := range sells {
-		e.idGen.SetID(order)
+		order.ID = idGen.NextID()
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: sell,
