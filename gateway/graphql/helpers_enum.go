@@ -491,10 +491,6 @@ func convertProposalRejectionReasonFromProto(x types.ProposalError) (ProposalRej
 		return ProposalRejectionReasonNoProduct, nil
 	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_PRODUCT:
 		return ProposalRejectionReasonUnsupportedProduct, nil
-	case types.ProposalError_PROPOSAL_ERROR_INVALID_FUTURE_PRODUCT_TIMESTAMP:
-		return ProposalRejectionReasonInvalidFutureMaturityTimestamp, nil
-	case types.ProposalError_PROPOSAL_ERROR_PRODUCT_MATURITY_IS_PASSED:
-		return ProposalRejectionReasonProductMaturityIsPassed, nil
 	case types.ProposalError_PROPOSAL_ERROR_NO_TRADING_MODE:
 		return ProposalRejectionReasonNoTradingMode, nil
 	case types.ProposalError_PROPOSAL_ERROR_UNSUPPORTED_TRADING_MODE:

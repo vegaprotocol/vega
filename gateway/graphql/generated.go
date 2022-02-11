@@ -255,7 +255,6 @@ type ComplexityRoot struct {
 	}
 
 	Future struct {
-		Maturity                        func(childComplexity int) int
 		OracleSpecBinding               func(childComplexity int) int
 		OracleSpecForSettlementPrice    func(childComplexity int) int
 		OracleSpecForTradingTermination func(childComplexity int) int
@@ -264,7 +263,6 @@ type ComplexityRoot struct {
 	}
 
 	FutureProduct struct {
-		Maturity                        func(childComplexity int) int
 		OracleSpecBinding               func(childComplexity int) int
 		OracleSpecForSettlementPrice    func(childComplexity int) int
 		OracleSpecForTradingTermination func(childComplexity int) int
@@ -396,7 +394,6 @@ type ComplexityRoot struct {
 		TradableInstrument            func(childComplexity int) int
 		Trades                        func(childComplexity int, skip *int, first *int, last *int) int
 		TradingMode                   func(childComplexity int) int
-		TradingModeConfig             func(childComplexity int) int
 	}
 
 	MarketData struct {
@@ -492,7 +489,6 @@ type ComplexityRoot struct {
 		Instrument     func(childComplexity int) int
 		Metadata       func(childComplexity int) int
 		RiskParameters func(childComplexity int) int
-		TradingMode    func(childComplexity int) int
 	}
 
 	NewMarketCommitment struct {
@@ -1072,7 +1068,6 @@ type MarginLevelsResolver interface {
 type MarketResolver interface {
 	Name(ctx context.Context, obj *vega.Market) (string, error)
 
-	TradingModeConfig(ctx context.Context, obj *vega.Market) (TradingMode, error)
 	DecimalPlaces(ctx context.Context, obj *vega.Market) (int, error)
 	OpeningAuction(ctx context.Context, obj *vega.Market) (*AuctionDuration, error)
 	PriceMonitoringSettings(ctx context.Context, obj *vega.Market) (*PriceMonitoringSettings, error)
@@ -1149,7 +1144,6 @@ type NewMarketResolver interface {
 	DecimalPlaces(ctx context.Context, obj *vega.NewMarket) (int, error)
 	RiskParameters(ctx context.Context, obj *vega.NewMarket) (RiskModel, error)
 	Metadata(ctx context.Context, obj *vega.NewMarket) ([]string, error)
-	TradingMode(ctx context.Context, obj *vega.NewMarket) (TradingMode, error)
 	Commitment(ctx context.Context, obj *vega.NewMarket) (*vega.NewMarketCommitment, error)
 }
 type NodeResolver interface {
@@ -1999,13 +1993,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Filter.Key(childComplexity), true
 
-	case "Future.maturity":
-		if e.complexity.Future.Maturity == nil {
-			break
-		}
-
-		return e.complexity.Future.Maturity(childComplexity), true
-
 	case "Future.oracleSpecBinding":
 		if e.complexity.Future.OracleSpecBinding == nil {
 			break
@@ -2040,13 +2027,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Future.SettlementAsset(childComplexity), true
-
-	case "FutureProduct.maturity":
-		if e.complexity.FutureProduct.Maturity == nil {
-			break
-		}
-
-		return e.complexity.FutureProduct.Maturity(childComplexity), true
 
 	case "FutureProduct.oracleSpecBinding":
 		if e.complexity.FutureProduct.OracleSpecBinding == nil {
@@ -2659,13 +2639,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Market.TradingMode(childComplexity), true
 
-	case "Market.tradingModeConfig":
-		if e.complexity.Market.TradingModeConfig == nil {
-			break
-		}
-
-		return e.complexity.Market.TradingModeConfig(childComplexity), true
-
 	case "MarketData.auctionEnd":
 		if e.complexity.MarketData.AuctionEnd == nil {
 			break
@@ -3099,13 +3072,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NewMarket.RiskParameters(childComplexity), true
-
-	case "NewMarket.tradingMode":
-		if e.complexity.NewMarket.TradingMode == nil {
-			break
-		}
-
-		return e.complexity.NewMarket.TradingMode(childComplexity), true
 
 	case "NewMarketCommitment.buys":
 		if e.complexity.NewMarketCommitment.Buys == nil {
@@ -6430,7 +6396,6 @@ type DiscreteTrading {
   tickSize: String!
 }
 
-union TradingMode = ContinuousTrading | DiscreteTrading
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
@@ -6487,9 +6452,6 @@ union Oracle = EthereumEvent
 
 "A Future product"
 type Future {
-  "RFC3339Nano maturity date of the product"
-  maturity: String!
-
   "The name of the asset (string)"
   settlementAsset: Asset!
 
@@ -6796,8 +6758,6 @@ type Market {
   "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
 
-  "Definitions and required configuration for the trading mode"
-  tradingModeConfig: TradingMode!
 
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
@@ -7802,8 +7762,6 @@ enum AccountType {
 }
 
 type FutureProduct {
-  "RFC3339Nano time when the future products matures"
-  maturity: String!
   "Product asset ID"
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
@@ -7859,8 +7817,6 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "Trading mode"
-  tradingMode: TradingMode!
   "The liquidity commitment submitted with the new market"
   commitment: NewMarketCommitment
 }
@@ -12680,41 +12636,6 @@ func (ec *executionContext) _Filter_conditions(ctx context.Context, field graphq
 	return ec.marshalOCondition2ᚕᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋoraclesᚋv1ᚐConditionᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Future_maturity(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Future",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Maturity, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Future_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *vega.Future) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -12888,41 +12809,6 @@ func (ec *executionContext) _Future_oracleSpecBinding(ctx context.Context, field
 	res := resTmp.(*vega.OracleSpecToFutureBinding)
 	fc.Result = res
 	return ec.marshalNOracleSpecToFutureBinding2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐOracleSpecToFutureBinding(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _FutureProduct_maturity(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "FutureProduct",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Maturity, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FutureProduct_settlementAsset(ctx context.Context, field graphql.CollectedField, obj *vega.FutureProduct) (ret graphql.Marshaler) {
@@ -15285,41 +15171,6 @@ func (ec *executionContext) _Market_tradableInstrument(ctx context.Context, fiel
 	res := resTmp.(*vega.TradableInstrument)
 	fc.Result = res
 	return ec.marshalNTradableInstrument2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚐTradableInstrument(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Market_tradingModeConfig(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Market",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Market().TradingModeConfig(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(TradingMode)
-	fc.Result = res
-	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTradingMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Market_decimalPlaces(ctx context.Context, field graphql.CollectedField, obj *vega.Market) (ret graphql.Marshaler) {
@@ -17947,41 +17798,6 @@ func (ec *executionContext) _NewMarket_metadata(ctx context.Context, field graph
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _NewMarket_tradingMode(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "NewMarket",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.NewMarket().TradingMode(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(TradingMode)
-	fc.Result = res
-	return ec.marshalNTradingMode2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTradingMode(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMarket_commitment(ctx context.Context, field graphql.CollectedField, obj *vega.NewMarket) (ret graphql.Marshaler) {
@@ -30584,29 +30400,6 @@ func (ec *executionContext) _RiskModel(ctx context.Context, sel ast.SelectionSet
 	}
 }
 
-func (ec *executionContext) _TradingMode(ctx context.Context, sel ast.SelectionSet, obj TradingMode) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case ContinuousTrading:
-		return ec._ContinuousTrading(ctx, sel, &obj)
-	case *ContinuousTrading:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._ContinuousTrading(ctx, sel, obj)
-	case DiscreteTrading:
-		return ec._DiscreteTrading(ctx, sel, &obj)
-	case *DiscreteTrading:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._DiscreteTrading(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 func (ec *executionContext) _TransferKind(ctx context.Context, sel ast.SelectionSet, obj TransferKind) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -31170,7 +30963,7 @@ func (ec *executionContext) _Condition(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var continuousTradingImplementors = []string{"ContinuousTrading", "TradingMode"}
+var continuousTradingImplementors = []string{"ContinuousTrading"}
 
 func (ec *executionContext) _ContinuousTrading(ctx context.Context, sel ast.SelectionSet, obj *ContinuousTrading) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, continuousTradingImplementors)
@@ -31367,7 +31160,7 @@ func (ec *executionContext) _Deposit(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var discreteTradingImplementors = []string{"DiscreteTrading", "TradingMode"}
+var discreteTradingImplementors = []string{"DiscreteTrading"}
 
 func (ec *executionContext) _DiscreteTrading(ctx context.Context, sel ast.SelectionSet, obj *DiscreteTrading) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, discreteTradingImplementors)
@@ -31814,11 +31607,6 @@ func (ec *executionContext) _Future(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Future")
-		case "maturity":
-			out.Values[i] = ec._Future_maturity(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "settlementAsset":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -31875,11 +31663,6 @@ func (ec *executionContext) _FutureProduct(ctx context.Context, sel ast.Selectio
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("FutureProduct")
-		case "maturity":
-			out.Values[i] = ec._FutureProduct_maturity(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
 		case "settlementAsset":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -32725,20 +32508,6 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "tradingModeConfig":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Market_tradingModeConfig(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
 		case "decimalPlaces":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -33752,20 +33521,6 @@ func (ec *executionContext) _NewMarket(ctx context.Context, sel ast.SelectionSet
 					}
 				}()
 				res = ec._NewMarket_metadata(ctx, field, obj)
-				return res
-			})
-		case "tradingMode":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._NewMarket_tradingMode(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			})
 		case "commitment":
@@ -39273,16 +39028,6 @@ func (ec *executionContext) unmarshalNTradeType2codeᚗvegaprotocolᚗioᚋdata�
 
 func (ec *executionContext) marshalNTradeType2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTradeType(ctx context.Context, sel ast.SelectionSet, v TradeType) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNTradingMode2codeᚗvegaprotocolᚗioᚋdataᚑnodeᚋgatewayᚋgraphqlᚐTradingMode(ctx context.Context, sel ast.SelectionSet, v TradingMode) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._TradingMode(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNTransfer2ᚖcodeᚗvegaprotocolᚗioᚋprotosᚋvegaᚋeventsᚋv1ᚐTransfer(ctx context.Context, sel ast.SelectionSet, v *v1.Transfer) graphql.Marshaler {

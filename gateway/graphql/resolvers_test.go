@@ -79,7 +79,6 @@ func getTestMarket() *types.Market {
 				},
 				Product: &types.Instrument_Future{
 					Future: &types.Future{
-						Maturity:        "2019-12-31",
 						SettlementAsset: "Ethereum/Ether",
 						OracleSpecForSettlementPrice: &oraclesv1.OracleSpec{
 							PubKeys: []string{"0xDEADBEEF"},
@@ -130,9 +129,6 @@ func getTestMarket() *types.Market {
 					},
 				},
 			},
-		},
-		TradingModeConfig: &types.Market_Continuous{
-			Continuous: &types.ContinuousTrading{},
 		},
 	}
 }

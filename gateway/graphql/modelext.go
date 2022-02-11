@@ -41,52 +41,6 @@ type MarketLogEvent interface {
 	GetPayload() string
 }
 
-// ContinuousTradingFromProto ...
-func ContinuousTradingFromProto(pct *types.ContinuousTrading) (*ContinuousTrading, error) {
-	return &ContinuousTrading{
-		TickSize: pct.TickSize,
-	}, nil
-}
-
-// DiscreteTradingFromProto ...
-func DiscreteTradingFromProto(pdt *types.DiscreteTrading) (*DiscreteTrading, error) {
-	return &DiscreteTrading{
-		Duration: int(pdt.DurationNs),
-		TickSize: pdt.TickSize,
-	}, nil
-}
-
-// TradingModeConfigFromProto ...
-func TradingModeConfigFromProto(ptm interface{}) (TradingMode, error) {
-	if ptm == nil {
-		return nil, ErrNilTradingMode
-	}
-
-	switch ptmimpl := ptm.(type) {
-	case *types.Market_Continuous:
-		return ContinuousTradingFromProto(ptmimpl.Continuous)
-	case *types.Market_Discrete:
-		return DiscreteTradingFromProto(ptmimpl.Discrete)
-	default:
-		return nil, ErrUnimplementedTradingMode
-	}
-}
-
-// NewMarketTradingModeFromProto ...
-func NewMarketTradingModeFromProto(ptm interface{}) (TradingMode, error) {
-	if ptm == nil {
-		ptm = defaultTradingMode()
-	}
-	switch ptmimpl := ptm.(type) {
-	case *types.NewMarketConfiguration_Continuous:
-		return ContinuousTradingFromProto(ptmimpl.Continuous)
-	case *types.NewMarketConfiguration_Discrete:
-		return DiscreteTradingFromProto(ptmimpl.Discrete)
-	default:
-		return nil, ErrUnimplementedTradingMode
-	}
-}
-
 func PriceMonitoringTriggerFromProto(ppmt *types.PriceMonitoringTrigger) *PriceMonitoringTrigger {
 	return &PriceMonitoringTrigger{
 		HorizonSecs:          int(ppmt.Horizon),
@@ -197,14 +151,6 @@ func ProposalVoteFromProto(v *types.Vote) *ProposalVote {
 func (a AccountType) IntoProto() types.AccountType {
 	at, _ := convertAccountTypeToProto(a)
 	return at
-}
-
-func defaultTradingMode() *types.NewMarketConfiguration_Continuous {
-	return &types.NewMarketConfiguration_Continuous{
-		Continuous: &types.ContinuousTrading{
-			TickSize: "0",
-		},
-	}
 }
 
 func busEventFromProto(events ...*eventspb.BusEvent) []*BusEvent {

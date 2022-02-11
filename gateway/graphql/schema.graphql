@@ -822,7 +822,6 @@ type DiscreteTrading {
   tickSize: String!
 }
 
-union TradingMode = ContinuousTrading | DiscreteTrading
 
 "Parameters for the log normal risk model"
 type LogNormalModelParams {
@@ -879,9 +878,6 @@ union Oracle = EthereumEvent
 
 "A Future product"
 type Future {
-  "RFC3339Nano maturity date of the product"
-  maturity: String!
-
   "The name of the asset (string)"
   settlementAsset: Asset!
 
@@ -1188,8 +1184,6 @@ type Market {
   "An instance of or reference to a tradable instrument."
   tradableInstrument: TradableInstrument!
 
-  "Definitions and required configuration for the trading mode"
-  tradingModeConfig: TradingMode!
 
   """
   decimalPlaces indicates the number of decimal places that an integer must be shifted by in order to get a correct
@@ -2194,8 +2188,6 @@ enum AccountType {
 }
 
 type FutureProduct {
-  "RFC3339Nano time when the future products matures"
-  maturity: String!
   "Product asset ID"
   settlementAsset: Asset!
   "String representing the quote (e.g. BTCUSD -> USD is quote)"
@@ -2251,8 +2243,6 @@ type NewMarket {
   riskParameters: RiskModel!
   "Metadata for this instrument, tags"
   metadata: [String!]
-  "Trading mode"
-  tradingMode: TradingMode!
   "The liquidity commitment submitted with the new market"
   commitment: NewMarketCommitment
 }

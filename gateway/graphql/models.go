@@ -36,10 +36,6 @@ type RiskModel interface {
 	IsRiskModel()
 }
 
-type TradingMode interface {
-	IsTradingMode()
-}
-
 type TransferKind interface {
 	IsTransferKind()
 }
@@ -87,8 +83,6 @@ type ContinuousTrading struct {
 	TickSize string `json:"tickSize"`
 }
 
-func (ContinuousTrading) IsTradingMode() {}
-
 // Frequent batch auctions trading mode
 type DiscreteTrading struct {
 	// Duration of the discrete trading batch in nanoseconds. Maximum 1 month.
@@ -96,8 +90,6 @@ type DiscreteTrading struct {
 	// Size of an increment in price in terms of the quote currency
 	TickSize string `json:"tickSize"`
 }
-
-func (DiscreteTrading) IsTradingMode() {}
 
 // An asset originated from an Ethereum ERC20 Token
 type Erc20 struct {
