@@ -208,7 +208,6 @@ func NewTestServer(t testing.TB, ctx context.Context, blocking bool) *TestServer
 	}
 
 	eventSource, err := broker.NewEventSource(conf.Broker, logger)
-
 	if err != nil {
 		t.Fatalf("failed to create event source: %v", err)
 	}
@@ -315,8 +314,8 @@ func PublishEvents(
 	ctx context.Context,
 	b *broker.Broker,
 	convertEvt func(be *eventspb.BusEvent) (events.Event, error),
-	goldenFile string) {
-
+	goldenFile string,
+) {
 	t.Helper()
 	path := filepath.Join("testdata", goldenFile)
 	f, err := os.Open(path)

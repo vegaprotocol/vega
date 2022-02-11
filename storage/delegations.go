@@ -11,7 +11,7 @@ import (
 	pb "code.vegaprotocol.io/protos/vega"
 )
 
-//Delegations is a storage for keeping track of delegation state from delegation balance update events
+// Delegations is a storage for keeping track of delegation state from delegation balance update events
 type Delegations struct {
 	Config
 
@@ -87,12 +87,12 @@ func (s *Delegations) Unsubscribe(id uint64) error {
 	return fmt.Errorf("subscriber to delegation updates does not exist with id: %d", id)
 }
 
-//AddDelegation is updated with new delegation update from the subscriber
+// AddDelegation is updated with new delegation update from the subscriber
 func (s *Delegations) AddDelegation(de pb.Delegation) {
 	s.mut.Lock()
 	defer s.mut.Unlock()
 
-	//update party delegations
+	// update party delegations
 	epoch, ok := s.epochToPartyDelegations[de.EpochSeq]
 	if !ok {
 		epoch = map[string]map[string]string{}
@@ -110,7 +110,7 @@ func (s *Delegations) AddDelegation(de pb.Delegation) {
 	s.notifyWithLock(de)
 }
 
-//notifyWithLock notifies registered subscribers - assumes lock has already been acquired
+// notifyWithLock notifies registered subscribers - assumes lock has already been acquired
 func (s *Delegations) notifyWithLock(de pb.Delegation) {
 	if len(s.subscribers) == 0 {
 		return
@@ -133,7 +133,7 @@ func (s *Delegations) notifyWithLock(de pb.Delegation) {
 	}
 }
 
-//GetAllDelegations returns all delegations across all epochs, all parties, all nodes
+// GetAllDelegations returns all delegations across all epochs, all parties, all nodes
 func (s *Delegations) GetAllDelegations(skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
@@ -153,7 +153,7 @@ func (s *Delegations) GetAllDelegations(skip, limit uint64, descending bool) ([]
 	return delegations, nil
 }
 
-//GetAllDelegationsOnEpoch returns all delegation for the given epoch
+// GetAllDelegationsOnEpoch returns all delegation for the given epoch
 func (s *Delegations) GetAllDelegationsOnEpoch(
 	epochSeq string,
 	skip, limit uint64, descending bool,
@@ -178,7 +178,7 @@ func (s *Delegations) GetAllDelegationsOnEpoch(
 	return delegations, nil
 }
 
-//GetNodeDelegations returns all the delegations made to a node across all epochs
+// GetNodeDelegations returns all the delegations made to a node across all epochs
 func (s *Delegations) GetNodeDelegations(
 	nodeID string,
 	skip, limit uint64, descending bool,
@@ -204,7 +204,7 @@ func (s *Delegations) GetNodeDelegations(
 	return delegations, nil
 }
 
-//GetNodeDelegationsOnEpoch returns the delegations to a node by all parties at a given epoch
+// GetNodeDelegationsOnEpoch returns the delegations to a node by all parties at a given epoch
 func (s *Delegations) GetNodeDelegationsOnEpoch(nodeID string, epochSeq string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
@@ -230,7 +230,7 @@ func (s *Delegations) GetNodeDelegationsOnEpoch(nodeID string, epochSeq string, 
 	return delegations, nil
 }
 
-//GetPartyDelegations returns all the delegations by a party across all epochs
+// GetPartyDelegations returns all the delegations by a party across all epochs
 func (s *Delegations) GetPartyDelegations(party string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
@@ -253,7 +253,7 @@ func (s *Delegations) GetPartyDelegations(party string, skip, limit uint64, desc
 	return delegations, nil
 }
 
-//GetPartyDelegationsOnEpoch returns all delegation by party on a given epoch
+// GetPartyDelegationsOnEpoch returns all delegation by party on a given epoch
 func (s *Delegations) GetPartyDelegationsOnEpoch(party string, epochSeq string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 
@@ -279,7 +279,7 @@ func (s *Delegations) GetPartyDelegationsOnEpoch(party string, epochSeq string, 
 	return delegations, nil
 }
 
-//GetPartyNodeDelegations returns the delegations from party to node across all epochs
+// GetPartyNodeDelegations returns the delegations from party to node across all epochs
 func (s *Delegations) GetPartyNodeDelegations(
 	party string, node string,
 	skip, limit uint64, descending bool,
@@ -309,7 +309,7 @@ func (s *Delegations) GetPartyNodeDelegations(
 	return delegations, nil
 }
 
-//GetPartyNodeDelegationsOnEpoch returns the delegations from party to node at epoch
+// GetPartyNodeDelegationsOnEpoch returns the delegations from party to node at epoch
 func (s *Delegations) GetPartyNodeDelegationsOnEpoch(party, node, epochSeq string) ([]*pb.Delegation, error) {
 	delegations := []*pb.Delegation{}
 

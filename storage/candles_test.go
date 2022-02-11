@@ -47,14 +47,16 @@ func TestStorage_SubscribeUnsubscribeCandles(t *testing.T) {
 	internalTransport1 := &storage.InternalTransport{
 		Market:    testMarket,
 		Interval:  types.Interval_INTERVAL_I1M,
-		Transport: make(chan *types.Candle)}
+		Transport: make(chan *types.Candle),
+	}
 	ref := candleStore.Subscribe(internalTransport1)
 	assert.Equal(t, uint64(1), ref)
 
 	internalTransport2 := &storage.InternalTransport{
 		Market:    testMarket,
 		Interval:  types.Interval_INTERVAL_I1M,
-		Transport: make(chan *types.Candle)}
+		Transport: make(chan *types.Candle),
+	}
 	ref = candleStore.Subscribe(internalTransport2)
 	assert.Equal(t, uint64(2), ref)
 

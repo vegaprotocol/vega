@@ -116,8 +116,8 @@ func (os *Order) Close() error {
 // GetByMarket retrieves all orders for a given Market. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByMarket(ctx context.Context, market string, skip,
-	limit uint64, descending bool) ([]*types.Order, error) {
-
+	limit uint64, descending bool) ([]*types.Order, error,
+) {
 	marketPrefix, validForPrefix := os.badger.marketPrefix(market, descending)
 	return os.getOrdersIndirectly(ctx, marketPrefix, validForPrefix, skip, limit, descending, nil)
 }
@@ -152,7 +152,6 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -163,8 +162,8 @@ func (os *Order) GetByMarketAndID(ctx context.Context, market string, id string)
 // GetByParty retrieves orders for a given party. Provide optional query filters to
 // refine the data set further (if required), any errors will be returned immediately.
 func (os *Order) GetByParty(ctx context.Context, party string, skip uint64,
-	limit uint64, descending bool) ([]*types.Order, error) {
-
+	limit uint64, descending bool) ([]*types.Order, error,
+) {
 	partyPrefix, validForPrefix := os.badger.partyPrefix(party, descending)
 	return os.getOrdersIndirectly(ctx, partyPrefix, validForPrefix, skip, limit, descending, nil)
 }
@@ -199,7 +198,6 @@ func (os *Order) GetByPartyAndID(ctx context.Context, party string, id string) (
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -253,7 +251,6 @@ func (os *Order) GetByReference(ctx context.Context, ref string) (*types.Order, 
 func (os *Order) GetByOrderID(ctx context.Context, id string, version *uint64) (*types.Order, error) {
 	var order types.Order
 	err := os.badger.db.View(func(txn *badger.Txn) error {
-
 		var primaryKey []byte
 		if version == nil {
 			idKey := os.badger.orderIDKey(id)
@@ -303,7 +300,6 @@ func (os *Order) GetAllVersionsByOrderID(
 	limit uint64,
 	descending bool,
 ) ([]*types.Order, error) {
-
 	versionsPrefix, validForPrefix := os.badger.orderIDVersionPrefix(id, descending)
 	return os.getOrdersDirectly(ctx, versionsPrefix, validForPrefix, skip, limit, descending, nil)
 }
@@ -319,7 +315,6 @@ func (os *Order) getOrdersIndirectly(
 	descending bool,
 	filterOut *orderFilter,
 ) ([]*types.Order, error) {
-
 	var err error
 	result := make([]*types.Order, 0, int(limit))
 
@@ -335,7 +330,6 @@ func (os *Order) getOrdersIndirectly(
 
 	primaryIndex, orderBuf := []byte{}, []byte{}
 	for it.Seek(keyPrefix); it.ValidForPrefix(validForPrefix); it.Next() {
-
 		select {
 		case <-ctx.Done():
 			if deadline.Before(time.Now()) {
@@ -390,7 +384,6 @@ func (os *Order) getOrdersDirectly(
 	descending bool,
 	filterOut *orderFilter,
 ) ([]*types.Order, error) {
-
 	var err error
 	result := make([]*types.Order, 0, int(limit))
 

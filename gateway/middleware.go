@@ -31,7 +31,6 @@ func RemoteAddrMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 // MetricCollectionMiddleware records the request and the time taken to service it
 func MetricCollectionMiddleware(log *logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		start := time.Now()
 		next.ServeHTTP(w, r)
 		end := time.Now()

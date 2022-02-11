@@ -9,9 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrNoMarketDataForMarket = errors.New("no market data for market")
-)
+var ErrNoMarketDataForMarket = errors.New("no market data for market")
 
 type MarketData struct {
 	Config

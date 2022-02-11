@@ -11,9 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	ErrNoAssetForID = errors.New("no asset for ID")
-)
+var ErrNoAssetForID = errors.New("no asset for ID")
 
 type AssetEvent interface {
 	events.Event

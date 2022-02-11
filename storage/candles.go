@@ -136,7 +136,6 @@ func (c *Candle) Close() error {
 
 // GenerateCandlesFromBuffer will generate all candles for a given market.
 func (c *Candle) GenerateCandlesFromBuffer(marketID string, buf map[string]types.Candle) error {
-
 	fetchCandle := func(txn *badger.Txn, badgerKey []byte) (*types.Candle, error) {
 		item, err := txn.Get(badgerKey)
 		if err != nil {
@@ -335,7 +334,6 @@ func (c *Candle) generateFetchKey(market string, interval types.Interval, since 
 	default:
 		return nil
 	}
-
 }
 
 // FetchLastCandle return the last candle store for a given market and interval
@@ -367,7 +365,6 @@ func (c *Candle) FetchLastCandle(marketID string, interval types.Interval) (*typ
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +444,6 @@ func (c *Candle) notify() error {
 
 // mergeCandles is used to update an existing candle in the buffer.
 func mergeCandles(candleFromDB *types.Candle, candleUpdate types.Candle) {
-
 	// always overwrite close price
 	candleFromDB.Close = candleUpdate.Close
 

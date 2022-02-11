@@ -46,16 +46,14 @@ func (t *Time) Types() []events.Type {
 	}
 }
 
-func (t *Time) Push(evts ...events.Event) {
-	for _, e := range evts {
-		switch et := e.(type) {
+func (t *Time) Push(evt events.Event) {
+	switch et := evt.(type) {
 
-		case TimeUpdateEvent:
-			t.consume(et)
-		default:
-			t.log.Panic("Unknown event type in time subscriber",
-				logging.String("Type", et.Type().String()))
-		}
+	case TimeUpdateEvent:
+		t.consume(et)
+	default:
+		t.log.Panic("Unknown event type in time subscriber",
+			logging.String("Type", et.Type().String()))
 	}
 }
 

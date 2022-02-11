@@ -10,7 +10,7 @@ import (
 )
 
 func TestSafeStringUint64(t *testing.T) {
-	var convTests = []struct {
+	convTests := []struct {
 		in          string
 		out         uint64
 		expectError bool

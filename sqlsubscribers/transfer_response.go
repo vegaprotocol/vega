@@ -21,8 +21,7 @@ type AccountStore interface {
 	Obtain(a *entities.Account) error
 }
 
-type PartyStore interface {
-}
+type PartyStore interface{}
 
 type TransferResponseEvent interface {
 	events.Event
@@ -62,11 +61,9 @@ func (t *TransferResponse) Types() []events.Type {
 	}
 }
 
-func (t *TransferResponse) Push(evts ...events.Event) {
-	for _, e := range evts {
-		if tre, ok := e.(TransferResponseEvent); ok {
-			t.consume(tre)
-		}
+func (t *TransferResponse) Push(evt events.Event) {
+	if tre, ok := evt.(TransferResponseEvent); ok {
+		t.consume(tre)
 	}
 }
 

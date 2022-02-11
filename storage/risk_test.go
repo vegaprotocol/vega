@@ -68,7 +68,6 @@ func testGetMarginLevelsByPartyIDAndMarketID(t *testing.T) {
 	assert.Equal(t, margins[0].PartyId, "p2")
 	assert.Equal(t, margins[0].MarketId, "m3")
 	assert.Equal(t, margins[0].MaintenanceMargin, "84")
-
 }
 
 func testGetMarginLevelsErrors(t *testing.T) {

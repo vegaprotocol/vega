@@ -7,9 +7,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type remoteIPAddrKey int
-type traceIDT int
-type blockHeight int
+type (
+	remoteIPAddrKey int
+	traceIDT        int
+	blockHeight     int
+)
 
 var (
 	clientRemoteIPAddrKey remoteIPAddrKey

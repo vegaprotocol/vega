@@ -78,7 +78,6 @@ func (s *Svc) GetAllTransfers(
 func (s *Svc) ObserveTransferResponses(
 	ctx context.Context, retries int,
 ) (<-chan []*types.TransferResponse, uint64) {
-
 	transfers := make(chan []*types.TransferResponse)
 	internal := make(chan []*types.TransferResponse)
 	ref := s.store.Subscribe(internal)

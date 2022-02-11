@@ -86,7 +86,7 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 	}
 
 	var yesWeight float64
-	var yesToken = num.Zero()
+	yesToken := num.Zero()
 	for _, yes := range obj.Yes {
 		weight, err := strconv.ParseFloat(yes.TotalGovernanceTokenWeight, 64)
 		if err != nil {
@@ -100,7 +100,7 @@ func (r *proposalResolver) Votes(_ context.Context, obj *types.GovernanceData) (
 		yesToken.Add(yesToken, yesUint)
 	}
 	var noWeight float64
-	var noToken = num.Zero()
+	noToken := num.Zero()
 	for _, no := range obj.No {
 		weight, err := strconv.ParseFloat(no.TotalGovernanceTokenWeight, 64)
 		if err != nil {

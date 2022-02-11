@@ -180,7 +180,7 @@ func (s *StreamSub) Push(evts ...events.Event) {
 		default:
 			close(s.updated)
 		}
-		//s.updated = make(chan struct{})
+		// s.updated = make(chan struct{})
 	}
 	s.mu.Unlock()
 }

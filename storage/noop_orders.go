@@ -113,8 +113,8 @@ func (os *NoopOrder) GetByMarketAndID(ctx context.Context, market string, id str
 }
 
 func (os *NoopOrder) GetByParty(ctx context.Context, party string, skip uint64,
-	limit uint64, descending bool) ([]*types.Order, error) {
-
+	limit uint64, descending bool) ([]*types.Order, error,
+) {
 	return []*types.Order{}, nil
 }
 
@@ -124,8 +124,8 @@ func (os *NoopOrder) GetByPartyAndID(ctx context.Context, party string, id strin
 }
 
 func (os *NoopOrder) GetAllVersionsByOrderID(ctx context.Context, id string,
-	skip, limit uint64, descending bool) (orders []*types.Order, err error) {
-
+	skip, limit uint64, descending bool) (orders []*types.Order, err error,
+) {
 	return []*types.Order{}, nil
 }
 

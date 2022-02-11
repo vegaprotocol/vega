@@ -278,7 +278,6 @@ func (ts *Trade) GetByPartyAndID(ctx context.Context, party string, id string) (
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

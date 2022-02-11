@@ -14,9 +14,7 @@ import (
 	ptypes "code.vegaprotocol.io/protos/vega"
 )
 
-var (
-	ErrInvalidOrderSide = errors.New("invalid order side")
-)
+var ErrInvalidOrderSide = errors.New("invalid order side")
 
 // RiskStore ...
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/risk_store_mock.go -package mocks code.vegaprotocol.io/data-node/risk RiskStore
@@ -148,7 +146,6 @@ func (s *Svc) EstimateMargin(ctx context.Context, order *ptypes.Order) (*ptypes.
 func (s *Svc) ObserveMarginLevels(
 	ctx context.Context, retries int, partyID, marketID string,
 ) (accountCh <-chan []ptypes.MarginLevels, ref uint64) {
-
 	margins := make(chan []ptypes.MarginLevels)
 	internal := make(chan []ptypes.MarginLevels)
 	ref = s.store.Subscribe(internal)
@@ -227,7 +224,6 @@ func (s *Svc) ObserveMarginLevels(
 	}()
 
 	return margins, ref
-
 }
 
 // GetMarginLevelsSubscribersCount returns the total number of active subscribers for ObserveMarginLevels.

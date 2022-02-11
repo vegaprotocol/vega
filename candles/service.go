@@ -138,8 +138,8 @@ func (s *Svc) ObserveCandles(ctx context.Context, retries int, market *string, i
 
 // GetCandles returns the candles for a given market, time, interval
 func (s *Svc) GetCandles(ctx context.Context, market string,
-	since time.Time, interval types.Interval) (candles []*types.Candle, err error) {
-
+	since time.Time, interval types.Interval) (candles []*types.Candle, err error,
+) {
 	// sinceTimestamp must be valid and not older than market genesis timestamp
 	// interval check if from range of valid intervals
 

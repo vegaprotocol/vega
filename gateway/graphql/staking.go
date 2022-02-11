@@ -14,9 +14,11 @@ type stakeLinkingResolver VegaResolverRoot
 func (s *stakeLinkingResolver) Type(ctx context.Context, obj *eventspb.StakeLinking) (StakeLinkingType, error) {
 	return convertStakeLinkingTypeFromProto(obj.Type)
 }
+
 func (s *stakeLinkingResolver) Timestamp(ctx context.Context, obj *eventspb.StakeLinking) (string, error) {
 	return vegatime.Format(vegatime.Unix(obj.Ts, 0)), nil
 }
+
 func (s *stakeLinkingResolver) Party(ctx context.Context, obj *eventspb.StakeLinking) (*vgproto.Party, error) {
 	return &vgproto.Party{Id: obj.Party}, nil
 }
@@ -24,6 +26,7 @@ func (s *stakeLinkingResolver) Party(ctx context.Context, obj *eventspb.StakeLin
 func (s *stakeLinkingResolver) Status(ctx context.Context, obj *eventspb.StakeLinking) (StakeLinkingStatus, error) {
 	return convertStakeLinkingStatusFromProto(obj.Status)
 }
+
 func (s *stakeLinkingResolver) FinalizedAt(ctx context.Context, obj *eventspb.StakeLinking) (*string, error) {
 	if obj.FinalizedAt == 0 {
 		return nil, nil

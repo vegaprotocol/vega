@@ -1,9 +1,10 @@
 package broker
 
 import (
-	"code.vegaprotocol.io/data-node/logging"
 	"fmt"
 	"path/filepath"
+
+	"code.vegaprotocol.io/data-node/logging"
 )
 
 func NewEventSource(config Config, log *logging.Logger) (eventSource, error) {

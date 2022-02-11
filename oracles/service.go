@@ -10,9 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 )
 
-var (
-	ErrNoOracleSpecForID = errors.New("no oracle spec for ID")
-)
+var ErrNoOracleSpecForID = errors.New("no oracle spec for ID")
 
 type OracleSpecEvent interface {
 	events.Event
@@ -88,7 +86,6 @@ func (s *Service) consume() {
 			}
 			s.saveOracleData(data)
 		}
-
 	}
 }
 

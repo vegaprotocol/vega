@@ -11,9 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/events"
 )
 
-var (
-	ErrNoMarketOrPartyFilters = errors.New("market or party filters are required")
-)
+var ErrNoMarketOrPartyFilters = errors.New("market or party filters are required")
 
 type LiquidityProvisionEvent interface {
 	events.Event

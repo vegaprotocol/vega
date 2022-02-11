@@ -27,7 +27,6 @@ var exampleCmd ExampleCmd
 // follow the command name.
 // This function is invoked from `Register` in main.go
 func Example(ctx context.Context, parser *flags.Parser) error {
-
 	// here we initialize the global exampleCmd with needed default values.
 	exampleCmd = ExampleCmd{}
 	_, err := parser.AddCommand("example", "short desc", "long desc", &exampleCmd)
@@ -35,8 +34,7 @@ func Example(ctx context.Context, parser *flags.Parser) error {
 }
 
 // exampleFoo is an `example` sub-command.
-type exampleFoo struct {
-}
+type exampleFoo struct{}
 
 func (opts *exampleFoo) Execute(args []string) error {
 	return nil

@@ -310,7 +310,6 @@ func testOracleDataGetBooleanSucceeds(t *testing.T) {
 	// then
 	require.NoError(t, err)
 	assert.True(t, value)
-
 }
 
 func testOracleDataGetTimestampSucceeds(t *testing.T) {
