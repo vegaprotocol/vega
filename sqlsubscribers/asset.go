@@ -29,6 +29,7 @@ type Asset struct {
 	store      AssetStore
 	log        *logging.Logger
 	blockStore BlockStore
+	vegaTime   time.Time
 }
 
 func NewAsset(ctx context.Context, store AssetStore, blockStore BlockStore, log *logging.Logger) *Asset {
@@ -40,15 +41,19 @@ func NewAsset(ctx context.Context, store AssetStore, blockStore BlockStore, log 
 	}
 }
 
-func (a *Asset) Types() []events.Type {
-	return []events.Type{
-		events.AssetEvent,
-	}
+func (a *Asset) Type() events.Type {
+	return events.AssetEvent
 }
 
-func (a *Asset) Push(evt events.Event) {
-	if ae, ok := evt.(AssetEvent); ok {
-		a.consume(ae)
+func (as *Asset) Push(evt events.Event) {
+	switch e := evt.(type) {
+	case TimeUpdateEvent:
+		as.vegaTime = e.Time()
+	case AssetEvent:
+		as.consume(e)
+	default:
+		as.log.Panic("Unknown event type in transfer response subscriber",
+			logging.String("Type", e.Type().String()))
 	}
 }
 
@@ -57,13 +62,7 @@ func (as *Asset) consume(ae AssetEvent) {
 		logging.Int64("block", ae.BlockNr()),
 		logging.String("assetId", ae.Asset().Id))
 
-	block, err := as.blockStore.WaitForBlockHeight(ae.BlockNr())
-	if err != nil {
-		as.log.Error("can't add asset because we don't have block")
-		return
-	}
-
-	err = as.addAsset(ae.Asset(), block.VegaTime)
+	err := as.addAsset(ae.Asset(), as.vegaTime)
 	if err != nil {
 		as.log.Error("adding asset", logging.Error(err))
 	}

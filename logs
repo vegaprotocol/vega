@@ -1,0 +1,804 @@
+API server listening at: [::]:2345
+2022-02-11T20:42:27.611Z	INFO	cfgwatcher	config/watcher.go:78	config watcher started successfully	{"config": "/home/matthewpendrey/.config/vega/data-node/config.toml"}
+2022-02-11T20:42:27.611Z	INFO	node/node_pre.go:71	Starting Vega	{"version": "", "version-hash": ""}
+2022-02-11T20:42:27.611Z	DEBUG	node/node_pre.go:83	Set ulimits	{"nofile": 8192}
+2022-02-11T20:42:27.643Z	INFO	sql_store.db migration	v3@v3.5.1/migration.go:47	OK   0001_initial.sql
+2022-02-11T20:42:27.679Z	INFO	sql_store.db migration	v3@v3.5.1/migration.go:39	OK   0001_initial.sql
+2022-02-11T20:42:27.680Z	INFO	sql_store.db migration	v3@v3.5.1/up.go:210	goose: no migrations to run. current version: 1
+2022-02-11T20:42:27.745Z	INFO	node/node_pre.go:217	using file event source, event file: /home/matthewpendrey/vega.evt
+2022-02-11T20:42:27.745Z	INFO	api.grpc	api/server.go:237	Starting gRPC based API	{"addr": "0.0.0.0", "port": "3007"}
+2022-02-11T20:42:27.745Z	INFO	gateway.restproxy	rest/server.go:65	Starting REST<>GRPC based API	{"addr": "0.0.0.0", "port": 3009}
+2022-02-11T20:42:27.745Z	INFO	gateway.gql	graphql/server.go:104	Starting GraphQL based API	{"addr": "0.0.0.0", "port": 3008}
+2022-02-11T20:42:27.745Z	WARN	gateway.gql	graphql/server.go:128	graphql playground enabled, this is not a recommended setting for production
+TIME:id:"0-1" block:"3AC77F3FE2C33EB8B3DA775508385086C9DFF75770A8421B5F7EC6BE8B6F841C" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573604 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.747Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 0, "time": "2022-02-11T10:00:04.000Z"}
+2022-02-11T20:42:27.747Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "fUSDC"}
+2022-02-11T20:42:27.747Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:00:04 +0000 UTC
+TIME:id:"1-1" block:"EABFBB9CCA0A55D3B052E67D46C6ECF8B0C2E74638570A126813C6FA3EAF7BF2" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573604 > version:1 chain_id:"chain-9RH748" TIME:id:"2-1" block:"643ADF5EE019094EBC078E507E0DBD7108132E97599E146208F86E884532C788" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573667 > version:1 chain_id:"chain-9RH748" TIME:id:"3-1" block:"2170ED36F545BF4DC91731D5FF63C95565C233F025015CF33D7502640884257B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573668 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.749Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:00:04 +0000 UTC
+2022-02-11T20:42:27.749Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:07 +0000 UTC
+2022-02-11T20:42:27.749Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:08 +0000 UTC
+TIME:id:"4-1" block:"9847B8ED08CC0E1C3CB59085137FF80A4D9A693687CDF886EB781D171767C25E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573670 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.749Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:10 +0000 UTC
+TIME:id:"5-1" block:"B2E498ABEDDAA33980B355CED45B4D16C07935DE4E15F64F35AA64828B6E6EFF" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573671 > version:1 chain_id:"chain-9RH748" TIME:id:"6-1" block:"A044DF768277B05058D1520BCDD171FB215D7079783AD1852067D9290CB650AF" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573672 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.750Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:11 +0000 UTC
+2022-02-11T20:42:27.750Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:12 +0000 UTC
+2022-02-11T20:42:27.750Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+TIME:id:"7-1" block:"AA0EE3CC51D9E67670AE0A469104D92DF0EE80EF02D59EBA34DC73A9076EC4CB" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573674 > version:1 chain_id:"chain-9RH748" TIME:id:"8-1" block:"6EBB44D27AF2C5FADBA879C80D36F01CD7D3E7B7049D5D4F6B271800CB5946AA" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573675 > version:1 chain_id:"chain-9RH748" TIME:id:"9-1" block:"EC70858D3689A7F53D72F2F6C11495EBB1926CDC24D3D68573A30FED62C3C592" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573676 > version:1 chain_id:"chain-9RH748" TIME:id:"10-1" block:"64D5E02B01066420678E72398DF2FB5550A76FE9F334D3E09989DC80FEEE93D5" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573678 > version:1 chain_id:"chain-9RH748" TIME:id:"11-1" block:"B59068DE96FECA09D6164E0CF3BF2C35C93119106C051EE1BA2556C0C0F78281" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573679 > version:1 chain_id:"chain-9RH748" TIME:id:"12-1" block:"E5ECB840E5582D0CB3AD3306F38C7D4195220F6E701611F1264F3185338EDF7E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573680 > version:1 chain_id:"chain-9RH748" TIME:id:"13-1" block:"35930E927E7ECF750BBE9DDBD5AA7AC126C9F89D5E9829A6C8A9D3C647E9F04D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573682 > version:1 chain_id:"chain-9RH748" TIME:id:"14-1" block:"6BBB34427ED478C8285A83A274FDAA80846394AC74BE6CF864B144DC2AA9C48D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573683 > version:1 chain_id:"chain-9RH748" TIME:id:"15-1" block:"36CF7F83AD35D9145E8E7EED2F708E9466B4639BA106D12E45070DDB71D4F09C" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573684 > version:1 chain_id:"chain-9RH748" TIME:id:"16-1" block:"351F499D73C8D6ED350477CF1AC1D85B3ACC4B618CE4873A6136568B1F598206" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573686 > version:1 chain_id:"chain-9RH748" TIME:id:"17-1" block:"DEBDE5220E5079B0A612D03C5C8B801D3DF6CF20ADDED205F1CA7423735637C2" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573687 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.755Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 1, "time": "2022-02-11T10:00:04.000Z"}
+2022-02-11T20:42:27.756Z	ERROR	sqlsubscribers/time_update.go:76	Error adding block	{"error": "adding block: ERROR: duplicate key value violates unique constraint \"blocks_pkey\" (SQLSTATE 23505)"}
+2022-02-11T20:42:27.756Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 2, "time": "2022-02-11T10:01:07.000Z"}
+2022-02-11T20:42:27.757Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 3, "time": "2022-02-11T10:01:08.000Z"}
+2022-02-11T20:42:27.758Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "XYZdelta"}
+2022-02-11T20:42:27.760Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 4, "time": "2022-02-11T10:01:10.000Z"}
+2022-02-11T20:42:27.761Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "fDAI"}
+2022-02-11T20:42:27.762Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 5, "time": "2022-02-11T10:01:11.000Z"}
+2022-02-11T20:42:27.764Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "5cfa87844724df6069b94e4c8a6f03af21907d7bc251593d08e4251043ee9f7c"}
+2022-02-11T20:42:27.764Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 6, "time": "2022-02-11T10:01:12.000Z"}
+2022-02-11T20:42:27.765Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.766Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 7, "time": "2022-02-11T10:01:14.000Z"}
+2022-02-11T20:42:27.768Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "XYZbeta"}
+2022-02-11T20:42:27.770Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 8, "time": "2022-02-11T10:01:15.000Z"}
+2022-02-11T20:42:27.772Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "b4f2726571fbe8e33b442dc92ed2d7f0d810e21835b7371a7915a365f07ccd9b"}
+2022-02-11T20:42:27.774Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 9, "time": "2022-02-11T10:01:16.000Z"}
+2022-02-11T20:42:27.775Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.775Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "XYZgamma"}
+2022-02-11T20:42:27.777Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 10, "time": "2022-02-11T10:01:18.000Z"}
+2022-02-11T20:42:27.778Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "fBTC"}
+2022-02-11T20:42:27.780Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 11, "time": "2022-02-11T10:01:19.000Z"}
+2022-02-11T20:42:27.781Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "XYZalpha"}
+2022-02-11T20:42:27.782Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 12, "time": "2022-02-11T10:01:20.000Z"}
+2022-02-11T20:42:27.783Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.783Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "XYZepsilon"}
+2022-02-11T20:42:27.784Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 13, "time": "2022-02-11T10:01:22.000Z"}
+2022-02-11T20:42:27.785Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "fEURO"}
+2022-02-11T20:42:27.786Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 14, "time": "2022-02-11T10:01:23.000Z"}
+2022-02-11T20:42:27.788Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 15, "time": "2022-02-11T10:01:24.000Z"}
+2022-02-11T20:42:27.789Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.789Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "6d9d35f657589e40ddfb448b7ad4a7463b66efb307527fedd2aa7df1bbd5ea61"}
+2022-02-11T20:42:27.789Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 16, "time": "2022-02-11T10:01:26.000Z"}
+2022-02-11T20:42:27.790Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "993ed98f4f770d91a796faab1738551193ba45c62341d20597df70fea6704ede"}
+2022-02-11T20:42:27.791Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 17, "time": "2022-02-11T10:01:27.000Z"}
+2022-02-11T20:42:27.792Z	DEBUG	sqlsubscribers/asset.go:61	AssetEvent: 	{"block": 0, "assetId": "8b52d4a3a4b0ffe733cddbc2b67be273816cfeb6ca4c8b339bac03ffba08e4e4"}
+2022-02-11T20:42:27.794Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.798Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.801Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.803Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.806Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.808Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.811Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.814Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.818Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.820Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.822Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.824Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.826Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.828Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.831Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.833Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.835Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.838Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.842Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.846Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.848Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.852Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.854Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.857Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.860Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.862Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.865Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.868Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.870Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.873Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.875Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.879Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.881Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.883Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.886Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.888Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.890Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+TIME:id:"18-1" block:"C56CC8D033D0E2A049DF1AB5AB2E1538508536A9F50A5ADC833B1EDA2F275CDB" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573689 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.890Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 18, "time": "2022-02-11T10:01:29.000Z"}
+2022-02-11T20:42:27.893Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.896Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.900Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.903Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.907Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.909Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.911Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.913Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+TIME:id:"19-1" block:"06F7CFE12392CC2B673D17A5E7C7F5C4B6D65B25BC20C85A0E3753E33F6AB5E8" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573690 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.915Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.916Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 19, "time": "2022-02-11T10:01:30.000Z"}
+2022-02-11T20:42:27.918Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 6}
+2022-02-11T20:42:27.920Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:14 +0000 UTC
+2022-02-11T20:42:27.920Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"20-1" block:"29FBA60A0A73B74AACED4B4F7BF2D5B547129146DDD2455E59A40D309D384D2E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573691 > version:1 chain_id:"chain-9RH748" TIME:id:"21-1" block:"3BE81FC5CF9DA3590E4E8824D110FCEAA6EF4EEF200C639ABF2958305FD2616A" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573693 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.921Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 20, "time": "2022-02-11T10:01:31.000Z"}
+2022-02-11T20:42:27.923Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"22-1" block:"94E6604BB40AC97251C3EDB1627137FC260A8AEBD3B82981028AF9FEC81CDE97" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573694 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.923Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 21, "time": "2022-02-11T10:01:33.000Z"}
+2022-02-11T20:42:27.924Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 22, "time": "2022-02-11T10:01:34.000Z"}
+2022-02-11T20:42:27.927Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"23-1" block:"1B6C9C3CCD12093417FF96DC51DF91FAB5696D94D37C46D8CA0E70E996D72E55" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573695 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.927Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 23, "time": "2022-02-11T10:01:35.000Z"}
+2022-02-11T20:42:27.930Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:27.933Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"24-1" block:"2D76932C2BA084B95376ABE28097094653BA43B2C5FFEDF347BFE3736A3D681D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573697 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.933Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 24, "time": "2022-02-11T10:01:37.000Z"}
+2022-02-11T20:42:27.938Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"25-1" block:"80F329127D5419584748F9E86FF52ADDCE8B7158E54D976D9213FAA19ED95663" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573698 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.938Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 25, "time": "2022-02-11T10:01:38.000Z"}
+2022-02-11T20:42:27.941Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"26-1" block:"69586A96D52597B8BA0D51F0E82E744E950D54504F1B7A912EC801A949F700B4" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573699 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.941Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 26, "time": "2022-02-11T10:01:39.000Z"}
+2022-02-11T20:42:27.944Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"27-1" block:"8DCBBD5EFD62670DDBFA6BA80D73713FFEF2CE87FDBBE33B5A1D48A9033CAA4F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573701 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.948Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:27.948Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 27, "time": "2022-02-11T10:01:41.000Z"}
+TIME:id:"28-1" block:"4C2AB7F045D0001EFB5C63EA92F7B4B4EA5817ACFB22D9554188AACE0DC8D2C2" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573702 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.951Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"29-1" block:"E85432838C68C6F07704FC136FC656965857B6DCDED4E9C46E34CA3F35760B10" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573703 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.951Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 28, "time": "2022-02-11T10:01:42.000Z"}
+2022-02-11T20:42:27.952Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 29, "time": "2022-02-11T10:01:43.000Z"}
+2022-02-11T20:42:27.955Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"30-1" block:"993B1CAC2F34B3BAA4C3E61CD8E395ACD14DAD7155147E4365CF8267EBC69D72" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573705 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.955Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 30, "time": "2022-02-11T10:01:45.000Z"}
+2022-02-11T20:42:27.959Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"31-1" block:"104161E1883D7E6275D97BDDE8008AC376EE573F8C8EF905CD629FCEBBD691EB" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573706 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.961Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"32-1" block:"9EAD3A069A1AADEE98AEB9D7F75C396FF95F256590344336CF5FFEF5B4C351EF" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573707 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.961Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 31, "time": "2022-02-11T10:01:46.000Z"}
+2022-02-11T20:42:27.962Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 32, "time": "2022-02-11T10:01:47.000Z"}
+2022-02-11T20:42:27.965Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"33-1" block:"59FC5C76084C9285FEEE65746C6954039F2EE85F85B1C4C95386B3791F088F9F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573709 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.965Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 33, "time": "2022-02-11T10:01:49.000Z"}
+2022-02-11T20:42:27.968Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"34-1" block:"5F1E72383962B1D2B01EE799691A6A556E2C9CA70FE8CA26DD9BF9C057C74963" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573710 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.968Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 34, "time": "2022-02-11T10:01:50.000Z"}
+2022-02-11T20:42:27.971Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"35-1" block:"6FA523E370B097404F2B46557782B879BE6CE5A490FC97BC63BF08D79663014F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573711 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.974Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"36-1" block:"334D4AD7027F667E6C24723D73632AB07583A2F1185AFDFFDE532697241CD7C4" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573713 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.974Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 35, "time": "2022-02-11T10:01:51.000Z"}
+2022-02-11T20:42:27.976Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"37-1" block:"0FE1DD58831CAD5A5F500531AC20BE15F6995F71DF2050611AB093284F3E086F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573714 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.977Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 36, "time": "2022-02-11T10:01:53.000Z"}
+2022-02-11T20:42:27.978Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 37, "time": "2022-02-11T10:01:54.000Z"}
+2022-02-11T20:42:27.980Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"38-1" block:"8CFCED553BDDFF5C9E95A32D1660FE6E4365CE52115785D4ED82FA4FDD156F53" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573715 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.982Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"39-1" block:"6DAB2D39E5CD23D3C4B2C6AB4E612EDAE44DEC6BC5984AAD9DC6EB93EDEABF80" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573717 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.982Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 38, "time": "2022-02-11T10:01:55.000Z"}
+2022-02-11T20:42:27.983Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 39, "time": "2022-02-11T10:01:57.000Z"}
+2022-02-11T20:42:27.986Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"40-1" block:"67990F16E7B7FC4E2EC985704FB17BA9045E64634F9E6B2E1B73E4EF243622D1" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573718 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.988Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"41-1" block:"1202279FC7C24276FA023B300F728AB02EE52084AAA300296F42D91052F7B5DB" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573720 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.988Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 40, "time": "2022-02-11T10:01:58.000Z"}
+2022-02-11T20:42:27.989Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 41, "time": "2022-02-11T10:02:00.000Z"}
+2022-02-11T20:42:27.992Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"42-1" block:"B8A5B99A9D6F044B9A4E8019496F7A14612748F3D0F87FD745794DBE126B68C7" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573721 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.992Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 42, "time": "2022-02-11T10:02:01.000Z"}
+2022-02-11T20:42:27.995Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"43-1" block:"DFA992603895DE944F4488B01430C41FB56D21BFCEE01F5573986E6597A3C948" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573722 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.995Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 43, "time": "2022-02-11T10:02:02.000Z"}
+2022-02-11T20:42:27.998Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"44-1" block:"8C9B24635168CCA086023DF816CBBD7677EFD4845039E16C725859B34D7002B9" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573724 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:27.998Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 44, "time": "2022-02-11T10:02:04.000Z"}
+2022-02-11T20:42:28.001Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"45-1" block:"7A2D3EB3CA1457222F4D8C7D2E097955DDDE978BCC247B12984806ACFA15C5F3" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573725 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.001Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 45, "time": "2022-02-11T10:02:05.000Z"}
+2022-02-11T20:42:28.003Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"46-1" block:"2A9FECFADD403C9B0962D0AF2541B45E87BF7794553B0A142FC0F88577C6C894" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573726 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.004Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 46, "time": "2022-02-11T10:02:06.000Z"}
+2022-02-11T20:42:28.006Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:28.008Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"47-1" block:"B7F1286F23F451898E315D6EE81CAF4E28A7AC8F96A011736FDA0938A02F0301" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573728 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.009Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 47, "time": "2022-02-11T10:02:08.000Z"}
+2022-02-11T20:42:28.012Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"48-1" block:"2216B55C6ECB2D55E5CF6FBE82644EA84FC3F035968726B06B5A959C624DCA84" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573729 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.012Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 48, "time": "2022-02-11T10:02:09.000Z"}
+2022-02-11T20:42:28.017Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:28.020Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:28.022Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"49-1" block:"797F6167A27E2D0DF3FBC16A7530236F1B266771DB5BAADA706498B3525630C4" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573730 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.023Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 49, "time": "2022-02-11T10:02:10.000Z"}
+2022-02-11T20:42:28.025Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:28.027Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:28.030Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+2022-02-11T20:42:28.032Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"50-1" block:"69D9D9D328F6874803CAE8311E1EEB2AE9B3DE459C33FA905CF23805E16C3162" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573732 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.034Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 7}
+TIME:id:"51-1" block:"F9B1DF735BF40F2369EE90A8CF64F93DDE1CE4D50C05C0832D7FF5D51EA8033D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573733 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.034Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 50, "time": "2022-02-11T10:02:12.000Z"}
+2022-02-11T20:42:28.035Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 51, "time": "2022-02-11T10:02:13.000Z"}
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:15 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:16 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:18 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:19 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:20 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:22 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:23 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:24 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:26 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:27 +0000 UTC
+2022-02-11T20:42:28.038Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"52-1" block:"D883F78BFF609436050C16C382E494B5568EF4AC23F3FF6505E248BBFFE9A62F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573734 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.039Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 52, "time": "2022-02-11T10:02:14.000Z"}
+TIME:id:"53-1" block:"EB641F4AF980C53E905345F1234BA5F22FC0BB83A81C22F64E7FD8C0670B0508" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573736 > version:1 chain_id:"chain-9RH748" TIME:id:"54-1" block:"DECC0DCEDF71E9BBFE6EE5149F32637FC0D7826214CA200D731F37640A0CBB25" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573737 > version:1 chain_id:"chain-9RH748" TIME:id:"55-1" block:"67BFAD7E45778EEB58826C8CAE8AE60B608C4127B8BBAC71D6002B0B8A44EEE3" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573738 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.042Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 53, "time": "2022-02-11T10:02:16.000Z"}
+2022-02-11T20:42:28.044Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 54, "time": "2022-02-11T10:02:17.000Z"}
+2022-02-11T20:42:28.045Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"56-1" block:"AAFADA95D548A9C4BC2877EC4546CA6DB7F37A68FC7C7A87414F7C49300EC53D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573740 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.046Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 55, "time": "2022-02-11T10:02:18.000Z"}
+2022-02-11T20:42:28.047Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 56, "time": "2022-02-11T10:02:20.000Z"}
+2022-02-11T20:42:28.050Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"57-1" block:"D51ACDBA759165E43716A0829FD364FC7E47A8F20349A5AA13D6B3363FD98570" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573741 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.054Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.054Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 57, "time": "2022-02-11T10:02:21.000Z"}
+2022-02-11T20:42:28.058Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"58-1" block:"5CD15A9728ABCFD921E2FF3A7ED143ADE7B4E140AC510E5DB13EF09A726AD707" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573742 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.058Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 58, "time": "2022-02-11T10:02:22.000Z"}
+2022-02-11T20:42:28.062Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.064Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"59-1" block:"5D3A69B17ACB38254F05576A61A61136AFEBAC222061763CE408461A2DB0E06B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573744 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.065Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 59, "time": "2022-02-11T10:02:24.000Z"}
+2022-02-11T20:42:28.068Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"60-1" block:"478062336182D545B569EC42DE0E1F4A336AF8F251819D8EC2D2ADF3FDD66E3A" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573745 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.072Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.072Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 60, "time": "2022-02-11T10:02:25.000Z"}
+2022-02-11T20:42:28.076Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"61-1" block:"B7868442CEBDD001E4F2D29091F8C931A6836E5CD841225665AC46F286E613AF" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573746 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.076Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 61, "time": "2022-02-11T10:02:26.000Z"}
+2022-02-11T20:42:28.081Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"62-1" block:"5BAE72C02067A20F0E8D5929A09A36E2FAEB948172D3FF0AFDF90F96165F8204" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573748 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.081Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 62, "time": "2022-02-11T10:02:28.000Z"}
+2022-02-11T20:42:28.084Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"63-1" block:"58E2ECA4B8E994BFA9690C72F78800FCB9E5B4D2819AF83712B64D395D09E44E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573749 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.086Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.086Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 63, "time": "2022-02-11T10:02:29.000Z"}
+2022-02-11T20:42:28.089Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"64-1" block:"521127F24B1FA40311BA2FB3F6977310346346604B275DB7B767B04240A5A5C3" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573750 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.089Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 64, "time": "2022-02-11T10:02:30.000Z"}
+2022-02-11T20:42:28.092Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.095Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.098Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.102Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.107Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.109Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.112Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.114Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.116Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"65-1" block:"7255B08FCA247ABFD6EEAA31814E527A22A7B61576396D94CE68812E551B0961" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573752 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.116Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 65, "time": "2022-02-11T10:02:32.000Z"}
+2022-02-11T20:42:28.119Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.123Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"66-1" block:"4419D5B0F110325EA3E55D62999AB8F65F848CAB3EC349A63562F7413C02400F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573753 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.127Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.127Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 66, "time": "2022-02-11T10:02:33.000Z"}
+2022-02-11T20:42:28.130Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.133Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"67-1" block:"D6D5AD9A9333B68534E0E003788EEC9E6A48B5DF29B66985512F9B506DA9EB22" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573754 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.133Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 67, "time": "2022-02-11T10:02:34.000Z"}
+2022-02-11T20:42:28.136Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.139Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.141Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.143Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"68-1" block:"4D0FB470F712422ADB6B8147A9595D8EB4AB0F6EC3024CC3CA6C172E24B54903" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573756 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.143Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 68, "time": "2022-02-11T10:02:36.000Z"}
+2022-02-11T20:42:28.146Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.148Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"69-1" block:"9B11E15E2DA978C2F9BA5C2009DD07AE047FCBEC036FA36C2745F897E21CD36B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573757 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.148Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 69, "time": "2022-02-11T10:02:37.000Z"}
+2022-02-11T20:42:28.153Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"70-1" block:"DCB98A9FE41B6C904C5B45A9657FD8858CA62BC357E5A0377194BEDDD58B8653" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573758 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.153Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 70, "time": "2022-02-11T10:02:38.000Z"}
+2022-02-11T20:42:28.157Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.168Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.172Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.176Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"71-1" block:"E318E139A85146A36D85C349866D12278CADED5E775127097ABAE79FDE859F70" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573759 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.177Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 71, "time": "2022-02-11T10:02:39.000Z"}
+2022-02-11T20:42:28.181Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+2022-02-11T20:42:28.184Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 17}
+TIME:id:"72-1" block:"AC53FB5E4D41F4E4F0057334DAE025417D296CB6C8FF6E43A9817CB633F7626B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573761 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.187Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:29 +0000 UTC
+2022-02-11T20:42:28.187Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 18}
+2022-02-11T20:42:28.187Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 72, "time": "2022-02-11T10:02:41.000Z"}
+TIME:id:"73-1" block:"B035E71832AF124A41B04BA977CC87A2A9FBCD8E2BCF40AB4C4D187DAA6FA8FD" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573762 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.188Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 73, "time": "2022-02-11T10:02:42.000Z"}
+2022-02-11T20:42:28.190Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 18}
+2022-02-11T20:42:28.193Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 18}
+2022-02-11T20:42:28.196Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 18}
+2022-02-11T20:42:28.200Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 18}
+TIME:id:"74-1" block:"C927985E4B9EB650F00913E874ABCFC11EF59129C7E2C20C7DC68FE30AF8CA60" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573764 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.200Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 74, "time": "2022-02-11T10:02:44.000Z"}
+2022-02-11T20:42:28.203Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 18}
+2022-02-11T20:42:28.205Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 18}
+TIME:id:"75-1" block:"D75AAD3D1A3303949C2BA02039D757F818CD938CD96B7C08F0EF21DB00409553" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573765 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.208Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:30 +0000 UTC
+2022-02-11T20:42:28.208Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 19}
+2022-02-11T20:42:28.208Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 75, "time": "2022-02-11T10:02:45.000Z"}
+TIME:id:"76-1" block:"BF98572BB49A135BA4564782A26B362B012C690C4E84A8DC51D88AE3CF09C3DD" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573766 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.209Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 76, "time": "2022-02-11T10:02:46.000Z"}
+2022-02-11T20:42:28.212Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 19}
+2022-02-11T20:42:28.214Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:31 +0000 UTC
+2022-02-11T20:42:28.214Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:33 +0000 UTC
+2022-02-11T20:42:28.214Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:34 +0000 UTC
+2022-02-11T20:42:28.214Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:35 +0000 UTC
+2022-02-11T20:42:28.214Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 23}
+TIME:id:"77-1" block:"1CDBBA66321DB938510EA32518B651553BC07D94DFF9CB09E154DD25874BE21E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573768 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.214Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 77, "time": "2022-02-11T10:02:48.000Z"}
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:37 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:38 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:39 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:41 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:42 +0000 UTC
+TIME:id:"78-1" block:"B823AC4964D6D7C86E4F8CF8BA862A2112CF9B60CC5F87EAF3850994C32AE8D3" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573769 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:43 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:45 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:46 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:47 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:49 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 78, "time": "2022-02-11T10:02:49.000Z"}
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:50 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:51 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:53 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:54 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:55 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:57 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:01:58 +0000 UTC
+TIME:id:"79-1" block:"FC2B464C2A7B1C97903EA8A3EC6725C160B9B3BFE13B01AFF68A7FD9BC78C61D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573770 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:00 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:01 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:02 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:04 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:05 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:06 +0000 UTC
+2022-02-11T20:42:28.217Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 46}
+TIME:id:"80-1" block:"8221B89B027D37AD301E091200D43CA6211FA67F90B34405DC2BB898796FBC35" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573772 > version:1 chain_id:"chain-9RH748" TIME:id:"81-1" block:"2BC5B9CCE586081143C53480BCF35A2CF72B6371F5B83070A90822E6A856FE9D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573773 > version:1 chain_id:"chain-9RH748" TIME:id:"82-1" block:"ED4E82F22E363CF7E4F4545F5C17F17201290C7CA6A9CF7D303EA3A76CDA4EF8" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573774 > version:1 chain_id:"chain-9RH748" TIME:id:"83-1" block:"DE37EACF9A983AC09794D64C57D98A4293990ABCE80FE78668F2A7E6B7F38E55" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573776 > version:1 chain_id:"chain-9RH748" TIME:id:"84-1" block:"DB63EF8D6F9BC482C2C7BF0D42D89D68210F55001B37C6792C08ED087033B1BB" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573777 > version:1 chain_id:"chain-9RH748" TIME:id:"85-1" block:"DF56C84A2F4B85C364B5FCDD723DBE14A9EB89EF3910F6E25DB5E2F16A22085E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573778 > version:1 chain_id:"chain-9RH748" TIME:id:"86-1" block:"ED84B55326CF6E3E31E8C67D7385F94FC33862B5F1978737938D09FA5CCC6D7B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573779 > version:1 chain_id:"chain-9RH748" TIME:id:"87-1" block:"AD995647AF6E6A5007F2AAAC016D8CDE4F194B0FACA8CE7A1811581BAE4947ED" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573781 > version:1 chain_id:"chain-9RH748" TIME:id:"88-1" block:"B4C32E13AEBAE16B564528BBD85C2C0C007B3B6431F428220E27C113DE365E64" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573782 > version:1 chain_id:"chain-9RH748" TIME:id:"89-1" block:"98A12A531281D534874D70849876AF6DA74BC4C0CD9913D5BB97429F19B50B5A" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573783 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.219Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 79, "time": "2022-02-11T10:02:50.000Z"}
+2022-02-11T20:42:28.221Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 80, "time": "2022-02-11T10:02:52.000Z"}
+2022-02-11T20:42:28.223Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:08 +0000 UTC
+2022-02-11T20:42:28.223Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:09 +0000 UTC
+2022-02-11T20:42:28.223Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 48}
+TIME:id:"90-1" block:"FE4C15313543B9D6AD7AC125E02128543F8A8A4ED381ABA8DB2FBA358F585928" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573785 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.224Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 81, "time": "2022-02-11T10:02:53.000Z"}
+2022-02-11T20:42:28.225Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 48}
+2022-02-11T20:42:28.227Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 82, "time": "2022-02-11T10:02:54.000Z"}
+2022-02-11T20:42:28.228Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 83, "time": "2022-02-11T10:02:56.000Z"}
+2022-02-11T20:42:28.230Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:10 +0000 UTC
+2022-02-11T20:42:28.230Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 49}
+2022-02-11T20:42:28.232Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 84, "time": "2022-02-11T10:02:57.000Z"}
+2022-02-11T20:42:28.233Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 49}
+TIME:id:"91-1" block:"A661ADED9E86D200A55AD92DAE0775057318F22A09D12E94512EB06ADB5EE6C5" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573786 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.234Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 85, "time": "2022-02-11T10:02:58.000Z"}
+2022-02-11T20:42:28.235Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 49}
+TIME:id:"92-1" block:"CA7542DBCEC5426487F84EF9D2B6DEE6D357F22C68BFE4C6A5503B054D86FC73" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573787 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.236Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 86, "time": "2022-02-11T10:02:59.000Z"}
+2022-02-11T20:42:28.238Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 87, "time": "2022-02-11T10:03:01.000Z"}
+2022-02-11T20:42:28.239Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:12 +0000 UTC
+2022-02-11T20:42:28.240Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:13 +0000 UTC
+2022-02-11T20:42:28.240Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 51}
+2022-02-11T20:42:28.240Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 88, "time": "2022-02-11T10:03:02.000Z"}
+TIME:id:"93-1" block:"5BD21BC36C211C4537DFCC2629EB5C3721441E80BE75AFD40815283D8B15F46B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573789 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.242Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 89, "time": "2022-02-11T10:03:03.000Z"}
+2022-02-11T20:42:28.245Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 90, "time": "2022-02-11T10:03:05.000Z"}
+2022-02-11T20:42:28.246Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:14 +0000 UTC
+2022-02-11T20:42:28.246Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 52}
+TIME:id:"94-1" block:"7FA1B058D2C6EBAF676657551D7F3CE4883DA522B8503B71F047592B827B5B1B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573790 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.247Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 91, "time": "2022-02-11T10:03:06.000Z"}
+2022-02-11T20:42:28.249Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 92, "time": "2022-02-11T10:03:07.000Z"}
+2022-02-11T20:42:28.250Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:16 +0000 UTC
+2022-02-11T20:42:28.251Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:17 +0000 UTC
+2022-02-11T20:42:28.251Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 54}
+TIME:id:"95-1" block:"546704141AB6C5390AD612D441D71ED7BBDE1F69CC64FA70F576C3467C056AC8" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573791 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.251Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 93, "time": "2022-02-11T10:03:09.000Z"}
+2022-02-11T20:42:28.252Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 94, "time": "2022-02-11T10:03:10.000Z"}
+2022-02-11T20:42:28.254Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 95, "time": "2022-02-11T10:03:11.000Z"}
+2022-02-11T20:42:28.255Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:18 +0000 UTC
+2022-02-11T20:42:28.255Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 55}
+2022-02-11T20:42:28.258Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 55}
+TIME:id:"96-1" block:"402009D5A8F8CCC4C70646E3D686709113F7E66A202DFF0D89068C01601EEA0E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573793 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.258Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 96, "time": "2022-02-11T10:03:13.000Z"}
+2022-02-11T20:42:28.261Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 55}
+2022-02-11T20:42:28.262Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 55}
+2022-02-11T20:42:28.266Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:20 +0000 UTC
+2022-02-11T20:42:28.266Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:21 +0000 UTC
+2022-02-11T20:42:28.266Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 57}
+2022-02-11T20:42:28.269Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:22 +0000 UTC
+2022-02-11T20:42:28.269Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 58}
+TIME:id:"97-1" block:"B68891A15D22A8B8D4338B4D49BE8C7446898AF3FBD99D97364ED5A8028097F9" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573794 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.269Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 97, "time": "2022-02-11T10:03:14.000Z"}
+2022-02-11T20:42:28.273Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:24 +0000 UTC
+2022-02-11T20:42:28.273Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:25 +0000 UTC
+2022-02-11T20:42:28.273Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 60}
+TIME:id:"98-1" block:"DD208A2A5412B472CE6DC1CB1F22A21FDFEBC1746CE65907E0DA9EA349A0DCBA" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573796 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.273Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 98, "time": "2022-02-11T10:03:16.000Z"}
+TIME:id:"99-1" block:"23C2EDE0EFC0102C0A75516F54BF705C8739140CB65DB4B0B0D2E44BB3AF0B20" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573797 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.275Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 99, "time": "2022-02-11T10:03:17.000Z"}
+2022-02-11T20:42:28.278Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:26 +0000 UTC
+2022-02-11T20:42:28.278Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:28 +0000 UTC
+2022-02-11T20:42:28.278Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:29 +0000 UTC
+2022-02-11T20:42:28.278Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 63}
+TIME:id:"100-1" block:"D32A90AFDF36227E8346882DA348682F4AD08911ACA8F1E7E0C3B4C762DAD235" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573798 > version:1 chain_id:"chain-9RH748" TIME:id:"101-1" block:"184899D61CF6DFAE0C6E8A8426DD160A2AFCACFCE279FB7631D1AAF73EB8F966" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573799 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.278Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 100, "time": "2022-02-11T10:03:18.000Z"}
+2022-02-11T20:42:28.280Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 101, "time": "2022-02-11T10:03:19.000Z"}
+2022-02-11T20:42:28.281Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:30 +0000 UTC
+2022-02-11T20:42:28.281Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+2022-02-11T20:42:28.281Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+TIME:id:"102-1" block:"158E06A32AB312E8B987BBAFBDBA54BE97F44558F235BDD0951ABF0F0087B854" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573801 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.283Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 102, "time": "2022-02-11T10:03:21.000Z"}
+2022-02-11T20:42:28.297Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+2022-02-11T20:42:28.298Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+2022-02-11T20:42:28.299Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+2022-02-11T20:42:28.301Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+2022-02-11T20:42:28.308Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+TIME:id:"103-1" block:"F47221D6F24974B09CB9D9F1A627651241DE58F102798B847D7A6EA26BC40043" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573802 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.319Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 64}
+2022-02-11T20:42:28.320Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 103, "time": "2022-02-11T10:03:22.000Z"}
+2022-02-11T20:42:28.324Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:32 +0000 UTC
+2022-02-11T20:42:28.324Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 65}
+TIME:id:"104-1" block:"A7B6CE715359A5D276DEEF647CE214D1C34B6F2323EFDF6408F1EB19B8455210" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573803 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.324Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 104, "time": "2022-02-11T10:03:23.000Z"}
+2022-02-11T20:42:28.326Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:33 +0000 UTC
+2022-02-11T20:42:28.326Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 66}
+TIME:id:"105-1" block:"4A158205F82459AB47E33FA103C61DDF87615BBEA145D06ED1715A5180935BC4" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573805 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.326Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 105, "time": "2022-02-11T10:03:25.000Z"}
+2022-02-11T20:42:28.329Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 66}
+2022-02-11T20:42:28.330Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:34 +0000 UTC
+2022-02-11T20:42:28.330Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 67}
+2022-02-11T20:42:28.332Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 67}
+TIME:id:"106-1" block:"57C690CC167FFE8F1889C7A41FD01E7956ECA935458B92D6735826EB08858765" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573806 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.332Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 106, "time": "2022-02-11T10:03:26.000Z"}
+2022-02-11T20:42:28.339Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 67}
+2022-02-11T20:42:28.354Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:36 +0000 UTC
+2022-02-11T20:42:28.354Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 68}
+TIME:id:"107-1" block:"E9609C55EC3AD5BC96024CEB60D8BFC7BDBA6F2F6E460860DD0BA4AA4546DA93" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573807 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.354Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 107, "time": "2022-02-11T10:03:27.000Z"}
+2022-02-11T20:42:28.357Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:37 +0000 UTC
+2022-02-11T20:42:28.357Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:38 +0000 UTC
+2022-02-11T20:42:28.357Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 70}
+TIME:id:"108-1" block:"FFE9412703B38D10E4D41509702A29966EB9E10AAABE382426D5761B9B312473" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573809 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.357Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 108, "time": "2022-02-11T10:03:29.000Z"}
+2022-02-11T20:42:28.365Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 70}
+2022-02-11T20:42:28.368Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 70}
+2022-02-11T20:42:28.372Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:39 +0000 UTC
+2022-02-11T20:42:28.372Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 71}
+TIME:id:"109-1" block:"9301BE5ACA6A8745A4500B2E8E136FE795F317313C4CCA27773998A8FE7B5D9D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573810 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.372Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 109, "time": "2022-02-11T10:03:30.000Z"}
+2022-02-11T20:42:28.375Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:41 +0000 UTC
+2022-02-11T20:42:28.375Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 72}
+TIME:id:"110-1" block:"F1953FCF29A934F52736B4C5DD1878999B455A9BA69FC00D3E7EA6B5E47E3C26" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573811 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.376Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 110, "time": "2022-02-11T10:03:31.000Z"}
+2022-02-11T20:42:28.378Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:42 +0000 UTC
+2022-02-11T20:42:28.378Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 73}
+TIME:id:"111-1" block:"1440195C88EECDE0235E3FDC9683274985C766E08398654D011D0B1F5521BA6E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573813 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.378Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 111, "time": "2022-02-11T10:03:33.000Z"}
+2022-02-11T20:42:28.387Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 73}
+2022-02-11T20:42:28.387Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 73}
+TIME:id:"112-1" block:"18441A3830C7B23F53763861188CCC24B51B5F9971BCE3B433B3B48CF8DCD36B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573814 > version:1 chain_id:"chain-9RH748" TIME:id:"113-1" block:"A831533EAA7EE0669787779167A8B7C3283E56BB056323AF4AB50BB0EDC24823" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573815 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.387Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 112, "time": "2022-02-11T10:03:34.000Z"}
+2022-02-11T20:42:28.388Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 113, "time": "2022-02-11T10:03:35.000Z"}
+2022-02-11T20:42:28.389Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:44 +0000 UTC
+2022-02-11T20:42:28.389Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 74}
+2022-02-11T20:42:28.391Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:45 +0000 UTC
+2022-02-11T20:42:28.391Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 75}
+TIME:id:"114-1" block:"215490F75AB82807E3CC4CF70F6FFD7A65D286E1208B05AEAEC67C1A35FF36D1" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573817 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.391Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 114, "time": "2022-02-11T10:03:37.000Z"}
+2022-02-11T20:42:28.393Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:46 +0000 UTC
+2022-02-11T20:42:28.393Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 76}
+2022-02-11T20:42:28.395Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 76}
+2022-02-11T20:42:28.402Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 76}
+2022-02-11T20:42:28.411Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 76}
+2022-02-11T20:42:28.413Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:48 +0000 UTC
+2022-02-11T20:42:28.413Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 77}
+TIME:id:"115-1" block:"5D7A997F643CAD72C0EDF68CD581E5982037D64689C90A9DB1352ED8C2E48865" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573818 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.413Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 115, "time": "2022-02-11T10:03:38.000Z"}
+2022-02-11T20:42:28.417Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:49 +0000 UTC
+2022-02-11T20:42:28.417Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 78}
+TIME:id:"116-1" block:"C3B45513E604CA8E8DA02E2BD6CB4569B354ED2F8CD43BEB420D728DBD3EC0AF" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573819 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.417Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 116, "time": "2022-02-11T10:03:39.000Z"}
+2022-02-11T20:42:28.420Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:50 +0000 UTC
+2022-02-11T20:42:28.420Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 79}
+2022-02-11T20:42:28.422Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:52 +0000 UTC
+2022-02-11T20:42:28.422Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:53 +0000 UTC
+2022-02-11T20:42:28.422Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 81}
+TIME:id:"117-1" block:"A81AD351F9CD41D40ADF082353B06A25FACE27493EC73DBF42641560AC0D2553" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573821 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.422Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 117, "time": "2022-02-11T10:03:41.000Z"}
+2022-02-11T20:42:28.425Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:54 +0000 UTC
+2022-02-11T20:42:28.425Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:56 +0000 UTC
+2022-02-11T20:42:28.425Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 83}
+2022-02-11T20:42:28.427Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:57 +0000 UTC
+2022-02-11T20:42:28.427Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 84}
+TIME:id:"118-1" block:"01F217D2094C74184B14D2CCBDD5A5F7FF3F523454724C335C9B20C6BA603F09" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573822 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.427Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 118, "time": "2022-02-11T10:03:42.000Z"}
+2022-02-11T20:42:28.429Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 84}
+TIME:id:"119-1" block:"72682A06F469A64822A8F53A61E90BC0214F85C121DCDCEB7768FA33D6529B89" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573823 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.429Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 119, "time": "2022-02-11T10:03:43.000Z"}
+2022-02-11T20:42:28.437Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 84}
+2022-02-11T20:42:28.446Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 84}
+2022-02-11T20:42:28.449Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:58 +0000 UTC
+2022-02-11T20:42:28.449Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 85}
+2022-02-11T20:42:28.451Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:02:59 +0000 UTC
+2022-02-11T20:42:28.451Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 86}
+TIME:id:"120-1" block:"EAFB31BDBE587CD887C6867D5B5DA24BC2F8240472CD46531E45E50CC6BC6D9E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573825 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.451Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 120, "time": "2022-02-11T10:03:45.000Z"}
+2022-02-11T20:42:28.454Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:01 +0000 UTC
+2022-02-11T20:42:28.454Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 87}
+TIME:id:"121-1" block:"790662CA749F4B6853529CD6EA70050B47E22BC4CA23464BCB9CE7A256E1E1D5" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573826 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.455Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:02 +0000 UTC
+2022-02-11T20:42:28.456Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:03 +0000 UTC
+2022-02-11T20:42:28.456Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 89}
+2022-02-11T20:42:28.456Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 121, "time": "2022-02-11T10:03:46.000Z"}
+TIME:id:"122-1" block:"323FC3D004691602A37B4824E0624F98BF2AC688C7D2E054C535B357815FDA61" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573827 > version:1 chain_id:"chain-9RH748" TIME:id:"123-1" block:"8B2A511FC26B231B386A862A12338CEB9A9ECCD5D3B6463E4F405B104F4A8E79" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573829 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.457Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 122, "time": "2022-02-11T10:03:47.000Z"}
+2022-02-11T20:42:28.459Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 89}
+TIME:id:"124-1" block:"EF69D7936B3491F30131FC9FE66DDF4F4591CD2B85903B1F553AD67C3593B2E9" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573830 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.460Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 123, "time": "2022-02-11T10:03:49.000Z"}
+2022-02-11T20:42:28.467Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 89}
+2022-02-11T20:42:28.468Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 124, "time": "2022-02-11T10:03:50.000Z"}
+TIME:id:"125-1" block:"D7848E10AF497E49D300566D45801640D79B917A27987E571CD2CB224DE17FCC" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573831 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.479Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:05 +0000 UTC
+2022-02-11T20:42:28.479Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 90}
+2022-02-11T20:42:28.479Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 125, "time": "2022-02-11T10:03:51.000Z"}
+TIME:id:"126-1" block:"D4BE5E6F5779D256F82A2BCA7D74DB6FAA7CEF2536D77F77B914E3FE9374A792" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573833 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.480Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 126, "time": "2022-02-11T10:03:53.000Z"}
+2022-02-11T20:42:28.481Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 90}
+2022-02-11T20:42:28.483Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 90}
+TIME:id:"127-1" block:"187234AFF24E1B47C4189B2785DDF38526FF59DAEC0FF4856CE018EFFE59FAFF" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573834 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.483Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 127, "time": "2022-02-11T10:03:54.000Z"}
+2022-02-11T20:42:28.485Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:06 +0000 UTC
+2022-02-11T20:42:28.485Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:07 +0000 UTC
+2022-02-11T20:42:28.485Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 92}
+TIME:id:"128-1" block:"74220C9425093608B67374F5BA8493AEE675F1131BC6930942BA3A29F86AC37C" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573836 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.486Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 128, "time": "2022-02-11T10:03:56.000Z"}
+2022-02-11T20:42:28.488Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:09 +0000 UTC
+2022-02-11T20:42:28.488Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 93}
+TIME:id:"129-1" block:"2A7C7A1BF958F0E596E0790F49D1A081B082F12CF918DCE3685B59CCAF17944C" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573837 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.496Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 93}
+2022-02-11T20:42:28.496Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 129, "time": "2022-02-11T10:03:57.000Z"}
+2022-02-11T20:42:28.510Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:10 +0000 UTC
+2022-02-11T20:42:28.510Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 94}
+2022-02-11T20:42:28.512Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:11 +0000 UTC
+2022-02-11T20:42:28.512Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 95}
+TIME:id:"130-1" block:"709A258FAD8FAD2AC508FE3FA0F003F1D5F0EB9A917C14516C6540420C9CC25B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573838 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.512Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 130, "time": "2022-02-11T10:03:58.000Z"}
+2022-02-11T20:42:28.514Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 95}
+2022-02-11T20:42:28.521Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 95}
+2022-02-11T20:42:28.521Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:13 +0000 UTC
+2022-02-11T20:42:28.521Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 96}
+TIME:id:"131-1" block:"F8D6743175AA0718D1A5F6C08BBE257E8EA826E72B684FA3C0DABE52DE05548E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573839 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.521Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 131, "time": "2022-02-11T10:03:59.000Z"}
+2022-02-11T20:42:28.523Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 96}
+2022-02-11T20:42:28.524Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 96}
+2022-02-11T20:42:28.531Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 96}
+2022-02-11T20:42:28.543Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 96}
+TIME:id:"132-1" block:"A71C8FEBE96D797F3E4D7B21EF87485C01CE54287A806A5A5D74D11687EEC596" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573841 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.544Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 132, "time": "2022-02-11T10:04:01.000Z"}
+2022-02-11T20:42:28.545Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:14 +0000 UTC
+2022-02-11T20:42:28.545Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 97}
+2022-02-11T20:42:28.547Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:16 +0000 UTC
+2022-02-11T20:42:28.547Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:17 +0000 UTC
+2022-02-11T20:42:28.547Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 99}
+TIME:id:"133-1" block:"3BD5639112E5F6B8B070C347FF7A4B4B98123EA9956E1145B5BA47C53BC662CB" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573842 > version:1 chain_id:"chain-9RH748" TIME:id:"134-1" block:"E635AF5BA61B824A3388A61BB44F9E2625128A5E73A85E4CA3461BBBD7770921" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573843 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.548Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 133, "time": "2022-02-11T10:04:02.000Z"}
+2022-02-11T20:42:28.549Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 134, "time": "2022-02-11T10:04:03.000Z"}
+2022-02-11T20:42:28.551Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:18 +0000 UTC
+2022-02-11T20:42:28.552Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:19 +0000 UTC
+2022-02-11T20:42:28.552Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 101}
+TIME:id:"135-1" block:"3393723F99DF0A82C8430595FFEBD91C85D2C437EBCC230E66EE34DE5171AF04" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573845 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.552Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 135, "time": "2022-02-11T10:04:05.000Z"}
+2022-02-11T20:42:28.560Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 101}
+TIME:id:"136-1" block:"87FE09541848BE5408ACD549E2BDA5A0F0052F8911F15531398AD7717BDADD37" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573846 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.560Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 136, "time": "2022-02-11T10:04:06.000Z"}
+2022-02-11T20:42:28.573Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 101}
+TIME:id:"137-1" block:"089CD29B377C0B4A047F7A388DF4BEB9BD631B89A1ADB5C7FD7E89D8A9E1C8B7" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573848 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.573Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 137, "time": "2022-02-11T10:04:08.000Z"}
+2022-02-11T20:42:28.577Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:21 +0000 UTC
+2022-02-11T20:42:28.577Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 102}
+2022-02-11T20:42:28.578Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 102}
+2022-02-11T20:42:28.580Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 102}
+2022-02-11T20:42:28.588Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 102}
+2022-02-11T20:42:28.588Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 102}
+TIME:id:"138-1" block:"56B63D1F9A468A4EC68E3122574B2475B1F14302B067E3C027369A1585B99DC0" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573849 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.588Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 138, "time": "2022-02-11T10:04:09.000Z"}
+2022-02-11T20:42:28.590Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:22 +0000 UTC
+2022-02-11T20:42:28.590Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 103}
+TIME:id:"139-1" block:"5A2DCB48656E20834ABF2DA0FB7971C71AE14BABB02979A562068C0AF7229B3C" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573850 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.590Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 139, "time": "2022-02-11T10:04:10.000Z"}
+2022-02-11T20:42:28.593Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:23 +0000 UTC
+2022-02-11T20:42:28.593Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 104}
+TIME:id:"140-1" block:"DB47E297124B16F659F9B48E996C9BC705F9979AFFB2434B175C9BE09E49C7D1" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573852 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.593Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 140, "time": "2022-02-11T10:04:12.000Z"}
+2022-02-11T20:42:28.595Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:25 +0000 UTC
+2022-02-11T20:42:28.595Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 105}
+TIME:id:"141-1" block:"6A1BAA8B3D2FAA134D36FE06243B46C0487AAA558679EEE18BB2F0590BCBAECD" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573853 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.595Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 141, "time": "2022-02-11T10:04:13.000Z"}
+2022-02-11T20:42:28.602Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 105}
+TIME:id:"142-1" block:"70F884E68E85C2D669F6D0AD34BEC6FA9252DBA1CE6183FF2F546A45F9C9605B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573855 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.602Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 142, "time": "2022-02-11T10:04:15.000Z"}
+2022-02-11T20:42:28.615Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 105}
+2022-02-11T20:42:28.616Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 105}
+2022-02-11T20:42:28.618Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:26 +0000 UTC
+2022-02-11T20:42:28.618Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 106}
+TIME:id:"143-1" block:"A15D9C2762A9CB097022F64FC103F4A474F892D4883AD398E7B72FA659F65BD6" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573856 > version:1 chain_id:"chain-9RH748" TIME:id:"144-1" block:"6E6D5983DB4079FB4CA8EF13B655812B7C41B63C6D178BD79A2AF20F5ABFAA78" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573857 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.618Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 143, "time": "2022-02-11T10:04:16.000Z"}
+2022-02-11T20:42:28.619Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 144, "time": "2022-02-11T10:04:17.000Z"}
+2022-02-11T20:42:28.620Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:27 +0000 UTC
+2022-02-11T20:42:28.620Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 107}
+2022-02-11T20:42:28.622Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:29 +0000 UTC
+2022-02-11T20:42:28.622Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 108}
+TIME:id:"145-1" block:"D13665ED2E1D25D03AD42045801119EA3DCF20CB21DA470D462E78057C07B1B0" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573859 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.622Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 145, "time": "2022-02-11T10:04:19.000Z"}
+2022-02-11T20:42:28.624Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 108}
+2022-02-11T20:42:28.632Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 108}
+2022-02-11T20:42:28.645Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 108}
+TIME:id:"146-1" block:"106DF44E0149B7240324A084286870097CD374C6F4FA6DAE23ABBDBAC1C4852B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573860 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.645Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 146, "time": "2022-02-11T10:04:20.000Z"}
+2022-02-11T20:42:28.648Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:30 +0000 UTC
+2022-02-11T20:42:28.648Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 109}
+TIME:id:"147-1" block:"9A8E565986EAFE83F48AC6425BD1FF2D7522D9D807759016D56694B223EB60A8" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573861 > version:1 chain_id:"chain-9RH748" TIME:id:"148-1" block:"5AD63B2330B26C4563670A5A402044921C6555505F64B3AE659A5A4869C831BD" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573863 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.648Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 147, "time": "2022-02-11T10:04:21.000Z"}
+2022-02-11T20:42:28.649Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 148, "time": "2022-02-11T10:04:23.000Z"}
+2022-02-11T20:42:28.650Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:31 +0000 UTC
+2022-02-11T20:42:28.650Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 110}
+TIME:id:"149-1" block:"789B44C01C2DADDB59BA1E1EBD9792395323400D412F9822CE7A8C422D68BED1" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573864 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.652Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 149, "time": "2022-02-11T10:04:24.000Z"}
+2022-02-11T20:42:28.653Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:33 +0000 UTC
+2022-02-11T20:42:28.653Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 111}
+TIME:id:"150-1" block:"15D3E51ED0980C56A34A9E81DA786DF5225E0A93DB3BBC17F359264FAFBEBB55" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573865 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.654Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 150, "time": "2022-02-11T10:04:25.000Z"}
+2022-02-11T20:42:28.655Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:34 +0000 UTC
+2022-02-11T20:42:28.655Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:35 +0000 UTC
+2022-02-11T20:42:28.655Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 113}
+2022-02-11T20:42:28.661Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 113}
+TIME:id:"151-1" block:"EF5BB0C397B8C84AE65664EA0638008921003C76F0FC255918FFA14351AD147C" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573867 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.661Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 151, "time": "2022-02-11T10:04:27.000Z"}
+2022-02-11T20:42:28.675Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 113}
+2022-02-11T20:42:28.676Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:37 +0000 UTC
+2022-02-11T20:42:28.676Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 114}
+2022-02-11T20:42:28.677Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 114}
+2022-02-11T20:42:28.678Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 114}
+TIME:id:"152-1" block:"64BDE20B8C8146DBBA0644E9069876AF7C91C5580B095E0BCA3C418A1EF39480" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573868 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.686Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 114}
+2022-02-11T20:42:28.686Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 152, "time": "2022-02-11T10:04:28.000Z"}
+2022-02-11T20:42:28.699Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 114}
+TIME:id:"153-1" block:"DE3089A4F5AC3A9A37372B0C2CF5C3EE39246BB14B6A19CE30FC272EE0280690" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573869 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.699Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 153, "time": "2022-02-11T10:04:29.000Z"}
+2022-02-11T20:42:28.701Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:38 +0000 UTC
+2022-02-11T20:42:28.701Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 115}
+2022-02-11T20:42:28.702Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:39 +0000 UTC
+2022-02-11T20:42:28.703Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 116}
+2022-02-11T20:42:28.704Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 116}
+TIME:id:"154-1" block:"685276B245DBD2BFECE98DB6C49C709EA7E6A1F9E0166D46163A5BF37E6EAD88" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573870 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.704Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 154, "time": "2022-02-11T10:04:30.000Z"}
+2022-02-11T20:42:28.709Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 116}
+2022-02-11T20:42:28.722Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:41 +0000 UTC
+2022-02-11T20:42:28.722Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 117}
+TIME:id:"155-1" block:"6256DB048B701991E02CCEA37045B51FFD44A03A979793D43BC1DF05E6007C68" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573872 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.722Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 155, "time": "2022-02-11T10:04:32.000Z"}
+2022-02-11T20:42:28.724Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 117}
+TIME:id:"156-1" block:"68B359830344A3512FCCDD235E075E5F5599E946A7A30E62C98FF659755228D0" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573873 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.725Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 117}
+2022-02-11T20:42:28.725Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 156, "time": "2022-02-11T10:04:33.000Z"}
+2022-02-11T20:42:28.733Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 117}
+TIME:id:"157-1" block:"649F8A2CD681AE4C4B38E48AAB2D1CF0B0E328A97295495C51A855B7608987D0" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573875 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.733Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 157, "time": "2022-02-11T10:04:35.000Z"}
+2022-02-11T20:42:28.747Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 117}
+2022-02-11T20:42:28.748Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:42 +0000 UTC
+2022-02-11T20:42:28.748Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 118}
+2022-02-11T20:42:28.750Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:43 +0000 UTC
+2022-02-11T20:42:28.750Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 119}
+2022-02-11T20:42:28.751Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 119}
+TIME:id:"158-1" block:"06F3F1A49D1F6D5E96E8BBD2FED3BD44802F0110C12CA8A600F8D207F21DA930" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573876 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.751Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 158, "time": "2022-02-11T10:04:36.000Z"}
+2022-02-11T20:42:28.758Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 119}
+2022-02-11T20:42:28.770Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 119}
+TIME:id:"159-1" block:"CC2E4E3FCB40AE5A5EE72A4BDC4E8F47F06A9BFD1E506D88214D49588006A506" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573877 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.770Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 159, "time": "2022-02-11T10:04:37.000Z"}
+2022-02-11T20:42:28.772Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:45 +0000 UTC
+2022-02-11T20:42:28.772Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 120}
+TIME:id:"160-1" block:"50F9CF4B855EB684E081D7BD6D6845D322343A9768C7C6CB8421075786CC119D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573879 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.772Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 160, "time": "2022-02-11T10:04:39.000Z"}
+2022-02-11T20:42:28.774Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 120}
+TIME:id:"161-1" block:"6139A34C01A3094E2B3838600AEA260179994299051B9D891B6A243B7C87C43F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573880 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.776Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:46 +0000 UTC
+2022-02-11T20:42:28.776Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:47 +0000 UTC
+2022-02-11T20:42:28.776Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:49 +0000 UTC
+2022-02-11T20:42:28.776Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 123}
+2022-02-11T20:42:28.776Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 161, "time": "2022-02-11T10:04:40.000Z"}
+TIME:id:"162-1" block:"A6D38E0A590B2EF0E4D11930109C8299A5CB5F89D801D90C052FB0174E9D1D24" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573881 > version:1 chain_id:"chain-9RH748" TIME:id:"163-1" block:"398D2709C189EFAB1BC483B9BDC7C925A5582D52F1F5E4E26AB9AFA0CAD62C21" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573883 > version:1 chain_id:"chain-9RH748" TIME:id:"164-1" block:"1E9E86EEC8969E8D0CB2A69D8B9420062BD1F512113937DD1D8FA7540B4FB3DA" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573884 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.777Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 162, "time": "2022-02-11T10:04:41.000Z"}
+2022-02-11T20:42:28.778Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:50 +0000 UTC
+2022-02-11T20:42:28.778Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:51 +0000 UTC
+2022-02-11T20:42:28.778Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 125}
+TIME:id:"165-1" block:"84534FDBCF9F1DF3A8A37E7D9E619ACB153923865B678D923E3A6BCA3480A89A" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573885 > version:1 chain_id:"chain-9RH748" TIME:id:"166-1" block:"AEB1BD28792EBB267F95A176A25C12C7872D54EC33F14D12D9B2FB9EB0DAFA33" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573887 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.779Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 163, "time": "2022-02-11T10:04:43.000Z"}
+2022-02-11T20:42:28.779Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:53 +0000 UTC
+2022-02-11T20:42:28.779Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 126}
+TIME:id:"167-1" block:"34F47FD12096908657FD8A09EB924FB01E3E8B3B64176165EFBC3BC8B002A522" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573888 > version:1 chain_id:"chain-9RH748" TIME:id:"168-1" block:"25134B1C9DA0C3107753B1A7DDA575CB16C8B4EBE5E7E559ECACAE5A91B65310" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573890 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.780Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 164, "time": "2022-02-11T10:04:44.000Z"}
+2022-02-11T20:42:28.781Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:54 +0000 UTC
+2022-02-11T20:42:28.781Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:56 +0000 UTC
+2022-02-11T20:42:28.781Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 128}
+TIME:id:"169-1" block:"EA86F5EBEE581A145325D799AB660C276AD6DCA341E3DE39DB9DEFC5357E2B1F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573891 > version:1 chain_id:"chain-9RH748" TIME:id:"170-1" block:"3582BD8E22FB86900310FFF8BA61CEE55F7B0A6C7686084D7E776DE9CAAA54FD" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573892 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.782Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 165, "time": "2022-02-11T10:04:45.000Z"}
+2022-02-11T20:42:28.783Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 128}
+TIME:id:"171-1" block:"091ADC0A9E245B6B09F26CF3992BE2657E48B685A4273B3A09331467D3986692" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573893 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.784Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 166, "time": "2022-02-11T10:04:47.000Z"}
+2022-02-11T20:42:28.786Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 167, "time": "2022-02-11T10:04:48.000Z"}
+2022-02-11T20:42:28.788Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 168, "time": "2022-02-11T10:04:50.000Z"}
+2022-02-11T20:42:28.790Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 169, "time": "2022-02-11T10:04:51.000Z"}
+2022-02-11T20:42:28.792Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 170, "time": "2022-02-11T10:04:52.000Z"}
+2022-02-11T20:42:28.794Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 171, "time": "2022-02-11T10:04:53.000Z"}
+2022-02-11T20:42:28.796Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 128}
+2022-02-11T20:42:28.807Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:57 +0000 UTC
+2022-02-11T20:42:28.807Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 129}
+TIME:id:"172-1" block:"2B48D5C4407AD623BADEA3C2DE478C3FEF3A6048C64AE81737DF6DD3F83860D8" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573895 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.807Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 172, "time": "2022-02-11T10:04:55.000Z"}
+2022-02-11T20:42:28.809Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 129}
+TIME:id:"173-1" block:"DEF71DA28CDE42BBF2B051AC84C56FC03C35584ACE66120A4F46C827B60430D2" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573896 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.811Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 129}
+2022-02-11T20:42:28.811Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 173, "time": "2022-02-11T10:04:56.000Z"}
+TIME:id:"174-1" block:"F3AD8B8AE6D2F57ADF855F28F86E1C2ACD20C4249ED5366F1C012D74B3893CDB" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573898 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.817Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 129}
+2022-02-11T20:42:28.817Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 174, "time": "2022-02-11T10:04:58.000Z"}
+2022-02-11T20:42:28.829Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:58 +0000 UTC
+2022-02-11T20:42:28.829Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 130}
+2022-02-11T20:42:28.831Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:03:59 +0000 UTC
+2022-02-11T20:42:28.831Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 131}
+TIME:id:"175-1" block:"F815A00A107A568AFA41E91E83D4631D6021C2AF188840C453CDCA0182A45CC9" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573899 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.831Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 175, "time": "2022-02-11T10:04:59.000Z"}
+2022-02-11T20:42:28.833Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 131}
+2022-02-11T20:42:28.839Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 131}
+2022-02-11T20:42:28.850Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 131}
+TIME:id:"176-1" block:"B4BC689A538411825491889DA07AE58489A1328E7042373D8754319D5903DF95" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573900 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.852Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 131}
+TIME:id:"177-1" block:"A63769528CB340CE295C10E03B00CF52590AC101506FCE4B1B6452B7457D1A3F" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573902 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.852Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 176, "time": "2022-02-11T10:05:00.000Z"}
+2022-02-11T20:42:28.853Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 177, "time": "2022-02-11T10:05:02.000Z"}
+2022-02-11T20:42:28.854Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:01 +0000 UTC
+2022-02-11T20:42:28.854Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 132}
+TIME:id:"178-1" block:"149A56E354448D57BEEDB0965440B14C0ADEC446E78D5AB3C55C3B4D953A3D06" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573903 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.855Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 178, "time": "2022-02-11T10:05:03.000Z"}
+2022-02-11T20:42:28.858Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 132}
+2022-02-11T20:42:28.859Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:02 +0000 UTC
+2022-02-11T20:42:28.859Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:03 +0000 UTC
+2022-02-11T20:42:28.859Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 134}
+2022-02-11T20:42:28.860Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 134}
+TIME:id:"179-1" block:"EFA4430545740F0E84A1A344D2DC577EFDFC18DDC311923E589E2F0E2E430446" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573904 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.860Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 179, "time": "2022-02-11T10:05:04.000Z"}
+2022-02-11T20:42:28.862Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:05 +0000 UTC
+2022-02-11T20:42:28.862Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 135}
+TIME:id:"180-1" block:"CFF4883A3F96E829FA6A6B4EC03A22A91CA63D8ECB87AE388EC4EB60BB0AE604" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573905 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.862Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 180, "time": "2022-02-11T10:05:05.000Z"}
+2022-02-11T20:42:28.864Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:06 +0000 UTC
+2022-02-11T20:42:28.864Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:08 +0000 UTC
+2022-02-11T20:42:28.864Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 137}
+2022-02-11T20:42:28.865Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 137}
+TIME:id:"181-1" block:"C6FC505B3B78CE811C929CFF71D3DD566AAEB5285B50EC434DFE7A2B2CFB6A47" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573907 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.870Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 137}
+2022-02-11T20:42:28.870Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 181, "time": "2022-02-11T10:05:07.000Z"}
+2022-02-11T20:42:28.883Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 137}
+TIME:id:"182-1" block:"18440781427D22224282BDB07625C6B96DC6CDBD6AFCDB4B9F104E986AAEDAC0" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573908 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.885Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:09 +0000 UTC
+2022-02-11T20:42:28.885Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 138}
+TIME:id:"183-1" block:"DBB70216857A94D52FB5166C78E482AF1F48480A1384BE71C968042EBBFB7B51" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573909 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.885Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 182, "time": "2022-02-11T10:05:08.000Z"}
+TIME:id:"184-1" block:"9D55A86A182A8747DE8F9A5E0A562CB36AA5073BE56C50C501A6A55FD5A6A702" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573911 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.886Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 183, "time": "2022-02-11T10:05:09.000Z"}
+2022-02-11T20:42:28.887Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 138}
+2022-02-11T20:42:28.888Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 184, "time": "2022-02-11T10:05:11.000Z"}
+2022-02-11T20:42:28.888Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:10 +0000 UTC
+2022-02-11T20:42:28.888Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:12 +0000 UTC
+2022-02-11T20:42:28.888Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 140}
+TIME:id:"185-1" block:"2813289E5C7FED2A605BD41440F844010629B932CED534AFD8168EA231A4E28D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573912 > version:1 chain_id:"chain-9RH748" TIME:id:"186-1" block:"DA13377AF86061F3D6C3A88E7B073D24CDEEFE596C786F7435D1670BA818688B" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573913 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.889Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 185, "time": "2022-02-11T10:05:12.000Z"}
+2022-02-11T20:42:28.890Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:13 +0000 UTC
+2022-02-11T20:42:28.890Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 141}
+2022-02-11T20:42:28.892Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 186, "time": "2022-02-11T10:05:13.000Z"}
+2022-02-11T20:42:28.892Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:15 +0000 UTC
+2022-02-11T20:42:28.892Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 142}
+2022-02-11T20:42:28.894Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 142}
+2022-02-11T20:42:28.895Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:16 +0000 UTC
+2022-02-11T20:42:28.895Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:17 +0000 UTC
+2022-02-11T20:42:28.895Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 144}
+2022-02-11T20:42:28.897Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 144}
+TIME:id:"187-1" block:"62E855223F33873686662003DC38972FBDBED24D59E381E0B12E13D6D77F920D" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573915 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.901Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 144}
+2022-02-11T20:42:28.902Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 187, "time": "2022-02-11T10:05:15.000Z"}
+2022-02-11T20:42:28.915Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:19 +0000 UTC
+2022-02-11T20:42:28.915Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 145}
+TIME:id:"188-1" block:"6A2D9302E3F9C38B6250BA67296F530EC41EA995F140B01CEDBA14FFE5037039" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573916 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.915Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 188, "time": "2022-02-11T10:05:16.000Z"}
+TIME:id:"189-1" block:"FFDA5959FE61F351F2511EE3567346689B822AB748F91E502573D247B1F87669" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573917 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.917Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 145}
+2022-02-11T20:42:28.917Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 189, "time": "2022-02-11T10:05:17.000Z"}
+2022-02-11T20:42:28.919Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:20 +0000 UTC
+2022-02-11T20:42:28.919Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:21 +0000 UTC
+2022-02-11T20:42:28.919Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:23 +0000 UTC
+2022-02-11T20:42:28.919Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 148}
+TIME:id:"190-1" block:"798E8CAD6F185E78F1C3796473695A293D5D7EDB3023D53FF68AB1F0B97E66C1" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573919 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.920Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 190, "time": "2022-02-11T10:05:19.000Z"}
+TIME:id:"191-1" block:"00D8F93938BE272E5B1D73926835401BC71D5C67B5F5536EADFEA97A76E5ABE9" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573920 > version:1 chain_id:"chain-9RH748" TIME:id:"192-1" block:"353EFDE943BF3E5FC0258BA883F4A453D1D0ADF498F9661DA392FAE3D5DBE1D9" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573922 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.921Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 191, "time": "2022-02-11T10:05:20.000Z"}
+2022-02-11T20:42:28.922Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:24 +0000 UTC
+2022-02-11T20:42:28.922Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:25 +0000 UTC
+2022-02-11T20:42:28.922Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 150}
+TIME:id:"193-1" block:"405D19673E1C4BF307CAC41EFCDF7D9A9E35DE1D5227069801D5121CC49BFAC2" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573923 > version:1 chain_id:"chain-9RH748" TIME:id:"194-1" block:"2E643FE5DBC650685906836CAF1CC9A1924906C31C470074720A6929643DBCEA" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573924 > version:1 chain_id:"chain-9RH748" TIME:id:"195-1" block:"65F1C1C8F6FAD736BA065D870C0CEB347C5D443BB76B034C1E6C2D631EE96C14" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573925 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.923Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 192, "time": "2022-02-11T10:05:22.000Z"}
+2022-02-11T20:42:28.923Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 150}
+2022-02-11T20:42:28.924Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 193, "time": "2022-02-11T10:05:23.000Z"}
+2022-02-11T20:42:28.927Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 194, "time": "2022-02-11T10:05:24.000Z"}
+2022-02-11T20:42:28.928Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 195, "time": "2022-02-11T10:05:25.000Z"}
+2022-02-11T20:42:28.934Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 150}
+TIME:id:"196-1" block:"E328F77A2EB7C8977932E3AB58F1F28B07CEF3B035E819EFDF58B04ED9982457" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573927 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.934Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 196, "time": "2022-02-11T10:05:27.000Z"}
+2022-02-11T20:42:28.947Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 150}
+TIME:id:"197-1" block:"D6B7981EF94B0E421B4E1B292ECAAF110DB812A96FC33CE7A87C2F1D496F8A8E" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573928 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.947Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 197, "time": "2022-02-11T10:05:28.000Z"}
+2022-02-11T20:42:28.950Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:27 +0000 UTC
+2022-02-11T20:42:28.950Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 151}
+TIME:id:"198-1" block:"723434EB8E0B6A28A42AA0FA6E4203C109FE4FE664982CAB051F2C7EFCF6D832" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573929 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.950Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 198, "time": "2022-02-11T10:05:29.000Z"}
+TIME:id:"199-1" block:"7010CC81E36CB270F215742F4ACD9F10FB1374A05DAFE4687BE0F7DAF13EFEC7" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573931 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.951Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 199, "time": "2022-02-11T10:05:31.000Z"}
+2022-02-11T20:42:28.952Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 151}
+TIME:id:"200-1" block:"1311AA0FEE2B038A3EE240107419A628BF9B1D290CE07FA7C087277D0542A47A" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573932 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.953Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 200, "time": "2022-02-11T10:05:32.000Z"}
+2022-02-11T20:42:28.959Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 151}
+TIME:id:"201-1" block:"FFB8CE0F896A60AD955F97403D5D77A11FC6576A2670DA0B3AEDFD6B6E2DA76C" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573933 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.959Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 201, "time": "2022-02-11T10:05:33.000Z"}
+2022-02-11T20:42:28.972Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 151}
+TIME:id:"202-1" block:"1FB85F2AF2F5C4461C652BF110BE17A39EF449EB878A268B5B5A9DAB7D0EFB6A" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573935 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.972Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 202, "time": "2022-02-11T10:05:35.000Z"}
+2022-02-11T20:42:28.974Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:28 +0000 UTC
+2022-02-11T20:42:28.974Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 152}
+TIME:id:"203-1" block:"8EC4355E686EF773C20BA96323BE277770B1E0C2444A39B39AA5F361CC9DF0D8" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573936 > version:1 chain_id:"chain-9RH748" TIME:id:"204-1" block:"05317A2270387E272D97BE32E4231762D6CA0986CD5851995D4DFABEE16408EC" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573937 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.975Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 203, "time": "2022-02-11T10:05:36.000Z"}
+2022-02-11T20:42:28.976Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:29 +0000 UTC
+2022-02-11T20:42:28.976Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 153}
+2022-02-11T20:42:28.976Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 204, "time": "2022-02-11T10:05:37.000Z"}
+TIME:id:"205-1" block:"3B514FB1AC32832CBEE6CC5DAC31D4D96015386D90E719B3E22DDAD6B5D3AE85" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573939 > version:1 chain_id:"chain-9RH748" TIME:id:"206-1" block:"2AB5AB4740474A0929CA6BB80FD8C2CA335C196EAF523EA276529D8A322E2BF7" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573940 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.977Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 205, "time": "2022-02-11T10:05:39.000Z"}
+2022-02-11T20:42:28.979Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 206, "time": "2022-02-11T10:05:40.000Z"}
+2022-02-11T20:42:28.984Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 153}
+TIME:id:"207-1" block:"C1A6C111D651709A13D528BDBF5339DBAF0E864F170BEAEAA9F6B63372AD3421" type:BUS_EVENT_TYPE_TIME_UPDATE time_update:<timestamp:1644573941 > version:1 chain_id:"chain-9RH748" 2022-02-11T20:42:28.984Z	DEBUG	sqlsubscribers/time_update.go:57	TimeUpdate: 	{"block": 207, "time": "2022-02-11T10:05:41.000Z"}
+2022-02-11T20:42:28.997Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 153}
+2022-02-11T20:42:28.998Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 153}
+2022-02-11T20:42:28.999Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:30 +0000 UTC
+2022-02-11T20:42:28.999Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 154}
+2022-02-11T20:42:29.000Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:32 +0000 UTC
+2022-02-11T20:42:29.000Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 155}
+2022-02-11T20:42:29.001Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:33 +0000 UTC
+2022-02-11T20:42:29.001Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 156}
+2022-02-11T20:42:29.003Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:35 +0000 UTC
+2022-02-11T20:42:29.003Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 157}
+2022-02-11T20:42:29.005Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 157}
+2022-02-11T20:42:29.009Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 157}
+2022-02-11T20:42:29.021Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 157}
+2022-02-11T20:42:29.022Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 157}
+2022-02-11T20:42:29.024Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:36 +0000 UTC
+2022-02-11T20:42:29.024Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 158}
+2022-02-11T20:42:29.025Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:37 +0000 UTC
+2022-02-11T20:42:29.025Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:39 +0000 UTC
+2022-02-11T20:42:29.025Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 160}
+2022-02-11T20:42:29.026Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:40 +0000 UTC
+2022-02-11T20:42:29.026Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:41 +0000 UTC
+2022-02-11T20:42:29.026Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:43 +0000 UTC
+2022-02-11T20:42:29.026Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 163}
+2022-02-11T20:42:29.028Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:44 +0000 UTC
+2022-02-11T20:42:29.028Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:45 +0000 UTC
+2022-02-11T20:42:29.028Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 165}
+2022-02-11T20:42:29.029Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:47 +0000 UTC
+2022-02-11T20:42:29.029Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:48 +0000 UTC
+2022-02-11T20:42:29.029Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:50 +0000 UTC
+2022-02-11T20:42:29.029Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:51 +0000 UTC
+2022-02-11T20:42:29.029Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 169}
+2022-02-11T20:42:29.030Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:52 +0000 UTC
+2022-02-11T20:42:29.030Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:53 +0000 UTC
+2022-02-11T20:42:29.030Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 171}
+2022-02-11T20:42:29.032Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:55 +0000 UTC
+2022-02-11T20:42:29.032Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 172}
+2022-02-11T20:42:29.033Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:56 +0000 UTC
+2022-02-11T20:42:29.033Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:58 +0000 UTC
+2022-02-11T20:42:29.033Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 174}
+2022-02-11T20:42:29.034Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 174}
+2022-02-11T20:42:29.041Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 174}
+2022-02-11T20:42:29.053Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 174}
+2022-02-11T20:42:29.055Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:04:59 +0000 UTC
+2022-02-11T20:42:29.055Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 175}
+2022-02-11T20:42:29.056Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 175}
+2022-02-11T20:42:29.057Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:00 +0000 UTC
+2022-02-11T20:42:29.057Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:02 +0000 UTC
+2022-02-11T20:42:29.057Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 177}
+2022-02-11T20:42:29.063Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:03 +0000 UTC
+2022-02-11T20:42:29.063Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 178}
+2022-02-11T20:42:29.065Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 178}
+2022-02-11T20:42:29.071Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 178}
+2022-02-11T20:42:29.083Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 178}
+2022-02-11T20:42:29.084Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:04 +0000 UTC
+2022-02-11T20:42:29.084Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 179}
+2022-02-11T20:42:29.085Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:05 +0000 UTC
+2022-02-11T20:42:29.085Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 180}
+2022-02-11T20:42:29.087Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 180}
+2022-02-11T20:42:29.092Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 180}
+2022-02-11T20:42:29.105Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:07 +0000 UTC
+2022-02-11T20:42:29.105Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 181}
+2022-02-11T20:42:29.106Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:08 +0000 UTC
+2022-02-11T20:42:29.106Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:09 +0000 UTC
+2022-02-11T20:42:29.106Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:11 +0000 UTC
+2022-02-11T20:42:29.106Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 184}
+2022-02-11T20:42:29.107Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:12 +0000 UTC
+2022-02-11T20:42:29.107Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:13 +0000 UTC
+2022-02-11T20:42:29.107Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.108Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.109Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.111Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.113Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.114Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.115Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.117Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.118Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 186}
+2022-02-11T20:42:29.119Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:15 +0000 UTC
+2022-02-11T20:42:29.119Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 187}
+2022-02-11T20:42:29.120Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:16 +0000 UTC
+2022-02-11T20:42:29.120Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:17 +0000 UTC
+2022-02-11T20:42:29.120Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 189}
+2022-02-11T20:42:29.122Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:19 +0000 UTC
+2022-02-11T20:42:29.122Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:20 +0000 UTC
+2022-02-11T20:42:29.122Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:22 +0000 UTC
+2022-02-11T20:42:29.122Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 192}
+2022-02-11T20:42:29.123Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:23 +0000 UTC
+2022-02-11T20:42:29.123Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:24 +0000 UTC
+2022-02-11T20:42:29.123Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:25 +0000 UTC
+2022-02-11T20:42:29.123Z	DEBUG	sqlsubscribers/transfer_response.go:77	TransferResponseEvent: 	{"block": 195}
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:27 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:28 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:29 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:31 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:32 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:33 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:35 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:36 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:37 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:39 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:40 +0000 UTC
+2022-02-11T20:42:29.124Z	DEBUG	broker/sqlstore_broker.go:115	Time update:2022-02-11 10:05:41 +0000 UTC

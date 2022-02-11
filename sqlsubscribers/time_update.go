@@ -18,7 +18,6 @@ type TimeUpdateEvent interface {
 
 type BlockStore interface {
 	Add(entities.Block) error
-	WaitForBlockHeight(height int64) (entities.Block, error)
 }
 
 type Time struct {
@@ -40,15 +39,12 @@ func NewTimeSub(
 	return t
 }
 
-func (t *Time) Types() []events.Type {
-	return []events.Type{
-		events.TimeUpdate,
-	}
+func (t *Time) Type() events.Type {
+	return events.TimeUpdate
 }
 
 func (t *Time) Push(evt events.Event) {
 	switch et := evt.(type) {
-
 	case TimeUpdateEvent:
 		t.consume(et)
 	default:

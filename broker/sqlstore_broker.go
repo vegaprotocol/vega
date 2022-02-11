@@ -10,7 +10,7 @@ import (
 
 type SqlBrokerSubscriber interface {
 	Push(val events.Event)
-	Types() []events.Type
+	Type() events.Type
 }
 
 // SqlStoreBroker : push events to each subscriber with a go-routine per type
@@ -41,6 +41,10 @@ func NewSqlStoreBroker(log *logging.Logger, config Config, chainInfo ChainInfoI,
 }
 
 func (b *SqlStoreBroker) Receive(ctx context.Context) error {
+	b.startedGuard.Lock()
+	defer b.startedGuard.Unlock()
+	b.startedSendingEvents = true
+
 	if err := b.eventSource.Listen(); err != nil {
 		return err
 	}
@@ -53,8 +57,15 @@ func (b *SqlStoreBroker) Receive(ctx context.Context) error {
 			return err
 		}
 
-		if ch, ok := b.typeToEvtCh[e.Type()]; ok {
-			ch <- e
+		// If the event is a time event send it to all type channels, this indicates a new block start (for now)
+		if e.Type() == events.TimeUpdate {
+			for _, ch := range b.typeToEvtCh {
+				ch <- e
+			}
+		} else {
+			if ch, ok := b.typeToEvtCh[e.Type()]; ok {
+				ch <- e
+			}
 		}
 	}
 
@@ -79,42 +90,39 @@ func (b *SqlStoreBroker) SubscribeBatch(subs ...SqlBrokerSubscriber) {
 }
 
 func (b *SqlStoreBroker) subscribe(s SqlBrokerSubscriber) {
-	for _, t := range s.Types() {
-		if _, exists := b.typeToEvtCh[t]; !exists {
-			ch := make(chan events.Event, b.eventTypeBufferSize)
-			b.typeToEvtCh[t] = ch
-		}
+	if _, exists := b.typeToEvtCh[s.Type()]; !exists {
+		ch := make(chan events.Event, b.eventTypeBufferSize)
+		b.typeToEvtCh[s.Type()] = ch
 	}
 
-	types := s.Types()
-	for _, t := range types {
-		b.typeToSubs[t] = append(b.typeToSubs[t], s)
-	}
+	b.typeToSubs[s.Type()] = append(b.typeToSubs[s.Type()], s)
 }
 
 func (b *SqlStoreBroker) startSendingEvents(ctx context.Context) {
-	b.startedGuard.Lock()
-	defer b.startedGuard.Unlock()
-	b.startedSendingEvents = true
-
-	for _, ch := range b.typeToEvtCh {
-		go func(ch chan events.Event) {
+	for t, ch := range b.typeToEvtCh {
+		go func(ch chan events.Event, subs []SqlBrokerSubscriber) {
 			for {
 				select {
 				case <-ctx.Done():
 					return
 				case evt := <-ch:
-					subs, _ := b.typeToSubs[evt.Type()]
-					for _, sub := range subs {
-						select {
-						case <-ctx.Done():
-							return
-						default:
-							sub.Push(evt)
+					if evt.Type() == events.TimeUpdate {
+						time := evt.(*events.Time)
+						for _, sub := range subs {
+							sub.Push(time)
+						}
+					} else {
+						for _, sub := range subs {
+							select {
+							case <-ctx.Done():
+								return
+							default:
+								sub.Push(evt)
+							}
 						}
 					}
 				}
 			}
-		}(ch)
+		}(ch, b.typeToSubs[t])
 	}
 }

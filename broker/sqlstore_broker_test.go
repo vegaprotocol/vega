@@ -3,6 +3,7 @@ package broker_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/logging"
@@ -17,9 +18,9 @@ var logger = logging.NewTestLogger()
 func TestEventDistribution(t *testing.T) {
 	tes, sb := createTestBroker(t)
 
-	s1 := testSqlBrokerSubscriber{types: []events.Type{events.AssetEvent}, receivedCh: make(chan events.Event)}
-	s2 := testSqlBrokerSubscriber{types: []events.Type{events.AssetEvent}, receivedCh: make(chan events.Event)}
-	s3 := testSqlBrokerSubscriber{types: []events.Type{events.AccountEvent}, receivedCh: make(chan events.Event)}
+	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
+	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
+	s3 := testSqlBrokerSubscriber{eventType: events.AccountEvent, receivedCh: make(chan events.Event)}
 	sb.SubscribeBatch(s1, s2, s3)
 	go sb.Receive(context.Background())
 
@@ -48,15 +49,30 @@ func TestSubscriptionAfterBrokerStartPanics(t *testing.T) {
 
 	tes, sb := createTestBroker(t)
 
-	s1 := testSqlBrokerSubscriber{types: []events.Type{events.AssetEvent}, receivedCh: make(chan events.Event)}
+	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	sb.SubscribeBatch(s1)
 	go sb.Receive(context.Background())
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
 	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-s1.receivedCh)
 
-	s2 := testSqlBrokerSubscriber{types: []events.Type{events.AssetEvent}, receivedCh: make(chan events.Event)}
+	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	sb.SubscribeBatch(s2)
+}
+
+func TestTimeEventOnlySendOnceToTimeSubscribers(t *testing.T) {
+	tes, sb := createTestBroker(t)
+
+	s1 := testSqlBrokerSubscriber{eventType: events.TimeUpdate, receivedCh: make(chan events.Event)}
+	sb.SubscribeBatch(s1)
+	go sb.Receive(context.Background())
+
+	timeEvent := events.NewTime(context.Background(), time.Now())
+
+	tes.eventsCh <- timeEvent
+
+	assert.Equal(t, timeEvent, <-s1.receivedCh)
+	assert.Equal(t, 0, len(s1.receivedCh))
 }
 
 func createTestBroker(t *testing.T) (*testEventSource, *broker.SqlStoreBroker) {
@@ -75,7 +91,7 @@ func createTestBroker(t *testing.T) (*testEventSource, *broker.SqlStoreBroker) {
 }
 
 type testSqlBrokerSubscriber struct {
-	types      []events.Type
+	eventType  events.Type
 	receivedCh chan events.Event
 }
 
@@ -83,8 +99,8 @@ func (t testSqlBrokerSubscriber) Push(evt events.Event) {
 	t.receivedCh <- evt
 }
 
-func (t testSqlBrokerSubscriber) Types() []events.Type {
-	return t.types
+func (t testSqlBrokerSubscriber) Type() events.Type {
+	return t.eventType
 }
 
 type testChainInfo struct {
