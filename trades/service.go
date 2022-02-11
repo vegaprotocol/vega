@@ -87,7 +87,7 @@ func (s *Svc) checkPagination(limit *uint64) error {
 	return nil
 }
 
-// GetByMarket returns a list of trades for a given market
+//GetByMarket returns a list of trades for a given market
 func (s *Svc) GetByMarket(ctx context.Context, market string, skip, limit uint64, descending bool) (trades []*ptypes.Trade, err error) {
 	if err = s.checkPagination(&limit); err != nil {
 		return nil, err
@@ -334,6 +334,7 @@ func (s *Svc) ObservePositions(ctx context.Context, retries int, party, market s
 
 // GetPositionsByParty returns a list of positions for a given party
 func (s *Svc) GetPositionsByParty(ctx context.Context, party, marketID string) ([]*ptypes.Position, error) {
+
 	s.log.Debug("Calculate positions for party",
 		logging.String("party-id", party))
 

@@ -213,7 +213,7 @@ func (rc *RewardCounters) notifyWithLock(rd vega.Reward) {
 	}
 }
 
-// subscribe allows a client to register for updates of the reward details.
+//subscribe allows a client to register for updates of the reward details.
 func (rc *RewardCounters) subscribe(sub subscription) uint64 {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
@@ -246,7 +246,7 @@ func (rc *RewardCounters) unsubscribe(id uint64) error {
 	return fmt.Errorf("subscriber to delegation updates does not exist with id: %d", id)
 }
 
-// ObserveRewardDetails returns a channel for subscribing to reward details.
+//ObserveRewardDetails returns a channel for subscribing to reward details.
 func (rc *RewardCounters) ObserveRewards(ctx context.Context, retries int, assetID, party string) (rewardCh <-chan vega.Reward, ref uint64) {
 	rewards := make(chan vega.Reward)
 	ctx, cancel := context.WithCancel(ctx)
@@ -308,11 +308,9 @@ func (rc *RewardCounters) GetRewardSummaries(ctx context.Context, partyID string
 		if assetID != nil && *assetID != rewardAssetID {
 			continue
 		}
-		s := vega.RewardSummary{
-			AssetId: rewardAssetID,
+		s := vega.RewardSummary{AssetId: rewardAssetID,
 			PartyId: partyID,
-			Amount:  sum.totalAmount.String(),
-		}
+			Amount:  sum.totalAmount.String()}
 
 		summaries = append(summaries, &s)
 	}

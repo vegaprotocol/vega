@@ -126,7 +126,7 @@ func testRWObserverWithFilter(t *testing.T, req *apipb.ObserveRewardsRequest, ev
 		server.broker.Send(evt)
 	}
 
-	i := 0
+	var i = 0
 	for i < len(expectedEvents) {
 		resp, err := stream.Recv()
 

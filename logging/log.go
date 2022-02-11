@@ -9,10 +9,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// ErrInvalidLogLevel signal that the log level used is not valid
-// as cannot be unmarshal from a string, or not one of the level
-// provided in this package
-var ErrInvalidLogLevel = errors.New("invalid log level")
+var (
+	// ErrInvalidLogLevel signal that the log level used is not valid
+	// as cannot be unmarshal from a string, or not one of the level
+	// provided in this package
+	ErrInvalidLogLevel = errors.New("invalid log level")
+)
 
 // A Level is a logging priority. Higher levels are more important.
 type Level int8
@@ -389,7 +391,7 @@ func (l *gooseLogger) Println(v ...interface{}) {
 }
 
 func (l *gooseLogger) Printf(format string, v ...interface{}) {
-	// l.Logger.WithOptions(zap.AddCallerSkip(2))
+	//l.Logger.WithOptions(zap.AddCallerSkip(2))
 	l.Infof(strings.TrimSpace(format), v...)
 }
 

@@ -12,7 +12,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var ErrNoSignaturesForID = errors.New("no signatures for id")
+var (
+	ErrNoSignaturesForID = errors.New("no signatures for id")
+)
 
 type NodeSignatureEvent interface {
 	events.Event

@@ -1,14 +1,11 @@
 package broker
 
 import (
+	"code.vegaprotocol.io/vega/events"
 	"context"
 	"sync"
-
-	"code.vegaprotocol.io/vega/events"
 )
 
-// fanOutEventSource: an event source to fan out an event stream, it is told in advance the number of subscribers to
-// expect and only starts publishing events once that number of subscriptions has been received
 type fanOutEventSource struct {
 	source                 eventSource
 	sendChannelBufferSize  int
@@ -44,7 +41,7 @@ func (e *fanOutEventSource) Receive(ctx context.Context) (<-chan events.Event, <
 	e.numSubscribers++
 
 	if e.numSubscribers > e.expectedNumSubscribers {
-		panic("number of subscribers exceeded expected subscriber number")
+		panic("number of subscribers exceeded expected subscriber count")
 	}
 
 	// Once the number of subscribers equals the expected number start forwarding events

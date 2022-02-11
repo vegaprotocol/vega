@@ -270,10 +270,8 @@ func (mdb *MarketDepthBuilder) updateMarketDepth(order *types.Order) {
 	if md == nil {
 		// First time we have an update for this market
 		// so we need to create a new MarketDepth
-		md = &MarketDepth{
-			marketID:   order.MarketID,
-			liveOrders: map[string]*types.Order{},
-		}
+		md = &MarketDepth{marketID: order.MarketID,
+			liveOrders: map[string]*types.Order{}}
 		mdb.marketDepths[order.MarketID] = md
 	}
 
@@ -377,16 +375,14 @@ func (mdb *MarketDepthBuilder) GetMarketDepth(ctx context.Context, market string
 
 	// Copy the data across
 	for index, pl := range md.buySide[:buyLimit] {
-		buyPtr[index] = &types.PriceLevel{
-			Volume:         pl.totalVolume,
+		buyPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
 			NumberOfOrders: pl.totalOrders,
 			Price:          pl.price.Clone(),
 		}
 	}
 
 	for index, pl := range md.sellSide[:sellLimit] {
-		sellPtr[index] = &types.PriceLevel{
-			Volume:         pl.totalVolume,
+		sellPtr[index] = &types.PriceLevel{Volume: pl.totalVolume,
 			NumberOfOrders: pl.totalOrders,
 			Price:          pl.price.Clone(),
 		}

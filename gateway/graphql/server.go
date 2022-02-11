@@ -89,7 +89,7 @@ func (g *GraphServer) ReloadConf(cfg gateway.Config) {
 func (g *GraphServer) Start() error {
 	// <--- cors support - configure for production
 	corz := cors.AllowAll()
-	up := websocket.Upgrader{
+	var up = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
@@ -110,7 +110,7 @@ func (g *GraphServer) Start() error {
 		g.coreProxyClient,
 		g.tradingDataClient,
 	)
-	config := Config{
+	var config = Config{
 		Resolvers: resolverRoot,
 	}
 

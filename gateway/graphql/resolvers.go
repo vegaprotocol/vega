@@ -62,6 +62,7 @@ func NewResolverRoot(
 	tradingClient CoreProxyServiceClient,
 	tradingDataClient TradingDataServiceClient,
 ) *VegaResolverRoot {
+
 	return &VegaResolverRoot{
 		log:                log,
 		Config:             config,
@@ -306,7 +307,6 @@ func (r *VegaResolverRoot) Transfer() TransferResolver {
 func (r *VegaResolverRoot) OneOffTransfer() OneOffTransferResolver {
 	return (*oneoffTransferResolver)(r)
 }
-
 func (r *VegaResolverRoot) RecurringTransfer() RecurringTransferResolver {
 	return (*recurringTransferResolver)(r)
 }
@@ -655,8 +655,8 @@ func (r *myQueryResolver) OrderByID(ctx context.Context, orderID string, version
 }
 
 func (r *myQueryResolver) OrderVersions(
-	ctx context.Context, orderID string, skip, first, last *int) ([]*types.Order, error,
-) {
+	ctx context.Context, orderID string, skip, first, last *int) ([]*types.Order, error) {
+
 	p := makePagination(skip, first, last)
 	reqest := &protoapi.OrderVersionsByIDRequest{
 		OrderId:    orderID,
@@ -921,6 +921,7 @@ func (r *myPartyResolver) Rewards(
 	asset *string,
 	skip, first, last *int,
 ) ([]*types.Reward, error) {
+
 	var assetID string
 	if asset != nil {
 		assetID = *asset
@@ -940,8 +941,8 @@ func (r *myPartyResolver) Rewards(
 func (r *myPartyResolver) RewardSummaries(
 	ctx context.Context,
 	party *types.Party,
-	asset *string) ([]*types.RewardSummary, error,
-) {
+	asset *string) ([]*types.RewardSummary, error) {
+
 	var assetID string
 	if asset != nil {
 		assetID = *asset
@@ -1002,8 +1003,8 @@ func (r *myPartyResolver) LiquidityProvisions(
 }
 
 func (r *myPartyResolver) Margins(ctx context.Context,
-	party *types.Party, marketID *string) ([]*types.MarginLevels, error,
-) {
+	party *types.Party, marketID *string) ([]*types.MarginLevels, error) {
+
 	req := protoapi.MarginLevelsRequest{
 		PartyId: party.Id,
 	}
@@ -1022,8 +1023,8 @@ func (r *myPartyResolver) Margins(ctx context.Context,
 }
 
 func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
-	skip, first, last *int) ([]*types.Order, error,
-) {
+	skip, first, last *int) ([]*types.Order, error) {
+
 	p := makePagination(skip, first, last)
 	req := protoapi.OrdersByPartyRequest{
 		PartyId:    party.Id,
@@ -1043,8 +1044,8 @@ func (r *myPartyResolver) Orders(ctx context.Context, party *types.Party,
 }
 
 func (r *myPartyResolver) Trades(ctx context.Context, party *types.Party,
-	market *string, skip, first, last *int) ([]*types.Trade, error,
-) {
+	market *string, skip, first, last *int) ([]*types.Trade, error) {
+
 	var mkt string
 	if market != nil {
 		mkt = *market
@@ -1196,6 +1197,7 @@ func (r *myPartyResolver) Delegations(
 	nodeID *string,
 	skip, first, last *int,
 ) ([]*types.Delegation, error) {
+
 	req := &protoapi.DelegationsRequest{
 		Party:      obj.Id,
 		Pagination: makePagination(skip, first, last),

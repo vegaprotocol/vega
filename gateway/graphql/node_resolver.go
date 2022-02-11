@@ -20,6 +20,7 @@ func (r *nodeResolver) Delegations(
 	partyID *string,
 	skip, first, last *int,
 ) ([]*proto.Delegation, error) {
+
 	req := &protoapi.DelegationsRequest{
 		NodeId:     obj.Id,
 		Pagination: makePagination(skip, first, last),

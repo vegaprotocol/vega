@@ -188,7 +188,7 @@ func (bs *badgerStore) Close() error {
 */
 
 // GarbageCollectValueLog triggers a value log garbage collection.
-// We ignore errors reported when no rewrites are triggered, and if GC is already running.
+//We ignore errors reported when no rewrites are triggered, and if GC is already running.
 func (bs *badgerStore) GarbageCollectValueLog() error {
 	err := bs.db.RunValueLogGC(0.5)
 	if err != nil &&

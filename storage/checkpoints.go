@@ -68,6 +68,7 @@ func (c *Checkpoints) GetAll() ([]*eventspb.CheckpointEvent, error) {
 		}
 		return nil
 	})
+
 	if err != nil {
 		c.log.Error("unable to get all checkpoints", logging.Error(err))
 		return nil, err

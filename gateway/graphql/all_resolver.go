@@ -60,6 +60,7 @@ func (r *allResolver) getNodeByID(ctx context.Context, id string) (*types.Node, 
 	}
 
 	return resp.Node, nil
+
 }
 
 func (r allResolver) allAssets(ctx context.Context) ([]*types.Asset, error) {
@@ -83,6 +84,7 @@ func (r *allResolver) getMarketByID(ctx context.Context, id string) (*types.Mark
 		return nil, nil
 	}
 	return res.Market, nil
+
 }
 
 func (r *allResolver) allMarkets(ctx context.Context, id *string) ([]*types.Market, error) {
@@ -102,6 +104,7 @@ func (r *allResolver) allMarkets(ctx context.Context, id *string) ([]*types.Mark
 		return nil, customErrorFromStatus(err)
 	}
 	return res.Markets, nil
+
 }
 
 func (r *allResolver) allRewards(ctx context.Context, partyID, assetID string, skip, first, last *int) ([]*types.Reward, error) {

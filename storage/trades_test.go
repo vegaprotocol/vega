@@ -190,9 +190,11 @@ func TestStorage_GetTradesByMarketWithPagination(t *testing.T) {
 	trades, err = tradeStore.GetByMarket(ctx, testMarket, skip, last, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(trades))
+
 }
 
 func insertTestData(t *testing.T, orderStore *storage.Order, tradeStore *storage.Trade) {
+
 	// Arrange seed orders & trades
 	orderA := &types.Order{
 		Id:          "d41d8cd98f00b204e9800998ecf9999a",

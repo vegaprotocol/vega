@@ -5,7 +5,9 @@ import (
 	"errors"
 )
 
-var ErrNoNetParamsGenesisState = errors.New("no network parameters genesis state")
+var (
+	ErrNoNetParamsGenesisState = errors.New("no network parameters genesis state")
+)
 
 type GenesisState map[string]string
 

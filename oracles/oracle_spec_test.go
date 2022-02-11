@@ -448,6 +448,7 @@ func testOracleSpecMatchingEqualPropertiesWorks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -549,6 +550,7 @@ func testOracleSpecMatchingGreaterThanPropertiesWorks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -668,6 +670,7 @@ func testOracleSpecMatchingGreaterThanOrEqualPropertiesWorks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -769,6 +772,7 @@ func testOracleSpecMatchingLessThanPropertiesWorks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -888,6 +892,7 @@ func testOracleSpecMatchingLessThanOrEqualPropertiesWorks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -965,6 +970,7 @@ func testOracleSpecMatchingPropertiesPresenceSucceeds(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -1033,6 +1039,7 @@ func testOracleSpecMatchingPropertiesPresenceFails(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -1107,6 +1114,7 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{
@@ -1220,6 +1228,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.msg, func(t *testing.T) {
+
 			// given
 			spec, _ := oracles.NewOracleSpec(oraclespb.OracleSpec{
 				PubKeys: []string{

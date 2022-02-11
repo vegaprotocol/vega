@@ -23,6 +23,7 @@ func (r *epochResolver) Delegations(
 	nodeID *string,
 	skip, first, last *int,
 ) ([]*proto.Delegation, error) {
+
 	req := &protoapi.DelegationsRequest{
 		Pagination: makePagination(skip, first, last),
 	}

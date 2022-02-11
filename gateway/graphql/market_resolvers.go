@@ -79,6 +79,7 @@ func (r *myMarketResolver) Trades(ctx context.Context, market *types.Market,
 }
 
 func (r *myMarketResolver) Depth(ctx context.Context, market *types.Market, maxDepth *int) (*types.MarketDepth, error) {
+
 	if market == nil {
 		return nil, errors.New("market missing or empty")
 	}

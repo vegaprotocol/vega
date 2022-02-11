@@ -51,7 +51,7 @@ func (opts *gatewayCmd) Execute(_ []string) error {
 
 	// waitSig will wait for a sigterm or sigint interrupt.
 	eg.Go(func() error {
-		gracefulStop := make(chan os.Signal, 1)
+		var gracefulStop = make(chan os.Signal, 1)
 		signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 		select {

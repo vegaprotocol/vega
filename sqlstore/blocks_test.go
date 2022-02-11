@@ -19,8 +19,7 @@ func addTestBlock(t *testing.T, bs *sqlstore.Blocks) entities.Block {
 	block1 := entities.Block{
 		VegaTime: time.Now().Truncate(time.Microsecond),
 		Height:   2,
-		Hash:     hash,
-	}
+		Hash:     hash}
 
 	// Add it to the database
 	err = bs.Add(block1)
@@ -48,4 +47,5 @@ func TestBlock(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, blocks, blocks_len+1)
 	assert.Equal(t, blocks[0], block1)
+
 }

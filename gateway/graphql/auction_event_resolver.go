@@ -12,8 +12,8 @@ type auctionEventResolver VegaResolverRoot
 
 func (r *auctionEventResolver) AuctionStart(ctx context.Context, obj *eventspb.AuctionEvent) (string, error) {
 	return vegatime.Format(vegatime.UnixNano(obj.Start)), nil
-}
 
+}
 func (r *auctionEventResolver) AuctionEnd(ctx context.Context, obj *eventspb.AuctionEvent) (string, error) {
 	if obj.End > 0 {
 		return vegatime.Format(vegatime.UnixNano(obj.End)), nil

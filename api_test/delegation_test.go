@@ -123,7 +123,7 @@ func testDLObserverWithFilter(t *testing.T, req *apipb.ObserveDelegationsRequest
 		server.broker.Send(evt)
 	}
 
-	i := 0
+	var i = 0
 	for i < len(expectedEvents) {
 		resp, err := stream.Recv()
 

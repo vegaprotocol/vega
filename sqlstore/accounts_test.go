@@ -13,8 +13,8 @@ func addTestAccount(t *testing.T,
 	accountStore *sqlstore.Accounts,
 	party entities.Party,
 	asset entities.Asset,
-	block entities.Block,
-) entities.Account {
+	block entities.Block) entities.Account {
+
 	account := entities.Account{
 		PartyID:  party.ID,
 		AssetID:  asset.ID,

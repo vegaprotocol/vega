@@ -38,6 +38,7 @@ func testvalue(prefix string, k int) []byte {
 }
 
 func TestWriteBatch(t *testing.T) {
+
 	runBadgerStoreTest(t, nil, func(t *testing.T, bs *badgerStore) {
 		n := 100000
 		for {

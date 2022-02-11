@@ -544,6 +544,7 @@ func NewJSON(val Reset, rules ...JSONRule) *JSON {
 		ty:        ty,
 		value:     val,
 	}
+
 }
 
 func (j *JSON) ToJSONStruct(v Reset) error {

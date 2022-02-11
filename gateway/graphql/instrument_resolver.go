@@ -7,7 +7,9 @@ import (
 	types "code.vegaprotocol.io/protos/vega"
 )
 
-var ErrUnsupportedProduct = errors.New("unsupported product")
+var (
+	ErrUnsupportedProduct = errors.New("unsupported product")
+)
 
 type myInstrumentResolver VegaResolverRoot
 

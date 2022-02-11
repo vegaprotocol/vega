@@ -62,7 +62,7 @@ func TestStorage_PostAndGetNewOrder(t *testing.T) {
 	assert.NoError(t, err)
 	defer orderStore.Close()
 
-	order := types.Order{
+	var order = types.Order{
 		Id:       "45305210ff7a9bb9450b1833cc10368a",
 		MarketId: "testMarket",
 		PartyId:  "testParty",
@@ -92,7 +92,7 @@ func TestStorage_PostAndGetByReference(t *testing.T) {
 	assert.NoError(t, err)
 	defer orderStore.Close()
 
-	order := types.Order{
+	var order = types.Order{
 		Reference: "83cfdf76-8eac-4c7e-8f6a-2aa51e89364f",
 		Id:        "45305210ff7a9bb9450b1833cc10368a",
 		MarketId:  "testMarket",
@@ -113,7 +113,7 @@ func TestStorage_GetOrdersForMarket(t *testing.T) {
 		t.Fatalf("unable to setup badger dirs: %v", err)
 	}
 
-	tests := []struct {
+	var tests = []struct {
 		inMarkets      []string
 		inOrders       []*types.Order
 		inLimit        uint64
@@ -512,6 +512,7 @@ func TestStorage_GetOrderByIDVersioning(t *testing.T) {
 	})
 
 	t.Run("test massive number of versions", func(t *testing.T) {
+
 		orders := make([]types.Order, 0, 10000)
 		for i := 0; i < 10000; i++ {
 			orderV := &types.Order{}

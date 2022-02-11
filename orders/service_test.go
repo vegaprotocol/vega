@@ -16,14 +16,16 @@ import (
 
 const InitialOrderVersion = 1
 
-var orderSubmission = commandspb.OrderSubmission{
-	Type:        types.Order_TYPE_LIMIT,
-	MarketId:    "market_id",
-	Price:       "10000",
-	Size:        1,
-	Side:        types.Side(1),
-	TimeInForce: types.Order_TIME_IN_FORCE_GTT,
-}
+var (
+	orderSubmission = commandspb.OrderSubmission{
+		Type:        types.Order_TYPE_LIMIT,
+		MarketId:    "market_id",
+		Price:       "10000",
+		Size:        1,
+		Side:        types.Side(1),
+		TimeInForce: types.Order_TIME_IN_FORCE_GTT,
+	}
+)
 
 type testService struct {
 	ctrl       *gomock.Controller

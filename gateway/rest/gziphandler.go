@@ -17,14 +17,16 @@ type gzipResponseWriter struct {
 	headerWritten bool
 }
 
-var pool = sync.Pool{
-	New: func() interface{} {
-		w, _ := gzip.NewWriterLevel(nil, gzip.BestSpeed)
-		return &gzipResponseWriter{
-			w: w,
-		}
-	},
-}
+var (
+	pool = sync.Pool{
+		New: func() interface{} {
+			w, _ := gzip.NewWriterLevel(nil, gzip.BestSpeed)
+			return &gzipResponseWriter{
+				w: w,
+			}
+		},
+	}
+)
 
 func (gzr *gzipResponseWriter) WriteHeader(statusCode int) {
 	gzr.statusCode = statusCode

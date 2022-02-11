@@ -188,8 +188,8 @@ func remoteAddrInterceptor(log *logging.Logger) grpc.UnaryServerInterceptor {
 		req interface{},
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (resp interface{}, err error,
-	) {
+	) (resp interface{}, err error) {
+
 		// first check if the request is forwarded from our restproxy
 		// get the metadata
 		var ip string

@@ -13,7 +13,9 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-var ErrMarketDoNotExist = errors.New("market does not exist")
+var (
+	ErrMarketDoNotExist = errors.New("market does not exist")
+)
 
 // Market is used for memory/RAM based markets storage.
 type Market struct {
@@ -103,6 +105,7 @@ func (m *Market) GetByID(id string) (*types.Market, error) {
 		buf, err = item.ValueCopy(nil)
 		return err
 	})
+
 	if err != nil {
 		m.log.Error("unable to get market from badger store",
 			logging.Error(err),
@@ -141,6 +144,7 @@ func (m *Market) GetAll() ([]*types.Market, error) {
 		}
 		return nil
 	})
+
 	if err != nil {
 		m.log.Error("unable to get all markets", logging.Error(err))
 		return nil, err

@@ -72,9 +72,11 @@ func TestJSONValues(t *testing.T) {
 	// valid type, field validation failed
 	err = j.Update(`{"s": "", "i": 84}`)
 	assert.EqualError(t, err, "empty string")
+
 }
 
 func TestJSONVPriceMonitoringParameters(t *testing.T) {
+
 	// happy case, populated parameters array
 	validPmJSONString := `{"triggers": [{"horizon": 60, "probability": 0.95, "auction_extension": 90},{"horizon": 120, "probability": 0.99, "auction_extension": 180}]}`
 	j := netparams.NewJSON(&types.PriceMonitoringParameters{}, netparams.JSONProtoValidator()).Mutable(true).MustUpdate(validPmJSONString)

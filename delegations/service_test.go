@@ -100,7 +100,6 @@ func TestGetAllDelegationsOnEpoch(t *testing.T) {
 	require.Equal(t, *del1, *res[0])
 	require.Equal(t, *del2, *res[1])
 }
-
 func TestGetPartyDelegations(t *testing.T) {
 	testService := getTestService(t)
 
@@ -131,7 +130,6 @@ func TestGetPartyDelegations(t *testing.T) {
 	require.Equal(t, *del1, *res[0])
 	require.Equal(t, *del2, *res[1])
 }
-
 func TestGetPartyDelegationsOnEpoch(t *testing.T) {
 	testService := getTestService(t)
 
@@ -195,7 +193,6 @@ func TestGetPartyNodeDelegations(t *testing.T) {
 	require.Equal(t, *del1, *res[0])
 	require.Equal(t, *del2, *res[1])
 }
-
 func TestGetPartyNodeDelegationsOnEpoch(t *testing.T) {
 	testService := getTestService(t)
 
@@ -216,7 +213,6 @@ func TestGetPartyNodeDelegationsOnEpoch(t *testing.T) {
 	require.Equal(t, 1, len(res))
 	require.Equal(t, *del1, *res[0])
 }
-
 func TestGetNodeDelegations(t *testing.T) {
 	testService := getTestService(t)
 
@@ -247,7 +243,6 @@ func TestGetNodeDelegations(t *testing.T) {
 	require.Equal(t, *del1, *res[0])
 	require.Equal(t, *del2, *res[1])
 }
-
 func TestGetNodeDelegationsOnEpoch(t *testing.T) {
 	testService := getTestService(t)
 

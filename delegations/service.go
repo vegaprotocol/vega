@@ -68,7 +68,7 @@ func (s *Service) GetDelegationSubscribersCount() int32 {
 	return atomic.LoadInt32(&s.subscriberCnt)
 }
 
-// ObserveDelegations returns a channel for subscribing to delegation updates.
+//ObserveDelegations returns a channel for subscribing to delegation updates.
 func (s *Service) ObserveDelegations(ctx context.Context, retries int, party, nodeID string) (delegationsCh <-chan pb.Delegation, ref uint64) {
 	delegations := make(chan pb.Delegation, 10)
 	internal := make(chan pb.Delegation, 10)
@@ -146,36 +146,30 @@ func (s *Service) ObserveDelegations(ctx context.Context, retries int, party, no
 	}()
 
 	return delegations, ref
+
 }
 
 func (s *Service) GetAllDelegations(skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetAllDelegations(skip, limit, descending)
 }
-
 func (s *Service) GetAllDelegationsOnEpoch(epochSeq string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetAllDelegationsOnEpoch(epochSeq, skip, limit, descending)
 }
-
 func (s *Service) GetPartyDelegations(party string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetPartyDelegations(party, skip, limit, descending)
 }
-
 func (s *Service) GetPartyDelegationsOnEpoch(party string, epochSeq string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetPartyDelegationsOnEpoch(party, epochSeq, skip, limit, descending)
 }
-
 func (s *Service) GetPartyNodeDelegations(party string, node string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetPartyNodeDelegations(party, node, skip, limit, descending)
 }
-
 func (s *Service) GetPartyNodeDelegationsOnEpoch(party string, node string, epochSeq string) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetPartyNodeDelegationsOnEpoch(party, node, epochSeq)
 }
-
 func (s *Service) GetNodeDelegations(nodeID string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetNodeDelegations(nodeID, skip, limit, descending)
 }
-
 func (s *Service) GetNodeDelegationsOnEpoch(nodeID string, epochSeq string, skip, limit uint64, descending bool) ([]*pb.Delegation, error) {
 	return s.delegationStore.GetNodeDelegationsOnEpoch(nodeID, epochSeq, skip, limit, descending)
 }

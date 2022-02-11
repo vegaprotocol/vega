@@ -131,8 +131,8 @@ func (s *Svc) GetGlobalRewardPoolAccounts(asset string) ([]*types.Account, error
 //
 // This function is typically used by the gRPC (or GraphQL) asynchronous streaming APIs.
 func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
-	partyID string, asset string, ty types.AccountType) (accountCh <-chan []*types.Account, ref uint64,
-) {
+	partyID string, asset string, ty types.AccountType) (accountCh <-chan []*types.Account, ref uint64) {
+
 	accounts := make(chan []*types.Account)
 	internal := make(chan []*types.Account)
 	ref = s.storage.Subscribe(internal)
@@ -213,6 +213,7 @@ func (s *Svc) ObserveAccounts(ctx context.Context, retries int, marketID string,
 	}()
 
 	return accounts, ref
+
 }
 
 // GetAccountSubscribersCount returns the total number of active subscribers for ObserveAccounts.

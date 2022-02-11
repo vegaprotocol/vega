@@ -308,6 +308,7 @@ func (s *Svc) ObserveDepthUpdates(ctx context.Context, retries int, market strin
 func (s *Svc) ObserveMarketsData(
 	ctx context.Context, retries int, marketID string,
 ) (<-chan []types.MarketData, uint64) {
+
 	marketsDataCh := make(chan []types.MarketData)
 	internal := make(chan []types.MarketData)
 	ref := s.marketDataStore.Subscribe(internal)

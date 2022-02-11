@@ -6,17 +6,16 @@ import (
 )
 
 type Config struct {
-	Enabled             encoding.Bool     `long:"enabled"`
-	Host                string            `long:"host"`
-	Port                int               `long:"port"`
-	Username            string            `long:"username"`
-	Password            string            `long:"password"`
-	Database            string            `long:"database"`
-	WipeOnStartup       encoding.Bool     `long:"wipe-on-startup"`
-	Level               encoding.LogLevel `long:"log-level"`
-	UseEmbedded         encoding.Bool     `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
-	FanOutBufferSize    int               `long:"fan-out-buffer-size" description:"buffer size used by the fan out event source"`
-	SqlBrokerBufferSize int               `long:"sql-broker-buffer-size" description:"the per type buffer size in the broker"`
+	Enabled          encoding.Bool     `long:"enabled"`
+	Host             string            `long:"host"`
+	Port             int               `long:"port"`
+	Username         string            `long:"username"`
+	Password         string            `long:"password"`
+	Database         string            `long:"database"`
+	WipeOnStartup    encoding.Bool     `long:"wipe-on-startup"`
+	Level            encoding.LogLevel `long:"log-level"`
+	UseEmbedded      encoding.Bool     `long:"use-embedded" description:"Use an embedded version of Postgresql for the SQL data store"`
+	FanOutBufferSize int               `long:"fan out buffer size" description:"buffer size used by the fan out event source"`
 }
 
 func NewDefaultConfig() Config {

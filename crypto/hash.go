@@ -7,7 +7,9 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-var chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+var (
+	chars = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+)
 
 func Hash(key []byte) []byte {
 	hasher := sha3.New256()

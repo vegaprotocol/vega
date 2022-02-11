@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	dirPerms = 0o700
+	dirPerms = 0700
 )
 
 // PathNotFound represent an error when a fd cannot be found
