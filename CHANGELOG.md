@@ -32,6 +32,7 @@
 - [326](https://github.com/vegaprotocol/data-node/pull/326) - Add `BlockNr()` methods to implementers of event interface
 - [331](https://github.com/vegaprotocol/data-node/pull/331) - Add support for running an embedded version of `Postgresql`
 - [336](https://github.com/vegaprotocol/data-node/pull/336) - Remove trading mode and future maturity
+- [338](https://github.com/vegaprotocol/data-node/pull/336) - Add `grpcui` web user interface
 
 ### 🐛 Fixes
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 

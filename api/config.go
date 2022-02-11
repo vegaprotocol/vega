@@ -16,6 +16,9 @@ type Config struct {
 	Level            encoding.LogLevel `long:"log-level"`
 	Timeout          encoding.Duration `long:"timeout"`
 	Port             int               `long:"port"`
+	WebUIPort        int               `long:"web-ui-port"`
+	WebUIEnabled     encoding.Bool     `long:"web-ui-enabled"`
+	Reflection       encoding.Bool     `long:"reflection"`
 	IP               string            `long:"ip"`
 	StreamRetries    int               `long:"stream-retries"`
 	CoreNodeIP       string            `long:"core-node-ip"`
@@ -31,6 +34,9 @@ func NewDefaultConfig() Config {
 
 		IP:               "0.0.0.0",
 		Port:             3007,
+		WebUIPort:        3006,
+		WebUIEnabled:     false,
+		Reflection:       false,
 		StreamRetries:    3,
 		CoreNodeIP:       "127.0.0.1",
 		CoreNodeGRPCPort: 3002,

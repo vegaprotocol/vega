@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -30,6 +32,7 @@ import (
 	"code.vegaprotocol.io/data-node/trades"
 	"code.vegaprotocol.io/data-node/transfers"
 	"code.vegaprotocol.io/data-node/vegatime"
+	"github.com/fullstorydev/grpcui/standalone"
 	"golang.org/x/sync/errgroup"
 
 	protoapi "code.vegaprotocol.io/protos/data-node/api/v1"
@@ -38,6 +41,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/reflection"
 )
 
 // GRPCServer represent the grpc api provided by the vega node
@@ -299,6 +303,10 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 
 	eg, ctx := errgroup.WithContext(ctx)
 
+	if g.Reflection || g.WebUIEnabled {
+		reflection.Register(g.srv)
+	}
+
 	eg.Go(func() error {
 		<-ctx.Done()
 		g.stop()
@@ -308,6 +316,10 @@ func (g *GRPCServer) Start(ctx context.Context, lis net.Listener) error {
 	eg.Go(func() error {
 		return g.srv.Serve(lis)
 	})
+
+	if g.WebUIEnabled {
+		g.startWebUI(ctx)
+	}
 
 	return eg.Wait()
 }
@@ -330,4 +342,27 @@ func (g *GRPCServer) stop() {
 		g.log.Info("Force stopping gRPC based API")
 		g.srv.Stop()
 	}
+}
+
+func (g *GRPCServer) startWebUI(ctx context.Context) {
+	cc, err := grpc.Dial(fmt.Sprintf("127.0.0.1:%d", g.Port), grpc.WithInsecure())
+	if err != nil {
+		g.log.Error("failed to create client to local grpc server", logging.Error(err))
+		return
+	}
+
+	uiHandler, err := standalone.HandlerViaReflection(ctx, cc, "vega data node")
+	if err != nil {
+		g.log.Error("failed to create grpc-ui server", logging.Error(err))
+		return
+	}
+
+	uiListener, err := net.Listen("tcp", net.JoinHostPort(g.IP, strconv.Itoa(g.WebUIPort)))
+	if err != nil {
+		g.log.Error("failed to open listen socket on port", logging.Int("port", g.WebUIPort), logging.Error(err))
+		return
+	}
+
+	g.log.Info("Starting gRPC Web UI", logging.String("addr", g.IP), logging.Int("port", g.WebUIPort))
+	go http.Serve(uiListener, uiHandler)
 }
