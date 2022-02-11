@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/data-node/config/encoding"
+
 	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/logging"
 	"code.vegaprotocol.io/vega/events"
@@ -15,13 +17,16 @@ import (
 
 var logger = logging.NewTestLogger()
 
-func TestEventDistribution(t *testing.T) {
-	tes, sb := createTestBroker(t)
+func TestSqlBrokerEventDistribution(t *testing.T) {
+	testSqlBrokerEventDistribution(t, false)
+	testSqlBrokerEventDistribution(t, true)
+}
 
+func testSqlBrokerEventDistribution(t *testing.T, sequential bool) {
 	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
 	s3 := testSqlBrokerSubscriber{eventType: events.AccountEvent, receivedCh: make(chan events.Event)}
-	sb.SubscribeBatch(s1, s2, s3)
+	tes, sb := createTestBroker(t, sequential, s1, s2, s3)
 	go sb.Receive(context.Background())
 
 	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
@@ -39,32 +44,35 @@ func TestEventDistribution(t *testing.T) {
 	assert.Equal(t, events.NewAccountEvent(context.Background(), types.Account{ID: "acc1"}), <-s3.receivedCh)
 }
 
-func TestSubscriptionAfterBrokerStartPanics(t *testing.T) {
-	defer func() {
-		r := recover()
-		if r == nil {
-			t.Fatalf("expected to panic")
-		}
-	}()
-
-	tes, sb := createTestBroker(t)
-
-	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
-	sb.SubscribeBatch(s1)
-	go sb.Receive(context.Background())
-
-	tes.eventsCh <- events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"})
-	assert.Equal(t, events.NewAssetEvent(context.Background(), types.Asset{ID: "a1"}), <-s1.receivedCh)
-
-	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
-	sb.SubscribeBatch(s2)
+func TestSqlBrokerTimeEventSentToAllSubscribers(t *testing.T) {
+	testSqlBrokerTimeEventSentToAllSubscribers(t, false)
+	testSqlBrokerTimeEventSentToAllSubscribers(t, true)
 }
 
-func TestTimeEventOnlySendOnceToTimeSubscribers(t *testing.T) {
-	tes, sb := createTestBroker(t)
+func testSqlBrokerTimeEventSentToAllSubscribers(t *testing.T, sequential bool) {
+	s1 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
+	s2 := testSqlBrokerSubscriber{eventType: events.AssetEvent, receivedCh: make(chan events.Event)}
+	tes, sb := createTestBroker(t, sequential, s1, s2)
 
+	go sb.Receive(context.Background())
+
+	timeEvent := events.NewTime(context.Background(), time.Now())
+
+	tes.eventsCh <- timeEvent
+
+	assert.Equal(t, timeEvent, <-s1.receivedCh)
+	assert.Equal(t, timeEvent, <-s2.receivedCh)
+}
+
+func TestSqlBrokerTimeEventOnlySendOnceToTimeSubscribers(t *testing.T) {
+	testNewSqlStoreBrokerestSqlBrokerTimeEventOnlySendOnceToTimeSubscribers(t, false)
+	testNewSqlStoreBrokerestSqlBrokerTimeEventOnlySendOnceToTimeSubscribers(t, true)
+}
+
+func testNewSqlStoreBrokerestSqlBrokerTimeEventOnlySendOnceToTimeSubscribers(t *testing.T, seq bool) {
 	s1 := testSqlBrokerSubscriber{eventType: events.TimeUpdate, receivedCh: make(chan events.Event)}
-	sb.SubscribeBatch(s1)
+	tes, sb := createTestBroker(t, seq, s1)
+
 	go sb.Receive(context.Background())
 
 	timeEvent := events.NewTime(context.Background(), time.Now())
@@ -75,18 +83,17 @@ func TestTimeEventOnlySendOnceToTimeSubscribers(t *testing.T) {
 	assert.Equal(t, 0, len(s1.receivedCh))
 }
 
-func createTestBroker(t *testing.T) (*testEventSource, *broker.SqlStoreBroker) {
+func createTestBroker(t *testing.T, sequential bool, subs ...broker.SqlBrokerSubscriber) (*testEventSource, broker.SqlStoreEventBroker) {
 	conf := broker.NewDefaultConfig()
+	conf.UseSequentialSqlStoreBroker = encoding.Bool(sequential)
 	testChainInfo := testChainInfo{chainId: ""}
 	tes := &testEventSource{
 		eventsCh: make(chan events.Event),
 		errorsCh: make(chan error, 1),
 	}
 
-	sb, err := broker.NewSqlStoreBroker(logger, conf, testChainInfo, tes, 0)
-	if err != nil {
-		t.Fatalf("failed to create broker:%s", err)
-	}
+	sb := broker.NewSqlStoreBroker(logger, conf, testChainInfo, tes, 0, subs...)
+
 	return tes, sb
 }
 

@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/data-node/broker"
+
 	"code.vegaprotocol.io/data-node/accounts"
 	"code.vegaprotocol.io/data-node/assets"
-	"code.vegaprotocol.io/data-node/broker"
 	"code.vegaprotocol.io/data-node/candles"
 	"code.vegaprotocol.io/data-node/checkpoint"
 	"code.vegaprotocol.io/data-node/config"
@@ -222,12 +223,9 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	if l.conf.SqlStore.Enabled {
 		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SqlStore.FanOutBufferSize, 2)
-		l.sqlBroker, err = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
-			l.conf.SqlStore.SqlEventBrokerBufferSize)
-		if err != nil {
-			l.Log.Error("unable to initialise sql broker", logging.Error(err))
-			return err
-		}
+
+		l.sqlBroker = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
+			l.conf.SqlStore.SqlEventBrokerBufferSize, l.timeSubSql, l.assetSubSql, l.transferResponseSubSql)
 	}
 
 	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
@@ -275,10 +273,6 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		l.nodesSub, l.delegationBalanceSub, l.epochUpdateSub, l.rewardsSub,
 		l.stakingService, l.checkpointSub, l.transferSub,
 	)
-
-	if l.conf.SqlStore.Enabled {
-		l.sqlBroker.SubscribeBatch(l.timeSubSql, l.assetSubSql, l.transferResponseSubSql)
-	}
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)
 	conn, err := grpc.Dial(nodeAddr, grpc.WithInsecure())

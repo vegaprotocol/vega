@@ -33,6 +33,7 @@
 - [331](https://github.com/vegaprotocol/data-node/pull/331) - Add support for running an embedded version of `Postgresql`
 - [336](https://github.com/vegaprotocol/data-node/pull/336) - Remove trading mode and future maturity
 - [338](https://github.com/vegaprotocol/data-node/pull/336) - Add `grpcui` web user interface
+- [340](https://github.com/vegaprotocol/data-node/pull/340) - Add brokers for the new data stores to support sequential and concurrent event processing 
 
 ### 🐛 Fixes
 - [277](https://github.com/vegaprotocol/data-node/pull/277) - Now returns not-found error instead of internal error when proposal not found 
