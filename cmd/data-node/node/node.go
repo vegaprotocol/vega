@@ -107,7 +107,8 @@ type NodeCommand struct {
 
 	vegaCoreServiceClient vegaprotoapi.CoreServiceClient
 
-	broker *broker.Broker
+	broker    *broker.Broker
+	sqlBroker *broker.Broker
 
 	transferRespSub      *subscribers.TransferResponse
 	marketEventSub       *subscribers.MarketEvent
@@ -256,6 +257,10 @@ func (l *NodeCommand) runNode(args []string) error {
 	eg.Go(func() error {
 		return l.broker.Receive(ctx)
 	})
+
+	if l.conf.SqlStore.Enabled {
+		return l.sqlBroker.Receive(ctx)
+	}
 
 	// waitSig will wait for a sigterm or sigint interrupt.
 	eg.Go(func() error {

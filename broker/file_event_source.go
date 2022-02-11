@@ -32,7 +32,7 @@ func NewFileEventSource(file string, timeBetweenBlocks time.Duration,
 	}, nil
 }
 
-func (e fileEventSource) listen() error {
+func (e fileEventSource) Listen() error {
 	return nil
 }
 

@@ -214,7 +214,22 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 		}
 	}()
 
-	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore)
+	eventSource, err := broker.NewEventSource(l.conf.Broker, l.Log)
+	if err != nil {
+		l.Log.Error("unable to initialise event source", logging.Error(err))
+		return err
+	}
+
+	if l.conf.SqlStore.Enabled {
+		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SqlStore.FanOutBufferSize, 2)
+		l.sqlBroker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
+		if err != nil {
+			l.Log.Error("unable to initialise sql broker", logging.Error(err))
+			return err
+		}
+	}
+
+	l.broker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
 	if err != nil {
 		l.Log.Error("unable to initialise broker", logging.Error(err))
 		return err
@@ -261,7 +276,7 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 	)
 
 	if l.conf.SqlStore.Enabled {
-		l.broker.SubscribeBatch(l.timeSubSql, l.assetSubSql, l.transferResponseSubSql)
+		l.sqlBroker.SubscribeBatch(l.timeSubSql, l.assetSubSql, l.transferResponseSubSql)
 	}
 
 	nodeAddr := fmt.Sprintf("%v:%v", l.conf.API.CoreNodeIP, l.conf.API.CoreNodeGRPCPort)

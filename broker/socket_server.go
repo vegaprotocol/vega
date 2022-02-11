@@ -55,7 +55,7 @@ func newSocketServer(log *logging.Logger, config *SocketConfig) (*socketServer, 
 	}, nil
 }
 
-func (s socketServer) listen() error {
+func (s socketServer) Listen() error {
 	addr := fmt.Sprintf(
 		"%s://%s",
 		strings.ToLower(s.config.TransportType),
@@ -63,7 +63,7 @@ func (s socketServer) listen() error {
 	)
 
 	if err := s.sock.Listen(addr); err != nil {
-		return fmt.Errorf("failed to listen on %v: %w", addr, err)
+		return fmt.Errorf("failed to Listen on %v: %w", addr, err)
 	}
 
 	s.log.Info("Starting broker socket server", logging.String("addr", s.config.IP), logging.Int("port", s.config.Port))

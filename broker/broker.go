@@ -3,7 +3,6 @@ package broker
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -38,7 +37,7 @@ type BrokerI interface {
 }
 
 type eventSource interface {
-	listen() error
+	Listen() error
 	Receive(ctx context.Context) (<-chan events.Event, <-chan error)
 }
 
@@ -72,33 +71,10 @@ type Broker struct {
 }
 
 // New creates a new base broker
-func New(ctx context.Context, log *logging.Logger, config Config, chainInfo ChainInfoI) (*Broker, error) {
+func New(ctx context.Context, log *logging.Logger, config Config, chainInfo ChainInfoI,
+	eventsource eventSource) (*Broker, error) {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
-
-	var eventsource eventSource
-	var err error
-	if config.UseEventFile {
-
-		absPath, err := filepath.Abs(config.FileEventSourceConfig.File)
-		if err != nil {
-			return nil, fmt.Errorf("unable to determine absolute path of file %s: %w", config.FileEventSourceConfig.File, err)
-		}
-
-		log.Infof("using file event source, event file: %s", absPath)
-		eventsource, err = NewFileEventSource(absPath, config.FileEventSourceConfig.TimeBetweenBlocks.Duration,
-			config.FileEventSourceConfig.SendChannelBufferSize)
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to create file event source:%w", err)
-		}
-
-	} else {
-		eventsource, err = newSocketServer(log, &config.SocketConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialise underlying socket receiver: %w", err)
-		}
-	}
 
 	b := &Broker{
 		ctx:         ctx,
@@ -366,7 +342,7 @@ func (b *Broker) checkChainID(chainID string) error {
 }
 
 func (b *Broker) Receive(ctx context.Context) error {
-	if err := b.eventSource.listen(); err != nil {
+	if err := b.eventSource.Listen(); err != nil {
 		return err
 	}
 
