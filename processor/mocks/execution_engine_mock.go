@@ -36,32 +36,32 @@ func (m *MockExecutionEngine) EXPECT() *MockExecutionEngineMockRecorder {
 }
 
 // AmendLiquidityProvision mocks base method.
-func (m *MockExecutionEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2 string) error {
+func (m *MockExecutionEngine) AmendLiquidityProvision(arg0 context.Context, arg1 *types.LiquidityProvisionAmendment, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "AmendLiquidityProvision", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AmendLiquidityProvision indicates an expected call of AmendLiquidityProvision.
-func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) AmendLiquidityProvision(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).AmendLiquidityProvision), arg0, arg1, arg2, arg3)
 }
 
 // AmendOrder mocks base method.
-func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) AmendOrder(arg0 context.Context, arg1 *types.OrderAmendment, arg2, arg3 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "AmendOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AmendOrder indicates an expected call of AmendOrder.
-func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) AmendOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockExecutionEngine)(nil).AmendOrder), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AmendOrder", reflect.TypeOf((*MockExecutionEngine)(nil).AmendOrder), arg0, arg1, arg2, arg3)
 }
 
 // CancelLiquidityProvision mocks base method.
@@ -79,18 +79,18 @@ func (mr *MockExecutionEngineMockRecorder) CancelLiquidityProvision(arg0, arg1, 
 }
 
 // CancelOrder mocks base method.
-func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2 string) ([]*types.OrderCancellationConfirmation, error) {
+func (m *MockExecutionEngine) CancelOrder(arg0 context.Context, arg1 *types.OrderCancellation, arg2, arg3 string) ([]*types.OrderCancellationConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "CancelOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].([]*types.OrderCancellationConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CancelOrder indicates an expected call of CancelOrder.
-func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) CancelOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CancelOrder", reflect.TypeOf((*MockExecutionEngine)(nil).CancelOrder), arg0, arg1, arg2, arg3)
 }
 
 // Hash mocks base method.
@@ -164,30 +164,30 @@ func (mr *MockExecutionEngineMockRecorder) SubmitMarket(arg0, arg1 interface{}) 
 }
 
 // SubmitMarketWithLiquidityProvision mocks base method.
-func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *types.Market, arg2 *types.LiquidityProvisionSubmission, arg3, arg4 string) error {
+func (m *MockExecutionEngine) SubmitMarketWithLiquidityProvision(arg0 context.Context, arg1 *types.Market, arg2 *types.LiquidityProvisionSubmission, arg3, arg4, arg5 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "SubmitMarketWithLiquidityProvision", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // SubmitMarketWithLiquidityProvision indicates an expected call of SubmitMarketWithLiquidityProvision.
-func (mr *MockExecutionEngineMockRecorder) SubmitMarketWithLiquidityProvision(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitMarketWithLiquidityProvision(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarketWithLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarketWithLiquidityProvision), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitMarketWithLiquidityProvision", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitMarketWithLiquidityProvision), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // SubmitOrder mocks base method.
-func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2 string) (*types.OrderConfirmation, error) {
+func (m *MockExecutionEngine) SubmitOrder(arg0 context.Context, arg1 *types.OrderSubmission, arg2, arg3 string) (*types.OrderConfirmation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SubmitOrder", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*types.OrderConfirmation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // SubmitOrder indicates an expected call of SubmitOrder.
-func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockExecutionEngineMockRecorder) SubmitOrder(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubmitOrder", reflect.TypeOf((*MockExecutionEngine)(nil).SubmitOrder), arg0, arg1, arg2, arg3)
 }

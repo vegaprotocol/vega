@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/libs/crypto"
+
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cucumber/godog"
@@ -32,6 +34,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 		row := submitLiquidityProvisionRow{row: r}
 
 		id := row.ID()
+		ref := id
 
 		lp, ok := lps[id]
 		if !ok {
@@ -41,7 +44,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Fee:              row.Fee(),
 				Sells:            []*types.LiquidityOrder{},
 				Buys:             []*types.LiquidityOrder{},
-				Reference:        row.Reference(),
+				Reference:        ref,
 				LpType:           row.LpType(),
 			}
 			parties[id] = row.Party()
@@ -58,18 +61,7 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 		} else {
 			lp.Sells = append(lp.Sells, lo)
 		}
-		// if lp.CommitmentAmount.EQ(checkAmt) {
-		// clp = lp
-		// }
 	}
-	/*
-		if clp != nil {
-			return fmt.Errorf(
-				"Offset buy: %d\nOffset sell: %d\n",
-				clp.Buys[0].Offset,
-				clp.Sells[0].Offset,
-			)
-		}*/
 	// ensure we always submit in the same order
 	sort.Strings(keys)
 	for _, id := range keys {
@@ -103,7 +95,8 @@ func PartiesSubmitLiquidityProvision(exec Execution, table *godog.Table) error {
 				Buys:             lp.Buys,
 				Reference:        lp.Reference,
 			}
-			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id); err != nil {
+
+			if err := exec.SubmitLiquidityProvision(context.Background(), sub, party, id, crypto.RandomHash()); err != nil {
 				return errSubmittingLiquidityProvision(sub, party, id, err)
 			}
 		}

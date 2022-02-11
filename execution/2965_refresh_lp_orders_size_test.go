@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
@@ -18,6 +21,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
+	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
@@ -168,7 +172,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	// Leave the auction
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
 
-	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", "id-lp"))
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
@@ -203,7 +207,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				if evt.Order().PartyId == "party-2" &&
-					evt.Order().Id == "V0000000000-0000000010" {
+					evt.Order().Size == 534 { //"V0000000000-0000000010" {
 					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
@@ -249,7 +253,8 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := context.Background()
+
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
@@ -305,7 +310,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 	)
 
 	// clear auction
@@ -315,7 +320,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 func TestCommitmentIsDeployed(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := context.Background()
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
@@ -371,7 +376,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 	// submit our lp
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 	)
 
 	// clear auction
@@ -433,7 +438,8 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	tm.WithSubmittedOrders(t, auctionOrders...)
 
 	// update the time to get out of auction
-	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd)
 
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,

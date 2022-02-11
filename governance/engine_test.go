@@ -1452,7 +1452,6 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 					Code: "CRYPTO:GBPVUSD/JUN20",
 					Product: &types.InstrumentConfiguration_Future{
 						Future: &types.FutureProduct{
-							Maturity:        "2030-06-30T22:59:59Z",
 							SettlementAsset: "VUSD",
 							QuoteName:       "VUSD",
 							OracleSpecForSettlementPrice: &oraclesv1.OracleSpecConfiguration{
@@ -1499,11 +1498,6 @@ func newValidMarketTerms() *types.ProposalTerms_NewMarket {
 				},
 				Metadata:      []string{"asset_class:fx/crypto", "product:futures"},
 				DecimalPlaces: 0,
-				TradingMode: &types.NewMarketConfiguration_Continuous{
-					Continuous: &types.ContinuousTrading{
-						TickSize: "0.1",
-					},
-				},
 			},
 			LiquidityCommitment: newMarketLiquidityCommitment(),
 		},

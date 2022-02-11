@@ -124,6 +124,13 @@ func (c Config) IsValidator() bool {
 	return c.NodeMode == cfgencoding.NodeModeValidator
 }
 
+func (c Config) HaveEthClient() bool {
+	if c.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		return false
+	}
+	return c.IsValidator()
+}
+
 type Loader struct {
 	configFilePath string
 }

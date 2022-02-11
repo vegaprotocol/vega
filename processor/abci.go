@@ -235,11 +235,11 @@ func NewApp(
 		HandleDeliverTx(txn.CancelTransferFundsCommand,
 			app.SendEventOnError(app.DeliverCancelTransferFunds)).
 		HandleDeliverTx(txn.SubmitOrderCommand,
-			app.SendEventOnError(app.DeliverSubmitOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverSubmitOrder))).
 		HandleDeliverTx(txn.CancelOrderCommand,
-			app.SendEventOnError(app.DeliverCancelOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverCancelOrder))).
 		HandleDeliverTx(txn.AmendOrderCommand,
-			app.SendEventOnError(app.DeliverAmendOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverAmendOrder))).
 		HandleDeliverTx(txn.WithdrawCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
 		HandleDeliverTx(txn.ProposeCommand,
@@ -253,7 +253,7 @@ func NewApp(
 		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
 			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
 		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
-			app.SendEventOnError(app.DeliverAmendLiquidityProvision)).
+			app.SendEventOnError(addDeterministicID(app.DeliverAmendLiquidityProvision))).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -587,7 +587,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	// read the state of validator set from the previous end of block
 	var vd []*tmtypesint.Validator
-	if app.blockchainClient != nil && req.Header.Height > 0 {
+	if req.Header.Height > 0 {
 		h := req.Header.Height - 1
 		vd, _ = app.blockchainClient.Validators(&h)
 	}
@@ -608,6 +608,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 			logging.Error(err))
 	}
 	resp.Data = snapHash
+
 	if len(snapHash) == 0 {
 		resp.Data = app.exec.Hash()
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
@@ -623,6 +624,16 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		}
 		_ = app.handleCheckpoint(cpt)
 	}
+
+	// the snapshot produce an actual hash, so no need
+	// to rehash if we have a snapshot hash.
+	// otherwise, it's a concatenation of hash that we get,
+	// so we just re-hash to have an output which is actually an
+	// hash and is consistent over all calls to Commit
+	if len(snapHash) <= 0 {
+		resp.Data = vgcrypto.Hash(resp.Data)
+	}
+
 	// Compute the AppHash and update the response
 	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
@@ -874,7 +885,7 @@ func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) erro
 	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
 }
 
-func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
@@ -888,7 +899,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicId)
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
@@ -915,7 +926,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	porder := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(porder); err != nil {
 		return err
@@ -926,7 +937,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order, tx.Party())
+	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -940,7 +951,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -956,7 +967,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -990,7 +1001,7 @@ func (app *App) DeliverWithdraw(
 	return app.handleCheckpoint(snap)
 }
 
-func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
+func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -1000,17 +1011,17 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 	if app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("submitting proposal",
-			logging.ProposalID(id),
+			logging.ProposalID(deterministicId),
 			logging.String("proposal-reference", prop.Reference),
 			logging.String("proposal-party", party),
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
 	propSubmission := types.NewProposalSubmissionFromProto(prop)
-	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, id, party)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicId, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
-			logging.ProposalID(id),
+			logging.ProposalID(deterministicId),
 			logging.Error(err))
 		return err
 	}
@@ -1022,7 +1033,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		// the lp provision ID (well it's still deterministic...)
 		lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
-			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
+			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid, deterministicId)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
@@ -1072,7 +1083,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return app.notary.RegisterSignature(ctx, tx.PubKeyHex(), *ns)
 }
 
-func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -1088,8 +1099,7 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 		return err
 	}
 
-	partyID := tx.Party()
-	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicId)
 }
 
 func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
@@ -1121,7 +1131,7 @@ func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx)
 	return nil
 }
 
-func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	lp := &commandspb.LiquidityProvisionAmendment{}
 	if err := tx.Unmarshal(lp); err != nil {
 		return err
@@ -1136,7 +1146,7 @@ func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx) 
 	}
 
 	// Submit the amend liquidity provision request to the Vega trading core
-	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party())
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
 		return err

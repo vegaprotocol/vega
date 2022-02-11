@@ -129,7 +129,7 @@ func (f *LogFilterer) CurrentHeight(ctx context.Context) uint64 {
 
 		if f.log.IsDebug() {
 			f.log.Debug("Current height of Ethereum blockchain has been retrieved",
-				logging.Uint64("height", *currentHeight),
+				logging.Uint64("height", height),
 			)
 		}
 

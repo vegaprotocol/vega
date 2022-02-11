@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/vega/events"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -754,6 +755,7 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
+
 	order := types.Order{
 		Status:        types.OrderStatusActive,
 		MarketID:      market,
@@ -766,7 +768,7 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		TimeInForce:   types.OrderTimeInForceGTT,
 		Type:          types.OrderTypeLimit,
 		ExpiresAt:     10,
-		ID:            "v0000000000000-0000001",
+		ID:            vgcrypto.RandomHash(),
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -783,7 +785,7 @@ func TestOrderBookSimple_CancelDistressedOrders(t *testing.T) {
 		Remaining:     10,
 		TimeInForce:   types.OrderTimeInForceGTC,
 		Type:          types.OrderTypeLimit,
-		ID:            "v0000000000000-0000002",
+		ID:            vgcrypto.RandomHash(),
 	}
 	confirm, err = book.SubmitOrder(&order2)
 	assert.NoError(t, err)

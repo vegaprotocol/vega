@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"code.vegaprotocol.io/vega/oracles"
 )
 
@@ -27,7 +30,8 @@ func (t *TimeStub) GetTimeNow() time.Time {
 
 func (t *TimeStub) SetTime(newNow time.Time) {
 	t.now = newNow
-	t.notify(context.Background(), t.now)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	t.notify(ctx, t.now)
 	t.publishOracleData(context.Background(), t.now)
 }
 

@@ -44,7 +44,7 @@ type PriceMonitor interface {
 
 // IDGen is an id generator for orders.
 type IDGen interface {
-	SetID(*types.Order)
+	NextID() string
 }
 
 type StateVarEngine interface {
@@ -62,7 +62,6 @@ type Engine struct {
 	marketID       string
 	log            *logging.Logger
 	broker         Broker
-	idGen          IDGen
 	suppliedEngine *supplied.Engine
 
 	currentTime             time.Time
@@ -95,7 +94,6 @@ type Engine struct {
 func NewEngine(config Config,
 	log *logging.Logger,
 	broker Broker,
-	idGen IDGen,
 	riskModel RiskModel,
 	priceMonitor PriceMonitor,
 	asset string,
@@ -109,7 +107,6 @@ func NewEngine(config Config,
 		marketID:       marketID,
 		log:            log,
 		broker:         broker,
-		idGen:          idGen,
 		suppliedEngine: supplied.NewEngine(riskModel, priceMonitor, asset, marketID, stateVarEngine, tickSize, log),
 
 		// parameters
@@ -363,9 +360,14 @@ func (e *Engine) rejectLiquidityProvisionSubmission(ctx context.Context, lps *ty
 // The LiquidityProvision is created if submitted for the first time, updated if a
 // previous one was created for the same PartyId or deleted (if exists) when
 // the CommitmentAmount is set to 0.
-func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.LiquidityProvisionSubmission, party, id string) error {
+func (e *Engine) SubmitLiquidityProvision(
+	ctx context.Context,
+	lps *types.LiquidityProvisionSubmission,
+	party string,
+	idgen IDGen,
+) error {
 	if err := e.ValidateLiquidityProvisionSubmission(lps, false); err != nil {
-		e.rejectLiquidityProvisionSubmission(ctx, lps, party, id)
+		e.rejectLiquidityProvisionSubmission(ctx, lps, party, idgen.NextID())
 		return err
 	}
 
@@ -376,7 +378,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	var (
 		now = e.currentTime.UnixNano()
 		lp  = &types.LiquidityProvision{
-			ID:        id,
+			ID:        idgen.NextID(),
 			MarketID:  lps.MarketID,
 			Party:     party,
 			CreatedAt: now,
@@ -400,7 +402,7 @@ func (e *Engine) SubmitLiquidityProvision(ctx context.Context, lps *types.Liquid
 	lp.CommitmentAmount = lps.CommitmentAmount
 	lp.Status = types.LiquidityProvisionStatusPending
 
-	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells)
+	e.setShapesReferencesOnLiquidityProvision(lp, lps.Buys, lps.Sells, idgen)
 
 	return nil
 }
@@ -409,13 +411,14 @@ func (e *Engine) setShapesReferencesOnLiquidityProvision(
 	lp *types.LiquidityProvision,
 	buys []*types.LiquidityOrder,
 	sells []*types.LiquidityOrder,
+	idGen IDGen,
 ) {
 	// this order is just a stub to send to the id generator,
 	// and get an ID assigned per references in the shapes
 	order := &types.Order{}
 	lp.Buys = make([]*types.LiquidityOrderReference, 0, len(buys))
 	for _, buy := range buys {
-		e.idGen.SetID(order)
+		order.ID = idGen.NextID()
 		lp.Buys = append(lp.Buys, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: buy,
@@ -424,7 +427,7 @@ func (e *Engine) setShapesReferencesOnLiquidityProvision(
 
 	lp.Sells = make([]*types.LiquidityOrderReference, 0, len(sells))
 	for _, sell := range sells {
-		e.idGen.SetID(order)
+		order.ID = idGen.NextID()
 		lp.Sells = append(lp.Sells, &types.LiquidityOrderReference{
 			OrderID:        order.ID,
 			LiquidityOrder: sell,

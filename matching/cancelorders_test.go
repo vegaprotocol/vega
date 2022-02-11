@@ -3,6 +3,7 @@ package matching
 import (
 	"testing"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -157,6 +158,8 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 	market := "testMarket"
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
+
+	orderId := vgcrypto.RandomHash()
 	order := types.Order{
 		MarketID:    market,
 		Party:       "A",
@@ -166,7 +169,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Remaining:   10,
 		TimeInForce: types.OrderTimeInForceGTC,
 		Type:        types.OrderTypeLimit,
-		ID:          "v0000000000000-0000001",
+		ID:          orderId,
 	}
 	confirm, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -181,7 +184,7 @@ func TestOrderBookSimple_CancelOrderIncorrectNonCriticalFields(t *testing.T) {
 		Remaining:   10,                        // Does not matter
 		TimeInForce: types.OrderTimeInForceGTC, // Does not matter
 		Type:        types.OrderTypeLimit,      // Does not matter
-		ID:          "v0000000000000-0000001",  // Must match
+		ID:          orderId,                   // Must match
 	}
 	_, err = book.CancelOrder(&order2)
 	assert.NoError(t, err)

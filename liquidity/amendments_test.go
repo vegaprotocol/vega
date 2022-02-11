@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/idgeneration"
+	"code.vegaprotocol.io/vega/libs/crypto"
+
 	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/liquidity"
@@ -38,9 +41,10 @@ func testCanAmend(t *testing.T) {
 
 	lps := getTestSubmitSimpleSubmission()
 
+	idgen := idgeneration.New(crypto.RandomHash())
 	// initially submit our provision to be amended, does not matter what's in
 	tng.broker.EXPECT().Send(gomock.Any()).Times(1)
-	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, "some-id-1")
+	err := tng.engine.SubmitLiquidityProvision(ctx, lps, party, idgen)
 	assert.NoError(t, err)
 
 	lpa := getTestAmendSimpleSubmission()

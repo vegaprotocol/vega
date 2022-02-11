@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"sort"
 
+	"code.vegaprotocol.io/vega/idgeneration"
+
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
@@ -17,7 +19,15 @@ import (
 var ErrCommitmentAmountTooLow = errors.New("commitment amount is too low")
 
 // SubmitLiquidityProvision forwards a LiquidityProvisionSubmission to the Liquidity Engine.
-func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.LiquidityProvisionSubmission, party, id string) (err error) {
+func (m *Market) SubmitLiquidityProvision(
+	ctx context.Context,
+	sub *types.LiquidityProvisionSubmission,
+	party, deterministicId string,
+) (err error,
+) {
+	m.idgen = idgeneration.New(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
@@ -43,7 +53,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		return ErrPartyAlreadyLiquidityProvider
 	}
 
-	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, id); err != nil {
+	if err := m.liquidity.SubmitLiquidityProvision(ctx, sub, party, m.idgen); err != nil {
 		return err
 	}
 
@@ -58,7 +68,7 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 		if newerr := m.liquidity.RejectLiquidityProvision(ctx, party); newerr != nil {
 			m.log.Debug("unable to submit cancel liquidity provision submission",
 				logging.String("party", party),
-				logging.String("id", id),
+				logging.String("id", deterministicId),
 				logging.Error(newerr))
 			err = fmt.Errorf("%v, %w", err, newerr)
 		}
@@ -211,7 +221,10 @@ func (m *Market) SubmitLiquidityProvision(ctx context.Context, sub *types.Liquid
 }
 
 // AmendLiquidityProvision forwards a LiquidityProvisionAmendment to the Liquidity Engine.
-func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string) (err error) {
+func (m *Market) AmendLiquidityProvision(ctx context.Context, lpa *types.LiquidityProvisionAmendment, party string, deterministicId string) (err error) {
+	m.idgen = idgeneration.New(deterministicId)
+	defer func() { m.idgen = nil }()
+
 	if !m.canSubmitCommitment() {
 		return ErrCommitmentSubmissionNotAllowed
 	}
@@ -384,7 +397,7 @@ func (m *Market) updateAndCreateLPOrders(
 			order.OriginalPrice = order.Price.Clone()
 			order.Price.Mul(order.Price, m.priceFactor)
 		}
-		conf, orderUpdts, err := m.submitOrder(ctx, order, false)
+		conf, orderUpdts, err := m.submitOrder(ctx, order)
 		if err != nil {
 			m.log.Debug("could not submit liquidity provision order, scheduling for closeout",
 				logging.OrderID(order.ID),
@@ -592,7 +605,7 @@ func (m *Market) createInitialLPOrders(ctx context.Context, newOrders []*types.O
 			order.OriginalPrice = order.Price.Clone()
 			order.Price.Mul(order.Price, m.priceFactor)
 		}
-		if conf, _, err := m.submitOrder(ctx, order, false); err != nil {
+		if conf, _, err := m.submitOrder(ctx, order); err != nil {
 			failedOnID = order.ID
 			m.log.Debug("unable to submit liquidity provision order",
 				logging.MarketID(m.GetID()),
@@ -1083,7 +1096,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentAuction(
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
-	_, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party)
+	_, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party, m.idgen)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))
@@ -1167,7 +1180,7 @@ func (m *Market) finalizeLiquidityProvisionAmendmentContinuous(
 ) error {
 	// first parameter is the update to the orders, but we know that during
 	// auction no orders shall be return, so let's just look at the error
-	cancels, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party)
+	cancels, err := m.liquidity.AmendLiquidityProvision(ctx, sub, party, m.idgen)
 	if err != nil {
 		m.log.Panic("error while amending liquidity provision, this should not happen at this point, the LP was validated earlier",
 			logging.Error(err))
