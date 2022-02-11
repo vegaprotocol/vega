@@ -85,7 +85,7 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.eventService = subscribers.NewService(n.broker)
 
 	now := n.timeService.GetTimeNow()
-	n.assets = assets.New(n.Log, n.conf.Assets, n.nodeWallets, n.ethClient, n.timeService, n.conf.IsValidator())
+	n.assets = assets.New(n.Log, n.conf.Assets, n.nodeWallets, n.ethClient, n.timeService, n.conf.HaveEthClient())
 	n.collateral = collateral.New(n.Log, n.conf.Collateral, n.broker, now)
 	n.oracle = oracles.NewEngine(n.Log, n.conf.Oracles, now, n.broker, n.timeService)
 	n.builtinOracle = oracles.NewBuiltinOracle(n.oracle, n.timeService)
@@ -115,14 +115,14 @@ func (n *NodeCommand) startServices(_ []string) (err error) {
 	n.timeService.NotifyOnTick(n.netParams.OnChainTimeUpdate)
 	n.eventForwarder = evtforward.New(n.Log, n.conf.EvtForward, n.commander, n.timeService, n.topology)
 
-	if n.conf.IsValidator() {
+	if n.conf.HaveEthClient() {
 		n.eventForwarderEngine = evtforward.NewEngine(n.Log, n.conf.EvtForward)
 	} else {
 		n.eventForwarderEngine = evtforward.NewNoopEngine(n.Log, n.conf.EvtForward)
 	}
 
 	n.stakingAccounts, n.stakeVerifier = staking.New(
-		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.IsValidator(),
+		n.Log, n.conf.Staking, n.broker, n.timeService, n.witness, n.ethClient, n.netParams, n.eventForwarder, n.conf.HaveEthClient(),
 	)
 	n.epochService = epochtime.NewService(n.Log, n.conf.Epoch, n.timeService, n.broker)
 
