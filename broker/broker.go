@@ -322,25 +322,6 @@ func (b *Broker) rmSubs(keys ...int) {
 	}
 }
 
-func (b *Broker) checkChainID(chainID string) error {
-	ourChainID, err := b.chainInfo.GetChainID()
-	if err != nil {
-		return fmt.Errorf("Unable to get expected chain ID %w", err)
-	}
-
-	// An empty chain ID indicates this is our first run
-	if ourChainID == "" {
-		b.chainInfo.SetChainID(chainID)
-		return nil
-	}
-
-	if chainID != ourChainID {
-		return fmt.Errorf("mismatched chain id received: %s, want %s", chainID, ourChainID)
-	}
-
-	return nil
-}
-
 func (b *Broker) Receive(ctx context.Context) error {
 	if err := b.eventSource.Listen(); err != nil {
 		return err
@@ -349,7 +330,7 @@ func (b *Broker) Receive(ctx context.Context) error {
 	receiveCh, errCh := b.eventSource.Receive(ctx)
 
 	for e := range receiveCh {
-		if err := b.checkChainID(e.ChainID()); err != nil {
+		if err := checkChainID(b.chainInfo, e.ChainID()); err != nil {
 			return err
 		}
 		b.Send(e)
@@ -361,4 +342,23 @@ func (b *Broker) Receive(ctx context.Context) error {
 	default:
 		return nil
 	}
+}
+
+func checkChainID(expectedChainInfo ChainInfoI, chainID string) error {
+	ourChainID, err := expectedChainInfo.GetChainID()
+	if err != nil {
+		return fmt.Errorf("Unable to get expected chain ID %w", err)
+	}
+
+	// An empty chain ID indicates this is our first run
+	if ourChainID == "" {
+		expectedChainInfo.SetChainID(chainID)
+		return nil
+	}
+
+	if chainID != ourChainID {
+		return fmt.Errorf("mismatched chain id received: %s, want %s", chainID, ourChainID)
+	}
+
+	return nil
 }

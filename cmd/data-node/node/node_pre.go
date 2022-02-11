@@ -222,7 +222,8 @@ func (l *NodeCommand) preRun(_ []string) (err error) {
 
 	if l.conf.SqlStore.Enabled {
 		eventSource = broker.NewFanOutEventSource(eventSource, l.conf.SqlStore.FanOutBufferSize, 2)
-		l.sqlBroker, err = broker.New(l.ctx, l.Log, l.conf.Broker, l.chainInfoStore, eventSource)
+		l.sqlBroker, err = broker.NewSqlStoreBroker(l.Log, l.conf.Broker, l.chainInfoStore, eventSource,
+			l.conf.SqlStore.SqlBrokerBufferSize)
 		if err != nil {
 			l.Log.Error("unable to initialise sql broker", logging.Error(err))
 			return err

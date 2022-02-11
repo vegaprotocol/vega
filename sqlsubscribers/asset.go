@@ -46,11 +46,9 @@ func (a *Asset) Types() []events.Type {
 	}
 }
 
-func (a *Asset) Push(evts ...events.Event) {
-	for _, e := range evts {
-		if ae, ok := e.(AssetEvent); ok {
-			a.consume(ae)
-		}
+func (a *Asset) Push(evt events.Event) {
+	if ae, ok := evt.(AssetEvent); ok {
+		a.consume(ae)
 	}
 }
 
