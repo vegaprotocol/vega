@@ -2969,7 +2969,7 @@ func TestOrderBook_Crash2651(t *testing.T) {
 	require.NoError(t, err)
 
 	// Leave auction and uncross the book
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 	require.Equal(t, 3, tm.market.GetPeggedOrderCount())
 	require.Equal(t, 3, tm.market.GetParkedOrderCount())
 	require.Equal(t, types.MarketStateSuspended, tm.market.State()) // still in auction
@@ -3400,7 +3400,9 @@ func TestOrderBook_Crash2718(t *testing.T) {
 	assert.True(t, o2Update.Price.IsZero())
 
 	// Flip out of auction to un-park it
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
+
 	o2Update = tm.lastOrderUpdate(o2.ID)
 	assert.Equal(t, types.OrderStatusActive, o2Update.Status)
 	assert.Equal(t, num.NewUint(100), o2Update.Price)
@@ -4307,7 +4309,7 @@ func TestMarket_LeaveAuctionAndRepricePeggedOrders(t *testing.T) {
 	require.NoError(t, err)
 
 	// Leave the auction so pegged orders are unparked
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 
 	// 6 live orders, 2 normal and 4 pegged
 	require.Equal(t, int64(6), tm.market.GetOrdersOnBookCount())
@@ -4430,7 +4432,7 @@ func TestOrderBook_ClosingOutLPProviderShouldRemoveCommitment(t *testing.T) {
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 
 	// Create some normal orders to set the reference prices
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-B", 10, 10)
@@ -4513,7 +4515,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashIOC(t *testing.T) {
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 
 	// Create 2 buy orders that we will try to match against
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-B", 10, 100)
@@ -4563,7 +4565,7 @@ func TestOrderBook_PartiallyFilledMarketOrderThatWouldWashFOKSell(t *testing.T) 
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 
 	// Create 2 buy orders that we will try to match against
 	o1 := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "Order01", types.SideBuy, "party-B", 10, 100)
@@ -4693,7 +4695,7 @@ func TestOrderBook_PartiallyFilledLimitOrderThatWouldWashFOK(t *testing.T) {
 	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
 
 	// Leave auction right away
-	tm.market.LeaveAuction(ctx, now.Add(time.Second*20))
+	tm.market.LeaveAuctionWithIdGen(ctx, now.Add(time.Second*20), newTestIdGenerator())
 
 	md := tm.market.GetMarketData()
 	require.Equal(t, types.MarketTradingModeContinuous, md.MarketTradingMode)

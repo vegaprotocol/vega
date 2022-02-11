@@ -49,7 +49,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 			return
 		}
 		m.log.Info("leaving opening auction for market", logging.String("market-id", m.mkt.ID))
-		m.LeaveAuction(ctx, now)
+		m.leaveAuction(ctx, now)
 		// the market is now in a ACTIVE state
 		m.mkt.State = types.MarketStateActive
 		// the market is now properly open, so set the timestamp to when the opening auction actually ended
@@ -96,7 +96,7 @@ func (m *Market) checkAuction(ctx context.Context, now time.Time) {
 				m.extendAuctionIncompleteBook()
 				return
 			}
-			m.LeaveAuction(ctx, now)
+			m.leaveAuction(ctx, now)
 		}
 	}
 	// This is where FBA handling will go
