@@ -121,7 +121,7 @@ func NewDefaultConfig() Config {
 }
 
 func (c Config) IsValidator() bool {
-	return c.NodeMode == cfgencoding.NodeModeValidator
+	return c.NodeMode == cfgencoding.NodeModeValidator && c.Blockchain.ChainProvider != blockchain.ProviderNullChain
 }
 
 type Loader struct {

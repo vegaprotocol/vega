@@ -587,7 +587,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 
 	// read the state of validator set from the previous end of block
 	var vd []*tmtypesint.Validator
-	if app.blockchainClient != nil && req.Header.Height > 0 {
+	if req.Header.Height > 0 {
 		h := req.Header.Height - 1
 		vd, _ = app.blockchainClient.Validators(&h)
 	}
