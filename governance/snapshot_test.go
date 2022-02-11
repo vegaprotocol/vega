@@ -206,7 +206,7 @@ func TestGovernanceSnapshotRoundTrip(t *testing.T) {
 	err = proto.Unmarshal(state, snap)
 	require.Nil(t, err)
 
-	snapEng.broker.EXPECT().Send(gomock.Any()).Times(1)
+	snapEng.broker.EXPECT().SendBatch(gomock.Any()).Times(2)
 	_, err = snapEng.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 

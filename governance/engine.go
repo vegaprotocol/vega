@@ -3,6 +3,7 @@ package governance
 import (
 	"context"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"sort"
 	"time"
@@ -150,6 +151,7 @@ func (e *Engine) Hash() []byte {
 	)
 
 	var i int
+
 	for _, k := range e.activeProposals {
 		idbytes := []byte(k.ID)
 		copy(output[i:], idbytes[:])
@@ -168,8 +170,9 @@ func (e *Engine) Hash() []byte {
 	}
 	// now add the hash of the nodeProposals
 	copy(output[i:], npHash[:])
-
-	return vgcrypto.Hash(output)
+	h := vgcrypto.Hash(output)
+	e.log.Debug("governance state hash", logging.String("hash", hex.EncodeToString(h)))
+	return h
 }
 
 // ReloadConf updates the internal configuration of the governance engine.

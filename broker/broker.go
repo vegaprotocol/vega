@@ -34,6 +34,7 @@ type BrokerI interface {
 	Subscribe(s Subscriber) int
 	SubscribeBatch(subs ...Subscriber)
 	Unsubscribe(k int)
+	SetStreaming(on bool) bool
 }
 
 // SocketClient is an interface to send serialized events over a socket.
@@ -67,6 +68,7 @@ type Broker struct {
 
 	config       Config
 	socketClient SocketClient
+	canStream    bool // whether not we shold send events to the socketClient
 }
 
 // New creates a new base broker.
@@ -75,14 +77,15 @@ func New(ctx context.Context, log *logging.Logger, config Config) (*Broker, erro
 	log.SetLevel(config.Level.Get())
 
 	b := &Broker{
-		ctx:    ctx,
-		log:    log,
-		tSubs:  map[events.Type]map[int]*subscription{},
-		subs:   map[int]subscription{},
-		keys:   []int{},
-		eChans: map[events.Type]chan []events.Event{},
-		seqGen: newGen(),
-		config: config,
+		ctx:       ctx,
+		log:       log,
+		tSubs:     map[events.Type]map[int]*subscription{},
+		subs:      map[int]subscription{},
+		keys:      []int{},
+		eChans:    map[events.Type]chan []events.Event{},
+		seqGen:    newGen(),
+		config:    config,
+		canStream: bool(config.Socket.Enabled),
 	}
 
 	if config.Socket.Enabled {
@@ -354,6 +357,13 @@ func (b *Broker) rmSubs(keys ...int) {
 	}
 }
 
+// SetStreaming allows the ability to toggle on and off sending events to the socketClient.
+func (b *Broker) SetStreaming(on bool) bool {
+	old := b.canStream
+	b.canStream = on
+	return old
+}
+
 func (b *Broker) streamingEnabled() bool {
-	return bool(b.config.Socket.Enabled) && b.socketClient != nil
+	return b.canStream && b.socketClient != nil
 }

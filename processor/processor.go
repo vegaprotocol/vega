@@ -138,6 +138,7 @@ type ValidatorTopology interface {
 // Broker - the event bus.
 type Broker interface {
 	Send(e events.Event)
+	SetStreaming(on bool) bool
 }
 
 // Notary ...

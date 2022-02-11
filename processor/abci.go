@@ -348,6 +348,8 @@ func (app *App) cancel() {
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	// returns whether or not we have loaded from a snapshot (and may even do the loading)
+	old := app.broker.SetStreaming(false)
+	defer app.broker.SetStreaming(old)
 	loaded, err := app.snapshot.Loaded()
 	if err != nil {
 		app.log.Panic("failed to load from snapshot", logging.Error(err))
@@ -629,6 +631,7 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 			// only append to commit hash if we aren't using the snapshot hash
 			// otherwise restoring a checkpoint would restore an incomplete/wrong hash
 			resp.Data = append(resp.Data, cpt.Hash...)
+			app.log.Debug("checkpoint hash", logging.String("response-data", hex.EncodeToString(cpt.Hash)))
 		}
 		_ = app.handleCheckpoint(cpt)
 	}

@@ -306,6 +306,7 @@ func testSnapshotRestore(t *testing.T) {
 	// we expect 2 batches of events to be sent
 
 	newEng.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+	newEng.broker.EXPECT().SendBatch(gomock.Any()).Times(3)
 	for k, pl := range payloads {
 		state := data[k]
 		ptype := pl.IntoProto()

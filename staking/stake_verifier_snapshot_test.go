@@ -79,7 +79,7 @@ func TestSVSnapshotDeposited(t *testing.T) {
 	defer snapSV.ctrl.Finish()
 	snapSV.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
-	snapSV.broker.EXPECT().Send(gomock.Any()).Times(1)
+	snapSV.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	_, err = snapSV.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 	// Check its there by adding it again and checking for duplication error
@@ -129,7 +129,7 @@ func TestSVSnapshotRemoved(t *testing.T) {
 	defer snapSV.ctrl.Finish()
 	snapSV.witness.EXPECT().RestoreResource(gomock.Any(), gomock.Any()).Times(1)
 
-	snapSV.broker.EXPECT().Send(gomock.Any()).Times(1)
+	snapSV.broker.EXPECT().SendBatch(gomock.Any()).Times(1)
 	_, err = snapSV.LoadState(ctx, types.PayloadFromProto(snap))
 	require.Nil(t, err)
 	// Check its there by adding it again and checking for duplication error

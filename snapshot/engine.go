@@ -251,12 +251,10 @@ func (e *Engine) Start() error {
 // via stat-sync we will already know, if we are loading from local store then we do that
 // node.
 func (e *Engine) Loaded() (bool, error) {
-	if len(e.hash) != 0 || e.app.Height != 0 {
-		// must have already loaded by state-sync
-		// TODO could be worth delaying the application of the snapshot that we
-		// retrieve until so that exactly when/where a snapshot is loaded is the same
-		// for both local-store and state-sync
-		return true, nil
+	// if the avl has been initialised we must have loaded it earlier via using state-sync
+	// we can go straight into loading the state into the providers
+	if e.avl != nil {
+		return true, e.applySnap(e.ctx)
 	}
 
 	startHeight := e.Config.StartHeight
@@ -389,6 +387,8 @@ func (e *Engine) RejectSnapshot() error {
 	return nil
 }
 
+// ApplySnapshot takes the snapshot data sent over via tendermint and reconstructs the AVL
+// tree from the data. This call does *not* restore the state into the providers.
 func (e *Engine) ApplySnapshot(ctx context.Context) error {
 	// remove all existing snapshot and create an initial empty tree
 	e.Start()
@@ -400,8 +400,9 @@ func (e *Engine) ApplySnapshot(ctx context.Context) error {
 		return err
 	}
 
+	return nil
 	// Load the snapshot data into each provider
-	return e.applySnap(ctx)
+	// return e.applySnap(ctx)
 }
 
 func (e *Engine) applySnap(ctx context.Context) error {

@@ -66,6 +66,9 @@ func (e *Engine) LoadState(ctx context.Context, p *types.Payload) ([]types.State
 
 func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAccounts) error {
 	e.log.Debug("restoring accounts snapshot", logging.Int("n_accounts", len(accs.Accounts)))
+
+	evts := []events.Event{}
+	pevts := []events.Event{}
 	e.accs = make(map[string]*types.Account, len(accs.Accounts))
 	e.partiesAccs = map[string]map[string]*types.Account{}
 	e.hashableAccs = make([]*types.Account, 0, len(accs.Accounts))
@@ -79,14 +82,15 @@ func (e *Engine) restoreAccounts(ctx context.Context, accs *types.CollateralAcco
 			e.hashableAccs = append(e.hashableAccs, acc)
 			e.addAccountToHashableSlice(acc)
 		}
-		e.broker.Send(events.NewAccountEvent(ctx, *acc))
+		evts = append(evts, events.NewAccountEvent(ctx, *acc))
 
 		if acc.Owner != systemOwner {
-			e.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: acc.Owner}))
+			pevts = append(pevts, events.NewPartyEvent(ctx, types.Party{Id: acc.Owner}))
 		}
 	}
 	e.state.updateAccs(e.hashableAccs)
-
+	e.broker.SendBatch(evts)
+	e.broker.SendBatch(pevts)
 	return nil
 }
 
@@ -97,6 +101,7 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 	e.enabledAssets = make(map[string]types.Asset, len(assets.Assets))
 	e.state.assetIDs = make([]string, 0, len(assets.Assets))
 	e.state.assets = make(map[string]types.Asset, len(assets.Assets))
+	evts := []events.Event{}
 	for _, a := range assets.Assets {
 		ast := types.Asset{
 			ID:      a.ID,
@@ -104,8 +109,9 @@ func (e *Engine) restoreAssets(ctx context.Context, assets *types.CollateralAsse
 		}
 		e.enabledAssets[a.ID] = ast
 		e.state.enableAsset(ast)
-		e.broker.Send(events.NewAssetEvent(ctx, *a))
+		evts = append(evts, events.NewAssetEvent(ctx, *a))
 	}
+	e.broker.SendBatch(evts)
 	return nil
 }
 

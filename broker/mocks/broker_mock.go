@@ -59,6 +59,20 @@ func (mr *MockBrokerIMockRecorder) SendBatch(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBatch", reflect.TypeOf((*MockBrokerI)(nil).SendBatch), arg0)
 }
 
+// SetStreaming mocks base method.
+func (m *MockBrokerI) SetStreaming(arg0 bool) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetStreaming", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// SetStreaming indicates an expected call of SetStreaming.
+func (mr *MockBrokerIMockRecorder) SetStreaming(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetStreaming", reflect.TypeOf((*MockBrokerI)(nil).SetStreaming), arg0)
+}
+
 // Subscribe mocks base method.
 func (m *MockBrokerI) Subscribe(arg0 broker.Subscriber) int {
 	m.ctrl.T.Helper()

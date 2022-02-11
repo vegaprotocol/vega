@@ -6,6 +6,7 @@ import (
 
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
+	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/protobuf/proto"
@@ -160,6 +161,9 @@ func (e *Engine) LoadState(ctx context.Context, payload *types.Payload) ([]types
 
 func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.GovernanceActive) error {
 	e.activeProposals = make([]*proposal, 0, len(active.Proposals))
+	evts := []events.Event{}
+	vevts := []events.Event{}
+	e.log.Debug("restoring active proposals snapshot", logging.Int("nproposals", len(active.Proposals)))
 	for _, p := range active.Proposals {
 		pp := &proposal{
 			Proposal:     p.Proposal,
@@ -167,30 +171,37 @@ func (e *Engine) restoreActiveProposals(ctx context.Context, active *types.Gover
 			no:           votesAsMap(p.No),
 			invalidVotes: votesAsMap(p.Invalid),
 		}
-
+		e.log.Debug("proposals",
+			logging.String("id", pp.ID),
+			logging.Int("yes", len(pp.yes)),
+			logging.Int("no", len(pp.yes)),
+			logging.Int("invalid", len(pp.yes)),
+		)
 		e.activeProposals = append(e.activeProposals, pp)
-		e.broker.Send(events.NewProposalEvent(ctx, *pp.Proposal))
+		evts = append(evts, events.NewProposalEvent(ctx, *pp.Proposal))
 
 		for _, v := range pp.yes {
-			e.broker.Send(events.NewVoteEvent(ctx, *v))
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 		for _, v := range pp.no {
-			e.broker.Send(events.NewVoteEvent(ctx, *v))
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 
-		// TODO check these aren't dupes
 		for _, v := range pp.invalidVotes {
-			e.broker.Send(events.NewVoteEvent(ctx, *v))
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 	}
 
 	e.gss.changed[activeKey] = true
-
+	e.broker.SendBatch(evts)
+	e.broker.SendBatch(vevts)
 	return nil
 }
 
 func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.GovernanceEnacted) error {
-	// e.enactedProposals = enacted.Proposals[:]
+	evts := []events.Event{}
+	vevts := []events.Event{}
+	e.log.Debug("restoring enacted proposals snapshot", logging.Int("nproposals", len(enacted.Proposals)))
 	for _, p := range enacted.Proposals {
 		pp := &proposal{
 			Proposal:     p.Proposal,
@@ -198,23 +209,29 @@ func (e *Engine) restoreEnactedProposals(ctx context.Context, enacted *types.Gov
 			no:           votesAsMap(p.No),
 			invalidVotes: votesAsMap(p.Invalid),
 		}
-
-		e.enactedProposals = append(e.activeProposals, pp)
-		e.broker.Send(events.NewProposalEvent(ctx, *pp.Proposal))
+		e.log.Debug("proposals",
+			logging.String("id", pp.ID),
+			logging.Int("yes", len(pp.yes)),
+			logging.Int("no", len(pp.no)),
+			logging.Int("invalid", len(pp.invalidVotes)),
+		)
+		e.enactedProposals = append(e.enactedProposals, pp)
+		evts = append(evts, events.NewProposalEvent(ctx, *pp.Proposal))
 
 		for _, v := range pp.yes {
-			e.broker.Send(events.NewVoteEvent(ctx, *v))
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 		for _, v := range pp.no {
-			e.broker.Send(events.NewVoteEvent(ctx, *v))
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 
-		// TODO check these aren't dupes
 		for _, v := range pp.invalidVotes {
-			e.broker.Send(events.NewVoteEvent(ctx, *v))
+			vevts = append(vevts, events.NewVoteEvent(ctx, *v))
 		}
 	}
 	e.gss.changed[enactedKey] = true
+	e.broker.SendBatch(evts)
+	e.broker.SendBatch(vevts)
 	return nil
 }
 

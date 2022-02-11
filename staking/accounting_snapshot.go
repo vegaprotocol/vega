@@ -108,6 +108,8 @@ func (a *Accounting) LoadState(ctx context.Context, payload *types.Payload) ([]t
 
 func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types.StakingAccounts) error {
 	a.hashableAccounts = make([]*StakingAccount, 0, len(accounts.Accounts))
+	evts := []events.Event{}
+	pevts := []events.Event{}
 	for _, acc := range accounts.Accounts {
 		stakingAcc := &StakingAccount{
 			Party:   acc.Party,
@@ -116,19 +118,19 @@ func (a *Accounting) restoreStakingAccounts(ctx context.Context, accounts *types
 		}
 		a.hashableAccounts = append(a.hashableAccounts, stakingAcc)
 		a.accounts[acc.Party] = stakingAcc
-
-		a.broker.Send(events.NewPartyEvent(ctx, types.Party{Id: acc.Party}))
+		pevts = append(pevts, events.NewPartyEvent(ctx, types.Party{Id: acc.Party}))
 		a.log.Debug("restoring staking account",
 			logging.String("party", acc.Party),
 			logging.Int("stakelinkings", len(acc.Events)),
 		)
 		for _, e := range acc.Events {
-			a.broker.Send(events.NewStakeLinking(ctx, *e))
+			evts = append(evts, events.NewStakeLinking(ctx, *e))
 		}
 	}
 
 	a.stakingAssetTotalSupply = accounts.StakingAssetTotalSupply.Clone()
-
 	a.accState.changed = true
+	a.broker.SendBatch(evts)
+	a.broker.SendBatch(pevts)
 	return nil
 }
