@@ -13,7 +13,7 @@ import (
 
 type MappedMD struct {
 	md      types.MarketData
-	uintMap map[string]*num.Uint
+	uintMap map[string]**num.Uint
 	u64Map  map[string]*uint64
 	strMap  map[string]*string
 	tMap    map[string]*int64
@@ -37,6 +37,7 @@ func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) erro
 	i64Set := expect.parseI64(data)
 	tSet := expect.parseTimes(data)
 	strSet := expect.parseStr(data)
+	uintSet := expect.parseUint(data)
 	expect.parseSpecial(data)
 	if pm := getPriceBounds(data); len(pm) > 0 {
 		expect.md.PriceMonitoringBounds = pm
@@ -47,7 +48,7 @@ func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) erro
 	}
 	cmp := mappedMD(actual)
 	parsed := mappedMD(expect.md)
-	errs := make([]error, 0, len(u64Set)+len(i64Set)+len(strSet)+2)
+	errs := make([]error, 0, len(u64Set)+len(i64Set)+len(strSet)+2+len(uintSet))
 	if expect.tm != nil && *expect.tm != expect.md.MarketTradingMode {
 		errs = append(errs, fmt.Errorf("expected '%s' trading mode, instead got '%s'", *expect.tm, expect.md.MarketTradingMode))
 	}
@@ -57,6 +58,14 @@ func TheMarketDataShouldBe(engine Execution, mID string, data *godog.Table) erro
 	if expect.et != nil && *expect.et != expect.md.ExtensionTrigger {
 		errs = append(errs, fmt.Errorf("expected '%s' extension trigger, instead got '%s'", *expect.et, expect.md.ExtensionTrigger))
 	}
+	// compare uints as strings
+	for _, u := range uintSet {
+		e, g := parsed.uintMap[u], cmp.uintMap[u]
+		if (*e).String() != (*g).String() {
+			errs = append(errs, fmt.Errorf("expected '%s' for %s, instead got '%s'", (*e).String(), u, (*g).String()))
+		}
+	}
+
 	// compare uint64
 	for _, u := range u64Set {
 		e, g := parsed.u64Map[u], cmp.u64Map[u] // get pointers to both fields
@@ -270,6 +279,22 @@ func (m *MappedMD) parseTimes(data *godog.Table) []string {
 	return set
 }
 
+func (m *MappedMD) parseUint(data *godog.Table) []string {
+	set := make([]string, 0, len(m.uintMap))
+	for _, r := range ParseTable(data) {
+		for k, ptr := range m.uintMap {
+			if i, ok := r.StrB(k); ok {
+				n, _ := num.UintFromString(i, 10)
+				*ptr = n
+				set = append(set, k)
+				// again: avoid reassignments when parsing the next row
+				delete(m.uintMap, k)
+			}
+		}
+	}
+	return set
+}
+
 func (m *MappedMD) parseI64(data *godog.Table) []string {
 	set := make([]string, 0, len(m.i64Map))
 	for _, r := range ParseTable(data) {
@@ -304,15 +329,17 @@ func mappedMD(md types.MarketData) *MappedMD {
 	r := &MappedMD{
 		md: md,
 	}
-	r.uintMap = map[string]*num.Uint{
-		"mark price":              r.md.MarkPrice.Clone(),
-		"best bid price":          r.md.BestBidPrice.Clone(),
-		"best offer price":        r.md.BestOfferPrice.Clone(),
-		"best static bid price":   r.md.BestStaticBidPrice.Clone(),
-		"best static offer price": r.md.BestStaticOfferPrice.Clone(),
-		"mid price":               r.md.MidPrice.Clone(),
-		"static mid price":        r.md.StaticMidPrice.Clone(),
-		"indicative price":        r.md.IndicativePrice.Clone(),
+
+	// no need to clone here, the values are already cloned
+	r.uintMap = map[string]**num.Uint{
+		"mark price":              &(r.md.MarkPrice),
+		"best bid price":          &r.md.BestBidPrice,
+		"best offer price":        &r.md.BestOfferPrice,
+		"best static bid price":   &r.md.BestStaticBidPrice,
+		"best static offer price": &r.md.BestStaticOfferPrice,
+		"mid price":               &r.md.MidPrice,
+		"static mid price":        &r.md.StaticMidPrice,
+		"indicative price":        &r.md.IndicativePrice,
 	}
 	r.u64Map = map[string]*uint64{
 		"best bid volume":          &r.md.BestBidVolume,

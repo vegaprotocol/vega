@@ -99,6 +99,7 @@
 - [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
 - [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 - [4747](https://github.com/vegaprotocol/vega/pull/4747) - Dispatch network parameter updates at the same block when loaded from checkpoint
+- [4590](https://github.com/vegaprotocol/vega/pull/4590) - Added verification of uint market data in integration test
 
 
 ## 0.47.6
