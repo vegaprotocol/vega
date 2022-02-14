@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os"
 
+	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/collateral"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
 	"code.vegaprotocol.io/vega/execution"
+	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/rewards"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/validators"
 
 	"code.vegaprotocol.io/vega/integration/helpers"
 	"code.vegaprotocol.io/vega/integration/steps/market"
@@ -62,6 +65,7 @@ type executionTestSetup struct {
 	stakingAccount   *stubs.StakingAccountStub
 	rewardsEngine    *rewards.Engine
 	assetsEngine     *stubs.AssetStub
+	banking          *banking.Engine
 
 	// save party accounts state
 	markets []types.Market
@@ -148,15 +152,22 @@ func newExecutionTestSetup() *executionTestSetup {
 		panic(err)
 	}
 
+	commander := stubs.NewCommanderStub()
+	execsetup.netDeposits = num.Zero()
+	witness := validators.NewWitness(execsetup.log, validators.NewDefaultConfig(), execsetup.topology, commander, execsetup.timeService)
+	ntry := notary.NewWithSnapshot(execsetup.log, notary.NewDefaultConfig(), execsetup.topology, execsetup.broker, commander, execsetup.timeService)
+	execsetup.banking = banking.New(execsetup.log, banking.NewDefaultConfig(), execsetup.collateralEngine, witness, execsetup.timeService, execsetup.assetsEngine, ntry, execsetup.broker, execsetup.topology, execsetup.epochEngine)
+
 	execsetup.netParams.Watch(
 		netparams.WatchParam{
 			Param:   netparams.FloatingPointUpdatesDuration,
 			Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.TransferFeeFactor,
+			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
+		},
 	)
-
-	execsetup.netDeposits = num.Zero()
-
 	return execsetup
 }
 

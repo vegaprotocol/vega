@@ -31,7 +31,7 @@ func NewBrokerStub() *BrokerStub {
 	}
 }
 
-func (b *BrokerStub) Subscribe(sub broker.Subscriber) {
+func (b *BrokerStub) Subscribe(sub broker.Subscriber) int {
 	b.mu.Lock()
 	ty := sub.Types()
 	for _, t := range ty {
@@ -41,6 +41,7 @@ func (b *BrokerStub) Subscribe(sub broker.Subscriber) {
 		b.subT[t] = append(b.subT[t], sub)
 	}
 	b.mu.Unlock()
+	return 0
 }
 
 func (b *BrokerStub) SendBatch(evts []events.Event) {
@@ -686,3 +687,7 @@ func derefTxErr(e events.Event) events.TxErr {
 	}
 	return dub
 }
+
+func (b *BrokerStub) SubscribeBatch(subs ...broker.Subscriber) {}
+
+func (b *BrokerStub) Unsubscribe(k int) {}
