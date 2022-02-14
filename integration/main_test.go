@@ -187,7 +187,15 @@ func InitializeScenario(s *godog.ScenarioContext) {
 	s.Step(`^the parties submit the following liquidity provision:$`, func(table *godog.Table) error {
 		return steps.PartiesSubmitLiquidityProvision(execsetup.executionEngine, table)
 	})
-
+	s.Step(`^the parties submit the following one off transfers:$`, func(table *godog.Table) error {
+		return steps.PartiesSubmitTransfers(execsetup.banking, table)
+	})
+	s.Step(`^the parties submit the following recurring transfers:$`, func(table *godog.Table) error {
+		return steps.PartiesSubmitRecurringTransfers(execsetup.banking, table)
+	})
+	s.Step(`^the parties submit the following transfer cancellations:$`, func(table *godog.Table) error {
+		return steps.PartiesCancelTransfers(execsetup.banking, table)
+	})
 	s.Step(`^the parties submit the following delegations:$`, func(table *godog.Table) error {
 		return steps.PartiesDelegateTheFollowingStake(execsetup.delegationEngine, table)
 	})
