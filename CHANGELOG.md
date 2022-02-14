@@ -71,6 +71,7 @@
 - [4737](https://github.com/vegaprotocol/vega/pull/4737) - Use a deterministic generator for order ids, set new order ids to the transaction hash of the Submit transaction 
 - [4741](https://github.com/vegaprotocol/vega/pull/4741) - Hash again list of hash from engines
 - [4751](https://github.com/vegaprotocol/vega/pull/4751) - Make trade ids unique using the deterministic id generator 
+- [4766](https://github.com/vegaprotocol/vega/issues/4766) - Added feature tests and integration steps for transfers
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset

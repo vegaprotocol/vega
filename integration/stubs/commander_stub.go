@@ -15,3 +15,6 @@ func NewCommanderStub() *CommanderStub {
 
 func (*CommanderStub) Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error)) {
 }
+
+func (*CommanderStub) CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error)) {
+}

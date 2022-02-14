@@ -20,11 +20,19 @@ func NewTopologyStub(nodeID string) *TopologyStub {
 	}
 }
 
+func (ts *TopologyStub) Len() int {
+	return len(ts.validators)
+}
+
 func (ts *TopologyStub) ValidatorPerformanceScore(nodeID string) num.Decimal {
 	return num.DecimalFromFloat(1)
 }
 
 func (ts *TopologyStub) SelfNodeID() string {
+	return ts.nodeID
+}
+
+func (ts *TopologyStub) SelfVegaPubKey() string {
 	return ts.nodeID
 }
 
