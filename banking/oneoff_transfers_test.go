@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -62,7 +63,7 @@ func testOneOffTransferNotEnoughFundsToTransfer(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 
@@ -181,7 +182,8 @@ func testValidOneOffTransfer(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(
+		assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -259,7 +261,7 @@ func testValidOneOffTransferWithDeliverOnInThePastStraightAway(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct
@@ -337,7 +339,7 @@ func testValidOneOffTransferWithDeliverOn(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
 	e.col.EXPECT().GetPartyGeneralAccount(gomock.Any(), gomock.Any()).Times(1).Return(&fromAcc, nil)
 
 	// assert the calculation of fees and transfer request are correct

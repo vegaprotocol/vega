@@ -5,10 +5,13 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/assets"
+	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +49,8 @@ func TestCancelTransfer(t *testing.T) {
 		},
 	}
 
-	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).Times(2).Return(
+		assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
 	e.broker.EXPECT().Send(gomock.Any()).Times(1)
 	assert.NoError(t, e.TransferFunds(ctx, transfer))
 
@@ -134,3 +138,21 @@ func TestCancelTransfer(t *testing.T) {
 	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_START})
 	e.OnEpoch(context.Background(), types.Epoch{Seq: 11, Action: vega.EpochAction_EPOCH_ACTION_END})
 }
+
+type mockAsset struct {
+	quantum *num.Uint
+}
+
+func (m *mockAsset) Type() *types.Asset {
+	return &types.Asset{
+		Details: &types.AssetDetails{
+			Quantum: m.quantum,
+		},
+	}
+}
+
+func (m *mockAsset) GetAssetClass() common.AssetClass { return common.ERC20 }
+func (m *mockAsset) IsValid() bool                    { return true }
+func (m *mockAsset) Validate() error                  { return nil }
+func (m *mockAsset) SetValidNonValidator()            {}
+func (m *mockAsset) String() string                   { return "" }

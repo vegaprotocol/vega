@@ -55,13 +55,19 @@ func (e *Engine) oneOffTransfer(
 	}()
 
 	// ensure asset exists
-	if _, err := e.assets.Get(transfer.Asset); err != nil {
+	a, err := e.assets.Get(transfer.Asset)
+	if err != nil {
 		transfer.Status = types.TransferStatusRejected
 		e.log.Debug("cannot transfer funds, invalid asset", logging.Error(err))
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
 	if err := transfer.IsValid(); err != nil {
+		transfer.Status = types.TransferStatusRejected
+		return err
+	}
+
+	if err := e.ensureMinimalTransferAmount(a, transfer.Amount); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}

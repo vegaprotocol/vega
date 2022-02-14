@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"code.vegaprotocol.io/protos/vega"
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -297,7 +298,7 @@ func testRecurringTransferInvalidTransfers(t *testing.T) {
 	}
 
 	// asset exists
-	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(nil, nil)
+	e.assets.EXPECT().Get(gomock.Any()).AnyTimes().Return(assets.NewAsset(&mockAsset{num.NewUint(1)}), nil)
 
 	var baseCpy types.TransferBase
 
