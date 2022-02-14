@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/fee"
 	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/liquidity/target"
@@ -19,6 +20,7 @@ import (
 	"code.vegaprotocol.io/vega/risk"
 	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 func NewMarketFromSnapshot(
@@ -35,7 +37,8 @@ func NewMarketFromSnapshot(
 	oracleEngine products.OracleEngine,
 	now time.Time,
 	broker Broker,
-	idgen *IDgenerator,
+	stateVarEngine StateVarEngine,
+	assetDetails *assets.Asset,
 ) (*Market, error) {
 	mkt := em.Market
 
@@ -68,6 +71,13 @@ func NewMarketFromSnapshot(
 		now.UnixNano(),
 		mkt.ID,
 		asset,
+		stateVarEngine,
+		&types.RiskFactor{
+			Market: mkt.ID,
+			Short:  em.ShortRiskFactor,
+			Long:   em.LongRiskFactor,
+		},
+		em.RiskFactorConsensusReached,
 	)
 
 	settleEngine := settlement.New(
@@ -91,16 +101,17 @@ func NewMarketFromSnapshot(
 		return nil, fmt.Errorf("unable to instantiate price monitoring engine: %w", err)
 	}
 
+	exp := assetDetails.DecimalPlaces() - mkt.DecimalPlaces
+	priceFactor := num.Zero().Exp(num.NewUint(10), num.NewUint(exp))
 	lMonitor := lmon.NewMonitor(tsCalc, mkt.LiquidityMonitoringParameters)
 
-	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, idgen, tradableInstrument.RiskModel, pMonitor, mkt.ID)
+	liqEngine := liquidity.NewSnapshotEngine(liquidityConfig, log, broker, tradableInstrument.RiskModel, pMonitor, asset, mkt.ID, stateVarEngine, mkt.TickSize())
 	// call on chain time update straight away, so
 	// the time in the engine is being updatedat creation
 	liqEngine.OnChainTimeUpdate(ctx, now)
 
 	market := &Market{
 		log:                log,
-		idgen:              idgen,
 		mkt:                mkt,
 		closingAt:          time.Unix(0, mkt.MarketTimestamps.Close),
 		currentTime:        now,
@@ -128,8 +139,9 @@ func NewMarketFromSnapshot(
 		lastMidSellPrice:   em.LastMidAsk.Clone(),
 		markPrice:          em.CurrentMarkPrice.Clone(),
 		stateChanged:       true,
+		priceFactor:        priceFactor,
 	}
-
+	liqEngine.SetGetStaticPricesFunc(market.getBestStaticPrices)
 	return market, nil
 }
 
@@ -139,13 +151,11 @@ func (m *Market) changed() bool {
 		m.as.Changed() ||
 		m.peggedOrders.Changed() ||
 		m.expiringOrders.Changed() ||
-		m.equityShares.Changed() ||
-		m.liquidity.Changed() ||
-		m.position.Changed() ||
-		m.tsCalc.Changed())
+		m.equityShares.Changed())
 }
 
 func (m *Market) getState() *types.ExecMarket {
+	rf, _ := m.risk.GetRiskFactors()
 	em := &types.ExecMarket{
 		Market:                     m.mkt.DeepClone(),
 		PriceMonitor:               m.pMonitor.GetState(),
@@ -160,6 +170,9 @@ func (m *Market) getState() *types.ExecMarket {
 		CurrentMarkPrice:           m.getCurrentMarkPrice(),
 		LastEquityShareDistributed: m.lastEquityShareDistributed.Unix(),
 		EquityShare:                m.equityShares.GetState(),
+		RiskFactorConsensusReached: m.risk.IsRiskFactorInitialised(),
+		ShortRiskFactor:            rf.Short,
+		LongRiskFactor:             rf.Long,
 	}
 
 	m.stateChanged = false

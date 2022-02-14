@@ -3,6 +3,7 @@ package netparams
 import (
 	"context"
 	"sort"
+	"time"
 
 	"code.vegaprotocol.io/protos/vega"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
@@ -53,5 +54,7 @@ func (s *Store) Load(ctx context.Context, data []byte) error {
 	if err := s.updateBatch(ctx, np); err != nil {
 		return err
 	}
+	// force the updates dispatch
+	s.OnChainTimeUpdate(ctx, time.Time{})
 	return nil
 }

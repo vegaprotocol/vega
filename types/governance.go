@@ -307,20 +307,20 @@ func NewMarketCommitmentFromProto(p *proto.NewMarketCommitment) (*NewMarketCommi
 	}
 
 	for _, sell := range p.Sells {
-		order := &LiquidityOrder{
-			Reference:  sell.Reference,
-			Proportion: sell.Proportion,
-			Offset:     sell.Offset,
+		order, err := LiquidityOrderFromProto(sell)
+		if err != nil {
+			return nil, err
 		}
+
 		l.Sells = append(l.Sells, order)
 	}
 
 	for _, buy := range p.Buys {
-		order := &LiquidityOrder{
-			Reference:  buy.Reference,
-			Proportion: buy.Proportion,
-			Offset:     buy.Offset,
+		order, err := LiquidityOrderFromProto(buy)
+		if err != nil {
+			return nil, err
 		}
+
 		l.Buys = append(l.Buys, order)
 	}
 
@@ -425,10 +425,14 @@ type ProposalTerms_NewAsset struct {
 	NewAsset *NewAsset
 }
 
-type NewFreeform struct {
+type NewFreeformDetails struct {
 	URL         string
 	Description string
 	Hash        string
+}
+
+type NewFreeform struct {
+	Changes *NewFreeformDetails
 }
 
 type ProposalTerms_NewFreeform struct {
@@ -477,7 +481,6 @@ func (n NewMarket) DeepClone() *NewMarket {
 
 func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 	riskParams := n.RiskParameters.rpIntoProto()
-	tradingMode := n.TradingMode.tmIntoProto()
 	md := make([]string, 0, len(n.Metadata))
 	md = append(md, n.Metadata...)
 
@@ -506,12 +509,6 @@ func (n NewMarketConfiguration) IntoProto() *proto.NewMarketConfiguration {
 		r.RiskParameters = rp
 	case *proto.NewMarketConfiguration_LogNormal:
 		r.RiskParameters = rp
-	}
-	switch tm := tradingMode.(type) {
-	case *proto.NewMarketConfiguration_Continuous:
-		r.TradingMode = tm
-	case *proto.NewMarketConfiguration_Discrete:
-		r.TradingMode = tm
 	}
 	return r
 }
@@ -573,30 +570,7 @@ func NewMarketConfigurationFromProto(p *proto.NewMarketConfiguration) *NewMarket
 			r.RiskParameters = NewMarketConfiguration_LogNormalFromProto(rp)
 		}
 	}
-	if p.TradingMode != nil {
-		switch tm := p.TradingMode.(type) {
-		case *proto.NewMarketConfiguration_Continuous:
-			r.TradingMode = NewMarketConfiguration_ContinuousFromProto(tm)
-		case *proto.NewMarketConfiguration_Discrete:
-			r.TradingMode = NewMarketConfiguration_DiscreteFromProto(tm)
-		}
-	}
-
 	return r
-}
-
-func (n *NewMarketConfiguration) GetTradingMode() tradingMode {
-	if n != nil {
-		return n.TradingMode
-	}
-	return nil
-}
-
-func (n *NewMarketConfiguration) GetContinuous() *ContinuousTrading {
-	if x, ok := n.GetTradingMode().(*NewMarketConfiguration_Continuous); ok {
-		return x.Continuous
-	}
-	return nil
 }
 
 func ProposalTermsFromProto(p *proto.ProposalTerms) *ProposalTerms {
@@ -680,11 +654,13 @@ func NewNewAssetFromProto(p *proto.ProposalTerms_NewAsset) *ProposalTerms_NewAss
 
 func NewNewFreeformFromProto(p *proto.ProposalTerms_NewFreeform) *ProposalTerms_NewFreeform {
 	var newFreeform *NewFreeform
-	if p.NewFreeform != nil {
+	if p.NewFreeform != nil && p.NewFreeform.Changes != nil {
 		newFreeform = &NewFreeform{
-			URL:         p.NewFreeform.Url,
-			Description: p.NewFreeform.Description,
-			Hash:        p.NewFreeform.Hash,
+			Changes: &NewFreeformDetails{
+				URL:         p.NewFreeform.Changes.Url,
+				Description: p.NewFreeform.Changes.Description,
+				Hash:        p.NewFreeform.Changes.Hash,
+			},
 		}
 	}
 
@@ -1000,6 +976,7 @@ type InstrumentConfiguration struct {
 type icProd interface {
 	isInstrumentConfiguration_Product()
 	icpIntoProto() interface{}
+	Asset() string
 	DeepClone() icProd
 }
 
@@ -1008,7 +985,6 @@ type InstrumentConfiguration_Future struct {
 }
 
 type FutureProduct struct {
-	Maturity                        string
 	SettlementAsset                 string
 	QuoteName                       string
 	OracleSpecForSettlementPrice    *v1.OracleSpecConfiguration
@@ -1023,6 +999,10 @@ func (i InstrumentConfiguration_Future) DeepClone() icProd {
 	return &InstrumentConfiguration_Future{
 		Future: i.Future.DeepClone(),
 	}
+}
+
+func (i InstrumentConfiguration_Future) Asset() string {
+	return i.Future.SettlementAsset
 }
 
 func (i InstrumentConfiguration) DeepClone() *InstrumentConfiguration {
@@ -1061,7 +1041,6 @@ func InstrumentConfigurationFromProto(
 	case *proto.InstrumentConfiguration_Future:
 		r.Product = &InstrumentConfiguration_Future{
 			Future: &FutureProduct{
-				Maturity:                        pr.Future.Maturity,
 				SettlementAsset:                 pr.Future.SettlementAsset,
 				QuoteName:                       pr.Future.QuoteName,
 				OracleSpecForSettlementPrice:    pr.Future.OracleSpecForSettlementPrice.DeepClone(),
@@ -1088,7 +1067,6 @@ func (InstrumentConfiguration_Future) isInstrumentConfiguration_Product() {}
 
 func (f FutureProduct) IntoProto() *proto.FutureProduct {
 	return &proto.FutureProduct{
-		Maturity:                        f.Maturity,
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
@@ -1100,7 +1078,6 @@ func (f FutureProduct) IntoProto() *proto.FutureProduct {
 
 func (f FutureProduct) DeepClone() *FutureProduct {
 	return &FutureProduct{
-		Maturity:                        f.Maturity,
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
@@ -1113,123 +1090,8 @@ func (f FutureProduct) String() string {
 	return f.IntoProto().String()
 }
 
-type ContinuousTrading struct {
-	TickSize string
-}
-
-func ContinuousTradingFromProto(c *proto.ContinuousTrading) *ContinuousTrading {
-	return &ContinuousTrading{
-		TickSize: c.TickSize,
-	}
-}
-
-func (c ContinuousTrading) IntoProto() *proto.ContinuousTrading {
-	return &proto.ContinuousTrading{
-		TickSize: c.TickSize,
-	}
-}
-
-func (c ContinuousTrading) DeepClone() *ContinuousTrading {
-	return &ContinuousTrading{
-		TickSize: c.TickSize,
-	}
-}
-
-func (c ContinuousTrading) String() string {
-	return c.IntoProto().String()
-}
-
-type NewMarketConfiguration_Continuous struct {
-	Continuous *ContinuousTrading
-}
-
-func (n NewMarketConfiguration_Continuous) IntoProto() *proto.NewMarketConfiguration_Continuous {
-	return &proto.NewMarketConfiguration_Continuous{
-		Continuous: n.Continuous.IntoProto(),
-	}
-}
-
-func NewMarketConfiguration_ContinuousFromProto(p *proto.NewMarketConfiguration_Continuous) *NewMarketConfiguration_Continuous {
-	return &NewMarketConfiguration_Continuous{
-		Continuous: &ContinuousTrading{
-			TickSize: p.Continuous.TickSize,
-		},
-	}
-}
-
-func (*NewMarketConfiguration_Continuous) isTradingMode() {}
-
-func (n NewMarketConfiguration_Continuous) tmIntoProto() interface{} {
-	return n.IntoProto()
-}
-
-func (n NewMarketConfiguration_Continuous) DeepClone() tradingMode {
-	if n.Continuous == nil {
-		return &NewMarketConfiguration_Continuous{}
-	}
-	return &NewMarketConfiguration_Continuous{
-		Continuous: n.Continuous.DeepClone(),
-	}
-}
-
-type NewMarketConfiguration_Discrete struct {
-	Discrete *DiscreteTrading
-}
-
-func (n NewMarketConfiguration_Discrete) IntoProto() *proto.NewMarketConfiguration_Discrete {
-	return &proto.NewMarketConfiguration_Discrete{
-		Discrete: n.Discrete.IntoProto(),
-	}
-}
-
-func NewMarketConfiguration_DiscreteFromProto(p *proto.NewMarketConfiguration_Discrete) *NewMarketConfiguration_Discrete {
-	return &NewMarketConfiguration_Discrete{
-		Discrete: &DiscreteTrading{
-			DurationNs: p.Discrete.DurationNs,
-			TickSize:   p.Discrete.TickSize,
-		},
-	}
-}
-
-func (*NewMarketConfiguration_Discrete) isTradingMode() {}
-
-func (n NewMarketConfiguration_Discrete) tmIntoProto() interface{} {
-	return n.IntoProto()
-}
-
-func (n NewMarketConfiguration_Discrete) DeepClone() tradingMode {
-	if n.Discrete == nil {
-		return &NewMarketConfiguration_Discrete{}
-	}
-	return &NewMarketConfiguration_Discrete{
-		Discrete: n.Discrete.DeepClone(),
-	}
-}
-
-type DiscreteTrading struct {
-	DurationNs int64
-	TickSize   string
-}
-
-func DiscreteTradingFromProto(d *proto.DiscreteTrading) *DiscreteTrading {
-	return &DiscreteTrading{
-		DurationNs: d.DurationNs,
-		TickSize:   d.TickSize,
-	}
-}
-
-func (d DiscreteTrading) DeepClone() *DiscreteTrading {
-	return &DiscreteTrading{
-		DurationNs: d.DurationNs,
-		TickSize:   d.TickSize,
-	}
-}
-
-func (d DiscreteTrading) IntoProto() *proto.DiscreteTrading {
-	return &proto.DiscreteTrading{
-		DurationNs: d.DurationNs,
-		TickSize:   d.TickSize,
-	}
+func (f FutureProduct) Asset() string {
+	return f.SettlementAsset
 }
 
 func (f ProposalTerms_NewFreeform) IntoProto() *proto.ProposalTerms_NewFreeform {
@@ -1262,9 +1124,11 @@ func (f ProposalTerms_NewFreeform) DeepClone() pterms {
 
 func (n NewFreeform) IntoProto() *proto.NewFreeform {
 	return &proto.NewFreeform{
-		Url:         n.URL,
-		Description: n.Description,
-		Hash:        n.Hash,
+		Changes: &proto.NewFreeformDetails{
+			Url:         n.Changes.URL,
+			Description: n.Changes.Description,
+			Hash:        n.Changes.Hash,
+		},
 	}
 }
 
@@ -1274,8 +1138,10 @@ func (n NewFreeform) String() string {
 
 func (n NewFreeform) DeepClone() *NewFreeform {
 	return &NewFreeform{
-		URL:         n.URL,
-		Description: n.Description,
-		Hash:        n.Hash,
+		Changes: &NewFreeformDetails{
+			URL:         n.Changes.URL,
+			Description: n.Changes.Description,
+			Hash:        n.Changes.Hash,
+		},
 	}
 }

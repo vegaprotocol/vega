@@ -110,6 +110,7 @@ func TestPanicInLeaveAuction(t *testing.T) {
 
 	for _, o := range orders {
 		o := o
+		o.OriginalPrice = o.Price.Clone()
 		cnf, err := book.SubmitOrder(&o)
 		assert.NoError(t, err)
 		assert.Len(t, cnf.Trades, 0)

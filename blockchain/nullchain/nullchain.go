@@ -17,10 +17,9 @@ import (
 	"code.vegaprotocol.io/vega/logging"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/proto/tendermint/crypto"
 	"github.com/tendermint/tendermint/proto/tendermint/types"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -62,7 +61,6 @@ type NullBlockchain struct {
 func NewClient(
 	log *logging.Logger,
 	cfg blockchain.NullChainConfig,
-	app ApplicationService,
 ) *NullBlockchain {
 	// setup logger
 	log = log.Named(namedLogger)
@@ -71,7 +69,6 @@ func NewClient(
 	now := time.Now()
 	n := &NullBlockchain{
 		log:                  log,
-		app:                  app,
 		srvAddress:           net.JoinHostPort(cfg.IP, strconv.Itoa(cfg.Port)),
 		chainID:              vgrand.RandomStr(12),
 		transactionsPerBlock: cfg.TransactionsPerBlock,
@@ -84,6 +81,10 @@ func NewClient(
 	}
 
 	return n
+}
+
+func (n *NullBlockchain) SetABCIApp(app ApplicationService) {
+	n.app = app
 }
 
 // ReloadConf update the internal configuration.
@@ -279,8 +280,8 @@ func (n *NullBlockchain) GetChainID(context.Context) (string, error) {
 
 func (n *NullBlockchain) GetStatus(context.Context) (*tmctypes.ResultStatus, error) {
 	return &tmctypes.ResultStatus{
-		NodeInfo: p2p.DefaultNodeInfo{
-			Version: "0.34.12",
+		NodeInfo: tmtypes.NodeInfo{
+			Version: "0.35.0",
 		},
 		SyncInfo: tmctypes.SyncInfo{
 			CatchingUp: false,
@@ -326,9 +327,10 @@ func (n *NullBlockchain) SendTransactionCommit(ctx context.Context, tx []byte) (
 	return "", ErrNotImplemented
 }
 
-func (n *NullBlockchain) Validators(_ context.Context) ([]*tmtypes.Validator, error) {
-	n.log.Error("not implemented")
-	return nil, ErrNotImplemented
+func (n *NullBlockchain) Validators(_ context.Context, _ *int64) ([]*tmtypes.Validator, error) {
+	// TODO: if we are feeling brave we, could pretend to have a validator set and open
+	// up the nullblockchain to more code paths
+	return []*tmtypes.Validator{}, nil
 }
 
 func (n *NullBlockchain) GenesisValidators(_ context.Context) ([]*tmtypes.Validator, error) {

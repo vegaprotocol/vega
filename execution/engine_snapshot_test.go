@@ -8,6 +8,7 @@ import (
 
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 
+	"code.vegaprotocol.io/vega/assets"
 	bmock "code.vegaprotocol.io/vega/broker/mocks"
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/execution/mocks"
@@ -37,7 +38,18 @@ func createEngine(t *testing.T) (*execution.Engine, *gomock.Controller) {
 	oracleService := mocks.NewMockOracleEngine(ctrl)
 	oracleService.EXPECT().Subscribe(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 
-	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker), ctrl
+	statevar := mocks.NewMockStateVarEngine(ctrl)
+	statevar.EXPECT().RegisterStateVariable(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+	statevar.EXPECT().NewEvent(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
+	epochEngine := mocks.NewMockEpochEngine(ctrl)
+	epochEngine.EXPECT().NotifyOnEpoch(gomock.Any()).Times(1)
+	asset := mocks.NewMockAssets(ctrl)
+	asset.EXPECT().Get(gomock.Any()).AnyTimes().DoAndReturn(func(a string) (*assets.Asset, error) {
+		as := NewAssetStub(a, 0)
+		return as, nil
+	})
+	return execution.NewEngine(log, executionConfig, timeService, collateralService, oracleService, broker, statevar, execution.NewFeesTracker(epochEngine), execution.NewMarketTracker(), asset), ctrl
 }
 
 func TestEmptyMarkets(t *testing.T) {
@@ -153,9 +165,6 @@ func getMarketConfig() *types.Market {
 				},
 			},
 		},
-		TradingModeConfig: &types.MarketContinuous{
-			Continuous: &types.ContinuousTrading{},
-		},
 		State: types.MarketStateActive,
 	}
 }
@@ -187,15 +196,18 @@ func TestValidMarketSnapshot(t *testing.T) {
 	keys := engine.Keys()
 	require.Equal(t, 1, len(keys))
 	key := keys[0]
+
+	// The snapshot engine will call GetHash first so we keep that order
+	// to mimic the flow
+	hash1, err := engine.GetHash(key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hash1)
+
 	// Take the snapshot and hash
 	bytes, providers, err := engine.GetState(key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bytes)
 	assert.Len(t, providers, 4)
-
-	hash1, err := engine.GetHash(key)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, hash1)
 
 	// Turn the bytes back into a payload and restore to a new engine
 	engine2, ctrl := createEngine(t)

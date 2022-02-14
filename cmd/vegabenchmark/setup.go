@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/rewards"
+	"code.vegaprotocol.io/vega/statevar"
 
 	ptypes "code.vegaprotocol.io/protos/vega"
 	vgrand "code.vegaprotocol.io/shared/libs/rand"
@@ -39,7 +40,6 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/jsonpb"
-	"github.com/prometheus/common/log"
 )
 
 func setupVega() (*processor.App, processor.Stats, error) {
@@ -78,7 +78,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	broker.EXPECT().Send(gomock.Any()).AnyTimes()
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 
-	timeService := vegatime.New(vegatime.NewDefaultConfig())
+	timeService := vegatime.New(vegatime.NewDefaultConfig(), broker)
 
 	vegaPaths, _ := vgtesting.NewVegaPaths()
 	pass := vgrand.RandomStr(10)
@@ -108,6 +108,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		nw,
 		ethClient,
 		timeService,
+		true,
 	)
 	if err != nil {
 		return nil, nil, err
@@ -115,8 +116,9 @@ func setupVega() (*processor.App, processor.Stats, error) {
 	topology := validators.NewTopology(
 		log,
 		validators.NewDefaultConfig(),
-		nw.Vega,
+		validators.WrapNodeWallets(nw),
 		broker,
+		true,
 	)
 
 	witness := validators.NewWitness(
@@ -126,6 +128,8 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		commander,
 		timeService,
 	)
+
+	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
 
 	banking := banking.New(
 		log,
@@ -137,15 +141,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		notary,
 		broker,
 		topology,
-	)
-
-	exec := execution.NewEngine(
-		log,
-		execution.NewDefaultConfig(),
-		timeService,
-		collateral,
-		oraclesM,
-		broker,
+		epochService,
 	)
 
 	genesisHandler := genesis.New(log, genesis.NewDefaultConfig())
@@ -155,15 +151,38 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		netparams.NewDefaultConfig(),
 		broker,
 	)
-
+	timeService.NotifyOnTick(netp.OnChainTimeUpdate)
 	bstats := stats.NewBlockchain()
 
-	epochService := epochtime.NewService(log, epochtime.NewDefaultConfig(), timeService, broker)
+	feesTracker := execution.NewFeesTracker(epochService)
+	stateVarEngine := statevar.New(log, statevar.NewDefaultConfig(), broker, topology, commander, timeService)
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.ValidatorsVoteRequired,
+		Watcher: stateVarEngine.OnDefaultValidatorsVoteRequiredUpdate,
+	})
+	netp.Watch(netparams.WatchParam{
+		Param:   netparams.FloatingPointUpdatesDuration,
+		Watcher: stateVarEngine.OnFloatingPointUpdatesDurationUpdate,
+	})
+
+	marketTracker := execution.NewMarketTracker()
+	exec := execution.NewEngine(
+		log,
+		execution.NewDefaultConfig(),
+		timeService,
+		collateral,
+		oraclesM,
+		broker,
+		stateVarEngine,
+		feesTracker,
+		marketTracker,
+		assets,
+	)
 
 	netParams := netparams.New(log, netparams.NewDefaultConfig(), broker)
 
 	stakingAccounts, _ := staking.New(
-		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams,
+		log, staking.NewDefaultConfig(), broker, timeService, witness, ethClient, netParams, evtfwd, true,
 	)
 
 	delegationEngine := delegation.New(log, delegation.NewDefaultConfig(), broker, topology, stakingAccounts, epochService, timeService)
@@ -172,7 +191,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		Watcher: delegationEngine.OnMinAmountChanged,
 	})
 
-	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService)
+	rewardEngine := rewards.New(log, rewards.NewDefaultConfig(), broker, delegationEngine, epochService, collateral, timeService, topology, feesTracker, marketTracker)
 	limits := mocks.NewMockLimits(ctrl)
 	limits.EXPECT().CanTrade().AnyTimes().Return(true)
 	limits.EXPECT().CanProposeMarket().AnyTimes().Return(true)
@@ -182,7 +201,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	stakeV := mocks.NewMockStakeVerifier(ctrl)
 	cp, _ := checkpoint.New(logging.NewTestLogger(), checkpoint.NewDefaultConfig())
-	snapshot, err := snapshot.New(ctx, vegaPaths, snapshot.NewDefaultConfig(), log, timeService)
+	snapshot, err := snapshot.New(ctx, vegaPaths, snapshot.NewDefaultConfig(), log, timeService, bstats)
 	if err != nil {
 		panic(err)
 	}
@@ -198,7 +217,6 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		witness,
 		evtfwd,
 		exec,
-		commander,
 		genesisHandler,
 		governance,
 		notary,
@@ -219,6 +237,8 @@ func setupVega() (*processor.App, processor.Stats, error) {
 		nil,
 		rewardEngine,
 		snapshot,
+		stateVarEngine,
+		nil,
 		"benchmark",
 	)
 	err = registerExecutionCallbacks(log, netp, exec, assets, collateral)
@@ -228,14 +248,7 @@ func setupVega() (*processor.App, processor.Stats, error) {
 
 	// load markets and assets
 	uponGenesisW := func(ctx context.Context, rawstate []byte) error {
-		return uponGenesis(
-			ctx,
-			rawstate,
-			log,
-			assets,
-			collateral,
-			exec,
-		)
+		return uponGenesis(ctx, rawstate, log, assets, collateral, exec)
 	}
 
 	setupGenesis(
@@ -267,11 +280,7 @@ func uponGenesis(
 	}
 
 	for k, v := range state {
-		err := loadAsset(
-			k, types.AssetDetailsFromProto(v),
-			assetSvc, collateral,
-		)
-		if err != nil {
+		if err := loadAsset(log, k, types.AssetDetailsFromProto(v), assetSvc, collateral); err != nil {
 			return err
 		}
 	}
@@ -304,6 +313,7 @@ func uponGenesis(
 }
 
 func loadAsset(
+	log *logging.Logger,
 	id string,
 	v *types.AssetDetails,
 	assets *assets.Service,
@@ -331,7 +341,7 @@ func loadAsset(
 		backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5),
 	)
 	if err != nil {
-		return fmt.Errorf("unable to instantiate new asset err=%v, asset-source=%s", err, v.String())
+		return fmt.Errorf("unable to instantiate asset \"%s\": %w", v.Name, err)
 	}
 	if err := assets.Enable(aid); err != nil {
 		return fmt.Errorf("unable to enable asset: %v", err)
@@ -420,6 +430,10 @@ func registerExecutionCallbacks(
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityProvisionShapesMaxSize,
 			Watcher: exec.OnMarketLiquidityProvisionShapesMaxSizeUpdate,
+		},
+		netparams.WatchParam{
+			Param:   netparams.MarketMinLpStakeQuantumMultiple,
+			Watcher: exec.OnMinLpStakeQuantumMultipleUpdate,
 		},
 		netparams.WatchParam{
 			Param:   netparams.MarketLiquidityMaximumLiquidityFeeFactorLevel,

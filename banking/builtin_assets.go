@@ -14,7 +14,7 @@ func (e *Engine) WithdrawBuiltinAsset(
 	ctx context.Context, id, party, assetID string, amount *num.Uint) error {
 	// build the withdrawal type
 	w, ref := e.newWithdrawal(id, party, assetID, amount, time.Time{}, nil)
-	w.Status = types.WithdrawalStatusCancelled // default
+	w.Status = types.WithdrawalStatusRejected // default
 	e.withdrawals[w.ID] = withdrawalRef{w, ref}
 
 	asset, err := e.assets.Get(assetID)

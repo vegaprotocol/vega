@@ -9,12 +9,16 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context, f float64) {
-	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(num.DecimalFromFloat(f))
+func (m *Market) OnMarketMinLpStakeQuantumMultipleUpdate(_ context.Context, d num.Decimal) {
+	m.minLPStakeQuantumMultiple = d
 }
 
-func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, v float64) {
-	m.bondPenaltyFactor = num.DecimalFromFloat(v)
+func (m *Market) OnMarketMinProbabilityOfTradingLPOrdersUpdate(_ context.Context, d num.Decimal) {
+	m.liquidity.OnMinProbabilityOfTradingLPOrdersUpdate(d)
+}
+
+func (m *Market) BondPenaltyFactorUpdate(ctx context.Context, d num.Decimal) {
+	m.bondPenaltyFactor = d
 }
 
 func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.ScalingFactors) error {
@@ -29,26 +33,24 @@ func (m *Market) OnMarginScalingFactorsUpdate(ctx context.Context, sf *types.Sca
 	return nil
 }
 
-func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, f float64) error {
-	mf := num.DecimalFromFloat(f)
-	m.fee.OnFeeFactorsMakerFeeUpdate(mf)
-	m.mkt.Fees.Factors.MakerFee = mf
+func (m *Market) OnFeeFactorsMakerFeeUpdate(ctx context.Context, d num.Decimal) error {
+	m.fee.OnFeeFactorsMakerFeeUpdate(d)
+	m.mkt.Fees.Factors.MakerFee = d
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
 }
 
-func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, f float64) error {
-	inf := num.DecimalFromFloat(f)
-	m.fee.OnFeeFactorsInfrastructureFeeUpdate(inf)
-	m.mkt.Fees.Factors.InfrastructureFee = inf
+func (m *Market) OnFeeFactorsInfrastructureFeeUpdate(ctx context.Context, d num.Decimal) error {
+	m.fee.OnFeeFactorsInfrastructureFeeUpdate(d)
+	m.mkt.Fees.Factors.InfrastructureFee = d
 	m.broker.Send(events.NewMarketUpdatedEvent(ctx, *m.mkt))
 
 	return nil
 }
 
-func (m *Market) OnSuppliedStakeToObligationFactorUpdate(v float64) {
-	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(v))
+func (m *Market) OnSuppliedStakeToObligationFactorUpdate(d num.Decimal) {
+	m.liquidity.OnSuppliedStakeToObligationFactorUpdate(d)
 }
 
 func (m *Market) OnMarketValueWindowLengthUpdate(d time.Duration) {
@@ -63,24 +65,24 @@ func (m *Market) OnMarketTargetStakeTimeWindowUpdate(d time.Duration) {
 	m.tsCalc.UpdateTimeWindow(d)
 }
 
-func (m *Market) OnMarketTargetStakeScalingFactorUpdate(v float64) error {
-	return m.tsCalc.UpdateScalingFactor(num.DecimalFromFloat(v))
+func (m *Market) OnMarketTargetStakeScalingFactorUpdate(d num.Decimal) error {
+	return m.tsCalc.UpdateScalingFactor(d)
 }
 
 func (m *Market) OnMarketLiquidityProvisionShapesMaxSizeUpdate(v int64) error {
 	return m.liquidity.OnMarketLiquidityProvisionShapesMaxSizeUpdate(v)
 }
 
-func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(v float64) {
-	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(num.DecimalFromFloat(v))
+func (m *Market) OnMarketLiquidityMaximumLiquidityFeeFactorLevelUpdate(d num.Decimal) {
+	m.liquidity.OnMaximumLiquidityFeeFactorLevelUpdate(d)
 }
 
-func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context, v float64) {
-	m.liquidity.OnProbabilityOfTradingTauScalingUpdate(num.DecimalFromFloat(v))
+func (m *Market) OnMarketProbabilityOfTradingTauScalingUpdate(_ context.Context, d num.Decimal) {
+	m.liquidity.OnProbabilityOfTradingTauScalingUpdate(d)
 }
 
-func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, v float64) {
-	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, num.DecimalFromFloat(v))
+func (m *Market) OnMarketLiquidityTargetStakeTriggeringRatio(ctx context.Context, d num.Decimal) {
+	m.lMonitor.UpdateTargetStakeTriggerRatio(ctx, d)
 	// TODO: Send an event containing updated parameter
 }
 

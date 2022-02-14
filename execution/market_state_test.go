@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"code.vegaprotocol.io/vega/execution"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -59,7 +62,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 	assert.Nil(t, o2conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
-	o3conf, err := tm.market.CancelOrder(ctx, "someparty", "someorder")
+	o3conf, err := tm.market.CancelOrder(ctx, "someparty", "someorder", vgcrypto.RandomHash())
 	assert.Nil(t, o3conf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
@@ -69,7 +72,7 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		SizeDelta: 10,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, "party-A")
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "party-A", vgcrypto.RandomHash())
 	assert.Nil(t, amendConf)
 	assert.EqualError(t, err, execution.ErrTradingNotAllowed.Error())
 
@@ -79,22 +82,15 @@ func testCannotDoOrderStuffInProposedState(t *testing.T) {
 		CommitmentAmount: num.NewUint(1),
 		Fee:              num.DecimalFromFloat(0.1),
 		Sells: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceBestAsk,
-				Proportion: 1,
-				Offset:     1,
-			},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 1),
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
 		},
 		Buys: []*types.LiquidityOrder{
-			{
-				Reference:  types.PeggedReferenceMid,
-				Proportion: 1,
-				Offset:     -1,
-			},
+			newLiquidityOrder(types.PeggedReferenceMid, 1, 1),
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lpsub, "someparty", "lpid1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lpsub, "someparty", vgcrypto.RandomHash())
 
 	// we expect an error as this lp may be stupid
 	// but not equal to the trading not allowed one
@@ -164,7 +160,7 @@ func testCanMoveFromPendingToActiveState(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
+	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 }
 
@@ -199,7 +195,7 @@ func testCanPlaceOrderInActiveState(t *testing.T) {
 		assert.NoError(t, err)
 	}
 	// now move to after the opening auction time
-	tm.market.OnChainTimeUpdate(context.Background(), now.Add(40*time.Second))
+	tm.market.OnChainTimeUpdate(vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash()), now.Add(40*time.Second))
 	assert.Equal(t, types.MarketStateActive, tm.market.State())
 
 	addAccountWithAmount(tm, "someparty", 100000000)

@@ -61,7 +61,8 @@ func enableMarketAssets(markets []types.Market, collateralEngine *collateral.Eng
 		err := collateralEngine.EnableAsset(context.Background(), types.Asset{
 			ID: assetToEnable,
 			Details: &types.AssetDetails{
-				Symbol: assetToEnable,
+				Quantum: num.Zero(),
+				Symbol:  assetToEnable,
 			},
 		})
 		if err != nil {
@@ -128,7 +129,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 		TradingMode:   types.MarketTradingModeContinuous,
 		State:         types.MarketStateActive,
 		ID:            row.id(),
-		DecimalPlaces: 2,
+		DecimalPlaces: row.decimalPlaces(),
 		Fees:          types.FeesFromProto(fees),
 		TradableInstrument: &types.TradableInstrument{
 			Instrument: &types.Instrument{
@@ -154,10 +155,7 @@ func newMarket(config *market.Config, row marketRow) types.Market {
 			},
 			MarginCalculator: types.MarginCalculatorFromProto(marginCalculator),
 		},
-		OpeningAuction: openingAuction(row),
-		TradingModeConfig: &types.MarketContinuous{
-			Continuous: &types.ContinuousTrading{},
-		},
+		OpeningAuction:          openingAuction(row),
 		PriceMonitoringSettings: types.PriceMonitoringSettingsFromProto(priceMonitoring),
 		LiquidityMonitoringParameters: &types.LiquidityMonitoringParameters{
 			TargetStakeParameters: &types.TargetStakeParameters{
@@ -202,6 +200,7 @@ func parseMarketsTable(table *godog.Table) []RowWrapper {
 		"auction duration",
 	}, []string{
 		"maturity date",
+		"decimal places",
 	})
 }
 
@@ -211,6 +210,13 @@ type marketRow struct {
 
 func (r marketRow) id() string {
 	return r.row.MustStr("id")
+}
+
+func (r marketRow) decimalPlaces() uint64 {
+	if !r.row.HasColumn("decimal places") {
+		return 0
+	}
+	return r.row.MustU64("decimal places")
 }
 
 func (r marketRow) quoteName() string {

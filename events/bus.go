@@ -43,6 +43,7 @@ type Base struct {
 	ctx     context.Context
 	traceID string
 	chainID string
+	txHash  string
 	blockNr int64
 	seq     uint64
 	et      Type
@@ -54,9 +55,11 @@ type Event interface {
 	Type() Type
 	Context() context.Context
 	TraceID() string
+	TxHash() string
 	ChainID() string
 	Sequence() uint64
 	SetSequenceID(s uint64)
+	BlockNr() int64
 	StreamMessage() *eventspb.BusEvent
 }
 
@@ -101,6 +104,9 @@ const (
 	CheckpointEvent
 	ValidatorScoreEvent
 	KeyRotationEvent
+	StateVarEvent
+	NetworkLimitsEvent
+	TransferEvent
 )
 
 var (
@@ -151,6 +157,9 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_UPDATE:    ValidatorUpdateEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT:          CheckpointEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION:        KeyRotationEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:           StateVarEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:      NetworkLimitsEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:            TransferEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
@@ -191,6 +200,9 @@ var (
 		CheckpointEvent:         eventspb.BusEventType_BUS_EVENT_TYPE_CHECKPOINT,
 		ValidatorScoreEvent:     eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_SCORE,
 		KeyRotationEvent:        eventspb.BusEventType_BUS_EVENT_TYPE_KEY_ROTATION,
+		StateVarEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR,
+		NetworkLimitsEvent:      eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS,
+		TransferEvent:           eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER,
 	}
 
 	eventStrings = map[Type]string{
@@ -232,6 +244,9 @@ var (
 		CheckpointEvent:         "CheckpointEvent",
 		ValidatorScoreEvent:     "ValidatorScoreEvent",
 		KeyRotationEvent:        "KeyRotationEvent",
+		StateVarEvent:           "StateVarEvent",
+		NetworkLimitsEvent:      "NetworkLimitsEvent",
+		TransferEvent:           "TransferEvent",
 	}
 )
 
@@ -240,10 +255,12 @@ func newBase(ctx context.Context, t Type) *Base {
 	ctx, tID := vgcontext.TraceIDFromContext(ctx)
 	cID, _ := vgcontext.ChainIDFromContext(ctx)
 	h, _ := vgcontext.BlockHeightFromContext(ctx)
+	txHash, _ := vgcontext.TxHashFromContext(ctx)
 	return &Base{
 		ctx:     ctx,
 		traceID: tID,
 		chainID: cID,
+		txHash:  txHash,
 		blockNr: h,
 		et:      t,
 	}
@@ -256,6 +273,10 @@ func (b Base) TraceID() string {
 
 func (b Base) ChainID() string {
 	return b.chainID
+}
+
+func (b Base) TxHash() string {
+	return b.txHash
 }
 
 func (b *Base) SetSequenceID(s uint64) {
@@ -283,6 +304,11 @@ func (b Base) Type() Type {
 
 func (b Base) eventID() string {
 	return fmt.Sprintf("%d-%d", b.blockNr, b.seq)
+}
+
+// BlockNr returns the current block number.
+func (b Base) BlockNr() int64 {
+	return b.blockNr
 }
 
 // MarketEvents return all the possible market events.
@@ -360,14 +386,29 @@ func (t Type) ToProto() eventspb.BusEventType {
 	return pt
 }
 
-func newBaseFromStream(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
+func newBusEventFromBase(base *Base) *eventspb.BusEvent {
+	event := &eventspb.BusEvent{
+		Version: eventspb.Version,
+		Id:      base.eventID(),
+		Type:    base.Type().ToProto(),
+		Block:   base.TraceID(),
+		ChainId: base.ChainID(),
+		TxHash:  base.TxHash(),
+	}
+
+	return event
+}
+
+func newBaseFromBusEvent(ctx context.Context, t Type, be *eventspb.BusEvent) *Base {
 	evtCtx := vgcontext.WithTraceID(ctx, be.Block)
 	evtCtx = vgcontext.WithChainID(evtCtx, be.ChainId)
+	evtCtx = vgcontext.WithTxHash(evtCtx, be.TxHash)
 	blockNr, seq := decodeEventID(be.Id)
 	return &Base{
 		ctx:     evtCtx,
 		traceID: be.Block,
 		chainID: be.ChainId,
+		txHash:  be.TxHash,
 		blockNr: blockNr,
 		seq:     seq,
 		et:      t,

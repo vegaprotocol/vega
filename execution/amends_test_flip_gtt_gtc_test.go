@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/types"
 
 	"github.com/golang/mock/gomock"
@@ -36,7 +37,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		ExpiresAt:   &v10,
 	}
 
-	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa")
+	amendConf, err := tm.market.AmendOrder(ctx, amendment, "aaa", vgcrypto.RandomHash())
 	require.NotNil(t, amendConf)
 	require.NoError(t, err)
 	assert.Equal(t, types.OrderStatusActive, amendConf.Order.Status)
@@ -50,7 +51,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		ExpiresAt:   &v,
 	}
 
-	amendConf2, err := tm.market.AmendOrder(ctx, amendment2, "aaa")
+	amendConf2, err := tm.market.AmendOrder(ctx, amendment2, "aaa", vgcrypto.RandomHash())
 	require.NotNil(t, amendConf2)
 	require.NoError(t, err)
 	assert.Equal(t, types.OrderStatusActive, amendConf2.Order.Status)
@@ -62,7 +63,7 @@ func TestOrderBookAmends_FlipToGTT(t *testing.T) {
 		TimeInForce: types.OrderTimeInForceGTC,
 	}
 
-	amendConf3, err := tm.market.AmendOrder(ctx, amendment3, "aaa")
+	amendConf3, err := tm.market.AmendOrder(ctx, amendment3, "aaa", vgcrypto.RandomHash())
 	require.NotNil(t, amendConf3)
 	require.NoError(t, err)
 	assert.Equal(t, types.OrderStatusActive, amendConf3.Order.Status)

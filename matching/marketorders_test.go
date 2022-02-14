@@ -56,14 +56,15 @@ func TestOrderBook_MarketOrderFOKPartiallyFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		Party:       "A",
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        6,
-		Remaining:   6,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		MarketID:      market,
+		Party:         "A",
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          6,
+		Remaining:     6,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)
@@ -97,14 +98,15 @@ func TestOrderBook_MarketOrderIOCPartiallyFilledResponsePrice(t *testing.T) {
 	book := getTestOrderBook(t, market)
 	defer book.Finish()
 	order := types.Order{
-		MarketID:    market,
-		Party:       "A",
-		Side:        types.SideSell,
-		Price:       num.NewUint(100),
-		Size:        6,
-		Remaining:   6,
-		TimeInForce: types.OrderTimeInForceGTC,
-		Type:        types.OrderTypeLimit,
+		MarketID:      market,
+		Party:         "A",
+		Side:          types.SideSell,
+		Price:         num.NewUint(100),
+		OriginalPrice: num.NewUint(100),
+		Size:          6,
+		Remaining:     6,
+		TimeInForce:   types.OrderTimeInForceGTC,
+		Type:          types.OrderTypeLimit,
 	}
 	_, err := book.SubmitOrder(&order)
 	assert.NoError(t, err)

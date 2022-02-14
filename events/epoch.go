@@ -29,21 +29,16 @@ func (e EpochEvent) Proto() eventspb.EpochEvent {
 }
 
 func (e EpochEvent) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      e.eventID(),
-		Block:   e.TraceID(),
-		ChainId: e.ChainID(),
-		Type:    e.et.ToProto(),
-		Event: &eventspb.BusEvent_EpochEvent{
-			EpochEvent: e.e,
-		},
+	busEvent := newBusEventFromBase(e.Base)
+	busEvent.Event = &eventspb.BusEvent_EpochEvent{
+		EpochEvent: e.e,
 	}
+	return busEvent
 }
 
 func EpochEventFromStream(ctx context.Context, be *eventspb.BusEvent) *EpochEvent {
 	return &EpochEvent{
-		Base: newBaseFromStream(ctx, EpochUpdate, be),
+		Base: newBaseFromBusEvent(ctx, EpochUpdate, be),
 		e:    be.GetEpochEvent(),
 	}
 }

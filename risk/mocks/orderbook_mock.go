@@ -5,36 +5,37 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	vega "code.vegaprotocol.io/protos/vega"
 	num "code.vegaprotocol.io/vega/types/num"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockOrderbook is a mock of Orderbook interface
+// MockOrderbook is a mock of Orderbook interface.
 type MockOrderbook struct {
 	ctrl     *gomock.Controller
 	recorder *MockOrderbookMockRecorder
 }
 
-// MockOrderbookMockRecorder is the mock recorder for MockOrderbook
+// MockOrderbookMockRecorder is the mock recorder for MockOrderbook.
 type MockOrderbookMockRecorder struct {
 	mock *MockOrderbook
 }
 
-// NewMockOrderbook creates a new mock instance
+// NewMockOrderbook creates a new mock instance.
 func NewMockOrderbook(ctrl *gomock.Controller) *MockOrderbook {
 	mock := &MockOrderbook{ctrl: ctrl}
 	mock.recorder = &MockOrderbookMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockOrderbook) EXPECT() *MockOrderbookMockRecorder {
 	return m.recorder
 }
 
-// GetCloseoutPrice mocks base method
+// GetCloseoutPrice mocks base method.
 func (m *MockOrderbook) GetCloseoutPrice(arg0 uint64, arg1 vega.Side) (*num.Uint, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCloseoutPrice", arg0, arg1)
@@ -43,13 +44,13 @@ func (m *MockOrderbook) GetCloseoutPrice(arg0 uint64, arg1 vega.Side) (*num.Uint
 	return ret0, ret1
 }
 
-// GetCloseoutPrice indicates an expected call of GetCloseoutPrice
+// GetCloseoutPrice indicates an expected call of GetCloseoutPrice.
 func (mr *MockOrderbookMockRecorder) GetCloseoutPrice(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCloseoutPrice", reflect.TypeOf((*MockOrderbook)(nil).GetCloseoutPrice), arg0, arg1)
 }
 
-// GetIndicativePrice mocks base method
+// GetIndicativePrice mocks base method.
 func (m *MockOrderbook) GetIndicativePrice() *num.Uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetIndicativePrice")
@@ -57,7 +58,7 @@ func (m *MockOrderbook) GetIndicativePrice() *num.Uint {
 	return ret0
 }
 
-// GetIndicativePrice indicates an expected call of GetIndicativePrice
+// GetIndicativePrice indicates an expected call of GetIndicativePrice.
 func (mr *MockOrderbookMockRecorder) GetIndicativePrice() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIndicativePrice", reflect.TypeOf((*MockOrderbook)(nil).GetIndicativePrice))

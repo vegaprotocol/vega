@@ -50,16 +50,12 @@ func (m MarketTick) MarketProto() eventspb.MarketEvent {
 
 func (m MarketTick) StreamMessage() *eventspb.BusEvent {
 	p := m.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      m.eventID(),
-		Block:   m.TraceID(),
-		ChainId: m.ChainID(),
-		Type:    m.et.ToProto(),
-		Event: &eventspb.BusEvent_MarketTick{
-			MarketTick: &p,
-		},
+	busEvent := newBusEventFromBase(m.Base)
+	busEvent.Event = &eventspb.BusEvent_MarketTick{
+		MarketTick: &p,
 	}
+
+	return busEvent
 }
 
 func (m MarketTick) StreamMarketMessage() *eventspb.BusEvent {
@@ -68,7 +64,7 @@ func (m MarketTick) StreamMarketMessage() *eventspb.BusEvent {
 
 func MarketTickEventFromStream(ctx context.Context, be *eventspb.BusEvent) *MarketTick {
 	return &MarketTick{
-		Base: newBaseFromStream(ctx, MarketTickEvent, be),
+		Base: newBaseFromBusEvent(ctx, MarketTickEvent, be),
 		id:   be.GetMarketTick().GetId(),
 		t:    time.Unix(be.GetMarketTick().GetTime(), 0).UTC(),
 	}

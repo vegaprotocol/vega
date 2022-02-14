@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
 )
@@ -23,6 +24,8 @@ var (
 	ErrMissingPropertyKey = errors.New("a property key is required")
 	// ErrMissingPropertyName is returned when a property as no name.
 	ErrMissingPropertyName = errors.New("a property name is required")
+	// ErrInvalidPropertyKey is returned if validation finds a reserved Vega property key.
+	ErrInvalidPropertyKey = errors.New("property key is reserved")
 )
 
 type OracleSpecID string
@@ -104,14 +107,35 @@ func NewOracleSpec(proto oraclespb.OracleSpec) (*OracleSpec, error) {
 	}, nil
 }
 
-func (s OracleSpec) CanBindProperty(property string) bool {
-	_, ok := s.filters[property]
-	return ok
+func (s OracleSpec) EnsureBoundableProperty(property string, propType oraclespb.PropertyKey_Type) error {
+	filter, ok := s.filters[property]
+	if !ok {
+		return fmt.Errorf("bound property \"%s\" not filtered by oracle spec", property)
+	}
+
+	if filter.propertyType != propType {
+		return fmt.Errorf("bound type \"%v\" doesn't match filtered property type \"%s\"", propType, filter.propertyType)
+	}
+
+	return nil
+}
+
+func isInternalOracleData(data OracleData) bool {
+	for k := range data.Data {
+		if !strings.HasPrefix(k, BuiltinOraclePrefix) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // MatchData indicates if a given OracleData matches the spec or not.
 func (s *OracleSpec) MatchData(data OracleData) (bool, error) {
-	if !containsRequiredPubKeys(data.PubKeys, s.pubKeys) {
+	// if the data contains the internal oracle timestamp key, and only that key,
+	// then we do not need to verify the public keys as there will not be one
+
+	if !isInternalOracleData(data) && !containsRequiredPubKeys(data.PubKeys, s.pubKeys) {
 		return false, nil
 	}
 

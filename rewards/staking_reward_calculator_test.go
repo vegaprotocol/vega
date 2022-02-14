@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/rewards/mocks"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -74,6 +75,8 @@ func testZeroValidatorScoresAllZero(t *testing.T) {
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
 	validators := []*types.ValidatorData{}
+	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	for i := 0; i < 3; i++ {
 		validators = append(validators, &types.ValidatorData{
@@ -84,8 +87,8 @@ func testZeroValidatorScoresAllZero(t *testing.T) {
 		})
 	}
 	// setting up that all 3 nodes get score of 0 because they are penalised for having too much stake given the expected stake per node = 30000/(3/0.1) = 1000 (they have 10k each)
-	normalisedScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, num.DecimalFromFloat(5), num.DecimalFromFloat(0.1), num.DecimalFromFloat(1), nil)
-	for _, v := range normalisedScores {
+	scores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, num.DecimalFromFloat(5), num.DecimalFromFloat(0.1), num.DecimalFromFloat(1), nil, valPerformance)
+	for _, v := range scores {
 		require.True(t, v.IsZero())
 	}
 }
@@ -116,6 +119,18 @@ func testCalcValidatorsScore(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).DoAndReturn(
+		func(nodeID string) num.Decimal {
+			// i.e. validators 0-9
+			if len(nodeID) == 5 {
+				i, _ := strconv.Atoi(string(nodeID[4]))
+				return num.DecimalFromInt64(int64(i + 1)).Div(num.DecimalFromFloat(10))
+			}
+			// i.e. validators 10-12
+			return num.DecimalFromFloat(1)
+		}).AnyTimes()
+
 	validators := []*types.ValidatorData{}
 
 	for i := 0; i < 12; i++ {
@@ -128,8 +143,8 @@ func testCalcValidatorsScore(t *testing.T) {
 	}
 
 	validators = append(validators, &types.ValidatorData{
-		NodeID:            "node13",
-		PubKey:            "node13",
+		NodeID:            "node12",
+		PubKey:            "node12",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.Zero(),
 	})
@@ -137,36 +152,45 @@ func testCalcValidatorsScore(t *testing.T) {
 	minVal := num.DecimalFromInt64(5)
 	compLevel, _ := num.DecimalFromString("1.1")
 	optimalStakeMultiplier, _ := num.DecimalFromString("3.0")
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng)
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
 	require.Equal(t, 13, len(valScores))
 
-	for i := 0; i < 12; i++ {
-		require.Equal(t, "0.083", valScores["node"+strconv.Itoa(i)].StringFixed(3))
-	}
-	require.Equal(t, "0.000", valScores["node13"].StringFixed(3))
+	require.Equal(t, "0.013", valScores["node0"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.1 valScore=0.0083327703083125 normalisedScore=0.0133318920477066
+	require.Equal(t, "0.027", valScores["node1"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.2 valScore=0.016665540616625 normalisedScore=0.0266637840954131
+	require.Equal(t, "0.040", valScores["node2"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.3 valScore=0.0249983109249375 normalisedScore=0.0399956761431197
+	require.Equal(t, "0.053", valScores["node3"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.4 valScore=0.03333108123325 normalisedScore=0.0533275681908262
+	require.Equal(t, "0.067", valScores["node4"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.5 valScore=0.0416638515415625 normalisedScore=0.0666594602385328
+	require.Equal(t, "0.080", valScores["node5"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.6 valScore=0.049996621849875 normalisedScore=0.0799913522862393
+	require.Equal(t, "0.093", valScores["node6"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.7 valScore=0.0583293921581875 normalisedScore=0.0933232443339459
+	require.Equal(t, "0.107", valScores["node7"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.8 valScore=0.0666621624665 normalisedScore=0.1066551363816524
+	require.Equal(t, "0.120", valScores["node8"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=0.9 valScore=0.0749949327748125 normalisedScore=0.119987028429359
+	require.Equal(t, "0.133", valScores["node9"].StringFixed(3))  // rawValScore=0.083327703083125 performanceScores=1 valScore=0.083327703083125 normalisedScore=0.1333189204770655
+	require.Equal(t, "0.133", valScores["node10"].StringFixed(3)) // rawValScore=0.083327703083125 performanceScores=1 valScore=0.083327703083125 normalisedScore=0.1333189204770655
+	require.Equal(t, "0.133", valScores["node11"].StringFixed(3)) // rawValScore=0.083327703083125 performanceScores=1 valScore=0.083327703083125 normalisedScore=0.1333189204770655
+	require.Equal(t, "0.000", valScores["node12"].StringFixed(3)) // rawValScore=0.0000675630024998 performanceScores=1 valScore=0.0000675630024998 normalisedScore=0.0001080964220084
 
 	validators[12] = &types.ValidatorData{
-		NodeID:            "node13",
-		PubKey:            "node13",
+		NodeID:            "node12",
+		PubKey:            "node12",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(19900),
 	}
-	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng)
-	require.Equal(t, "0.001", valScores["node13"].StringFixed(3))
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
+	require.Equal(t, "0.001", valScores["node12"].StringFixed(3))
 
 	validators[12] = &types.ValidatorData{
-		NodeID:            "node13",
-		PubKey:            "node13",
+		NodeID:            "node12",
+		PubKey:            "node12",
 		SelfStake:         num.NewUint(3000),
 		StakeByDelegators: num.NewUint(919900),
 	}
-	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng)
-	require.Equal(t, "0.020", valScores["node13"].StringFixed(3))
+	valScores = calcValidatorsNormalisedScore(context.Background(), broker, "1", validators, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
+	require.Equal(t, "0.032", valScores["node12"].StringFixed(3))
 }
 
 func testCalcRewardNoBalance(t *testing.T) {
 	delegatorShare, _ := num.DecimalFromString("0.3")
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.Zero(), map[string]num.Decimal{}, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -179,7 +203,7 @@ func testCalcRewardsZeroScores(t *testing.T) {
 	scores["node3"] = num.DecimalZero()
 	scores["node4"] = num.DecimalZero()
 
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(100000), scores, []*types.ValidatorData{}, delegatorShare, num.Zero(), num.Zero(), rng, logging.NewTestLogger())
 	require.Equal(t, num.Zero(), res.totalReward)
 	require.Equal(t, 0, len(res.partyToAmount))
 }
@@ -193,6 +217,8 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	delegatorForVal1 := map[string]*num.Uint{}
 	delegatorForVal1["party1"] = num.NewUint(6000)
@@ -231,8 +257,8 @@ func testCalcRewardsMaxPayoutRepsected(t *testing.T, maxPayout *num.Uint) {
 	}
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero(), rng, logging.NewTestLogger())
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, maxPayout, num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.25
@@ -319,10 +345,12 @@ func testCalcRewardSmallMaxPayoutBreached(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero(), rng, logging.NewTestLogger())
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(20000), num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.2
@@ -400,10 +428,12 @@ func testCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero(), rng, logging.NewTestLogger())
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(40000), num.Zero(), rng, logging.NewTestLogger())
 
 	// the normalised scores are as follows (from the test above)
 	// node1 - 0.25
@@ -493,10 +523,12 @@ func testEarlyStopCalcRewardsMaxPayoutBreachedPartyCanTakeMore(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	broker := bmock.NewMockBroker(ctrl)
 	broker.EXPECT().SendBatch(gomock.Any()).AnyTimes()
+	valPerformance := mocks.NewMockValidatorPerformance(ctrl)
+	valPerformance.EXPECT().ValidatorPerformanceScore(gomock.Any()).Return(num.DecimalFromFloat(1)).AnyTimes()
 
 	validatorData := []*types.ValidatorData{validator1, validator2, validator3, validator4}
-	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng)
-	res := calculateRewards("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), num.Zero(), rng, logging.NewTestLogger())
+	valScores := calcValidatorsNormalisedScore(context.Background(), broker, "1", validatorData, minVal, compLevel, optimalStakeMultiplier, rng, valPerformance)
+	res := calculateRewardsByStake("1", "asset", "rewardsAccountID", num.NewUint(1000000), valScores, validatorData, delegatorShare, num.NewUint(1000000000), num.Zero(), rng, logging.NewTestLogger())
 
 	// 0.1% of 1000000000 = 1000000 - this test is demonstrating that regardless of the remaining balance to give to delegators is less than 0.1% of the max
 	// payout per participant, we still run one round and then stop.

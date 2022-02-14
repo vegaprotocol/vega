@@ -1,22 +1,18 @@
 package rewards
 
 import (
-	"context"
 	"math/rand"
 	"sort"
 
-	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-// Utilities for calculating delegation based rewards
-
 var minThresholdDelegatorReward, _ = num.DecimalFromString("0.001")
 
 // distribute rewards for a given asset account with the given settings of delegation and reward constraints.
-func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
+func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *num.Uint, valScore map[string]num.Decimal, validatorDelegation []*types.ValidatorData, delegatorShare num.Decimal, maxPayout, minStakePerValidator *num.Uint, rng *rand.Rand, log *logging.Logger) *payout {
 	minLeftOverForDistribution := num.Zero()
 	if !maxPayout.IsZero() {
 		minLeftOverForDistribution, _ = num.UintFromDecimal(minThresholdDelegatorReward.Mul(maxPayout.ToDecimal()))
@@ -175,84 +171,4 @@ func calculateRewards(epochSeq, asset, accountID string, rewardBalance *num.Uint
 		asset:         asset,
 		epochSeq:      epochSeq,
 	}
-}
-
-func calcNormalisedScore(epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, optimalStakeMultiplier num.Decimal, rng *rand.Rand) (map[string]num.Decimal, map[string]num.Decimal, []string) {
-	// calculate the total amount of tokens delegated across all validators
-	totalStake := calcTotalStake(validatorsData)
-	totalScore := num.DecimalZero()
-	rawScores := make(map[string]num.Decimal, len(validatorsData))
-	valScores := make(map[string]num.Decimal, len(validatorsData))
-
-	if totalStake.IsZero() {
-		return valScores, rawScores, []string{}
-	}
-
-	// for each validator calculate the score
-	nodeIDSlice := []string{}
-	for _, vd := range validatorsData {
-		valStake := num.Sum(vd.StakeByDelegators, vd.SelfStake)
-		valScore := calcValidatorScore(valStake.ToDecimal(), totalStake.ToDecimal(), minVal, compLevel, num.DecimalFromInt64(int64(len(validatorsData))), optimalStakeMultiplier)
-		rawScores[vd.NodeID] = valScore
-		totalScore = totalScore.Add(valScore)
-		nodeIDSlice = append(nodeIDSlice, vd.NodeID)
-	}
-
-	sort.Strings(nodeIDSlice)
-	scoreSum := num.DecimalZero()
-	for _, k := range nodeIDSlice {
-		score := rawScores[k]
-		if !totalScore.IsZero() {
-			valScores[k] = score.Div(totalScore)
-		} else {
-			valScores[k] = num.DecimalZero()
-		}
-
-		scoreSum = scoreSum.Add(valScores[k])
-	}
-
-	// verify that the sum of scores is 1, if not adjust one score at random
-	if scoreSum.GreaterThan(num.DecimalFromInt64(1)) {
-		precisionError := scoreSum.Sub(num.DecimalFromInt64(1))
-		unluckyValidator := rng.Intn(len(nodeIDSlice))
-		valScores[nodeIDSlice[unluckyValidator]] = num.MaxD(valScores[nodeIDSlice[unluckyValidator]].Sub(precisionError), num.DecimalZero())
-	}
-
-	return valScores, rawScores, nodeIDSlice
-}
-
-// calculate the score for each validator and normalise by the total score.
-func calcValidatorsNormalisedScore(ctx context.Context, broker Broker, epochSeq string, validatorsData []*types.ValidatorData, minVal, compLevel num.Decimal, optimalStakeMultiplier num.Decimal, rng *rand.Rand) map[string]num.Decimal {
-	valScores, rawScores, nodeIDSlice := calcNormalisedScore(epochSeq, validatorsData, minVal, compLevel, optimalStakeMultiplier, rng)
-	if len(valScores) == 0 {
-		return valScores
-	}
-	validatorScoreEventSlice := make([]events.Event, 0, len(valScores))
-	for _, k := range nodeIDSlice {
-		validatorScoreEventSlice = append(validatorScoreEventSlice, events.NewValidatorScore(ctx, k, epochSeq, rawScores[k], valScores[k]))
-	}
-
-	broker.SendBatch(validatorScoreEventSlice)
-	return valScores
-}
-
-// calculate the validator score.
-func calcValidatorScore(valStake, totalStake, minVal, compLevel, numVal, optimalStakeMultiplier num.Decimal) num.Decimal {
-	a := num.MaxD(minVal, numVal.Div(compLevel))
-	optStake := totalStake.Div(a)
-	penaltyFlatAmt := num.MaxD(num.DecimalZero(), valStake.Sub(optStake))
-	penaltyDownAmt := num.MaxD(num.DecimalZero(), valStake.Sub(optimalStakeMultiplier.Mul(optStake)))
-	linearScore := valStake.Sub(penaltyFlatAmt).Sub(penaltyDownAmt).Div(totalStake) // totalStake guaranteed to be non zero at this point
-	decimal1, _ := num.DecimalFromString("1.0")
-	linearScore = num.MinD(decimal1, num.MaxD(num.DecimalZero(), linearScore))
-	return linearScore
-}
-
-// calculate the total amount of tokens delegated to the validators including self and party delegation.
-func calcTotalStake(validatorsData []*types.ValidatorData) *num.Uint {
-	total := num.Zero()
-	for _, d := range validatorsData {
-		total.AddSum(d.StakeByDelegators, d.SelfStake)
-	}
-	return total
 }

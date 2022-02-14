@@ -6,13 +6,10 @@ Background:
       | reward.asset                                      |  VEGA                    |
       | validators.epoch.length                           |  10s                     |
       | validators.delegation.minAmount                   |  10                      |
-      | reward.staking.delegation.payoutDelay             |  0s                      |
       | reward.staking.delegation.delegatorShare          |  0.883                   |
       | reward.staking.delegation.minimumValidatorStake   |  100                     |
-      | reward.staking.delegation.payoutFraction          |  0.8                     |
       | reward.staking.delegation.maxPayoutPerParticipant | 100000                   |
       | reward.staking.delegation.competitionLevel        |  1.1                     |
-      | reward.staking.delegation.maxPayoutPerEpoch       |  50000                   |
       | reward.staking.delegation.minValidators           |  5                       |
       | reward.staking.delegation.optimalStakeMultiplier  |  5.0                     |
 
@@ -65,7 +62,7 @@ Background:
 
     And the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  | 120000 |  
+      | VEGA  | 50000  |  
 
     #complete the first epoch for the self delegation to take effect
     Then the network moves ahead "7" blocks
@@ -167,7 +164,7 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     |  node3  |      0.07887     |     0.07887      | 
     |  node4  |      0.07657     |     0.07657      | 
 
-    #staking and delegation rewards - the available amount for the epoch is 96k but it is capped to 50 by the max.  
+    #staking and delegation rewards - 50k
     #node1 has 10k self delegation + 100 from party1
     #node2 has 10k self delegation + 200 from party2 
     #node3 has 10k self delegation + 300 from party3 
@@ -177,27 +174,27 @@ Scenario: Testing fees when network parameters are changed (in continuous tradin
     #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 50000
     #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 50000
     #node4 - node13 gets: 0.07657 * 50000
-    #infrastructure fees rewards -> 1503 * 0.8 = 1202
-    #party1 gets 0.07734 * 1202 * 0.883 * 100/10100 + 0.07810 * 1202 * 0.883 * 200/10200 + 0.07887 * 1202 * 0.883 * 300/10300
-    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 1202
-    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 1202
-    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 1202
-    #node4 - node13 gets: 0.07657 * 1202
+    #infrastructure fees rewards -> 1503 
+    #party1 gets 0.07734 * 1503 * 0.883 * 100/10100 + 0.07810 * 1503 * 0.883 * 200/10200 + 0.07887 * 1503 * 0.883 * 300/10300
+    #node1 gets: (1 - 0.883 * 100/10100) * 0.07734 * 1503
+    #node2 gets: (1 - 0.883 * 200/10200) * 0.07810 * 1503
+    #node3 gets: (1 - 0.883 * 300/10300) * 0.07887 * 1503
+    #node4 - node13 gets: 0.07657 * 1503
 
     And the parties receive the following reward for epoch 1:
     | party  | asset | amount |
-    | party1 | ETH   |  3     | 
-    | node1  | ETH   |  92    | 
-    | node2  | ETH   |  92    | 
-    | node3  | ETH   |  92    | 
-    | node4  | ETH   |  92    | 
-    | node5  | ETH   |  92    | 
-    | node6  | ETH   |  92    | 
-    | node8  | ETH   |  92    | 
-    | node10 | ETH   |  92    | 
-    | node11 | ETH   |  92    | 
-    | node12 | ETH   |  92    | 
-    | node13 | ETH   |  92    | 
+    | party1 | ETH   |  6     |
+    | node1  | ETH   |  115   |
+    | node2  | ETH   |  115   |
+    | node3  | ETH   |  115   |
+    | node4  | ETH   |  115   |
+    | node5  | ETH   |  115   |
+    | node6  | ETH   |  115   |
+    | node8  | ETH   |  115   |
+    | node10 | ETH   |  115   |
+    | node11 | ETH   |  115   |
+    | node12 | ETH   |  115   |
+    | node13 | ETH   |  115   |
     | party1 | VEGA  |  201   | 
     | node1  | VEGA  |  3832  | 
     | node2  | VEGA  |  3837  | 

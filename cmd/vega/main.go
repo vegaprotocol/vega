@@ -70,6 +70,8 @@ func Main(ctx context.Context) error {
 		Query,
 		Bridge,
 		paths.Paths,
+		UnsafeResetAll,
+		SnapshotList,
 	); err != nil {
 		_, _ = fmt.Fprintln(os.Stderr, err)
 		return err

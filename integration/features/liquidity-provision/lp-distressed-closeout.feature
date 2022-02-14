@@ -35,9 +35,9 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
   Scenario: LP gets distressed during continuous trading
 
     Given the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |
@@ -119,11 +119,11 @@ Feature: Replicate LP getting distressed during continuous trading, and after le
   Scenario: LP gets distressed after auction
 
     Given the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
-      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
-      | lp2 | party5 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | -10    |
-      | lp2 | party5 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     |
+      | id  | party   | market id | commitment amount | fee   | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp1 | party0 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment |
+      | lp2 | party5 | ETH/DEC21 | 5000              | 0.001 | buy  | BID              | 500        | 10     | submission |
+      | lp2 | party5 | ETH/DEC21 | 5000              | 0.001 | sell | ASK              | 500        | 10     | amendment |
 
     And the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference  |

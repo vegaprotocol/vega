@@ -28,21 +28,17 @@ func (n NetworkParameter) Proto() proto.NetworkParameter {
 }
 
 func (n NetworkParameter) StreamMessage() *eventspb.BusEvent {
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      n.eventID(),
-		Block:   n.TraceID(),
-		ChainId: n.ChainID(),
-		Type:    n.et.ToProto(),
-		Event: &eventspb.BusEvent_NetworkParameter{
-			NetworkParameter: &n.np,
-		},
+	busEvent := newBusEventFromBase(n.Base)
+	busEvent.Event = &eventspb.BusEvent_NetworkParameter{
+		NetworkParameter: &n.np,
 	}
+
+	return busEvent
 }
 
 func NetworkParameterEventFromStream(ctx context.Context, be *eventspb.BusEvent) *NetworkParameter {
 	return &NetworkParameter{
-		Base: newBaseFromStream(ctx, NetworkParameterEvent, be),
+		Base: newBaseFromBusEvent(ctx, NetworkParameterEvent, be),
 		np:   proto.NetworkParameter{Key: be.GetNetworkParameter().Key, Value: be.GetNetworkParameter().Value},
 	}
 }

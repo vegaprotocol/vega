@@ -9,6 +9,8 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -122,8 +124,22 @@ func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
 	defer t.mu.RUnlock()
 
 	pkrs := make([]*PendingKeyRotation, 0, len(t.pendingPubKeyRotations)*2)
-	for blockHeight, rotations := range t.pendingPubKeyRotations {
-		for nodeID, r := range rotations {
+
+	blockHeights := make([]uint64, 0, len(t.pendingPubKeyRotations))
+	for blockHeight := range t.pendingPubKeyRotations {
+		blockHeights = append(blockHeights, blockHeight)
+	}
+	sort.Slice(blockHeights, func(i, j int) bool { return blockHeights[i] < blockHeights[j] })
+
+	for _, blockHeight := range blockHeights {
+		rotations := t.pendingPubKeyRotations[blockHeight]
+		nodeIDs := make([]string, 0, len(rotations))
+		for nodeID := range rotations {
+			nodeIDs = append(nodeIDs, nodeID)
+		}
+		sort.Strings(nodeIDs)
+		for _, nodeID := range nodeIDs {
+			r := rotations[nodeID]
 			pkrs = append(pkrs, &PendingKeyRotation{
 				BlockHeight: blockHeight,
 				NodeID:      nodeID,
@@ -136,14 +152,16 @@ func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
 	return pkrs
 }
 
-func (t *Topology) BeginBlock(ctx context.Context, blockHeight uint64) {
+func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
+	t.validatorPerformance.BeginBlock(ctx, req, vd)
+
 	t.mu.Lock()
 	defer t.mu.Unlock()
-
+	blockHeight := uint64(req.Header.Height)
 	t.currentBlockHeight = blockHeight
 
 	// key swaps should run in deterministic order
-	nodeIDs := t.pendingPubKeyRotations.getSortedNodeIDsPerHeight(blockHeight)
+	nodeIDs := t.pendingPubKeyRotations.getSortedNodeIDsPerHeight(t.currentBlockHeight)
 	if len(nodeIDs) == 0 {
 		return
 	}

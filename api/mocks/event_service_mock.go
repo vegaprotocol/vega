@@ -5,38 +5,39 @@
 package mocks
 
 import (
+	context "context"
+	reflect "reflect"
+
 	v1 "code.vegaprotocol.io/protos/vega/events/v1"
 	events "code.vegaprotocol.io/vega/events"
 	subscribers "code.vegaprotocol.io/vega/subscribers"
-	context "context"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockEventService is a mock of EventService interface
+// MockEventService is a mock of EventService interface.
 type MockEventService struct {
 	ctrl     *gomock.Controller
 	recorder *MockEventServiceMockRecorder
 }
 
-// MockEventServiceMockRecorder is the mock recorder for MockEventService
+// MockEventServiceMockRecorder is the mock recorder for MockEventService.
 type MockEventServiceMockRecorder struct {
 	mock *MockEventService
 }
 
-// NewMockEventService creates a new mock instance
+// NewMockEventService creates a new mock instance.
 func NewMockEventService(ctrl *gomock.Controller) *MockEventService {
 	mock := &MockEventService{ctrl: ctrl}
 	mock.recorder = &MockEventServiceMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockEventService) EXPECT() *MockEventServiceMockRecorder {
 	return m.recorder
 }
 
-// ObserveEvents mocks base method
+// ObserveEvents mocks base method.
 func (m *MockEventService) ObserveEvents(arg0 context.Context, arg1 int, arg2 []events.Type, arg3 int, arg4 ...subscribers.EventFilter) (<-chan []*v1.BusEvent, chan<- int) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2, arg3}
@@ -49,7 +50,7 @@ func (m *MockEventService) ObserveEvents(arg0 context.Context, arg1 int, arg2 []
 	return ret0, ret1
 }
 
-// ObserveEvents indicates an expected call of ObserveEvents
+// ObserveEvents indicates an expected call of ObserveEvents.
 func (mr *MockEventServiceMockRecorder) ObserveEvents(arg0, arg1, arg2, arg3 interface{}, arg4 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1, arg2, arg3}, arg4...)

@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
+	cfgencoding "code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/coreapi"
 	"code.vegaprotocol.io/vega/delegation"
 	"code.vegaprotocol.io/vega/epochtime"
@@ -24,23 +25,19 @@ import (
 	"code.vegaprotocol.io/vega/governance"
 	"code.vegaprotocol.io/vega/libs/pprof"
 	"code.vegaprotocol.io/vega/limits"
-	"code.vegaprotocol.io/vega/liquidity"
 	"code.vegaprotocol.io/vega/logging"
-	"code.vegaprotocol.io/vega/matching"
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
-	"code.vegaprotocol.io/vega/positions"
 	"code.vegaprotocol.io/vega/processor"
 	"code.vegaprotocol.io/vega/rewards"
-	"code.vegaprotocol.io/vega/risk"
-	"code.vegaprotocol.io/vega/settlement"
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
@@ -55,12 +52,7 @@ type Config struct {
 	Execution         execution.Config   `group:"Execution" namespace:"execution"`
 	Processor         processor.Config   `group:"Processor" namespace:"processor"`
 	Logging           logging.Config     `group:"Logging" namespace:"logging"`
-	Matching          matching.Config    `group:"Matching" namespace:"matching"`
 	Oracles           oracles.Config     `group:"Oracles" namespace:"oracles"`
-	Liquidity         liquidity.Config   `group:"Liquidity" namespace:"liquidity"`
-	Position          positions.Config   `group:"Position" namespace:"position"`
-	Risk              risk.Config        `group:"Risk" namespace:"risk"`
-	Settlement        settlement.Config  `group:"Settlement" namespace:"settlement"`
 	Time              vegatime.Config    `group:"Time" namespace:"time"`
 	Epoch             epochtime.Config   `group:"Epoch" namespace:"epochtime"`
 	Monitoring        monitoring.Config  `group:"Monitoring" namespace:"monitoring"`
@@ -83,31 +75,29 @@ type Config struct {
 	Delegation        delegation.Config  `group:"Delegation" namespace:"delegation"`
 	Spam              spam.Config        `group:"Spam" namespace:"spam"`
 	Snapshot          snapshot.Config    `group:"Snapshot" namespace:"snapshot"`
+	StateVar          statevar.Config    `group:"StateVar" namespace:"statevar"`
 
-	Pprof        pprof.Config `group:"Pprof" namespace:"pprof"`
-	UlimitNOFile uint64       `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
+	Pprof        pprof.Config         `group:"Pprof" namespace:"pprof"`
+	NodeMode     cfgencoding.NodeMode `long:"mode" description:"The mode of the vega node [validator, full]"`
+	UlimitNOFile uint64               `long:"ulimit-no-files" description:"Set the max number of open files (see: ulimit -n)" tomlcp:"Set the max number of open files (see: ulimit -n)"`
 }
 
 // NewDefaultConfig returns a set of default configs for all vega packages, as specified at the per package
 // config level, if there is an error initialising any of the configs then this is returned.
 func NewDefaultConfig() Config {
 	return Config{
+		NodeMode:          cfgencoding.NodeModeValidator,
 		API:               api.NewDefaultConfig(),
 		CoreAPI:           coreapi.NewDefaultConfig(),
 		Blockchain:        blockchain.NewDefaultConfig(),
 		Execution:         execution.NewDefaultConfig(),
 		Processor:         processor.NewDefaultConfig(),
 		Oracles:           oracles.NewDefaultConfig(),
-		Liquidity:         liquidity.NewDefaultConfig(),
 		Time:              vegatime.NewDefaultConfig(),
 		Epoch:             epochtime.NewDefaultConfig(),
-		Matching:          matching.NewDefaultConfig(),
-		Risk:              risk.NewDefaultConfig(),
 		Pprof:             pprof.NewDefaultConfig(),
 		Monitoring:        monitoring.NewDefaultConfig(),
 		Logging:           logging.NewDefaultConfig(),
-		Position:          positions.NewDefaultConfig(),
-		Settlement:        settlement.NewDefaultConfig(),
 		Collateral:        collateral.NewDefaultConfig(),
 		Metrics:           metrics.NewDefaultConfig(),
 		Governance:        governance.NewDefaultConfig(),
@@ -126,7 +116,19 @@ func NewDefaultConfig() Config {
 		Broker:            broker.NewDefaultConfig(),
 		UlimitNOFile:      8192,
 		Snapshot:          snapshot.NewDefaultConfig(),
+		StateVar:          statevar.NewDefaultConfig(),
 	}
+}
+
+func (c Config) IsValidator() bool {
+	return c.NodeMode == cfgencoding.NodeModeValidator
+}
+
+func (c Config) HaveEthClient() bool {
+	if c.Blockchain.ChainProvider == blockchain.ProviderNullChain {
+		return false
+	}
+	return c.IsValidator()
 }
 
 type Loader struct {

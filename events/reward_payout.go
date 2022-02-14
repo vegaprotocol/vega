@@ -2,7 +2,6 @@ package events
 
 import (
 	"context"
-	"fmt"
 
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 
@@ -19,13 +18,13 @@ type RewardPayout struct {
 	Timestamp               int64
 }
 
-func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward float64) *RewardPayout {
+func NewRewardPayout(ctx context.Context, timestamp int64, party, epochSeq string, asset string, amount *num.Uint, percentageOfTotalReward num.Decimal) *RewardPayout {
 	return &RewardPayout{
 		Base:                    newBase(ctx, RewardPayoutEvent),
 		Party:                   party,
 		EpochSeq:                epochSeq,
 		Asset:                   asset,
-		PercentageOfTotalReward: fmt.Sprintf("%f", percentageOfTotalReward),
+		PercentageOfTotalReward: percentageOfTotalReward.String(),
 		Amount:                  amount,
 		Timestamp:               timestamp,
 	}
@@ -48,16 +47,12 @@ func (rp RewardPayout) Proto() eventspb.RewardPayoutEvent {
 
 func (rp RewardPayout) StreamMessage() *eventspb.BusEvent {
 	p := rp.Proto()
-	return &eventspb.BusEvent{
-		Version: eventspb.Version,
-		Id:      rp.eventID(),
-		Block:   rp.TraceID(),
-		ChainId: rp.ChainID(),
-		Type:    rp.et.ToProto(),
-		Event: &eventspb.BusEvent_RewardPayout{
-			RewardPayout: &p,
-		},
+	busEvent := newBusEventFromBase(rp.Base)
+	busEvent.Event = &eventspb.BusEvent_RewardPayout{
+		RewardPayout: &p,
 	}
+
+	return busEvent
 }
 
 func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *RewardPayout {
@@ -68,7 +63,7 @@ func RewardPayoutEventFromStream(ctx context.Context, be *eventspb.BusEvent) *Re
 
 	amount, _ := num.UintFromString(rp.Amount, 10)
 	return &RewardPayout{
-		Base:                    newBaseFromStream(ctx, RewardPayoutEvent, be),
+		Base:                    newBaseFromBusEvent(ctx, RewardPayoutEvent, be),
 		Party:                   rp.Party,
 		EpochSeq:                rp.EpochSeq,
 		Asset:                   rp.Asset,

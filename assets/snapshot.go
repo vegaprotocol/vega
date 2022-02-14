@@ -116,6 +116,16 @@ func (s *Service) restoreActive(ctx context.Context, active *types.ActiveAssets)
 		if _, err := s.NewAsset(p.ID, p.Details); err != nil {
 			return err
 		}
+
+		pa, _ := s.Get(p.ID)
+		if s.isValidator {
+			if err := pa.Validate(); err != nil {
+				return err
+			}
+		} else {
+			pa.SetValidNonValidator()
+		}
+
 		if err := s.Enable(p.ID); err != nil {
 			return err
 		}

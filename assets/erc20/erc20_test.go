@@ -33,7 +33,7 @@ var token = &types.AssetDetails{
 	Symbol:      "VEGA",
 	TotalSupply: num.NewUint(10000),
 	Decimals:    18,
-	MinLpStake:  num.NewUint(1),
+	Quantum:     num.NewUint(1),
 	Source: &types.AssetDetailsErc20{
 		Erc20: &types.ERC20{
 			ContractAddress: "0x1FaA74E181092A97Fecc923015293ce57eE1208A",
@@ -105,9 +105,13 @@ type testEthClient struct {
 func (testEthClient) HeaderByNumber(context.Context, *big.Int) (*ethtypes.Header, error) {
 	return nil, nil
 }
-func (testEthClient) BridgeAddress() ethcommon.Address              { return ethcommon.HexToAddress(bridgeAddress) }
+
+func (testEthClient) CollateralBridgeAddress() ethcommon.Address {
+	return ethcommon.HexToAddress(bridgeAddress)
+}
+
 func (testEthClient) CurrentHeight(context.Context) (uint64, error) { return 100, nil }
-func (testEthClient) ConfirmationsRequired() uint32                 { return 1 }
+func (testEthClient) ConfirmationsRequired() uint64                 { return 1 }
 
 type testWallet struct{}
 

@@ -3,13 +3,13 @@ package validators_test
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
 
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-	"code.vegaprotocol.io/vega/validators"
-
 	"github.com/stretchr/testify/assert"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	types1 "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 func addNodes(top *testTop, number int) {
@@ -33,19 +33,11 @@ func addNodes(top *testTop, number int) {
 	}
 }
 
-func sortPendingKeyRotations(pkrs []*validators.PendingKeyRotation) {
-	sort.Slice(pkrs, func(i, j int) bool {
-		if pkrs[i].BlockHeight == pkrs[j].BlockHeight {
-			return pkrs[i].NodeID < pkrs[j].NodeID
-		}
-
-		return pkrs[i].BlockHeight < pkrs[j].BlockHeight
-	})
-}
-
 func TestTopologyCheckpoint(t *testing.T) {
-	t.Run("test checkpoint success", testTopologyCheckpointSuccess)
-	t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
+	for i := 0; i < 100; i++ {
+		t.Run("test checkpoint success", testTopologyCheckpointSuccess)
+		t.Run("test checkpoint uses relative block height", testTopologyCheckpointUsesRelativeBlockHeight)
+	}
 }
 
 func testTopologyCheckpointSuccess(t *testing.T) {
@@ -88,9 +80,6 @@ func testTopologyCheckpointSuccess(t *testing.T) {
 
 	newPkrs := newTop.GetAllPendingKeyRotations()
 	assert.Len(t, newPkrs, 2)
-
-	sortPendingKeyRotations(pkrs)
-	sortPendingKeyRotations(newPkrs)
 	assert.Equal(t, pkrs, newPkrs)
 }
 
@@ -134,15 +123,12 @@ func testTopologyCheckpointUsesRelativeBlockHeight(t *testing.T) {
 	var newNetworkBlockHeight uint64 = 100
 
 	// set current block height to newNetworkBlockHeight
-	newTop.BeginBlock(ctx, newNetworkBlockHeight)
+	newTop.BeginBlock(ctx, abcitypes.RequestBeginBlock{Header: types1.Header{Height: int64(newNetworkBlockHeight)}}, []*tmtypes.Validator{})
 
 	newTop.Load(ctx, ckp)
 
 	newPkrs := newTop.GetAllPendingKeyRotations()
 	assert.Len(t, newPkrs, 2)
-
-	sortPendingKeyRotations(pkrs)
-	sortPendingKeyRotations(newPkrs)
 
 	assert.Equal(t, pkrs[0].BlockHeight+newNetworkBlockHeight, newPkrs[0].BlockHeight)
 	assert.Equal(t, pkrs[1].BlockHeight+newNetworkBlockHeight, newPkrs[1].BlockHeight)

@@ -28,9 +28,11 @@ import (
 	"code.vegaprotocol.io/vega/txn"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	"code.vegaprotocol.io/vega/types/statevar"
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	tmtypesint "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -60,6 +62,7 @@ type SpamEngine interface {
 }
 
 type Snapshot interface {
+	Start() error
 	Info() ([]byte, int64)
 	List() ([]*types.Snapshot, error)
 	ReceiveSnapshot(snap *types.Snapshot) error
@@ -70,6 +73,14 @@ type Snapshot interface {
 	LoadSnapshotChunk(height uint64, format, chunk uint32) (*types.RawChunk, error)
 	AddProviders(provs ...types.StateProvider)
 	Snapshot(ctx context.Context) ([]byte, error)
+}
+
+type StateVarEngine interface {
+	ProposedValueReceived(ctx context.Context, ID, nodeID, eventID string, bundle *statevar.KeyValueBundle) error
+}
+
+type BlockchainClient interface {
+	Validators(height *int64) ([]*tmtypesint.Validator, error)
 }
 
 type App struct {
@@ -83,6 +94,7 @@ type App struct {
 	blockCtx          context.Context // use this to have access to block hash + height in commit call
 	reloadCP          bool
 	version           string
+	blockchainClient  BlockchainClient
 
 	vegaPaths paths.Paths
 	cfg       Config
@@ -94,7 +106,6 @@ type App struct {
 	assets          Assets
 	banking         Banking
 	broker          Broker
-	cmd             Commander
 	witness         Witness
 	evtfwd          EvtForwarder
 	exec            ExecutionEngine
@@ -115,8 +126,8 @@ type App struct {
 	spam            SpamEngine
 	epoch           EpochService
 	snapshot        Snapshot
-
-	cpt abci.Tx
+	stateVar        StateVarEngine
+	cpt             abci.Tx
 }
 
 func NewApp(
@@ -130,7 +141,6 @@ func NewApp(
 	witness Witness,
 	evtfwd EvtForwarder,
 	exec ExecutionEngine,
-	cmd Commander,
 	ghandler *genesis.Handler,
 	gov GovernanceEngine,
 	notary Notary,
@@ -148,6 +158,8 @@ func NewApp(
 	stakingAccounts StakingAccounts,
 	rewards RewardEngine,
 	snapshot Snapshot,
+	stateVarEngine StateVarEngine,
+	blockchainClient BlockchainClient,
 	version string, // we need the version for snapshot reload
 ) *App {
 	log = log.Named(namedLogger)
@@ -164,32 +176,33 @@ func NewApp(
 			config.Ratelimit.Requests,
 			config.Ratelimit.PerNBlocks,
 		),
-		reloadCP:        checkpoint.AwaitingRestore(),
-		assets:          assets,
-		banking:         banking,
-		broker:          broker,
-		cmd:             cmd,
-		witness:         witness,
-		evtfwd:          evtfwd,
-		exec:            exec,
-		ghandler:        ghandler,
-		gov:             gov,
-		notary:          notary,
-		stats:           stats,
-		time:            time,
-		top:             top,
-		netp:            netp,
-		oracles:         oracles,
-		delegation:      delegation,
-		limits:          limits,
-		stake:           stake,
-		checkpoint:      checkpoint,
-		spam:            spam,
-		stakingAccounts: stakingAccounts,
-		epoch:           epoch,
-		rewards:         rewards,
-		snapshot:        snapshot,
-		version:         version,
+		reloadCP:         checkpoint.AwaitingRestore(),
+		assets:           assets,
+		banking:          banking,
+		broker:           broker,
+		witness:          witness,
+		evtfwd:           evtfwd,
+		exec:             exec,
+		ghandler:         ghandler,
+		gov:              gov,
+		notary:           notary,
+		stats:            stats,
+		time:             time,
+		top:              top,
+		netp:             netp,
+		oracles:          oracles,
+		delegation:       delegation,
+		limits:           limits,
+		stake:            stake,
+		checkpoint:       checkpoint,
+		spam:             spam,
+		stakingAccounts:  stakingAccounts,
+		epoch:            epoch,
+		rewards:          rewards,
+		snapshot:         snapshot,
+		stateVar:         stateVarEngine,
+		version:          version,
+		blockchainClient: blockchainClient,
 	}
 
 	// register replay protection if needed:
@@ -202,21 +215,31 @@ func NewApp(
 	app.abci.OnCheckTx = app.OnCheckTx
 	app.abci.OnDeliverTx = app.OnDeliverTx
 	app.abci.OnInfo = app.Info
+	// snapshot specific handlers.
+	app.abci.OnListSnapshots = app.ListSnapshots
+	app.abci.OnOfferSnapshot = app.OfferSnapshot
+	app.abci.OnApplySnapshotChunk = app.ApplySnapshotChunk
+	app.abci.OnLoadSnapshotChunk = app.LoadSnapshotChunk
 
 	app.abci.
 		HandleCheckTx(txn.NodeSignatureCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.NodeVoteCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.ChainEventCommand, app.RequireValidatorPubKey).
 		HandleCheckTx(txn.SubmitOracleDataCommand, app.CheckSubmitOracleData).
-		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey)
+		HandleCheckTx(txn.KeyRotateSubmissionCommand, app.RequireValidatorMasterPubKey).
+		HandleCheckTx(txn.StateVariableProposalCommand, app.RequireValidatorPubKey)
 
 	app.abci.
+		HandleDeliverTx(txn.TransferFundsCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverTransferFunds))).
+		HandleDeliverTx(txn.CancelTransferFundsCommand,
+			app.SendEventOnError(app.DeliverCancelTransferFunds)).
 		HandleDeliverTx(txn.SubmitOrderCommand,
-			app.SendEventOnError(app.DeliverSubmitOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverSubmitOrder))).
 		HandleDeliverTx(txn.CancelOrderCommand,
-			app.SendEventOnError(app.DeliverCancelOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverCancelOrder))).
 		HandleDeliverTx(txn.AmendOrderCommand,
-			app.SendEventOnError(app.DeliverAmendOrder)).
+			app.SendEventOnError(addDeterministicID(app.DeliverAmendOrder))).
 		HandleDeliverTx(txn.WithdrawCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverWithdraw))).
 		HandleDeliverTx(txn.ProposeCommand,
@@ -227,6 +250,10 @@ func NewApp(
 			app.RequireValidatorPubKeyW(app.DeliverNodeSignature)).
 		HandleDeliverTx(txn.LiquidityProvisionCommand,
 			app.SendEventOnError(addDeterministicID(app.DeliverLiquidityProvision))).
+		HandleDeliverTx(txn.CancelLiquidityProvisionCommand,
+			app.SendEventOnError(app.DeliverCancelLiquidityProvision)).
+		HandleDeliverTx(txn.AmendLiquidityProvisionCommand,
+			app.SendEventOnError(addDeterministicID(app.DeliverAmendLiquidityProvision))).
 		HandleDeliverTx(txn.NodeVoteCommand,
 			app.RequireValidatorPubKeyW(app.DeliverNodeVote)).
 		HandleDeliverTx(txn.ChainEventCommand,
@@ -239,7 +266,9 @@ func NewApp(
 		HandleDeliverTx(txn.CheckpointRestoreCommand,
 			app.SendEventOnError(app.DeliverReloadCheckpoint)).
 		HandleDeliverTx(txn.KeyRotateSubmissionCommand,
-			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission))
+			app.RequireValidatorMasterPubKeyW(app.DeliverKeyRotateSubmission)).
+		HandleDeliverTx(txn.StateVariableProposalCommand,
+			app.RequireValidatorPubKeyW(app.DeliverStateVarProposal))
 
 	app.time.NotifyOnTick(app.onTick)
 
@@ -318,6 +347,12 @@ func (app *App) cancel() {
 
 func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 	hash, height := app.snapshot.Info()
+	app.log.Debug("ABCI service INFO requested", logging.Int64("height", height), logging.String("hash", hex.EncodeToString(hash)))
+
+	// if we've restore from a snapshot replace the protector since we will have restored it
+	if height != 0 {
+		app.Abci().ReplaceReplayProtector(0)
+	}
 	return tmtypes.ResponseInfo{
 		AppVersion:       0, // application protocol version TBD.
 		Version:          app.version,
@@ -327,6 +362,7 @@ func (app *App) Info(_ tmtypes.RequestInfo) tmtypes.ResponseInfo {
 }
 
 func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseListSnapshots {
+	app.log.Debug("ABCI service ListSnapshots requested")
 	snapshots, err := app.snapshot.List()
 	resp := tmtypes.ResponseListSnapshots{}
 	if err != nil {
@@ -335,16 +371,23 @@ func (app *App) ListSnapshots(_ tmtypes.RequestListSnapshots) tmtypes.ResponseLi
 	}
 	resp.Snapshots = make([]*tmtypes.Snapshot, 0, len(snapshots))
 	for _, snap := range snapshots {
-		resp.Snapshots = append(resp.Snapshots, snap.ToTM())
+		tmSnap, err := snap.ToTM()
+		if err != nil {
+			app.log.Error("Failed to convert snapshot to TM form", logging.Error(err))
+			continue
+		}
+		resp.Snapshots = append(resp.Snapshots, tmSnap)
 	}
 	return resp
 }
 
 func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.ResponseOfferSnapshot {
+	app.log.Debug("ABCI service OfferSnapshot start")
 	snap, err := types.SnapshotFromTM(req.Snapshot)
 	// invalid hash?
 	if err != nil {
 		// sender provided an invalid snapshot, that's not exactly something we can trust
+		app.log.Error("failed to convert snapshot", logging.Error(err))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT_SENDER,
 		}
@@ -352,6 +395,9 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 	// @TODO this is a placeholder for the actual check
 	// if this node produced the wrong hash, don't accept... earlier snapshots may still be valid
 	if !bytes.Equal(snap.Hash, req.AppHash) {
+		app.log.Error("hash mismatch",
+			logging.String("snap.Hash", hex.EncodeToString(snap.Hash)),
+			logging.String("rep.AppHash", hex.EncodeToString(req.AppHash)))
 		return tmtypes.ResponseOfferSnapshot{
 			Result: tmtypes.ResponseOfferSnapshot_REJECT,
 		}
@@ -364,6 +410,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 			// hashes match, but the meta doesn't, do not trust
 			ret.Result = tmtypes.ResponseOfferSnapshot_REJECT_SENDER
 		}
+		app.log.Error("snapshot rejected", logging.Error(err))
 		return ret
 	}
 	// @TODO initialise snapshot engine to restore snapshot?
@@ -373,6 +420,7 @@ func (app *App) OfferSnapshot(req tmtypes.RequestOfferSnapshot) tmtypes.Response
 }
 
 func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApplySnapshotChunk) tmtypes.ResponseApplySnapshotChunk {
+	app.log.Debug("ABCI service ApplySnapshotChunk start")
 	chunk := types.RawChunk{
 		Nr:   req.Index,
 		Data: req.Chunk,
@@ -392,28 +440,35 @@ func (app *App) ApplySnapshotChunk(ctx context.Context, req tmtypes.RequestApply
 		case types.ErrMissingChunks:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_RETRY
 			resp.RefetchChunks = app.snapshot.GetMissingChunks()
-		case types.ErrSnapshotRetryLimit:
-			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
-			defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
 		default:
 			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
 			// @TODO panic?
 		}
 		if resp.Result == tmtypes.ResponseApplySnapshotChunk_RETRY || resp.Result == tmtypes.ResponseApplySnapshotChunk_REJECT_SNAPSHOT {
-			_ = app.snapshot.RejectSnapshot()
+			if err := app.snapshot.RejectSnapshot(); err == types.ErrSnapshotRetryLimit {
+				app.log.Error("Applying snapshot chunk has reaching the retry limit, aborting")
+				resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+				defer app.log.Panic("Failed to load snapshot, max retry limit reached", logging.Error(err))
+			}
 		}
 		return resp
 	}
 	resp.Result = tmtypes.ResponseApplySnapshotChunk_ACCEPT
 	if ready {
-		_ = app.snapshot.ApplySnapshot(ctx)
+		err = app.snapshot.ApplySnapshot(ctx)
+		if err != nil {
+			app.log.Error("failed to apply snapshot", logging.Error(err))
+			resp.Result = tmtypes.ResponseApplySnapshotChunk_ABORT
+		}
 	}
 	return resp
 }
 
-func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+func (app *App) LoadSnapshotChunk(req tmtypes.RequestLoadSnapshotChunk) tmtypes.ResponseLoadSnapshotChunk {
+	app.log.Debug("ABCI service LoadSnapshotChunk start")
 	raw, err := app.snapshot.LoadSnapshotChunk(req.Height, req.Format, req.Chunk)
 	if err != nil {
+		app.log.Error("failed to load snapshot chunk", logging.Error(err))
 		return tmtypes.ResponseLoadSnapshotChunk{}
 	}
 	return tmtypes.ResponseLoadSnapshotChunk{
@@ -422,6 +477,7 @@ func (app *App) LoadSnapshotChunk(ctx context.Context, req tmtypes.RequestLoadSn
 }
 
 func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitChain {
+	app.log.Debug("ABCI service InitChain start")
 	hash := hex.EncodeToString(vgcrypto.Hash(req.AppStateBytes))
 	// let's assume genesis block is block 0
 	app.chainCtx = vgcontext.WithChainID(context.Background(), req.ChainId)
@@ -430,6 +486,15 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.blockCtx = ctx
 
 	app.abci.RegisterSnapshot(app.snapshot)
+
+	// Start the snapshot engine letting it clear any pre-existing state so that if we are
+	// replaying a chain from block 0 we won't recreate snapshots for blocks as we revisit
+	// them
+	if err := app.snapshot.Start(); err != nil {
+		app.cancel()
+		app.log.Fatal("couldn't start snapshot engine", logging.Error(err))
+	}
+
 	vators := make([]string, 0, len(req.Validators))
 	// get just the pubkeys out of the validator list
 	for _, v := range req.Validators {
@@ -441,7 +506,7 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 	app.top.UpdateValidatorSet(vators)
 	if err := app.ghandler.OnGenesis(ctx, req.Time, req.AppStateBytes); err != nil {
 		app.cancel()
-		app.log.Panic("something happened when initializing vega with the genesis block", logging.Error(err))
+		app.log.Fatal("couldn't initialise vega with the genesis block", logging.Error(err))
 	}
 
 	return tmtypes.ResponseInitChain{}
@@ -487,6 +552,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
+
+	// Set chainID, if we have loaded from a snapshot we will not have called InitChain
+	// TODO: we may be able to better if we store the chainID in the appstate's snapshot
+	app.chainCtx = vgcontext.WithChainID(context.Background(), req.Header.GetChainID())
+
 	ctx = vgcontext.WithBlockHeight(vgcontext.WithTraceID(app.chainCtx, hash), req.Header.Height)
 	app.blockCtx = ctx
 
@@ -502,6 +572,7 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
 		logging.String("current-datetime", vegatime.Format(app.currentTimestamp)),
 		logging.String("previous-datetime", vegatime.Format(app.previousTimestamp)),
+		logging.Int64("height", req.Header.GetHeight()),
 	)
 
 	// will be true only the first time we get out of the bootstrap period
@@ -514,7 +585,13 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 		app.cpt = nil
 	}
 
-	app.top.BeginBlock(ctx, uint64(req.Header.Height))
+	// read the state of validator set from the previous end of block
+	var vd []*tmtypesint.Validator
+	if req.Header.Height > 0 {
+		h := req.Header.Height - 1
+		vd, _ = app.blockchainClient.Validators(&h)
+	}
+	app.top.BeginBlock(ctx, req, vd)
 
 	return ctx, resp
 }
@@ -523,12 +600,15 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 	app.log.Debug("Processor COMMIT starting")
 	defer app.log.Debug("Processor COMMIT completed")
 
+	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
+	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
 	snapHash, err := app.snapshot.Snapshot(app.blockCtx)
 	if err != nil {
 		app.log.Panic("Failed to create snapshot",
 			logging.Error(err))
 	}
 	resp.Data = snapHash
+
 	if len(snapHash) == 0 {
 		resp.Data = app.exec.Hash()
 		resp.Data = append(resp.Data, app.delegation.Hash()...)
@@ -536,13 +616,26 @@ func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
 		resp.Data = append(resp.Data, app.stakingAccounts.Hash()...)
 	}
 
-	// Checkpoint can be nil if it wasn't time to create a checkpoint
-	if cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp); cpt != nil {
-		resp.Data = append(resp.Data, cpt.Hash...)
+	if cpt != nil {
+		if len(snapHash) == 0 {
+			// only append to commit hash if we aren't using the snapshot hash
+			// otherwise restoring a checkpoint would restore an incomplete/wrong hash
+			resp.Data = append(resp.Data, cpt.Hash...)
+		}
 		_ = app.handleCheckpoint(cpt)
 	}
-	// Compute the AppHash and update the response
 
+	// the snapshot produce an actual hash, so no need
+	// to rehash if we have a snapshot hash.
+	// otherwise, it's a concatenation of hash that we get,
+	// so we just re-hash to have an output which is actually an
+	// hash and is consistent over all calls to Commit
+	if len(snapHash) <= 0 {
+		resp.Data = vgcrypto.Hash(resp.Data)
+	}
+
+	// Compute the AppHash and update the response
+	app.log.Debug("apphash calculated", logging.String("response-data", hex.EncodeToString(resp.Data)))
 	app.updateStats()
 	app.setBatchStats()
 
@@ -696,7 +789,7 @@ func (app *App) canSubmitTx(tx abci.Tx) (err error) {
 			// we haven't reloaded the collateral data, withdrawals are going to fail
 			return ErrAwaitingCheckpointRestore
 		}
-	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand:
+	case txn.SubmitOrderCommand, txn.AmendOrderCommand, txn.CancelOrderCommand, txn.LiquidityProvisionCommand, txn.AmendLiquidityProvisionCommand, txn.CancelLiquidityProvisionCommand:
 		if !app.limits.CanTrade() {
 			return ErrTradingDisabled
 		}
@@ -750,6 +843,7 @@ func (app *App) OnDeliverTx(ctx context.Context, req tmtypes.RequestDeliverTx, t
 	}
 
 	// we don't need to set trace ID on context, it's been handled with OnBeginBlock
+
 	return ctx, resp
 }
 
@@ -767,7 +861,31 @@ func (app *App) RequireValidatorMasterPubKey(ctx context.Context, tx abci.Tx) er
 	return nil
 }
 
-func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverTransferFunds(ctx context.Context, tx abci.Tx, id string) error {
+	tfr := &commandspb.Transfer{}
+	if err := tx.Unmarshal(tfr); err != nil {
+		return err
+	}
+
+	party := tx.Party()
+	transferFunds, err := types.NewTransferFromProto(id, party, tfr)
+	if err != nil {
+		return err
+	}
+
+	return app.banking.TransferFunds(ctx, transferFunds)
+}
+
+func (app *App) DeliverCancelTransferFunds(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.CancelTransfer{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	return app.banking.CancelTransferFunds(ctx, types.NewCancelTransferFromProto(tx.Party(), cancel))
+}
+
+func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	s := &commandspb.OrderSubmission{}
 	if err := tx.Unmarshal(s); err != nil {
 		return err
@@ -781,7 +899,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 		return err
 	}
 	// Submit the create order request to the execution engine
-	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party())
+	conf, err := app.exec.SubmitOrder(ctx, os, tx.Party(), deterministicId)
 	if conf != nil {
 		if app.log.GetLevel() <= logging.DebugLevel {
 			app.log.Debug("Order confirmed",
@@ -808,7 +926,7 @@ func (app *App) DeliverSubmitOrder(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	porder := &commandspb.OrderCancellation{}
 	if err := tx.Unmarshal(porder); err != nil {
 		return err
@@ -819,7 +937,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 
 	order := types.OrderCancellationFromProto(porder)
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.CancelOrder(ctx, order, tx.Party())
+	msg, err := app.exec.CancelOrder(ctx, order, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on cancelling order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -833,7 +951,7 @@ func (app *App) DeliverCancelOrder(ctx context.Context, tx abci.Tx) error {
 	return nil
 }
 
-func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
+func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	order := &commandspb.OrderAmendment{}
 	if err := tx.Unmarshal(order); err != nil {
 		return err
@@ -849,7 +967,7 @@ func (app *App) DeliverAmendOrder(ctx context.Context, tx abci.Tx) error {
 	}
 
 	// Submit the cancel new order request to the Vega trading core
-	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party())
+	msg, err := app.exec.AmendOrder(ctx, oa, tx.Party(), deterministicId)
 	if err != nil {
 		app.log.Error("error on amending order", logging.String("order-id", order.OrderId), logging.Error(err))
 		return err
@@ -883,7 +1001,7 @@ func (app *App) DeliverWithdraw(
 	return app.handleCheckpoint(snap)
 }
 
-func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error {
+func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	prop := &commandspb.ProposalSubmission{}
 	if err := tx.Unmarshal(prop); err != nil {
 		return err
@@ -893,17 +1011,17 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 
 	if app.log.GetLevel() <= logging.DebugLevel {
 		app.log.Debug("submitting proposal",
-			logging.ProposalID(id),
+			logging.ProposalID(deterministicId),
 			logging.String("proposal-reference", prop.Reference),
 			logging.String("proposal-party", party),
 			logging.String("proposal-terms", prop.Terms.String()))
 	}
 
 	propSubmission := types.NewProposalSubmissionFromProto(prop)
-	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, id, party)
+	toSubmit, err := app.gov.SubmitProposal(ctx, *propSubmission, deterministicId, party)
 	if err != nil {
 		app.log.Debug("could not submit proposal",
-			logging.ProposalID(id),
+			logging.ProposalID(deterministicId),
 			logging.Error(err))
 		return err
 	}
@@ -915,7 +1033,7 @@ func (app *App) DeliverPropose(ctx context.Context, tx abci.Tx, id string) error
 		// the lp provision ID (well it's still deterministic...)
 		lpid := hex.EncodeToString(vgcrypto.Hash([]byte(nm.Market().ID)))
 		err := app.exec.SubmitMarketWithLiquidityProvision(
-			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid)
+			ctx, nm.Market(), nm.LiquidityProvisionSubmission(), party, lpid, deterministicId)
 		if err != nil {
 			app.log.Debug("unable to submit new market with liquidity submission",
 				logging.ProposalID(nm.Market().ID),
@@ -965,7 +1083,7 @@ func (app *App) DeliverNodeSignature(ctx context.Context, tx abci.Tx) error {
 	return app.notary.RegisterSignature(ctx, tx.PubKeyHex(), *ns)
 }
 
-func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id string) error {
+func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
 	sub := &commandspb.LiquidityProvisionSubmission{}
 	if err := tx.Unmarshal(sub); err != nil {
 		return err
@@ -981,8 +1099,63 @@ func (app *App) DeliverLiquidityProvision(ctx context.Context, tx abci.Tx, id st
 		return err
 	}
 
-	partyID := tx.Party()
-	return app.exec.SubmitLiquidityProvision(ctx, lps, partyID, id)
+	return app.exec.SubmitLiquidityProvision(ctx, lps, tx.Party(), deterministicId)
+}
+
+func (app *App) DeliverCancelLiquidityProvision(ctx context.Context, tx abci.Tx) error {
+	cancel := &commandspb.LiquidityProvisionCancellation{}
+	if err := tx.Unmarshal(cancel); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a CANCEL Liquidity Provision request", logging.String("liquidity-provision-market-id", cancel.MarketId))
+
+	lpc, err := types.LiquidityProvisionCancellationFromProto(cancel)
+	if err != nil {
+		if app.log.GetLevel() <= logging.DebugLevel {
+			app.log.Debug("Unable to convert LiquidityProvisionCancellation protobuf message to domain type",
+				logging.LiquidityProvisionCancellationProto(cancel), logging.Error(err))
+		}
+		return err
+	}
+
+	err = app.exec.CancelLiquidityProvision(ctx, lpc, tx.Party())
+	if err != nil {
+		app.log.Error("error on cancelling order", logging.String("liquidity-provision-market-id", lpc.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderCancelDebug {
+		app.log.Debug("Liquidity provision cancelled", logging.LiquidityProvisionCancellation(*lpc))
+	}
+
+	return nil
+}
+
+func (app *App) DeliverAmendLiquidityProvision(ctx context.Context, tx abci.Tx, deterministicId string) error {
+	lp := &commandspb.LiquidityProvisionAmendment{}
+	if err := tx.Unmarshal(lp); err != nil {
+		return err
+	}
+
+	app.log.Debug("Blockchain service received a AMEND Liquidity Provision request", logging.String("liquidity-provision-market-id", lp.MarketId))
+
+	// Convert protobuf into local domain type
+	lpa, err := types.LiquidityProvisionAmendmentFromProto(lp)
+	if err != nil {
+		return err
+	}
+
+	// Submit the amend liquidity provision request to the Vega trading core
+	err = app.exec.AmendLiquidityProvision(ctx, lpa, tx.Party(), deterministicId)
+	if err != nil {
+		app.log.Error("error on amending Liquidity Provision", logging.String("liquidity-provision-market-id", lpa.MarketID), logging.Error(err))
+		return err
+	}
+	if app.cfg.LogOrderAmendDebug {
+		app.log.Debug("Liquidity Provision amended", logging.LiquidityProvisionAmendment(*lpa))
+	}
+
+	return nil
 }
 
 func (app *App) DeliverNodeVote(ctx context.Context, tx abci.Tx) error {
@@ -1026,6 +1199,7 @@ func (app *App) CheckSubmitOracleData(_ context.Context, tx abci.Tx) error {
 
 	pubKey := crypto.NewPublicKey(tx.PubKeyHex(), tx.PubKey())
 	_, err := app.oracles.Adaptors.Normalise(pubKey, *data)
+
 	return err
 }
 
@@ -1273,4 +1447,22 @@ func (app *App) DeliverKeyRotateSubmission(ctx context.Context, tx abci.Tx) erro
 		uint64(currentBlockHeight),
 		kr,
 	)
+}
+
+func (app *App) DeliverStateVarProposal(ctx context.Context, tx abci.Tx) error {
+	proposal := &commandspb.StateVariableProposal{}
+	if err := tx.Unmarshal(proposal); err != nil {
+		app.log.Error("failed to unmarshal StateVariableProposal", logging.Error(err), logging.String("pub-key", tx.PubKeyHex()))
+		return err
+	}
+
+	stateVarID := proposal.Proposal.StateVarId
+	node := tx.PubKeyHex()
+	eventID := proposal.Proposal.EventId
+	bundle, err := statevar.KeyValueBundleFromProto(proposal.Proposal.Kvb)
+	if err != nil {
+		app.log.Error("failed to propose value", logging.Error(err))
+		return err
+	}
+	return app.stateVar.ProposedValueReceived(ctx, stateVarID, node, eventID, bundle)
 }

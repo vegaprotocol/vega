@@ -14,7 +14,7 @@ import (
 
 type signCmd struct {
 	config.VegaHomeFlag
-	TmRoot           string            `short:"t" long:"tm-root" description:"The root path of tendermint"`
+	TmHome           string            `short:"t" long:"tm-home" description:"The home path of tendermint"`
 	WalletName       string            `long:"wallet-name" description:"The name of the wallet to use" required:"true"`
 	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file" description:"A file containing the passphrase for the wallet, if empty will prompt for input"`
 }
@@ -30,7 +30,7 @@ func (opts *signCmd) Execute(_ []string) error {
 		return err
 	}
 
-	_, genesisState, err := genesis.GetLocalGenesisState(os.ExpandEnv(opts.TmRoot))
+	_, genesisState, err := genesis.GetLocalGenesisState(os.ExpandEnv(opts.TmHome))
 	if err != nil {
 		return err
 	}

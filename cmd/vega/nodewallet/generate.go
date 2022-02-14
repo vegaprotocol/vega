@@ -21,13 +21,14 @@ type generateCmd struct {
 
 	WalletPassphrase config.Passphrase `long:"wallet-passphrase-file"`
 
-	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported (vega, ethereum)"`
+	Chain string `short:"c" long:"chain" required:"true" description:"The chain to be imported" choice:"vega" choice:"ethereum"`
 	Force bool   `long:"force" description:"Should the command generate a new wallet on top of an existing one"`
 }
 
 const (
-	ethereumChain = "ethereum"
-	vegaChain     = "vega"
+	ethereumChain   = "ethereum"
+	vegaChain       = "vega"
+	tendermintChain = "tendermint"
 )
 
 func (opts *generateCmd) Execute(_ []string) error {

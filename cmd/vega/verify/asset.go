@@ -50,6 +50,7 @@ func verifyAssetTerms(r *reporter, prop *types.Proposal) {
 	} else if time.Unix(prop.Terms.ValidationTimestamp, 0).Before(time.Now()) {
 		r.Warn("prop.terms.validationTimestamp may be in the past")
 	}
+
 	if prop.Terms.EnactmentTimestamp == 0 {
 		r.Err("prop.terms.enactmentTimestamp is missing or 0")
 	} else if time.Unix(prop.Terms.EnactmentTimestamp, 0).Before(time.Now()) {
@@ -78,8 +79,8 @@ func verifyAssetTerms(r *reporter, prop *types.Proposal) {
 	if newAsset.Changes.Decimals == 0 {
 		r.Err("prop.terms.newAsset.changes.decimals is missing or empty")
 	}
-	if len(newAsset.Changes.MinLpStake) <= 0 {
-		r.Err("prop.terms.newAsset.changes.minLpStake is missing or empty")
+	if len(newAsset.Changes.Quantum) <= 0 {
+		r.Err("prop.terms.newAsset.changes.quantum is missing or empty")
 	}
 
 	switch source := newAsset.Changes.Source.(type) {

@@ -66,7 +66,7 @@ type Witness interface {
 type NetParams interface {
 	Validate(string, string) error
 	Update(context.Context, string, string) error
-	GetFloat(string) (float64, error)
+	GetDecimal(string) (num.Decimal, error)
 	GetInt(string) (int64, error)
 	GetUint(string) (*num.Uint, error)
 	GetDuration(string) (time.Duration, error)

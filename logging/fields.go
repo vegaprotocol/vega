@@ -102,6 +102,11 @@ func Strings(key string, val []string) zap.Field {
 	return zap.Strings(key, val)
 }
 
+// Decimal constructs a field with the given key and value.
+func Decimal(key string, val num.Decimal) zap.Field {
+	return String(key, val.String())
+}
+
 // BigUint constructs a field with the given key and value.
 func BigUint(key string, val *num.Uint) zap.Field {
 	return String(key, val.String())
@@ -219,6 +224,26 @@ func LiquidityProvisionSubmissionProto(
 func LiquidityProvisionSubmission(
 	lp types.LiquidityProvisionSubmission) zap.Field {
 	return zap.String("liquidity-provision-submission", lp.String())
+}
+
+func LiquidityProvisionCancellationProto(
+	lp *commandspb.LiquidityProvisionCancellation) zap.Field {
+	return zap.String("liquidity-provision-cancellation", lp.String())
+}
+
+func LiquidityProvisionCancellation(
+	lp types.LiquidityProvisionCancellation) zap.Field {
+	return zap.String("liquidity-provision-cancellation", lp.String())
+}
+
+func LiquidityProvisionAmendmentProto(
+	lp *commandspb.LiquidityProvisionAmendment) zap.Field {
+	return zap.String("liquidity-provision-amendment", lp.String())
+}
+
+func LiquidityProvisionAmendment(
+	lp types.LiquidityProvisionAmendment) zap.Field {
+	return zap.String("liquidity-provision-amendment", lp.String())
 }
 
 func WithdrawSubmissionProto(

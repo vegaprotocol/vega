@@ -3,17 +3,37 @@ package stubs
 import (
 	"sort"
 
+	"code.vegaprotocol.io/vega/types/num"
+
 	"code.vegaprotocol.io/vega/validators"
 )
 
 type TopologyStub struct {
 	validators map[string]string
+	nodeID     string
 }
 
-func NewTopologyStub() *TopologyStub {
+func NewTopologyStub(nodeID string) *TopologyStub {
 	return &TopologyStub{
 		validators: map[string]string{},
+		nodeID:     nodeID,
 	}
+}
+
+func (ts *TopologyStub) ValidatorPerformanceScore(nodeID string) num.Decimal {
+	return num.DecimalFromFloat(1)
+}
+
+func (ts *TopologyStub) SelfNodeID() string {
+	return ts.nodeID
+}
+
+func (ts *TopologyStub) IsValidator() bool {
+	return true
+}
+
+func (ts *TopologyStub) IsValidatorVegaPubKey(pubKey string) bool {
+	return true
 }
 
 func (ts *TopologyStub) IsValidatorNodeID(nodeID string) bool {

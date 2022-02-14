@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
+	vgfs "code.vegaprotocol.io/shared/libs/fs"
 	"code.vegaprotocol.io/shared/paths"
 	vegactx "code.vegaprotocol.io/vega/libs/context"
 	"code.vegaprotocol.io/vega/libs/crypto"
@@ -18,6 +22,10 @@ import (
 	"github.com/tendermint/tendermint/libs/strings"
 	db "github.com/tendermint/tm-db"
 )
+
+type SnapshotSource int
+
+const SnapshotDBName = "snapshot"
 
 type StateProviderT interface {
 	// Namespace this provider operates in, basically a prefix for the keys
@@ -50,6 +58,11 @@ type TimeService interface {
 	SetTimeNow(context.Context, time.Time)
 }
 
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/stats_mock.go -package mocks code.vegaprotocol.io/vega/snapshot StatsService
+type StatsService interface {
+	SetHeight(uint64)
+}
+
 // Engine the snapshot engine.
 type Engine struct {
 	Config
@@ -57,7 +70,9 @@ type Engine struct {
 	ctx        context.Context
 	cfunc      context.CancelFunc
 	time       TimeService
+	stats      StatsService
 	db         db.DB
+	dbPath     string
 	log        *logging.Logger
 	avl        *iavl.MutableTree
 	namespaces []types.SnapshotNamespace
@@ -69,12 +84,13 @@ type Engine struct {
 	interval   int64
 	current    int64
 
-	providers    map[string]types.StateProvider
-	restoreProvs []types.PostRestore
-	providersNS  map[types.SnapshotNamespace][]types.StateProvider
-	providerTS   map[string]StateProviderT
-	pollCtx      context.Context
-	pollCfunc    context.CancelFunc
+	providers          map[string]types.StateProvider
+	restoreProvs       []types.PostRestore
+	beforeRestoreProvs []types.PreRestore
+	providersNS        map[types.SnapshotNamespace][]types.StateProvider
+	providerTS         map[string]StateProviderT
+	pollCtx            context.Context
+	pollCfunc          context.CancelFunc
 
 	last          *iavl.ImmutableTree
 	hash          []byte
@@ -101,9 +117,12 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.NetParamsSnapshot,
 	types.CheckpointSnapshot,
 	types.DelegationSnapshot,
-	types.ExecutionSnapshot, // creates the markets, returns matching and positions engines for state providers
-	types.MatchingSnapshot,  // this requires a market
-	types.PositionsSnapshot, // again, needs a market
+	types.FloatingPointConsensusSnapshot, // shouldn't matter but maybe best before the markets are restored
+	types.ExecutionSnapshot,              // creates the markets, returns matching and positions engines for state providers
+	types.MatchingSnapshot,               // this requires a market
+	types.PositionsSnapshot,              // again, needs a market
+	types.LiquiditySnapshot,
+	types.LiquidityTargetSnapshot,
 	types.EpochSnapshot,
 	types.StakingSnapshot,
 	types.StakeVerifierSnapshot,
@@ -113,26 +132,25 @@ var nodeOrder = []types.SnapshotNamespace{
 	types.RewardSnapshot,
 	types.TopologySnapshot,
 	types.EventForwarderSnapshot,
+	types.FeeTrackerSnapshot,
+	types.MarketTrackerSnapshot,
 }
 
 // New returns a new snapshot engine.
-func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService) (*Engine, error) {
+func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Logger, tm TimeService, stats StatsService) (*Engine, error) {
 	// default to min 1 version, just so we don't have to account for negative cap or nil slice.
 	// A single version kept in memory is pretty harmless.
-	if conf.Versions < 1 {
-		conf.Versions = 1
+	if conf.KeepRecent < 1 {
+		conf.KeepRecent = 1
 	}
 	log = log.Named(namedLogger)
-	dbConn, err := getDB(conf, vegapath)
+	log.SetLevel(conf.Level.Get())
+
+	dbPath, err := conf.validate(vegapath)
 	if err != nil {
-		log.Error("Failed to open DB connection", logging.Error(err))
 		return nil, err
 	}
-	tree, err := iavl.NewMutableTree(dbConn, 0)
-	if err != nil {
-		log.Error("Could not create AVL tree", logging.Error(err))
-		return nil, err
-	}
+
 	sctx, cfunc := context.WithCancel(ctx)
 	appPL := &types.PayloadAppState{
 		AppState: &types.AppState{},
@@ -143,9 +161,9 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		ctx:        sctx,
 		cfunc:      cfunc,
 		time:       tm,
-		db:         dbConn,
+		stats:      stats,
+		dbPath:     dbPath,
 		log:        log,
-		avl:        tree,
 		namespaces: []types.SnapshotNamespace{},
 		nsKeys: map[types.SnapshotNamespace][]string{
 			app: {appPL.Key()},
@@ -159,22 +177,13 @@ func New(ctx context.Context, vegapath paths.Paths, conf Config, log *logging.Lo
 		hashes:        map[string][]byte{},
 		providers:     map[string]types.StateProvider{},
 		providersNS:   map[types.SnapshotNamespace][]types.StateProvider{},
-		versions:      make([]int64, 0, conf.Versions), // cap determines how many versions we keep
+		versions:      make([]int64, 0, conf.KeepRecent), // cap determines how many versions we keep
 		versionHeight: map[uint64]int64{},
 		wrap:          appPL,
 		app:           appPL.AppState,
 		interval:      1, // default to every block
 		current:       1,
 	}
-	if conf.StartHeight == 0 {
-		return eng, nil
-	}
-	if err := eng.loadHeight(ctx, conf.StartHeight); err != nil {
-		return nil, err
-	}
-	eng.log.Debug("Loaded snapshot",
-		logging.Int64("loaded height", conf.StartHeight),
-	)
 	return eng, nil
 }
 
@@ -190,36 +199,65 @@ func (e *Engine) ReloadConfig(cfg Config) {
 	e.Config = cfg
 }
 
-func getDB(conf Config, vegapath paths.Paths) (db.DB, error) {
-	if conf.Storage == memDB {
-		return db.NewMemDB(), nil
-	}
-	dbPath := vegapath.StatePathFor(paths.SnapshotStateHome)
-	return db.NewGoLevelDB("snapshot", dbPath)
-}
-
 // List returns all snapshots available.
 func (e *Engine) List() ([]*types.Snapshot, error) {
-	trees := make([]*types.Snapshot, 0, len(e.versions))
-	for _, v := range e.versions {
+	snapshots := make([]*types.Snapshot, 0, len(e.versions))
+	// TM list of snapshots is limited to the 10 most recent ones.
+	i := len(e.versions) - 11
+	if i < 0 {
+		i = 0
+	}
+	for j := len(e.versions); i < j; i++ {
+		v := e.versions[i]
 		tree, err := e.avl.GetImmutable(v)
 		if err != nil {
 			return nil, err
 		}
 		snap, err := types.SnapshotFromTree(tree)
 		if err != nil {
-			return nil, err
+			e.log.Error("could not list snapshot",
+				logging.Int64("version", v),
+				logging.Error(err))
+			continue // if we have a borked snapshot we just won't list it
 		}
-		trees = append(trees, snap)
+		snapshots = append(snapshots, snap)
 		e.versionHeight[snap.Height] = snap.Meta.Version
 	}
-	return trees, nil
+	return snapshots, nil
 }
 
-func (e *Engine) loadHeight(ctx context.Context, h int64) error {
-	if h < 0 {
-		return e.LoadLast(ctx)
+// Start kicks the snapshot engine into its initial state setting up the DB connections
+// and ensuring any pre-existing snapshot database is removed first. It is to be called
+// by a chain that is starting from block 0.
+func (e *Engine) Start() error {
+	p := filepath.Join(e.dbPath, SnapshotDBName+".db")
+
+	exists, err := vgfs.PathExists(p)
+	if err != nil {
+		return err
 	}
+
+	if exists {
+		e.log.Warn("removing old snapshot data", logging.String("dbpath", p))
+		if err := os.RemoveAll(p); err != nil {
+			return err
+		}
+	}
+
+	return e.initialiseTree()
+}
+
+// LoadHeight will restore the vega node to it's state at block height `h`
+// from a snapshots stored locally. It is an error if a snapshot is not found
+// for this height.
+func (e *Engine) LoadHeight(ctx context.Context, h int64) error {
+	e.log.Debug("loading snapshot for height", logging.Int64("height", h))
+	// setup AVL tree from local store
+	e.initialiseTree()
+	if h < 0 {
+		return e.load(ctx)
+	}
+
 	height := uint64(h)
 	versions := e.avl.AvailableVersions()
 	// descending order, because that makes most sense
@@ -264,14 +302,42 @@ func (e *Engine) loadHeight(ctx context.Context, h int64) error {
 	return types.ErrNoSnapshot
 }
 
-func (e *Engine) LoadLast(ctx context.Context) error {
-	version, err := e.avl.Load()
+// initialiseTree connects to the snapshotdb and sets the engine's state to
+// point to the latest version of the tree.
+func (e *Engine) initialiseTree() error {
+	switch e.Config.Storage {
+	case memDB:
+		e.db = db.NewMemDB()
+	case goLevelDB:
+		conn, _ := db.NewGoLevelDB(SnapshotDBName, e.dbPath)
+		e.db = conn
+	default:
+		return types.ErrInvalidSnapshotStorageMethod
+	}
+
+	tree, err := iavl.NewMutableTree(e.db, 0)
+	if err != nil {
+		e.log.Error("Could not create AVL tree", logging.Error(err))
+		return err
+	}
+
+	e.avl = tree
+	// Either create the first empty tree, or load the latest tree we have in the store
+	if err := e.loadTree(); err != nil {
+		e.log.Error("Failed to load AVL version", logging.Error(err))
+		return err
+	}
+	return nil
+}
+
+func (e *Engine) loadTree() error {
+	v, err := e.avl.Load()
 	if err != nil {
 		return err
 	}
-	e.version = version
+	e.version = v
 	e.last = e.avl.ImmutableTree
-	return e.load(ctx)
+	return nil
 }
 
 func (e *Engine) load(ctx context.Context) error {
@@ -281,7 +347,7 @@ func (e *Engine) load(ctx context.Context) error {
 	}
 	e.snapshot = snap
 	// apply, no need to set the tree, it's coming from local store
-	return e.applySnap(ctx, false)
+	return e.applySnap(ctx)
 }
 
 func (e *Engine) ReceiveSnapshot(snap *types.Snapshot) error {
@@ -310,10 +376,21 @@ func (e *Engine) RejectSnapshot() error {
 }
 
 func (e *Engine) ApplySnapshot(ctx context.Context) error {
-	return e.applySnap(ctx, true)
+	// remove all existing snapshot and create an initial empty tree
+	e.Start()
+
+	// Import the AVL tree from the snapshot data so we have a working copy
+	// that is consistent with the other nodes
+	if err := e.snapshot.TreeFromSnapshot(e.avl); err != nil {
+		e.log.Error("failed to recreate tree", logging.Error(err))
+		return err
+	}
+
+	// Load the snapshot data into each provider
+	return e.applySnap(ctx)
 }
 
-func (e *Engine) applySnap(ctx context.Context, cas bool) error {
+func (e *Engine) applySnap(ctx context.Context) error {
 	if e.snapshot == nil {
 		return types.ErrUnknownSnapshot
 	}
@@ -336,10 +413,9 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 				ordered[ns] = []*types.Payload{}
 			}
 		}
-		if cas {
-			if err := e.nodeCAS(i, pl); err != nil {
-				return err
-			}
+
+		if err := e.setTreeNode(i, pl); err != nil {
+			return err
 		}
 		// node was verified and set on tree
 		ordered[ns] = append(ordered[ns], pl)
@@ -354,14 +430,22 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 	now := time.Unix(e.app.Time, 0)
 	// restore app state
 	e.time.SetTimeNow(ctx, now)
+	e.stats.SetHeight(e.app.Height)
 
+	// before we starts restoring the providers
+	for _, pp := range e.beforeRestoreProvs {
+		if err := pp.OnStateLoadStarts(ctx); err != nil {
+			return err
+		}
+	}
 	// now let's load the data in the correct order, skip app state, we've already handled that
 	for _, ns := range nodeOrder[1:] {
 		for _, n := range ordered[ns] {
 			p, ok := e.providers[n.GetTreeKey()]
 			if !ok {
-				return types.ErrUnknownSnapshotNamespace
+				return fmt.Errorf("%w %s", types.ErrUnknownSnapshotNamespace, n.GetTreeKey())
 			}
+			e.log.Debug("Loading provider", logging.String("tree-key", n.GetTreeKey()))
 			nps, err := p.LoadState(ctx, n)
 			if err != nil {
 				return err
@@ -376,44 +460,27 @@ func (e *Engine) applySnap(ctx context.Context, cas bool) error {
 			return err
 		}
 	}
-	// we're done, we can clear the snapshot state
-	e.snapshot = nil
-	// no need to save, return here
-	if !cas {
-		return nil
-	}
-	if _, err := e.saveCurrentTree(); err != nil {
-		return err
-	}
+
+	e.current = e.interval   // set the snapshot counter to the interval so that we do not create a duplicate snapshot on commit
+	e.hash = e.snapshot.Hash // set the engine's "last snapshot hash" field to the hash of the snapshot we've just loaded
+	e.snapshot = nil         // we're done, we can clear the snapshot state
+
 	return nil
 }
 
-func (e *Engine) nodeCAS(i int, p *types.Payload) error {
-	h, err := e.setTreeNode(p)
-	if err != nil {
-		return err
-	}
-	if exp := e.snapshot.Meta.NodeHashes[i].Hash; exp != hex.EncodeToString(h) {
-		key := p.GetTreeKey()
-		e.log.Error("Snapshot node not restored - hash mismatch",
-			logging.String("node-key", key),
-		)
-		_, _ = e.avl.Remove([]byte(key))
-		return types.ErrNodeHashMismatch
-	}
-	return nil
-}
-
-func (e *Engine) setTreeNode(p *types.Payload) ([]byte, error) {
+func (e *Engine) setTreeNode(i int, p *types.Payload) error {
+	// unpack payload
 	data, err := proto.Marshal(p.IntoProto())
 	if err != nil {
-		return nil, err
+		return err
 	}
+
+	// hash the node and save it into our cache of node hashes for comparison at the next snapshot
 	hash := crypto.Hash(data)
 	key := p.GetTreeKey()
 	e.hashes[key] = hash
-	_ = e.avl.Set([]byte(key), data)
-	return hash, nil
+
+	return nil
 }
 
 func (e *Engine) ApplySnapshotChunk(chunk *types.RawChunk) (bool, error) {
@@ -521,9 +588,10 @@ func (e *Engine) Snapshot(ctx context.Context) (b []byte, errlol error) {
 		appUpdate = true
 	}
 	if appUpdate {
-		if updated, err = e.updateAppState(); err != nil {
+		if err = e.updateAppState(); err != nil {
 			return nil, err
 		}
+		updated = true
 	}
 	if !updated {
 		return e.hash, nil
@@ -585,7 +653,15 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 			return update, err
 		}
 		if len(nsps) > 0 {
+			// The provider has generated new providers, register them with the engine
+			// add them to the AVL tree
 			e.AddProviders(nsps...)
+			for _, n := range nsps {
+				e.log.Debug("Provider generated",
+					logging.String("namespace", n.Namespace().String()),
+				)
+				e.update(n.Namespace())
+			}
 		}
 		e.log.Debug("State updated",
 			logging.String("node-key", k),
@@ -609,14 +685,14 @@ func (e *Engine) update(ns types.SnapshotNamespace) (bool, error) {
 	return update, nil
 }
 
-func (e *Engine) updateAppState() (bool, error) {
+func (e *Engine) updateAppState() error {
 	keys, ok := e.nsTreeKeys[e.wrap.Namespace()]
 	if !ok {
-		return false, types.ErrNoPrefixFound
+		return types.ErrNoPrefixFound
 	}
 	// there should be only 1 entry here
 	if len(keys) > 1 || len(keys) == 0 {
-		return false, types.ErrUnexpectedKey
+		return types.ErrUnexpectedKey
 	}
 	// we only have 1 key
 	pl := types.Payload{
@@ -624,10 +700,10 @@ func (e *Engine) updateAppState() (bool, error) {
 	}
 	data, err := proto.Marshal(pl.IntoProto())
 	if err != nil {
-		return false, err
+		return err
 	}
 	_ = e.avl.Set(keys[0], data)
-	return true, nil
+	return nil
 }
 
 func (e *Engine) Hash(ctx context.Context) ([]byte, error) {
@@ -656,6 +732,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 			}
 			if pp, ok := p.(types.PostRestore); ok {
 				e.restoreProvs = append(e.restoreProvs, pp)
+			}
+			if pp, ok := p.(types.PreRestore); ok {
+				e.beforeRestoreProvs = append(e.beforeRestoreProvs, pp)
 			}
 			e.nsKeys[ns] = ks
 			continue
@@ -699,6 +778,9 @@ func (e *Engine) AddProviders(provs ...types.StateProvider) {
 		}
 		if pp, ok := p.(types.PostRestore); ok {
 			e.restoreProvs = append(e.restoreProvs, pp)
+		}
+		if pp, ok := p.(types.PreRestore); ok {
+			e.beforeRestoreProvs = append(e.beforeRestoreProvs, pp)
 		}
 	}
 }

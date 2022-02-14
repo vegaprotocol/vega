@@ -20,9 +20,9 @@ Feature: Ensure we can enter and leave liquidity auction
 
 # submit our LP
     Then the parties submit the following liquidity provision:
-      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset |
-      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | buy  | BID              | 50         | -10    |
-      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | sell | ASK              | 50         | 10     |
+      | id  | party   | market id | commitment amount | fee | side | pegged reference | proportion | offset | lp type |
+      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | buy  | BID              | 50         | 10     | submission |
+      | lp1 | party1 | ETH/DEC19 | 3000              | 0.1 | sell | ASK              | 50         | 10     | amendment |
 
 # get out of auction
     When the parties place the following orders:
@@ -38,7 +38,7 @@ Feature: Ensure we can enter and leave liquidity auction
     Then the parties place the following pegged orders:
       | party | market id | side | volume | pegged reference | offset |
       | aux2   | ETH/DEC19 | sell | 10     | ASK              | 9      |
-      | aux2   | ETH/DEC19 | buy  | 5      | BID              | -9     |
+      | aux2   | ETH/DEC19 | buy  | 5      | BID              | 9     |
 
 # now consume all the volume on the sell side
     When the parties place the following orders:

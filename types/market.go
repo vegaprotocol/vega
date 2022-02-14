@@ -308,68 +308,6 @@ func (t TradableInstrument) DeepClone() *TradableInstrument {
 	}
 }
 
-type MarketDiscrete struct {
-	Discrete *DiscreteTrading
-}
-
-func (m MarketDiscrete) IntoProto() *proto.Market_Discrete {
-	return &proto.Market_Discrete{
-		Discrete: m.Discrete.IntoProto(),
-	}
-}
-
-func (MarketDiscrete) istmc() {}
-
-func (m MarketDiscrete) tmcIntoProto() interface{} {
-	return m.IntoProto()
-}
-
-func MarketDiscreteFromProto(m *proto.Market_Discrete) *MarketDiscrete {
-	return &MarketDiscrete{
-		Discrete: DiscreteTradingFromProto(m.Discrete),
-	}
-}
-
-func (MarketDiscrete) tmcType() MarketTradingConfigType {
-	return MarketTradingConfigDiscrete
-}
-
-type MarketContinuous struct {
-	Continuous *ContinuousTrading
-}
-
-func MarketContinuousFromProto(c *proto.Market_Continuous) *MarketContinuous {
-	return &MarketContinuous{
-		Continuous: ContinuousTradingFromProto(c.Continuous),
-	}
-}
-
-func (m MarketContinuous) IntoProto() *proto.Market_Continuous {
-	return &proto.Market_Continuous{
-		Continuous: m.Continuous.IntoProto(),
-	}
-}
-
-func (MarketContinuous) tmcType() MarketTradingConfigType {
-	return MarketTradingConfigContinuous
-}
-
-func (MarketContinuous) istmc() {}
-
-func (m MarketContinuous) tmcIntoProto() interface{} {
-	return m.IntoProto()
-}
-
-func tmcFromProto(tm interface{}) istmc {
-	switch tmc := tm.(type) {
-	case *proto.Market_Continuous:
-		return MarketContinuousFromProto(tmc)
-	case *proto.Market_Discrete:
-		return MarketDiscreteFromProto(tmc)
-	}
-	return nil
-}
-
 type Instrument_Future struct {
 	Future *Future
 }
@@ -385,7 +323,6 @@ type Future struct {
 
 func FutureFromProto(f *proto.Future) *Future {
 	return &Future{
-		Maturity:                        f.Maturity,
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
@@ -396,7 +333,6 @@ func FutureFromProto(f *proto.Future) *Future {
 
 func (f Future) IntoProto() *proto.Future {
 	return &proto.Future{
-		Maturity:                        f.Maturity,
 		SettlementAsset:                 f.SettlementAsset,
 		QuoteName:                       f.QuoteName,
 		OracleSpecForSettlementPrice:    f.OracleSpecForSettlementPrice.DeepClone(),
@@ -630,7 +566,6 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		DecimalPlaces:                 mkt.DecimalPlaces,
 		Fees:                          FeesFromProto(mkt.Fees),
 		OpeningAuction:                AuctionDurationFromProto(mkt.OpeningAuction),
-		TradingModeConfig:             tmcFromProto(mkt.TradingModeConfig),
 		PriceMonitoringSettings:       PriceMonitoringSettingsFromProto(mkt.PriceMonitoringSettings),
 		LiquidityMonitoringParameters: LiquidityMonitoringParametersFromProto(mkt.LiquidityMonitoringParameters),
 		TradingMode:                   mkt.TradingMode,
@@ -642,6 +577,11 @@ func MarketFromProto(mkt *proto.Market) *Market {
 		m.tmc = m.TradingModeConfig.tmcType()
 	}
 	return m
+}
+
+// tick size as implied by the decimal places for the market.
+func (m Market) TickSize() *num.Uint {
+	return num.Zero().Exp(num.NewUint(10), num.NewUint(m.DecimalPlaces))
 }
 
 func (m Market) IntoProto() *proto.Market {
@@ -683,16 +623,6 @@ func (m Market) IntoProto() *proto.Market {
 		State:                         m.State,
 		MarketTimestamps:              mktTS,
 	}
-	if m.TradingModeConfig == nil {
-		return r
-	}
-	tmc := m.TradingModeConfig.tmcIntoProto()
-	switch tm := tmc.(type) {
-	case *proto.Market_Continuous:
-		r.TradingModeConfig = tm
-	case *proto.Market_Discrete:
-		r.TradingModeConfig = tm
-	}
 	return r
 }
 
@@ -723,28 +653,6 @@ func (m *Market) GetAsset() (string, error) {
 		m.asset = asset
 	}
 	return m.asset, nil
-}
-
-func (m Market) GetContinuous() *MarketContinuous {
-	if m.tmc == MarketTradingConfigUndefined && m.TradingModeConfig != nil {
-		m.tmc = m.TradingModeConfig.tmcType()
-	}
-	if m.tmc != MarketTradingConfigContinuous {
-		return nil
-	}
-	r, _ := m.TradingModeConfig.(*MarketContinuous)
-	return r
-}
-
-func (m Market) GetDiscrete() *MarketDiscrete {
-	if m.tmc == MarketTradingConfigUndefined && m.TradingModeConfig != nil {
-		m.tmc = m.TradingModeConfig.tmcType()
-	}
-	if m.tmc != MarketTradingConfigDiscrete {
-		return nil
-	}
-	r, _ := m.TradingModeConfig.(*MarketDiscrete)
-	return r
 }
 
 func (m Market) String() string {

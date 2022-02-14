@@ -33,11 +33,13 @@ type brokerTst struct {
 }
 
 type evt struct {
-	t   events.Type
-	ctx context.Context
-	sid uint64
-	id  string
-	cid string
+	t       events.Type
+	ctx     context.Context
+	sid     uint64
+	id      string
+	cid     string
+	txHash  string
+	blockNr int64
 }
 
 func getBroker(t *testing.T) *brokerTst {
@@ -59,10 +61,12 @@ func (b brokerTst) randomEvt() *evt {
 		idString = ctxV
 	}
 	return &evt{
-		t:   events.All,
-		ctx: b.ctx,
-		id:  idString,
-		cid: "testchain",
+		t:       events.All,
+		ctx:     b.ctx,
+		id:      idString,
+		cid:     "testchain",
+		txHash:  "testTxHash",
+		blockNr: 0,
 	}
 }
 
@@ -721,6 +725,14 @@ func (e evt) TraceID() string {
 
 func (e evt) ChainID() string {
 	return e.cid
+}
+
+func (e evt) TxHash() string {
+	return e.txHash
+}
+
+func (e evt) BlockNr() int64 {
+	return e.blockNr
 }
 
 func (e evt) StreamMessage() *eventspb.BusEvent {

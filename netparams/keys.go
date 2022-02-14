@@ -20,6 +20,7 @@ const (
 	MarketPriceMonitoringDefaultParameters          = "market.monitor.price.defaultParameters"
 	MarketPriceMonitoringUpdateFrequency            = "market.monitor.price.updateFrequency"
 	MarketLiquidityProvisionShapesMaxSize           = "market.liquidityProvision.shapes.maxSize"
+	MarketMinLpStakeQuantumMultiple                 = "market.liquidityProvision.minLpStakeQuantumMultiple"
 
 	RewardAsset = "reward.asset"
 
@@ -107,6 +108,10 @@ const (
 
 	// snapshot parameters.
 	SnapshotIntervalLength = "snapshot.interval.length"
+
+	FloatingPointUpdatesDuration = "network.floatingPointUpdates.delay"
+
+	TransferFeeFactor = "transfer.fee.factor"
 )
 
 var AllKeys = map[string]struct{}{
@@ -124,6 +129,7 @@ var AllKeys = map[string]struct{}{
 	MarketTargetStakeScalingFactor:                        {},
 	MarketPriceMonitoringDefaultParameters:                {},
 	MarketPriceMonitoringUpdateFrequency:                  {},
+	MarketMinLpStakeQuantumMultiple:                       {},
 	RewardAsset:                                           {},
 	GovernanceProposalMarketMinClose:                      {},
 	GovernanceProposalMarketMaxClose:                      {},
@@ -190,4 +196,6 @@ var AllKeys = map[string]struct{}{
 	StakingAndDelegationRewardsMinValidators:              {},
 	StakingAndDelegationRewardOptimalStakeMultiplier:      {},
 	SnapshotIntervalLength:                                {},
+	FloatingPointUpdatesDuration:                          {},
+	TransferFeeFactor:                                     {},
 }

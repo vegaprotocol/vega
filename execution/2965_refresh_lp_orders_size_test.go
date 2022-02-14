@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	vegapb "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/types"
@@ -18,6 +21,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
 	ctx := context.Background()
+	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
 		Duration: 10000,
@@ -51,7 +55,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		WithAccountAndAmount("party-3", 1000000).
 		WithAccountAndAmount("party-4", 1000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	orderParams := []struct {
@@ -60,14 +64,12 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		side      types.Side
 		tif       types.OrderTimeInForce
 		pegRef    types.PeggedReference
-		pegOffset int64
+		pegOffset *num.Uint
 	}{
-		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, -2000},
-		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, 1000},
+		{"party-4", 1, types.SideBuy, types.OrderTimeInForceGTC, types.PeggedReferenceBestBid, num.NewUint(2000)},
+		{"party-3", 1, types.SideSell, types.OrderTimeInForceGTC, types.PeggedReferenceBestAsk, num.NewUint(1000)},
 	}
 	partyA, partyB := orderParams[0], orderParams[1]
-	aOffset := num.NewUint(uint64(-partyA.pegOffset))
-	bOffset := num.NewUint(uint64(partyB.pegOffset))
 
 	tpl := OrderTemplate{
 		Type: types.OrderTypeLimit,
@@ -77,7 +79,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Sum(num.NewUint(5500), aOffset), // 3500
+			Price:       num.Sum(num.NewUint(5500), partyA.pegOffset), // 3500
 			Side:        types.SideBuy,
 			Party:       "party-0",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -85,7 +87,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		tpl.New(types.Order{
 			Size:        20,
 			Remaining:   20,
-			Price:       num.Zero().Sub(num.NewUint(5000), bOffset), // 4000
+			Price:       num.Zero().Sub(num.NewUint(5000), partyB.pegOffset), // 4000
 			Side:        types.SideSell,
 			Party:       "party-1",
 			TimeInForce: types.OrderTimeInForceGFA,
@@ -158,19 +160,19 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 		CommitmentAmount: num.NewUint(2000000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 10, Offset: 2},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 1},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 2, 10),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 1, 13),
 		},
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 10, Offset: -1},
-			{Reference: types.PeggedReferenceMid, Proportion: 13, Offset: -15},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 1, 10),
+			newLiquidityOrder(types.PeggedReferenceMid, 15, 13),
 		},
 	}
 
 	// Leave the auction
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10001*time.Second))
 
-	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", "id-lp"))
+	require.NoError(t, tm.market.SubmitLiquidityProvision(ctx, lp, "party-2", vgcrypto.RandomHash()))
 	assert.Equal(t, 1, tm.market.GetLPSCount())
 
 	tm.market.OnChainTimeUpdate(ctx, now.Add(10011*time.Second))
@@ -188,6 +190,11 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 	md := tm.market.GetMarketData()
 	require.Equal(t, md.MarketTradingMode, types.MarketTradingModeContinuous, "not in continuous trading")
 	tm.events = nil
+
+	// assure that the order price is within the valid price range so it can trade as expected
+	require.True(t, newOrder.Price.GT(md.PriceMonitoringBounds[0].MinValidPrice))
+	require.True(t, newOrder.Price.LT(md.PriceMonitoringBounds[0].MaxValidPrice))
+
 	cnf, err := tm.market.SubmitOrder(ctx, newOrder)
 	assert.NoError(t, err)
 	assert.True(t, len(cnf.Trades) > 0)
@@ -200,7 +207,7 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 			switch evt := e.(type) {
 			case *events.Order:
 				if evt.Order().PartyId == "party-2" &&
-					evt.Order().Id == "V0000000000-0000000010" {
+					evt.Order().Size == 534 { //"V0000000000-0000000010" {
 					found = append(found, mustOrderFromProto(evt.Order()))
 				}
 			}
@@ -246,7 +253,8 @@ func TestRefreshLiquidityProvisionOrdersSizes(t *testing.T) {
 func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := context.Background()
+
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
@@ -278,7 +286,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 155000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -290,19 +298,19 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -500},
-			{Reference: types.PeggedReferenceMid, Proportion: 2, Offset: -500},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 500, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 500, 2),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 500},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 500},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 500, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 500, 13),
 		},
 	}
 
 	// submit our lp
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 	)
 
 	// clear auction
@@ -312,7 +320,7 @@ func TestRefreshLiquidityProvisionOrdersSizesCrashOnSubmitOrder(t *testing.T) {
 func TestCommitmentIsDeployed(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	ctx := context.Background()
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
 
 	auctionEnd := now.Add(10001 * time.Second)
 	mktCfg := getMarket(closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{
@@ -344,7 +352,7 @@ func TestCommitmentIsDeployed(t *testing.T) {
 		// the liquidity provider
 		WithAccountAndAmount(lpparty, 50000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(1.0)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(1.0))
 	tm.market.OnChainTimeUpdate(ctx, now)
 
 	// Add a LPSubmission
@@ -356,19 +364,19 @@ func TestCommitmentIsDeployed(t *testing.T) {
 		Fee:              num.DecimalFromFloat(0.01),
 		Reference:        "ref-lp-submission-1",
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 2, Offset: -50},
-			{Reference: types.PeggedReferenceMid, Proportion: 7, Offset: -50},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 50, 2),
+			newLiquidityOrder(types.PeggedReferenceMid, 50, 7),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 13, Offset: 50},
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 5, Offset: 50},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 50, 13),
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 50, 5),
 		},
 	}
 
 	// submit our lp
 	require.NoError(t,
 		tm.market.SubmitLiquidityProvision(
-			ctx, lpSubmission, lpparty, "liquidity-submission-1"),
+			ctx, lpSubmission, lpparty, vgcrypto.RandomHash()),
 	)
 
 	// clear auction
@@ -430,7 +438,8 @@ func (tm *testMarket) EndOpeningAuction(t *testing.T, auctionEnd time.Time, setM
 	tm.WithSubmittedOrders(t, auctionOrders...)
 
 	// update the time to get out of auction
-	tm.market.OnChainTimeUpdate(context.Background(), auctionEnd)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	tm.market.OnChainTimeUpdate(ctx, auctionEnd)
 
 	assert.Equal(t,
 		tm.market.GetMarketData().MarketTradingMode,

@@ -122,7 +122,7 @@ func testAddKeyFinalize(t *testing.T) {
 	notr.StartAggregate(resID, kind, sig)
 
 	// expect command to be send on next on time update
-	notr.cmd.EXPECT().Command(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
+	notr.cmd.EXPECT().CommandSync(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 	notr.onTick(context.Background(), time.Now())
 
 	ns := commandspb.NodeSignature{

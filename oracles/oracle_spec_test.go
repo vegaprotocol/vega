@@ -1,6 +1,7 @@
 package oracles_test
 
 import (
+	"errors"
 	"testing"
 
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -1150,71 +1151,89 @@ func testOracleSpecMatchingWithInconvertibleTypeFails(t *testing.T) {
 func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 	cases := []struct {
 		msg              string
-		keyType          oraclespb.PropertyKey_Type
+		declaredType     oraclespb.PropertyKey_Type
 		declaredProperty string
+		boundType        oraclespb.PropertyKey_Type
 		boundProperty    string
-		expectedMatch    bool
+		expectedError    error
 	}{
 		{
 			msg:              "same integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_INTEGER,
+			declaredType:     oraclespb.PropertyKey_TYPE_INTEGER,
 			declaredProperty: "price.ETH.value",
+			boundType:        oraclespb.PropertyKey_TYPE_INTEGER,
 			boundProperty:    "price.ETH.value",
-			expectedMatch:    true,
+			expectedError:    nil,
 		}, {
 			msg:              "different integer properties cannot be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_INTEGER,
+			declaredType:     oraclespb.PropertyKey_TYPE_INTEGER,
 			declaredProperty: "price.USD.value",
+			boundType:        oraclespb.PropertyKey_TYPE_INTEGER,
 			boundProperty:    "price.BTC.value",
-			expectedMatch:    false,
+			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_BOOLEAN,
+			declaredType:     oraclespb.PropertyKey_TYPE_BOOLEAN,
 			declaredProperty: "price.ETH.value",
+			boundType:        oraclespb.PropertyKey_TYPE_BOOLEAN,
 			boundProperty:    "price.ETH.value",
-			expectedMatch:    true,
+			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_BOOLEAN,
+			declaredType:     oraclespb.PropertyKey_TYPE_BOOLEAN,
 			declaredProperty: "price.USD.value",
+			boundType:        oraclespb.PropertyKey_TYPE_BOOLEAN,
 			boundProperty:    "price.BTC.value",
-			expectedMatch:    false,
+			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_DECIMAL,
+			declaredType:     oraclespb.PropertyKey_TYPE_DECIMAL,
 			declaredProperty: "price.ETH.value",
+			boundType:        oraclespb.PropertyKey_TYPE_DECIMAL,
 			boundProperty:    "price.ETH.value",
-			expectedMatch:    true,
+			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_DECIMAL,
+			declaredType:     oraclespb.PropertyKey_TYPE_DECIMAL,
 			declaredProperty: "price.USD.value",
+			boundType:        oraclespb.PropertyKey_TYPE_DECIMAL,
 			boundProperty:    "price.BTC.value",
-			expectedMatch:    false,
+			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_STRING,
+			declaredType:     oraclespb.PropertyKey_TYPE_STRING,
 			declaredProperty: "price.ETH.value",
+			boundType:        oraclespb.PropertyKey_TYPE_STRING,
 			boundProperty:    "price.ETH.value",
-			expectedMatch:    true,
+			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_STRING,
+			declaredType:     oraclespb.PropertyKey_TYPE_STRING,
 			declaredProperty: "price.USD.value",
+			boundType:        oraclespb.PropertyKey_TYPE_STRING,
 			boundProperty:    "price.BTC.value",
-			expectedMatch:    false,
+			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
 		}, {
 			msg:              "same integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredType:     oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			declaredProperty: "price.ETH.value",
+			boundType:        oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			boundProperty:    "price.ETH.value",
-			expectedMatch:    true,
+			expectedError:    nil,
 		}, {
 			msg:              "different integer properties can be bound",
-			keyType:          oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredType:     oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			declaredProperty: "price.USD.value",
+			boundType:        oraclespb.PropertyKey_TYPE_TIMESTAMP,
 			boundProperty:    "price.BTC.value",
-			expectedMatch:    false,
+			expectedError:    errors.New("bound property \"price.BTC.value\" not filtered by oracle spec"),
+		}, {
+			msg:              "same properties but different type can't be bound",
+			declaredType:     oraclespb.PropertyKey_TYPE_TIMESTAMP,
+			declaredProperty: "price.USD.value",
+			boundType:        oraclespb.PropertyKey_TYPE_STRING,
+			boundProperty:    "price.USD.value",
+			expectedError:    errors.New("bound type \"TYPE_STRING\" doesn't match filtered property type \"TYPE_TIMESTAMP\""),
 		},
 	}
 
@@ -1229,7 +1248,7 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 					{
 						Key: &oraclespb.PropertyKey{
 							Name: c.declaredProperty,
-							Type: c.keyType,
+							Type: c.declaredType,
 						},
 						Conditions: []*oraclespb.Condition{},
 					},
@@ -1237,10 +1256,10 @@ func testOracleSpecVerifyingBindingWorks(t *testing.T) {
 			})
 
 			// when
-			matched := spec.CanBindProperty(c.boundProperty)
+			err := spec.EnsureBoundableProperty(c.boundProperty, c.boundType)
 
 			// then
-			assert.Equal(t, c.expectedMatch, matched)
+			assert.Equal(t, c.expectedError, err)
 		})
 	}
 }

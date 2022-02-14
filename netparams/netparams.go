@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -28,7 +29,7 @@ type value interface {
 	Validate(value string) error
 	Update(value string) error
 	String() string
-	ToFloat() (float64, error)
+	ToDecimal() (num.Decimal, error)
 	ToInt() (int64, error)
 	ToUint() (*num.Uint, error)
 	ToBool() (bool, error)
@@ -158,7 +159,7 @@ func (s *Store) Watch(wp ...WatchParam) error {
 	for _, v := range wp {
 		// type check the function to dispatch updates to
 		if err := s.store[v.Param].CheckDispatch(v.Watcher); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", v.Param, err)
 		}
 		if watchers, ok := s.watchers[v.Param]; ok {
 			s.watchers[v.Param] = append(watchers, v)
@@ -193,7 +194,15 @@ func (s *Store) OnChainTimeUpdate(ctx context.Context, _ time.Time) {
 	if len(s.paramUpdates) <= 0 {
 		return
 	}
+
+	// sort for deterministic order of processing.
+	params := make([]string, 0, len(s.paramUpdates))
 	for k := range s.paramUpdates {
+		params = append(params, k)
+	}
+	sort.Strings(params)
+
+	for _, k := range params {
 		if err := s.dispatchUpdate(ctx, k); err != nil {
 			s.log.Debug("unable to dispatch netparams update", logging.Error(err))
 		}
@@ -290,15 +299,15 @@ func (s *Store) Get(key string) (string, error) {
 	return svalue.String(), nil
 }
 
-// GetFloat a value associated to the given key.
-func (s *Store) GetFloat(key string) (float64, error) {
+// GetDecimal a value associated to the given key.
+func (s *Store) GetDecimal(key string) (num.Decimal, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	svalue, ok := s.store[key]
 	if !ok {
-		return 0, ErrUnknownKey
+		return num.DecimalZero(), ErrUnknownKey
 	}
-	return svalue.ToFloat()
+	return svalue.ToDecimal()
 }
 
 // GetInt a value associated to the given key.
@@ -392,17 +401,6 @@ type AddParamRules struct {
 }
 
 func ParamStringRules(key string, rules ...StringRule) AddParamRules {
-	irules := []interface{}{}
-	for _, v := range rules {
-		irules = append(irules, v)
-	}
-	return AddParamRules{
-		Param: key,
-		Rules: irules,
-	}
-}
-
-func ParamFloatRules(key string, rules ...FloatRule) AddParamRules {
 	irules := []interface{}{}
 	for _, v := range rules {
 		irules = append(irules, v)

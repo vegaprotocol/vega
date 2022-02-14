@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 
 	"github.com/cucumber/godog"
 )
@@ -70,8 +71,8 @@ func (r submitPeggedOrderRow) Volume() uint64 {
 	return r.row.MustU64("volume")
 }
 
-func (r submitPeggedOrderRow) Offset() int64 {
-	return r.row.MustI64("offset")
+func (r submitPeggedOrderRow) Offset() *num.Uint {
+	return r.row.MustUint("offset")
 }
 
 func (r submitPeggedOrderRow) Error() string {

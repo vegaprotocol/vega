@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	vgjson "code.vegaprotocol.io/shared/libs/json"
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/config"
+	"code.vegaprotocol.io/vega/config/encoding"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/nodewallets"
 	"github.com/jessevdk/go-flags"
@@ -22,25 +24,38 @@ type InitCmd struct {
 
 var initCmd InitCmd
 
-func (opts *InitCmd) Execute(_ []string) error {
+func (opts *InitCmd) Execute(args []string) error {
 	logger := logging.NewLoggerFromConfig(logging.NewDefaultConfig())
 	defer logger.AtExit()
 
-	output, err := opts.OutputFlag.GetOutput()
+	if len(args) != 1 {
+		return errors.New("require exactly 1 parameter mode, expected modes [validator, full]")
+	}
+
+	mode, err := encoding.NodeModeFromString(args[0])
 	if err != nil {
 		return err
 	}
 
-	pass, err := opts.Passphrase.Get("node wallet", true)
+	output, err := opts.GetOutput()
 	if err != nil {
 		return err
 	}
 
 	vegaPaths := paths.New(opts.VegaHome)
 
-	nwRegistry, err := nodewallets.NewRegistryLoader(vegaPaths, pass)
-	if err != nil {
-		return err
+	// a nodewallet will be required only for a validator node
+	var nwRegistry *nodewallets.RegistryLoader
+	if mode == encoding.NodeModeValidator {
+		pass, err := opts.Get("node wallet", true)
+		if err != nil {
+			return err
+		}
+
+		nwRegistry, err = nodewallets.NewRegistryLoader(vegaPaths, pass)
+		if err != nil {
+			return err
+		}
 	}
 
 	cfgLoader, err := config.InitialiseLoader(vegaPaths)
@@ -65,6 +80,7 @@ func (opts *InitCmd) Execute(_ []string) error {
 	}
 
 	cfg := config.NewDefaultConfig()
+	cfg.NodeMode = mode
 
 	if err := cfgLoader.Save(&cfg); err != nil {
 		return fmt.Errorf("couldn't save configuration file: %w", err)
@@ -73,12 +89,19 @@ func (opts *InitCmd) Execute(_ []string) error {
 	if output.IsHuman() {
 		logger.Info("configuration generated successfully", logging.String("path", cfgLoader.ConfigFilePath()))
 	} else if output.IsJSON() {
+		if mode == encoding.NodeModeValidator {
+			return vgjson.Print(struct {
+				ConfigFilePath           string `json:"configFilePath"`
+				NodeWalletConfigFilePath string `json:"nodeWalletConfigFilePath"`
+			}{
+				ConfigFilePath:           cfgLoader.ConfigFilePath(),
+				NodeWalletConfigFilePath: nwRegistry.RegistryFilePath(),
+			})
+		}
 		return vgjson.Print(struct {
-			ConfigFilePath           string `json:"configFilePath"`
-			NodeWalletConfigFilePath string `json:"nodeWalletConfigFilePath"`
+			ConfigFilePath string `json:"configFilePath"`
 		}{
-			ConfigFilePath:           cfgLoader.ConfigFilePath(),
-			NodeWalletConfigFilePath: nwRegistry.RegistryFilePath(),
+			ConfigFilePath: cfgLoader.ConfigFilePath(),
 		})
 	}
 

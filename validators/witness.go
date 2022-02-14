@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"math"
 	"math/rand"
 	"sort"
 	"sync"
@@ -14,6 +13,7 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/txn"
+	"code.vegaprotocol.io/vega/types/num"
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 )
@@ -35,6 +35,7 @@ type TimeService interface {
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/commander_mock.go -package mocks code.vegaprotocol.io/vega/validators Commander
 type Commander interface {
 	Command(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
+	CommandSync(ctx context.Context, cmd txn.Command, payload proto.Message, f func(error))
 }
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorTopology
@@ -61,7 +62,11 @@ const (
 	minValidationPeriod = 1                   // sec minutes
 	maxValidationPeriod = 30 * 24 * time.Hour // 2 days
 	// by default all validators needs to sign.
-	defaultValidatorsVoteRequired = 1.0
+)
+
+var (
+	defaultValidatorsVoteRequired = num.MustDecimalFromString("1.0")
+	oneDec                        = num.MustDecimalFromString("1")
 )
 
 func init() {
@@ -125,7 +130,7 @@ type Witness struct {
 	needResendMu  sync.Mutex
 	needResendRes map[string]struct{}
 
-	validatorVotesRequired float64
+	validatorVotesRequired num.Decimal
 	wss                    *witnessSnapshotState
 }
 
@@ -154,8 +159,8 @@ func NewWitness(log *logging.Logger, cfg Config, top ValidatorTopology, cmd Comm
 	}
 }
 
-func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, f float64) error {
-	w.validatorVotesRequired = f
+func (w *Witness) OnDefaultValidatorsVoteRequiredUpdate(ctx context.Context, d num.Decimal) error {
+	w.validatorVotesRequired = d
 	return nil
 }
 
@@ -250,8 +255,7 @@ func (w *Witness) StartCheck(
 }
 
 func (w *Witness) validateCheckUntil(checkUntil time.Time) error {
-	minValid, maxValid :=
-		w.now.Add(minValidationPeriod),
+	minValid, maxValid := w.now.Add(minValidationPeriod),
 		w.now.Add(maxValidationPeriod)
 	if checkUntil.Unix() < minValid.Unix() || checkUntil.Unix() > maxValid.Unix() {
 		if w.log.GetLevel() <= logging.DebugLevel {
@@ -298,7 +302,10 @@ func (w *Witness) start(ctx context.Context, r *res) {
 }
 
 func (w *Witness) votePassed(votesCount, topLen int) bool {
-	return math.Min((float64(topLen)*w.validatorVotesRequired)+1, float64(topLen)) <= float64(votesCount)
+	topLenDec := num.DecimalFromInt64(int64(topLen))
+	return num.MinD(
+		(topLenDec.Mul(w.validatorVotesRequired)).Add(oneDec), topLenDec,
+	).LessThanOrEqual(num.DecimalFromInt64(int64(votesCount)))
 }
 
 func (w *Witness) OnTick(ctx context.Context, t time.Time) {
@@ -362,7 +369,7 @@ func (w *Witness) OnTick(ctx context.Context, t time.Time) {
 				PubKey:    pubKey,
 				Reference: v.res.GetID(),
 			}
-			w.cmd.Command(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
+			w.cmd.CommandSync(ctx, txn.NodeVoteCommand, nv, w.onCommandSent(k))
 			// set new state so we do not try to validate again
 			atomic.StoreUint32(&v.state, voteSent)
 		} else if (isValidator && state == voteSent) && t.After(v.lastSentVote.Add(10*time.Second)) {

@@ -6,13 +6,10 @@ Feature: Staking & Delegation
       | reward.asset                                      |  VEGA                    |
       | validators.epoch.length                           |  10s                     |
       | validators.delegation.minAmount                   |  10                      |
-      | reward.staking.delegation.payoutDelay             |  0s                      |
       | reward.staking.delegation.delegatorShare          |  0.883                   |
       | reward.staking.delegation.minimumValidatorStake   |  100                     |
-      | reward.staking.delegation.payoutFraction          |  0.5                     |
       | reward.staking.delegation.maxPayoutPerParticipant | 100000                   |
       | reward.staking.delegation.competitionLevel        |  1.1                     |
-      | reward.staking.delegation.maxPayoutPerEpoch       |  50000                   |
       | reward.staking.delegation.minValidators           |  5                       |
       | reward.staking.delegation.optimalStakeMultiplier  |  5.0                     |
 
@@ -66,12 +63,8 @@ Feature: Staking & Delegation
     #complete the first epoch for the self delegation to take effect
     Then the network moves ahead "7" blocks
 
-   Scenario: Parties get rewarded for a full epoch of having delegated stake
+  Scenario: Parties get rewarded for a full epoch of having delegated stake
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
-
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
 
     #advance to the end of the epoch / start next epoch
     Then the network moves ahead "7" blocks
@@ -101,19 +94,14 @@ Feature: Staking & Delegation
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. 
     
+    #the available amount for the epoch is 50k
     Given the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  | 100000 | 
-
-    And the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 120000 |   
-
-    #the available amount for the epoch is 60k but it is capped to 50 by the max.  
+      | VEGA  | 50000  | 
 
     #advance to the end of the epoch
     Then the network moves ahead "7" blocks
-
+  
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
     | node id | validator score  | normalised score |
@@ -149,16 +137,14 @@ Feature: Staking & Delegation
   Scenario: Parties request to undelegate at the end of the epoch. They get fully rewarded for the current epoch and not get rewarded in the following epoch for the undelegated stake
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-
     Then the parties submit the following undelegations:
     | party  | node id  | amount | when         |
     | party1 |  node2   |  150   | end of epoch |      
     | party1 |  node3   |  300   | end of epoch |
 
-
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 50000  | 
     #advance to the end of the epoch
     When the network moves ahead "7" blocks
 
@@ -187,6 +173,10 @@ Feature: Staking & Delegation
     | node11 | VEGA  |  3828  | 
     | node12 | VEGA  |  3828  | 
     | node13 | VEGA  |  3828  | 
+
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 25000  | 
 
     #advance to the beginning and end of the following epoch 
     When the network moves ahead "7" blocks
@@ -225,15 +215,15 @@ Feature: Staking & Delegation
   Scenario: Parties request to undelegate now during the epoch. They only get rewarded for the current epoch for the fraction that remained for the whole duration 
     Desciption: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch. During the epoch however they request to undelegate at the end of the epoch part of their stake. On the following epoch they are not rewarded for the undelegated stake. 
 
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-      
     Then the parties submit the following undelegations:
     | party  | node id  | amount | when |
     | party1 |  node2   |  150   | now  |      
     | party1 |  node3   |  300   | now  |
 
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 50000  | 
+    
     #advance to the end of the epoch
     When the network moves ahead "7" blocks
 
@@ -272,10 +262,6 @@ Feature: Staking & Delegation
   Scenario: Parties withdraw from their staking account during an epoch once having active delegations - they should not get rewarded for those uncovered delegations 
     Desciption: Parties have active delegations on epoch 1 and withdraw stake from the staking account. They should only get rewarded for any delegation that still has cover 
 
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-      
     #party1 has a balance of 10k tokens in their staking account and an active delegation in this epoch of 600. By withdrawing 9850, 450 of their delegation needs to be revoked and they should only get rewarded for the 150 tokens
     #NB: the undelegation is done proportionally to the stake they have in each node, so for example party1 has 100, 200, 300 in nodes 1-3 respectively so 
     #after undelegation they will have 25, 50, 75 in nodes 1-3 respectively
@@ -283,6 +269,10 @@ Feature: Staking & Delegation
     | party  | asset  | amount |
     | party1 | VEGA   |  9850  |
 
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 50000  | 
+    
     #advance to the end of the epoch
     When the network moves ahead "7" blocks
 
@@ -326,11 +316,6 @@ Feature: Staking & Delegation
     Then "node1" should have general account balance of "3842" for asset "VEGA"
   
   Scenario: Party has delegation unfunded for majority of the epoch (except for begining and end) - should get no rewards.
-
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-      
     Given the parties withdraw from staking account the following amount:  
       | party  | asset | amount |
       | party1 | VEGA  |  9999  |
@@ -350,11 +335,6 @@ Feature: Staking & Delegation
 
    Scenario: A party changes delegation from one validator to another in the same epoch
    Description: A party can change delegation from one validator to another      
-
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-
     When the network moves ahead "7" blocks
 
     #now request to undelegate from node2 and node3 
@@ -368,6 +348,9 @@ Feature: Staking & Delegation
     | party1 |  node1   |  190   |  
 
     #advance to the end of the epoch for the delegation to become effective
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 25004  | 
     Then the network moves ahead "7" blocks    
 
      #verify validator score 
@@ -411,6 +394,9 @@ Feature: Staking & Delegation
     | party1 |  node3   |  0     | 
 
      #advance to the beginning and end of the following epoch 
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 12497  | 
     Then the network moves ahead "7" blocks
 
     #verify validator score 
@@ -449,11 +435,6 @@ Feature: Staking & Delegation
   
   Scenario: A party can request delegate and undelegate from the same node at the same epoch such that the request can balance each other without affecting the actual delegate balance
     Description: party requests to delegate to node1 at the end of the epoch and regrets it and undelegate the whole amount to delegate it to another node
-
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-
     And the parties submit the following undelegations:
     | party  | node id  | amount |    when      |
     | party1 |  node1   |  100   | end of epoch |
@@ -461,6 +442,9 @@ Feature: Staking & Delegation
     | party  | node id  |  amount | 
     | party1 |  node4   |   100   | 
     #advance to the end of the epoch
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 50000  | 
     Then the network moves ahead "7" blocks
     #node1 has 10k self delegation + 100 from party1
     #node2 has 10k self delegation + 200 from party1 
@@ -492,6 +476,11 @@ Feature: Staking & Delegation
     | party1 |  node1   | 0      | 
     | party1 |  node4   | 100    | 
     #advance to the beginning and end of the following epoch 
+
+    Given the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 24995  | 
+
     Then the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 2:
@@ -532,10 +521,6 @@ Feature: Staking & Delegation
   Scenario: A party has active delegations and submits an undelegate request followed by a delegation request that covers only part of the undelegation such that the undelegation still takes place
     Description: A party delegated tokens to node1 at previous epoch such that the delegations is now active and is requesting to undelegate some of the tokens at the end of the current epoch. Then regret some of it and submit a delegation request that undoes some of the undelegation but still some of it remains.
 
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-      
     #advance to the end of the epoch
     Then the network moves ahead "7" blocks
     Then the parties submit the following undelegations:
@@ -544,6 +529,11 @@ Feature: Staking & Delegation
     And the parties submit the following delegations:
     | party  | node id  |  amount | 
     | party1 |  node1   |    50   |
+
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 25004  | 
+
     When the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 2:
@@ -581,6 +571,11 @@ Feature: Staking & Delegation
     | party  | node id  | amount |
     | party1 |  node1   |  50    | 
     #advance to the beginning and end of the following epoch 
+    
+     Given the global reward account gets the following deposits:
+      | asset | amount |
+      | VEGA  | 12501  | 
+
     When the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 3:
@@ -618,15 +613,14 @@ Feature: Staking & Delegation
   Scenario: Parties get rewarded for a full epoch of having delegated stake - the reward amount is capped per participant
    Description: Parties have had their tokens delegated to nodes for a full epoch and get rewarded for the full epoch and the reward amount per participant is capped
   
-    Given the global reward account gets the following deposits:
-      | asset | amount |
-      | VEGA  | 100000 | 
-      
     Given the following network parameters are set:
       | name                                              | value |
       | reward.staking.delegation.maxPayoutPerParticipant | 3000  |
     #the reward amount for each participant per epoch is capped to 3k by maxPayoutPerParticipant
     #advance to the end of the epoch
+    Given the global reward account gets the following deposits:
+    | asset | amount |
+    | VEGA  | 50000  | 
     When the network moves ahead "7" blocks
     #verify validator score 
     Then the validators should have the following val scores for epoch 1:
@@ -663,12 +657,10 @@ Feature: Staking & Delegation
 
   Scenario: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances
     Description: Topping up the reward account and confirming reward transfers are correctly refelected in parties account balances when they get rewarded for a full epoch of having delegated stake
-
+    #advance to the end of the epoch
     Given the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  |  50000 | 
-
-    #advance to the end of the epoch
+      | VEGA  | 25000  | 
     When the network moves ahead "7" blocks
 
     #verify validator score 
@@ -711,9 +703,8 @@ Feature: Staking & Delegation
   
     And the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  | 74993  | 
-
-    # The total amount now in rewards account is 100000-50000-24993(rewards payout)+74993 = 100000
+      | VEGA  | 49992  | 
+    
     When the network moves ahead "7" blocks
 
     #verify validator score 
@@ -758,7 +749,7 @@ Feature: Staking & Delegation
 
     Given the global reward account gets the following deposits:
       | asset | amount |
-      | VEGA  |     28 | 
+      | VEGA  |     14 | 
 
     #advance to the end of the epoch
     When the network moves ahead "7" blocks
@@ -799,40 +790,3 @@ Feature: Staking & Delegation
     | node13 | VEGA  | 1 | 
 
     Then "node1" should have general account balance of "1" for asset "VEGA"
-
-    When the network moves ahead "7" blocks
-
-    And the parties receive the following reward for epoch 2:
-    | party  | asset | amount |
-    | party1 | VEGA  | 0 | 
-    | node1  | VEGA  | 0 | 
-    | node2  | VEGA  | 0 | 
-    | node3  | VEGA  | 0 | 
-    | node4  | VEGA  | 0 |
-    | node5  | VEGA  | 0 | 
-    | node6  | VEGA  | 0 | 
-    | node7  | VEGA  | 0 | 
-    | node8  | VEGA  | 0 | 
-    | node9  | VEGA  | 0 | 
-    | node10 | VEGA  | 0 | 
-    | node11 | VEGA  | 0 | 
-    | node12 | VEGA  | 0 | 
-    | node13 | VEGA  | 0 | 
-
-    When the network moves ahead "37542" blocks
-    And the parties receive the following reward for epoch 3153602:
-    | party  | asset | amount |
-    | party1 | VEGA  | 0 | 
-    | node1  | VEGA  | 0 | 
-    | node2  | VEGA  | 0 | 
-    | node3  | VEGA  | 0 | 
-    | node4  | VEGA  | 0 |
-    | node5  | VEGA  | 0 | 
-    | node6  | VEGA  | 0 | 
-    | node7  | VEGA  | 0 | 
-    | node8  | VEGA  | 0 | 
-    | node9  | VEGA  | 0 | 
-    | node10 | VEGA  | 0 | 
-    | node11 | VEGA  | 0 | 
-    | node12 | VEGA  | 0 | 
-    | node13 | VEGA  | 0 | 

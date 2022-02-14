@@ -29,7 +29,7 @@ When running these tests, you'll probably want to get a more verbose output (sho
 failed), which can be done by adding 2 flags:
 
 ```
-go test -v ./integration/... -godog.format=pretty
+go test -v ./integration/... --godog.format=pretty
 ```
 
 The `-v` flag tells `go test` to run with verbose output (sending logging to stdout). The `-godog.format=pretty` flag (
@@ -41,7 +41,7 @@ particular step of a given scenario didn't work.
 To run only certain tests (feature files), you can simply add the paths to a given feature file to the command:
 
 ```shell
-go test -v ./integration/... -godog.format=pretty $(pwd)/integration/features/my-feature.feature
+go test -v ./integration/... --godog.format=pretty $(pwd)/integration/features/my-feature.feature
 ```
 
 ### Race detection and cache
@@ -52,7 +52,7 @@ package, changes to _other_ packages might not be compiled, and tests could poss
 To ensure no cached results are used, the `-count` flag can be used:
 
 ```shell
-go test -v -count=1 ./integration/... -godog.format=pretty
+go test -v -count=1 ./integration/... --godog.format=pretty
 ```
 
 Should there be tests that are intermittently failing, this could indicate a data race somewhere in the code. To use the
@@ -60,10 +60,10 @@ race detector to check for this, you can add the `-race` flag to the command. Th
 
 ```shell
 # Run all integration tests, verbose mode, ensure recompiled binaries, enable race detection, and use godog pretty formatting
-go test -v -count=1 -race ./integration/... -godog.format=pretty
+go test -v -count=1 -race ./integration/... --godog.format=pretty
 
 # Same as above, but only run a specific feature file:
-go test -v -count=1 -race ./integration/... -godog.format=pretty $(pwd)/integration/feature/my-feature.feature
+go test -v -count=1 -race ./integration/... --godog.format=pretty $(pwd)/integration/feature/my-feature.feature
 ```
 
 Race detection is a complex thing to do, so it will make running tests significantly slower. The pipeline runs the tests

@@ -5,6 +5,9 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 
@@ -15,8 +18,9 @@ import (
 func TestIssue2876(t *testing.T) {
 	now := time.Unix(10, 0)
 	closingAt := time.Unix(1000000000, 0)
-	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{Duration: 30})
+	tm := getTestMarketWithDP(t, now, closingAt, defaultPriceMonitorSettings, &types.AuctionDuration{Duration: 30}, 3)
 	ctx := context.Background()
+	ctx = vegacontext.WithTraceID(ctx, vgcrypto.RandomHash())
 
 	tm.market.OnChainTimeUpdate(ctx, now)
 
@@ -26,7 +30,7 @@ func TestIssue2876(t *testing.T) {
 	addAccountWithAmount(tm, "party-3", 100000000)
 	addAccountWithAmount(tm, "party-4", 100000000)
 
-	tm.market.OnSuppliedStakeToObligationFactorUpdate(5)
+	tm.market.OnSuppliedStakeToObligationFactorUpdate(num.DecimalFromFloat(5))
 
 	orders := []*types.Order{
 		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, "opening1", types.SideBuy, "party-3", 10, 3000),
@@ -67,29 +71,29 @@ func TestIssue2876(t *testing.T) {
 			{
 				Reference:  types.PeggedReferenceBestBid,
 				Proportion: 10,
-				Offset:     -1000,
+				Offset:     num.NewUint(1000),
 			},
 			{
 				Reference:  types.PeggedReferenceMid,
 				Proportion: 13,
-				Offset:     -1500,
+				Offset:     num.NewUint(1500),
 			},
 		},
 		Sells: []*types.LiquidityOrder{
 			{
 				Reference:  types.PeggedReferenceBestAsk,
 				Proportion: 10,
-				Offset:     2000,
+				Offset:     num.NewUint(2000),
 			},
 			{
 				Reference:  types.PeggedReferenceBestAsk,
 				Proportion: 13,
-				Offset:     1000,
+				Offset:     num.NewUint(1000),
 			},
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, &lporder, "party-2", "lp-order-01")
+	err = tm.market.SubmitLiquidityProvision(ctx, &lporder, "party-2", vgcrypto.RandomHash())
 	assert.NoError(t, err)
 
 	bondAccount, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, "party-2", tm.market.GetID(), tm.asset)
@@ -121,12 +125,13 @@ func TestIssue2876(t *testing.T) {
 	// but also some margin to cover the orders
 	marginAccount, err = tm.collateralEngine.GetPartyMarginAccount(tm.market.GetID(), "party-2", tm.asset)
 	assert.NoError(t, err)
-	expMargin := num.NewUint(30622560)
-	// expMargin := num.NewUint(13200)
+
+	expMargin := num.NewUint(24001200)
+	// expMargin := num.NewUint(30622560)
 	assert.True(t, marginAccount.Balance.EQ(expMargin), "Expected: "+expMargin.String()+" got "+marginAccount.Balance.String())
 
-	expGeneral := num.NewUint(68377440)
-	// expGeneral := num.NewUint(98986800)
+	expGeneral := num.NewUint(74998800)
+	// expGeneral := num.NewUint(68377440)
 	// but also some funds left in the genearal
 	generalAccount, err = tm.collateralEngine.GetPartyGeneralAccount("party-2", tm.asset)
 	assert.NoError(t, err)

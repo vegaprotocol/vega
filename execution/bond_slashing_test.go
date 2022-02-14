@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	vegacontext "code.vegaprotocol.io/vega/libs/context"
+	vgcrypto "code.vegaprotocol.io/vega/libs/crypto"
+
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/mock/gomock"
@@ -79,7 +82,8 @@ func setMarkPrice(t *testing.T, mkt *testMarket, duration *types.AuctionDuration
 	}
 	// now fast-forward the market so the auction ends
 	now = now.Add(time.Duration(duration.Duration+1) * time.Second)
-	mkt.market.OnChainTimeUpdate(context.Background(), now)
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+	mkt.market.OnChainTimeUpdate(ctx, now)
 
 	// opening auction ended, mark-price set
 	mktData := mkt.market.GetMarketData()
@@ -127,14 +131,14 @@ func TestAcceptLiquidityProvisionWithSufficientFunds(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
@@ -184,14 +188,14 @@ func TestRejectLiquidityProvisionWithInsufficientFundsForInitialMargin(t *testin
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, "id-lp1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lp1, mainParty, vgcrypto.RandomHash())
 	require.Error(t, err)
 
 	assert.Equal(t, 0, tm.market.GetLPSCount())
@@ -266,14 +270,14 @@ func TestCloseoutLPWhenCannotCoverMargin(t *testing.T) {
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	require.Equal(t, 1, tm.market.GetLPSCount())
@@ -363,14 +367,14 @@ func TestBondAccountNotUsedForMarginShortageWhenEnoughMoneyInGeneral(t *testing.
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	bondAcc, err := tm.collateralEngine.GetOrCreatePartyBondAccount(ctx, mainParty, tm.mktCfg.ID, asset)
@@ -426,10 +430,10 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 	asset := tm.asset
 
 	bondPenaltyParameter := 0.1
-	tm.market.BondPenaltyFactorUpdate(ctx, bondPenaltyParameter)
+	tm.market.BondPenaltyFactorUpdate(ctx, num.DecimalFromFloat(bondPenaltyParameter))
 	// No fees
-	tm.market.OnFeeFactorsInfrastructureFeeUpdate(ctx, 0)
-	tm.market.OnFeeFactorsMakerFeeUpdate(ctx, 0)
+	tm.market.OnFeeFactorsInfrastructureFeeUpdate(ctx, num.DecimalFromFloat(0))
+	tm.market.OnFeeFactorsMakerFeeUpdate(ctx, num.DecimalFromFloat(0))
 
 	var mainPartyInitialDeposit uint64 = 1000 // 1020 is the minimum required amount to cover margin without dipping into the bond account
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
@@ -461,14 +465,14 @@ func TestBondAccountUsedForMarginShortage_PenaltyPaidFromBondAccount(t *testing.
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.0),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	genAcc, err := tm.collateralEngine.GetAccountByID(mainPartyGenAccID)
@@ -562,7 +566,7 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 	asset := tm.asset
 
 	bondPenaltyParameter := 0.1
-	tm.market.BondPenaltyFactorUpdate(ctx, bondPenaltyParameter)
+	tm.market.BondPenaltyFactorUpdate(ctx, num.DecimalFromFloat(bondPenaltyParameter))
 
 	var mainPartyInitialDeposit uint64 = 800
 	transferResp := addAccountWithAmount(tm, mainParty, mainPartyInitialDeposit)
@@ -594,14 +598,14 @@ func TestBondAccountUsedForMarginShortagePenaltyPaidFromMarginAccount_NoCloseout
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	marginAcc, err := tm.collateralEngine.GetAccountByID(mainPartyMarginAccID)
@@ -699,10 +703,10 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 		CommitmentAmount: num.NewUint(200),
 		Fee:              num.DecimalFromFloat(0.05),
 		Buys: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestBid, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestBid, 0, 1),
 		},
 		Sells: []*types.LiquidityOrder{
-			{Reference: types.PeggedReferenceBestAsk, Proportion: 1, Offset: 0},
+			newLiquidityOrder(types.PeggedReferenceBestAsk, 0, 1),
 		},
 	}
 
@@ -712,7 +716,7 @@ func TestBondAccountUsedForMarginShortagePenaltyNotPaidOnTransitionFromAuction(t
 	genAccBalanceBeforeLPSubmission := genAcc.Balance.Clone()
 	require.False(t, genAcc.Balance.IsZero())
 
-	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, "id-lp1")
+	err = tm.market.SubmitLiquidityProvision(ctx, lp, mainParty, vgcrypto.RandomHash())
 	require.NoError(t, err)
 
 	genAcc, err = tm.collateralEngine.GetAccountByID(mainPartyGenAccID)

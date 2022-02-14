@@ -27,6 +27,16 @@ func (e *Engine) Checkpoint() ([]byte, error) {
 	return ret, nil
 }
 
+var partyOverrides = map[string]types.AccountType{
+	systemOwner: types.AccountTypeGlobalReward,
+	systemOwner + types.AccountTypeMakerFeeReward.String():                 types.AccountTypeMakerFeeReward,
+	systemOwner + types.AccountTypeTakerFeeReward.String():                 types.AccountTypeTakerFeeReward,
+	systemOwner + types.AccountTypeLPFeeReward.String():                    types.AccountTypeLPFeeReward,
+	systemOwner + types.AccountTypeMarketProposerReward.String():           types.AccountTypeMarketProposerReward,
+	systemOwner + types.AccountTypeFeesInfrastructure.String():             types.AccountTypeFeesInfrastructure,
+	systemOwner + systemOwner + types.AccountTypePendingTransfers.String(): types.AccountTypePendingTransfers,
+}
+
 func (e *Engine) Load(ctx context.Context, data []byte) error {
 	msg := checkpoint.Collateral{}
 	if err := proto.Unmarshal(data, &msg); err != nil {
@@ -35,14 +45,7 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 	for _, balance := range msg.Balances {
 		ub, _ := num.UintFromString(balance.Balance, 10)
 		// for backward compatibility check both - after this is already out checkpoints will always have the type for global accounts
-		if balance.Party == systemOwner || balance.Party == systemOwner+types.AccountTypeGlobalReward.String() || balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() {
-			tp := types.AccountTypeGlobalInsurance
-			if balance.Party == systemOwner+types.AccountTypeGlobalReward.String() {
-				tp = types.AccountTypeGlobalReward
-			} else if balance.Party == systemOwner+types.AccountTypeFeesInfrastructure.String() {
-				tp = types.AccountTypeFeesInfrastructure
-			}
-
+		if tp, ok := partyOverrides[balance.Party]; ok {
 			accID := e.accountID(noMarket, systemOwner, balance.Asset, tp)
 			if _, err := e.GetAccountByID(accID); err != nil {
 				// this account is created when the asset is enabled. If we can't get this account,
@@ -71,11 +74,17 @@ func (e *Engine) getCheckpointBalances() []*checkpoint.AssetBalance {
 		}
 		switch acc.Type {
 		case types.AccountTypeMargin, types.AccountTypeGeneral, types.AccountTypeBond,
-			types.AccountTypeInsurance, types.AccountTypeGlobalInsurance, types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure:
+			types.AccountTypeInsurance, types.AccountTypeGlobalReward,
+			types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward,
+			types.AccountTypeMarketProposerReward, types.AccountTypeFeesInfrastructure, types.AccountTypePendingTransfers:
 			owner := acc.Owner
-			// handle reward accounts separately.
-			if owner == systemOwner && (acc.Type == types.AccountTypeGlobalReward || acc.Type == types.AccountTypeFeesInfrastructure) {
-				owner = owner + acc.Type.String()
+			// NB: market insurance accounts funds will flow implicitly using this logic into the network treasury for the asset
+			if owner == systemOwner {
+				for k, v := range partyOverrides {
+					if acc.Type == v {
+						owner = k
+					}
+				}
 			}
 
 			assets, ok := balances[owner]

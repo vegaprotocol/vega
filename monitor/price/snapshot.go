@@ -2,7 +2,6 @@ package price
 
 import (
 	"sort"
-	"time"
 
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -22,7 +21,6 @@ func NewMonitorFromSnapshot(
 
 	e := &Engine{
 		riskModel:           riskModel,
-		updateFrequency:     time.Duration(settings.UpdateFrequency) * time.Second,
 		initialised:         pm.Initialised,
 		fpHorizons:          keyDecimalPairToMap(pm.FPHorizons),
 		now:                 pm.Now,
@@ -36,12 +34,7 @@ func NewMonitorFromSnapshot(
 		pricesPast:          pricesPastToInternal(pm.PricesPast),
 		stateChanged:        true,
 	}
-	// hack to work around the update frequency being 0 causing an infinite loop
-	// for now, this will do
-	// @TODO go through integration and system tests once we validate this properly
-	if settings.UpdateFrequency == 0 {
-		e.updateFrequency = time.Second
-	}
+	e.boundFactorsInitialised = pm.PriceBoundsConsensusReached
 	return e, nil
 }
 
@@ -216,17 +209,18 @@ func (e Engine) serialisePricesPast() []*types.PastPrice {
 
 func (e *Engine) GetState() *types.PriceMonitor {
 	pm := &types.PriceMonitor{
-		Initialised:         e.initialised,
-		FPHorizons:          mapToKeyDecimalPair(e.fpHorizons),
-		Now:                 e.now,
-		Update:              e.update,
-		Bounds:              e.serialiseBounds(),
-		PriceRangeCache:     e.serialisePriceRanges(),
-		PricesNow:           e.serialisePricesNow(),
-		PricesPast:          e.serialisePricesPast(),
-		PriceRangeCacheTime: e.priceRangeCacheTime,
-		RefPriceCache:       mapToKeyDecimalPair(e.refPriceCache),
-		RefPriceCacheTime:   e.refPriceCacheTime,
+		Initialised:                 e.initialised,
+		FPHorizons:                  mapToKeyDecimalPair(e.fpHorizons),
+		Now:                         e.now,
+		Update:                      e.update,
+		Bounds:                      e.serialiseBounds(),
+		PriceRangeCache:             e.serialisePriceRanges(),
+		PricesNow:                   e.serialisePricesNow(),
+		PricesPast:                  e.serialisePricesPast(),
+		PriceRangeCacheTime:         e.priceRangeCacheTime,
+		RefPriceCache:               mapToKeyDecimalPair(e.refPriceCache),
+		RefPriceCacheTime:           e.refPriceCacheTime,
+		PriceBoundsConsensusReached: e.boundFactorsInitialised,
 	}
 
 	e.stateChanged = false

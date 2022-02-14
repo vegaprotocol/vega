@@ -24,7 +24,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
-	tmctypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
 	"google.golang.org/grpc/codes"
 )
 
@@ -54,7 +54,7 @@ type coreService struct {
 	netInfoMu sync.RWMutex
 }
 
-// no need for a mutext - we only access the config through a value receiver.
+// no need for a mutex - we only access the config through a value receiver.
 func (s *coreService) updateConfig(conf Config) {
 	s.conf = conf
 }
@@ -82,13 +82,13 @@ func (s *coreService) GetVegaTime(ctx context.Context, _ *protoapi.GetVegaTimeRe
 
 func (s *coreService) SubmitTransaction(ctx context.Context, req *protoapi.SubmitTransactionRequest) (*protoapi.SubmitTransactionResponse, error) {
 	startTime := time.Now()
-	defer metrics.APIRequestAndTimeGRPC("SubmitTransactionV2", startTime)
+	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
 
 	if req == nil {
 		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
 	}
 
-	txHash, err := s.blockchain.SubmitTransactionV2(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_ASYNC)
+	txHash, err := s.blockchain.SubmitTransaction(ctx, req.Tx, protoapi.SubmitTransactionRequest_TYPE_SYNC)
 	if err != nil {
 		// This is Tendermint's specific error signature
 		if _, ok := err.(interface {
@@ -349,10 +349,6 @@ func (s *coreService) ObserveEventBus(
 		return nil //nolint
 	}
 
-	if err := req.Validate(); err != nil {
-		return apiError(codes.InvalidArgument, ErrMalformedRequest, err)
-	}
-
 	// now we will aggregate filter out of the initial request
 	types, err := events.ProtoToInternal(req.Type...)
 	if err != nil {
@@ -469,4 +465,34 @@ func (s *coreService) observeEventsWithAck(
 			bCh <- int(batchSize)
 		}
 	}
+}
+
+func (s *coreService) SubmitRawTransaction(ctx context.Context, req *protoapi.SubmitRawTransactionRequest) (*protoapi.SubmitRawTransactionResponse, error) {
+	startTime := time.Now()
+	defer metrics.APIRequestAndTimeGRPC("SubmitTransaction", startTime)
+
+	if req == nil {
+		return nil, apiError(codes.InvalidArgument, ErrMalformedRequest)
+	}
+
+	txHash, err := s.blockchain.SubmitRawTransaction(ctx, req.Tx, req.Type)
+	if err != nil {
+		// This is Tendermint's specific error signature
+		if _, ok := err.(interface {
+			Code() uint32
+			Details() string
+			Error() string
+		}); ok {
+			s.log.Debug("unable to submit raw transaction", logging.Error(err))
+			return nil, apiError(codes.InvalidArgument, err)
+		}
+		s.log.Debug("unable to submit raw transaction", logging.Error(err))
+
+		return nil, apiError(codes.Internal, err)
+	}
+
+	return &protoapi.SubmitRawTransactionResponse{
+		Success: true,
+		TxHash:  txHash,
+	}, nil
 }

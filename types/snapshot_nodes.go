@@ -6,39 +6,42 @@ import (
 	"time"
 
 	"code.vegaprotocol.io/protos/vega"
+	checkpointpb "code.vegaprotocol.io/protos/vega/checkpoint/v1"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	snapshot "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	"code.vegaprotocol.io/vega/types/num"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type Snapshot struct {
-	Height     uint64
-	Format     SnapshotFormat
+	Format SnapshotFormat
+	Height uint64    // the block-height of the snapshot
+	Hash   []byte    // the hash of the snapshot (the root hash of the AVL tree)
+	Meta   *Metadata // the AVL tree metadata
+	// Metadata []byte     // the above metadata serialised
+	Nodes []*Payload // the snapshot payloads in the tree (always leaf nodes)
+
+	// Chunk stuff
 	Chunks     uint32
-	Hash       []byte
-	Metadata   []byte
-	Meta       *Metadata
 	DataChunks []*Chunk
-	Nodes      []*Payload
 	ByteChunks [][]byte
 	ChunksSeen uint32
 	byteLen    int
 }
 
 type Metadata struct {
-	Version     int64
+	Version     int64       // the version of the AVL tree
+	NodeHashes  []*NodeHash // he nodes of the AVL tree ordered such that it can be imported with identical shape
 	ChunkHashes []string
-	NodeHashes  []*NodeHash
 }
 
+// NodeHash contains the data for a node in the IAVL, without its value, but the values hash instead.
 type NodeHash struct {
-	FullKey   string
-	Namespace SnapshotNamespace
-	Key       string
-	Hash      string
+	Key     string // the node's key eg. epoch.all
+	Hash    string // the hash of the noes value
+	IsLeaf  bool   // whether or not the node contains a payload
+	Height  int32  // the height of the node in the tree
+	Version int64  // the version of that node i.e how many times its value has changed
 }
 
 type Chunk struct {
@@ -81,6 +84,14 @@ type PayloadBankingSeen struct {
 
 type PayloadBankingAssetActions struct {
 	BankingAssetActions *BankingAssetActions
+}
+
+type PayloadBankingRecurringTransfers struct {
+	BankingRecurringTransfers *checkpointpb.RecurringTransfers
+}
+
+type PayloadBankingScheduledTransfers struct {
+	BankingScheduledTransfers []*checkpointpb.ScheduledTransferAtTime
 }
 
 type PayloadCheckpoint struct {
@@ -179,6 +190,19 @@ type Topology struct {
 	ValidatorData          []*eventspb.ValidatorUpdate
 	ChainValidators        []string
 	PendingPubKeyRotations []*snapshot.PendingKeyRotation
+	ValidatorPerformance   *snapshot.ValidatorPerformance
+}
+
+type PayloadFloatingPointConsensus struct {
+	ConsensusData []*snapshot.NextTimeTrigger
+}
+
+type PayloadFeeTracker struct {
+	FeeTrackerData *snapshot.FeesTracker
+}
+
+type PayloadMarketTracker struct {
+	MarketTracker []*snapshot.MarketVolumeTracker
 }
 
 type Witness struct {
@@ -262,20 +286,24 @@ type ExecMarket struct {
 	LastEquityShareDistributed int64
 	EquityShare                *EquityShare
 	CurrentMarkPrice           *num.Uint
+	ShortRiskFactor            num.Decimal
+	LongRiskFactor             num.Decimal
+	RiskFactorConsensusReached bool
 }
 
 type PriceMonitor struct {
-	Initialised         bool
-	FPHorizons          []*KeyDecimalPair
-	Now                 time.Time
-	Update              time.Time
-	Bounds              []*PriceBound
-	PriceRangeCache     []*PriceRangeCache
-	PriceRangeCacheTime time.Time
-	PricesNow           []*CurrentPrice
-	PricesPast          []*PastPrice
-	RefPriceCache       []*KeyDecimalPair
-	RefPriceCacheTime   time.Time
+	Initialised                 bool
+	FPHorizons                  []*KeyDecimalPair
+	Now                         time.Time
+	Update                      time.Time
+	Bounds                      []*PriceBound
+	PriceRangeCache             []*PriceRangeCache
+	PriceRangeCacheTime         time.Time
+	PricesNow                   []*CurrentPrice
+	PricesPast                  []*PastPrice
+	RefPriceCache               []*KeyDecimalPair
+	RefPriceCacheTime           time.Time
+	PriceBoundsConsensusReached bool
 }
 
 type CurrentPrice struct {
@@ -473,7 +501,8 @@ type MarketPosition struct {
 }
 
 type StakingAccounts struct {
-	Accounts []*StakingAccount
+	Accounts                []*StakingAccount
+	StakingAssetTotalSupply *num.Uint
 }
 
 type StakingAccount struct {
@@ -501,47 +530,6 @@ type FutureState struct {
 
 type PayloadLiquiditySupplied struct {
 	LiquiditySupplied *snapshot.LiquiditySupplied
-}
-
-func SnapshotFromProto(s *snapshot.Snapshot) (*Snapshot, error) {
-	meta := &snapshot.Metadata{}
-	if err := proto.Unmarshal(s.Metadata, meta); err != nil {
-		return nil, err
-	}
-	m, err := MetadataFromProto(meta)
-	if err != nil {
-		return nil, err
-	}
-	return &Snapshot{
-		Height:     s.Height,
-		Format:     s.Format,
-		Chunks:     s.Chunks,
-		Hash:       s.Hash,
-		Metadata:   s.Metadata,
-		Meta:       m,
-		DataChunks: make([]*Chunk, 0, int(s.Chunks)),
-	}, nil
-}
-
-func (s Snapshot) IntoProto() (*snapshot.Snapshot, error) {
-	if len(s.Metadata) == 0 {
-		m, err := proto.Marshal(s.Meta.IntoProto())
-		if err != nil {
-			return nil, err
-		}
-		s.Metadata = m
-	}
-	// just make sure the number of chunks is set
-	if s.Chunks == 0 {
-		s.Chunks = uint32(len(s.DataChunks))
-	}
-	return &snapshot.Snapshot{
-		Height:   s.Height,
-		Format:   s.Format,
-		Chunks:   s.Chunks,
-		Hash:     s.Hash,
-		Metadata: s.Metadata,
-	}, nil
 }
 
 func (s Snapshot) GetRawChunk(idx uint32) (*RawChunk, error) {
@@ -584,24 +572,22 @@ func (m Metadata) IntoProto() *snapshot.Metadata {
 }
 
 func NodeHashFromProto(nh *snapshot.NodeHash) (*NodeHash, error) {
-	ns, err := namespaceFromString(nh.Namespace)
-	if err != nil {
-		return nil, err
-	}
 	return &NodeHash{
-		FullKey:   nh.FullKey,
-		Namespace: ns,
-		Key:       nh.Key,
-		Hash:      nh.Hash,
+		Key:     nh.Key,
+		Hash:    nh.Hash,
+		Version: nh.Version,
+		Height:  nh.Height,
+		IsLeaf:  nh.IsLeaf,
 	}, nil
 }
 
 func (n NodeHash) IntoProto() *snapshot.NodeHash {
 	return &snapshot.NodeHash{
-		FullKey:   n.FullKey,
-		Namespace: n.Namespace.String(),
-		Key:       n.Key,
-		Hash:      n.Hash,
+		Key:     n.Key,
+		Hash:    n.Hash,
+		Height:  n.Height,
+		Version: n.Version,
+		IsLeaf:  n.IsLeaf,
 	}
 }
 
@@ -716,6 +702,16 @@ func PayloadFromProto(p *snapshot.Payload) *Payload {
 		ret.Data = PayloadLiquidityTargetFromProto(dt)
 	case *snapshot.Payload_FutureState:
 		ret.Data = PayloadFutureStateFromProto(dt)
+	case *snapshot.Payload_FloatingPointConsensus:
+		ret.Data = PayloadFloatingPointConsensusFromProto(dt)
+	case *snapshot.Payload_FeesTracker:
+		ret.Data = PayloadFeeTrackerFromProto(dt)
+	case *snapshot.Payload_MarketTracker:
+		ret.Data = PayloadMarketTrackerFromProto(dt)
+	case *snapshot.Payload_BankingRecurringTransfers:
+		ret.Data = PayloadBankingRecurringTransfersFromProto(dt)
+	case *snapshot.Payload_BankingScheduledTransfers:
+		ret.Data = PayloadBankingScheduledTransfersFromProto(dt)
 	}
 
 	return ret
@@ -832,6 +828,16 @@ func (p Payload) IntoProto() *snapshot.Payload {
 	case *snapshot.Payload_NetworkParameters:
 		ret.Data = dt
 	case *snapshot.Payload_LiquidityTarget:
+		ret.Data = dt
+	case *snapshot.Payload_FloatingPointConsensus:
+		ret.Data = dt
+	case *snapshot.Payload_FeesTracker:
+		ret.Data = dt
+	case *snapshot.Payload_MarketTracker:
+		ret.Data = dt
+	case *snapshot.Payload_BankingRecurringTransfers:
+		ret.Data = dt
+	case *snapshot.Payload_BankingScheduledTransfers:
 		ret.Data = dt
 	}
 	return &ret
@@ -970,7 +976,7 @@ func (p *PayloadLiquidityTarget) plToProto() interface{} {
 }
 
 func (*PayloadLiquidityTarget) Namespace() SnapshotNamespace {
-	return LiquiditySnapshot
+	return LiquidityTargetSnapshot
 }
 
 func (p *PayloadLiquidityTarget) Key() string {
@@ -1078,6 +1084,62 @@ func (*PayloadBankingDeposits) Key() string {
 }
 
 func (*PayloadBankingDeposits) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingRecurringTransfersFromProto(pbd *snapshot.Payload_BankingRecurringTransfers) *PayloadBankingRecurringTransfers {
+	return &PayloadBankingRecurringTransfers{
+		BankingRecurringTransfers: pbd.BankingRecurringTransfers.RecurringTranfers,
+	}
+}
+
+func (p PayloadBankingRecurringTransfers) IntoProto() *snapshot.Payload_BankingRecurringTransfers {
+	return &snapshot.Payload_BankingRecurringTransfers{
+		BankingRecurringTransfers: &snapshot.BankingRecurringTransfers{
+			RecurringTranfers: p.BankingRecurringTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingRecurringTransfers) isPayload() {}
+
+func (p *PayloadBankingRecurringTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingRecurringTransfers) Key() string {
+	return "recurringTransfers"
+}
+
+func (*PayloadBankingRecurringTransfers) Namespace() SnapshotNamespace {
+	return BankingSnapshot
+}
+
+func PayloadBankingScheduledTransfersFromProto(pbd *snapshot.Payload_BankingScheduledTransfers) *PayloadBankingScheduledTransfers {
+	return &PayloadBankingScheduledTransfers{
+		BankingScheduledTransfers: pbd.BankingScheduledTransfers.TransfersAtTime,
+	}
+}
+
+func (p PayloadBankingScheduledTransfers) IntoProto() *snapshot.Payload_BankingScheduledTransfers {
+	return &snapshot.Payload_BankingScheduledTransfers{
+		BankingScheduledTransfers: &snapshot.BankingScheduledTransfers{
+			TransfersAtTime: p.BankingScheduledTransfers,
+		},
+	}
+}
+
+func (*PayloadBankingScheduledTransfers) isPayload() {}
+
+func (p *PayloadBankingScheduledTransfers) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadBankingScheduledTransfers) Key() string {
+	return "scheduledTransfers"
+}
+
+func (*PayloadBankingScheduledTransfers) Namespace() SnapshotNamespace {
 	return BankingSnapshot
 }
 
@@ -2404,17 +2466,18 @@ func (pp PastPrice) IntoProto() *snapshot.PastPrice {
 
 func PriceMonitorFromProto(pm *snapshot.PriceMonitor) *PriceMonitor {
 	ret := PriceMonitor{
-		Initialised:         pm.Initialised,
-		FPHorizons:          make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
-		Now:                 time.Unix(pm.Now, 0).UTC(),
-		Update:              time.Unix(pm.Update, 0).UTC(),
-		Bounds:              make([]*PriceBound, 0, len(pm.Bounds)),
-		PriceRangeCacheTime: time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
-		PriceRangeCache:     make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
-		PricesNow:           make([]*CurrentPrice, 0, len(pm.PricesNow)),
-		PricesPast:          make([]*PastPrice, 0, len(pm.PricesPast)),
-		RefPriceCacheTime:   time.Unix(pm.RefPriceCacheTime, 0).UTC(),
-		RefPriceCache:       make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
+		Initialised:                 pm.Initialised,
+		FPHorizons:                  make([]*KeyDecimalPair, 0, len(pm.FpHorizons)),
+		Now:                         time.Unix(pm.Now, 0).UTC(),
+		Update:                      time.Unix(pm.Update, 0).UTC(),
+		Bounds:                      make([]*PriceBound, 0, len(pm.Bounds)),
+		PriceRangeCacheTime:         time.Unix(pm.PriceRangeCacheTime, 0).UTC(),
+		PriceRangeCache:             make([]*PriceRangeCache, 0, len(pm.PriceRangeCache)),
+		PricesNow:                   make([]*CurrentPrice, 0, len(pm.PricesNow)),
+		PricesPast:                  make([]*PastPrice, 0, len(pm.PricesPast)),
+		RefPriceCacheTime:           time.Unix(pm.RefPriceCacheTime, 0).UTC(),
+		RefPriceCache:               make([]*KeyDecimalPair, 0, len(pm.RefPriceCache)),
+		PriceBoundsConsensusReached: pm.ConsensusReached,
 	}
 	for _, d := range pm.FpHorizons {
 		ret.FPHorizons = append(ret.FPHorizons, KeyDecimalPairFromProto(d))
@@ -2450,6 +2513,7 @@ func (p PriceMonitor) IntoProto() *snapshot.PriceMonitor {
 		PricesPast:          make([]*snapshot.PastPrice, 0, len(p.PricesPast)),
 		RefPriceCacheTime:   p.RefPriceCacheTime.Unix(),
 		RefPriceCache:       make([]*snapshot.DecimalMap, 0, len(p.RefPriceCache)),
+		ConsensusReached:    p.PriceBoundsConsensusReached,
 	}
 	for _, d := range p.FPHorizons {
 		ret.FpHorizons = append(ret.FpHorizons, d.IntoProto())
@@ -2483,6 +2547,10 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 	lastMB, _ = num.UintFromString(em.LastMidBid, 10)
 	lastMA, _ = num.UintFromString(em.LastMidAsk, 10)
 	markPrice, _ = num.UintFromString(em.CurrentMarkPrice, 10)
+
+	shortRF, _ := num.DecimalFromString(em.RiskFactorShort)
+	longRF, _ := num.DecimalFromString(em.RiskFactorLong)
+
 	if len(em.LastMarketValueProxy) > 0 {
 		lastMVP, _ = num.DecimalFromString(em.LastMarketValueProxy)
 	}
@@ -2500,6 +2568,9 @@ func ExecMarketFromProto(em *snapshot.Market) *ExecMarket {
 		LastMidBid:                 lastMB,
 		LastMarketValueProxy:       lastMVP,
 		CurrentMarkPrice:           markPrice,
+		ShortRiskFactor:            shortRF,
+		LongRiskFactor:             longRF,
+		RiskFactorConsensusReached: em.RiskFactorConsensusReached,
 	}
 	for _, o := range em.PeggedOrders {
 		or, _ := OrderFromProto(o)
@@ -2527,6 +2598,9 @@ func (e ExecMarket) IntoProto() *snapshot.Market {
 		LastMidBid:                 e.LastMidBid.String(),
 		LastMarketValueProxy:       e.LastMarketValueProxy.String(),
 		CurrentMarkPrice:           e.CurrentMarkPrice.String(),
+		RiskFactorShort:            e.ShortRiskFactor.String(),
+		RiskFactorLong:             e.LongRiskFactor.String(),
+		RiskFactorConsensusReached: e.RiskFactorConsensusReached,
 	}
 	for _, o := range e.PeggedOrders {
 		ret.PeggedOrders = append(ret.PeggedOrders, o.IntoProto())
@@ -2568,8 +2642,10 @@ func StakingAccountsFromProto(sa *snapshot.StakingAccounts) *StakingAccounts {
 	for _, a := range sa.Accounts {
 		accs = append(accs, StakingAccountFromProto(a))
 	}
+	bal, _ := num.UintFromString(sa.StakingAssetTotalSupply, 10)
 	return &StakingAccounts{
-		Accounts: accs,
+		Accounts:                accs,
+		StakingAssetTotalSupply: bal,
 	}
 }
 
@@ -2578,8 +2654,13 @@ func (s StakingAccounts) IntoProto() *snapshot.StakingAccounts {
 	for _, a := range s.Accounts {
 		accs = append(accs, a.IntoProto())
 	}
+	amount := "0"
+	if s.StakingAssetTotalSupply != nil {
+		amount = s.StakingAssetTotalSupply.String()
+	}
 	return &snapshot.StakingAccounts{
-		Accounts: accs,
+		Accounts:                accs,
+		StakingAssetTotalSupply: amount,
 	}
 }
 
@@ -3318,6 +3399,88 @@ func (*PayloadWitness) Namespace() SnapshotNamespace {
 	return WitnessSnapshot
 }
 
+func (*PayloadFloatingPointConsensus) isPayload() {}
+
+func PayloadFloatingPointConsensusFromProto(t *snapshot.Payload_FloatingPointConsensus) *PayloadFloatingPointConsensus {
+	return &PayloadFloatingPointConsensus{
+		ConsensusData: t.FloatingPointConsensus.NextTimeTrigger,
+	}
+}
+
+func (p *PayloadFloatingPointConsensus) IntoProto() *snapshot.Payload_FloatingPointConsensus {
+	return &snapshot.Payload_FloatingPointConsensus{
+		FloatingPointConsensus: &snapshot.FloatingPointConsensus{
+			NextTimeTrigger: p.ConsensusData,
+		},
+	}
+}
+
+func (p *PayloadFloatingPointConsensus) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadFloatingPointConsensus) Key() string {
+	return "floatingPointConsensus"
+}
+
+func (*PayloadFloatingPointConsensus) Namespace() SnapshotNamespace {
+	return FloatingPointConsensusSnapshot
+}
+
+func (*PayloadFeeTracker) isPayload() {}
+
+func PayloadFeeTrackerFromProto(t *snapshot.Payload_FeesTracker) *PayloadFeeTracker {
+	return &PayloadFeeTracker{
+		FeeTrackerData: t.FeesTracker,
+	}
+}
+
+func (p *PayloadFeeTracker) IntoProto() *snapshot.Payload_FeesTracker {
+	return &snapshot.Payload_FeesTracker{
+		FeesTracker: p.FeeTrackerData,
+	}
+}
+
+func (p *PayloadFeeTracker) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadFeeTracker) Key() string {
+	return "feesTracker"
+}
+
+func (*PayloadFeeTracker) Namespace() SnapshotNamespace {
+	return FeeTrackerSnapshot
+}
+
+func (*PayloadMarketTracker) isPayload() {}
+
+func PayloadMarketTrackerFromProto(t *snapshot.Payload_MarketTracker) *PayloadMarketTracker {
+	return &PayloadMarketTracker{
+		MarketTracker: t.MarketTracker.MarketTracker,
+	}
+}
+
+func (p *PayloadMarketTracker) IntoProto() *snapshot.Payload_MarketTracker {
+	return &snapshot.Payload_MarketTracker{
+		MarketTracker: &snapshot.MarketTracker{
+			MarketTracker: p.MarketTracker,
+		},
+	}
+}
+
+func (p *PayloadMarketTracker) plToProto() interface{} {
+	return p.IntoProto()
+}
+
+func (*PayloadMarketTracker) Key() string {
+	return "marketTracker"
+}
+
+func (*PayloadMarketTracker) Namespace() SnapshotNamespace {
+	return MarketTrackerSnapshot
+}
+
 func (*PayloadTopology) isPayload() {}
 
 func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
@@ -3326,6 +3489,7 @@ func PayloadTopologyFromProto(t *snapshot.Payload_Topology) *PayloadTopology {
 			ChainValidators:        t.Topology.ChainKeys,
 			ValidatorData:          t.Topology.ValidatorData,
 			PendingPubKeyRotations: t.Topology.PendingPubKeyRotations,
+			ValidatorPerformance:   t.Topology.ValidatorPerformance,
 		},
 	}
 }
@@ -3336,6 +3500,7 @@ func (p *PayloadTopology) IntoProto() *snapshot.Payload_Topology {
 			ChainKeys:              p.Topology.ChainValidators,
 			ValidatorData:          p.Topology.ValidatorData,
 			PendingPubKeyRotations: p.Topology.PendingPubKeyRotations,
+			ValidatorPerformance:   p.Topology.ValidatorPerformance,
 		},
 	}
 }

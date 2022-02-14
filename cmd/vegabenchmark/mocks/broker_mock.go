@@ -5,54 +5,98 @@
 package mocks
 
 import (
+	reflect "reflect"
+
+	broker "code.vegaprotocol.io/vega/broker"
 	events "code.vegaprotocol.io/vega/events"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
-// MockBroker is a mock of Broker interface
+// MockBroker is a mock of Broker interface.
 type MockBroker struct {
 	ctrl     *gomock.Controller
 	recorder *MockBrokerMockRecorder
 }
 
-// MockBrokerMockRecorder is the mock recorder for MockBroker
+// MockBrokerMockRecorder is the mock recorder for MockBroker.
 type MockBrokerMockRecorder struct {
 	mock *MockBroker
 }
 
-// NewMockBroker creates a new mock instance
+// NewMockBroker creates a new mock instance.
 func NewMockBroker(ctrl *gomock.Controller) *MockBroker {
 	mock := &MockBroker{ctrl: ctrl}
 	mock.recorder = &MockBrokerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBroker) EXPECT() *MockBrokerMockRecorder {
 	return m.recorder
 }
 
-// Send mocks base method
+// Send mocks base method.
 func (m *MockBroker) Send(arg0 events.Event) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Send", arg0)
 }
 
-// Send indicates an expected call of Send
+// Send indicates an expected call of Send.
 func (mr *MockBrokerMockRecorder) Send(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Send", reflect.TypeOf((*MockBroker)(nil).Send), arg0)
 }
 
-// SendBatch mocks base method
+// SendBatch mocks base method.
 func (m *MockBroker) SendBatch(arg0 []events.Event) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SendBatch", arg0)
 }
 
-// SendBatch indicates an expected call of SendBatch
+// SendBatch indicates an expected call of SendBatch.
 func (mr *MockBrokerMockRecorder) SendBatch(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBatch", reflect.TypeOf((*MockBroker)(nil).SendBatch), arg0)
+}
+
+// Subscribe mocks base method.
+func (m *MockBroker) Subscribe(arg0 broker.Subscriber) int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscribe", arg0)
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// Subscribe indicates an expected call of Subscribe.
+func (mr *MockBrokerMockRecorder) Subscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscribe", reflect.TypeOf((*MockBroker)(nil).Subscribe), arg0)
+}
+
+// SubscribeBatch mocks base method.
+func (m *MockBroker) SubscribeBatch(arg0 ...broker.Subscriber) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	m.ctrl.Call(m, "SubscribeBatch", varargs...)
+}
+
+// SubscribeBatch indicates an expected call of SubscribeBatch.
+func (mr *MockBrokerMockRecorder) SubscribeBatch(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeBatch", reflect.TypeOf((*MockBroker)(nil).SubscribeBatch), arg0...)
+}
+
+// Unsubscribe mocks base method.
+func (m *MockBroker) Unsubscribe(arg0 int) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Unsubscribe", arg0)
+}
+
+// Unsubscribe indicates an expected call of Unsubscribe.
+func (mr *MockBrokerMockRecorder) Unsubscribe(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsubscribe", reflect.TypeOf((*MockBroker)(nil).Unsubscribe), arg0)
 }

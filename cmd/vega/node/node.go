@@ -33,6 +33,7 @@ import (
 	"code.vegaprotocol.io/vega/metrics"
 	"code.vegaprotocol.io/vega/monitoring"
 	"code.vegaprotocol.io/vega/netparams"
+	"code.vegaprotocol.io/vega/nodewallets"
 	nodewallet "code.vegaprotocol.io/vega/nodewallets"
 	"code.vegaprotocol.io/vega/notary"
 	"code.vegaprotocol.io/vega/oracles"
@@ -43,6 +44,7 @@ import (
 	"code.vegaprotocol.io/vega/snapshot"
 	"code.vegaprotocol.io/vega/spam"
 	"code.vegaprotocol.io/vega/staking"
+	"code.vegaprotocol.io/vega/statevar"
 	"code.vegaprotocol.io/vega/stats"
 	"code.vegaprotocol.io/vega/subscribers"
 	"code.vegaprotocol.io/vega/validators"
@@ -73,6 +75,8 @@ type NodeCommand struct {
 	conf        config.Config
 	confWatcher *config.Watcher
 
+	feesTracker          *execution.FeesTracker
+	statevar             *statevar.Engine
 	snapshot             *snapshot.Engine
 	executionEngine      *execution.Engine
 	governance           *governance.Engine
@@ -87,14 +91,16 @@ type NodeCommand struct {
 	spam                 *spam.Engine
 	nodeWallets          *nodewallet.NodeWallets
 	nodeWalletPassphrase string
+	builtinOracle        *oracles.Builtin
 
-	assets         *assets.Service
-	topology       *validators.Topology
-	notary         *notary.SnapshotNotary
-	evtfwd         *evtforward.EvtForwarder
-	witness        *validators.Witness
-	banking        *banking.Engine
-	genesisHandler *genesis.Handler
+	assets               *assets.Service
+	topology             *validators.Topology
+	notary               *notary.SnapshotNotary
+	eventForwarder       *evtforward.Forwarder
+	eventForwarderEngine EventForwarderEngine
+	witness              *validators.Witness
+	banking              *banking.Engine
+	genesisHandler       *genesis.Handler
 
 	// plugins
 	settlePlugin     *plugins.Positions
@@ -108,30 +114,40 @@ type NodeCommand struct {
 	stakingAccounts *staking.Accounting
 	stakeVerifier   *staking.StakeVerifier
 
+	commander *nodewallets.Commander
+
 	app *processor.App
 
 	Version     string
 	VersionHash string
 }
 
-func (l *NodeCommand) Run(confWatcher *config.Watcher, vegaPaths paths.Paths, nodeWalletPassphrase string, args []string) error {
-	l.confWatcher = confWatcher
-	l.nodeWalletPassphrase = nodeWalletPassphrase
+func (n *NodeCommand) Run(
+	confWatcher *config.Watcher,
+	vegaPaths paths.Paths,
+	nodeWalletPassphrase string,
+	args []string,
+) error {
+	n.confWatcher = confWatcher
+	n.nodeWalletPassphrase = nodeWalletPassphrase
 
-	l.conf = confWatcher.Get()
-	l.vegaPaths = vegaPaths
+	n.conf = confWatcher.Get()
+	n.vegaPaths = vegaPaths
 
-	tmCfg := l.conf.Blockchain.Tendermint
+	tmCfg := n.conf.Blockchain.Tendermint
 	if tmCfg.ABCIRecordDir != "" && tmCfg.ABCIReplayFile != "" {
 		return errors.New("you can't specify both abci-record and abci-replay flags")
 	}
 
 	stages := []func([]string) error{
-		l.persistentPre,
-		l.preRun,
-		l.runNode,
-		l.postRun,
-		l.persistentPost,
+		n.setupCommon,
+		n.startBlockchainConnections,
+		n.loadNodeWallets,
+		n.startServices,
+		n.runNode,
+		n.stopServices,
+		n.postRun,
+		n.persistentPost,
 	}
 	for _, fn := range stages {
 		if err := fn(args); err != nil {
@@ -143,60 +159,63 @@ func (l *NodeCommand) Run(confWatcher *config.Watcher, vegaPaths paths.Paths, no
 }
 
 // runNode is the entry of node command.
-func (l *NodeCommand) runNode(args []string) error {
-	defer l.cancel()
+func (n *NodeCommand) runNode(args []string) error {
+	defer n.cancel()
 	defer func() {
-		if err := l.nodeWallets.Ethereum.Cleanup(); err != nil {
-			l.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
+		if n.conf.IsValidator() {
+			if err := n.nodeWallets.Ethereum.Cleanup(); err != nil {
+				n.Log.Error("couldn't clean up Ethereum node wallet", logging.Error(err))
+			}
 		}
 	}()
 
-	statusChecker := monitoring.New(l.Log, l.conf.Monitoring, l.blockchainClient)
-	statusChecker.OnChainDisconnect(l.cancel)
+	statusChecker := monitoring.New(n.Log, n.conf.Monitoring, n.blockchainClient)
+	statusChecker.OnChainDisconnect(n.cancel)
 	statusChecker.OnChainVersionObtained(
-		func(v string) { l.stats.SetChainVersion(v) },
+		func(v string) { n.stats.SetChainVersion(v) },
 	)
 
 	grpcServer := api.NewGRPC(
-		l.Log,
-		l.conf.API,
-		l.stats,
-		l.blockchainClient,
-		l.evtfwd,
-		l.timeService,
-		l.eventService,
+		n.Log,
+		n.conf.API,
+		n.stats,
+		n.blockchainClient,
+		n.eventForwarder,
+		n.timeService,
+		n.eventService,
 		statusChecker,
 	)
 
 	grpcServer.RegisterService(func(server *grpc.Server) {
-		svc := coreapi.NewService(l.ctx, l.Log, l.conf.CoreAPI, l.broker)
+		svc := coreapi.NewService(n.ctx, n.Log, n.conf.CoreAPI, n.broker)
 		apipb.RegisterCoreStateServiceServer(server, svc)
 	})
 
 	// watch configs
-	l.confWatcher.OnConfigUpdate(
+	n.confWatcher.OnConfigUpdate(
 		func(cfg config.Config) { grpcServer.ReloadConf(cfg.API) },
 		func(cfg config.Config) { statusChecker.ReloadConf(cfg.Monitoring) },
 	)
 
-	proxyServer := rest.NewProxyServer(l.Log, l.conf.API)
+	proxyServer := rest.NewProxyServer(n.Log, n.conf.API)
 
 	// start the grpc server
 	go grpcServer.Start()
 	go proxyServer.Start()
-	metrics.Start(l.conf.Metrics)
+	metrics.Start(n.conf.Metrics)
 
 	// some clients need to start after the rpc-server is up
-	err := l.blockchainClient.Start()
+	err := n.blockchainClient.Start()
 
 	if err == nil {
-		l.Log.Info("Vega startup complete")
-		waitSig(l.ctx, l.Log)
+		n.Log.Info("Vega startup complete",
+			logging.String("node-mode", string(n.conf.NodeMode)))
+		waitSig(n.ctx, n.Log)
 	}
 
 	// Clean up and close resources
 	grpcServer.Stop()
-	l.blockchainServer.Stop()
+	n.blockchainServer.Stop()
 	statusChecker.Stop()
 	proxyServer.Stop()
 
