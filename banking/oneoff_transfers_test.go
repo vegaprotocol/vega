@@ -22,6 +22,38 @@ func TestTransfers(t *testing.T) {
 	t.Run("valid oneoff transfer", testValidOneOffTransfer)
 	t.Run("valid oneoff with deliverOn", testValidOneOffTransferWithDeliverOn)
 	t.Run("valid oneoff with deliverOn in the past is done straight away", testValidOneOffTransferWithDeliverOnInThePastStraightAway)
+	t.Run("rejected if doesn't reach minimal amount", testRejectedIfDoesntReachMinimalAmount)
+}
+
+func testRejectedIfDoesntReachMinimalAmount(t *testing.T) {
+	e := getTestEngine(t)
+	defer e.ctrl.Finish()
+
+	ctx := context.Background()
+	transfer := &types.TransferFunds{
+		Kind: types.TransferCommandKindOneOff,
+		OneOff: &types.OneOffTransfer{
+			TransferBase: &types.TransferBase{
+				From:            "from",
+				FromAccountType: types.AccountTypeGeneral,
+				To:              "to",
+				ToAccountType:   types.AccountTypeGeneral,
+				Asset:           "eth",
+				Amount:          num.NewUint(10),
+				Reference:       "someref",
+			},
+		},
+	}
+
+	e.OnMinTransferQuantumMultiple(context.Background(), num.DecimalFromFloat(1))
+	// asset exists
+	e.assets.EXPECT().Get(gomock.Any()).Times(1).Return(assets.NewAsset(&mockAsset{num.NewUint(100)}), nil)
+	e.broker.EXPECT().Send(gomock.Any()).Times(1)
+
+	assert.EqualError(t,
+		e.TransferFunds(ctx, transfer),
+		"could not transfer funds, less than minimal amount requested to transfer",
+	)
 }
 
 func testInvalidTransferKind(t *testing.T) {
