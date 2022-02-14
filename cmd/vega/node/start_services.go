@@ -481,6 +481,10 @@ func (n *NodeCommand) setupNetParameters() error {
 			Param:   netparams.TransferFeeFactor,
 			Watcher: n.banking.OnTransferFeeFactorUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.TransferMinTransferQuantumMultiple,
+			Watcher: n.banking.OnMinTransferQuantumMultiple,
+		},
 	)
 }
 

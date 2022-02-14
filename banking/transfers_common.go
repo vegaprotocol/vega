@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/logging"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
@@ -11,6 +12,11 @@ import (
 
 func (e *Engine) OnTransferFeeFactorUpdate(ctx context.Context, f num.Decimal) error {
 	e.transferFeeFactor = f
+	return nil
+}
+
+func (e *Engine) OnMinTransferQuantumMultiple(ctx context.Context, f num.Decimal) error {
+	e.minTransferQuantumMultiple = f
 	return nil
 }
 
@@ -29,6 +35,23 @@ func (e *Engine) TransferFunds(
 	default:
 		return ErrUnsupportedTransferKind
 	}
+}
+
+func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) error {
+	quantum := a.Type().Details.Quantum.ToDecimal()
+	// no reason this would produce an error
+	minAmount, _ := num.UintFromDecimal(quantum.Mul(e.minTransferQuantumMultiple))
+
+	// no verify amount
+	if amount.LT(minAmount) {
+		e.log.Debug("cannot transfer funds, less than minimal amount requested to transfer",
+			logging.BigUint("min-amount", minAmount),
+			logging.BigUint("requested-amount", amount),
+		)
+		return fmt.Errorf("could not transfer funds, less than minimal amount requested to transfer")
+	}
+
+	return nil
 }
 
 func (e *Engine) processTransfer(
