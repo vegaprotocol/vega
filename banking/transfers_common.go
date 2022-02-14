@@ -49,8 +49,8 @@ func (e *Engine) ensureMinimalTransferAmount(a *assets.Asset, amount *num.Uint) 
 			logging.BigUint("requested-amount", amount),
 		)
 		return fmt.Errorf("could not transfer funds, less than minimal amount requested to transfer")
-
 	}
+
 	return nil
 }
 

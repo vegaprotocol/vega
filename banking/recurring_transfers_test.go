@@ -115,7 +115,6 @@ func testInvalidRecurringTransfersDuplicates(t *testing.T) {
 		e.TransferFunds(ctx, transfer2),
 		banking.ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo.Error(),
 	)
-
 }
 
 func testForeverTransferCancelledNotEnoughFunds(t *testing.T) {
