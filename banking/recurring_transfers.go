@@ -14,7 +14,7 @@ import (
 
 var (
 	ErrStartEpochInThePast                                     = errors.New("start epoch in the past")
-	ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo = errors.New("cannot submit duplicate recurring transfer with same from an to")
+	ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo = errors.New("cannot submit duplicate recurring transfer with same from and to")
 )
 
 func (e *Engine) recurringTransfer(
