@@ -6,6 +6,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/assets/common"
 	"code.vegaprotocol.io/vega/types"
+	"code.vegaprotocol.io/vega/types/num"
 )
 
 type AssetStub struct {
@@ -70,6 +71,7 @@ func (a isAssetStub) Type() *types.Asset {
 		ID: a.ID,
 		Details: &types.AssetDetails{
 			Decimals: a.DecimalPlaces,
+			Quantum:  num.Zero(),
 		},
 	}
 }
