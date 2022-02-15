@@ -513,6 +513,9 @@ func (app *App) OnInitChain(req tmtypes.RequestInitChain) tmtypes.ResponseInitCh
 }
 
 func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, resp tmtypes.ResponseEndBlock) {
+	app.log.Debug("entering end block", logging.Time("at", time.Now()))
+	defer func() { app.log.Debug("leaving end block", logging.Time("at", time.Now())) }()
+
 	app.log.Debug("ABCI service END block completed",
 		logging.Int64("current-timestamp", app.currentTimestamp.UnixNano()),
 		logging.Int64("previous-timestamp", app.previousTimestamp.UnixNano()),
@@ -550,6 +553,9 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 
 // OnBeginBlock updates the internal lastBlockTime value with each new block.
 func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context, resp tmtypes.ResponseBeginBlock) {
+	app.log.Debug("entering begin block", logging.Time("at", time.Now()))
+	defer func() { app.log.Debug("leaving begin block", logging.Time("at", time.Now())) }()
+
 	hash := hex.EncodeToString(req.Hash)
 	app.cBlock = hash
 
@@ -597,8 +603,8 @@ func (app *App) OnBeginBlock(req tmtypes.RequestBeginBlock) (ctx context.Context
 }
 
 func (app *App) OnCommit() (resp tmtypes.ResponseCommit) {
-	app.log.Debug("Processor COMMIT starting")
-	defer app.log.Debug("Processor COMMIT completed")
+	app.log.Debug("entering commit", logging.Time("at", time.Now()))
+	defer func() { app.log.Debug("leaving commit", logging.Time("at", time.Now())) }()
 
 	// call checkpoint _first_ so the snapshot contains the correct checkpoint state.
 	cpt, _ := app.checkpoint.Checkpoint(app.blockCtx, app.currentTimestamp)
