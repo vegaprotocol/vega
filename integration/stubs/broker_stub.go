@@ -390,11 +390,11 @@ func (b *BrokerStub) GetValidatorScores(epochSeq string) map[string]events.Valid
 	for _, e := range batch {
 		switch et := e.(type) {
 		case events.ValidatorScore:
-			if et.EpochSeq == epochSeq {
+			if et.EpochSeq == epochSeq && et.ValidatorStatus == "tendermint" {
 				scores[et.NodeID] = et
 			}
 		case *events.ValidatorScore:
-			if (*et).EpochSeq == epochSeq {
+			if (*et).EpochSeq == epochSeq && et.ValidatorStatus == "tendermint" {
 				scores[et.NodeID] = *et
 			}
 		}

@@ -111,6 +111,14 @@ const (
 
 	FloatingPointUpdatesDuration = "network.floatingPointUpdates.delay"
 
+	// validators by stake.
+	NumberOfTendermintValidators               = "network.validators.tendermint.number"
+	ValidatorIncumbentBonus                    = "network.validators.incumbentBonus"
+	NumberEthMultisigSigners                   = "network.validators.multisig.numberOfSigners"
+	ErsatzvalidatorsRewardFactor               = "network.validators.ersatz.rewardFactor"
+	MultipleOfTendermintValidatorsForEtsatzSet = "network.validators.ersatz.multipleOfTendermintValidators"
+	MinimumEthereumEventsForNewValidator       = "network.validators.minimumEthereumEventsForNewValidator"
+
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 )
@@ -199,5 +207,11 @@ var AllKeys = map[string]struct{}{
 	SnapshotIntervalLength:                                {},
 	FloatingPointUpdatesDuration:                          {},
 	TransferFeeFactor:                                     {},
+	NumberOfTendermintValidators:                          {},
+	ValidatorIncumbentBonus:                               {},
+	NumberEthMultisigSigners:                              {},
+	ErsatzvalidatorsRewardFactor:                          {},
+	MultipleOfTendermintValidatorsForEtsatzSet:            {},
+	MinimumEthereumEventsForNewValidator:                  {},
 	TransferMinTransferQuantumMultiple:                    {},
 }

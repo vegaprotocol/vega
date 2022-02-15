@@ -81,6 +81,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	}
 
 	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log, accounting)
+	valJoinPolicy := NewSimpleSpamPolicy("validatorJoin", netparams.StakingAndDelegationRewardMinimumValidatorStake, "", log, accounting)
 	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log, accounting)
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 
@@ -92,6 +93,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.VoteCommand] = votePolicy
 	e.transactionTypeToPolicy[txn.DelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
+	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
@@ -131,6 +133,11 @@ func (e *Engine) OnMaxProposalsChanged(ctx context.Context, maxProposals int64) 
 func (e *Engine) OnMinTokensForProposalChanged(ctx context.Context, minTokens num.Decimal) error {
 	minTokensForProposal, _ := num.UintFromDecimal(minTokens)
 	return e.transactionTypeToPolicy[txn.ProposeCommand].UpdateUintParam(netparams.SpamProtectionMinTokensForProposal, minTokensForProposal)
+}
+
+func (e *Engine) OnMinValidatorTokensChanged(_ context.Context, minTokens num.Decimal) error {
+	minTokensForJoiningValidator, _ := num.UintFromDecimal(minTokens)
+	return e.transactionTypeToPolicy[txn.AnnounceNodeCommand].UpdateUintParam(netparams.StakingAndDelegationRewardMinimumValidatorStake, minTokensForJoiningValidator)
 }
 
 // OnEpochEvent is a callback for epoch events.

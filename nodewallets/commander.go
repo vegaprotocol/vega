@@ -116,13 +116,21 @@ func wrapPayloadIntoInputData(data *commandspb.InputData, cmd txn.Command, paylo
 	switch cmd {
 	case txn.SubmitOrderCommand, txn.CancelOrderCommand, txn.AmendOrderCommand, txn.VoteCommand, txn.WithdrawCommand, txn.LiquidityProvisionCommand, txn.ProposeCommand, txn.SubmitOracleDataCommand:
 		panic("command is not supported to be sent by a node.")
-	case txn.RegisterNodeCommand:
-		if underlyingCmd, ok := payload.(*commandspb.NodeRegistration); ok {
-			data.Command = &commandspb.InputData_NodeRegistration{
-				NodeRegistration: underlyingCmd,
+	case txn.AnnounceNodeCommand:
+		if underlyingCmd, ok := payload.(*commandspb.AnnounceNode); ok {
+			data.Command = &commandspb.InputData_AnnounceNode{
+				AnnounceNode: underlyingCmd,
 			}
 		} else {
-			panic("failed to wrap to NodeRegistration")
+			panic("failed to wrap to AnnounceNode")
+		}
+	case txn.ValidatorHeartbeatCommand:
+		if underlyingCmd, ok := payload.(*commandspb.ValidatorHeartbeat); ok {
+			data.Command = &commandspb.InputData_ValidatorHeartbeat{
+				ValidatorHeartbeat: underlyingCmd,
+			}
+		} else {
+			panic("failed to wrap to ValidatorHeartbeat")
 		}
 	case txn.NodeVoteCommand:
 		if underlyingCmd, ok := payload.(*commandspb.NodeVote); ok {

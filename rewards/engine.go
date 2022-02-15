@@ -14,9 +14,8 @@ import (
 )
 
 var (
-	votingPowerScalingFactor, _ = num.DecimalFromString("10000")
-	decimal1, _                 = num.DecimalFromString("1")
-	rewardAccountTypes          = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeLPFeeReward}
+	decimal1, _        = num.DecimalFromString("1")
+	rewardAccountTypes = []types.AccountType{types.AccountTypeGlobalReward, types.AccountTypeFeesInfrastructure, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeLPFeeReward}
 )
 
 // Broker for sending events.
@@ -63,25 +62,27 @@ type TimeService interface {
 	GetTimeNow() time.Time
 }
 
-//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/rewards ValidatorPerformance
-type ValidatorPerformance interface {
-	ValidatorPerformanceScore(address string) num.Decimal
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/topology_mock.go -package mocks code.vegaprotocol.io/vega/rewards Topology
+type Topology interface {
+	GetRewardsScores(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams) (*types.ScoreData, *types.ScoreData)
+	RecalcValidatorSet(ctx context.Context, epochSeq string, delegationState []*types.ValidatorData, stakeScoreParams types.StakeScoreParams)
 }
 
 // Engine is the reward engine handling reward payouts.
 type Engine struct {
-	log             *logging.Logger
-	config          Config
-	broker          Broker
-	delegation      Delegation
-	collateral      Collateral
-	valPerformance  ValidatorPerformance
-	feesTracker     FeesTracker
-	marketTracker   MarketTracker
-	rng             *rand.Rand
-	global          *globalRewardParams
-	newEpochStarted bool // flag to signal new epoch so we can update the voting power at the end of the block
-	epochSeq        string
+	log                *logging.Logger
+	config             Config
+	broker             Broker
+	topology           Topology
+	delegation         Delegation
+	collateral         Collateral
+	feesTracker        FeesTracker
+	marketTracker      MarketTracker
+	rng                *rand.Rand
+	global             *globalRewardParams
+	newEpochStarted    bool // flag to signal new epoch so we can update the voting power at the end of the block
+	epochSeq           string
+	ersatzRewardFactor num.Decimal
 }
 
 type globalRewardParams struct {
@@ -105,7 +106,7 @@ type payout struct {
 }
 
 // New instantiate a new rewards engine.
-func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, valPerformance ValidatorPerformance, feesTracker FeesTracker, marketTracker MarketTracker) *Engine {
+func New(log *logging.Logger, config Config, broker Broker, delegation Delegation, epochEngine EpochEngine, collateral Collateral, ts TimeService, feesTracker FeesTracker, marketTracker MarketTracker, topology Topology) *Engine {
 	log = log.Named(namedLogger)
 	log.SetLevel(config.Level.Get())
 	e := &Engine{
@@ -116,9 +117,9 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 		collateral:      collateral,
 		global:          &globalRewardParams{},
 		newEpochStarted: false,
-		valPerformance:  valPerformance,
 		feesTracker:     feesTracker,
 		marketTracker:   marketTracker,
+		topology:        topology,
 	}
 
 	// register for epoch end notifications
@@ -131,6 +132,12 @@ func New(log *logging.Logger, config Config, broker Broker, delegation Delegatio
 
 func (e *Engine) UpdateAssetForStakingAndDelegation(ctx context.Context, asset string) error {
 	e.global.asset = asset
+	return nil
+}
+
+// UpdateErsatzRewardFactor updates the ratio of staking and delegation reward that goes to ersatz validators.
+func (e *Engine) UpdateErsatzRewardFactor(ctx context.Context, ersatzRewardFactor num.Decimal) error {
+	e.ersatzRewardFactor = ersatzRewardFactor
 	return nil
 }
 
@@ -193,21 +200,58 @@ func (e *Engine) OnEpochEvent(ctx context.Context, epoch types.Epoch) {
 	e.calculateRewardPayouts(ctx, epoch)
 }
 
+// splitDelegationByStatus splits the delegation data for an epoch into tendermint and ersatz validator sets.
+func (e *Engine) splitDelegationByStatus(delegation []*types.ValidatorData, tmScores *types.ScoreData, ezScores *types.ScoreData) ([]*types.ValidatorData, []*types.ValidatorData) {
+	tm := make([]*types.ValidatorData, 0, len(tmScores.NodeIDSlice))
+	ez := make([]*types.ValidatorData, 0, len(ezScores.NodeIDSlice))
+	for _, vd := range delegation {
+		if _, ok := tmScores.NormalisedScores[vd.NodeID]; ok {
+			tm = append(tm, vd)
+		}
+		if _, ok := ezScores.NormalisedScores[vd.NodeID]; ok {
+			ez = append(ez, vd)
+		}
+	}
+	return tm, ez
+}
+
+func calcTotalDelegation(d []*types.ValidatorData) num.Decimal {
+	total := num.Zero()
+	for _, vd := range d {
+		total.AddSum(num.Sum(vd.SelfStake, vd.StakeByDelegators))
+	}
+	return total.ToDecimal()
+}
+
 func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) []*payout {
 	// get the validator delegation data from the delegation engine and calculate the staking and delegation rewards for the epoch
-	validatorData := e.delegation.ProcessEpochDelegations(ctx, epoch)
-	// calculate the validator score for each validator and the total score for all
-	validatorNormalisedScores := calcValidatorsNormalisedScore(ctx, e.broker, num.NewUint(epoch.Seq).String(), validatorData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng, e.valPerformance)
-	for node, score := range validatorNormalisedScores {
-		e.log.Info("Rewards: calculated normalised score", logging.String("validator", node), logging.String("normalisedScore", score.String()))
+	delegationState := e.delegation.ProcessEpochDelegations(ctx, epoch)
+
+	stakeScoreParams := types.StakeScoreParams{MinVal: e.global.minValidators, CompLevel: e.global.compLevel, OptimalStakeMultiplier: e.global.optimalStakeMultiplier}
+	// let the topology process the changes in delegation set and calculate changes to tendermint/ersatz validator sets
+	e.topology.RecalcValidatorSet(ctx, num.NewUint(epoch.Seq+1).String(), e.delegation.GetValidatorData(), stakeScoreParams)
+
+	tmValidatorsScores, ersatzValidatorsScores := e.topology.GetRewardsScores(ctx, e.epochSeq, delegationState, stakeScoreParams)
+	tmValidatorsDelegation, ersatzValidatorsDelegation := e.splitDelegationByStatus(delegationState, tmValidatorsScores, ersatzValidatorsScores)
+
+	s_p := calcTotalDelegation(tmValidatorsDelegation)
+	s_e := calcTotalDelegation(ersatzValidatorsDelegation).Mul(e.ersatzRewardFactor)
+	s_t := s_p.Add(s_e)
+	s_pFactor := num.DecimalZero()
+	s_eFactor := num.DecimalZero()
+	// if there's stake calculate the factors of primary vs ersatz and make sure it's <= 1
+	if s_t.IsPositive() {
+		s_pFactor = s_p.Div(s_t)
+		s_eFactor = s_e.Div(s_t)
+		overflow := num.MinD(num.DecimalZero(), s_pFactor.Add(s_eFactor).Sub(decimal1))
+		s_eFactor = s_eFactor.Sub(overflow)
 	}
-	if e.log.GetLevel() == logging.DebugLevel {
-		for _, v := range validatorData {
-			e.log.Debug("Rewards: epoch stake summary for validator", logging.Uint64("epoch", epoch.Seq), logging.String("validator", v.NodeID), logging.String("selfStake", v.SelfStake.String()), logging.String("stakeByDelegators", v.StakeByDelegators.String()))
-			for party, d := range v.Delegators {
-				e.log.Debug("Rewards: epoch delegation for party", logging.Uint64("epoch", epoch.Seq), logging.String("party", party), logging.String("validator", v.NodeID), logging.String("amount", d.String()))
-			}
-		}
+
+	for node, score := range tmValidatorsScores.NormalisedScores {
+		e.log.Info("Rewards: calculated normalised score for tendermint validators", logging.String("validator", node), logging.String("normalisedScore", score.String()))
+	}
+	for node, score := range ersatzValidatorsScores.NormalisedScores {
+		e.log.Info("Rewards: calculated normalised score for ersatz validator", logging.String("validator", node), logging.String("normalisedScore", score.String()))
 	}
 
 	payouts := []*payout{}
@@ -215,8 +259,18 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 	for _, asset := range e.collateral.GetEnabledAssets() {
 		for _, rewardType := range rewardAccountTypes {
 			account, err := e.collateral.GetRewardAccount(asset, rewardType)
-			if err == nil && !account.Balance.IsZero() {
-				po := e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, validatorData, validatorNormalisedScores, epoch.EndTime)
+
+			if err != nil || account.Balance.IsZero() {
+				continue
+			}
+			pos := []*payout{}
+			if (rewardType == types.AccountTypeGlobalReward && asset == e.global.asset) || rewardType == types.AccountTypeFeesInfrastructure {
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, s_pFactor))
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, ersatzValidatorsDelegation, ersatzValidatorsScores.NormalisedScores, epoch.EndTime, s_eFactor))
+			} else {
+				pos = append(pos, e.calculateRewardTypeForAsset(num.NewUint(epoch.Seq).String(), asset, rewardType, account, tmValidatorsDelegation, tmValidatorsScores.NormalisedScores, epoch.EndTime, decimal1))
+			}
+			for _, po := range pos {
 				if po != nil && !po.totalReward.IsZero() && !po.totalReward.IsNegative() {
 					po.timestamp = epoch.EndTime.UnixNano()
 					payouts = append(payouts, po)
@@ -230,11 +284,12 @@ func (e *Engine) calculateRewardPayouts(ctx context.Context, epoch types.Epoch) 
 }
 
 // calculateRewardTypeForAsset calculates the payout for a given asset and reward type.
-func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time) *payout {
+func (e *Engine) calculateRewardTypeForAsset(epochSeq string, asset string, rewardType types.AccountType, account *types.Account, validatorData []*types.ValidatorData, validatorNormalisedScores map[string]num.Decimal, timestamp time.Time, factor num.Decimal) *payout {
 	switch rewardType {
 	case types.AccountTypeGlobalReward: // given to delegator based on stake
 		if asset == e.global.asset {
-			return calculateRewardsByStake(epochSeq, account.Asset, account.ID, account.Balance.Clone(), validatorNormalisedScores, validatorData, e.global.delegatorShare, e.global.maxPayoutPerParticipant, e.global.minValStakeUInt, e.rng, e.log)
+			balance, _ := num.UintFromDecimal(account.Balance.ToDecimal().Mul(factor))
+			return calculateRewardsByStake(epochSeq, account.Asset, account.ID, balance, validatorNormalisedScores, validatorData, e.global.delegatorShare, e.global.maxPayoutPerParticipant, e.global.minValStakeUInt, e.rng, e.log)
 		}
 		return nil
 	case types.AccountTypeFeesInfrastructure: // given to delegator based on stake
@@ -298,39 +353,4 @@ func (e *Engine) distributePayout(ctx context.Context, po *payout) {
 		return
 	}
 	e.broker.Send(events.NewTransferResponse(ctx, responses))
-}
-
-// EndOfBlock returns the validator updates with the power of the validators based on their stake in the current block.
-func (e *Engine) EndOfBlock(blockHeight int64) []types.ValidatorVotingPower {
-	if !e.shouldUpdateValidatorsVotingPower(blockHeight) {
-		return nil
-	}
-
-	validatorsData := e.delegation.GetValidatorData()
-	scoreData := calcNormalisedScore(e.epochSeq, validatorsData, e.global.minValidators, e.global.compLevel, e.global.optimalStakeMultiplier, e.rng, e.valPerformance)
-	votingPower := make([]types.ValidatorVotingPower, 0, len(validatorsData))
-	for _, v := range validatorsData {
-		ns, ok := scoreData.normalisedScores[v.NodeID]
-		power := int64(10)
-
-		if ok {
-			power = num.MaxD(decimal1, ns.Mul(votingPowerScalingFactor)).IntPart()
-		}
-		votingPower = append(votingPower, types.ValidatorVotingPower{
-			VotingPower: power,
-			TmPubKey:    v.TmPubKey,
-		})
-	}
-
-	return votingPower
-}
-
-// shouldUpdateValidatorsVotingPower returns whether we should update the voting power of the validator in tendermint
-// currently this should happen at the beginning of each epoch (at the end of the first block of the new epoch) and every 1000 blocks.
-func (e *Engine) shouldUpdateValidatorsVotingPower(height int64) bool {
-	if e.newEpochStarted {
-		e.newEpochStarted = false
-		return true
-	}
-	return height%1000 == 0
 }

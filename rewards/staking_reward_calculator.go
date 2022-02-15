@@ -46,11 +46,6 @@ func calculateRewardsByStake(epochSeq, asset, accountID string, rewardBalance *n
 		delegatorFraction := delegatorShare.Mul(vd.StakeByDelegators.ToDecimal()).Div(totalStakeForValidator) // totalStakeForValidator must be non zero as valScore is non zero
 		validatorFraction := num.DecimalFromInt64(1).Sub(delegatorFraction)
 
-		// if minStake is non zero and the validator has less total stake than required they don't get anything but their delegators still do
-		if !minStakePerValidator.IsZero() && vd.SelfStake.LT(minStakePerValidator) {
-			validatorFraction = num.DecimalZero()
-		}
-
 		// how much delegators take
 		amountToGiveToDelegators, _ := num.UintFromDecimal(delegatorFraction.Mul(epochPayoutForValidatorAndDelegators))
 		// calculate the potential reward for delegators and the validator
