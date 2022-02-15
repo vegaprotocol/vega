@@ -44,6 +44,8 @@ func (b *BrokerStub) Subscribe(sub broker.Subscriber) int {
 	return 0
 }
 
+func (b *BrokerStub) SetStreaming(v bool) bool { return false }
+
 func (b *BrokerStub) SendBatch(evts []events.Event) {
 	if len(evts) == 0 {
 		return
