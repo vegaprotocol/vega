@@ -3036,6 +3036,7 @@ func (m *Market) tradingTerminated(ctx context.Context, tt bool) {
 	if sp != nil {
 		m.settlementPriceWithLock(ctx, sp)
 	}
+	m.stateChanged = true
 }
 
 func (m *Market) settlementPrice(ctx context.Context, settlementPrice *num.Uint) {
