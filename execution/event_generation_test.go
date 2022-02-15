@@ -57,7 +57,7 @@ func startMarketInAuction(t *testing.T, ctx context.Context, now *time.Time) *te
 func leaveAuction(tm *testMarket, ctx context.Context, now *time.Time) {
 	// Leave auction to force the order to be removed
 	*now = now.Add(time.Second * 20)
-	tm.market.LeaveAuction(ctx, *now)
+	tm.market.LeaveAuctionWithIdGen(ctx, *now, newTestIdGenerator())
 }
 
 func processEventsWithCounter(t *testing.T, tm *testMarket, mdb *subscribers.MarketDepthBuilder, i int) {

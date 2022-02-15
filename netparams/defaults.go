@@ -131,6 +131,7 @@ func defaultNetParams() map[string]value {
 
 		FloatingPointUpdatesDuration: NewDuration().Mutable(true).MustUpdate("5m"),
 
-		TransferFeeFactor: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.01"),
+		TransferFeeFactor:                  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.001"),
+		TransferMinTransferQuantumMultiple: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.1"),
 	}
 }

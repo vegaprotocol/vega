@@ -111,7 +111,8 @@ const (
 
 	FloatingPointUpdatesDuration = "network.floatingPointUpdates.delay"
 
-	TransferFeeFactor = "transfer.fee.factor"
+	TransferFeeFactor                  = "transfer.fee.factor"
+	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
 )
 
 var AllKeys = map[string]struct{}{
@@ -198,4 +199,5 @@ var AllKeys = map[string]struct{}{
 	SnapshotIntervalLength:                                {},
 	FloatingPointUpdatesDuration:                          {},
 	TransferFeeFactor:                                     {},
+	TransferMinTransferQuantumMultiple:                    {},
 }

@@ -3207,7 +3207,7 @@ func TestOrderBook_AuctionUncrossTamlyn(t *testing.T) {
 	//	assert.Equal(t, side, types.Side_SIDE_BUY)
 
 	// Leave auction and uncross the book
-	//	uncrossedOrders, cancels, err := book.ob.LeaveAuction(time.Now())
+	//	uncrossedOrders, cancels, err := book.ob.leaveAuction(time.Now())
 	//	assert.Nil(t, err)
 	//	assert.Equal(t, len(uncrossedOrders), 1)
 	//	assert.Equal(t, len(cancels), 0)

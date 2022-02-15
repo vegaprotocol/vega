@@ -14,7 +14,7 @@
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add support for decimal places specific to markets. This means market price values and position events can have different values. Positions will be expressed in asset decimal places, market specific data events will list prices in market precision.
 - [4660](https://github.com/vegaprotocol/vega/pull/4660) - Add tendermint transaction hash to events
 - [4670](https://github.com/vegaprotocol/vega/pull/4670) - Rework `freeform proposal` structure so that they align with other proposals
-- [4681](https://github.com/vegaprotocol/vega/issues/4681) - Remove tick size from market 
+- [4681](https://github.com/vegaprotocol/vega/issues/4681) - Remove tick size from market
 - [4698](https://github.com/vegaprotocol/vega/issues/4698) - Remove maturity field from future
 - [4699](https://github.com/vegaprotocol/vega/issues/4699) - Remove trading mode one off from market proposal
 ### 🗑️ Deprecation
@@ -52,6 +52,7 @@
 - [4643](https://github.com/vegaprotocol/vega/issues/4643) - Add noise to floating point consensus variables in QA
 - [4639](https://github.com/vegaprotocol/vega/pull/4639) - Add cancel transfer command
 - [4750](https://github.com/vegaprotocol/vega/pull/4750) - Fix null blockchain by forcing it to always be a non-validator node
+- [4754](https://github.com/vegaprotocol/vega/pull/4754) - Fix null blockchain properly this time
 - [4823](https://github.com/vegaprotocol/vega/pull/4283) - Reward refactoring for network treasury
 - [4647](https://github.com/vegaprotocol/vega/pull/4647) - Added endpoint `SubmitRawTransaction` to provide support for different transaction request message versions
 - [4653](https://github.com/vegaprotocol/vega/issues/4653) - Replace asset insurance pool with network treasury
@@ -67,8 +68,11 @@
 - [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
 - [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
 - [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
-- [4737](https://github.com/vegaprotocol/vega/pull/4737) - Use a deterministic generator for order ids, set new order ids to the transaction hash of the Submit transaction 
+- [4737](https://github.com/vegaprotocol/vega/pull/4737) - Use a deterministic generator for order ids, set new order ids to the transaction hash of the Submit transaction
 - [4741](https://github.com/vegaprotocol/vega/pull/4741) - Hash again list of hash from engines
+- [4751](https://github.com/vegaprotocol/vega/pull/4751) - Make trade ids unique using the deterministic id generator
+- [4766](https://github.com/vegaprotocol/vega/issues/4766) - Added feature tests and integration steps for transfers
+- [4771](https://github.com/vegaprotocol/vega/issues/4771) - Small fixes and conformance update for transfers
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -98,6 +102,7 @@
 - [4700](https://github.com/vegaprotocol/vega/pull/4700) - Ensure verification of type between oracle spec binding and oracle spec
 - [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 - [4747](https://github.com/vegaprotocol/vega/pull/4747) - Dispatch network parameter updates at the same block when loaded from checkpoint
+- [4590](https://github.com/vegaprotocol/vega/pull/4590) - Added verification of uint market data in integration test
 
 
 ## 0.47.6

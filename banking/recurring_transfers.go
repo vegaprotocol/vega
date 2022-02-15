@@ -12,7 +12,10 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 )
 
-var ErrStartEpochInThePast = errors.New("start epoch in the past")
+var (
+	ErrStartEpochInThePast                                     = errors.New("start epoch in the past")
+	ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo = errors.New("cannot submit duplicate recurring transfer with same from and to")
+)
 
 func (e *Engine) recurringTransfer(
 	ctx context.Context,
@@ -26,13 +29,24 @@ func (e *Engine) recurringTransfer(
 	}()
 
 	// ensure asset exists
-	if _, err := e.assets.Get(transfer.Asset); err != nil {
+	a, err := e.assets.Get(transfer.Asset)
+	if err != nil {
 		transfer.Status = types.TransferStatusRejected
 		e.log.Debug("cannot transfer funds, invalid asset", logging.Error(err))
 		return fmt.Errorf("could not transfer funds: %w", err)
 	}
 
 	if err := transfer.IsValid(); err != nil {
+		transfer.Status = types.TransferStatusRejected
+		return err
+	}
+
+	if err := e.ensureMinimalTransferAmount(a, transfer.Amount); err != nil {
+		transfer.Status = types.TransferStatusRejected
+		return err
+	}
+
+	if err := e.ensureNoRecurringTransferDuplicates(transfer); err != nil {
 		transfer.Status = types.TransferStatusRejected
 		return err
 	}
@@ -46,6 +60,18 @@ func (e *Engine) recurringTransfer(
 	// from here all sounds OK, we can add the transfer
 	// in the recurringTransfer map
 	e.recurringTransfers[transfer.ID] = transfer
+
+	return nil
+}
+
+func (e *Engine) ensureNoRecurringTransferDuplicates(
+	transfer *types.RecurringTransfer,
+) error {
+	for _, v := range e.recurringTransfers {
+		if v.From == transfer.From && v.To == transfer.To && v.FromAccountType == transfer.FromAccountType && v.ToAccountType == transfer.ToAccountType {
+			return ErrCannotSubmitDuplicateRecurringTransferWithSameFromAndTo
+		}
+	}
 
 	return nil
 }
@@ -84,6 +110,23 @@ func (e *Engine) distributeRecurringTransfers(
 				),
 			)
 		)
+
+		// check if the amount is still enough
+		// ensure asset exists
+		a, err := e.assets.Get(v.Asset)
+		if err != nil {
+			// this should not be possible, asset was validated at first when
+			// accepting the transfer
+			e.log.Panic("this should never happen", logging.Error(err))
+		}
+
+		if err := e.ensureMinimalTransferAmount(a, amount); err != nil {
+			v.Status = types.TransferStatusStopped
+			transfersDone = append(transfersDone,
+				events.NewRecurringTransferFundsEvent(ctx, v))
+			delete(e.recurringTransfers, k)
+			continue
+		}
 
 		resps, err := e.processTransfer(
 			ctx, v.From, v.To, v.Asset, v.FromAccountType, v.ToAccountType, amount, v.Reference, nil, // last is eventual oneoff, which this is not

@@ -125,9 +125,9 @@ type Engine struct {
 	keyToSerialiser map[string]func() ([]byte, error)
 
 	// transfer fee related stuff
-	scheduledTransfers map[time.Time][]scheduledTransfer
-	transferFeeFactor  num.Decimal
-
+	scheduledTransfers         map[time.Time][]scheduledTransfer
+	transferFeeFactor          num.Decimal
+	minTransferQuantumMultiple num.Decimal
 	// recurring transfers
 	// transfer id to recurringTransfers
 	recurringTransfers map[string]*types.RecurringTransfer
@@ -176,10 +176,11 @@ func New(
 			hash:       map[string][]byte{},
 			serialised: map[string][]byte{},
 		},
-		keyToSerialiser:    map[string]func() ([]byte, error){},
-		scheduledTransfers: map[time.Time][]scheduledTransfer{},
-		recurringTransfers: map[string]*types.RecurringTransfer{},
-		transferFeeFactor:  num.DecimalZero(),
+		keyToSerialiser:            map[string]func() ([]byte, error){},
+		scheduledTransfers:         map[time.Time][]scheduledTransfer{},
+		recurringTransfers:         map[string]*types.RecurringTransfer{},
+		transferFeeFactor:          num.DecimalZero(),
+		minTransferQuantumMultiple: num.DecimalZero(),
 	}
 
 	e.keyToSerialiser[withdrawalsKey] = e.serialiseWithdrawals
