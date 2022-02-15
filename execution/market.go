@@ -647,8 +647,6 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	m.settlement.OnTick(t)
 	m.feeSplitter.SetCurrentTime(t)
 
-	m.stateChanged = true
-
 	// TODO(): This also assume that the market is not
 	// being closed before the market is leaving
 	// the opening auction, but settlement at expiry is

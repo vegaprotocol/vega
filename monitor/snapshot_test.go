@@ -1,6 +1,7 @@
 package monitor_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuration) types.Market {
@@ -84,10 +86,15 @@ func createAuctionState() *monitor.AuctionState {
 	return monitor.NewAuctionState(&mktCfg, time.Now())
 }
 
-func getHash(as *monitor.AuctionState) []byte {
+func getHash(t *testing.T, as *monitor.AuctionState) []byte {
+	t.Helper()
 	state := as.GetState()
 	pmproto := state.IntoProto()
-	bytes, _ := proto.Marshal(pmproto)
+	bytes, err := proto.Marshal(pmproto)
+	require.NoError(t, err)
+
+	// Check our change flag has been reset
+	require.False(t, as.Changed())
 	return crypto.Hash(bytes)
 }
 
@@ -95,7 +102,7 @@ func TestEmpty(t *testing.T) {
 	as := createAuctionState()
 
 	// Get the hash and state for the empty object
-	hash1 := getHash(as)
+	hash1 := getHash(t, as)
 	state1 := as.GetState()
 
 	// Create a new object and restore into it
@@ -107,15 +114,14 @@ func TestEmpty(t *testing.T) {
 	as2 := monitor.NewAuctionStateFromSnapshot(&mktCfg, state1)
 
 	// Check the new hash matches the old hash
-	hash2 := getHash(as2)
-	assert.Equal(t, hash1, hash2)
+	assert.Equal(t, hash1, getHash(t, as2))
 }
 
 func TestChangedState(t *testing.T) {
 	as := createAuctionState()
 
 	// Get the hash for the empty object
-	hash1 := getHash(as)
+	original := getHash(t, as)
 
 	// Perform some updates to the object
 	as.StartPriceAuction(time.Now(), &types.AuctionDuration{
@@ -126,8 +132,56 @@ func TestChangedState(t *testing.T) {
 	// Make sure we thinks things have changed
 	assert.True(t, as.Changed())
 
-	// Get the new hash and check it's different to the original
-	hash2 := getHash(as)
+	auctionStart := getHash(t, as)
+	assert.NotEqual(t, original, auctionStart)
 
-	assert.NotEqual(t, hash1, hash2)
+	// extend the auction
+	as.ExtendAuction(types.AuctionDuration{Duration: 12, Volume: 12})
+	assert.True(t, as.Changed())
+
+	auctionExtended := getHash(t, as)
+	assert.NotEqual(t, auctionStart, auctionExtended)
+
+	// set Ready to leave
+	as.SetReadyToLeave()
+	assert.True(t, as.Changed())
+
+	auctionReady := getHash(t, as)
+	assert.NotEqual(t, auctionStart, auctionReady)
+
+	// end it
+	as.Left(context.Background(), time.Now())
+	assert.True(t, as.Changed())
+
+	auctionEnded := getHash(t, as)
+	assert.NotEqual(t, auctionStart, auctionEnded)
+}
+
+// TestAuctionTypeChain checks that if an auction is ended, then started again it is logged as a change.
+func TestAuctionEndsOpens(t *testing.T) {
+	as := createAuctionState()
+
+	// Perform some updates to the object
+	as.StartOpeningAuction(time.Now(), &types.AuctionDuration{
+		Duration: 200,
+		Volume:   200,
+	})
+
+	// Get the hash of a started auction
+	require.True(t, as.Changed())
+	original := getHash(t, as)
+
+	// Close it down and then start exactly the same auction again
+	as.Left(context.Background(), time.Now())
+	require.False(t, as.InAuction()) // definitely no auction
+
+	as.StartOpeningAuction(time.Now(), &types.AuctionDuration{
+		Duration: 200,
+		Volume:   200,
+	})
+
+	require.True(t, as.Changed())
+	newAuction := getHash(t, as)
+	// change flagged even though hash is exactly the same (which is expected given all the state change that actually occurred)
+	assert.Equal(t, original, newAuction)
 }
