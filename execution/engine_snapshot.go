@@ -112,6 +112,9 @@ func (e *Engine) restoreMarketsStates(ctx context.Context, ems []*types.ExecMark
 		}
 
 		pvds = append(pvds, m.position, m.matching, m.tsCalc, m.liquidity)
+
+		// so that we don't return them again the next state change
+		e.generatedProviders[m.GetID()] = struct{}{}
 	}
 
 	return pvds, nil
