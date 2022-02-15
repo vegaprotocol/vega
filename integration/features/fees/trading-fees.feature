@@ -1,8 +1,9 @@
 Feature: Fees calculations
 
-Scenario: Testing fees in continuous trading with one trade and no liquidity providers
+Scenario: Testing fees in continuous trading with one trade and no liquidity providers, 0029-All-Fees-001
     
     Given the fees configuration named "fees-config-1":
+
       | maker fee | infrastructure fee |
       | 0.005     | 0.002              |
     And the price monitoring updated every "1000" seconds named "price-monitoring":
@@ -83,7 +84,7 @@ Scenario: Testing fees in continuous trading with one trade and no liquidity pro
     And the accumulated infrastructure fees should be "7" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-Scenario: Testing fees in continuous trading with two trades and no liquidity providers
+Scenario: Testing fees in continuous trading with two trades and no liquidity providers,0029-ALL-FEES-002
     
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -181,7 +182,7 @@ Scenario: Testing fees in continuous trading with two trades and no liquidity pr
     And the accumulated infrastructure fees should be "8" for the asset "ETH"
     And the accumulated liquidity fees should be "0" for the market "ETH/DEC21"
 
-Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep
+Scenario: Testing fees in continuous trading with two trades and one liquidity providers with 10 and 0 s liquidity fee distribution timestep, 0029-All-Fees-003
     
     When the following network parameters are set:
       | name                                                | value |
@@ -304,7 +305,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | from   | to   | from account                | to account          | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 5      | ETH   |
 
-  # Scenario: WIP - Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep
+   #Scenario: WIP - Testing fees in continuous trading with two trades and one liquidity providers with 0s liquidity fee distribution timestep, 0029-All-Fees-004
     When the following network parameters are set:
       | name                                                | value |
       | market.liquidity.providers.fee.distributionTimeStep | 0s    |
@@ -338,7 +339,7 @@ Scenario: Testing fees in continuous trading with two trades and one liquidity p
       | from   | to   | from account                | to account          | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 2      | ETH   |
 
-Scenario: Testing fees get collected when amended order trades
+Scenario: Testing fees get collected when amended order trades, 0029-All-Fees-005
     
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -462,7 +463,7 @@ Scenario: Testing fees get collected when amended order trades
       | trader3a    | ETH   | ETH/DEC21 | 1159   | 8852    |
       | trader4     | ETH   | ETH/DEC21 | 1102   |  123    |
 
-Scenario: Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees
+Scenario: Testing fees in continuous trading with insufficient balance in their general account but margin covers the fees, 0029-All-Fees-006
     
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -542,7 +543,7 @@ Scenario: Testing fees in continuous trading with insufficient balance in their 
       | trader3 | ETH   | ETH/DEC21 | 34129  | 9966378 |
       | trader4 | ETH   | ETH/DEC21 | 21375  | 0       |
 
-Scenario: Testing fees to confirm fees are collected first and then margin
+Scenario: Testing fees to confirm fees are collected first and then margin, 0029-ALL-FEES-007
     
     Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -599,7 +600,7 @@ Scenario: Testing fees to confirm fees are collected first and then margin
       | trader3 | ETH   | ETH/DEC21 | 339    | 9999667 |
       | trader4 | ETH   | ETH/DEC21 | 205    | 0       |
 
-Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute
+Scenario: WIP - Testing fees in continuous trading when insufficient balance in their general and margin account with LP, then the trade does not execute, 0029-All-Fees-008
  # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
  # <PC> - Also need to confirm if all 4 internal levels of margin should be 0, as in another case where the trade shouldn't be going through it's non-zero
 
@@ -694,7 +695,7 @@ Scenario: WIP - Testing fees in continuous trading when insufficient balance in 
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 4      | ETH   |
 
-Scenario: Testing fees in auctions session with each side of a trade debited 1/2 IF & LP
+Scenario: Testing fees in auctions session with each side of a trade debited 1/2 IF & LP, 0029-All-Fees-009
     
     Given the following network parameters are set:
       | name                                                | value |
@@ -756,7 +757,7 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
       | trader3a | ETH   | ETH/DEC21 | 843    | 9157    |
       | trader4  | ETH   | ETH/DEC21 | 1318   | 8682    |
       
-      #Scenario: Triggering Liquidity auction
+      #Scenario: Triggering Liquidity auction, 0029-All-Fees-010
 
       Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -842,7 +843,7 @@ Scenario: Testing fees in auctions session with each side of a trade debited 1/2
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees
+Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general account but margin covers the fees, 0029-All-Fees-011
     
     Given the following network parameters are set:
       | name                                                | value |
@@ -893,7 +894,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
    
     Then the opening auction period ends for market "ETH/DEC21"
 
-    #Scenario: Triggering Liquidity auction
+    #Scenario: Triggering Liquidity auction, 0029-All-Fees-012
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -945,7 +946,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in Price auction session trading with insufficient balance in their general account but margin covers the fees
+Scenario: Testing fees in Price auction session trading with insufficient balance in their general account but margin covers the fees, 0029-All-Fees-013
     
   Given the following network parameters are set:
       | name                                                | value |
@@ -1047,7 +1048,7 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead.
+Scenario: Testing fees in Liquidity auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, 0029-ALL-FEES-014
 
     Given the following network parameters are set:
       | name                                                | value |
@@ -1098,7 +1099,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
    
     Then the opening auction period ends for market "ETH/DEC21"
 
-    #Scenario: Triggering Liquidity auction
+    #Scenario: Triggering Liquidity auction:0029-ALL-FEES-015
 
     Then the parties place the following orders:
       | party   | market id | side | volume | price | resulting trades | type       | tif     |
@@ -1150,7 +1151,7 @@ Scenario: Testing fees in Liquidity auction session trading with insufficient ba
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead
+Scenario: Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade still goes ahead, 0029-ALL-FEES-016
     
   Given the following network parameters are set:
       | name                                                | value |
@@ -1252,7 +1253,7 @@ Scenario: Testing fees in Price auction session trading with insufficient balanc
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead
+Scenario: WIP - Testing fees in Price auction session trading with insufficient balance in their general and margin account, then the trade does not go ahead,0029-ALL-FEES-017
  # <PC> - Just need to confirm if the trades doesn't go through, then general and margin account balances are expected to be 0.
  # <PC> - Also need to confirm if all 4 internal levels of margin should be non-zero , as in another case where the trade shouldn't be going through it's 0
  # Reducing account balances somehow lowers the margin requirement so the fees again gets covered by the deficient created.
@@ -1359,7 +1360,7 @@ Scenario: WIP - Testing fees in Price auction session trading with insufficient 
       | trading mode            | auction trigger             |
       | TRADING_MODE_CONTINUOUS | AUCTION_TRIGGER_UNSPECIFIED |
 
-Scenario: Testing fees in continuous trading during position resolution
+Scenario: Testing fees in continuous trading during position resolution, 0029-ALL-FEES-018
 
   Given the fees configuration named "fees-config-1":
       | maker fee | infrastructure fee |
@@ -1455,7 +1456,7 @@ Scenario: Testing fees in continuous trading during position resolution
 
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-Scenario: WIP - Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid
+Scenario: WIP - Testing fees in continuous trading during position resolution with insufficient balance in their general and margin account, partial or full fees does not get paid, 0029-ALL-FEES-019
 
  # Fees calculations during Position Resolution when insufficient balance in their general and margin account, then the fees gets paid in order - Maker, IP and then LP else don't get paid
  # <PC> - Even after reducing trader's balance and increasing the fees factors, the fees are being taken fully and thereby reducing the realised PnL.
@@ -1557,7 +1558,7 @@ Scenario: WIP - Testing fees in continuous trading during position resolution wi
 
   And the insurance pool balance should be "0" for the market "ETH/DEC21"
 
-Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers
+Scenario: WIP - Testing fees in continuous trading with two pegged trades and one liquidity providers, 0029-ALL-FEES-020
   # <PC> - Somehow the trades for party aux1 with size = 20 at price = 990 are getting cancelled and new trades of size = 21 at price = 965 are getting placed; but fees look ok
 
     When the following network parameters are set:
@@ -1672,7 +1673,7 @@ Scenario: WIP - Testing fees in continuous trading with two pegged trades and on
       | from   | to   | from account                | to account           | market id | amount | asset |
       | market | aux1 | ACCOUNT_TYPE_FEES_LIQUIDITY | ACCOUNT_TYPE_GENERAL | ETH/DEC21 | 10     | ETH   |
 
-Scenario: Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers) 
+Scenario: Testing fees when network parameters are changed (in continuous trading with one trade and no liquidity providers), 0029-ALL-FEES-021
  Description : Changing net params does change the fees being collected appropriately even if the market is already running
     
     Given the fees configuration named "fees-config-1":
