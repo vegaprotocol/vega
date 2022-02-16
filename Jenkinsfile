@@ -35,7 +35,6 @@ pipeline {
                 description: 'Git branch, tag or hash of the vegaprotocol/system-tests repository')
         string( name: 'PROTOS_BRANCH', defaultValue: 'develop',
                 description: 'Git branch, tag or hash of the vegaprotocol/protos repository')
-        string(name: 'SPECS_INTERNAL_BRANCH', defaultValue: 'master', description: 'Git branch name of the vegaprotocol/specs-internal repository')
     }
     environment {
         CGO_ENABLED = 0
@@ -59,29 +58,17 @@ pipeline {
         }
 
         stage('Git clone') {
-            parallel {
-                stage('vega core') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega') {
-                            script {
-                                scmVars = checkout(scm)
-                                versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
-                                version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
-                                commitHash = getCommitHash()
-                            }
-                            echo "scmVars=${scmVars}"
-                            echo "commitHash=${commitHash}"
-                        }
+            options { retry(3) }
+            steps {
+                dir('vega') {
+                    script {
+                        scmVars = checkout(scm)
+                        versionHash = sh (returnStdout: true, script: "echo \"${scmVars.GIT_COMMIT}\"|cut -b1-8").trim()
+                        version = sh (returnStdout: true, script: "git describe --tags 2>/dev/null || echo ${versionHash}").trim()
+                        commitHash = getCommitHash()
                     }
-                }
-                stage('specs-internal') {
-                    options { retry(3) }
-                    steps {
-                        dir('specs-internal') {
-                            git branch: "${params.SPECS_INTERNAL_BRANCH}", credentialsId: 'vega-ci-bot', url: 'git@github.com:vegaprotocol/specs-internal.git'
-                        }
-                    }
+                    echo "scmVars=${scmVars}"
+                    echo "commitHash=${commitHash}"
                 }
             }
         }
@@ -267,15 +254,6 @@ pipeline {
                         dir('vega/integration') {
                             sh 'godog build -o integration.test && ./integration.test --format=junit:vega-integration-report.xml'
                             junit checksName: 'Integration Tests', testResults: 'vega-integration-report.xml'
-                        }
-                    }
-                }
-                stage('specs-internal qa-scenarios') {
-                    options { retry(3) }
-                    steps {
-                        dir('vega/integration') {
-                            sh 'godog build -o qa_integration.test && ./qa_integration.test --format=junit:specs-internal-qa-scenarios-report.xml ../../specs-internal/qa-scenarios/'
-                            junit checksName: 'Specs Tests (specs-internal)', testResults: 'specs-internal-qa-scenarios-report.xml'
                         }
                     }
                 }

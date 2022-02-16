@@ -52,8 +52,8 @@ Background:
     #complete the first epoch for the self delegation to take effect
     Then the network moves ahead "7" blocks
 
-Scenario: A party enters auto delegation mode by nominating all of its associated stake 
-    Desciption: Once a party has delegated all of its associated stake, it enters auto delegation mode. Once it has more stake associated, it gets automatically distributed between the validators maintaining the same distribution.  
+Scenario: A party enters auto delegation mode by nominating all of its associated stake (0059-STKG-019)
+    Description: Once a party has delegated all of its associated stake, it enters auto delegation mode. Once it has more stake associated, it gets automatically distributed between the validators maintaining the same distribution.  
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
@@ -68,7 +68,7 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party1 |  node9   |  1000  |
     | party1 |  node10  |  1000  |
 
-    #advance to the end of the epoch
+    #advance to the end of the second epoch
     #by now party1 is in auto delegation mode - start the next epoch
     Then the network moves ahead "7" blocks
 
@@ -76,7 +76,7 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party  | asset  | amount |
     | party1 | VEGA   | 1000   |
 
-    # move to the end of the epoch for auto delegation to take place for party1
+    # move to the end of the third epoch for auto delegation to take place for party1
     When the network moves ahead "7" blocks
     Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
@@ -91,8 +91,8 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party1 |  node9   | 1100   | 
     | party1 |  node10  | 1100   |
 
-Scenario: A party dissociates VEGA token leading to undelegation propotionally to their current delegation
-    Desciption: Once a party dissociates VEGA tokens their delegation is adjusted automatically to reflect that in the same propotion as the delegation with respect to the amount withdrawn
+Scenario: A party dissociates VEGA token leading to undelegation proportionally to their current delegation (0059-STKG-012, 0059-STKG-018)
+    Description: Once a party dissociates VEGA tokens their delegation is adjusted automatically to reflect that in the same propotion as the delegation with respect to the amount withdrawn
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
@@ -107,29 +107,29 @@ Scenario: A party dissociates VEGA token leading to undelegation propotionally t
     | party1 |  node9   |  500   |
     | party1 |  node10  |  500   |
 
-    #advance to the end of the epoch 1 and start epoch 2
+    #advance to the end of the epoch 2 and start epoch 3
     When the network moves ahead "7" blocks  
     Given the parties withdraw from staking account the following amount:  
     | party  | asset  | amount |
     | party1 | VEGA   |  5000  |
 
-    #advance to the end of epoch 2
+    #advance to the end of epoch 3
     When the network moves ahead "7" blocks
-    Then the parties should have the following delegation balances for epoch 2:
+    Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   |  1000  |
     | party1 |  node2   |  1000  |
-    | party1 |  node3   |  500  |
-    | party1 |  node4   |  500  |
-    | party1 |  node5   |  500  |
-    | party1 |  node6   |  500  |
-    | party1 |  node7   |  250   |
-    | party1 |  node8   |  250   |
-    | party1 |  node9   |  250   |
-    | party1 |  node10  |  250   |
+    | party1 |  node3   |   500  |
+    | party1 |  node4   |   500  |
+    | party1 |  node5   |   500  |
+    | party1 |  node6   |   500  |
+    | party1 |  node7   |   250  |
+    | party1 |  node8   |   250  |
+    | party1 |  node9   |   250  |
+    | party1 |  node10  |   250  |
 
-Scenario: A party enters auto delegation mode by nominating all of its associated stake, once more tokens are associated they are distributed however not in epochs when manual delegation takes place
-    Desciption: Once a party has delegated all of its associated stake, it enters auto delegation mode. In the following epoch they submit manual delegations so the auto delegation doesn't kick in. An epoch later the remaining tokens are distributed.
+Scenario: A party enters auto delegation mode by nominating all of its associated stake, once more tokens are associated they are distributed however not in epochs when manual delegation takes place (0059-STKG-020)
+    Description: Once a party has delegated all of its associated stake, it enters auto delegation mode. In the following epoch they submit manual delegations so the auto delegation doesn't kick in. An epoch later the remaining tokens are distributed.
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
@@ -152,16 +152,16 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
 
     And the parties submit the following delegations:
     | party  | node id  | amount |
-    | party1 |  node1   |  50  |
-    | party1 |  node2   |  50  |
-    | party1 |  node3   |  50  |
-    | party1 |  node4   |  50  |
-    | party1 |  node5   |  50  |
-    | party1 |  node6   |  50  |
-    | party1 |  node7   |  50  |
-    | party1 |  node8   |  50  |
-    | party1 |  node9   |  50  |
-    | party1 |  node10  |  50  |
+    | party1 |  node1   |  50    |
+    | party1 |  node2   |  50    |
+    | party1 |  node3   |  50    |
+    | party1 |  node4   |  50    |
+    | party1 |  node5   |  50    |
+    | party1 |  node6   |  50    |
+    | party1 |  node7   |  50    |
+    | party1 |  node8   |  50    |
+    | party1 |  node9   |  50    |
+    | party1 |  node10  |  50    |
 
     # move to the end of the epoch - auto delegation will not take place party1 because they requested to manually delegate
     When the network moves ahead "7" blocks
@@ -193,8 +193,8 @@ Scenario: A party enters auto delegation mode by nominating all of its associate
     | party1 |  node9   | 1150   | 
     | party1 |  node10  | 1150   |
 
-Scenario: A party qualifies to auto delegation by delegating all of their associated tokens however by manually undelegation they exit auto delegation mode
-    Desciption: Once a party dissociates VEGA tokens their delegation is adjusted automatically to reflect that in the same propotion as the delegation with respect to the amount withdrawn
+Scenario: A party qualifies to auto delegation by delegating all of their associated tokens however by manually undelegation they exit auto delegation mode (0059-STKG-013, STKG-0014, 0059-STKG-021)
+    Description: Once a party dissociates VEGA tokens their delegation is adjusted automatically to reflect that in the same proportion as the delegation with respect to the amount withdrawn
 
     When the parties submit the following delegations:
     | party  | node id  | amount |
@@ -209,18 +209,18 @@ Scenario: A party qualifies to auto delegation by delegating all of their associ
     | party1 |  node9   |  500   |
     | party1 |  node10  |  500   |
 
-    #advance to the end of the epoch 1 and start epoch 2
+    #advance to the end of the epoch 2 and start epoch 3
     When the network moves ahead "7" blocks"   
     
     Then the parties submit the following undelegations:
     | party  | node id  | amount |  when  |
     | party1 |  node1   |  100   |  now   |
 
-    #advance to the end of epoch 2
+    #advance to the end of epoch 3
     When the network moves ahead "7" blocks 
 
     #as we're out of auto delegation, due to the undelegateNow, no auto delegation will take place until all amount is fully delegated again 
-    Then the parties should have the following delegation balances for epoch 2:
+    Then the parties should have the following delegation balances for epoch 3:
     | party  | node id  | amount |
     | party1 |  node1   |  1900  |
     | party1 |  node2   |  2000  |
@@ -259,3 +259,22 @@ Scenario: A party qualifies to auto delegation by delegating all of their associ
     | party1 |  node8   |  550   |
     | party1 |  node9   |  550   |
     | party1 |  node10  |  660   |
+
+    #verifying auto delegation works on recurring delegations  
+    Then the parties deposit on staking account the following amount:  
+    | party  | asset  | amount |
+    | party1 | VEGA   | 1000   |
+    #end epoch5 - start and end epoch6
+    When the network moves ahead "7" blocks
+    Then the parties should have the following delegation balances for epoch 6:
+    | party  | node id  | amount |
+    | party1 |  node1   |  2280  |
+    | party1 |  node2   |  2400  |
+    | party1 |  node3   |  1200  |
+    | party1 |  node4   |  1200  |
+    | party1 |  node5   |  1200  |
+    | party1 |  node6   |  1200  |
+    | party1 |  node7   |  600   |
+    | party1 |  node8   |  600   |
+    | party1 |  node9   |  600   |
+    | party1 |  node10  |  720   |
