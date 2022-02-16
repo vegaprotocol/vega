@@ -33,7 +33,7 @@ func (s *Service) Load(_ context.Context, cp []byte) error {
 	s.pamu.Unlock()
 	s.amu.Unlock()
 	for _, a := range data.Assets {
-		details := types.AssetDetailsFromProto(a.AssetDetails)
+		details, _ := types.AssetDetailsFromProto(a.AssetDetails)
 		id, err := s.NewAsset(a.Id, details)
 		if err != nil {
 			return err
