@@ -276,14 +276,15 @@ Feature: Test liquidity provider reward distribution
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the trading mode should be "TRADING_MODE_CONTINUOUS" for the market "ETH/DEC21"
 
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
+      | buyer  | price | size | seller  |
       | party2 | 951   | 12   | lp1     |
-      | party2 | 1000  | 8    | party1 |
+      | party2 | 951   | 3    | lp2     |
+      | party2 | 1000  | 5    | party1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -382,12 +383,13 @@ Feature: Test liquidity provider reward distribution
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     | reference    |
       | party1 | ETH/DEC21 | sell | 20     | 1000  | 0                | TYPE_LIMIT | TIF_GTC | party1-sell |
-      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 2                | TYPE_LIMIT | TIF_GTC | party2-buy  |
+      | party2 | ETH/DEC21 | buy  | 20     | 1000  | 3                | TYPE_LIMIT | TIF_GTC | party2-buy  |
 
     And the following trades should be executed:
-      | buyer   | price | size | seller  |
-      | party2 | 951   | 12   | lp1     |
-      | party2 | 1000  | 8    | party1 |
+      | buyer  | price | size | seller |
+      | party2 | 951   | 12   | lp1    |
+      | party2 | 951   | 3    | lp2    |
+      | party2 | 1000  | 5    | party1 |
 
     And the accumulated liquidity fees should be "20" for the market "ETH/DEC21"
 
@@ -410,10 +412,10 @@ Feature: Test liquidity provider reward distribution
       | lp3 | lp3   | ETH/DEC21 | 10000             | 0.001 | sell | MID              | 2          | 1      | amendment |
 
     And the liquidity provider fee shares for the market "ETH/DEC21" should be:
-      | party | equity like share | average entry valuation |
-      | lp1   | 0.7366            | 10000                   |
-      | lp2   | 0.1841            | 10000                   |
-      | lp3   | 0.0791            | 116278                  |
+      | party | equity like share  | average entry valuation |
+      | lp1   | 0.7362029616262406 | 10000                   |
+      | lp2   | 0.1840507404065602 | 10000                   |
+      | lp3   | 0.0797462979671992 | 115397.670549084859473  |
 
     Then the parties place the following orders:
       | party  | market id | side | volume | price | resulting trades | type       | tif     |
