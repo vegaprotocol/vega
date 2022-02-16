@@ -5,6 +5,7 @@ import (
 
 	"code.vegaprotocol.io/vega/execution"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestExpiringOrders(t *testing.T) {
@@ -47,7 +48,7 @@ func testExpireOrdersSnapshot(t *testing.T) {
 	testOrders := getTestOrders()[:6]
 
 	// Test empty
-	a.Equal([]string{}, eo.GetState())
+	a.Len(eo.GetState(), 0)
 	a.False(eo.Changed())
 
 	eo.Insert(testOrders[0].ID, 100)
@@ -58,17 +59,20 @@ func testExpireOrdersSnapshot(t *testing.T) {
 	eo.Insert(testOrders[5].ID, 170)
 	a.True(eo.Changed())
 
-	testIDs := []string{}
+	testIDs := map[string]struct{}{}
 	for _, to := range testOrders {
-		testIDs = append(testIDs, to.ID)
+		testIDs[to.ID] = struct{}{}
 	}
 
 	s := eo.GetState()
 	a.False(eo.Changed())
-	a.Equal(testIDs, s)
 
-	newEo := execution.NewExpiringOrdersFromState(testOrders)
+	newEo := execution.NewExpiringOrdersFromState(s)
 	a.True(newEo.Changed())
-	a.Equal(testIDs, newEo.GetState())
+	state := newEo.GetState()
+	a.Equal(len(testIDs), len(state))
+	for _, o := range state {
+		require.NotNil(t, testIDs[o.ID])
+	}
 	a.False(newEo.Changed())
 }
