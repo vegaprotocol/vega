@@ -73,6 +73,7 @@
 - [4751](https://github.com/vegaprotocol/vega/pull/4751) - Make trade ids unique using the deterministic id generator
 - [4766](https://github.com/vegaprotocol/vega/issues/4766) - Added feature tests and integration steps for transfers
 - [4771](https://github.com/vegaprotocol/vega/issues/4771) - Small fixes and conformance update for transfers
+- [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
