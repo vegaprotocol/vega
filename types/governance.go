@@ -3,6 +3,7 @@ package types
 import (
 	"errors"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	vegapb "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	oraclespb "code.vegaprotocol.io/protos/vega/oracles/v1"
@@ -196,10 +197,14 @@ func ProposalSubmissionFromProposal(p *Proposal) *ProposalSubmission {
 	}
 }
 
-func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalSubmission {
+func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) (*ProposalSubmission, error) {
 	var pterms *ProposalTerms
 	if p.Terms != nil {
-		pterms = ProposalTermsFromProto(p.Terms)
+		var err error
+		pterms, err = ProposalTermsFromProto(p.Terms)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &ProposalSubmission{
 		Reference: p.Reference,
@@ -209,7 +214,7 @@ func NewProposalSubmissionFromProto(p *commandspb.ProposalSubmission) *ProposalS
 			Hash:        p.Rationale.Hash,
 			URL:         p.Rationale.Url,
 		},
-	}
+	}, nil
 }
 
 func (p ProposalSubmission) IntoProto() *commandspb.ProposalSubmission {
@@ -295,18 +300,23 @@ func (p Proposal) DeepClone() *Proposal {
 	return &cpy
 }
 
-func ProposalFromProto(pp *vegapb.Proposal) *Proposal {
+func ProposalFromProto(pp *proto.Proposal) (*Proposal, error) {
+	terms, err := ProposalTermsFromProto(pp.Terms)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Proposal{
 		ID:           pp.Id,
 		Reference:    pp.Reference,
 		Party:        pp.PartyId,
 		State:        pp.State,
 		Timestamp:    pp.Timestamp,
-		Terms:        ProposalTermsFromProto(pp.Terms),
+		Terms:        terms,
 		Reason:       pp.Reason,
 		Rationale:    ProposalRationaleFromProto(pp.Rationale),
 		ErrorDetails: pp.ErrorDetails,
-	}
+	}, nil
 }
 
 func (p Proposal) IntoProto() *vegapb.Proposal {
@@ -648,21 +658,27 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 	return r
 }
 
-func ProposalTermsFromProto(p *vegapb.ProposalTerms) *ProposalTerms {
-	var change proposalTerm
+func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
+	var (
+		change pterms
+		err    error
+	)
 	if p.Change != nil {
 		switch ch := p.Change.(type) {
 		case *vegapb.ProposalTerms_NewMarket:
-			change = NewNewMarketFromProto(ch)
+			change, err = NewNewMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateMarket:
-			change = UpdateMarketFromProto(ch)
+			change = NewUpdateMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateNetworkParameter:
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:
-			change = NewNewAssetFromProto(ch)
+			change, err = NewNewAssetFromProto(ch)
 		case *vegapb.ProposalTerms_NewFreeform:
 			change = NewNewFreeformFromProto(ch)
 		}
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	return &ProposalTerms{
@@ -670,7 +686,7 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) *ProposalTerms {
 		EnactmentTimestamp:  p.EnactmentTimestamp,
 		ValidationTimestamp: p.ValidationTimestamp,
 		Change:              change,
-	}
+	}, nil
 }
 
 func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale {
@@ -684,7 +700,7 @@ func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale 
 	}
 }
 
-func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) *ProposalTermsNewMarket {
+func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTerms_NewMarket, error) {
 	var newMarket *NewMarket
 	if p.NewMarket != nil {
 		newMarket = &NewMarket{}
@@ -693,13 +709,17 @@ func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) *ProposalTermsNewM
 			newMarket.Changes = NewMarketConfigurationFromProto(p.NewMarket.Changes)
 		}
 		if p.NewMarket.LiquidityCommitment != nil {
-			newMarket.LiquidityCommitment, _ = NewMarketCommitmentFromProto(p.NewMarket.LiquidityCommitment)
+			var err error
+			newMarket.LiquidityCommitment, err = NewMarketCommitmentFromProto(p.NewMarket.LiquidityCommitment)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 	return &ProposalTermsNewMarket{
 		NewMarket: newMarket,
-	}
+	}, nil
 }
 
 func NewUpdateNetworkParameterFromProto(
@@ -719,19 +739,21 @@ func NewUpdateNetworkParameterFromProto(
 	}
 }
 
-func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) *ProposalTermsNewAsset {
+func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) (*ProposalTerms_NewAsset, error) {
 	var newAsset *NewAsset
 	if p.NewAsset != nil {
 		newAsset = &NewAsset{}
 
 		if p.NewAsset.Changes != nil {
-			newAsset.Changes = AssetDetailsFromProto(p.NewAsset.Changes)
+			var err error
+			newAsset.Changes, err = AssetDetailsFromProto(p.NewAsset.Changes)
+			return nil, err
 		}
 	}
 
 	return &ProposalTermsNewAsset{
 		NewAsset: newAsset,
-	}
+	}, nil
 }
 
 func NewNewFreeformFromProto(_ *vegapb.ProposalTerms_NewFreeform) *ProposalTermsNewFreeform {
@@ -747,6 +769,7 @@ func (p ProposalTerms) IntoProto() *vegapb.ProposalTerms {
 		EnactmentTimestamp:  p.EnactmentTimestamp,
 		ValidationTimestamp: p.ValidationTimestamp,
 	}
+
 	switch ch := change.(type) {
 	case *vegapb.ProposalTerms_NewMarket:
 		r.Change = ch
@@ -885,7 +908,6 @@ func (n UpdateNetworkParameter) DeepClone() *UpdateNetworkParameter {
 }
 
 func (a ProposalTermsNewAsset) IntoProto() *vegapb.ProposalTerms_NewAsset {
-	var newAsset *vegapb.NewAsset
 	if a.NewAsset != nil {
 		newAsset = a.NewAsset.IntoProto()
 	}

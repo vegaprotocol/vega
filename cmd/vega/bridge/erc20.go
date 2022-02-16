@@ -3,6 +3,7 @@ package bridge
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"code.vegaprotocol.io/shared/paths"
 	"code.vegaprotocol.io/vega/bridges"
@@ -161,6 +162,7 @@ type ERC20WithdrawAssetCmd struct {
 	ReceiverAddress string `long:"receiver-address" required:"true" description:"The ethereum address of the wallet which is to receive the funds"`
 	BridgeAddress   string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
 	Nonce           string `long:"nonce" required:"true" description:"A nonce for this signature"`
+	Creation        int64  `long:"creation" required:"true" descripton:"creation time of the withdrawal (timestamp)"`
 }
 
 func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
@@ -183,9 +185,11 @@ func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
 		return errors.New("invalid amount, needs to be base 10")
 	}
 
+	creation := time.Unix(opts.Creation, 0)
+
 	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress)
 	bundle, err := erc20Logic.WithdrawAsset(
-		opts.TokenAddress, amount, opts.ReceiverAddress, nonce,
+		opts.TokenAddress, amount, opts.ReceiverAddress, creation, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
@@ -196,10 +200,12 @@ func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {
 }
 
 type ERC20ListAssetCmd struct {
-	TokenAddress  string `long:"token-address" required:"true" description:"The Ethereum address of the new token"`
-	VegaAssetID   string `long:"vega-asset-id" required:"true" description:"The vega ID for this new token"`
-	BridgeAddress string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
-	Nonce         string `long:"nonce" required:"true" description:"A nonce for this signature"`
+	TokenAddress      string `long:"token-address" required:"true" description:"The Ethereum address of the new token"`
+	VegaAssetID       string `long:"vega-asset-id" required:"true" description:"The vega ID for this new token"`
+	BridgeAddress     string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
+	Nonce             string `long:"nonce" required:"true" description:"A nonce for this signature"`
+	LifetimeLimit     string `long:"lifetime-limit" required:"true" description:"The lifetime deposit limit for the asset"`
+	WithdrawThreshold string `long:"withdraw-threshold" required:"true" description:"The withdrawal threshold for this asset"`
 }
 
 func (opts *ERC20ListAssetCmd) Execute(_ []string) error {
@@ -216,10 +222,18 @@ func (opts *ERC20ListAssetCmd) Execute(_ []string) error {
 	if overflowed {
 		return errors.New("invalid nonce, needs to be base 10")
 	}
+	lifetimeLimit, overflowed := num.UintFromString(opts.LifetimeLimit, 10)
+	if overflowed {
+		return errors.New("invalid lifetime-limit, needs to be base 10")
+	}
+	withdrawThreshod, overflowed := num.UintFromString(opts.WithdrawThreshold, 10)
+	if overflowed {
+		return errors.New("invalid withdraw-threshold, needs to be base 10")
+	}
 
 	erc20Logic := bridges.NewERC20Logic(w, opts.BridgeAddress)
 	bundle, err := erc20Logic.ListAsset(
-		opts.TokenAddress, opts.VegaAssetID, nonce,
+		opts.TokenAddress, opts.VegaAssetID, lifetimeLimit, withdrawThreshod, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)

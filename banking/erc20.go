@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"code.vegaprotocol.io/vega/assets/erc20"
 	"code.vegaprotocol.io/vega/events"
@@ -163,10 +164,11 @@ func (e *Engine) startERC20Signatures(
 		err       error
 	)
 
+	creation := time.Unix(0, w.CreationDate)
 	// if we are a validator, we want to build a signature
 	if e.top.IsValidator() {
 		_, signature, err = asset.SignWithdrawal(
-			w.Amount, w.Ext.GetErc20().GetReceiverAddress(), ref)
+			w.Amount, w.Ext.GetErc20().GetReceiverAddress(), ref, creation)
 		if err != nil {
 			// there's not reason we cannot build the signature here
 			// apart if the node isn't configure properly
@@ -211,9 +213,10 @@ func (e *Engine) offerERC20NotarySignatures(resource string) []byte {
 			logging.Error(err))
 	}
 
+	creation := time.Unix(0, w.CreationDate)
 	erc20asset, _ := asset.ERC20()
 	_, signature, err := erc20asset.SignWithdrawal(
-		w.Amount, w.Ext.GetErc20().GetReceiverAddress(), wref.ref)
+		w.Amount, w.Ext.GetErc20().GetReceiverAddress(), wref.ref, creation)
 	if err != nil {
 		// there's not reason we cannot build the signature here
 		// apart if the node isn't configure properly
