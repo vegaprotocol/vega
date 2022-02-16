@@ -113,6 +113,7 @@ const (
 
 	TransferFeeFactor                  = "transfer.fee.factor"
 	TransferMinTransferQuantumMultiple = "transfer.minTransferQuantumMultiple"
+	TransferMaxCommandsPerEpoch        = "spam.protection.maxUserTransfersPerEpoch"
 )
 
 var AllKeys = map[string]struct{}{
@@ -200,4 +201,5 @@ var AllKeys = map[string]struct{}{
 	FloatingPointUpdatesDuration:                          {},
 	TransferFeeFactor:                                     {},
 	TransferMinTransferQuantumMultiple:                    {},
+	TransferMaxCommandsPerEpoch:                           {},
 }

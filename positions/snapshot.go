@@ -111,7 +111,7 @@ func (e *SnapshotEngine) LoadState(_ context.Context, payload *types.Payload) ([
 		if e.marketID != pl.MarketPositions.MarketID {
 			return nil, types.ErrUnknownSnapshotType
 		}
-		e.log.Debug("loading snapshot", logging.Int("positions", len(pl.MarketPositions.Positions)))
+
 		for _, p := range pl.MarketPositions.Positions {
 			pos := NewMarketPosition(p.PartyID)
 			pos.price = p.Price
@@ -140,21 +140,20 @@ func (e *SnapshotEngine) serialise() ([]byte, []byte, error) {
 		return e.data, e.hash, nil // we already have what we need
 	}
 
-	e.log.Debug("serilaising snapshot", logging.Int("positions", len(e.positionsCpy)))
 	positions := make([]*types.MarketPosition, 0, len(e.positionsCpy))
 
 	for _, evt := range e.positionsCpy {
 		pos := &types.MarketPosition{
-			PartyID: evt.Party(),
-			Price:   evt.Price(),
-			Buy:     evt.Buy(),
-			Sell:    evt.Sell(),
-			Size:    evt.Size(),
-			VwBuy:   evt.VWBuy(),
-			VwSell:  evt.VWSell(),
+			Price:  evt.Price(),
+			Buy:    evt.Buy(),
+			Sell:   evt.Sell(),
+			Size:   evt.Size(),
+			VwBuy:  evt.VWBuy(),
+			VwSell: evt.VWSell(),
 		}
 		positions = append(positions, pos)
 	}
+
 	e.pl.Data = &types.PayloadMarketPositions{
 		MarketPositions: &types.MarketPositions{
 			MarketID:  e.marketID,
