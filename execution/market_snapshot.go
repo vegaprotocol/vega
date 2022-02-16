@@ -167,7 +167,7 @@ func (m *Market) getState() *types.ExecMarket {
 		PriceMonitor:               m.pMonitor.GetState(),
 		AuctionState:               m.as.GetState(),
 		PeggedOrders:               m.peggedOrders.GetState(),
-		ExpiringOrders:             m.getOrdersByID(m.expiringOrders.GetState()),
+		ExpiringOrders:             m.expiringOrders.GetState(),
 		LastBestBid:                m.lastBestBidPrice.Clone(),
 		LastBestAsk:                m.lastBestAskPrice.Clone(),
 		LastMidBid:                 m.lastMidBuyPrice.Clone(),
