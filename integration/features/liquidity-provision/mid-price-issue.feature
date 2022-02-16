@@ -439,6 +439,7 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     When the parties place the following orders:
       | party  | market id | side | volume | price      | resulting trades | type       | tif     | reference |
       | party2 | DAI/DEC22 | buy  | 1      | 810000000  | 0                | TYPE_LIMIT | TIF_GTC | party1-b  |
+
     ## LP orders are gone! this is where things go wrong
     ## THIS IS WRONG!!!
     Then the order book should have the following volumes for market "DAI/DEC22":
@@ -446,8 +447,8 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | sell | 8200000000 | 1      |
       | buy  | 800000000  | 1      |
       | buy  | 810000000  | 1      |
-      #| sell | 4510000000 | 5      |
-      #| buy  | 4490000000 | 5      |
+      | sell | 4515000000 | 5      |
+      | buy  | 4495000000 | 5      |
     And the mark price should be "3500000000" for the market "DAI/DEC22"
     When the parties cancel the following orders:
       | party  | reference |
@@ -465,18 +466,18 @@ Feature: Replicate unexpected margin issues - no mid price pegs
     ## Buy side is gone, sell side only has volume of 3, so LP is doing SOMETHING, but what?
     Then the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4510000000 | 3      |
+      | sell | 4510000000 | 5      |
       | sell | 8200000000 | 1      |
       | sell | 8190000000 | 1      |
       | buy  | 810000000  | 1      |
-      #| buy  | 4490000000 | 5      |
+      | buy  | 4490000000 | 5      |
     When the parties cancel the following orders:
       | party  | reference |
       | party1 | party3-2  |
     ## Now the volumes are different compared to when we created both orders + deleted both at the same time???
     Then the order book should have the following volumes for market "DAI/DEC22":
       | side | price      | volume |
-      | sell | 4510000000 | 3      |
+      | sell | 4510000000 | 5      |
       | sell | 8190000000 | 1      |
       | buy  | 4490000000 | 5      |
       | buy  | 810000000  | 1      |
@@ -525,8 +526,8 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | sell | 8200000000 | 1      |
       | buy  | 800000000  | 1      |
       | buy  | 810000000  | 1      |
-      #| sell | 4510000000 | 5      |
-      #| buy  | 4490000000 | 5      |
+      | sell | 4515000000 | 5      |
+      | buy  | 4495000000 | 5      |
     And the mark price should be "3500000000" for the market "DAI/DEC22"
     When the parties cancel the following orders:
       | party  | reference |
@@ -547,8 +548,8 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | sell | 8200000000 | 1      |
       | sell | 8190000000 | 1      |
       | buy  | 810000000  | 1      |
-      #| sell | 4510000000 | 3      |
-      #| buy  | 4490000000 | 5      |
+      | sell | 4510000000 | 5      |
+      | buy  | 4490000000 | 5      |
     When the parties cancel the following orders:
       | party  | reference |
       | party2 | party3-2  |

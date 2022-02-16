@@ -112,10 +112,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount  | asset |
       | party3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1574328 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2399217 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1799229 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
+      | party3 | ETH   | ETH/DEC20 | 1799229 | 988550783 |
+      #| party3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
 
     # Amend orders to set slippage to 180
     When the parties amend the following orders:

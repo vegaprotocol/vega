@@ -92,8 +92,11 @@ Feature: Replicate unexpected margin issues - no mid price pegs
       | sell | 8200000000 | 1      |
       | sell | 8190000000 | 1      |
       | buy  | 810000000  | 1      |
-      #| sell | 4510000000 | 3      |
-      #| buy  | 4490000000 | 5      |
+    # The bug is fixed, so we should also see the LP orders
+    And the order book should have the following volumes for market "DAI/DEC22":
+      | side | price      | volume |
+      | sell | 4510000000 | 5      |
+      | buy  | 4490000000 | 5      |
     ## Let's see if amending the LP in a trivial way changes anything at all
     When the parties submit the following liquidity provision:
       | id  | party  | market id | commitment amount | fee  | side | pegged reference | proportion | offset   | reference | lp type   |
