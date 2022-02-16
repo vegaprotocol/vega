@@ -1,0 +1,37 @@
+{
+  "oracleSpecForSettlementPrice": {
+    "id": "100",
+    "pubKeys": ["0x0000"],
+    "filters": [
+      {
+        "key": {
+          "name": "price.DAI.value",
+          "type": "TYPE_INTEGER"
+        },
+        "conditions": [
+        ]
+      }
+    ],
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "oracleSpecForTradingTermination": {
+    "pubKeys": ["0x0000"],
+    "filters": [
+      {
+        "key": {
+          "name": "price.DAI.value",
+          "type": "TYPE_INTEGER"
+        },
+        "conditions": [
+        ]
+      }
+    ],
+    "status": "STATUS_UNSPECIFIED"
+  },
+  "oracleSpecBinding": {
+    "settlementPriceProperty": "price.DAI.value",
+    "tradingTerminationProperty": "price.DAI.value"
+  },
+  "quoteName": "DAI",
+  "settlementAsset": "DAI"
+}

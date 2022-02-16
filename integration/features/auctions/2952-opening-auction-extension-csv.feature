@@ -112,10 +112,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount  | asset |
       | party3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1574328 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2399217 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 1799229 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
+      | party3 | ETH   | ETH/DEC20 | 1799229 | 989150771 |
+      #| party3 | ETH   | ETH/DEC20 | 2399217 | 988550783 |
 
     # Amend orders to set slippage to 180
     When the parties amend the following orders:
@@ -130,11 +131,11 @@ Feature: Set up a market, with an opening auction, then uncross the book
     # Check MTM Loss transfer happened
     Then the following transfers should happen:
       | from    | to      | from account         | to account              | market id | amount  | asset |
-      | party3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 2000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2224903 | ETH   |
+      | party3 | market  | ACCOUNT_TYPE_MARGIN  | ACCOUNT_TYPE_SETTLEMENT | ETH/DEC20 | 1799229 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_GENERAL | ACCOUNT_TYPE_MARGIN     | ETH/DEC20 | 2024132 | ETH   |
     And the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
-      | party3 | ETH   | ETH/DEC20 | 2624120 | 986325880 |
+      | party3 | ETH   | ETH/DEC20 | 2024132 | 986925868 |
 
     # Amend orders to set slippage to 140
     # Amending prices down, so amend buy order first, so it doesn't uncross with the lowered sell order
@@ -152,7 +153,7 @@ Feature: Set up a market, with an opening auction, then uncross the book
     Then the following transfers should happen:
       | from    | to      | from account            | to account           | market id | amount  | asset |
       | market  | party3 | ACCOUNT_TYPE_SETTLEMENT | ACCOUNT_TYPE_MARGIN  | ETH/DEC20 | 4000000 | ETH   |
-      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 5049792 | ETH   |
+      | party3 | party3 | ACCOUNT_TYPE_MARGIN     | ACCOUNT_TYPE_GENERAL | ETH/DEC20 | 4449804 | ETH   |
     Then the parties should have the following account balances:
       | party  | asset | market id | margin  | general   |
       | party3 | ETH   | ETH/DEC20 | 1574328 | 991375672 |

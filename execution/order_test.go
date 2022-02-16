@@ -2832,3 +2832,83 @@ func Test2965EnsureLPOrdersAreNotCancelleableWithCancelAll(t *testing.T) {
 		}
 	})
 }
+
+func TestMissingLP(t *testing.T) {
+	party1 := "party1"
+	party2 := "party2"
+	party3 := "party3"
+	auxParty, auxParty2 := "auxParty", "auxParty2"
+	now := time.Unix(10, 0)
+	closingAt := time.Unix(10000000000, 0)
+	tm := getTestMarket(t, now, closingAt, nil, &types.AuctionDuration{
+		Duration: 1,
+	})
+	ctx := vegacontext.WithTraceID(context.Background(), vgcrypto.RandomHash())
+
+	addAccount(tm, party1)
+	addAccount(tm, party2)
+	addAccount(tm, party3)
+	addAccount(tm, auxParty)
+	addAccount(tm, auxParty2)
+	tm.broker.EXPECT().Send(gomock.Any()).AnyTimes()
+
+	// Assure liquidity auction won't be triggered
+	tm.market.OnMarketLiquidityTargetStakeTriggeringRatio(ctx, num.DecimalFromFloat(0))
+	// ensure auction durations are 1 second
+	tm.market.OnMarketAuctionMinimumDurationUpdate(ctx, time.Second)
+	alwaysOnBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, vgcrypto.RandomHash(), types.SideBuy, auxParty, 1, 800000)
+	conf, err := tm.market.SubmitOrder(ctx, alwaysOnBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	alwaysOnAsk := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, vgcrypto.RandomHash(), types.SideSell, auxParty, 1, 8200000)
+	conf, err = tm.market.SubmitOrder(ctx, alwaysOnAsk)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+	// create orders so we can leave opening auction
+	auxOrders := []*types.Order{
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, vgcrypto.RandomHash(), types.SideBuy, auxParty, 1, 3500000),
+		getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, vgcrypto.RandomHash(), types.SideSell, auxParty2, 1, 3500000),
+	}
+	for _, o := range auxOrders {
+		conf, err := tm.market.SubmitOrder(ctx, o)
+		require.NotNil(t, conf)
+		require.NoError(t, err)
+	}
+	now = now.Add(time.Second * 2) // opening auction is 1 second, move time ahead by 2 seconds so we leave auction
+	tm.market.OnChainTimeUpdate(ctx, now)
+
+	// Here we are in auction
+	assert.False(t, tm.mas.InAuction())
+
+	// Send LP order
+
+	lps := &types.LiquidityProvisionSubmission{
+		MarketID:         tm.market.GetID(),
+		CommitmentAmount: num.NewUint(10000),
+		Fee:              num.DecimalFromFloat(0.01),
+		Sells: []*types.LiquidityOrder{
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
+		},
+		Buys: []*types.LiquidityOrder{
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
+		},
+	}
+
+	tm.market.SubmitLiquidityProvision(ctx, lps, party1, vgcrypto.RandomHash())
+
+	// Check we have 2 orders on each side of the book (4 in total)
+	assert.EqualValues(t, 4, tm.market.GetOrdersOnBookCount())
+
+	// Send in a limit order to move the BEST_BID and MID price
+	newBestBid := getMarketOrder(tm, now, types.OrderTypeLimit, types.OrderTimeInForceGTC, vgcrypto.RandomHash(), types.SideBuy, auxParty, 1, 810000)
+	conf, err = tm.market.SubmitOrder(ctx, newBestBid)
+	require.NotNil(t, conf)
+	require.NoError(t, err)
+	require.Equal(t, types.OrderStatusActive, conf.Order.Status)
+
+	// Check we have 5 orders in total
+	assert.EqualValues(t, 5, tm.market.GetOrdersOnBookCount())
+}
