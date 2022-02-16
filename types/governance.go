@@ -660,7 +660,7 @@ func NewMarketConfigurationFromProto(p *vegapb.NewMarketConfiguration) *NewMarke
 
 func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 	var (
-		change pterms
+		change proposalTerm
 		err    error
 	)
 	if p.Change != nil {
@@ -668,7 +668,7 @@ func ProposalTermsFromProto(p *vegapb.ProposalTerms) (*ProposalTerms, error) {
 		case *vegapb.ProposalTerms_NewMarket:
 			change, err = NewNewMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateMarket:
-			change = NewUpdateMarketFromProto(ch)
+			change = UpdateMarketFromProto(ch)
 		case *vegapb.ProposalTerms_UpdateNetworkParameter:
 			change = NewUpdateNetworkParameterFromProto(ch)
 		case *vegapb.ProposalTerms_NewAsset:
@@ -700,7 +700,7 @@ func ProposalRationaleFromProto(p *vegapb.ProposalRationale) *ProposalRationale 
 	}
 }
 
-func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTerms_NewMarket, error) {
+func NewNewMarketFromProto(p *vegapb.ProposalTerms_NewMarket) (*ProposalTermsNewMarket, error) {
 	var newMarket *NewMarket
 	if p.NewMarket != nil {
 		newMarket = &NewMarket{}
@@ -739,7 +739,7 @@ func NewUpdateNetworkParameterFromProto(
 	}
 }
 
-func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) (*ProposalTerms_NewAsset, error) {
+func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) (*ProposalTermsNewAsset, error) {
 	var newAsset *NewAsset
 	if p.NewAsset != nil {
 		newAsset = &NewAsset{}
@@ -747,7 +747,9 @@ func NewNewAssetFromProto(p *vegapb.ProposalTerms_NewAsset) (*ProposalTerms_NewA
 		if p.NewAsset.Changes != nil {
 			var err error
 			newAsset.Changes, err = AssetDetailsFromProto(p.NewAsset.Changes)
-			return nil, err
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -908,6 +910,7 @@ func (n UpdateNetworkParameter) DeepClone() *UpdateNetworkParameter {
 }
 
 func (a ProposalTermsNewAsset) IntoProto() *vegapb.ProposalTerms_NewAsset {
+	var newAsset *vegapb.NewAsset
 	if a.NewAsset != nil {
 		newAsset = a.NewAsset.IntoProto()
 	}

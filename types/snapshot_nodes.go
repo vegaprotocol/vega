@@ -1513,7 +1513,6 @@ func PayloadGovernanceActiveFromProto(ga *snapshot.Payload_GovernanceActive) *Pa
 }
 
 func (p PayloadGovernanceActive) IntoProto() *snapshot.Payload_GovernanceActive {
-	fmt.Printf("ACTIVE%v", p.GovernanceActive.IntoProto().String())
 	return &snapshot.Payload_GovernanceActive{
 		GovernanceActive: p.GovernanceActive.IntoProto(),
 	}
@@ -2154,7 +2153,7 @@ func GovernanceEnactedFromProto(ge *snapshot.GovernanceEnacted) *GovernanceEnact
 		Proposals: make([]*ProposalData, 0, len(ge.Proposals)),
 	}
 	for _, p := range ge.Proposals {
-		ep, _ := ProposalFromProto(p)
+		ep := ProposalDataFromProto(p)
 		ret.Proposals = append(ret.Proposals, ep)
 	}
 	return &ret
