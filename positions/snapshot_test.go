@@ -102,6 +102,12 @@ func TestSnapshotSaveAndLoad(t *testing.T) {
 	require.Nil(t, err)
 	require.True(t, bytes.Equal(h1, h3))
 	require.Equal(t, len(engine.Positions()), len(snapEngine.Positions()))
+	for _, p := range engine.Positions() {
+		// find it in the other engine by partyID
+		pos, found := snapEngine.GetPositionByPartyID(p.Party())
+		require.True(t, found)
+		require.Equal(t, p, pos)
+	}
 }
 
 func TestSnapshotHashNoChanges(t *testing.T) {
