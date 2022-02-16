@@ -253,7 +253,8 @@ func (b *BrokerStub) GetActiveOrderDepth(marketID string) (sell []*types.Order, 
 		}
 		sell = append(sell, ord)
 	}
-	return
+
+	return sell, buy
 }
 
 func (b *BrokerStub) GetMarket(marketID string) *types.Market {

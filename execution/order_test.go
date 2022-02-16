@@ -2889,10 +2889,10 @@ func TestMissingLP(t *testing.T) {
 		CommitmentAmount: num.NewUint(10000),
 		Fee:              num.DecimalFromFloat(0.01),
 		Sells: []*types.LiquidityOrder{
-			&types.LiquidityOrder{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
 		},
 		Buys: []*types.LiquidityOrder{
-			&types.LiquidityOrder{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
+			{Reference: types.PeggedReferenceMid, Proportion: 1, Offset: num.NewUint(10000)},
 		},
 	}
 
