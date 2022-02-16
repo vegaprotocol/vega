@@ -757,7 +757,7 @@ func (e *Engine) createOrdersFromShape(
 			// we check if the order was not nil, which mean we already had a deployed order
 			// if the order as not traded, and the size haven't changed, then we have nothing
 			// to do about it. If the size has changed, then we will want to recreate one.
-			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume)) ||
+			(order != nil && (!order.HasTraded() && order.Size == o.LiquidityImpliedVolume && order.Price.EQ(o.Price))) ||
 			// we check o.Price == 0 just to make sure we are able to price
 			// the order, in which case the size will have been calculated
 			// properly by the engine.
