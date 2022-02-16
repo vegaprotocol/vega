@@ -19,20 +19,21 @@ type ERC20Cmd struct {
 	Config     nodewallets.Config
 	PrivateKey string `long:"private-key" required:"false" description:"A ethereum private key to be use to sign the messages"`
 
-	AddSigner            ERC20AddSignerCmd            `command:"add_signer" description:"Create signature to add a new signer to the erc20 bridge"`
-	RemoveSigner         ERC20RemoveSignerCmd         `command:"remove_signer" description:"Create signature to remove a signer from the erc20 bridge"`
-	SetThreshold         ERC20SetThresholdCmd         `command:"set_threshold" description:"Create signature to change the threshold of required signature to apply changes to the bridge"`
-	ListAsset            ERC20ListAssetCmd            `command:"list_asset" description:"Add a new erc20 asset to the erc20 bridge"`
-	RemoveAsset          ERC20RemoveAssetCmd          `command:"remove_asset" description:"Remove an erc20 asset from the erc20 bridge"`
-	WithdrawAsset        ERC20WithdrawAssetCmd        `command:"withdraw_asset" description:"Withdraw ERC20 from the bridge"`
-	SetDepositMinimum    ERC20SetDepositMinimumCmd    `command:"set_deposit_minimum" description:"Set the minimum allowed deposit for an ERC20 token on the bridge"`
-	SetDepositMaximum    ERC20SetDepositMaximumCmd    `command:"set_deposit_maximum" description:"Set the maximum allowed deposit for an ERC20 token on the bridge"`
-	SetBridgeAddress     ERC20SetBridgeAddressCmd     `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
-	SetExemptionLister   ERC20SetExemptionListerCmd   `command:"set_exemption_lister" description:"Set the address allow to list for deposit limits exemptions"`
-	GlobalResume         ERC20GlobalResumeCmd         `command:"global_resume" description:"Build the signature to resume usage of the bridge"`
-	GlobalStop           ERC20GlobalStopCmd           `command:"global_stop" description:"Build the signature to stop the bridge"`
-	SetWithdrawThreshold ERC20SetWithdrawThresholdCmd `command:"set_withdraw_threshold" description:"Update the withdraw threshold for an asset"`
-	SetWithdrawDelay     ERC20SetWithdrawDelayCmd     `command:"set_withdraw_delay" description:"Update the withdraw delay for all asset"`
+	AddSigner             ERC20AddSignerCmd             `command:"add_signer" description:"Create signature to add a new signer to the erc20 bridge"`
+	RemoveSigner          ERC20RemoveSignerCmd          `command:"remove_signer" description:"Create signature to remove a signer from the erc20 bridge"`
+	SetThreshold          ERC20SetThresholdCmd          `command:"set_threshold" description:"Create signature to change the threshold of required signature to apply changes to the bridge"`
+	ListAsset             ERC20ListAssetCmd             `command:"list_asset" description:"Add a new erc20 asset to the erc20 bridge"`
+	RemoveAsset           ERC20RemoveAssetCmd           `command:"remove_asset" description:"Remove an erc20 asset from the erc20 bridge"`
+	WithdrawAsset         ERC20WithdrawAssetCmd         `command:"withdraw_asset" description:"Withdraw ERC20 from the bridge"`
+	SetDepositMinimum     ERC20SetDepositMinimumCmd     `command:"set_deposit_minimum" description:"Set the minimum allowed deposit for an ERC20 token on the bridge"`
+	SetDepositMaximum     ERC20SetDepositMaximumCmd     `command:"set_deposit_maximum" description:"Set the maximum allowed deposit for an ERC20 token on the bridge"`
+	SetBridgeAddress      ERC20SetBridgeAddressCmd      `command:"set_bridge_address" description:"Update the bridge address use by the asset pool"`
+	SetExemptionLister    ERC20SetExemptionListerCmd    `command:"set_exemption_lister" description:"Set the address allow to list for deposit limits exemptions"`
+	GlobalResume          ERC20GlobalResumeCmd          `command:"global_resume" description:"Build the signature to resume usage of the bridge"`
+	GlobalStop            ERC20GlobalStopCmd            `command:"global_stop" description:"Build the signature to stop the bridge"`
+	SetWithdrawThreshold  ERC20SetWithdrawThresholdCmd  `command:"set_withdraw_threshold" description:"Update the withdraw threshold for an asset"`
+	SetWithdrawDelay      ERC20SetWithdrawDelayCmd      `command:"set_withdraw_delay" description:"Update the withdraw delay for all asset"`
+	SetLifetimeDepositMax ERC20SetLifetimeDepositMaxCmd `command:"set_lifetime_deposit_max" description:"Update the lifetime deposit for an address"`
 }
 
 var erc20Cmd *ERC20Cmd
@@ -577,6 +578,44 @@ func (opts *ERC20SetWithdrawDelayCmd) Execute(_ []string) error {
 	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress)
 	bundle, err := erc20.SetWithdrawDelay(
 		opts.Delay, nonce,
+	)
+	if err != nil {
+		return fmt.Errorf("unable to generate signature: %w", err)
+	}
+
+	fmt.Printf("0x%v\n", bundle.Signature.Hex())
+	return nil
+}
+
+type ERC20SetLifetimeDepositMaxCmd struct {
+	TokenAddress  string `long:"token-address" required:"true" description:"The address of the token"`
+	LifetimeLimit string `long:"lifetime-limit" required:"true" description:"The limit to be used for this asset"`
+	Nonce         string `long:"nonce" required:"true" description:"A nonce for this signature"`
+	BridgeAddress string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
+}
+
+func (opts *ERC20SetLifetimeDepositMaxCmd) Execute(_ []string) error {
+	if _, err := flags.NewParser(opts, flags.Default|flags.IgnoreUnknown).Parse(); err != nil {
+		return err
+	}
+
+	w, err := erc20Cmd.GetSigner()
+	if err != nil {
+		return err
+	}
+
+	nonce, overflowed := num.UintFromString(opts.Nonce, 10)
+	if overflowed {
+		return errors.New("invalid nonce, needs to be base 10 and not overflow")
+	}
+	lifetimeLimit, overflowed := num.UintFromString(opts.LifetimeLimit, 10)
+	if overflowed {
+		return errors.New("invalid lifetime-limit, needs to be base 10 and not overflow")
+	}
+
+	erc20 := bridges.NewERC20Logic(w, opts.BridgeAddress)
+	bundle, err := erc20.SetLifetimeDepositMax(
+		opts.TokenAddress, lifetimeLimit, nonce,
 	)
 	if err != nil {
 		return fmt.Errorf("unable to generate signature: %w", err)
