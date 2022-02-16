@@ -74,6 +74,8 @@
 - [4766](https://github.com/vegaprotocol/vega/issues/4766) - Added feature tests and integration steps for transfers
 - [4771](https://github.com/vegaprotocol/vega/issues/4771) - Small fixes and conformance update for transfers
 - [4785](https://github.com/vegaprotocol/vega/issues/4785) - Implement feature tests given the acceptance criteria for transfers
+- [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
+
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
 - [4692](https://github.com/vegaprotocol/vega/pull/4692) - Set statistics block height after a snapshot reload
