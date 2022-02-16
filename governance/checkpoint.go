@@ -38,7 +38,10 @@ func (e *Engine) Load(ctx context.Context, data []byte) error {
 			// the proposal in question has expired, ignore it
 			continue
 		}
-		prop := types.ProposalFromProto(p)
+		prop, err := types.ProposalFromProto(p)
+		if err != nil {
+			return err
+		}
 		evts = append(evts, events.NewProposalEvent(ctx, *prop))
 		e.activeProposals = append(e.activeProposals, &proposal{
 			Proposal: prop,

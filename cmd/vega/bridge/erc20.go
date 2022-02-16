@@ -168,7 +168,7 @@ type ERC20WithdrawAssetCmd struct {
 	ReceiverAddress string `long:"receiver-address" required:"true" description:"The ethereum address of the wallet which is to receive the funds"`
 	BridgeAddress   string `long:"bridge-address" required:"true" description:"The address of the vega bridge this transaction will be submitted to"`
 	Nonce           string `long:"nonce" required:"true" description:"A nonce for this signature"`
-	Creation        int64  `long:"creation" required:"true" descripton:"creation time of the withdrawal (timestamp)"`
+	Creation        int64  `long:"creation" required:"true" description:"creation time of the withdrawal (timestamp)"`
 }
 
 func (opts *ERC20WithdrawAssetCmd) Execute(_ []string) error {

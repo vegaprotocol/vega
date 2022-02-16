@@ -50,7 +50,11 @@ func (svcs *allServices) UponGenesis(ctx context.Context, rawstate []byte) (err 
 func (svcs *allServices) loadAsset(
 	ctx context.Context, id string, v *proto.AssetDetails,
 ) error {
-	aid, err := svcs.assets.NewAsset(id, types.AssetDetailsFromProto(v))
+	rawAsset, err := types.AssetDetailsFromProto(v)
+	if err != nil {
+		return err
+	}
+	aid, err := svcs.assets.NewAsset(id, rawAsset)
 	if err != nil {
 		return fmt.Errorf("error instanciating asset %v", err)
 	}
