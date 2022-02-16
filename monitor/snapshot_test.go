@@ -10,6 +10,7 @@ import (
 	"code.vegaprotocol.io/vega/types/num"
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func getMarket(closingAt time.Time, openingAuctionDuration *types.AuctionDuration) types.Market {
@@ -109,6 +110,19 @@ func TestEmpty(t *testing.T) {
 	// Check the new hash matches the old hash
 	hash2 := getHash(as2)
 	assert.Equal(t, hash1, hash2)
+}
+
+func TestRestoreTriggerType(t *testing.T) {
+	as := createAuctionState()
+
+	// Perform some updates to the object
+	as.StartPriceAuction(time.Now(), &types.AuctionDuration{
+		Duration: 200,
+		Volume:   200,
+	})
+
+	asNew := monitor.NewAuctionStateFromSnapshot(nil, as.GetState())
+	require.Equal(t, as.IsPriceAuction(), asNew.IsPriceAuction())
 }
 
 func TestChangedState(t *testing.T) {
