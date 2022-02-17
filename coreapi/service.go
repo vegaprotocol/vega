@@ -13,6 +13,7 @@ import (
 var ErrServiceDisabled = errors.New("service disabled")
 
 type Service struct {
+	apipb.UnimplementedCoreStateServiceServer
 	ctx    context.Context
 	broker broker.BrokerI
 	cfg    Config
