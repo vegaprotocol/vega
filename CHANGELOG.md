@@ -77,7 +77,7 @@
 - [4771](https://github.com/vegaprotocol/vega/issues/4771) - Small fixes and conformance update for transfers
 - [4785](https://github.com/vegaprotocol/vega/issues/4785) - Implement feature tests given the acceptance criteria for transfers
 - [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
-- [4801](https://github.com/vegaprotocol/vega/issues/4801) - added acceptance criteria codes to feature tests for 0002-STTL-Settlement at expiry spec 
+- [4797](https://github.com/vegaprotocol/vega/issues/4784) - Update `CODEOWNERS` for research to review verified feature files
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot
