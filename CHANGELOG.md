@@ -22,7 +22,7 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
-- [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test 
+- [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test
 - [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
@@ -81,8 +81,9 @@
 - [4785](https://github.com/vegaprotocol/vega/issues/4785) - Implement feature tests given the acceptance criteria for transfers
 - [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
 - [4797](https://github.com/vegaprotocol/vega/issues/4784) - Update `CODEOWNERS` for research to review verified feature files
-- [4801](https://github.com/vegaprotocol/vega/issues/4801) - added acceptance criteria codes to feature tests for Settlement at expiry spec 
+- [4801](https://github.com/vegaprotocol/vega/issues/4801) - added acceptance criteria codes to feature tests for Settlement at expiry spec
 - [4823](https://github.com/vegaprotocol/vega/issues/4823) - simplified performance score
+- [4805](https://github.com/vegaprotocol/vega/issues/4805) - Add command line tool to sign for the asset pool method `set_bridge_address`
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot
