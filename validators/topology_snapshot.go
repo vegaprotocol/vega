@@ -219,7 +219,6 @@ func (t *Topology) restore(ctx context.Context, topology *types.Topology) error 
 		if t.isValidatorSetup && !t.isValidator {
 			t.checkValidatorDataWithSelfWallets(vs.data)
 		}
-
 	}
 
 	t.chainValidators = topology.ChainValidators[:]
