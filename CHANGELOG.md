@@ -77,7 +77,9 @@
 - [4751](https://github.com/vegaprotocol/vega/pull/4751) - Make trade ids unique using the deterministic id generator
 - [4766](https://github.com/vegaprotocol/vega/issues/4766) - Added feature tests and integration steps for transfers
 - [4771](https://github.com/vegaprotocol/vega/issues/4771) - Small fixes and conformance update for transfers
+- [4785](https://github.com/vegaprotocol/vega/issues/4785) - Implement feature tests given the acceptance criteria for transfers
 - [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
+- [4797](https://github.com/vegaprotocol/vega/issues/4784) - Update `CODEOWNERS` for research to review verified feature files
 
 ### 🐛 Fixes
 - [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot

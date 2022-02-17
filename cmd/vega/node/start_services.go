@@ -502,6 +502,10 @@ func (n *NodeCommand) setupNetParameters() error {
 			Watcher: n.snapshot.OnSnapshotIntervalUpdate,
 		},
 		netparams.WatchParam{
+			Param:   netparams.TransferMaxCommandsPerEpoch,
+			Watcher: n.spam.OnMaxTransfersChanged,
+		},
+		netparams.WatchParam{
 			Param:   netparams.ValidatorsVoteRequired,
 			Watcher: n.statevar.OnDefaultValidatorsVoteRequiredUpdate,
 		},

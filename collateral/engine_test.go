@@ -590,7 +590,7 @@ func testEnableAssetSuccess(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(8)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -607,7 +607,7 @@ func testEnableAssetFailureDuplicate(t *testing.T) {
 			Symbol: "MYASSET",
 		},
 	}
-	eng.broker.EXPECT().Send(gomock.Any()).Times(4)
+	eng.broker.EXPECT().Send(gomock.Any()).Times(8)
 	err := eng.EnableAsset(context.Background(), asset)
 	assert.NoError(t, err)
 
@@ -2406,8 +2406,9 @@ func getTestEngine(t *testing.T, market string) *testEngine {
 	// 2 markets accounts
 	// 2 new assets
 	// 3 asset insurance accounts
-	// 1 reward account
-	broker.EXPECT().Send(gomock.Any()).Times(16)
+	// 1 global reward account
+	// 4 reward accounts for the various reward types
+	broker.EXPECT().Send(gomock.Any()).Times(28)
 	// system accounts created
 
 	eng := collateral.New(logging.NewTestLogger(), conf, broker, time.Now())
@@ -2583,7 +2584,7 @@ func TestHash(t *testing.T) {
 
 	hash := eng.Hash()
 	require.Equal(t,
-		"b6b01540747491155d56267a6c5f7627d6719c73cf58889c0869375bd7853978",
+		"8135b8f8b04a8e7d8e8043cd06a0d47c26fccd8cde01982fbfdc2e0310488712",
 		hex.EncodeToString(hash),
 		"It should match against the known hash",
 	)
