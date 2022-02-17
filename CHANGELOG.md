@@ -39,6 +39,7 @@
 - [274](https://github.com/vegaprotocol/data-node/issues/274) - Bug fix for proposal NO vote showing incorrect weight and tokens
 - [288](https://github.com/vegaprotocol/data-node/pull/288) - Add back `assetId` GraphQL resolver for `RewardPerAssetDetail`, change `RiskFactor` fields to strings.
 - [317](https://github.com/vegaprotocol/data-node/pull/317) - Fix `graphql` support for free-form governance proposals
+- [345](https://github.com/vegaprotocol/data-node/issues/345) - Add the missing events conversion to data node
 
 ## 0.47.1
 *`2021-12-20`*

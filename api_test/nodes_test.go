@@ -30,6 +30,8 @@ func TestGetKeyRotations(t *testing.T) {
 		"GB",
 		"Validator",
 		"",
+		1,
+		true,
 	))
 
 	// make sure event has been processed
