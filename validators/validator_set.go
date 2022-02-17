@@ -356,7 +356,7 @@ func (t *Topology) calculateVotingPower(IDs []string, rankingScores map[string]n
 		if sumOfScores.IsPositive() && rankingScores[ID].IsPositive() {
 			votingPower[ID] = num.MaxD(DecimalOne, rankingScores[ID].Div(sumOfScores).Mul(VotingPowerScalingFactor)).IntPart()
 		} else {
-			votingPower[ID] = 10
+			votingPower[ID] = 5000
 		}
 	}
 	return votingPower
