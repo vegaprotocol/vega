@@ -240,9 +240,9 @@ func (e *Engine) SettleMTM(ctx context.Context, markPrice *num.Uint, positions [
 		// the trades slice contains all trade positions (position changes for the party)
 		// at their exact trade price, so we can MTM that volume correctly, too
 		mtmShare, neg := calcMTM(markPrice, current.price, current.size, traded)
+		current.price = markPrice
 		// we've marked this party to market, their position can now reflect this
 		_ = current.update(evt)
-		current.price = markPrice
 		// we don't want to accidentally MTM a party who closed out completely when they open
 		// a new position at a later point, so remove if size == 0
 		if current.size == 0 {

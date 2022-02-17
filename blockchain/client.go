@@ -3,6 +3,7 @@ package blockchain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"code.vegaprotocol.io/protos/commands"
@@ -151,6 +152,13 @@ func (c *Client) Validators(height *int64) ([]*tmtypes.Validator, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	if c == nil {
+		fmt.Printf("\n\n\n\nC IS NILLLLL\n\n\n\n")
+	}
+	if c.clt == nil {
+		fmt.Printf("\n\n\n\nCLT IS NILLLLL\n\n\n\n")
+	}
+	fmt.Printf("\n\n\n\nALRIGHTY\n\n\n\n")
 	return c.clt.Validators(ctx, height)
 }
 

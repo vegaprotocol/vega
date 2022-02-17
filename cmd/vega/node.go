@@ -66,7 +66,12 @@ func Node(ctx context.Context, parser *flags.Parser) error {
 	nodeCmd = NodeCmd{
 		Config: config.NewDefaultConfig(),
 	}
-	cmd, err := parser.AddCommand("node", "Runs a vega node", "Runs a vega node as defined by the config files", &nodeCmd)
+	cmd, err := parser.AddCommand(
+		"start",
+		"Runs a vega node",
+		"Runs a vega node as defined by the config files",
+		&nodeCmd,
+	)
 	if err != nil {
 		return err
 	}

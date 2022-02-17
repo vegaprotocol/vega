@@ -275,6 +275,11 @@ func NewApp(
 	return app
 }
 
+func (app *App) SetClient(client BlockchainClient) {
+	fmt.Printf("\n\n\nSET CLIENT: %v\n\n\n", client)
+	app.blockchainClient = client
+}
+
 // addDeterministicID will build the command id and .
 // the command id is built using the signature of the proposer of the command
 // the signature is then hashed with sha3_256

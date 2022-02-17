@@ -10,7 +10,6 @@ import (
 	"code.vegaprotocol.io/vega/blockchain"
 	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/blockchain/nullchain"
-	"code.vegaprotocol.io/vega/blockchain/recorder"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
 	"code.vegaprotocol.io/vega/collateral"
@@ -42,8 +41,6 @@ import (
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/validators"
 	"code.vegaprotocol.io/vega/vegatime"
-	"github.com/spf13/afero"
-	tmtypes "github.com/tendermint/tendermint/abci/types"
 )
 
 var (
@@ -210,19 +207,6 @@ func (n *NodeCommand) stopServices(_ []string) error {
 func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 	// if tm chain, setup the client
 
-	var null *nullchain.NullBlockchain
-	switch n.conf.Blockchain.ChainProvider {
-	case blockchain.ProviderTendermint:
-		a, err := abci.NewClient(n.conf.Blockchain.Tendermint.ClientAddr)
-		if err != nil {
-			return nil, err
-		}
-		n.blockchainClient = blockchain.NewClient(a)
-	case blockchain.ProviderNullChain:
-		null = nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
-		n.blockchainClient = blockchain.NewClient(null)
-	}
-
 	app := processor.NewApp(
 		n.Log,
 		n.vegaPaths,
@@ -273,21 +257,46 @@ func (n *NodeCommand) startBlockchain() (*processor.App, error) {
 
 	switch n.conf.Blockchain.ChainProvider {
 	case blockchain.ProviderTendermint:
-		srv, err := n.startABCI(n.ctx, app)
-		n.blockchainServer = blockchain.NewServer(srv)
+		fmt.Printf("\n\n\n\nCLIENT: %v\n\n\n\n", 1)
+		var err error
+		// initialise the node
+		n.tmNode, err = n.startABCI(n.ctx, app)
+		if err != nil {
+			fmt.Printf("ERROR: %v\n", err)
+			return nil, err
+		}
+		fmt.Printf("\n\n\n\nCLIENT: %v\n\n\n\n", 2)
+		n.blockchainServer = blockchain.NewServer(n.tmNode)
+		if err := n.tmNode.Start(); err != nil {
+			return nil, err
+		}
+		fmt.Printf("\n\n\n\nCLIENT: %v\n\n\n\n", 3)
+
+		// initialise the client
+		client, err := n.tmNode.GetClient()
 		if err != nil {
 			return nil, err
 		}
+		n.blockchainClient = blockchain.NewClient(client)
+
+		fmt.Printf("\n\n\n\nCLIENT: %v\n\n\n\n", client)
+
 	case blockchain.ProviderNullChain:
+		null := nullchain.NewClient(n.Log, n.conf.Blockchain.Null)
 		null.SetABCIApp(app.Abci())
 		// nullchain acts as both the client and the server because its does everything
 		n.blockchainServer = blockchain.NewServer(null)
+		n.blockchainClient = blockchain.NewClient(null)
 	default:
 		return nil, ErrUnknownChainProvider
 	}
 
+	fmt.Printf("\n\n\nLOOOOOOOOOOOOOOOOOOOOOL\n\n\n")
+	app.SetClient(n.blockchainClient)
+
 	// setup the commander only if we are a validator node
 	if n.conf.IsValidator() {
+		fmt.Printf("\n\n\nIS VALIDATOR\n\n\n")
 		n.commander.SetChain(n.blockchainClient)
 	}
 
@@ -541,49 +550,60 @@ func (n *NodeCommand) setupConfigWatchers() {
 	)
 }
 
-func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.Server, error) {
-	var abciApp tmtypes.Application
-	tmCfg := l.conf.Blockchain.Tendermint
-	if path := tmCfg.ABCIRecordDir; path != "" {
-		rec, err := recorder.NewRecord(path, afero.NewOsFs())
-		if err != nil {
-			return nil, err
-		}
+// func (l *NodeCommand) startABCI(ctx context.Context, app *processor.App) (*abci.Server, error) {
+// 	var abciApp tmtypes.Application
+// 	tmCfg := l.conf.Blockchain.Tendermint
+// 	if path := tmCfg.ABCIRecordDir; path != "" {
+// 		rec, err := recorder.NewRecord(path, afero.NewOsFs())
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
+// 		// closer
+// 		go func() {
+// 			<-ctx.Done()
+// 			rec.Stop()
+// 		}()
 
-		abciApp = recorder.NewApp(app.Abci(), rec)
-	} else {
-		abciApp = app.Abci()
-	}
+// 		abciApp = recorder.NewApp(app.Abci(), rec)
+// 	} else {
+// 		abciApp = app.Abci()
+// 	}
 
-	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
-	if err := srv.Start(); err != nil {
-		return nil, err
-	}
+// 	srv := abci.NewServer(l.Log, l.conf.Blockchain, abciApp)
+// 	if err := srv.Start(); err != nil {
+// 		return nil, err
+// 	}
 
-	if path := tmCfg.ABCIReplayFile; path != "" {
-		rec, err := recorder.NewReplay(path, afero.NewOsFs())
-		if err != nil {
-			return nil, err
-		}
+// 	if path := tmCfg.ABCIReplayFile; path != "" {
+// 		rec, err := recorder.NewReplay(path, afero.NewOsFs())
+// 		if err != nil {
+// 			return nil, err
+// 		}
 
-		// closer
-		go func() {
-			<-ctx.Done()
-			rec.Stop()
-		}()
+// 		// closer
+// 		go func() {
+// 			<-ctx.Done()
+// 			rec.Stop()
+// 		}()
 
-		go func() {
-			if err := rec.Replay(abciApp); err != nil {
-				l.Log.Fatal("replay error", logging.Error(err))
-			}
-		}()
-	}
+// 		go func() {
+// 			if err := rec.Replay(abciApp); err != nil {
+// 				l.Log.Fatal("replay error", logging.Error(err))
+// 			}
+// 		}()
+// 	}
 
-	return srv, nil
+// 	return srv, nil
+// }
+
+func (l *NodeCommand) startABCI(
+	ctx context.Context,
+	app *processor.App,
+) (*abci.TmNode, error) {
+	return abci.NewTmNode(
+		"/Users/jeremy/.tendermint/",
+		app.Abci(),
+		nil,
+	)
 }

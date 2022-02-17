@@ -15,6 +15,7 @@ import (
 	"code.vegaprotocol.io/vega/assets"
 	"code.vegaprotocol.io/vega/banking"
 	"code.vegaprotocol.io/vega/blockchain"
+	"code.vegaprotocol.io/vega/blockchain/abci"
 	"code.vegaprotocol.io/vega/broker"
 	"code.vegaprotocol.io/vega/checkpoint"
 	ethclient "code.vegaprotocol.io/vega/client/eth"
@@ -120,6 +121,8 @@ type NodeCommand struct {
 
 	Version     string
 	VersionHash string
+
+	tmNode *abci.TmNode
 }
 
 func (n *NodeCommand) Run(

@@ -12,15 +12,17 @@ import (
 
 var ErrInvalidRequest = errors.New("invalid request")
 
-func (n *NullBlockchain) Stop() {
+func (n *NullBlockchain) Stop() error {
 	if n.srv == nil {
-		return
+		return nil
 	}
 
 	n.log.Info("Stopping nullchain server")
 	if err := n.srv.Shutdown(context.Background()); err != nil {
 		n.log.Warn("failed to shutdown")
 	}
+
+	return nil
 }
 
 func (n *NullBlockchain) Start() error {

@@ -2,7 +2,7 @@ package blockchain
 
 type ChainServerImpl interface {
 	ReloadConf(cfg Config)
-	Stop()
+	Stop() error
 }
 
 // Server abstraction for the abci server.
@@ -19,8 +19,9 @@ func NewServer(srv ChainServerImpl) *Server {
 }
 
 // Stop gracefully shutdowns down the blockchain provider's server.
-func (s *Server) Stop() {
+func (s *Server) Stop() error {
 	s.srv.Stop()
+	return nil
 }
 
 func (s *Server) ReloadConf(cfg Config) {

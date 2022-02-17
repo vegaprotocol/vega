@@ -14,8 +14,8 @@ import (
 
 func Tm(_ context.Context, parser *flags.Parser) error {
 	_, err := parser.AddCommand(
-		"tm",
-		"Run tendermint nodes",
+		"tendermint",
+		"Tendermint utilities",
 		"Run a tendermint node",
 		&tmCmd{},
 	)
@@ -31,7 +31,7 @@ func (opts *tmCmd) Execute(_ []string) error {
 	rootCmd.AddCommand(
 		tmcmd.GenValidatorCmd,
 		tmcmd.ReIndexEventCmd,
-		tmcmd.InitFilesCmd,
+		// tmcmd.InitFilesCmd,
 		tmcmd.ProbeUpnpCmd,
 		tmcmd.LightCmd,
 		tmcmd.ReplayCmd,
@@ -49,7 +49,7 @@ func (opts *tmCmd) Execute(_ []string) error {
 		tmcli.NewCompletionCmd(rootCmd, true),
 	)
 
-	rootCmd.AddCommand(NewRunNodeCmd())
+	// rootCmd.AddCommand(NewRunNodeCmd())
 
 	baseCmd := tmcli.PrepareBaseCmd(rootCmd, "TM", os.ExpandEnv(filepath.Join("$HOME", tmcfg.DefaultTendermintDir)))
 	if err := baseCmd.Execute(); err != nil {

@@ -1,0 +1,177 @@
+package abci
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	tmquery "github.com/tendermint/tendermint/libs/pubsub/query"
+	"github.com/tendermint/tendermint/libs/service"
+	"github.com/tendermint/tendermint/rpc/client/local"
+	tmctypes "github.com/tendermint/tendermint/rpc/coretypes"
+	tmtypes "github.com/tendermint/tendermint/types"
+)
+
+type LocalClient struct {
+	node *local.Local
+}
+
+func newLocalClient(node service.Service) (*LocalClient, error) {
+	localNode, err := local.New(node.(local.NodeService))
+	if err != nil {
+		return nil, fmt.Errorf("could not instantiate client: %w", err)
+	}
+
+	return &LocalClient{
+		node: localNode,
+	}, nil
+}
+
+func (c *LocalClient) SendTransactionAsync(ctx context.Context, bytes []byte) (string, error) {
+	// Fire off the transaction for consensus
+	res, err := c.node.BroadcastTxAsync(ctx, bytes)
+	if err != nil {
+		return "", err
+	}
+	return res.Hash.String(), nil
+}
+
+func (c *LocalClient) SendTransactionSync(ctx context.Context, bytes []byte) (string, error) {
+	// Fire off the transaction for consensus
+	r, err := c.node.BroadcastTxSync(ctx, bytes)
+	if err != nil {
+		return "", err
+	} else if r.Code != 0 {
+		return "", newUserInputError(r.Code, string(r.Data))
+	}
+	return r.Hash.String(), nil
+}
+
+func (c *LocalClient) SendTransactionCommit(ctx context.Context, bytes []byte) (string, error) {
+	// Fire off the transaction for consensus
+	r, err := c.node.BroadcastTxCommit(ctx, bytes)
+	if err != nil {
+		return "", err
+	} else if r.CheckTx.Code != 0 {
+		return "", newUserInputError(r.CheckTx.Code, string(r.CheckTx.Data))
+	}
+	return r.Hash.String(), nil
+}
+
+// GetGenesisTime retrieves the genesis time from the blockchain.
+func (c *LocalClient) GetGenesisTime(ctx context.Context) (genesisTime time.Time, err error) {
+	res, err := c.node.Genesis(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return res.Genesis.GenesisTime.UTC(), nil
+}
+
+// GetChainID retrieves the chainID from the blockchain.
+func (c *LocalClient) GetChainID(ctx context.Context) (chainID string, err error) {
+	res, err := c.node.Genesis(ctx)
+	if err != nil {
+		return "", err
+	}
+	return res.Genesis.ChainID, nil
+}
+
+// GetStatus returns the current status of the chain.
+func (c *LocalClient) GetStatus(ctx context.Context) (status *tmctypes.ResultStatus, err error) {
+	return c.node.Status(ctx)
+}
+
+// GetNetworkInfo return information of the current network.
+func (c *LocalClient) GetNetworkInfo(ctx context.Context) (netInfo *tmctypes.ResultNetInfo, err error) {
+	return c.node.NetInfo(ctx)
+}
+
+// GetUnconfirmedTxCount return the current count of unconfirmed transactions.
+func (c *LocalClient) GetUnconfirmedTxCount(ctx context.Context) (count int, err error) {
+	res, err := c.node.NumUnconfirmedTxs(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return res.Count, err
+}
+
+// Health returns the result of the health endpoint of the chain.
+func (c *LocalClient) Health(ctx context.Context) (*tmctypes.ResultHealth, error) {
+	return c.node.Health(ctx)
+}
+
+func (c *LocalClient) Validators(ctx context.Context, height *int64) ([]*tmtypes.Validator, error) {
+	res, err := c.node.Validators(ctx, height, nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	return res.Validators, nil
+}
+
+func (c *LocalClient) Genesis(ctx context.Context) (*tmtypes.GenesisDoc, error) {
+	res, err := c.node.Genesis(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return res.Genesis, nil
+}
+
+func (c *LocalClient) GenesisValidators(ctx context.Context) ([]*tmtypes.Validator, error) {
+	gen, err := c.Genesis(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	validators := make([]*tmtypes.Validator, 0, len(gen.Validators))
+	for _, v := range gen.Validators {
+		validators = append(validators, &tmtypes.Validator{
+			Address:     v.Address,
+			PubKey:      v.PubKey,
+			VotingPower: v.Power,
+		})
+	}
+
+	return validators, nil
+}
+
+// Subscribe subscribes to any event matching query (https://godoc.org/github.com/tendermint/tendermint/types#pkg-constants).
+// Subscribe will call fn each time it receives an event from the node.
+// The function returns nil when the context is canceled or when fn returns an error.
+func (c *LocalClient) Subscribe(ctx context.Context, fn func(tmctypes.ResultEvent) error, queries ...string) error {
+	if err := c.node.Start(); err != nil {
+		return err
+	}
+	defer c.node.Stop()
+
+	errCh := make(chan error)
+
+	for _, query := range queries {
+		q, err := tmquery.New(query)
+		if err != nil {
+			return err
+		}
+
+		// For subscription we use "vega" as the client name but it's ignored by the implementation.
+		// 10 is the channel capacity which is absolutely arbitraty.
+		out, err := c.node.Subscribe(ctx, "vega", q.String(), 10)
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			for res := range out {
+				if err := fn(res); err != nil {
+					errCh <- err
+					return
+				}
+			}
+		}()
+	}
+	defer c.node.UnsubscribeAll(context.Background(), "vega")
+
+	return <-errCh
+}
+
+func (c *LocalClient) Start() error {
+	return nil // Nothing to do for this client type.
+}
