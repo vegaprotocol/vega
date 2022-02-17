@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	code.vegaprotocol.io/oracles-relay v0.0.0-20210201140234-f047e1bf6df3
-	code.vegaprotocol.io/protos v0.48.1-0.20220217093822-cd2f88bf870a
+	code.vegaprotocol.io/protos v0.48.1-0.20220217115305-b24b47ff9ff0
 	code.vegaprotocol.io/quant v0.2.5
 	code.vegaprotocol.io/shared v0.0.0-20220202150846-b6aba31dcdb0
 	github.com/blang/semver v3.5.1+incompatible
@@ -49,7 +49,7 @@ require (
 )
 
 require (
-	code.vegaprotocol.io/vegawallet v0.12.1-0.20220215193236-62a1689f606f
+	code.vegaprotocol.io/vegawallet v0.12.1-0.20220217130931-e2d76ed75667
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.7.3
 )
 
