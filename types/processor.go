@@ -12,7 +12,7 @@ import (
 
 type (
 	OracleDataSubmission = commandspb.OracleDataSubmission
-	NodeRegistration     = commandspb.NodeRegistration
+	AnnounceNode         = commandspb.AnnounceNode
 	NodeVote             = commandspb.NodeVote
 	ChainEvent           = commandspb.ChainEvent
 )

@@ -5,16 +5,22 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strings"
 	"sync"
+	"time"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
-
+	v1 "code.vegaprotocol.io/protos/vega/snapshot/v1"
 	vgcrypto "code.vegaprotocol.io/shared/libs/crypto"
 	"code.vegaprotocol.io/vega/crypto"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
+	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -32,6 +38,30 @@ type Broker interface {
 type Wallet interface {
 	PubKey() crypto.PublicKey
 	ID() crypto.PublicKey
+	Signer
+}
+
+type MultiSigTopology interface {
+	IsSigner(address string) bool
+	ExcessSigners(addresses []string) bool
+}
+
+type DummyMultiSigTopology struct{}
+
+func (*DummyMultiSigTopology) IsSigner(address string) bool {
+	return true
+}
+
+func (*DummyMultiSigTopology) ExcessSigners(addresses []string) bool {
+	return false
+}
+
+//go:generate go run github.com/golang/mock/mockgen -destination mocks/val_performance_mock.go -package mocks code.vegaprotocol.io/vega/validators ValidatorPerformance
+type ValidatorPerformance interface {
+	ValidatorPerformanceScore(address string) num.Decimal
+	BeginBlock(ctx context.Context, r abcitypes.RequestBeginBlock, vd []*tmtypes.Validator)
+	Serialize() *v1.ValidatorPerformance
+	Deserialize(*v1.ValidatorPerformance)
 }
 
 type ValidatorData struct {
@@ -44,6 +74,7 @@ type ValidatorData struct {
 	Country         string `json:"country"`
 	Name            string `json:"name"`
 	AvatarURL       string `json:"avatar_url"`
+	FromEpoch       uint64 `json:"from_epoch"`
 }
 
 func (v ValidatorData) IsValid() bool {
@@ -67,10 +98,12 @@ type Topology struct {
 	cfg                  Config
 	wallets              NodeWallets
 	broker               Broker
-	validatorPerformance *validatorPerformance
+	validatorPerformance ValidatorPerformance
+	currentTime          time.Time
+	multiSigTopology     MultiSigTopology
 
 	// vega pubkey to validator data
-	validators ValidatorMapping
+	validators map[string]*valState
 
 	chainValidators []string
 
@@ -90,25 +123,54 @@ type Topology struct {
 	mu sync.RWMutex
 
 	tss *topologySnapshotState
+
+	rng *rand.Rand // random generator seeded by block
+
+	// net params
+	numberOfTendermintValidators         int
+	numberOfErsatzValidators             int
+	validatorIncumbentBonusFactor        num.Decimal
+	ersatzValidatorsFactor               num.Decimal
+	minimumStake                         *num.Uint
+	minimumEthereumEventsForNewValidator uint64
+	numberEthMultisigSigners             int
+
+	// transient data for updating tendermint on validator voting power changes.
+	validatorPowerUpdates []abcitypes.ValidatorUpdate
+	epochSeq              uint64
+	newEpochStarted       bool
+
+	cmd Commander
+}
+
+func (t *Topology) OnEpochEvent(_ context.Context, epoch types.Epoch) {
+	t.epochSeq = epoch.Seq
+	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
+		t.newEpochStarted = true
+	}
 }
 
 func NewTopology(
-	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool,
+	log *logging.Logger, cfg Config, wallets NodeWallets, broker Broker, isValidatorSetup bool, cmd Commander,
 ) *Topology {
 	log = log.Named(namedLogger)
 	log.SetLevel(cfg.Level.Get())
 
 	t := &Topology{
-		log:                    log,
-		cfg:                    cfg,
-		wallets:                wallets,
-		broker:                 broker,
-		validators:             ValidatorMapping{},
-		chainValidators:        []string{},
-		tss:                    &topologySnapshotState{changed: true},
-		pendingPubKeyRotations: pendingKeyRotationMapping{},
-		isValidatorSetup:       isValidatorSetup,
-		validatorPerformance:   NewValidatorPerformance(log),
+		log:                           log,
+		cfg:                           cfg,
+		wallets:                       wallets,
+		broker:                        broker,
+		validators:                    map[string]*valState{},
+		chainValidators:               []string{},
+		tss:                           &topologySnapshotState{changed: true},
+		pendingPubKeyRotations:        pendingKeyRotationMapping{},
+		isValidatorSetup:              isValidatorSetup,
+		validatorPerformance:          NewValidatorPerformance(log),
+		validatorIncumbentBonusFactor: num.DecimalZero(),
+		ersatzValidatorsFactor:        num.DecimalZero(),
+		multiSigTopology:              &DummyMultiSigTopology{}, // TODO replace with real implementation
+		cmd:                           cmd,
 	}
 
 	return t
@@ -133,6 +195,8 @@ func (t *Topology) IsValidator() bool {
 }
 
 func (t *Topology) Len() int {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	return len(t.validators)
 }
 
@@ -142,7 +206,7 @@ func (t *Topology) Get(key string) *ValidatorData {
 	defer t.mu.RUnlock()
 
 	if data, ok := t.validators[key]; ok {
-		return &data
+		return &data.data
 	}
 
 	return nil
@@ -154,7 +218,7 @@ func (t *Topology) AllVegaPubKeys() []string {
 	defer t.mu.RUnlock()
 	keys := make([]string, 0, len(t.validators))
 	for _, data := range t.validators {
-		keys = append(keys, data.VegaPubKey)
+		keys = append(keys, data.data.VegaPubKey)
 	}
 	return keys
 }
@@ -184,17 +248,10 @@ func (t *Topology) SelfNodeID() string {
 	return t.wallets.GetVega().ID().Hex()
 }
 
-// UpdateValidatorSet updates the chain validator set
-// It overwrites the previous set.
-func (t *Topology) UpdateValidatorSet(keys []string) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.chainValidators = keys
-	t.tss.changed = true
-}
-
 // IsValidatorNodeID takes a nodeID and returns true if the node is a validator node.
 func (t *Topology) IsValidatorNodeID(nodeID string) bool {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 	_, ok := t.validators[nodeID]
 	return ok
 }
@@ -218,7 +275,7 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	defer t.mu.RUnlock()
 
 	for _, data := range t.validators {
-		if data.VegaPubKey == pubkey {
+		if data.data.VegaPubKey == pubkey {
 			return true
 		}
 	}
@@ -226,7 +283,25 @@ func (t *Topology) IsValidatorVegaPubKey(pubkey string) (ok bool) {
 	return false
 }
 
-func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error {
+func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
+	// we're not adding or removing nodes only potentially changing their state so should be safe
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	t.currentTime = req.Header.Time
+	// resetting the seed every block, to both get some more unpredictability and still deterministic
+	// and play nicely with snapshot
+	t.rng = rand.New(rand.NewSource(req.Header.Time.Unix()))
+
+	t.checkHeartbeat(ctx)
+	t.validatorPerformance.BeginBlock(ctx, req, vd)
+	blockHeight := uint64(req.Header.Height)
+	t.currentBlockHeight = blockHeight
+	t.keyRotationBeginBlockLocked(ctx)
+}
+
+func (t *Topology) AddNewNode(ctx context.Context, nr *commandspb.AnnounceNode) error {
+	// write lock!
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -234,24 +309,7 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 		return ErrVegaNodeAlreadyRegisterForChain
 	}
 
-	// check if this tm pubkey exists in the network
-	var ok bool
-	for _, k := range t.chainValidators {
-		if k == nr.ChainPubKey {
-			ok = true
-			break
-		}
-	}
-	if !ok {
-		t.log.Error("invalid validator tendermint pubkey",
-			logging.Strings("expected-keys", t.chainValidators),
-			logging.String("got", nr.ChainPubKey),
-		)
-		return fmt.Errorf("%s: %w", nr.ChainPubKey, ErrInvalidChainPubKey)
-	}
-
-	// then add it to the topology
-	t.validators[nr.Id] = ValidatorData{
+	data := ValidatorData{
 		ID:              nr.Id,
 		VegaPubKey:      nr.VegaPubKey,
 		VegaPubKeyIndex: nr.VegaPubKeyIndex,
@@ -261,12 +319,24 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 		Country:         nr.Country,
 		Name:            nr.Name,
 		AvatarURL:       nr.AvatarUrl,
+		FromEpoch:       nr.FromEpoch,
+	}
+
+	// then add it to the topology
+	t.validators[nr.Id] = &valState{
+		data:                            data,
+		status:                          ValidatorStatusTendermint,
+		blockAdded:                      0,
+		statusChangeBlock:               0,
+		lastBlockWithPositiveRanking:    -1,
+		numberOfEthereumEventsForwarded: 0,
+		heartbeatTracker:                &validatorHeartbeatTracker{},
 	}
 
 	t.tss.changed = true
 
 	// Send event to notify core about new validator
-	t.sendValidatorUpdateEvent(ctx, nr)
+	t.sendValidatorUpdateEvent(ctx, data, true)
 
 	t.log.Info("new node registration successful",
 		logging.String("id", nr.Id),
@@ -276,18 +346,20 @@ func (t *Topology) AddNodeRegistration(ctx context.Context, nr *commandspb.NodeR
 	return nil
 }
 
-func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, nr *commandspb.NodeRegistration) {
+func (t *Topology) sendValidatorUpdateEvent(ctx context.Context, data ValidatorData, added bool) {
 	t.broker.Send(events.NewValidatorUpdateEvent(
 		ctx,
-		nr.Id,
-		nr.VegaPubKey,
-		nr.VegaPubKeyIndex,
-		nr.EthereumAddress,
-		nr.ChainPubKey,
-		nr.InfoUrl,
-		nr.Country,
-		nr.Name,
-		nr.AvatarUrl,
+		data.ID,
+		data.VegaPubKey,
+		data.VegaPubKeyIndex,
+		data.EthereumAddress,
+		data.TmPubKey,
+		data.InfoURL,
+		data.Country,
+		data.Name,
+		data.AvatarURL,
+		data.FromEpoch,
+		added,
 	))
 }
 
@@ -318,7 +390,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 			t.checkValidatorDataWithSelfWallets(data)
 		}
 
-		nr := &commandspb.NodeRegistration{
+		nr := &commandspb.AnnounceNode{
 			Id:              data.ID,
 			VegaPubKey:      data.VegaPubKey,
 			VegaPubKeyIndex: data.VegaPubKeyIndex,
@@ -329,7 +401,7 @@ func (t *Topology) LoadValidatorsOnGenesis(ctx context.Context, rawstate []byte)
 			Name:            data.Name,
 			AvatarUrl:       data.AvatarURL,
 		}
-		if err := t.AddNodeRegistration(ctx, nr); err != nil {
+		if err := t.AddNewNode(ctx, nr); err != nil {
 			return err
 		}
 	}
