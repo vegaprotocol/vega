@@ -131,6 +131,15 @@ func defaultNetParams() map[string]value {
 
 		FloatingPointUpdatesDuration: NewDuration().Mutable(true).MustUpdate("5m"),
 
+		// validators by stake
+		NumberOfTendermintValidators:               NewUint(UintGTE(num.NewUint(1))).Mutable(true).MustUpdate("30"),
+		ValidatorIncumbentBonus:                    NewDecimal(DecimalGTE(num.MustDecimalFromString("0"))).Mutable(true).MustUpdate("1"),
+		NumberEthMultisigSigners:                   NewUint(UintGTE(num.NewUint(1))).Mutable(true).MustUpdate("13"),
+		ErsatzvalidatorsRewardFactor:               NewDecimal(DecimalGTE(num.MustDecimalFromString("0")), DecimalLTE(num.MustDecimalFromString("1"))).Mutable(true).MustUpdate("0.5"),
+		MultipleOfTendermintValidatorsForEtsatzSet: NewDecimal(DecimalGTE(num.MustDecimalFromString("0"))).Mutable(true).MustUpdate("0.5"),
+		MinimumEthereumEventsForNewValidator:       NewUint(UintGTE(num.NewUint(0))).Mutable(true).MustUpdate("3"),
+
+		// transfers
 		TransferFeeFactor:                  NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.001"),
 		TransferMinTransferQuantumMultiple: NewDecimal(DecimalGTE(num.DecimalZero())).Mutable(true).MustUpdate("0.1"),
 		TransferMaxCommandsPerEpoch:        NewInt(IntGTE(0)).Mutable(true).MustUpdate("20"),

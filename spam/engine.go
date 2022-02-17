@@ -81,6 +81,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	}
 
 	proposalPolicy := NewSimpleSpamPolicy("proposal", netparams.SpamProtectionMinTokensForProposal, netparams.SpamProtectionMaxProposals, log, accounting)
+	valJoinPolicy := NewSimpleSpamPolicy("validatorJoin", netparams.StakingAndDelegationRewardMinimumValidatorStake, "", log, accounting)
 	delegationPolicy := NewSimpleSpamPolicy("delegation", netparams.SpamProtectionMinTokensForDelegation, netparams.SpamProtectionMaxDelegations, log, accounting)
 	votePolicy := NewVoteSpamPolicy(netparams.SpamProtectionMinTokensForVoting, netparams.SpamProtectionMaxVotes, log, accounting)
 	transferPolicy := NewSimpleSpamPolicy("transfer", "", netparams.TransferMaxCommandsPerEpoch, log, accounting)
@@ -95,6 +96,7 @@ func New(log *logging.Logger, config Config, epochEngine EpochEngine, accounting
 	e.transactionTypeToPolicy[txn.UndelegateCommand] = delegationPolicy
 	e.transactionTypeToPolicy[txn.TransferFundsCommand] = transferPolicy
 	e.transactionTypeToPolicy[txn.CancelTransferFundsCommand] = transferPolicy
+	e.transactionTypeToPolicy[txn.AnnounceNodeCommand] = valJoinPolicy
 
 	// register for epoch end notifications
 	epochEngine.NotifyOnEpoch(e.OnEpochEvent)
@@ -137,8 +139,14 @@ func (e *Engine) OnMinTokensForProposalChanged(ctx context.Context, minTokens nu
 }
 
 // OnMaxTransfersChanged is called when the net param for max transfers per epoch changes.
-func (e *Engine) OnMaxTransfersChanged(ctx context.Context, maxTransfers int64) error {
+func (e *Engine) OnMaxTransfersChanged(_ context.Context, maxTransfers int64) error {
 	return e.transactionTypeToPolicy[txn.TransferFundsCommand].UpdateIntParam(netparams.TransferMaxCommandsPerEpoch, maxTransfers)
+}
+
+// OnMinValidatorTokensChanged is called when the net param for min tokens for joining validator changes.
+func (e *Engine) OnMinValidatorTokensChanged(_ context.Context, minTokens num.Decimal) error {
+	minTokensForJoiningValidator, _ := num.UintFromDecimal(minTokens)
+	return e.transactionTypeToPolicy[txn.AnnounceNodeCommand].UpdateUintParam(netparams.StakingAndDelegationRewardMinimumValidatorStake, minTokensForJoiningValidator)
 }
 
 // OnEpochEvent is a callback for epoch events.

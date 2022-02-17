@@ -99,8 +99,8 @@ func (t Tx) Command() txn.Command {
 		return txn.AmendLiquidityProvisionCommand
 	case *commandspb.InputData_ProposalSubmission:
 		return txn.ProposeCommand
-	case *commandspb.InputData_NodeRegistration:
-		return txn.RegisterNodeCommand
+	case *commandspb.InputData_AnnounceNode:
+		return txn.AnnounceNodeCommand
 	case *commandspb.InputData_NodeVote:
 		return txn.NodeVoteCommand
 	case *commandspb.InputData_NodeSignature:
@@ -123,6 +123,8 @@ func (t Tx) Command() txn.Command {
 		return txn.TransferFundsCommand
 	case *commandspb.InputData_CancelTransfer:
 		return txn.CancelTransferFundsCommand
+	case *commandspb.InputData_ValidatorHeartbeat:
+		return txn.ValidatorHeartbeatCommand
 	default:
 		panic("unsupported command")
 	}
@@ -148,8 +150,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.LiquidityProvisionAmendment
 	case *commandspb.InputData_ProposalSubmission:
 		return cmd.ProposalSubmission
-	case *commandspb.InputData_NodeRegistration:
-		return cmd.NodeRegistration
+	case *commandspb.InputData_AnnounceNode:
+		return cmd.AnnounceNode
 	case *commandspb.InputData_NodeVote:
 		return cmd.NodeVote
 	case *commandspb.InputData_NodeSignature:
@@ -172,6 +174,8 @@ func (t Tx) GetCmd() interface{} {
 		return cmd.Transfer
 	case *commandspb.InputData_CancelTransfer:
 		return cmd.CancelTransfer
+	case *commandspb.InputData_ValidatorHeartbeat:
+		return cmd.ValidatorHeartbeat
 	default:
 		return errors.New("unsupported command")
 	}
@@ -233,12 +237,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshall to ProposalSubmission")
 		}
 		*underlyingCmd = *cmd.ProposalSubmission
-	case *commandspb.InputData_NodeRegistration:
-		underlyingCmd, ok := i.(*commandspb.NodeRegistration)
+	case *commandspb.InputData_AnnounceNode:
+		underlyingCmd, ok := i.(*commandspb.AnnounceNode)
 		if !ok {
-			return errors.New("failed to unmarshall to NodeRegistration")
+			return errors.New("failed to unmarshall to AnnounceNode")
 		}
-		*underlyingCmd = *cmd.NodeRegistration
+		*underlyingCmd = *cmd.AnnounceNode
 	case *commandspb.InputData_NodeVote:
 		underlyingCmd, ok := i.(*commandspb.NodeVote)
 		if !ok {
@@ -305,6 +309,12 @@ func (t Tx) Unmarshal(i interface{}) error {
 			return errors.New("failed to unmarshal CancelTransferFunds")
 		}
 		*underlyingCmd = *cmd.CancelTransfer
+	case *commandspb.InputData_ValidatorHeartbeat:
+		underlyingCmd, ok := i.(*commandspb.ValidatorHeartbeat)
+		if !ok {
+			return errors.New("failed to unmarshal ValidatorHeartbeat")
+		}
+		*underlyingCmd = *cmd.ValidatorHeartbeat
 	default:
 		return errors.New("unsupported command")
 	}

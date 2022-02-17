@@ -34,6 +34,20 @@ func (m *MockNodeWallets) EXPECT() *MockNodeWalletsMockRecorder {
 	return m.recorder
 }
 
+// GetEthereum mocks base method.
+func (m *MockNodeWallets) GetEthereum() validators.Signer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEthereum")
+	ret0, _ := ret[0].(validators.Signer)
+	return ret0
+}
+
+// GetEthereum indicates an expected call of GetEthereum.
+func (mr *MockNodeWalletsMockRecorder) GetEthereum() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEthereum", reflect.TypeOf((*MockNodeWallets)(nil).GetEthereum))
+}
+
 // GetEthereumAddress mocks base method.
 func (m *MockNodeWallets) GetEthereumAddress() string {
 	m.ctrl.T.Helper()

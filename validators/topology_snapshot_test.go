@@ -3,7 +3,6 @@ package validators_test
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"testing"
 
 	"code.vegaprotocol.io/vega/validators"
@@ -48,29 +47,24 @@ func TestTopologySnapshot(t *testing.T) {
 	require.Nil(t, err)
 
 	tmPubKeys := []string{"tm-pubkey-1", "tm-pubkey-2"}
-	top.UpdateValidatorSet(tmPubKeys)
-
-	h2, err := top.GetHash(topKey)
-	require.Nil(t, err)
-
 	ctx := context.Background()
 
-	nr1 := commandspb.NodeRegistration{
+	nr1 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey",
 		ChainPubKey:     tmPubKeys[0],
 		VegaPubKey:      "vega-key",
 		EthereumAddress: "eth-address",
 	}
-	err = top.AddNodeRegistration(ctx, &nr1)
+	err = top.AddNewNode(ctx, &nr1)
 	assert.NoError(t, err)
 
-	nr2 := commandspb.NodeRegistration{
+	nr2 := commandspb.AnnounceNode{
 		Id:              "vega-master-pubkey-2",
 		ChainPubKey:     tmPubKeys[1],
 		VegaPubKey:      "vega-key-2",
 		EthereumAddress: "eth-address-2",
 	}
-	err = top.AddNodeRegistration(ctx, &nr2)
+	err = top.AddNewNode(ctx, &nr2)
 	assert.NoError(t, err)
 
 	kr1 := &commandspb.KeyRotateSubmission{
@@ -94,8 +88,6 @@ func TestTopologySnapshot(t *testing.T) {
 	// Check the hashes have changed after each state change
 	h3, err := top.GetHash(topKey)
 	require.Nil(t, err)
-	require.False(t, bytes.Equal(h1, h2))
-	require.False(t, bytes.Equal(h2, h3))
 	require.False(t, bytes.Equal(h1, h3))
 
 	// Get the state ready to load into a new instance of the engine
@@ -120,11 +112,11 @@ func TestTopologySnapshot(t *testing.T) {
 	assert.Equal(t, top.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey), snapTop.GetPendingKeyRotation(kr1.TargetBlock, kr1.NewPubKey))
 	assert.Equal(t, top.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey), snapTop.GetPendingKeyRotation(kr2.TargetBlock, kr2.NewPubKey))
 
-	require.Equal(t, "0.5", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address1)).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address2)).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address3)).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address4)).String())
-	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
+	require.Equal(t, "0.5", snapTop.ValidatorPerformanceScore(tmkey1).String())
+	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey2).String())
+	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey3).String())
+	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey4).String())
+	require.Equal(t, "1", snapTop.ValidatorPerformanceScore(tmkey5).String())
 }
 
 func updateValidatorPerformanceToNonDefaultState(t *testing.T, top *validators.Topology) {
@@ -151,9 +143,9 @@ func updateValidatorPerformanceToNonDefaultState(t *testing.T, top *validators.T
 	req2 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address3, Height: int64(1)}}
 	top.BeginBlock(context.Background(), req2, vd2)
 
-	require.Equal(t, "0.5", top.ValidatorPerformanceScore(hex.EncodeToString(address1)).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(hex.EncodeToString(address2)).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(hex.EncodeToString(address3)).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(hex.EncodeToString(address4)).String())
-	require.Equal(t, "1", top.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
+	require.Equal(t, "0.5", top.ValidatorPerformanceScore(tmkey1).String())
+	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey2).String())
+	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey3).String())
+	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey4).String())
+	require.Equal(t, "1", top.ValidatorPerformanceScore(tmkey5).String())
 }
