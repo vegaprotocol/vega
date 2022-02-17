@@ -37,6 +37,9 @@ func (app *App) processChainEvent(
 		return ErrChainEventFromNonValidator
 	}
 
+	// let the topology know who was the validator that forwarded the event
+	app.top.AddForwarder(pubkey)
+
 	// ack the new event then
 	if !app.evtfwd.Ack(ce) {
 		// there was an error, or this was already acked

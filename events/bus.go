@@ -107,6 +107,7 @@ const (
 	StateVarEvent
 	NetworkLimitsEvent
 	TransferEvent
+	ValidatorRankingEvent
 )
 
 var (
@@ -160,9 +161,11 @@ var (
 		eventspb.BusEventType_BUS_EVENT_TYPE_STATE_VAR:           StateVarEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_NETWORK_LIMITS:      NetworkLimitsEvent,
 		eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER:            TransferEvent,
+		eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING:   ValidatorRankingEvent,
 	}
 
 	toProto = map[Type]eventspb.BusEventType{
+		ValidatorRankingEvent:   eventspb.BusEventType_BUS_EVENT_TYPE_VALIDATOR_RANKING,
 		TimeUpdate:              eventspb.BusEventType_BUS_EVENT_TYPE_TIME_UPDATE,
 		TransferResponses:       eventspb.BusEventType_BUS_EVENT_TYPE_TRANSFER_RESPONSES,
 		PositionResolution:      eventspb.BusEventType_BUS_EVENT_TYPE_POSITION_RESOLUTION,
@@ -247,6 +250,7 @@ var (
 		StateVarEvent:           "StateVarEvent",
 		NetworkLimitsEvent:      "NetworkLimitsEvent",
 		TransferEvent:           "TransferEvent",
+		ValidatorRankingEvent:   "ValidatorRankingEvent",
 	}
 )
 

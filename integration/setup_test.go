@@ -106,7 +106,7 @@ func newExecutionTestSetup() *executionTestSetup {
 	execsetup.collateralEngine.EnableAsset(context.Background(), vegaAsset)
 
 	execsetup.epochEngine = epochtime.NewService(execsetup.log, epochtime.NewDefaultConfig(), execsetup.timeService, execsetup.broker)
-	execsetup.topology = stubs.NewTopologyStub("nodeID")
+	execsetup.topology = stubs.NewTopologyStub("nodeID", execsetup.broker)
 
 	execsetup.stakingAccount = stubs.NewStakingAccountStub()
 	execsetup.epochEngine.NotifyOnEpoch(execsetup.stakingAccount.OnEpochEvent)
@@ -115,7 +115,7 @@ func newExecutionTestSetup() *executionTestSetup {
 
 	execsetup.delegationEngine = delegation.New(execsetup.log, delegation.NewDefaultConfig(), execsetup.broker, execsetup.topology, execsetup.stakingAccount, execsetup.epochEngine, execsetup.timeService)
 	marketTracker := execution.NewMarketTracker()
-	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, execsetup.topology, feesTracker, marketTracker)
+	execsetup.rewardsEngine = rewards.New(execsetup.log, rewards.NewDefaultConfig(), execsetup.broker, execsetup.delegationEngine, execsetup.epochEngine, execsetup.collateralEngine, execsetup.timeService, feesTracker, marketTracker, execsetup.topology)
 	execsetup.oracleEngine = oracles.NewEngine(
 		execsetup.log, oracles.NewDefaultConfig(), currentTime, execsetup.broker, execsetup.timeService,
 	)
@@ -173,6 +173,10 @@ func newExecutionTestSetup() *executionTestSetup {
 
 func (e *executionTestSetup) registerNetParamsCallbacks() error {
 	return e.netParams.Watch(
+		netparams.WatchParam{
+			Param:   netparams.StakingAndDelegationRewardMinimumValidatorStake,
+			Watcher: e.topology.OnMinDelegationUpdated,
+		},
 		netparams.WatchParam{
 			Param:   netparams.MarketMarginScalingFactors,
 			Watcher: e.executionEngine.OnMarketMarginScalingFactorsUpdate,

@@ -19,7 +19,7 @@ func Test(t *testing.T) {
 	t.Run("verify ERC20 assets", testVerifyERC20Assets)
 	t.Run("verify builtin assets", testVerifyBuiltinAssets)
 	t.Run("verify netparams", testVerifyNetworkParams)
-	t.Run("verify netparams", testVerifyValidators)
+	t.Run("verify validators", testVerifyValidators)
 	t.Run("verify unknown appstate field", testUnknownAppstateField)
 }
 

@@ -9,8 +9,6 @@ import (
 	commandspb "code.vegaprotocol.io/protos/vega/commands/v1"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/logging"
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 var (
@@ -78,11 +76,11 @@ func (t *Topology) AddKeyRotate(ctx context.Context, nodeID string, currentBlock
 		return ErrTargetBlockHeightMustBeGraterThanCurrentHeight
 	}
 
-	if node.VegaPubKeyIndex >= kr.NewPubKeyIndex {
+	if node.data.VegaPubKeyIndex >= kr.NewPubKeyIndex {
 		return ErrNewVegaPubKeyIndexMustBeGreaterThenCurrentPubKeyIndex
 	}
 
-	if node.HashVegaPubKey() != kr.CurrentPubKeyHash {
+	if node.data.HashVegaPubKey() != kr.CurrentPubKeyHash {
 		return ErrCurrentPubKeyHashDoesNotMatch
 	}
 
@@ -152,14 +150,7 @@ func (t *Topology) GetAllPendingKeyRotations() []*PendingKeyRotation {
 	return pkrs
 }
 
-func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator) {
-	t.validatorPerformance.BeginBlock(ctx, req, vd)
-
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	blockHeight := uint64(req.Header.Height)
-	t.currentBlockHeight = blockHeight
-
+func (t *Topology) keyRotationBeginBlockLocked(ctx context.Context) {
 	// key swaps should run in deterministic order
 	nodeIDs := t.pendingPubKeyRotations.getSortedNodeIDsPerHeight(t.currentBlockHeight)
 	if len(nodeIDs) == 0 {
@@ -174,18 +165,18 @@ func (t *Topology) BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlo
 			continue
 		}
 
-		oldPubKey := data.VegaPubKey
-		rotation := t.pendingPubKeyRotations[blockHeight][nodeID]
+		oldPubKey := data.data.VegaPubKey
+		rotation := t.pendingPubKeyRotations[t.currentBlockHeight][nodeID]
 
-		data.VegaPubKey = rotation.newPubKey
-		data.VegaPubKeyIndex = rotation.newKeyIndex
+		data.data.VegaPubKey = rotation.newPubKey
+		data.data.VegaPubKeyIndex = rotation.newKeyIndex
 		t.validators[nodeID] = data
 
 		t.notifyKeyChange(ctx, oldPubKey, rotation.newPubKey)
-		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, blockHeight))
+		t.broker.Send(events.NewKeyRotationEvent(ctx, nodeID, oldPubKey, rotation.newPubKey, t.currentBlockHeight))
 	}
 
-	delete(t.pendingPubKeyRotations, blockHeight)
+	delete(t.pendingPubKeyRotations, t.currentBlockHeight)
 
 	t.tss.changed = true
 }
