@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/events"
 	"code.vegaprotocol.io/vega/libs/crypto"
 	"code.vegaprotocol.io/vega/logging"
@@ -235,20 +236,23 @@ func (e *Engine) EnableAsset(ctx context.Context, asset types.Asset) error {
 		e.accs[externalID] = externalAcc
 	}
 
-	// when an asset is enabled a global reward account (aka network treasury) is created for it
-	globalRewardID := e.accountID(noMarket, systemOwner, asset.ID, types.AccountTypeGlobalReward)
-	if _, ok := e.accs[globalRewardID]; !ok {
-		rewardAcc := &types.Account{
-			ID:       globalRewardID,
-			Asset:    asset.ID,
-			Owner:    systemOwner,
-			Balance:  num.Zero(),
-			MarketID: noMarket,
-			Type:     types.AccountTypeGlobalReward,
+	// when an asset is enabled a global reward account (aka network treasury) is created for it along with the other 4 types of rewards
+	rewardAccountTypes := []vega.AccountType{types.AccountTypeGlobalReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeMarketProposerReward, types.AccountTypeLPFeeReward}
+	for _, rewardAccountType := range rewardAccountTypes {
+		rewardID := e.accountID(noMarket, systemOwner, asset.ID, rewardAccountType)
+		if _, ok := e.accs[rewardID]; !ok {
+			rewardAcc := &types.Account{
+				ID:       rewardID,
+				Asset:    asset.ID,
+				Owner:    systemOwner,
+				Balance:  num.Zero(),
+				MarketID: noMarket,
+				Type:     rewardAccountType,
+			}
+			e.accs[rewardID] = rewardAcc
+			e.addAccountToHashableSlice(rewardAcc)
+			e.broker.Send(events.NewAccountEvent(ctx, *rewardAcc))
 		}
-		e.accs[globalRewardID] = rewardAcc
-		e.addAccountToHashableSlice(rewardAcc)
-		e.broker.Send(events.NewAccountEvent(ctx, *rewardAcc))
 	}
 
 	// pending transfers account
@@ -1502,8 +1506,8 @@ func (e *Engine) getTransferFundsTransferRequest(
 			}
 
 		// this could not exists as well, let's just create in this case
-		case types.AccountTypeGlobalReward:
-			toAcc, err = e.GetGlobalRewardAccount(t.Amount.Asset)
+		case types.AccountTypeGlobalReward, types.AccountTypeLPFeeReward, types.AccountTypeMakerFeeReward, types.AccountTypeTakerFeeReward, types.AccountTypeMarketProposerReward:
+			toAcc, err = e.GetRewardAccount(t.Amount.Asset, accountType)
 			if err != nil {
 				// shouldn't happen, we just created it...
 				return nil, err

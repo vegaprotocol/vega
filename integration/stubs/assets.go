@@ -71,7 +71,7 @@ func (a isAssetStub) Type() *types.Asset {
 		ID: a.ID,
 		Details: &types.AssetDetails{
 			Decimals: a.DecimalPlaces,
-			Quantum:  num.Zero(),
+			Quantum:  num.NewUint(5000),
 		},
 	}
 }

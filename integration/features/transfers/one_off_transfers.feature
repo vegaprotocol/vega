@@ -12,7 +12,7 @@ Background:
     | party    | asset | amount          |
     | party1   | VEGA  | 10000000        |
 
-Scenario: simple successful transfers
+Scenario: simple successful transfers (0057-TRAN-001, 0057-TRAN-007, 0057-TRAN-008)
     Given the parties submit the following one off transfers:
     | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | delivery_time         |
     | 1  | party1 |  ACCOUNT_TYPE_GENERAL | party2 | ACCOUNT_TYPE_GENERAL | VEGA  |  10000 | 2021-08-26T00:00:01Z  |    
@@ -36,7 +36,7 @@ Scenario: simple successful transfers
     Then "party3" should have general account balance of "20000" for asset "VEGA"
     Then "party4" should have general account balance of "30000" for asset "VEGA"
     
-Scenario: invalid transfers
+Scenario: invalid transfers (0057-TRAN-005, 0057-TRAN-006)
      Given the parties submit the following one off transfers:
     | id | from   |              from_account_type           |   to   |         to_account_type          | asset | amount | delivery_time         |               error            |
     | 1  |        |  ACCOUNT_TYPE_GENERAL                    | party2 | ACCOUNT_TYPE_GENERAL             | VEGA  |  10000 | 2021-08-26T00:00:01Z  |  invalid from account          |  
@@ -95,3 +95,55 @@ Scenario: payout time in the past - should be executed immediately
     Then "party1" should have general account balance of "9985000" for asset "VEGA"
     Then "party2" should have general account balance of "2500" for asset "VEGA"
     
+Scenario: Transfer from general account to reward account (0057-TRAN-002, 0057-TRAN-007)
+    Given the parties submit the following one off transfers:
+    | id | from   |  from_account_type    |   to   |   to_account_type                       | asset | amount | delivery_time         |
+    | 1  | party1 |  ACCOUNT_TYPE_GENERAL |    *   | ACCOUNT_TYPE_GLOBAL_REWARD              | VEGA  |  10000 | 2021-08-25T00:00:00Z  |    
+    | 2  | party1 |  ACCOUNT_TYPE_GENERAL |    *   | ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS    | VEGA  |  20000 | 2021-08-26T00:00:02Z  |    
+    | 3  | party1 |  ACCOUNT_TYPE_GENERAL |    *   | ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES    | VEGA  |  30000 | 2021-08-26T00:00:03Z  |    
+    | 4  | party1 |  ACCOUNT_TYPE_GENERAL |    *   | ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES | VEGA  |  40000 | 2021-08-26T00:00:03Z  |    
+    | 5  | party1 |  ACCOUNT_TYPE_GENERAL |    *   | ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES     | VEGA  |  50000 | 2021-08-26T00:00:03Z  |    
+
+    Then "party1" should have general account balance of "9775000" for asset "VEGA"
+    
+    # first transfer's time is in the past so done immediately
+    And the reward account of type "ACCOUNT_TYPE_GLOBAL_REWARD" should have balance of "10000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS" should have balance of "0" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES" should have balance of "0" for asset "VEGA"
+
+    #  advance to the payout to ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS
+    Given time is updated to "2021-08-26T00:00:02Z"
+    Then "party1" should have general account balance of "9775000" for asset "VEGA"
+    Then the reward account of type "ACCOUNT_TYPE_GLOBAL_REWARD" should have balance of "10000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS" should have balance of "20000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES" should have balance of "0" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES" should have balance of "0" for asset "VEGA"
+
+    # advance to the payout to all other rewards, 
+    Given time is updated to "2021-08-26T00:00:03Z"
+    Then "party1" should have general account balance of "9775000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_GLOBAL_REWARD" should have balance of "10000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MARKET_PROPOSERS" should have balance of "20000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_LP_RECEIVED_FEES" should have balance of "30000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_MAKER_RECEIVED_FEES" should have balance of "40000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_REWARD_TAKER_PAID_FEES" should have balance of "50000" for asset "VEGA"
+    And the reward account of type "ACCOUNT_TYPE_FEES_INFRASTRUCTURE" should have balance of "75000" for asset "VEGA"
+
+Scenario: Insufficient funds to cover transfer + fees (0057-TRAN-007)
+    Given the parties submit the following one off transfers:
+    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | delivery_time         |                            error                                 |
+    | 1  | party1 |  ACCOUNT_TYPE_GENERAL | party2 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2021-08-25T00:00:00Z  |                                                                  |
+    | 2  | party2 |  ACCOUNT_TYPE_GENERAL | party3 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000 | 2021-08-26T00:00:02Z   | could not pay the fee for transfer: not enough funds to transfer |
+    
+
+Scenario: Cannot cancel scheduled one off transfer (0057-TRAN-010)    
+    Given the parties submit the following one off transfers:
+    | id | from   |  from_account_type    |   to   |   to_account_type    | asset | amount | delivery_time         |
+    | 1  | party1 |  ACCOUNT_TYPE_GENERAL | party2 | ACCOUNT_TYPE_GENERAL | VEGA  | 10000  | 2021-08-28T00:00:00Z  |
+
+   When the parties submit the following transfer cancellations:
+    | party  | transfer_id |                error               |
+    | party1 |      1      | recurring transfer does not exists |

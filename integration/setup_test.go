@@ -167,6 +167,10 @@ func newExecutionTestSetup() *executionTestSetup {
 			Param:   netparams.TransferFeeFactor,
 			Watcher: execsetup.banking.OnTransferFeeFactorUpdate,
 		},
+		netparams.WatchParam{
+			Param:   netparams.TransferMinTransferQuantumMultiple,
+			Watcher: execsetup.banking.OnMinTransferQuantumMultiple,
+		},
 	)
 	return execsetup
 }
