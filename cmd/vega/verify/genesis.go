@@ -23,6 +23,7 @@ type validator struct {
 	Country         string `json:"country"`
 	Name            string `json:"name"`
 	AvatarURL       string `json:"avatar_url"`
+	FromEpoch       uint64 `json:"from_epoch"`
 }
 
 type asset struct {

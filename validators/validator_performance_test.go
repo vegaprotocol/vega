@@ -15,11 +15,17 @@ import (
 )
 
 var (
-	address1, _ = hex.DecodeString("31D6EBD2A8E40524142613A241CA1D2056159EF4")
-	address2, _ = hex.DecodeString("6DB7E2A705ABF86C6B4A4817E778669D45421166")
-	address3, _ = hex.DecodeString("A5429AF24A820AFD9C3D21507C8642F27F5DD308")
-	address4, _ = hex.DecodeString("AE5B9A8193AEFC405C159C930ED2BBF40A806785")
-	address5, _ = hex.DecodeString("1C9B6E2708F8217F8D5BFC8D8734ED9A5BC19B21")
+	tmkey1 = "uBr9FP/M/QyVtOa3j18+hjksXra7qxCa7e25/FVW5c0="
+	tmkey2 = "7xmxwJpTnPHt6u+18ggFIJzlTWtfKSLKBFkGD6AC99o="
+	tmkey3 = "7kRL1jCJH8QUDTHK90/Nz9lIAvl8/s1Z70XL1EXFkaM="
+	tmkey4 = "g2QGqXnfkNmmVO4QSw/wu5kpk8rbaY+I4qYNzk7QJTc="
+	tmkey5 = "vQVqN1N0+k1GtGZmB8gb1b9BR/cdcYFZtxgiywaTVYM="
+
+	address1, _ = hex.DecodeString("91484AD0B6343D73690F1D36A80EF92B67622C47")
+	address2, _ = hex.DecodeString("3619F6EC431527F02457875B7355041ADBB54772")
+	address3, _ = hex.DecodeString("13FA0B679D6064772567C7A6050B42CCA1C7C8CD")
+	address4, _ = hex.DecodeString("15B7DA235BEED81158737FBFE79C6264D5E2E5FF")
+	address5, _ = hex.DecodeString("34DA2E4636D96ABE36AE63D3A01A9AC86802A1CF")
 )
 
 func TestValidatorPerformanceNoPerformance(t *testing.T) {
@@ -40,12 +46,12 @@ func TestElectedExpectationWithVotingPower(t *testing.T) {
 	req1 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address1, Height: int64(1)}}
 	vp.BeginBlock(context.Background(), req1, vd1)
 
-	// expect all validators to have the same performance score, all by address1 for not being selected and address1 for being selected and proposing
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address1)).String())
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address2)).String())
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address3)).String())
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address4)).String())
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
+	// expect all validators to have the same performance score, all but address1 for not being selected and address1 for being selected and proposing
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey1).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey2).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey3).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey4).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey5).String())
 
 	vd2 := []*tmtypes.Validator{
 		{Address: address1, VotingPower: 3715, ProposerPriority: 6433},
@@ -71,9 +77,9 @@ func TestElectedExpectationWithVotingPower(t *testing.T) {
 	req3 := abcitypes.RequestBeginBlock{Header: types1.Header{ProposerAddress: address5, Height: int64(1)}}
 	vp.BeginBlock(context.Background(), req3, vd3)
 
-	require.Equal(t, "0.5", vp.ValidatorPerformanceScore(hex.EncodeToString(address1)).String())
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address2)).String())
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address3)).String())
-	require.Equal(t, "0.05", vp.ValidatorPerformanceScore(hex.EncodeToString(address4)).String())
-	require.Equal(t, "1", vp.ValidatorPerformanceScore(hex.EncodeToString(address5)).String())
+	require.Equal(t, "0.5", vp.ValidatorPerformanceScore(tmkey1).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey2).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey3).String())
+	require.Equal(t, "0.05", vp.ValidatorPerformanceScore(tmkey4).String())
+	require.Equal(t, "1", vp.ValidatorPerformanceScore(tmkey5).String())
 }

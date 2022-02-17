@@ -22,6 +22,7 @@
 ### 🗑️ Deprecation
 
 ### 🛠 Improvements
+- [4793](https://github.com/vegaprotocol/vega/issues/4793) - Add specific insurance pool balance test 
 - [4633](https://github.com/vegaprotocol/vega/pull/4633) - Add possibility to list snapshots from the vega command line
 - [4640](https://github.com/vegaprotocol/vega/pull/4640) - Update feature tests related to liquidity provision following integration of probability of trading with floating point consensus
 - [4558](https://github.com/vegaprotocol/vega/pull/4558) - Add MacOS install steps and information required to use `dockerisedvega.sh` script with private docker repository
@@ -67,6 +68,7 @@
 - [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
 - [4712](https://github.com/vegaprotocol/vega/issues/4712) - Check smart contract hash on startup to ensure the correct version is being used
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add integration test ensuring positions plug-in calculates P&L accurately.
+- [4689](https://github.com/vegaprotocol/vega/issues/4689) - Validators joining and leaving the network
 - [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
 - [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
 - [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
@@ -78,6 +80,7 @@
 - [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
 
 ### 🐛 Fixes
+- [4798](https://github.com/vegaprotocol/vega/pull/4798) - Fix panic in loading topology from snapshot
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
 - [4692](https://github.com/vegaprotocol/vega/pull/4692) - Set statistics block height after a snapshot reload
 - [4702](https://github.com/vegaprotocol/vega/pull/4702) - User tree importer and exporter to transfer snapshots via `statesync`
@@ -107,6 +110,7 @@
 - [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 - [4747](https://github.com/vegaprotocol/vega/pull/4747) - Dispatch network parameter updates at the same block when loaded from checkpoint
 - [4756](https://github.com/vegaprotocol/vega/pull/4756) - Fix for markets loaded from snapshot not terminated by their oracle
+- [4776](https://github.com/vegaprotocol/vega/pull/4776) - Add testing for auction state changes and remove unnecessary market state change
 - [4590](https://github.com/vegaprotocol/vega/pull/4590) - Added verification of uint market data in integration test
 - [4749](https://github.com/vegaprotocol/vega/pull/4794) - Fixed issue where LP orders did not get redeployed
 

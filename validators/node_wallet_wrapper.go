@@ -9,6 +9,7 @@ type NodeWallets interface {
 	GetVega() Wallet
 	GetTendermintPubkey() string
 	GetEthereumAddress() string
+	GetEthereum() Signer
 }
 
 type NodeWalletsWrapper struct {
@@ -21,6 +22,10 @@ func WrapNodeWallets(nw *nodewallets.NodeWallets) *NodeWalletsWrapper {
 
 func (w *NodeWalletsWrapper) GetVega() Wallet {
 	return w.Vega
+}
+
+func (w *NodeWalletsWrapper) GetEthereum() Signer {
+	return w.Ethereum
 }
 
 func (w *NodeWalletsWrapper) GetEthereumAddress() string {

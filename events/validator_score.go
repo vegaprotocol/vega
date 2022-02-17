@@ -15,10 +15,12 @@ type ValidatorScore struct {
 	NormalisedScore      string
 	RawValidatorScore    string
 	ValidatorPerformance string
+	MultisigScore        string
+	ValidatorStatus      string
 }
 
 func NewValidatorScore(ctx context.Context, nodeID, epochSeq string, score, normalisedScore, rawValidatorScore,
-	validatorPerformance num.Decimal) *ValidatorScore {
+	validatorPerformance num.Decimal, multisigScore num.Decimal, validatorStatus string) *ValidatorScore {
 	return &ValidatorScore{
 		Base:                 newBase(ctx, ValidatorScoreEvent),
 		NodeID:               nodeID,
@@ -27,6 +29,8 @@ func NewValidatorScore(ctx context.Context, nodeID, epochSeq string, score, norm
 		NormalisedScore:      normalisedScore.String(),
 		RawValidatorScore:    rawValidatorScore.String(),
 		ValidatorPerformance: validatorPerformance.String(),
+		MultisigScore:        multisigScore.String(),
+		ValidatorStatus:      validatorStatus,
 	}
 }
 
@@ -38,6 +42,8 @@ func (vd ValidatorScore) Proto() eventspb.ValidatorScoreEvent {
 		NormalisedScore:      vd.NormalisedScore,
 		ValidatorPerformance: vd.ValidatorPerformance,
 		RawValidatorScore:    vd.RawValidatorScore,
+		MultisigScore:        vd.MultisigScore,
+		ValidatorStatus:      vd.ValidatorStatus,
 	}
 }
 
@@ -69,5 +75,7 @@ func ValidatorScoreEventFromStream(ctx context.Context, be *eventspb.BusEvent) *
 		NormalisedScore:      event.NormalisedScore,
 		RawValidatorScore:    event.RawValidatorScore,
 		ValidatorPerformance: event.ValidatorPerformance,
+		MultisigScore:        event.MultisigScore,
+		ValidatorStatus:      event.ValidatorStatus,
 	}
 }
