@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	vgtesting "code.vegaprotocol.io/data-node/libs/testing"
 	types "code.vegaprotocol.io/protos/vega"
 	eventspb "code.vegaprotocol.io/protos/vega/events/v1"
 	"code.vegaprotocol.io/vega/broker"
@@ -652,7 +653,7 @@ func testStreamsOverSocket(t *testing.T) {
 	var receivedEvent eventspb.BusEvent
 	err = proto.Unmarshal(receivedBytes, &receivedEvent)
 	assert.NoError(t, err)
-	assert.Equal(t, *sentEvent.StreamMessage(), receivedEvent)
+	vgtesting.AssertProtoEqual(t, sentEvent.StreamMessage(), &receivedEvent)
 }
 
 func testStopsProcessOnStreamError(t *testing.T) {

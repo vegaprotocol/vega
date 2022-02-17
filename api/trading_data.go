@@ -254,6 +254,7 @@ type CheckpointService interface {
 }
 
 type tradingDataService struct {
+	protoapi.UnimplementedTradingDataServiceServer
 	log                     *logging.Logger
 	Config                  Config
 	TimeService             VegaTime

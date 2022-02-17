@@ -20,6 +20,7 @@ type CoreServiceClient interface {
 
 // core service acts as a proxy to the trading service in core node
 type coreProxyService struct {
+	protoapi.UnimplementedCoreServiceServer
 	log  *logging.Logger
 	conf Config
 
