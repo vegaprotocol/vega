@@ -675,6 +675,7 @@ func (m *Market) OnChainTimeUpdate(ctx context.Context, t time.Time) bool {
 	// distribute liquidity fees each `m.lpFeeDistributionTimeStep`
 	if t.Sub(m.lastEquityShareDistributed) > m.lpFeeDistributionTimeStep {
 		m.lastEquityShareDistributed = t
+		m.stateChanged = true
 
 		if err := m.distributeLiquidityFees(ctx); err != nil {
 			m.log.Panic("liquidity fee distribution error", logging.Error(err))

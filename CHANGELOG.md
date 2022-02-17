@@ -106,6 +106,7 @@
 - [4738](https://github.com/vegaprotocol/vega/pull/4738) - Add vesting contract as part of the Ethereum event forwarder
 - [4747](https://github.com/vegaprotocol/vega/pull/4747) - Dispatch network parameter updates at the same block when loaded from checkpoint
 - [4756](https://github.com/vegaprotocol/vega/pull/4756) - Fix for markets loaded from snapshot not terminated by their oracle
+- [4776](https://github.com/vegaprotocol/vega/pull/4776) - Add testing for auction state changes and remove unnecessary market state change
 - [4590](https://github.com/vegaprotocol/vega/pull/4590) - Added verification of uint market data in integration test
 - [4749](https://github.com/vegaprotocol/vega/pull/4794) - Fixed issue where LP orders did not get redeployed
 
