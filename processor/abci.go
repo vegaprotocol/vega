@@ -30,6 +30,7 @@ import (
 	"code.vegaprotocol.io/vega/vegatime"
 
 	tmtypes "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/encoding"
 	tmtypesint "github.com/tendermint/tendermint/types"
 )
 
@@ -522,6 +523,11 @@ func (app *App) OnEndBlock(req tmtypes.RequestEndBlock) (ctx context.Context, re
 
 	powerUpdates := app.top.GetValidatorPowerUpdates()
 	if len(powerUpdates) > 0 {
+		app.log.Info("updating validator power")
+		for _, vu := range powerUpdates {
+			cPubKey, _ := encoding.PubKeyFromProto(vu.PubKey)
+			app.log.Info("Setting ResponseEndBlock voting power power:", logging.String(("address"), cPubKey.Address().String()), logging.Uint64("power", uint64(vu.Power)))
+		}
 		resp = tmtypes.ResponseEndBlock{
 			ValidatorUpdates: powerUpdates,
 		}
