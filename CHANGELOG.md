@@ -65,6 +65,7 @@
 - [4672](https://github.com/vegaprotocol/vega/issues/4672) - Update Jenkinsfile
 - [4712](https://github.com/vegaprotocol/vega/issues/4712) - Check smart contract hash on startup to ensure the correct version is being used
 - [4594](https://github.com/vegaprotocol/vega/issues/4594) - Add integration test ensuring positions plug-in calculates P&L accurately.
+- [4689](https://github.com/vegaprotocol/vega/issues/4689) - Validators joining and leaving the network
 - [4680](https://github.com/vegaprotocol/vega/issues/4680) - Add `totalTokenSupplyStake` to the snapshots
 - [4645](https://github.com/vegaprotocol/vega/pull/4645) - Add transfers snapshots
 - [4595](https://github.com/vegaprotocol/vega/pull/4595) - Add internal oracle supplying vega time data for time-triggered events
@@ -73,6 +74,7 @@
 - [4751](https://github.com/vegaprotocol/vega/pull/4751) - Make trade ids unique using the deterministic id generator
 - [4766](https://github.com/vegaprotocol/vega/issues/4766) - Added feature tests and integration steps for transfers
 - [4771](https://github.com/vegaprotocol/vega/issues/4771) - Small fixes and conformance update for transfers
+- [4784](https://github.com/vegaprotocol/vega/issues/4784) - Moving feature tests from specs internal to verified folder
 
 ### 🐛 Fixes
 - [4521](https://github.com/vegaprotocol/vega/pull/4521) - Better error when trying to use the null-blockchain with an ERC20 asset
@@ -83,6 +85,7 @@
 - [4515](https://github.com/vegaprotocol/vega/pull/4515) - Set log level in snapshot engine
 - [4721](https://github.com/vegaprotocol/vega/pull/4721) - Save checkpoint with `UnixNano` when taking a snapshot
 - [4728](https://github.com/vegaprotocol/vega/pull/4728) - Fix restoring markets from snapshot by handling generated providers properly
+- [4782](https://github.com/vegaprotocol/vega/pull/4782) - Fix restoring markets from snapshot in an auction with orders
 - [4522](https://github.com/vegaprotocol/vega/pull/4522) - Set transfer responses event when paying rewards
 - [4566](https://github.com/vegaprotocol/vega/pull/4566) - Withdrawal fails should return a status rejected rather than cancelled
 - [4582](https://github.com/vegaprotocol/vega/pull/4582) - Deposits stayed in memory indefinitely, and withdrawal keys were not being sorted to ensure determinism.
@@ -105,6 +108,7 @@
 - [4756](https://github.com/vegaprotocol/vega/pull/4756) - Fix for markets loaded from snapshot not terminated by their oracle
 - [4776](https://github.com/vegaprotocol/vega/pull/4776) - Add testing for auction state changes and remove unnecessary market state change
 - [4590](https://github.com/vegaprotocol/vega/pull/4590) - Added verification of uint market data in integration test
+- [4749](https://github.com/vegaprotocol/vega/pull/4794) - Fixed issue where LP orders did not get redeployed
 
 ## 0.47.6
 *2022-02-01*

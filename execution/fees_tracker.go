@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	proto "code.vegaprotocol.io/protos/vega"
 	"code.vegaprotocol.io/vega/types"
 	"code.vegaprotocol.io/vega/types/num"
 )
@@ -59,7 +60,7 @@ func NewFeesTracker(epochEngine EpochEngine) *FeesTracker {
 
 // onEpochEvent is called when the state of the epoch changes, we only care about new epochs starting.
 func (f *FeesTracker) onEpochEvent(_ context.Context, epoch types.Epoch) {
-	if f.currentEpoch != epoch.Seq {
+	if epoch.Action == proto.EpochAction_EPOCH_ACTION_START {
 		f.assetToTracker = map[string]*assetFeesTracker{}
 	}
 	f.currentEpoch = epoch.Seq

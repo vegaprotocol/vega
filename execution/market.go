@@ -2909,22 +2909,6 @@ func (m *Market) removePeggedOrder(order *types.Order) {
 	m.peggedOrders.Remove(order)
 }
 
-// getOrdersByID returns orders based on given IDs. Returns NO error if order not found.
-// TODO implement this more efficiently - pre compute?
-func (m *Market) getOrdersByID(ids []string) []*types.Order {
-	orders := make([]*types.Order, 0, len(ids))
-
-	for _, id := range ids {
-		o, _, err := m.getOrderByID(id)
-		if err != nil {
-			continue
-		}
-		orders = append(orders, o.Clone())
-	}
-
-	return orders
-}
-
 // getOrderBy looks for the order in the order book and in the list
 // of pegged orders in the market. Returns the order if found, a bool
 // representing if the order was found on the order book and any error code.

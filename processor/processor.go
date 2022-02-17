@@ -49,10 +49,6 @@ type DelegationEngine interface {
 	Hash() []byte
 }
 
-type RewardEngine interface {
-	EndOfBlock(blockHeight int64) []types.ValidatorVotingPower
-}
-
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/execution_engine_mock.go -package mocks code.vegaprotocol.io/vega/processor ExecutionEngine
 type ExecutionEngine interface {
 	// orders stuff
@@ -123,8 +119,6 @@ type Assets interface {
 
 //go:generate go run github.com/golang/mock/mockgen -destination mocks/validator_topology_mock.go -package mocks code.vegaprotocol.io/vega/processor ValidatorTopology
 type ValidatorTopology interface {
-	AddNodeRegistration(ctx context.Context, nr *commandspb.NodeRegistration) error
-	UpdateValidatorSet(keys []string)
 	Len() int
 	IsValidatorVegaPubKey(pk string) bool
 	IsValidatorNodeID(nodeID string) bool
@@ -132,6 +126,10 @@ type ValidatorTopology interface {
 	IsValidator() bool
 	AddKeyRotate(ctx context.Context, nodeID string, currentBlockHeight uint64, kr *commandspb.KeyRotateSubmission) error
 	BeginBlock(ctx context.Context, req abcitypes.RequestBeginBlock, vd []*tmtypes.Validator)
+	GetValidatorPowerUpdates() []abcitypes.ValidatorUpdate
+	ProcessAnnounceNode(ctx context.Context, nr *commandspb.AnnounceNode) error
+	ProcessValidatorHeartbeat(context.Context, *commandspb.ValidatorHeartbeat, func(message, signature, pubkey []byte) error, func(message, signature []byte, hexAddress string) error) error
+	AddForwarder(ID string)
 }
 
 // Broker - the event bus.

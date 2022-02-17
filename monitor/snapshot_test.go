@@ -117,6 +117,19 @@ func TestEmpty(t *testing.T) {
 	assert.Equal(t, hash1, getHash(t, as2))
 }
 
+func TestRestoreTriggerType(t *testing.T) {
+	as := createAuctionState()
+
+	// Perform some updates to the object
+	as.StartPriceAuction(time.Now(), &types.AuctionDuration{
+		Duration: 200,
+		Volume:   200,
+	})
+
+	asNew := monitor.NewAuctionStateFromSnapshot(nil, as.GetState())
+	require.Equal(t, as.IsPriceAuction(), asNew.IsPriceAuction())
+}
+
 func TestChangedState(t *testing.T) {
 	as := createAuctionState()
 

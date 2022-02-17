@@ -19,12 +19,10 @@ func addNodes(top *testTop, number int) {
 		tmPubKeys = append(tmPubKeys, fmt.Sprintf("tm-pub-key-%d", i))
 	}
 
-	top.UpdateValidatorSet(tmPubKeys)
-
 	ctx := context.Background()
 
 	for i := 0; i < number; i++ {
-		top.AddNodeRegistration(ctx, &commandspb.NodeRegistration{
+		top.AddNewNode(ctx, &commandspb.AnnounceNode{
 			Id:              fmt.Sprintf("vega-master-pubkey-%d", i),
 			ChainPubKey:     tmPubKeys[0],
 			VegaPubKey:      fmt.Sprintf("vega-key-%d", i),

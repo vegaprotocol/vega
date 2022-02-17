@@ -187,7 +187,7 @@ type PayloadTopology struct {
 }
 
 type Topology struct {
-	ValidatorData          []*eventspb.ValidatorUpdate
+	ValidatorData          []*snapshot.ValidatorState
 	ChainValidators        []string
 	PendingPubKeyRotations []*snapshot.PendingKeyRotation
 	ValidatorPerformance   *snapshot.ValidatorPerformance
@@ -342,6 +342,7 @@ type KeyDecimalPair struct {
 type AuctionState struct {
 	Mode        MarketTradingMode
 	DefaultMode MarketTradingMode
+	Trigger     AuctionTrigger
 	Begin       time.Time
 	End         *AuctionDuration
 	Start       bool
@@ -2305,6 +2306,7 @@ func AuctionStateFromProto(as *snapshot.AuctionState) *AuctionState {
 		Mode:        as.Mode,
 		DefaultMode: as.DefaultMode,
 		Begin:       time.Unix(as.Begin, 0).UTC(),
+		Trigger:     as.Trigger,
 		End:         end,
 		Start:       as.Start,
 		Stop:        as.Stop,
@@ -2320,6 +2322,7 @@ func (a AuctionState) IntoProto() *snapshot.AuctionState {
 	return &snapshot.AuctionState{
 		Mode:        a.Mode,
 		DefaultMode: a.DefaultMode,
+		Trigger:     a.Trigger,
 		Begin:       a.Begin.Unix(),
 		End:         end,
 		Start:       a.Start,
